@@ -2,7 +2,7 @@
   "mcpServers": {
     "serena": {
       "command": "uvx",
-      "args": ["--from", "serena-mcp", "serena-mcp"]
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"]
     },
     "codegraph": {
       "type": "stdio",
