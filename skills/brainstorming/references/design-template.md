@@ -1,6 +1,6 @@
 # Design Document Template
 
-Use this template when writing to `docs/designs/YYYY-MM-DD-<topic>-design.md`.
+Use this template when writing to `.bdx/brainstorming/YYYY-MM-DD-<topic>-design.md`.
 
 ---
 

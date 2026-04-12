@@ -1,5 +1,5 @@
 ---
-name: brainstorming-session
+name: brainstorming
 description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
 argument-hint: [feature description]
 model: opus
@@ -22,11 +22,11 @@ Transform vague ideas into concrete, validated designs through structured dialog
 ### Phase 1: Context Analysis
 - [ ] Read project `CLAUDE.md` and relevant rules
 - [ ] Check recent commits (last 5)
-- [ ] Decide how many subagents to run based on complexity
+- [ ] Decide subagent count based on complexity
 - [ ] Use subagents to explore related code
 - [ ] Note constraints (tech stack, patterns, conventions)
 
-**GATE**: Must complete context analysis before Phase 2.
+**GATE**: Complete context analysis before Phase 2.
 
 ---
 
@@ -36,7 +36,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 - [ ] Clarify: problem, users, success criteria, constraints
 - [ ] WAIT for answer before proceeding
 
-**GATE**: Must have clear success criteria before Phase 3.
+**GATE**: Clear success criteria before Phase 3.
 
 ---
 
@@ -45,7 +45,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 - [ ] For each: description, pros, cons, complexity
 - [ ] Lead with recommended option + reasoning
 
-**GATE**: User must select approach before Phase 4.
+**GATE**: User selects approach before Phase 4.
 
 ---
 
@@ -60,24 +60,26 @@ Transform vague ideas into concrete, validated designs through structured dialog
 - [ ] After EACH section: "Does this look right so far?"
 - [ ] WAIT for validation before next section
 
-**GATE**: All sections must be user-approved before Phase 5.
+**GATE**: All sections user-approved before Phase 5.
 
 ---
 
 ### Phase 5: Design Validation
 - [ ] Review design against original request
 - [ ] Check: solves problem? edge cases? error handling? testing clear?
-- [ ] List any gaps found
+- [ ] List gaps found
 - [ ] Address gaps before proceeding
 
-**GATE**: No unresolved gaps allowed before Phase 6.
+**GATE**: No unresolved gaps before Phase 6.
 
 ---
 
 ### Phase 6: Documentation
-- [ ] Create file: `docs/designs/YYYY-MM-DD-<topic>-design.md`
+- [ ] Create file: `.bdx/brainstorming/YYYY-MM-DD-<topic>-design.md`
 - [ ] Include: Problem, Solution, Architecture, Components, Data Flow, Error Handling, Testing
 - [ ] Verify file created
+
+See [design-template](references/design-template.md) for full document structure.
 
 ```markdown
 # [Feature Name] Design
@@ -108,7 +110,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 [unit, integration, edge cases]
 ```
 
-**GATE**: Design document exists and matches approved content.
+**GATE**: Design document exists, matches approved content.
 
 ---
 
@@ -121,7 +123,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 
 ## Key Principles
 
-- **One question at a time** — Don't overwhelm
+- **One question at a time** — No overwhelm
 - **Multiple choice preferred** — Easier to answer
 - **YAGNI ruthlessly** — Simplest solution wins
 - **Explore alternatives** — Always 2-3 approaches first

@@ -1,3 +1,8 @@
+---
+paths:
+  - "skills/**/*.md"
+---
+
 # Portability Check — BDK Skill Authoring Rules
 
 Creating or editing skills: verify portability before commit.
@@ -15,7 +20,7 @@ Use generic phrasing:
 - "run the project's linter/formatter"
 - "build the project"
 
-Environment detection handled by `STARTUP_INSTRUCTIONS.md` — trust it.
+Env detection handled by `STARTUP_INSTRUCTIONS.md` — trust it.
 
 ## Required: Standard Skill Header
 
@@ -33,7 +38,7 @@ Referencing other BDK skills, use full namespace:
 
 ## Domain-Specific Skills Do Not Belong Here
 
-Skill only useful for one language, framework, or domain:
+Skill useful for one language, framework, or domain:
 - NOT in `skills/`
 - Belongs in target project's `.claude/` directory
 - Document reasoning in comment if making exceptions

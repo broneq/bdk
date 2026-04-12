@@ -13,10 +13,15 @@ Verify BDK skill or agent file meets portability and quality conventions.
 
 ## Determine target
 
-- `$ARGUMENTS` provided: use that path.
-- Otherwise: ask user which file, or infer from recent context.
+- `$ARGUMENTS` may be one or more space-separated paths.
+- No arguments: ask user which file, or infer from recent context.
 
-Read target file.
+Per path:
+1. Read file.
+2. List all files in skill directory (recursively). Every file other than `SKILL.md` is supporting file.
+3. Each supporting file: lint too (checks 3–6 only — portability checks), regardless of whether referenced in SKILL.md.
+
+Print **separate report block** per file linted.
 
 ## Run checks
 
@@ -39,7 +44,7 @@ Fail if file contains:
 ### 4. No project-specific file references
 Warn if file refs files only in one project:
 - Patterns: specific filenames like `src/foo.py`, `app/models/user.rb`, `internal/auth/handler.go`
-- Exception: generic examples clearly illustrative (e.g. `<your-file>`, `path/to/file`)
+- Exception: generic illustrative examples (e.g. `<your-file>`, `path/to/file`)
 
 ### 5. No project-specific instructions
 Warn if file contains phrases tied to specific project:
@@ -62,7 +67,7 @@ Skills must start body (after frontmatter) with:
 FAIL if missing.
 
 ### 8. Skill cross-references use full namespace
-References to other BDK skills must use `/bdk:` prefix.
+Refs to other BDK skills must use `/bdk:` prefix.
 - FAIL on: `/commit`, `/debug`, `/create-plan` (bare names)
 - PASS on: `/bdk:commit`, `/bdk:debug`
 
@@ -91,11 +96,60 @@ If both `disable-model-invocation: true` AND `user-invocable: false`: FAIL — s
 ### 15. `$ARGUMENT` typo
 If body uses `$ARGUMENT` (no S): FAIL — correct variable is `$ARGUMENTS` or `$ARGUMENTS[N]`.
 
-## Output format
+### 16. External skill/agent references
+BDK skills depend only on BDK-owned skills. Flag `/slash-command` invocations in body NOT prefixed `/bdk:`.
+- WARN on bare `/name` refs (e.g. `/commit`, `/debug`) — ambiguous, may resolve to wrong skill
+- WARN on `/other-plugin:name` — hard dep on external plugin not guaranteed present
+- PASS on `/bdk:name` — BDK namespace, expected
+
+### 17. Skill directory format
+Per Claude Code skills spec, each skill must live at `<skill-name>/SKILL.md`.
+- FAIL if filename not exactly `SKILL.md` (case-sensitive)
+- WARN if parent dir name doesn't match `name` field in frontmatter (causes confusing dual identities)
+
+### 18. Artifacts go to `.bdx/`
+Skills producing file output must write to `.bdx/` in project root, not arbitrary dirs.
+- FAIL if skill body instructs writing to `docs/`, `output/`, `tmp/`, `reports/`, or other non-`.bdx` paths
+- PASS if output path is `.bdx/...` or no file output produced
+- Exception: skills writing code/config into project structure as part of code-gen task (not report/artifact output)
+
+### 19. No unused files in skill directory
+List all files in skill directory (recursively). Every file other than `SKILL.md` must be referenced in skill body (markdown link, inline code mention, or explicit filename reference).
+- WARN for each file present but not referenced anywhere in `SKILL.md`
+- Exception: `SKILL.md` itself always exempt
+
+Check: list dir contents, scan `SKILL.md` body for each filename. Not found → WARN.
+
+### 20. Valid skill directory structure
+Allowed layout:
 
 ```
-SKILL LINT: <filename>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<skill-name>/
+├── SKILL.md            ← required, exactly this name
+├── references/
+│   └── *.md            ← templates and reference docs
+├── examples/
+│   └── *.md            ← example output files only
+└── scripts/
+    └── *               ← executable scripts only (*.sh, *.py, etc.)
+```
+
+Rules:
+- FAIL if any subdirectory other than `examples/`, `references/`, or `scripts/` exists
+- WARN if `*.md` template/reference files sit at root level instead of `references/` — suggest moving
+- WARN if `examples/` contains non-`.md` files
+- WARN if `references/` contains non-`.md` files
+- WARN if `scripts/` contains non-script files (non-executable or non-`.sh`/`.py`/`.js`/`.rb` extensions)
+- WARN if any file at root level that is not `SKILL.md` (e.g. `.sh` scripts at root → `scripts/`, `.md` files → `references/`)
+- PASS if only `SKILL.md` present (minimal valid structure)
+
+## Output format
+
+One report block per file. Supporting files get abbreviated reports (checks 3–6 only).
+
+```
+SKILL LINT: skills/brainstorming/SKILL.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PASS  Frontmatter present (name, description)
 FAIL  No model defined — agent files require model:
 PASS  No absolute paths
@@ -104,10 +158,27 @@ PASS  No project-specific instructions
 FAIL  Language-specific command: pytest (line 22) — use "run the project's test suite"
 PASS  BDK foundation header present
 PASS  Skill references use /bdk: namespace
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-2 failures, 1 warning
+PASS  name format valid
+PASS  description length OK
+PASS  No invalid frontmatter fields
+PASS  Directory format correct (SKILL.md, dir matches name)
+WARN  External skill reference: /deploy (line 44) — use /bdk: prefix or remove dependency
+FAIL  Artifact path: docs/designs/ (line 88) — skills must write artifacts to .bdx/
+WARN  Unused file: examples/old-sample.md — not referenced in SKILL.md
+PASS  Directory structure valid (SKILL.md, examples/, scripts/)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2 failures, 2 warnings
+
+SKILL LINT: skills/brainstorming/reference.md  [supporting file — portability checks only]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PASS  No absolute paths
+PASS  No project-specific file references
+PASS  No project-specific instructions
+PASS  No language-specific commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+All checks passed.
 ```
 
-All checks pass → end with: `All checks passed.`
+All files pass → end with: `All checks passed.`
 
 No fixes beyond check results unless user asks.

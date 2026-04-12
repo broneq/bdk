@@ -1,8 +1,16 @@
+---
+paths:
+  - "skills/**/*.md"
+  - "agents/**/*.md"
+  - "hooks/**/*"
+  - "STARTUP_INSTRUCTIONS.md"
+---
+
 # Testing Protocol — How to Verify BDK Changes
 
 ## Testing Skills
 
-Never test skills inside BDK repo — BDK is meta-project, won't exercise skills naturally.
+Never test skills inside BDK repo — BDK meta-project, won't exercise skills naturally.
 
 **Standard workflow:**
 1. Make changes in this repo
@@ -16,7 +24,7 @@ Never test skills inside BDK repo — BDK is meta-project, won't exercise skills
 For repeatable testing, use eval format defined in `rules/skill-test-eval.md`.
 
 Evals live in `tests/skills/<skill-name>/`. Each eval contains:
-- Prompt exercising the skill
+- Prompt exercising skill
 - Assertions about expected output or behavior
 
 Run evals in test project after installing BDK locally.
