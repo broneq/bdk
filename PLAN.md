@@ -163,9 +163,9 @@ These stay in the project-level `.claude/` of each repo:
 
 ## Implementation Steps
 
-- [ ] Create `.claude-plugin/plugin.json`
-- [ ] Copy and clean 13 portable skills from or-migrator
-- [ ] Copy all 11 agents
+- [X] Create `.claude-plugin/plugin.json`
+- [X] Copy and clean 13 portable skills from or-migrator
+- [X] Copy all 11 agents
 - [ ] Copy 2 portable hooks (`format-python.sh`, `typecheck-python.sh`)
 - [ ] Write `README.md`
 - [ ] Test locally with `/plugin install ~/projects/bdk`

@@ -6,7 +6,7 @@ paths:
 
 # Skill Evals and Tests
 
-Store all evals and tests in `.claude/tests/skills/<skill-name>/`.
+Store evals + tests in `.claude/tests/skills/<skill-name>/`.
 
 ## Directory Structure
 
@@ -31,6 +31,6 @@ Store all evals and tests in `.claude/tests/skills/<skill-name>/`.
 
 ## Guidelines
 
-- **Eval prompts must be codebase-agnostic** — test the skill's behavior (structure, agent count, TDD format), not knowledge of specific classes or files
+- **Eval prompts must be codebase-agnostic** — test skill behavior (structure, agent count, TDD format), not specific classes or files
 - **Assertions check structural properties** — e.g. "plan has 2+ approaches", "tasks use ✅/❌ markers", "correct agent count for complexity"
-- **Iterations accumulate** — each `/skill-creator` run adds a new `iteration-N/` without overwriting previous results
+- **Iterations accumulate** — each `/skill-creator` run adds new `iteration-N/`, no overwrite

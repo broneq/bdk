@@ -5,8 +5,9 @@
       "args": ["--from", "serena-mcp", "serena-mcp"]
     },
     "codegraph": {
-      "command": "npx",
-      "args": ["-y", "@codegraph/mcp-server"]
+      "type": "stdio",
+      "command": "codegraph",
+      "args": ["serve", "--mcp"]
     }
   }
 }

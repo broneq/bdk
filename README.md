@@ -93,6 +93,50 @@ Every BDK skill:
 
 ---
 
+## Development
+
+### Prerequisites
+
+- Claude Code CLI installed
+- A separate test project to install BDK into (any language/stack)
+- (Optional) Serena and CodeGraph MCP servers — see `.mcp.json`
+
+### Workflow
+
+1. Edit skills, agents, or hooks in this repo
+2. In a test project's Claude Code session, install locally:
+   ```
+   /plugin install ~/projects/bdx
+   ```
+3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
+4. Run evals if available — see `rules/skill-test-eval.md`
+
+### Adding a Skill
+
+1. Create `skills/<name>/skill.md`
+2. Keep it language-agnostic — no hardcoded tool names, paths, or commands
+3. Start with the standard header (see `.claude/rules/portability-check.md`)
+4. Add an entry to the Skills table above
+5. Write an eval in `tests/skills/<name>/`
+
+### Adding an Agent
+
+1. Create `agents/<name>.md`
+2. Assign a model (`haiku` / `sonnet` / `opus`) based on task complexity
+3. Add an entry to the Agents table above
+
+### Hooks
+
+- `hooks/hooks.json` — registers all hooks (currently: `SessionStart`)
+- Hook scripts live in `hooks/` alongside the JSON
+- New hooks: add a script, register it in `hooks.json`
+
+### Modifying the Shared Foundation
+
+`STARTUP_INSTRUCTIONS.md` is injected into every user session. Edit with care — it affects all skills and occupies context on every session start. Test in a fresh session after changes.
+
+---
+
 ## What Does NOT Go Into BDK
 
 These stay in the project-level `.claude/` of each repo:
