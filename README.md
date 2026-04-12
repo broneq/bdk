@@ -9,8 +9,8 @@ A personal Claude Code plugin packaging reusable dev workflows, skills, agents, 
 ## Installation
 
 ```bash
-# Local development
-/plugin install ~/projects/bdk
+# Local development — launch Claude Code from the target project with:
+claude --plugin-dir ~/projects/bdx
 
 # From GitHub (once published)
 /plugin install bdk@broneq
@@ -130,6 +130,24 @@ Every BDK skill:
 - `hooks/hooks.json` — registers all hooks (currently: `SessionStart`)
 - Hook scripts live in `hooks/` alongside the JSON
 - New hooks: add a script, register it in `hooks.json`
+
+### Running Tests
+
+Requires [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv run pytest
+```
+
+Dev dependencies (`pytest`) are declared in `pyproject.toml` under `[dependency-groups] dev` — uv installs them automatically on first run.
+
+Test files use `*.test.py` naming (e.g. `check.test.py`) alongside `test_*.py`. Both patterns are picked up automatically.
+
+#### Hook tests
+
+| Hook | Test file |
+|------|-----------|
+| `is-skill-exist` | `tests/hooks/is-skill-exist/check.test.py` |
 
 ### Modifying the Shared Foundation
 

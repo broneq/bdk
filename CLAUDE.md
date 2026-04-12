@@ -28,8 +28,8 @@ docs/                    — design specs and analysis
 
 ```bash
 # Install BDK locally into a test project
-# (run this inside the target project's Claude Code session)
-/plugin install ~/projects/bdx
+# Launch Claude Code from the target project directory with:
+claude --plugin-dir ~/projects/bdx
 
 # Invoke a skill in the test project
 /bdk:commit
