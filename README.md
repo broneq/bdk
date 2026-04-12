@@ -10,7 +10,7 @@ A personal Claude Code plugin packaging reusable dev workflows, skills, agents, 
 
 ```bash
 # Local development — launch Claude Code from the target project with:
-claude --plugin-dir ~/projects/bdx
+claude --plugin-dir ~/projects/bdk
 
 # From GitHub (once published)
 /plugin install bdk@broneq
@@ -106,7 +106,7 @@ Every BDK skill:
 1. Edit skills, agents, or hooks in this repo
 2. In a test project's Claude Code session, install locally:
    ```
-   /plugin install ~/projects/bdx
+   /plugin install ~/projects/bdk
    ```
 3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
 4. Run evals if available — see `rules/skill-test-eval.md`

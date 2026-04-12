@@ -29,7 +29,7 @@ docs/                    — design specs and analysis
 ```bash
 # Install BDK locally into a test project
 # Launch Claude Code from the target project directory with:
-claude --plugin-dir ~/projects/bdx
+claude --plugin-dir ~/projects/bdk
 
 # Invoke a skill in the test project
 /bdk:commit

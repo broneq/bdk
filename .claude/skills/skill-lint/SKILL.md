@@ -107,10 +107,10 @@ Per Claude Code skills spec, each skill must live at `<skill-name>/SKILL.md`.
 - FAIL if filename not exactly `SKILL.md` (case-sensitive)
 - WARN if parent dir name doesn't match `name` field in frontmatter (causes confusing dual identities)
 
-### 18. Artifacts go to `.bdx/`
-Skills producing file output must write to `.bdx/` in project root, not arbitrary dirs.
-- FAIL if skill body instructs writing to `docs/`, `output/`, `tmp/`, `reports/`, or other non-`.bdx` paths
-- PASS if output path is `.bdx/...` or no file output produced
+### 18. Artifacts go to `.bdk/`
+Skills producing file output must write to `.bdk/` in project root, not arbitrary dirs.
+- FAIL if skill body instructs writing to `docs/`, `output/`, `tmp/`, `reports/`, or other non-`.bdk` paths
+- PASS if output path is `.bdk/...` or no file output produced
 - Exception: skills writing code/config into project structure as part of code-gen task (not report/artifact output)
 
 ### 19. No unused files in skill directory
@@ -163,7 +163,7 @@ PASS  description length OK
 PASS  No invalid frontmatter fields
 PASS  Directory format correct (SKILL.md, dir matches name)
 WARN  External skill reference: /deploy (line 44) — use /bdk: prefix or remove dependency
-FAIL  Artifact path: docs/designs/ (line 88) — skills must write artifacts to .bdx/
+FAIL  Artifact path: docs/designs/ (line 88) — skills must write artifacts to .bdk/
 WARN  Unused file: examples/old-sample.md — not referenced in SKILL.md
 PASS  Directory structure valid (SKILL.md, examples/, scripts/)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -6,18 +6,18 @@ paths:
 
 # Skill Artifacts — Output Directory Convention
 
-Skills producing file output (reports, designs, generated docs, analysis) write to `.bdx/` in project root.
+Skills producing file output (reports, designs, generated docs, analysis) write to `.bdk/` in project root.
 
 ## Rule
 
 ```
-Skill artifacts → .bdx/<skill-name>/<output-file>
+Skill artifacts → .bdk/<skill-name>/<output-file>
 ```
 
 Examples:
-- `.bdx/brainstorming/2026-04-12-auth-redesign-design.md`
-- `.bdx/debug/session-2026-04-12.md`
-- `.bdx/create-plan/implementation-plan.md`
+- `.bdk/brainstorming/2026-04-12-auth-redesign-design.md`
+- `.bdk/debug/session-2026-04-12.md`
+- `.bdk/create-plan/implementation-plan.md`
 
 ## Why
 
@@ -32,4 +32,4 @@ Skills writing code/config into project as code generation (e.g. scaffold creati
 
 ## Enforcement
 
-`/bdk:skill-lint` check 18 flags skills writing to non-`.bdx` paths.
+`/bdk:skill-lint` check 18 flags skills writing to non-`.bdk` paths.

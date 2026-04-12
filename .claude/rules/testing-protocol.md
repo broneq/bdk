@@ -15,7 +15,7 @@ Never test skills inside BDK repo — BDK meta-project, won't exercise skills na
 **Standard workflow:**
 1. Make changes in this repo
 2. Open Claude Code in separate test project (any language/stack)
-3. Install BDK: `/plugin install ~/projects/bdx`
+3. Install BDK: `/plugin install ~/projects/bdk`
 4. Invoke changed skill: `/bdk:<skill-name>`
 5. Verify correct behavior in that project's context
 
