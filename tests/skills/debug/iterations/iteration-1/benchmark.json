@@ -1,0 +1,169 @@
+{
+  "metadata": {
+    "skill_name": "debug",
+    "timestamp": "2026-03-27T00:00:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "simple-float-bug",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 83.6,
+        "tokens": 26582,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": true, "evidence": "Opens with 'Using debug to investigate the issue.'"},
+        {"text": "prints_phase1_summary", "passed": true, "evidence": "[debug] Issue: and [debug] Signals: lines present"},
+        {"text": "identifies_root_cause", "passed": true, "evidence": "[debug] Root cause: format_price uses str(value) exposing raw IEEE 754 repr"},
+        {"text": "writes_concrete_failing_test", "passed": true, "evidence": "test_format_price_float_sum_returns_two_decimal_places with input 0.1+0.2, expected '0.30'"},
+        {"text": "confirms_tests_are_red", "passed": true, "evidence": "Simulated test-runner: 5 FAILED, confirmed RED before proceeding"},
+        {"text": "asks_user_confirmation", "passed": true, "evidence": "AskUserQuestion with options: Fix now / Create plan / Something else"},
+        {"text": "scans_for_related_gaps", "passed": true, "evidence": "Found format_percentage and format_currency with same str(value) pattern — 2 gap tests"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "simple-float-bug",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.143,
+        "passed": 1,
+        "failed": 6,
+        "total": 7,
+        "time_seconds": 38.5,
+        "tokens": 20054,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": false, "evidence": "No announcement — jumps straight to explanation"},
+        {"text": "prints_phase1_summary", "passed": false, "evidence": "No structured [debug] output"},
+        {"text": "identifies_root_cause", "passed": true, "evidence": "Correctly identifies IEEE 754 binary float as root cause"},
+        {"text": "writes_concrete_failing_test", "passed": false, "evidence": "No test written — gives 4 fix options with code but no test"},
+        {"text": "confirms_tests_are_red", "passed": false, "evidence": "No test-runner delegation, no RED confirmation"},
+        {"text": "asks_user_confirmation", "passed": false, "evidence": "No confirmation asked — goes straight to recommending f'{value:.2f}'"},
+        {"text": "scans_for_related_gaps", "passed": false, "evidence": "No gap scanning — focuses only on format_price"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "complex-multicurrency",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.833,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 189.9,
+        "tokens": 32435,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": true, "evidence": "Skill invoked header present"},
+        {"text": "traces_call_chain", "passed": true, "evidence": "Traced OrderService → CurrencyConverter → TaxCalculator → PriceValidator with simulated symbol reads"},
+        {"text": "writes_failing_test", "passed": true, "evidence": "test_validate_raises_for_large_usd_equivalent_of_reasonable_eur_order with Decimal('12750.00')"},
+        {"text": "estimates_token_cost", "passed": true, "evidence": "Estimated ~20 lines / ~2-3k tokens"},
+        {"text": "recommends_create_plan", "passed": false, "evidence": "Assertion was incorrect — skill correctly estimated LOW complexity (~3k tokens) and recommended inline fix"},
+        {"text": "asks_user_confirmation", "passed": true, "evidence": "AskUserQuestion simulated with all 3 options — does not auto-proceed"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "complex-multicurrency",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.167,
+        "passed": 1,
+        "failed": 5,
+        "total": 6,
+        "time_seconds": 38.9,
+        "tokens": 20164,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": false, "evidence": "No announcement"},
+        {"text": "traces_call_chain", "passed": true, "evidence": "Hypothesizes PriceValidator as culprit, mentions currency-specific discriminating test"},
+        {"text": "writes_failing_test", "passed": false, "evidence": "Mentions a test conceptually but writes no actual test code"},
+        {"text": "estimates_token_cost", "passed": false, "evidence": "No token estimate provided"},
+        {"text": "recommends_create_plan", "passed": false, "evidence": "No routing — gives fix directly"},
+        {"text": "asks_user_confirmation", "passed": false, "evidence": "No confirmation — proceeds straight to the fix"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "vague-input",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 47.0,
+        "tokens": 23433,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": true, "evidence": "'Using debug to investigate the issue.' in Skill Announcement section"},
+        {"text": "detects_vague_input", "passed": true, "evidence": "Phase 1 identifies input lacks error message, steps, expected vs actual, component"},
+        {"text": "asks_clarifying_question", "passed": true, "evidence": "AskUserQuestion with 4 specific options: traceback, steps, expected vs actual, component"},
+        {"text": "does_not_investigate", "passed": true, "evidence": "Phase 1 Gate: BLOCKED — transcript ends, Phase 2 never reached"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "vague-input",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 20.8,
+        "tokens": 19104,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": false, "evidence": "No announcement"},
+        {"text": "detects_vague_input", "passed": true, "evidence": "Baseline also identifies input is too vague"},
+        {"text": "asks_clarifying_question", "passed": true, "evidence": "Asks for error message, stack trace, specific document"},
+        {"text": "does_not_investigate", "passed": true, "evidence": "Baseline also stops after asking"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 0.944, "stddev": 0.089, "min": 0.833, "max": 1.0},
+      "time_seconds": {"mean": 106.8, "stddev": 74.7, "min": 47.0, "max": 189.9},
+      "tokens": {"mean": 27483, "stddev": 4633, "min": 23433, "max": 32435}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.353, "stddev": 0.309, "min": 0.143, "max": 0.75},
+      "time_seconds": {"mean": 32.7, "stddev": 10.1, "min": 20.8, "max": 38.9},
+      "tokens": {"mean": 19774, "stddev": 614, "min": 19104, "max": 20164}
+    },
+    "delta": {
+      "pass_rate": "+0.591",
+      "time_seconds": "+74.1",
+      "tokens": "+7709"
+    }
+  },
+  "notes": [
+    "Key discriminators: writes failing tests, confirms RED gate, presents 3-option confirmation, scans for related gaps — baseline does none of these",
+    "Eval 3 (vague input) has low discriminating power — both baseline and skill correctly ask a clarifying question",
+    "Eval 2 assertion 'recommends_create_plan' was incorrectly specified — fix was genuinely LOW complexity (~3k tokens)",
+    "Skill uses ~1.4x more tokens and ~3x more time — overhead reflects structured phases and test confirmation"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "expectations": [
+    {"text": "announces_skill_at_start", "passed": false, "evidence": "No announcement"},
+    {"text": "proceeds_without_clarifying_question", "passed": false, "evidence": "Baseline couldn't find the code (wrong repo), asked clarifying questions about the actual implementation"},
+    {"text": "identifies_root_cause", "passed": false, "evidence": "Listed 4 generic hypotheses — no specific root cause identified"},
+    {"text": "writes_concrete_failing_test", "passed": false, "evidence": "No test written"},
+    {"text": "confirms_tests_are_red", "passed": false, "evidence": "No test-runner delegation"},
+    {"text": "asks_user_confirmation", "passed": false, "evidence": "No structured confirmation gate"}
+  ],
+  "summary": {"passed": 0, "failed": 6, "total": 6, "pass_rate": 0.0}
+}

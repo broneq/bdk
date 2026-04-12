@@ -1,0 +1,15 @@
+{
+  "eval_id": 3,
+  "eval_name": "failing-cli-command",
+  "prompt": "Fix a validation failure in the position verification axiom. When running the migration the following command fails:\n\nuv run data-migrator migrate --name=nype46 tests/fixtures/orv1/nype46/document_test_4201_anon.html --debug-dir=tmp/dumps --verify\n\nThe error occurs during validation in addition_position_preserved.",
+  "assertions": [
+    {"text": "A plan markdown file was written to docs/plans/"},
+    {"text": "The plan contains at least 2 explored approaches with pros/cons"},
+    {"text": "Every implementation task lists exact file paths"},
+    {"text": "Implementation tasks include test cases marked with ✅ or ❌"},
+    {"text": "The exact failing CLI command is included in the Verification or Success Criteria section as a regression/acceptance check"},
+    {"text": "Plan explores what causes the addition_position_preserved failure — not just where to add a fix but why it fails"},
+    {"text": "Every implementation task ends with a reference to /test-driven-development skill"},
+    {"text": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton"}
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "eval_id": 2,
+  "eval_name": "complex-multicurrency",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "announces_skill_at_start",
+      "passed": false,
+      "evidence": "No skill announcement"
+    },
+    {
+      "text": "traces_call_chain",
+      "passed": true,
+      "evidence": "Baseline correctly hypothesizes PriceValidator as most likely culprit and mentions currency-conversion-specific test (USD 15000 vs EUR 15000)"
+    },
+    {
+      "text": "writes_failing_test",
+      "passed": false,
+      "evidence": "A 'quick discriminating test' is mentioned conceptually but no actual test code is written"
+    },
+    {
+      "text": "estimates_token_cost",
+      "passed": false,
+      "evidence": "No token estimate provided"
+    },
+    {
+      "text": "recommends_create_plan",
+      "passed": false,
+      "evidence": "No routing to create-plan \u2014 baseline gives the fix directly"
+    },
+    {
+      "text": "asks_user_confirmation",
+      "passed": false,
+      "evidence": "No user confirmation \u2014 baseline goes straight to recommending the fix"
+    }
+  ],
+  "pass_count": 1,
+  "total_count": 6,
+  "pass_rate": 0.167,
+  "summary": {
+    "passed": 1,
+    "failed": 5,
+    "total": 6,
+    "pass_rate": 0.167
+  }
+}

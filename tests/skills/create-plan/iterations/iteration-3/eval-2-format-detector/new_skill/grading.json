@@ -1,0 +1,47 @@
+{
+  "eval_id": 2,
+  "eval_name": "format-detector",
+  "run": "new_skill",
+  "expectations": [
+    {
+      "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "Plan written to docs/plans/2026-03-24-document-format-detector-parser-selection.md and copied to outputs/plan.md"
+    },
+    {
+      "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "3 approaches: SeaDetector + Static Bridge (selected), FormatAwareParserSelector new service (rejected), Auto-detect flag on CLI (rejected)"
+    },
+    {
+      "text": "existing_detector_pattern_found: Exploration identified existing detector/parser patterns in the codebase and referenced them",
+      "passed": true,
+      "evidence": "FroalaFormatDetector, FormatDetectorInterface, FormatDetectorStrategy all found and explicitly referenced as structural templates"
+    },
+    {
+      "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "All 5 tasks list exact paths: src/data_migrator/schemas/models/fingerprint.py, detectors/sea/sea_contracts_format_detector.py, detectors/format_detector_strategy.py, processors/tokenizer_strategy.py, services/source_parsing/source_document_parser.py, plus test files"
+    },
+    {
+      "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with ✅ or ❌",
+      "passed": true,
+      "evidence": "All 5 tasks contain ✅ and ❌ markers with concrete inputs and expected outcomes"
+    },
+    {
+      "text": "registration_mechanism_addressed: Plan explains how to register the new detector in the existing parser selection mechanism",
+      "passed": true,
+      "evidence": "Task 3 explicitly addresses registering SeaContractsFormatDetector in FormatDetectorStrategy.create_default() with exact code showing how to add it alongside FroalaFormatDetector"
+    },
+    {
+      "text": "three_explorer_agents_dispatched: 3 explorer agents were dispatched for complex scope",
+      "passed": true,
+      "evidence": "Transcript confirms 'Three agents dispatched' with Agent 1 (Utilities), Agent 2 (Architecture & Dependencies), Agent 3 (Similar Features) — all three explicitly listed with their findings"
+    },
+    {
+      "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "All 5 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (grep count: 5)"
+    }
+  ]
+}

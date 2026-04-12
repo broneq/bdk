@@ -1,0 +1,48 @@
+{
+  "eval_id": 2,
+  "eval_name": "eval-2-format-detector",
+  "configuration": "with_skill",
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 7,
+    "failed": 0,
+    "total": 7
+  },
+  "expectations": [
+    {
+      "text": "plan_file_created",
+      "passed": true,
+      "evidence": "Plan written to docs/plans/2026-03-24-document-format-detector-parser.md"
+    },
+    {
+      "text": "has_two_or_more_approaches",
+      "passed": true,
+      "evidence": "3 approaches: (1) SeaDetector + Static Bridge [Selected], (2) Format-Parser Registry in TokenizerStrategy, (3) New FormatAwareParserSelector Service \u2014 each with full Pros/Cons/Complexity/Risk/Files"
+    },
+    {
+      "text": "existing_detector_pattern_found",
+      "passed": true,
+      "evidence": "FroalaFormatDetector, FormatDetectorInterface, FormatDetectorStrategy all found and explicitly referenced as patterns to follow. SeaChangeTypeDetector ICE markers used for detection logic."
+    },
+    {
+      "text": "tasks_have_exact_file_paths",
+      "passed": true,
+      "evidence": "All 5 tasks list exact file paths: detectors/sea/__init__.py, detectors/sea/sea_contracts_format_detector.py, schemas/models/fingerprint.py, processors/tokenizer_strategy.py, etc."
+    },
+    {
+      "text": "tasks_have_test_cases_with_markers",
+      "passed": true,
+      "evidence": "All 5 tasks include test cases marked with \u2705 and \u274c markers"
+    },
+    {
+      "text": "registration_mechanism_addressed",
+      "passed": true,
+      "evidence": "Task 3 explicitly shows FormatDetectorStrategy.create_default() modification. Task 4 adds TokenizerStrategy.format_to_parser_name() bridge. Task 5 wires detect_and_parse() on SourceDocumentParser."
+    },
+    {
+      "text": "three_explorer_agents_dispatched",
+      "passed": true,
+      "evidence": "Transcript confirms 3 agents dispatched: Agent 1 (Utilities), Agent 2 (Architecture & Dependencies), Agent 3 (Similar Features)"
+    }
+  ]
+}

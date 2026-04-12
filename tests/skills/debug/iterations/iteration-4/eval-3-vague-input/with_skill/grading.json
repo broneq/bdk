@@ -1,0 +1,9 @@
+{
+  "expectations": [
+    {"text": "announces_skill_at_start", "passed": true, "evidence": "Starts with 'Using debug to investigate the issue.'"},
+    {"text": "detects_vague_input", "passed": true, "evidence": "Immediately says 'too vague to begin investigation' — no Phase 2"},
+    {"text": "asks_clarifying_question_inline", "passed": true, "evidence": "Lists 4 options inline as bullet points with concrete examples — no AskUserQuestion tool used"},
+    {"text": "does_not_investigate", "passed": true, "evidence": "Response is 18 lines, no Phase 2/3/4/5 sections, stops after inline question"}
+  ],
+  "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1.0}
+}

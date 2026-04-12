@@ -1,0 +1,173 @@
+{
+  "skill_name": "create-plan",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Add a validator that checks if parsed tokens list is empty before processing starts and raises a descriptive exception.",
+      "expected_output": "A plan file in docs/plans/ with: 1 explorer agent dispatched (simple scope), at least 2 implementation approaches with pros/cons, TDD task structure with \u2705/\u274c test cases, exact file paths in every task, actual code snippets not vague descriptions, commit message per task.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "plan_file_created",
+          "description": "A plan markdown file was written to docs/plans/"
+        },
+        {
+          "name": "has_two_or_more_approaches",
+          "description": "The plan contains at least 2 explored approaches with pros/cons"
+        },
+        {
+          "name": "tasks_have_exact_file_paths",
+          "description": "Every implementation task lists exact file paths (no vague references like 'the service file')"
+        },
+        {
+          "name": "tasks_have_test_cases_with_markers",
+          "description": "Implementation tasks include test cases marked with \u2705 or \u274c"
+        },
+        {
+          "name": "tasks_have_code_not_descriptions",
+          "description": "Tasks contain actual code (class names, method signatures, or code blocks) not just prose descriptions"
+        },
+        {
+          "name": "single_explorer_agent_for_simple_scope",
+          "description": "Only 1 explorer agent was dispatched (simple scope \u2192 1 agent)"
+        },
+        {
+          "name": "tdd_skill_referenced",
+          "description": "Every implementation task ends with a reference to /test-driven-development skill"
+        },
+        {
+          "name": "tasks_have_test_scaffold",
+          "description": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt — they use '# CLI regression — see Verification section' instead)"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "Add in-memory caching to the repository layer so repeated reads of the same file skip disk I/O. Cache should be invalidated on write.",
+      "expected_output": "A plan file with: 2 explorer agents dispatched (medium scope), existing repository class identified and referenced, OO design with proper encapsulation (no global state), cache invalidation logic in plan, 2+ approaches, TDD tasks with exact paths and code.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "plan_file_created",
+          "description": "A plan markdown file was written to docs/plans/"
+        },
+        {
+          "name": "has_two_or_more_approaches",
+          "description": "The plan contains at least 2 explored approaches with pros/cons"
+        },
+        {
+          "name": "existing_repository_identified",
+          "description": "Exploration found and referenced the actual existing repository class in the codebase"
+        },
+        {
+          "name": "tasks_have_exact_file_paths",
+          "description": "Every implementation task lists exact file paths"
+        },
+        {
+          "name": "tasks_have_test_cases_with_markers",
+          "description": "Implementation tasks include test cases marked with \u2705 or \u274c"
+        },
+        {
+          "name": "cache_invalidation_addressed",
+          "description": "Plan explicitly addresses cache invalidation on write, not just cache population on read"
+        },
+        {
+          "name": "two_explorer_agents_dispatched",
+          "description": "2 explorer agents were dispatched for medium complexity"
+        },
+        {
+          "name": "tdd_skill_referenced",
+          "description": "Every implementation task ends with a reference to /test-driven-development skill"
+        },
+        {
+          "name": "tasks_have_test_scaffold",
+          "description": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt — they use '# CLI regression — see Verification section' instead)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Implement a new document format detector that identifies document type from HTML structure and auto-selects the right parser. Register it in the existing parser selection mechanism.",
+      "expected_output": "A plan file with: 3 explorer agents dispatched (complex scope), existing detector/parser patterns found and referenced, proper architecture following Strategy or Factory pattern, 2+ approaches, TDD tasks with exact paths and concrete code, references to similar existing implementations.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "plan_file_created",
+          "description": "A plan markdown file was written to docs/plans/"
+        },
+        {
+          "name": "has_two_or_more_approaches",
+          "description": "The plan contains at least 2 explored approaches with pros/cons"
+        },
+        {
+          "name": "existing_detector_pattern_found",
+          "description": "Exploration identified existing detector/parser patterns in the codebase and referenced them"
+        },
+        {
+          "name": "tasks_have_exact_file_paths",
+          "description": "Every implementation task lists exact file paths"
+        },
+        {
+          "name": "tasks_have_test_cases_with_markers",
+          "description": "Implementation tasks include test cases marked with \u2705 or \u274c"
+        },
+        {
+          "name": "registration_mechanism_addressed",
+          "description": "Plan explains how to register the new detector in the existing parser selection mechanism"
+        },
+        {
+          "name": "three_explorer_agents_dispatched",
+          "description": "3 explorer agents were dispatched for complex scope"
+        },
+        {
+          "name": "tdd_skill_referenced",
+          "description": "Every implementation task ends with a reference to /test-driven-development skill"
+        },
+        {
+          "name": "tasks_have_test_scaffold",
+          "description": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt — they use '# CLI regression — see Verification section' instead)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Fix a validation failure in the position verification axiom. When running the migration the following command fails:\n\nuv run data-migrator migrate --name=nype46 tests/fixtures/orv1/nype46/document_test_4201_anon.html --debug-dir=tmp/dumps --verify\n\nThe error occurs during validation in addition_position_preserved.",
+      "expected_output": "A plan file that: investigates the root cause in the position verification axiom, includes the exact failing CLI command in Verification or Success Criteria as a regression check, has 2+ approaches, TDD tasks with exact paths and code.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "plan_file_created",
+          "description": "A plan markdown file was written to docs/plans/"
+        },
+        {
+          "name": "has_two_or_more_approaches",
+          "description": "The plan contains at least 2 explored approaches with pros/cons"
+        },
+        {
+          "name": "tasks_have_exact_file_paths",
+          "description": "Every implementation task lists exact file paths"
+        },
+        {
+          "name": "tasks_have_test_cases_with_markers",
+          "description": "Implementation tasks include test cases marked with \u2705 or \u274c"
+        },
+        {
+          "name": "failing_command_in_verification",
+          "description": "The exact failing CLI command is included in the Verification or Success Criteria section as a regression/acceptance check"
+        },
+        {
+          "name": "root_cause_investigated",
+          "description": "Plan explores what causes the addition_position_preserved failure \u2014 not just where to add a fix but why it fails"
+        },
+        {
+          "name": "tdd_skill_referenced",
+          "description": "Every implementation task ends with a reference to /test-driven-development skill"
+        },
+        {
+          "name": "tasks_have_test_scaffold",
+          "description": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt — they use '# CLI regression — see Verification section' instead)"
+        }
+      ]
+    }
+  ]
+}

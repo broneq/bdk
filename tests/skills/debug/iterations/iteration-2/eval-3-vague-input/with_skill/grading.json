@@ -1,0 +1,11 @@
+{
+  "expectations": [
+    {"text": "announces_skill_at_start", "passed": true, "evidence": "Opens with 'Using debug to investigate the issue.'"},
+    {"text": "proceeds_without_clarifying_question", "passed": true, "evidence": "Phase 1 found steps-to-reproduce and expected vs actual — proceeded directly to Phase 2 without AskUserQuestion"},
+    {"text": "identifies_root_cause", "passed": true, "evidence": "Found page_number=idx (0-indexed) and total_pages=0 (hardcoded) in _render_pages"},
+    {"text": "writes_concrete_failing_test", "passed": true, "evidence": "5 tests written: 3 primary (0-indexed, hardcoded 0, correct multi-page) + 2 gap tests"},
+    {"text": "confirms_tests_are_red", "passed": true, "evidence": "Simulated test-runner: all 5 RED confirmed"},
+    {"text": "asks_user_confirmation", "passed": true, "evidence": "AskUserQuestion printed with Fix now / Create plan / Something else"}
+  ],
+  "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}
+}

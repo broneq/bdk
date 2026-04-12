@@ -1,0 +1,9 @@
+{
+  "expectations": [
+    {"text": "announces_skill_at_start", "passed": false, "evidence": "No skill announcement — starts with '# Response to...'"},
+    {"text": "detects_vague_input", "passed": true, "evidence": "Says 'too vague to act on without more details'"},
+    {"text": "asks_clarifying_question_inline", "passed": false, "evidence": "Ran actual test suite (3221 tests!) before asking — wrong approach, proactive investigation instead of asking first"},
+    {"text": "does_not_investigate", "passed": false, "evidence": "Ran full test suite, checked git status, listed possible failure areas — did investigate despite vague input"}
+  ],
+  "summary": {"passed": 1, "failed": 3, "total": 4, "pass_rate": 0.25}
+}

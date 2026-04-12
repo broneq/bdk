@@ -1,0 +1,6 @@
+{"eval_id": 3, "eval_name": "vague-input-inline-question", "prompt": "The migration is broken.", "assertions": [
+  {"text": "announces_skill_at_start", "description": "Skill announces 'Using debug' at the start"},
+  {"text": "detects_vague_input", "description": "Recognizes the input is too vague to investigate"},
+  {"text": "asks_clarifying_question_inline", "description": "Asks clarifying questions inline in response text — NOT using AskUserQuestion tool"},
+  {"text": "does_not_investigate", "description": "Does NOT proceed to Phase 2 investigation"}
+]}

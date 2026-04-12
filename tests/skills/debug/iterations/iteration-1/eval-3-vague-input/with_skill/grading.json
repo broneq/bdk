@@ -1,0 +1,36 @@
+{
+  "eval_id": 3,
+  "eval_name": "vague-input",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "announces_skill_at_start",
+      "passed": true,
+      "evidence": "'Using debug to investigate the issue.' present in Skill Announcement section"
+    },
+    {
+      "text": "detects_vague_input",
+      "passed": true,
+      "evidence": "Phase 1 correctly identifies input lacks error message, steps to reproduce, expected vs actual, and failing component"
+    },
+    {
+      "text": "asks_clarifying_question",
+      "passed": true,
+      "evidence": "AskUserQuestion simulated asking for: error/traceback, steps to reproduce, expected vs actual, affected component \u2014 4 specific options given"
+    },
+    {
+      "text": "does_not_investigate",
+      "passed": true,
+      "evidence": "Phase 1 Gate: BLOCKED \u2014 transcript ends after clarifying question, Phase 2 never reached"
+    }
+  ],
+  "pass_count": 4,
+  "total_count": 4,
+  "pass_rate": 1.0,
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "serena-mcp", "serena-mcp"]
+    },
+    "codegraph": {
+      "command": "npx",
+      "args": ["-y", "@codegraph/mcp-server"]
+    }
+  }
+}

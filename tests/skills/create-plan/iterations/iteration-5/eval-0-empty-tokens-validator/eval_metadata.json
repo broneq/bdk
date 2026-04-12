@@ -1,0 +1,31 @@
+{
+  "eval_id": 0,
+  "eval_name": "empty-tokens-validator",
+  "prompt": "Add a validator that checks if parsed tokens list is empty before processing starts and raises a descriptive exception.",
+  "assertions": [
+    {
+      "text": "A plan markdown file was written to docs/plans/"
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons"
+    },
+    {
+      "text": "Every implementation task lists exact file paths (no vague references like 'the service file')"
+    },
+    {
+      "text": "Implementation tasks include test cases marked with \u2705 or \u274c"
+    },
+    {
+      "text": "Tasks contain actual code (class names, method signatures, or code blocks) not just prose descriptions"
+    },
+    {
+      "text": "Only 1 explorer agent was dispatched (simple scope \u2192 1 agent)"
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill"
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt)"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+digraph development_lifecycle {
+    rankdir=LR
+    bgcolor="white"
+    node [fontname="Helvetica" fontsize=11 style="filled,rounded" shape=box]
+    edge [fontname="Helvetica" fontsize=9 color="#666666"]
+
+    // Phase colors
+    node [fillcolor="#E8F4FD" color="#2196F3"]  // Blue - ideation
+    ideation [label="Ideation\n/brainstorming-session" shape=box]
+
+    node [fillcolor="#FFF3E0" color="#FF9800"]  // Orange - planning
+    planning [label="Planning\n/create-plan"]
+    verification [label="Verification\n/verify-plan"]
+
+    node [fillcolor="#E8F5E9" color="#4CAF50"]  // Green - implementation
+    execution [label="Execution\n/execute-plan"]
+    tdd [label="TDD Cycle\n/test-driven-development"]
+
+    node [fillcolor="#F3E5F5" color="#9C27B0"]  // Purple - quality
+    review [label="Code Review\n/cr"]
+    static [label="Static Analysis\nbin/cleanup.sh"]
+
+    node [fillcolor="#FFEBEE" color="#F44336"]  // Red - delivery
+    commit_skill [label="Commit\n/commit"]
+
+    node [fillcolor="#E0F7FA" color="#00BCD4"]  // Teal - support
+    debug [label="Debug\n/debug"]
+    save [label="Save Progress\n/save-progress"]
+    restore [label="Restore Progress\n/restore-progress"]
+
+    // Main flow
+    ideation -> planning [label="design doc" penwidth=2 color="#2196F3"]
+    planning -> verification [label="plan file" penwidth=2 color="#FF9800"]
+    verification -> execution [label="PASS" penwidth=2 color="#4CAF50"]
+    verification -> planning [label="FAIL\n(max 3x)" style=dashed color="#F44336"]
+    execution -> tdd [label="per task" penwidth=2 color="#4CAF50"]
+    tdd -> execution [label="task done" style=dashed color="#4CAF50"]
+    execution -> review [label="all tasks\ncomplete" penwidth=2 color="#9C27B0"]
+    review -> static [penwidth=2 color="#9C27B0"]
+    static -> commit_skill [label="clean" penwidth=2 color="#F44336"]
+    static -> execution [label="fix issues" style=dashed color="#F44336"]
+
+    // Support flows
+    debug -> tdd [label="failing test\ncreated" style=dashed]
+    save -> restore [label="next session" style=dotted]
+    execution -> save [label="context\nlarge" style=dashed color="#00BCD4"]
+
+    // Subgraph for legend
+    subgraph cluster_legend {
+        label="Legend" labeljust=l fontsize=10 style=dashed color="#CCCCCC"
+        node [shape=plaintext fillcolor=transparent color=transparent fontsize=9]
+        l1 [label="━━  Main flow"]
+        l2 [label="- -  Feedback loop"]
+        l3 [label="···  Cross-session"]
+    }
+}

@@ -1,0 +1,25 @@
+{
+  "reviews": [
+    {
+      "run_id": "eval-0-empty-tokens-validator-new_skill",
+      "feedback": "it's ok",
+      "timestamp": "2026-03-25T08:51:22.826Z"
+    },
+    {
+      "run_id": "eval-1-repository-caching-new_skill",
+      "feedback": "it's ok",
+      "timestamp": "2026-03-25T08:51:22.826Z"
+    },
+    {
+      "run_id": "eval-2-format-detector-new_skill",
+      "feedback": "it's ok",
+      "timestamp": "2026-03-25T08:51:22.826Z"
+    },
+    {
+      "run_id": "eval-3-failing-cli-command-new_skill",
+      "feedback": "it's ok",
+      "timestamp": "2026-03-25T08:51:22.826Z"
+    }
+  ],
+  "status": "in_progress"
+}

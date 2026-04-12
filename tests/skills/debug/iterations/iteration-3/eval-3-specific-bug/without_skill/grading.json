@@ -1,0 +1,11 @@
+{
+  "expectations": [
+    {"text": "announces_skill_at_start", "passed": false, "evidence": "No announcement"},
+    {"text": "proceeds_without_clarifying_question", "passed": false, "evidence": "Couldn't find relevant code (wrong repo), listed 4 generic hypotheses"},
+    {"text": "identifies_root_cause", "passed": false, "evidence": "No specific root cause — generic hypotheses only"},
+    {"text": "writes_concrete_failing_test", "passed": false, "evidence": "No test written"},
+    {"text": "assesses_impact_as_LOW", "passed": false, "evidence": "No complexity assessment"},
+    {"text": "asks_user_confirmation", "passed": false, "evidence": "No confirmation gate"}
+  ],
+  "summary": {"passed": 0, "failed": 6, "total": 6, "pass_rate": 0.0}
+}

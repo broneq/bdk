@@ -1,0 +1,35 @@
+{
+  "reviews": [
+    {
+      "run_id": "eval-0-empty-tokens-validator-with_skill",
+      "feedback": "In my opinion plan i solid - maybe you see some improvments?",
+      "timestamp": "2026-03-24T08:15:28.416Z"
+    },
+    {
+      "run_id": "eval-0-empty-tokens-validator-without_skill",
+      "feedback": "There is no verification stage such running tests or checking styles.",
+      "timestamp": "2026-03-24T08:15:28.416Z"
+    },
+    {
+      "run_id": "eval-1-repository-caching-with_skill",
+      "feedback": "looks ok, do you see anything?",
+      "timestamp": "2026-03-24T08:15:28.416Z"
+    },
+    {
+      "run_id": "eval-1-repository-caching-without_skill",
+      "feedback": "good point about Thread safety\nPoor description of test cases",
+      "timestamp": "2026-03-24T08:15:28.416Z"
+    },
+    {
+      "run_id": "eval-2-format-detector-with_skill",
+      "feedback": "looks ok, do you see some improvments?",
+      "timestamp": "2026-03-24T08:15:28.416Z"
+    },
+    {
+      "run_id": "eval-2-format-detector-without_skill",
+      "feedback": "You're not using builtin subagents to fire tests and checks",
+      "timestamp": "2026-03-24T08:15:28.416Z"
+    }
+  ],
+  "status": "in_progress"
+}

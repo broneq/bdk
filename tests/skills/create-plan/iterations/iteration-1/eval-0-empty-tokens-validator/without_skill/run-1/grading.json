@@ -1,0 +1,43 @@
+{
+  "eval_id": 0,
+  "eval_name": "eval-0-empty-tokens-validator",
+  "configuration": "without_skill",
+  "summary": {
+    "pass_rate": 0.6667,
+    "passed": 4,
+    "failed": 2,
+    "total": 6
+  },
+  "expectations": [
+    {
+      "text": "plan_file_created",
+      "passed": true,
+      "evidence": "Plan written to docs/plans/2026-03-24-empty-tokens-validator.md"
+    },
+    {
+      "text": "has_two_or_more_approaches",
+      "passed": true,
+      "evidence": "2 approaches explored: Option A (inside each parser), Option B (in SourceDocumentParser.parse_content) [chosen]. However, approaches are brief design decision notes, not full trade-off analysis with Pros/Cons/Complexity/Risk/Files sections."
+    },
+    {
+      "text": "tasks_have_exact_file_paths",
+      "passed": true,
+      "evidence": "Files listed in 'Files to Change' table with exact paths: src/data_migrator/exceptions.py, src/data_migrator/services/source_parsing/source_document_parser.py"
+    },
+    {
+      "text": "tasks_have_test_cases_with_markers",
+      "passed": false,
+      "evidence": "Test cases are in a markdown table (Test | Input | Expected) format, not using \u2705/\u274c markers per task as required by the plan template. Tasks are not structured as individual TDD cycles."
+    },
+    {
+      "text": "tasks_have_code_not_descriptions",
+      "passed": true,
+      "evidence": "Complete code provided for EmptyTokensError class and _validate_tokens_not_empty() method with full implementation"
+    },
+    {
+      "text": "single_explorer_agent_for_simple_scope",
+      "passed": false,
+      "evidence": "No structured agent dispatch \u2014 baseline does direct codebase exploration without the multi-agent approach. No explicit scope assessment or agent count decision."
+    }
+  ]
+}

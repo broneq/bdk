@@ -1,0 +1,36 @@
+{
+  "eval_id": 3,
+  "eval_name": "vague-input",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "announces_skill_at_start",
+      "passed": false,
+      "evidence": "No skill announcement"
+    },
+    {
+      "text": "detects_vague_input",
+      "passed": true,
+      "evidence": "Baseline also correctly identifies the input is too vague to act on"
+    },
+    {
+      "text": "asks_clarifying_question",
+      "passed": true,
+      "evidence": "Baseline asks for error message, stack trace, specific document, and description of 'broken'"
+    },
+    {
+      "text": "does_not_investigate",
+      "passed": true,
+      "evidence": "Baseline also stops after asking \u2014 does not speculate about causes"
+    }
+  ],
+  "pass_count": 3,
+  "total_count": 4,
+  "pass_rate": 0.75,
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.75
+  }
+}

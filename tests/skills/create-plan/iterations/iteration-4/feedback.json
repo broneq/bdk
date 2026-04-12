@@ -1,0 +1,25 @@
+{
+  "reviews": [
+    {
+      "run_id": "eval-0-empty-tokens-validator-with_skill",
+      "feedback": "so I see 3 test cases and only one test:\n**Test cases:**\n- \u2705 Positive: `EmptyTokensError` is a subclass of `DataMigratorError`\n- \u2705 Positive: instantiating `EmptyTokensError(\"FroalaParser\")` stores message with parser name\n- \u2705 Positive: `EmptyTokensError` can be caught as `DataMigratorError`\n\n**Test scaffold:**\n```python\n# Setup: no fixture needed\ndef test_empty_tokens_error_is_data_migrator_error():\n    err = EmptyTokensError(\"FroalaParser produced 0 tokens\")\n    assert isinstance(err, DataMigratorError)\n    assert \"FroalaParser\" in str(err)\n```",
+      "timestamp": "2026-03-27T07:21:04.374Z"
+    },
+    {
+      "run_id": "eval-1-repository-caching-with_skill",
+      "feedback": "I see 5 test cases but only 3 implementations\n\n**Test cases:**\n- \u2705 Positive: after `_cache_put(\"t1\", obj)`, `_cache_get(\"t1\")` returns the same `obj`\n- \u2705 Positive: `_cache_get(\"missing\")` returns `None` when cache is empty\n- \u2705 Positive: after `_cache_put(\"t1\", obj)` then `_cache_invalidate(\"t1\")`, `_cache_get(\"t1\")` returns `None`\n- \u2705 Positive: `_cache_invalidate(\"nonexistent\")` does not raise\n- \u2705 Positive: two different keys do not interfere \u2014 `_cache_put(\"t1\", a)`, `_cache_put(\"t2\", b)`, `_cache_get(\"t1\")` returns `a`\n\n**Test scaffold:**\n```python\n# Setup: no fixture needed \u2014 use a minimal concrete subclass of BaseJsonFileRepository\nclass _StubRepo(BaseJsonFileRepository[str]):\n    def _log_deleted(self, template_name: str) -> None:\n        pass\n\ndef test_cache_put_and_get(tmp_path: Path) -> None:\n    repo = _StubRepo(tmp_path)\n    repo._cache_put(\"t1\", \"value\")\n    assert repo._cache_get(\"t1\") == \"value\"\n\ndef test_cache_invalidate(tmp_path: Path) -> None:\n    repo = _StubRepo(tmp_path)\n    repo._cache_put(\"t1\", \"value\")\n    repo._cache_invalidate(\"t1\")\n    assert repo._cache_get(\"t1\") is None\n\ndef test_cache_invalidate_missing_key_no_error(tmp_path: Path) -> None:\n    repo = _StubRepo(tmp_path)\n    repo._cache_invalidate(\"nope\")  # should not raise\n```",
+      "timestamp": "2026-03-27T07:21:04.374Z"
+    },
+    {
+      "run_id": "eval-2-format-detector-with_skill",
+      "feedback": "I see 7 test cases and only 3 implemnented\n\n**Test cases:**\n- \u2705 Positive: given content containing `ins data-cid`, `matches()` returns `True`\n- \u2705 Positive: given content containing `del data-cid`, `matches()` returns `True`\n- \u2705 Positive: given content containing `data-author-id`, `matches()` returns `True`\n- \u2705 Positive: given content containing `ins data-cid`, `get_format()` returns `DocumentFormat.SEA_HTML`\n- \u2705 Positive: given plain `<p>text</p>` with no ICE markers, `matches()` returns `False`\n- \u274c Negative: given Froala-only HTML (`fr-element`), `matches()` returns `False`\n- \u2705 Positive: `extract_fingerprint_hash()` returns `\"no-image\"` for HTML with no identifiable image\n\n**Test scaffold:**\n```python\n# Setup: no fixture needed\nfrom data_migrator.detectors.sea.sea_format_detector import SeaFormatDetector\nfrom data_migrator.schemas.models.fingerprint import DocumentFormat\n\nSEA_HTML = '<ins data-cid=\"1\" data-author-id=\"user1\">added text</ins>'\nPLAIN_HTML = \"<p>regular text</p>\"\nFROALA_HTML = '<div class=\"fr-element\">text</div>'\n\ndef test_matches_sea_markers():\n    detector = SeaFormatDetector(SEA_HTML)\n    assert detector.matches() is True\n\ndef test_does_not_match_plain_html():\n    detector = SeaFormatDetector(PLAIN_HTML)\n    assert detector.matches() is False\n\ndef test_get_format_returns_sea_html():\n    detector = SeaFormatDetector(SEA_HTML)\n    assert detector.get_format() == DocumentFormat.SEA_HTML\n```",
+      "timestamp": "2026-03-27T07:21:04.374Z"
+    },
+    {
+      "run_id": "eval-3-failing-cli-command-with_skill",
+      "feedback": "I don't kow why you marked that eval \"Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton\" not passed.\n",
+      "timestamp": "2026-03-27T07:21:04.374Z"
+    }
+  ],
+  "status": "in_progress"
+}

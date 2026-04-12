@@ -1,0 +1,41 @@
+{
+  "eval_id": 2,
+  "eval_name": "complex-multicurrency",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "announces_skill_at_start",
+      "passed": true,
+      "evidence": "Transcript opens with 'Skill invoked: /debug' and signals section"
+    },
+    {
+      "text": "traces_call_chain",
+      "passed": true,
+      "evidence": "Traced OrderService.process_order → CurrencyConverter.convert → TaxCalculator.calculate → PriceValidator.validate with simulated symbol reads at each step"
+    },
+    {
+      "text": "writes_failing_test",
+      "passed": true,
+      "evidence": "test_validate_raises_for_large_usd_equivalent_of_reasonable_eur_order with Decimal('12750.00') — concrete EUR order scenario"
+    },
+    {
+      "text": "estimates_token_cost",
+      "passed": true,
+      "evidence": "Estimated ~20 lines / ~2–3k tokens — well under 20k"
+    },
+    {
+      "text": "recommends_create_plan",
+      "passed": false,
+      "evidence": "Token estimate was ~3k (correctly LOW), so skill recommended inline fix — not create-plan. This is correct behavior for a low-complexity fix. Assertion wording was too prescriptive."
+    },
+    {
+      "text": "asks_user_confirmation",
+      "passed": true,
+      "evidence": "AskUserQuestion simulated with all 3 options: Fix now, Create plan, Something else — does not auto-proceed"
+    }
+  ],
+  "pass_count": 5,
+  "total_count": 6,
+  "pass_rate": 0.833,
+  "notes": "The 'recommends_create_plan' assertion was incorrectly specified — the skill correctly estimated LOW complexity (~3k tokens) and recommended inline fix. The assertion should test that the skill presents all 3 options and provides a recommendation based on estimate, not that it always recommends create-plan for multi-file bugs."
+}

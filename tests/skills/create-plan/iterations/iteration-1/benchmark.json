@@ -1,0 +1,373 @@
+{
+  "metadata": {
+    "skill_name": "create-plan",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-03-24T07:48:24Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 228.9,
+        "tokens": 67311,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-validate-empty-tokens-before-processing.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches",
+          "passed": true,
+          "evidence": "3 approaches explored: (1) Static validator in SourceDocumentParser [Selected], (2) Dedicated ParsedDocumentValidator class, (3) Validation in TokenizerInterface base class"
+        },
+        {
+          "text": "tasks_have_exact_file_paths",
+          "passed": true,
+          "evidence": "Every task lists exact paths: src/data_migrator/exceptions.py, src/data_migrator/services/source_parsing/source_document_parser.py, tests/unit/services/source_parsing/test_source_document_parser.py"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers",
+          "passed": true,
+          "evidence": "All 3 tasks include test cases marked with \u2705 and \u274c markers"
+        },
+        {
+          "text": "tasks_have_code_not_descriptions",
+          "passed": true,
+          "evidence": "Complete code provided: EmptyTokensError class body, _validate_non_empty() method with full implementation, test helper functions _make_empty_document() and _make_no_lines_document()"
+        },
+        {
+          "text": "single_explorer_agent_for_simple_scope",
+          "passed": true,
+          "evidence": "Transcript summary confirms 1 explorer agent dispatched (simple scope)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 201.4,
+        "tokens": 64286,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-in-memory-caching-repository.md"
+        },
+        {
+          "text": "has_two_or_more_approaches",
+          "passed": true,
+          "evidence": "3 approaches: (1) CachingRepository Decorator [Selected], (2) Extend BaseJsonFileRepository with Cache Hooks, (3) Inline Cache per Concrete Repository \u2014 each with Pros/Cons/Complexity/Risk/Files"
+        },
+        {
+          "text": "existing_repository_identified",
+          "passed": true,
+          "evidence": "Found TemplateDiffsFileRepository, TemplateRulesFileRepository, BaseJsonFileRepository, FingerprintFileRepository (with inline cache as prior art reference)"
+        },
+        {
+          "text": "tasks_have_exact_file_paths",
+          "passed": true,
+          "evidence": "All tasks specify exact paths: src/data_migrator/repositories/caching_mixin.py, src/data_migrator/containers/base.py, tests/unit/repositories/test_caching_mixin.py, etc."
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers",
+          "passed": true,
+          "evidence": "All 3 tasks include test cases marked with \u2705 and \u274c markers"
+        },
+        {
+          "text": "cache_invalidation_addressed",
+          "passed": true,
+          "evidence": "Cache invalidation on save() and delete() explicitly covered with implementation code: self._cache.pop(template_name, None) in both save() and delete() methods"
+        },
+        {
+          "text": "two_explorer_agents_dispatched",
+          "passed": true,
+          "evidence": "Transcript confirms 2 agents dispatched: Agent 1 (Utilities & Existing Implementations) and Agent 2 (Architecture & Dependencies)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 306.1,
+        "tokens": 119753,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-document-format-detector-parser.md"
+        },
+        {
+          "text": "has_two_or_more_approaches",
+          "passed": true,
+          "evidence": "3 approaches: (1) SeaDetector + Static Bridge [Selected], (2) Format-Parser Registry in TokenizerStrategy, (3) New FormatAwareParserSelector Service \u2014 each with full Pros/Cons/Complexity/Risk/Files"
+        },
+        {
+          "text": "existing_detector_pattern_found",
+          "passed": true,
+          "evidence": "FroalaFormatDetector, FormatDetectorInterface, FormatDetectorStrategy all found and explicitly referenced as patterns to follow. SeaChangeTypeDetector ICE markers used for detection logic."
+        },
+        {
+          "text": "tasks_have_exact_file_paths",
+          "passed": true,
+          "evidence": "All 5 tasks list exact file paths: detectors/sea/__init__.py, detectors/sea/sea_contracts_format_detector.py, schemas/models/fingerprint.py, processors/tokenizer_strategy.py, etc."
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers",
+          "passed": true,
+          "evidence": "All 5 tasks include test cases marked with \u2705 and \u274c markers"
+        },
+        {
+          "text": "registration_mechanism_addressed",
+          "passed": true,
+          "evidence": "Task 3 explicitly shows FormatDetectorStrategy.create_default() modification. Task 4 adds TokenizerStrategy.format_to_parser_name() bridge. Task 5 wires detect_and_parse() on SourceDocumentParser."
+        },
+        {
+          "text": "three_explorer_agents_dispatched",
+          "passed": true,
+          "evidence": "Transcript confirms 3 agents dispatched: Agent 1 (Utilities), Agent 2 (Architecture & Dependencies), Agent 3 (Similar Features)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6667,
+        "passed": 4,
+        "failed": 2,
+        "total": 6,
+        "time_seconds": 150.7,
+        "tokens": 64085,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-empty-tokens-validator.md"
+        },
+        {
+          "text": "has_two_or_more_approaches",
+          "passed": true,
+          "evidence": "2 approaches explored: Option A (inside each parser), Option B (in SourceDocumentParser.parse_content) [chosen]. However, approaches are brief design decision notes, not full trade-off analysis with Pros/Cons/Complexity/Risk/Files sections."
+        },
+        {
+          "text": "tasks_have_exact_file_paths",
+          "passed": true,
+          "evidence": "Files listed in 'Files to Change' table with exact paths: src/data_migrator/exceptions.py, src/data_migrator/services/source_parsing/source_document_parser.py"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers",
+          "passed": false,
+          "evidence": "Test cases are in a markdown table (Test | Input | Expected) format, not using \u2705/\u274c markers per task as required by the plan template. Tasks are not structured as individual TDD cycles."
+        },
+        {
+          "text": "tasks_have_code_not_descriptions",
+          "passed": true,
+          "evidence": "Complete code provided for EmptyTokensError class and _validate_tokens_not_empty() method with full implementation"
+        },
+        {
+          "text": "single_explorer_agent_for_simple_scope",
+          "passed": false,
+          "evidence": "No structured agent dispatch \u2014 baseline does direct codebase exploration without the multi-agent approach. No explicit scope assessment or agent count decision."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.7143,
+        "passed": 5,
+        "failed": 2,
+        "total": 7,
+        "time_seconds": 125.9,
+        "tokens": 60510,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-repository-in-memory-caching.md"
+        },
+        {
+          "text": "has_two_or_more_approaches",
+          "passed": true,
+          "evidence": "3 options in Section 2.1: Option A (in BaseJsonFileRepository) [chosen], Option B (per concrete repository), Option C (separate CachingRepositoryDecorator). Brief notes rather than full Pros/Cons/Risk/Complexity/Files sections."
+        },
+        {
+          "text": "existing_repository_identified",
+          "passed": true,
+          "evidence": "Found TemplateDiffsFileRepository, TemplateRulesFileRepository, BaseJsonFileRepository, FingerprintFileRepository with inline cache pattern as prior art"
+        },
+        {
+          "text": "tasks_have_exact_file_paths",
+          "passed": true,
+          "evidence": "Files table in Section 3 lists exact paths for all modified/created files"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers",
+          "passed": false,
+          "evidence": "Tests listed in Section 5 as bullet points with names only (e.g. test_cache_starts_empty), not structured as TDD tasks with \u2705/\u274c markers per task"
+        },
+        {
+          "text": "cache_invalidation_addressed",
+          "passed": true,
+          "evidence": "Cache invalidation on delete() explicitly covered. Save populates cache after write. Section 2.3 and steps 3/5 address invalidation."
+        },
+        {
+          "text": "two_explorer_agents_dispatched",
+          "passed": false,
+          "evidence": "No structured agent dispatch. Baseline explored directly without multi-agent approach."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5714,
+        "passed": 4,
+        "failed": 3,
+        "total": 7,
+        "time_seconds": 206.4,
+        "tokens": 65847,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-document-format-detector.md"
+        },
+        {
+          "text": "has_two_or_more_approaches",
+          "passed": false,
+          "evidence": "No trade-off analysis section. Plan goes directly to implementation steps without exploring alternatives or documenting why other approaches were rejected."
+        },
+        {
+          "text": "existing_detector_pattern_found",
+          "passed": true,
+          "evidence": "FroalaFormatDetector pattern identified as template. FormatDetectorInterface ABC found. ICE markers from SeaChangeTypeDetector referenced."
+        },
+        {
+          "text": "tasks_have_exact_file_paths",
+          "passed": true,
+          "evidence": "Files table at end lists exact paths for all 7 files changed/created"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers",
+          "passed": false,
+          "evidence": "Test cases listed as bullet points under step 4 without \u2705/\u274c markers. Not structured as TDD tasks with per-task test cycles."
+        },
+        {
+          "text": "registration_mechanism_addressed",
+          "passed": true,
+          "evidence": "Step 3 shows FormatDetectorStrategy.create_default() modification with exact code. Registration mechanism clearly addressed."
+        },
+        {
+          "text": "three_explorer_agents_dispatched",
+          "passed": false,
+          "evidence": "No structured agent dispatch. Baseline did direct exploration without multi-agent pattern."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 245.4667,
+        "stddev": 54.2804,
+        "min": 201.4,
+        "max": 306.1
+      },
+      "tokens": {
+        "mean": 83783.3333,
+        "stddev": 31187.3427,
+        "min": 64286,
+        "max": 119753
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.6508,
+        "stddev": 0.0728,
+        "min": 0.5714,
+        "max": 0.7143
+      },
+      "time_seconds": {
+        "mean": 161.0,
+        "stddev": 41.2266,
+        "min": 125.9,
+        "max": 206.4
+      },
+      "tokens": {
+        "mean": 63480.6667,
+        "stddev": 2719.3393,
+        "min": 60510,
+        "max": 65847
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.35",
+      "time_seconds": "+84.5",
+      "tokens": "+20303"
+    }
+  },
+  "notes": []
+}
