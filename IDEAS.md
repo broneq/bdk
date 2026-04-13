@@ -7,7 +7,8 @@
     * [ ] serena
 * [ ] Config in repo root — disable serena, set local doc dir, load project-specific docs deterministically
 * [ ] SessionStart script — check required tools available (uvx, npm, etc.)
-
+* [ ] Inject into templates dynamic instructions for instance `! inject-language-specific-rules.py`
+  * [ ] skills/cr/reviewer-prompt-template.md
 
 # References
 ## Startup script

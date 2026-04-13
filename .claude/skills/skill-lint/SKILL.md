@@ -182,3 +182,30 @@ All checks passed.
 All files pass → end with: `All checks passed.`
 
 No fixes beyond check results unless user asks.
+
+## Checklist before responding
+
+Verify ALL 20 checks were executed for SKILL.md (not just the ones that seemed relevant):
+
+- [ ] 1. Frontmatter present
+- [ ] 2. Model field
+- [ ] 3. No absolute paths
+- [ ] 4. No project-specific file references
+- [ ] 5. No project-specific instructions
+- [ ] 6. No language-specific commands
+- [ ] 7. BDK foundation header
+- [ ] 8. Skill cross-references use full namespace
+- [ ] 9. `name` format valid
+- [ ] 10. `description` length
+- [ ] 11. Invalid frontmatter fields
+- [ ] 12. `effort` valid value
+- [ ] 13. `context` + `agent` combo
+- [ ] 14. Dead skill combo
+- [ ] 15. `$ARGUMENT` typo
+- [ ] 16. External skill/agent references
+- [ ] 17. Skill directory format
+- [ ] 18. Artifacts go to `.bdk/`
+- [ ] 19. No unused files in skill directory
+- [ ] 20. Valid skill directory structure
+
+Do not output the checklist. Use it internally to confirm no check was skipped.

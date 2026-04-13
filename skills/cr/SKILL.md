@@ -90,7 +90,7 @@ Based on total changed lines, determine dispatch mode:
 
 Launch ALL planned agents in a SINGLE message using the Agent tool with `run_in_background: true`.
 
-For each layer-group reviewer:
+For each layer-group reviewer (use `references/reviewer-prompt-template.md` for dispatch structure):
 - List source files assigned to this group
 - List test files paired with these source files
 
@@ -119,8 +119,11 @@ For test-runner:
 3. **Assign severity**: CRITICAL > HIGH > MEDIUM > LOW
 4. **Map findings to report sections**
 5. **Produce the final 13-section report** (see below)
+6. **Write report to artifact**: `.bdk/cr/[TDP - dynamic path here]` — see IDEAS.md for dynamic path pattern
 
 ## Report Format
+
+See `references/report-format.md` for detailed 13-section structure and templates.
 
 ### 1. Summary
 ≤ 5 sentences: overall assessment, severity distribution, key wins/gaps.

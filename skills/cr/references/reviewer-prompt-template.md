@@ -15,11 +15,11 @@ Test files:
 
 ## Review Criteria
 
-Read `.claude/rules/code-quality.md` and follow all rules there.
+{! inject-language-specific-rules.py code-quality}
 
 {IF TINY MODE, also include:}
 ### Architecture (tiny mode only)
-Read `.claude/rules/architecture.md` and follow all rules there.
+{! inject-language-specific-rules.py architecture}
 
 ### Duplicates (tiny mode only)
 - Check for repeated code blocks (>5 lines)
@@ -45,13 +45,13 @@ TESTS_GAPS:
 
 When dispatching the architecture-reviewer, use subagent_type `architecture-reviewer` with `model: opus`. List ALL changed source files and instruct it to:
 
-Read `.claude/rules/architecture.md` and follow all rules there. Check layer boundaries, DI, design patterns, and data flow.
+{! inject-language-specific-rules.py architecture}
 
 ## Test-Reviewer Dispatch Instructions
 
 When dispatching the test-reviewer, use subagent_type `code-reviewer` with `model: opus` (read-only). Provide both test files AND their corresponding source files. Instruct it to:
 
-- Read `.claude/rules/testing-assertions.md`, `.claude/rules/testing-conventions.md`, `.claude/rules/testing-fixtures.md`, and `.claude/rules/code-quality.md` and follow all rules there
+- {! inject-language-specific-rules.py testing}
 - Check: semantic alignment between test names and what they actually assert
 - Check: near-duplicate tests that could be parametrized
 - Check: missing edge cases (null, empty, boundary, exception paths) derived from source logic
