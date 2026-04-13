@@ -1,16 +1,21 @@
 ---
 name: update-docs
-description: Use when existing architecture documentation in docs/architecture/ needs refreshing after code changes, when running periodic doc maintenance, or when user asks to "update docs", "refresh documentation", or "sync docs with code".
+description: Use when existing architecture documentation needs refreshing after code changes, when running periodic doc maintenance, or when user asks to "update docs", "refresh documentation", or "sync docs with code".
 model: sonnet
 user-invocable: true
 disable-model-invocation: true
-arguments:
-  - name: doc_path
-    description: Path to existing documentation file (e.g., "docs/architecture/xml-parser.md")
-    required: true
+argument-hint: "[doc_path]"
+hooks:
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "Verify documentation update completeness: $ARGUMENTS\n\nRequired checks:\n1. File saved to original doc_path location\n2. Contains Overview section (2-3 sentences)\n3. Contains Core Architecture with file tree\n4. Contains at least ONE Graphviz diagram compiled to SVG (no raw ```dot or ```graphviz blocks remain — all replaced with ![...](*.svg) image references)\n5. Contains Critical Rules section with examples\n6. Contains Live Examples with PROTOTYPE code (not actual implementation)\n7. Contains Core Classes section\n8. Contains Testing Coverage section describing existing tests\n9. Updated sections read as uniform text — no changelog markers, no 'updated on' annotations, no diff markers\n\nReview the conversation and tool outputs. If ANY required section is missing or incomplete, respond: {\"ok\": false, \"reason\": \"Missing: [list specific items]\"}\n\nIf all sections present and complete, respond: {\"ok\": true}"
+          timeout: 30
 ---
 
 # Update Docs
+
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
 Refresh existing architecture documentation by comparing it against current code, merging updates while preserving accurate manual prose. The result is uniform text — no changelog, no diff markers, no "updated on" annotations.
 
@@ -18,7 +23,7 @@ Refresh existing architecture documentation by comparing it against current code
 
 ### 1. Parse Existing Doc
 
-Read the documentation file at `doc_path` and extract:
+Read the documentation file at `$ARGUMENTS` and extract:
 
 - **Sections**: Split by `##` headers into top-level sections
 - **Module root**: From the file tree code block (e.g., `src/data_migrator/processors/loaders/xml/`)
@@ -57,7 +62,7 @@ Include diagram findings alongside code findings for subagents.
 
 **Step 2.3 — Partition into Logical Blocks**
 
-Same rules as `explain-complex-code`:
+Same rules as `/bdk:explain-complex-code`:
 
 | Files Count | Subagent Count |
 |-------------|----------------|
@@ -155,7 +160,7 @@ Options: "Approve" / "Approve with changes" / "Cancel"
 Reconstruct the document:
 
 1. **Copy** unchanged sections verbatim (preserves manual prose, formatting, wording)
-2. **Rewrite** outdated sections using patterns from `references/documentation-template.md` in `explain-complex-code`
+2. **Rewrite** outdated sections using patterns from `/bdk:explain-complex-code` references
 3. **Insert** new content where it fits logically within existing structure
 4. **Remove** orphaned references cleanly — no "removed" comments, just omit
 5. **Update diagrams**:
@@ -166,57 +171,23 @@ Reconstruct the document:
 
 The final file reads as one uniform document. No markers indicating which parts were updated.
 
-**Prototype code rules** (same as `explain-complex-code`):
+**Prototype code rules** (same as `/bdk:explain-complex-code`):
 - Use placeholder names: `process()`, `transform()`, `calculate()`
 - Show control flow clearly, include comments for key steps
 - Keep under 20 lines per example
 - Never copy actual implementation
 
-### 5. Save and Auto-Compile
+### 5. Save and Compile Diagrams
 
-Save to the same path as the input `doc_path`.
+Save to the same path as the input `$ARGUMENTS`.
 
-**Automatic Processing** (via PostToolUse hook):
-When documentation is saved, the hook automatically:
-1. Validates Graphviz syntax (blocks on errors)
-2. Extracts diagrams to `.dot` files
-3. Compiles to SVG (if Graphviz installed)
-4. Updates markdown with image references
-
-**Manual Compilation** (if needed):
-```bash
-uv run python skills/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --mode both
-```
+After saving, invoke `/bdk:graphviz-docs-compiler` to extract `.dot` files and compile to SVG.
 
 ## Resources
 
 ### Documentation Template
 
-Use `explain-complex-code/references/documentation-template.md` for section structure when rewriting outdated sections. Do not load unless rewriting sections.
-
-### Graphviz Patterns
-
-Use `explain-complex-code/references/graphviz-patterns.md` when redrawing diagrams. Do not load unless diagrams need updating.
-
-### Validation Script
-
-```bash
-uv run python skills/explain-complex-code/scripts/validate_graphviz.py <doc_path>
-```
-
-## Quality Gates (Automated Hooks)
-
-### PostToolUse Hook (After Writing Documentation)
-
-**Trigger**: When documentation is written to `docs/architecture/*.md`
-
-Same hook as `explain-complex-code`: validates Graphviz, extracts diagrams, compiles SVG, updates markdown.
-
-### Stop Hook (Before Finishing)
-
-**Trigger**: Before the skill completes
-
-Verifies documentation completeness — all required sections present and well-formed.
+Use `/bdk:explain-complex-code` references for section structure when rewriting outdated sections. Do not load unless rewriting sections.
 
 ## Quick Reference
 
@@ -240,4 +211,5 @@ Verifies documentation completeness — all required sections present and well-f
 - [ ] Presented update plan and got user confirmation via single AskUserQuestion
 - [ ] Wrote updates preserving accurate sections verbatim
 - [ ] Updated/added/kept diagrams as approved
+- [ ] Invoked `/bdk:graphviz-docs-compiler` to compile diagrams to SVG
 - [ ] Final document reads as uniform text (no update markers)
