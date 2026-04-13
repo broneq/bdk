@@ -3,6 +3,11 @@ name: graphviz-docs-compiler
 description: Compile Graphviz diagrams (.dot files) to SVG images and update markdown documentation. Use when working with documentation that contains Graphviz diagrams, adding new diagrams to docs, updating existing diagrams, or when the user asks to "compile diagrams", "update documentation diagrams", "generate SVG from dot files", or mentions working with .dot files in documentation.
 model: haiku
 hooks:
+  UserPromptSubmit:
+    - hooks:
+        - type: command
+          command: "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/is-command-exists/check.py dot 'brew install graphviz  |  sudo apt-get install graphviz'"
+          once: true
   PostToolUse:
     - matcher: "Write"
       hooks:
