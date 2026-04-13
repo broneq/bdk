@@ -57,7 +57,6 @@ Used by skills internally (invoke via `subagent_type`):
 | `architecture-reviewer` | opus | Audit against architectural rules |
 | `static-analyse` | haiku | Detect and run project lint/format/type-check |
 | `step-simulator` | opus | Dry-run plans with concrete data traces |
-| `helper-writer` | sonnet | Write utility functions and helpers |
 | `log-analyzer` | haiku | Parse and summarize error logs |
 | `web-researcher` | haiku | Search web for solutions and docs |
 

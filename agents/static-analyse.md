@@ -1,6 +1,6 @@
 ---
 name: static-analyse
-description: Run static analysis (lint, format, type check) and analyze output
+description: Detect and run project-appropriate static analysis tools (lint, format, type check) across Python, JS, Go, Rust and other stacks
 model: haiku
 ---
 

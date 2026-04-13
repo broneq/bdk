@@ -11,6 +11,7 @@
   * [ ] skills/cr/reviewer-prompt-template.md (paths to docs)
   * [ ] skills/create-adr/SKILL.md (adr docs path from config)
   * [ ] skills/create-plan/references/plan-template.md (test & lint commands {test_command} {lint_command})
+  * [ ] agents/static-analyse.md
 
 # References
 ## Startup script
