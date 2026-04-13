@@ -7,6 +7,16 @@ arguments:
   - name: plan
     description: "The full implementation plan to execute"
     required: true
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/skills/execute-plan/scripts/context-usage.py"
+  PostToolUse:
+    - matcher: "TaskUpdate"
+      hooks:
+        - type: command
+          command: "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/skills/execute-plan/scripts/context-usage.py"
 ---
 
 # Execute Plan
