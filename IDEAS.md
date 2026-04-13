@@ -12,6 +12,7 @@
   * [ ] skills/create-adr/SKILL.md (adr docs path from config)
   * [ ] skills/create-plan/references/plan-template.md (test & lint commands {test_command} {lint_command})
   * [ ] agents/static-analyse.md
+  * [ ] agents/test-runner.md
 
 # References
 ## Startup script
