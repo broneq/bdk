@@ -1,11 +1,8 @@
 ---
 name: save-progress
-description: Save current work progress to docs/progress/ for resuming in a future session. Use when context is large, work is in progress, and you want to stop and continue later.
+description: Save current work progress to .bdk/save-progress/ for resuming in a future session. Use when context is large, work is in progress, and you want to stop and continue later.
 model: haiku
-arguments:
-  - name: name
-    description: "Name for the progress file (e.g. 'auth-refactor', 'api-feature'). Will be saved as docs/progress/{name}.md"
-    required: true
+argument-hint: "[name]"
 user-invocable: true
 ---
 
@@ -13,55 +10,55 @@ user-invocable: true
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-Capture current work state to `docs/progress/$ARGUMENTS.md` for resuming in a future session.
+Capture work state to `.bdk/save-progress/$ARGUMENTS.md` for future resume.
 
-**Announce:** "Saving progress to docs/progress/$ARGUMENTS.md"
+**Announce:** "Saving progress to .bdk/save-progress/$ARGUMENTS.md"
 
 ## Step 1: Validate
 
-- If `$ARGUMENTS` is empty: say "Usage: /bdk:save-progress <name>" and **stop**
-- Set path: `docs/progress/$ARGUMENTS.md`
+- `$ARGUMENTS` empty: say "Usage: /bdk:save-progress <name>" and **stop**
+- Set path: `.bdk/save-progress/$ARGUMENTS.md`
 
 ## Step 2: Gather Context
 
-Collect these in parallel:
+Collect in parallel:
 
 1. **Git branch**: `git branch --show-current`
-2. **TaskList**: Read current TaskList tasks (if any exist)
+2. **TaskList**: Read current tasks (if any)
 3. **Recent files**: `git diff --name-only HEAD~3..HEAD 2>/dev/null`
-4. **Used skills**: Recall from conversation history which skills were invoked
+4. **Used skills**: Recall from conversation history
 
 ## Step 3: Build Task Summary
 
-**If TaskList has tasks:**
-- List each task with its status (pending/in_progress/completed)
-- Present with `AskUserQuestion`: "Want to add notes or adjust statuses before saving?"
+**TaskList has tasks:**
+- List each task + status (pending/in_progress/completed)
+- `AskUserQuestion`: "Want to add notes or adjust statuses before saving?"
 - Options: "Save as-is", "Let me edit"
 
-**If no TaskList tasks:**
-- Ask user: "No tracked tasks found. Please describe the current tasks and their status."
+**No tasks:**
+- Ask user: "No tracked tasks found. Describe current tasks and status."
 
 ## Step 4: Collect Reference Files
 
-Ask user with `AskUserQuestion`:
-- "Which files should be referenced for context when resuming?"
-- Options: auto-suggest from git diff + docs/plans/, plus "Let me specify"
+`AskUserQuestion`:
+- "Which files needed for context when resuming?"
+- Options: auto-suggest from git diff + .bdk/ plan files, plus "Let me specify"
 
 ## Step 5: Collect Used Skills
 
-From conversation history, identify every BDK skill invoked. For each:
-1. A one-line "why" — what triggered it and what outcome it produced
-2. A judgment: will this skill likely be useful for the remaining tasks?
+From history, identify every BDK skill invoked. For each:
+1. One-line "why" — trigger + outcome
+2. Judgment: useful for remaining tasks?
 
 ## Step 6: Collect Important Notes
 
 Ask user:
-- "Any critical notes for the next session?"
+- "Critical notes for next session?"
 - Options: "No notes needed", "Let me add notes"
 
 ## Step 7: Write Progress File
 
-Write to `docs/progress/$ARGUMENTS.md`:
+Write to `.bdk/save-progress/$ARGUMENTS.md`:
 
 ```markdown
 # Progress: {name}
@@ -96,7 +93,7 @@ Write to `docs/progress/$ARGUMENTS.md`:
 ## Step 8: Confirm
 
 ```
-[save-progress] Saved to docs/progress/$ARGUMENTS.md
+[save-progress] Saved to .bdk/save-progress/$ARGUMENTS.md
   Tasks: {N done} / {N in_progress} / {N todo}
   References: {N files}
   Skills: {N skills used}
@@ -108,5 +105,5 @@ Resume with: /bdk:restore-progress $ARGUMENTS
 ## Rules
 
 - NEVER modify source code
-- Keep the progress file SHORT
+- Keep progress file SHORT
 - Status values: `done`, `in_progress`, `todo`, `skipped`, `blocked`
