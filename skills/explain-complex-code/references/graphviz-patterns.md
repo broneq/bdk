@@ -4,7 +4,7 @@
 
 ### Data Flow Diagram
 
-Shows how data moves through the system:
+Data movement through system:
 
 ```dot
 digraph data_flow {
@@ -19,7 +19,7 @@ digraph data_flow {
 
 ### Component Architecture
 
-Shows system components and relationships:
+System components and relationships:
 
 ```dot
 digraph architecture {
@@ -50,7 +50,7 @@ digraph architecture {
 
 ### Algorithm Flow
 
-Shows decision points and processing steps:
+Decision points and processing steps:
 
 ```dot
 digraph algorithm {
@@ -69,7 +69,7 @@ digraph algorithm {
 
 ### Class Relationships
 
-Shows inheritance and composition:
+Inheritance and composition:
 
 ```dot
 digraph classes {
@@ -89,7 +89,7 @@ digraph classes {
 
 ### Sequential Process
 
-Shows step-by-step workflow:
+Step-by-step workflow:
 
 ```dot
 digraph workflow {
@@ -126,12 +126,12 @@ digraph workflow {
 
 ### Node Shapes
 
-- `box` - Standard process/component
+- `box` - Process/component
 - `diamond` - Decision point
-- `ellipse` - Start/end point
+- `ellipse` - Start/end
 - `record` - Class/struct with fields
 - `component` - System component
-- `cylinder` - Database/storage
+- `cylinder` - DB/storage
 - `folder` - File/directory
 
 ### Edge Styles

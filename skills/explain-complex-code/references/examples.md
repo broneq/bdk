@@ -1,6 +1,6 @@
 # Explain Complex Code - Detailed Examples
 
-This document provides detailed, realistic examples of using the explain-complex-code skill with different codebase sizes and structures.
+Doc: realistic examples of explain-complex-code skill across codebase sizes.
 
 ## Example 1: Migration Pipeline (10+ files)
 
@@ -32,8 +32,8 @@ Task("Explore Storage Block (storage/repository.py, json_writer.py, xml_formatte
 ```
 
 **Output**: `docs/architecture/migration-pipeline.md` with:
-- Component diagram (4 layers with 12 files)
-- Data flow diagram (HTML → Tokens → Transformed → XML)
+- Component diagram (4 layers, 12 files)
+- Data flow (HTML → Tokens → Transformed → XML)
 - Critical rules (position accuracy, change detection)
 - Live example (sample migration)
 - Core classes (Service, Parser, Transformer, Storage)
@@ -82,7 +82,7 @@ mcp__serena__find_referencing_symbols(name_path="UnmarkedChangeDetector", relati
 # Discovers: Main detector orchestrates Rules → Detectors → Marker flow
 ```
 
-**Step 2.3 - Decision**: 7 files → Group into 2 logical blocks (not 3, keep it simple)
+**Step 2.3 - Decision**: 7 files → Group into 2 logical blocks (not 3, keep simple)
 
 **Step 3 - Subagent Launch** (parallel, all in ONE message):
 ```python
@@ -91,7 +91,7 @@ Task("Explore Detection Utilities Block (detectors/text_differ.py, html_comparer
 ```
 
 **Output**: `docs/architecture/change-detection-system.md` with:
-- Component diagram (2 blocks with dependency arrows)
+- Component diagram (2 blocks, dependency arrows)
 - Algorithm flow (Rule evaluation → Detection → Classification → Marking)
 - Critical rules (unmarked text detection, Froala compatibility)
 - Live examples (detection scenarios)
@@ -163,23 +163,23 @@ Task(prompt="Explore Position Mapping Services (all files in position_mapping/):
 ## Pattern: Multi-Module Feature
 
 For features spanning multiple files:
-1. Create one subagent per logical block (not per file!)
-2. Create overview diagram showing module relationships
-3. Create detailed flow for main process
-4. Document each core class separately
+1. One subagent per logical block (not per file)
+2. Overview diagram showing module relationships
+3. Detailed flow for main process
+4. Each core class documented separately
 
 ## Pattern: Algorithm Documentation
 
 For complex algorithms:
-1. Create high-level flow diagram
-2. Document critical rules with violation examples
-3. Show 2-3 live examples (simple → complex)
-4. Include edge cases and pitfalls
+1. High-level flow diagram
+2. Critical rules with violation examples
+3. 2-3 live examples (simple → complex)
+4. Edge cases and pitfalls
 
 ## Pattern: Service Layer Documentation
 
 For service-oriented code:
-1. Show layer architecture (CLI → Use Cases → Services → Data)
-2. Document dependency injection pattern
-3. Show data flow through layers
-4. Include test strategy per layer
+1. Layer architecture (CLI → Use Cases → Services → Data)
+2. Dependency injection pattern
+3. Data flow through layers
+4. Test strategy per layer

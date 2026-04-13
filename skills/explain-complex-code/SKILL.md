@@ -3,24 +3,27 @@ name: explain-complex-code
 description: Generate comprehensive architecture documentation for complex code modules with Graphviz diagrams and examples. Use when user asks to "explain this code", "document the architecture", or wants to understand how a module/system works.
 model: sonnet
 user-invocable: true
-arguments:
-  - name: path
-    description: Path to the code module/feature to explain
-    required: true
+argument-hint: "[path]"
+hooks:
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "Verify documentation completeness: $ARGUMENTS\n\nRequired checks:\n1. File saved to .bdk/explain-complex-code/ directory\n2. Contains Overview section (2-3 sentences)\n3. Contains Core Architecture with file tree\n4. Contains at least ONE Graphviz diagram (check for ```dot or ```graphviz blocks)\n5. Contains Critical Rules section with examples\n6. Contains Live Examples with PROTOTYPE code (not actual implementation)\n7. Contains Core Classes section\n8. Contains Testing Coverage section describing existing tests\n\nReview the conversation and tool outputs. If ANY required section is missing or incomplete, respond: {\"ok\": false, \"reason\": \"Missing: [list specific items]\"}\n\nIf all sections present and complete, respond: {\"ok\": true}"
+          timeout: 30
 ---
 
 # Explain Complex Code
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-Generate comprehensive architecture documentation for complex code with visual diagrams and clear examples.
+Generate architecture docs for complex code with visual diagrams and examples.
 
 ## Workflow
 
 ### 1. Understand Scope
 
-The `path` argument specifies what code to explain. Clarify with the user:
-- **Focus areas**: Specific aspects (architecture, algorithms, data flow, testing strategy)
+`path` arg specifies code to explain. Clarify:
+- **Focus areas**: Architecture, algorithms, data flow, testing strategy
 - **Audience level**: Team onboarding, external docs, debugging guide
 
 ### 2. Analyze Code Structure
@@ -29,7 +32,7 @@ The `path` argument specifies what code to explain. Clarify with the user:
 Use Tier 1/2/3 tools per BDK foundation to discover structure.
 
 **Step 2.2: Map Dependencies**
-For each key class/function: find its callers and what it calls.
+For each key class/function: find callers and callees.
 
 **Step 2.3: Decide Partitioning Strategy**
 
@@ -40,11 +43,11 @@ For each key class/function: find its callers and what it calls.
 | 6-10 files | Group into 2-3 logical blocks | 2-3 subagents |
 | 10+ files | Group by architectural layers | 3-4 subagents |
 
-**Never more than 3-4 subagents total.**
+**Never more than 3-4 subagents.**
 
 ### 3. Launch Subagents Strategically
 
-Launch ALL subagents in a SINGLE message. For each subagent:
+Launch ALL subagents in ONE message. Per subagent:
 
 ```
 Explore the following files as a logical block: [FILE_LIST]
@@ -65,7 +68,7 @@ Then synthesize:
 
 ### 4. Synthesize Documentation
 
-Using subagent findings, create structured documentation.
+From subagent findings, create structured docs.
 
 **Structure:**
 1. **Overview**: 2-3 sentence summary
@@ -78,16 +81,16 @@ Using subagent findings, create structured documentation.
 
 ### 5. Create Graphviz Diagrams
 
-Use diagrams for:
+Use for:
 - **Data flow**: How data moves through system
 - **Component architecture**: Layers and dependencies
 - **Algorithm flow**: Decision points and steps
 
-Keep diagrams under 15 nodes. Label edges clearly.
+Under 15 nodes. Label edges clearly.
 
 ### 6. Write Prototype Examples
 
-**CRITICAL RULE**: Use prototype code, NOT actual implementation.
+**CRITICAL RULE**: Prototype code only — NOT actual implementation.
 
 **Good Prototype:**
 ```
@@ -102,15 +105,15 @@ return format_output(result)
 ```
 
 **Prototype Rules:**
-- Use placeholder function names
-- Show control flow clearly
-- Include comments for key steps
-- Keep under 20 lines per example
-- Focus on ONE concept per example
+- Placeholder function names
+- Clear control flow
+- Comments for key steps
+- Under 20 lines per example
+- One concept per example
 
 ### 7. Save Documentation
 
-Save to `docs/architecture/[feature-name].md`.
+Save to `.bdk/explain-complex-code/[feature-name].md`.
 
 ## Quality Checklist
 
@@ -124,6 +127,6 @@ Save to `docs/architecture/[feature-name].md`.
 
 ## Notes
 
-- **Prototype code is mandatory**: Never copy actual implementation
+- **Prototype code mandatory**: Never copy actual implementation
 - **Parallel subagents save time**: Launch all in one message
-- **Focus on non-obvious details**: Skip explaining basic patterns
+- **Focus non-obvious details**: Skip basic patterns
