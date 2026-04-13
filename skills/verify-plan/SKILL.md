@@ -4,17 +4,14 @@ description: >-
   Verify implementation plans before execution using a 4-agent pipeline.
   Use when you have a written plan (from /bdk:create-plan or manual) and want to check
   if it will actually work before writing code.
-arguments:
-  - name: plan_file
-    description: Path to the plan markdown file to verify
-    required: true
+argument-hint: "[plan-file]"
 ---
 
 # Verify Plan
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-Verify implementation plans against real code before execution.
+Verify plans against real code before execution.
 
 ## Invocation
 
@@ -22,7 +19,7 @@ Verify implementation plans against real code before execution.
 /bdk:verify-plan docs/plans/2026-03-17-some-plan.md
 ```
 
-The `$ARGUMENTS` variable contains the plan file path. Read this file first.
+`$ARGUMENTS` = plan file path. Read file first.
 
 ## Decision Flow
 
@@ -66,7 +63,7 @@ digraph verify_plan {
 
 ### Stage 1: Explorer
 
-Launch `explorer` agent with thoroughness "very thorough":
+Launch `explorer` agent, thoroughness "very thorough":
 
 ```
 Analyze the following implementation plan for verification.
@@ -87,99 +84,24 @@ class hierarchies, callers, and downstream consumers.
 
 ### Stage 2A & 2B: Run in Parallel
 
-Launch TWO `step-simulator` agents simultaneously.
+Launch TWO `step-simulator` agents simultaneously using prompts in `references/agent-prompts.md`.
 
-**Stage 2A — Plan Prover prompt:**
-```
-You are proving whether an implementation plan will work by tracing concrete data through it.
-
-PLAN: {plan_content}
-EXPLORATION REPORT: {exploration_report}
-
-For EACH task:
-1. Assumption Check: verify every referenced function/model against exploration report
-2. Data Flow Trace: invent 2-3 CONCRETE examples, walk through step by step
-3. Edge Case Invention: empty/null, boundaries, multi-unit, overlaps, partial data
-4. Gap Analysis: where would code crash or produce wrong output?
-
-OUTPUT FORMAT:
-## Plan Proof Report
-### Task N: <name>
-**Verdict**: PASS / FAIL / WARNING
-**Assumptions Checked**: (table)
-**Data Traces**: (concrete traces)
-**Edge Cases Invented**: (table)
-**Issues Found**: (list)
-### Overall Plan Proof Verdict: PASS / FAIL
-```
-
-**Stage 2B — Regression Hunter prompt:**
-```
-You are checking whether an implementation plan breaks existing flows.
-
-PLAN: {plan_content}
-EXPLORATION REPORT: {exploration_report}
-
-1. Identify All Affected Flows from exploration report
-2. Backward Compatibility Check: are new parameters optional? do existing callers need updating?
-3. Flow Tracing: for each affected flow, trace through CURRENT code then CHANGED code
-4. Scope Creep Detection: does the fix affect more than intended?
-5. Test Coverage: are there tests that would catch regressions?
-
-OUTPUT FORMAT:
-## Regression Hunt Report
-### Affected Flows Summary (table)
-### Backward Compatibility (table)
-### Scope Creep Findings
-### Overall Regression Verdict: SAFE / REGRESSIONS FOUND / RISKS IDENTIFIED
-```
+- **Stage 2A** — "Plan Prover" prompt, substitute `{plan_content}` and `{exploration_report}`
+- **Stage 2B** — "Regression Hunter" prompt, substitute `{plan_content}` and `{exploration_report}`
 
 ### Stage 3: Code Reviewer
 
-Launch `code-reviewer` agent on the proposed code snippets with both simulator reports as context.
+Launch `code-reviewer` agent on proposed code snippets with both simulator reports as context.
 
 ## Verdict Assembly
 
-Merge all reports into:
-
-```markdown
-# Plan Verification Report: <plan-name>
-
-**Date**: YYYY-MM-DD
-**Plan**: `<path>`
-**Verdict**: PASS / FAIL / PASS WITH WARNINGS
-**Iterations**: N/3
-
-## Summary
-<2-3 sentence overall assessment>
-
-## 1. Plan Proof (Simulator A)
-### Assumptions Verified (table)
-### Step-by-Step Simulation
-
-## 2. Regression Check (Simulator B)
-### Affected Flows (table)
-### Backward Compatibility (table)
-### Scope Creep Findings
-
-## 3. Code Review
-| Severity | Finding | Location |
-
-## 4. New Edge Cases
-| # | Edge Case | Source | Why It Matters | Recommended Test |
-
-## 5. Recommendations
-### Must Fix Before Implementation
-### Should Consider
-
-## Iteration History (table)
-```
+Merge all reports using structure in `references/verdict-template.md`. Save to `.bdk/verify-plan/<plan-name>-verification.md`.
 
 ## Loop Logic
 
-1. If PASS → save report, done
-2. If FAIL and iteration < 3: show remaining issues, ask to re-verify
-3. If FAIL and iteration >= 3: suggest `/bdk:brainstorming-session` to rethink approach
+1. PASS → save report, done
+2. FAIL + iteration < 3: show remaining issues, ask to re-verify
+3. FAIL + iteration >= 3: suggest `/bdk:brainstorming-session`
 
 ## Iteration Summary Format
 

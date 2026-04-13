@@ -90,9 +90,6 @@ PLAN:
 EXPLORATION REPORT (actual code state, signatures, types, ALL callers of modified symbols):
 {exploration_report}
 
-KNOWN TEMPLATES/FLOWS:
-nype2015, nype46, nype93, nype81, gencon1994, gencon1976
-
 YOUR TASK — Find regressions in OTHER flows caused by this plan's changes:
 
 1. **Identify All Affected Flows**: From the exploration report, list every caller of
