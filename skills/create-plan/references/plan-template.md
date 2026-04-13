@@ -1,6 +1,6 @@
 # Plan Template
 
-Use this template when writing to `docs/plans/YYYY-MM-DD-<slug>.md`.
+Use when writing to `.bdk/plans/YYYY-MM-DD-<slug>.md`.
 
 ---
 
@@ -17,10 +17,10 @@ Use this template when writing to `docs/plans/YYYY-MM-DD-<slug>.md`.
 
 ## Context
 
-[2-3 paragraphs explaining:
-- What this feature does and why it's needed
-- How it fits into the existing architecture
-- Related design docs (if found in docs/designs/)
+[2-3 paragraphs:
+- What feature does and why needed
+- How fits into existing architecture
+- Related design docs (if in .bdk/brainstorming/)
 - Key constraints or requirements]
 
 ---
@@ -57,7 +57,7 @@ Use this template when writing to `docs/plans/YYYY-MM-DD-<slug>.md`.
 
 ## Selected Approach: [Name]
 
-**Rationale:** [Why this approach is best, referencing pros/cons]
+**Rationale:** [Why best, referencing pros/cons]
 
 ---
 
@@ -66,36 +66,36 @@ Use this template when writing to `docs/plans/YYYY-MM-DD-<slug>.md`.
 ### Task 1: [Action verb + what]
 
 **Files:**
-- Create: `exact/path/to/new_file.py`
-- Modify: `exact/path/to/existing.py`
-- Test: `tests/exact/path/test_file.py`
+- Create: `exact/path/to/new_file.[ext]`
+- Modify: `exact/path/to/existing.[ext]`
+- Test: `tests/exact/path/test_file.[ext]`
 
 **Test cases:**
 - ✅ Positive: given [input], expects [output]
 - ✅ Positive: given [edge case input], expects [edge case output]
-- ❌ Negative: given [invalid input], raises [error] *(omit if no meaningful failure mode exists)*
+- ❌ Negative: given [invalid input], raises [error] *(omit if no meaningful failure mode)*
 
 **Test scaffold:**
-```python
-# Setup: [which fixture/container is needed, e.g. "no fixture", "container fixture", "MockContainer with repo stub"]
+```
+// language-agnostic pseudocode — write in the project's language/framework
 
-# One stub per test case above:
-def test_[name_matching_first_case]():
-    # arrange
-    [concrete input setup]
-    # act + assert
-    [call + assertion]
+// Setup: [fixture or setup needed, e.g. "none", "mock repo", "test container"]
 
-def test_[name_matching_second_case]():
-    [...]
+// test: [name matching first case]
+//   arrange: [concrete input]
+//   act:     [call under test]
+//   assert:  [expected output or side effect]
 
-# CLI regression tasks: replace all stubs with:
-# # CLI regression — see Verification section
+// test: [name matching second case]
+//   [...]
+
+// CLI regression tasks: replace stubs with:
+//   run [command] — expect exit 0, no errors
 ```
 
 **Implementation:** [class name, method signature, key logic]
 
-> Follow `/test-driven-development` skill for test writing and red-green-clean cycle.
+> Follow `/bdk:test-driven-development` skill for test writing and red-green-clean cycle.
 
 ---
 
@@ -105,13 +105,13 @@ def test_[name_matching_second_case]():
 
 ---
 
-[Continue for all tasks - each task should take 2-5 minutes]
+[Continue for all tasks — each task: 2-5 minutes]
 
 ---
 
 ## Reusable Components
 
-**Existing utilities to leverage:**
+**Existing utilities:**
 - `file:symbol_path` - [what it does]
 
 **Relevant schemas/models:**
@@ -120,7 +120,7 @@ def test_[name_matching_second_case]():
 **Patterns to follow:**
 - [pattern from existing codebase]
 
-**Test helpers to use:**
+**Test helpers:**
 - `file:function_path` - [what it does]
 
 ---
@@ -131,23 +131,22 @@ def test_[name_matching_second_case]():
 
 Delegate to `test-runner` subagent:
 ```
-Run: pytest [specific test paths for this feature] -v --cov=[specific source paths]
-Coverage targets:
-  - Critical paths: >90%
-  - Business logic: >85%
+Run the project's test suite against the relevant paths for this feature.
+Use {test_command} from project discovery (e.g. jest, vitest, pytest, go test, cargo test).
+Target: [specific test paths or modules]
 ```
 
 ### Code Quality
 
 Delegate to `static-analyse` subagent:
 ```
-Run: bin/cleanup.sh
-Must pass: ruff, mypy, radon (MI >= A, CC <= B)
+Run the project's lint/format/type-check commands.
+Use {lint_command} from project discovery (e.g. eslint, ruff, golangci-lint, rubocop).
 ```
 
 ### Regression
 
-*(Include this section only if the input provided a failing CLI command)*
+*(Only if input provided a failing CLI command)*
 
 Delegate to `test-runner` subagent:
 ```
@@ -195,12 +194,12 @@ Expected: exits 0 with no errors
 ## Notes
 
 **Plan vs. Design:**
-- **Design** (from `/brainstorming`): WHAT and WHY - architecture, trade-offs
-- **Plan** (this document): HOW - step-by-step TDD tasks with exact code
+- **Design** (from `/brainstorming`): WHAT and WHY — architecture, trade-offs
+- **Plan** (this doc): HOW — step-by-step TDD tasks with exact code
 
 **Required sections**: Context, Approaches, Tasks, Verification, Success Criteria
 **Optional sections**: Reusable Components, References (skip if not applicable)
 
-**Task granularity**: Each task = one TDD cycle (2-5 minutes)
-**Test scaffold**: Every task must include a scaffold showing fixture pattern and arrange/act/assert skeleton
-**Code completeness**: Every task must include actual implementation guidance, not descriptions
+**Task granularity**: each task = one TDD cycle (2-5 min)
+**Test scaffold**: every task must include fixture pattern + arrange/act/assert skeleton
+**Code completeness**: every task must include actual implementation guidance, not descriptions

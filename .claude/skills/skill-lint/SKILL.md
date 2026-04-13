@@ -1,7 +1,7 @@
 ---
 name: skill-lint
 description: Lint a BDK skill or agent file for best practices and portability. Use when reviewing, creating, or editing a skill (skills/*.md) or agent (agents/*.md) to verify it meets BDK conventions. Trigger on phrases like "check this skill", "verify agent", "does this follow best practices", "lint skill", or when about to commit a new skill/agent.
-model: haiku
+model: sonnet
 argument-hint: "[path/to/SKILL.md or agents/name.md]"
 ---
 

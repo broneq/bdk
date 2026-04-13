@@ -1,6 +1,11 @@
 # Explorer Agent Prompts
 
-Use these prompts when dispatching Task agents in Phase 2. Replace `{feature description}` with the actual feature before dispatching.
+Use when dispatching agents in Phase 2. Replace `{feature description}` with actual feature.
+
+Tool tier system (from STARTUP_INSTRUCTIONS):
+- **Tier 1:** CodeGraph (`codegraph_explore`, `codegraph_search`, `codegraph_callers`, `codegraph_impact`) — use first if `.codegraph/` exists
+- **Tier 2:** Serena (`find_symbol`, `search_for_pattern`, `get_symbols_overview`, `find_referencing_symbols`) — if CodeGraph unavailable
+- **Tier 3:** Grep/Glob/Read — always available fallback
 
 ---
 
@@ -11,8 +16,10 @@ Search the codebase for existing utilities and implementations related to:
 
 Feature: {feature description}
 
-Use Serena tools (find_symbol, search_for_pattern, get_symbols_overview) to:
-1. Check if similar functionality already exists (check utility_classes memory first)
+Tool preference: use CodeGraph first (codegraph_explore or codegraph_search) if .codegraph/ exists.
+Fall back to Serena (find_symbol, search_for_pattern, get_symbols_overview), then Grep/Glob.
+
+1. Check if similar functionality already exists
 2. Find helper functions or base classes that could be reused
 3. Identify relevant schemas, models, or data structures
 4. Search for patterns or conventions this feature should follow
@@ -33,10 +40,12 @@ Analyze architecture and dependencies for implementing:
 
 Feature: {feature description}
 
-Read architecture_patterns and code_style_and_conventions memories if available. Use Serena tools to:
-1. Identify which layer(s) this feature touches (CLI, Use Cases, Services, Processors, Repository)
-2. Find which existing services or processors need changes
-3. Trace dependencies using find_referencing_symbols
+Tool preference: use CodeGraph first (codegraph_callers, codegraph_impact, codegraph_explore) if .codegraph/ exists.
+Fall back to Serena (find_referencing_symbols, get_symbols_overview), then Grep/Glob.
+
+1. Identify which modules/layers this feature touches
+2. Find which existing components need changes
+3. Trace dependencies
 4. Check for related test files and test patterns
 
 Return structured findings:
@@ -44,7 +53,7 @@ AFFECTED_LAYERS: {list layers}
 AFFECTED_FILES: {list file paths}
 DEPENDENCIES: {what this feature depends on}
 TEST_PATTERNS: {describe testing approach from existing tests}
-ARCHITECTURAL_CONSTRAINTS: {any SOLID principles or patterns to follow}
+ARCHITECTURAL_CONSTRAINTS: {patterns to follow}
 ```
 
 ---
@@ -56,7 +65,9 @@ Find similar features in the codebase as implementation examples:
 
 Feature: {feature description}
 
-Use Serena tools to:
+Tool preference: use CodeGraph first (codegraph_explore, codegraph_search) if .codegraph/ exists.
+Fall back to Serena (find_symbol, search_for_pattern), then Grep/Glob.
+
 1. Search for features with similar purpose or structure
 2. Find examples of similar data transformations or validations
 3. Identify common error handling patterns

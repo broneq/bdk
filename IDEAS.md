@@ -10,6 +10,7 @@
 * [ ] Inject into templates dynamic instructions for instance `! inject-language-specific-rules.py`
   * [ ] skills/cr/reviewer-prompt-template.md (paths to docs)
   * [ ] skills/create-adr/SKILL.md (adr docs path from config)
+  * [ ] skills/create-plan/references/plan-template.md (test & lint commands {test_command} {lint_command})
 
 # References
 ## Startup script
