@@ -1,17 +1,16 @@
 ---
 paths:
-  - ".claude/skills/**"
-  - ".claude/tests/**"
+  - "tests/evals/**"
 ---
 
-# Skill Evals and Tests
+# Skill Evals
 
-Store evals + tests in `.claude/tests/skills/<skill-name>/`.
+Store evals in `tests/evals/skills/<skill-name>/`.
 
 ## Directory Structure
 
 ```
-.claude/tests/skills/<skill-name>/
+tests/evals/skills/<skill-name>/
 ├── evals/
 │   └── evals.json              ← test prompts + assertions (codebase-agnostic)
 └── iterations/

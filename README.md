@@ -109,7 +109,7 @@ Every BDK skill:
    /plugin install ~/projects/bdk
    ```
 3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
-4. Run evals if available — see `rules/skill-test-eval.md`
+4. Run evals if available — see `.claude/rules/skill-test-eval.md`
 
 ### Adding a Skill
 

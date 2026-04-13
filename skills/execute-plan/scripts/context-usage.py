@@ -92,7 +92,7 @@ if pct >= 50:
         json.dumps(
             {
                 "continue": False,
-                "stopReason": f"⚠️ Context at {pct}% ({total_tokens:,} / {context_size:,} tokens). Run /save-progress {slug} before continuing.",
+                "stopReason": f"⚠️ Context at {pct}% ({total_tokens:,} / {context_size:,} tokens). Run /bdk:save-progress {slug} before continuing.",
             }
         )
     )

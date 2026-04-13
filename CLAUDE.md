@@ -10,7 +10,8 @@ agents/                  — subagent definitions used internally by skills
 hooks/                   — hooks.json + shell scripts
 rules/                   — convention docs distributed WITH the plugin to end-users
 STARTUP_INSTRUCTIONS.md  — injected into user sessions at SessionStart via hook
-tests/skills/            — skill evals
+tests/evals/             — skill behavior evals (LLM output grading, iterations)
+tests/unit/              — pytest unit/integration tests for scripts
 docs/                    — design specs and analysis
 ```
 
@@ -35,8 +36,10 @@ claude --plugin-dir ~/projects/bdk
 /bdk:commit
 /bdk:debug
 
-# Run skill evals
-# See rules/skill-test-eval.md for the eval format
+# Run unit tests (deterministic, fast)
+pytest tests/unit/
+
+# Run skill evals — see .claude/rules/skill-test-eval.md for format
 ```
 
 ## Adding a New Skill
@@ -44,7 +47,7 @@ claude --plugin-dir ~/projects/bdk
 1. Create `skills/<name>/skill.md`
 2. Verify: no project-specific paths, tool names, or commands
 3. Add entry to `## Skills` table in `README.md`
-4. Write eval in `tests/skills/<name>/`
+4. Write eval in `tests/evals/skills/<name>/`
 
 Portability rule: skill only makes sense for one language stack or domain → not BDK. Put in target project's `.claude/` instead.
 

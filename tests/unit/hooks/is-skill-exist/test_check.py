@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT = Path(__file__).parents[3] / "hooks" / "is-skill-exist" / "check.py"
+SCRIPT = Path(__file__).parents[4] / "hooks" / "is-skill-exist" / "check.py"
 
 
 def _load_module():

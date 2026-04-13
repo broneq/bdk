@@ -21,9 +21,9 @@ Never test skills inside BDK repo — BDK meta-project, won't exercise skills na
 
 ## Skill Evals
 
-For repeatable testing, use eval format defined in `rules/skill-test-eval.md`.
+For repeatable testing, use eval format defined in `.claude/rules/skill-test-eval.md`.
 
-Evals live in `tests/skills/<skill-name>/`. Each eval contains:
+Evals live in `tests/evals/skills/<skill-name>/`. Each eval contains:
 - Prompt exercising skill
 - Assertions about expected output or behavior
 
