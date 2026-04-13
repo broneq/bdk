@@ -8,17 +8,28 @@ argument-hint: "[error message, traceback, or steps to reproduce]"
 model: opus
 user-invocable: true
 context: main
+allowed-tools: AskUserQuestion TaskCreate TaskUpdate TaskList
 ---
 
 # Debug
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-Diagnose bugs through structured investigation, reproduce them with failing tests, then fix or plan — depending on complexity.
+Diagnose bugs via structured investigation, reproduce with failing tests, then fix or plan.
 
 **Announce at start:** "Using debug to investigate the issue."
 
 **Core principle**: Understand first → test second → confirm with user → fix third.
+
+**On start: create tasks for phases 1–4 only** via `TaskCreate`:
+- Phase 1: Parse Input
+- Phase 2: Investigate
+- Phase 3: Write Failing Tests
+- Phase 4: Propose & Wait for User Decision ← HARD STOP
+
+Mark each task complete (`TaskUpdate`) only when phase fully done. **Never mark Phase 4 complete until user responded.**
+
+**After user responds to Phase 4**: create Phase 5 task (`TaskCreate`) for chosen path — "Fix Inline" or "Hand Off to /bdk:create-plan" — then proceed.
 
 ---
 
@@ -68,8 +79,8 @@ digraph debug_flow {
 
 ### Phase 2: Investigate
 
-1. **Find the entry point** using Tier 1/2/3 tools per BDK foundation
-2. **Trace the execution path** — follow call chain to failure
+1. **Find entry point** via Tier 1/2/3 tools per BDK foundation
+2. **Trace execution path** — follow call chain to failure
 3. **Identify root cause**
 4. **Scan for related test gaps** — same class of problem in nearby code only
 5. **Print investigation summary**:
@@ -79,20 +90,20 @@ digraph debug_flow {
    [debug] Test gaps found: {N}
    ```
 
-**GATE**: Must have identified root cause before Phase 3.
+**GATE**: Must identify root cause before Phase 3.
 
 ---
 
 ### Phase 3: Write Failing Tests
 
-Write tests that precisely reproduce the bug. Tests will be RED until the fix is applied.
+Write tests that precisely reproduce bug. Tests RED until fix applied.
 
 **Rules:**
-- Each test must be concrete: specific input values, specific expected outcome
+- Each test concrete: specific input values, specific expected outcome
 - Follow project test conventions (check existing tests for patterns)
-- Place tests in the correct existing test file
+- Place tests in correct existing test file
 
-Delegate to `test-runner` subagent to confirm all new tests are RED.
+Delegate to `test-runner` subagent to confirm all new tests RED.
 
 ```
 [debug] Failing tests confirmed: {N} red
@@ -104,15 +115,15 @@ Delegate to `test-runner` subagent to confirm all new tests are RED.
 
 ### Phase 4: Propose Solution & Ask User (HARD STOP)
 
-**This is a mandatory checkpoint. STOP and wait for user decision.**
+**Mandatory checkpoint. STOP and wait for user decision.**
 
-**Step 1**: Describe the proposed solution (what changes, why it fixes root cause, risks)
+**Step 1**: Describe proposed solution (what changes, why it fixes root cause, risks)
 
 **Step 2**: Assess complexity:
 - **LOW** (inline fix): isolated change affecting one function/call site
 - **HIGH** (route to /bdk:create-plan): affects many call sites, introduces new abstractions, changes shared data models
 
-**Step 3**: Ask the user using `AskUserQuestion`:
+**Step 3**: Ask user via `AskUserQuestion`:
 
 ```
 ## Proposed Fix
@@ -129,17 +140,19 @@ Delegate to `test-runner` subagent to confirm all new tests are RED.
 {recommendation}
 ```
 
-**AFTER calling AskUserQuestion: STOP. Do nothing else. Wait for response.**
+**`AskUserQuestion` MUST be last tool call in this phase.**
 
-**GATE**: User has explicitly chosen an option.
+> **HARD STOP: After calling `AskUserQuestion`, output NO text, call NO tools, take NO action. Turn ends here. Phase 4 task stays open. Phase 5 does not start until user replies.**
+
+**GATE**: User explicitly chose option. Only then: mark Phase 4 complete, begin Phase 5.
 
 ---
 
 ### Phase 5a: Fix Inline
 
-1. Apply the minimal fix
-2. Delegate to `test-runner` — run only the new failing tests
-3. Confirm all tests are GREEN
+1. Apply minimal fix
+2. Delegate to `test-runner` — run only new failing tests
+3. Confirm all tests GREEN
 4. Delegate to `static-analyse` — run project's lint/type-check
 5. Fix any issues
 6. Print final summary:
@@ -157,7 +170,7 @@ Delegate to `test-runner` subagent to confirm all new tests are RED.
 
 1. Print: `[debug] Routing to /bdk:create-plan`
 2. Invoke `/bdk:create-plan` passing:
-   - The root cause as the feature description
+   - Root cause as feature description
    - Steps to reproduce (verbatim)
    - Failing test file path and test names as acceptance criteria
    - Architectural constraints discovered during investigation
@@ -167,15 +180,18 @@ Delegate to `test-runner` subagent to confirm all new tests are RED.
 ## Key Principles
 
 - **Investigate before testing** — understand first
-- **Tests define the bug** — the failing test is the contract
-- **Phase 4 is a hard stop** — ALWAYS wait for user decision
+- **Tests define bug** — failing test is contract
+- **Phase 4 is hard stop** — ALWAYS wait for user decision
 - **Inline questions for info, AskUserQuestion for decisions**
-- **Minimal fix** — change only what the failing tests require
+- **Minimal fix** — change only what failing tests require
 - **NEVER hardcode test or lint commands** — detect from project context
 
 ## Anti-Patterns
 
-- NEVER fix before writing a failing test
+- NEVER fix before writing failing test
 - NEVER proceed past Phase 4 without user confirmation
 - NEVER route to /bdk:create-plan without passing failing test paths
-- NEVER scan the entire codebase for gaps — only code you've already read
+- NEVER scan entire codebase for gaps — only code already read
+- NEVER call any tool after `AskUserQuestion` in Phase 4 — turn ends there
+- NEVER mark Phase 4 task complete before user responds
+- NEVER start Phase 5 without first creating Phase 5 task and Phase 4 marked complete
