@@ -7,8 +7,8 @@ set -e
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# Only process docs/architecture/*.md files
-if [[ "$FILE_PATH" != docs/architecture/*.md ]]; then
+# Only process markdown files
+if [[ "$FILE_PATH" != *.md ]]; then
   exit 0
 fi
 
@@ -21,6 +21,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 cd "$PROJECT_ROOT"
+
+# Derive docs root: top-level directory of the written file
+DOCS_ROOT=$(echo "$FILE_PATH" | cut -d'/' -f1)
 
 # Step 1: Validate syntax
 echo "Validating Graphviz syntax..." >&2
@@ -37,9 +40,9 @@ fi
 
 # Step 3: Extract and compile diagrams
 echo "Extracting and compiling diagrams..." >&2
-if uv run python "$SCRIPT_DIR/compile_diagrams.py" docs/ --mode both 2>&1 | tee /dev/stderr; then
+if uv run python "$SCRIPT_DIR/compile_diagrams.py" "$DOCS_ROOT" --mode both 2>&1 | tee /dev/stderr; then
   # Success - show summary
-  DIAGRAM_COUNT=$(find docs/architecture -name "*.svg" 2>/dev/null | wc -l | tr -d ' ')
+  DIAGRAM_COUNT=$(find . -name "*.svg" 2>/dev/null | wc -l | tr -d ' ')
   echo "{\"systemMessage\": \"✓ Graphviz diagrams validated and compiled successfully ($DIAGRAM_COUNT SVG files generated)\"}"
   exit 0
 else

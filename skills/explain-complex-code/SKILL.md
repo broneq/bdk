@@ -8,7 +8,7 @@ hooks:
   Stop:
     - hooks:
         - type: prompt
-          prompt: "Verify documentation completeness: $ARGUMENTS\n\nRequired checks:\n1. File saved to .bdk/explain-complex-code/ directory\n2. Contains Overview section (2-3 sentences)\n3. Contains Core Architecture with file tree\n4. Contains at least ONE Graphviz diagram (check for ```dot or ```graphviz blocks)\n5. Contains Critical Rules section with examples\n6. Contains Live Examples with PROTOTYPE code (not actual implementation)\n7. Contains Core Classes section\n8. Contains Testing Coverage section describing existing tests\n\nReview the conversation and tool outputs. If ANY required section is missing or incomplete, respond: {\"ok\": false, \"reason\": \"Missing: [list specific items]\"}\n\nIf all sections present and complete, respond: {\"ok\": true}"
+          prompt: "Verify documentation completeness: $ARGUMENTS\n\nRequired checks:\n1. File saved to .bdk/explain-complex-code/ directory\n2. Contains Overview section (2-3 sentences)\n3. Contains Core Architecture with file tree\n4. Contains at least ONE Graphviz diagram compiled to SVG (no raw ```dot or ```graphviz blocks remain — all replaced with ![...](*.svg) image references)\n5. Contains Critical Rules section with examples\n6. Contains Live Examples with PROTOTYPE code (not actual implementation)\n7. Contains Core Classes section\n8. Contains Testing Coverage section describing existing tests\n\nReview the conversation and tool outputs. If ANY required section is missing or incomplete, respond: {\"ok\": false, \"reason\": \"Missing: [list specific items]\"}\n\nIf all sections present and complete, respond: {\"ok\": true}"
           timeout: 30
 ---
 
@@ -115,11 +115,16 @@ return format_output(result)
 
 Save to `.bdk/explain-complex-code/[feature-name].md`.
 
+### 8. Compile Diagrams
+
+After saving, invoke `/bdk:graphviz-docs-compiler` to extract `.dot` files and compile to SVG.
+
 ## Quality Checklist
 
 - [ ] Overview (2-3 sentences)
 - [ ] File tree
 - [ ] At least one Graphviz diagram
+- [ ] Dot code blocks replaced with SVG image references
 - [ ] Critical rules with examples
 - [ ] Live examples with prototype code
 - [ ] Core classes with usage

@@ -1,6 +1,7 @@
 ---
 name: graphviz-docs-compiler
-description: Compile Graphviz diagrams (.dot files) to SVG images and update markdown documentation. Use when working with documentation that contains Graphviz diagrams, adding new diagrams to docs, updating existing diagrams, or when the user asks to "compile diagrams", "update documentation diagrams", "generate SVG from dot files", or mentions working with .dot files in documentation.
+description: Compile Graphviz diagrams (.dot files) to SVG in-place. Use when working with .dot files or markdown with Graphviz code blocks, or when user says "compile diagrams", "generate SVG from dot files", "update documentation diagrams".
+argument-hint: "[path/to/docs/dir or file.md]"
 model: haiku
 hooks:
   UserPromptSubmit:
@@ -17,13 +18,19 @@ hooks:
           timeout: 30
 ---
 
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+
 # Graphviz Docs Compiler
 
-Automate the compilation of Graphviz diagrams in documentation by converting `.dot` files to SVG images and updating markdown files to reference the generated images.
+Compile Graphviz diagrams in docs — converts `.dot` files to SVG, updates markdown references in-place.
+
+**Argument:** path to docs dir or `.md` file (`$ARGUMENTS`). Defaults to `docs/`.
+
+Use `$ARGUMENTS` as target path passed to `compile_diagrams.py`.
 
 ## Prerequisites
 
-**System Dependency Required:**
+`dot` must be in PATH. Script calls it directly via subprocess.
 
 ```bash
 # macOS
@@ -36,11 +43,9 @@ sudo apt-get install graphviz
 dot -V
 ```
 
-The `dot` command must be available in your PATH. The script calls `dot` directly via subprocess - no Python wrapper needed.
-
 ## Quick Start
 
-The script supports three modes:
+Three modes:
 
 ```bash
 # Forward mode: Compile existing .dot files to SVG
@@ -53,15 +58,11 @@ uv run python skills/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --
 uv run python skills/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --mode both
 ```
 
-**What each mode does:**
-
-- **Forward**: Find `.dot` files → compile to SVG → update markdown references
-- **Reverse**: Find Graphviz code blocks in markdown → extract to `.dot` files → compile to SVG → update references
-- **Both**: Reverse + Forward (extract everything, then compile everything)
+- **Forward**: `.dot` files → SVG → update markdown refs
+- **Reverse**: markdown code blocks → `.dot` files → SVG → update refs
+- **Both**: Reverse + Forward (extract all, compile all)
 
 ## File Organization
-
-Structure your documentation following this pattern:
 
 ```
 docs/
@@ -81,9 +82,7 @@ docs/
 
 ### Workflow 1: Start with Markdown (Recommended)
 
-Write documentation with embedded Graphviz diagrams, then extract and compile:
-
-**Step 1:** Write documentation with code blocks:
+**Step 1:** Write docs with embedded code blocks:
 
 ````markdown
 # Component Architecture
@@ -99,13 +98,13 @@ digraph architecture {
 ```
 ````
 
-**Step 2:** Run reverse + forward compilation:
+**Step 2:** Extract + compile:
 
 ```bash
 uv run python skills/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --mode both
 ```
 
-**Result:** Markdown updated to reference images:
+**Result:** Markdown updated to:
 
 ```markdown
 ### Component Diagram
@@ -115,19 +114,17 @@ uv run python skills/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --
 Source: [`diagrams/component-diagram.dot`](module/diagrams/component-diagram.dot)
 ```
 
-**Generated files:**
-- `docs/module/diagrams/component-diagram.dot` (extracted from header text)
+Generated:
+- `docs/module/diagrams/component-diagram.dot` (extracted from header)
 - `docs/module/images/component-diagram.svg` (compiled)
 
 ### Workflow 2: Start with .dot Files
 
-Create `.dot` files directly, then compile:
-
 **Step 1:** Create diagram source:
 
 ```bash
-mkdir -p docs/xml_template_loader/diagrams
-cat > docs/xml_template_loader/diagrams/architecture.dot << 'EOF'
+mkdir -p docs/my_module/diagrams
+cat > docs/my_module/diagrams/architecture.dot << 'EOF'
 digraph flow {
     rankdir=TB;
     "Parser" -> "Loader";
@@ -135,13 +132,13 @@ digraph flow {
 EOF
 ```
 
-**Step 2:** Run forward compilation:
+**Step 2:** Compile:
 
 ```bash
 uv run python skills/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --mode forward
 ```
 
-**Step 3:** Manually add reference to markdown or let script update code blocks if they exist.
+**Step 3:** Manually add markdown ref or let script update existing code blocks.
 
 ## Script Options
 
@@ -163,7 +160,7 @@ Options:
 
 ## Diagram Naming (Reverse Mode)
 
-When extracting diagrams from markdown, filenames are generated from the preceding header:
+Filenames generated from preceding header:
 
 ```markdown
 ### Component Diagram       → component-diagram.dot
@@ -171,19 +168,14 @@ When extracting diagrams from markdown, filenames are generated from the precedi
 ### Class: XMLLoader       → class-xmlloader.dot
 ```
 
-Rules:
-- Converts to lowercase
-- Replaces spaces with hyphens
-- Removes special characters
-- Handles duplicates by appending `-2`, `-3`, etc.
+- Lowercase, spaces → hyphens, special chars removed
+- Duplicates → `-2`, `-3`, etc.
 
 ## Troubleshooting
 
 ### Graphviz not installed
 
 **Error:** `Graphviz 'dot' command not found`
-
-**Solution:**
 
 ```bash
 # macOS
@@ -198,19 +190,12 @@ dot -V
 
 ### Code block not replaced in forward mode
 
-**Issue:** `.dot` file compiled but markdown not updated
-
-**Cause:** Code block content doesn't match `.dot` file exactly (whitespace sensitive)
-
-**Solution:** Use `--mode both` or `--mode reverse` to extract from markdown first, ensuring exact match.
+`.dot` compiled but markdown not updated. Cause: code block content doesn't match `.dot` exactly (whitespace sensitive). Fix: use `--mode both` or `--mode reverse` to extract first.
 
 ### Duplicate diagram names
 
-**Issue:** Multiple diagrams with same header text
+Multiple diagrams with same header → auto-appends `-2`, `-3`:
 
-**Behavior:** Automatically appends `-2`, `-3` to filenames
-
-**Example:**
 ```markdown
 ### Architecture  → architecture.dot
 ### Architecture  → architecture-2.dot
@@ -218,57 +203,38 @@ dot -V
 
 ### No diagrams extracted
 
-**Issue:** `0 extracted` when markdown has diagrams
-
-**Check:**
+`0 extracted` when markdown has diagrams. Check:
 - Code blocks use ` ```dot ` or ` ```graphviz ` fence
-- Blocks are preceded by header (`###` or `##`)
+- Blocks preceded by header (`###` or `##`)
 - Markdown files in `docs/` directory
 
-## Integration with Documentation Workflow
+## Recommended Workflow
 
-### Recommended Workflow
-
-1. **Write documentation** with embedded Graphviz code blocks (use `/explain-complex-code` skill)
-2. **Extract and compile** with `--mode both` before committing
-3. **Commit both** `.dot` files (source) and `.svg` files (compiled output)
-4. **Reviewers see** both source and rendered diagrams in GitHub
-
-### Integration with explain-complex-code
-
-The `/explain-complex-code` skill automatically runs diagram compilation via PostToolUse hook:
-
-1. You write documentation with Graphviz diagrams
-2. Hook automatically extracts `.dot` files
-3. Hook automatically compiles to SVG
-4. Hook automatically updates markdown references
-5. You review and commit the changes
-
-**Note:** This requires `brew install graphviz` to be run once on your system.
+1. Write docs with embedded Graphviz code blocks
+2. Extract + compile with `--mode both` before commit
+3. Commit both `.dot` (source) and `.svg` (output)
+4. Reviewers see source + rendered diagrams in GitHub
 
 ## Example: Full Workflow
 
-Creating documentation for `xml_template_loader.py`:
-
 ```bash
 # 1. Create documentation structure
-mkdir -p docs/xml_template_loader/diagrams
+mkdir -p docs/my_module/diagrams
 
 # 2. Create diagram source
-cat > docs/xml_template_loader/diagrams/architecture.dot << 'EOF'
+cat > docs/my_module/diagrams/architecture.dot << 'EOF'
 digraph flow {
     rankdir=TB;
     node [shape=box, style=filled, fillcolor=lightblue];
 
-    "XML Input" -> "XMLTemplateLoader";
-    "XMLTemplateLoader" -> "Parse";
-    "Parse" -> "XMLDocument";
+    "Input" -> "Processor";
+    "Processor" -> "Output";
 }
 EOF
 
 # 3. Create markdown file with code block
-cat > docs/xml_template_loader.md << 'EOF'
-# XML Template Loader
+cat > docs/my_module.md << 'EOF'
+# My Module
 
 ## Architecture
 
@@ -277,9 +243,8 @@ digraph flow {
     rankdir=TB;
     node [shape=box, style=filled, fillcolor=lightblue];
 
-    "XML Input" -> "XMLTemplateLoader";
-    "XMLTemplateLoader" -> "Parse";
-    "Parse" -> "XMLDocument";
+    "Input" -> "Processor";
+    "Processor" -> "Output";
 }
 ```
 EOF
@@ -287,14 +252,13 @@ EOF
 # 4. Compile diagrams
 uv run python skills/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --verbose
 
-# Result: docs/xml_template_loader.md now contains:
-# ![Architecture](xml_template_loader/images/architecture.svg)
-# Source: [`diagrams/architecture.dot`](xml_template_loader/diagrams/architecture.dot)
+# Result: docs/my_module.md now contains:
+# ![Architecture](my_module/images/architecture.svg)
+# Source: [`diagrams/architecture.dot`](my_module/diagrams/architecture.dot)
 ```
 
 ## Resources
 
 ### scripts/compile_diagrams.py
 
-Python script that handles diagram compilation and markdown updates. Can be executed directly without loading into context.
-
+Handles diagram compilation + markdown updates. Execute directly without loading into context.
