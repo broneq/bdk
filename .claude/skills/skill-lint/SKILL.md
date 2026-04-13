@@ -97,10 +97,17 @@ If both `disable-model-invocation: true` AND `user-invocable: false`: FAIL — s
 If body uses `$ARGUMENT` (no S): FAIL — correct variable is `$ARGUMENTS` or `$ARGUMENTS[N]`.
 
 ### 16. External skill/agent references
-BDK skills depend only on BDK-owned skills. Flag `/slash-command` invocations in body NOT prefixed `/bdk:`.
+BDK skills depend only on BDK-owned skills. Flag `/slash-command` and agent name invocations NOT prefixed `/bdk:`.
+
+**Slash command refs** (`/name` in body):
 - WARN on bare `/name` refs (e.g. `/commit`, `/debug`) — ambiguous, may resolve to wrong skill
 - WARN on `/other-plugin:name` — hard dep on external plugin not guaranteed present
 - PASS on `/bdk:name` — BDK namespace, expected
+
+**Agent refs** (backtick or plain `agent-name` in body, e.g. `` `test-runner` ``):
+1. Check if `agents/<name>.md` exists in BDK repo.
+2. If exists → WARN: bare name found, use `/bdk:<name>` prefix.
+3. If not exists → WARN: unknown agent dependency, not shipped with BDK.
 
 ### 17. Skill directory format
 Per Claude Code skills spec, each skill must live at `<skill-name>/SKILL.md`.

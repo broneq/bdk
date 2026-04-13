@@ -10,7 +10,7 @@ description: >-
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-A rigid, gated process focused on tests. Follow every gate in order. Do not skip ahead.
+Rigid, gated process. Follow every gate in order. No skipping.
 
 ```dot
 digraph tdd {
@@ -51,7 +51,7 @@ digraph tdd {
 
 ## Input
 
-The plan task provides:
+Plan task provides:
 
 ```
 **Test cases:**
@@ -65,12 +65,12 @@ The plan task provides:
 
 ## GATE 0: Load Context
 
-Read project context to understand:
-- Test file conventions (where tests live, how they're named)
-- Test framework being used
-- Existing test patterns (fixtures, factories, assertions)
+Read project context:
+- Test file conventions (location, naming)
+- Test framework
+- Existing patterns (fixtures, factories, assertions)
 
-Identify the test file path following project conventions.
+Identify test file path per project conventions.
 
 **Cannot proceed without understanding project test conventions.**
 
@@ -78,54 +78,54 @@ Identify the test file path following project conventions.
 
 ## GATE 1: Write Tests
 
-Write tests for every ✅ bullet point. Follow project test conventions from GATE 0.
+Write test per ✅ bullet. Follow conventions from GATE 0.
 
-**Before writing, examine the implementation spec for:**
+**Before writing, scan spec for:**
 - Boundary conditions (empty list, zero, first/last element)
 - Invalid types or missing required fields
 - Unexpected None or absent optional data
 
-Add test cases for meaningful gaps. **Do not add tests just to have more tests.**
+Add tests for meaningful gaps. **No padding.**
 
-**Negative tests (❌ bullets):** Write them when they provide real value. Skip if no meaningful failure modes exist.
+**Negative tests (❌ bullets):** Write when real value exists. Skip if no meaningful failure modes.
 
-**Cannot proceed until every ✅ bullet has a corresponding test.**
+**Cannot proceed until every ✅ bullet has corresponding test.**
 
 ---
 
 ## GATE 2: Verify RED
 
-Delegate to `test-runner` agent:
+Delegate to `/bdk:test-runner` agent:
 
 ```
 Run the project's test suite against: {test_file_path}
 Expected: ALL written tests FAIL
 ```
 
-**If tests PASS:** Stop. Either the implementation already exists or the test is wrong.
+**Tests PASS:** Stop. Implementation already exists or test wrong.
 
-**If tests FAIL as expected:** Proceed to GATE 3. ✓
+**Tests FAIL as expected:** Proceed to GATE 3. ✓
 
 ---
 
 ## GATE 3: Implement
 
-Implement as described in the plan task. Keep it focused on making the tests pass — no extra features.
+Implement per plan task. Focused on passing tests — no extra features.
 
 ---
 
 ## GATE 4: Verify GREEN
 
-Delegate to `test-runner` agent:
+Delegate to `/bdk:test-runner` agent:
 
 ```
 Run the project's test suite against: {test_file_path}
 Expected: ALL tests PASS
 ```
 
-**If tests FAIL:** Fix the implementation. Maximum 3 attempts. After 3 failures, stop and ask the user.
+**Tests FAIL:** Fix implementation. Max 3 attempts. After 3, stop and ask user.
 
-**If tests PASS:** Proceed. ✓
+**Tests PASS:** Proceed. ✓
 
 ---
 
@@ -133,5 +133,5 @@ Expected: ALL tests PASS
 
 - ❌ Skipping GATE 2 ("I know it will fail")
 - ❌ Writing implementation before tests exist
-- ❌ Forcing a negative test when no real failure mode exists
-- ❌ Hardcoding test commands — always detect the project's test runner
+- ❌ Forcing negative test when no real failure mode exists
+- ❌ Hardcoding test commands — always detect project's test runner
