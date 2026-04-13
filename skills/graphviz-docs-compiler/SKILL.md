@@ -2,6 +2,14 @@
 name: graphviz-docs-compiler
 description: Compile Graphviz diagrams (.dot files) to SVG images and update markdown documentation. Use when working with documentation that contains Graphviz diagrams, adding new diagrams to docs, updating existing diagrams, or when the user asks to "compile diagrams", "update documentation diagrams", "generate SVG from dot files", or mentions working with .dot files in documentation.
 model: haiku
+hooks:
+  PostToolUse:
+    - matcher: "Write"
+      hooks:
+        - type: command
+          command: "${CLAUDE_PLUGIN_ROOT}/skills/graphviz-docs-compiler/scripts/validate_on_write.sh"
+          statusMessage: "Validating Graphviz diagrams..."
+          timeout: 30
 ---
 
 # Graphviz Docs Compiler
@@ -164,15 +172,6 @@ Rules:
 - Removes special characters
 - Handles duplicates by appending `-2`, `-3`, etc.
 
-## Common Patterns
-
-See `references/graphviz-patterns.md` for:
-- Flow diagram patterns
-- Class/component diagram examples
-- Data flow visualization
-- Color and style guidelines
-- Unicode symbols for labels
-
 ## Troubleshooting
 
 ### Graphviz not installed
@@ -294,6 +293,3 @@ uv run python skills/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --
 
 Python script that handles diagram compilation and markdown updates. Can be executed directly without loading into context.
 
-### references/graphviz-patterns.md
-
-Graphviz best practices, common patterns, and style guidelines. Load when creating new diagrams or designing visualization patterns.

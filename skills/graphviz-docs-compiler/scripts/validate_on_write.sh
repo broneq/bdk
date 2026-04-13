@@ -17,7 +17,6 @@ if ! grep -q '```dot\|```graphviz' "$FILE_PATH" 2>/dev/null; then
   exit 0
 fi
 
-# Get project root (4 levels up from .claude/commands/explain-complex-code/scripts/)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
@@ -38,7 +37,7 @@ fi
 
 # Step 3: Extract and compile diagrams
 echo "Extracting and compiling diagrams..." >&2
-if uv run python .claude/commands/graphviz-docs-compiler/scripts/compile_diagrams.py docs/ --mode both 2>&1 | tee /dev/stderr; then
+if uv run python "$SCRIPT_DIR/compile_diagrams.py" docs/ --mode both 2>&1 | tee /dev/stderr; then
   # Success - show summary
   DIAGRAM_COUNT=$(find docs/architecture -name "*.svg" 2>/dev/null | wc -l | tr -d ' ')
   echo "{\"systemMessage\": \"✓ Graphviz diagrams validated and compiled successfully ($DIAGRAM_COUNT SVG files generated)\"}"

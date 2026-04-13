@@ -1,19 +1,6 @@
 {
   "description": "Quality gates for code documentation generation",
   "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/skills/explain-complex-code/scripts/validate_on_write.sh",
-            "statusMessage": "Validating Graphviz diagrams...",
-            "timeout": 30
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
