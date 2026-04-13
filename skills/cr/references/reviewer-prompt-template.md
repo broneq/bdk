@@ -1,6 +1,6 @@
 # Layer-Group Reviewer Prompt Template
 
-When dispatching each layer-group reviewer, use subagent_type `code-reviewer` with `model: sonnet` and this prompt structure:
+Dispatch each layer-group reviewer: subagent_type `code-reviewer`, `model: sonnet`, prompt structure:
 
 ```
 You are reviewing a slice of changed code. Analyze thoroughly and report findings.
@@ -43,13 +43,13 @@ TESTS_GAPS:
 
 ## Architecture-Reviewer Dispatch Instructions
 
-When dispatching the architecture-reviewer, use subagent_type `architecture-reviewer` with `model: opus`. List ALL changed source files and instruct it to:
+Dispatch architecture-reviewer: subagent_type `architecture-reviewer`, `model: opus`. List ALL changed source files. Instruct:
 
 {! inject-language-specific-rules.py architecture}
 
 ## Test-Reviewer Dispatch Instructions
 
-When dispatching the test-reviewer, use subagent_type `code-reviewer` with `model: opus` (read-only). Provide both test files AND their corresponding source files. Instruct it to:
+Dispatch test-reviewer: subagent_type `code-reviewer`, `model: opus` (read-only). Provide test files + source files. Instruct:
 
 - {! inject-language-specific-rules.py testing}
 - Check: semantic alignment between test names and what they actually assert

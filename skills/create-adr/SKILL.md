@@ -6,17 +6,14 @@ description: >-
   "write an ADR", or provides decision context that needs to be formalized.
 model: opus
 user-invocable: true
-arguments:
-  - name: decision
-    description: "Free-form description of the decision: context, problem, options, constraints, preferences"
-    required: true
+argument-hint: "[decision context, options, constraints, preferences]"
 ---
 
 # Create ADR
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-Generate an Architecture Decision Record following MADR format.
+Generate ADR following MADR format.
 
 ## Input
 
@@ -26,11 +23,11 @@ $ARGUMENTS
 
 ### 1. Analyze Input
 
-Extract from the free-form description:
+Extract from free-form description:
 - Problem statement and context
 - Considered options
 - Constraints and decision drivers
-- Any stated preference or chosen option
+- Stated preference or chosen option
 
 ### 2. Ask Targeted Questions
 
@@ -44,7 +41,7 @@ Use AskUserQuestion to fill gaps — only ask what's genuinely unclear.
 
 ### 3. Determine Next ADR Number
 
-Scan `docs/adr/` for existing ADR files matching pattern `NNNN-*.md`. Use the next sequential number, zero-padded to 4 digits.
+Scan `docs/adr/` for existing ADR files matching pattern `NNNN-*.md`. Use next sequential number, zero-padded to 4 digits.
 
 ### 4. Generate ADR Document
 
@@ -104,24 +101,24 @@ informed: {TBD}
 
 ### 5. Generate Diagrams (Optional)
 
-Only create diagrams when they genuinely add visual value:
+Only create diagrams when they add genuine visual value:
 - Architecture options with different component layouts
 - Options with different data flows or system interactions
 
-Skip diagrams for trivially simple options or abstract decisions.
+Skip for trivially simple or abstract decisions.
 
 If creating diagrams:
-- Write `.dot` files to `docs/adr/diagrams/`
-- Compile to SVG with `dot -Tsvg input.dot -o output.svg` if graphviz is available
-- Reference in ADR as `![Description](images/name.svg)`
+- Embed Graphviz diagrams directly in ADR as fenced code blocks (` ```dot `), preceded by `###` header — compiler uses header as filename
+- After writing ADR file, invoke `/bdk:graphviz-docs-compiler` passing `docs/adr/` as target directory with `--mode both` to extract `.dot` files and compile to SVG
+- Compiler rewrites code blocks in-place with `![Description](images/name.svg)` references
 
 ### 6. Final Verification
 
-- Read the generated ADR file and verify formatting
-- Show the user the generated ADR path and a summary
+- Read generated ADR file and verify formatting
+- Show user generated ADR path and summary
 
 ## Rules
 
-- **Diagrams are optional** — only generate when they add genuine visual value
-- **Don't over-ask** — extract maximum information from free-form input before asking
+- **Diagrams optional** — only generate when they add genuine visual value
+- **Don't over-ask** — extract maximum info from free-form input before asking
 - **No commits** — generate files only, user decides when to commit

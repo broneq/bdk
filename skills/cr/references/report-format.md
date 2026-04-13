@@ -1,6 +1,6 @@
 # Code Review Report Format
 
-The final merged report uses the following 14-section structure.
+14-section merged report structure.
 
 ## Section Mapping
 
@@ -113,8 +113,8 @@ Each recommendation includes:
 
 ### 9. Dead Code Detection
 
-Paste the dead-code-detector agent's output **verbatim** here. Do NOT reformat, summarize, or rewrite it.
-The agent produces structured `DEAD_CODE_FINDINGS` / `DELETION_PLAN` blocks with pre-filled `delete_lines` calls — these must be preserved exactly so the caller can execute them without re-reading files.
+Paste dead-code-detector agent output **verbatim**. Do NOT reformat, summarize, or rewrite.
+Agent produces structured `DEAD_CODE_FINDINGS` / `DELETION_PLAN` blocks with pre-filled `delete_lines` calls — preserve exactly so caller can execute without re-reading files.
 
 ### 10. Security
 - SQL injection risks (✓/✗)
@@ -150,7 +150,7 @@ The agent produces structured `DEAD_CODE_FINDINGS` / `DELETION_PLAN` blocks with
 Good patterns worth reinforcing.
 
 ### 13. All Issues
-All problems found across all agents, sorted by severity descending (CRITICAL → HIGH → MEDIUM → LOW).
+All problems across all agents, sorted severity descending (CRITICAL → HIGH → MEDIUM → LOW).
 
 Each issue: **[SEVERITY] category** → `file:line` → problem → 1-sentence fix.
 
@@ -158,12 +158,12 @@ Each issue: **[SEVERITY] category** → `file:line` → problem → 1-sentence f
 
 _(Skipped for tiny changes — run `baselines dump` first if no snapshots exist)_
 
-Paste the baseline-comparator agent's output **verbatim** here. Do NOT reformat or summarize.
+Paste baseline-comparator agent output **verbatim**. Do NOT reformat or summarize.
 
 **Status line format:**
 - `✅ UNCHANGED` — migration output matches baseline for all fixtures
-- `⚠️ CHANGED ({N} fixtures)` — output differs from baseline; list changed fixture names
+- `⚠️ CHANGED ({N} fixtures)` — output differs; list changed fixture names
 - `❌ FAILED` — command failed (show error output)
 - `⬜ NO BASELINE` — no snapshots found in `var/snapshots/`
 
-If status is `⚠️ CHANGED`, include the diff summary from the comparator output so the reviewer knows whether the change is intentional or a regression.
+If `⚠️ CHANGED`, include diff summary from comparator output so reviewer knows whether change is intentional or regression.

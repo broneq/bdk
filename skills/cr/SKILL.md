@@ -9,7 +9,7 @@ effort: high
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-You are the code review orchestrator. You determine change scope, dispatch specialized agents in parallel, collect results, and merge them into a unified report.
+Code review orchestrator. Determine change scope, dispatch specialized agents parallel, collect results, merge into unified report.
 
 ## Terminal Output
 
@@ -41,31 +41,31 @@ You are the code review orchestrator. You determine change scope, dispatch speci
 
 ## Safety Rules (MANDATORY)
 
-- You MUST NOT modify any files. You have no Edit, Write, or NotebookEdit tools.
-- All sub-agents are read-only.
+- MUST NOT modify files. No Edit, Write, NotebookEdit tools.
+- All sub-agents read-only.
 
 ## Process
 
 ### Step 1: Determine Scope
 
-1. `git diff --name-only HEAD~1` to get changed files
-2. `git diff --stat HEAD~1` to get line counts
+1. `git diff --name-only HEAD~1` — get changed files
+2. `git diff --stat HEAD~1` — get line counts
 3. Classify changed files by directory/module (based on project structure)
-4. For each source file, find its corresponding test file based on project conventions
+4. For each source file, find corresponding test file per project conventions
 
 ### Step 2: Plan Dispatch
 
-Based on total changed lines, determine dispatch mode:
+Based on total changed lines:
 
 **Tiny (< 50 lines):**
-- 1× layer-group reviewer (sonnet) — reviews ALL code, also checks architecture, duplicates, dead code inline
+- 1× layer-group reviewer (sonnet) — reviews ALL code, checks architecture, duplicates, dead code inline
 - 1× test-reviewer (opus)
 - 1× static-analyse (haiku)
 - 1× test-runner (haiku)
 - **Total: 4 agents**
 
 **Small (50–1000 lines):**
-- 1× layer-group reviewer (sonnet) — all changed files + their tests
+- 1× layer-group reviewer (sonnet) — all changed files + tests
 - 1× architecture-reviewer (opus)
 - 1× test-reviewer (opus)
 - 1× duplicate-detector (haiku)
@@ -88,11 +88,11 @@ Based on total changed lines, determine dispatch mode:
 
 ### Step 3: Dispatch ALL Agents in Parallel
 
-Launch ALL planned agents in a SINGLE message using the Agent tool with `run_in_background: true`.
+Launch ALL planned agents in SINGLE message using Agent tool with `run_in_background: true`.
 
 For each layer-group reviewer (use `references/reviewer-prompt-template.md` for dispatch structure):
-- List source files assigned to this group
-- List test files paired with these source files
+- List source files assigned to group
+- List test files paired with source files
 
 For architecture-reviewer:
 - List ALL changed source files
@@ -101,13 +101,13 @@ For test-reviewer:
 - List ALL test files AND corresponding source files
 
 For each duplicate-detector:
-- List the symbols in its partition
+- List symbols in its partition
 
 For dead-code-detector:
 - List ALL changed files
 
 For static-analyse:
-- Run the project's static analysis command (read project context to determine it)
+- Run project's static analysis command (read project context to determine it)
 
 For test-runner:
 - Pass relevant test file paths based on changed source files
@@ -115,10 +115,10 @@ For test-runner:
 ### Step 4: Collect & Merge Results
 
 1. **Collect** all agent outputs
-2. **Deduplicate**: keep the more detailed finding when duplicates appear
+2. **Deduplicate**: keep more detailed finding when duplicates appear
 3. **Assign severity**: CRITICAL > HIGH > MEDIUM > LOW
 4. **Map findings to report sections**
-5. **Produce the final 13-section report** (see below)
+5. **Produce final 13-section report** (see below)
 6. **Write report to artifact**: `.bdk/cr/[TDP - dynamic path here]` — see IDEAS.md for dynamic path pattern
 
 ## Report Format
