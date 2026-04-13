@@ -3,26 +3,24 @@ name: refactor
 description: Propose better object-oriented architecture for complex, procedural code
 user-invocable: true
 model: opus
-arguments:
-  - name: instruction
-    description: "What to refactor (file path, module name, or feature description)"
-    required: true
+argument-hint: "[file path, module name, or feature description]"
 ---
 
 # Refactor
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-I would like to do complex refactoring of my feature.
-The code is complex and not well-organized. I believe we can make it cleaner with well-separated classes.
+Complex refactor needed. Code messy, needs clean class separation.
 
 **Workflow:**
-1. Use `explorer` subagent to understand the current code structure
-2. Propose new object-oriented architecture with well-separated classes
-3. Create documentation in `docs/plans/` with:
+1. Use `explorer` subagent to understand current code structure
+2. Propose OO architecture with well-separated classes
+3. Identify applicable Gang of Four patterns (Strategy, Factory, Observer, Decorator) and explain fit
+4. Create docs in `.bdk/refactor/`:
    - Architecture overview
+   - Applicable GoF patterns with rationale
    - Implementation plan
 
 **Problem description:**
 
-$ARGUMENT
+$ARGUMENTS
