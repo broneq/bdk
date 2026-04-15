@@ -10,6 +10,10 @@
           {
             "type": "command",
             "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-rules-drift/check.py --snapshot-baseline"
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-bdk-config/check.py"
           }
         ]
       }
@@ -23,7 +27,7 @@
           },
           {
             "type": "command",
-            "command": "codegraph sync-if-dirty"
+            "command": "command -v codegraph >/dev/null 2>&1 && codegraph sync-if-dirty || true"
           }
         ]
       }

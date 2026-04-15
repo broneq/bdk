@@ -2,13 +2,14 @@
 
 This file is injected into every session via SessionStart hook. It defines the BDK contract inherited by all skills.
 
-## 1. Project Context Discovery Order
+## 1. Project Context
 
-When any skill needs to understand the project environment, follow this sequence:
+If `.bdk/settings.json` is configured, test/lint/build commands are injected at session start — use them directly.
+
+Without settings, or for commands not covered, fall back to:
 1. Read local `CLAUDE.md` and `.claude/rules/*.md`
-2. Detect language/ecosystem from package files (`package.json`, `go.mod`, `Cargo.toml`, `pyproject.toml`, `composer.json`, `.terraform`, etc.)
-3. Infer test runner, build tool, and lint tool from those files
-4. Fall back to asking the user only if nothing is detectable
+2. Detect from package files (`package.json`, `go.mod`, `Cargo.toml`, `pyproject.toml`, `composer.json`, `.terraform`, etc.)
+3. Ask user only if nothing detectable
 
 ## 2. MCP Tool Preference (Tier System)
 

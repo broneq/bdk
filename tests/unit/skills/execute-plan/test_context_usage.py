@@ -493,7 +493,7 @@ class TestMainOutput(unittest.TestCase):
         # subprocess runs in a child — we can't patch there; just verify slug present
         # (git will run real; whatever branch it returns will be in output)
         out = json.loads(res["stdout"])
-        assert "/save-progress" in out["stopReason"]
+        assert "/bdk:save-progress" in out["stopReason"]
 
 
 if __name__ == "__main__":

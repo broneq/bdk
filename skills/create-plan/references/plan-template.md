@@ -132,7 +132,8 @@ Use when writing to `.bdk/plans/YYYY-MM-DD-<slug>.md`.
 Delegate to `test-runner` subagent:
 ```
 Run the project's test suite against the relevant paths for this feature.
-Use {test_command} from project discovery (e.g. jest, vitest, pytest, go test, cargo test).
+Use the test command from `.bdk/settings.json` (injected at session start), or detect from project if not configured.
+
 Target: [specific test paths or modules]
 ```
 
@@ -141,7 +142,7 @@ Target: [specific test paths or modules]
 Delegate to `static-analyse` subagent:
 ```
 Run the project's lint/format/type-check commands.
-Use {lint_command} from project discovery (e.g. eslint, ruff, golangci-lint, rubocop).
+Use the lint command from `.bdk/settings.json` (injected at session start), or detect from project if not configured.
 ```
 
 ### Regression

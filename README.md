@@ -24,6 +24,7 @@ Invoke with `/bdk:<skill-name>`:
 
 | Skill | Description |
 |-------|-------------|
+| `/bdk:setup` | Initialize `.bdk/settings.json` — run once per project before using other skills |
 | `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size) |
 | `/bdk:commit` | Generate conventional commit message from git changes |
 | `/bdk:create-plan` | Create TDD-driven implementation plans |
