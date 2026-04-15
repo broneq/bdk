@@ -6,6 +6,7 @@ model: opus
 effort: high
 user-invocable: true
 context: main
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Create Implementation Plan
@@ -103,6 +104,13 @@ Print: `[create-plan] Design complete: {selected approach name}`
 
 ### Phase 4: Write Plan
 
+Inject project tools context before writing:
+
+- Test tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
+- Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
+
+Use these values when filling the Verification section of `references/plan-template.md`. If a command fails (no `.bdk/settings.json`), fall back to generic phrasing ("run the project's test suite").
+
 Write to `.bdk/plans/YYYY-MM-DD-{slug}.md`. Use template in `references/plan-template.md`.
 
 **Critical requirements:**
@@ -110,7 +118,7 @@ Write to `.bdk/plans/YYYY-MM-DD-{slug}.md`. Use template in `references/plan-tem
 - Each task: 2-5 min
 - Exact file paths always
 - Every task ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.`
-- NEVER hardcode test runner/build tool — write "run the project's test suite"
+- NEVER hardcode test runner/build tool — use injected values above, or fall back to "run the project's test suite"
 
 Print: `[create-plan] Plan written: .bdk/plans/YYYY-MM-DD-{slug}.md — {N} tasks, {N} files to modify, {N} files to create`
 

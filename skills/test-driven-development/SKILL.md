@@ -4,6 +4,7 @@ description: >-
   Rigid TDD process for writing and verifying tests before implementation.
   Use when implementing any feature or bugfix. Receives test case bullet points
   from the plan and enforces red-green cycle.
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Test-Driven Development
@@ -95,7 +96,9 @@ Add tests for meaningful gaps. **No padding.**
 
 ## GATE 2: Verify RED
 
-Delegate to `/bdk:test-runner` agent:
+Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
+
+Delegate to `/bdk:test-runner` agent using injected command above (fall back to detecting from project context if unavailable):
 
 ```
 Run the project's test suite against: {test_file_path}
@@ -116,7 +119,7 @@ Implement per plan task. Focused on passing tests — no extra features.
 
 ## GATE 4: Verify GREEN
 
-Delegate to `/bdk:test-runner` agent:
+Delegate to `/bdk:test-runner` agent using injected command from GATE 2:
 
 ```
 Run the project's test suite against: {test_file_path}

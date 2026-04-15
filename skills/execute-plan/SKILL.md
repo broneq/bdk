@@ -4,6 +4,7 @@ description: Execute an implementation plan, then run tests and static analysis,
 model: sonnet
 user-invocable: true
 argument-hint: "[plan]"
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 hooks:
   Stop:
     - hooks:
@@ -47,18 +48,23 @@ Per task:
 
 ## Step 2: Verify and Fix
 
-All tasks done → run verification agents **in parallel**:
+All tasks done → inject project tools context:
+
+- Test tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
+- Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
+
+Run verification agents **in parallel**:
 
 ### 2a. Run Tests
 
-Read project context for test command. Delegate to `test-runner` agent. Tests fail → fix, re-run. Repeat until pass.
+Delegate to `test-runner` agent using injected test command above. Tests fail → fix, re-run. Repeat until pass.
 
 ### 2b. Run Static Analysis
 
-Read project context for lint/type-check command. Delegate to `static-analyse` agent. Issues found → fix, re-run. Repeat until clean.
+Delegate to `static-analyse` agent using injected lint command above. Issues found → fix, re-run. Repeat until clean.
 
 ## Rules
 
 - Main agent fixes issues, subagents only *run*
 - Max 3 fix-and-rerun cycles per step before asking user
-- NEVER hardcode test or lint commands — detect from project context
+- NEVER hardcode test or lint commands — use injected values, fall back to detecting from project context

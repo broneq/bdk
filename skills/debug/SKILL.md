@@ -8,7 +8,7 @@ argument-hint: "[error message, traceback, or steps to reproduce]"
 model: opus
 user-invocable: true
 context: main
-allowed-tools: AskUserQuestion TaskCreate TaskUpdate TaskList
+allowed-tools: AskUserQuestion TaskCreate TaskUpdate TaskList Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Debug
@@ -103,7 +103,9 @@ Write tests that precisely reproduce bug. Tests RED until fix applied.
 - Follow project test conventions (check existing tests for patterns)
 - Place tests in correct existing test file
 
-Delegate to `test-runner` subagent to confirm all new tests RED.
+Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
+
+Delegate to `test-runner` subagent using injected command above (fall back to detecting from project context if unavailable) to confirm all new tests RED.
 
 ```
 [debug] Failing tests confirmed: {N} red
@@ -150,10 +152,15 @@ Delegate to `test-runner` subagent to confirm all new tests RED.
 
 ### Phase 5a: Fix Inline
 
+Inject project tools context:
+
+- Test tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
+- Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
+
 1. Apply minimal fix
-2. Delegate to `test-runner` — run only new failing tests
+2. Delegate to `test-runner` — run only new failing tests using injected test command
 3. Confirm all tests GREEN
-4. Delegate to `static-analyse` — run project's lint/type-check
+4. Delegate to `static-analyse` — run lint/type-check using injected lint command
 5. Fix any issues
 6. Print final summary:
    ```
