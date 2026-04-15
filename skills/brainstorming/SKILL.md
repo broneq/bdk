@@ -76,7 +76,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 ---
 
 ### Phase 6: Documentation
-- [ ] Create file: `.bdk/brainstorming/YYYY-MM-DD-<topic>-design.md`
+- [ ] Create file: `.bdk/brainstorming/YYYY-MM-DD-HHMM-<topic>-design.md`
 - [ ] Include: Problem, Solution, Architecture, Components, Data Flow, Error Handling, Testing
 - [ ] Verify file created
 

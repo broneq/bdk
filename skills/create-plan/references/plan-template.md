@@ -1,6 +1,6 @@
 # Plan Template
 
-Use when writing to `.bdk/plans/YYYY-MM-DD-<slug>.md`.
+Use when writing to `.bdk/plans/YYYY-MM-DD-HHMM-<slug>.md`.
 
 ---
 

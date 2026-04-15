@@ -31,7 +31,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 
 2. **Extract topic slug**: 3-5 descriptive words, kebab-case, lowercase
 
-3. **Set plan path**: `.bdk/plans/YYYY-MM-DD-<slug>.md`
+3. **Set plan path**: `.bdk/plans/YYYY-MM-DD-HHMM-<slug>.md`
 
 4. **Create directory**: ensure `.bdk/plans/` exists
 
@@ -39,7 +39,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 
 6. **Check design docs**: scan `.bdk/brainstorming/` for slug keywords; if found, print `[create-plan] Found related design doc: {filename}` and read it
 
-Print: `[create-plan] Setup complete. Plan: .bdk/plans/YYYY-MM-DD-{slug}.md`
+Print: `[create-plan] Setup complete. Plan: .bdk/plans/YYYY-MM-DD-HHMM-{slug}.md`
 
 **GATE**: valid input + plan path required before Phase 2.
 
@@ -111,7 +111,7 @@ Inject project tools context before writing:
 
 Use these values when filling the Verification section of `references/plan-template.md`. If a command fails (no `.bdk/settings.json`), fall back to generic phrasing ("run the project's test suite").
 
-Write to `.bdk/plans/YYYY-MM-DD-{slug}.md`. Use template in `references/plan-template.md`.
+Write to `.bdk/plans/YYYY-MM-DD-HHMM-{slug}.md`. Use template in `references/plan-template.md`.
 
 **Critical requirements:**
 - Each task = one TDD cycle (write test → fail → implement → pass)
@@ -120,7 +120,7 @@ Write to `.bdk/plans/YYYY-MM-DD-{slug}.md`. Use template in `references/plan-tem
 - Every task ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.`
 - NEVER hardcode test runner/build tool — use injected values above, or fall back to "run the project's test suite"
 
-Print: `[create-plan] Plan written: .bdk/plans/YYYY-MM-DD-{slug}.md — {N} tasks, {N} files to modify, {N} files to create`
+Print: `[create-plan] Plan written: .bdk/plans/YYYY-MM-DD-HHMM-{slug}.md — {N} tasks, {N} files to modify, {N} files to create`
 
 **GATE**: plan file must exist and be readable.
 
@@ -131,7 +131,7 @@ Print: `[create-plan] Plan written: .bdk/plans/YYYY-MM-DD-{slug}.md — {N} task
 ```
 [create-plan] Done.
 
-  Plan:        .bdk/plans/YYYY-MM-DD-{slug}.md
+  Plan:        .bdk/plans/YYYY-MM-DD-HHMM-{slug}.md
   Approach:    {selected approach name}
   Complexity:  {LOW|MEDIUM|HIGH}
   Tasks:       {N} implementation tasks
