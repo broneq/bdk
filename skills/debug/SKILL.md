@@ -8,7 +8,7 @@ argument-hint: "[error message, traceback, or steps to reproduce]"
 model: opus
 user-invocable: true
 context: main
-allowed-tools: AskUserQuestion TaskCreate TaskUpdate TaskList Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+allowed-tools: AskUserQuestion TaskCreate TaskUpdate TaskList Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) mcp__code-review-graph__semantic_search_nodes_tool mcp__code-review-graph__query_graph_tool mcp__code-review-graph__get_impact_radius_tool mcp__code-review-graph__get_affected_flows_tool mcp__code-review-graph__get_bridge_nodes_tool
 ---
 
 # Debug
@@ -79,11 +79,15 @@ digraph debug_flow {
 
 ### Phase 2: Investigate
 
-1. **Find entry point** via Tier 1/2/3 tools per BDK foundation
-2. **Trace execution path** — follow call chain to failure
-3. **Identify root cause**
-4. **Scan for related test gaps** — same class of problem in nearby code only
-5. **Print investigation summary**:
+1. **Find entry point**: `semantic_search_nodes(query=<error component or symbol>)` — locate without manual file browsing
+2. **Trace callers**: `query_graph(pattern="callers_of", node=<entry_point>)` — trace up the call chain
+3. **Trace callees**: `query_graph(pattern="callees_of", node=<entry_point>)` — trace down to dependencies
+4. **Identify impacted paths**: `get_affected_flows` — named execution paths through the suspected area
+5. **Flag cascading risk**: `get_bridge_nodes_tool` on the affected module — highest-risk choke points
+6. **Identify root cause**
+7. **Quantify blast radius**: `get_impact_radius(node=<suspected_file>)` — understand scope before proposing fix
+8. **Scan for related test gaps** — same class of problem in nearby code only
+9. **Print investigation summary**:
    ```
    [debug] Root cause: {one sentence}
    [debug] Affected: {file path}:{line range}

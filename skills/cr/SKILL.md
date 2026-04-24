@@ -3,6 +3,7 @@ name: cr
 description: Run code review with dynamic agent scaling (3-13 agents based on change size)
 model: sonnet
 effort: high
+allowed-tools: Bash(git *) mcp__code-review-graph__detect_changes_tool mcp__code-review-graph__get_bridge_nodes_tool mcp__code-review-graph__get_affected_flows_tool
 ---
 
 # Dynamic Code Review Orchestrator
@@ -48,10 +49,12 @@ Code review orchestrator. Determine change scope, dispatch specialized agents pa
 
 ### Step 1: Determine Scope
 
-1. `git diff --name-only HEAD~1` — get changed files
-2. `git diff --stat HEAD~1` — get line counts
-3. Classify changed files by directory/module (based on project structure)
-4. For each source file, find corresponding test file per project conventions
+1. `detect_changes(detail_level="minimal")` — get risk-scored changed file list with severity ratings
+2. `get_bridge_nodes_tool` — identify which changed files are architectural choke points (flag these for architecture-reviewer)
+3. `get_affected_flows` — identify which execution paths are impacted (pass to test-reviewer as scope context)
+4. Fallback if graph unavailable: `git diff --name-only HEAD~1` + `git diff --stat HEAD~1`
+5. Classify changed files by directory/module (based on project structure)
+6. For each source file, find corresponding test file per project conventions
 
 ### Step 2: Plan Dispatch
 
@@ -96,9 +99,11 @@ For each layer-group reviewer (use `references/reviewer-prompt-template.md` for 
 
 For architecture-reviewer:
 - List ALL changed source files
+- Pass `detect_changes` output and `get_bridge_nodes_tool` results as initial context
 
 For test-reviewer:
 - List ALL test files AND corresponding source files
+- Pass `get_affected_flows` results as scope context
 
 For each duplicate-detector:
 - List symbols in its partition

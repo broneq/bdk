@@ -14,6 +14,9 @@ tools:
   - mcp__serena__find_referencing_symbols
   - mcp__serena__read_memory
   - mcp__serena__list_memories
+  - mcp__code-review-graph__get_architecture_overview_tool
+  - mcp__code-review-graph__get_surprising_connections_tool
+  - mcp__code-review-graph__query_graph_tool
 ---
 
 # Architecture Reviewer Agent
@@ -58,12 +61,14 @@ Read project context (CLAUDE.md, .claude/rules/architecture.md if present) for p
 
 ## Process
 
-1. Read project architectural rules from CLAUDE.md and .claude/rules/ if present
-2. Examine directory structure of changed files
-3. For each changed file, get symbols overview
-4. Use `find_referencing_symbols` to trace import directions
-5. Check for architectural violations against project rules (or general best practices)
-6. Trace data flow through new/modified symbols
+1. Run `get_architecture_overview(detail_level="minimal")` — establish community map before reading any file
+2. Run `get_surprising_connections_tool` — auto-detect cross-community coupling that may indicate layer violations
+3. Read project architectural rules from CLAUDE.md and .claude/rules/ if present
+4. Examine directory structure of changed files
+5. For each changed file, get symbols overview
+6. Use `query_graph(pattern="importers_of", node=<file>)` to trace import directions; fall back to `find_referencing_symbols` if graph unavailable
+7. Check for architectural violations against project rules (or general best practices)
+8. Trace data flow through new/modified symbols
 
 ## Output Format
 

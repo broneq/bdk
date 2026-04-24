@@ -4,7 +4,7 @@ description: >-
   Rigid TDD process for writing and verifying tests before implementation.
   Use when implementing any feature or bugfix. Receives test case bullet points
   from the plan and enforces red-green cycle.
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) mcp__code-review-graph__get_flow_tool mcp__code-review-graph__query_graph_tool mcp__code-review-graph__get_impact_radius_tool
 ---
 
 # Test-Driven Development
@@ -70,6 +70,11 @@ Read project context:
 - Test file conventions (location, naming)
 - Test framework
 - Existing patterns (fixtures, factories, assertions)
+
+Graph-assisted discovery (if graph available):
+- `get_flow_tool(flow=<feature>)` — understand the execution path before writing tests
+- `query_graph(pattern="tests_for", node=<target_symbol>)` — find existing tests to avoid duplication
+- `get_impact_radius(node=<implementation_file>)` — understand blast radius to prioritize edge cases
 
 Identify test file path per project conventions.
 

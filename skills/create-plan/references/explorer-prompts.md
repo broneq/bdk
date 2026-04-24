@@ -19,6 +19,7 @@ Feature: {feature description}
 Tool preference: use code-review-graph first (semantic_search_nodes, query_graph, get_review_context).
 Fall back to Serena (find_symbol, search_for_pattern, get_symbols_overview), then Grep/Glob.
 
+0. Run `get_minimal_context(task="{feature description}")` first — quick codebase snapshot before deeper search
 1. Check if similar functionality already exists
 2. Find helper functions or base classes that could be reused
 3. Identify relevant schemas, models, or data structures
@@ -72,6 +73,7 @@ Fall back to Serena (find_symbol, search_for_pattern), then Grep/Glob.
 2. Find examples of similar data transformations or validations
 3. Identify common error handling patterns
 4. Look for similar integration tests
+5. Use `get_review_context(node=<similar_symbol>)` to read implementation details token-efficiently
 
 Return structured findings:
 SIMILAR_FEATURES: {list file:symbol paths}

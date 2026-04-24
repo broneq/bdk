@@ -12,6 +12,8 @@ tools:
   - mcp__serena__get_symbols_overview
   - mcp__serena__find_symbol
   - mcp__serena__find_referencing_symbols
+  - mcp__code-review-graph__refactor_tool
+  - mcp__code-review-graph__query_graph_tool
 ---
 
 # Dead Code Detector Agent
@@ -33,12 +35,13 @@ A symbol is dead if it has **zero callers in the source tree**:
 
 ## Detection Process
 
-1. Use `get_symbols_overview` on each target file
-2. For each public function/method, use `find_referencing_symbols` to find callers
-3. **Classify each reference by path**: production vs test files
-4. Flag symbols where production reference count is zero
-5. Check for unreachable code after early returns
-6. For each dead symbol, use `find_symbol` with `include_body=False` to get line ranges
+1. Run `refactor_tool(mode="dead_code")` on the target files — primary detection in one call
+2. For each flagged symbol, run `query_graph(pattern="callers_of", node=<symbol>)` to confirm zero production callers
+3. Fall back to `get_symbols_overview` + `find_referencing_symbols` for symbols not covered by graph
+4. **Classify each reference by path**: production vs test files
+5. Flag symbols where production reference count is zero
+6. Check for unreachable code after early returns
+7. For each dead symbol, use `find_symbol` with `include_body=False` to get line ranges
 
 ## Exclusions (Do NOT flag)
 

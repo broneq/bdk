@@ -4,6 +4,7 @@ description: Generate comprehensive architecture documentation for complex code 
 model: sonnet
 user-invocable: true
 argument-hint: "[path]"
+allowed-tools: mcp__code-review-graph__semantic_search_nodes_tool mcp__code-review-graph__query_graph_tool mcp__code-review-graph__get_hub_nodes_tool mcp__code-review-graph__list_communities_tool
 hooks:
   Stop:
     - hooks:
@@ -29,12 +30,17 @@ Generate architecture docs for complex code with visual diagrams and examples.
 ### 2. Analyze Code Structure
 
 **Step 2.1: Initial Discovery**
-Use Tier 1/2/3 tools per BDK foundation to discover structure.
+- `semantic_search_nodes(query=<path or module name>)` — find all symbols without file browsing
+- `get_hub_nodes_tool` on the target directory — identify high-dependency symbols that need prominent documentation
+- `list_communities` — use community grouping to determine subagent partitioning (prefer community boundaries over line-count rules)
+- Fall back to Tier 1/2/3 tools per BDK foundation if graph unavailable
 
 **Step 2.2: Map Dependencies**
-For each key class/function: find callers and callees.
+For each key class/function: `query_graph(pattern="callers_of", node=<symbol>)` and `query_graph(pattern="callees_of", node=<symbol>)`. Fall back to Serena `find_referencing_symbols` if graph unavailable.
 
 **Step 2.3: Decide Partitioning Strategy**
+
+When graph communities are available, use community boundaries as partitioning units — one community per subagent. Otherwise fall back to file-count rules:
 
 | Files Count | Strategy | Subagent Count |
 |-------------|----------|----------------|
