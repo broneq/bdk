@@ -14,8 +14,10 @@ skills/<skill-name>/
 │   └── *.md            ← templates and reference docs
 ├── examples/
 │   └── *.md            ← example output showing expected format
-└── scripts/
-    └── *               ← scripts Claude can execute
+├── scripts/
+│   └── *               ← scripts Claude can execute
+└── fragments/
+    └── *.md            ← conditional injection targets
 ```
 
 ## Rules
@@ -24,6 +26,7 @@ skills/<skill-name>/
 - Templates and reference docs → `references/` (not root)
 - Example outputs → `examples/` (`*.md` only)
 - Executable scripts → `scripts/`
+- Conditional injection targets → `fragments/` (see inject-fragments.md)
 - No other subdirectories allowed
 
 ## Enforcement

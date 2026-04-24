@@ -137,12 +137,15 @@ Allowed layout:
 │   └── *.md            ← templates and reference docs
 ├── examples/
 │   └── *.md            ← example output files only
-└── scripts/
-    └── *               ← executable scripts only (*.sh, *.py, etc.)
+├── scripts/
+│   └── *               ← executable scripts only (*.sh, *.py, etc.)
+└── fragments/
+    └── *.md            ← conditional injection targets
 ```
 
 Rules:
-- FAIL if any subdirectory other than `examples/`, `references/`, or `scripts/` exists
+- FAIL if any subdirectory other than `examples/`, `references/`, `scripts/`, or `fragments/` exists
+- WARN if `fragments/` contains non-`.md` files
 - WARN if `*.md` template/reference files sit at root level instead of `references/` — suggest moving
 - WARN if `examples/` contains non-`.md` files
 - WARN if `references/` contains non-`.md` files

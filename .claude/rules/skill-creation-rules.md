@@ -156,16 +156,16 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 ## Examples
 
 ```md
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --then ${CLAUDE_SKILL_DIR}/references/react.md`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --then ${CLAUDE_SKILL_DIR}/fragments/react.md`
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --if languages[typescript] --then ${CLAUDE_SKILL_DIR}/references/react-ts.md`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --if languages[typescript] --then ${CLAUDE_SKILL_DIR}/fragments/react-ts.md`
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.code-review-graph --then-text "Run detect_changes first for risk scoring."`
 ```
 
 ## Rules
 
-- Put conditional reference docs in `references/` subdir of the skill
+- Put conditional fragments in `fragments/` subdir of the skill — see `.claude/rules/inject-fragments.md`
 - Use `--then-text` only for short snippets (1-2 lines); use `--then` + file for anything longer
 - Missing `.bdk/settings.json` = silent (exit 0) — graceful for projects not using BDK
 - Settings file searched upward from cwd — no need to specify path in skills
