@@ -104,6 +104,7 @@ Create directory and file:
 Write `settings.json` with confirmed values using the schema:
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/broneq/bdk/main/hooks/check-bdk-config/settings.schema.json",
   "languages": ["..."],
   "test-tools": [{"type": "...", "command": "..."}],
   "lint-tools": [{"type": "...", "command": "..."}],

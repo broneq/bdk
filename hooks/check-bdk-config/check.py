@@ -21,6 +21,49 @@ Run /bdk:setup to configure this project before proceeding.
 Setup probes your project files and records test/lint/build commands.
 Until setup is complete, skills that rely on project settings will not work correctly."""
 
+INVALID_REASON = """\
+.bdk/settings.json is malformed or failed validation.
+
+Run /bdk:setup --force to regenerate it."""
+
+_TOOL_ARRAY_KEYS = ("test-tools", "lint-tools", "build-tools")
+
+
+def validate_settings(settings: dict) -> list[str]:  # type: ignore[type-arg]
+    """Return list of validation error strings. Empty = valid."""
+    errors = []
+    if not isinstance(settings, dict):
+        return ["root must be an object"]
+
+    languages = settings.get("languages")
+    if languages is not None:
+        if not isinstance(languages, list) or not all(isinstance(l, str) for l in languages):
+            errors.append("'languages' must be array of strings")
+
+    for key in _TOOL_ARRAY_KEYS:
+        tools = settings.get(key)
+        if tools is None:
+            continue
+        if not isinstance(tools, list):
+            errors.append(f"'{key}' must be an array")
+            continue
+        for i, t in enumerate(tools):
+            if not isinstance(t, dict):
+                errors.append(f"'{key}[{i}]' must be an object")
+            elif "command" not in t or not isinstance(t["command"], str):
+                errors.append(f"'{key}[{i}].command' must be a non-empty string")
+
+    features = settings.get("features")
+    if features is not None:
+        if not isinstance(features, dict):
+            errors.append("'features' must be an object")
+        else:
+            for k, v in features.items():
+                if not isinstance(v, bool):
+                    errors.append(f"'features.{k}' must be a boolean")
+
+    return errors
+
 
 def read_stdin_json() -> dict:  # type: ignore[type-arg]
     """Read hook input from stdin."""
@@ -84,6 +127,13 @@ def main() -> None:
         settings = json.loads(settings_path.read_text())
     except (json.JSONDecodeError, OSError):
         print(json.dumps({"decision": "block", "reason": BLOCK_REASON}))
+        sys.exit(0)
+
+    errors = validate_settings(settings)
+    if errors:
+        detail = "\n".join(f"  - {e}" for e in errors)
+        reason = f"{INVALID_REASON}\n\nErrors:\n{detail}"
+        print(json.dumps({"decision": "block", "reason": reason}))
         sys.exit(0)
 
     print(format_settings_context(settings))

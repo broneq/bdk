@@ -204,3 +204,89 @@ def test_settings_languages_in_output(tmp_path):
     result = _run_script(tmp_path)
     assert "go" in result.stdout
     assert "python" in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# validate_settings — unit tests
+# ---------------------------------------------------------------------------
+
+
+def test_validate_valid_full_settings():
+    mod = _load_module()
+    assert mod.validate_settings(FULL_SETTINGS) == []
+
+
+def test_validate_empty_object():
+    mod = _load_module()
+    assert mod.validate_settings({}) == []
+
+
+def test_validate_languages_not_list():
+    mod = _load_module()
+    errors = mod.validate_settings({"languages": "python"})
+    assert any("languages" in e for e in errors)
+
+
+def test_validate_languages_non_string_items():
+    mod = _load_module()
+    errors = mod.validate_settings({"languages": [1, 2]})
+    assert any("languages" in e for e in errors)
+
+
+def test_validate_tool_array_not_list():
+    mod = _load_module()
+    errors = mod.validate_settings({"test-tools": "pytest"})
+    assert any("test-tools" in e for e in errors)
+
+
+def test_validate_tool_missing_command():
+    mod = _load_module()
+    errors = mod.validate_settings({"test-tools": [{"type": "direct"}]})
+    assert any("command" in e for e in errors)
+
+
+def test_validate_tool_command_not_string():
+    mod = _load_module()
+    errors = mod.validate_settings({"test-tools": [{"type": "direct", "command": 42}]})
+    assert any("command" in e for e in errors)
+
+
+def test_validate_features_not_dict():
+    mod = _load_module()
+    errors = mod.validate_settings({"features": ["caveman"]})
+    assert any("features" in e for e in errors)
+
+
+def test_validate_features_value_not_bool():
+    mod = _load_module()
+    errors = mod.validate_settings({"features": {"caveman": "yes"}})
+    assert any("caveman" in e for e in errors)
+
+
+def test_validate_multiple_errors():
+    mod = _load_module()
+    errors = mod.validate_settings({"languages": "go", "features": "bad"})
+    assert len(errors) >= 2
+
+
+# ---------------------------------------------------------------------------
+# Integration: invalid structure blocks session
+# ---------------------------------------------------------------------------
+
+
+def test_invalid_structure_outputs_block(tmp_path):
+    bdk_dir = tmp_path / ".bdk"
+    bdk_dir.mkdir()
+    (bdk_dir / "settings.json").write_text(json.dumps({"languages": "not-a-list"}))
+    result = _run_script(tmp_path)
+    data = json.loads(result.stdout)
+    assert data["decision"] == "block"
+
+
+def test_invalid_structure_reason_mentions_force(tmp_path):
+    bdk_dir = tmp_path / ".bdk"
+    bdk_dir.mkdir()
+    (bdk_dir / "settings.json").write_text(json.dumps({"test-tools": "pytest"}))
+    result = _run_script(tmp_path)
+    data = json.loads(result.stdout)
+    assert "--force" in data["reason"]
