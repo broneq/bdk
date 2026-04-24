@@ -23,7 +23,7 @@ FULL_SETTINGS = {
     ],
     "lint-tools": [{"type": "eslint", "command": "npm run lint"}],
     "build-tools": [{"type": "tsc", "command": "npm run build"}],
-    "features": {"caveman": True, "serena": True, "codegraph": False},
+    "features": {"caveman": True, "serena": True, "code-review-graph": False},
 }
 
 
@@ -74,7 +74,7 @@ def test_get_features():
     mod = _load_module()
     result = mod.get_value(FULL_SETTINGS, "features")
     assert "caveman=on" in result
-    assert "codegraph=off" in result
+    assert "code-review-graph=off" in result
 
 
 def test_get_missing_key_returns_none():
@@ -165,7 +165,7 @@ def test_features_output(tmp_path):
     result = _run(tmp_path, "features")
     assert result.returncode == 0
     assert "caveman=on" in result.stdout
-    assert "codegraph=off" in result.stdout
+    assert "code-review-graph=off" in result.stdout
 
 
 def test_missing_key_exits_one(tmp_path):

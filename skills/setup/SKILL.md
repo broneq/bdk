@@ -111,14 +111,33 @@ Write `settings.json` with confirmed values using the schema:
   "features": {
     "caveman": true,
     "serena": false,
-    "codegraph": false
+    "code-review-graph": false
   }
 }
 ```
 
 Omit empty arrays (e.g. no `build-tools` key if none detected/provided).
 
-### Phase 5: Git guidance
+### Phase 5: Initialize MCP tools
+
+Run after writing `settings.json`.
+
+**code-review-graph** — only if both conditions met:
+1. `features.code-review-graph` is not `false` in written settings
+2. `.mcp.json` (project or `~/.claude/mcp.json`) contains a `code-review-graph` server entry
+
+Check if `.code-review-graph/graph.db` exists in project root:
+- **Exists** → skip build, print `[setup] code-review-graph: index already built.`
+- **Missing** → run `uvx code-review-graph build`, print progress, then print `[setup] code-review-graph: index built.`
+
+If build fails (exit non-zero), print warning and continue — do not abort setup:
+```
+[setup] code-review-graph: build failed. Run `uvx code-review-graph build` manually after install.
+```
+
+**Serena** — no initialization needed (AST analysis is on-demand).
+
+### Phase 6: Git guidance
 
 Recommend:
 - Commit `.bdk/settings.json` (shared with team — consistent commands for all contributors)

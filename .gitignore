@@ -3,3 +3,5 @@ __pycache__/
 *.pyo
 tmp_*.py
 .idea/
+# Added by code-review-graph
+.code-review-graph/

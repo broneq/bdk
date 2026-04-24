@@ -23,7 +23,7 @@ FULL_SETTINGS = {
     ],
     "lint-tools": [{"type": "eslint", "command": "npm run lint"}],
     "build-tools": [{"type": "tsc", "command": "npm run build"}],
-    "features": {"caveman": True, "serena": True, "codegraph": False},
+    "features": {"caveman": True, "serena": True, "code-review-graph": False},
 }
 
 
@@ -85,7 +85,7 @@ def test_format_features_on_off():
     result = mod.format_settings_context(FULL_SETTINGS)
     assert "caveman=on" in result
     assert "serena=on" in result
-    assert "codegraph=off" in result
+    assert "code-review-graph=off" in result
 
 
 def test_format_empty_tools_omitted():

@@ -9,7 +9,7 @@ Keys:
     test-tools      → npm run test:unit (vitest), npm run test:e2e (playwright)
     lint-tools      → npm run lint (eslint)
     build-tools     → npm run build (tsc)
-    features        → caveman=on, serena=on, codegraph=off
+    features        → caveman=on, serena=on, code-review-graph=off
 
 Exits 0 on success, 1 if settings file missing or key not found.
 

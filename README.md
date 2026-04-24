@@ -38,6 +38,10 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:update-docs` | Refresh existing architecture docs after code changes |
 | `/bdk:graphviz-docs-compiler` | Compile `.dot` files to SVG and update markdown references |
 | `/bdk:analyze-migration` | Analyse migration tasks and risks |
+| `/bdk:graph-review` | Risk-aware code review using knowledge graph — change detection, impact analysis, test coverage |
+| `/bdk:graph-explore` | Navigate codebase structure using knowledge graph — stats, architecture, call relationships |
+| `/bdk:graph-debug` | Debug issues using graph-powered code navigation — trace call chains, correlate with recent changes |
+| `/bdk:graph-refactor` | Safe refactoring using dependency analysis — dead code, rename preview, impact verification |
 
 ---
 

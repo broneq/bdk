@@ -3,7 +3,7 @@
 Use when dispatching agents in Phase 2. Replace `{feature description}` with actual feature.
 
 Tool tier system (from STARTUP_INSTRUCTIONS):
-- **Tier 1:** CodeGraph (`codegraph_explore`, `codegraph_search`, `codegraph_callers`, `codegraph_impact`) — use first if `.codegraph/` exists
+- **Tier 1:** code-review-graph (`semantic_search_nodes`, `query_graph`, `get_impact_radius`, `get_affected_flows`) — use first
 - **Tier 2:** Serena (`find_symbol`, `search_for_pattern`, `get_symbols_overview`, `find_referencing_symbols`) — if CodeGraph unavailable
 - **Tier 3:** Grep/Glob/Read — always available fallback
 
@@ -16,7 +16,7 @@ Search the codebase for existing utilities and implementations related to:
 
 Feature: {feature description}
 
-Tool preference: use CodeGraph first (codegraph_explore or codegraph_search) if .codegraph/ exists.
+Tool preference: use code-review-graph first (semantic_search_nodes, query_graph, get_review_context).
 Fall back to Serena (find_symbol, search_for_pattern, get_symbols_overview), then Grep/Glob.
 
 1. Check if similar functionality already exists
@@ -40,7 +40,7 @@ Analyze architecture and dependencies for implementing:
 
 Feature: {feature description}
 
-Tool preference: use CodeGraph first (codegraph_callers, codegraph_impact, codegraph_explore) if .codegraph/ exists.
+Tool preference: use code-review-graph first (query_graph with callers_of/callees_of, get_impact_radius, get_affected_flows).
 Fall back to Serena (find_referencing_symbols, get_symbols_overview), then Grep/Glob.
 
 1. Identify which modules/layers this feature touches
@@ -65,7 +65,7 @@ Find similar features in the codebase as implementation examples:
 
 Feature: {feature description}
 
-Tool preference: use CodeGraph first (codegraph_explore, codegraph_search) if .codegraph/ exists.
+Tool preference: use code-review-graph first (semantic_search_nodes, get_review_context).
 Fall back to Serena (find_symbol, search_for_pattern), then Grep/Glob.
 
 1. Search for features with similar purpose or structure
