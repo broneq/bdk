@@ -1,0 +1,7 @@
+{
+  "mode": "additive",
+  "chain": [
+    { "if": ["features.code-review-graph"], "then": "edit-graph.md" },
+    { "if": ["features.serena"], "then": "edit-serena.md" }
+  ]
+}

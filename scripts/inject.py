@@ -10,6 +10,8 @@ Usage:
     python3 inject.py --if features.react --if languages[typescript] --then react-ts.md
     python3 inject.py --if features.react --then-text "Prefer reducers over useState"
     python3 inject.py --if features.react --then file.md --settings /custom/.bdk/settings.json
+    python3 inject.py --if features.serena --prefer features.code-review-graph --then serena.md
+    python3 inject.py --chain fragments/tool-tiers/search.chain.json
 
 Condition syntax:
     features.react              settings["features"]["react"] is True
@@ -83,21 +85,27 @@ def evaluate_condition(condition: str, settings: dict) -> bool:  # type: ignore[
 
 def inject(
     conditions: list[str],
+    prefer_conditions: list[str] | None = None,
     then_path: str | Path | None = None,
     then_text: str | None = None,
     settings: dict | None = None,  # type: ignore[type-arg]
 ) -> str:
     """Evaluate all conditions and return content string or empty string.
 
-    Returns empty string when any condition is false or settings is None.
-    Raises FileNotFoundError if then_path does not exist (conditions all true).
-    Raises ValueError for invalid condition syntax.
+    prefer_conditions: list of conditions using OR logic — if any is true,
+    suppress this block (used to defer to a higher-tier tool).
+    Returns empty string when any condition is false, any prefer is true,
+    or settings is None.
     """
     if settings is None:
         return ""
 
     for condition in conditions:
         if not evaluate_condition(condition, settings):
+            return ""
+
+    for prefer in (prefer_conditions or []):
+        if evaluate_condition(prefer, settings):
             return ""
 
     if then_text is not None:
@@ -112,19 +120,89 @@ def inject(
     return ""
 
 
+def inject_chain(
+    chain_path: str | Path,
+    settings: dict | None = None,
+) -> str:
+    """Resolve a chain config file and return assembled content.
+
+    Chain file format:
+        {"mode": "exclusive"|"additive", "chain": [...]}
+
+    Each chain entry:
+        {"if": ["condition", ...], "then": "relative/path.md"}
+        {"then": "path.md"}  # unconditional fallback
+
+    Paths in chain entries are resolved relative to chain_path's directory.
+    Returns empty string when settings is None.
+    Raises FileNotFoundError if chain_path does not exist.
+    Raises ValueError for unrecognised mode or missing 'then'.
+    """
+    if settings is None:
+        return ""
+
+    chain_path = Path(chain_path)
+    if not chain_path.exists():
+        raise FileNotFoundError(f"inject: chain file not found: {chain_path}")
+
+    try:
+        config = json.loads(chain_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise ValueError(f"inject: invalid JSON in chain file {chain_path}: {e}") from e
+
+    mode = config.get("mode")
+    if mode not in ("exclusive", "additive"):
+        raise ValueError(f"inject: unknown chain mode {mode!r} in {chain_path}")
+
+    chain = config.get("chain", [])
+    base = chain_path.parent
+    parts: list[str] = []
+
+    for entry in chain:
+        conditions = entry.get("if", [])
+        then_rel = entry.get("then")
+        if then_rel is None:
+            raise ValueError(f"inject: chain entry missing 'then' key in {chain_path}")
+
+        then_path = base / then_rel if not Path(then_rel).is_absolute() else Path(then_rel)
+        content = inject(conditions=conditions, then_path=then_path, settings=settings)
+
+        if content:
+            if mode == "exclusive":
+                return content
+            parts.append(content)
+
+    return "\n".join(parts) if parts else ""
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Conditionally inject file content based on .bdk/settings.json"
     )
     parser.add_argument(
+        "--chain",
+        dest="chain_path",
+        metavar="CHAIN_FILE",
+        help="JSON chain config file for multi-tier injection",
+    )
+    parser.add_argument(
         "--if",
         dest="conditions",
         action="append",
-        required=True,
+        required=False,
+        default=[],
         metavar="CONDITION",
         help="Condition to evaluate (repeatable, AND logic)",
     )
-    group = parser.add_mutually_exclusive_group(required=True)
+    parser.add_argument(
+        "--prefer",
+        dest="prefer_conditions",
+        action="append",
+        default=[],
+        metavar="CONDITION",
+        help="Suppress block if any of these conditions are true (repeatable, OR logic)",
+    )
+    group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument("--then", dest="then_path", metavar="FILE", help="File to print if conditions true")
     group.add_argument("--then-text", dest="then_text", metavar="TEXT", help="Inline text to print if conditions true")
     parser.add_argument(
@@ -135,32 +213,52 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    settings = (
-        load_settings(args.settings_path)
-        if args.settings_path
-        else load_settings()
-    )
+    # Chain mode — mutually exclusive with --if/--then/--then-text
+    if args.chain_path:
+        # Validate chain file existence before loading settings
+        if not Path(args.chain_path).exists():
+            print(f"[BDK inject] inject: chain file not found: {args.chain_path}", file=sys.stderr)
+            sys.exit(1)
+        settings = (
+            load_settings(args.settings_path) if args.settings_path else load_settings()
+        )
+        if settings is None:
+            sys.exit(0)
+        try:
+            result = inject_chain(chain_path=args.chain_path, settings=settings)
+        except (FileNotFoundError, ValueError) as e:
+            print(f"[BDK inject] {e}", file=sys.stderr)
+            sys.exit(1)
+        if result:
+            print(result, end="")
+        sys.exit(0)
 
+    # Standard --if/--then mode
+    if not args.conditions and not args.prefer_conditions:
+        parser.error("one of --if, --prefer, or --chain is required")
+    if args.then_path is None and args.then_text is None:
+        parser.error("one of the arguments --then --then-text is required")
+
+    settings = (
+        load_settings(args.settings_path) if args.settings_path else load_settings()
+    )
     if settings is None:
         sys.exit(0)
 
     try:
         result = inject(
             conditions=args.conditions,
+            prefer_conditions=args.prefer_conditions,
             then_path=args.then_path,
             then_text=args.then_text,
             settings=settings,
         )
-    except ValueError as e:
-        print(f"[BDK inject] {e}", file=sys.stderr)
-        sys.exit(1)
-    except FileNotFoundError as e:
+    except (ValueError, FileNotFoundError) as e:
         print(f"[BDK inject] {e}", file=sys.stderr)
         sys.exit(1)
 
     if result:
         print(result, end="")
-
     sys.exit(0)
 
 

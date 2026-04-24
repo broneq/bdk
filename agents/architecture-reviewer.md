@@ -17,6 +17,13 @@ tools:
   - mcp__code-review-graph__get_architecture_overview_tool
   - mcp__code-review-graph__get_surprising_connections_tool
   - mcp__code-review-graph__query_graph_tool
+hooks:
+  SessionStart:
+    - hooks:
+        - type: command
+          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh explore.chain.json"
+        - type: command
+          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
 ---
 
 # Architecture Reviewer Agent

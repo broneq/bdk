@@ -14,6 +14,11 @@ tools:
   - mcp__serena__find_referencing_symbols
   - mcp__code-review-graph__refactor_tool
   - mcp__code-review-graph__query_graph_tool
+hooks:
+  SessionStart:
+    - hooks:
+        - type: command
+          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
 ---
 
 # Dead Code Detector Agent
@@ -38,6 +43,7 @@ A symbol is dead if it has **zero callers in the source tree**:
 1. Run `refactor_tool(mode="dead_code")` on the target files — primary detection in one call
 2. For each flagged symbol, run `query_graph(pattern="callers_of", node=<symbol>)` to confirm zero production callers
 3. Fall back to `get_symbols_overview` + `find_referencing_symbols` for symbols not covered by graph
+
 4. **Classify each reference by path**: production vs test files
 5. Flag symbols where production reference count is zero
 6. Check for unreachable code after early returns

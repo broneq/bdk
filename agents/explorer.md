@@ -21,6 +21,13 @@ tools:
   - Grep
   - Glob
   - Bash
+hooks:
+  SessionStart:
+    - hooks:
+        - type: command
+          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh explore.chain.json"
+        - type: command
+          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
 ---
 
 # Explorer Agent

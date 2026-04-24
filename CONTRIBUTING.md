@@ -107,3 +107,53 @@ These stay in the project-level `.claude/` of each repo:
 - **Project-specific hooks** — drift detection, worktree setup, directory creation
 - **Domain skills** — feature-specific workflows
 - **Language-specific hooks** — Python formatters, Go linters tied to one stack
+
+---
+
+## Writing Fragments
+
+Fragments are conditional Markdown files injected into skills at load time.
+
+### Creating a Leaf Fragment
+
+1. Decide scope: shared (`fragments/<capability>/`) or skill-local (`skills/<name>/fragments/`)
+2. Name the file after the tool tier or feature it teaches (e.g. `search-serena.md`)
+3. Write content that teaches Claude WHEN and HOW to use the tools — not just a tool list
+4. Keep content under 10 lines; longer content should be split into multiple fragments
+
+### Creating a Chain File
+
+1. Create `<purpose>.chain.json` in the same directory as the leaf files
+2. Choose mode:
+   - `exclusive` — fallback tiers (first match wins)
+   - `additive` — complementary tools (all matches combined)
+3. Paths are relative to the chain file's own directory
+4. The last entry in an exclusive chain may have no `"if"` — unconditional fallback
+
+```json
+{
+  "mode": "exclusive",
+  "chain": [
+    { "if": ["features.code-review-graph"], "then": "search-graph.md" },
+    { "if": ["features.serena"], "then": "search-serena.md" },
+    { "then": "search-fallback.md" }
+  ]
+}
+```
+
+### Referencing a Chain from a Skill
+
+```markdown
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
+```
+
+### Naming Conventions
+
+- Chain files: `<purpose>.chain.json`
+- Leaf files: `<purpose>-<tier>.md` (e.g. `search-graph.md`, `search-serena.md`, `search-fallback.md`)
+- Tier names: `graph`, `serena`, `fallback`
+
+### When NOT to Use Chains
+
+- **Graph-only skills** (`graph-explore`, `graph-debug`, `graph-review`, `graph-refactor`): these require code-review-graph by design; no chain migration applies
+- **Agents**: static markdown, no shell execution at load time; use body text subsections instead

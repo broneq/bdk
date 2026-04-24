@@ -3,7 +3,7 @@ name: cr
 description: Run code review with dynamic agent scaling (3-13 agents based on change size)
 model: sonnet
 effort: high
-allowed-tools: Bash(git *) mcp__code-review-graph__detect_changes_tool mcp__code-review-graph__get_bridge_nodes_tool mcp__code-review-graph__get_affected_flows_tool
+allowed-tools: Bash(git *) Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Dynamic Code Review Orchestrator
@@ -49,9 +49,11 @@ Code review orchestrator. Determine change scope, dispatch specialized agents pa
 
 ### Step 1: Determine Scope
 
-1. `detect_changes(detail_level="minimal")` — get risk-scored changed file list with severity ratings
-2. `get_bridge_nodes_tool` — identify which changed files are architectural choke points (flag these for architecture-reviewer)
-3. `get_affected_flows` — identify which execution paths are impacted (pass to test-reviewer as scope context)
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/review.chain.json`
+
+1. Get risk-scored changed file list with severity ratings
+2. Identify which changed files are architectural choke points (flag these for architecture-reviewer)
+3. Identify which execution paths are impacted (pass to test-reviewer as scope context)
 4. Fallback if graph unavailable: `git diff --name-only HEAD~1` + `git diff --stat HEAD~1`
 5. Classify changed files by directory/module (based on project structure)
 6. For each source file, find corresponding test file per project conventions

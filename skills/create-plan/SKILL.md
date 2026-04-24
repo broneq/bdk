@@ -6,7 +6,7 @@ model: opus
 effort: high
 user-invocable: true
 context: main
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) mcp__code-review-graph__get_architecture_overview_tool mcp__code-review-graph__list_flows_tool mcp__code-review-graph__get_surprising_connections_tool mcp__code-review-graph__semantic_search_nodes_tool
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Create Implementation Plan
@@ -48,9 +48,13 @@ Print: `[create-plan] Setup complete. Plan: .bdk/plans/YYYY-MM-DD-HHMM-{slug}.md
 ### Phase 2: Exploration
 
 Before launching agents, run a graph-first architecture snapshot:
-1. `get_architecture_overview(detail_level="minimal")` — understand which layers are affected
-2. `list_flows_tool` — identify named execution flows the feature may touch
-3. `get_surprising_connections_tool` — detect cross-module dependencies the plan must account for
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
+
+Using the exploration tools above:
+1. Understand which layers are affected
+2. Identify named execution flows the feature may touch
+3. Detect cross-module dependencies the plan must account for
 
 Pass these findings to each explorer agent as architectural context.
 

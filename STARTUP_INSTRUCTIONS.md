@@ -2,23 +2,18 @@
 
 This file is injected into every session via SessionStart hook. It defines the BDK contract inherited by all skills.
 
-## MCP Tool Preference (Tier System)
+## Tool Tier System
 
-- **Tier 1:** code-review-graph — structural graph, impact analysis, code review context
-- **Tier 2:** Serena — AST-level analysis, referencing symbols, structural analysis
-- **Tier 3:** Grep/Glob/Read — always available, used when MCP tools are unavailable
+When exploring, searching, editing, or reviewing code, use the best available tool tier. The instructions below are injected based on your project's enabled features.
 
-If a Tier 1 or Tier 2 tool is not available, fall back to the next tier silently.
+**Exploration & Architecture:**
 
-## When to Use code-review-graph (Tier 1)
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
 
-Use `mcp__code-review-graph__*` tools BEFORE Grep/Glob/Read for:
+**Symbol Search & Tracing:**
 
-- **Symbol/code search** → `semantic_search_nodes` or `query_graph`
-- **Impact of a change** → `get_impact_radius` (what breaks if I touch X?)
-- **Code review** → `detect_changes` + `get_review_context` (risk-scored diff analysis)
-- **Call chains** → `query_graph` with `callers_of` / `callees_of`
-- **Test coverage** → `query_graph` with `tests_for`
-- **Architecture** → `get_architecture_overview` + `list_communities`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
 
-Fall back to Serena or Grep only when graph returns no results or tool unavailable.
+**Impact Analysis:**
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/impact.chain.json`

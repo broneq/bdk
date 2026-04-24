@@ -20,6 +20,13 @@ tools:
   - mcp__code-review-graph__get_affected_flows_tool
   - mcp__code-review-graph__query_graph_tool
   - mcp__code-review-graph__get_review_context_tool
+hooks:
+  SessionStart:
+    - hooks:
+        - type: command
+          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh review.chain.json"
+        - type: command
+          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
 ---
 
 You are a layer-group code reviewer. Review the files specified in your prompt thoroughly.
