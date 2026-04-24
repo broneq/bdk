@@ -135,12 +135,12 @@ Skills and agents can conditionally include content based on `.bdk/settings.json
 
 ## Tool
 
-`hooks/inject/inject.py` — evaluates conditions against `.bdk/settings.json`, prints file content or text if all conditions true, silent otherwise.
+`scripts/inject.py` — evaluates conditions against `.bdk/settings.json`, prints file content or text if all conditions true, silent otherwise.
 
 ## Syntax
 
 ```md
-!`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/inject/inject.py --if <condition> --then ${CLAUDE_SKILL_DIR}/file.md`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if <condition> --then ${CLAUDE_SKILL_DIR}/file.md`
 ```
 
 Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file.
@@ -156,11 +156,11 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 ## Examples
 
 ```md
-!`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/inject/inject.py --if features.react --then ${CLAUDE_SKILL_DIR}/references/react.md`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --then ${CLAUDE_SKILL_DIR}/references/react.md`
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/inject/inject.py --if features.react --if languages[typescript] --then ${CLAUDE_SKILL_DIR}/references/react-ts.md`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --if languages[typescript] --then ${CLAUDE_SKILL_DIR}/references/react-ts.md`
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/inject/inject.py --if features.code-review-graph --then-text "Run detect_changes first for risk scoring."`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.code-review-graph --then-text "Run detect_changes first for risk scoring."`
 ```
 
 ## Rules
@@ -173,7 +173,7 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 ## Programmatic API
 
 ```python
-from hooks.inject.inject import load_settings, evaluate_condition, inject
+from scripts.inject import load_settings, evaluate_condition, inject
 
 settings = load_settings()                                    # dict | None
 ok = evaluate_condition("features.react", settings)           # bool

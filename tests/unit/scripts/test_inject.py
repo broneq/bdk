@@ -1,4 +1,4 @@
-"""Tests for hooks/inject/inject.py."""
+"""Tests for scripts/inject.py."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT = Path(__file__).parents[4] / "hooks" / "inject" / "inject.py"
+SCRIPT = Path(__file__).parents[3] / "scripts" / "inject.py"
 
 
 def _load_module():
