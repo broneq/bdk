@@ -126,3 +126,56 @@ hooks:
 - Hook scripts live in `hooks/<hook-name>/` — not in `skills/`
 - Skills reference plugin root via `${CLAUDE_PLUGIN_ROOT}` — no hardcoded paths
 - Do not add hooks that duplicate global hooks in `hooks/hooks.json`
+
+---
+
+# Conditional Content Injection
+
+Skills and agents can conditionally include content based on `.bdk/settings.json` using the native `!`command`` shell injection syntax. Runs at skill load time — deterministic, works for both user and agent invocation.
+
+## Tool
+
+`hooks/inject/inject.py` — evaluates conditions against `.bdk/settings.json`, prints file content or text if all conditions true, silent otherwise.
+
+## Syntax
+
+```md
+!`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/inject/inject.py --if <condition> --then ${CLAUDE_SKILL_DIR}/file.md`
+```
+
+Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file.
+
+## Condition Syntax
+
+| Condition | True when |
+|-----------|-----------|
+| `features.react` | `settings.features.react == true` |
+| `features.code-review-graph` | `settings.features.code-review-graph == true` |
+| `languages[typescript]` | `"typescript" in settings.languages` |
+
+## Examples
+
+```md
+!`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/inject/inject.py --if features.react --then ${CLAUDE_SKILL_DIR}/references/react.md`
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/inject/inject.py --if features.react --if languages[typescript] --then ${CLAUDE_SKILL_DIR}/references/react-ts.md`
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/hooks/inject/inject.py --if features.code-review-graph --then-text "Run detect_changes first for risk scoring."`
+```
+
+## Rules
+
+- Put conditional reference docs in `references/` subdir of the skill
+- Use `--then-text` only for short snippets (1-2 lines); use `--then` + file for anything longer
+- Missing `.bdk/settings.json` = silent (exit 0) — graceful for projects not using BDK
+- Settings file searched upward from cwd — no need to specify path in skills
+
+## Programmatic API
+
+```python
+from hooks.inject.inject import load_settings, evaluate_condition, inject
+
+settings = load_settings()                                    # dict | None
+ok = evaluate_condition("features.react", settings)           # bool
+content = inject(["features.react"], then_path="react.md", settings=settings)  # str
+```
