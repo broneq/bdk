@@ -24,7 +24,8 @@ Three changes, layered:
 
 1. Extend `inject.py` with `--prefer` flag and `--chain` mode
 2. Build a root `fragments/tool-tiers/` library with chain config files
-3. Refactor STARTUP_INSTRUCTIONS.md + update skills to use the chain system
+3. Refactor STARTUP_INSTRUCTIONS.md + update general skills to use the chain system
+4. Enrich agent body text with Serena powerful tool instructions
 
 ---
 
@@ -202,7 +203,65 @@ $(python3 inject.py --chain fragments/tool-tiers/explore.chain.json)
 
 ---
 
-## 5. Documentation
+## 5. Skill Changes
+
+### Two categories of skills
+
+**Graph-only skills — no changes needed:**
+
+Skills `graph-explore`, `graph-debug`, `graph-review`, `graph-refactor` require code-review-graph by design. They make no sense without it. These skills stay as-is. A guard message may be added if codegraph is disabled, but no chain migration applies.
+
+**General skills — migrate tool-reference steps to `--chain` calls:**
+
+| Skill | Lines to replace | Chain fragment |
+|-------|-----------------|----------------|
+| `skills/debug/SKILL.md` | Phase 2 investigation steps (graph tool calls ~lines 82-87) | `explore.chain.json` + `search.chain.json` |
+| `skills/create-plan/SKILL.md` | Phase 2 exploration steps (graph tool calls ~lines 50-53) | `explore.chain.json` |
+| `skills/cr/SKILL.md` | Step 1 scope steps (graph tool calls ~lines 51-54) | already has `fragments/code-review-graph/step1-scope.md` — extend with chain |
+| `skills/refactor/SKILL.md` | Workflow architecture survey (~lines 18-21) | `explore.chain.json` |
+| `skills/test-driven-development/SKILL.md` | Graph tool references | `search.chain.json` |
+| `skills/explain-complex-code/SKILL.md` | Graph tool references | `explore.chain.json` + `search.chain.json` |
+
+**Migration pattern for each skill:**
+
+```markdown
+## Phase 2: Investigate
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
+```
+
+`allowed-tools:` frontmatter entries for graph/serena tools are removed from general skills — the chain fragments define what's available contextually.
+
+---
+
+## 6. Agent Changes
+
+### Constraint
+
+Agent `.md` files are static markdown. Shell commands do not execute. `inject.py --chain` cannot be used in agents.
+
+### Approach
+
+Agent `tools:` frontmatter arrays and tier body text stay structurally as-is. The behavioral tier preference comes from STARTUP_INSTRUCTIONS.md (assembled via chains). Agent body text is enriched with Serena's powerful tool instructions — currently absent.
+
+**Agents that need Serena tool enrichment:**
+
+| Agent | Missing Serena instructions |
+|-------|---------------------------|
+| `agents/explorer.md` | `find_referencing_symbols`, `get_symbols_overview` usage patterns |
+| `agents/code-reviewer.md` | `replace_symbol_body`, `insert_before/after_symbol` for suggesting fixes |
+| `agents/architecture-reviewer.md` | `rename_symbol`, `find_referencing_symbols` for impact analysis |
+| `agents/dead-code-detector.md` | `safe_delete_symbol`, `find_referencing_symbols` |
+| `agents/duplicate-detector.md` | `find_referencing_symbols`, `get_symbols_overview` |
+| `agents/step-simulator.md` | `find_symbol`, `get_symbols_overview` |
+| `agents/log-analyzer.md` | `find_symbol`, `search_for_pattern` usage patterns |
+
+**What changes in agent body text:** Add a "Serena tools" subsection under the existing tool hierarchy describing when and how to use the powerful structural editing/analysis tools. This is additive — no existing lines removed.
+
+---
+
+## 7. Documentation
 
 ### `.claude/rules/fragment-system.md` (new)
 
@@ -211,7 +270,8 @@ Covers:
 - Chain file format and both modes
 - When to use `--chain` vs `--if`/`--prefer`
 - When to use exclusive vs additive mode
-- How Serena and codegraph fragments relate
+- Graph-only skills vs general skills distinction
+- How agents differ from skills (static — no inject.py)
 
 ### `CONTRIBUTING.md` (update)
 
@@ -220,6 +280,7 @@ Add section: **Writing Fragments**
 - How to create a chain file
 - How to reference fragments from SKILL.md
 - Naming conventions
+- When NOT to use chains (graph-only skills)
 
 ---
 
@@ -227,12 +288,13 @@ Add section: **Writing Fragments**
 
 1. `inject.py` — add `--prefer` flag + tests
 2. `inject.py` — add `--chain` mode + tests
-3. `fragments/tool-tiers/` — create leaf content files (search, edit, impact, review, explore)
+3. `fragments/tool-tiers/` — create leaf content files (search, edit, impact, review, explore) with Serena + codegraph + fallback variants
 4. `fragments/tool-tiers/` — create chain config files
 5. `STARTUP_INSTRUCTIONS.md` — refactor to use chains
-6. Skills — migrate to `--chain` calls (can be incremental)
-7. `.claude/rules/fragment-system.md` — write rule doc
-8. `CONTRIBUTING.md` — add fragment authoring section
+6. General skills — migrate to `--chain` calls (`debug`, `create-plan`, `cr`, `refactor`, `tdd`, `explain-complex-code`)
+7. Agents — enrich body text with Serena powerful tool instructions (all 7 agents)
+8. `.claude/rules/fragment-system.md` — write rule doc
+9. `CONTRIBUTING.md` — add fragment authoring section
 
 ---
 
@@ -240,4 +302,5 @@ Add section: **Writing Fragments**
 
 - Changing `.bdk/settings.json` schema (feature flags already exist)
 - New MCP tools or Serena configuration
-- Skill rewrites beyond tool reference migration
+- Changes to graph-only skills (graph-explore, graph-debug, graph-review, graph-refactor)
+- Converting agents to skills for dynamic injection
