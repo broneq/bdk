@@ -151,3 +151,68 @@ def test_object_entry_replace_works_without_bdk_default(tmp_path):
     result = resolve_rule("unknown-rule", cwd=project, plugin_root=plugin_root)
 
     assert result == "user only"
+
+
+def test_string_entry_user_file_missing_raises(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"quality": {"code-quality": "missing.md"}})
+
+    with pytest.raises(FileNotFoundError):
+        resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+
+def test_object_entry_path_missing_raises(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"quality": {"code-quality": {"mode": "replace"}}})
+
+    with pytest.raises(ValueError, match="path.*required"):
+        resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+
+def test_unknown_rule_no_bdk_default_raises(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    (plugin_root / "rules").mkdir(parents=True)
+    project = tmp_path / "project"
+    project.mkdir()
+
+    with pytest.raises(FileNotFoundError):
+        resolve_rule("nonexistent", cwd=project, plugin_root=plugin_root)
+
+
+def test_unknown_mode_warns_and_extends(tmp_path, capsys):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("user")
+    _write_settings(
+        project,
+        {"quality": {"code-quality": {"path": "user.md", "mode": "garbage"}}},
+    )
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default\n\nuser"
+    captured = capsys.readouterr()
+    assert "unknown mode" in captured.err
+
+
+def test_empty_user_file_extends(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("")
+    _write_settings(project, {"quality": {"code-quality": "user.md"}})
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default\n\n"
