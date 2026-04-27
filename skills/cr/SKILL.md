@@ -91,6 +91,18 @@ Based on total changed lines:
 
 **Massive (3000+ lines):** Same as Large, N capped at 5.
 
+### Step 2.5: Resolve Quality Rule Placeholders
+
+Before dispatching agents, read `references/reviewer-prompt-template.md`. For each `<!-- INJECT: <name> -->` marker, run:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>
+```
+
+Substitute the script's stdout in place of the marker. If exit is non-zero, surface the stderr message and stop dispatch — quality rules are mandatory context for reviewers.
+
+The resolved template is what each layer-group reviewer, architecture-reviewer, and test-reviewer receives in their prompt.
+
 ### Step 3: Dispatch ALL Agents in Parallel
 
 Launch ALL planned agents in SINGLE message using Agent tool with `run_in_background: true`.
