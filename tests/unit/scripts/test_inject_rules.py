@@ -85,3 +85,18 @@ def test_settings_with_quality_but_rule_missing_returns_bdk_default(tmp_path):
     result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
 
     assert result == "default content"
+
+
+def test_string_entry_extends_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "docs" / "coding.md"
+    user_file.parent.mkdir(parents=True)
+    user_file.write_text("user additions")
+    _write_settings(project, {"quality": {"code-quality": "docs/coding.md"}})
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content\n\nuser additions"

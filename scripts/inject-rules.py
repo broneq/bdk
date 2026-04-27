@@ -53,7 +53,38 @@ def resolve_rule(name: str, cwd: Path | None = None, plugin_root: Path | None = 
             raise FileNotFoundError(f"BDK default not found: {default_path}")
         return default_path.read_text(encoding="utf-8")
 
-    raise NotImplementedError("entry handling — implemented in later task")
+    # Normalise entry to {path, mode}
+    if isinstance(entry, str):
+        normalised = {"path": entry, "mode": "extends"}
+    elif isinstance(entry, dict):
+        if "path" not in entry:
+            raise ValueError(f"quality.{name}: 'path' is required in object form")
+        mode = entry.get("mode", "extends")
+        if mode not in ("extends", "replace"):
+            print(
+                f"[BDK inject-rules] quality.{name}: unknown mode {mode!r}, treating as 'extends'",
+                file=sys.stderr,
+            )
+            mode = "extends"
+        normalised = {"path": entry["path"], "mode": mode}
+    else:
+        raise ValueError(f"quality.{name}: must be string or object, got {type(entry).__name__}")
+
+    user_path = Path(normalised["path"])
+    if not user_path.is_absolute():
+        user_path = cwd / user_path
+    if not user_path.exists():
+        raise FileNotFoundError(f"quality.{name}: user file not found: {user_path}")
+    user_content = user_path.read_text(encoding="utf-8")
+
+    if normalised["mode"] == "replace":
+        return user_content
+
+    # extends mode
+    if not default_path.exists():
+        raise FileNotFoundError(f"BDK default not found (required for extends mode): {default_path}")
+    default_content = default_path.read_text(encoding="utf-8")
+    return f"{default_content}\n\n{user_content}"
 
 
 def main() -> None:
