@@ -64,6 +64,51 @@ Used by skills internally (invoke via `subagent_type`):
 
 ---
 
+## Quality Rules
+
+BDK ships language-agnostic rule sets (`code-quality`, `architecture`) injected into `/bdk:cr` and `/bdk:create-plan` outputs.
+
+### Four usage patterns
+
+**1. Zero config (recommended for most projects).** No settings entry. BDK defaults are used as-is.
+
+**2. Extend defaults.** Point `.bdk/settings.json` at a file with project-specific additions:
+
+```json
+{
+  "quality": {
+    "code-quality": "docs/standards/coding.md"
+  }
+}
+```
+
+The BDK default content is emitted first, then your file's content appended.
+
+**3. Replace defaults.** When your project has its own complete rule set:
+
+```json
+{
+  "quality": {
+    "code-quality": {
+      "path": "docs/standards/coding.md",
+      "mode": "replace"
+    }
+  }
+}
+```
+
+**4. Point at existing project doc.** Same as pattern 2, but the path can be any existing standards doc — no copy needed.
+
+### Behaviour on misconfiguration
+
+If `.bdk/settings.json` references a file that doesn't exist (or is unreadable), `inject-rules.py` exits 1 with a clear error. `/bdk:cr` and `/bdk:create-plan` will surface the error and stop, rather than silently dropping the rule context.
+
+### Adding a new rule category
+
+See `.claude/rules/quality-rules.md` (BDK-dev convention).
+
+---
+
 ## What Does NOT Go Into BDK
 
 These stay in the project-level `.claude/` of each repo:
