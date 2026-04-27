@@ -116,6 +116,29 @@ bdk/
 
 ### Skill integration
 
+**Constraint:** Shell substitution (`!`...`` `) only fires at SKILL.md load time. It does NOT execute inside `references/*.md`. Templates therefore use a **placeholder convention** that the skill resolves explicitly via the Bash tool when constructing prompts.
+
+#### Placeholder syntax
+
+Templates mark injection points with HTML comments:
+
+```
+<!-- INJECT: code-quality -->
+<!-- INJECT: architecture -->
+```
+
+Invisible if rendered without processing. Trivial to grep/regex.
+
+#### Resolution flow inside skills
+
+Skill SKILL.md instructs Claude:
+
+> Before emitting the template (or constructing the prompt from it), find every `<!-- INJECT: <name> -->` placeholder. For each, run:
+> ```
+> python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>
+> ```
+> Substitute the placeholder with the script's stdout. If the script exits non-zero, surface the error and stop.
+
 #### `skills/cr/references/reviewer-prompt-template.md`
 
 Line 18 changes from:
@@ -127,7 +150,7 @@ Line 18 changes from:
 to:
 
 ```
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py code-quality`
+<!-- INJECT: code-quality -->
 ```
 
 Line 22 changes from:
@@ -139,8 +162,12 @@ Line 22 changes from:
 to:
 
 ```
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py architecture`
+<!-- INJECT: architecture -->
 ```
+
+#### `skills/cr/SKILL.md`
+
+Add a step to the prompt-construction phase: "Resolve `<!-- INJECT: <name> -->` placeholders in the reviewer prompt template by running `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>` for each. Substitute output into the prompt before dispatching reviewers."
 
 #### `skills/create-plan/references/plan-template.md`
 
@@ -156,8 +183,12 @@ to:
 ```
 **Code Standards:**
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py code-quality`
+<!-- INJECT: code-quality -->
 ```
+
+#### `skills/create-plan/SKILL.md`
+
+Add a step before emitting the plan: "Resolve `<!-- INJECT: <name> -->` placeholders in the plan template by running `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>` for each. Substitute output into the final plan."
 
 ### Tests
 
@@ -193,18 +224,23 @@ Use `tmp_path` fixtures. Set `CLAUDE_PLUGIN_ROOT` env var per test. No real file
 ## Architecture
 
 ```
-┌─────────────────────┐     ┌──────────────────────┐
-│ skills/cr           │     │ skills/create-plan   │
-│ reviewer-prompt-tpl │     │ plan-template        │
-└──────────┬──────────┘     └──────────┬───────────┘
-           │                           │
-           │  inject-rules.py code-quality
-           ▼                           ▼
+┌──────────────────────────────────────────────────────────┐
+│ Skill (cr or create-plan) — SKILL.md orchestration       │
+│                                                          │
+│  1. Read template (references/*.md) verbatim             │
+│  2. Find <!-- INJECT: <name> --> placeholders            │
+│  3. For each, run inject-rules.py via Bash tool          │
+│  4. Substitute output into template                      │
+│  5. Emit resolved prompt/plan                            │
+└────────────────────────┬─────────────────────────────────┘
+                         │
+                         ▼
         ┌──────────────────────────────────┐
         │ scripts/inject-rules.py          │
         │  - reads .bdk/settings.json      │
-        │  - resolves rule path            │
+        │  - resolves rule source          │
         │  - applies extends/replace mode  │
+        │  - writes resolved content stdout│
         └────────────┬─────────────────────┘
                      │
         ┌────────────┴────────────┐
@@ -212,8 +248,22 @@ Use `tmp_path` fixtures. Set `CLAUDE_PLUGIN_ROOT` env var per test. No real file
   ${CLAUDE_PLUGIN_ROOT}/    <project>/<user-path>
   rules/code-quality.md     (per settings.json)
   rules/architecture.md
-  (BDK defaults)            (user override)
+  (BDK defaults)            (user override, optional)
 ```
+
+### `rules/` vs `fragments/` — distinction
+
+BDK already has `fragments/` for conditional content. `rules/` is a separate concept:
+
+| | `fragments/` | `rules/` |
+|--|--------------|----------|
+| **Purpose** | Conditional injection based on feature flags | Default rule sets, overridable by user |
+| **Trigger** | `features.<flag>` in settings | Always injected; settings only changes *source* |
+| **User override** | No (only on/off via flag) | Yes (path or content via `quality` settings) |
+| **Resolver** | `scripts/inject.py` | `scripts/inject-rules.py` |
+| **Settings section** | `features` | `quality` |
+
+Keeping them separate avoids overloading either concept. Mixing override-able defaults under `fragments/` would conflate "feature on/off" with "where does this content come from".
 
 ## Trade-offs Considered
 
@@ -225,6 +275,8 @@ Use `tmp_path` fixtures. Set `CLAUDE_PLUGIN_ROOT` env var per test. No real file
 | Per-language rule files (`code-quality-python.md`) | Violates BDK language-agnostic principle. Language nuance belongs in consuming skill. |
 | `mode: "prepend"` (user content first, default after) | No clear use case; complexity without value. |
 | Disable-individual-rules markers | YAGNI. Revisit if users request. |
+| Shell-substitution (`!`...`` ` ) inside `references/*.md` | Doesn't execute — substitution only runs at SKILL.md load. Forced placeholder + Bash-tool resolution at skill orchestration time. |
+| Reuse `fragments/` for rule files | Different semantics (override vs. feature flag). Keeps mental model and settings schema clean. |
 
 ## Success Criteria
 
