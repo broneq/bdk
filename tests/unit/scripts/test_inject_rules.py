@@ -61,3 +61,27 @@ def test_no_settings_file_returns_bdk_default(tmp_path):
     result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
 
     assert result == "default content"
+
+
+def test_settings_without_quality_returns_bdk_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"features": {"react": True}})
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content"
+
+
+def test_settings_with_quality_but_rule_missing_returns_bdk_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"quality": {"architecture": "docs/arch.md"}})
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content"
