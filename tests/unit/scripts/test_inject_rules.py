@@ -100,3 +100,54 @@ def test_string_entry_extends_default(tmp_path):
     result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
 
     assert result == "default content\n\nuser additions"
+
+
+def test_object_entry_extends(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("user additions")
+    _write_settings(
+        project,
+        {"quality": {"code-quality": {"path": "user.md", "mode": "extends"}}},
+    )
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content\n\nuser additions"
+
+
+def test_object_entry_replace(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("user only")
+    _write_settings(
+        project,
+        {"quality": {"code-quality": {"path": "user.md", "mode": "replace"}}},
+    )
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "user only"
+
+
+def test_object_entry_replace_works_without_bdk_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    (plugin_root / "rules").mkdir(parents=True)  # rules/ exists but file missing
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("user only")
+    _write_settings(
+        project,
+        {"quality": {"unknown-rule": {"path": "user.md", "mode": "replace"}}},
+    )
+
+    result = resolve_rule("unknown-rule", cwd=project, plugin_root=plugin_root)
+
+    assert result == "user only"
