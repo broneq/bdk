@@ -216,3 +216,40 @@ def test_empty_user_file_extends(tmp_path):
     result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
 
     assert result == "default\n\n"
+
+
+def test_cli_emits_default_to_stdout(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+
+    proc = _run_cli(["code-quality"], cwd=project, plugin_root=plugin_root)
+
+    assert proc.returncode == 0
+    assert proc.stdout == "default content"
+
+
+def test_cli_missing_user_file_exits_one(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"quality": {"code-quality": "missing.md"}})
+
+    proc = _run_cli(["code-quality"], cwd=project, plugin_root=plugin_root)
+
+    assert proc.returncode == 1
+    assert "user file not found" in proc.stderr
+
+
+def test_cli_no_args_exits_one(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+
+    proc = _run_cli([], cwd=project, plugin_root=plugin_root)
+
+    assert proc.returncode == 1
+    assert "Usage" in proc.stderr
