@@ -179,7 +179,8 @@ Expected: exits 0 with no errors
 ## References
 
 **Code Standards:**
-.claude/shared/code-quality.md
+
+<!-- INJECT: code-quality -->
 
 **Design Doc:** [path if exists]
 
