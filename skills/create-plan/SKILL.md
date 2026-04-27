@@ -119,6 +119,9 @@ Inject project tools context before writing:
 
 - Test tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 - Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
+- Quality rules: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py code-quality`
+
+Resolve the `<!-- INJECT: code-quality -->` placeholder in `references/plan-template.md` by substituting the resolved content above into the final plan output. If `inject-rules.py` exits non-zero, surface the error and stop — quality rules must be present in every plan.
 
 Use these values when filling the Verification section of `references/plan-template.md`. If a command fails (no `.bdk/settings.json`), fall back to generic phrasing ("run the project's test suite").
 
