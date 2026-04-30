@@ -1,0 +1,1 @@
+{"eval_id": 3, "eval_name": "specific-bug-no-clarification", "prompt": "When I export a report to PDF, the footer shows page '0 of 0' instead of the correct page numbers. Steps to reproduce: go to Reports > Export > PDF on any report with more than 1 page.", "assertions": []}

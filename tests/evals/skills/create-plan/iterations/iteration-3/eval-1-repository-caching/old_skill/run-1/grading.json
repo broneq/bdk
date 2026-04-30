@@ -1,0 +1,54 @@
+{
+  "eval_id": 1,
+  "eval_name": "repository-caching",
+  "run": "old_skill",
+  "expectations": [
+    {
+      "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "Plan written to docs/plans/ in iteration-2"
+    },
+    {
+      "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "Multiple approaches present in iteration-2 plan"
+    },
+    {
+      "text": "existing_repository_identified: Exploration found and referenced the actual existing repository class",
+      "passed": true,
+      "evidence": "Agents found BaseJsonFileRepository, TemplateDiffsFileRepository, TemplateRulesFileRepository"
+    },
+    {
+      "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "Exact paths present in iteration-2 plan"
+    },
+    {
+      "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+      "passed": true,
+      "evidence": "\u2705/\u274c markers present in iteration-2 plan"
+    },
+    {
+      "text": "cache_invalidation_addressed: Plan explicitly addresses cache invalidation on write",
+      "passed": true,
+      "evidence": "Cache invalidation addressed in iteration-2 plan"
+    },
+    {
+      "text": "two_explorer_agents_dispatched: 2 explorer agents were dispatched for medium complexity",
+      "passed": true,
+      "evidence": "Transcript shows Agent 1 (Utilities) and Agent 2 (Architecture & Dependencies) dispatched"
+    },
+    {
+      "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "grep count=3, all 3 tasks have /test-driven-development references \u2014 iteration-2 skill already had this"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 8,
+    "failed": 0,
+    "total": 8
+  },
+  "configuration": "old_skill"
+}

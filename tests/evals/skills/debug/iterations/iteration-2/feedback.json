@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "run_id": "eval-2-complex-unicode-with_skill",
+      "feedback": "I don't see recomendation to use /create-plan\nIt seems to be complex problem, so maybe my gap <20K tokens is bad?\nYou don't pass steps to reproduce to /create-plan - it's really important!",
+      "timestamp": "2026-03-27T08:59:33.043Z"
+    },
+    {
+      "run_id": "eval-3-vague-input-with_skill",
+      "feedback": "I mean somethink different in previous answer Test was ok, but previous output was:\n\n### AskUserQuestion (SIMULATED)\n\n**Question I would ask the user:**\n\n> The migration is broken \u2014 can you give me a bit more detail so I can investigate effectively?\n>\n> Specifically, I need one or more of the following:\n>\n> 1. **Error message or traceback** \u2014 paste the full error output (exception class, stack trace, file/line number)\n> 2. **Steps to reproduce** \u2014 what command did you run? What input file or data did you use?\n> 3. **Expected vs actual behavior** \u2014 what did you expect to happen, and what happened instead?\n> 4. **Affected component** \u2014 do you know which part is broken? (e.g., the HTML parser, the XML output, the CLI command, a specific charter party document?)\n>\n> **Options presented:**\n> - Paste an error message or traceback\n> - Describe the steps to reproduce (command + input)\n> - Describe what you expected vs what actually happened\n> - Point me to a specific file, test, or document type that is failing\n\n**STOP \u2014 waiting for user response before proceeding.**\n---\nthat questions were ok but I mean that you should ask inline instead of AskUserQuestion tool.",
+      "timestamp": "2026-03-27T08:59:33.043Z"
+    }
+  ],
+  "status": "in_progress"
+}

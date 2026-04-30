@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "eval_name": "failing-cli-command",
+  "run": "new_skill",
+  "expectations": [
+    {
+      "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "Plan written to docs/plans/2026-03-24-fix-addition-position-preserved-validation.md and copied to outputs/plan.md"
+    },
+    {
+      "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "3 approaches: Add _try_short_context_fallback to ContextMatcher (selected), Lower global min_match_ratio (rejected), Fix merger gap threshold (rejected)"
+    },
+    {
+      "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "All 4 tasks list exact paths: src/data_migrator/services/verification/axioms/position/context_matcher.py, tests/unit/services/verification/axioms/position/, tests/integration/test_addition_position_preserved_nype46.py"
+    },
+    {
+      "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with ✅ or ❌",
+      "passed": true,
+      "evidence": "All 4 tasks contain ✅ and ❌ markers with concrete inputs and expected outcomes"
+    },
+    {
+      "text": "failing_command_in_verification: The exact failing CLI command is included in the Verification or Success Criteria section",
+      "passed": true,
+      "evidence": "Exact command 'uv run data-migrator migrate --name=nype46 tests/fixtures/orv1/nype46/document_test_4201_anon.html --debug-dir=tmp/dumps --verify' appears in Verification Regression section (line 369) and Success Criteria"
+    },
+    {
+      "text": "root_cause_investigated: Plan explores what causes the addition_position_preserved failure",
+      "passed": true,
+      "evidence": "3 root cause candidates analyzed: ContextExpander over-expansion, V2 candidate line misalignment, short context at document edges. Architecture traced through axiom.py, pipeline.py, context_matcher.py, context_expander.py, filtering.py"
+    },
+    {
+      "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "All 4 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.'"
+    }
+  ]
+}

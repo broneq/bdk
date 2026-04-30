@@ -1,0 +1,11 @@
+{
+  "expectations": [
+    {"text": "announces_skill_at_start", "passed": true, "evidence": "Announces 'Using debug to investigate the issue.'"},
+    {"text": "traces_call_chain", "passed": true, "evidence": "Traced all 4 services, found .encode('ascii') pattern in each"},
+    {"text": "writes_failing_test", "passed": true, "evidence": "5 primary tests + 2 gap tests, all confirmed RED"},
+    {"text": "assesses_impact_as_HIGH", "passed": true, "evidence": "Explicitly: new shared abstraction all 4 services depend on + DB migration + schema change = 'if I get this wrong, many things break'"},
+    {"text": "recommends_create_plan", "passed": true, "evidence": "Routed to /create-plan with root cause, steps-to-reproduce, failing test paths, and architectural constraints"},
+    {"text": "asks_user_confirmation", "passed": true, "evidence": "AskUserQuestion printed with all 3 options before routing"}
+  ],
+  "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}
+}

@@ -1,0 +1,8 @@
+{
+  "mode": "exclusive",
+  "chain": [
+    { "if": ["features.code-review-graph"], "then": "search-graph.md" },
+    { "if": ["features.serena"], "then": "search-serena.md" },
+    { "then": "search-fallback.md" }
+  ]
+}

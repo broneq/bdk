@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat ${CLAUDE_PLUGIN_ROOT}/STARTUP_INSTRUCTIONS.md"
+          },
+          {
+            "type": "command",
+            "command": "command -v uvx >/dev/null 2>&1 || echo '[BDK] WARNING: uvx not found. MCP tools (serena, code-review-graph) require uvx. Install: https://docs.astral.sh/uv/getting-started/installation/'"
+          },
+          {
+            "type": "command",
+            "command": "command -v uvx >/dev/null 2>&1 && uvx code-review-graph status || true"
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-rules-drift/check.py --snapshot-baseline"
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-bdk-config/check.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-rules-drift/check.py"
+          },
+          {
+            "type": "command",
+            "command": "command -v uvx >/dev/null 2>&1 && uvx code-review-graph update || true"
+          }
+        ]
+      }
+    ]
+  }
+}

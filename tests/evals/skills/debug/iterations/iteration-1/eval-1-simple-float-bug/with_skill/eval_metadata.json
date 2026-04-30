@@ -1,0 +1,6 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-float-bug",
+  "prompt": "When I call `format_price(0.1 + 0.2)` it returns `'0.30000000000000004'` instead of `'0.30'`. Steps to reproduce: call `format_price(0.1 + 0.2)` in a Python REPL.",
+  "assertions": []
+}

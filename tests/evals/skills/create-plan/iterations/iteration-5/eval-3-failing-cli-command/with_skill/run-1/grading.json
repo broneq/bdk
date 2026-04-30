@@ -1,0 +1,99 @@
+{
+  "eval_id": 3,
+  "config": "with_skill",
+  "expectations": [
+    {
+      "text": "A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "docs/plans/2026-03-27-fix-addition-position-preserved-axiom-v2.md exists on disk. Transcript Phase 1 confirms: 'Plan file 2026-03-27-fix-addition-position-preserved-axiom.md already existed \u2014 created v2 at 2026-03-27-fix-addition-position-preserved-axiom-v2.md'. Plan is 344 lines of substantive content."
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "Plan documents 3 approaches: Approach 1 (Fix _extract_placeholder to return list + add IGNORE guard \u2014 Selected), Approach 2 (Filter IGNORE placeholders in V1Extractor \u2014 Not Selected), Approach 3 (Fix PositionPreservedAxiom to skip IGNORE-sourced additions \u2014 Not Selected). Each has Pros/Cons and 'Why not selected' reasoning."
+    },
+    {
+      "text": "Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "Task 1: 'src/data_migrator/processors/tokenizers/sea/core/dom_walker.py', 'tests/unit/processors/tokenizers/sea/core/test_dom_walker.py'. Task 2: 'tests/unit/processors/tokenizers/sea/core/test_dom_walker.py' (no source changes). Task 3: 'No code changes; acceptance criterion for the full fix'. All references are exact file paths or explicit 'no changes' statements."
+    },
+    {
+      "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+      "passed": true,
+      "evidence": "Task 1 has 4 \u2705 and 1 \u274c test cases. Task 2 has 3 \u2705 test cases. Task 3 has 2 \u2705 test cases. All use \u2705/\u274c markers with specific scenario descriptions."
+    },
+    {
+      "text": "The exact failing CLI command is included in the Verification or Success Criteria section as a regression/acceptance check",
+      "passed": true,
+      "evidence": "Plan Verification Regression section contains verbatim: 'uv run data-migrator migrate --name=nype46 tests/fixtures/orv1/nype46/document_test_4201_anon.html --debug-dir=tmp/dumps --verify'. Also appears in Context section. Transcript Verification section confirms: 'extracted verbatim from failing CLI command in task input'. Task 3 references it as the acceptance criterion."
+    },
+    {
+      "text": "Plan explores what causes the addition_position_preserved failure \u2014 not just where to add a fix but why it fails",
+      "passed": true,
+      "evidence": "Plan Context section explains the causal chain: '1. V1Extractor.build_word_sequence() counts the placeholder's value as an ADDITION token. 2. The migration itself suppresses the placeholder (because IGNORE means skip), so V2 XML does not contain the placeholder as an addition. 3. PositionPreservedAxiom finds the V1 addition has no matching V2 position and raises a violation \u2014 even though migration was correct.' It also explains WHY: 'After the refactor in cb77627, the method was changed to always emit text_type=ChangeType.ADDITION (correct for non-IGNORE cases), but the IGNORE suppression was not added.'"
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "Task 1 ends with '> Follow `/test-driven-development` skill for test writing and red-green-clean cycle.' Task 2 ends with the same. Task 3 ends with the same. All 3 tasks have this footer."
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt \u2014 they use '# CLI regression \u2014 see Verification section' instead)",
+      "passed": true,
+      "evidence": "Task 1 scaffold: 5 stubs for 5 test cases (test_inherited_type_ignore_returns_empty_list, test_inherited_type_none_emits_addition_token, test_inherited_type_deletion_emits_addition_token, test_inherited_type_addition_emits_addition_token, test_inherited_type_black_emits_addition_token). Task 2 scaffold: 3 stubs for 3 walk() integration cases. Task 3 scaffold: '# CLI regression \u2014 see Verification section' (correct exemption). Transcript confirms Task 3 'correctly uses the CLI regression exception note instead of stubs'."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tokens": 53144,
+    "output_chars": 53144,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 230.4,
+    "total_duration_seconds": 230.4
+  },
+  "claims": [
+    {
+      "claim": "The untracked test file tests/unit/processors/tokenizers/sea/core/test_dom_walker.py already exists in the working tree",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Git status at conversation start shows '?? tests/unit/processors/tokenizers/sea/core/test_dom_walker.py' \u2014 confirming it is an untracked file in the working tree. Plan and transcript both reference this as 'untracked file already exists with full coverage'."
+    },
+    {
+      "claim": "_handle_text already contains an identical IGNORE guard pattern",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Plan Reusable Components: 'src/data_migrator/processors/tokenizers/sea/core/dom_walker.py:SeaDomWalker._handle_text \u2014 identical IGNORE guard pattern: if change_type == ChangeType.IGNORE: return []'. Transcript Agent 1: '_handle_text contains identical IGNORE guard pattern; _extract_placeholder was missing it'. The git status shows dom_walker.py is modified (M), consistent with the fix being in progress."
+    },
+    {
+      "claim": "Commit cb77627 introduced the regression by changing _extract_placeholder to always emit ADDITION",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Plan Context references 'commit cb77627' by hash. Git log confirms cb77627: 'feat: implement SEA parser refactoring with nested change type contradiction handling' is in the recent commit history. The causal link is coherent and specific."
+    },
+    {
+      "claim": "2 explorer agents were dispatched for medium complexity",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript 'Scope determination: Medium (cross-file: dom_walker + test file + verification axiom pipeline)'. Two agents documented: Agent 1 (Utilities & Existing Implementations) and Agent 2 (Architecture & Dependencies)."
+    }
+  ],
+  "user_notes_summary": {},
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "Assertion 6 ('explores what causes the failure') is satisfied by the plan's Context section. However, the assertion could be tightened to require that the exploration section names the specific commit or code path responsible \u2014 plans that just describe the symptom without the mechanism would also pass a weaker version of this check. This eval's assertion is actually fairly strong; noting it is above-average quality."
+      },
+      {
+        "reason": "No assertion checks that Task 2 (walk() integration test) is present. A plan that only has Task 1 (unit test) and Task 3 (CLI regression) would pass all current assertions but would miss the integration-level coverage. An assertion like 'plan includes integration tests verifying the fix through the walk() call chain' would be discriminating."
+      }
+    ],
+    "overall": "All 8 assertions pass. This eval is the most discriminating in the iteration \u2014 assertion 6 requires genuine causal analysis, not just symptom description. The CLI regression command check (assertion 5) is well-targeted. One gap: no assertion for integration-level walk() coverage."
+  }
+}

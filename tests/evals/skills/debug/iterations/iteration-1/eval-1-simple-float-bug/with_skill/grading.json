@@ -1,0 +1,51 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-float-bug",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "announces_skill_at_start",
+      "passed": true,
+      "evidence": "Transcript opens with 'Using debug to investigate the issue.' in the Announcement section"
+    },
+    {
+      "text": "prints_phase1_summary",
+      "passed": true,
+      "evidence": "[debug] Issue: format_price(0.1 + 0.2) returns raw float repr... and [debug] Signals: error=none (wrong return value), component=format_price both present"
+    },
+    {
+      "text": "identifies_root_cause",
+      "passed": true,
+      "evidence": "[debug] Root cause: format_price uses str(value) which exposes raw IEEE 754 float repr; no decimal rounding applied"
+    },
+    {
+      "text": "writes_concrete_failing_test",
+      "passed": true,
+      "evidence": "test_format_price_float_sum_returns_two_decimal_places with input format_price(0.1 + 0.2) and expected '0.30'"
+    },
+    {
+      "text": "confirms_tests_are_red",
+      "passed": true,
+      "evidence": "Simulated test-runner output shows 5 FAILED tests, followed by '[debug] Failing tests confirmed: 3 red' and '[debug] Gap tests confirmed: 2 red'"
+    },
+    {
+      "text": "asks_user_confirmation",
+      "passed": true,
+      "evidence": "AskUserQuestion simulated with all 3 options: A) Fix now, B) Create plan, C) Something else"
+    },
+    {
+      "text": "scans_for_related_gaps",
+      "passed": true,
+      "evidence": "Found format_percentage and format_currency as sibling functions with identical str(value) pattern \u2014 2 gap tests written"
+    }
+  ],
+  "pass_count": 7,
+  "total_count": 7,
+  "pass_rate": 1.0,
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

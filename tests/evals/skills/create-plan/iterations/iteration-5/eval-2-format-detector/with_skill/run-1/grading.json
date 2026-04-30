@@ -1,0 +1,104 @@
+{
+  "eval_id": 2,
+  "config": "with_skill",
+  "expectations": [
+    {
+      "text": "A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "docs/plans/2026-03-27-document-format-detector-parser-selection.md exists on disk. Transcript Phase 4 confirms: 'Plan written to docs/plans/2026-03-27-document-format-detector-parser-selection.md'. Plan is 607 lines of substantive content."
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "Plan documents 3 approaches: Approach 1 (SeaFormatDetector + FormatParserResolver \u2014 Selected), Approach 2 (Auto-detect Inline in SourceDocumentParser \u2014 Not Selected), Approach 3 (FormatDetectorStrategy grows resolve_parser_name() \u2014 Not Selected). Each has Pros/Cons and 'Why not selected' justification."
+    },
+    {
+      "text": "Exploration identified existing detector/parser patterns in the codebase and referenced them",
+      "passed": true,
+      "evidence": "Transcript Agent 1 found: FormatDetectorInterface (base class), FroalaFormatDetector (reference pattern), FormatDetectorStrategy.register_detector(), TokenizerStrategy already having 'sea_contracts'. Agent 3 found FroalaFormatDetector.matches() using 'any(marker in self._content for marker in _FROALA_MARKERS)' \u2014 the exact pattern reused. Plan Section 'Reusable Components' lists FroalaFormatDetector as 'exact reference implementation to follow' with full file path."
+    },
+    {
+      "text": "Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "All 6 tasks list exact paths. Task 1: 'src/data_migrator/schemas/models/fingerprint.py'. Task 2: 'src/data_migrator/detectors/sea/__init__.py', 'src/data_migrator/detectors/sea/sea_format_detector.py', etc. Task 3: 'src/data_migrator/detectors/format_detector_strategy.py'. Task 4: 'src/data_migrator/processors/format_parser_resolver.py'. Task 5: 'src/data_migrator/services/source_parsing/source_document_parser.py'. Task 6: 'src/data_migrator/containers/base.py'. No vague references."
+    },
+    {
+      "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+      "passed": true,
+      "evidence": "All 6 tasks use \u2705/\u274c markers. Task 1: 3 \u2705. Task 2: 6 \u2705 + 1 \u274c. Task 3: 3 \u2705. Task 4: 3 \u2705 + 1 \u274c. Task 5: 3 \u2705 + 1 \u274c. Task 6: 3 \u2705. Transcript confirms counts per task."
+    },
+    {
+      "text": "Plan explains how to register the new detector in the existing parser selection mechanism",
+      "passed": true,
+      "evidence": "Task 3 (Register SeaFormatDetector in FormatDetectorStrategy.create_default()) explicitly addresses registration with code: 'strategy.register_detector(\"sea_contracts\", SeaFormatDetector)'. Task 4 creates FormatParserResolver mapping DocumentFormat.SEA_HTML to 'sea_contracts'. Task 5 wires _resolve_parser_name() into SourceDocumentParser. Task 6 adds resolver to DefaultContainer. The full registration chain is documented end-to-end."
+    },
+    {
+      "text": "3 explorer agents were dispatched for complex scope",
+      "passed": true,
+      "evidence": "Transcript states 'Scope assessment: Complex (new detector class, new resolver class, integration into parser service, DI container wiring \u2014 multiple components across multiple layers)'. Three agents documented: Agent 1 (Utilities & Existing Implementations), Agent 2 (Architecture & Dependencies), Agent 3 (Similar Features). Transcript Phase 2: '3 agents dispatched (Complex scope)'."
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "All 6 tasks end with '> Follow `/test-driven-development` skill for test writing and red-green-clean cycle.' Transcript confirms: 'All tasks end with > Follow /test-driven-development skill for test writing and red-green-clean cycle.'"
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt)",
+      "passed": true,
+      "evidence": "Task 1: 3 stubs for 3 cases. Task 2: 7 stubs for 7 cases. Task 3: 3 stubs for 3 cases. Task 4: 4 stubs for 4 cases. Task 5: 4 stubs for 4 cases. Task 6: 3 stubs for 3 cases. All stubs have concrete arrange/act/assert. Transcript confirms 'All stubs include concrete arrange/act/assert skeletons with real fixture variables.' No CLI regression tasks present."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tokens": 56889,
+    "output_chars": 56889,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 258.1,
+    "total_duration_seconds": 258.1
+  },
+  "claims": [
+    {
+      "claim": "FormatDetectionError and ParserNotFoundError already exist in exceptions.py",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Agent 2 confirmed: 'FormatDetectionError and ParserNotFoundError already exist in exceptions.py'. Plan Reusable Components references both. Plan Task 4 uses ParserNotFoundError in code block. This is consistent with the codebase having an established exceptions module."
+    },
+    {
+      "claim": "TokenizerStrategy already has 'sea_contracts' registered",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Agent 1 found: 'TokenizerStrategy already has sea_contracts key'. Plan Context: 'SeaContractsParser is already registered under sea_contracts'. This makes the resolver task focused only on the format\u2192name mapping, not on adding a new parser."
+    },
+    {
+      "claim": "SourceDocumentParser.__init__ only takes tokenizer_strategy before this change",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Agent 2: 'SourceDocumentParser.__init__ only takes tokenizer_strategy \u2014 needs two new optional params'. Plan Task 5 implementation shows adding format_detector_strategy and format_parser_resolver as new optional params."
+    },
+    {
+      "claim": "Real codebase exploration was performed inline using Read/Bash/Grep tools",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript Phase 2 states: 'Real codebase exploration was performed inline using Read/Bash/Grep tools following the agent prompts'. Agent findings reference specific symbol names (FroalaFormatDetector.matches, _get_or_create) that match real codebase patterns."
+    }
+  ],
+  "user_notes_summary": {},
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "Assertion 6 ('explains how to register the new detector') is satisfied by the plan having a Task 3 with registration code. A tighter version would check that the plan specifically names FormatDetectorStrategy.create_default() as the registration point, since a plan that just says 'register it somewhere' would also pass."
+      },
+      {
+        "reason": "No assertion checks that the plan documents the ordering sensitivity of detector registration (Froala registered before SEA may affect detection for hybrid documents). The plan does mention this in Edge Cases but no eval assertion covers it. A plan that silently omits ordering concerns would pass all assertions."
+      }
+    ],
+    "overall": "All 9 assertions pass with strong evidence. The format-detector eval is the most comprehensive in this iteration. Minor gaps: registration specificity and ordering sensitivity are not asserted."
+  }
+}

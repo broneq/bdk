@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "skill_name": "debug",
+    "timestamp": "2026-03-27T12:00:00Z",
+    "evals_run": [3],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 3,
+      "eval_name": "vague-input-inline-question",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 33.0, "tokens": 23645, "errors": 0},
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": true, "evidence": "Starts with 'Using debug to investigate the issue.'"},
+        {"text": "detects_vague_input", "passed": true, "evidence": "Immediately says 'too vague to begin investigation'"},
+        {"text": "asks_clarifying_question_inline", "passed": true, "evidence": "4 bullet points inline with concrete examples — no AskUserQuestion tool"},
+        {"text": "does_not_investigate", "passed": true, "evidence": "18-line response, no Phase 2/3/4/5, stops after inline question"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "vague-input-inline-question",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 0.25, "passed": 1, "failed": 3, "total": 4, "time_seconds": 108.7, "tokens": 24126, "errors": 0},
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": false, "evidence": "No announcement"},
+        {"text": "detects_vague_input", "passed": true, "evidence": "Eventually says 'too vague'"},
+        {"text": "asks_clarifying_question_inline", "passed": false, "evidence": "Ran 3221 tests before asking — proactive investigation instead of stopping"},
+        {"text": "does_not_investigate", "passed": false, "evidence": "Ran full test suite, checked git, listed possible failure areas"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 33.0, "stddev": 0.0, "min": 33.0, "max": 33.0},
+      "tokens": {"mean": 23645, "stddev": 0.0, "min": 23645, "max": 23645}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.25, "stddev": 0.0, "min": 0.25, "max": 0.25},
+      "time_seconds": {"mean": 108.7, "stddev": 0.0, "min": 108.7, "max": 108.7},
+      "tokens": {"mean": 24126, "stddev": 0.0, "min": 24126, "max": 24126}
+    },
+    "delta": {
+      "pass_rate": "+0.750",
+      "time_seconds": "-75.7",
+      "tokens": "-481"
+    }
+  },
+  "notes": [
+    "Vague input gate working correctly: skill stops immediately and asks inline — no Phase 2 investigation triggered",
+    "Without skill: ran full test suite (3221 tests) before asking for details — 3x slower, wrong approach for vague input",
+    "Inline question (not AskUserQuestion) confirmed working — this was the key fix from iteration-2 feedback",
+    "With skill is also faster (33s vs 109s) and uses fewer tokens — stops early as intended"
+  ]
+}

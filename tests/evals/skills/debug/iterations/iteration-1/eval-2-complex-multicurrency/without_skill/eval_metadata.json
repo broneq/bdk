@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "complex-multicurrency",
+  "prompt": "Our checkout API returns 500 when the order total exceeds 10000. It worked before we added multi-currency support. The OrderService calls CurrencyConverter, then TaxCalculator, then PriceValidator, then writes to the OrderRepository. Looks like the validation logic breaks for large amounts in non-USD currencies.",
+  "assertions": []
+}

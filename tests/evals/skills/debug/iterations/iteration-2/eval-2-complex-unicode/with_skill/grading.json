@@ -1,0 +1,11 @@
+{
+  "expectations": [
+    {"text": "announces_skill_at_start", "passed": true, "evidence": "Opens with 'Using debug to investigate the issue.'"},
+    {"text": "traces_call_chain", "passed": true, "evidence": "Traced PaymentGatewayService._encode_payload as entry point, found .encode('ascii') as root cause, checked all 4 components"},
+    {"text": "writes_failing_test", "passed": true, "evidence": "test_encode_payload_raises_for_non_ascii_billing_name with input 'François Müller'"},
+    {"text": "estimates_token_cost", "passed": true, "evidence": "Estimated ~9k tokens for 7-file fix"},
+    {"text": "recommends_create_plan", "passed": true, "evidence": "Simulated user choosing /create-plan given scope spans 6+ files and data model"},
+    {"text": "asks_user_confirmation", "passed": true, "evidence": "AskUserQuestion printed with all 3 options — Fix now / Create plan / Something else"}
+  ],
+  "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}
+}

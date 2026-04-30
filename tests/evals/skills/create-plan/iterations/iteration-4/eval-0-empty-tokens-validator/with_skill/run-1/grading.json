@@ -1,0 +1,46 @@
+{
+  "eval_id": 0,
+  "config": "with_skill",
+  "expectations": [
+    {
+      "text": "A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "Transcript confirms plan written to 'docs/plans/2026-03-27-validate-empty-tokens-before-processing.md'. Plan header shows Created: 2026-03-27."
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "3 approaches documented: Approach 1 (Guard in BaseTokenizerParser.parse()), Approach 2 (Validation in SourceDocumentParser.parse_content()), Approach 3 (Pydantic field_validator). Each has explicit Pros/Cons or Pros / Cons sections."
+    },
+    {
+      "text": "Every implementation task lists exact file paths (no vague references like 'the service file')",
+      "passed": true,
+      "evidence": "All 3 tasks list exact paths, e.g. Task 1: 'src/data_migrator/exceptions.py', 'tests/unit/test_exceptions.py'; Task 2: 'src/data_migrator/processors/tokenizers/base_parser.py', 'tests/unit/processors/tokenizers/test_base_parser.py'; Task 3: 'tests/unit/processors/tokenizers/froala/test_froala_parser.py'."
+    },
+    {
+      "text": "Implementation tasks include test cases marked with ✅ or ❌",
+      "passed": true,
+      "evidence": "All 3 tasks include test case markers: Task 1 has '✅ Positive' cases; Task 2 has '✅ Positive' and '❌ Negative' cases; Task 3 has '❌ Negative' cases."
+    },
+    {
+      "text": "Tasks contain actual code (class names, method signatures, or code blocks) not just prose descriptions",
+      "passed": true,
+      "evidence": "All tasks include code blocks: Task 1 has 'class EmptyTokensError(DataMigratorError)'; Task 2 has '_validate_tokens_not_empty(self, lines: dict[int, SourceLine]) -> None' method signature and call site; Task 3 has complete test class with method signatures."
+    },
+    {
+      "text": "Only 1 explorer agent was dispatched (simple scope → 1 agent)",
+      "passed": true,
+      "evidence": "Transcript states: 'Scope assessed as Simple', '1 explorer agent dispatched (Agent 1: Utilities & Existing Implementations)', 'No Agent 2 or Agent 3 dispatched (Simple scope)'."
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "All 3 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (Task 1, Task 2, Task 3)."
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton",
+      "passed": true,
+      "evidence": "All 3 tasks include a '**Test scaffold:**' code block. Task 1 shows setup comment and assert structure; Task 2 shows _StubParser inline class, arrange (parser = _StubParser(...)), act (parser.parse()), assert (pytest.raises); Task 3 shows class TestFroalaParserEdgeCases with arrange/act/assert pattern."
+    }
+  ]
+}

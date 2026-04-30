@@ -1,0 +1,11 @@
+{
+  "expectations": [
+    {"text": "announces_skill_at_start", "passed": false, "evidence": "No announcement"},
+    {"text": "traces_call_chain", "passed": true, "evidence": "Correctly identifies per-service unicode problems and traces the encoding failure path"},
+    {"text": "writes_failing_test", "passed": false, "evidence": "Deliberately stops short of writing code — no test written"},
+    {"text": "estimates_token_cost", "passed": false, "evidence": "No token estimate"},
+    {"text": "recommends_create_plan", "passed": false, "evidence": "No routing — gives analysis and defers the fix to separate planned steps informally"},
+    {"text": "asks_user_confirmation", "passed": false, "evidence": "No structured confirmation — just analysis and recommendations"}
+  ],
+  "summary": {"passed": 1, "failed": 5, "total": 6, "pass_rate": 0.167}
+}

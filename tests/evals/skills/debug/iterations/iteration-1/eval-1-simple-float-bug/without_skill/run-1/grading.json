@@ -1,0 +1,45 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-float-bug",
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "announces_skill_at_start",
+      "passed": false,
+      "evidence": "No announcement — baseline jumps straight into explanation"
+    },
+    {
+      "text": "prints_phase1_summary",
+      "passed": false,
+      "evidence": "No structured [debug] output — no phase logging at all"
+    },
+    {
+      "text": "identifies_root_cause",
+      "passed": true,
+      "evidence": "Correctly identifies IEEE 754 binary float as root cause"
+    },
+    {
+      "text": "writes_concrete_failing_test",
+      "passed": false,
+      "evidence": "No failing test written — baseline provides 4 fix options with code examples but no test"
+    },
+    {
+      "text": "confirms_tests_are_red",
+      "passed": false,
+      "evidence": "No test-runner delegation — no RED confirmation"
+    },
+    {
+      "text": "asks_user_confirmation",
+      "passed": false,
+      "evidence": "No user confirmation asked — baseline goes straight to recommending f'{value:.2f}'"
+    },
+    {
+      "text": "scans_for_related_gaps",
+      "passed": false,
+      "evidence": "No gap scanning — baseline focuses only on format_price, doesn't look for sibling functions"
+    }
+  ],
+  "pass_count": 1,
+  "total_count": 7,
+  "pass_rate": 0.143
+}

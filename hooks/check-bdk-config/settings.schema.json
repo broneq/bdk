@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bdk-settings",
+  "title": "BDK Project Settings",
+  "description": "Project-level configuration for the Broneq Dev Kit (.bdk/settings.json)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["python", "javascript", "typescript", "go", "rust", "java", "php", "ruby", "csharp", "dart", "react", "next"]
+      },
+      "minItems": 1,
+      "description": "Languages detected in this project"
+    },
+    "test-tools": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/tool" },
+      "description": "Commands to run the test suite"
+    },
+    "lint-tools": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/tool" },
+      "description": "Commands to run linters/formatters"
+    },
+    "build-tools": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/tool" },
+      "description": "Commands to build the project"
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "caveman": {
+          "type": "boolean",
+          "description": "Caveman communication mode"
+        },
+        "serena": {
+          "type": "boolean",
+          "description": "Serena MCP semantic code tools"
+        },
+        "code-review-graph": {
+          "type": "boolean",
+          "description": "code-review-graph MCP knowledge graph"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "tool": {
+      "type": "object",
+      "required": ["type", "command"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["npm", "yarn", "pnpm", "poetry", "bundle", "direct"],
+          "description": "Package manager or invocation method"
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Full shell command to run"
+        }
+      }
+    }
+  }
+}

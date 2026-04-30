@@ -1,0 +1,530 @@
+{
+  "metadata": {
+    "skill_name": "create-plan",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-03-27T07:04:49Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571428571428571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 212.8,
+        "tokens": 49853,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-validate-empty-tokens.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches documented: Static _validate_non_empty (selected), Separate ParsedDocumentValidator class (rejected), Validation inside each parser (rejected)"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 3 tasks list exact paths: src/data_migrator/exceptions.py, src/data_migrator/services/source_parsing/source_document_parser.py, tests/unit/services/source_parsing/test_source_document_parser.py"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 3 tasks have \u2705 and \u274c markers with concrete inputs and expected outcomes"
+        },
+        {
+          "text": "tasks_have_code_not_descriptions: Tasks contain actual code (class names, method signatures, or code blocks)",
+          "passed": true,
+          "evidence": "Tasks include full code blocks: EmptyTokensError class definition, _validate_non_empty method signature with full implementation, parse_content updated method body"
+        },
+        {
+          "text": "single_explorer_agent_for_simple_scope: Only 1 explorer agent was dispatched (simple scope \u2192 1 agent)",
+          "passed": false,
+          "evidence": "Transcript says '2 exploration passes using Serena tools' \u2014 skill used inline Serena tools rather than dispatching 1 Task subagent as the skill spec requires. While the scope was assessed as simple (LOW), the skill ran 2 passes instead of the expected 1 agent."
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 3 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (grep count: 3)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 204.9,
+        "tokens": 53426,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-add-inmemory-cache-repository.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches: Add caching to BaseJsonFileRepository (selected), Caching Decorator/Wrapper (rejected), Cache per concrete subclass (rejected)"
+        },
+        {
+          "text": "existing_repository_identified: Exploration found and referenced the actual existing repository class in the codebase",
+          "passed": true,
+          "evidence": "BaseJsonFileRepository, TemplateDiffsFileRepository, TemplateRulesFileRepository, and FingerprintFileRepository all identified and referenced by exact paths"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 3 tasks list exact paths: src/data_migrator/repositories/base_json_repository.py, template_diffs/file_repository.py, template_rules/file_repository.py, and corresponding test files"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 3 tasks contain \u2705 markers with concrete inputs/outputs"
+        },
+        {
+          "text": "cache_invalidation_addressed: Plan explicitly addresses cache invalidation on write",
+          "passed": true,
+          "evidence": "Cache invalidation on save() and delete() explicitly addressed in goal, architecture, and all task implementations. _evict_cached() called from both save() and delete()"
+        },
+        {
+          "text": "two_explorer_agents_dispatched: 2 explorer agents were dispatched for medium complexity",
+          "passed": false,
+          "evidence": "Transcript says '2 agents, executed inline' \u2014 used Serena tools inline rather than dispatching 2 Task subagents. The assertion requires 2 Task agent dispatches per the skill spec."
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 3 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (grep count: 3)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 67.3,
+        "tokens": 34151,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-document-format-detector-parser-selection.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches: SeaDetector + Static Bridge (selected), FormatAwareParserSelector new service (rejected), Auto-detect flag on CLI (rejected)"
+        },
+        {
+          "text": "existing_detector_pattern_found: Exploration identified existing detector/parser patterns in the codebase and referenced them",
+          "passed": true,
+          "evidence": "FroalaFormatDetector, FormatDetectorInterface, FormatDetectorStrategy all found and explicitly referenced as structural templates"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 5 tasks list exact paths: src/data_migrator/schemas/models/fingerprint.py, detectors/sea/sea_contracts_format_detector.py, detectors/format_detector_strategy.py, processors/tokenizer_strategy.py, services/source_parsing/source_document_parser.py, plus test files"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 5 tasks contain \u2705 and \u274c markers with concrete inputs and expected outcomes"
+        },
+        {
+          "text": "registration_mechanism_addressed: Plan explains how to register the new detector in the existing parser selection mechanism",
+          "passed": true,
+          "evidence": "Task 3 explicitly addresses registering SeaContractsFormatDetector in FormatDetectorStrategy.create_default() with exact code showing how to add it alongside FroalaFormatDetector"
+        },
+        {
+          "text": "three_explorer_agents_dispatched: 3 explorer agents were dispatched for complex scope",
+          "passed": true,
+          "evidence": "Transcript confirms 'Three agents dispatched' with Agent 1 (Utilities), Agent 2 (Architecture & Dependencies), Agent 3 (Similar Features) \u2014 all three explicitly listed with their findings"
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 5 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (grep count: 5)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 340.3,
+        "tokens": 91645,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-fix-addition-position-preserved-validation.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches: Add _try_short_context_fallback to ContextMatcher (selected), Lower global min_match_ratio (rejected), Fix merger gap threshold (rejected)"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 4 tasks list exact paths: src/data_migrator/services/verification/axioms/position/context_matcher.py, tests/unit/services/verification/axioms/position/, tests/integration/test_addition_position_preserved_nype46.py"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 4 tasks contain \u2705 and \u274c markers with concrete inputs and expected outcomes"
+        },
+        {
+          "text": "failing_command_in_verification: The exact failing CLI command is included in the Verification or Success Criteria section",
+          "passed": true,
+          "evidence": "Exact command 'uv run data-migrator migrate --name=nype46 tests/fixtures/orv1/nype46/document_test_4201_anon.html --debug-dir=tmp/dumps --verify' appears in Verification Regression section (line 369) and Success Criteria"
+        },
+        {
+          "text": "root_cause_investigated: Plan explores what causes the addition_position_preserved failure",
+          "passed": true,
+          "evidence": "3 root cause candidates analyzed: ContextExpander over-expansion, V2 candidate line misalignment, short context at document edges. Architecture traced through axiom.py, pipeline.py, context_matcher.py, context_expander.py, filtering.py"
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 4 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 0,
+        "total": 0,
+        "time_seconds": 209.8,
+        "tokens": 57664,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Transcript confirms plan written to 'docs/plans/2026-03-27-validate-empty-tokens-before-processing.md'. Plan header shows Created: 2026-03-27."
+        },
+        {
+          "text": "The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches documented: Approach 1 (Guard in BaseTokenizerParser.parse()), Approach 2 (Validation in SourceDocumentParser.parse_content()), Approach 3 (Pydantic field_validator). Each has explicit Pros/Cons or Pros / Cons sections."
+        },
+        {
+          "text": "Every implementation task lists exact file paths (no vague references like 'the service file')",
+          "passed": true,
+          "evidence": "All 3 tasks list exact paths, e.g. Task 1: 'src/data_migrator/exceptions.py', 'tests/unit/test_exceptions.py'; Task 2: 'src/data_migrator/processors/tokenizers/base_parser.py', 'tests/unit/processors/tokenizers/test_base_parser.py'; Task 3: 'tests/unit/processors/tokenizers/froala/test_froala_parser.py'."
+        },
+        {
+          "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 3 tasks include test case markers: Task 1 has '\u2705 Positive' cases; Task 2 has '\u2705 Positive' and '\u274c Negative' cases; Task 3 has '\u274c Negative' cases."
+        },
+        {
+          "text": "Tasks contain actual code (class names, method signatures, or code blocks) not just prose descriptions",
+          "passed": true,
+          "evidence": "All tasks include code blocks: Task 1 has 'class EmptyTokensError(DataMigratorError)'; Task 2 has '_validate_tokens_not_empty(self, lines: dict[int, SourceLine]) -> None' method signature and call site; Task 3 has complete test class with method signatures."
+        },
+        {
+          "text": "Only 1 explorer agent was dispatched (simple scope \u2192 1 agent)",
+          "passed": true,
+          "evidence": "Transcript states: 'Scope assessed as Simple', '1 explorer agent dispatched (Agent 1: Utilities & Existing Implementations)', 'No Agent 2 or Agent 3 dispatched (Simple scope)'."
+        },
+        {
+          "text": "Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 3 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (Task 1, Task 2, Task 3)."
+        },
+        {
+          "text": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton",
+          "passed": true,
+          "evidence": "All 3 tasks include a '**Test scaffold:**' code block. Task 1 shows setup comment and assert structure; Task 2 shows _StubParser inline class, arrange (parser = _StubParser(...)), act (parser.parse()), assert (pytest.raises); Task 3 shows class TestFroalaParserEdgeCases with arrange/act/assert pattern."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 0,
+        "total": 0,
+        "time_seconds": 216.5,
+        "tokens": 48845,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Transcript confirms: 'Plan written to docs/plans/2026-03-27-add-inmemory-cache-repository.md'"
+        },
+        {
+          "text": "The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "Plan has 3 approaches: 'Cache helpers in BaseJsonFileRepository', 'Decorator/Wrapper CachedRepository', 'Cache in DefaultContainer' \u2014 each with explicit Pros and Cons sections"
+        },
+        {
+          "text": "Exploration found and referenced the actual existing repository class in the codebase",
+          "passed": true,
+          "evidence": "Plan references 'BaseJsonFileRepository[T]' at 'src/data_migrator/repositories/base_json_repository.py' and 'FingerprintFileRepository._cache' as prior art with actual file paths"
+        },
+        {
+          "text": "Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 4 tasks list exact file paths under 'Files:' e.g. Task 1: 'src/data_migrator/repositories/base_json_repository.py' and 'tests/unit/repositories/test_base_json_repository.py'"
+        },
+        {
+          "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All tasks use \u2705 markers, e.g. Task 1: '\u2705 Positive: after _cache_put(\"t1\", obj), _cache_get(\"t1\") returns the same obj'"
+        },
+        {
+          "text": "Plan explicitly addresses cache invalidation on write, not just cache population on read",
+          "passed": true,
+          "evidence": "Context section states: 'save() stores the newly serialized value in the cache; delete() removes it.' Tasks 2 and 3 include _cache_put in save() and _cache_invalidate in delete() with explicit test cases for post-delete behavior"
+        },
+        {
+          "text": "2 explorer agents were dispatched for medium complexity",
+          "passed": true,
+          "evidence": "Transcript table shows Agent 1 (Utilities & Existing Implementations) and Agent 2 (Architecture & Dependencies) dispatched=Yes; Agent 3 dispatched=No. 'Total explorer agents: 2'"
+        },
+        {
+          "text": "Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 4 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.'"
+        },
+        {
+          "text": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton",
+          "passed": true,
+          "evidence": "All 4 tasks include a '**Test scaffold:**' code block; e.g. Task 2 shows '@pytest.fixture def repo(tmp_path)' and test functions with monkeypatch arrange/act/assert structure"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 299.2,
+        "tokens": 21000,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Transcript Phase 4: 'Plan written to docs/plans/2026-03-27-document-format-detector.md'. Plan header confirms 'Created: 2026-03-27'."
+        },
+        {
+          "text": "The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "Plan contains 3 approaches: (1) SeaFormatDetector + FormatParserResolver (selected), (2) Auto-detect Inline in SourceDocumentParser (not selected), (3) FormatDetectorStrategy.resolve_parser_name() (not selected). Each has explicit Pros/Cons or Pros / Cons sections."
+        },
+        {
+          "text": "Exploration identified existing detector/parser patterns in the codebase and referenced them",
+          "passed": true,
+          "evidence": "Transcript: Agent 1 found FormatDetectorInterface, FroalaFormatDetector, FormatDetectorStrategy, TokenizerStrategy, SourceDocumentParser, DefaultContainer. Plan 'Reusable Components' section references all of them with exact file paths and explains FroalaFormatDetector as 'exact reference' for SeaFormatDetector structure."
+        },
+        {
+          "text": "Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 6 tasks include a **Files:** section with exact paths, e.g. Task 1: 'Modify: src/data_migrator/schemas/models/fingerprint.py'; Task 2: 'Create: src/data_migrator/detectors/sea/__init__.py', 'Create: src/data_migrator/detectors/sea/sea_format_detector.py', etc."
+        },
+        {
+          "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All tasks use \u2705 and \u274c markers. Example from Task 2: '\u2705 Positive: given content containing ins data-cid, matches() returns True' and '\u274c Negative: given Froala-only HTML (fr-element), matches() returns False'."
+        },
+        {
+          "text": "Plan explains how to register the new detector in the existing parser selection mechanism",
+          "passed": true,
+          "evidence": "Task 3 is dedicated to 'Register SeaFormatDetector in FormatDetectorStrategy.create_default()' and includes implementation code: 'strategy.register_detector(\"sea_contracts\", SeaFormatDetector)'. Context section also explains the existing gap and the full registration flow."
+        },
+        {
+          "text": "3 explorer agents were dispatched for complex scope",
+          "passed": true,
+          "evidence": "Transcript Phase 2: 'Scope assessed as Complex (architectural change touching new subsystem: detectors + processors + container)' and '3 explorer agents dispatched in parallel' with individual agent descriptions."
+        },
+        {
+          "text": "Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 6 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (Tasks 1-5) or '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (Task 6)."
+        },
+        {
+          "text": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton",
+          "passed": true,
+          "evidence": "All 6 tasks include a **Test scaffold:** code block. Each shows import setup, variable/fixture definitions, and test functions with assert statements. E.g., Task 5 shows FROALA_CONTENT/SEA_CONTENT/UNKNOWN_CONTENT fixtures and three test functions with arrange/act/assert structure."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 330.9,
+        "tokens": 88967,
+        "tool_calls": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Transcript Phase 5 states: 'Plan written to: docs/plans/2026-03-27-fix-addition-position-preserved-axiom.md'. The plan.md output file is present and non-empty (12712 bytes)."
+        },
+        {
+          "text": "The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "Plan has 'Approach 1: Fix _extract_placeholder to return list + add IGNORE guard (Selected)' with explicit Pros/Cons sections, and 'Approach 2: Filter IGNORE placeholders in V1Extractor (Not Selected)' with a 'Pros / Cons' paragraph explaining why it was rejected."
+        },
+        {
+          "text": "Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "Task 1 lists 'src/data_migrator/processors/tokenizers/sea/core/dom_walker.py' and 'tests/unit/processors/tokenizers/sea/core/test_dom_walker.py'. Task 2 lists the same two files. Task 3 lists 'tests/unit/processors/tokenizers/sea/core/test_dom_walker.py'. All are absolute-style project paths."
+        },
+        {
+          "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "Task 1 has 4 \u2705 positive cases and 1 \u274c negative case. Task 2 has 3 \u2705 positive cases. Task 3 has 2 \u2705 positive cases. All tasks use the required markers."
+        },
+        {
+          "text": "The exact failing CLI command is included in the Verification or Success Criteria section as a regression/acceptance check",
+          "passed": true,
+          "evidence": "Regression section under Verification contains verbatim: 'uv run data-migrator migrate --name=nype46 tests/fixtures/orv1/nype46/document_test_4201_anon.html --debug-dir=tmp/dumps --verify' with expected outcome 'exits 0 with no validation errors, [PASS] addition_position_preserved displayed'."
+        },
+        {
+          "text": "Plan explores what causes the addition_position_preserved failure \u2014 not just where to add a fix but why it fails",
+          "passed": true,
+          "evidence": "Context section explains the 3-step causal chain: (1) '_extract_placeholder' emits ADDITION token even in IGNORE context, (2) migration suppresses the placeholder so V2 has no matching addition, (3) PositionPreservedAxiom finds unmatched V1 addition and raises a violation. Root cause traced to the cb77627 refactor removing inherited_type handling."
+        },
+        {
+          "text": "Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "Task 1 ends with '> Follow `/test-driven-development` skill for test writing and red-green-clean cycle.' Task 2 ends with the same line. Task 3 ends with the same line."
+        },
+        {
+          "text": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton",
+          "passed": false,
+          "evidence": "Tasks 1 and 2 have proper scaffold blocks with fixture setup and arrange/act/assert structure. Task 3's scaffold block contains only a comment: '# This task is validated via CLI regression (see Verification section below) / # No unit test needed here \u2014 the regression is captured by the CLI check' \u2014 no actual fixture/container setup or arrange/act/assert skeleton is provided."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "old_skill": {
+      "pass_rate": {
+        "mean": 0.933,
+        "stddev": 0.0777,
+        "min": 0.8571,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 206.325,
+        "stddev": 111.5366,
+        "min": 67.3,
+        "max": 340.3
+      },
+      "tokens": {
+        "mean": 57268.75,
+        "stddev": 24398.8866,
+        "min": 34151,
+        "max": 91645
+      }
+    },
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.4688,
+        "stddev": 0.5437,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 264.1,
+        "stddev": 60.3006,
+        "min": 209.8,
+        "max": 330.9
+      },
+      "tokens": {
+        "mean": 54119.0,
+        "stddev": 27997.8176,
+        "min": 21000,
+        "max": 88967
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.46",
+      "time_seconds": "-57.8",
+      "tokens": "+3150"
+    }
+  },
+  "notes": []
+}

@@ -1,0 +1,99 @@
+{
+  "eval_id": 1,
+  "config": "with_skill",
+  "expectations": [
+    {
+      "text": "A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "docs/plans/2026-03-27-repository-in-memory-caching.md exists on disk. Transcript Phase 4 confirms: 'Plan written to docs/plans/2026-03-27-repository-in-memory-caching.md'. Plan content is 383 lines of substantive content."
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "Plan documents 3 approaches: Approach 1 (Per-Instance Dict Cache in Concrete Repositories \u2014 Selected), Approach 2 (Cache Helpers in BaseJsonFileRepository \u2014 Not Selected), Approach 3 (Decorator-Based Caching \u2014 Not Selected). Each has Pros/Cons and 'Why not selected' reasoning."
+    },
+    {
+      "text": "Exploration found and referenced the actual existing repository class in the codebase",
+      "passed": true,
+      "evidence": "Both explorer agents found and referenced 'FingerprintFileRepository' as the existing cached repository. Plan states: 'FingerprintFileRepository already carries a self._cache: FingerprintIndex | None = None'. Transcript Agent 1: 'Found: FingerprintFileRepository._cache (per-instance FingerprintIndex | None) as the existing pattern'. Exact file path src/data_migrator/repositories/fingerprints/file_repository.py referenced throughout."
+    },
+    {
+      "text": "Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "Task 1 lists: 'src/data_migrator/repositories/template_diffs/file_repository.py', 'tests/unit/repositories/template_diffs/test_template_diffs_repository.py'. Task 2 lists: 'src/data_migrator/repositories/template_rules/file_repository.py', 'tests/unit/repositories/template_rules/test_template_rules_repository.py'. No vague references."
+    },
+    {
+      "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+      "passed": true,
+      "evidence": "Task 1 has 4 \u2705 test cases covering: disk read once, save evicts cache, delete evicts cache, selective eviction. Task 2 has 4 \u2705 test cases with same structure for TemplateRulesFileRepository. All use \u2705 markers."
+    },
+    {
+      "text": "Plan explicitly addresses cache invalidation on write, not just cache population on read",
+      "passed": true,
+      "evidence": "Goal statement says 'with cache invalidation on save() and delete()'. Both tasks include test cases for save() eviction ('calling save(\"GENCON1994\", ...) evicts the cache entry') and delete() eviction. Implementation blocks show 'self._cache.pop(template_name, None)' in both save() and delete() paths. Verified for both Task 1 and Task 2."
+    },
+    {
+      "text": "2 explorer agents were dispatched for medium complexity",
+      "passed": true,
+      "evidence": "Transcript states 'Count: 2 (scope assessed as Medium \u2014 cross-file change touching multiple components)'. Two agents documented: 'Agent 1 \u2014 Utilities & Existing Implementations' and 'Agent 2 \u2014 Architecture & Dependencies'."
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "Task 1 ends with '> Follow `/test-driven-development` skill for test writing and red-green-clean cycle.' Task 2 ends with the same line. Both tasks have this footer."
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt)",
+      "passed": true,
+      "evidence": "Task 1 scaffold has 4 stubs: test_load_reads_disk_only_once, test_save_evicts_cache_entry, test_delete_evicts_cache_entry, test_delete_evicts_only_targeted_template. Task 2 scaffold has 4 stubs: test_rules_load_reads_disk_only_once, test_rules_save_evicts_cache_entry, test_rules_delete_evicts_cache_entry, test_rules_save_evicts_only_targeted_template. Each stub has arrange/act/assert skeleton. Transcript confirms '4 stubs, 1 per test case' for both tasks."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tokens": 52703,
+    "output_chars": 52703,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 187.8,
+    "total_duration_seconds": 187.8
+  },
+  "claims": [
+    {
+      "claim": "Only FingerprintFileRepository has caching among the three repositories",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Agent 1: 'Grep search for existing cache code confirmed only FingerprintFileRepository has caching'. Plan Context confirms 'TemplateDiffsFileRepository and TemplateRulesFileRepository have no caching'."
+    },
+    {
+      "claim": "FingerprintFileRepository does NOT extend BaseJsonFileRepository",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Agent 2: 'FingerprintFileRepository does NOT extend BaseJsonFileRepository, so base-class approach would not cover all repos uniformly \u2014 reinforces per-concrete-class approach'. This claim is critical to the approach selection and is corroborated in the plan Approach 2 rejection."
+    },
+    {
+      "claim": "create_test_position_index and create_test_metadata factory helpers exist in the test file",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Transcript Agent 2 mentions these as reusable, but we did not verify the actual test files. The claim is plausible given the existing test patterns, but cannot be confirmed without reading the test files."
+    }
+  ],
+  "user_notes_summary": {},
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "No assertion checks that the two concrete repository class names (TemplateDiffsFileRepository and TemplateRulesFileRepository) are actually mentioned by name in the plan. A plan for a generic 'add caching' task that only describes one of the two repos would pass all current assertions."
+      },
+      {
+        "assertion": "Exploration found and referenced the actual existing repository class in the codebase",
+        "reason": "This assertion is satisfied by finding FingerprintFileRepository, but a stronger check would verify it also found TemplateDiffsFileRepository and TemplateRulesFileRepository \u2014 the classes being modified \u2014 not just the reference pattern."
+      }
+    ],
+    "overall": "All 9 assertions pass. Evals are well-targeted for this scope. The two gaps are: (1) no check that both target repository classes are named specifically, (2) exploration verification only checks the pattern class, not the classes to be modified."
+  }
+}

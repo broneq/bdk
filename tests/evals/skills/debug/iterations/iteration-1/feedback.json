@@ -1,0 +1,20 @@
+{
+  "reviews": [
+    {
+      "run_id": "eval-1-simple-float-bug-with_skill",
+      "feedback": "great!",
+      "timestamp": "2026-03-27T08:45:34.799Z"
+    },
+    {
+      "run_id": "eval-2-complex-multicurrency-with_skill",
+      "feedback": "It was to easy to fix so recommends_create_plan not works. I think that we have to have some extra informations about this bug in sumulation to have 100% sure that resolution of this bug is complex.",
+      "timestamp": "2026-03-27T08:45:34.799Z"
+    },
+    {
+      "run_id": "eval-3-vague-input-with_skill",
+      "feedback": "I think when we precise bug whe shouldn't use AskUserQuestion - there are open questions.",
+      "timestamp": "2026-03-27T08:45:34.799Z"
+    }
+  ],
+  "status": "in_progress"
+}

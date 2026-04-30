@@ -1,0 +1,103 @@
+{
+  "eval_id": 3,
+  "config": "with_skill",
+  "expectations": [
+    {
+      "text": "A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "Transcript Phase 5 states: 'Plan written to: docs/plans/2026-03-27-fix-addition-position-preserved-axiom.md'. The plan.md output file is present and non-empty (12712 bytes)."
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "Plan has 'Approach 1: Fix _extract_placeholder to return list + add IGNORE guard (Selected)' with explicit Pros/Cons sections, and 'Approach 2: Filter IGNORE placeholders in V1Extractor (Not Selected)' with a 'Pros / Cons' paragraph explaining why it was rejected."
+    },
+    {
+      "text": "Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "Task 1 lists 'src/data_migrator/processors/tokenizers/sea/core/dom_walker.py' and 'tests/unit/processors/tokenizers/sea/core/test_dom_walker.py'. Task 2 lists the same two files. Task 3 lists 'tests/unit/processors/tokenizers/sea/core/test_dom_walker.py'. All are absolute-style project paths."
+    },
+    {
+      "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+      "passed": true,
+      "evidence": "Task 1 has 4 \u2705 positive cases and 1 \u274c negative case. Task 2 has 3 \u2705 positive cases. Task 3 has 2 \u2705 positive cases. All tasks use the required markers."
+    },
+    {
+      "text": "The exact failing CLI command is included in the Verification or Success Criteria section as a regression/acceptance check",
+      "passed": true,
+      "evidence": "Regression section under Verification contains verbatim: 'uv run data-migrator migrate --name=nype46 tests/fixtures/orv1/nype46/document_test_4201_anon.html --debug-dir=tmp/dumps --verify' with expected outcome 'exits 0 with no validation errors, [PASS] addition_position_preserved displayed'."
+    },
+    {
+      "text": "Plan explores what causes the addition_position_preserved failure \u2014 not just where to add a fix but why it fails",
+      "passed": true,
+      "evidence": "Context section explains the 3-step causal chain: (1) '_extract_placeholder' emits ADDITION token even in IGNORE context, (2) migration suppresses the placeholder so V2 has no matching addition, (3) PositionPreservedAxiom finds unmatched V1 addition and raises a violation. Root cause traced to the cb77627 refactor removing inherited_type handling."
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "Task 1 ends with '> Follow `/test-driven-development` skill for test writing and red-green-clean cycle.' Task 2 ends with the same line. Task 3 ends with the same line."
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton",
+      "passed": false,
+      "evidence": "Tasks 1 and 2 have proper scaffold blocks with fixture setup and arrange/act/assert structure. Task 3's scaffold block contains only a comment: '# This task is validated via CLI regression (see Verification section below) / # No unit test needed here \u2014 the regression is captured by the CLI check' \u2014 no actual fixture/container setup or arrange/act/assert skeleton is provided."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 1,
+    "total": 8,
+    "pass_rate": 0.875
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 5,
+    "errors_encountered": 0,
+    "output_chars": 12712,
+    "transcript_chars": 3753
+  },
+  "claims": [
+    {
+      "claim": "3 explorer agents were dispatched in parallel",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript Phase 2 states 'Number of explorer agents dispatched: 3 (in parallel)' with descriptions of each agent's scope."
+    },
+    {
+      "claim": "The CLI command currently passes on this branch (all axioms PASS)",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Transcript claims this but it cannot be independently verified from the available output files \u2014 no test run output is included."
+    },
+    {
+      "claim": "Test scaffolds included in all tasks",
+      "type": "quality",
+      "verified": false,
+      "evidence": "Transcript summary claims 'Test scaffolds included in all tasks? Yes' but Task 3 has a placeholder scaffold with no actual arrange/act/assert structure, which contradicts a genuine 'yes' for that task."
+    },
+    {
+      "claim": "2 approaches were analyzed",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Plan contains exactly 2 approaches in the 'Explored Approaches' section with full descriptions."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton",
+        "reason": "The assertion could be strengthened to also require that the scaffold be non-trivial \u2014 i.e., contains at least one concrete assert statement. Task 3 satisfied the letter of the requirement with a comment-only block, which would also pass a naive check. A discriminating version might require: 'each scaffold has at least one assert statement or function definition'."
+      },
+      {
+        "reason": "No assertion checks whether the root-cause explanation identifies the specific commit (cb77627) or the exact method responsible. The plan does include this level of detail, but the current assertions don't distinguish between a shallow 'it fails because X' and a deep causal chain explanation."
+      }
+    ],
+    "overall": "Assertions are well-targeted and mostly discriminating. The main gap is assertion 8, which a plan can technically satisfy with a placeholder scaffold block containing only comments. The root-cause assertion (6) is strong and was genuinely satisfied with detail."
+  }
+}

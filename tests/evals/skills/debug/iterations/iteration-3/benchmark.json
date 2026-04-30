@@ -1,0 +1,93 @@
+{
+  "metadata": {
+    "skill_name": "debug",
+    "timestamp": "2026-03-27T00:00:00Z",
+    "evals_run": [2, 3, 4],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 2,
+      "eval_name": "complex-unicode-HIGH",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 171.5, "tokens": 33021, "errors": 0},
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": true, "evidence": "Announces at start"},
+        {"text": "traces_call_chain", "passed": true, "evidence": "Traced all 4 services, found .encode('ascii') pattern"},
+        {"text": "writes_failing_test", "passed": true, "evidence": "7 tests written and confirmed RED"},
+        {"text": "assesses_impact_as_HIGH", "passed": true, "evidence": "New shared abstraction + DB migration + schema = 'many things break'"},
+        {"text": "recommends_create_plan", "passed": true, "evidence": "Routed to /create-plan with full context: root cause, steps, tests, constraints"},
+        {"text": "asks_user_confirmation", "passed": true, "evidence": "AskUserQuestion with 3 options before routing"}
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "borderline-4files-LOW",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 97.0, "tokens": 28911, "errors": 0},
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": true, "evidence": "Announces at start"},
+        {"text": "traces_call_chain", "passed": true, "evidence": "Found _format_date in all 4 formatters"},
+        {"text": "writes_failing_test", "passed": true, "evidence": "4 tests confirmed RED"},
+        {"text": "assesses_impact_as_LOW", "passed": true, "evidence": "Same mechanical fix in 4 independent classes — one wrong = one formatter breaks"},
+        {"text": "fixes_inline", "passed": true, "evidence": "All 4 GREEN, static analysis clean"},
+        {"text": "asks_user_confirmation", "passed": true, "evidence": "AskUserQuestion before fixing"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "specific-bug-no-clarification",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 155.9, "tokens": 32215, "errors": 0},
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": true, "evidence": "Announces at start"},
+        {"text": "proceeds_without_clarifying_question", "passed": true, "evidence": "Went straight to Phase 2 — no questions"},
+        {"text": "identifies_root_cause", "passed": true, "evidence": "Stale zero-initialized instance vars in _render_footer"},
+        {"text": "writes_concrete_failing_test", "passed": true, "evidence": "4 tests RED confirmed"},
+        {"text": "assesses_impact_as_LOW", "passed": true, "evidence": "Isolated to one file"},
+        {"text": "asks_user_confirmation", "passed": true, "evidence": "AskUserQuestion with 3 options"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "specific-bug-no-clarification",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 0.0, "passed": 0, "failed": 6, "total": 6, "time_seconds": 49.0, "tokens": 25187, "errors": 0},
+      "expectations": [
+        {"text": "announces_skill_at_start", "passed": false, "evidence": "No announcement"},
+        {"text": "proceeds_without_clarifying_question", "passed": false, "evidence": "Gave 4 generic hypotheses, no specific investigation"},
+        {"text": "identifies_root_cause", "passed": false, "evidence": "No specific root cause identified"},
+        {"text": "writes_concrete_failing_test", "passed": false, "evidence": "No test written"},
+        {"text": "assesses_impact_as_LOW", "passed": false, "evidence": "No complexity assessment"},
+        {"text": "asks_user_confirmation", "passed": false, "evidence": "No confirmation gate"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 141.5, "stddev": 38.7, "min": 97.0, "max": 171.5},
+      "tokens": {"mean": 31382, "stddev": 2196, "min": 28911, "max": 33021}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0},
+      "time_seconds": {"mean": 49.0, "stddev": 0.0, "min": 49.0, "max": 49.0},
+      "tokens": {"mean": 25187, "stddev": 0.0, "min": 25187, "max": 25187}
+    },
+    "delta": {
+      "pass_rate": "+1.000",
+      "time_seconds": "+92.5",
+      "tokens": "+6195"
+    }
+  },
+  "notes": [
+    "Impact heuristic working correctly: unicode bug (new shared abstraction + migration) → HIGH; 4-formatter date fix (same mechanical change, independent classes) → LOW",
+    "All 3 with_skill evals: 100% pass rate — skill is stable after 3 iterations of refinement",
+    "Key discriminators confirmed again: writes tests, confirms RED, assesses impact, asks confirmation, passes full context to create-plan",
+    "Borderline eval (4 files, LOW impact) is the most valuable new discriminator — proves file count alone doesn't drive routing"
+  ]
+}

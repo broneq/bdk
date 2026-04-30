@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "complex-unicode",
+  "prompt": "Our payment processing pipeline is broken after the v2 refactor. When a user submits a payment with a non-ASCII billing name (e.g. 'François Müller'), the PaymentGatewayService raises UnicodeEncodeError mid-transaction, leaving the order in a partial state in the DB. Steps to reproduce: submit any order with a non-ASCII character in the billing name. The fix requires: (1) encoding normalisation across PaymentGatewayService, BillingAddressValidator, InvoiceRenderer, and AuditLogger — all four need to handle unicode consistently; (2) a new UnicodeNormalizer utility class used by all of them; (3) DB migration to change the billing_name column from VARCHAR(100) to NVARCHAR(100); (4) updating the Order schema model. This touches 6+ files and the data model.",
+  "assertions": []
+}

@@ -1,0 +1,510 @@
+{
+  "metadata": {
+    "skill_name": "create-plan",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-03-24T13:17:55Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "new_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571428571428571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-validate-empty-tokens.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches documented: Static _validate_non_empty (selected), Separate ParsedDocumentValidator class (rejected), Validation inside each parser (rejected)"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 3 tasks list exact paths: src/data_migrator/exceptions.py, src/data_migrator/services/source_parsing/source_document_parser.py, tests/unit/services/source_parsing/test_source_document_parser.py"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 3 tasks have \u2705 and \u274c markers with concrete inputs and expected outcomes"
+        },
+        {
+          "text": "tasks_have_code_not_descriptions: Tasks contain actual code (class names, method signatures, or code blocks)",
+          "passed": true,
+          "evidence": "Tasks include full code blocks: EmptyTokensError class definition, _validate_non_empty method signature with full implementation, parse_content updated method body"
+        },
+        {
+          "text": "single_explorer_agent_for_simple_scope: Only 1 explorer agent was dispatched (simple scope \u2192 1 agent)",
+          "passed": false,
+          "evidence": "Transcript says '2 exploration passes using Serena tools' \u2014 skill used inline Serena tools rather than dispatching 1 Task subagent as the skill spec requires. While the scope was assessed as simple (LOW), the skill ran 2 passes instead of the expected 1 agent."
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 3 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (grep count: 3)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "new_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-add-inmemory-cache-repository.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches: Add caching to BaseJsonFileRepository (selected), Caching Decorator/Wrapper (rejected), Cache per concrete subclass (rejected)"
+        },
+        {
+          "text": "existing_repository_identified: Exploration found and referenced the actual existing repository class in the codebase",
+          "passed": true,
+          "evidence": "BaseJsonFileRepository, TemplateDiffsFileRepository, TemplateRulesFileRepository, and FingerprintFileRepository all identified and referenced by exact paths"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 3 tasks list exact paths: src/data_migrator/repositories/base_json_repository.py, template_diffs/file_repository.py, template_rules/file_repository.py, and corresponding test files"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 3 tasks contain \u2705 markers with concrete inputs/outputs"
+        },
+        {
+          "text": "cache_invalidation_addressed: Plan explicitly addresses cache invalidation on write",
+          "passed": true,
+          "evidence": "Cache invalidation on save() and delete() explicitly addressed in goal, architecture, and all task implementations. _evict_cached() called from both save() and delete()"
+        },
+        {
+          "text": "two_explorer_agents_dispatched: 2 explorer agents were dispatched for medium complexity",
+          "passed": false,
+          "evidence": "Transcript says '2 agents, executed inline' \u2014 used Serena tools inline rather than dispatching 2 Task subagents. The assertion requires 2 Task agent dispatches per the skill spec."
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 3 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (grep count: 3)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "new_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-document-format-detector-parser-selection.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches: SeaDetector + Static Bridge (selected), FormatAwareParserSelector new service (rejected), Auto-detect flag on CLI (rejected)"
+        },
+        {
+          "text": "existing_detector_pattern_found: Exploration identified existing detector/parser patterns in the codebase and referenced them",
+          "passed": true,
+          "evidence": "FroalaFormatDetector, FormatDetectorInterface, FormatDetectorStrategy all found and explicitly referenced as structural templates"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 5 tasks list exact paths: src/data_migrator/schemas/models/fingerprint.py, detectors/sea/sea_contracts_format_detector.py, detectors/format_detector_strategy.py, processors/tokenizer_strategy.py, services/source_parsing/source_document_parser.py, plus test files"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 5 tasks contain \u2705 and \u274c markers with concrete inputs and expected outcomes"
+        },
+        {
+          "text": "registration_mechanism_addressed: Plan explains how to register the new detector in the existing parser selection mechanism",
+          "passed": true,
+          "evidence": "Task 3 explicitly addresses registering SeaContractsFormatDetector in FormatDetectorStrategy.create_default() with exact code showing how to add it alongside FroalaFormatDetector"
+        },
+        {
+          "text": "three_explorer_agents_dispatched: 3 explorer agents were dispatched for complex scope",
+          "passed": true,
+          "evidence": "Transcript confirms 'Three agents dispatched' with Agent 1 (Utilities), Agent 2 (Architecture & Dependencies), Agent 3 (Similar Features) \u2014 all three explicitly listed with their findings"
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 5 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (grep count: 5)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "new_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-fix-addition-position-preserved-validation.md and copied to outputs/plan.md"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches: Add _try_short_context_fallback to ContextMatcher (selected), Lower global min_match_ratio (rejected), Fix merger gap threshold (rejected)"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 4 tasks list exact paths: src/data_migrator/services/verification/axioms/position/context_matcher.py, tests/unit/services/verification/axioms/position/, tests/integration/test_addition_position_preserved_nype46.py"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "All 4 tasks contain \u2705 and \u274c markers with concrete inputs and expected outcomes"
+        },
+        {
+          "text": "failing_command_in_verification: The exact failing CLI command is included in the Verification or Success Criteria section",
+          "passed": true,
+          "evidence": "Exact command 'uv run data-migrator migrate --name=nype46 tests/fixtures/orv1/nype46/document_test_4201_anon.html --debug-dir=tmp/dumps --verify' appears in Verification Regression section (line 369) and Success Criteria"
+        },
+        {
+          "text": "root_cause_investigated: Plan explores what causes the addition_position_preserved failure",
+          "passed": true,
+          "evidence": "3 root cause candidates analyzed: ContextExpander over-expansion, V2 candidate line misalignment, short context at document edges. Architecture traced through axiom.py, pipeline.py, context_matcher.py, context_expander.py, filtering.py"
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "All 4 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571428571428571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/2026-03-24-validate-empty-tokens-before-processing.md (iteration-2 output)"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches in iteration-2 plan"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "Exact paths present in iteration-2 plan"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "\u2705/\u274c markers present in iteration-2 plan"
+        },
+        {
+          "text": "tasks_have_code_not_descriptions: Tasks contain actual code not just prose descriptions",
+          "passed": true,
+          "evidence": "Full code blocks present in iteration-2 plan"
+        },
+        {
+          "text": "single_explorer_agent_for_simple_scope: Only 1 explorer agent was dispatched (simple scope \u2192 1 agent)",
+          "passed": true,
+          "evidence": "1 explorer agent dispatched in iteration-2 (simple scope correctly identified)"
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": false,
+          "evidence": "grep count=0 \u2014 iteration-2 plan has no /test-driven-development skill references. This assertion was added in iteration-3."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/ in iteration-2"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "Multiple approaches present in iteration-2 plan"
+        },
+        {
+          "text": "existing_repository_identified: Exploration found and referenced the actual existing repository class",
+          "passed": true,
+          "evidence": "Agents found BaseJsonFileRepository, TemplateDiffsFileRepository, TemplateRulesFileRepository"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "Exact paths present in iteration-2 plan"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "\u2705/\u274c markers present in iteration-2 plan"
+        },
+        {
+          "text": "cache_invalidation_addressed: Plan explicitly addresses cache invalidation on write",
+          "passed": true,
+          "evidence": "Cache invalidation addressed in iteration-2 plan"
+        },
+        {
+          "text": "two_explorer_agents_dispatched: 2 explorer agents were dispatched for medium complexity",
+          "passed": true,
+          "evidence": "Transcript shows Agent 1 (Utilities) and Agent 2 (Architecture & Dependencies) dispatched"
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "grep count=3, all 3 tasks have /test-driven-development references \u2014 iteration-2 skill already had this"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/ in iteration-2"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "3 approaches in iteration-2 plan"
+        },
+        {
+          "text": "existing_detector_pattern_found: Exploration identified existing detector/parser patterns in the codebase",
+          "passed": true,
+          "evidence": "FroalaFormatDetector, FormatDetectorInterface, FormatDetectorStrategy found in iteration-2"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "Exact paths present in iteration-2 plan"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "\u2705/\u274c markers present in iteration-2 plan"
+        },
+        {
+          "text": "registration_mechanism_addressed: Plan explains how to register the new detector",
+          "passed": true,
+          "evidence": "Registration in FormatDetectorStrategy.create_default() addressed in iteration-2 plan"
+        },
+        {
+          "text": "three_explorer_agents_dispatched: 3 explorer agents were dispatched for complex scope",
+          "passed": true,
+          "evidence": "3 agents dispatched in iteration-2 (complex scope)"
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": true,
+          "evidence": "grep count=5, all 5 tasks have /test-driven-development references \u2014 same plan reused"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.7142857142857143,
+        "passed": 5,
+        "failed": 2,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+          "passed": true,
+          "evidence": "Plan written to docs/plans/ in iteration-2"
+        },
+        {
+          "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+          "passed": true,
+          "evidence": "Multiple approaches with pros/cons in iteration-2 plan"
+        },
+        {
+          "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+          "passed": true,
+          "evidence": "All 5 tasks list exact paths in iteration-2 plan"
+        },
+        {
+          "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with \u2705 or \u274c",
+          "passed": true,
+          "evidence": "\u2705/\u274c markers present in iteration-2 plan"
+        },
+        {
+          "text": "failing_command_in_verification: The exact failing CLI command is included in the Verification or Success Criteria section",
+          "passed": true,
+          "evidence": "CLI command appears in Regression section (line 330) and Success Criteria"
+        },
+        {
+          "text": "root_cause_investigated: Plan explores what causes the addition_position_preserved failure",
+          "passed": false,
+          "evidence": "Plan investigates FileNotFoundError from stale XML path in template metadata \u2014 a different root cause than the axiom logic failure. Does not analyze ContextMatcher, PositionValidationPipeline, or position matching logic."
+        },
+        {
+          "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+          "passed": false,
+          "evidence": "grep count=4, but there are 5 tasks. Task 4 (Re-import affected templates) has no /test-driven-development reference \u2014 it is a data migration step without test cases, but the skill spec requires every task to have the reference."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "new_skill": {
+      "pass_rate": {
+        "mean": 0.933,
+        "stddev": 0.0777,
+        "min": 0.8571,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "old_skill": {
+      "pass_rate": {
+        "mean": 0.8929,
+        "stddev": 0.1368,
+        "min": 0.7143,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.04",
+      "time_seconds": "+0.0",
+      "tokens": "+0"
+    }
+  },
+  "notes": []
+}

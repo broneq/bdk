@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "eval_name": "empty-tokens-validator",
+  "prompt": "Add a validator that checks if parsed tokens list is empty before processing starts and raises a descriptive exception.",
+  "assertions": [
+    {"name": "plan_file_created", "description": "A plan markdown file was written to docs/plans/"},
+    {"name": "has_two_or_more_approaches", "description": "The plan contains at least 2 explored approaches with pros/cons"},
+    {"name": "tasks_have_exact_file_paths", "description": "Every implementation task lists exact file paths (no vague references like 'the service file')"},
+    {"name": "tasks_have_test_cases_with_markers", "description": "Implementation tasks include test cases marked with ✅ or ❌"},
+    {"name": "tasks_have_code_not_descriptions", "description": "Tasks contain actual code (class names, method signatures, or code blocks) not just prose descriptions"},
+    {"name": "single_explorer_agent_for_simple_scope", "description": "Only 1 explorer agent was dispatched (simple scope → 1 agent)"},
+    {"name": "tdd_skill_referenced", "description": "Every implementation task ends with a reference to /test-driven-development skill"}
+  ]
+}

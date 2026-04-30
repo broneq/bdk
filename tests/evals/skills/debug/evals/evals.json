@@ -1,0 +1,97 @@
+{
+  "skill_name": "debug",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "When I call `format_price(0.1 + 0.2)` it returns `'0.30000000000000004'` instead of `'0.30'`. Steps to reproduce: call `format_price(0.1 + 0.2)` in a Python REPL.",
+      "expected_output": "Skill investigates root cause (floating point), writes a concrete failing test, scans for related gaps (e.g. other float inputs), shows tests, asks user to confirm fix approach (Fix now / Create plan / Something else), and if confirmed inline — applies minimal fix and verifies green.",
+      "assertions": [
+        {
+          "name": "announces_skill_at_start",
+          "description": "Skill announces 'Using debug' at the start of the response"
+        },
+        {
+          "name": "prints_phase1_summary",
+          "description": "Prints [debug] Issue: and [debug] Signals: lines after parsing input"
+        },
+        {
+          "name": "identifies_root_cause",
+          "description": "Prints [debug] Root cause: line identifying floating point precision as the issue"
+        },
+        {
+          "name": "writes_concrete_failing_test",
+          "description": "Writes at least one test with specific input (0.1 + 0.2) and specific expected output ('0.30')"
+        },
+        {
+          "name": "confirms_tests_are_red",
+          "description": "Delegates to test-runner and confirms new tests are RED before proceeding"
+        },
+        {
+          "name": "asks_user_confirmation",
+          "description": "Uses AskUserQuestion with all three options: Fix now, Create plan, Something else"
+        },
+        {
+          "name": "scans_for_related_gaps",
+          "description": "Identifies at least one related test gap (e.g. other edge cases of format_price)"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Our payment processing pipeline is broken after the v2 refactor. When a user submits a payment with a non-ASCII billing name (e.g. 'François Müller'), the PaymentGatewayService raises UnicodeEncodeError mid-transaction, leaving the order in a partial state in the DB. Steps to reproduce: submit any order with a non-ASCII character in the billing name. The fix requires: (1) encoding normalisation across PaymentGatewayService, BillingAddressValidator, InvoiceRenderer, and AuditLogger — all four need to handle unicode consistently; (2) a new UnicodeNormalizer utility class used by all of them; (3) DB migration to change the billing_name column from VARCHAR(100) to NVARCHAR(100); (4) updating the Order schema model. This touches 6+ files and the data model.",
+      "expected_output": "Skill investigates the call chain, identifies encoding root cause, writes failing tests, estimates token cost > 20k given 6+ files + schema + migration, recommends create-plan, but still presents all three options to the user.",
+      "assertions": [
+        {
+          "name": "announces_skill_at_start",
+          "description": "Skill announces 'Using debug' at the start of the response"
+        },
+        {
+          "name": "traces_call_chain",
+          "description": "Investigation traces PaymentGatewayService and related components in the encoding failure path"
+        },
+        {
+          "name": "writes_failing_test",
+          "description": "Writes at least one concrete failing test reproducing the UnicodeEncodeError with a non-ASCII billing name"
+        },
+        {
+          "name": "estimates_token_cost",
+          "description": "Provides a token cost estimate exceeding 20k tokens given 6+ files, new utility class, and DB migration"
+        },
+        {
+          "name": "recommends_create_plan",
+          "description": "Recommends routing to /create-plan because estimated cost > 20k tokens"
+        },
+        {
+          "name": "asks_user_confirmation",
+          "description": "Uses AskUserQuestion with all three options: Fix now, Create plan, Something else — does not auto-proceed"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "The migration is broken.",
+      "expected_output": "Skill detects vague input in Phase 1 and uses AskUserQuestion to ask for more detail — does not proceed to investigation.",
+      "assertions": [
+        {
+          "name": "announces_skill_at_start",
+          "description": "Skill announces 'Using debug' at the start of the response"
+        },
+        {
+          "name": "detects_vague_input",
+          "description": "Recognizes the input is too vague to investigate"
+        },
+        {
+          "name": "asks_clarifying_question_inline",
+          "description": "Asks clarifying questions inline in the response text (NOT using AskUserQuestion tool) — requests error message, steps to reproduce, or expected vs actual"
+        },
+        {
+          "name": "does_not_investigate",
+          "description": "Does NOT proceed to Phase 2 investigation — stops after the inline clarifying questions"
+        }
+      ],
+      "files": []
+    }
+  ]
+}

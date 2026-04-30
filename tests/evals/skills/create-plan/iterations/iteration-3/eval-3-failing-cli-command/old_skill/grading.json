@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "eval_name": "failing-cli-command",
+  "run": "old_skill",
+  "expectations": [
+    {
+      "text": "plan_file_created: A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "Plan written to docs/plans/ in iteration-2"
+    },
+    {
+      "text": "has_two_or_more_approaches: The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "Multiple approaches with pros/cons in iteration-2 plan"
+    },
+    {
+      "text": "tasks_have_exact_file_paths: Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "All 5 tasks list exact paths in iteration-2 plan"
+    },
+    {
+      "text": "tasks_have_test_cases_with_markers: Implementation tasks include test cases marked with ✅ or ❌",
+      "passed": true,
+      "evidence": "✅/❌ markers present in iteration-2 plan"
+    },
+    {
+      "text": "failing_command_in_verification: The exact failing CLI command is included in the Verification or Success Criteria section",
+      "passed": true,
+      "evidence": "CLI command appears in Regression section (line 330) and Success Criteria"
+    },
+    {
+      "text": "root_cause_investigated: Plan explores what causes the addition_position_preserved failure",
+      "passed": false,
+      "evidence": "Plan investigates FileNotFoundError from stale XML path in template metadata — a different root cause than the axiom logic failure. Does not analyze ContextMatcher, PositionValidationPipeline, or position matching logic."
+    },
+    {
+      "text": "tdd_skill_referenced: Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": false,
+      "evidence": "grep count=4, but there are 5 tasks. Task 4 (Re-import affected templates) has no /test-driven-development reference — it is a data migration step without test cases, but the skill spec requires every task to have the reference."
+    }
+  ]
+}

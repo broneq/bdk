@@ -1,0 +1,93 @@
+{
+  "eval_id": 0,
+  "config": "with_skill",
+  "expectations": [
+    {
+      "text": "A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "docs/plans/2026-03-27-validate-empty-tokens-before-processing-v2.md exists on disk. Transcript Phase 1 confirms: 'Plan file already existed \u2192 created v2 variant: 2026-03-27-validate-empty-tokens-before-processing-v2.md'. Plan content is substantive (333 lines)."
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "Plan documents 3 approaches: Approach 1 (Guard in BaseTokenizerParser.parse() \u2014 Selected), Approach 2 (Guard in SourceDocumentParser.parse_content() \u2014 Not Selected), Approach 3 (Pydantic field_validator on SourceDocument \u2014 Not Selected). Each has explicit Pros/Cons and 'Why not selected' reasoning."
+    },
+    {
+      "text": "Every implementation task lists exact file paths (no vague references like 'the service file')",
+      "passed": true,
+      "evidence": "All 3 tasks list exact paths. Task 1: 'src/data_migrator/exceptions.py', 'tests/unit/test_exceptions.py'. Task 2: 'src/data_migrator/processors/tokenizers/base_parser.py', 'tests/unit/processors/tokenizers/test_base_parser.py'. Task 3: 'tests/unit/processors/tokenizers/froala/test_froala_parser.py'. No vague references."
+    },
+    {
+      "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+      "passed": true,
+      "evidence": "Task 1 has 3 \u2705 cases. Task 2 has 1 \u2705 and 2 \u274c cases. Task 3 has 2 \u274c cases. All use \u2705/\u274c markers with specific scenario descriptions."
+    },
+    {
+      "text": "Tasks contain actual code (class names, method signatures, or code blocks) not just prose descriptions",
+      "passed": true,
+      "evidence": "Every task includes a code block with actual Python. Task 1 has the EmptyTokensError class definition. Task 2 has _validate_tokens_not_empty() method signature and body, and updated parse() method. Task 3 has full test function implementations."
+    },
+    {
+      "text": "Only 1 explorer agent was dispatched (simple scope \u2192 1 agent)",
+      "passed": true,
+      "evidence": "Transcript states 'Count: 1 (Simple scope \u2014 single base class, localized change)'. Only 'Agent 1: Utilities & Existing Implementations' is documented."
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "Task 1 ends with '> Follow `/test-driven-development` skill for test writing and red-green-clean cycle.' Task 2 and Task 3 end with the same line. All 3 tasks have this footer."
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt \u2014 they use '# CLI regression \u2014 see Verification section' instead)",
+      "passed": true,
+      "evidence": "Task 1: scaffold has 3 stubs for 3 test cases. Task 2: scaffold has 3 stubs for 3 test cases. Task 3: scaffold has 2 stubs for 2 test cases. Transcript confirms 'one def test_... stub per \u2705/\u274c bullet point'. No CLI regression tasks present."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tokens": 61654,
+    "output_chars": 61654,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 222.1,
+    "total_duration_seconds": 222.1
+  },
+  "claims": [
+    {
+      "claim": "No prior empty-tokens validator exists in the codebase",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Agent 1 findings: 'EXISTING_IMPLEMENTATIONS: No prior empty-tokens validator exists'. Plan corroborates this with canonical reference to TokenTypeValidator as nearest pattern."
+    },
+    {
+      "claim": "TokenTypeValidator.validate_include_types is the canonical structlog-then-raise pattern",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Referenced in both plan Context section and transcript Agent 1 findings. File path src/data_migrator/services/text_processing/validators.py is specific."
+    },
+    {
+      "claim": "Plan file already existed at the original slug, so a v2 variant was created",
+      "type": "process",
+      "verified": true,
+      "evidence": "docs/plans/2026-03-27-validate-empty-tokens-before-processing.md and docs/plans/2026-03-27-validate-empty-tokens-before-processing-v2.md both exist on disk."
+    }
+  ],
+  "user_notes_summary": {},
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "Assertion 1 checks that the file was written to docs/plans/ but does not verify the plan file referenced in the transcript actually matches the plan.md in outputs/. Both v2 variants exist on disk; a stronger assertion would check that the written file is non-empty and references the correct goal/architecture."
+      },
+      {
+        "reason": "No assertion verifies that the exploration actually read the correct source files (base_parser.py, exceptions.py) rather than just guessing. An assertion like 'Explorer agent read at least base_parser.py and exceptions.py during exploration' would catch a fabricated plan."
+      }
+    ],
+    "overall": "All 8 assertions pass with clear evidence. The evals are generally solid for structural correctness. Two gaps: file content depth (assertion 1) and exploration authenticity."
+  }
+}

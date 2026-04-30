@@ -1,0 +1,255 @@
+"""Tests for scripts/inject-rules.py."""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+SCRIPT = Path(__file__).parents[3] / "scripts" / "inject-rules.py"
+
+
+def _load_module():
+    spec = importlib.util.spec_from_file_location("inject_rules", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+inject_rules_mod = _load_module()
+resolve_rule = inject_rules_mod.resolve_rule
+
+
+def _write_settings(tmp_path: Path, data: dict) -> Path:
+    bdk = tmp_path / ".bdk"
+    bdk.mkdir()
+    settings = bdk / "settings.json"
+    settings.write_text(json.dumps(data))
+    return settings
+
+
+def _write_plugin_default(plugin_root: Path, name: str, content: str) -> Path:
+    rules = plugin_root / "rules"
+    rules.mkdir(parents=True, exist_ok=True)
+    target = rules / f"{name}.md"
+    target.write_text(content)
+    return target
+
+
+def _run_cli(args: list[str], cwd: Path, plugin_root: Path) -> subprocess.CompletedProcess:
+    env = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(plugin_root)}
+    return subprocess.run(
+        [sys.executable, str(SCRIPT)] + args,
+        capture_output=True,
+        text=True,
+        cwd=str(cwd),
+        env=env,
+    )
+
+
+def test_no_settings_file_returns_bdk_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content"
+
+
+def test_settings_without_quality_returns_bdk_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"features": {"react": True}})
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content"
+
+
+def test_settings_with_quality_but_rule_missing_returns_bdk_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"quality": {"architecture": "docs/arch.md"}})
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content"
+
+
+def test_string_entry_extends_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "docs" / "coding.md"
+    user_file.parent.mkdir(parents=True)
+    user_file.write_text("user additions")
+    _write_settings(project, {"quality": {"code-quality": "docs/coding.md"}})
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content\n\nuser additions"
+
+
+def test_object_entry_extends(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("user additions")
+    _write_settings(
+        project,
+        {"quality": {"code-quality": {"path": "user.md", "mode": "extends"}}},
+    )
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default content\n\nuser additions"
+
+
+def test_object_entry_replace(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("user only")
+    _write_settings(
+        project,
+        {"quality": {"code-quality": {"path": "user.md", "mode": "replace"}}},
+    )
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "user only"
+
+
+def test_object_entry_replace_works_without_bdk_default(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    (plugin_root / "rules").mkdir(parents=True)  # rules/ exists but file missing
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("user only")
+    _write_settings(
+        project,
+        {"quality": {"unknown-rule": {"path": "user.md", "mode": "replace"}}},
+    )
+
+    result = resolve_rule("unknown-rule", cwd=project, plugin_root=plugin_root)
+
+    assert result == "user only"
+
+
+def test_string_entry_user_file_missing_raises(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"quality": {"code-quality": "missing.md"}})
+
+    with pytest.raises(FileNotFoundError):
+        resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+
+def test_object_entry_path_missing_raises(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"quality": {"code-quality": {"mode": "replace"}}})
+
+    with pytest.raises(ValueError, match="path.*required"):
+        resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+
+def test_unknown_rule_no_bdk_default_raises(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    (plugin_root / "rules").mkdir(parents=True)
+    project = tmp_path / "project"
+    project.mkdir()
+
+    with pytest.raises(FileNotFoundError):
+        resolve_rule("nonexistent", cwd=project, plugin_root=plugin_root)
+
+
+def test_unknown_mode_warns_and_extends(tmp_path, capsys):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("user")
+    _write_settings(
+        project,
+        {"quality": {"code-quality": {"path": "user.md", "mode": "garbage"}}},
+    )
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default\n\nuser"
+    captured = capsys.readouterr()
+    assert "unknown mode" in captured.err
+
+
+def test_empty_user_file_extends(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    user_file = project / "user.md"
+    user_file.write_text("")
+    _write_settings(project, {"quality": {"code-quality": "user.md"}})
+
+    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+
+    assert result == "default\n\n"
+
+
+def test_cli_emits_default_to_stdout(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default content")
+    project = tmp_path / "project"
+    project.mkdir()
+
+    proc = _run_cli(["code-quality"], cwd=project, plugin_root=plugin_root)
+
+    assert proc.returncode == 0
+    assert proc.stdout == "default content"
+
+
+def test_cli_missing_user_file_exits_one(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+    _write_settings(project, {"quality": {"code-quality": "missing.md"}})
+
+    proc = _run_cli(["code-quality"], cwd=project, plugin_root=plugin_root)
+
+    assert proc.returncode == 1
+    assert "user file not found" in proc.stderr
+
+
+def test_cli_no_args_exits_one(tmp_path):
+    plugin_root = tmp_path / "plugin"
+    _write_plugin_default(plugin_root, "code-quality", "default")
+    project = tmp_path / "project"
+    project.mkdir()
+
+    proc = _run_cli([], cwd=project, plugin_root=plugin_root)
+
+    assert proc.returncode == 1
+    assert "Usage" in proc.stderr

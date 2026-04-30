@@ -1,0 +1,34 @@
+{
+  "eval_id": 2,
+  "eval_name": "format-detector",
+  "prompt": "Implement a new document format detector that identifies document type from HTML structure and auto-selects the right parser. Register it in the existing parser selection mechanism.",
+  "assertions": [
+    {
+      "text": "A plan markdown file was written to docs/plans/"
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons"
+    },
+    {
+      "text": "Exploration identified existing detector/parser patterns in the codebase and referenced them"
+    },
+    {
+      "text": "Every implementation task lists exact file paths"
+    },
+    {
+      "text": "Implementation tasks include test cases marked with \u2705 or \u274c"
+    },
+    {
+      "text": "Plan explains how to register the new detector in the existing parser selection mechanism"
+    },
+    {
+      "text": "3 explorer agents were dispatched for complex scope"
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill"
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block with one stub per test case (CLI regression tasks are exempt)"
+    }
+  ]
+}

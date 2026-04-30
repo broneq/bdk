@@ -1,0 +1,99 @@
+{
+  "eval_id": 2,
+  "config": "with_skill",
+  "expectations": [
+    {
+      "text": "A plan markdown file was written to docs/plans/",
+      "passed": true,
+      "evidence": "Transcript Phase 4: 'Plan written to docs/plans/2026-03-27-document-format-detector.md'. Plan header confirms 'Created: 2026-03-27'."
+    },
+    {
+      "text": "The plan contains at least 2 explored approaches with pros/cons",
+      "passed": true,
+      "evidence": "Plan contains 3 approaches: (1) SeaFormatDetector + FormatParserResolver (selected), (2) Auto-detect Inline in SourceDocumentParser (not selected), (3) FormatDetectorStrategy.resolve_parser_name() (not selected). Each has explicit Pros/Cons or Pros / Cons sections."
+    },
+    {
+      "text": "Exploration identified existing detector/parser patterns in the codebase and referenced them",
+      "passed": true,
+      "evidence": "Transcript: Agent 1 found FormatDetectorInterface, FroalaFormatDetector, FormatDetectorStrategy, TokenizerStrategy, SourceDocumentParser, DefaultContainer. Plan 'Reusable Components' section references all of them with exact file paths and explains FroalaFormatDetector as 'exact reference' for SeaFormatDetector structure."
+    },
+    {
+      "text": "Every implementation task lists exact file paths",
+      "passed": true,
+      "evidence": "All 6 tasks include a **Files:** section with exact paths, e.g. Task 1: 'Modify: src/data_migrator/schemas/models/fingerprint.py'; Task 2: 'Create: src/data_migrator/detectors/sea/__init__.py', 'Create: src/data_migrator/detectors/sea/sea_format_detector.py', etc."
+    },
+    {
+      "text": "Implementation tasks include test cases marked with \u2705 or \u274c",
+      "passed": true,
+      "evidence": "All tasks use \u2705 and \u274c markers. Example from Task 2: '\u2705 Positive: given content containing ins data-cid, matches() returns True' and '\u274c Negative: given Froala-only HTML (fr-element), matches() returns False'."
+    },
+    {
+      "text": "Plan explains how to register the new detector in the existing parser selection mechanism",
+      "passed": true,
+      "evidence": "Task 3 is dedicated to 'Register SeaFormatDetector in FormatDetectorStrategy.create_default()' and includes implementation code: 'strategy.register_detector(\"sea_contracts\", SeaFormatDetector)'. Context section also explains the existing gap and the full registration flow."
+    },
+    {
+      "text": "3 explorer agents were dispatched for complex scope",
+      "passed": true,
+      "evidence": "Transcript Phase 2: 'Scope assessed as Complex (architectural change touching new subsystem: detectors + processors + container)' and '3 explorer agents dispatched in parallel' with individual agent descriptions."
+    },
+    {
+      "text": "Every implementation task ends with a reference to /test-driven-development skill",
+      "passed": true,
+      "evidence": "All 6 tasks end with '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (Tasks 1-5) or '> Follow /test-driven-development skill for test writing and red-green-clean cycle.' (Task 6)."
+    },
+    {
+      "text": "Every implementation task includes a test scaffold block showing fixture/container setup and arrange/act/assert skeleton",
+      "passed": true,
+      "evidence": "All 6 tasks include a **Test scaffold:** code block. Each shows import setup, variable/fixture definitions, and test functions with assert statements. E.g., Task 5 shows FROALA_CONTENT/SEA_CONTENT/UNKNOWN_CONTENT fixtures and three test functions with arrange/act/assert structure."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tokens": 80746,
+    "output_chars": 21000,
+    "transcript_chars": 2500
+  },
+  "timing": {
+    "total_duration_seconds": 299.2,
+    "executor_duration_ms": 299223
+  },
+  "claims": [
+    {
+      "claim": "Test scaffolds included in every task",
+      "type": "quality",
+      "verified": true,
+      "evidence": "All 6 tasks contain **Test scaffold:** blocks with Python code showing setup, arrange, act, assert pattern."
+    },
+    {
+      "claim": "TDD cycle enforced \u2014 every task ends with reference to /test-driven-development skill",
+      "type": "process",
+      "verified": true,
+      "evidence": "Confirmed by reading each task in plan.md \u2014 all end with the /test-driven-development reference."
+    },
+    {
+      "claim": "FroalaFormatDetector used as exact reference implementation",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript agent 3 and plan 'Similar Implementations' section both cite froala_format_detector.py as canonical reference."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Every implementation task ends with a reference to /test-driven-development skill",
+        "reason": "The assertion is satisfied by a boilerplate line appended to each task. A stronger check would verify the task's test scaffold is non-trivial (e.g., has at least one negative/edge-case test) rather than just checking the footer line exists."
+      },
+      {
+        "reason": "No assertion checks that the plan's registration approach is architecturally correct \u2014 e.g., that FormatParserResolver is injected via the DI container rather than instantiated inline. Task 6 does cover container wiring, but no assertion validates this critical architectural detail."
+      }
+    ],
+    "overall": "All 9 assertions pass with solid evidence. The plan is thorough and well-structured. Consider adding assertions that check architectural correctness of the DI wiring, not just presence of content."
+  },
+  "user_notes_summary": {}
+}
