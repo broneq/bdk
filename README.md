@@ -8,10 +8,16 @@ A personal Claude Code plugin packaging reusable dev workflows, skills, agents, 
 
 ## Installation
 
-```bash
-# From GitHub (once published)
-/plugin install bdk@broneq
-```
+**From GitHub directly (recommended until marketplace listing is live):**
+
+1. Add the BDK marketplace source:
+   ```
+   /plugin marketplace add broneq/bdk
+   ```
+2. Install:
+   ```
+   /plugin install bdk@bdk
+   ```
 
 ---
 
