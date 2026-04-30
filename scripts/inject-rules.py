@@ -35,13 +35,26 @@ def _load_settings(start: Path) -> dict | None:
         current = parent
 
 
+def _default_plugin_root() -> Path:
+    """Resolve plugin root from CLAUDE_PLUGIN_ROOT env var, falling back to script location.
+
+    Slash-command frontmatter substitutes ${CLAUDE_PLUGIN_ROOT} but does not export it
+    to the spawned shell. Use the script's own location (scripts/inject-rules.py →
+    plugin root is parent of scripts/) as a robust fallback.
+    """
+    env = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if env:
+        return Path(env)
+    return Path(__file__).resolve().parent.parent
+
+
 def resolve_rule(name: str, cwd: Path | None = None, plugin_root: Path | None = None) -> str:
     """Resolve final rule content for `name`. Returns content string.
 
     Raises FileNotFoundError, ValueError, OSError on misconfigurations.
     """
     cwd = cwd or Path.cwd()
-    plugin_root = plugin_root or Path(os.environ["CLAUDE_PLUGIN_ROOT"])
+    plugin_root = plugin_root or _default_plugin_root()
     default_path = plugin_root / "rules" / f"{name}.md"
 
     settings = _load_settings(cwd)

@@ -253,3 +253,22 @@ def test_cli_no_args_exits_one(tmp_path):
 
     assert proc.returncode == 1
     assert "Usage" in proc.stderr
+
+
+def test_cli_falls_back_to_script_location_without_env(tmp_path):
+    """When CLAUDE_PLUGIN_ROOT env var is unset, plugin root is derived from script location."""
+    project = tmp_path / "project"
+    project.mkdir()
+
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PLUGIN_ROOT"}
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT), "code-quality"],
+        capture_output=True,
+        text=True,
+        cwd=str(project),
+        env=env,
+    )
+
+    # Real BDK plugin root contains rules/code-quality.md — script self-locates.
+    assert proc.returncode == 0, f"stderr: {proc.stderr}"
+    assert proc.stdout.strip(), "expected non-empty default content"
