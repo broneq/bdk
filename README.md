@@ -32,6 +32,7 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:commit` | Generate conventional commit message from git changes                                               |
 | `/bdk:create-plan` | Create TDD-driven implementation plans                                                              |
 | `/bdk:execute-plan` | Execute a plan with task tracking and verification                                                  |
+| `/bdk:subagent-execute-plan` | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review |
 | `/bdk:verify-plan` | Verify a plan against real code before execution                                                    |
 | `/bdk:debug` | Structured debugging: investigate → failing tests → fix or plan                                     |
 | `/bdk:refactor` | Propose object-oriented architecture for complex code                                               |
@@ -57,6 +58,8 @@ Used by skills internally (invoke via `subagent_type`):
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | `code-reviewer` | sonnet | Layer-group deep code review |
+| `implementer` | sonnet | End-to-end task implementation (TDD, lint, commit) — used by `/bdk:subagent-execute-plan` |
+| `fixer` | sonnet | Apply specific findings (review, lint, test failures) — used by `/bdk:subagent-execute-plan` |
 | `explorer` | haiku | Fast codebase exploration (CodeGraph → Serena → Grep) |
 | `test-runner` | haiku | Run tests, parse and report results |
 | `dead-code-detector` | haiku | Find unreachable/unused code |
