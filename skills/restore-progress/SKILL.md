@@ -1,6 +1,6 @@
 ---
 name: restore-progress
-description: Restore saved work progress from .bdk/progress/ to resume a previous session. Loads referenced plans, creates TaskList items for remaining work.
+description: Restore saved work progress from .bdk/save-progress/ to resume a previous session. Loads referenced plans, creates TaskList items for remaining work.
 argument-hint: "[name]"
 user-invocable: true
 model: sonnet
@@ -10,14 +10,14 @@ model: sonnet
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-Resume previous work by loading `.bdk/progress/$ARGUMENTS.md` and recreating task context.
+Resume previous work by loading `.bdk/save-progress/$ARGUMENTS.md` and recreating task context.
 
-**Announce:** "Restoring progress from .bdk/progress/$ARGUMENTS.md"
+**Announce:** "Restoring progress from .bdk/save-progress/$ARGUMENTS.md"
 
 ## Step 1: Validate & Load
 
-- If `$ARGUMENTS` empty: list available progress files from `.bdk/progress/` and **stop**
-- Read `.bdk/progress/$ARGUMENTS.md`
+- If `$ARGUMENTS` empty: list available progress files from `.bdk/save-progress/` and **stop**
+- Read `.bdk/save-progress/$ARGUMENTS.md`
 - If file missing: list available files and **stop**
 
 ## Step 2: Display Summary

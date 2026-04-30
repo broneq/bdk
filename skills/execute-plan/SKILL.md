@@ -9,12 +9,12 @@ hooks:
   Stop:
     - hooks:
         - type: command
-          command: "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/skills/execute-plan/scripts/context-usage.py"
+          command: "python3 ${CLAUDE_PLUGIN_ROOT}/skills/execute-plan/scripts/context-usage.py"
   PostToolUse:
     - matcher: "TaskUpdate"
       hooks:
         - type: command
-          command: "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/skills/execute-plan/scripts/context-usage.py"
+          command: "python3 ${CLAUDE_PLUGIN_ROOT}/skills/execute-plan/scripts/context-usage.py"
 ---
 
 # Execute Plan

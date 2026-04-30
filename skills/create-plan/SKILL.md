@@ -27,7 +27,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 
 1. **Validate input**:
    - `$ARGUMENTS` empty/blank: ask user to describe feature, **stop**
-   - Input vague (< 10 words OR generic like "make it better"): suggest `/bdk:brainstorming-session`, **stop**
+   - Input vague (< 10 words OR generic like "make it better"): suggest `/bdk:brainstorming`, **stop**
 
 2. **Extract topic slug**: 3-5 descriptive words, kebab-case, lowercase
 

@@ -40,7 +40,7 @@ digraph verify_plan {
     pass_check [label="PASS?", shape=diamond]
     done [label="Save report\nDone", shape=ellipse, fillcolor="#d4edda"]
     iter_check [label="Iteration < 3?", shape=diamond]
-    rethink [label="Plan needs rethink.\nSuggest /bdk:brainstorming-session", shape=ellipse]
+    rethink [label="Plan needs rethink.\nSuggest /bdk:brainstorming", shape=ellipse]
 
     start -> parse
     parse -> explorer
@@ -101,7 +101,7 @@ Merge all reports using structure in `references/verdict-template.md`. Save to `
 
 1. PASS → save report, done
 2. FAIL + iteration < 3: show remaining issues, ask to re-verify
-3. FAIL + iteration >= 3: suggest `/bdk:brainstorming-session`
+3. FAIL + iteration >= 3: suggest `/bdk:brainstorming`
 
 ## Iteration Summary Format
 

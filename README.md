@@ -19,29 +19,28 @@ A personal Claude Code plugin packaging reusable dev workflows, skills, agents, 
 
 Invoke with `/bdk:<skill-name>`:
 
-| Skill | Description |
-|-------|-------------|
-| `/bdk:setup` | Initialize `.bdk/settings.json` — run once per project before using other skills |
-| `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size) |
-| `/bdk:commit` | Generate conventional commit message from git changes |
-| `/bdk:create-plan` | Create TDD-driven implementation plans |
-| `/bdk:execute-plan` | Execute a plan with task tracking and verification |
-| `/bdk:verify-plan` | Verify a plan against real code before execution |
-| `/bdk:debug` | Structured debugging: investigate → failing tests → fix or plan |
-| `/bdk:refactor` | Propose object-oriented architecture for complex code |
-| `/bdk:test-driven-development` | Rigid TDD cycle: red → green |
-| `/bdk:brainstorming-session` | Design sessions before implementation |
-| `/bdk:create-adr` | Generate Architecture Decision Records (MADR format) |
-| `/bdk:save-progress` | Checkpoint in-progress work to `docs/progress/` |
-| `/bdk:restore-progress` | Resume work from a saved checkpoint |
-| `/bdk:explain-complex-code` | Generate architecture docs with Graphviz diagrams |
-| `/bdk:update-docs` | Refresh existing architecture docs after code changes |
-| `/bdk:graphviz-docs-compiler` | Compile `.dot` files to SVG and update markdown references |
-| `/bdk:analyze-migration` | Analyse migration tasks and risks |
-| `/bdk:graph-review` | Risk-aware code review using knowledge graph — change detection, impact analysis, test coverage |
-| `/bdk:graph-explore` | Navigate codebase structure using knowledge graph — stats, architecture, call relationships |
+| Skill | Description                                                                                         |
+|-------|-----------------------------------------------------------------------------------------------------|
+| `/bdk:setup` | Initialize `.bdk/settings.json` — run once per project before using other skills                    |
+| `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size)                                     |
+| `/bdk:commit` | Generate conventional commit message from git changes                                               |
+| `/bdk:create-plan` | Create TDD-driven implementation plans                                                              |
+| `/bdk:execute-plan` | Execute a plan with task tracking and verification                                                  |
+| `/bdk:verify-plan` | Verify a plan against real code before execution                                                    |
+| `/bdk:debug` | Structured debugging: investigate → failing tests → fix or plan                                     |
+| `/bdk:refactor` | Propose object-oriented architecture for complex code                                               |
+| `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                        |
+| `/bdk:brainstorming` | Design sessions before implementation                                                               |
+| `/bdk:create-adr` | Generate Architecture Decision Records (MADR format)                                                |
+| `/bdk:save-progress` | Checkpoint in-progress work to `.bdk/save-progress/`                                                |
+| `/bdk:restore-progress` | Resume work from a saved checkpoint                                                                 |
+| `/bdk:explain-complex-code` | Generate architecture docs with Graphviz diagrams                                                   |
+| `/bdk:update-docs` | Refresh existing architecture docs after code changes                                               |
+| `/bdk:graphviz-docs-compiler` | Compile `.dot` files to SVG and update markdown references                                          |
+| `/bdk:graph-review` | Risk-aware code review using knowledge graph — change detection, impact analysis, test coverage     |
+| `/bdk:graph-explore` | Navigate codebase structure using knowledge graph — stats, architecture, call relationships         |
 | `/bdk:graph-debug` | Debug issues using graph-powered code navigation — trace call chains, correlate with recent changes |
-| `/bdk:graph-refactor` | Safe refactoring using dependency analysis — dead code, rename preview, impact verification |
+| `/bdk:graph-refactor` | Safe refactoring using dependency analysis — dead code, rename preview, impact verification         |
 
 ---
 
