@@ -1,0 +1,13 @@
+{
+  "name": "bdk",
+  "owner": {
+    "name": "broneq"
+  },
+  "plugins": [
+    {
+      "name": "bdk",
+      "source": ".",
+      "description": "Broneq Dev Kit — reusable dev workflows, skills, agents, and hooks for any project"
+    }
+  ]
+}
