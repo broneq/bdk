@@ -14,11 +14,6 @@ tools:
   - mcp__serena__find_referencing_symbols
   - mcp__code-review-graph__semantic_search_nodes_tool
   - mcp__code-review-graph__get_community_tool
-hooks:
-  SessionStart:
-    - hooks:
-        - type: command
-          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
 ---
 
 # Duplicate Code Detector Agent

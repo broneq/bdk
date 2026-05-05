@@ -22,16 +22,6 @@ tools:
   - mcp__code-review-graph__query_graph_tool
   - mcp__code-review-graph__semantic_search_nodes_tool
   - mcp__code-review-graph__get_impact_radius_tool
-hooks:
-  Stop:
-    - hooks:
-        - type: command
-          command: "python3 ${CLAUDE_PLUGIN_ROOT}/skills/execute-plan/scripts/context-usage.py"
-  PostToolUse:
-    - matcher: "TaskUpdate"
-      hooks:
-        - type: command
-          command: "python3 ${CLAUDE_PLUGIN_ROOT}/skills/execute-plan/scripts/context-usage.py"
 ---
 
 # Implementer Agent
