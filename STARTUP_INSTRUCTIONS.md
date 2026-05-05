@@ -8,15 +8,15 @@ When exploring, searching, editing, or reviewing code, use the best available to
 
 **Exploration & Architecture:**
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
+<!-- CHAIN: explore.chain.json -->
 
 **Symbol Search & Tracing:**
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
+<!-- CHAIN: search.chain.json -->
 
 **Impact Analysis:**
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/impact.chain.json`
+<!-- CHAIN: impact.chain.json -->
 
 ## Quality Rules
 
