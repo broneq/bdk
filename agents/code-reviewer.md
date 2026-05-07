@@ -7,6 +7,7 @@ skills:
   - bdk-tier-review
   - bdk-rules-code-quality
   - bdk-rules-architecture
+  - bdk-rules-design-patterns
 tools:
   - Read
   - Bash

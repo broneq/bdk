@@ -7,6 +7,7 @@ skills:
   - bdk-tier-search
   - bdk-tier-impact
   - bdk-rules-architecture
+  - bdk-rules-design-patterns
 tools:
   - Read
   - Grep

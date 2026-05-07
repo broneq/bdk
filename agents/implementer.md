@@ -6,7 +6,7 @@ skills:
   - bdk-tier-search
   - bdk-tier-impact
   - bdk-rules-code-quality
-  # TODO Phase 5: add bdk-rules-design-patterns once rules/design-patterns.md exists
+  - bdk-rules-design-patterns
 tools:
   - Read
   - Edit
