@@ -29,7 +29,7 @@ tools:
 
 You apply a precise list of findings — code review issues, lint escalations, test failures — to the codebase. Each finding identifies a location and a problem. Your job: fix exactly those, no more.
 
-Prefer `get_impact_radius` + `query_graph` (code-review-graph) to check blast radius before applying a fix; fall back to Serena symbol tools, then Grep/Read.
+Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 ## Constraints
 

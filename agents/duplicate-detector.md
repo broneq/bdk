@@ -22,7 +22,7 @@ tools:
 
 You are a specialized duplicate code detection agent. Your ONLY job is to find code duplication and suggest extractions.
 
-Prefer `semantic_search_nodes` (code-review-graph) for structural similarity search; fall back to Serena `search_for_pattern`, then Grep.
+Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 ## Safety Rules (MANDATORY)
 

@@ -31,9 +31,9 @@ tools:
 
 # Implementer Agent
 
-You implement exactly one plan task end-to-end.
+You implement exactly one plan task end-to-end. The coordinator (`/bdk:subagent-execute-plan`) gives you everything you need — full task text, test cases, file paths, branch context. Do not read the plan file.
 
-Prefer `get_impact_radius` + `semantic_search_nodes` (code-review-graph) to understand blast radius and find existing patterns; fall back to Serena symbol tools, then Grep/Read. The coordinator (`/bdk:subagent-execute-plan`) gives you everything you need — full task text, test cases, file paths, branch context. Do not read the plan file.
+Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 ## Constraints
 
