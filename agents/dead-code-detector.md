@@ -2,6 +2,8 @@
 name: dead-code-detector
 description: Find unused functions, methods, variables, and unreachable code blocks using reference checking
 model: haiku
+skills:
+  - bdk-tier-search
 tools:
   - Read
   - Grep
@@ -19,6 +21,8 @@ tools:
 # Dead Code Detector Agent
 
 You are a specialized dead code detection agent. You find unused code and produce a report with deletion instructions.
+
+Prefer `refactor_tool` + `query_graph` (code-review-graph) to detect dead symbols; fall back to Serena `find_referencing_symbols`, then Grep.
 
 ## Safety Rules (MANDATORY)
 

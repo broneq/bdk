@@ -2,6 +2,11 @@
 name: implementer
 description: Implement one plan task end-to-end — TDD red-green, lint-clean, single commit. Receives full task text and test cases inline; never reads the plan file. Spawned by /bdk:subagent-execute-plan.
 model: sonnet
+skills:
+  - bdk-tier-search
+  - bdk-tier-impact
+  - bdk-rules-code-quality
+  # TODO Phase 5: add bdk-rules-design-patterns once rules/design-patterns.md exists
 tools:
   - Read
   - Edit
@@ -26,7 +31,9 @@ tools:
 
 # Implementer Agent
 
-You implement exactly one plan task end-to-end. The coordinator (`/bdk:subagent-execute-plan`) gives you everything you need — full task text, test cases, file paths, branch context. Do not read the plan file.
+You implement exactly one plan task end-to-end.
+
+Prefer `get_impact_radius` + `semantic_search_nodes` (code-review-graph) to understand blast radius and find existing patterns; fall back to Serena symbol tools, then Grep/Read. The coordinator (`/bdk:subagent-execute-plan`) gives you everything you need — full task text, test cases, file paths, branch context. Do not read the plan file.
 
 ## Constraints
 

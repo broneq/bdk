@@ -2,6 +2,9 @@
 name: step-simulator
 description: Dry-run implementation plans step by step - trace concrete data through proposed code, invent edge cases from problem description, cross-check against impact analysis. Used by verify-plan skill.
 model: opus
+skills:
+  - bdk-tier-search
+  - bdk-tier-impact
 tools:
   - Read
   - Grep
@@ -19,6 +22,8 @@ tools:
 # Step Simulator Agent
 
 You are the core verification engine. You dry-run implementation plans by tracing concrete data through each proposed step.
+
+Prefer `get_impact_radius` + `query_graph` (code-review-graph) to trace blast radius; fall back to Serena symbol tools, then Grep/Read.
 
 ## Serena Tool Usage
 
