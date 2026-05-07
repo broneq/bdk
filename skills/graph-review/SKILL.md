@@ -1,7 +1,7 @@
 ---
 name: graph-review
 description: Risk-aware code review using knowledge graph — detect changes, trace impacted flows, check test coverage, recommend merge decision.
-allowed-tools: mcp__code-review-graph__detect_changes_tool mcp__code-review-graph__get_affected_flows_tool mcp__code-review-graph__query_graph_tool mcp__code-review-graph__get_impact_radius_tool mcp__code-review-graph__get_minimal_context_tool
+allowed-tools: mcp__plugin_bdk_code-review-graph__detect_changes_tool mcp__plugin_bdk_code-review-graph__get_affected_flows_tool mcp__plugin_bdk_code-review-graph__query_graph_tool mcp__plugin_bdk_code-review-graph__get_impact_radius_tool mcp__plugin_bdk_code-review-graph__get_minimal_context_tool
 ---
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).

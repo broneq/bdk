@@ -1,7 +1,7 @@
 ---
 name: graph-refactor
 description: Plan and execute safe refactoring using dependency analysis — find dead code, preview renames, verify no critical paths broken.
-allowed-tools: mcp__code-review-graph__refactor_tool mcp__code-review-graph__apply_refactor_tool mcp__code-review-graph__detect_changes_tool mcp__code-review-graph__get_impact_radius_tool mcp__code-review-graph__get_affected_flows_tool mcp__code-review-graph__find_large_functions_tool mcp__code-review-graph__get_minimal_context_tool
+allowed-tools: mcp__plugin_bdk_code-review-graph__refactor_tool mcp__plugin_bdk_code-review-graph__apply_refactor_tool mcp__plugin_bdk_code-review-graph__detect_changes_tool mcp__plugin_bdk_code-review-graph__get_impact_radius_tool mcp__plugin_bdk_code-review-graph__get_affected_flows_tool mcp__plugin_bdk_code-review-graph__find_large_functions_tool mcp__plugin_bdk_code-review-graph__get_minimal_context_tool
 ---
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).

@@ -14,19 +14,21 @@ tools:
   - Bash
   - Grep
   - Glob
-  - mcp__serena__list_dir
-  - mcp__serena__find_file
-  - mcp__serena__search_for_pattern
-  - mcp__serena__get_symbols_overview
-  - mcp__serena__find_symbol
-  - mcp__serena__find_referencing_symbols
-  - mcp__serena__replace_symbol_body
-  - mcp__serena__insert_after_symbol
-  - mcp__serena__insert_before_symbol
-  - mcp__code-review-graph__detect_changes_tool
-  - mcp__code-review-graph__query_graph_tool
-  - mcp__code-review-graph__semantic_search_nodes_tool
-  - mcp__code-review-graph__get_impact_radius_tool
+  - mcp__plugin_bdk_serena__list_dir
+  - mcp__plugin_bdk_serena__find_file
+  - mcp__plugin_bdk_serena__search_for_pattern
+  - mcp__plugin_bdk_serena__get_symbols_overview
+  - mcp__plugin_bdk_serena__find_symbol
+  - mcp__plugin_bdk_serena__find_referencing_symbols
+  - mcp__plugin_bdk_serena__replace_symbol_body
+  - mcp__plugin_bdk_serena__insert_after_symbol
+  - mcp__plugin_bdk_serena__insert_before_symbol
+  - mcp__plugin_bdk_code-review-graph__detect_changes_tool
+  - mcp__plugin_bdk_code-review-graph__query_graph_tool
+  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__get_impact_radius_tool
+  - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
+  - mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool
 ---
 
 # Implementer Agent

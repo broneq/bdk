@@ -1,7 +1,7 @@
 ---
 name: graph-explore
 description: Navigate and understand codebase structure using the knowledge graph — stats, architecture overview, community modules, call relationships.
-allowed-tools: mcp__code-review-graph__list_graph_stats_tool mcp__code-review-graph__get_architecture_overview_tool mcp__code-review-graph__list_communities_tool mcp__code-review-graph__get_community_tool mcp__code-review-graph__semantic_search_nodes_tool mcp__code-review-graph__query_graph_tool mcp__code-review-graph__list_flows_tool mcp__code-review-graph__get_flow_tool mcp__code-review-graph__find_large_functions_tool mcp__code-review-graph__get_minimal_context_tool
+allowed-tools: mcp__plugin_bdk_code-review-graph__list_graph_stats_tool mcp__plugin_bdk_code-review-graph__get_architecture_overview_tool mcp__plugin_bdk_code-review-graph__list_communities_tool mcp__plugin_bdk_code-review-graph__get_community_tool mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool mcp__plugin_bdk_code-review-graph__query_graph_tool mcp__plugin_bdk_code-review-graph__list_flows_tool mcp__plugin_bdk_code-review-graph__get_flow_tool mcp__plugin_bdk_code-review-graph__find_large_functions_tool mcp__plugin_bdk_code-review-graph__get_minimal_context_tool
 ---
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
