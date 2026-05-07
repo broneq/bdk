@@ -13,6 +13,8 @@ argument-hint: "[decision context, options, constraints, preferences]"
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
+<!-- INJECT: architecture -->
+
 Generate ADR following MADR format.
 
 ## Input

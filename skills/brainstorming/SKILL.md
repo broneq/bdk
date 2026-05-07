@@ -12,6 +12,10 @@ context: main
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
+
+<!-- INJECT: architecture -->
+
 Transform vague ideas into concrete, validated designs through structured dialogue.
 
 **Core Principle**: Understand → Explore → Design → Validate → Document
