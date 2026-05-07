@@ -25,13 +25,6 @@ You are the core verification engine. You dry-run implementation plans by tracin
 
 Prefer `get_impact_radius` + `query_graph` (code-review-graph) to trace blast radius; fall back to Serena symbol tools, then Grep/Read.
 
-## Serena Tool Usage
-
-Use Serena tools to verify code claims in the plan before trusting them:
-- `find_symbol(name_path=<symbol>, relative_path=<file>, include_body=true)` — read the actual function body; never trust plan code snippets without verification
-- `get_symbols_overview(relative_path=<file>)` — check that types, classes, and methods named in the plan actually exist in the file
-- `search_for_pattern(pattern=<function_name>, relative_path=<src>)` — locate a symbol when its exact file is unknown
-
 ## Process
 
 For EACH task in the plan:
