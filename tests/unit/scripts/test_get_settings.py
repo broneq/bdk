@@ -121,14 +121,16 @@ def test_no_args_exits_one(tmp_path):
     assert result.returncode == 1
 
 
-def test_missing_settings_exits_one(tmp_path):
+def test_missing_settings_exits_zero_with_fallback(tmp_path):
     result = _run(tmp_path, "languages")
-    assert result.returncode == 1
+    assert result.returncode == 0
+    assert result.stdout.strip() != ""
 
 
-def test_missing_settings_stderr_mentions_setup(tmp_path):
-    result = _run(tmp_path, "languages")
-    assert "/bdk:setup" in result.stderr
+def test_missing_settings_test_tools_fallback(tmp_path):
+    result = _run(tmp_path, "test-tools")
+    assert result.returncode == 0
+    assert "test suite" in result.stdout
 
 
 def test_languages_output(tmp_path):
@@ -168,16 +170,18 @@ def test_features_output(tmp_path):
     assert "code-review-graph=off" in result.stdout
 
 
-def test_missing_key_exits_one(tmp_path):
+def test_missing_key_exits_zero_with_fallback(tmp_path):
     _write_settings(tmp_path, FULL_SETTINGS)
     result = _run(tmp_path, "nonexistent-key")
-    assert result.returncode == 1
+    assert result.returncode == 0
+    assert "nonexistent-key" in result.stdout
 
 
-def test_missing_key_stderr_mentions_key(tmp_path):
-    _write_settings(tmp_path, FULL_SETTINGS)
-    result = _run(tmp_path, "nonexistent-key")
-    assert "nonexistent-key" in result.stderr
+def test_missing_tool_key_prints_generic_phrase(tmp_path):
+    _write_settings(tmp_path, {})
+    result = _run(tmp_path, "test-tools")
+    assert result.returncode == 0
+    assert "test suite" in result.stdout
 
 
 def test_malformed_json_exits_one(tmp_path):
@@ -188,6 +192,6 @@ def test_malformed_json_exits_one(tmp_path):
     assert result.returncode == 1
 
 
-def test_no_stdout_on_error(tmp_path):
+def test_no_stderr_on_missing_settings(tmp_path):
     result = _run(tmp_path, "languages")
-    assert result.stdout == ""
+    assert result.stderr == ""

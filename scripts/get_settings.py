@@ -11,7 +11,8 @@ Keys:
     build-tools     → npm run build (tsc)
     features        → caveman=on, serena=on, code-review-graph=off
 
-Exits 0 on success, 1 if settings file missing or key not found.
+Exits 0 always (key missing or settings absent → prints generic fallback to stdout).
+Exits 1 only if the settings file exists but is unparseable JSON.
 
 Intended for use in skill/agent prompts via:
     ! python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools
@@ -71,6 +72,19 @@ def get_value(settings: dict, key: str) -> str | None:  # type: ignore[type-arg]
     return str(value)
 
 
+_FALLBACKS: dict[str, str] = {
+    "test-tools": "run the project's test suite",
+    "lint-tools": "run the project's linter/formatter",
+    "build-tools": "build the project",
+    "languages": "auto-detect from project files",
+    "features": "(no features configured)",
+}
+
+
+def _fallback(key: str) -> str:
+    return _FALLBACKS.get(key, f"(no value configured for '{key}')")
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         print(
@@ -81,12 +95,11 @@ def main() -> None:
 
     key = sys.argv[1]
 
+    fallback = _fallback(key)
+
     if not SETTINGS_PATH.exists():
-        print(
-            f"[BDK] .bdk/settings.json not found. Run /bdk:setup first.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+        print(fallback)
+        sys.exit(0)
 
     try:
         settings = json.loads(SETTINGS_PATH.read_text())
@@ -96,8 +109,8 @@ def main() -> None:
 
     result = get_value(settings, key)
     if result is None:
-        print(f"[BDK] Key '{key}' not found in .bdk/settings.json", file=sys.stderr)
-        sys.exit(1)
+        print(fallback)
+        sys.exit(0)
 
     print(result)
     sys.exit(0)
