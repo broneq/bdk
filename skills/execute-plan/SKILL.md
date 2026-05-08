@@ -3,6 +3,7 @@ name: execute-plan
 description: Execute an implementation plan, then run tests and static analysis, fixing issues
 model: sonnet
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[plan]"
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 hooks:

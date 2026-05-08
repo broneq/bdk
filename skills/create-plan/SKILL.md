@@ -5,6 +5,7 @@ argument-hint: [feature description or design doc path]
 model: opus
 effort: high
 user-invocable: true
+disable-model-invocation: true
 context: main
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---

@@ -6,6 +6,7 @@ description: >-
   "write an ADR", or provides decision context that needs to be formalized.
 model: opus
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[decision context, options, constraints, preferences]"
 ---
 

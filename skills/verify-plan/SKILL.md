@@ -5,6 +5,7 @@ description: >-
   Use when you have a written plan (from /bdk:create-plan or manual) and want to check
   if it will actually work before writing code.
 argument-hint: "[plan-file]"
+disable-model-invocation: true
 ---
 
 # Verify Plan

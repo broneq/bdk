@@ -7,6 +7,7 @@ description: >-
 model: opus
 effort: high
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[plan-path]"
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(git *)
 ---

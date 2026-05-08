@@ -2,6 +2,7 @@
 name: setup
 description: Initialize .bdk/settings.json for this project. Run once per project when BDK blocks session start with missing settings.
 argument-hint: "[--force to re-run even if settings exist]"
+disable-model-invocation: true
 allowed-tools: Read Bash Write AskUserQuestion mcp__plugin_bdk_*
 ---
 

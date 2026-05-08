@@ -2,6 +2,7 @@
 name: refactor
 description: Propose better object-oriented architecture for complex, procedural code
 user-invocable: true
+disable-model-invocation: true
 model: opus
 argument-hint: "[file path, module name, or feature description]"
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
