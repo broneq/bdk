@@ -32,7 +32,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 
 ---
 
-## 5-Phase Workflow
+## 6-Phase Workflow
 
 ### Phase 1: Parse & Setup
 
@@ -135,6 +135,11 @@ Generate **2-3 implementation approaches.** Per approach:
 - Complexity: LOW | MEDIUM | HIGH
 - Risk: LOW | MEDIUM | HIGH
 - Files to change
+- **Structural impact** — if this approach extends an existing conditional / switch / handler chain (if-elif, switch, type-dispatch, registry):
+  - Branches before: `N`
+  - Branches after: `N+1`
+  - At what `N` does this structure stop being the right shape? Name the refactor (Strategy map, polymorphism, dispatch table, state machine, etc.).
+  - If `N+1` crosses that threshold, **propose the refactor as a separate approach** — do not silently add another branch.
 
 **Decision resolution** — bundle every open decision into ONE `AskUserQuestion` call (multi-question form supports up to 4). Mark recommended approach as first option. Do not split into multiple sequential prompts.
 
@@ -190,7 +195,27 @@ Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {
 
 ---
 
-### Phase 5: Summary & Handoff
+### Phase 5: Plan Validation
+
+- [ ] Re-read the written plan against the original request (`$ARGUMENTS`) and selected approach
+- [ ] Check:
+  - Solves the stated problem?
+  - Edge cases and failure modes covered?
+  - Every task has exact file paths and a single TDD cycle?
+  - Task-sizing rule respected (≤1 prod file, ≤40 LOC delta)?
+  - Risks & open questions listed (including degraded-agent gaps from Phase 2)?
+  - Success criteria observable and testable?
+  - No hardcoded language tools (`pytest`, `npm`, etc.)?
+- [ ] List gaps found
+- [ ] Address gaps by editing the plan in place — do not defer to Phase 5
+
+Print: `[create-plan] Validation: {N} gaps found and addressed` (or `Validation: clean`)
+
+**GATE:** No unresolved gaps before Phase 5.
+
+---
+
+### Phase 6: Summary & Handoff
 
 ```
 [create-plan] Done.

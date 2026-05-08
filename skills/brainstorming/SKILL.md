@@ -48,6 +48,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 ### Phase 3: Approach Exploration
 - [ ] Present 2-3 alternative approaches
 - [ ] For each: description, pros, cons, complexity
+- [ ] **Structural check** — if an approach extends an existing branching structure (if-elif chain, switch, handler registry), name the structure and its current branch count. If branches would grow past ~3-4, surface the refactor option (polymorphism, dispatch table, state machine) as an alternative approach — even if not recommended.
 - [ ] Lead with recommended option + reasoning
 
 **GATE**: User selects approach before Phase 4.
