@@ -5,14 +5,13 @@ Source of truth for the YAML envelope every implementer / fixer subagent must em
 ## Schema
 
 ```yaml
-status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED | CONTEXT_LIMIT
+status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 task_id: "1.2"
 agent_id: "<id from spawn envelope, for SendMessage continuation>"
 files_changed: ["src/a.ts", "src/a.test.ts"]
 concerns: []                  # required for DONE_WITH_CONCERNS, else []
 needs: ""                     # required for NEEDS_CONTEXT
 blocker: ""                   # required for BLOCKED
-save_slug: ""                 # required for CONTEXT_LIMIT
 ```
 
 ## Rules
@@ -31,7 +30,6 @@ save_slug: ""                 # required for CONTEXT_LIMIT
 | `DONE_WITH_CONCERNS` | Task implementation complete, but flagging a correctness/scope/architecture observation the coordinator should triage. Populate `concerns`. |
 | `NEEDS_CONTEXT` | Stuck on a missing piece of context (file, decision, clarification). Populate `needs`. Coordinator will `SendMessage` with the answer; subagent resumes. |
 | `BLOCKED` | Cannot proceed. Plan ambiguity, environment failure, contradictory spec. Populate `blocker`. Coordinator decides re-dispatch / split / abort. |
-| `CONTEXT_LIMIT` | Context-usage hook tripped. Subagent ran `/bdk:save-progress {slug}` and is returning. Populate `save_slug`. Coordinator spawns a fresh subagent with `/bdk:restore-progress {slug}`. |
 
 ## Coordinator action map
 
@@ -41,7 +39,6 @@ See SKILL.md Step 3c for the full action table. Quick reference:
 - `DONE_WITH_CONCERNS` → triage `concerns`; correctness/scope → fixer; observation only → log.
 - `NEEDS_CONTEXT` → `SendMessage(to: agent_id, …)`.
 - `BLOCKED` → diagnose, then re-dispatch / split / abort.
-- `CONTEXT_LIMIT` → fresh spawn with `/bdk:restore-progress {save_slug}`.
 
 ## What this contract is NOT for
 

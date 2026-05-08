@@ -52,7 +52,7 @@ The coordinator may spawn **multiple implementers in parallel** for a single gro
 
 ## Subagent return contract (REQUIRED)
 
-Every implementer / fixer dispatch must return the YAML envelope defined in `references/return-contract.md` as its **final** message. Five statuses: `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, `BLOCKED`, `CONTEXT_LIMIT`. Anything else is treated as `BLOCKED` with reason "malformed return."
+Every implementer / fixer dispatch must return the YAML envelope defined in `references/return-contract.md` as its **final** message. Four statuses: `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, `BLOCKED`. Anything else is treated as `BLOCKED` with reason "malformed return."
 
 The dispatch prompt (Step 3b) MUST include the schema from `references/return-contract.md` verbatim and the line: "Final message must be exactly this YAML block — no prose before or after."
 
@@ -104,7 +104,7 @@ The explorer returns the JSON envelope defined in `references/explorer-contract.
 
 ## Step 2 — Build TaskList
 
-One `TaskCreate` per task, all `pending`. Track group membership in the task content (e.g. `[Group 1] Task 1.1 — Add lineChild group spec test`). The coordinator may add **dynamic** tasks during execution: verify-batch, fix-lint, fix-test, restore-after-context-limit. Add them as new TaskList entries when spawned, mark `completed` when their subagent returns success.
+One `TaskCreate` per task, all `pending`. Track group membership in the task content (e.g. `[Group 1] Task 1.1 — Add lineChild group spec test`). The coordinator may add **dynamic** tasks during execution: verify-batch, fix-lint, fix-test. Add them as new TaskList entries when spawned, mark `completed` when their subagent returns success.
 
 ---
 
@@ -149,12 +149,11 @@ Each implementer returns one of:
 | `DONE_WITH_CONCERNS` | Read concerns. Correctness/scope concern → queue a fixer. Observation only → log, proceed. |
 | `NEEDS_CONTEXT` | `SendMessage(to: agent_id, …)` with the missing context (cache likely warm). |
 | `BLOCKED` | Diagnose: bad context → SendMessage; reasoning gap → spawn fresh implementer one model tier up; task too large → split task in TaskList, re-dispatch first slice; plan wrong → log and stop with explicit error. |
-| `CONTEXT_LIMIT` | Implementer hit the context-usage hook, ran `/bdk:save-progress`, returned `save_slug`. Spawn a **fresh** implementer with: "First action: `/bdk:restore-progress {slug}`. Then continue Task {N} from where the previous subagent stopped." |
 | (malformed return) | Treat as `BLOCKED` with reason "malformed return." Re-dispatch fresh, same tier. |
 
 Max 3 re-dispatch cycles per task before stopping the whole skill with an error report.
 
-> Re-dispatch ≠ fresh spawn. For `NEEDS_CONTEXT` and small clarifications, prefer `SendMessage(to: "<agent_id>", ...)` — the implementer keeps its prior reasoning. Spawn fresh only on `CONTEXT_LIMIT` or when escalating model tier. See STARTUP "Continuing a Spawned Agent".
+> Re-dispatch ≠ fresh spawn. For `NEEDS_CONTEXT` and small clarifications, prefer `SendMessage(to: "<agent_id>", ...)` — the implementer keeps its prior reasoning. Spawn fresh only when escalating model tier. See STARTUP "Continuing a Spawned Agent".
 
 ### 3d. Decide: run tests/lints now? (pure judgment)
 
@@ -260,33 +259,6 @@ The coordinator does not push or open PRs. That belongs to a downstream skill (`
 
 ---
 
-## Context-pressure handling
-
-The threshold lives in the context-usage hook script (currently 50%, opaque to this skill). The hook fires inside any subagent that carries it.
-
-Each implementer/fixer carries the hook. When it trips:
-
-1. Subagent halts.
-2. Subagent runs `/bdk:save-progress {plan-slug}-task-{N}` before returning.
-3. Subagent returns `status: CONTEXT_LIMIT` with `save_slug` populated.
-
-Coordinator spawns a **fresh** subagent:
-
-```
-First action: /bdk:restore-progress {slug}
-Then: continue Task {N} from where the previous subagent stopped.
-```
-
-Why this works:
-
-- The percentage threshold can change without touching this skill.
-- The coordinator's own context grows slowly — it sees subagent **reports**, not transcripts.
-- Each fresh subagent inherits work via `restore-progress`, not via context bleed.
-
-If the **coordinator itself** trips the hook: it runs `/bdk:save-progress {plan-slug}-coordinator` and stops. User restarts the session and re-invokes `/bdk:subagent-execute-plan {plan-path}`. Step 0 resume detection picks up where it left off.
-
----
-
 ## User-interrupt contract
 
 Skill is autonomous, but not uninterruptible. If the user sends a message mid-run:
@@ -319,7 +291,6 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - ❌ Spawning parallel implementers without an explorer pass — silent file conflicts.
 - ❌ Spawning `bdk:code-reviewer` per task. End-of-branch only — it sees cross-task patterns the per-task view misses.
 - ❌ Hardcoding test cadence ("every 3 tasks"). Pure orchestrator judgment per group, bounded by the 2-consecutive-skip cap.
-- ❌ Hardcoding the context-usage threshold here. The hook owns the number.
 - ❌ Asking the user for confirmation mid-flow. Autonomous skill — surface decisions only on terminal failure or user interrupt.
 - ❌ Letting an implementer read the plan file. Pass full task text in the dispatch prompt.
 - ❌ Hardcoding `pytest`, `npm test`, etc. in any prompt to a subagent. Subagents detect from project context.

@@ -47,7 +47,6 @@ Follow the tool-tier and quality-rule guidance from your preloaded skills.
 - **Findings list** — each finding has: severity, category, file:line, problem, suggested fix.
 - **Source of findings** — which reviewer, linter, or test produced them (so you understand the context).
 - **Branch name and base SHA**
-- **Resume slug** — present only if you are resuming after CONTEXT_LIMIT.
 
 ## Workflow
 
@@ -79,14 +78,10 @@ After fixing:
 
 One commit per fixer dispatch. Subject style: `fix({scope}): {summary of finding category}`. Stage only the files you changed.
 
-## Context-limit handling
-
-Same as the implementer agent. Hook fires → halt → run `/bdk:save-progress {slug}-fixer-resume` → return with `Status: CONTEXT_LIMIT` and the slug.
-
 ## Report format
 
 ```
-Status: DONE | DONE_WITH_CONCERNS | BLOCKED | CONTEXT_LIMIT
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED
 
 Findings addressed:
 - [SEVERITY] {category} → {file:line} → {one-line summary of fix applied}
@@ -105,9 +100,6 @@ Commit: {short SHA} {subject}
 
 Concerns / blockers:
 - {anything the coordinator should know — or "none"}
-
-Resume slug:
-- {only if Status is CONTEXT_LIMIT}
 ```
 
 ## Escalation

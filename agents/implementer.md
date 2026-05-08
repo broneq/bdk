@@ -54,9 +54,6 @@ The coordinator passes you:
 - **Files this task touches** (explicit paths)
 - **Architectural context** (one paragraph — where this task sits)
 - **Branch name and base SHA** (for self-commit)
-- **Resume slug** (only present if you are resuming after a previous CONTEXT_LIMIT — run `/bdk:restore-progress {slug}` first)
-
-If the resume slug is present, your first action is `/bdk:restore-progress {slug}`. Then continue from the restored state.
 
 ## Workflow
 
@@ -102,24 +99,6 @@ When GREEN is verified for your task's tests:
 - **Do not** commit. The coordinator commits per group after verification.
 - Leave your changes in the working tree (uncommitted). Report what you changed via the `Files changed:` block.
 
-## Context-limit handling
-
-The hooks attached to this agent will fire `{"continue": false, "stopReason": "..."}` when the project's context-usage script decides you are too close to the limit. The threshold lives in the script — do not assume a number.
-
-When the hook fires:
-
-1. The agent halts mid-loop. You will see the stopReason in your next turn.
-2. **Before returning**, run `/bdk:save-progress {task-slug}-task-{N}-resume` to capture:
-   - current TaskList state
-   - which gate of TDD you are at
-   - any partial implementation
-   - which files you have edited
-3. Return with `Status: CONTEXT_LIMIT` and the save slug.
-
-The coordinator will spawn a fresh implementer with instructions to `/bdk:restore-progress` first.
-
-If you cannot run `save-progress` (the hook stopped you mid-tool), describe in your final message exactly what state you were in so the coordinator can reconstruct context for the next subagent.
-
 ## Escalation
 
 Stop and escalate when:
@@ -136,7 +115,7 @@ Escalate via `Status: BLOCKED` with: what you are stuck on, what you tried, what
 End your final message with this exact block:
 
 ```
-Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT | CONTEXT_LIMIT
+Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
 
 Implemented:
 - {bullet list of what you built}
@@ -154,9 +133,6 @@ Self-review findings:
 
 Concerns / blockers:
 - {anything the coordinator should know — or "none"}
-
-Resume slug:
-- {only if Status is CONTEXT_LIMIT}
 ```
 
 The coordinator parses this block to decide next action. Stick to the structure exactly.

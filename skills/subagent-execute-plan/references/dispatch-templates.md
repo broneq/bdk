@@ -49,12 +49,6 @@ Agent tool — subagent_type: "implementer"
     - Base SHA: {sha-before-task-N}
 
     Commit your work to this branch. One commit per task.
-
-    {OPTIONAL — only on resume after CONTEXT_LIMIT:}
-    ## Resume
-
-    Run /bdk:restore-progress {resume-slug} as your first action.
-    Then continue this task from the restored state.
 ```
 
 ---

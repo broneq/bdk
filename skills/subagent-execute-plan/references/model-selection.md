@@ -21,7 +21,6 @@ flowchart TD
     H -->|yes| I[opus]
     H -->|no| F
     A --> J{Re-dispatch after BLOCKED?}
-    J -->|context was the issue| F
     J -->|reasoning was the issue| I
 ```
 
@@ -50,7 +49,7 @@ A well-formed plan from `/bdk:create-plan` lists exact files, test cases, and co
 Reach for Opus when:
 
 - The plan **explicitly** flags a decision deferred to implementation.
-- A Sonnet attempt returned `BLOCKED` for reasoning reasons (not context reasons).
+- A Sonnet attempt returned `BLOCKED` for reasoning reasons.
 - The task touches architecture (`Impact: high` plus new layer / new public API).
 
 ## Why Haiku is rarer than it sounds
