@@ -8,5 +8,8 @@ Language-agnostic principles for applying structural design patterns.
 - **Observer / Event.** Decouple producers from consumers when the producer should not know about its subscribers. Prefer over direct method calls when the subscriber set changes at runtime.
 - **Decorator.** Add behaviour to an object without subclassing. Prefer over inheritance when the added behaviour is optional or composable.
 - **Repository.** Isolate data-access logic behind a domain-facing interface. Keeps domain objects free of query language or ORM details.
+- **Tell-Don't-Ask.** Behaviour lives with data. A `Document` object exposes `document.line(5).text()`; do not scatter helpers like `get_line_text(parse(src), 5)` that pull state out and operate on it externally. Counters Anemic model.
+- **Replace conditional with polymorphism.** When a switch or if-chain dispatches on a type tag (`if kind == "pdf": ... elif kind == "xml": ...`), push branches into subclasses or a Strategy. New cases extend code, not edit it.
 - **Anti-patterns to avoid.** God class (one class knows everything), Shotgun surgery (one change touches many files), Primitive obsession (domain concepts as raw strings/ints), Anemic model (objects with only getters/setters and no behaviour).
 - **Pattern documentation.** When proposing a pattern, name it, state the problem it solves, and show the proposed shape — not just the name.
+- **GoF catalog.** The five patterns named above (Strategy, Factory, Observer, Decorator, Repository) are the ones that recur in review. The full Gang of Four catalog applies; reach for it when a problem matches a named pattern, but do not introduce patterns not listed here without justifying fit per the Pattern fit rule.
