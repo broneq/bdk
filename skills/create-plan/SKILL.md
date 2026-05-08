@@ -12,7 +12,7 @@ hooks:
   UserPromptSubmit:
     - hooks:
         - type: command
-          command: "mkdir -p .bdk/plans .bdk/create-plan"
+          command: "mkdir -p .bdk/plans"
           once: true
 ---
 
@@ -22,17 +22,17 @@ hooks:
 
 Transform requirements into detailed, TDD-driven implementation plans via structured exploration and analysis.
 
-**Core Principle**: Explore → Analyze → Design → Plan → Document
+**Core Principle:** Explore → Design → Outline+Verify → Write
 
 **Announce at start:** "Using create-plan to build an implementation plan."
 
-**Hard rules (apply to every phase):**
-- Do NOT implement code. Plan is the only deliverable.
-- Do NOT hardcode language tools (`pytest`, `npm`, `cargo`, etc.) — use injected values or fall back to "run the project's test suite".
+**Hard rules:**
+- Do NOT implement code — plan is the only deliverable.
+- Do NOT hardcode language tools (`pytest`, `npm`, `cargo`) — use injected values or fall back to "run the project's test suite".
 
 ---
 
-## 6-Phase Workflow
+## Workflow
 
 ### Phase 1: Parse & Setup
 
@@ -50,7 +50,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 
 4. **Set plan path:** `.bdk/plans/<timestamp>-<slug>.md`
 
-   > Directories `.bdk/plans/` and `.bdk/create-plan/` are pre-created by the skill's `UserPromptSubmit` hook — no runtime mkdir needed.
+   > Directory `.bdk/plans/` is pre-created by the skill's `UserPromptSubmit` hook — no runtime mkdir needed.
 
 5. **Existing-plan handling** — if file exists, `AskUserQuestion`:
    - Overwrite (keep same path)
@@ -65,50 +65,27 @@ Print: `[create-plan] Setup complete. Plan: <path>`
 
 ---
 
-### Phase 2: Exploration
+### Phase 2: Exploration (always via subagents)
 
-Graph-first architecture snapshot:
+Exploration runs in subagents — never in the orchestrator. Subagent context is throwaway, orchestrator context is precious. A "small" feature can still need many tool calls; agent count tracks **question dimensions**, not feature size.
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
+**Pick agents by question** (see `references/explorer-prompts.md` for full prompts and shared output contract):
 
-Using the exploration tools above:
-1. Identify affected layers.
-2. Identify named execution flows the feature may touch.
-3. Identify cross-module dependencies the plan must account for.
-
-**Persist snapshot** to `.bdk/create-plan/<slug>-context.md` so it survives context compaction and is auditable from the resulting plan. Reference this file in every explorer-agent prompt.
-
-**Scope tier** (drives fan-out):
-- **Simple** — single function/class → 1 agent
-- **Medium** — cross-file, multiple components → 2 agents
-- **Complex** — architectural change, new subsystem → 3 agents
-
-Print: `[create-plan] Launching {N} exploration agents (scope: {Simple|Medium|Complex})...`
-
-**Explorer-agent output contract** — every explorer MUST return JSON with these keys (empty arrays allowed, never omitted):
-
-```json
-{
-  "utilities": [{"name": "...", "path": "...", "why_relevant": "..."}],
-  "affected_files": [{"path": "...", "reason": "..."}],
-  "similar_features": [{"name": "...", "path": "...", "pattern": "..."}],
-  "notes": "free-text caveats or gaps"
-}
-```
-
-Aggregator merges arrays by `path`+`name` dedup.
-
-| Agent | When | Source prompt |
+| Agent | Question it answers | Always launch? |
 |---|---|---|
-| Agent 1 — Utilities & Existing Implementations | Always | `references/explorer-prompts.md` Agent 1 |
-| Agent 2 — Architecture & Dependencies | Medium or Complex | `references/explorer-prompts.md` Agent 2 |
-| Agent 3 — Similar Features | Complex only | `references/explorer-prompts.md` Agent 3 |
+| Agent 1 — Existing Code | What can be reused? | **Yes, always** |
+| Agent 2 — Architecture & Dependencies | What does it touch, what depends on it? | If feature modifies existing components or crosses module boundaries |
+| Agent 3 — Similar Features | How have comparable features been built before? | If a similar pattern likely exists in the codebase |
 
-**Failure handling:** if an agent errors or returns malformed JSON, retry once with a narrowed prompt. On second failure, record `[create-plan] Agent {N}: no results` and proceed; note the gap in the plan's Risks section.
+These dimensions are orthogonal — choosing one doesn't imply the others.
 
-> Retry via `SendMessage(to: "<agentId>", ...)` with the narrowed prompt — the agent's exploration context is already loaded and re-using it is cheaper than a fresh spawn. See STARTUP "Continuing a Spawned Agent".
+Print: `[create-plan] Launching {N} explorer(s): {list of agent names}`
 
-Wait for all agents, then print:
+**Failure handling:** on agent error or malformed JSON, retry once via `SendMessage(to: "<agentId>", ...)` with a narrowed prompt — cheaper than a fresh spawn (see STARTUP "Continuing a Spawned Agent"). On second failure, record `[create-plan] Agent {N}: no results` and proceed; note the gap in the plan's Risks section.
+
+**Aggregation:** merge agent JSON outputs by `path`+`name` dedup. Keep the merged result in conversation context — do **not** persist a snapshot file. The plan's Context section will capture what's needed.
+
+Print:
 ```
 [create-plan] Exploration complete:
   - Utilities: {N}
@@ -149,7 +126,43 @@ Print: `[create-plan] Design complete: {selected approach name}`
 
 ---
 
-### Phase 4: Write Plan
+### Phase 4: Outline + Verify (in memory)
+
+Build the plan **as a structured outline in conversation**, not on disk yet. Validation runs against the outline — cheap, already in context. No re-read of a written file.
+
+**Outline structure** (mirror Phase 5 final layout):
+1. Summary & selected approach
+2. Context (architectural snapshot from Phase 2 — inline, no external file)
+3. Files to create / modify (exact paths)
+4. Tasks — each a single TDD cycle
+5. Verification
+6. Risks & open questions (include degraded-agent gaps from Phase 2)
+
+**Task-sizing rule** — one task =
+- one test file added or edited, AND
+- ≤ 1 production file changed, AND
+- ≤ 40 LOC delta (excluding test scaffolding).
+
+Split anything that exceeds these thresholds.
+
+**Verify the outline** — answer each:
+- [ ] Solves the stated problem in `$ARGUMENTS`?
+- [ ] Edge cases and failure modes covered?
+- [ ] Every task has exact file paths and a single TDD cycle?
+- [ ] Task-sizing rule respected?
+- [ ] Risks & open questions listed (including Phase 2 gaps)?
+- [ ] Success criteria observable and testable?
+- [ ] No hardcoded language tools (`pytest`, `npm`, etc.)?
+
+Fix gaps in the outline before moving to Phase 5. Do not write to disk with known gaps.
+
+Print: `[create-plan] Outline verified: {N} gaps found and fixed` (or `Outline verified: clean`)
+
+**GATE:** verified outline required before Phase 5.
+
+---
+
+### Phase 5: Write Plan (single pass)
 
 Inject project tools context:
 
@@ -166,52 +179,11 @@ python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>
 
 Substitute stdout in place of the marker. **On non-zero exit, surface stderr and stop** — quality rules are mandatory.
 
-Write the plan to `<path>` using `references/plan-template.md`.
-
-**Plan structure (top-level sections, in order):**
-1. Summary & selected approach
-2. Architectural context (link to `.bdk/create-plan/<slug>-context.md`)
-3. Files to create / modify (exact paths)
-4. Tasks (TDD cycles, see sizing rule below)
-5. Verification (uses injected test/lint tools)
-6. Risks & open questions (include any degraded-agent gaps from Phase 2)
-7. Quality-rule sections injected from `<!-- INJECT: ... -->` markers
-
-**Task-sizing rule** — one task =
-- one test file added or edited, AND
-- ≤ 1 production file changed, AND
-- ≤ 40 LOC delta (excluding test scaffolding).
-
-If a unit exceeds any threshold, split it.
-
-**Each task must:**
-- Specify exact file paths.
-- Be a single TDD cycle (write test → fail → implement → pass).
-- End with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.`
+Render the verified outline to `<path>` using `references/plan-template.md`. Each task ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.`
 
 Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {K} files to create`
 
 **GATE:** plan file must exist and be readable.
-
----
-
-### Phase 5: Plan Validation
-
-- [ ] Re-read the written plan against the original request (`$ARGUMENTS`) and selected approach
-- [ ] Check:
-  - Solves the stated problem?
-  - Edge cases and failure modes covered?
-  - Every task has exact file paths and a single TDD cycle?
-  - Task-sizing rule respected (≤1 prod file, ≤40 LOC delta)?
-  - Risks & open questions listed (including degraded-agent gaps from Phase 2)?
-  - Success criteria observable and testable?
-  - No hardcoded language tools (`pytest`, `npm`, etc.)?
-- [ ] List gaps found
-- [ ] Address gaps by editing the plan in place — do not defer to Phase 5
-
-Print: `[create-plan] Validation: {N} gaps found and addressed` (or `Validation: clean`)
-
-**GATE:** No unresolved gaps before Phase 5.
 
 ---
 
@@ -225,7 +197,6 @@ Print: `[create-plan] Validation: {N} gaps found and addressed` (or `Validation:
   Complexity:  {LOW|MEDIUM|HIGH}
   Tasks:       {N}
   Files:       {M} to modify, {K} to create
-  Context:     .bdk/create-plan/<slug>-context.md
 
   Next steps:
     1. Review the plan
@@ -237,21 +208,12 @@ Print: `[create-plan] Validation: {N} gaps found and addressed` (or `Validation:
 
 ---
 
-## Key Principles
+## Rules (apply throughout)
 
-- Exact file paths always.
-- Bite-sized TDD tasks per the sizing rule above.
-- NEVER hardcode language tools — detect from project context.
-- Explorer agents for discovery — always dispatch, never skip.
-- Trade-off analysis mandatory — even if one approach is obvious.
-- Persist exploration context to disk; do not rely on the orchestrator window surviving compaction.
-
-## Anti-Patterns (MANDATORY)
-
-- NEVER skip exploration.
-- NEVER write vague steps — every step needs specific files and code.
-- NEVER skip trade-off analysis.
-- NEVER implement code — explore, analyze, document only.
-- NEVER hardcode `pytest`, `uv run`, `bin/cleanup.sh`, or any project-specific commands.
-- NEVER ask more than 3 `AskUserQuestion` calls in one run.
-- NEVER invent timestamps — always shell out to `date`.
+- Exact file paths always; no vague steps.
+- Bite-sized TDD tasks per the Phase 4 sizing rule.
+- Always dispatch explorer subagents — never explore from the orchestrator.
+- Trade-off analysis mandatory, even when one approach seems obvious.
+- Never hardcode language tools (`pytest`, `npm`, `cargo`, `uv run`, …) — use injected values or generic phrasing.
+- Never invent timestamps — shell out to `date`.
+- Cap `AskUserQuestion` calls at 3 per run.

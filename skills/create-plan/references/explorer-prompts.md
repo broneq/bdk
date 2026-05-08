@@ -1,83 +1,76 @@
 # Explorer Agent Prompts
 
-Use when dispatching agents in Phase 2. Replace `{feature description}` with actual feature.
+Use when dispatching explorer agents in Phase 2. Replace `{feature}` with actual feature description.
 
-Tool tier system (from STARTUP_INSTRUCTIONS):
-- **Tier 1:** code-review-graph (`semantic_search_nodes`, `query_graph`, `get_impact_radius`, `get_affected_flows`) — use first
-- **Tier 2:** Serena (`find_symbol`, `search_for_pattern`, `get_symbols_overview`, `find_referencing_symbols`) — if CodeGraph unavailable
-- **Tier 3:** Grep/Glob/Read — always available fallback
+Each explorer answers one **question dimension**. Pick the agents whose question is relevant to the feature — not all three are always needed (see SKILL.md Phase 2).
 
 ---
 
-## Agent 1: Utilities & Existing Implementations (ALWAYS launch)
+## Shared preamble (prepend to every agent prompt)
 
 ```
-Search the codebase for existing utilities and implementations related to:
+Feature: {feature}
 
-Feature: {feature description}
+You are an explorer subagent. Use BDK tool tiers (code-review-graph → Serena → Grep) — your skills frontmatter has loaded the tier guidance.
 
-Tool preference: use code-review-graph first (semantic_search_nodes, query_graph, get_review_context).
-Fall back to Serena (find_symbol, search_for_pattern, get_symbols_overview), then Grep/Glob.
+Start with `get_minimal_context(task="{feature}")` for a quick snapshot, then dive deeper with the tools relevant to your question.
 
-0. Run `get_minimal_context(task="{feature description}")` first — quick codebase snapshot before deeper search
-1. Check if similar functionality already exists
-2. Find helper functions or base classes that could be reused
-3. Identify relevant schemas, models, or data structures
-4. Search for patterns or conventions this feature should follow
+Return STRICTLY this JSON (empty arrays allowed, never omit a key):
 
-Return structured findings:
-EXISTING_IMPLEMENTATIONS: {list file:symbol paths or NONE}
-REUSABLE_UTILITIES: {list file:symbol paths or NONE}
-RELEVANT_MODELS: {list file paths or NONE}
-PATTERNS_FOUND: {describe 1-2 patterns this feature should follow}
+{
+  "utilities":         [{"name": "...", "path": "...", "why_relevant": "..."}],
+  "affected_files":    [{"path": "...", "reason": "..."}],
+  "similar_features":  [{"name": "...", "path": "...", "pattern": "..."}],
+  "notes":             "free-text caveats, gaps, surprising findings"
+}
+
+Only populate the keys your question dimension owns (see role below). Leave the others as empty arrays.
 ```
 
 ---
 
-## Agent 2: Architecture & Dependencies (Medium or Complex scope)
+## Agent 1 — Existing Code (always launched)
+
+**Owns:** `utilities`, `similar_features` (where overlap exists)
 
 ```
-Analyze architecture and dependencies for implementing:
+Question: what code already exists that this feature can reuse or build on?
 
-Feature: {feature description}
-
-Tool preference: use code-review-graph first (query_graph with callers_of/callees_of, get_impact_radius, get_affected_flows).
-Fall back to Serena (find_referencing_symbols, get_symbols_overview), then Grep/Glob.
-
-1. Identify which modules/layers this feature touches
-2. Find which existing components need changes
-3. Trace dependencies
-4. Check for related test files and test patterns
-
-Return structured findings:
-AFFECTED_LAYERS: {list layers}
-AFFECTED_FILES: {list file paths}
-DEPENDENCIES: {what this feature depends on}
-TEST_PATTERNS: {describe testing approach from existing tests}
-ARCHITECTURAL_CONSTRAINTS: {patterns to follow}
+1. Search for similar functionality already implemented
+2. Find helper functions, base classes, schemas, models that could be reused
+3. Identify conventions/patterns this feature should follow
 ```
 
 ---
 
-## Agent 3: Similar Features (Complex scope only)
+## Agent 2 — Architecture & Dependencies
+
+**Owns:** `affected_files`, populates `notes` with architectural constraints
+
+**Launch when:** feature modifies existing components, crosses module boundaries, or changes shared infrastructure.
 
 ```
-Find similar features in the codebase as implementation examples:
+Question: what does this feature touch, and what depends on it?
 
-Feature: {feature description}
+1. Identify which modules/layers the feature touches
+2. Find existing components needing changes (use query_graph callers_of/callees_of, get_impact_radius)
+3. Trace dependencies and named execution flows (get_affected_flows)
+4. Surface architectural constraints in `notes`
+```
 
-Tool preference: use code-review-graph first (semantic_search_nodes, get_review_context).
-Fall back to Serena (find_symbol, search_for_pattern), then Grep/Glob.
+---
+
+## Agent 3 — Similar Features
+
+**Owns:** `similar_features`, populates `notes` with implementation patterns
+
+**Launch when:** a feature with comparable shape likely exists in the codebase (e.g. "add new endpoint X" when other endpoints already exist).
+
+```
+Question: how have similar features been implemented before?
 
 1. Search for features with similar purpose or structure
-2. Find examples of similar data transformations or validations
-3. Identify common error handling patterns
-4. Look for similar integration tests
-5. Use `get_review_context(node=<similar_symbol>)` to read implementation details token-efficiently
-
-Return structured findings:
-SIMILAR_FEATURES: {list file:symbol paths}
-IMPLEMENTATION_EXAMPLES: {1-2 examples with brief description}
-ERROR_HANDLING_PATTERNS: {how errors are handled in similar code}
-TEST_EXAMPLES: {test file paths for similar features}
+2. Use get_review_context(node=<symbol>) to read implementation token-efficiently
+3. Identify error-handling, validation, and test patterns
+4. Note 1-2 concrete reference implementations in `notes`
 ```
