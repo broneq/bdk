@@ -99,8 +99,13 @@ Start with architecture and impact radius...
 ### When to use this skill
 ```
 
+## Chain files
+
+For multi-tier injection (fallback ladders, complementary tool sets), use a `*.chain.json` file with `inject.py --chain`. Each tier fragment is self-contained — it carries its own tool list and policy rules. Schema and examples in `.claude/rules/fragment-system.md`.
+
 ## Rules summary
 
 - **Fragments ≠ references**: Fragments are conditional; references are static. See decision tree above for placement.
 - **Syntax**: Use `--then <file>` for content >2 lines; `--then-text` for snippets.
 - **Placement**: Inject calls go immediately before the section they augment.
+- **Multi-tier**: Use `--chain <file>.chain.json` instead of multiple `--if/--then` calls. See `fragment-system.md`.

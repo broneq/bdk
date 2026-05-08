@@ -27,6 +27,8 @@ tools:
   - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
   - mcp__plugin_bdk_code-review-graph__query_graph_tool
   - mcp__plugin_bdk_code-review-graph__get_review_context_tool
+  - mcp__plugin_bdk_code-review-graph__get_knowledge_gaps_tool
+  - mcp__plugin_bdk_code-review-graph__list_flows_tool
 ---
 
 You are a layer-group code reviewer. Review the files specified in your prompt thoroughly.

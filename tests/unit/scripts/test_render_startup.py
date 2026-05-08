@@ -142,3 +142,28 @@ def test_cli_missing_source_exits_nonzero(tmp_path):
 
     assert result.returncode == 1
     assert "source not found" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Tier-rewrite regression — orchestrator codepath (Task 11)
+# ---------------------------------------------------------------------------
+#
+# Subagents read tier guidance through `bdk-tier-*` preload skills (covered
+# by tests/unit/fragments/test_tier_chain_render.py). The orchestrator gets
+# tier guidance through this script resolving `<!-- CHAIN: ... -->` markers
+# in STARTUP_INSTRUCTIONS.md — a separate codepath that must also land the
+# rewrite content.
+
+
+def test_renders_new_tier_steps_in_orchestrator_startup():
+    """The real STARTUP_INSTRUCTIONS.md rendered with graph enabled must
+    contain the rewritten tier-policy content (Step 0, Negative result,
+    canonical call-cap phrase). Guards the orchestrator delivery path.
+    """
+    settings = {"features": {"code-review-graph": True, "serena": True}}
+    out = render(PLUGIN_ROOT / "STARTUP_INSTRUCTIONS.md", settings)
+    for required in ("Step 0", "max 2 graph calls", "Negative result"):
+        assert required in out, (
+            f"orchestrator STARTUP render missing {required!r} — "
+            "tier-rewrite content did not reach the orchestrator codepath"
+        )

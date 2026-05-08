@@ -16,6 +16,8 @@ tools:
   - mcp__plugin_bdk_serena__find_referencing_symbols
   - mcp__plugin_bdk_code-review-graph__refactor_tool
   - mcp__plugin_bdk_code-review-graph__query_graph_tool
+  - mcp__plugin_bdk_code-review-graph__find_large_functions_tool
+  - mcp__plugin_bdk_code-review-graph__list_flows_tool
 ---
 
 # Dead Code Detector Agent

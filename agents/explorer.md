@@ -14,6 +14,11 @@ tools:
   - mcp__plugin_bdk_code-review-graph__get_architecture_overview_tool
   - mcp__plugin_bdk_code-review-graph__list_communities_tool
   - mcp__plugin_bdk_code-review-graph__traverse_graph_tool
+  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
+  - mcp__plugin_bdk_code-review-graph__list_flows_tool
+  - mcp__plugin_bdk_code-review-graph__get_flow_tool
+  - mcp__plugin_bdk_code-review-graph__get_knowledge_gaps_tool
+  - mcp__plugin_bdk_code-review-graph__find_large_functions_tool
   - mcp__plugin_bdk_serena__list_dir
   - mcp__plugin_bdk_serena__find_file
   - mcp__plugin_bdk_serena__search_for_pattern

@@ -18,7 +18,7 @@ All fields optional except `description` (recommended).
 | `argument-hint` | Autocomplete hint for args. Example: `[issue-number]` or `[filename] [format]`. |
 | `disable-model-invocation` | `true` = user-only (not Claude). Use for `/commit`, `/deploy`, etc. |
 | `user-invocable` | `false` = hidden from `/` menu. Claude-only background knowledge. |
-| `allowed-tools` | Tools auto-approved when skill active. Space-separated or YAML list. |
+| `allowed-tools` | Tools auto-approved when skill active. Space-separated or YAML list. Supports glob patterns (e.g. `mcp__plugin_bdk_*` to grant access to all plugin-bundled MCP tools). For MCP tool naming convention see `.claude/rules/mcp-tool-naming.md`. |
 | `model` | Model override. |
 | `effort` | `low` / `medium` / `high` / `max` (Opus only). Overrides session effort. |
 | `context` | `fork` = isolated subagent. |

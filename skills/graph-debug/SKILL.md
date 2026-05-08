@@ -1,7 +1,7 @@
 ---
 name: graph-debug
 description: Systematically debug issues using graph-powered code navigation — trace call chains, find execution paths, correlate with recent changes.
-allowed-tools: mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool mcp__plugin_bdk_code-review-graph__query_graph_tool mcp__plugin_bdk_code-review-graph__get_flow_tool mcp__plugin_bdk_code-review-graph__detect_changes_tool mcp__plugin_bdk_code-review-graph__get_impact_radius_tool mcp__plugin_bdk_code-review-graph__get_minimal_context_tool
+allowed-tools: mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool mcp__plugin_bdk_code-review-graph__query_graph_tool mcp__plugin_bdk_code-review-graph__get_flow_tool mcp__plugin_bdk_code-review-graph__list_flows_tool mcp__plugin_bdk_code-review-graph__detect_changes_tool mcp__plugin_bdk_code-review-graph__get_impact_radius_tool mcp__plugin_bdk_code-review-graph__get_minimal_context_tool
 ---
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
@@ -24,6 +24,10 @@ Systematically trace and debug issues using the knowledge graph.
 - Check both callers and callees to understand full context.
 - Look at affected flows to find entry point that triggers the bug.
 - Recent changes are the most common source of new issues.
+
+### Diagnostic shortcuts
+
+- `list_flows_tool` — survey every named entry point (HTTP route, CLI command, scheduled job) before guessing where a bug enters; flips an open-ended search into a bounded one.
 
 ## Token Efficiency
 

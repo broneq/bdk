@@ -53,6 +53,8 @@ skills/<skill-name>/
 - `chain`: array of entries, each with optional `"if"` (AND conditions) and required `"then"` (path relative to chain file)
 - Entry without `"if"` is an unconditional fallback
 
+Each tier fragment is self-contained: it carries its own tool list AND the policy rules governing those tools. There is no shared header file.
+
 ## Modes
 
 | Mode | Behaviour | Use when |

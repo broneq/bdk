@@ -29,6 +29,9 @@ tools:
   - mcp__plugin_bdk_code-review-graph__get_impact_radius_tool
   - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
   - mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
+  - mcp__plugin_bdk_code-review-graph__list_flows_tool
+  - mcp__plugin_bdk_code-review-graph__get_flow_tool
 ---
 
 # Architecture Reviewer Agent

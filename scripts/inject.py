@@ -127,15 +127,18 @@ def inject_chain(
     """Resolve a chain config file and return assembled content.
 
     Chain file format:
-        {"mode": "exclusive"|"additive", "chain": [...]}
+        {"mode": "exclusive"|"additive", "header": "header.md", "chain": [...]}
 
     Each chain entry:
         {"if": ["condition", ...], "then": "relative/path.md"}
         {"then": "path.md"}  # unconditional fallback
 
-    Paths in chain entries are resolved relative to chain_path's directory.
-    Returns empty string when settings is None.
-    Raises FileNotFoundError if chain_path does not exist.
+    The optional ``header`` is prepended to the result whenever at least one
+    chain entry produced content. Paths in chain entries and ``header`` are
+    resolved relative to ``chain_path``'s directory.
+
+    Returns empty string when settings is None or no chain entry matched.
+    Raises FileNotFoundError if chain_path or referenced files do not exist.
     Raises ValueError for unrecognised mode or missing 'then'.
     """
     if settings is None:
@@ -168,11 +171,14 @@ def inject_chain(
         content = inject(conditions=conditions, then_path=then_path, settings=settings)
 
         if content:
-            if mode == "exclusive":
-                return content
             parts.append(content)
+            if mode == "exclusive":
+                break
 
-    return "\n".join(parts) if parts else ""
+    if not parts:
+        return ""
+
+    return "\n".join(parts)
 
 
 def main() -> None:
