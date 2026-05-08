@@ -94,11 +94,13 @@ Read your own changes with fresh eyes:
 
 Fix issues you find before reporting.
 
-### 5. Commit
+### 5. Stop — do not commit, do not run final verification
 
-Stage exactly the files this task changed. One commit per task. Use the project's commit message style (read recent `git log`).
+When GREEN is verified for your task's tests:
 
-Do **not** push.
+- **Do not** run a full-project lint sweep or full test suite. The coordinator schedules dedicated `bdk:static-analyse` and `bdk:test-runner` subagents for that.
+- **Do not** commit. The coordinator commits per group after verification.
+- Leave your changes in the working tree (uncommitted). Report what you changed via the `Files changed:` block.
 
 ## Context-limit handling
 
@@ -144,10 +146,8 @@ Tests:
 - RED verified: yes/no
 - GREEN verified: yes/no — {pass}/{total}
 
-Files changed:
+Files changed (uncommitted):
 - {path} ({+lines, -lines})
-
-Commit: {short SHA} {subject}
 
 Self-review findings:
 - {what you fixed during self-review, or "none"}
