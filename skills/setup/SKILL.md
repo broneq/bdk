@@ -2,7 +2,8 @@
 name: setup
 description: Initialize .bdk/settings.json for this project. Run once per project when BDK blocks session start with missing settings.
 argument-hint: "[--force to re-run even if settings exist]"
-allowed-tools: Read Bash Write AskUserQuestion
+disable-model-invocation: true
+allowed-tools: Read Bash Write AskUserQuestion mcp__plugin_bdk_*
 ---
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
@@ -127,16 +128,17 @@ Run after writing `settings.json`.
 1. `features.code-review-graph` is not `false` in written settings
 2. `.mcp.json` (project or `~/.claude/mcp.json`) contains a `code-review-graph` server entry
 
-Check if `.code-review-graph/graph.db` exists in project root:
-- **Exists** → skip build, print `[setup] code-review-graph: index already built.`
-- **Missing** → run `uvx code-review-graph build`, print progress, then print `[setup] code-review-graph: index built.`
+Call `mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool` (the MCP server itself is the source of truth — no need to check `.code-review-graph/graph.db` from the filesystem; the tool is incremental and skips work when the index is current).
 
-If build fails (exit non-zero), print warning and continue — do not abort setup:
-```
-[setup] code-review-graph: build failed. Run `uvx code-review-graph build` manually after install.
-```
+- **Success** → print `[setup] code-review-graph: index built.`
+- **Failure** (MCP not reachable / tool error) → print warning and continue — do not abort setup:
+  ```
+  [setup] code-review-graph: build failed. Call `mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool` manually once MCP is reachable.
+  ```
 
-**Serena** — no initialization needed (AST analysis is on-demand).
+Prefer the MCP tool over shelling out to `uvx code-review-graph build` — same binary under the hood, but the MCP path uses the already-running server and works inside sandboxed/restricted environments where `uvx` may not be available.
+
+**Serena** — no manual action needed at setup time. Serena's active-project state is in-memory only (resets every Claude Code session), so per-session activation is handled by the `hooks/activate-serena/activate.py` SessionStart hook. The hook emits an instruction telling Claude to call `mcp__plugin_bdk_serena__activate_project` whenever both `features.serena` is enabled and `.mcp.json` declares a `serena` server. No setup-time call required.
 
 ### Phase 6: Git guidance
 

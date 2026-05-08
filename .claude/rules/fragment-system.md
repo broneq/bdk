@@ -53,6 +53,8 @@ skills/<skill-name>/
 - `chain`: array of entries, each with optional `"if"` (AND conditions) and required `"then"` (path relative to chain file)
 - Entry without `"if"` is an unconditional fallback
 
+Each tier fragment is self-contained: it carries its own tool list AND the policy rules governing those tools. There is no shared header file.
+
 ## Modes
 
 | Mode | Behaviour | Use when |
@@ -85,4 +87,23 @@ Skills `graph-explore`, `graph-debug`, `graph-review`, `graph-refactor` require 
 
 ## Agents vs Skills
 
-Agent `.md` files are static markdown — shell commands do not execute at load time. `inject.py --chain` cannot be used in agents. Agent tool preferences come from `STARTUP_INSTRUCTIONS.md` (assembled via chains) and from explicit Serena tool subsections in the agent body.
+Agent `.md` files are static markdown — shell commands do not execute at load time, and the `hooks:`, `mcpServers:`, and `permissionMode:` frontmatter fields are **stripped** when an agent ships in a plugin (verbatim from the Claude Code agents reference: *"For security reasons, plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin."*). `inject.py --chain` cannot be used directly inside an agent file.
+
+Agent tool preferences are assembled by two complementary mechanisms instead:
+
+1. **`STARTUP_INSTRUCTIONS.md`** — rendered by `scripts/render_startup.py` before the SessionStart hook returns it, so chain markers (`<!-- CHAIN: <file> -->`) are resolved to real tier guidance. The **orchestrator** session sees this. Subagents do **not** inherit it.
+2. **`skills:` frontmatter on the agent** — preloads named meta-skills (e.g. `bdk-tier-search`, `bdk-rules-code-quality`) into the subagent's startup context. The skill bodies contain `!`...`` blocks that resolve at preload time, so the subagent receives the same tier/rule guidance the orchestrator gets.
+
+`skills:` is **not** in the plugin-restricted list — it is the supported substitute for the dead `hooks: SessionStart` pattern. See `docs/INJECTION-FLOWS.md` for the full audit and migration history.
+
+## Naming Gotcha — Three `rules/` Directories
+
+BDK has three distinct `rules/` locations. Do not confuse them:
+
+| Path | Owner | Purpose |
+|------|-------|---------|
+| `rules/` (repo root) | BDK distributor | Language-agnostic rule files shipped to end-user projects (`code-quality.md`, `architecture.md`, `design-patterns.md`). Injected via `scripts/inject-rules.py`. |
+| `.claude/rules/` (this dir) | BDK dev-time | Internal conventions for developing BDK itself (`fragment-system.md`, `portability-check.md`, etc.). Not distributed. |
+| `<user-project>/.claude/rules/` | End-user project | Project-specific rules injected by Claude Code at session start. May collide in name with BDK's `rules/` if a user copies rule files in — treat as separate namespaces. |
+
+When a user project installs BDK as a plugin, the plugin's `rules/` files are accessed via `${CLAUDE_PLUGIN_ROOT}/rules/` (explicit path). The user project's `.claude/rules/` is loaded by Claude Code automatically and is a separate namespace — no collision at runtime, but the similar names can confuse contributors. Always use the full path (`${CLAUDE_PLUGIN_ROOT}/rules/`) when referencing BDK rules from scripts or skill inject calls.

@@ -64,6 +64,10 @@ Portability rule: skill only makes sense for one language stack or domain → no
 - Verify skills relying on modified section still work
 - Test in isolated project after changes
 
+## Plugin Reference Verification
+
+When implementing or modifying anything that depends on Claude Code plugin loader behaviour — directory layout, manifest fields, hook events, frontmatter, `${CLAUDE_PLUGIN_ROOT}`, skill discovery, MCP/LSP server config, etc. — fetch https://code.claude.com/docs/en/plugins-reference first and verify the convention against the current spec. Don't trust prior assumptions; the spec evolves. Cite the relevant section before recommending non-standard behaviour.
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 

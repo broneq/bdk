@@ -9,15 +9,15 @@ Doc: realistic examples of explain-complex-code skill across codebase sizes.
 **Step 2.1 - Initial Discovery**:
 ```python
 # Discover 12 files across 3 subdirectories
-mcp__serena__list_dir(relative_path="src/services/migration/", recursive=True)
+mcp__plugin_bdk_serena__list_dir(relative_path="src/services/migration/", recursive=True)
 # Files found: document_migration_service.py, + parsers/ (3 files) + transformers/ (4 files) + storage/ (4 files)
 ```
 
 **Step 2.2 - Map Dependencies**:
 ```python
 # Find key classes
-mcp__serena__find_symbol(name_path_pattern="DocumentMigrationService")
-mcp__serena__find_referencing_symbols(name_path="DocumentMigrationService", relative_path="...")
+mcp__plugin_bdk_serena__find_symbol(name_path_pattern="DocumentMigrationService")
+mcp__plugin_bdk_serena__find_referencing_symbols(name_path="DocumentMigrationService", relative_path="...")
 # Discovers: Service orchestrates Parser → Transformer → Storage flow
 ```
 
@@ -46,7 +46,7 @@ Task("Explore Storage Block (storage/repository.py, json_writer.py, xml_formatte
 
 **Step 2.1 - Initial Discovery**:
 ```python
-mcp__serena__get_symbols_overview(relative_path="src/services/position_mapping/token_alignment.py")
+mcp__plugin_bdk_serena__get_symbols_overview(relative_path="src/services/position_mapping/token_alignment.py")
 # Files found: token_alignment.py (450 lines), test file (300 lines)
 ```
 
@@ -71,14 +71,14 @@ Task(prompt="Explore Token Alignment module (token_alignment.py + tests): Report
 
 **Step 2.1 - Initial Discovery**:
 ```python
-mcp__serena__list_dir(relative_path="src/services/change_detection/", recursive=True)
+mcp__plugin_bdk_serena__list_dir(relative_path="src/services/change_detection/", recursive=True)
 # Files found: 7 files (unmarked_change_detector.py, froala_marker.py, + detectors/ (3 files) + rules/ (2 files))
 ```
 
 **Step 2.2 - Map Dependencies**:
 ```python
-mcp__serena__find_symbol(name_path_pattern="UnmarkedChangeDetector")
-mcp__serena__find_referencing_symbols(name_path="UnmarkedChangeDetector", relative_path="...")
+mcp__plugin_bdk_serena__find_symbol(name_path_pattern="UnmarkedChangeDetector")
+mcp__plugin_bdk_serena__find_referencing_symbols(name_path="UnmarkedChangeDetector", relative_path="...")
 # Discovers: Main detector orchestrates Rules → Detectors → Marker flow
 ```
 
@@ -104,7 +104,7 @@ Task("Explore Detection Utilities Block (detectors/text_differ.py, html_comparer
 
 **Step 2.1 - Initial Discovery**:
 ```python
-mcp__serena__get_symbols_overview(relative_path="src/utils/position_calculator.py")
+mcp__plugin_bdk_serena__get_symbols_overview(relative_path="src/utils/position_calculator.py")
 # File: 180 lines, 3 classes, 8 helper functions
 ```
 
@@ -129,15 +129,15 @@ Task(prompt="Explore position_calculator.py: Report all classes/functions, their
 
 **Step 2.1 - Initial Discovery**:
 ```python
-mcp__serena__list_dir(relative_path="src/services/", recursive=True)
+mcp__plugin_bdk_serena__list_dir(relative_path="src/services/", recursive=True)
 # Files found: 18 files across migration/, transformation/, change_detection/, position_mapping/
 ```
 
 **Step 2.2 - Map Dependencies**:
 ```python
 # Analyze top-level services
-mcp__serena__find_symbol(name_path_pattern="*Service", relative_path="src/services/")
-mcp__serena__find_referencing_symbols(...)
+mcp__plugin_bdk_serena__find_symbol(name_path_pattern="*Service", relative_path="src/services/")
+mcp__plugin_bdk_serena__find_referencing_symbols(...)
 # Discovers: 4 main service categories with clear boundaries
 ```
 

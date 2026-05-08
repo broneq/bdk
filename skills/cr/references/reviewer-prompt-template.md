@@ -17,6 +17,8 @@ Test files:
 
 <!-- INJECT: code-quality -->
 
+<!-- INJECT: design-patterns -->
+
 {IF TINY MODE, also include:}
 ### Architecture (tiny mode only)
 <!-- INJECT: architecture -->

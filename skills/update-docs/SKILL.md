@@ -17,6 +17,8 @@ hooks:
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
+
 Refresh existing architecture documentation by comparing it against current code, merging updates while preserving accurate manual prose. The result is uniform text — no changelog, no diff markers, no "updated on" annotations.
 
 ## Workflow
@@ -43,8 +45,8 @@ Do this in main context — no subagent needed. Use regex and string matching.
 **Step 2.1 — Discover Current State**
 
 ```python
-mcp__serena__list_dir(relative_path="<module_root>", recursive=True)
-mcp__serena__get_symbols_overview(relative_path="<key_files>")
+mcp__plugin_bdk_serena__list_dir(relative_path="<module_root>", recursive=True)
+mcp__plugin_bdk_serena__get_symbols_overview(relative_path="<key_files>")
 ```
 
 Compare actual file list against the doc's file tree. Note added/removed/renamed files immediately.

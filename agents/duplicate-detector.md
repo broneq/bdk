@@ -2,28 +2,28 @@
 name: duplicate-detector
 description: Find duplicated code and extractable patterns - searches changed symbols for literal duplicates, structural patterns, and intra-function duplication
 model: haiku
+skills:
+  - bdk-tier-search
 tools:
   - Read
   - Grep
   - Glob
-  - mcp__serena__list_dir
-  - mcp__serena__find_file
-  - mcp__serena__search_for_pattern
-  - mcp__serena__get_symbols_overview
-  - mcp__serena__find_symbol
-  - mcp__serena__find_referencing_symbols
-  - mcp__code-review-graph__semantic_search_nodes_tool
-  - mcp__code-review-graph__get_community_tool
-hooks:
-  SessionStart:
-    - hooks:
-        - type: command
-          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
+  - mcp__plugin_bdk_serena__list_dir
+  - mcp__plugin_bdk_serena__find_file
+  - mcp__plugin_bdk_serena__search_for_pattern
+  - mcp__plugin_bdk_serena__get_symbols_overview
+  - mcp__plugin_bdk_serena__find_symbol
+  - mcp__plugin_bdk_serena__find_referencing_symbols
+  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__get_community_tool
+  - mcp__plugin_bdk_code-review-graph__find_large_functions_tool
 ---
 
 # Duplicate Code Detector Agent
 
 You are a specialized duplicate code detection agent. Your ONLY job is to find code duplication and suggest extractions.
+
+Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 ## Safety Rules (MANDATORY)
 

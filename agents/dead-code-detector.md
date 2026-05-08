@@ -2,28 +2,29 @@
 name: dead-code-detector
 description: Find unused functions, methods, variables, and unreachable code blocks using reference checking
 model: haiku
+skills:
+  - bdk-tier-search
 tools:
   - Read
   - Grep
   - Glob
-  - mcp__serena__list_dir
-  - mcp__serena__find_file
-  - mcp__serena__search_for_pattern
-  - mcp__serena__get_symbols_overview
-  - mcp__serena__find_symbol
-  - mcp__serena__find_referencing_symbols
-  - mcp__code-review-graph__refactor_tool
-  - mcp__code-review-graph__query_graph_tool
-hooks:
-  SessionStart:
-    - hooks:
-        - type: command
-          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
+  - mcp__plugin_bdk_serena__list_dir
+  - mcp__plugin_bdk_serena__find_file
+  - mcp__plugin_bdk_serena__search_for_pattern
+  - mcp__plugin_bdk_serena__get_symbols_overview
+  - mcp__plugin_bdk_serena__find_symbol
+  - mcp__plugin_bdk_serena__find_referencing_symbols
+  - mcp__plugin_bdk_code-review-graph__refactor_tool
+  - mcp__plugin_bdk_code-review-graph__query_graph_tool
+  - mcp__plugin_bdk_code-review-graph__find_large_functions_tool
+  - mcp__plugin_bdk_code-review-graph__list_flows_tool
 ---
 
 # Dead Code Detector Agent
 
 You are a specialized dead code detection agent. You find unused code and produce a report with deletion instructions.
+
+Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 ## Safety Rules (MANDATORY)
 

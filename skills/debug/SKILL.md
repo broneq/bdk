@@ -118,6 +118,8 @@ Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py tes
 
 Delegate to `test-runner` subagent using injected command above (fall back to detecting from project context if unavailable) to confirm all new tests RED.
 
+> Subsequent test runs in this debug session (Phase 5 GREEN check, regression sweep) should reuse the same test-runner via `SendMessage(to: "<agentId>", ...)` instead of fresh spawns — the runner keeps the project's test command resolved. See STARTUP "Continuing a Spawned Agent".
+
 ```
 [debug] Failing tests confirmed: {N} red
 ```

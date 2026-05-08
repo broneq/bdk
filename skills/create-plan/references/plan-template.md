@@ -182,6 +182,14 @@ Expected: exits 0 with no errors
 
 <!-- INJECT: code-quality -->
 
+**Architecture Principles:**
+
+<!-- INJECT: architecture -->
+
+**Design Patterns:**
+
+<!-- INJECT: design-patterns -->
+
 **Design Doc:** [path if exists]
 
 **Memories Referenced:**

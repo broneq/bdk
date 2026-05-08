@@ -12,6 +12,10 @@ context: main
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
+
+<!-- INJECT: architecture -->
+
 Transform vague ideas into concrete, validated designs through structured dialogue.
 
 **Core Principle**: Understand → Explore → Design → Validate → Document
@@ -24,7 +28,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 - [ ] Read project `CLAUDE.md` and relevant rules
 - [ ] Check recent commits (last 5)
 - [ ] Decide subagent count based on complexity
-- [ ] Use subagents to explore related code
+- [ ] Use subagents to explore related code (later phases that need follow-up findings should `SendMessage(to: "<agentId>", ...)` the same explorer instead of re-spawning — see STARTUP "Continuing a Spawned Agent")
 - [ ] Note constraints (tech stack, patterns, conventions)
 
 **GATE**: Complete context analysis before Phase 2.
@@ -44,6 +48,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 ### Phase 3: Approach Exploration
 - [ ] Present 2-3 alternative approaches
 - [ ] For each: description, pros, cons, complexity
+- [ ] **Structural check** — if an approach extends an existing branching structure (if-elif chain, switch, handler registry), name the structure and its current branch count. If branches would grow past ~3-4, surface the refactor option (polymorphism, dispatch table, state machine) as an alternative approach — even if not recommended.
 - [ ] Lead with recommended option + reasoning
 
 **GATE**: User selects approach before Phase 4.

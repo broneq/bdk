@@ -3,6 +3,7 @@ name: execute-plan
 description: Execute an implementation plan, then run tests and static analysis, fixing issues
 model: sonnet
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[plan]"
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 hooks:
@@ -20,6 +21,10 @@ hooks:
 # Execute Plan
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/impact.chain.json`
+
+For each `<!-- INJECT: <name> -->` marker below, run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>` and substitute its stdout in place of the marker before acting on it.
 
 ## Step 0: Create Task List
 
@@ -64,6 +69,8 @@ Delegate to `test-runner` agent using injected test command above. Tests fail â†
 Delegate to `static-analyse` agent using injected lint command above. Issues found â†’ fix, re-run. Repeat until clean.
 
 ## Rules
+
+<!-- INJECT: code-quality -->
 
 - Main agent fixes issues, subagents only *run*
 - Max 3 fix-and-rerun cycles per step before asking user

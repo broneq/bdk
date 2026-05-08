@@ -58,7 +58,7 @@ def get_file_mtimes(files: list[str]) -> dict[str, float]:
 
 def _drift_dir() -> Path:
     """Stable directory for drift state files — immune to TMPDIR differences."""
-    d = Path("tmp/.rules_drift")
+    d = Path(".bdk/tmp/.rules_drift")
     d.mkdir(parents=True, exist_ok=True)
     return d
 

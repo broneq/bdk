@@ -6,12 +6,15 @@ description: >-
   "write an ADR", or provides decision context that needs to be formalized.
 model: opus
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[decision context, options, constraints, preferences]"
 ---
 
 # Create ADR
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+
+<!-- INJECT: architecture -->
 
 Generate ADR following MADR format.
 

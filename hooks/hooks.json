@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat ${CLAUDE_PLUGIN_ROOT}/STARTUP_INSTRUCTIONS.md"
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/render_startup.py"
           },
           {
             "type": "command",
@@ -22,6 +22,10 @@
           {
             "type": "command",
             "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-bdk-config/check.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/register-graph-repo/register.py"
           }
         ]
       }

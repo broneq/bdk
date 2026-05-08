@@ -5,6 +5,7 @@ description: >-
   Use when you have a written plan (from /bdk:create-plan or manual) and want to check
   if it will actually work before writing code.
 argument-hint: "[plan-file]"
+disable-model-invocation: true
 ---
 
 # Verify Plan
@@ -88,6 +89,8 @@ Launch TWO `step-simulator` agents simultaneously using prompts in `references/a
 
 - **Stage 2A** — "Plan Prover" prompt, substitute `{plan_content}` and `{exploration_report}`
 - **Stage 2B** — "Regression Hunter" prompt, substitute `{plan_content}` and `{exploration_report}`
+
+> If verification loops (iteration 2/3), re-engage the same simulators via `SendMessage(to: "<agentId>", ...)` with only the deltas — they already hold the plan and exploration report. See STARTUP "Continuing a Spawned Agent".
 
 ### Stage 3: Code Reviewer
 

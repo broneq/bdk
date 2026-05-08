@@ -2,33 +2,43 @@
 name: architecture-reviewer
 description: Cross-cutting architectural analysis - layer boundaries, DI, design patterns, data flow, directory structure, import direction
 model: opus
+skills:
+  - bdk-tier-explore
+  - bdk-tier-search
+  - bdk-tier-impact
+  - bdk-rules-architecture
+  - bdk-rules-design-patterns
 tools:
   - Read
   - Grep
   - Glob
-  - mcp__serena__list_dir
-  - mcp__serena__find_file
-  - mcp__serena__search_for_pattern
-  - mcp__serena__get_symbols_overview
-  - mcp__serena__find_symbol
-  - mcp__serena__find_referencing_symbols
-  - mcp__serena__read_memory
-  - mcp__serena__list_memories
-  - mcp__code-review-graph__get_architecture_overview_tool
-  - mcp__code-review-graph__get_surprising_connections_tool
-  - mcp__code-review-graph__query_graph_tool
-hooks:
-  SessionStart:
-    - hooks:
-        - type: command
-          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh explore.chain.json"
-        - type: command
-          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
+  - mcp__plugin_bdk_serena__list_dir
+  - mcp__plugin_bdk_serena__find_file
+  - mcp__plugin_bdk_serena__search_for_pattern
+  - mcp__plugin_bdk_serena__get_symbols_overview
+  - mcp__plugin_bdk_serena__find_symbol
+  - mcp__plugin_bdk_serena__find_referencing_symbols
+  - mcp__plugin_bdk_serena__read_memory
+  - mcp__plugin_bdk_serena__list_memories
+  - mcp__plugin_bdk_code-review-graph__get_architecture_overview_tool
+  - mcp__plugin_bdk_code-review-graph__list_communities_tool
+  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__get_hub_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__get_surprising_connections_tool
+  - mcp__plugin_bdk_code-review-graph__query_graph_tool
+  - mcp__plugin_bdk_code-review-graph__get_impact_radius_tool
+  - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
+  - mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
+  - mcp__plugin_bdk_code-review-graph__list_flows_tool
+  - mcp__plugin_bdk_code-review-graph__get_flow_tool
 ---
 
 # Architecture Reviewer Agent
 
 You are a specialized architecture review agent. Your ONLY job is to analyze code for architectural violations and produce findings.
+
+Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 ## Safety Rules (MANDATORY)
 

@@ -1,0 +1,25 @@
+{
+  "skill_name": "bdk-injection-preload",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Dispatch the sentinel-agent subagent with this prompt: 'Echo your startup context verbatim.' Return the subagent's reply unchanged.",
+      "expected_output": "Subagent transcript contains both literal tokens 'SENTINEL_A_42' and 'SENTINEL_B_43', proving that !-blocks in bdk-sentinel-a and bdk-sentinel-b skill bodies executed when those skills were preloaded into the agent via the skills: frontmatter field.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "sentinel_a_resolved",
+          "description": "The literal token 'SENTINEL_A_42' appears in the subagent's reply, proving the !-block in skills/bdk-sentinel-a/SKILL.md executed under skills: preload."
+        },
+        {
+          "name": "sentinel_b_resolved",
+          "description": "The literal token 'SENTINEL_B_43' appears in the subagent's reply, proving multiple skills: preload entries each resolve independently."
+        },
+        {
+          "name": "no_raw_backticks",
+          "description": "The subagent's reply does NOT contain the raw string 'sentinel-echo.py' wrapped in backticks, proving the !-block was preprocessed (not echoed verbatim by cat-style hook injection)."
+        }
+      ]
+    }
+  ]
+}

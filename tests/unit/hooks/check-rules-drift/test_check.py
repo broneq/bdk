@@ -300,7 +300,7 @@ def test_scenario_baseline_preexisting_dirty_ignored(tmp_path: Path) -> None:
     (tmp_path / "b.txt").write_text("old")
     (tmp_path / "c.txt").write_text("old")
 
-    drift_dir = tmp_path / "tmp" / ".rules_drift"
+    drift_dir = tmp_path / ".bdk" / "tmp" / ".rules_drift"
     drift_dir.mkdir(parents=True)
     baseline = {
         "a.txt": os.path.getmtime(tmp_path / "a.txt"),
@@ -334,7 +334,7 @@ def test_scenario_modified_file_triggers_block(tmp_path: Path) -> None:
     (tmp_path / "b.txt").write_text("old")
     old_mtime = os.path.getmtime(tmp_path / "b.txt")
 
-    drift_dir = tmp_path / "tmp" / ".rules_drift"
+    drift_dir = tmp_path / ".bdk" / "tmp" / ".rules_drift"
     drift_dir.mkdir(parents=True)
     baseline = {"b.txt": old_mtime}
     (drift_dir / f"drift-baseline-{session_id}.json").write_text(json.dumps(baseline))
@@ -370,7 +370,7 @@ def test_scenario_already_reported_file_silent(tmp_path: Path) -> None:
     (tmp_path / "b.txt").write_text("content")
     current_mtime = os.path.getmtime(tmp_path / "b.txt")
 
-    drift_dir = tmp_path / "tmp" / ".rules_drift"
+    drift_dir = tmp_path / ".bdk" / "tmp" / ".rules_drift"
     drift_dir.mkdir(parents=True)
     # seen state already has b.txt at current mtime (was reported last time)
     seen = {"b.txt": current_mtime}
@@ -448,7 +448,7 @@ def test_snapshot_baseline_mode(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0
-    baseline_file = tmp_path / "tmp" / ".rules_drift" / f"drift-baseline-{session_id}.json"
+    baseline_file = tmp_path / ".bdk" / "tmp" / ".rules_drift" / f"drift-baseline-{session_id}.json"
     assert baseline_file.exists()
     baseline = json.loads(baseline_file.read_text())
     assert "a.txt" in baseline
@@ -463,7 +463,7 @@ def test_changed_file_matches_rule_mtime_unchanged_silent(tmp_path: Path) -> Non
     (tmp_path / "a.txt").write_text("content")
     mtime = os.path.getmtime(tmp_path / "a.txt")
 
-    drift_dir = tmp_path / "tmp" / ".rules_drift"
+    drift_dir = tmp_path / ".bdk" / "tmp" / ".rules_drift"
     drift_dir.mkdir(parents=True)
     (drift_dir / f"drift-{session_id}.json").write_text(json.dumps({"a.txt": mtime}))
 

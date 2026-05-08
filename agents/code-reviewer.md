@@ -2,34 +2,38 @@
 name: code-reviewer
 description: Layer-group code reviewer - deep review of assigned source files and their tests, produces structured findings
 model: sonnet
+skills:
+  - bdk-tier-search
+  - bdk-tier-review
+  - bdk-rules-code-quality
+  - bdk-rules-architecture
+  - bdk-rules-design-patterns
 tools:
   - Read
   - Bash
   - Grep
   - Glob
-  - mcp__serena__list_dir
-  - mcp__serena__find_file
-  - mcp__serena__search_for_pattern
-  - mcp__serena__get_symbols_overview
-  - mcp__serena__find_symbol
-  - mcp__serena__find_referencing_symbols
-  - mcp__serena__read_memory
-  - mcp__serena__list_memories
-  - mcp__code-review-graph__detect_changes_tool
-  - mcp__code-review-graph__get_impact_radius_tool
-  - mcp__code-review-graph__get_affected_flows_tool
-  - mcp__code-review-graph__query_graph_tool
-  - mcp__code-review-graph__get_review_context_tool
-hooks:
-  SessionStart:
-    - hooks:
-        - type: command
-          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh review.chain.json"
-        - type: command
-          command: "bash ${CLAUDE_PLUGIN_ROOT}/scripts/hook_inject.sh search.chain.json"
+  - mcp__plugin_bdk_serena__list_dir
+  - mcp__plugin_bdk_serena__find_file
+  - mcp__plugin_bdk_serena__search_for_pattern
+  - mcp__plugin_bdk_serena__get_symbols_overview
+  - mcp__plugin_bdk_serena__find_symbol
+  - mcp__plugin_bdk_serena__find_referencing_symbols
+  - mcp__plugin_bdk_serena__read_memory
+  - mcp__plugin_bdk_serena__list_memories
+  - mcp__plugin_bdk_code-review-graph__detect_changes_tool
+  - mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__get_impact_radius_tool
+  - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
+  - mcp__plugin_bdk_code-review-graph__query_graph_tool
+  - mcp__plugin_bdk_code-review-graph__get_review_context_tool
+  - mcp__plugin_bdk_code-review-graph__get_knowledge_gaps_tool
+  - mcp__plugin_bdk_code-review-graph__list_flows_tool
 ---
 
 You are a layer-group code reviewer. Review the files specified in your prompt thoroughly.
+
+Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 ## Safety Rules
 - You MUST NOT modify any files. You are read-only.
