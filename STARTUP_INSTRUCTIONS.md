@@ -44,6 +44,25 @@ BDK ships these subagents. Invoke via the Agent tool with the listed `subagent_t
 | `bdk:implementer` | sonnet | `/bdk:subagent-execute-plan` |
 | `bdk:fixer` | sonnet | `/bdk:subagent-execute-plan` |
 
+### Continuing a Spawned Agent (SendMessage)
+
+Every Agent tool result includes an `agentId:` envelope and a `SendMessage` hint. You can resume the same agent with full prior context instead of spawning a fresh one.
+
+**Continue (`SendMessage` to existing agent)** when:
+- Follow-up genuinely depends on the agent's prior reasoning or findings
+- Within ~5 min of original call (cache still warm)
+- Narrow scope: clarification, "now check X given what you found", surfacing one more detail
+
+**Spawn fresh `Agent`** when:
+- Independent task with no relation to prior work
+- Parallel work (multiple agents in one message)
+- Original agent's context is stale or irrelevant
+- Different `subagent_type` needed
+
+**Cost**: SendMessage past the 5-min cache window pays a full cache miss for the resumed agent's prior context. Prefer fresh spawn for small self-contained follow-ups.
+
+Pattern: `SendMessage(to: "<agentId>", message: "...")` — never re-include the original prompt; the agent already has it.
+
 ## Quality Rules
 
 BDK ships language-agnostic `code-quality` and `architecture` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.

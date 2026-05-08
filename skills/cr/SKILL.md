@@ -107,6 +107,8 @@ The resolved template is what each layer-group reviewer, architecture-reviewer, 
 
 Launch ALL planned agents in SINGLE message using Agent tool with `run_in_background: true`.
 
+> When a reviewer's report needs clarification on a specific finding, prefer `SendMessage(to: "<agentId>", ...)` over re-spawning — the reviewer keeps its scan context. See STARTUP "Continuing a Spawned Agent".
+
 For each layer-group reviewer (use `references/reviewer-prompt-template.md` for dispatch structure):
 - List source files assigned to group
 - List test files paired with source files

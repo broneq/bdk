@@ -28,7 +28,7 @@ Transform vague ideas into concrete, validated designs through structured dialog
 - [ ] Read project `CLAUDE.md` and relevant rules
 - [ ] Check recent commits (last 5)
 - [ ] Decide subagent count based on complexity
-- [ ] Use subagents to explore related code
+- [ ] Use subagents to explore related code (later phases that need follow-up findings should `SendMessage(to: "<agentId>", ...)` the same explorer instead of re-spawning — see STARTUP "Continuing a Spawned Agent")
 - [ ] Note constraints (tech stack, patterns, conventions)
 
 **GATE**: Complete context analysis before Phase 2.

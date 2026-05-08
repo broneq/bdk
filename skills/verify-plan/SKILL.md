@@ -90,6 +90,8 @@ Launch TWO `step-simulator` agents simultaneously using prompts in `references/a
 - **Stage 2A** — "Plan Prover" prompt, substitute `{plan_content}` and `{exploration_report}`
 - **Stage 2B** — "Regression Hunter" prompt, substitute `{plan_content}` and `{exploration_report}`
 
+> If verification loops (iteration 2/3), re-engage the same simulators via `SendMessage(to: "<agentId>", ...)` with only the deltas — they already hold the plan and exploration report. See STARTUP "Continuing a Spawned Agent".
+
 ### Stage 3: Code Reviewer
 
 Launch `code-reviewer` agent on proposed code snippets with both simulator reports as context.

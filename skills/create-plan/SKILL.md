@@ -106,6 +106,8 @@ Aggregator merges arrays by `path`+`name` dedup.
 
 **Failure handling:** if an agent errors or returns malformed JSON, retry once with a narrowed prompt. On second failure, record `[create-plan] Agent {N}: no results` and proceed; note the gap in the plan's Risks section.
 
+> Retry via `SendMessage(to: "<agentId>", ...)` with the narrowed prompt — the agent's exploration context is already loaded and re-using it is cheaper than a fresh spawn. See STARTUP "Continuing a Spawned Agent".
+
 Wait for all agents, then print:
 ```
 [create-plan] Exploration complete:

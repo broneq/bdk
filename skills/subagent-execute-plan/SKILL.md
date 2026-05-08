@@ -137,6 +137,8 @@ Implementer returns one of:
 
 Max 3 re-dispatch cycles per task before stopping the whole skill with an error report.
 
+> Re-dispatch ≠ fresh spawn. For `NEEDS_CONTEXT` and small clarifications, prefer `SendMessage(to: "<agentId>", ...)` to feed the missing context — the implementer keeps its prior reasoning and partial work. Spawn fresh only on `CONTEXT_LIMIT` or when escalating to a different model tier. See STARTUP "Continuing a Spawned Agent".
+
 ### 1d. Dispatch static-analyse (every task)
 
 Spawn `static-analyse` agent on the files the implementer changed.
