@@ -6,7 +6,6 @@ model: opus
 effort: high
 user-invocable: true
 disable-model-invocation: true
-context: main
 ---
 
 # Create Tasks — PM Task Writer

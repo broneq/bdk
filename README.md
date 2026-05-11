@@ -39,6 +39,7 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:refactor` | Propose object-oriented architecture for complex code                                               |
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                        |
 | `/bdk:brainstorming` | Design sessions before implementation                                                               |
+| `/bdk:brainstorm-architecture` | Architecture-only brainstorming loop: explorer grounding, 2+ approaches, Mermaid, self-critique     |
 | `/bdk:create-adr` | Generate Architecture Decision Records (MADR format)                                                |
 | `/bdk:save-progress` | Checkpoint in-progress work to `.bdk/save-progress/`                                                |
 | `/bdk:restore-progress` | Resume work from a saved checkpoint                                                                 |
