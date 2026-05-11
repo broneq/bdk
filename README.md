@@ -31,6 +31,7 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size)                                     |
 | `/bdk:commit` | Generate conventional commit message from git changes                                               |
 | `/bdk:create-plan` | Create TDD-driven implementation plans                                                              |
+| `/bdk:create-tasks` | Write PM-style task definitions (User Story + Given/When/Then ACs) from features or code findings   |
 | `/bdk:execute-plan` | Execute a plan with task tracking and verification                                                  |
 | `/bdk:subagent-execute-plan` | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review |
 | `/bdk:verify-plan` | Verify a plan against real code before execution                                                    |
