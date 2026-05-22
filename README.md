@@ -38,8 +38,7 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:debug` | Structured debugging: investigate → failing tests → fix or plan                                     |
 | `/bdk:refactor` | Propose object-oriented architecture for complex code                                               |
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                        |
-| `/bdk:brainstorming` | Design sessions before implementation                                                               |
-| `/bdk:brainstorm-architecture` | Architecture-only brainstorming loop: explorer grounding, 2+ approaches, Mermaid, self-critique     |
+| `/bdk:design` | Design partner: classifies product vs architecture vs combined, 2+ approaches with Mermaid, self-critique, validation loop with warm-explorer reuse |
 | `/bdk:create-adr` | Generate Architecture Decision Records (MADR format)                                                |
 | `/bdk:save-progress` | Checkpoint in-progress work to `.bdk/save-progress/`                                                |
 | `/bdk:restore-progress` | Resume work from a saved checkpoint                                                                 |
@@ -69,6 +68,7 @@ Used by skills internally (invoke via `subagent_type`):
 | `architecture-reviewer` | opus | Audit against architectural rules |
 | `static-analyse` | haiku | Detect and run project lint/format/type-check |
 | `plan-verifier` | opus | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. Used by `/bdk:verify-plan` |
+| `design-verifier` | opus | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. Used by `/bdk:design` Phase 3 |
 | `log-analyzer` | haiku | Parse and summarize error logs |
 | `web-researcher` | haiku | Search web for solutions and docs |
 

@@ -38,7 +38,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 
 1. **Validate input**
    - `$ARGUMENTS` empty/blank → ask user to describe feature, **stop**.
-   - Vague (< 10 words OR generic like "make it better") → suggest `/bdk:brainstorming`, **stop**.
+   - Vague (< 10 words OR generic like "make it better") → suggest `/bdk:design`, **stop**.
 
 2. **Derive slug deterministically**
    - Lowercase `$ARGUMENTS`, strip punctuation, drop stop-words `{the, a, an, for, to, of, in, on, with, and, or}`.
@@ -57,7 +57,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
    - Create v2 (append `-v2` per slug rule above)
    - Stop
 
-6. **Check design docs** — scan `.bdk/brainstorming/` for slug keywords; if found, print `[create-plan] Found related design doc: {filename}` and read it.
+6. **Check design docs** — scan `.bdk/design/` for slug keywords; if found, print `[create-plan] Found related design doc: {filename}` and read it.
 
 Print: `[create-plan] Setup complete. Plan: <path>`
 

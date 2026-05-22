@@ -33,7 +33,7 @@ flowchart LR
 
 | Phase | Skills | Output artifact |
 |---|---|---|
-| 1. Discovery | `brainstorming`, `brainstorm-architecture` | `.bdk/brainstorming/*.md`, `.bdk/brainstorm-architecture/*.md` |
+| 1. Discovery | `design` | `.bdk/design/*.md` |
 | 2. Specification | `create-tasks`, `create-adr` | `.bdk/create-tasks/*.md`, `docs/adr/NNNN-*.md` |
 | 3. Planning | `create-plan`, `verify-plan` | `.bdk/plans/<ts>-<slug>.md`, `.bdk/verify-plan/*-verification.md` |
 | 4. Implementation | `execute-plan`, `subagent-execute-plan`, `test-driven-development` | Code changes + commits |
@@ -130,9 +130,9 @@ flowchart TB
 
 ### Discovery pain points
 
-- 🔴 **Brainstorming Phase 4 presents design one section at a time** — deliberate slowness for human review, but multiplies user-wait cycles for trivial features.
-- 🟡 **Two near-identical skills** (`brainstorming` vs `brainstorm-architecture`) with overlapping phases (clarify → ideate → write doc). User must know which to pick before any guidance triggers. Cognitive friction.
-- 🟡 **Explorer-first is mandatory** in `brainstorm-architecture` Phase 0 even when the user explicitly says "no codebase yet, greenfield design" — wastes a spawn.
+- ✅ **Per-section gating dropped** (2026-05-22) — `/bdk:design` Phase 2 runs branch dimensions in one turn; gates collapsed into Phase 3 validation.
+- ✅ **Two-skill split resolved** (2026-05-22) — `/bdk:design` unifies product / architecture / combined behind one classify question.
+- 🟡 **Explorer-first still mandatory** in Phase 0 of `/bdk:design`. Tradeoff preserved: cheaper-than-rework cost when user hasn't volunteered codebase context; revisit if greenfield use cases dominate.
 - 🟢 **`SendMessage` reuse pattern** prevents duplicate explorer spawns within ~5 min cache window.
 - 🟢 **Both skills inject `architecture` rules via marker** — no token cost when user disables.
 
@@ -559,6 +559,8 @@ flowchart LR
 
 ### 7.6.3 Merge `brainstorming` + `brainstorm-architecture` → `/bdk:design`
 
+**Status:** ✅ Implemented 2026-05-22. `skills/design/SKILL.md` ships with 5-phase shape (Ground → Classify → Branch → Validate → Write), Phase 3 validation loop with warm-explorer reuse via `SendMessage`, hard 3-loop cap. Old skills deleted; output directory unified at `.bdk/design/`. Cross-refs in `create-plan`, `verify-plan`, `setup`, `README`, `INJECTION-FLOWS.md`, `.claude/rules/artifacts.md` updated.
+
 **Decision:** Single skill with up-front classification, then product or architecture or combined branch. Deprecate the two existing skills.
 
 ```mermaid
@@ -640,10 +642,10 @@ gantt
 ```
 
 Reasoning:
-- **Portability fix first** (1 day) — unblocks everything else.
-- **Verify rework second** — biggest token savings, independent of other changes.
-- **Design merger third** — clarifies the interface the coordinator will consume.
-- **Coordinator last** — depends on both prior shifts being stable.
+- **Portability fix first** (1 day) — unblocks everything else. ✅ 2026-05-22
+- **Verify rework second** — biggest token savings, independent of other changes. ✅ 2026-05-22
+- **Design merger third** — clarifies the interface the coordinator will consume. ✅ 2026-05-22
+- **Coordinator last** — depends on both prior shifts being stable. ← **next**
 
 ---
 
@@ -653,7 +655,7 @@ Reasoning:
 2. ~~**Cache `verify-plan` explorer between iterations**~~ ✅ **Done 2026-05-22** — subsumed by §7.6.1: the single `bdk:plan-verifier` agent retains plan + iter-1 findings; iter 2 receives only the must-fix delta via `SendMessage`.
 3. **Lazy chain resolution** — don't resolve chains at SessionStart; resolve when a skill that needs them invokes.
 4. **Parallelize `subagent-execute-plan` Step 4** — fan out architecture-reviewer + full test-runner together.
-5. **Add `--quick` flag to `brainstorming`** — collapses Phase 4 per-section gates into one pass for small features.
+5. ~~**Add `--quick` flag to `brainstorming`**~~ ✅ **Subsumed 2026-05-22** — §7.6.3 `/bdk:design` removes per-section gates structurally; no flag needed.
 6. **Memoize `detect_changes`** in `/bdk:cr` against git SHA + diff hash.
 7. ~~**Structured verdicts in `verify-plan`**~~ ✅ **Done 2026-05-22** — the new YAML envelope (per-task `outcome` + `confidence` + per-section `checks` + `must_fix`) is structured and machine-parseable.
 8. **Shared rules mount** for `/bdk:cr` layer-groups — preload once, reference N times.
@@ -663,9 +665,9 @@ Reasoning:
 ## 9. Key Open Questions
 
 - Should there be an **all-in-one super-skill** (`/bdk:ship`) that chains discovery → spec → plan → execute → review with sensible defaults and minimal gates? Currently the user must invoke each, re-priming context each time.
-- ~~Is the **3-iteration cap on `verify-plan`** too generous?~~ **Answered 2026-05-22** — cap dropped to 2 in the §7.6.1 rework. After two failures the plan is treated as structurally wrong and `/bdk:brainstorming` is recommended.
+- ~~Is the **3-iteration cap on `verify-plan`** too generous?~~ **Answered 2026-05-22** — cap dropped to 2 in the §7.6.1 rework. After two failures the plan is treated as structurally wrong and `/bdk:design` is recommended.
 - Should `/bdk:cr` **always include a test-reviewer** (currently only for Tiny+), since test coverage gaps are the most common high-severity finding?
-- Can we **drop the brainstorming/brainstorm-architecture split** and have a single `/bdk:design` skill that chooses tactic based on the input (product vs system)?
+- ~~Can we **drop the brainstorming/brainstorm-architecture split** and have a single `/bdk:design` skill?~~ **Answered 2026-05-22** — done; see §7.6.3.
 
 ---
 
@@ -673,7 +675,7 @@ Reasoning:
 
 | Agent | Model | Owner | Spawned by | Purpose |
 |---|---|---|---|---|
-| `explorer` | haiku | direct | `brainstorming`, `brainstorm-architecture`, `create-tasks`, `create-plan`, `verify-plan`, `subagent-execute-plan`, `refactor`, `debug` | Codebase exploration |
+| `explorer` | haiku | direct | `design`, `create-tasks`, `create-plan`, `verify-plan`, `subagent-execute-plan`, `refactor`, `debug` | Codebase exploration |
 | `log-analyzer` | haiku | direct | manual | Stderr/log triage |
 | `web-researcher` | haiku | direct | manual | External docs |
 | `static-analyse` | haiku | direct | `execute-plan`, `subagent-execute-plan`, `/bdk:cr` | Lint/format/typecheck |
@@ -685,6 +687,7 @@ Reasoning:
 | `fixer` | sonnet | internal | `subagent-execute-plan` | Apply findings |
 | `architecture-reviewer` | opus | direct | `/bdk:cr`, `subagent-execute-plan` Step 4 | Cross-cutting architecture |
 | `plan-verifier` | opus | direct | `verify-plan` | One-pass plan verification with structured six-section checklist; resumable via `SendMessage` |
+| `design-verifier` | opus | direct | `design` | One-pass design verification with five-section checklist + gap-type routing (codebase/requirement/shape/honesty); resumable via `SendMessage` |
 
 ---
 

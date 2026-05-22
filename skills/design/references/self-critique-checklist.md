@@ -1,6 +1,6 @@
 # Self-Critique Checklist — Devil's Advocate Pass
 
-Run through this list every time you recommend an architectural approach. The goal is to expose weaknesses *before* the user does. If every answer is "no risk", you have not pushed hard enough — keep looking.
+Run through this list every time you recommend a design. The goal is to expose weaknesses *before* the user does. If every answer is "no risk", you have not pushed hard enough — keep looking.
 
 ## Bottlenecks & Limits
 
@@ -39,7 +39,7 @@ Run through this list every time you recommend an architectural approach. The go
 
 ## Evolution
 
-- What's the most likely next feature on top of this? Does the architecture welcome it or fight it?
+- What's the most likely next feature on top of this? Does the design welcome it or fight it?
 - Which decisions are reversible cheaply? Which lock us in for years?
 - If load patterns change (read-heavy → write-heavy, or vice-versa), what breaks first?
 
@@ -49,4 +49,11 @@ Run through this list every time you recommend an architectural approach. The go
 - Can a single request be traced end-to-end?
 - Are failure modes distinguishable from each other in logs/metrics?
 
-Pick at least **four** items across at least **three** categories and answer them concretely for the proposed design. Concrete = "the dispatcher becomes a bottleneck above ~5k req/s because the routing table is rebuilt on every change", not "scalability could be a concern."
+## Product / UX (when Product or Combined branch)
+
+- Who can't use this feature, and is that intentional?
+- What does the failure path look like to the end user? Is it actionable?
+- What success metric proves this worked? Can we measure it from day one?
+- What's the simplest version that would still deliver value?
+
+Pick at least **four** items across at least **three** categories and answer them concretely for the proposed design. Concrete = *"the dispatcher becomes a bottleneck above ~5k req/s because the routing table is rebuilt on every change"*, not *"scalability could be a concern."*

@@ -34,7 +34,7 @@ flowchart TB
     status -- FAIL --> iter_check{iteration < 2?}
     iter_check -- YES --> delta[Build delta message<br/>SendMessage verifier_agent_id]
     delta -- reply --> parse
-    iter_check -- NO 2 failures --> escalate([Plan needs rethink.<br/>Suggest /bdk:brainstorming])
+    iter_check -- NO 2 failures --> escalate([Plan needs rethink.<br/>Suggest /bdk:design])
 
     classDef good fill:#d4edda,stroke:#3aa055
     classDef bad fill:#f8d7da,stroke:#c25a1b
@@ -78,7 +78,7 @@ Branch on `status`:
 |---|---|
 | `PASS` or `PASS_WITH_WARNINGS` | Go to Step 5 (write report). |
 | `FAIL` and `iteration < 2` | Build a delta message (below). Call `SendMessage(to: verifier_agent_id, message: <delta>)`. Loop back to Step 3 with the new reply. |
-| `FAIL` and `iteration == 2` | Stop. Print a concise summary of remaining `must_fix` entries. Recommend `/bdk:brainstorming` — after two failed iterations the plan is structurally wrong, not detail-wrong. |
+| `FAIL` and `iteration == 2` | Stop. Print a concise summary of remaining `must_fix` entries. Recommend `/bdk:design` — after two failed iterations the plan is structurally wrong, not detail-wrong. |
 
 **Delta message template (iteration 2):**
 

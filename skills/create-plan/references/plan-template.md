@@ -20,7 +20,7 @@ Use when writing to `.bdk/plans/YYYY-MM-DD-HHMM-<slug>.md`.
 [2-3 paragraphs:
 - What feature does and why needed
 - How fits into existing architecture
-- Related design docs (if in .bdk/brainstorming/)
+- Related design docs (if in .bdk/design/)
 - Key constraints or requirements]
 
 ---
@@ -204,7 +204,7 @@ Expected: exits 0 with no errors
 ## Notes
 
 **Plan vs. Design:**
-- **Design** (from `/brainstorming`): WHAT and WHY — architecture, trade-offs
+- **Design** (from `/bdk:design`): WHAT and WHY — architecture, trade-offs
 - **Plan** (this doc): HOW — step-by-step TDD tasks with exact code
 
 **Required sections**: Context, Approaches, Tasks, Verification, Success Criteria

@@ -99,7 +99,7 @@ Create directory and file:
 .bdk/
 ├── settings.json
 ├── plans/
-└── brainstorming/
+└── design/
 ```
 
 Write `settings.json` with confirmed values using the schema:
@@ -144,12 +144,12 @@ Prefer the MCP tool over shelling out to `uvx code-review-graph build` — same 
 
 Recommend:
 - Commit `.bdk/settings.json` (shared with team — consistent commands for all contributors)
-- Add to `.gitignore`: `.bdk/plans/` and `.bdk/brainstorming/` (personal artifacts)
+- Add to `.gitignore`: `.bdk/plans/` and `.bdk/design/` (personal artifacts)
 
 Show the gitignore lines to add:
 ```
 .bdk/plans/
-.bdk/brainstorming/
+.bdk/design/
 ```
 
 Ask: "Add these to .gitignore now? [y/n]"
@@ -159,6 +159,6 @@ Ask: "Add these to .gitignore now? [y/n]"
 Print:
 ```
 [setup] .bdk/settings.json created.
-[setup] Directories created: .bdk/plans/, .bdk/brainstorming/
+[setup] Directories created: .bdk/plans/, .bdk/design/
 [setup] Restart your Claude Code session — BDK will inject project settings on startup.
 ```
