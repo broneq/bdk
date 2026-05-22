@@ -1,9 +1,10 @@
 ---
 name: verify-plan
 description: >-
-  Verify implementation plans before execution using a 4-agent pipeline.
-  Use when you have a written plan (from /bdk:create-plan or manual) and want to check
-  if it will actually work before writing code.
+  Verify implementation plans before execution with a single Opus subagent
+  driven by a structured six-section checklist. Use when you have a written
+  plan (from /bdk:create-plan or manual) and want to check it works before
+  writing code.
 argument-hint: "[plan-file]"
 disable-model-invocation: true
 ---
@@ -12,7 +13,7 @@ disable-model-invocation: true
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-Verify plans against real code before execution.
+Verify plans against real code before execution. Spawns one Opus subagent (`bdk:plan-verifier`) that runs a six-section checklist and returns a YAML verdict envelope.
 
 ## Invocation
 
@@ -24,97 +25,83 @@ Verify plans against real code before execution.
 
 ## Decision Flow
 
-```dot
-digraph verify_plan {
-    rankdir=TB
-    node [shape=box, style="rounded,filled", fillcolor="#f0f0f0"]
+```mermaid
+flowchart TB
+    start([Read plan file]) --> spawn[Spawn bdk:plan-verifier<br/>opus, six-section checklist]
+    spawn --> parse[Parse YAML verdict envelope]
+    parse --> status{status?}
+    status -- PASS or<br/>PASS_WITH_WARNINGS --> save([Render verdict-template<br/>Write report])
+    status -- FAIL --> iter_check{iteration < 2?}
+    iter_check -- YES --> delta[Build delta message<br/>SendMessage verifier_agent_id]
+    delta -- reply --> parse
+    iter_check -- NO 2 failures --> escalate([Plan needs rethink.<br/>Suggest /bdk:brainstorming])
 
-    start [label="Read plan file", shape=ellipse, fillcolor="#d4edda"]
-    parse [label="Extract:\n- Problem context\n- Files to change\n- Proposed code\n- Success criteria"]
-    explorer [label="Stage 1: EXPLORER\nGather signatures, types,\nmodels, ALL callers of\nmodified symbols"]
-    parallel_start [label="", shape=point, width=0.1]
-    sim_a [label="Stage 2A: PLAN PROVER\nDry-run plan steps,\ninvent edge cases"]
-    sim_b [label="Stage 2B: REGRESSION HUNTER\nTrace OTHER flows\nthrough changed code"]
-    parallel_end [label="", shape=point, width=0.1]
-    reviewer [label="Stage 3: CODE REVIEWER\nReview proposed code\nvs patterns"]
-    verdict [label="Assemble VERDICT REPORT"]
-    pass_check [label="PASS?", shape=diamond]
-    done [label="Save report\nDone", shape=ellipse, fillcolor="#d4edda"]
-    iter_check [label="Iteration < 3?", shape=diamond]
-    rethink [label="Plan needs rethink.\nSuggest /bdk:brainstorming", shape=ellipse]
-
-    start -> parse
-    parse -> explorer
-    explorer -> parallel_start
-    parallel_start -> sim_a
-    parallel_start -> sim_b
-    sim_a -> parallel_end
-    sim_b -> parallel_end
-    parallel_end -> reviewer
-    reviewer -> verdict
-    verdict -> pass_check
-    pass_check -> done [label="YES"]
-    pass_check -> iter_check [label="NO"]
-    iter_check -> explorer [label="YES\n(full re-run)"]
-    iter_check -> rethink [label="NO (3 failures)"]
-}
+    classDef good fill:#d4edda,stroke:#3aa055
+    classDef bad fill:#f8d7da,stroke:#c25a1b
+    class start,save good
+    class escalate bad
 ```
 
-## Pipeline Execution
+## Step 1 — Locate Plan File
 
-### Stage 1: Explorer
+Parse `$ARGUMENTS`. Validate the path exists. Read the full content. Compute `plan-slug` = basename without `.md` extension. If the path is missing or empty, abort with a clear error and stop.
 
-Launch `explorer` agent, thoroughness "very thorough":
+## Step 2 — Spawn `bdk:plan-verifier`
 
-```
-Analyze the following implementation plan for verification.
-
-PLAN:
-<full plan content>
-
-YOUR TASK:
-1. For each file in "Files to change", get symbols overview
-2. For each function/method the plan modifies, read its FULL current signature and body
-3. For each model/class the plan references, read its fields and types
-4. For ALL modified symbols, find every caller
-5. List all flows that use the modified code paths
-
-Focus on: current function signatures, parameter types, return types, model fields,
-class hierarchies, callers, and downstream consumers.
-```
-
-### Stage 2A & 2B: Run in Parallel
-
-Launch TWO `step-simulator` agents simultaneously using prompts in `references/agent-prompts.md`.
-
-- **Stage 2A** — "Plan Prover" prompt, substitute `{plan_content}` and `{exploration_report}`
-- **Stage 2B** — "Regression Hunter" prompt, substitute `{plan_content}` and `{exploration_report}`
-
-> If verification loops (iteration 2/3), re-engage the same simulators via `SendMessage(to: "<agentId>", ...)` with only the deltas — they already hold the plan and exploration report. See STARTUP "Continuing a Spawned Agent".
-
-### Stage 3: Code Reviewer
-
-Launch `code-reviewer` agent on proposed code snippets with both simulator reports as context.
-
-## Verdict Assembly
-
-Merge all reports using structure in `references/verdict-template.md`. Save to `.bdk/verify-plan/<plan-name>-verification.md`.
-
-## Loop Logic
-
-1. PASS → save report, done
-2. FAIL + iteration < 3: show remaining issues, ask to re-verify
-3. FAIL + iteration >= 3: suggest `/bdk:brainstorming`
-
-## Iteration Summary Format
+Use the Agent tool with `subagent_type: "bdk:plan-verifier"` and this message body:
 
 ```
-## Iteration N/3 Summary
-
-| Check            | Iter 1 | Iter 2 | Delta           |
-|------------------|--------|--------|-----------------|
-| Plan Proof       | 3 FAIL | 1 FAIL | Improved        |
-| Regression Check | 1 WARN | 0 WARN | Fixed           |
-| Code Review      | 0 FAIL | 0 FAIL | Clean           |
-| **Overall**      | **FAIL**| **FAIL**| **4 → 1 issues** |
+PLAN FILE: <path>
+ITERATION: 1
+FULL PLAN CONTENT:
+---
+<plan content verbatim>
+---
+For each task, run all six checklist sections (signature_drift, data_trace,
+edge_cases, regression_flows, test_coverage, plan_completeness). Emit the
+YAML verdict envelope as the LAST block of your reply — no prose after it.
 ```
+
+Capture `agent_id` from the spawn envelope. Store as `verifier_agent_id` — needed for iteration 2 SendMessage.
+
+## Step 3 — Parse YAML Envelope
+
+Extract the final ```yaml ... ``` block from the agent's reply. Parse it. Required keys: `status`, `iteration`, `per_task`, `must_fix`.
+
+Malformed YAML handling: respawn the agent once with the identical message. If the second reply is also malformed, abort and report the parse error to the user — do not silently continue.
+
+## Step 4 — Decide Next Action
+
+Branch on `status`:
+
+| `status` | Action |
+|---|---|
+| `PASS` or `PASS_WITH_WARNINGS` | Go to Step 5 (write report). |
+| `FAIL` and `iteration < 2` | Build a delta message (below). Call `SendMessage(to: verifier_agent_id, message: <delta>)`. Loop back to Step 3 with the new reply. |
+| `FAIL` and `iteration == 2` | Stop. Print a concise summary of remaining `must_fix` entries. Recommend `/bdk:brainstorming` — after two failed iterations the plan is structurally wrong, not detail-wrong. |
+
+**Delta message template (iteration 2):**
+
+```
+Iteration 2.
+Task IDs to re-verify: <deduped task_ids from must_fix>
+Other tasks are unchanged — carry forward iteration-1 verdicts.
+Run all six checklist sections only on the listed tasks. Emit the YAML
+verdict envelope as the LAST block, with iteration: 2.
+```
+
+## Step 5 — Write Verification Report
+
+Render the report using `references/verdict-template.md`. Save to:
+
+```
+.bdk/verify-plan/<plan-slug>-verification.md
+```
+
+Confirm in chat with the report path and the pass/fail summary line.
+
+## Notes
+
+- Loop cap = 2 iterations. Third would be wasted work; escalation is the intended path.
+- The agent retains plan content + iteration-1 findings across SendMessage. Pass only the delta — do not re-include the full plan.
+- See STARTUP "Continuing a Spawned Agent" for the 5-min warm-cache window. If iteration 2 is delayed beyond that, the SendMessage still works but pays a cache miss.

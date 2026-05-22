@@ -34,7 +34,7 @@ BDK ships these subagents. Invoke via the Agent tool with the listed `subagent_t
 | `bdk:dead-code-detector` | haiku | Find unused/unreachable code |
 | `bdk:duplicate-detector` | haiku | Find duplicated code and extractable patterns |
 | `bdk:architecture-reviewer` | opus | Cross-cutting architectural analysis |
-| `bdk:step-simulator` | opus | Dry-run a plan with concrete data traces |
+| `bdk:plan-verifier` | opus | Single-pass plan verification (used by `/bdk:verify-plan`) |
 
 **Used by skills internally** — don't invoke directly; let the skill orchestrate:
 

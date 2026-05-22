@@ -68,7 +68,7 @@ Used by skills internally (invoke via `subagent_type`):
 | `duplicate-detector` | haiku | Find code duplication |
 | `architecture-reviewer` | opus | Audit against architectural rules |
 | `static-analyse` | haiku | Detect and run project lint/format/type-check |
-| `step-simulator` | opus | Dry-run plans with concrete data traces |
+| `plan-verifier` | opus | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. Used by `/bdk:verify-plan` |
 | `log-analyzer` | haiku | Parse and summarize error logs |
 | `web-researcher` | haiku | Search web for solutions and docs |
 
