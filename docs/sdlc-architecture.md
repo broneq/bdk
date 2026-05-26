@@ -85,7 +85,7 @@ flowchart TB
 
 ### Foundation pain points
 
-- 🔴 **Hook chain runs on every session** even for trivial questions — ~1150 tokens of warmup whether or not a skill is invoked.
+- ✅ **Hook chain warmup reduced** (2026-05-26) — `fragments/tool-tiers/*.md` trimmed of redundant prose while preserving tool tables and policy rules. Chain mechanism unchanged (CHAIN markers still in `STARTUP_INSTRUCTIONS.md`, still feature-conditional). Measured: 10140 → 7502 bytes across 11 tier fragments (~30%); rendered STARTUP drops from ~8930 → 6293 bytes with both features on (~660 tokens/session saved).
 - 🟡 **Chain content is static** — `explore.chain.json` (additive) injects both graph + serena even when one is enough for the task.
 - ✅ **`agents/test-runner.md` portability fixed (2026-05-22)** — now resolves commands via `bdk-test-tools` meta-skill from `.bdk/settings.json`. Same pattern applied to lint via `bdk-lint-tools`. No hardcoded `pytest`/`go test`/`cargo test` left.
 - 🟢 **Settings-driven gating** is clean: missing `.bdk/settings.json` blocks the session with a clear setup pointer.
@@ -287,7 +287,7 @@ flowchart LR
 
 ### Implementation pain points
 
-- 🔴 **`subagent-execute-plan` end-of-plan review (Step 4) is sequential** — code-reviewer → architecture-reviewer → test-runner. Architecture review could fan out in parallel with the final test-runner.
+- ✅ **`subagent-execute-plan` end-of-plan review (Step 4) parallelized** (2026-05-26, commit `d95b741`) — Phase A (code-reviewer + triage) stays sequential; Phase B fans out `architecture-reviewer` and full `test-runner` in a single coordinator message with `run_in_background: true`. Anti-pattern added forbidding sequencing.
 - 🔴 **Verification re-spawns** test-runner and static-analyse on every fix cycle (no SendMessage reuse for verifiers).
 - 🔴 **`execute-plan` blocks at 40% context usage** asking user to save progress — interrupts flow on long plans.
 - 🟡 **Group execution is parallel within a group, but groups are serial** — no pipelining of next group's prep while current commits.
@@ -393,10 +393,10 @@ Mapped against the user's five goals.
 |---|---|
 | `verify-plan` iterations | Cache explorer report across iterations; only re-run explorer on plan-section delta. |
 | `verify-plan` simulators | Run Stage 1 explorer + Stage 2A/2B simulators in 3-way parallel (Stage 2 doesn't strictly need full explorer output for some cases — pass partial). |
-| `subagent-execute-plan` Step 4 | Run architecture-reviewer in parallel with full-suite test-runner (independent). |
+| ~~`subagent-execute-plan` Step 4~~ | ✅ **Done 2026-05-26** — Phase B runs architecture-reviewer ‖ full-suite test-runner via single background dispatch. |
 | `/bdk:cr` collect-merge | Build sections in parallel from agent returns; merge step becomes pure concatenation. |
 | `execute-plan` TDD | Pre-warm test-runner agent at GATE 0; reuse via `SendMessage` for GATE 2 and GATE 4. |
-| Foundation hook | Skip `register-graph-repo` and chain resolution when user invokes a question-only command (no skill triggered). |
+| ~~Foundation hook~~ | ✅ **Done 2026-05-26** — tier fragments trimmed of redundant prose (~30%), reducing rendered STARTUP size. `register-graph-repo` still runs unconditionally (separate optimization). |
 | Verification cycles | Re-engage test-runner / static-analyse via `SendMessage` instead of fresh spawn on fix cycles. |
 
 ### 7.2 More accurate
@@ -432,7 +432,7 @@ Mapped against the user's five goals.
 
 | Where | Change | Estimated savings |
 |---|---|---|
-| Foundation | Lazy-load chain content per skill invocation, not at SessionStart. | ~800 tokens/session (when no BDK skill is used) |
+| ~~Foundation~~ | ✅ **Done 2026-05-26** — `fragments/tool-tiers/*.md` trimmed of redundant prose. Chain mechanism preserved (still feature-conditional). | **~660 tokens/session measured** (rendered STARTUP 8930 → 6293 bytes with both MCP features on; 11 fragments 10140 → 7502 bytes / ~30%) |
 | `verify-plan` simulators | Pass only **changed plan sections** on iteration 2+, not full plan. | 30–50% per iteration |
 | `/bdk:cr` rule preload | Share quality rule context across layer-groups via a single shared meta-skill mount, not N preloads. | ~1200 × (N−1) tokens per review |
 | `subagent-execute-plan` implementer dispatch | Currently includes full task text + arch context + return schema (~3k tokens). Compress schema to a reference once at session start; pass only deltas. | ~1500 tokens per implementer spawn |
@@ -653,8 +653,8 @@ Reasoning:
 
 1. ~~**Fix `agents/test-runner.md` portability**~~ ✅ **Done 2026-05-22** — meta-skills `bdk-test-tools` / `bdk-lint-tools` resolve commands from `.bdk/settings.json`.
 2. ~~**Cache `verify-plan` explorer between iterations**~~ ✅ **Done 2026-05-22** — subsumed by §7.6.1: the single `bdk:plan-verifier` agent retains plan + iter-1 findings; iter 2 receives only the must-fix delta via `SendMessage`.
-3. **Lazy chain resolution** — don't resolve chains at SessionStart; resolve when a skill that needs them invokes.
-4. **Parallelize `subagent-execute-plan` Step 4** — fan out architecture-reviewer + full test-runner together.
+3. ~~**Trim tier fragments**~~ ✅ **Done 2026-05-26** — `fragments/tool-tiers/*.md` trimmed of redundant prose (duplicate budgets, repeated coverage-check lines, verbose tool descriptions). Chain mechanism preserved — STARTUP still uses feature-conditional `<!-- CHAIN: ... -->` markers and `inject.py --chain` resolves them against `.bdk/settings.json`. Skills using inline chains (`cr`, `debug`, `refactor`, `design`, `execute-plan`, `explain-complex-code`, `test-driven-development`, `update-docs`) inherit the smaller fragments transparently. Measured: 11 fragments 10140 → 7502 bytes (~30%); rendered STARTUP 8930 → 6293 bytes (~660 tokens/session with both MCP features on). Earlier "remove CHAIN markers + thin hint" approach rejected — hardcoded tool prefixes (`mcp__plugin_bdk_code-review-graph__*`, `mcp__plugin_bdk_serena__*`) violated configurability.
+4. ~~**Parallelize `subagent-execute-plan` Step 4**~~ ✅ **Done 2026-05-26** (commit `d95b741`) — Step 4 split into Phase A (code-review + triage, sequential) and Phase B (architecture-reviewer || full test-runner, parallel via single message with `run_in_background: true`). Anti-pattern added forbidding sequential dispatch.
 5. ~~**Add `--quick` flag to `brainstorming`**~~ ✅ **Subsumed 2026-05-22** — §7.6.3 `/bdk:design` removes per-section gates structurally; no flag needed.
 6. **Memoize `detect_changes`** in `/bdk:cr` against git SHA + diff hash.
 7. ~~**Structured verdicts in `verify-plan`**~~ ✅ **Done 2026-05-22** — the new YAML envelope (per-task `outcome` + `confidence` + per-section `checks` + `must_fix`) is structured and machine-parseable.
