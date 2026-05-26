@@ -5,6 +5,7 @@ model: sonnet
 skills:
   - bdk-tier-search
   - bdk-tier-impact
+  - bdk-tier-edit
   - bdk-rules-code-quality
   - bdk-rules-design-patterns
   - bdk:test-driven-development

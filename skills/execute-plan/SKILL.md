@@ -49,6 +49,8 @@ Per task:
      > ⚠️ Context at XX% — consider running `/bdk:save-progress [slug]` before continuing.
      Ask: "Continue or save progress first?" Wait for response.
 
+   > See `subagent-execute-plan` "Context-stop policy" for the autonomous-mode threshold (≥ 50%, higher because the coordinator's per-task state is lighter).
+
 3. Blocked or unclear → stop, ask user
 
 ## Step 2: Verify and Fix

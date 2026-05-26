@@ -176,6 +176,8 @@ In **parallel** (one message, multiple Agent calls):
 
 Both background. Wait for both.
 
+**Record verifier `agentId`s** in per-group coordinator state (alongside `files_changed`) for SendMessage reuse in 3f. The recorded ids are scoped to **this group only** — never reuse a verifier across groups, since each group has a different `files_changed` set and reusing would poison context.
+
 ### 3f. Handle verification results
 
 For each failure (lint or test):
@@ -183,7 +185,9 @@ For each failure (lint or test):
 - If the failure clearly belongs to one task and that task's implementer agent is still alive (cache warm, <5 min) → `SendMessage` to that implementer with the findings. It already has the file context. Cheap fix.
 - Otherwise → spawn a fresh `bdk:fixer` subagent with the findings inline.
 
-After fixers/SendMessage rounds return → **re-spawn the verification subagents** (lint + test). Up to 3 verify-fix cycles per group. After 3 unsuccessful cycles → stop with error.
+After fixers/SendMessage rounds return → **re-engage the same verifiers** via `SendMessage(to: <verifier_agent_id>, …)` recorded in 3e, passing only the new diff / changed files. The cache should still be warm (typically <5 min). If `SendMessage` errors (agent gone) or the cache window has expired → spawn fresh and increment a `verifier_cache_misses` counter (surfaced in Step 4e). Up to 3 verify-fix cycles per group. After 3 unsuccessful cycles → stop with error.
+
+> Verifiers are stateless w.r.t. project semantics — they execute a command and report. Reuse saves the model's cold-start prompt without semantic risk. See STARTUP "Continuing a Spawned Agent" for the cache-window rules.
 
 ### 3g. Commit group
 
@@ -204,18 +208,24 @@ The coordinator runs `git` directly — that is the one tool category it owns (m
 
 ## Step 4 — End-of-plan review
 
-All groups committed → run **once**:
+All groups committed → run **once**, organized in two phases. Phase A converges code-review findings; Phase B runs architecture review and final tests **in parallel**.
 
-### 4a. `bdk:code-reviewer` on `${BASE_SHA}..HEAD`
+### Phase A — Code review + triage
 
-### 4b. Triage findings
+#### 4a. `bdk:code-reviewer` on `${BASE_SHA}..HEAD`
+
+#### 4b. Triage findings
 
 - `CRITICAL` / `HIGH` → spawn `bdk:fixer` per finding batch (group by file or by severity). After fixer commits, re-spawn `bdk:code-reviewer`.
 - `MEDIUM` / `LOW` → log to `.bdk/cr/{branch}-summary.md`. Do not auto-fix — risk of overcorrection on debatable findings.
 
 Up to 2 review-fix cycles. Remaining `CRITICAL` after cycle 2 → stop with error.
 
-### 4c. `bdk:architecture-reviewer` (conditional)
+### Phase B — Parallel final pass (architecture review || final tests)
+
+Once Phase A converges, dispatch the final two checks in a **single coordinator message with two background `Agent` calls** (`run_in_background: true`). Wait for both to complete before moving to 4e. Their failure paths are independent — each runs its own fixer cycles.
+
+#### 4c. `bdk:architecture-reviewer` (conditional)
 
 Spawn only if **any** of:
 
@@ -223,11 +233,15 @@ Spawn only if **any** of:
 - Plan introduced new layers, public APIs, or cross-module dependencies
 - Any task had architectural surface (judgment call from plan text)
 
-Findings handled like 4b.
+Findings handled like 4b: `CRITICAL` / `HIGH` → `bdk:fixer`, then re-spawn `bdk:architecture-reviewer`. Up to 2 review-fix cycles.
 
-### 4d. Final `bdk:test-runner` (full suite)
+If none of the conditions hold, **skip** the spawn — log `architecture_review: skipped:<reason>` in the summary. Phase B then degenerates to just the final test-runner.
+
+#### 4d. Final `bdk:test-runner` (full suite)
 
 Must pass. On failure, spawn `bdk:fixer` with failures, re-run. Up to 3 cycles.
+
+**Independence:** architecture-reviewer is read-only (source + graph); test-runner is read-only (executes test commands). They cannot race on shared state. Fixer dispatches from either path are serialized through the existing 3-cycle cap and do not interleave across the two failure pipelines.
 
 ### 4e. Print summary, stop
 
@@ -246,16 +260,47 @@ fixer_dispatches: {N}
 sendmessage_rounds: {N}
 verification_cycles_run: {N}
 verification_cycles_skipped: {N}
+verifier_cache_misses: {N}
 final_tests: {pass}/{total}
 review_critical_remaining: {C}
 review_high_remaining: {H}
 review_medium_logged: {M}
 review_low_logged: {L}
 architecture_review: ran|skipped:{reason}
+context_stop_pct: 50
 status: success|partial|error
 ```
 
 The coordinator does not push or open PRs. That belongs to a downstream skill (`/bdk:commit`, the user's PR workflow).
+
+---
+
+## Context-stop policy
+
+The coordinator monitors its own context usage between groups (not mid-group — never abandon in-flight subagents).
+
+- **Threshold:** **≥ 50%** of coordinator context used at the boundary between two groups → finish the in-flight group (commit per 3g), do **not** dispatch the next group.
+- **Action:**
+  1. Run `/bdk:save-progress {plan-slug}-context-stop` so the run is resumable.
+  2. Print the paused summary block:
+
+     ```
+     [subagent-execute-plan-paused]
+     plan: {path}
+     reason: context_stop
+     threshold_pct: 50
+     context_used_pct: {observed}
+     groups_committed: {G}
+     groups_remaining: {R}
+     resume: /bdk:subagent-execute-plan {plan-path}
+     save_progress_slug: {plan-slug}-context-stop
+     ```
+  3. Stop.
+- **Resume:** Re-invoke `/bdk:subagent-execute-plan {plan-path}`. Step 0.6 (resume detection) finds the existing TaskList and picks up at the first `pending` group.
+
+**Why 50% (and why this differs from `execute-plan`'s 40%):** the coordinator's context is mostly TaskList + last subagent return envelope + a slice of the plan — light per tick. `execute-plan` runs the implementation inline and accumulates file reads, test output, and edit diffs in its own context, so its threshold is lower. Both are documented constants — not user-tunable in this version. Revisit if reports come in (the prior observation of "stops at 50%" tracked in `docs/BUGS.md` #7 was intentional but undocumented; this section closes that gap).
+
+The threshold actually used this run is surfaced in the Step 4e summary as `context_stop_pct: 50`.
 
 ---
 
@@ -278,6 +323,7 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - Implementer subagents **do not** run final lint or test verification. They do TDD red-green for their own task and stop. Verification is a separate subagent the coordinator schedules.
 - Parallel implementers are allowed only when `bdk:explorer` confirms file-disjoint sets within the group AND `confidence ≥ 0.6`.
 - For verification failures: try `SendMessage` to the original implementer first if cache likely warm and scope is narrow. Fall back to spawning `bdk:fixer`.
+- Verifiers (`bdk:static-analyse`, `bdk:test-runner`) are reused via `SendMessage` across verify-fix cycles **within a group**; fresh spawn only on cache miss. Never reuse verifiers across groups — each group's `files_changed` set differs.
 - Subagents may invoke skills (e.g. `/bdk:test-driven-development`, `/bdk:save-progress`, `/bdk:restore-progress`) but cannot spawn nested subagents. Skills that themselves spawn subagents (`/bdk:execute-plan`, `/bdk:cr`) are forbidden inside subagents — coordinator handles those flows directly.
 - Reviewer findings → fixer subagent. Coordinator never patches code itself.
 - Max 3 re-dispatch cycles per task. Max 3 verify-fix cycles per group. Max 2 review-fix cycles at end-of-plan. Max 2 consecutive groups skipping verification.
@@ -290,6 +336,7 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - ❌ Implementer running final `npm test` / `pytest` / lint as part of its task. That belongs to dedicated verification subagents.
 - ❌ Spawning parallel implementers without an explorer pass — silent file conflicts.
 - ❌ Spawning `bdk:code-reviewer` per task. End-of-branch only — it sees cross-task patterns the per-task view misses.
+- ❌ Sequencing `bdk:architecture-reviewer` and the final `bdk:test-runner` in Step 4. They are independent read-only checks and **must** be dispatched in a single coordinator message with `run_in_background: true`.
 - ❌ Hardcoding test cadence ("every 3 tasks"). Pure orchestrator judgment per group, bounded by the 2-consecutive-skip cap.
 - ❌ Asking the user for confirmation mid-flow. Autonomous skill — surface decisions only on terminal failure or user interrupt.
 - ❌ Letting an implementer read the plan file. Pass full task text in the dispatch prompt.
