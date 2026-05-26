@@ -49,6 +49,8 @@ Agent tool — subagent_type: "implementer"
     - Base SHA: {sha-before-task-N}
 
     Commit your work to this branch. One commit per task.
+
+    Return the YAML envelope per the preloaded `bdk-implementer-return-contract` meta-skill. Final message MUST be that YAML — no prose before or after.
 ```
 
 ---

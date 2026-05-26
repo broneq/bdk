@@ -104,12 +104,14 @@ Add tests for meaningful gaps. **No padding.**
 
 Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 
-Delegate to `/bdk:test-runner` agent using injected command above (fall back to detecting from project context if unavailable):
+Spawn a fresh `/bdk:test-runner` agent using injected command above (fall back to detecting from project context if unavailable):
 
 ```
 Run the project's test suite against: {test_file_path}
 Expected: ALL written tests FAIL
 ```
+
+**Record** the `agentId` from the spawn envelope into a local variable (e.g. `test_runner_agent_id`). Used by GATE 4 to avoid a redundant cold-start.
 
 **Tests PASS:** Stop. Implementation already exists or test wrong.
 
@@ -125,12 +127,14 @@ Implement per plan task. Focused on passing tests — no extra features.
 
 ## GATE 4: Verify GREEN
 
-Delegate to `/bdk:test-runner` agent using injected command from GATE 2:
+**Prefer `SendMessage` reuse over a fresh spawn:**
 
-```
-Run the project's test suite against: {test_file_path}
-Expected: ALL tests PASS
-```
+- If `test_runner_agent_id` was captured in GATE 2 and the cache window is likely warm (< 5 min since GATE 2): use `SendMessage(to: <test_runner_agent_id>, ...)` with the message:
+  ```
+  Run the project's test suite against: {test_file_path}
+  Expected: ALL tests PASS
+  ```
+- If `test_runner_agent_id` is not available (e.g. resumed session with no warm state) OR `SendMessage` errors: fall back to a fresh `/bdk:test-runner` spawn with the same prompt. Log "verifier cache miss" to run output.
 
 **Tests FAIL:** Fix implementation. Max 3 attempts. After 3, stop and ask user.
 

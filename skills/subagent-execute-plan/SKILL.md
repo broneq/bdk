@@ -54,7 +54,7 @@ The coordinator may spawn **multiple implementers in parallel** for a single gro
 
 Every implementer / fixer dispatch must return the YAML envelope defined in `references/return-contract.md` as its **final** message. Four statuses: `DONE`, `DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, `BLOCKED`. Anything else is treated as `BLOCKED` with reason "malformed return."
 
-The dispatch prompt (Step 3b) MUST include the schema from `references/return-contract.md` verbatim and the line: "Final message must be exactly this YAML block — no prose before or after."
+The dispatch prompt (Step 3b) does **not** need to repeat the schema — the `bdk-implementer-return-contract` meta-skill is preloaded on the implementer and fixer agents' `skills:` list, so the contract arrives at spawn. The dispatch prompt ends with: "Return the YAML envelope per the preloaded `bdk-implementer-return-contract` meta-skill. Final message MUST be that YAML — no prose before or after."
 
 Reviewer / verification subagents have their own return formats — see `references/dispatch-templates.md`.
 
@@ -132,8 +132,7 @@ For a multi-task group, send **one message with multiple `Agent` calls** using `
 - File paths the task touches
 - One-paragraph architectural context
 - Branch name and `BASE_SHA`
-- The **return-contract YAML schema** (verbatim from the section above)
-- **Explicit instruction**: "Do not run final lint or test verification. The coordinator schedules those separately."
+- **Explicit instruction**: "Do not run final lint or test verification. The coordinator schedules those separately. Return the YAML envelope per the preloaded `bdk-implementer-return-contract` meta-skill (already on your `skills:` list) — final message MUST be that YAML, no prose before or after."
 
 For a single-task group: foreground or background — both fine. Background is cheaper if the orchestrator has nothing to do meanwhile.
 

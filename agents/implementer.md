@@ -9,6 +9,7 @@ skills:
   - bdk-rules-code-quality
   - bdk-rules-design-patterns
   - bdk:test-driven-development
+  - bdk-implementer-return-contract
 tools:
   - Read
   - Edit

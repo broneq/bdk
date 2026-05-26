@@ -123,12 +123,12 @@ For test-runner:
 
 ### Step 4: Collect & Merge Results
 
-1. **Collect** all agent outputs
-2. **Deduplicate**: keep more detailed finding when duplicates appear
-3. **Assign severity**: CRITICAL > HIGH > MEDIUM > LOW
-4. **Map findings to report sections**
-5. **Produce final 13-section report** (see below)
-6. **Write report to artifact**: `.bdk/cr/[TDP - dynamic path here]` — see IDEAS.md for dynamic path pattern
+All agent inputs are already in hand by this point — no sequential section construction needed.
+
+1. **Collect** all agent outputs (gathering pass — wait for any still-running agents).
+2. **Deduplicate**: build a flat findings array keyed by `(file, line, category)`; keep the more detailed entry when two agents report the same location.
+3. **Parallel section assembly**: derive all 13 report sections simultaneously from the flat array. Each section draws from its own category slice — they are independent. Phrase the assembly as a single pass: "For each section below, extract matching findings from the flat array."
+4. **Write report to artifact**: concatenate sections in order, write to `.bdk/cr/[TDP - dynamic path here]` — see IDEAS.md for dynamic path pattern.
 
 ## Report Format
 
