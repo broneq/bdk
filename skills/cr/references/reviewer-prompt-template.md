@@ -15,13 +15,8 @@ Test files:
 
 ## Review Criteria
 
-<!-- INJECT: code-quality -->
+Quality rules (code-quality, design-patterns, architecture) are preloaded into your context via meta-skills — apply them when reviewing.
 
-<!-- INJECT: design-patterns -->
-
-{IF TINY MODE, also include:}
-### Architecture (tiny mode only)
-<!-- INJECT: architecture -->
 
 ### Duplicates (tiny mode only)
 - Check for repeated code blocks (>5 lines)
@@ -45,9 +40,7 @@ TESTS_GAPS:
 
 ## Architecture-Reviewer Dispatch Instructions
 
-Dispatch architecture-reviewer: subagent_type `architecture-reviewer`, `model: opus`. List ALL changed source files. Instruct:
-
-<!-- INJECT: architecture -->
+Dispatch architecture-reviewer: subagent_type `architecture-reviewer`, `model: opus`. List ALL changed source files. Architecture and design-pattern rules are preloaded via meta-skills — apply them.
 
 ## Test-Reviewer Dispatch Instructions
 

@@ -374,8 +374,8 @@ flowchart LR
 ### Review & maintenance pain points
 
 - 🔴 **`/bdk:cr` Step 4 collect-and-merge** runs sequentially in the orchestrator — 14 sections built one-by-one even though all inputs are already in hand.
-- 🔴 **Quality rules preloaded per layer-group**, but a fresh review spawn doesn't share cache with prior `/bdk:cr` invocations — same ~1200 tokens per layer-group per run.
-- 🔴 **`detect_changes` runs every `/bdk:cr` call** even on unchanged diffs (no memoization).
+- ✅ **Quality rules deduplicated** (2026-05-26) — rules now flow ONLY via meta-skill preload on the reviewer agents (`bdk-rules-*`); removed from `reviewer-prompt-template.md` and `cr` Step 2.5. Prior state shipped rules in both the dispatch prompt AND the agent's preload (double payment per spawn). Cross-run cache sharing still pending — each spawn pays preload once, but `SendMessage` continuation reuses warm cache.
+- ⚪ ~~**`detect_changes` runs every `/bdk:cr` call** even on unchanged diffs (no memoization).~~ **Rejected 2026-05-26** — see Quick-Wins #6. Tool already deterministic + graph-cached in-memory; cache layer saves <0.5% per run.
 - 🟡 **Duplicate-detector partitioning** is symbol-disjoint within a single run but doesn't deduplicate findings across runs (re-runs find the same patterns).
 - 🟡 **`debug` Phase 4 hard gate** is correct for ambiguous bugs, but adds latency to obvious one-line fixes.
 - 🟢 **Single-message background fan-out** in `/bdk:cr` is the right pattern — no sequential queueing.
@@ -434,7 +434,7 @@ Mapped against the user's five goals.
 |---|---|---|
 | ~~Foundation~~ | ✅ **Done 2026-05-26** — `fragments/tool-tiers/*.md` trimmed of redundant prose. Chain mechanism preserved (still feature-conditional). | **~660 tokens/session measured** (rendered STARTUP 8930 → 6293 bytes with both MCP features on; 11 fragments 10140 → 7502 bytes / ~30%) |
 | `verify-plan` simulators | Pass only **changed plan sections** on iteration 2+, not full plan. | 30–50% per iteration |
-| `/bdk:cr` rule preload | Share quality rule context across layer-groups via a single shared meta-skill mount, not N preloads. | ~1200 × (N−1) tokens per review |
+| ~~`/bdk:cr` rule preload~~ | ✅ **Done 2026-05-26** — removed duplicate inline rules from dispatch template; rules flow only via meta-skill preload now. Cross-spawn cache sharing remains a future optimization. | ~1200 × N tokens per review (orchestrator outbound) |
 | `subagent-execute-plan` implementer dispatch | Currently includes full task text + arch context + return schema (~3k tokens). Compress schema to a reference once at session start; pass only deltas. | ~1500 tokens per implementer spawn |
 | `create-plan` Phase 5 | Cache `inject-rules.py` output between invocations (rules change rarely). | ~400 tokens/plan |
 | `brainstorm-architecture` Phase 0 | Allow user to skip explorer grounding with `--greenfield` flag. | 1–4 spawns × ~2000 tokens |
@@ -656,9 +656,9 @@ Reasoning:
 3. ~~**Trim tier fragments**~~ ✅ **Done 2026-05-26** — `fragments/tool-tiers/*.md` trimmed of redundant prose (duplicate budgets, repeated coverage-check lines, verbose tool descriptions). Chain mechanism preserved — STARTUP still uses feature-conditional `<!-- CHAIN: ... -->` markers and `inject.py --chain` resolves them against `.bdk/settings.json`. Skills using inline chains (`cr`, `debug`, `refactor`, `design`, `execute-plan`, `explain-complex-code`, `test-driven-development`, `update-docs`) inherit the smaller fragments transparently. Measured: 11 fragments 10140 → 7502 bytes (~30%); rendered STARTUP 8930 → 6293 bytes (~660 tokens/session with both MCP features on). Earlier "remove CHAIN markers + thin hint" approach rejected — hardcoded tool prefixes (`mcp__plugin_bdk_code-review-graph__*`, `mcp__plugin_bdk_serena__*`) violated configurability.
 4. ~~**Parallelize `subagent-execute-plan` Step 4**~~ ✅ **Done 2026-05-26** (commit `d95b741`) — Step 4 split into Phase A (code-review + triage, sequential) and Phase B (architecture-reviewer || full test-runner, parallel via single message with `run_in_background: true`). Anti-pattern added forbidding sequential dispatch.
 5. ~~**Add `--quick` flag to `brainstorming`**~~ ✅ **Subsumed 2026-05-22** — §7.6.3 `/bdk:design` removes per-section gates structurally; no flag needed.
-6. **Memoize `detect_changes`** in `/bdk:cr` against git SHA + diff hash.
+6. ~~**Memoize `detect_changes`** in `/bdk:cr` against git SHA + diff hash.~~ ❌ **Rejected 2026-05-26** — savings don't justify cache infra. `detect_changes` is already deterministic and graph-backed (in-memory after first build); the call is ~1-2% of a `/bdk:cr` run's token cost (real cost = N reviewer subagents downstream). Cache hit rate <20% in practice (graph auto-rebuilds on file changes → key invalidates; re-review without edits is rare). Expected savings <0.5% per run for ~1-2 days of build + new failure modes (stale cache, graph-rebuild detection). Net negative.
 7. ~~**Structured verdicts in `verify-plan`**~~ ✅ **Done 2026-05-22** — the new YAML envelope (per-task `outcome` + `confidence` + per-section `checks` + `must_fix`) is structured and machine-parseable.
-8. **Shared rules mount** for `/bdk:cr` layer-groups — preload once, reference N times.
+8. ~~**Shared rules mount** for `/bdk:cr` layer-groups — preload once, reference N times.~~ ✅ **Done 2026-05-26** — meta-skills `bdk-rules-code-quality` / `bdk-rules-design-patterns` / `bdk-rules-architecture` already preloaded into `code-reviewer` + `architecture-reviewer` agents via `skills:` frontmatter. Removed redundant `<!-- INJECT: -->` markers from `skills/cr/references/reviewer-prompt-template.md` and dropped Step 2.5 from `skills/cr/SKILL.md` — rules were being shipped twice (template inline + agent preload). Saves ~1200 tok per spawned reviewer in orchestrator outbound (3600 tok for Small, 8400 tok for Large with N=5).
 
 ---
 
