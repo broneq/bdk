@@ -85,6 +85,14 @@ Identify test file path per project conventions.
 
 ## GATE 1: Write Tests
 
+**Branch on task type:**
+
+- *Code task* (Files: lists code files): write tests per ✅ bullet using the project's test framework. Continue with the rest of this gate.
+- *Doc-only task* (Files: lists only `.md` / templates / non-executable docs): write **executable assertions** instead — never accept "re-read and confirm" as a test. Use POSIX primitives:
+  - `grep -q 'pattern' path` — checks content presence
+  - `test -f path && test -s path` — checks file exists and non-empty
+  - Save as a shell script (or single-file test that shells out) matching the project's test conventions from GATE 0. Then proceed to GATE 2 with that file as `{test_file_path}`.
+
 Write test per ✅ bullet. Follow conventions from GATE 0.
 
 **Before writing, scan spec for:**
@@ -148,3 +156,4 @@ Implement per plan task. Focused on passing tests — no extra features.
 - ❌ Writing implementation before tests exist
 - ❌ Forcing negative test when no real failure mode exists
 - ❌ Hardcoding test commands — always detect project's test runner
+- ❌ Accepting "re-read and confirm" as a test case for a doc-only task — that's a manual step. Reject the plan task and ask `/bdk:create-plan` to rewrite with grep-able / file-presence assertions.

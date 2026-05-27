@@ -120,6 +120,8 @@ Generate **2-3 implementation approaches.** Per approach:
 
 **Decision resolution** — bundle every open decision into ONE `AskUserQuestion` call (multi-question form supports up to 4). Mark recommended approach as first option. Do not split into multiple sequential prompts.
 
+**Decision gates rejected inside tasks.** A task body must describe a single committed action. If a task would contain "Option A or B — user picks" or any unresolved decision, split it: move the decision into the bundled `AskUserQuestion` call above, then write the chosen action as the task. Tasks describe what *will* happen, not what *might* happen.
+
 Print: `[create-plan] Design complete: {selected approach name}`
 
 **GATE:** selected approach required before Phase 4.
@@ -153,6 +155,9 @@ Split anything that exceeds these thresholds.
 - [ ] Risks & open questions listed (including Phase 2 gaps)?
 - [ ] Success criteria observable and testable?
 - [ ] No hardcoded language tools (`pytest`, `npm`, etc.)?
+- [ ] No task body contains an unresolved decision gate ("Option A or B — user picks")?
+- [ ] Each task with cross-task dependencies declares them via `Depends on: Tn` (or is genuinely independent)?
+- [ ] Doc-only tasks (Files: lists only `.md` / templates) use grep-able / file-presence assertions, not "re-read and confirm"?
 
 Fix gaps in the outline before moving to Phase 5. Do not write to disk with known gaps.
 
@@ -216,4 +221,3 @@ Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {
 - Trade-off analysis mandatory, even when one approach seems obvious.
 - Never hardcode language tools (`pytest`, `npm`, `cargo`, `uv run`, …) — use injected values or generic phrasing.
 - Never invent timestamps — shell out to `date`.
-- Cap `AskUserQuestion` calls at 3 per run.

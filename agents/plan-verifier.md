@@ -87,9 +87,11 @@ For the plan's "Test cases" block:
 ### 6. Plan completeness
 Scan the plan as a whole:
 - Files referenced in task bodies but not declared in any `Files:` block.
-- Undeclared cross-task dependencies (task B uses a symbol task A creates, with no ordering hint).
+- Undeclared cross-task dependencies (task B uses a symbol task A creates, with no ordering hint). Flag tasks that should carry `Depends on: Tn` but don't.
 - Ambiguous instructions ("update X to do Y" without enough specifics to implement).
 - Missing implementation hints or absent test scaffolds where the rest of the plan has them.
+- **Decision gates inside tasks.** Flag any task body containing "Option A or B — user picks" or other unresolved decisions. Tasks describe committed actions, not branches; decisions belong in `## Open Questions` and must resolve before execution.
+- **Prose-task assertions.** For tasks whose `Files:` lists only `.md` / templates / non-executable docs, confirm Test cases are executable (`grep -q`, `test -f`, file-presence). Flag any "re-read and confirm" / "manual read" — those are not tests.
 
 ## Confidence Scoring
 
