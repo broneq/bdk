@@ -117,9 +117,51 @@ Use when writing to `.bdk/plans/YYYY-MM-DD-HHMM-<slug>.md`.
 //   run [command] — expect exit 0, no errors
 ```
 
-**Implementation:** [class name, method signature, key logic — 1-3 sentences]
+**Implementation:**
 
-*Optional inline snippets (Type shape / Before-After / Fixture sample) — see Notes section for when to include.*
+Show the change as a fenced code block. Pick the form that fits:
+
+- **Modifying existing code** → diff fence, `-` for removed, `+` for added.
+- **Adding new code** → language-tagged fence (ts, py, go, …) with the full new function/block.
+- **Renames / signature flips** → diff fence showing both lines.
+
+Rules:
+- No prose paragraphs inside Implementation. Code only.
+- One short `**Why:**` line above the block iff the *why* is not obvious from the diff (hidden invariant, contract preserved, surprising choice). Omit otherwise.
+- For helper/utility references, use the `**Use:**` and `**See:**` fields above — not Implementation.
+- For non-trivial control flow (>2 branches or crosses >2 components), add a `**Flow:**` Mermaid block instead of describing it in prose.
+
+**Example (diff):**
+
+```diff
+- const blobToken = process.env["ATTACHMENT_BLOB_READ_WRITE_TOKEN"];
+- if (!convexUrl || !blobToken) return err500();
++ if (!convexUrl) return err500();
++ const result = await attachmentRepository().download(attachment.blobKey);
++ if (!result.ok) return mapDownloadError(result.reason);
+```
+
+**Example (new code):**
+
+```ts
+async download(blobKey: string): Promise<DownloadResult> {
+  if (!blobKey) throw new Error("blobKey required");
+  return this.store.download(blobKey);
+}
+```
+
+**Example (Why + Flow):**
+
+**Why:** Preserves the 404 body contract for legacy clients while mapping new failure modes.
+
+```mermaid
+flowchart LR
+  R[route] --> D[repo.download]
+  D -->|ok| S[stream]
+  D -->|not_found| F404
+  D -->|unauthorized| F401
+  D -->|fetch_failed| F502
+```
 
 > Follow `/bdk:test-driven-development` skill for test writing and red-green-clean cycle.
 
@@ -238,25 +280,15 @@ Expected: exits 0 with no errors
 
 **Task granularity**: each task = one TDD cycle (2-5 min)
 **Test scaffold**: every task must include fixture pattern + arrange/act/assert skeleton
-**Code completeness**: every task must include actual implementation guidance, not descriptions
+**Code completeness**: every task's Implementation is a fenced code block (diff or full code), never prose.
 
 **Per-task optional fields (signal-when-useful):**
 - `Depends on: Tn, Tm` — declare when this task requires another. Independent tasks omit it. Sub-agents executing in parallel rely on this for ordering.
 - `Use: helper (path)` — bind reusable helpers/utilities to this task. Saves implementer a search.
 - `See: file:line` — pinpoint an existing pattern to mirror. Prefer line ranges over "look at X".
+- `Why:` — one short line above the Implementation block when the rationale isn't obvious from the diff.
+- `Flow:` — Mermaid block when control flow has >2 branches or crosses >2 components.
 
-**Inline code patterns (all optional, signal-when-useful):**
-- `Type shape` — for non-trivial discriminated unions or complex types (≥3 fields or ≥2 union variants AND not trivially importable). Inline once at first use.
-  ```
-  type ContractAccess =
-    | { accessType: "org_member"; orgMember: OrgMember; userId: Id<"users"> }
-    | { accessType: "sharing_grant"; permission: Permission; userId: Id<"users"> };
-  ```
-- `Before / After` diff — for non-obvious mutations (signature change with same name, permission rebuild, internal-vs-public flip). Skip for trivial deletes or pure additions.
-  ```
-  - export const createFromImport = mutation({ ... })
-  + export const createFromImportInternal = internalMutation({ ... })
-  ```
-- `Fixture sample` — when a test depends on input shape not obvious from the schema (e.g. parsed HTML, sanitized JSON). 3-5 lines max.
+**Type shape inline** — for non-trivial discriminated unions or complex types (≥3 fields or ≥2 union variants AND not trivially importable), put the type in a language-tagged fence inside Implementation. Skip for types the implementer can `import`.
 
-**Rule of thumb for snippets and optional fields:** each addition costs plan length. Include only when it saves the implementer a `Read` call or a guess. Trivial change = no snippet. Senior dev reading the plan does the Read; junior dev or sub-agent benefits from the inline.
+**Rule of thumb:** every snippet costs plan length. Trivial one-line change → diff fence with two lines, no Why. Non-obvious mutation → diff fence + one Why line. Architectural choice with branching → Why + Flow. Prose belongs in the approach's Rationale, never inside a task.

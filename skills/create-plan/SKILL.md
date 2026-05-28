@@ -158,6 +158,9 @@ Split anything that exceeds these thresholds.
 - [ ] No task body contains an unresolved decision gate ("Option A or B — user picks")?
 - [ ] Each task with cross-task dependencies declares them via `Depends on: Tn` (or is genuinely independent)?
 - [ ] Doc-only tasks (Files: lists only `.md` / templates) use grep-able / file-presence assertions, not "re-read and confirm"?
+- [ ] Every task's `**Implementation:**` is a fenced code block (diff for edits, language-tagged for new code), not prose paragraphs?
+- [ ] Any rationale inside a task is a single `**Why:**` line above the code block — no multi-sentence reasoning embedded in the implementation?
+- [ ] Architectural / cross-component reasoning lives in the approach's Rationale section, not inside individual tasks?
 
 Fix gaps in the outline before moving to Phase 5. Do not write to disk with known gaps.
 
