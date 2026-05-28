@@ -258,6 +258,10 @@ Expected: exits 0 with no errors
 
 <!-- INJECT: design-patterns -->
 
+**Language Rules:**
+
+<!-- INJECT-LANGUAGES -->
+
 **Design Doc:** [path if exists]
 
 **Memories Referenced:**

@@ -119,6 +119,35 @@ See `.claude/rules/quality-rules.md` (BDK-dev convention).
 
 ---
 
+## Language Rules
+
+Companion to Quality Rules, but keyed by the project's `languages` array rather than a flat rule name. BDK ships per-language principle sheets in `rules/languages/<lang>.md` (React today; Vue, Python, Go, … follow the same pattern). Each agent that writes or reviews code (`code-reviewer`, `implementer`, `fixer`, `plan-verifier`) preloads them via the `bdk-rules-languages` meta-skill; plan and execution templates pull them through a `<!-- INJECT-LANGUAGES -->` marker.
+
+Declare the project's stack in `.bdk/settings.json`:
+
+```json
+{
+  "languages": ["react", "typescript"]
+}
+```
+
+Override or extend a default rule sheet per language (same `extends` | `replace` semantics as quality rules):
+
+```json
+{
+  "languages": ["react"],
+  "language-rules": {
+    "react": "docs/team-react-conventions.md"
+  }
+}
+```
+
+A language listed without a matching `rules/languages/<lang>.md` (and no override) is silently skipped — no error.
+
+Authoring a new language sheet: see `.claude/rules/language-rules.md`.
+
+---
+
 ## What Does NOT Go Into BDK
 
 These stay in the project-level `.claude/` of each repo:

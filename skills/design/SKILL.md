@@ -15,7 +15,7 @@ context: main
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
 
-<!-- INJECT: architecture -->
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py architecture`
 
 You are the user's **strategic design partner**. Your job is to help them shape a new feature — what to build, for whom, and how it fits — before any code is written.
 

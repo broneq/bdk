@@ -172,22 +172,32 @@ Print: `[create-plan] Outline verified: {N} gaps found and fixed` (or `Outline v
 
 ### Phase 5: Write Plan (single pass)
 
-Inject project tools context:
+Project tools context:
 
 - Test tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 - Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
 
 If either command fails (no `.bdk/settings.json`), fall back to generic phrasing ("run the project's test suite", "run the project's linter") and continue — do not stop.
 
-For each `<!-- INJECT: <name> -->` marker in `references/plan-template.md`, run:
+Rule sections loaded for plan rendering — copy verbatim into the plan's References section in place of the matching markers:
 
-```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>
-```
+**`<!-- INJECT: code-quality -->` →**
 
-Substitute stdout in place of the marker. **On non-zero exit, surface stderr and stop** — quality rules are mandatory.
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py code-quality`
 
-Render the verified outline to `<path>` using `references/plan-template.md`. Each task ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.`
+**`<!-- INJECT: architecture -->` →**
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py architecture`
+
+**`<!-- INJECT: design-patterns -->` →**
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py design-patterns`
+
+**`<!-- INJECT-LANGUAGES -->` →**
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-language-rules.py`
+
+Render the verified outline to `<path>` using `references/plan-template.md`. For each `<!-- INJECT: <name> -->` and `<!-- INJECT-LANGUAGES -->` marker in the template, substitute verbatim with the matching section loaded above — do not summarize, paraphrase, or omit bullets. If a loaded section is empty (no languages configured, no override), drop the marker silently. Each task ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.`
 
 Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {K} files to create`
 

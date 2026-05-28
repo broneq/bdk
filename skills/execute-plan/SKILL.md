@@ -24,8 +24,6 @@ hooks:
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/impact.chain.json`
 
-For each `<!-- INJECT: <name> -->` marker below, run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>` and substitute its stdout in place of the marker before acting on it.
-
 ## Step 0: Create Task List
 
 Before executing, create TaskList from plan:
@@ -72,7 +70,9 @@ Delegate to `static-analyse` agent using injected lint command above. Issues fou
 
 ## Rules
 
-<!-- INJECT: code-quality -->
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py code-quality`
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-language-rules.py`
 
 - Main agent fixes issues, subagents only *run*
 - Max 3 fix-and-rerun cycles per step before asking user

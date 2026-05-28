@@ -30,6 +30,7 @@ Agents needing project test/lint/build commands MUST preload the matching meta-s
 |---|---|
 | Run tests | `bdk-test-tools` |
 | Run lint/format/typecheck | `bdk-lint-tools` |
+| Language- or framework-specific rules | `bdk-rules-languages` |
 
 Meta-skill body resolves at agent spawn. Edits to `.bdk/settings.json` take effect on the next agent spawn, not retroactively.
 
