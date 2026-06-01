@@ -8,6 +8,7 @@ skills:
   - bdk-tier-edit
   - bdk-rules-code-quality
   - bdk-rules-design-patterns
+  - bdk-rules-security
   - bdk-rules-languages
   - bdk:test-driven-development
   - bdk-implementer-return-contract

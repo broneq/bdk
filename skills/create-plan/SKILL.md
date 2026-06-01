@@ -193,6 +193,10 @@ Rule sections loaded for plan rendering — copy verbatim into the plan's Refere
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py design-patterns`
 
+**`<!-- INJECT: security -->` →**
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py security`
+
 **`<!-- INJECT-LANGUAGES -->` →**
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-language-rules.py`

@@ -65,4 +65,4 @@ Pattern: `SendMessage(to: "<agentId>", message: "...")` — never re-include the
 
 ## Quality Rules
 
-BDK ships language-agnostic `code-quality` and `architecture` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.
+BDK ships language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.

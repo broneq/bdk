@@ -7,6 +7,7 @@ skills:
   - bdk-tier-explore
   - bdk-rules-architecture
   - bdk-rules-design-patterns
+  - bdk-rules-security
 tools:
   - Read
   - Grep

@@ -8,6 +8,7 @@ skills:
   - bdk-rules-code-quality
   - bdk-rules-architecture
   - bdk-rules-design-patterns
+  - bdk-rules-security
   - bdk-rules-languages
 tools:
   - Read

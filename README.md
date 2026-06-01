@@ -76,7 +76,7 @@ Used by skills internally (invoke via `subagent_type`):
 
 ## Quality Rules
 
-BDK ships language-agnostic rule sets (`code-quality`, `architecture`) injected into `/bdk:cr` and `/bdk:create-plan` outputs.
+BDK ships language-agnostic rule sets (`code-quality`, `architecture`, `design-patterns`, `security`) injected into `/bdk:cr` and `/bdk:create-plan` outputs.
 
 ### Four usage patterns
 

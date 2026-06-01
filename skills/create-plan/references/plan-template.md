@@ -258,6 +258,10 @@ Expected: exits 0 with no errors
 
 <!-- INJECT: design-patterns -->
 
+**Security:**
+
+<!-- INJECT: security -->
+
 **Language Rules:**
 
 <!-- INJECT-LANGUAGES -->
