@@ -121,7 +121,7 @@ See `.claude/rules/quality-rules.md` (BDK-dev convention).
 
 ## Language Rules
 
-Companion to Quality Rules, but keyed by the project's `languages` array rather than a flat rule name. BDK ships per-language principle sheets in `rules/languages/<lang>.md` (React today; Vue, Python, Go, … follow the same pattern). Each agent that writes or reviews code (`code-reviewer`, `implementer`, `fixer`, `plan-verifier`) preloads them via the `bdk-rules-languages` meta-skill; plan and execution templates pull them through a `<!-- INJECT-LANGUAGES -->` marker.
+Companion to Quality Rules, but keyed by the project's `languages` array rather than a flat rule name. BDK ships per-language principle sheets in `rules/languages/<lang>.md` (React, TypeScript, and JavaScript today; Vue, Python, Go, … follow the same pattern). Each agent that writes or reviews code (`code-reviewer`, `implementer`, `fixer`, `plan-verifier`) preloads them via the `bdk-rules-languages` meta-skill; plan and execution templates pull them through a `<!-- INJECT-LANGUAGES -->` marker.
 
 Declare the project's stack in `.bdk/settings.json`:
 
