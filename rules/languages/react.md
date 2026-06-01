@@ -22,3 +22,12 @@ Principles for React 19+ codebases. Applied during planning, implementation, and
 - **Context for environment, store for hot state.** Context fits stable, low-frequency values (theme, auth, locale). High-frequency or fan-out state (cursor position, page index, large derived lists) belongs in an external store even with the Compiler — Context still re-renders every consumer.
 - **`<ViewTransition>` is an enhancement, not a routing primitive.** Reach for it only when morphing shared elements adds perceived polish (gallery, dashboard tab swap). Wrapping every route transition adds animation cost and complexity without UX gain.
 - **Asset preloading is declarative and co-located.** Call `preload` / `preinit` from `react-dom` at the component that depends on the asset, not in a global bootstrap. Co-location lets Server Components stream the hint with the markup that needs it.
+
+## Security
+
+These are React's stack-specific failure modes — the language-agnostic security rules (trust boundaries, injection, secrets) apply on top.
+
+- **`dangerouslySetInnerHTML` is the one XSS hatch — sanitize at it.** JSX escapes interpolated values by default, so the *only* common XSS vector is raw HTML injection. Never pass unsanitized user content; run it through a vetted sanitizer (e.g. DOMPurify) at the boundary and treat every use site as a security review point. The same applies to `<iframe srcDoc>` and direct `ref.current.innerHTML` writes.
+- **React does not sanitize URL schemes — validate `href`/`src`.** A user-controlled `href={value}` or `src={value}` accepting a `javascript:` (or `data:`) scheme executes script on click. Allowlist `http`/`https`/`mailto` schemes for any URL derived from untrusted input; JSX escaping does not cover this.
+- **Server Component props and Server Action arguments are a trust boundary.** RSC props and `"use server"` action inputs arrive over the network and are fully attacker-controlled — re-validate and re-authorize them server-side on every call. A Server Action is a public endpoint, not an internal function; never trust a client-supplied id, role, or amount without checking it against the authenticated principal.
+- **Secrets never cross into a Client Component.** Anything read in a `"use client"` tree — or exposed via a public env prefix (`NEXT_PUBLIC_*`, `VITE_*`) — ships in the browser bundle. Keep API keys, tokens, and server config in Server Components / server-only modules; pass only the derived, non-sensitive result to the client.

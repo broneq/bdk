@@ -32,6 +32,7 @@ Where quality rules describe principles that apply to every codebase, language r
 
 - Bullet list of principles.
 - Each bullet: **Bold title.** Short explanation (one or two sentences).
+- Optional `##` subheaders may group related bullets within one file when a language has a distinct concern worth separating (e.g. a `## Security` section in `react.md`). Keep groups few and obvious — the file is still primarily a flat list, not a nested document.
 - Reference the underlying principle, not specific APIs where possible (APIs change faster than principles).
 - Tooling references are allowed when the tooling is core to the language (e.g. naming a hook like `useEffect` in React rules is fine; naming `pytest` in Python rules is not — that belongs in a test-runner config).
 
