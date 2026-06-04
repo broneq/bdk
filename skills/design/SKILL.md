@@ -32,6 +32,7 @@ Absolute. Violating them defeats the skill's purpose.
 - **No rushing.** Never present a full design in one turn. The loop is the product.
 - **No single solution.** Always offer at least two viable approaches at every branching decision. If you genuinely think only one is viable, say so explicitly and explain why the alternatives fail.
 - **No invented context.** Anything you claim about the existing codebase must come from an explorer agent finding, the graph, or a file you actually read. If you don't know, say "I need to check this" and dispatch the explorer.
+- **No unapproved schema changes.** If a chosen approach alters the database schema (new/dropped/renamed tables or columns, type or constraint changes, index changes, migrations), you MUST run the Schema-Change Gate (Phase 2A.2.5) and obtain **explicit user approval** before validation or writing the doc. Approving the DB schema is mandatory — never assume it.
 
 ---
 
@@ -44,9 +45,12 @@ flowchart TB
     P2 -- product --> P2P[Phase 2P: Product branch]
     P2 -- architecture --> P2A[Phase 2A: Architecture branch]
     P2 -- combined --> P2B[Phase 2B: Combined branch]
-    P2P --> P3[Phase 3: Spawn bdk:design-verifier<br/>opus, 5-section checklist]
-    P2A --> P3
-    P2B --> P3
+    P2P --> SG{Schema changed?}
+    P2A --> SG
+    P2B --> SG
+    SG -- yes --> GATE[Phase 2A.2.5: Schema-Change Gate<br/>show current + proposals, MANDATORY approval]
+    SG -- no --> P3
+    GATE --> P3[Phase 3: Spawn bdk:design-verifier<br/>opus, 5-section checklist]
     P3 --> V{Verdict status}
     V -- PASS --> P4[Phase 4: Write doc]
     V -- PASS_WITH_WARNINGS --> ASK[AskUserQuestion<br/>accept or loop]
@@ -183,6 +187,34 @@ After the user reacts:
 - Surface 1–2 *new* questions the latest decision unlocked
 - If a question requires codebase knowledge you don't have, **`SendMessage` to an existing Phase 0 explorer** whose scope matches; spawn fresh only if no live explorer covered that area or the cache is stale
 
+### 2A.2.5 Schema-Change Gate (MANDATORY when the schema moves)
+
+**Trigger:** the selected (or any seriously-considered) approach changes the database schema — new/dropped/renamed tables or columns, type changes, constraint or nullability changes, index additions/removals, or any migration.
+
+A schema change is one of the most expensive things to get wrong: migrations are hard to reverse, downstream readers break silently, and data loss is permanent. So the user — not you — owns the final schema.
+
+**This gate is non-skippable.** You may not proceed to Phase 3 (Validation) or Phase 4 (Write) on a schema-touching design until the user has explicitly approved a schema.
+
+Run these steps:
+
+1. **Show the current schema** for the affected tables, grounded in real findings. Pull it from the explorer / graph / migration files you actually read — never invent column names. If you have not confirmed the current shape, `SendMessage` the matching Phase 0 explorer first.
+
+2. **Present the proposed change(s).** When more than one schema shape is viable, show **2+ proposals with trade-offs** (normalization vs read performance, nullable-and-backfill vs not-null-with-default, new table vs new columns, additive vs breaking migration, etc.). If only one shape is genuinely viable, say so explicitly and explain why the alternatives fail — same single-solution rule as the rest of the skill.
+
+   Use a compact `erDiagram` (or before/after column table) so the delta is readable on its own. Mark each proposal's migration as **additive / backward-compatible** or **breaking**, and call out backfill, downtime, and rollback implications.
+
+3. **Get explicit approval** via `AskUserQuestion`. Options are the proposals plus an escape hatch:
+
+   | Header | Options |
+   |---|---|
+   | "DB schema" | Proposal A / Proposal B / [more] / Revise — none fit |
+
+   Approval is **mandatory**. "Revise — none fit" loops back to step 2 with the user's feedback. Do not treat silence, a thumbs-up on the broader design, or "looks good" on an unrelated question as schema approval — the approval must be against this gate specifically.
+
+4. **Record the approved schema** so it survives into the doc. The approved proposal becomes the "Database Schema Changes" section of the template (Phase 4); rejected proposals are summarized there as considered-and-dropped.
+
+If the design changes later (a validation loop-back alters the data model), **re-run this gate** for the delta — prior approval does not cover a shape the user never saw.
+
 ---
 
 ## Phase 2B — Combined Branch
@@ -194,6 +226,8 @@ Run Phase 2P (Product) then Phase 2A (Architecture). Single doc, two top-level s
 ## Phase 3 — Validation
 
 All branches converge here. Run before writing.
+
+> **Gate precondition.** If the design touches the database schema, do not enter validation until the Schema-Change Gate (2A.2.5) has an explicit user approval on record. No approval → go run the gate first.
 
 ### Why a subagent does this
 
@@ -319,6 +353,9 @@ Free-form is fine for numbers, names, genuinely open questions. One question per
 - Re-spawning a fresh explorer on loop-back when a warm one covers the same scope
 - Silently looping past the 3-cap
 - Writing the doc with known unaddressed gaps (instead of looping or explicitly documenting them)
+- Changing the DB schema without showing the current shape and getting explicit user approval (Schema-Change Gate)
+- Presenting a single schema shape as the only option when alternatives with real trade-offs exist
+- Treating a thumbs-up on the broader design as schema approval
 
 ---
 

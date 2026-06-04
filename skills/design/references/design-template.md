@@ -6,7 +6,7 @@ Use when the user accepts the write step in Phase 4. Save to:
 .bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md
 ```
 
-Include only the sections that fit the branch the skill took (Product, Architecture, or Combined). Mermaid diagrams and "What we did NOT decide" are mandatory in all branches.
+Include only the sections that fit the branch the skill took (Product, Architecture, or Combined). Mermaid diagrams and "What we did NOT decide" are mandatory in all branches. The **Database Schema Changes** section is mandatory whenever the design alters the schema — and it must record the user's explicit approval (Phase 2A.2.5 gate).
 
 ---
 
@@ -141,6 +141,41 @@ Measurable outcomes (not feature lists).
 
 - [Boundary] — what crosses it, what doesn't
 - [Boundary] — what crosses it, what doesn't
+
+---
+
+<!-- Mandatory when the design changes the DB schema. Records the Phase 2A.2.5 gate outcome. -->
+
+## Database Schema Changes
+
+**Schema approval:** ✅ Approved by user on YYYY-MM-DD — Proposal [X] | ⛔ Not yet approved (design must not be implemented)
+
+### Current schema (affected tables)
+
+```mermaid
+erDiagram
+[current shape — grounded in real migration/model files]
+```
+
+### Approved change
+
+**Proposal [X] — [name].** Migration type: **additive / backward-compatible** | **breaking**.
+
+```mermaid
+erDiagram
+[post-change shape]
+```
+
+- **Delta:** [tables/columns added, dropped, renamed, retyped; constraints/indexes touched]
+- **Backfill:** [required? strategy / volume]
+- **Downtime:** [none / window needed]
+- **Rollback:** [how to reverse, or why it's one-way]
+
+### Considered & dropped
+
+| Proposal | Shape in one line | Why not chosen |
+|---|---|---|
+| [Y] | ... | ... |
 
 ---
 
