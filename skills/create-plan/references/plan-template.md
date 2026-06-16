@@ -181,12 +181,14 @@ flowchart LR
 
 *Derived from the `Depends on:` edges. The executor (`/bdk:subagent-execute-plan`) fans out one wave at a time: all tasks in a wave run in parallel, the next wave starts when the current wave's tasks complete. Tasks within a wave have disjoint file sets and no inter-dependency.*
 
-- **Wave 1** (no dependencies): T1, T3, T4
+- **Wave 1** (no dependencies): T1, T3, T4 — `strategy: workflow`
 - **Wave 2** (depends on Wave 1): T2, T5
 - **Wave 3** (depends on Wave 2): T6
 
 **Parallel width:** {widest wave size} — peak concurrent implementers.
 **Critical path:** {longest dependency chain, e.g. T1 → T2 → T6} — lower bound on serial time.
+
+> **Optional per-wave `strategy:` tag.** Append `strategy: workflow` or `strategy: subagents` to a wave line to declare a preferred execution strategy for `/bdk:subagent-execute-plan`. Tag `workflow` for wide waves (≥ 4 disjoint, mechanical tasks with full test cases) where deterministic fan-out beats hand-orchestration; tag `subagents` (or omit — it's the default) for narrow, ambiguous, or architectural waves needing per-task control. The executor treats the tag as a preference and may override it per its rubric.
 
 > If every wave has width 1, the plan is fully serial — reconsider the decomposition unless the serial chain is genuinely irreducible (note why in Risks).
 
