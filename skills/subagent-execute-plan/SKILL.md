@@ -88,9 +88,11 @@ Reviewer / verification subagents have their own return formats — see `referen
 
 ---
 
-## Step 1 — Explorer-driven group planning
+## Step 1 — Group planning (prefer the plan's declared waves)
 
-Spawn `bdk:explorer` (one foreground call). Pass:
+**If the plan has an `## Execution Waves` section** (produced by `/bdk:create-plan`): adopt those waves directly as the parallel groups — they are already computed from the task DAG with disjoint file sets per wave. Spawn `bdk:explorer` once only to **validate**, not re-derive: pass the declared waves plus each task's `Files:`/`Depends on:` and ask it to confirm no same-wave file collision and no missing dependency edge. If the explorer confirms (`confidence ≥ 0.6`, no `warnings`), use the plan's waves as-is — this skips a full re-derivation and is the fast path. If it flags a collision or missing edge, fall back to full re-derivation below and log `[subagent-execute-plan] Plan waves rejected: {reason} — re-deriving`.
+
+**If the plan has no Execution Waves section** (older plan, hand-written): spawn `bdk:explorer` (one foreground call) to derive groups. Pass:
 
 - The list of tasks (number, title, file paths declared in plan).
 - The repo root.

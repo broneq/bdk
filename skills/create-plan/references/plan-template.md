@@ -76,9 +76,9 @@ Use when writing to `.bdk/plans/YYYY-MM-DD-HHMM-<slug>.md`.
 
 ### Task 1: [Action verb + what]
 
-**Depends on:** T2, T5  *(optional — list task IDs this task requires; omit for independent tasks. Sub-agents executing in parallel rely on this for ordering.)*
+**Depends on:** none  *(REQUIRED — list task IDs whose output this task consumes, or `none`. List ONLY real producer→consumer edges: would this task fail to compile/import without the other's output? If no, it is independent. The executor parallelizes everything not blocked by a declared dependency — spurious edges serialize work needlessly.)*
 
-**Files:**
+**Files:**  *(REQUIRED — exact paths. Tasks with disjoint file sets run in the same wave. Two tasks sharing a file cannot parallelize.)*
 - Create: `exact/path/to/new_file.[ext]`
 - Modify: `exact/path/to/existing.[ext]`
 - Test: `tests/exact/path/test_file.[ext]`
@@ -174,6 +174,21 @@ flowchart LR
 ---
 
 [Continue for all tasks — each task: 2-5 minutes]
+
+---
+
+## Execution Waves
+
+*Derived from the `Depends on:` edges. The executor (`/bdk:subagent-execute-plan`) fans out one wave at a time: all tasks in a wave run in parallel, the next wave starts when the current wave's tasks complete. Tasks within a wave have disjoint file sets and no inter-dependency.*
+
+- **Wave 1** (no dependencies): T1, T3, T4
+- **Wave 2** (depends on Wave 1): T2, T5
+- **Wave 3** (depends on Wave 2): T6
+
+**Parallel width:** {widest wave size} — peak concurrent implementers.
+**Critical path:** {longest dependency chain, e.g. T1 → T2 → T6} — lower bound on serial time.
+
+> If every wave has width 1, the plan is fully serial — reconsider the decomposition unless the serial chain is genuinely irreducible (note why in Risks).
 
 ---
 
@@ -283,15 +298,18 @@ Expected: exits 0 with no errors
 - **Design** (from `/bdk:design`): WHAT and WHY — architecture, trade-offs
 - **Plan** (this doc): HOW — step-by-step TDD tasks with exact code
 
-**Required sections**: Context, Approaches, Tasks, Verification, Success Criteria
+**Required sections**: Context, Approaches, Tasks, Execution Waves, Verification, Success Criteria
 **Optional sections**: Constraints, Reusable Components, References (skip if not applicable)
 
 **Task granularity**: each task = one TDD cycle (2-5 min)
 **Test scaffold**: every task must include fixture pattern + arrange/act/assert skeleton
 **Code completeness**: every task's Implementation is a fenced code block (diff or full code), never prose.
 
+**Per-task REQUIRED fields:**
+- `Depends on: Tn, Tm` (or `none`) — real producer→consumer edges only. Drives wave computation; spurious edges serialize work.
+- `Files:` — exact paths. Disjoint file sets across tasks enable same-wave parallelism.
+
 **Per-task optional fields (signal-when-useful):**
-- `Depends on: Tn, Tm` — declare when this task requires another. Independent tasks omit it. Sub-agents executing in parallel rely on this for ordering.
 - `Use: helper (path)` — bind reusable helpers/utilities to this task. Saves implementer a search.
 - `See: file:line` — pinpoint an existing pattern to mirror. Prefer line ranges over "look at X".
 - `Why:` — one short line above the Implementation block when the rationale isn't obvious from the diff.

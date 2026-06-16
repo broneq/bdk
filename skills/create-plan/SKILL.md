@@ -24,11 +24,14 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 
 **Core Principle:** Explore → Design → Outline+Verify → Write
 
+**Optimize for parallel execution.** The plan is consumed by `/bdk:subagent-execute-plan`, which fans out as many implementer subagents as it can run concurrently. The single biggest lever on end-to-end speed is **how the plan decomposes work**: tasks that touch disjoint files and declare honest dependencies let the executor run a wide wave instead of a long serial chain. A plan that is correct but accidentally serial is a slow plan. Design the task graph to be **wide and shallow**, not deep.
+
 **Announce at start:** "Using create-plan to build an implementation plan."
 
 **Hard rules:**
 - Do NOT implement code — plan is the only deliverable.
 - Do NOT hardcode language tools (`pytest`, `npm`, `cargo`) — use injected values or fall back to "run the project's test suite".
+- Every task MUST declare its `Files:` and its `Depends on:` (or `Depends on: none`). The executor uses both to compute parallel waves — omitting them forces conservative serial fallback.
 
 ---
 
@@ -118,6 +121,8 @@ Generate **2-3 implementation approaches.** Per approach:
   - At what `N` does this structure stop being the right shape? Name the refactor (Strategy map, polymorphism, dispatch table, state machine, etc.).
   - If `N+1` crosses that threshold, **propose the refactor as a separate approach** — do not silently add another branch.
 
+**Parallelism is a first-class design axis.** When comparing approaches, prefer the one that decomposes into more independent units of work — all else roughly equal, an approach that yields 6 file-disjoint tasks beats one that yields 3 tasks chained by shared-file edits. Note each approach's **parallel width** (how many tasks could run at once) alongside its complexity/risk. A lower-complexity approach that is fully serial may lose to a slightly more complex approach that fans out.
+
 **Decision resolution** — bundle every open decision into ONE `AskUserQuestion` call (multi-question form supports up to 4). Mark recommended approach as first option. Do not split into multiple sequential prompts.
 
 **Decision gates rejected inside tasks.** A task body must describe a single committed action. If a task would contain "Option A or B — user picks" or any unresolved decision, split it: move the decision into the bundled `AskUserQuestion` call above, then write the chosen action as the task. Tasks describe what *will* happen, not what *might* happen.
@@ -136,9 +141,10 @@ Build the plan **as a structured outline in conversation**, not on disk yet. Val
 1. Summary & selected approach
 2. Context (architectural snapshot from Phase 2 — inline, no external file)
 3. Files to create / modify (exact paths)
-4. Tasks — each a single TDD cycle
-5. Verification
-6. Risks & open questions (include degraded-agent gaps from Phase 2)
+4. Tasks — each a single TDD cycle, each with `Files:` and `Depends on:`
+5. Execution waves (derived from the task DAG — see below)
+6. Verification
+7. Risks & open questions (include degraded-agent gaps from Phase 2)
 
 **Task-sizing rule** — one task =
 - one test file added or edited, AND
@@ -146,6 +152,15 @@ Build the plan **as a structured outline in conversation**, not on disk yet. Val
 - ≤ 40 LOC delta (excluding test scaffolding).
 
 Split anything that exceeds these thresholds.
+
+**Decompose for parallel width.** After sizing, deliberately shape the task graph so the executor can fan out:
+
+- **Disjoint files = parallel.** Two tasks that touch no common file and have no data dependency can run in the same wave. Actively split work along file boundaries so independent units exist. If two tasks both edit one shared file (e.g. a central registry), see if one task can *create* a new file the other consumes instead — converting a shared-file collision into a producer→consumer dependency that still parallelizes across other tasks.
+- **Declare honest dependencies, nothing more.** `Depends on:` lists only tasks that produce a symbol, file, or contract this task consumes. Do NOT add dependencies for ordering preference, "feels safer", or narrative flow — every spurious edge serializes work the executor could have parallelized. When unsure whether a dependency is real, ask: "would this task's tests fail to even compile/import without the other task's output?" If no, it is independent.
+- **Wide and shallow beats deep.** Prefer a DAG with many roots (tasks depending on nothing) and few levels. A long `T1→T2→T3→T4→T5` chain is the worst case — the executor runs it fully serially. Look for chains and break them: can T3 and T4 both depend only on T2 instead of T4 depending on T3?
+- **Shared-foundation first.** If many tasks need one new type/interface/module, make that its own root task (wave 1, depends on nothing). Everything that consumes it forms a wide wave 2.
+
+**Compute execution waves.** From the `Depends on:` edges, group tasks into ordered waves: wave 1 = all tasks with `Depends on: none`; wave N = all tasks whose dependencies are all satisfied by waves < N and whose files are disjoint from other wave-N tasks. Two tasks in the same wave that share a file must be split across waves (or merged) — flag and fix. Record the waves explicitly; this is what the executor consumes to fan out without re-deriving the graph.
 
 **Verify the outline** — answer each:
 - [ ] Solves the stated problem in `$ARGUMENTS`?
@@ -156,7 +171,11 @@ Split anything that exceeds these thresholds.
 - [ ] Success criteria observable and testable?
 - [ ] No hardcoded language tools (`pytest`, `npm`, etc.)?
 - [ ] No task body contains an unresolved decision gate ("Option A or B — user picks")?
-- [ ] Each task with cross-task dependencies declares them via `Depends on: Tn` (or is genuinely independent)?
+- [ ] Every task declares both `Files:` and `Depends on:` (`none` if independent) — no omissions?
+- [ ] `Depends on:` lists only *real* producer→consumer edges (would the task fail to compile/import without the dependency)? No ordering-preference or "feels safer" edges?
+- [ ] No two tasks in the same wave touch a shared file?
+- [ ] Task graph is wide, not a single serial chain? (If every task depends on the previous one, re-decompose — flag in Risks if genuinely unavoidable.)
+- [ ] Execution waves computed and recorded, consistent with the `Depends on:` edges?
 - [ ] Doc-only tasks (Files: lists only `.md` / templates) use grep-able / file-presence assertions, not "re-read and confirm"?
 - [ ] Every task's `**Implementation:**` is a fenced code block (diff for edits, language-tagged for new code), not prose paragraphs?
 - [ ] Any rationale inside a task is a single `**Why:**` line above the code block — no multi-sentence reasoning embedded in the implementation?
@@ -165,6 +184,7 @@ Split anything that exceeds these thresholds.
 Fix gaps in the outline before moving to Phase 5. Do not write to disk with known gaps.
 
 Print: `[create-plan] Outline verified: {N} gaps found and fixed` (or `Outline verified: clean`)
+Print: `[create-plan] Parallelism: {T} tasks in {W} waves (max width {widest wave size}, critical path {longest dependency chain})`
 
 **GATE:** verified outline required before Phase 5.
 
@@ -219,11 +239,12 @@ Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {
   Complexity:  {LOW|MEDIUM|HIGH}
   Tasks:       {N}
   Files:       {M} to modify, {K} to create
+  Parallelism: {W} waves, max width {widest}, critical path {longest chain}
 
   Next steps:
     1. Review the plan
     2. Edit if needed
-    3. Execute with /bdk:execute-plan or manually
+    3. Execute with /bdk:subagent-execute-plan (parallel fan-out) or /bdk:execute-plan (serial)
 ```
 
 **Do NOT start implementing. Plan is the deliverable.**
@@ -234,6 +255,8 @@ Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {
 
 - Exact file paths always; no vague steps.
 - Bite-sized TDD tasks per the Phase 4 sizing rule.
+- **Design for parallel execution**: maximize file-disjoint tasks, declare only real dependencies, prefer a wide-shallow DAG over a serial chain. The executor's speed is bounded by the critical path, not the task count.
+- Every task carries `Files:` and `Depends on:` — mandatory, never omitted.
 - Always dispatch explorer subagents — never explore from the orchestrator.
 - Trade-off analysis mandatory, even when one approach seems obvious.
 - Never hardcode language tools (`pytest`, `npm`, `cargo`, `uv run`, …) — use injected values or generic phrasing.
