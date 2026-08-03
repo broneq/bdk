@@ -165,6 +165,27 @@ def build_block_reason(matched: dict[str, list[str]]) -> str:
     lines.append(
         "Use your session context — no codebase exploration needed.",
     )
+    lines.append(
+        "\nDon't trust the existing wording just because it's already there — rule files",
+    )
+    lines.append(
+        "accumulate content from many different sessions and agents, and prior text earns",
+    )
+    lines.append(
+        "no credit for having survived this long. Verify any claim you touch against what",
+    )
+    lines.append(
+        "you actually changed, not against what the file already asserts.",
+    )
+    lines.append(
+        "\nOnly add durable, worthwhile information: a convention or invariant that will",
+    )
+    lines.append(
+        "still be true next session. Skip changelog-style narration (\"switched from X to",
+    )
+    lines.append(
+        "Y\"), dated notes, or anything that reads as a log entry rather than a rule.",
+    )
     return "\n".join(lines)
 
 

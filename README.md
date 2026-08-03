@@ -44,6 +44,7 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:restore-progress` | Resume work from a saved checkpoint                                                                 |
 | `/bdk:explain-complex-code` | Generate architecture docs with Graphviz diagrams                                                   |
 | `/bdk:update-docs` | Refresh existing architecture docs after code changes                                               |
+| `/bdk:refine-rules` | Compact and verify `.claude/rules/*.md` against real code — strips history/changelog, uniform format |
 | `/bdk:graphviz-docs-compiler` | Compile `.dot` files to SVG and update markdown references                                          |
 | `/bdk:graph-review` | Risk-aware code review using knowledge graph — change detection, impact analysis, test coverage     |
 | `/bdk:graph-explore` | Navigate codebase structure using knowledge graph — stats, architecture, call relationships         |
