@@ -117,7 +117,7 @@ Three mechanisms coexist — do not confuse them:
 | Mechanism | Trigger | Source | Use case |
 |---|---|---|---|
 | `inject.py` | `!`...`` shell line with `--if` / `--chain` | Skill/agent body | Conditional fragments based on `features.*` or `languages[...]` |
-| `inject-rules.py` | `!`...`` shell line, name as arg | `rules/<name>.md` (BDK) + `quality.<name>` override | Language-agnostic quality rules (`code-quality`, `architecture`, `design-patterns`) |
+| `inject-rules.py` | `!`...`` shell line, name as arg | `rules/<name>.md` (BDK) + `quality.<name>` override | Language-agnostic quality rules (`code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`) |
 | `inject-language-rules.py` | `!`...`` shell line | `rules/languages/<lang>.md` per entry in `languages` + `language-rules.<lang>` override | Language- or framework-specific rule sheets |
 
 All three resolve at skill load-time via `!`command`` — the model receives substituted content, never raw markers or instructions to substitute.

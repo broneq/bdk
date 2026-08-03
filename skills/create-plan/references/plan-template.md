@@ -279,6 +279,10 @@ Expected: exits 0 with no errors
 
 <!-- INJECT: security -->
 
+**Engineering Judgment:**
+
+<!-- INJECT: engineering-judgment -->
+
 **Language Rules:**
 
 <!-- INJECT-LANGUAGES -->

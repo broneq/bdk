@@ -20,6 +20,8 @@ hooks:
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py engineering-judgment`
+
 Transform requirements into detailed, TDD-driven implementation plans via structured exploration and analysis.
 
 **Core Principle:** Explore → Design → Outline+Verify → Write
@@ -112,7 +114,7 @@ Generate **2-3 implementation approaches.** Per approach:
 - Name, Description (2-3 sentences)
 - Design pattern, OO principles
 - Pros (2-3), Cons (1-2)
-- Complexity: LOW | MEDIUM | HIGH
+- Complexity: LOW | MEDIUM | HIGH (informational only - per engineering-judgment rules, do not let this drive the recommendation; weight quality, robustness, and long-term maintainability instead)
 - Risk: LOW | MEDIUM | HIGH
 - Files to change
 - **Structural impact** — if this approach extends an existing conditional / switch / handler chain (if-elif, switch, type-dispatch, registry):
@@ -217,6 +219,10 @@ Rule sections loaded for plan rendering — copy verbatim into the plan's Refere
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py security`
 
+**`<!-- INJECT: engineering-judgment -->` →**
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py engineering-judgment`
+
 **`<!-- INJECT-LANGUAGES -->` →**
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-language-rules.py`
@@ -259,5 +265,7 @@ Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {
 - Every task carries `Files:` and `Depends on:` — mandatory, never omitted.
 - Always dispatch explorer subagents — never explore from the orchestrator.
 - Trade-off analysis mandatory, even when one approach seems obvious.
+- Prefer quality, simplicity, robustness, scalability, and long-term maintainability over implementation effort - see engineering-judgment rules.
+- If exploration surfaces something clearly wrong or inconsistent outside the requested scope, call it out (as a task or an explicit note) rather than ignoring it.
 - Never hardcode language tools (`pytest`, `npm`, `cargo`, `uv run`, …) — use injected values or generic phrasing.
 - Never invent timestamps — shell out to `date`.
