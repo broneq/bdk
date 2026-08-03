@@ -31,13 +31,14 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size)                                     |
 | `/bdk:commit` | Generate conventional commit message from git changes                                               |
 | `/bdk:create-plan` | Create TDD-driven implementation plans                                                              |
+| `/bdk:create-tasks` | Write PM-style task definitions (User Story + Given/When/Then ACs) from features or code findings   |
 | `/bdk:execute-plan` | Execute a plan with task tracking and verification                                                  |
 | `/bdk:subagent-execute-plan` | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review |
 | `/bdk:verify-plan` | Verify a plan against real code before execution                                                    |
 | `/bdk:debug` | Structured debugging: investigate → failing tests → fix or plan                                     |
 | `/bdk:refactor` | Propose object-oriented architecture for complex code                                               |
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                        |
-| `/bdk:brainstorming` | Design sessions before implementation                                                               |
+| `/bdk:design` | Design partner: classifies product vs architecture vs combined, 2+ approaches with Mermaid, self-critique, validation loop with warm-explorer reuse |
 | `/bdk:create-adr` | Generate Architecture Decision Records (MADR format)                                                |
 | `/bdk:save-progress` | Checkpoint in-progress work to `.bdk/save-progress/`                                                |
 | `/bdk:restore-progress` | Resume work from a saved checkpoint                                                                 |
@@ -66,7 +67,8 @@ Used by skills internally (invoke via `subagent_type`):
 | `duplicate-detector` | haiku | Find code duplication |
 | `architecture-reviewer` | opus | Audit against architectural rules |
 | `static-analyse` | haiku | Detect and run project lint/format/type-check |
-| `step-simulator` | opus | Dry-run plans with concrete data traces |
+| `plan-verifier` | opus | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. Used by `/bdk:verify-plan` |
+| `design-verifier` | opus | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. Used by `/bdk:design` Phase 3 |
 | `log-analyzer` | haiku | Parse and summarize error logs |
 | `web-researcher` | haiku | Search web for solutions and docs |
 
@@ -74,7 +76,7 @@ Used by skills internally (invoke via `subagent_type`):
 
 ## Quality Rules
 
-BDK ships language-agnostic rule sets (`code-quality`, `architecture`) injected into `/bdk:cr` and `/bdk:create-plan` outputs.
+BDK ships language-agnostic rule sets (`code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`) injected into `/bdk:cr`, `/bdk:create-plan`, and `/bdk:design` outputs.
 
 ### Four usage patterns
 
@@ -114,6 +116,35 @@ If `.bdk/settings.json` references a file that doesn't exist (or is unreadable),
 ### Adding a new rule category
 
 See `.claude/rules/quality-rules.md` (BDK-dev convention).
+
+---
+
+## Language Rules
+
+Companion to Quality Rules, but keyed by the project's `languages` array rather than a flat rule name. BDK ships per-language principle sheets in `rules/languages/<lang>.md` (React, TypeScript, and JavaScript today; Vue, Python, Go, … follow the same pattern). Each agent that writes or reviews code (`code-reviewer`, `implementer`, `fixer`, `plan-verifier`) preloads them via the `bdk-rules-languages` meta-skill; plan and execution templates pull them through a `<!-- INJECT-LANGUAGES -->` marker.
+
+Declare the project's stack in `.bdk/settings.json`:
+
+```json
+{
+  "languages": ["react", "typescript"]
+}
+```
+
+Override or extend a default rule sheet per language (same `extends` | `replace` semantics as quality rules):
+
+```json
+{
+  "languages": ["react"],
+  "language-rules": {
+    "react": "docs/team-react-conventions.md"
+  }
+}
+```
+
+A language listed without a matching `rules/languages/<lang>.md` (and no override) is silently skipped — no error.
+
+Authoring a new language sheet: see `.claude/rules/language-rules.md`.
 
 ---
 

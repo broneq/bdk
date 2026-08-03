@@ -12,8 +12,6 @@ allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-For each `<!-- INJECT: <name> -->` marker below, run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>` and substitute its stdout in place of the marker before acting on it.
-
 Complex refactor needed. Code messy, needs clean class separation.
 
 **Workflow:**
@@ -34,4 +32,6 @@ Complex refactor needed. Code messy, needs clean class separation.
 
 $ARGUMENTS
 
-<!-- INJECT: design-patterns -->
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py design-patterns`
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-language-rules.py`

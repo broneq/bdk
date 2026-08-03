@@ -34,7 +34,7 @@ BDK ships these subagents. Invoke via the Agent tool with the listed `subagent_t
 | `bdk:dead-code-detector` | haiku | Find unused/unreachable code |
 | `bdk:duplicate-detector` | haiku | Find duplicated code and extractable patterns |
 | `bdk:architecture-reviewer` | opus | Cross-cutting architectural analysis |
-| `bdk:step-simulator` | opus | Dry-run a plan with concrete data traces |
+| `bdk:plan-verifier` | opus | Single-pass plan verification (used by `/bdk:verify-plan`) |
 
 **Used by skills internally** — don't invoke directly; let the skill orchestrate:
 
@@ -65,4 +65,4 @@ Pattern: `SendMessage(to: "<agentId>", message: "...")` — never re-include the
 
 ## Quality Rules
 
-BDK ships language-agnostic `code-quality` and `architecture` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.
+BDK ships language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.

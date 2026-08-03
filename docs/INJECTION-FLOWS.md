@@ -507,7 +507,7 @@ Skills that ARE orchestrators (dispatch subagents) and skills that produce outpu
 | `test-driven-development` | Procedure | ✅ `tier-search` | Keep | — | TDD process; tests are the enforcement, no rule injection needed. |
 | `execute-plan` | Procedure | — (uses `get_settings.py`) | Add `tier-impact` | Add `code-quality` | Writes code to satisfy plan; benefits from impact awareness + quality rules. |
 | `subagent-execute-plan` | Orchestrator | — | Add `tier-impact` (orchestrator triages risk) | — | Dispatches `implementer`/`fixer`/reviewers. Rules go to those subagents. |
-| `brainstorming` | Output document | — | Add `tier-explore` (some) | Add `architecture`, `design-patterns` | Design exploration; should know the constraints it's designing within. |
+| `design` | Output document | ✅ `tier-explore` (via `explore.chain.json`) | Keep | Add `architecture`, `design-patterns` | Design exploration; should know the constraints it's designing within. Replaces `brainstorming` + `brainstorm-architecture`. |
 | `verify-plan` | Orchestrator | — | Add `tier-impact` | — | Orchestrates `step-simulator` etc. Rules go to subagents. |
 | `commit` | Procedure | — | — | — | Generates commit message from git diff. No code analysis. |
 | `setup` | Bootstrap | — | — | — | Initializes settings; no analysis. |
@@ -531,7 +531,7 @@ Skills that ARE orchestrators (dispatch subagents) and skills that produce outpu
 
 4. **No agent currently reads `tier-impact` despite `impact.chain.json` existing.** Worth adding to `fixer`, `implementer`, `step-simulator` — they all reason about blast radius.
 
-5. **`brainstorming` should know architecture and design-patterns rules.** Currently it explores design space without that context. Adding rules would tighten its output toward project conventions.
+5. **`design` should know architecture and design-patterns rules.** The skill currently injects `architecture` only; adding `design-patterns` would tighten its output toward project conventions.
 
 6. **`graph-*` skills are deliberately frozen.** They only make sense when `code-review-graph` is enabled, so they hardcode graph tools instead of going through the chain mechanism. Don't migrate them.
 

@@ -1,86 +1,68 @@
 # Verdict Report Template
 
+Use this layout when writing `.bdk/verify-plan/<plan-slug>-verification.md`. Section names map 1:1 to the YAML `checks:` keys returned by `bdk:plan-verifier`.
+
 ```markdown
-# Plan Verification Report: <plan-name>
+# Plan Verification Report: <plan-slug>
 
 **Date**: YYYY-MM-DD
 **Plan**: `<path-to-plan-file>`
-**Verdict**: PASS / FAIL / PASS WITH WARNINGS
-**Iterations**: N/3
+**Verdict**: PASS | PASS_WITH_WARNINGS | FAIL
+**Iterations**: N/2
+**Overall confidence**: 0.00–1.00
 
 ## Summary
-<2-3 sentence overall assessment — would this plan work if executed as-is?>
+<2-3 sentence assessment — would this plan work if executed as-is?>
+
+## Per-Task Verdict
+| Task | Title | Outcome | Confidence | Sig. drift | Data trace | Edge cases | Regression | Test cov. | Completeness |
+|------|-------|---------|------------|------------|------------|------------|------------|-----------|--------------|
+| 1.1  | …     | PASS    | 0.92       | PASS       | PASS       | PASS       | PASS       | PASS      | PASS         |
 
 ---
 
-## 1. Plan Proof (Simulator A)
+## 1. Signature Drift Findings
+| Task | Symbol | Plan says | Actual | Match? |
+|------|--------|-----------|--------|--------|
 
-### Assumptions Verified
-| # | Assumption | Actual Code | Match? |
-|---|-----------|------------|--------|
+## 2. Data Trace Walkthroughs
+### Task N: <title>
+- Trace 1: `input → step → step → output` [PASS/FAIL reason]
+- Trace 2: …
 
-### Step-by-Step Simulation
-#### Task N: <name>
-- **Verdict**: PASS / FAIL
-- **Data Traces**:
-  - `input → transform → output` [PASS/FAIL reason]
-- **Edge Cases**:
-  | Case | Handled? | Risk |
-  |------|----------|------|
-- **Issues**: ...
+## 3. Edge Cases Surfaced
+| # | Edge case | Source task | Handled? | Recommended test |
+|---|-----------|-------------|----------|------------------|
 
----
+## 4. Regression Flows
+| Flow | Affected symbol | Backward compatible? | Detail |
+|------|------------------|----------------------|--------|
 
-## 2. Regression Check (Simulator B)
+## 5. Test Coverage Gaps
+| Task | Bullet | Covered? | Missing test |
+|------|--------|----------|--------------|
 
-### Affected Flows
-| Flow/Template | Risk Level | Test Coverage | Verdict |
-|--------------|-----------|---------------|---------|
-
-### Backward Compatibility
-| Changed Symbol | Backward Compatible? | Detail |
-|---------------|---------------------|--------|
-
-### Scope Creep Findings
-1. ...
-
-### Regressions Found
-1. ...
+## 6. Plan Completeness Findings
+- <bullet list of cross-task issues, missing files, undeclared dependencies, ambiguous instructions>
 
 ---
 
-## 3. Code Review
+## Must Fix Before Implementation
+1. <one bullet per `must_fix` entry, with file:line where the YAML envelope provided a `location`>
 
-| Severity | Finding | Location |
-|----------|---------|----------|
-| CRITICAL | ... | file:line |
-| HIGH | ... | file:line |
-
----
-
-## 4. New Edge Cases (from both simulators)
-
-| # | Edge Case | Source | Why It Matters | Recommended Test |
-|---|-----------|--------|---------------|-----------------|
-
----
-
-## 5. Recommendations
-
-### Must Fix Before Implementation
-1. <actionable fix for each FAIL>
-
-### Should Consider
-1. <warnings and improvements>
+## Should Consider
+1. <warnings, low-confidence flags, advisory items from `recommendations`>
 
 ---
 
 ## Iteration History
-
-| Check            | Iter 1 | Iter 2 | Iter 3 |
-|------------------|--------|--------|--------|
-| Plan Proof       | ...    | ...    | ...    |
-| Regression Check | ...    | ...    | ...    |
-| Code Review      | ...    | ...    | ...    |
-| **Overall**      | ...    | ...    | ...    |
+| Section          | Iter 1 | Iter 2 | Delta |
+|------------------|--------|--------|-------|
+| Signature drift  | …      | …      | …     |
+| Data trace       | …      | …      | …     |
+| Edge cases       | …      | …      | …     |
+| Regression flows | …      | …      | …     |
+| Test coverage    | …      | …      | …     |
+| Plan completeness| …      | …      | …     |
+| **Overall**      | …      | …      | …     |
 ```

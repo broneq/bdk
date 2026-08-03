@@ -14,6 +14,10 @@ tools:
   - mcp__plugin_bdk_serena__get_symbols_overview
   - mcp__plugin_bdk_serena__find_symbol
   - mcp__plugin_bdk_serena__find_referencing_symbols
+  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__query_graph_tool
+  - mcp__plugin_bdk_code-review-graph__traverse_graph_tool
+  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
 ---
 
 You are a log analyzer. Your job is to quickly identify what went wrong from stderr, logs, and stack traces.

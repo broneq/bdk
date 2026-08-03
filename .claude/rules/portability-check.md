@@ -22,13 +22,27 @@ Use generic phrasing:
 
 Env detection handled by `STARTUP_INSTRUCTIONS.md` — trust it.
 
+## Required: Agents Reading Tool Commands
+
+Agents needing project test/lint/build commands MUST preload the matching meta-skill via `skills:` frontmatter — never embed tool tables:
+
+| Agent need | Meta-skill to preload |
+|---|---|
+| Run tests | `bdk-test-tools` |
+| Run lint/format/typecheck | `bdk-lint-tools` |
+| Language- or framework-specific rules | `bdk-rules-languages` |
+
+Meta-skill body resolves at agent spawn. Edits to `.bdk/settings.json` take effect on the next agent spawn, not retroactively.
+
 ## Required: Standard Skill Header
 
-Every skill must start with:
+Every **user-invocable workflow skill** must start with:
 
 ```
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 ```
+
+**Exempt:** meta-skills with `user-invocable: false` (e.g., `bdk-test-tools`, `bdk-lint-tools`, `bdk-rules-*`, `bdk-tier-*`). They are preloaded into agents, not invoked by users, and the foundation reference adds noise to the agent's context.
 
 ## Required: Skill References
 

@@ -5,7 +5,12 @@ model: sonnet
 skills:
   - bdk-tier-search
   - bdk-tier-impact
+  - bdk-tier-edit
   - bdk-rules-code-quality
+  - bdk-rules-design-patterns
+  - bdk-rules-security
+  - bdk-rules-languages
+  - bdk-implementer-return-contract
 tools:
   - Read
   - Edit
@@ -24,9 +29,14 @@ tools:
   - mcp__plugin_bdk_serena__insert_after_symbol
   - mcp__plugin_bdk_code-review-graph__detect_changes_tool
   - mcp__plugin_bdk_code-review-graph__query_graph_tool
+  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__traverse_graph_tool
+  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
   - mcp__plugin_bdk_code-review-graph__get_impact_radius_tool
   - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
   - mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool
+  - mcp__plugin_bdk_code-review-graph__list_flows_tool
+  - mcp__plugin_bdk_code-review-graph__get_flow_tool
 ---
 
 # Fixer Agent

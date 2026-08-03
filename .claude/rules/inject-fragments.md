@@ -109,3 +109,23 @@ For multi-tier injection (fallback ladders, complementary tool sets), use a `*.c
 - **Syntax**: Use `--then <file>` for content >2 lines; `--then-text` for snippets.
 - **Placement**: Inject calls go immediately before the section they augment.
 - **Multi-tier**: Use `--chain <file>.chain.json` instead of multiple `--if/--then` calls. See `fragment-system.md`.
+
+## Related: rule injection (not fragments)
+
+Three mechanisms coexist — do not confuse them:
+
+| Mechanism | Trigger | Source | Use case |
+|---|---|---|---|
+| `inject.py` | `!`...`` shell line with `--if` / `--chain` | Skill/agent body | Conditional fragments based on `features.*` or `languages[...]` |
+| `inject-rules.py` | `!`...`` shell line, name as arg | `rules/<name>.md` (BDK) + `quality.<name>` override | Language-agnostic quality rules (`code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`) |
+| `inject-language-rules.py` | `!`...`` shell line | `rules/languages/<lang>.md` per entry in `languages` + `language-rules.<lang>` override | Language- or framework-specific rule sheets |
+
+All three resolve at skill load-time via `!`command`` — the model receives substituted content, never raw markers or instructions to substitute.
+
+### `<!-- INJECT: <name> -->` markers — template-only
+
+Markers exist **only** inside template files that the skill writes to disk as output (e.g., `skills/create-plan/references/plan-template.md`). The skill loads rule sections into context via `!`python3 .../inject-rules.py <name>`` at the top of its SKILL.md, then instructs the model to substitute marker → matching section verbatim while rendering the template to the output path.
+
+Do **not** put `<!-- INJECT: ... -->` markers inside SKILL.md or agent.md bodies — those are skill-context files, not output templates. Use `!`...`` directly in their place.
+
+See `.claude/rules/quality-rules.md` and `.claude/rules/language-rules.md` for authoring conventions of the latter two.
