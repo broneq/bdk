@@ -1,0 +1,85 @@
+{
+  "skill_name": "refine-rules",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our .claude/rules/ directory has gotten messy over the last few months — different sessions kept appending to the same files. Can you clean up .claude/rules/ so it's just the rules that still apply, not a running log of what we changed and when?",
+      "expected_output": "Skill discovers every file under .claude/rules/, classifies content bullet-by-bullet into RULE vs NOISE (dated entries, 'we used to X now we Y' narration, TODOs), verifies surviving RULE claims against the real codebase rather than trusting the existing wording, converges every file on the same bullet format ('**bold claim.** why'), presents a per-file plan (kept/compacted/contradicted/flagged counts) via a single AskUserQuestion before writing anything, and only writes after approval.",
+      "assertions": [
+        {
+          "name": "discovers_all_rule_files",
+          "description": "Enumerates every .md file under .claude/rules/ (including nested subdirectories) before classifying content, rather than picking a subset"
+        },
+        {
+          "name": "distinguishes_rule_from_noise",
+          "description": "Explicitly separates changelog/history/dated narration from present-tense rule statements, and removes the former"
+        },
+        {
+          "name": "verifies_against_code_not_docs",
+          "description": "States that it checked claims against the actual current codebase (e.g. read source files, grepped for a pattern) rather than assuming prior rule text was accurate"
+        },
+        {
+          "name": "uses_uniform_bullet_format",
+          "description": "Rewritten rules follow a consistent '**bold falsifiable claim.** explanation' bullet shape across every file, not a different style per file"
+        },
+        {
+          "name": "presents_plan_before_writing",
+          "description": "Uses a single AskUserQuestion call presenting a per-file plan (kept/compacted/contradicted/flagged) and waits for approval before overwriting any file"
+        },
+        {
+          "name": "preserves_frontmatter",
+          "description": "Any 'paths:' YAML frontmatter in a rule file is preserved verbatim, not paraphrased or removed"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "One of our rule files (.claude/rules/database.md) says 'all writes go through the ORM's validate() hook, never raw SQL' but I'm pretty sure someone added a raw query somewhere last quarter and never updated the doc. Can you run refine-rules on that file and make sure whatever it ends up saying is actually still true?",
+      "expected_output": "Skill treats the existing claim as unverified, searches the real codebase (scoped to the file's paths: frontmatter if present) for evidence for or against it, and reports a clear verdict — CONFIRMED, CONTRADICTED with concrete evidence (e.g. a raw SQL call site), or UNVERIFIED — rather than repeating the doc's claim unchanged. If contradicted, it does not invent a replacement rule without evidence.",
+      "assertions": [
+        {
+          "name": "treats_existing_claim_as_unverified",
+          "description": "Does not simply retain the 'never raw SQL' claim on the assumption it's correct; explicitly checks it"
+        },
+        {
+          "name": "searches_real_code_for_evidence",
+          "description": "Performs an actual code search (grep/read/subagent) for raw SQL usage rather than reasoning from the doc text alone"
+        },
+        {
+          "name": "reports_concrete_verdict",
+          "description": "States a clear CONFIRMED/CONTRADICTED/UNVERIFIED verdict with supporting evidence (file path or quoted line) if contradicted"
+        },
+        {
+          "name": "does_not_invent_unverified_replacement",
+          "description": "If the original claim is contradicted, does not fabricate a new rule without code evidence backing it"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "refine-rules on .claude/rules/ — some files are terse bullet lists, one is basically a wall of prose paragraphs, and another has a big changelog section at the top dated by sprint. I want them all reading the same way when you're done.",
+      "expected_output": "Skill converges every file — including the prose-style one — onto the same uniform bullet format ('**bold claim.** why'), strips the changelog section entirely, and does not leave any file in its original inconsistent structure just because it 'already worked'.",
+      "assertions": [
+        {
+          "name": "rewrites_prose_file_into_bullets",
+          "description": "The prose-paragraph file is restructured into the same bold-claim bullet format as the others, not left as freeform paragraphs"
+        },
+        {
+          "name": "removes_changelog_section_entirely",
+          "description": "The sprint-dated changelog section is dropped from the output, not merely reformatted or moved"
+        },
+        {
+          "name": "uniform_style_across_all_files",
+          "description": "Final output uses one consistent heading/bullet convention across every rule file, not a per-file style"
+        },
+        {
+          "name": "confirms_before_writing",
+          "description": "Still gets user approval via AskUserQuestion before overwriting files, even though the request was framed as a direct instruction"
+        }
+      ],
+      "files": []
+    }
+  ]
+}

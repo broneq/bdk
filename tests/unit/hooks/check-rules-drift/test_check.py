@@ -205,6 +205,20 @@ def test_build_block_reason_multiple_rules() -> None:
     assert "file3.py" in reason
 
 
+def test_build_block_reason_warns_against_trusting_prior_wording() -> None:
+    mod = _load_module()
+    reason = mod.build_block_reason({"skill.md": ["skills/foo/check.py"]})
+    assert "Don't trust the existing wording" in reason
+    assert "many different sessions and agents" in reason
+
+
+def test_build_block_reason_requires_worthwhile_durable_info() -> None:
+    mod = _load_module()
+    reason = mod.build_block_reason({"skill.md": ["skills/foo/check.py"]})
+    assert "durable, worthwhile information" in reason
+    assert "changelog-style narration" in reason
+
+
 # ---------------------------------------------------------------------------
 # get_file_mtimes (unit)
 # ---------------------------------------------------------------------------
