@@ -95,6 +95,8 @@ Based on total changed lines:
 
 Launch ALL planned agents in SINGLE message using Agent tool with `run_in_background: true`.
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if env.HERDR_ENV=1 --if cmd.herdr --then-text '> **Herdr spawn tier active.** This fleet is normally 5+ agents, which exceeds the 4-pane cap, so keep the reviewer fleet on the Agent tool. Route only the single-agent follow-ups (a fixer pass, a re-review of one layer group) to Herdr pane agents per the "Spawn Tier: Herdr Pane Agents" block in the BDK foundation.'`
+
 > When a reviewer's report needs clarification on a specific finding, prefer `SendMessage(to: "<agentId>", ...)` over re-spawning — the reviewer keeps its scan context. See STARTUP "Continuing a Spawned Agent".
 
 For each layer-group reviewer (use `references/reviewer-prompt-template.md` for dispatch structure):

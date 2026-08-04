@@ -27,6 +27,9 @@ fragments/
     explore.chain.json
     explore-graph.md
     explore-serena.md
+  spawn/               ← spawn transport tier (see .claude/rules/spawn-tiers.md)
+    spawn.chain.json
+    spawn-herdr.md
   <capability>/        ← other shared fragment groups
     step1-*.md
 
@@ -53,6 +56,8 @@ skills/<skill-name>/
 - `chain`: array of entries, each with optional `"if"` (AND conditions) and required `"then"` (path relative to chain file)
 - Entry without `"if"` is an unconditional fallback
 
+Conditions are either project conditions (`features.*`, `languages[...]`, read from `.bdk/settings.json`) or runtime conditions (`env.VAR`, `env.VAR=value`, `cmd.name`, read from the session). An entry gated purely on runtime conditions resolves even with no `.bdk/settings.json`; anything else, including an unconditional fallback entry, still requires it. See `.claude/rules/spawn-tiers.md`.
+
 Each tier fragment is self-contained: it carries its own tool list AND the policy rules governing those tools. There is no shared header file.
 
 ## Modes
@@ -71,6 +76,14 @@ Each tier fragment is self-contained: it carries its own tool list AND the polic
 | `impact.chain.json` | exclusive | Codegraph wins; Serena has no impact analysis |
 | `review.chain.json` | exclusive | Codegraph first; grep fallback |
 | `explore.chain.json` | additive | Architecture overview + symbol detail = complementary |
+
+## Spawn Chain
+
+| Chain | Mode | Reason |
+|-------|------|--------|
+| `spawn/spawn.chain.json` | exclusive | One transport per dispatch; herdr panes win when available, Agent tool is the prose baseline in `STARTUP_INSTRUCTIONS.md` |
+
+Gated on runtime conditions only (`env.HERDR_ENV=1`, `cmd.herdr`), so it works in projects with no `.bdk/settings.json`. It has no fallback entry by design: no match means the foundation's Agent-tool prose stands unmodified.
 
 ## When to Use `--chain` vs `--if`/`--prefer`
 

@@ -20,7 +20,7 @@ When exploring, searching, editing, or reviewing code, use the best available to
 
 ## Agents
 
-BDK ships these subagents. Invoke via the Agent tool with the listed `subagent_type`.
+BDK ships these agent roles. The default spawn path is the Agent tool with the listed `subagent_type`. When a higher spawn tier is available, the block at the end of this section overrides that default — read it before dispatching.
 
 **Directly invokable by orchestrator** (general-purpose helpers):
 
@@ -62,6 +62,8 @@ Every Agent tool result includes an `agentId:` envelope and a `SendMessage` hint
 **Cost**: SendMessage past the 5-min cache window pays a full cache miss for the resumed agent's prior context. Prefer fresh spawn for small self-contained follow-ups.
 
 Pattern: `SendMessage(to: "<agentId>", message: "...")` — never re-include the original prompt; the agent already has it.
+
+<!-- CHAIN: spawn/spawn.chain.json -->
 
 ## Quality Rules
 

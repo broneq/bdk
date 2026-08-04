@@ -237,6 +237,8 @@ The author of the design (you, the orchestrator) has confirmation bias against y
 
 ### Step 1 — Spawn `bdk:design-verifier`
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if env.HERDR_ENV=1 --if cmd.herdr --then-text '> **Herdr spawn tier active.** Dispatch the verifier, and the Phase 0 explorers, as Herdr pane agents instead: role bootstrap per role, the same message bodies, and each envelope written to a file. Later iterations use a continuation prompt to the same agent name in place of SendMessage. Full procedure and fallback triggers: "Spawn Tier: Herdr Pane Agents" in the BDK foundation.'`
+
 Use the Agent tool with `subagent_type: "bdk:design-verifier"` and this spawn message:
 
 ```

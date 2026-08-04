@@ -142,6 +142,8 @@ Decide once per group, **before** dispatching, how the group's tasks run. Two st
 
 **Default when neither plan tag nor rubric is decisive:** `subagents`. It is strictly more controllable; reserve `workflow` for waves that clearly fit the left column.
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if env.HERDR_ENV=1 --if cmd.herdr --then-text '> **Herdr spawn tier active.** A Workflow script cannot drive Herdr panes, so treat the herdr transport as an argument for the **subagents** strategy: override a plan-declared workflow strategy toward subagents unless the wave is wide enough (5+ tasks) that the pane cap would force batching anyway. Log the override reason as override:herdr-transport. Pane cap and transport details: "Spawn Tier: Herdr Pane Agents" in the BDK foundation.'`
+
 Record the chosen strategy per group in coordinator state and surface the counts in the Step 4e summary (`groups_via_workflow`, `groups_via_subagents`). Log the decision:
 
 ```
@@ -164,6 +166,8 @@ Record the chosen strategy per group in coordinator state and surface the counts
 See `references/model-selection.md`.
 
 ### 3b. Dispatch implementers (parallel if group has >1 task)
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if env.HERDR_ENV=1 --if cmd.herdr --then-text '> **Herdr spawn tier active.** Dispatch implementers as Herdr pane agents instead of Agent calls, up to 4 concurrent (waves wider than 4 split into consecutive pane batches). Everything else in this step is unchanged: same dispatch payload, same YAML envelope, now written to a file. Step 3c status handling reads that file, and NEEDS_CONTEXT uses a continuation prompt in place of SendMessage. When the wave is not file-disjoint, give each pane its own herdr worktree rather than serialising. Full procedure and fallback triggers: "Spawn Tier: Herdr Pane Agents" in the BDK foundation. Record the transport in the Step 4e summary.'`
 
 For a multi-task group, send **one message with multiple `Agent` calls** using `run_in_background: true`. Each call passes:
 
@@ -319,6 +323,8 @@ tasks_completed: {N}
 groups_committed: {G}
 groups_via_workflow: {W}
 groups_via_subagents: {S}
+spawn_transport: agent|herdr|mixed
+spawn_fallbacks: {N}
 implementer_dispatches: {N}
 implementer_redispatches: {N}
 fixer_dispatches: {N}
@@ -385,6 +391,7 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 ## Rules
 
 - Coordinator never edits files, runs tests, runs lint, or reads source. It runs `git` (status, rev-parse, diff, add, commit) and dispatches subagents (directly, or via a `Workflow` script for a `workflow`-strategy group).
+- Spawn transport is chosen by the foundation's spawn tier, not by this skill: when the Herdr tier is active, dispatch via pane agents and fall back to `Agent` calls on that tier's triggers. Transport never changes the return contract, the verification schedule, or the commit boundary. Surface it as `spawn_transport` in the Step 4e summary.
 - Execution strategy is chosen per group in Step 3a-S: plan-declared `strategy:` tag is authoritative input, the executor override rubric may flip it, default is `subagents`. A `workflow` group requires file-disjoint tasks at `confidence ≥ 0.6` and >1 task — otherwise force `subagents`.
 - The `Workflow` script implements + optionally fixes only. Verification (3d–3f) and commits (3g) stay with the coordinator. Unresolved `BLOCKED`/`NEEDS_CONTEXT` items from a Workflow fall back to a single hand-orchestrated implementer each.
 - Implementer subagents **do not** run final lint or test verification. They do TDD red-green for their own task and stop. Verification is a separate subagent the coordinator schedules.
