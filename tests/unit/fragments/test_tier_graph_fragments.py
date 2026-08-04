@@ -32,9 +32,16 @@ def test_graph_fragment_has_coverage_reference(frag_path: Path) -> None:
 @pytest.mark.parametrize("frag_path", GRAPH_FRAGMENTS, ids=lambda p: p.name)
 def test_graph_fragment_has_negative_result_rule(frag_path: Path) -> None:
     body = frag_path.read_text(encoding="utf-8")
-    assert "absent" in body or "Stop" in body or "no impact" in body, (
-        f"{frag_path.name} missing negative-result rule"
-    )
+    # Each tier states its own negative-result conclusion in its own vocabulary:
+    # search/explore say "absent", impact says "no impact", edit says "isolated
+    # change". All three are the same rule: a 0-result after retry is an answer.
+    assert (
+        "absent" in body
+        or "Stop" in body
+        or "no impact" in body
+        or "isolated change" in body
+        or "mechanical change" in body
+    ), f"{frag_path.name} missing negative-result rule"
 
 
 @pytest.mark.parametrize("frag_path", GRAPH_FRAGMENTS, ids=lambda p: p.name)

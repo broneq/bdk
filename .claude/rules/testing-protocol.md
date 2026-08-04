@@ -36,6 +36,8 @@ Shared foundation injected at session start. After changing:
 2. Verify session context reflects updated instructions
 3. Run any skill relying on modified section
 
+Content gated on runtime conditions (`env.*`, `cmd.*`) must be verified from a session that actually satisfies the gate. Rendering the file by hand with a faked environment proves the injection resolves, not that the guidance reaches the model or that the described commands work. Verify both gate states: content present when satisfied, absent when not.
+
 ## Hooks
 
 After changing `hooks/hooks.json` or hook scripts:

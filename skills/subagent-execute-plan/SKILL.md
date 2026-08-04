@@ -25,16 +25,18 @@ This skill is a **coordinator only**. It holds plan state, builds an execution s
 
 ```
 plan → explorer (group disjoint tasks) → for each group:
-  pick execution strategy (subagents | workflow) →           ← Step 3a-S
-  ┌─ subagents: parallel background implementers ───┐
-  └─ workflow:  one Workflow script over the wave ──┘ →
+  pick execution strategy (subagents | workflow | workflow-isolated) →   ← Step 3a-S
+  ┌─ subagents:          parallel background implementers, same tree ───┐
+  ├─ workflow:           one Workflow script, same tree ─────────────────┤
+  └─ workflow-isolated:  one Workflow script, per-task worktree ────────┘ →
+  if workflow-isolated → merge each task's patch into the shared tree →   ← Step 3c-WI
   decide: tests/lints worth running now? →
   if yes → test-runner / static-analyse subagents →
   if findings → SendMessage original implementer OR spawn bdk:fixer →
   commit group → next group
 ```
 
-**Two execution paths per group.** A group is dispatched either as **hand-orchestrated background subagents** (the default — full SendMessage/re-dispatch control per task) or as a **single Workflow** that fans out over the wave deterministically (cheaper coordinator context, better for large disjoint mechanical waves). The coordinator chooses per group — see Step 3a-S. The Workflow path reuses the **same bdk agent fleet** via `agentType`, so return contracts, rules, and tool tiers are identical; only the orchestration differs.
+**Three execution paths per group.** A group is dispatched as **hand-orchestrated background subagents** (the default — full SendMessage/re-dispatch control per task), as a **single Workflow** that fans out over the wave deterministically in the shared tree (cheaper coordinator context, better for large disjoint mechanical waves), or as a **worktree-isolated Workflow** (each task gets its own git worktree, so the wave doesn't need proven file-disjointness — the coordinator reconciles afterward). The coordinator chooses per group — see Step 3a-S. Both Workflow paths reuse the **same bdk agent fleet** via `agentType`, so return contracts, rules, and tool tiers are identical; only the orchestration and merge step differ.
 
 ---
 
@@ -50,9 +52,9 @@ plan → explorer (group disjoint tasks) → for each group:
 | `bdk:code-reviewer` | Review final branch diff | sonnet | once at end |
 | `bdk:architecture-reviewer` | Review architectural surface | opus | end, conditional |
 
-The coordinator may spawn **multiple implementers in parallel** for a single group when `bdk:explorer` reports the tasks touch disjoint file sets. Same group → same worktree (disjoint files = no conflict).
+The coordinator may spawn **multiple implementers in parallel** for a single group when `bdk:explorer` reports the tasks touch disjoint file sets. Same group → same tree (disjoint files = no conflict). When the explorer cannot confirm disjointness but the wave is wide, `workflow-isolated` (Step 3a-S) gives each implementer its own worktree instead — see 3b-WI/3c-WI.
 
-For a `workflow`-strategy group (Step 3a-S / 3b-W), the same `bdk:implementer` and `bdk:fixer` agents are driven by a `Workflow` script via `agentType` rather than by direct `Agent` calls — identical agents, identical return contract, deterministic orchestration.
+For a `workflow` or `workflow-isolated` group (Step 3a-S / 3b-W / 3b-WI), the same `bdk:implementer` and `bdk:fixer` agents are driven by a `Workflow` script via `agentType` rather than by direct `Agent` calls — identical agents, identical return contract (plus a `patch` field for the isolated variant), deterministic orchestration.
 
 ---
 
@@ -88,7 +90,7 @@ Reviewer / verification subagents have their own return formats — see `referen
      Tasks: {N}
      Parallel groups: {G}  (e.g. [1.1,1.2] [1.3] [2.1,2.2,2.3] [3.1])
      Base SHA: {short-sha}
-     Worktree mode: same-worktree (disjoint files within group)
+     Worktree mode: chosen per group in Step 3a-S (same-tree default; per-task worktree only for workflow-isolated)
      Test/lint cadence: orchestrator judgment per group (max 2 consecutive skips)
    ```
 
@@ -120,39 +122,44 @@ One `TaskCreate` per task, all `pending`. Track group membership in the task con
 
 For each group in order:
 
-### 3a-S. Pick execution strategy (subagents vs. workflow)
+### 3a-S. Pick execution strategy (subagents vs. workflow vs. workflow-isolated)
 
-Decide once per group, **before** dispatching, how the group's tasks run. Two strategies:
+Decide once per group, **before** dispatching, how the group's tasks run. Three strategies:
 
 - **`subagents`** (default) — hand-orchestrated background `Agent` calls, one per task, with full per-task control: SendMessage follow-up, per-task model escalation, `NEEDS_CONTEXT` round-trips. Steps 3a → 3c.
-- **`workflow`** — a single `Workflow` script fans out over the whole wave deterministically. Cheaper coordinator context (one tool call, not N background agents to track), and the script handles intra-wave parallelism + per-item verification inline. Step 3b-W.
+- **`workflow`** — a single `Workflow` script fans out over the whole wave deterministically, all tasks in the shared tree. Cheaper coordinator context (one tool call, not N background agents to track), and the script handles intra-wave parallelism + per-item verification inline. Requires proven file-disjointness (below). Step 3b-W.
+- **`workflow-isolated`** — a single `Workflow` script, same as `workflow`, but each task's implementer runs in its own git worktree (`isolation: 'worktree'`) and returns a patch instead of mutating the shared tree directly. Use this when the wave is wide enough to be worth batching but the explorer couldn't confirm disjointness. The coordinator merges patches into the shared tree afterward (Step 3c-WI) — collisions become merge conflicts to resolve, not silent corruption. Step 3b-WI.
 
-**Plan-declared preference (authoritative input).** If the plan's `## Execution Waves` section tags the wave with `strategy: workflow` or `strategy: subagents`, treat that as the declared preference. Adopt it **unless** an override condition below fires — then log the override and its reason.
+**Plan-declared preference (authoritative input).** If the plan's `## Execution Waves` section tags the wave with `strategy: workflow`, `strategy: workflow-isolated`, or `strategy: subagents`, treat that as the declared preference. Adopt it **unless** an override condition below fires — then log the override and its reason.
 
 **Executor override rubric.** The plan tag is a hint, not a mandate. Override toward each strategy when:
 
-| Choose `workflow` when | Choose `subagents` when |
-|---|---|
-| Wave has **≥ 4 file-disjoint tasks**, all with full `Test cases:` blocks (mechanical, low-ambiguity) | Wave has **≤ 3 tasks**, or any task is architectural / ambiguous / likely to return `NEEDS_CONTEXT` |
-| Tasks are uniform (same model tier, no expected escalation) | Tasks need **per-task model escalation** or tight SendMessage iteration |
-| Coordinator context is tight and a compact dispatch helps | A task may need the coordinator to split it mid-flight |
-| Explorer `confidence ≥ 0.6` on disjointness (Workflow runs tasks concurrently — collisions are unrecoverable mid-script) | Explorer flagged any collision risk for the wave |
+| Choose `workflow` when | Choose `workflow-isolated` when | Choose `subagents` when |
+|---|---|---|
+| Wave has **≥ 4 file-disjoint tasks**, all with full `Test cases:` blocks (mechanical, low-ambiguity) | Wave has **≥ 4 tasks**, explorer flags collision risk (`confidence < 0.6`) but tasks are still logically independent (e.g. several features touching a shared config/index file) | Wave has **≤ 3 tasks**, or any task is architectural / ambiguous / likely to return `NEEDS_CONTEXT` |
+| Tasks are uniform (same model tier, no expected escalation) | Tasks are uniform, and a merge-conflict-per-task is an acceptable cost | Tasks need **per-task model escalation** or tight SendMessage iteration |
+| Coordinator context is tight and a compact dispatch helps | Coordinator context is tight, wave is too wide to serialize acceptably | A task may need the coordinator to split it mid-flight |
+| Explorer `confidence ≥ 0.6` on disjointness | Explorer `confidence < 0.6`, but no task is flagged as truly dependent on another's edits to the *same lines* | Explorer flagged a collision risk **and** the wave has ≤ 3 tasks (isolation overhead isn't worth it) |
 
-**Hard precondition for `workflow`:** the wave's tasks MUST be file-disjoint with `confidence ≥ 0.6` (same rule as parallel implementers — see Rules). If not, force `subagents`. A Workflow that mutates colliding files in parallel corrupts the worktree with no recovery path.
+**Hard precondition for `workflow`:** the wave's tasks MUST be file-disjoint with `confidence ≥ 0.6` (same rule as parallel implementers — see Rules). If not, prefer `workflow-isolated` when the wave qualifies (≥ 4 tasks); otherwise force `subagents`. A `workflow` (non-isolated) script that mutates colliding files in parallel corrupts the shared tree with no recovery path.
 
-**Default when neither plan tag nor rubric is decisive:** `subagents`. It is strictly more controllable; reserve `workflow` for waves that clearly fit the left column.
+**Precondition for `workflow-isolated`:** wave has **≥ 4 tasks**. Below that, per-task worktree setup + patch reconciliation costs more than the serialization it's meant to avoid — force `subagents` instead. Isolation does not require `confidence ≥ 0.6`; it exists precisely for the sub-0.6 case. It still requires the explorer to have run (no isolation for a wave the explorer couldn't analyze at all — malformed JSON still triggers full serial mode per Step 1's fallback triggers).
 
-Record the chosen strategy per group in coordinator state and surface the counts in the Step 4e summary (`groups_via_workflow`, `groups_via_subagents`). Log the decision:
+**Default when neither plan tag nor rubric is decisive:** `subagents`. It is strictly more controllable; reserve `workflow` and `workflow-isolated` for waves that clearly fit their columns.
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if env.HERDR_ENV=1 --if cmd.herdr --then-text '> **Herdr spawn tier active.** A Workflow script cannot drive Herdr panes, so treat the herdr transport as an argument for the **subagents** strategy: override a plan-declared workflow strategy toward subagents unless the wave is wide enough (5+ tasks) that the pane cap would force batching anyway. Log the override reason as override:herdr-transport. Pane cap and transport details: "Spawn Tier: Herdr Pane Agents" in the BDK foundation.'`
+
+Record the chosen strategy per group in coordinator state and surface the counts in the Step 4e summary (`groups_via_workflow`, `groups_via_workflow_isolated`, `groups_via_subagents`). Log the decision:
 
 ```
-[subagent-execute-plan] Group {N} strategy: {workflow|subagents} ({declared|override:<reason>|default})
+[subagent-execute-plan] Group {N} strategy: {workflow|workflow-isolated|subagents} ({declared|override:<reason>|default})
 ```
 
 > A single-task group is never worth a Workflow — the script overhead exceeds one `Agent` call. Force `subagents` for any group with one task.
 
 ### 3a. Pick implementer model per task
 
-> Steps 3a, 3b, and 3c apply to the **`subagents`** strategy. For a **`workflow`** group, skip to **3b-W**; the script handles model selection and dispatch internally. Both paths converge at **3d** (verification).
+> Steps 3a, 3b, and 3c apply to the **`subagents`** strategy. For a **`workflow`** group, skip to **3b-W**. For a **`workflow-isolated`** group, skip to **3b-WI**, then **3c-WI** (merge). All three paths converge at **3d** (verification).
 
 | Task profile | Model |
 |---|---|
@@ -164,6 +171,8 @@ Record the chosen strategy per group in coordinator state and surface the counts
 See `references/model-selection.md`.
 
 ### 3b. Dispatch implementers (parallel if group has >1 task)
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if env.HERDR_ENV=1 --if cmd.herdr --then-text '> **Herdr spawn tier active.** Dispatch implementers as Herdr pane agents instead of Agent calls, up to 4 concurrent (waves wider than 4 split into consecutive pane batches). Everything else in this step is unchanged: same dispatch payload, same YAML envelope, now written to a file. Step 3c status handling reads that file, and NEEDS_CONTEXT uses a continuation prompt in place of SendMessage. When the wave is not file-disjoint, give each pane its own herdr worktree rather than serialising. Full procedure and fallback triggers: "Spawn Tier: Herdr Pane Agents" in the BDK foundation. Record the transport in the Step 4e summary.'`
 
 For a multi-task group, send **one message with multiple `Agent` calls** using `run_in_background: true`. Each call passes:
 
@@ -217,6 +226,33 @@ The script returns `{ files_changed: [...], blocked: [...], needs_context: [...]
 See `references/dispatch-templates.md` → "Workflow wave dispatch" for the script skeleton and the `RETURN_SCHEMA` literal.
 
 After the Workflow (and any fallbacks) settle, proceed to **3d** with the merged `files_changed`.
+
+### 3b-WI. Dispatch group as an isolated Workflow (when 3a-S chose `workflow-isolated`)
+
+Same script shape as 3b-W, with two differences: each implementer call sets `isolation: 'worktree'`, and implementers **never mutate the coordinator's shared tree** — they return a patch instead of relying on the coordinator's later `git add`/`git commit` seeing their edits directly.
+
+**Authoring rules, delta from 3b-W:**
+
+- **Stage 1 — implement:** `agent(prompt, { agentType: 'bdk:implementer', phase: 'Implement', isolation: 'worktree', schema: ISOLATED_RETURN_SCHEMA })`. `ISOLATED_RETURN_SCHEMA` extends the normal return contract with one additional required field on `DONE` / `DONE_WITH_CONCERNS`: `patch` (string) — the unified diff of the implementer's own worktree, produced with `git diff` (and `git diff --cached` if it staged anything) before returning. The dispatch prompt adds: "Before returning, run `git diff` in your working directory and include the full output verbatim as the `patch` field. Do not commit — the coordinator applies your patch."
+- **Stage 2 — fix (conditional):** identical to 3b-W, `agentType: 'bdk:fixer'`, same worktree, same `patch`-on-return rule.
+- **No commit inside the script, same as 3b-W** — plus, critically, no commit **inside the isolated worktree either**. A subagent-authored commit would break the single commit-boundary invariant (Rules) and complicate the merge in 3c-WI, which expects a plain patch, not a ref to cherry-pick.
+- The script returns `{ files_changed: [...], patches: [{ task_id, patch }], blocked: [...], needs_context: [...] }` — one `patch` entry per successfully implemented task, in task order.
+
+Worktrees created by the `Workflow` tool are ephemeral to that tool call; the coordinator never references their paths or branches directly, only the returned `patch` strings. This keeps the isolation invisible to everything downstream of 3c-WI.
+
+### 3c-WI. Merge isolated patches into the shared tree
+
+For each entry in `patches`, **in task-number order** (deterministic — not return order):
+
+1. `git apply --3way` the patch onto the coordinator's shared working tree.
+2. **Clean apply** → continue to the next patch.
+3. **Conflict** (non-zero exit, or conflict markers left in the tree) → spawn `bdk:fixer` once with: the failing patch, the conflicting file's current content, and the original task text. The fixer resolves in the shared tree directly (it has `Edit`/`Write`) and reports `DONE`/`BLOCKED` — no isolation for the fixer, it's operating on the one tree everything else already shares.
+4. **Fixer resolves** → continue to the next patch.
+5. **Fixer reports `BLOCKED`** (or a second conflict) → `git checkout -- <affected files>` to revert the failed apply attempt, then fall back to a single hand-orchestrated implementer for that task **on the current state of the shared tree** (existing 3b path, foreground is fine — the rest of the wave already landed or is waiting). Count as `implementer_redispatch` and log `[subagent-execute-plan] Group {N} task {task_id}: isolated patch conflict, resolved via {fixer|fallback-implementer}`.
+
+Three or more patch conflicts that require the step-5 fallback in one wave → stop the skill with an error report (the wave was mis-classified as `workflow-isolated`-suitable; note this so the plan tag can be corrected, same as the 3+ blocked-task cap in 3b-W).
+
+After all patches are applied or reconciled, proceed to **3d** with the union of `files_changed` (declared) reconciled against `git diff --name-only` against the pre-merge tree state — same reconciliation 3g already does at commit time, just run once more here so 3d–3f see the true diff.
 
 ### 3d. Decide: run tests/lints now? (pure judgment)
 
@@ -318,7 +354,11 @@ head_sha: {short-sha}
 tasks_completed: {N}
 groups_committed: {G}
 groups_via_workflow: {W}
+groups_via_workflow_isolated: {WI}
 groups_via_subagents: {S}
+isolated_patch_conflicts: {N}
+spawn_transport: agent|herdr|mixed
+spawn_fallbacks: {N}
 implementer_dispatches: {N}
 implementer_redispatches: {N}
 fixer_dispatches: {N}
@@ -384,9 +424,11 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 
 ## Rules
 
-- Coordinator never edits files, runs tests, runs lint, or reads source. It runs `git` (status, rev-parse, diff, add, commit) and dispatches subagents (directly, or via a `Workflow` script for a `workflow`-strategy group).
-- Execution strategy is chosen per group in Step 3a-S: plan-declared `strategy:` tag is authoritative input, the executor override rubric may flip it, default is `subagents`. A `workflow` group requires file-disjoint tasks at `confidence ≥ 0.6` and >1 task — otherwise force `subagents`.
+- Coordinator never edits files, runs tests, runs lint, or reads source. It runs `git` (status, rev-parse, diff, add, commit, and — for `workflow-isolated` merges only — apply, checkout) and dispatches subagents (directly, or via a `Workflow` script for a `workflow`/`workflow-isolated`-strategy group).
+- Spawn transport is chosen by the foundation's spawn tier, not by this skill: when the Herdr tier is active, dispatch via pane agents and fall back to `Agent` calls on that tier's triggers. Transport never changes the return contract, the verification schedule, or the commit boundary. Surface it as `spawn_transport` in the Step 4e summary.
+- Execution strategy is chosen per group in Step 3a-S: plan-declared `strategy:` tag is authoritative input, the executor override rubric may flip it, default is `subagents`. A `workflow` group requires file-disjoint tasks at `confidence ≥ 0.6` and >1 task. A `workflow-isolated` group requires ≥ 4 tasks but not proven disjointness — otherwise force `subagents` (or `workflow` if disjointness IS proven).
 - The `Workflow` script implements + optionally fixes only. Verification (3d–3f) and commits (3g) stay with the coordinator. Unresolved `BLOCKED`/`NEEDS_CONTEXT` items from a Workflow fall back to a single hand-orchestrated implementer each.
+- `workflow-isolated` implementers/fixers never commit inside their worktree and never touch the coordinator's shared tree directly. They return a `patch`; only the coordinator applies it (3c-WI), preserving the single commit-boundary invariant. A patch conflict is resolved by `bdk:fixer` operating on the shared tree, not by re-running the isolated agent.
 - Implementer subagents **do not** run final lint or test verification. They do TDD red-green for their own task and stop. Verification is a separate subagent the coordinator schedules.
 - Parallel implementers are allowed only when `bdk:explorer` confirms file-disjoint sets within the group AND `confidence ≥ 0.6`.
 - For verification failures: try `SendMessage` to the original implementer first if cache likely warm and scope is narrow. Fall back to spawning `bdk:fixer`.
@@ -402,9 +444,11 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - ❌ Coordinator running `Edit`, `Write`, or test commands. Coordinator dispatches; subagents act.
 - ❌ Implementer running final `npm test` / `pytest` / lint as part of its task. That belongs to dedicated verification subagents.
 - ❌ Spawning parallel implementers without an explorer pass — silent file conflicts.
-- ❌ Choosing the `workflow` strategy for a group whose tasks are not file-disjoint at `confidence ≥ 0.6`. The script runs them concurrently — collisions corrupt the worktree with no recovery. Force `subagents`.
-- ❌ Using `workflow` for a single-task group, an ambiguous/architectural task, or one likely to need `NEEDS_CONTEXT` round-trips. The script can't SendMessage mid-flight — use `subagents`.
-- ❌ Committing or running tests/lint inside the Workflow script. The script implements + fixes only; the coordinator owns 3d–3g.
+- ❌ Choosing the `workflow` strategy for a group whose tasks are not file-disjoint at `confidence ≥ 0.6`. The script runs them concurrently — collisions corrupt the shared tree with no recovery. Use `workflow-isolated` (if ≥ 4 tasks) or force `subagents`.
+- ❌ Choosing `workflow-isolated` for a wave with < 4 tasks. Per-task worktree setup plus patch reconciliation costs more than the serialization it exists to avoid — use `subagents`.
+- ❌ Using `workflow` or `workflow-isolated` for a single-task group, an ambiguous/architectural task, or one likely to need `NEEDS_CONTEXT` round-trips. Neither script can SendMessage mid-flight — use `subagents`.
+- ❌ Letting a `workflow-isolated` implementer or fixer commit inside its own worktree, or having the coordinator cherry-pick/merge a worktree branch directly. The contract is patch-in, patch-applied-by-coordinator — never a subagent-authored commit landing on the shared branch.
+- ❌ Committing or running tests/lint inside the Workflow script (either variant). The script implements + fixes only; the coordinator owns 3c-WI (isolated merge) and 3d–3g.
 - ❌ Looping a Workflow more than once per wave to chase blocked tasks. One invocation; stragglers fall back to hand-orchestrated subagents.
 - ❌ Spawning `bdk:code-reviewer` per task. End-of-branch only — it sees cross-task patterns the per-task view misses.
 - ❌ Sequencing `bdk:architecture-reviewer` and the final `bdk:test-runner` in Step 4. They are independent read-only checks and **must** be dispatched in a single coordinator message with `run_in_background: true`.
@@ -421,4 +465,4 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - `references/return-contract.md` — REQUIRED YAML envelope every implementer/fixer subagent must emit. Source of truth.
 - `references/explorer-contract.md` — REQUIRED JSON envelope `bdk:explorer` returns for group planning. Source of truth.
 - `references/model-selection.md` — when to pick haiku vs sonnet vs opus for the implementer.
-- `references/dispatch-templates.md` — exact dispatch prompts for explorer, implementer, fixer, verification, and reviewers, plus the **Workflow wave dispatch** script skeleton + `RETURN_SCHEMA` for the `workflow` strategy. Cites the two contracts above.
+- `references/dispatch-templates.md` — exact dispatch prompts for explorer, implementer, fixer, verification, and reviewers, plus the **Workflow wave dispatch** script skeleton + `RETURN_SCHEMA` for the `workflow` strategy, and the **isolated Workflow wave dispatch** skeleton + `ISOLATED_RETURN_SCHEMA` (adds the `patch` field) for `workflow-isolated`. Cites the two contracts above.

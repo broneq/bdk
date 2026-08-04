@@ -73,6 +73,12 @@ Used by skills internally (invoke via `subagent_type`):
 | `log-analyzer` | haiku | Parse and summarize error logs |
 | `web-researcher` | haiku | Search web for solutions and docs |
 
+### Spawn transport
+
+By default these agents are dispatched with the Agent tool. When the session runs inside Herdr, a terminal multiplexer for coding agents (`HERDR_ENV=1` and `herdr` on `PATH`), BDK prefers Herdr pane agents instead: each delegate becomes a full session in its own pane, so the orchestrator pays almost no context, follow-ups have no cache window, parallel work can take a real worktree, and you can attach to any pane and steer it.
+
+Nothing to configure. The tier is gated on the running session, not on `.bdk/settings.json`, so a project with no BDK settings still gets it, and a session outside Herdr behaves exactly as before. BDK falls back to the Agent tool per delegate when a pane fails to start, an agent stalls or blocks, a return envelope is malformed, or a fleet needs more than 4 concurrent delegates (`/bdk:cr` at scale stays on the Agent tool for that reason). Skills that print a summary block report which transport ran.
+
 ---
 
 ## Quality Rules

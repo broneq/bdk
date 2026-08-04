@@ -48,6 +48,8 @@ Parse `$ARGUMENTS`. Validate the path exists. Read the full content. Compute `pl
 
 ## Step 2 — Spawn `bdk:plan-verifier`
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if env.HERDR_ENV=1 --if cmd.herdr --then-text '> **Herdr spawn tier active.** Dispatch the verifier as a Herdr pane agent instead: role bootstrap for plan-verifier, the same message body below, and the YAML verdict written to an envelope file. Iteration 2 uses a continuation prompt to the same agent name in place of SendMessage. Full procedure and fallback triggers: "Spawn Tier: Herdr Pane Agents" in the BDK foundation.'`
+
 Use the Agent tool with `subagent_type: "bdk:plan-verifier"` and this message body:
 
 ```
