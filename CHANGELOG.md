@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/broneq/bdk/compare/v1.2.0...v1.3.0) (2026-08-13)
+
+
+### Features
+
+* add /bdk:add-rule skill and rule-admission linting for refine-r… ([a65eda1](https://github.com/broneq/bdk/commit/a65eda1d932e1ebb50ce101d21a372c719d8fa4f))
+* add /bdk:add-rule skill and rule-admission linting for refine-rules ([dd79e7b](https://github.com/broneq/bdk/commit/dd79e7b2085c38cac5e945dce77a189820915a3c))
+
 ## [1.2.0](https://github.com/broneq/bdk/compare/v1.1.0...v1.2.0) (2026-08-03)
 
 
