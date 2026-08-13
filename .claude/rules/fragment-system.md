@@ -81,10 +81,6 @@ Each tier fragment is self-contained: it carries its own tool list AND the polic
 | Simple one-off conditional | `--if` / `--prefer` inline |
 | Suppress block when better tool available | `--prefer` |
 
-## Graph-Only Skills
-
-Skills `graph-explore`, `graph-debug`, `graph-review`, `graph-refactor` require code-review-graph by design. They make no sense without it. **Do not apply chain migration to these skills.** They stay hardcoded.
-
 ## Agents vs Skills
 
 Agent `.md` files are static markdown — shell commands do not execute at load time, and the `hooks:`, `mcpServers:`, and `permissionMode:` frontmatter fields are **stripped** when an agent ships in a plugin (verbatim from the Claude Code agents reference: *"For security reasons, plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin."*). `inject.py --chain` cannot be used directly inside an agent file.

@@ -80,6 +80,38 @@
         }
       ],
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Our .claude/rules/editor.md is 40KB — way too big — but honestly most of what's in there is true and hard-won. A lot of it explains how specific functions work, with the full reasoning behind each design decision. Refine it, but don't just delete knowledge people paid for.",
+      "expected_output": "Skill applies the admission test per bullet: keeps push-based invariants as rules, compresses test-enforced constraints to one-line signposts, and RELOCATES pull-based content (per-function mechanics, design rationale local to one file) into doc comments at the code sites — moving first, cutting second — rather than either keeping everything (over budget) or deleting it. The rewritten file fits the 150-line/8KB budget, opens with a Critical Invariants section, and the plan lists every relocation target file before approval. The final lint pass (lint_rules.py) reports zero errors.",
+      "assertions": [
+        {
+          "name": "applies_four_verdicts",
+          "description": "Classifies content as RULE / SIGNPOST / RELOCATE / NOISE rather than only keep-vs-drop"
+        },
+        {
+          "name": "relocates_instead_of_deleting",
+          "description": "Pull-based content (single-function mechanics, local design rationale) is moved into doc comments at the code sites, not silently deleted and not kept in the rule file"
+        },
+        {
+          "name": "move_first_cut_second",
+          "description": "Doc comments are written to source files before the corresponding content is removed from the rule file"
+        },
+        {
+          "name": "enforces_budget_and_critical_invariants",
+          "description": "The rewritten rule file fits the 150-line/8KB budget and opens with a '## Critical Invariants' section of 3-6 items"
+        },
+        {
+          "name": "plan_lists_relocation_targets",
+          "description": "The AskUserQuestion plan enumerates the source files that will receive doc comments, so the user sees the full blast radius"
+        },
+        {
+          "name": "lint_gate_passes",
+          "description": "Runs lint_rules.py after writing and reports zero errors as the exit criterion"
+        }
+      ],
+      "files": []
     }
   ]
 }
