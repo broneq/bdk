@@ -29,6 +29,8 @@ All fields optional except `description` (recommended).
 
 **Wrong:** `arguments:` field does not exist. Use `argument-hint:` for autocomplete hints.
 
+**If the skill body runs a `!`...`` block against `${CLAUDE_PLUGIN_ROOT}/scripts/`:** add `allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)`. `${CLAUDE_PLUGIN_ROOT}` resolves inside `allowed-tools` Bash rules the same way it does in skill body content, so the rule stays correct wherever the plugin is installed. This pre-approves the call instead of leaving it to be decided fresh each time, which matters most for `user-invocable: false` meta-skills preloaded into background subagents.
+
 ### Invocation matrix
 
 | Frontmatter | User invoke | Claude invoke | When loaded |

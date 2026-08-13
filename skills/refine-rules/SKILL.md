@@ -5,6 +5,7 @@ model: sonnet
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[rules-dir]"
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Refine Rules
