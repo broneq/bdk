@@ -109,6 +109,7 @@ For multi-tier injection (fallback ladders, complementary tool sets), use a `*.c
 - **Syntax**: Use `--then <file>` for content >2 lines; `--then-text` for snippets.
 - **Placement**: Inject calls go immediately before the section they augment.
 - **Multi-tier**: Use `--chain <file>.chain.json` instead of multiple `--if/--then` calls. See `fragment-system.md`.
+- **Frontmatter**: a skill running these `!`...`` calls needs `allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)` — see `.claude/rules/skill-creation-rules.md`.
 
 ## Related: rule injection (not fragments)
 

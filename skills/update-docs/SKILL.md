@@ -5,6 +5,7 @@ model: sonnet
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[doc_path]"
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 hooks:
   Stop:
     - hooks:

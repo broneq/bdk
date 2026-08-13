@@ -8,6 +8,7 @@ model: opus
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[decision context, options, constraints, preferences]"
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Create ADR
