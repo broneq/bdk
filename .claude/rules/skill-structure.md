@@ -28,6 +28,7 @@ skills/<skill-name>/
 - Executable scripts → `scripts/`
 - Conditional injection targets → `fragments/` (see inject-fragments.md)
 - No other subdirectories allowed
+- **Cross-skill assets are referenced, never copied.** A reference doc or script used by more than one skill lives in exactly one owning skill's directory; sibling skills reach it via `${CLAUDE_PLUGIN_ROOT}/skills/<owner>/references/...` (or `scripts/...`). Duplicating the file creates drifting copies (e.g. `add-rule` reads `refine-rules`' `rule-admission.md` and `lint_rules.py` this way).
 
 ## Enforcement
 

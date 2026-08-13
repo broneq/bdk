@@ -1,0 +1,73 @@
+{
+  "skill_name": "add-rule",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We just spent two hours debugging: someone used a nullish-coalescing default on a field where null and empty string mean different things, and the fallback silently swallowed the distinction. There's a resolver helper that handles it correctly. Add a rule so this never happens again.",
+      "expected_output": "Skill distills one imperative sentence (e.g. 'Never collapse null and empty string with ?? / || on tri-state fields; resolve only via the resolver helper'), applies the admission test and concludes rule-file (the trap can be written far from the code that defines the invariant, so no doc comment can warn in time), checks for an existing rule covering it, picks the rule file whose paths: scope covers the field code, budget-checks it with lint_rules.py, confirms the exact text via AskUserQuestion, and writes a uniform-format bullet with no incident narrative (no 'we just spent two hours').",
+      "assertions": [
+        {
+          "name": "distills_single_imperative_sentence",
+          "description": "Produces one present-tense MUST/NEVER sentence capturing the constraint, not a paragraph retelling the debugging session"
+        },
+        {
+          "name": "no_incident_narrative_in_output",
+          "description": "The written rule contains no story of the incident (no 'we spent two hours', no dates, no 'someone did X') — only the constraint, an optional one-clause why, and a pointer"
+        },
+        {
+          "name": "applies_admission_test",
+          "description": "Explicitly reasons about where the knowledge belongs (rule file vs doc comment vs test) before writing, referencing the visibility of the trap"
+        },
+        {
+          "name": "dedupes_against_existing_rules",
+          "description": "Searches .claude/rules/ for an existing rule covering the same constraint before appending, and sharpens in place if found"
+        },
+        {
+          "name": "budget_checked_before_write",
+          "description": "Runs lint_rules.py on the target file and routes to _inbox.md instead if the target is over budget"
+        },
+        {
+          "name": "confirms_before_writing",
+          "description": "Presents verdict, target, and exact text via AskUserQuestion before touching any file"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Add a rule: the +1 offset in the cursor-forward mapping function looks wrong but it's intentional — the confirmed-history path needs it while the unsent-steps path uses -1. I don't want anyone 'fixing' it.",
+      "expected_output": "Skill recognizes this as pull-based knowledge (the subtlety lives in exactly one file, visible when editing it) and routes the full rationale to a doc comment at the code site; at most a one-line deliberate-decision pointer goes into a rule file. It does not paste the full mechanism explanation into .claude/rules/.",
+      "assertions": [
+        {
+          "name": "routes_to_doc_comment",
+          "description": "Concludes the detailed rationale belongs in a doc comment at the function's code site, not as a multi-line rule-file entry, because the trap is visible in the one file where it lives"
+        },
+        {
+          "name": "rule_file_gets_at_most_pointer",
+          "description": "If anything is added to .claude/rules/, it is a one-line deliberate-decision flag pointing to the doc comment, not the full explanation"
+        },
+        {
+          "name": "writes_comment_matching_style",
+          "description": "The doc comment is written at the relevant code location, matching the file's existing comment conventions"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Capture this as a rule: layer imports must stay one-directional. Note that we already have a unit test that fails the build whenever someone imports upward.",
+      "expected_output": "Skill recognizes the constraint is already mechanically enforced by a test and outputs at most a one-line signpost naming the enforcing test (or nothing if a rule section already covers layering), instead of writing a full multi-line rule duplicating what the test guards.",
+      "assertions": [
+        {
+          "name": "recognizes_existing_enforcer",
+          "description": "Identifies that a guard test already enforces the constraint (derivability test) and says so explicitly"
+        },
+        {
+          "name": "writes_signpost_not_full_rule",
+          "description": "Output is at most one line naming the enforcing test, not a multi-line rule restating the constraint the test already guards"
+        }
+      ],
+      "files": []
+    }
+  ]
+}

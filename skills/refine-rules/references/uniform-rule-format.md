@@ -16,6 +16,11 @@ paths:
 
 <Optional 1-2 sentence orientation: what this file governs, where the real code lives.>
 
+## Critical Invariants
+
+1. <The 3-6 constraints whose violation means data loss, divergence, or silent
+   corruption — one line each, with a pointer to the full rule below.>
+
 ## <Section Name>
 
 - **<Rule stated as a present-tense, falsifiable claim>.** <Why it matters or what
@@ -23,6 +28,10 @@ paths:
   a file:line, a real function name, or a short illustrative code fragment —
   only when it clarifies a banned/required pattern.>
 ```
+
+Budgets (from `rule-admission.md`): 150 lines / 8 KB per file, ~5 lines per bullet.
+The `## Critical Invariants` section is required for files over ~40 lines; a short
+file whose whole body IS its critical list may skip it.
 
 Frontmatter (`paths:`) is the one part of a rule file that is NOT prose — never
 paraphrase, compact, or "uniform-ize" it. It is machine-read by the drift hook.
@@ -42,6 +51,19 @@ Good:
 Bad (buries the rule, no falsifiable claim up front):
 > - We generally try to be careful about how actions touch the database, since
 >   there have been issues in the past with this.
+
+**Signpost form** — for a constraint a test or lint already fully enforces, one line
+naming the enforcer replaces the explanation:
+
+> - **Layer imports are one-directional.** Enforced by `lib/__tests__/layering.test.ts` —
+>   when it fails, read the test, don't work around it.
+
+**Deliberate-decision form** — for behavior that LOOKS like a bug but is intentional,
+the rule is one line flagging it, and the full story lives in a doc comment at the
+code site:
+
+> - **`trailingBreak` is rendered, not hidden — deliberate, do not "fix".** Full
+>   rationale in the doc comment at `renderer/trailing-break.ts`.
 
 ## What is a rule vs. what is noise
 

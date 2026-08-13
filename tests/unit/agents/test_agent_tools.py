@@ -6,10 +6,10 @@ Two contracts are guarded:
    graph tools must list them in their `tools:` allowlist using the
    plugin-namespaced form (`mcp__plugin_bdk_code-review-graph__*`,
    per `mcp-tool-naming.md`).
-2. **Narrow agents stay narrow** — agents with tightly scoped tool sets
-   (test-runner, static-analyse, web-researcher, log-analyzer,
-   sentinel-agent, fixer, implementer) keep their declared sets.
-   Adding a tool to one of these requires updating the spec inline.
+2. **Narrow agents stay narrow** - agents with tightly scoped tool sets
+   (test-runner, static-analyse, web-researcher, log-analyzer, fixer,
+   implementer) keep their declared sets. Adding a tool to one of these
+   requires updating the spec inline.
 """
 
 from __future__ import annotations
@@ -136,14 +136,6 @@ def test_duplicate_detector_has_large_function_tool() -> None:
     assert expected in tools, f"duplicate-detector.md missing {expected}"
 
 
-def test_step_simulator_has_flow_tools() -> None:
-    tools = _expect_tool_set(AGENTS_DIR / "step-simulator.md")
-    for tool in ("list_flows_tool", "get_flow_tool"):
-        assert f"{CRG_PREFIX}{tool}" in tools, (
-            f"step-simulator.md missing {CRG_PREFIX}{tool}"
-        )
-
-
 # ---------------------------------------------------------------------------
 # Convention — every CRG tool entry uses the plugin_bdk_ prefix
 # ---------------------------------------------------------------------------
@@ -203,8 +195,11 @@ NARROW_AGENT_TOOLS: dict[str, set[str] | str] = {
         "mcp__plugin_bdk_serena__get_symbols_overview",
         "mcp__plugin_bdk_serena__find_symbol",
         "mcp__plugin_bdk_serena__find_referencing_symbols",
+        "mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool",
+        "mcp__plugin_bdk_code-review-graph__query_graph_tool",
+        "mcp__plugin_bdk_code-review-graph__traverse_graph_tool",
+        "mcp__plugin_bdk_code-review-graph__list_graph_stats_tool",
     },
-    "sentinel-agent": {"Read"},
     "fixer": {
         "Read",
         "Edit",
@@ -223,9 +218,14 @@ NARROW_AGENT_TOOLS: dict[str, set[str] | str] = {
         "mcp__plugin_bdk_serena__insert_after_symbol",
         "mcp__plugin_bdk_code-review-graph__detect_changes_tool",
         "mcp__plugin_bdk_code-review-graph__query_graph_tool",
+        "mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool",
+        "mcp__plugin_bdk_code-review-graph__traverse_graph_tool",
+        "mcp__plugin_bdk_code-review-graph__list_graph_stats_tool",
         "mcp__plugin_bdk_code-review-graph__get_impact_radius_tool",
         "mcp__plugin_bdk_code-review-graph__get_affected_flows_tool",
         "mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool",
+        "mcp__plugin_bdk_code-review-graph__list_flows_tool",
+        "mcp__plugin_bdk_code-review-graph__get_flow_tool",
     },
     "implementer": {
         "Read",
@@ -246,11 +246,21 @@ NARROW_AGENT_TOOLS: dict[str, set[str] | str] = {
         "mcp__plugin_bdk_code-review-graph__detect_changes_tool",
         "mcp__plugin_bdk_code-review-graph__query_graph_tool",
         "mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool",
+        "mcp__plugin_bdk_code-review-graph__traverse_graph_tool",
+        "mcp__plugin_bdk_code-review-graph__list_graph_stats_tool",
         "mcp__plugin_bdk_code-review-graph__get_impact_radius_tool",
         "mcp__plugin_bdk_code-review-graph__get_affected_flows_tool",
         "mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool",
+        "mcp__plugin_bdk_code-review-graph__list_flows_tool",
+        "mcp__plugin_bdk_code-review-graph__get_flow_tool",
     },
 }
+
+
+def test_narrow_agent_spec_covers_only_existing_agents() -> None:
+    """Guard against the spec drifting to reference deleted agents."""
+    missing = [n for n in NARROW_AGENT_TOOLS if not (AGENTS_DIR / f"{n}.md").exists()]
+    assert not missing, f"NARROW_AGENT_TOOLS names agents that no longer exist: {missing}"
 
 
 @pytest.mark.parametrize("name,expected", sorted(NARROW_AGENT_TOOLS.items()))
