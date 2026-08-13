@@ -156,24 +156,14 @@ def test_cli_missing_source_exits_nonzero(tmp_path):
 
 
 def test_renders_new_tier_steps_in_orchestrator_startup():
-    """The real STARTUP_INSTRUCTIONS.md rendered with graph enabled must carry
-    tier-policy content, not just the tool menus. Guards the orchestrator
-    delivery path.
-
-    Asserted on the vocabulary the fragments actually use (see
-    tests/unit/fragments/test_tier_graph_fragments.py for the same three
-    policy checks applied per fragment): a coverage check, a per-question
-    call cap, and a negative-result rule.
+    """The real STARTUP_INSTRUCTIONS.md rendered with graph enabled must
+    contain the rewritten tier-policy content (Step 0, Negative result,
+    canonical call-cap phrase). Guards the orchestrator delivery path.
     """
     settings = {"features": {"code-review-graph": True, "serena": True}}
     out = render(PLUGIN_ROOT / "STARTUP_INSTRUCTIONS.md", settings)
-
-    assert "list_graph_stats_tool" in out or "coverage" in out, (
-        "orchestrator STARTUP render missing coverage-check reference"
-    )
-    assert "calls per question" in out or "Budget" in out, (
-        "orchestrator STARTUP render missing call-cap phrase"
-    )
-    assert "absent" in out or "no impact" in out, (
-        "orchestrator STARTUP render missing negative-result rule"
-    )
+    for required in ("Step 0", "max 2 graph calls", "Negative result"):
+        assert required in out, (
+            f"orchestrator STARTUP render missing {required!r} — "
+            "tier-rewrite content did not reach the orchestrator codepath"
+        )

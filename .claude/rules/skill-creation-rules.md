@@ -152,11 +152,6 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 | `features.react` | `settings.features.react == true` |
 | `features.code-review-graph` | `settings.features.code-review-graph == true` |
 | `languages[typescript]` | `"typescript" in settings.languages` |
-| `env.HERDR_ENV` | `HERDR_ENV` is set and non-empty |
-| `env.HERDR_ENV=1` | `HERDR_ENV` equals `1` exactly |
-| `cmd.herdr` | `herdr` resolves on `PATH` |
-
-`env.*` and `cmd.*` describe the running session, so a block gated only on them resolves even with no `.bdk/settings.json`. Use them for facts about the environment; use `features.*` for project opt-ins. Do not add a feature flag that merely claims a runtime tool is present: a stale flag lies.
 
 ## Examples
 
@@ -171,8 +166,8 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 ## Rules
 
 - Put conditional fragments in `fragments/` subdir of the skill — see `.claude/rules/inject-fragments.md`
-- Use `--then-text` for one paragraph with no backticks; use `--then` + file for formatted or multi-paragraph content
-- Missing `.bdk/settings.json` = silent for `features.*` / `languages[...]` blocks and for unconditional chain entries (exit 0, graceful for projects not using BDK). Blocks gated only on `env.*` / `cmd.*` still resolve
+- Use `--then-text` only for short snippets (1-2 lines); use `--then` + file for anything longer
+- Missing `.bdk/settings.json` = silent (exit 0) — graceful for projects not using BDK
 - Settings file searched upward from cwd — no need to specify path in skills
 
 ## Programmatic API

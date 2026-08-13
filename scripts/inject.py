@@ -12,22 +12,13 @@ Usage:
     python3 inject.py --if features.react --then file.md --settings /custom/.bdk/settings.json
     python3 inject.py --if features.serena --prefer features.code-review-graph --then serena.md
     python3 inject.py --chain fragments/tool-tiers/search.chain.json
-    python3 inject.py --if env.HERDR_ENV=1 --if cmd.herdr --then spawn-herdr.md
 
 Condition syntax:
     features.react              settings["features"]["react"] is True
     features.code-review-graph  settings["features"]["code-review-graph"] is True
     languages[typescript]       "typescript" in settings["languages"]
-    env.HERDR_ENV               os.environ["HERDR_ENV"] is set and non-empty
-    env.HERDR_ENV=1             os.environ["HERDR_ENV"] == "1"
-    cmd.herdr                   "herdr" resolves on PATH
 
 Multiple --if flags use AND logic (all must be true).
-
-`env.*` and `cmd.*` conditions describe the runtime session, not project config,
-so they evaluate even when .bdk/settings.json is absent. A block whose conditions
-are ALL runtime conditions therefore works in any project. Mixing a runtime
-condition with a `features.*` condition still requires settings.json.
 
 Public API (importable):
     from inject import load_settings, evaluate_condition, inject
@@ -37,23 +28,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
-import shutil
 import sys
 from pathlib import Path
 
 # Matches: features.some-key  OR  languages[value]
 _FEATURE_RE = re.compile(r'^features\.([\w-]+)$')
 _ARRAY_RE = re.compile(r'^([\w-]+)\[([\w-]+)\]$')
-# Runtime conditions — evaluated against the session, not .bdk/settings.json
-_ENV_RE = re.compile(r'^env\.([A-Za-z_][A-Za-z0-9_]*)(?:=(.*))?$')
-_CMD_RE = re.compile(r'^cmd\.([\w.+-]+)$')
-
-
-def is_runtime_condition(condition: str) -> bool:
-    """True when the condition depends on the session, not on settings.json."""
-    return bool(_ENV_RE.match(condition) or _CMD_RE.match(condition))
 
 
 def load_settings(start: str | Path | None = None) -> dict | None:
@@ -75,27 +56,11 @@ def load_settings(start: str | Path | None = None) -> dict | None:
         current = parent
 
 
-def evaluate_condition(condition: str, settings: dict | None = None) -> bool:  # type: ignore[type-arg]
-    """Evaluate a single condition string against settings or the environment.
+def evaluate_condition(condition: str, settings: dict) -> bool:  # type: ignore[type-arg]
+    """Evaluate a single condition string against settings.
 
-    `env.*` and `cmd.*` conditions ignore `settings` entirely. Raises ValueError
-    for unrecognised syntax.
+    Raises ValueError for unrecognised syntax.
     """
-    env_match = _ENV_RE.match(condition)
-    if env_match:
-        name, expected = env_match.group(1), env_match.group(2)
-        actual = os.environ.get(name)
-        if expected is None:
-            return bool(actual)
-        return actual == expected
-
-    cmd_match = _CMD_RE.match(condition)
-    if cmd_match:
-        return shutil.which(cmd_match.group(1)) is not None
-
-    if settings is None:
-        return False
-
     feature_match = _FEATURE_RE.match(condition)
     if feature_match:
         key = feature_match.group(1)
@@ -113,8 +78,8 @@ def evaluate_condition(condition: str, settings: dict | None = None) -> bool:  #
         return value in arr
 
     raise ValueError(
-        f"Unrecognised condition syntax: {condition!r}. Expected 'features.<key>', "
-        "'<field>[<value>]', 'env.<VAR>[=<value>]', or 'cmd.<name>'."
+        f"Unrecognised condition syntax: {condition!r}. "
+        "Expected 'features.<key>' or '<field>[<value>]'."
     )
 
 
@@ -130,15 +95,10 @@ def inject(
     prefer_conditions: list of conditions using OR logic — if any is true,
     suppress this block (used to defer to a higher-tier tool).
     Returns empty string when any condition is false, any prefer is true,
-    or settings is None and the block is not purely runtime-conditioned.
+    or settings is None.
     """
-    all_conditions = list(conditions) + list(prefer_conditions or [])
-
     if settings is None:
-        # Runtime-only blocks (env./cmd.) do not need project settings. Anything
-        # else, including an unconditional block, stays suppressed.
-        if not all_conditions or not all(map(is_runtime_condition, all_conditions)):
-            return ""
+        return ""
 
     for condition in conditions:
         if not evaluate_condition(condition, settings):
@@ -177,11 +137,13 @@ def inject_chain(
     chain entry produced content. Paths in chain entries and ``header`` are
     resolved relative to ``chain_path``'s directory.
 
-    Returns empty string when no chain entry matched. When settings is None,
-    only entries whose conditions are all runtime (`env.*` / `cmd.*`) can match.
+    Returns empty string when settings is None or no chain entry matched.
     Raises FileNotFoundError if chain_path or referenced files do not exist.
     Raises ValueError for unrecognised mode or missing 'then'.
     """
+    if settings is None:
+        return ""
+
     chain_path = Path(chain_path)
     if not chain_path.exists():
         raise FileNotFoundError(f"inject: chain file not found: {chain_path}")
@@ -266,6 +228,8 @@ def main() -> None:
         settings = (
             load_settings(args.settings_path) if args.settings_path else load_settings()
         )
+        if settings is None:
+            sys.exit(0)
         try:
             result = inject_chain(chain_path=args.chain_path, settings=settings)
         except (FileNotFoundError, ValueError) as e:
@@ -284,6 +248,8 @@ def main() -> None:
     settings = (
         load_settings(args.settings_path) if args.settings_path else load_settings()
     )
+    if settings is None:
+        sys.exit(0)
 
     try:
         result = inject(

@@ -15,13 +15,11 @@ Usage:
 Marker syntax in STARTUP_INSTRUCTIONS.md:
 
     <!-- CHAIN: explore.chain.json -->
-    <!-- CHAIN: spawn/spawn.chain.json -->
 
-Path is resolved relative to fragments/tool-tiers/ first, then relative to
-fragments/. Whole marker line is replaced with the chain's resolved content.
-When .bdk/settings.json is missing, markers expand to empty strings — except
-for chains gated purely on runtime conditions (env./cmd.), which still resolve.
-The file is always emitted so the prose-only sections reach the model.
+Path is resolved relative to fragments/tool-tiers/. Whole marker line
+is replaced with the chain's resolved content. When .bdk/settings.json
+is missing, markers expand to empty strings — the file is still emitted
+so the prose-only sections reach the model.
 """
 
 from __future__ import annotations
@@ -34,18 +32,9 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SOURCE = PLUGIN_ROOT / "STARTUP_INSTRUCTIONS.md"
-FRAGMENTS_DIR = PLUGIN_ROOT / "fragments"
-CHAINS_DIR = FRAGMENTS_DIR / "tool-tiers"
+CHAINS_DIR = PLUGIN_ROOT / "fragments" / "tool-tiers"
 
 _MARKER_RE = re.compile(r"<!--\s*CHAIN:\s*([^\s]+)\s*-->")
-
-
-def resolve_chain_path(chain_rel: str) -> Path:
-    """Resolve a marker path: tool-tiers/ first (bare tier names), then fragments/."""
-    tier_candidate = CHAINS_DIR / chain_rel
-    if tier_candidate.exists():
-        return tier_candidate
-    return FRAGMENTS_DIR / chain_rel
 
 
 def _load_inject_module():
@@ -64,7 +53,7 @@ def render(source: Path, settings: dict | None) -> str:
 
     def replace(match: re.Match[str]) -> str:
         chain_rel = match.group(1)
-        chain_path = resolve_chain_path(chain_rel)
+        chain_path = CHAINS_DIR / chain_rel
         if not chain_path.exists():
             print(
                 f"[BDK render_startup] chain file not found: {chain_path}",

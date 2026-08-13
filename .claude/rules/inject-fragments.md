@@ -72,7 +72,7 @@ bdk/
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if languages.react --then ${CLAUDE_SKILL_DIR}/fragments/react.md`
 ```
 
-### Inline text (single paragraph, no formatting)
+### Inline text (≤2 lines)
 ```markdown
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.embeddings --then-text "Enable embeddings in your STARTUP_INSTRUCTIONS.md"`
 ```
@@ -81,10 +81,8 @@ bdk/
 
 | Use | When |
 |---|---|
-| `--then <file>` | Formatting-sensitive content (lists, code blocks, tables) or anything needing more than one paragraph |
-| `--then-text "<text>"` | A single paragraph, no embedded backticks (the call itself is backtick-delimited) or markdown formatting that needs a block |
-
-Length is not the constraint. A full paragraph is fine; one backtick is not, and truncates the block silently at load time.
+| `--then <file>` | Anything >2 lines or formatting-sensitive (lists, code blocks, tables) |
+| `--then-text "<text>"` | Single line or short, stable snippets (≤2 lines) |
 
 ## Placement rule
 
@@ -108,7 +106,7 @@ For multi-tier injection (fallback ladders, complementary tool sets), use a `*.c
 ## Rules summary
 
 - **Fragments ≠ references**: Fragments are conditional; references are static. See decision tree above for placement.
-- **Syntax**: Use `--then <file>` for formatted or multi-paragraph content; `--then-text` for one backtick-free paragraph.
+- **Syntax**: Use `--then <file>` for content >2 lines; `--then-text` for snippets.
 - **Placement**: Inject calls go immediately before the section they augment.
 - **Multi-tier**: Use `--chain <file>.chain.json` instead of multiple `--if/--then` calls. See `fragment-system.md`.
 
@@ -118,7 +116,7 @@ Three mechanisms coexist — do not confuse them:
 
 | Mechanism | Trigger | Source | Use case |
 |---|---|---|---|
-| `inject.py` | `!`...`` shell line with `--if` / `--chain` | Skill/agent body | Conditional fragments based on project conditions (`features.*`, `languages[...]`) or runtime conditions (`env.*`, `cmd.*`) |
+| `inject.py` | `!`...`` shell line with `--if` / `--chain` | Skill/agent body | Conditional fragments based on `features.*` or `languages[...]` |
 | `inject-rules.py` | `!`...`` shell line, name as arg | `rules/<name>.md` (BDK) + `quality.<name>` override | Language-agnostic quality rules (`code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`) |
 | `inject-language-rules.py` | `!`...`` shell line | `rules/languages/<lang>.md` per entry in `languages` + `language-rules.<lang>` override | Language- or framework-specific rule sheets |
 

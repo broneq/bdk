@@ -56,14 +56,9 @@ def test_chain_renders_policy_with_graph_enabled(
     assert "Budget" in out or "calls per question" in out or "max 2" in out, (
         f"{chain_name}: rendered chain missing call budget phrase"
     )
-    # Per-tier vocabulary for the same rule — see test_tier_graph_fragments.py.
-    assert (
-        "absent" in out
-        or "Stop" in out
-        or "no impact" in out
-        or "isolated change" in out
-        or "mechanical change" in out
-    ), f"{chain_name}: rendered chain missing negative-result rule"
+    assert "absent" in out or "Stop" in out or "no impact" in out, (
+        f"{chain_name}: rendered chain missing negative-result rule"
+    )
     assert fragment_marker in out, (
         f"{chain_name}: menu fragment marker {fragment_marker!r} missing"
     )

@@ -1,6 +1,0 @@
-{
-  "mode": "exclusive",
-  "chain": [
-    { "if": ["env.HERDR_ENV=1", "cmd.herdr"], "then": "spawn-herdr.md" }
-  ]
-}
