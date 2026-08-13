@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/broneq/bdk/compare/v1.3.0...v1.3.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* grant allowed-tools for plugin scripts to skills that call them ([a1bac0e](https://github.com/broneq/bdk/commit/a1bac0e9865659ffd122cdbcfca8f0183381914d))
+* grant allowed-tools for plugin scripts to skills that call them ([1b08acc](https://github.com/broneq/bdk/commit/1b08acc0ff6f6a01853a3b9bee8689f174d509d3))
+
 ## [1.3.0](https://github.com/broneq/bdk/compare/v1.2.0...v1.3.0) (2026-08-13)
 
 
