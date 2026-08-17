@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/broneq/bdk/compare/v1.3.1...v1.4.0) (2026-08-17)
+
+
+### Features
+
+* **rules:** add extract-to-owner trigger to design-patterns rules ([7eb0c7d](https://github.com/broneq/bdk/commit/7eb0c7d1582340be29ecc3834868d494df879239))
+* **rules:** add extract-to-owner trigger to design-patterns rules ([1d1ab5a](https://github.com/broneq/bdk/commit/1d1ab5a34ccec6f3f8aaada5cf182c8499b5b196))
+
 ## [1.3.1](https://github.com/broneq/bdk/compare/v1.3.0...v1.3.1) (2026-08-13)
 
 
