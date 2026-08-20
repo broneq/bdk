@@ -181,3 +181,8 @@ settings = load_settings()                                    # dict | None
 ok = evaluate_condition("features.react", settings)           # bool
 content = inject(["features.react"], then_path="react.md", settings=settings)  # str
 ```
+
+# Dispatching Subagents From a Skill
+
+- The `Agent` tool takes only `subagent_type`, `prompt`, `description`, `model`, `isolation`. There is no `run_in_background` (that is a `Bash` field). Naming a parameter the tool does not have is an input-validation error at user runtime; BDK's own tests never execute a skill body, so nothing here catches it.
+- Subagents already run in the background and the harness notifies the orchestrator on completion. A skill that says "wait for still-running agents" without saying how invites the orchestrator to invent a poll - `ScheduleWakeup` (valid only in `/loop` dynamic mode), `Monitor`, `sleep`, or a watcher agent. When a step waits, say explicitly: wait for the completion notification, do not poll.

@@ -93,7 +93,9 @@ Based on total changed lines:
 
 ### Step 3: Dispatch ALL Agents in Parallel
 
-Launch ALL planned agents in SINGLE message using Agent tool with `run_in_background: true`.
+Launch ALL planned agents in a SINGLE message using multiple `Agent` calls. Subagents already run in the background - there is no `run_in_background` parameter on the `Agent` tool; passing one is an input-validation error.
+
+You will be notified as each agent completes. **Do not poll and do not schedule wake-ups** - no `ScheduleWakeup`, no `Monitor`, no `sleep`, no re-spawning an agent to check on another. Just wait for the notifications.
 
 > When a reviewer's report needs clarification on a specific finding, prefer `SendMessage(to: "<agentId>", ...)` over re-spawning — the reviewer keeps its scan context. See STARTUP "Continuing a Spawned Agent".
 
@@ -125,7 +127,7 @@ For test-runner:
 
 All agent inputs are already in hand by this point — no sequential section construction needed.
 
-1. **Collect** all agent outputs (gathering pass — wait for any still-running agents).
+1. **Collect** all agent outputs (gathering pass). If agents are still running, wait for their completion notifications - do not poll, schedule wake-ups, or merge partial results.
 2. **Deduplicate**: build a flat findings array keyed by `(file, line, category)`; keep the more detailed entry when two agents report the same location.
 3. **Parallel section assembly**: derive all 13 report sections simultaneously from the flat array. Each section draws from its own category slice — they are independent. Phrase the assembly as a single pass: "For each section below, extract matching findings from the flat array."
 4. **Write report to artifact**: concatenate sections in order, write to `.bdk/cr/[TDP - dynamic path here]` — see IDEAS.md for dynamic path pattern.
