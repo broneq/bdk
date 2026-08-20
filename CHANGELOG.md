@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/broneq/bdk/compare/v1.5.0...v1.5.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **skills:** drop invalid Agent param, forbid agent polling ([f7b9e60](https://github.com/broneq/bdk/commit/f7b9e60ef49a14b89465eed03d43177c116e484d))
+* **skills:** drop invalid Agent param, forbid agent polling ([04a7e6c](https://github.com/broneq/bdk/commit/04a7e6c6e558661db66299e49d9129241454b885))
+
 ## [1.5.0](https://github.com/broneq/bdk/compare/v1.4.0...v1.5.0) (2026-08-20)
 
 
