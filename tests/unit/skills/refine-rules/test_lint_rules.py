@@ -162,6 +162,145 @@ def test_markers_inside_frontmatter_ignored(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# admission lints - code-mirror (admission test #0)
+# ---------------------------------------------------------------------------
+
+
+def _warn_codes(mod, tmp_path: Path, body: str) -> set[str]:
+    f = tmp_path / "rule.md"
+    f.write_text("---\npaths:\n  - a/**\n---\n\n# T\n\n" + body)
+    return _codes(mod.lint_file(f)["warnings"])
+
+
+def test_three_paths_from_one_directory_is_warning(tmp_path: Path) -> None:
+    mod = _load_module()
+    body = (
+        "- **Cascade order matters.** See `convex/cascade/user.ts`, "
+        "`convex/cascade/org.ts`, `convex/cascade/team.ts`.\n"
+    )
+    assert "admission:code-mirror" in _warn_codes(mod, tmp_path, body)
+
+
+def test_two_paths_from_one_directory_is_clean(tmp_path: Path) -> None:
+    mod = _load_module()
+    body = "- **X.** See `convex/cascade/user.ts` and `convex/cascade/org.ts`.\n"
+    assert "admission:code-mirror" not in _warn_codes(mod, tmp_path, body)
+
+
+def test_three_paths_across_different_directories_is_clean(tmp_path: Path) -> None:
+    mod = _load_module()
+    body = "- **X.** See `a/one.ts`, `b/two.ts`, `c/three.ts`.\n"
+    assert "admission:code-mirror" not in _warn_codes(mod, tmp_path, body)
+
+
+def test_pinning_test_citation_exempts_the_enumeration(tmp_path: Path) -> None:
+    mod = _load_module()
+    body = (
+        "- **Layer list is exhaustive.** `a/one.ts`, `a/two.ts`, `a/three.ts` - "
+        "Enforced by `a/layering.test.ts`.\n"
+    )
+    assert "admission:code-mirror" not in _warn_codes(mod, tmp_path, body)
+
+
+def test_multi_symbol_rule_is_not_a_code_mirror(tmp_path: Path) -> None:
+    """Regression guard: the canonical good example in uniform-rule-format.md."""
+    mod = _load_module()
+    body = (
+        "- **No `ctx.db` in an `action`.** Actions have no `ctx.db`. Read via "
+        "`ctx.runQuery(...)`, write via `ctx.runMutation(...)`.\n"
+    )
+    assert "admission:code-mirror" not in _warn_codes(mod, tmp_path, body)
+
+
+def test_code_mirror_ignores_fenced_examples(tmp_path: Path) -> None:
+    mod = _load_module()
+    body = (
+        "```markdown\n"
+        "- **Bad.** `a/one.ts`, `a/two.ts`, `a/three.ts`\n"
+        "```\n"
+    )
+    assert "admission:code-mirror" not in _warn_codes(mod, tmp_path, body)
+
+
+def test_code_mirror_folds_bullet_continuation_lines(tmp_path: Path) -> None:
+    mod = _load_module()
+    body = (
+        "- **Cascade order matters.** See `convex/cascade/user.ts`,\n"
+        "  `convex/cascade/org.ts`, and `convex/cascade/team.ts` in that order.\n"
+    )
+    assert "admission:code-mirror" in _warn_codes(mod, tmp_path, body)
+
+
+# ---------------------------------------------------------------------------
+# admission lints - ticket-only rationale
+# ---------------------------------------------------------------------------
+
+
+def test_ticket_as_sole_rationale_is_warning(tmp_path: Path) -> None:
+    mod = _load_module()
+    codes = _warn_codes(mod, tmp_path, "- **Writes go through the projection.** See CUR-11.\n")
+    assert "admission:ticket-only-rationale" in codes
+
+
+def test_ticket_alongside_stated_consequence_is_clean(tmp_path: Path) -> None:
+    mod = _load_module()
+    codes = _warn_codes(
+        mod,
+        tmp_path,
+        "- **Writes go through the projection.** A drift between the two "
+        "projections loses deletions (CUR-11).\n",
+    )
+    assert "admission:ticket-only-rationale" not in codes
+    # the broader bug-id marker still fires - the two checks are independent
+    assert "narrative:bug-id" in codes
+
+
+def test_bullet_without_ticket_is_clean(tmp_path: Path) -> None:
+    mod = _load_module()
+    codes = _warn_codes(mod, tmp_path, "- **X.** Because the two projections would diverge.\n")
+    assert "admission:ticket-only-rationale" not in codes
+
+
+# ---------------------------------------------------------------------------
+# admission lints - severity contract
+# ---------------------------------------------------------------------------
+
+
+def test_admission_lints_are_warnings_and_do_not_fail_the_exit_gate(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "mirror.md").write_text(
+        "---\npaths:\n  - a/**\n---\n\n# T\n\n"
+        "- **Cascade order.** `convex/cascade/user.ts`, `convex/cascade/org.ts`, "
+        "`convex/cascade/team.ts`.\n"
+    )
+    result = _run_cli(str(tmp_path))
+    payload = json.loads(result.stdout)
+    assert payload["summary"]["errors"] == 0
+    assert payload["summary"]["warnings"] >= 1
+    assert result.returncode == 0
+
+
+# ---------------------------------------------------------------------------
+# iter_bullets
+# ---------------------------------------------------------------------------
+
+
+def test_iter_bullets_folds_continuations_and_splits_siblings() -> None:
+    mod = _load_module()
+    lines = (
+        "---\npaths:\n  - a/**\n---\n\n# T\n\n"
+        "- **First.** part one\n  part two\n"
+        "- **Second.** alone\n"
+    ).splitlines()
+    bullets = list(mod.iter_bullets(lines))
+    assert bullets == [
+        (8, "- **First.** part one part two"),
+        (10, "- **Second.** alone"),
+    ]
+
+
+# ---------------------------------------------------------------------------
 # exemptions / collection
 # ---------------------------------------------------------------------------
 

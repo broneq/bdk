@@ -44,8 +44,8 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:restore-progress` | Resume work from a saved checkpoint                                                                 |
 | `/bdk:explain-complex-code` | Generate architecture docs with Graphviz diagrams                                                   |
 | `/bdk:update-docs` | Refresh existing architecture docs after code changes                                               |
-| `/bdk:refine-rules` | Compact and verify `.claude/rules/*.md` against real code — admission test, budgets, relocation to doc comments, uniform format |
-| `/bdk:add-rule` | Capture one lesson as a properly-homed rule — routes to rules/doc comment/test signpost, dedupes, respects budgets |
+| `/bdk:refine-rules` | Compact and verify `.claude/rules/*.md` against real code - four-part admission test, six verdicts, budgets, relocation to doc comments, uniform format |
+| `/bdk:add-rule` | Capture one lesson as a properly-homed rule - routes to a narrow-glob rule file, a wide one, a skill, a doc comment, a test signpost, or nothing; dedupes, respects budgets |
 | `/bdk:graphviz-docs-compiler` | Compile `.dot` files to SVG and update markdown references                                          |
 
 ---

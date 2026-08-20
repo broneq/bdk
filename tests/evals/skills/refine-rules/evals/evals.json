@@ -87,8 +87,8 @@
       "expected_output": "Skill applies the admission test per bullet: keeps push-based invariants as rules, compresses test-enforced constraints to one-line signposts, and RELOCATES pull-based content (per-function mechanics, design rationale local to one file) into doc comments at the code sites — moving first, cutting second — rather than either keeping everything (over budget) or deleting it. The rewritten file fits the 150-line/8KB budget, opens with a Critical Invariants section, and the plan lists every relocation target file before approval. The final lint pass (lint_rules.py) reports zero errors.",
       "assertions": [
         {
-          "name": "applies_four_verdicts",
-          "description": "Classifies content as RULE / SIGNPOST / RELOCATE / NOISE rather than only keep-vs-drop"
+          "name": "applies_six_verdicts",
+          "description": "Classifies content as RULE / NARROW-GLOB / SKILL / SIGNPOST / RELOCATE / NOISE rather than only keep-vs-drop, and prefers the narrowest destination that fits"
         },
         {
           "name": "relocates_instead_of_deleting",
@@ -109,6 +109,30 @@
         {
           "name": "lint_gate_passes",
           "description": "Runs lint_rules.py after writing and reports zero errors as the exit criterion"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Run refine-rules on .claude/rules/. One file has bullets that just list out which files live in each directory and which methods each service exposes - it reads like a table of contents for the codebase. Someone clearly wanted the agent to know its way around.",
+      "expected_output": "Skill identifies the inventory bullets as code mirrors failing admission test #0 (durability) - a rename or file move forces an edit, and the same information is derivable from the code graph or a directory listing within the task. It removes them rather than reformatting them, replacing them only where an actual invariant is hiding inside the list. Any enumeration it keeps is one pinned by a test it names. The lint's admission:code-mirror findings are treated as compaction work, not suppressed.",
+      "assertions": [
+        {
+          "name": "identifies_inventories_as_code_mirrors",
+          "description": "Explicitly applies the durability test and names the file/method listings as code mirrors that a refactor would force an edit to"
+        },
+        {
+          "name": "removes_rather_than_reformats",
+          "description": "The inventory bullets are dropped or replaced by a stated invariant - not merely rewritten into the uniform bullet shape and kept"
+        },
+        {
+          "name": "kept_enumerations_cite_a_pinning_test",
+          "description": "If any enumeration survives, the bullet names the test that fails when the list drifts"
+        },
+        {
+          "name": "does_not_suppress_lint_findings",
+          "description": "admission:code-mirror warnings are resolved by changing the content, not by rewording to dodge the check or ignoring the findings"
         }
       ],
       "files": []

@@ -18,6 +18,11 @@ narratives, appended to whichever file is nearest, duplicating rules that alread
 exist, in files already over budget. That turns `.claude/rules/` into a changelog that
 costs context every session and instructs nobody.
 
+**"Nothing" is a frequent, correct output of this skill.** The worst outcome is not a
+badly-routed rule - it is a rule written at all when none was warranted. Reporting
+"this is not a rule, and here is why" is a complete, successful run. Never write
+something just to have written something.
+
 ## Workflow
 
 ### 1. Distill the Rule
@@ -38,14 +43,23 @@ Never carry the incident story into the sentence. Record the consequence
 ### 2. Apply the Admission Test
 
 Read `${CLAUDE_PLUGIN_ROOT}/skills/refine-rules/references/rule-admission.md` and apply
-the three-part test (decision / visibility / derivability) to route the sentence:
+the four-part test (durability / decision / visibility / derivability) to route the
+sentence:
 
 | Verdict | Route |
 |---|---|
-| Passes all three | **Rule file** — continue to Step 3 |
-| True but pull-based (trap visible at the code site) | **Doc comment** at the code site — Step 5b |
-| A test/lint already enforces it | **Signpost** — one line naming the enforcer, only if a rule file section already covers the area; otherwise nothing |
-| Fails the decision test | **Nothing** — report why and stop |
+| Passes all four, governs a broad surface | **Rule file** - continue to Step 3 |
+| Passes all four, but true only for a narrow subset of files | **Narrow-glob rule file** - a file whose `paths:` names just that subset; create one if none fits - Step 3 |
+| Procedural how-to behind an intent no glob expresses, AND a deterministic backstop (guard test / validator / deploy gate) catches a missed invocation, AND near-immutable | **Project skill** - extract it there; the rule file keeps nothing, or a one-line pointer |
+| True but pull-based (trap visible at the code site) | **Doc comment** at the code site - Step 5b |
+| A test/lint already enforces it | **Signpost** - one line naming the enforcer, only if a rule file section already covers the area; otherwise nothing |
+| Fails durability (an inventory, or a line a rename would force you to edit) | **Nothing** - report why and stop |
+| Fails the decision test | **Nothing** - report why and stop |
+
+When several destinations fit, prefer in this order:
+`narrow glob > wide glob > skill > doc comment > nothing`. Skills fail open and rules
+fail closed - never route an ambient constraint to a skill. Never park the content in
+`docs/`: content that fails admission goes to a code site or nowhere.
 
 When the lesson warrants a guard test that doesn't exist yet, say so in the final
 report — writing that test is separate work the user should schedule, not a silent
@@ -54,18 +68,23 @@ side effect of this skill.
 ### 3. Deduplicate Against Existing Rules
 
 Search `.claude/rules/` for existing coverage of the same constraint (grep for the key
-identifiers/terms in the distilled sentence). If an existing rule already covers it:
+identifiers/terms in the distilled sentence). Per the `## Duplication policy` section of
+`rule-admission.md`, one fact has exactly one home. If an existing rule already covers
+it:
 
 - **Sharpen that rule in place** (tighten wording, add the missing case) — never append
   a near-duplicate, and never append the newest violation's story to it.
 - If the existing rule is in a different file than `paths:` would suggest, leave it
-  where it is — one rule lives in one file.
+  where it is - one rule lives in one file. If another file genuinely needs the fact,
+  it gets a one-line pointer (`see .claude/rules/<file>.md "<section>"`), not a copy.
 
 ### 4. Pick the Target and Check the Budget
 
-Choose the rule file whose `paths:` frontmatter covers the code the rule governs
-(create a new, narrowly-scoped file only when no existing file fits). Then check the
-budget:
+Choose the **narrowest** `paths:` scope that still covers the code the rule governs. A
+file scoped to the two or three globs the rule actually applies to beats appending to
+one scoped at the whole directory tree: every session matching the wider glob pays for
+a rule that does not apply to it. Creating a narrowly-scoped file is the preferred
+outcome, not a last resort. Then check the budget:
 
 ```
 python3 ${CLAUDE_PLUGIN_ROOT}/skills/refine-rules/scripts/lint_rules.py .claude/rules/<target>.md
@@ -94,6 +113,10 @@ invoking prompt already contained the explicit final text and target.
 Place it under the topical section it belongs to; if it is data-loss/divergence grade,
 also add a one-liner to `## Critical Invariants`.
 
+If you created a new rule file, it MUST open with `paths:` frontmatter naming the narrow
+glob set - that frontmatter is functional metadata read by the drift hook, and a file
+without it is loaded by every session regardless of relevance.
+
 **5b. Doc comment** — write the comment at the code site (the function/module where
 the trap lives), matching the file's existing comment style. If a rule file section
 covers the same area, a one-line pointer there is optional — add it only when the
@@ -116,9 +139,12 @@ nothing was), and any follow-up (missing guard test, over-budget file awaiting
 ### Checklist
 
 - [ ] Distilled ONE imperative, falsifiable sentence (or stopped — non-rule)
-- [ ] Applied admission test: rule file / doc comment / signpost / nothing
+- [ ] Applied the four-part admission test, durability first (would a rename force an
+      edit to this line? then it is a code mirror, not a rule)
+- [ ] Routed it: narrow-glob rule / wide rule / skill / doc comment / signpost / nothing
 - [ ] Searched existing rules; sharpened in place instead of duplicating
-- [ ] Picked target by `paths:` scope; budget-checked with lint_rules.py
+- [ ] Picked the narrowest `paths:` scope that covers the code; budget-checked with
+      lint_rules.py; wrote `paths:` frontmatter if the file is new
 - [ ] Over-budget target → `_inbox.md` + recommended `/bdk:refine-rules`
 - [ ] Confirmed via AskUserQuestion before writing
 - [ ] Wrote in uniform format (no incident narrative); re-lint shows zero new errors
