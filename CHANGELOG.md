@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/broneq/bdk/compare/v1.4.0...v1.5.0) (2026-08-20)
+
+
+### Features
+
+* **rules:** add durability test, narrow-glob/skill verdicts, admissi… ([f9cfb5b](https://github.com/broneq/bdk/commit/f9cfb5be2443eeef5e29fd1bab77544b8a87ccbd))
+* **rules:** add durability test, narrow-glob/skill verdicts, admission lints ([a37943c](https://github.com/broneq/bdk/commit/a37943c0a6e3dd54375ea4cc885f17467b5c8ae0))
+
 ## [1.4.0](https://github.com/broneq/bdk/compare/v1.3.1...v1.4.0) (2026-08-17)
 
 
