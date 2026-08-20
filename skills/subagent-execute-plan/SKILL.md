@@ -165,7 +165,7 @@ See `references/model-selection.md`.
 
 ### 3b. Dispatch implementers (parallel if group has >1 task)
 
-For a multi-task group, send **one message with multiple `Agent` calls** using `run_in_background: true`. Each call passes:
+For a multi-task group, send **one message with multiple `Agent` calls**. Each call passes:
 
 - Full task text inline (do not make subagent re-read the plan)
 - Test cases block
@@ -286,7 +286,7 @@ Up to 2 review-fix cycles. Remaining `CRITICAL` after cycle 2 → stop with erro
 
 ### Phase B — Parallel final pass (architecture review || final tests)
 
-Once Phase A converges, dispatch the final two checks in a **single coordinator message with two background `Agent` calls** (`run_in_background: true`). Wait for both to complete before moving to 4e. Their failure paths are independent — each runs its own fixer cycles.
+Once Phase A converges, dispatch the final two checks in a **single coordinator message with two `Agent` calls**. Wait for both completion notifications before moving to 4e - do not poll or schedule wake-ups. Their failure paths are independent — each runs its own fixer cycles.
 
 #### 4c. `bdk:architecture-reviewer` (conditional)
 
@@ -407,7 +407,7 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - ❌ Committing or running tests/lint inside the Workflow script. The script implements + fixes only; the coordinator owns 3d–3g.
 - ❌ Looping a Workflow more than once per wave to chase blocked tasks. One invocation; stragglers fall back to hand-orchestrated subagents.
 - ❌ Spawning `bdk:code-reviewer` per task. End-of-branch only — it sees cross-task patterns the per-task view misses.
-- ❌ Sequencing `bdk:architecture-reviewer` and the final `bdk:test-runner` in Step 4. They are independent read-only checks and **must** be dispatched in a single coordinator message with `run_in_background: true`.
+- ❌ Sequencing `bdk:architecture-reviewer` and the final `bdk:test-runner` in Step 4. They are independent read-only checks and **must** be dispatched in a single coordinator message with two `Agent` calls.
 - ❌ Hardcoding test cadence ("every 3 tasks"). Pure orchestrator judgment per group, bounded by the 2-consecutive-skip cap.
 - ❌ Asking the user for confirmation mid-flow. Autonomous skill — surface decisions only on terminal failure or user interrupt.
 - ❌ Letting an implementer read the plan file. Pass full task text in the dispatch prompt.
