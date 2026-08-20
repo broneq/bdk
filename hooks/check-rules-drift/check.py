@@ -178,13 +178,37 @@ def build_block_reason(matched: dict[str, list[str]]) -> str:
         "you actually changed, not against what the file already asserts.",
     )
     lines.append(
-        "\nOnly add durable, worthwhile information: a convention or invariant that will",
+        "\nRoute anything you are tempted to write down:",
     )
     lines.append(
-        "still be true next session. Skip changelog-style narration (\"switched from X to",
+        "  cross-cutting invariant that fails silently -> a rule file",
     )
     lines.append(
-        "Y\"), dated notes, or anything that reads as a log entry rather than a rule.",
+        "  trap visible at the code site               -> a doc comment there",
+    )
+    lines.append(
+        "  a test or lint already enforces it          -> one line naming the enforcer",
+    )
+    lines.append(
+        "  anything else                               -> nothing",
+    )
+    lines.append(
+        "\nA line that a rename or a file move would force you to edit is a code mirror,",
+    )
+    lines.append(
+        "not a rule - it belongs at the code site or nowhere. Skip changelog-style",
+    )
+    lines.append(
+        "narration (\"switched from X to Y\"), dated notes, and ticket ids offered as the",
+    )
+    lines.append(
+        "only rationale.",
+    )
+    lines.append(
+        "\n\"Nothing\" is a frequent, correct outcome here - do not write a rule just to",
+    )
+    lines.append(
+        "have written something. For a full routing pass, run /bdk:add-rule.",
     )
     return "\n".join(lines)
 

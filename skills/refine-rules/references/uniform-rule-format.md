@@ -58,6 +58,11 @@ naming the enforcer replaces the explanation:
 > - **Layer imports are one-directional.** Enforced by `lib/__tests__/layering.test.ts` —
 >   when it fails, read the test, don't work around it.
 
+**Pointer form** - one fact has exactly one home. When a second file genuinely needs
+that fact, it gets a pointer, never a restatement:
+
+> - **Cascade deletes are ordered.** See `.claude/rules/cascade.md` "Delete ordering".
+
 **Deliberate-decision form** — for behavior that LOOKS like a bug but is intentional,
 the rule is one line flagging it, and the full story lives in a doc comment at the
 code site:

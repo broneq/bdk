@@ -212,11 +212,22 @@ def test_build_block_reason_warns_against_trusting_prior_wording() -> None:
     assert "many different sessions and agents" in reason
 
 
-def test_build_block_reason_requires_worthwhile_durable_info() -> None:
+def test_build_block_reason_carries_the_routing_summary() -> None:
+    """The drift hook is the always-on capture path - it must state where things go."""
     mod = _load_module()
     reason = mod.build_block_reason({"skill.md": ["skills/foo/check.py"]})
-    assert "durable, worthwhile information" in reason
-    assert "changelog-style narration" in reason
+    assert "a rule file" in reason
+    assert "a doc comment there" in reason
+    assert "one line naming the enforcer" in reason
+    assert "anything else" in reason
+
+
+def test_build_block_reason_legitimizes_writing_nothing() -> None:
+    mod = _load_module()
+    reason = mod.build_block_reason({"skill.md": ["skills/foo/check.py"]})
+    assert '"Nothing" is a frequent, correct outcome' in reason
+    assert "code mirror" in reason
+    assert "changelog-style" in reason
 
 
 # ---------------------------------------------------------------------------

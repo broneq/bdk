@@ -66,3 +66,16 @@ Pattern: `SendMessage(to: "<agentId>", message: "...")` — never re-include the
 ## Quality Rules
 
 BDK ships language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.
+
+## Capture Conventions
+
+Before recording a convention or lesson anywhere, route it:
+
+| The knowledge | Where it goes |
+|---|---|
+| Cross-cutting invariant whose violation fails silently | `.claude/rules/`, scoped by the narrowest `paths:` that covers it |
+| Trap visible at the code site where the mistake happens | a doc comment there |
+| Something a test or lint already enforces | one line naming the enforcer |
+| Anything else | nothing |
+
+A line that a rename or file move would force you to edit is a code mirror, not a rule. **"Nothing" is the frequent, correct answer** - never write something down just to have written it. `/bdk:add-rule` runs this routing properly; `/bdk:refine-rules` cleans up what accumulated.

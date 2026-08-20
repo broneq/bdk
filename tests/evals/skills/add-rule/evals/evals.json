@@ -19,6 +19,10 @@
           "description": "Explicitly reasons about where the knowledge belongs (rule file vs doc comment vs test) before writing, referencing the visibility of the trap"
         },
         {
+          "name": "rule_survives_a_rename",
+          "description": "The written rule states the constraint in terms that survive renaming or moving the helper - it does not enumerate file paths or symbol inventories that a refactor would force an edit to (durability test)"
+        },
+        {
           "name": "dedupes_against_existing_rules",
           "description": "Searches .claude/rules/ for an existing rule covering the same constraint before appending, and sharpens in place if found"
         },
@@ -65,6 +69,66 @@
         {
           "name": "writes_signpost_not_full_rule",
           "description": "Output is at most one line naming the enforcing test, not a multi-line rule restating the constraint the test already guards"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Add a rule: yesterday we renamed the payment handler module and three call sites had to be updated. Write down which files reference it so nobody misses one next time.",
+      "expected_output": "Skill declines to write a rule. The candidate fails the durability test - an inventory of call sites is a code mirror that a rename forces an edit to, and it is derivable from the code graph or a reference search within the task. The skill explains why nothing is written, and writes nothing to .claude/rules/, no doc comment, and no _inbox.md entry.",
+      "assertions": [
+        {
+          "name": "writes_nothing",
+          "description": "No file is created or modified - not a rule file, not a doc comment, not _inbox.md"
+        },
+        {
+          "name": "cites_durability_failure",
+          "description": "Explicitly identifies the candidate as a code mirror / inventory that a rename would force an edit to, rather than a durable constraint"
+        },
+        {
+          "name": "treats_nothing_as_success",
+          "description": "Reports the non-capture as a completed, correct outcome rather than apologizing, hedging, or offering a watered-down rule as a consolation"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Add a rule: never construct a raw date string for the billing cycle boundary - always go through the cycle helper, because the naive version breaks on DST transitions. This only affects the billing subscription code, but our rules file for that area is scoped to the whole backend directory.",
+      "expected_output": "Skill recognizes the constraint is real but relevant only to a subset of the wide paths: scope, and routes it to a narrow-glob rule file - either an existing file scoped to the billing subscription paths, or a new file it creates with paths: frontmatter naming just those globs. It does not append to the backend-wide file, and it explains that every session matching the wider glob would otherwise pay for a rule that does not apply to it.",
+      "assertions": [
+        {
+          "name": "prefers_narrow_glob_over_wide_file",
+          "description": "Routes to (or creates) a rule file whose paths: names the billing subset, instead of appending to the backend-wide file"
+        },
+        {
+          "name": "writes_paths_frontmatter_on_new_file",
+          "description": "If it creates a new rule file, that file opens with paths: YAML frontmatter naming the narrow glob set"
+        },
+        {
+          "name": "justifies_by_context_cost",
+          "description": "States the reason for narrowing - sessions matching the wider glob would load a rule irrelevant to them"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Capture this: our release procedure is a fixed six-step sequence - cut the branch, bump the version, regenerate the client, run the migration check, tag, then publish. The deploy gate already refuses any release where the migration check didn't run. People keep asking me to walk them through it.",
+      "expected_output": "Skill recognizes all four SKILL-verdict criteria hold - the trigger is an intent ('how do I release?') no glob expresses, the content is procedural rather than an ambient constraint, a deterministic backstop (the deploy gate) catches a missed invocation, and the sequence is near-immutable - and routes the procedure to a project skill rather than a rule-file bullet. The rule file keeps nothing, or at most a one-line pointer.",
+      "assertions": [
+        {
+          "name": "routes_to_skill_not_rule",
+          "description": "Concludes the six-step procedure belongs in a project skill, not as bullets in .claude/rules/"
+        },
+        {
+          "name": "names_the_deterministic_backstop",
+          "description": "Explicitly identifies the deploy gate as the backstop that makes a fail-open skill safe here, rather than routing procedural content to a skill unconditionally"
+        },
+        {
+          "name": "rule_file_keeps_at_most_a_pointer",
+          "description": "Nothing beyond a single pointer line is written into .claude/rules/ - the procedure itself is not duplicated there"
         }
       ],
       "files": []

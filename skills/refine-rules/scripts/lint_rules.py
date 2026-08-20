@@ -6,6 +6,8 @@ Enforces the rule-admission contract (references/rule-admission.md):
   - narrative markers ("used to", bug IDs, ...) → error / warning per marker
   - `paths:` frontmatter present                → warning (global files are legitimate)
   - `## Critical Invariants` section present    → warning (only for files > 40 lines)
+  - code-mirror bullets (3+ paths, one dir)     → warning (admission test #0)
+  - ticket-id-only rationale in a bullet        → warning
 
 `_inbox.md` (the uncurated staging file) is exempt from every check.
 Markers inside fenced code blocks are ignored — examples may quote bad style.
@@ -28,6 +30,19 @@ MAX_BYTES = 8192
 MAX_LINES = 150
 CRITICAL_INVARIANTS_MIN_LINES = 40
 EXEMPT_FILENAMES = {"_inbox.md"}
+
+# Admission-test lints (see references/rule-admission.md "Mechanical enforcement").
+CODE_MIRROR_MIN_PATHS = 3
+TICKET_RATIONALE_MIN_WORDS = 4
+
+BULLET_RE = re.compile(r"^\s*[-*]\s+")
+CODE_SPAN_RE = re.compile(r"`([^`]+)`")
+# Path-like only: must contain a "/". Bare dotted symbols (`ctx.db`) are NOT paths -
+# counting them would flag legitimate multi-symbol rules.
+PATH_LIKE_RE = re.compile(r"^[\w.@~-]+(?:/[\w.@~*-]+)+$")
+TEST_HINT_RE = re.compile(r"test|spec|__tests__|enforced by", re.I)
+TICKET_RE = re.compile(r"\b[A-Z]{2,4}-\d+\b")
+BOLD_CLAIM_RE = re.compile(r"\*\*(.+?)\*\*", re.S)
 
 # (regex, severity, code) — narrative/transition language that marks a changelog
 # entry rather than a present-tense rule.
@@ -74,6 +89,73 @@ def iter_prose_lines(lines: list[str]):
         if in_fence:
             continue
         yield i, line
+
+
+def iter_bullets(lines: list[str]):
+    """Yield (lineno, text) per Markdown bullet, continuation lines folded in.
+
+    A bullet starts on a `-`/`*` line and absorbs the indented, non-bullet lines that
+    follow; a blank line, a heading, or the next bullet ends it. `lineno` is the
+    bullet's first line. Frontmatter and fenced code are excluded upstream by
+    iter_prose_lines().
+    """
+    start: int | None = None
+    parts: list[str] = []
+
+    for lineno, line in iter_prose_lines(lines):
+        stripped = line.strip()
+        if BULLET_RE.match(line):
+            if start is not None:
+                yield start, " ".join(parts)
+            start, parts = lineno, [stripped]
+        elif start is None:
+            continue
+        elif stripped and not stripped.startswith("#") and line[:1].isspace():
+            parts.append(stripped)
+        else:
+            yield start, " ".join(parts)
+            start, parts = None, []
+
+    if start is not None:
+        yield start, " ".join(parts)
+
+
+def code_mirror_paths(text: str) -> tuple[str, int] | None:
+    """Return (directory, count) when one bullet enumerates too many paths from one dir.
+
+    The mechanical arm of admission test #0: an inventory of file paths has to be edited
+    whenever a file is renamed or moved, so it mirrors code instead of stating a
+    decision. A bullet that cites a pinning test is exempt - that enumeration is allowed
+    to exist because a test fails when it drifts.
+    """
+    if TEST_HINT_RE.search(text):
+        return None
+
+    by_dir: dict[str, set[str]] = {}
+    for span in sorted({m.group(1) for m in CODE_SPAN_RE.finditer(text)}):
+        if PATH_LIKE_RE.match(span):
+            by_dir.setdefault(span.rsplit("/", 1)[0], set()).add(span)
+
+    for directory, paths in by_dir.items():
+        if len(paths) >= CODE_MIRROR_MIN_PATHS:
+            return directory, len(paths)
+    return None
+
+
+def ticket_only_rationale(text: str) -> bool:
+    """True when a bullet's only justification is an issue-tracker id.
+
+    Strips the bold claim and the ticket ids themselves; what remains is the actual
+    reasoning. Almost nothing left ("See CUR-11") means the ticket is doing the work a
+    stated consequence should be doing.
+    """
+    if not TICKET_RE.search(text):
+        return False
+
+    rationale = BULLET_RE.sub("", BOLD_CLAIM_RE.sub(" ", text))
+    rationale = re.sub(rf"[(\[]\s*{TICKET_RE.pattern}\s*[)\]]", " ", rationale)
+    rationale = TICKET_RE.sub(" ", rationale)
+    return len(re.findall(r"[A-Za-z0-9']+", rationale)) < TICKET_RATIONALE_MIN_WORDS
 
 
 def lint_file(path: Path, root: Path | None = None) -> dict:
@@ -126,6 +208,27 @@ def lint_file(path: Path, root: Path | None = None) -> dict:
                     f"narrative marker {match.group(0)!r} — record the consequence, not the story",
                     lineno,
                 )
+
+    for lineno, bullet in iter_bullets(lines):
+        mirror = code_mirror_paths(bullet)
+        if mirror:
+            directory, count = mirror
+            add(
+                "warning",
+                "admission:code-mirror",
+                f"{count} paths from `{directory}/` in one bullet - an inventory mirrors "
+                "code and breaks on rename; state the invariant, or cite the test that "
+                "pins the list",
+                lineno,
+            )
+        if ticket_only_rationale(bullet):
+            add(
+                "warning",
+                "admission:ticket-only-rationale",
+                "ticket id is the only rationale - state the consequence inline, ticket "
+                "as an addendum",
+                lineno,
+            )
 
     return {
         "path": str(path.relative_to(root)) if root else str(path),

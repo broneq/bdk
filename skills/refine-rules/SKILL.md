@@ -42,29 +42,44 @@ Then run the mechanical linter for a budget/narrative baseline (same argument ha
 python3 ${CLAUDE_SKILL_DIR}/scripts/lint_rules.py $ARGUMENTS
 ```
 
-Its findings (over-budget files, narrative-marker lines) tell you where the worst
-accretion is before you read a single file. `_inbox.md` is exempt by design — it stages
-uncurated candidates.
+Its findings (over-budget files, narrative-marker lines, code-mirror and
+ticket-only-rationale bullets) tell you where the worst accretion is before you read a
+single file. `_inbox.md` is exempt by design - it stages uncurated candidates.
+
+Health heuristic: a rule file that changes more often than roughly once a quarter is a
+code-mirror suspect - rules churn with decisions, not with code. Use it to decide where
+to look hardest, not as a metric to compute.
 
 Skip any file whose frontmatter or header explicitly marks it as auto-generated — treat
 those like `CHANGELOG.md`, never rewrite them.
 
 ### 2. Classify Content: Verdict per Bullet
 
-Read `references/rule-admission.md` (the admission test — decision / visibility /
-derivability) and `references/uniform-rule-format.md` (the "What is a rule vs. what is
-noise" table with worked examples). For each file, go bullet-by-bullet (or
-paragraph-by-paragraph for prose sections) and tag each with one of four verdicts:
+Read `references/rule-admission.md` (the prime directive, the admission test - durability
+/ decision / visibility / derivability) and `references/uniform-rule-format.md` (the
+"What is a rule vs. what is noise" table with worked examples). For each file, go
+bullet-by-bullet (or paragraph-by-paragraph for prose sections) and tag each with one of
+six verdicts:
 
-- **RULE** — a present-tense, falsifiable claim that passes all three admission tests
-- **SIGNPOST** — a true constraint a test/lint already enforces — compress to one line
+- **RULE** - a present-tense, falsifiable claim that passes all four admission tests
+- **NARROW-GLOB** - a true rule, but relevant only to a subset of this file's `paths:`.
+  Move it to (or create) a file whose `paths:` names just that subset
+- **SKILL** - procedural how-to behind an intent trigger no glob expresses, with a
+  deterministic backstop that catches a missed invocation. Extract to a project skill;
+  skills fail open, rules fail closed, so never route an ambient constraint here
+- **SIGNPOST** - a true constraint a test/lint already enforces, compressed to one line
   naming the enforcer
-- **RELOCATE** — true and valuable but pull-based (the trap is visible at the code
-  site): API/protocol description, single-file subtleties, design history worth
-  keeping — belongs in a doc comment at the code site, with at most a one-line pointer
+- **RELOCATE** - true and valuable but pull-based (the trap is visible at the code
+  site): API/protocol description, single-file subtleties, design rationale worth
+  keeping. Belongs in a doc comment at the code site, with at most a one-line pointer
   left in the rule file
-- **NOISE** — changelog/history/narration/hedged guess/TODO — drop these outright, no
+- **NOISE** - changelog/history/narration/hedged guess/TODO. Drop these outright, no
   matter how confidently the original file phrased them
+
+When several destinations fit, prefer in this order:
+`narrow glob > wide glob > skill > doc comment > nothing`. Never park content in
+`docs/`: content that fails admission is relocated to a code site or deleted. Deleting
+is a successful outcome; a shorter directory that instructs better is the goal.
 
 This is a fast text-judgment pass — do it in main context, no code access needed yet.
 
@@ -139,14 +154,17 @@ file:
 
 ```
 <file>: KEEP unchanged / COMPACTED (N noise lines removed) /
+        NARROWED (paths: tightened to N globs, or split into <new-file>) /
+        EXTRACTED-TO-SKILL (N items → <skill>, with its backstop named) /
         RELOCATED (N items → doc comments, with target files) /
         SIGNPOSTED (N bullets compressed to enforcer pointers) /
         CONTRADICTED (N claims removed, with evidence) /
         FLAGGED (N unverified claims to confirm) / REFORMATTED (structure only)
 ```
 
-RELOCATED items modify source files, not just rule files — list every target file in
-the plan so the user sees the full blast radius before approving.
+RELOCATED, NARROWED, and EXTRACTED-TO-SKILL items all change more than the rule file -
+source files, `paths:` scoping, or a new skill. List every target in the plan so the
+user sees the full blast radius before approving.
 
 Options: "Approve" / "Approve with changes" / "Cancel". For CONTRADICTED items, show
 the evidence (file:line or a short quote from the source) so the user can check your
@@ -185,9 +203,10 @@ follow-up, final lint status.
 
 ### references/rule-admission.md
 
-What belongs in a rule file at all: push vs. pull, the three-part admission test, the
-four verdicts (RULE/SIGNPOST/RELOCATE/NOISE), where each kind of knowledge lives, and
-the file/bullet budgets. Read before Step 2.
+What belongs in a rule file at all: the prime directive, push vs. pull, the four-part
+admission test, the six verdicts (RULE/NARROW-GLOB/SKILL/SIGNPOST/RELOCATE/NOISE), the
+destination priority order, the duplication policy, where each kind of knowledge lives,
+and the file/bullet budgets. Read before Step 2.
 
 ### references/uniform-rule-format.md
 
@@ -197,20 +216,25 @@ before Step 2 for noise calibration; use it directly while rewriting in Step 4.
 ### scripts/lint_rules.py
 
 Mechanical enforcement of the admission contract: budgets, `paths:` frontmatter,
-`## Critical Invariants` presence, narrative markers. Run at discovery (Step 1 baseline)
-and as the exit gate (Step 7). Also used standalone by `/bdk:add-rule`.
+`## Critical Invariants` presence, narrative markers, plus `admission:code-mirror`
+(a bullet enumerating 3+ paths from one directory with no pinning test) and
+`admission:ticket-only-rationale`. Run at discovery (Step 1 baseline) and as the exit
+gate (Step 7). Also used standalone by `/bdk:add-rule`.
 
 ## Quick Reference
 
 ### Checklist
 
 - [ ] Ran discovery script + linter, got file list, budgets, narrative baseline
-- [ ] Classified every bullet/paragraph as RULE / SIGNPOST / RELOCATE / NOISE
+- [ ] Classified every bullet/paragraph as RULE / NARROW-GLOB / SKILL / SIGNPOST /
+      RELOCATE / NOISE, preferring the narrowest destination that fits
 - [ ] Split checkable vs. non-checkable claims
 - [ ] Verified checkable claims against real code (subagents for large scope), skeptical default
 - [ ] Rewrote all files: uniform bullets, Critical Invariants section, budgets, frontmatter preserved
 - [ ] Drafted doc comments for every RELOCATE item (move first, cut second)
-- [ ] Presented plan via single AskUserQuestion — including relocation targets — got approval
+- [ ] Reduced every duplicated fact to one home + one-line pointers elsewhere
+- [ ] Presented plan via single AskUserQuestion - including relocation, narrowing, and
+      skill-extraction targets - got approval
 - [ ] Checked git status / suggested a commit before writing if uncommitted
 - [ ] Wrote doc comments, then rule files; linter exit gate passes with zero errors
 - [ ] Reported noise/relocation/contradiction/flag counts + lint status
