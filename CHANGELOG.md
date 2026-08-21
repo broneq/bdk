@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/broneq/bdk/compare/v2.0.0...v2.1.0) (2026-08-21)
+
+
+### Features
+
+* right-size verification and comments across the pipeline ([d820751](https://github.com/broneq/bdk/commit/d820751de635516c1cc9a5a5fd065c6d1d59726a))
+* right-size verification and comments across the pipeline ([c621d5c](https://github.com/broneq/bdk/commit/c621d5cc1d66819043bd77bf34e2f017c2b61e23))
+
 ## [2.0.0](https://github.com/broneq/bdk/compare/v1.5.1...v2.0.0) (2026-08-21)
 
 
