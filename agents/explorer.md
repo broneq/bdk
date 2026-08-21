@@ -59,7 +59,13 @@ Follow the tool-tier and quality-rule guidance from your preloaded skills.
 - **medium**: Semantic search + fetch source context for key symbols, follow 1-2 levels of callers/callees
 - **very thorough**: Map full impact radius, follow complete call chains, cross-check with symbol tools
 
-## Output Format (MANDATORY)
+## Output Format
+
+**The caller's schema wins.** If the prompt you were given specifies an output shape - a JSON schema, a named contract, a file to read the schema from - return exactly that and ignore the default below. Callers use you for structured work as well as for prose exploration, and a caller that asked for JSON cannot use prose.
+
+Return exactly one shape: the caller's, or the default. Never both, and never the default wrapped around the caller's.
+
+Default, used only when the prompt specifies no shape of its own:
 
 ```
 ## FINDINGS

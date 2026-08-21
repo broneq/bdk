@@ -1,6 +1,8 @@
 # Explorer Contract
 
-Source of truth for the JSON `bdk:explorer` returns when the coordinator (`/bdk:subagent-execute-plan` Step 1) asks it to compute parallel groups. Dispatch templates cite this file — do not restate the schema elsewhere.
+Source of truth for the JSON `bdk:explorer` returns when the coordinator (`/bdk:subagent-execute-plan` Step 1) asks it to compute parallel groups.
+
+**The explorer reads this file directly** - Step 1's dispatch passes its path, not its contents. Do not restate the schema in a dispatch prompt or a template: a copy competes with the explorer's own default output format, and the copy is what gets shortened. `agents/explorer.md` already states that a caller-specified schema wins, so a pointer here is enough.
 
 ## Schema
 
@@ -37,11 +39,21 @@ Source of truth for the JSON `bdk:explorer` returns when the coordinator (`/bdk:
 
 The coordinator switches to **full serial mode** (every task its own group, in plan order) if any of the following hold:
 
-- JSON is malformed or missing required fields.
-- `confidence < 0.6`.
-- Any `groups[].tasks` entry references an undefined task id.
+| Trigger | `reason` to print |
+|---|---|
+| JSON malformed or missing required fields | `malformed envelope: {what was wrong}` |
+| `confidence < 0.6` | `confidence {value} < 0.6` |
+| Any `groups[].tasks` entry references an undefined task id | `unknown task id {id}` |
 
-Fallback is silent (logged but does not halt the run) — serial mode is always safe.
+Fallback **does not halt the run** - serial mode is always correct, just slow. It is never silent:
+
+```
+[subagent-execute-plan] Explorer grouping rejected: {reason} - full serial mode ({N} groups)
+```
+
+Print it, and carry the same reason into the Step 0.7 summary's `Parallel groups:` line. Without it the run reports `Parallel groups: 12` for a 12-task plan and the three cases become indistinguishable: a plan that is genuinely serial (nothing to fix), an explorer that returned garbage (a bug to fix), and a plan that declared no `Files:` (a `/bdk:create-plan` gap to fix). Same output, three different actions - so the reason is the whole signal.
+
+`confidence < 0.6` is the trigger to expect in practice: per the calibration below, a plan light on path declarations lands there by construction. That reading is a verdict on the plan, and dropping it on the floor wastes the one diagnosis this step produces for free.
 
 ## Confidence calibration hints (for the explorer prompt)
 

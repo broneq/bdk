@@ -45,7 +45,7 @@ commits_in_range:     <n>
 delta_files:          [<path>, ...]
 cumulative_files:     [<path>, ...]
 scaling:              tiny | small | large | massive
-findings:             [ {severity, category, file, line, problem, fix}, ... ]
+findings:             [ {severity, category, file, line, symbol, problem, fix}, ... ]
 positive_observations: [<string>, ...]
 test_gaps:            [<string>, ...]
 counts:               {critical, high, medium, low}
@@ -53,6 +53,36 @@ suppressed:           <n>            # deferred findings withheld from reviewers
 degraded:             [<string>, ...] # agents that failed or timed out
 warnings:             [<string>, ...]
 ```
+
+### Finding fields
+
+| Field | Value |
+|---|---|
+| `severity` | `CRITICAL` \| `HIGH` \| `MEDIUM` \| `LOW` |
+| `category` | one slug from the vocabulary below - never free text |
+| `file` | repo-relative path, as `git diff --name-only` prints it |
+| `line` | first line of the problem, for display |
+| `symbol` | enclosing function/class/method name, or `null` when the finding is file-level (a missing module, an import block, a whole-file duplication) |
+| `problem` / `fix` | prose, one sentence each |
+
+### Category vocabulary
+
+Ten slugs, one per reportable section. Every finding from every agent maps to exactly one; nothing else is a valid value.
+
+| Slug | Report section | Fed by |
+|---|---|---|
+| `style` | 2. Style & Conventions | layer-group reviewer `FINDINGS` |
+| `correctness` | 3. Functionality & Logic | layer-group reviewer `FINDINGS` |
+| `performance` | 4. Performance | layer-group reviewer `FINDINGS` |
+| `tests` | 5. Tests | reviewer `TEST_GAPS`, test-runner |
+| `types` | 6. Type Hints & SOLID | layer-group reviewer `FINDINGS` |
+| `oo-design` | 7. Object-Oriented Design | layer-group reviewer `FINDINGS` |
+| `duplication` | 8. Duplicate Code | duplicate-detector `LITERAL_DUPLICATES` / `STRUCTURAL_PATTERNS` / `INTRA_FUNCTION` |
+| `dead-code` | 9. Dead Code | dead-code-detector `UNUSED_SYMBOLS` / `UNREACHABLE_CODE` |
+| `security` | 10. Security | layer-group reviewer `FINDINGS` |
+| `architecture` | 11. Architecture | architecture-reviewer `LAYER_VIOLATIONS` / `DI_ISSUES` / `PATTERN_COMPLIANCE` / `DATA_FLOW` |
+
+The four reviewer agents each emit their own block shape; normalizing them into this vocabulary is the merge's job, not theirs. Do not invent a slug for a finding that fits none of the ten - pick the closest and say why in `problem`. A free-text category defeats the dedup key below, because `dead_code`, `Dead Code`, and `unused-code` are three keys for one defect.
 
 ---
 
@@ -145,7 +175,19 @@ Without it, every delta pass re-reports the same debatable `MEDIUM`s that were d
 ## Step 4 - Merge
 
 1. **Collect** every agent's output. If some are still running, wait for their notifications - do not merge partial results, and do not poll.
-2. **Deduplicate** into one flat findings array keyed by `(file, line, category)`. When two agents report the same location, keep the more detailed entry.
+2. **Normalize, then deduplicate** into one flat findings array. Two passes, in this order:
+
+   **a. Normalize.** Map each agent's block into the finding fields above: repo-relative `file`, one `category` slug from the vocabulary, `symbol` filled in from the block when it names one (dead-code-detector always does; the graph tier gives it for the rest) or `null`.
+
+   **b. Collapse.** Group by `(file, category)`, then merge findings that point at the same defect within that group:
+
+   - Same `symbol` (both non-null) → same defect. Merge.
+   - Either `symbol` is null and the lines are within **10 lines** of each other → same defect. Merge.
+   - Otherwise → distinct. Keep both.
+
+   Merging keeps the most detailed `problem`/`fix`, the **highest** severity of the merged set, and the **lowest** `line`. Record the collapse count in `warnings` as `deduped: {N} findings merged`.
+
+   Keying on the symbol rather than the exact line is the point. Four agents look at one function from four angles and anchor at four different lines - the signature, the first statement, the middle of the body, an import above it. An exact-line key reports that as four findings, and since `counts` is derived from this array, the report's `{critical}C/{high}H/{medium}M/{low}L` header inflates with it. The executor then triages the same defect four times and can dispatch a fixer per copy, which is either three wasted passes or three conflicting edits to one function.
 3. **Record what failed.** An agent that errored or timed out goes in `degraded[]` and is named in the report. A review missing a cohort must not read like a clean pass.
 4. Derive `counts` from the flat array - never from your own recollection of what the agents said.
 
@@ -168,10 +210,12 @@ Defer each `MEDIUM` and `LOW` rather than dropping it:
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py findings-add \
   --run {run_id} --severity MEDIUM --category {cat} \
-  --file {path} --line {n} --problem {one line} [--fix {one line}]
+  --file {path} --line {n} [--symbol {name}] --problem {one line} [--fix {one line}]
 ```
 
-It is idempotent on `(severity, category, file, line, problem)`, so re-running a review does not duplicate entries.
+`--category` takes a slug from the vocabulary above. The script normalizes case and separators (`Dead Code`, `dead_code` → `dead-code`) so a stored entry is keyed the same way whatever spelling reaches it, but it does not guess a slug from prose - pass one of the ten.
+
+Idempotency: `(severity, category, file, symbol, problem)` when `--symbol` is given, `(severity, category, file, line, problem)` when it is not. Pass `--symbol` whenever the merge resolved one - a re-review of an edited file finds the same defect on a shifted line, and a line-keyed entry then stores a second copy of a finding already deferred.
 
 ## Mode differences
 

@@ -11,6 +11,7 @@ user-invocable: true
 disable-model-invocation: true
 argument-hint: "[plan-path]"
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(git *) Bash(cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/*) Workflow
+disallowed-tools: AskUserQuestion
 ---
 
 # Subagent-Execute-Plan (Coordinator)
@@ -125,28 +126,46 @@ Reviewer / verification subagents have their own return formats — see `referen
      Resume: {yes, from group N|no}
      Verification: {stamped|stale|missing}
      Tasks: {N}
-     Parallel groups: {G}  (e.g. [1.1,1.2] [1.3] [2.1,2.2,2.3] [3.1])
+     Parallel groups: {G} {source}  (e.g. [1.1,1.2] [1.3] [2.1,2.2,2.3] [3.1])
      Base SHA: {short-sha}
      Manifest: .bdk/runs/{run-id}.json
      Worktree mode: same-worktree (disjoint files within group)
      Test/lint cadence: orchestrator judgment per group (max 2 consecutive skips)
    ```
 
+   `{source}` names where the grouping came from and is never omitted: `(plan waves, validated)`, `(explorer-derived)`, or `(serial: {reason})` when Step 1 fell back. A bare group count cannot distinguish a genuinely serial plan from a failed grouping - see Step 1.
+
 ---
 
 ## Step 1 — Group planning (prefer the plan's declared waves)
 
-**If the plan has an `## Execution Waves` section** (produced by `/bdk:create-plan`): adopt those waves directly as the parallel groups — they are already computed from the task DAG with disjoint file sets per wave. Spawn `bdk:explorer` once only to **validate**, not re-derive: pass the declared waves plus each task's `Files:`/`Depends on:` and ask it to confirm no same-wave file collision and no missing dependency edge. If the explorer confirms (`confidence ≥ 0.6`, no `warnings`), use the plan's waves as-is — this skips a full re-derivation and is the fast path. If it flags a collision or missing edge, fall back to full re-derivation below and log `[subagent-execute-plan] Plan waves rejected: {reason} — re-deriving`.
+**If the plan has an `## Execution Waves` section** (produced by `/bdk:create-plan`): adopt those waves directly as the parallel groups — they are already computed from the task DAG with disjoint file sets per wave. Spawn `bdk:explorer` once only to **validate**, not re-derive: pass the declared waves plus each task's `Files:`/`Depends on:`, point it at the contract (see the dispatch line below), and ask it to confirm no same-wave file collision and no missing dependency edge. If the explorer confirms (`confidence ≥ 0.6`, no `warnings`), use the plan's waves as-is — this skips a full re-derivation and is the fast path. If it flags a collision or missing edge, fall back to full re-derivation below and log `[subagent-execute-plan] Plan waves rejected: {reason} — re-deriving`.
 
 **If the plan has no Execution Waves section** (older plan, hand-written): spawn `bdk:explorer` (one foreground call) to derive groups. Pass:
 
 - The list of tasks (number, title, file paths declared in plan).
 - The repo root.
-- The schema and grouping rules from `references/explorer-contract.md` (verbatim).
+- This line, so the explorer reads the contract itself rather than receiving a copy of it:
+
+  ```
+  Read ${CLAUDE_PLUGIN_ROOT}/skills/subagent-execute-plan/references/explorer-contract.md
+  and return exactly the JSON envelope it defines - that schema overrides your
+  default output format. Follow its grouping rules and confidence calibration.
+  ```
 
 The explorer returns the JSON envelope defined in `references/explorer-contract.md`: `confidence` (float), `groups[]` (ordered, each with `tasks` + `rationale`), `warnings[]`.
 
-**Fallback triggers** (any → full serial mode, every task its own group): malformed JSON, `confidence < 0.6`, or any group referencing an undefined task id. See `references/explorer-contract.md` for full grouping rules and confidence calibration hints.
+Both dispatches (validate and derive) carry that line. It replaces pasting the schema inline, which was the previous instruction and had two failure modes: the paste was 2.5 KB of prompt inviting a well-meant "shorten this", and it competed against the explorer's own default output format, so a shortened paste silently produced prose instead of JSON. A pointer to the one source of truth cannot drift from it, and `agents/explorer.md` states that a caller-specified schema wins - so the override is the agent's own rule, not something the prompt has to out-shout.
+
+**Fallback triggers** (any → full serial mode, every task its own group): malformed JSON, `confidence < 0.6`, or any group referencing an undefined task id.
+
+Serial mode is safe but slow - a 12-task plan becomes 12 groups, so 12 dispatch/verify/commit cycles instead of 4. It is never entered silently. Print the reason and carry it into the Step 0.7 summary:
+
+```
+[subagent-execute-plan] Explorer grouping rejected: {reason} - full serial mode ({N} groups)
+```
+
+See `references/explorer-contract.md` for the `reason` wording per trigger, the full grouping rules, and the confidence calibration hints.
 
 ---
 
@@ -377,8 +396,10 @@ The engine returns a flat findings array. You do not render the 13-section repor
   ```bash
   python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py findings-add \
     --run {run-id} --severity MEDIUM --category {cat} \
-    --file {path} --line {n} --problem {one-line summary}
+    --file {path} --line {n} [--symbol {name}] --problem {one-line summary}
   ```
+
+  Triage the **merged** array from the engine's Step 4, never the raw agent outputs: the merge collapses one defect reported by several reviewers into one finding. Batching fixers off the raw outputs sends two fixers at one function. Pass `--symbol` whenever the merged finding carries one, and `--category` as one of the engine's ten slugs.
 
   Do not auto-fix — risk of overcorrection on debatable findings. Recording them is what stops the next review pass from re-reporting findings you deliberately declined: `findings-list --format prompt` emits the suppression block for the next reviewer prompt.
 
@@ -529,7 +550,7 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - ❌ Spawning `bdk:code-reviewer` per task. End-of-branch only — it sees cross-task patterns the per-task view misses.
 - ❌ Sequencing `bdk:architecture-reviewer` and the final `bdk:test-runner` in Step 4. They are independent read-only checks and **must** be dispatched in a single coordinator message with two `Agent` calls.
 - ❌ Hardcoding test cadence ("every 3 tasks"). Pure orchestrator judgment per group, bounded by the 2-consecutive-skip cap.
-- ❌ Asking the user for confirmation mid-flow. Autonomous skill — surface decisions only on terminal failure or user interrupt.
+- ❌ Asking the user for confirmation mid-flow. Autonomous skill — surface decisions only on terminal failure or user interrupt. Enforced, not merely asked for: the frontmatter's `disallowed-tools: AskUserQuestion` removes the tool from the pool for the run, so a mid-flow question is not available to reach for. Surface a terminal failure as a printed report and stop; do not look for another way to prompt.
 - ❌ Letting an implementer read the plan file. Pass full task text in the dispatch prompt.
 - ❌ Hardcoding `pytest`, `npm test`, etc. in any prompt to a subagent. Subagents detect from project context.
 - ❌ Accepting prose returns from implementers. Malformed return → `BLOCKED` and re-dispatch.

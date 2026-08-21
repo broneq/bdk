@@ -5,6 +5,7 @@ model: sonnet
 effort: high
 argument-hint: "[--full] [focus]"
 allowed-tools: Bash(git *) Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/*) Write(.bdk/cr/**)
+disallowed-tools: Edit NotebookEdit
 ---
 
 # Dynamic Code Review Orchestrator
@@ -18,7 +19,8 @@ Determine what changed, dispatch specialized reviewers in parallel, merge their 
 ## Safety Rules (MANDATORY)
 
 - **MUST NOT modify source files.** No `Edit`, no `NotebookEdit`, and no `Write` outside `.bdk/cr/`.
-- The one permitted write is this skill's own report under `.bdk/cr/`. That is what the narrow `Write(.bdk/cr/**)` grant in the frontmatter is for.
+- The first two are enforced mechanically: `disallowed-tools: Edit NotebookEdit` in the frontmatter removes them from the pool while this skill is active, so "review only" is a property of the turn rather than a promise in prose.
+- `Write` cannot be removed the same way - the report needs it. It stays bounded by the narrow `Write(.bdk/cr/**)` grant plus the rule above: a `Write` anywhere else is a rule violation, and the grant means it also costs a permission prompt, which is the signal that something has gone wrong. Stop and report instead of answering that prompt.
 - All sub-agents are read-only. Findings go into the report; fixing them is a separate, explicit decision by the user.
 
 ## Terminal Output

@@ -18,9 +18,10 @@ All fields optional except `description` (recommended).
 | `argument-hint` | Autocomplete hint for args. Example: `[issue-number]` or `[filename] [format]`. |
 | `disable-model-invocation` | `true` = user-only (not Claude). Use for `/commit`, `/deploy`, etc. |
 | `user-invocable` | `false` = hidden from `/` menu. Claude-only background knowledge. |
-| `allowed-tools` | Tools auto-approved when skill active. Space-separated or YAML list. Supports glob patterns (e.g. `mcp__plugin_bdk_*` to grant access to all plugin-bundled MCP tools). For MCP tool naming convention see `.claude/rules/mcp-tool-naming.md`. |
+| `allowed-tools` | Tools auto-approved when skill active. Space-separated or YAML list. Supports glob patterns (e.g. `mcp__plugin_bdk_*` to grant access to all plugin-bundled MCP tools). For MCP tool naming convention see `.claude/rules/mcp-tool-naming.md`. **Pre-approval, not a whitelist** - a tool absent from this list still works, it just goes through the normal permission flow. |
+| `disallowed-tools` | Tools **removed from the pool** while the skill is active - the only frontmatter field that restricts rather than pre-approves. Use it when a skill's prose states an invariant about what it must never call, so the invariant is enforced instead of requested: `AskUserQuestion` for an autonomous background skill, `Edit`/`NotebookEdit` for a read-only reviewer. Same accepted forms as `allowed-tools`. `/bdk:skill-lint` check 22 flags a stated invariant with no matching field. |
 | `model` | Model override. |
-| `effort` | `low` / `medium` / `high` / `max` (Opus only). Overrides session effort. |
+| `effort` | `low` / `medium` / `high` / `xhigh` / `max`. Overrides session effort; which levels exist depends on the model. |
 | `context` | `fork` = isolated subagent. |
 | `agent` | Subagent type when `context: fork`. Options: `Explore`, `Plan`, `general-purpose`, or custom. |
 | `hooks` | Skill-scoped hooks. See below. |

@@ -155,7 +155,9 @@ Good patterns worth reinforcing.
 ### 13. All Issues
 All problems across all agents, sorted severity descending (CRITICAL → HIGH → MEDIUM → LOW).
 
-Each issue: **[SEVERITY] category** → `file:line` → problem → 1-sentence fix.
+Each issue: **[SEVERITY] category** → `file:line` (symbol, when the finding has one) → problem → 1-sentence fix.
+
+One row per **merged** finding, and `category` is one of the engine's ten slugs. The array reaching this section is already deduplicated by `(file, category, symbol-or-nearby-line)`; do not re-expand it back to per-agent rows, and derive the header's severity counts from the same rows so the count and the list agree.
 
 ---
 

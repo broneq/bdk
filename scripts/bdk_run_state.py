@@ -26,7 +26,8 @@ Usage:
     python3 bdk_run_state.py review-done --run <id> --reviewed-sha <sha>
                                  [--group <n>] [--counts C,H,M,L] [--report <path>]
     python3 bdk_run_state.py findings-add --run <id> --severity <s> --category <c>
-                                 --file <path> [--line <n>] --problem <text> [--fix <text>]
+                                 --file <path> [--line <n>] [--symbol <name>]
+                                 --problem <text> [--fix <text>]
     python3 bdk_run_state.py findings-list --run <id> [--severity <s>] [--format json|prompt]
     python3 bdk_run_state.py rebuild --run <id>
     python3 bdk_run_state.py list [--branch <name>]
@@ -575,23 +576,46 @@ def _parse_counts(raw: str | None) -> dict:
     return dict(zip(SEVERITIES, (int(p) for p in parts)))
 
 
+def normalize_category(raw: str) -> str:
+    """Fold spelling variants of one category onto a single slug.
+
+    `Dead Code`, `dead_code`, and `DEAD-CODE` are one category; keying the
+    deferred list on the raw string stores them as three separate entries and
+    the suppression prompt then carries three copies of one finding.
+    """
+    slug = re.sub(r"[\s_]+", "-", raw.strip().lower())
+    slug = re.sub(r"-{2,}", "-", slug)
+    return slug.strip("-")
+
+
 def cmd_findings_add(args: argparse.Namespace) -> dict:
     state = read_manifest(args.run)
     severity = args.severity.upper()
     if severity not in SEVERITIES:
         raise Refusal(f"--severity must be one of {', '.join(SEVERITIES)}")
+    category = normalize_category(args.category)
+    if not category:
+        raise Refusal("--category must not be empty")
     finding = {
         "severity": severity,
-        "category": args.category,
+        "category": category,
         "file": args.file,
         "line": args.line,
+        "symbol": args.symbol,
         "problem": args.problem,
         "fix": args.fix,
     }
     findings = state.setdefault("deferred_findings", [])
-    key = (severity, args.category, args.file, args.line, args.problem)
+    # A symbol survives edits that shift line numbers, so it keys the entry
+    # whenever the caller resolved one; line is the fallback locus.
+    locus = args.symbol if args.symbol else args.line
+
+    def locus_of(f: dict) -> object:
+        return f.get("symbol") if f.get("symbol") else f.get("line")
+
+    key = (severity, category, args.file, locus, args.problem)
     if any(
-        (f["severity"], f["category"], f["file"], f.get("line"), f["problem"]) == key
+        (f["severity"], f["category"], f["file"], locus_of(f), f["problem"]) == key
         for f in findings
     ):
         return {"run_id": state["run_id"], "added": False, "total": len(findings)}
@@ -624,6 +648,8 @@ def cmd_findings_list(args: argparse.Namespace) -> dict | str:
         ]
         for f in findings:
             where = f["file"] + (f":{f['line']}" if f.get("line") else "")
+            if f.get("symbol"):
+                where += f" ({f['symbol']})"
             lines.append(f"- [{f['severity']}] {f['category']} → {where} → {f['problem']}")
         return "\n".join(lines) + "\n"
 
@@ -787,6 +813,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--category", required=True)
     p.add_argument("--file", required=True)
     p.add_argument("--line", type=int)
+    p.add_argument("--symbol", help="enclosing function/class; keys the entry when given")
     p.add_argument("--problem", required=True)
     p.add_argument("--fix")
     p.set_defaults(func=cmd_findings_add)

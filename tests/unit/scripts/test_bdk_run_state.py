@@ -648,6 +648,106 @@ def test_prompt_format_is_silent_with_nothing_deferred(repo: Path) -> None:
     assert proc.stdout.strip() == ""
 
 
+def _add_symbol_finding(
+    repo: Path,
+    category: str = "dead-code",
+    symbol: str = "parse_row",
+    line: str = "42",
+    problem: str = "unused",
+) -> dict:
+    return _ok(
+        [
+            "findings-add",
+            "--run",
+            RUN,
+            "--severity",
+            "MEDIUM",
+            "--category",
+            category,
+            "--file",
+            "src/a.py",
+            "--line",
+            line,
+            "--symbol",
+            symbol,
+            "--problem",
+            problem,
+        ],
+        repo,
+    )
+
+
+def test_category_spellings_fold_onto_one_slug(repo: Path) -> None:
+    """`Dead Code`, `dead_code`, `DEAD-CODE` are one category, not three."""
+    _init(repo)
+    for spelling in ("Dead Code", "dead_code", "DEAD-CODE", "  dead-code  "):
+        _add_symbol_finding(repo, category=spelling)
+    out = _ok(["findings-list", "--run", RUN], repo)
+    assert out["total"] == 1
+    assert out["findings"][0]["category"] == "dead-code"
+
+
+def test_category_normalization_keeps_distinct_categories_apart(repo: Path) -> None:
+    _init(repo)
+    _add_symbol_finding(repo, category="dead-code")
+    _add_symbol_finding(repo, category="duplication")
+    assert _ok(["findings-list", "--run", RUN], repo)["total"] == 2
+
+
+def test_an_empty_category_is_refused(repo: Path) -> None:
+    _init(repo)
+    proc = _run(
+        [
+            "findings-add",
+            "--run",
+            RUN,
+            "--severity",
+            "LOW",
+            "--category",
+            "  ",
+            "--file",
+            "a.py",
+            "--problem",
+            "p",
+        ],
+        repo,
+    )
+    assert proc.returncode == 1
+
+
+def test_symbol_keys_the_entry_across_a_line_shift(repo: Path) -> None:
+    """An edit above the defect shifts its line; the deferral must not double."""
+    _init(repo)
+    _add_symbol_finding(repo, line="42")
+    second = _add_symbol_finding(repo, line="57")
+    assert second["added"] is False
+    assert second["total"] == 1
+
+
+def test_distinct_symbols_on_one_line_stay_distinct(repo: Path) -> None:
+    _init(repo)
+    _add_symbol_finding(repo, symbol="parse_row")
+    _add_symbol_finding(repo, symbol="write_row")
+    assert _ok(["findings-list", "--run", RUN], repo)["total"] == 2
+
+
+def test_line_still_keys_the_entry_with_no_symbol(repo: Path) -> None:
+    _init(repo)
+    _add_finding(repo)
+    assert _add_finding(repo)["added"] is False
+    out = _ok(["findings-list", "--run", RUN], repo)
+    assert out["total"] == 1
+    assert out["findings"][0]["symbol"] is None
+
+
+def test_prompt_format_names_the_symbol_when_stored(repo: Path) -> None:
+    _init(repo)
+    _add_symbol_finding(repo)
+    proc = _run(["findings-list", "--run", RUN, "--format", "prompt"], repo)
+    assert proc.returncode == 0
+    assert "src/a.py:42 (parse_row)" in proc.stdout
+
+
 def test_resolve_range_reports_the_suppression_count(repo: Path) -> None:
     _init(repo)
     _add_finding(repo)
