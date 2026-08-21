@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.0.0](https://github.com/broneq/bdk/compare/v1.5.1...v2.0.0) (2026-08-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* /bdk:execute-plan, /bdk:save-progress, /bdk:restore-progress, /bdk:create-tasks, /bdk:refactor, and /bdk:audit-prompt are removed. See the "Removed skills" table in README.md for replacements.
+
+### Features
+
+* rebuild plan pipeline on immutable plans + run manifest ([24d83bb](https://github.com/broneq/bdk/commit/24d83bb041c55350c7f96e8b8a22bbe07271f208))
+* scope tests and lint to changed files during plan execution ([48b1304](https://github.com/broneq/bdk/commit/48b13042b9bc2786fe778f8ac814efc1a7b3f408))
+
+
+### Bug Fixes
+
+* close the four open findings from the pipeline audits ([8278c4d](https://github.com/broneq/bdk/commit/8278c4d4c7d67a9a0071acf5fe1e73563e8fc234))
+
 ## [1.5.1](https://github.com/broneq/bdk/compare/v1.5.0...v1.5.1) (2026-08-20)
 
 
