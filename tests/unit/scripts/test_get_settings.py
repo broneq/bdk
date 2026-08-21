@@ -18,12 +18,51 @@ SCRIPT = Path(__file__).parents[3] / "scripts" / "get_settings.py"
 FULL_SETTINGS = {
     "languages": ["typescript", "react"],
     "test-tools": [
+        {
+            "type": "vitest",
+            "tier": "fast",
+            "command": "npm run test:unit",
+            "scoped": "npx vitest run {files}",
+            "related": "npx vitest related --run {files}",
+            "failed": "npx vitest run --changed",
+        },
+        {
+            "type": "playwright",
+            "tier": "e2e",
+            "command": "npm run test:e2e",
+            "scoped": "npx playwright test {files}",
+            "failed": "npx playwright test --last-failed",
+        },
+    ],
+    "lint-tools": [
+        {
+            "type": "eslint",
+            "tier": "lint",
+            "command": "npm run lint",
+            "scoped": "npx eslint {files}",
+        },
+        {
+            "type": "tsc",
+            "tier": "typecheck",
+            "command": "npm run typecheck",
+            "incremental": "npx tsc -b --incremental",
+        },
+    ],
+    "build-tools": [{"type": "tsc", "command": "npm run build"}],
+    "features": {"caveman": True, "serena": True, "code-review-graph": False},
+}
+
+# What a settings file written before tiers existed looks like.
+LEGACY_SETTINGS = {
+    "test-tools": [
         {"type": "vitest", "command": "npm run test:unit"},
         {"type": "playwright", "command": "npm run test:e2e"},
     ],
-    "lint-tools": [{"type": "eslint", "command": "npm run lint"}],
-    "build-tools": [{"type": "tsc", "command": "npm run build"}],
-    "features": {"caveman": True, "serena": True, "code-review-graph": False},
+    "lint-tools": [
+        {"type": "eslint", "command": "npm run lint"},
+        {"type": "tsc", "command": "npm run typecheck"},
+        {"type": "prettier", "command": "npm run format"},
+    ],
 }
 
 
@@ -51,23 +90,109 @@ def test_get_languages():
     assert result == "typescript, react"
 
 
-def test_get_test_tools():
+def test_get_test_tools_emits_a_block_per_tier():
     mod = _load_module()
     result = mod.get_value(FULL_SETTINGS, "test-tools")
-    assert "npm run test:unit (vitest)" in result
-    assert "npm run test:e2e (playwright)" in result
+    assert "tier=fast type=vitest" in result
+    assert "tier=e2e type=playwright" in result
+    # Every form is reachable, and the unscoped one is labelled by its cost.
+    assert "full:" in result
+    assert "npx vitest related --run {files}" in result
+    assert "npx playwright test --last-failed" in result
 
 
-def test_get_lint_tools():
+def test_a_declared_tier_is_not_marked_as_inferred():
+    mod = _load_module()
+    result = mod.get_value(FULL_SETTINGS, "test-tools")
+    assert "inferred" not in result
+
+
+def test_get_lint_tools_separates_lint_from_typecheck():
     mod = _load_module()
     result = mod.get_value(FULL_SETTINGS, "lint-tools")
-    assert "npm run lint (eslint)" in result
+    assert "tier=lint type=eslint" in result
+    assert "tier=typecheck type=tsc" in result
+    assert "npx tsc -b --incremental" in result
 
 
-def test_get_build_tools():
+def test_get_build_tools_has_no_tier():
     mod = _load_module()
     result = mod.get_value(FULL_SETTINGS, "build-tools")
-    assert "npm run build (tsc)" in result
+    assert "type=tsc" in result
+    assert "tier=" not in result
+    assert "npm run build" in result
+
+
+# ---------------------------------------------------------------------------
+# tier inference — a settings file predating `tier` must still be usable
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "tool,expected",
+    [
+        ({"type": "vitest", "command": "npm run test:unit"}, "fast"),
+        ({"type": "pytest", "command": "pytest"}, "fast"),
+        ({"type": "playwright", "command": "npm run test:e2e"}, "e2e"),
+        ({"type": "cypress", "command": "npx cypress run"}, "e2e"),
+        # Named by the command alone, not the tool.
+        ({"type": "vitest", "command": "npm run test:integration"}, "e2e"),
+    ],
+)
+def test_test_tier_is_inferred_from_name_or_command(tool, expected):
+    mod = _load_module()
+    assert mod.infer_tier("test-tools", tool) == expected
+
+
+@pytest.mark.parametrize(
+    "tool,expected",
+    [
+        ({"type": "eslint", "command": "npm run lint"}, "lint"),
+        ({"type": "tsc", "command": "npm run typecheck"}, "typecheck"),
+        ({"type": "mypy", "command": "mypy ."}, "typecheck"),
+        ({"type": "prettier", "command": "npm run format"}, "format"),
+        ({"type": "ruff", "command": "ruff check ."}, "lint"),
+    ],
+)
+def test_lint_tier_is_inferred_from_name_or_command(tool, expected):
+    mod = _load_module()
+    assert mod.infer_tier("lint-tools", tool) == expected
+
+
+def test_build_tools_get_no_inferred_tier():
+    mod = _load_module()
+    assert mod.infer_tier("build-tools", {"type": "tsc", "command": "npm run build"}) is None
+
+
+def test_an_inferred_tier_is_marked_as_a_guess():
+    """A reader must be able to tell a declaration from BDK's guess."""
+    mod = _load_module()
+    result = mod.get_value(LEGACY_SETTINGS, "test-tools")
+    assert "tier=fast type=vitest (tier inferred)" in result
+    assert "tier=e2e type=playwright (tier inferred)" in result
+
+
+def test_a_legacy_entry_still_yields_its_command():
+    mod = _load_module()
+    result = mod.get_value(LEGACY_SETTINGS, "lint-tools")
+    for command in ("npm run lint", "npm run typecheck", "npm run format"):
+        assert command in result
+
+
+def test_an_entry_without_a_command_is_skipped():
+    mod = _load_module()
+    result = mod.get_value(
+        {"test-tools": [{"type": "vitest"}, {"type": "pytest", "command": "pytest"}]},
+        "test-tools",
+    )
+    assert "pytest" in result
+    assert "vitest" not in result
+
+
+def test_a_tool_list_with_nothing_usable_falls_back():
+    """An array of junk must read as 'not configured', not as an empty block."""
+    mod = _load_module()
+    assert mod.get_value({"test-tools": [{"type": "vitest"}]}, "test-tools") is None
 
 
 def test_get_features():
@@ -146,6 +271,8 @@ def test_test_tools_output(tmp_path):
     result = _run(tmp_path, "test-tools")
     assert result.returncode == 0
     assert "npm run test:unit" in result.stdout
+    assert "tier=fast" in result.stdout
+    assert "npx vitest run {files}" in result.stdout
 
 
 def test_lint_tools_output(tmp_path):

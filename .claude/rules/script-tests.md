@@ -64,6 +64,20 @@ with pytest.raises(ValueError):
 - Subprocess invocation when script has top-level side effects
 - Use `tmp_path` fixture or `tempfile.NamedTemporaryFile(delete=False)` + `finally: os.unlink(path)`
 
+## Handling Ambient Input (Clock, Randomness)
+
+A script that stamps a timestamp reads an override env var first and falls back to the real clock:
+
+```python
+def now_iso() -> str:
+    override = os.environ.get("BDK_NOW")
+    return override if override else datetime.now(timezone.utc)...
+```
+
+Tests set the var per invocation (`env={**os.environ, "BDK_NOW": "..."}`) and assert exact values — no `datetime` patching, which couples the test to the import site and breaks on refactor.
+
+Without an override hook the script is only testable by mocking, so assertions degrade to "some string came back" and elapsed-time arithmetic goes unverified. Same reasoning for any other ambient read a script does.
+
 ## Handling Scripts with Side Effects
 
 Scripts that read stdin or call `sys.exit` at import time — stub before loading:

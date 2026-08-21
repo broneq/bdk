@@ -114,6 +114,52 @@ Used by skills internally (invoke via `subagent_type`):
 
 ---
 
+## Test & Lint Tiers
+
+BDK runs checks **scoped to what changed** for the whole length of a plan, and the full suite exactly once, at the end. That only works if it knows which of your commands is the cheap one and how to narrow it — so each `test-tools` / `lint-tools` entry in `.bdk/settings.json` carries a tier and the narrower forms of the same command. `/bdk:setup` fills these in; this is what it writes:
+
+```json
+{
+  "test-tools": [
+    {
+      "type": "vitest",
+      "tier": "fast",
+      "command": "npm run test:unit",
+      "scoped": "npx vitest run {files}",
+      "related": "npx vitest related --run {files}",
+      "failed": "npx vitest run --changed"
+    },
+    {
+      "type": "playwright",
+      "tier": "e2e",
+      "command": "npm run test:e2e",
+      "scoped": "npx playwright test {files}",
+      "failed": "npx playwright test --last-failed"
+    }
+  ],
+  "lint-tools": [
+    {"type": "eslint", "tier": "lint", "command": "npm run lint", "scoped": "npx eslint {files}"},
+    {"type": "tsc", "tier": "typecheck", "command": "npm run typecheck", "incremental": "npx tsc -b --incremental"}
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `type` | The runner or framework (`vitest`, `pytest`, `eslint`, `tsc`) — not the package manager. BDK reads it to infer a missing `tier`. |
+| `tier` | `fast` / `e2e` for tests; `lint` / `format` / `typecheck` for lint. Decides **when** the command may run. |
+| `command` | The full, unscoped form. The slowest one: reserved for the end-of-plan gate. |
+| `scoped` | Scoped to a path list. Must contain `{files}`. |
+| `related` | The tests *covering* given source files, for runners that compute that themselves. Must contain `{files}`. Replaces asking an agent which tests cover a change. |
+| `failed` | Re-runs only what failed. Used by fix cycles, so a fix attempt does not pay for a suite. |
+| `incremental` | Cache-reusing form of a check that cannot take a path list — typecheckers above all. |
+
+Omit any form your tool does not support; BDK falls back cleanly from a missing form. `tier` is optional but should always be set: BDK infers it from the tool name, and an inferred `fast` on an e2e runner means a slow suite runs at every group boundary.
+
+**What this buys.** Per task, only the task's own test file runs. Per group, only the tests covering the group's changed files — the fast tier alone, unless the group actually touched e2e specs. Fix cycles re-run failures, not suites. Lint runs on the changed files; typecheck reuses its cache between groups. The unscoped everything, e2e included, runs once per plan.
+
+---
+
 ## Quality Rules
 
 BDK ships language-agnostic rule sets (`code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`) injected into `/bdk:cr`, `/bdk:create-plan`, and `/bdk:design` outputs.

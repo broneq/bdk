@@ -22,6 +22,16 @@ Use generic phrasing:
 
 Env detection handled by `STARTUP_INSTRUCTIONS.md` — trust it.
 
+## Required: Dispatch Paths and Intent, Never a Command
+
+A skill dispatching a verifier subagent (`bdk:test-runner`, `bdk:static-analyse`) passes **file paths plus what scope is wanted**, never a resolved command string. The dispatching skill does not know the project's runner; the agent reads it from `.bdk/settings.json` through its preloaded meta-skill.
+
+A command baked into a dispatch prompt runs correctly in the project it was written for and silently runs the wrong scope — usually the whole suite — everywhere else. Nothing errors; the plan just takes minutes longer per group.
+
+## Exception: Skills That Detect the Stack
+
+A skill whose job is *discovering* the environment names runners and frameworks by necessity — it maps a discovered runner to the command forms it writes into `.bdk/settings.json`. The ban above is on **consuming** a hardcoded command; naming one to derive settings is the whole function. Do not "portability-fix" such a table into generic prose: a derivation table that cannot name `vitest` cannot produce `vitest related --run`.
+
 ## Required: Agents Reading Tool Commands
 
 Agents needing project test/lint/build commands MUST preload the matching meta-skill via `skills:` frontmatter — never embed tool tables:

@@ -54,7 +54,7 @@ plan → explorer (group disjoint tasks) → for each group:
 |---|---|---|---|
 | `bdk:explorer` | Analyze plan tasks for file-disjoint groups | haiku | once, upfront |
 | `bdk:implementer` | Implement one task end-to-end (TDD only — no final lint/test) | sonnet | per task, parallel where safe, background |
-| `bdk:test-runner` | Run tests | haiku | per group, orchestrator's judgment |
+| `bdk:test-runner` | Run tests (scoped per group; full suite once) | haiku | per group by orchestrator's judgment, plus once at 4-0 for the final gate |
 | `bdk:static-analyse` | Lint changed files | haiku | per group, orchestrator's judgment |
 | `bdk:fixer` | Apply specific findings | sonnet | on failures, when SendMessage to original is wrong fit |
 | `bdk:code-reviewer` | Review final branch diff | sonnet | once at end |
@@ -131,6 +131,7 @@ Reviewer / verification subagents have their own return formats — see `referen
      Manifest: .bdk/runs/{run-id}.json
      Worktree mode: same-worktree (disjoint files within group)
      Test/lint cadence: orchestrator judgment per group (max 2 consecutive skips)
+     Test/lint scope: scoped to changed files; full suite once, at 4d
    ```
 
    `{source}` names where the grouping came from and is never omitted: `(plan waves, validated)`, `(explorer-derived)`, or `(serial: {reason})` when Step 1 fell back. A bare group count cannot distinguish a genuinely serial plan from a failed grouping - see Step 1.
@@ -187,6 +188,14 @@ Ad-hoc dispatches inside a group (verify-batch, fix-lint, fix-test) are not trac
 ## Step 3 — Per-group loop
 
 For each group in order:
+
+### 3a-0. Stamp the group's start
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py group-start --run {run-id} --group {n}
+```
+
+One call, before the first dispatch. It is what makes `wall_clock_per_group` in the closing summary real numbers instead of an estimate, and the next speed audit reads those numbers instead of guessing. Do not hold the timestamp yourself — the script owns the clock so a group that dies mid-flight still leaves evidence of when it began.
 
 ### 3a-S. Pick execution strategy (subagents vs. workflow)
 
@@ -298,12 +307,21 @@ After all implementers in the group return `DONE`, decide whether to verify. No 
 
 **Hard cap:** at most **2 consecutive groups** may skip verification. The 3rd group in a row MUST verify regardless of heuristic.
 
+**One conditional widening (judgment call, not a rule).** A group that changed a *public contract* — an exported signature, a route, a schema, a wire format — can break an e2e flow whose specs it never touched, and 4d is the most expensive place to discover that. For such a group only, add a **scoped** e2e run covering the changed area (3e below says how). Do not do this for every group: e2e per group is slower net than one late failure, which is why the default stays "e2e only if the group touched e2e specs."
+
 ### 3e. Spawn verification subagents (when 3d says yes)
 
-In **parallel** (one message, multiple Agent calls):
+In **parallel** (one message, multiple Agent calls). Both get the group's `files_changed` — the union reported by its implementers — and both are expected to run **scoped**, not project-wide:
 
-- `bdk:static-analyse` — pass the union of `files_changed` reported by implementers in this group.
-- `bdk:test-runner` — pass the group's `files_changed`, scoped to the project's fast/unit-tier test command only (per `.bdk/settings.json` `test-tools`). If the group added or modified spec files belonging to a slower e2e/integration-tier test command, also pass those exact spec paths for that tier. **Never fall back to a bare full-suite invocation of any tier here** — if scoping isn't obvious, ask `bdk:explorer` which test files cover the changed paths rather than defaulting to "run everything." The one and only full-suite run happens once, at 4d.
+- `bdk:static-analyse` — pass `files_changed`. It resolves the scoped lint/format form and the incremental typecheck form itself from `lint-tools`; you pass paths, not commands.
+- `bdk:test-runner` — pass `files_changed` and say which job this is: *"changed source files — run the fast tier's `related`/`scoped` form."* The agent resolves the form from `test-tools`; you pass paths and intent, never a command string.
+  - The group added or modified e2e/integration spec files → also pass those exact spec paths for that tier.
+  - The group changed a public contract per 3d's widening → also pass the e2e specs covering it, named by path or by the tier's `--grep`-style selector.
+  - Otherwise **no e2e tier at all** for this group.
+
+**Never a bare full-suite invocation of any tier here.** `test-tools` entries carry a `scoped`/`related` template precisely so scoping is deterministic — the runner computes which tests cover a file list in about a second. Do **not** spend an `bdk:explorer` dispatch on "which tests cover these paths" when a `related` form exists; that round-trip sits on the critical path of every group. Explorer is the fallback for a project whose runner genuinely cannot map files to tests.
+
+The one and only full-suite run happens once, at 4d.
 
 Both background. Wait for both.
 
@@ -317,6 +335,8 @@ For each failure (lint or test):
 - Otherwise → spawn a fresh `bdk:fixer` subagent with the findings inline.
 
 After fixers/SendMessage rounds return → **re-engage the same verifiers** via `SendMessage(to: <verifier_agent_id>, …)` recorded in 3e, passing only the new diff / changed files. The cache should still be warm (typically <5 min). If `SendMessage` errors (agent gone) or the cache window has expired → spawn fresh and increment a `verifier_cache_misses` counter (surfaced in Step 4e). Up to 3 verify-fix cycles per group. After 3 unsuccessful cycles → stop with error.
+
+A re-engagement is **narrower** than the run it follows, never wider: tell the test-runner to re-run the failures (`failed` form) and the static-analyse agent to re-check the files the fixer touched. A cycle that re-runs the group's whole scoped set to confirm one fixed test pays for the whole set on every attempt.
 
 > Verifiers are stateless w.r.t. project semantics — they execute a command and report. Reuse saves the model's cold-start prompt without semantic risk. See STARTUP "Continuing a Spawned Agent" for the cache-window rules.
 
@@ -357,7 +377,29 @@ Continue to the next group.
 
 ## Step 4 — End-of-plan review
 
-All groups committed → run **once**, organized in two phases. Phase A converges code-review findings; Phase B runs architecture review and final tests **in parallel**.
+All groups committed → run **once**, organized in two phases. The full test suite starts immediately, in the shadow of Phase A's code review; Phase A converges review findings; Phase B closes out architecture review and the test gate.
+
+### 4-0. Start the full suite now (optimistic)
+
+Before dispatching any reviewer, dispatch the final gate's test run **in the background** and do not wait for it:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py phase-start --run {run-id} --phase final-tests
+```
+
+- Record `optimistic_sha = $(git rev-parse HEAD)` in coordinator state.
+- Spawn `bdk:test-runner` with: *"full suite, final gate — every tier in `test-tools`, e2e included."*
+- Immediately continue to 4a. **Do not wait.**
+
+Its completion notification will probably arrive in the middle of Phase A. **Hold the result; do not act on it before 4d.** A failing optimistic run is not a reason to interrupt review — the fix may be in the findings Phase A is still converging, and 4d is where the two meet.
+
+**Why here.** The full e2e tier is normally the single longest item in the run, and placing it after review put it in series behind the slowest thing the coordinator does. The two are independent reads — reviewers read a diff, the runner executes commands — so they cannot race. If Phase A ends up changing code, this run's result is stale and 4d re-runs; that is one possibly-wasted run of time that today is spent anyway, only later and in series.
+
+Also stamp the review phase so the overlap is measurable:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py phase-start --run {run-id} --phase review
+```
 
 ### Phase A — Code review + triage
 
@@ -405,19 +447,22 @@ The engine returns a flat findings array. You do not render the 13-section repor
 
 Up to 2 review-fix cycles. Remaining `CRITICAL` after cycle 2 → stop with error.
 
-Once Phase A converges, record the watermark:
+Once Phase A converges, record the watermark and close the phase:
 
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py review-done \
   --run {run-id} --reviewed-sha $(git rev-parse HEAD) \
   --counts {C},{H},{M},{L}
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py phase-done --run {run-id} --phase review
 ```
 
 After a fixer round, `HEAD` has moved - pass the sha you actually reviewed last, which is the post-fix `HEAD`. The script refuses the literal string `HEAD` and refuses any sha that is not a descendant of the current watermark; both refusals mean the range was wrong, so fix the call rather than working around it.
 
 ### Phase B — Parallel final pass (architecture review || final tests)
 
-Once Phase A converges, dispatch the final two checks in a **single coordinator message with two `Agent` calls**. Wait for both completion notifications before moving to 4e - do not poll or schedule wake-ups. Their failure paths are independent — each runs its own fixer cycles.
+Once Phase A converges, run the architecture review (4c) and close out the test gate (4d) **in parallel**: dispatch both in a **single coordinator message** — the `bdk:architecture-reviewer` `Agent` call alongside whatever 4d turns out to need. Wait for both completion notifications before moving to 4e - do not poll or schedule wake-ups. Their failure paths are independent — each runs its own fixer cycles.
+
+4d may need no dispatch at all, because the run it validates started back at 4-0.
 
 #### 4c. `bdk:architecture-reviewer` (conditional)
 
@@ -431,15 +476,40 @@ Dispatch it per the engine's cumulative cohort: pass `cumulative_files`, the who
 
 Findings handled like 4b: `CRITICAL` / `HIGH` → `bdk:fixer`, then re-spawn `bdk:architecture-reviewer`. Up to 2 review-fix cycles.
 
-If none of the conditions hold, **skip** the spawn — log `architecture_review: skipped:<reason>` in the summary. Phase B then degenerates to just the final test-runner.
+If none of the conditions hold, **skip** the spawn — log `architecture_review: skipped:<reason>` in the summary. Phase B then degenerates to just the test gate, which may itself be a no-op if the 4-0 run still stands.
 
-#### 4d. Final `bdk:test-runner` (full suite)
+#### 4d. Final test gate
 
-The only point in this skill where a bare, unscoped full-suite command runs for **every** tier in `test-tools`, including slower e2e/integration ones — deliberately placed here, after Phase A's code review has already converged, not per-group. Do not move this earlier or add an equivalent full-suite fallback elsewhere in this skill.
+The only place in this skill where a bare, unscoped full-suite command runs for **every** tier in `test-tools`, e2e included. It is *started* at 4-0 and *settled* here. Do not add an equivalent full-suite fallback anywhere else in this skill.
 
-Must pass. On failure, spawn `bdk:fixer` with failures, re-run. Up to 3 cycles.
+**Step 1 — is the optimistic run still valid?** Compare `$(git rev-parse HEAD)` to the `optimistic_sha` recorded at 4-0.
 
-**Independence:** architecture-reviewer is read-only (source + graph); test-runner is read-only (executes test commands). They cannot race on shared state. Fixer dispatches from either path are serialized through the existing 3-cycle cap and do not interleave across the two failure pipelines.
+| HEAD vs `optimistic_sha` | What it means | Action |
+|---|---|---|
+| unchanged | Phase A fixed nothing — every reviewer finding was MEDIUM/LOW and got logged, not patched | The 4-0 run **is** the gate. Take its result. **No second full run.** |
+| moved | Phase A's fixers changed code, so the 4-0 result describes a tree that no longer exists | Go to step 2 |
+
+Log which branch you took: `[subagent-execute-plan] Final gate: optimistic run {valid|superseded by {n} fix commit(s)}`.
+
+**Step 2 — failed-first re-run.** Do not re-run everything to check a fix.
+
+1. **If the 4-0 run reported failures:** dispatch `bdk:test-runner` with *"re-run the failures"* plus the failure list — it uses each tier's `failed` form (`--last-failed`, `--changed`, or the failing paths).
+2. **If the 4-0 run was green and only Phase A's fix commits are new:** dispatch a run scoped to the fixed files plus the failures being chased — the tiers the change actually touches, not all of them.
+3. **Confirming run:** once failed-first comes back green, run the **full** suite once to confirm. That is the only full run in this step, and it happens at most once per fix chain — not once per attempt.
+
+Fix cycles: spawn `bdk:fixer` with the failures, then loop back to step 2. Up to 3 cycles. Cycles 1 and 2 are failed-first; the confirming full run closes the chain.
+
+**If 4c's architecture fixers land code after this gate went green,** the gate is stale again: run one failed-first pass plus one confirming full run over the arch fixes. Do not skip it because "tests already passed" — they passed on a different tree.
+
+When the gate closes, stamp it:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py phase-done --run {run-id} --phase final-tests
+```
+
+Must pass to reach 4e.
+
+**Independence:** architecture-reviewer is read-only (source + graph); test-runner is read-only (executes test commands). They cannot race on shared state — which is also what makes the 4-0 head start safe. Fixer dispatches from either path are serialized through the existing 3-cycle cap and do not interleave across the two failure pipelines.
 
 ### 4e. Print summary, stop
 
@@ -469,11 +539,26 @@ review_high_remaining: {H}
 review_medium_logged: {M}
 review_low_logged: {L}
 architecture_review: ran|skipped:{reason}
+final_gate: optimistic|rerun:{cycles}
+wall_clock_total: {N}s
+wall_clock_review: {N}s
+wall_clock_final_tests: {N}s
+wall_clock_per_group: {N},{N},{N}
 context_stop_pct: 50
 status: success|partial|error
 ```
 
 `review_medium_logged` and `review_low_logged` come from `findings-list --run {run-id}`, not from your own recollection of Phase A - the manifest is the record, and counting from context is how the two drift.
+
+The four `wall_clock_*` values come from one call, for the same reason:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py timings --run {run-id}
+```
+
+Map `wall_clock_total_s` → `wall_clock_total`, `phases.review.elapsed_s` → `wall_clock_review`, `phases.final-tests.elapsed_s` → `wall_clock_final_tests`, and the per-group `elapsed_s` list → `wall_clock_per_group`. Print `unknown` for any value the script reports as `null` rather than estimating one. The phase figures overlap on purpose — the test gate runs inside the review window — so they will not sum to the total, and that overlap is the thing worth seeing.
+
+`final_gate` records whether the 4-0 optimistic run stood (`optimistic`) or had to be re-run after Phase A changed code (`rerun:{cycles}`).
 
 The coordinator does not push or open PRs. That belongs to a downstream skill (`/bdk:commit`, the user's PR workflow).
 
@@ -529,6 +614,9 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - Execution strategy is chosen per group in Step 3a-S: plan-declared `strategy:` tag is authoritative input, the executor override rubric may flip it, default is `subagents`. A `workflow` group requires file-disjoint tasks at `confidence ≥ 0.6` and >1 task — otherwise force `subagents`.
 - The `Workflow` script implements + optionally fixes only. Verification (3d–3f) and commits (3g) stay with the coordinator. Unresolved `BLOCKED`/`NEEDS_CONTEXT` items from a Workflow fall back to a single hand-orchestrated implementer each.
 - Implementer subagents **do not** run final lint or test verification. They do TDD red-green for their own task and stop. Verification is a separate subagent the coordinator schedules.
+- **Everything before 4d is scoped to what changed.** Per task: the task's own test file. Per group: the group's `files_changed`, fast tier only. Per fix cycle: the failures, or the files the fixer touched. An e2e/integration tier runs during Step 3 only for specs the group itself added or modified — or, as a judgment call, scoped to a public-contract change per 3d. Lint and format run on the changed file list; typecheck runs in its cache-reusing incremental form. The full, unscoped suite of every tier runs once per plan, at 4d.
+- Scoping is read from `.bdk/settings.json`, not invented: `test-tools` and `lint-tools` entries carry `tier` plus `scoped` / `related` / `failed` / `incremental` templates. Pass **paths and intent** to a verifier subagent and let it resolve the command; never pass a command string, and never spend an explorer dispatch on a mapping the runner computes itself.
+- A verifier re-engagement after a fix is narrower than the run before it, never wider.
 - Parallel implementers are allowed only when `bdk:explorer` confirms file-disjoint sets within the group AND `confidence ≥ 0.6`.
 - For verification failures: try `SendMessage` to the original implementer first if cache likely warm and scope is narrow. Fall back to spawning `bdk:fixer`.
 - Verifiers (`bdk:static-analyse`, `bdk:test-runner`) are reused via `SendMessage` across verify-fix cycles **within a group**; fresh spawn only on cache miss. Never reuse verifiers across groups — each group's `files_changed` set differs.
@@ -548,7 +636,13 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - ❌ Committing or running tests/lint inside the Workflow script. The script implements + fixes only; the coordinator owns 3d–3g.
 - ❌ Looping a Workflow more than once per wave to chase blocked tasks. One invocation; stragglers fall back to hand-orchestrated subagents.
 - ❌ Spawning `bdk:code-reviewer` per task. End-of-branch only — it sees cross-task patterns the per-task view misses.
-- ❌ Sequencing `bdk:architecture-reviewer` and the final `bdk:test-runner` in Step 4. They are independent read-only checks and **must** be dispatched in a single coordinator message with two `Agent` calls.
+- ❌ Sequencing `bdk:architecture-reviewer` and the final test gate in Step 4. They are independent read-only checks and must be dispatched together.
+- ❌ Waiting for the 4-0 full-suite run before starting the review. It is dispatched in the background precisely so the longest item in the run happens inside the review window; waiting on it puts e2e back in series.
+- ❌ Re-running the full suite at 4d when Phase A changed nothing. `HEAD == optimistic_sha` means the 4-0 result describes the exact tree being gated — take it.
+- ❌ Re-running the full suite on every fix attempt at 4d. Failed-first for the attempts, one confirming full run at the end of the chain.
+- ❌ Passing a resolved command string to `bdk:test-runner` / `bdk:static-analyse`. Pass paths and intent; the agent resolves the form from settings, which is what keeps the scoping right when settings change.
+- ❌ Dispatching `bdk:explorer` to ask which tests cover the changed files when the fast tier has a `related` form. That is a round-trip on every group's critical path to answer a question the runner answers in a second.
+- ❌ Running an e2e tier per group as a precaution. Net slower than one late failure; the exceptions are specs the group touched and 3d's public-contract widening.
 - ❌ Hardcoding test cadence ("every 3 tasks"). Pure orchestrator judgment per group, bounded by the 2-consecutive-skip cap.
 - ❌ Asking the user for confirmation mid-flow. Autonomous skill — surface decisions only on terminal failure or user interrupt. Enforced, not merely asked for: the frontmatter's `disallowed-tools: AskUserQuestion` removes the tool from the pool for the run, so a mid-flow question is not available to reach for. Surface a terminal failure as a printed report and stop; do not look for another way to prompt.
 - ❌ Letting an implementer read the plan file. Pass full task text in the dispatch prompt.

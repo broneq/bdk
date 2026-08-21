@@ -6,10 +6,25 @@ Usage:
 
 Keys:
     languages       → typescript, react, next
-    test-tools      → npm run test:unit (vitest), npm run test:e2e (playwright)
-    lint-tools      → npm run lint (eslint)
-    build-tools     → npm run build (tsc)
+    test-tools      → one block per tier (full / scoped / related / failed)
+    lint-tools      → one block per tier (full / scoped / incremental)
+    build-tools     → one block per tool
     features        → caveman=on, serena=on, code-review-graph=off
+
+Tool keys emit a block per entry rather than a flat prose string, because the
+scoping form of a command is what callers actually need most of the time and
+prose forces every agent to re-derive it (`npm run test:unit -- <path>`?
+`vitest related`? `playwright --grep`?). A block looks like:
+
+    tier=fast type=vitest
+      full:     npm run test:unit
+      scoped:   npx vitest run {files}
+      related:  npx vitest related --run {files}
+      failed:   npx vitest run --changed
+
+`{files}` is substituted by the caller with a space-separated path list.
+`tier` is inferred from the tool name when the entry does not declare one, and
+the inference is marked so the reader can tell a guess from a declaration.
 
 Exits 0 always (key missing or settings absent → prints generic fallback to stdout).
 Exits 1 only if the settings file exists but is unparseable JSON.
@@ -21,6 +36,7 @@ Intended for use in skill/agent prompts via:
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -28,17 +44,69 @@ SETTINGS_PATH = Path(".bdk/settings.json")
 
 TOOL_KEYS = {"test-tools", "lint-tools", "build-tools"}
 
+# Emitted in this order, under these labels. `command` is the full/unscoped form
+# and is labelled `full` to make its cost explicit at every read site.
+TEMPLATE_FIELDS: tuple[tuple[str, str], ...] = (
+    ("command", "full"),
+    ("scoped", "scoped"),
+    ("related", "related"),
+    ("failed", "failed"),
+    ("incremental", "incremental"),
+)
 
-def _format_tools(tools: list[dict]) -> str:  # type: ignore[type-arg]
-    parts = []
-    for t in tools:
-        cmd = t.get("command", "")
-        typ = t.get("type", "")
-        if cmd and typ:
-            parts.append(f"{cmd} ({typ})")
-        elif cmd:
-            parts.append(cmd)
-    return ", ".join(parts)
+_E2E_PATTERN = re.compile(
+    r"e2e|playwright|cypress|selenium|puppeteer|nightwatch|integration", re.I
+)
+_TYPECHECK_PATTERN = re.compile(r"tsc|typecheck|type-check|mypy|pyright|flow", re.I)
+_FORMAT_PATTERN = re.compile(r"prettier|black|gofmt|rustfmt|fmt|format", re.I)
+
+
+def infer_tier(key: str, tool: dict) -> str | None:  # type: ignore[type-arg]
+    """Guess a tier from the tool's name and command when it declares none.
+
+    The whole scoped-first policy hinges on knowing which command is the slow
+    one, so a settings file written before `tier` existed must still be usable.
+    """
+    haystack = f"{tool.get('type', '')} {tool.get('command', '')}"
+    if key == "test-tools":
+        return "e2e" if _E2E_PATTERN.search(haystack) else "fast"
+    if key == "lint-tools":
+        if _TYPECHECK_PATTERN.search(haystack):
+            return "typecheck"
+        if _FORMAT_PATTERN.search(haystack):
+            return "format"
+        return "lint"
+    return None
+
+
+def _format_tool(key: str, tool: dict) -> list[str]:  # type: ignore[type-arg]
+    declared_tier = tool.get("tier")
+    tier = declared_tier or infer_tier(key, tool)
+
+    header_parts = []
+    if tier:
+        header_parts.append(f"tier={tier}")
+    if tool.get("type"):
+        header_parts.append(f"type={tool['type']}")
+    header = " ".join(header_parts) or "tool"
+    if tier and not declared_tier:
+        header += " (tier inferred)"
+
+    lines = [header]
+    for field, label in TEMPLATE_FIELDS:
+        value = tool.get(field)
+        if isinstance(value, str) and value.strip():
+            lines.append(f"  {label + ':':13}{value}")
+    return lines
+
+
+def _format_tools(key: str, tools: list[dict]) -> str:  # type: ignore[type-arg]
+    blocks = []
+    for tool in tools:
+        if not isinstance(tool, dict) or not tool.get("command"):
+            continue
+        blocks.extend(_format_tool(key, tool))
+    return "\n".join(blocks)
 
 
 def _format_features(features: dict) -> str:  # type: ignore[type-arg]
@@ -58,7 +126,7 @@ def get_value(settings: dict, key: str) -> str | None:  # type: ignore[type-arg]
 
     if key in TOOL_KEYS:
         if isinstance(value, list):
-            return _format_tools(value)
+            return _format_tools(key, value) or None
         return str(value)
 
     if key == "features":

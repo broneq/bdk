@@ -79,12 +79,44 @@ Read the following files if they exist and extract command/tool hints:
 - Test: `flutter test` (if flutter sdk) or `dart test`
 - Language: `dart`
 
+### Phase 2b: Fill in tier and scoping forms
+
+The full command is the least useful thing about a tool entry. BDK runs scoped checks throughout a plan and the full suite exactly once, at the end — so every entry needs a `tier` and, wherever the tool supports it, the narrower forms. Getting these right here is what stops every later agent from guessing at `npm run test:unit -- <path>` versus `vitest related`.
+
+Set `tier` on every `test-tools` entry (`fast` | `e2e`) and every `lint-tools` entry (`lint` | `format` | `typecheck`). Never leave it out: BDK infers a missing tier from the tool name, and an inferred `fast` on an e2e runner means a slow suite runs at every group boundary.
+
+`{files}` is a literal placeholder in these templates — callers substitute a path list. Derive per runner:
+
+| Runner | `scoped` | `related` | `failed` | `incremental` |
+|---|---|---|---|---|
+| vitest | `npx vitest run {files}` | `npx vitest related --run {files}` | `npx vitest run --changed` | — |
+| jest | `npx jest {files}` | `npx jest --findRelatedTests {files}` | `npx jest --onlyFailures` | — |
+| playwright | `npx playwright test {files}` | — | `npx playwright test --last-failed` | — |
+| cypress | `npx cypress run --spec {files}` | — | — | — |
+| pytest | `pytest {files}` | — | `pytest --lf` | — |
+| go test | `go test {files}` | — | — | — |
+| cargo test | `cargo test {files}` | — | — | — |
+| rspec | `bundle exec rspec {files}` | — | `bundle exec rspec --only-failures` | — |
+| eslint | `npx eslint {files}` | — | — | — |
+| prettier | `npx prettier --check {files}` | — | — | — |
+| ruff | `ruff check {files}` | — | — | — |
+| tsc | — | — | — | `npx tsc -b --incremental` |
+| mypy | `mypy {files}` | — | — | `mypy --incremental .` |
+
+Rules for anything not in the table:
+- Package-manager script wrapping a runner that takes paths → `<script> -- {files}` (`npm run test:unit -- {files}`). The `--` is required or the paths reach npm, not the runner.
+- A tool that takes no path list (most typecheckers, some build-mode linters) → omit `scoped`; give an `incremental` form if the tool has a cache flag.
+- Not sure a form exists → omit it. A wrong template is worse than a missing one: BDK falls back cleanly from a missing form, and silently runs the wrong thing with a broken one.
+- `scoped` and `related` **must** contain `{files}`; the config hook rejects settings where they do not, because such a command ignores the file list and quietly runs everything.
+
 ### Phase 3: Confirm settings via AskUserQuestion
 
 Use the `AskUserQuestion` tool with up to 4 questions in a single call:
 
 1. **Test commands** — multiSelect: true, options: each detected command as its own option + "None". User can add unlisted commands via "Other".
 2. **Lint commands** — multiSelect: true, same pattern
+
+Confirm the **full** commands only. Tiers and scoped forms are derived from Phase 2b for whatever the user confirms — they are mechanical consequences of the runner, not preferences worth a question. Show them in the completion summary instead so a wrong derivation is visible.
 3. **Features** — multiSelect: true, question: "Which features do you want to **disable**?", options: "Serena MCP", "CodeGraph MCP", "Caveman mode". Empty selection = all enabled.
 4. **Build command** — only include if a build tool was detected or the language typically has one (e.g. TypeScript, Java, Rust); skip otherwise to stay under 4 questions
 
@@ -102,14 +134,33 @@ Create directory and file:
 └── design/
 ```
 
-Write `settings.json` with confirmed values using the schema:
+Write `settings.json` with confirmed values plus the tier/scoping forms from Phase 2b:
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/broneq/bdk/main/hooks/check-bdk-config/settings.schema.json",
-  "languages": ["..."],
-  "test-tools": [{"type": "...", "command": "..."}],
-  "lint-tools": [{"type": "...", "command": "..."}],
-  "build-tools": [{"type": "...", "command": "..."}],
+  "languages": ["typescript", "react"],
+  "test-tools": [
+    {
+      "type": "vitest",
+      "tier": "fast",
+      "command": "npm run test:unit",
+      "scoped": "npx vitest run {files}",
+      "related": "npx vitest related --run {files}",
+      "failed": "npx vitest run --changed"
+    },
+    {
+      "type": "playwright",
+      "tier": "e2e",
+      "command": "npm run test:e2e",
+      "scoped": "npx playwright test {files}",
+      "failed": "npx playwright test --last-failed"
+    }
+  ],
+  "lint-tools": [
+    {"type": "eslint", "tier": "lint", "command": "npm run lint", "scoped": "npx eslint {files}"},
+    {"type": "tsc", "tier": "typecheck", "command": "npm run typecheck", "incremental": "npx tsc -b --incremental"}
+  ],
+  "build-tools": [{"type": "tsc", "command": "npm run build"}],
   "features": {
     "caveman": true,
     "serena": false,
@@ -118,7 +169,7 @@ Write `settings.json` with confirmed values using the schema:
 }
 ```
 
-Omit empty arrays (e.g. no `build-tools` key if none detected/provided).
+`type` names the runner or framework (`vitest`, `playwright`, `pytest`, `eslint`, `tsc`), not the package manager — BDK reads it to infer a missing `tier`. Omit empty arrays (e.g. no `build-tools` key if none detected/provided), and omit any per-entry form the tool does not support. `build-tools` need no `tier`.
 
 ### Phase 5: Initialize MCP tools
 
@@ -159,6 +210,10 @@ Ask: "Add these to .gitignore now? [y/n]"
 Print:
 ```
 [setup] .bdk/settings.json created.
+[setup] Test tiers: {tier}={command} (scoped: {scoped|none}) …
+[setup] Lint tiers: {tier}={command} (scoped: {scoped|none}) …
 [setup] Directories created: .bdk/plans/, .bdk/design/
 [setup] Restart your Claude Code session — BDK will inject project settings on startup.
 ```
+
+The tier lines exist so a wrong derivation is caught now, by the one person who knows the project, rather than showing up later as a slow suite running at every group boundary.

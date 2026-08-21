@@ -21,7 +21,11 @@ Usage:
                                  --session <id> [--force]
     python3 bdk_run_state.py get --run <id>
     python3 bdk_run_state.py resume --run <id> --session <id> [--force]
+    python3 bdk_run_state.py group-start --run <id> --group <n>
     python3 bdk_run_state.py group-done --run <id> --group <n> --commit <sha>
+    python3 bdk_run_state.py phase-start --run <id> --phase <slug>
+    python3 bdk_run_state.py phase-done --run <id> --phase <slug>
+    python3 bdk_run_state.py timings --run <id>
     python3 bdk_run_state.py resolve-range --run <id> --head <sha> [--full]
     python3 bdk_run_state.py review-done --run <id> --reviewed-sha <sha>
                                  [--group <n>] [--counts C,H,M,L] [--report <path>]
@@ -48,6 +52,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 STATE_DIR = Path(".bdk/runs")
@@ -61,6 +66,47 @@ SEVERITIES = ("CRITICAL", "HIGH", "MEDIUM", "LOW")
 
 class Refusal(Exception):
     """A condition the caller must resolve - never a crash, always a message."""
+
+
+# ---------------------------------------------------------------------------
+# clock
+# ---------------------------------------------------------------------------
+
+
+def now_iso() -> str:
+    """Current UTC instant, ISO-8601 with a trailing Z.
+
+    `BDK_NOW` overrides it so a test can assert an exact elapsed value instead
+    of asserting only that some timestamp exists.
+    """
+    override = os.environ.get("BDK_NOW")
+    if override:
+        return override
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
+def _parse_iso(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def elapsed_s(start: str | None, end: str | None) -> int | None:
+    """Whole seconds between two stamps, or None if either is missing/unparseable.
+
+    Timings are diagnostics: a manifest written by an older version, or one
+    whose stamp got mangled, must degrade to "unknown" rather than break the
+    run it is measuring.
+    """
+    a, b = _parse_iso(start), _parse_iso(end)
+    if a is None or b is None:
+        return None
+    return int((b - a).total_seconds())
 
 
 # ---------------------------------------------------------------------------
@@ -282,6 +328,10 @@ def reconcile(state: dict) -> list[str]:
             f"on this branch carries that trailer - dropped"
         )
         del recorded[group]
+        # Its timing measured work that git no longer knows about. Only entries
+        # dropped here are pruned - a group that is merely still in flight has a
+        # start stamp and no commit yet, and must keep it.
+        state.get("group_timings", {}).pop(str(group), None)
 
     state["groups_done"] = {str(g): sha for g, sha in sorted(recorded.items())}
     return drift
@@ -351,6 +401,11 @@ def cmd_init(args: argparse.Namespace) -> dict:
             )
             state["plan_sha256"] = new_hash
         notes += reconcile(state)
+        # A manifest written before timings existed has no start stamp. Backfill
+        # it at the resume instant rather than leaving the total unmeasurable;
+        # the resulting total is short by the pre-resume work, which is better
+        # than absent and is why `timings` reports the stamp it used.
+        state.setdefault("started_at", now_iso())
         state["existed"] = True
     else:
         branch = current_branch()
@@ -364,7 +419,10 @@ def cmd_init(args: argparse.Namespace) -> dict:
             "branch_slug": slugify(branch),
             "base_sha": args.base_sha,
             "session_id": args.session,
+            "started_at": now_iso(),
             "groups_done": {},
+            "group_timings": {},
+            "phases": {},
             "reviewed_sha": None,
             "reviews": [],
             "deferred_findings": [],
@@ -388,6 +446,7 @@ def cmd_init(args: argparse.Namespace) -> dict:
         "resumed": existed,
         "base_sha": state["base_sha"],
         "plan_sha256": state["plan_sha256"],
+        "started_at": state["started_at"],
         "groups_done": sorted(int(g) for g in state["groups_done"]),
         "notes": notes,
     }
@@ -423,12 +482,41 @@ def cmd_resume(args: argparse.Namespace) -> dict:
     }
 
 
+def cmd_group_start(args: argparse.Namespace) -> dict:
+    """Stamp the instant a group's first dispatch goes out.
+
+    The coordinator calls this instead of holding a timestamp itself: it has no
+    clock of its own it can quote back later, and a group that dies mid-flight
+    should still leave evidence of when it began.
+    """
+    state = read_manifest(args.run)
+    timings = state.setdefault("group_timings", {})
+    entry = timings.setdefault(str(args.group), {})
+    restarted = bool(entry.get("started_at"))
+    entry["started_at"] = now_iso()
+    entry.pop("ended_at", None)
+    entry.pop("elapsed_s", None)
+    notes = write_manifest(state)
+    if restarted:
+        notes.append(f"group {args.group} was already started - stamp reset (re-dispatch)")
+    return {
+        "run_id": state["run_id"],
+        "group": args.group,
+        "started_at": entry["started_at"],
+        "notes": notes,
+    }
+
+
 def cmd_group_done(args: argparse.Namespace) -> dict:
     state = read_manifest(args.run)
     if not commit_exists(args.commit):
         raise Refusal(f"commit {args.commit} does not exist")
     sha = git("rev-parse", args.commit)
     state.setdefault("groups_done", {})[str(args.group)] = sha
+
+    entry = state.setdefault("group_timings", {}).setdefault(str(args.group), {})
+    entry["ended_at"] = now_iso()
+    entry["elapsed_s"] = elapsed_s(entry.get("started_at"), entry["ended_at"])
     notes = write_manifest(state)
 
     recorded = {c["group"] for c in trailer_commits(state["run_id"], state.get("base_sha"))}
@@ -445,7 +533,102 @@ def cmd_group_done(args: argparse.Namespace) -> dict:
         "group": args.group,
         "commit": sha,
         "groups_done": sorted(int(g) for g in state["groups_done"]),
+        "elapsed_s": entry["elapsed_s"],
         "notes": notes,
+    }
+
+
+def cmd_phase_start(args: argparse.Namespace) -> dict:
+    state = read_manifest(args.run)
+    phase = normalize_category(args.phase)
+    if not phase:
+        raise Refusal("--phase must not be empty")
+    entry = state.setdefault("phases", {}).setdefault(phase, {})
+    entry["started_at"] = now_iso()
+    entry.pop("ended_at", None)
+    entry.pop("elapsed_s", None)
+    notes = write_manifest(state)
+    return {
+        "run_id": state["run_id"],
+        "phase": phase,
+        "started_at": entry["started_at"],
+        "notes": notes,
+    }
+
+
+def cmd_phase_done(args: argparse.Namespace) -> dict:
+    state = read_manifest(args.run)
+    phase = normalize_category(args.phase)
+    if not phase:
+        raise Refusal("--phase must not be empty")
+    entry = state.setdefault("phases", {}).setdefault(phase, {})
+    entry["ended_at"] = now_iso()
+    entry["elapsed_s"] = elapsed_s(entry.get("started_at"), entry["ended_at"])
+    notes = write_manifest(state)
+    if entry["elapsed_s"] is None:
+        notes.append(
+            f"phase '{phase}' was never started - recorded an end stamp only, so its "
+            f"duration is unknown"
+        )
+    return {
+        "run_id": state["run_id"],
+        "phase": phase,
+        "started_at": entry.get("started_at"),
+        "ended_at": entry["ended_at"],
+        "elapsed_s": entry["elapsed_s"],
+        "notes": notes,
+    }
+
+
+def cmd_timings(args: argparse.Namespace) -> dict:
+    """Wall-clock breakdown of the run, for the executor's closing summary.
+
+    Phases can overlap on purpose - the full-suite run is started in the shadow
+    of code review - so the phase durations do NOT sum to the total. That is the
+    point of measuring them: an audit needs to see the overlap, not a tidy
+    partition.
+    """
+    state = read_manifest(args.run)
+    # Reconcile first, like every other read: a group git no longer knows about
+    # must not appear in the breakdown as time well spent.
+    if reconcile(state):
+        write_manifest(state)
+    started = state.get("started_at")
+    end = now_iso()
+
+    groups = []
+    timings = state.get("group_timings", {})
+    for key in sorted(timings, key=lambda k: int(k) if k.isdigit() else 0):
+        entry = timings[key]
+        groups.append(
+            {
+                "group": int(key) if key.isdigit() else key,
+                "started_at": entry.get("started_at"),
+                "ended_at": entry.get("ended_at"),
+                "elapsed_s": entry.get("elapsed_s"),
+            }
+        )
+
+    phases = {
+        name: {
+            "started_at": entry.get("started_at"),
+            "ended_at": entry.get("ended_at"),
+            "elapsed_s": entry.get("elapsed_s"),
+        }
+        for name, entry in sorted(state.get("phases", {}).items())
+    }
+
+    measured = [g["elapsed_s"] for g in groups if g["elapsed_s"] is not None]
+    return {
+        "run_id": state["run_id"],
+        "started_at": started,
+        "as_of": end,
+        "wall_clock_total_s": elapsed_s(started, end),
+        "groups": groups,
+        "groups_measured": len(measured),
+        "group_total_s": sum(measured) if measured else None,
+        "slowest_group_s": max(measured) if measured else None,
+        "phases": phases,
     }
 
 
@@ -552,6 +735,7 @@ def cmd_review_done(args: argparse.Namespace) -> dict:
             "group": args.group,
             "counts": counts,
             "report": args.report,
+            "ts": now_iso(),
         }
     )
     notes = write_manifest(state)
@@ -731,12 +915,19 @@ def cmd_print(args: argparse.Namespace) -> str:
         f"branch       {state.get('branch')}",
         f"base         {(state.get('base_sha') or '')[:12]}",
         f"session      {state.get('session_id')}",
+        f"started      {state.get('started_at') or 'unstamped'}",
         f"groups done  {', '.join(map(str, done)) or 'none'}",
         f"reviewed to  {(state.get('reviewed_sha') or 'never')[:12]}",
         f"deferred     {len(findings)} finding(s)",
     ]
+    timings = state.get("group_timings", {})
     for group in done:
-        lines.append(f"  group {group} → {state['groups_done'][str(group)][:12]}")
+        took = (timings.get(str(group)) or {}).get("elapsed_s")
+        suffix = f"  ({took}s)" if took is not None else ""
+        lines.append(f"  group {group} → {state['groups_done'][str(group)][:12]}{suffix}")
+    for name, entry in sorted(state.get("phases", {}).items()):
+        took = entry.get("elapsed_s")
+        lines.append(f"  phase   {name} {f'{took}s' if took is not None else 'in flight'}")
     for review in state.get("reviews", []):
         counts = review.get("counts") or {}
         summary = " ".join(f"{k[0]}{v}" for k, v in counts.items()) or "-"
@@ -787,11 +978,30 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--force", action="store_true")
     p.set_defaults(func=cmd_resume)
 
+    p = sub.add_parser("group-start", help="stamp the start of a group's dispatch")
+    p.add_argument("--run", required=True)
+    p.add_argument("--group", type=int, required=True)
+    p.set_defaults(func=cmd_group_start)
+
     p = sub.add_parser("group-done", help="record a completed group's commit")
     p.add_argument("--run", required=True)
     p.add_argument("--group", type=int, required=True)
     p.add_argument("--commit", required=True)
     p.set_defaults(func=cmd_group_done)
+
+    p = sub.add_parser("phase-start", help="stamp the start of a named phase")
+    p.add_argument("--run", required=True)
+    p.add_argument("--phase", required=True, help="e.g. review, final-tests")
+    p.set_defaults(func=cmd_phase_start)
+
+    p = sub.add_parser("phase-done", help="stamp the end of a named phase")
+    p.add_argument("--run", required=True)
+    p.add_argument("--phase", required=True)
+    p.set_defaults(func=cmd_phase_done)
+
+    p = sub.add_parser("timings", help="wall-clock breakdown of a run")
+    p.add_argument("--run", required=True)
+    p.set_defaults(func=cmd_timings)
 
     p = sub.add_parser("resolve-range", help="resolve what a review should cover")
     p.add_argument("--run", required=True)

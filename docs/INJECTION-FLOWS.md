@@ -471,7 +471,8 @@ For each, decision based on the entity's actual job. "Inject only what's used."
 - `fixer` — applies findings someone else generated. `code-quality` because it's writing code; `tier-impact` because every fix has a blast radius.
 - `implementer` — writes new code. `code-quality` for hygiene; `design-patterns` to encourage right shape from the start.
 - `log-analyzer` — reads logs. Sometimes needs to find a symbol from a stack trace (`tier-search`).
-- `static-analyse`, `test-runner`, `web-researcher` — pure tool runners. No injection. Their bodies are short and self-contained.
+- `web-researcher` — pure tool runner. No injection. Its body is short and self-contained.
+- `static-analyse`, `test-runner` — no tier or rules injection (they read no code), but each preloads its tool meta-skill (`bdk-lint-tools` / `bdk-test-tools`) via `skills:`. That is not just a command list: the meta-skill carries the **tier and scoping policy** — which form of a command to run given a file list, and which tier may run when. Callers pass paths and intent; the agent resolves the command. Removing the preload would make every caller embed a command string, which is how scoping silently rots into a full-suite run.
 
 ### Proposed injection map — every skill
 

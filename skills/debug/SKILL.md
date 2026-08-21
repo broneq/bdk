@@ -117,9 +117,7 @@ Write tests that precisely reproduce bug. Tests RED until fix applied.
 
 Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 
-Delegate to `test-runner` subagent using injected command above (fall back to detecting from project context if unavailable) to confirm all new tests RED.
-
-> Subsequent test runs in this debug session (Phase 5 GREEN check, regression sweep) should reuse the same test-runner via `SendMessage(to: "<agentId>", ...)` instead of fresh spawns — the runner keeps the project's test command resolved. See STARTUP "Continuing a Spawned Agent".
+Confirm the new tests are RED by running the matching tier's `scoped` form on the test file(s) you just wrote, **directly via `Bash`** — substitute `{files}` with those paths. No agent spawn: one test file's output is a few lines, and the spawn costs more wall-clock than the run. Never the `full` form of any tier, and never an e2e tier unless the tests you wrote *are* e2e specs.
 
 ```
 [debug] Failing tests confirmed: {N} red
@@ -172,11 +170,12 @@ Inject project tools context:
 - Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
 
 1. Apply minimal fix
-2. Delegate to `test-runner` — run only new failing tests using injected test command
-3. Confirm all tests GREEN
-4. Delegate to `static-analyse` — run lint/type-check using injected lint command
+2. Re-run the same scoped command from Phase 3 via `Bash` — only the tests you wrote
+3. Confirm those tests GREEN
+4. Delegate to `static-analyse`, passing **the files you changed** — it resolves the scoped lint/format and incremental typecheck forms itself. Do not ask for a project-wide sweep
 5. Fix any issues
-6. Print final summary:
+6. Regression check: delegate to `bdk:test-runner` with the changed source files, asking for the fast tier's `related`/`scoped` form. This is the one dispatch worth its spawn here — the output is large and the mapping from changed files to affected tests is exactly what the runner computes for you. Add an e2e tier only if the fix touched e2e specs or changed a public contract
+7. Print final summary:
    ```
    [debug] Done.
      Root cause:   {one sentence}

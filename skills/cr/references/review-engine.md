@@ -147,6 +147,8 @@ Consequently the cumulative cohort runs **only on a full-range review**. On a de
 
 Every dispatch prompt carries **both** file lists - the delta files to review and the cumulative files as context - or a reviewer re-flags a function an earlier commit of the same run introduced.
 
+`bdk:static-analyse` and `bdk:test-runner` get **paths and intent, never a command**: they resolve the scoped / `related` / incremental form from `.bdk/settings.json` themselves. A review runs the fast test tier only; an e2e tier belongs here solely when the range itself added or modified e2e specs. A reviewer's job is to read the change, not to pay for a suite.
+
 ### Caller-specific skips
 
 The executor skips `bdk:static-analyse` and `bdk:test-runner` entirely: it already ran them per group and runs the full suite once at Step 4d. Double-running them is pure waste and doubles the review's wall-clock for nothing.

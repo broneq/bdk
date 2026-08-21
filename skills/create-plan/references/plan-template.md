@@ -214,20 +214,27 @@ flowchart LR
 
 ### Tests
 
-Delegate to `test-runner` subagent:
+Delegate to `test-runner` subagent, passing paths — not a command:
 ```
-Run the project's test suite against the relevant paths for this feature.
-Use the test command from `.bdk/settings.json` (injected at session start), or detect from project if not configured.
+Changed source files for this feature — run the fast tier's tests covering them:
 
-Target: [specific test paths or modules]
+[specific source or test paths]
+
+Use the `related` form from `.bdk/settings.json` `test-tools` if configured,
+otherwise `scoped` on the matching test files. Fast tier only.
 ```
+
+The full suite of every tier, e2e included, runs once at the end of execution — not here. Add e2e paths to this dispatch only if the feature's own tasks add or modify e2e specs.
 
 ### Code Quality
 
-Delegate to `static-analyse` subagent:
+Delegate to `static-analyse` subagent, passing the changed file list:
 ```
-Run the project's lint/format/type-check commands.
-Use the lint command from `.bdk/settings.json` (injected at session start), or detect from project if not configured.
+Static analysis, scoped to these files only:
+
+[changed paths]
+
+Scoped form for lint/format; incremental form for typecheck.
 ```
 
 ### Regression

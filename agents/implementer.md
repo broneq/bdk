@@ -80,7 +80,7 @@ Invoke `/bdk:test-driven-development` with the test cases block from your inputs
 - GATE 3: implement
 - GATE 4: verify GREEN — all tests pass
 
-You can call this skill because it does not spawn subagents — it delegates the actual test run via the `test-runner` skill instruction, which the skill itself executes via `Bash` when run inside an agent. If the skill misbehaves inside this agent, fall back to running the gates inline yourself using `Bash` for tests.
+You can call this skill because it spawns nothing: GATE 2 and GATE 4 run the project's scoped test command directly via `Bash`. Keep it that way — the Agent tool is unavailable to you anyway, and a scoped single-file run is cheaper inline than any delegation would be.
 
 ### 3. Code organization rules
 

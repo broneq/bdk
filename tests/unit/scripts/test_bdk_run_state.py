@@ -35,18 +35,23 @@ hash_plan = state_mod.hash_plan
 Refusal = state_mod.Refusal
 
 
-def _run(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
+def _run(args: list[str], cwd: Path, at: str | None = None) -> subprocess.CompletedProcess:
+    # `at` pins the script's clock (BDK_NOW) so a timing test can assert an
+    # exact elapsed value instead of only that some stamp exists.
+    env = {**os.environ}
+    if at:
+        env["BDK_NOW"] = at
     return subprocess.run(
         [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd),
-        env={**os.environ},
+        env=env,
     )
 
 
-def _ok(args: list[str], cwd: Path) -> dict:
-    proc = _run(args, cwd)
+def _ok(args: list[str], cwd: Path, at: str | None = None) -> dict:
+    proc = _run(args, cwd, at)
     assert proc.returncode == 0, f"{args} failed: {proc.stderr}"
     return json.loads(proc.stdout) if proc.stdout.strip() else {}
 
@@ -103,6 +108,7 @@ def _init(
     session: str = "s1",
     extra: list[str] | None = None,
     base: str | None = None,
+    at: str | None = None,
 ) -> dict:
     # The real coordinator passes the merge-base, which stays fixed for the
     # life of the run - not HEAD, which moves with every group.
@@ -121,6 +127,7 @@ def _init(
             *(extra or []),
         ],
         repo,
+        at,
     )
 
 
@@ -803,3 +810,171 @@ def test_a_corrupt_manifest_refuses_and_names_the_recovery(repo: Path) -> None:
     proc = _run(["get", "--run", RUN], repo)
     assert proc.returncode == 1
     assert "rebuild" in proc.stderr
+
+
+# ---------------------------------------------------------------------------
+# timings
+# ---------------------------------------------------------------------------
+
+
+def test_init_stamps_a_start_instant(repo: Path) -> None:
+    result = _init(repo, at="2026-08-21T10:00:00Z")
+    assert result["started_at"] == "2026-08-21T10:00:00Z"
+
+
+def test_group_elapsed_is_measured_between_start_and_done(repo: Path) -> None:
+    _init(repo, at="2026-08-21T10:00:00Z")
+    _ok(["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:00:05Z")
+    _commit_group(repo, 1)
+    done = _ok(
+        ["group-done", "--run", RUN, "--group", "1", "--commit", "HEAD"],
+        repo,
+        "2026-08-21T10:02:05Z",
+    )
+    assert done["elapsed_s"] == 120
+
+
+def test_group_done_without_a_start_reports_unknown_rather_than_guessing(repo: Path) -> None:
+    _init(repo, at="2026-08-21T10:00:00Z")
+    _commit_group(repo, 1)
+    done = _ok(
+        ["group-done", "--run", RUN, "--group", "1", "--commit", "HEAD"],
+        repo,
+        "2026-08-21T10:02:05Z",
+    )
+    assert done["elapsed_s"] is None
+
+
+def test_group_start_twice_resets_the_stamp_and_says_so(repo: Path) -> None:
+    _init(repo, at="2026-08-21T10:00:00Z")
+    _ok(["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:00:05Z")
+    again = _ok(
+        ["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:03:05Z"
+    )
+    assert again["started_at"] == "2026-08-21T10:03:05Z"
+    assert any("re-dispatch" in n for n in again["notes"])
+    _commit_group(repo, 1)
+    done = _ok(
+        ["group-done", "--run", RUN, "--group", "1", "--commit", "HEAD"],
+        repo,
+        "2026-08-21T10:04:05Z",
+    )
+    assert done["elapsed_s"] == 60
+
+
+def test_phase_elapsed_is_measured_and_the_slug_is_normalized(repo: Path) -> None:
+    _init(repo, at="2026-08-21T10:00:00Z")
+    _ok(
+        ["phase-start", "--run", RUN, "--phase", "final_tests"],
+        repo,
+        "2026-08-21T10:00:00Z",
+    )
+    # Same phase, different spelling: one entry, not two.
+    done = _ok(
+        ["phase-done", "--run", RUN, "--phase", "Final Tests"],
+        repo,
+        "2026-08-21T10:05:00Z",
+    )
+    assert done["phase"] == "final-tests"
+    assert done["elapsed_s"] == 300
+    timings = _ok(["timings", "--run", RUN], repo, "2026-08-21T10:06:00Z")
+    assert list(timings["phases"]) == ["final-tests"]
+
+
+def test_phase_done_without_a_start_names_the_gap(repo: Path) -> None:
+    _init(repo, at="2026-08-21T10:00:00Z")
+    done = _ok(["phase-done", "--run", RUN, "--phase", "review"], repo, "2026-08-21T10:05:00Z")
+    assert done["elapsed_s"] is None
+    assert any("never started" in n for n in done["notes"])
+
+
+def test_timings_reports_total_and_per_group_breakdown(repo: Path) -> None:
+    _init(repo, at="2026-08-21T10:00:00Z")
+    _ok(["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:00:00Z")
+    _commit_group(repo, 1)
+    _ok(
+        ["group-done", "--run", RUN, "--group", "1", "--commit", "HEAD"],
+        repo,
+        "2026-08-21T10:01:00Z",
+    )
+    _ok(["group-start", "--run", RUN, "--group", "2"], repo, "2026-08-21T10:01:00Z")
+    _commit_group(repo, 2)
+    _ok(
+        ["group-done", "--run", RUN, "--group", "2", "--commit", "HEAD"],
+        repo,
+        "2026-08-21T10:04:00Z",
+    )
+
+    timings = _ok(["timings", "--run", RUN], repo, "2026-08-21T10:10:00Z")
+    assert timings["wall_clock_total_s"] == 600
+    assert [g["group"] for g in timings["groups"]] == [1, 2]
+    assert [g["elapsed_s"] for g in timings["groups"]] == [60, 180]
+    assert timings["groups_measured"] == 2
+    assert timings["group_total_s"] == 240
+    assert timings["slowest_group_s"] == 180
+
+
+def test_timings_survives_a_manifest_written_before_timings_existed(repo: Path) -> None:
+    _init(repo)
+    path = repo / ".bdk" / "runs" / f"{RUN}.json"
+    state = json.loads(path.read_text())
+    for key in ("started_at", "group_timings", "phases"):
+        state.pop(key, None)
+    path.write_text(json.dumps(state))
+
+    timings = _ok(["timings", "--run", RUN], repo)
+    assert timings["wall_clock_total_s"] is None
+    assert timings["groups"] == []
+    assert timings["group_total_s"] is None
+
+
+def test_a_resumed_legacy_run_gets_its_start_stamp_backfilled(repo: Path) -> None:
+    _init(repo)
+    path = repo / ".bdk" / "runs" / f"{RUN}.json"
+    state = json.loads(path.read_text())
+    del state["started_at"]
+    path.write_text(json.dumps(state))
+
+    result = _init(repo, at="2026-08-21T12:00:00Z")
+    assert result["started_at"] == "2026-08-21T12:00:00Z"
+
+
+def test_review_done_stamps_the_review(repo: Path) -> None:
+    _init(repo)
+    sha = _commit_group(repo, 1)
+    _ok(["group-done", "--run", RUN, "--group", "1", "--commit", sha], repo)
+    _ok(
+        ["review-done", "--run", RUN, "--reviewed-sha", sha, "--counts", "0,0,1,2"],
+        repo,
+        "2026-08-21T11:00:00Z",
+    )
+    state = _ok(["get", "--run", RUN], repo)
+    assert state["reviews"][-1]["ts"] == "2026-08-21T11:00:00Z"
+
+
+def test_a_group_dropped_by_reconcile_loses_its_timing_too(repo: Path) -> None:
+    _init(repo, at="2026-08-21T10:00:00Z")
+    _ok(["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:00:00Z")
+    sha = _commit_group(repo, 1)
+    _ok(
+        ["group-done", "--run", RUN, "--group", "1", "--commit", sha],
+        repo,
+        "2026-08-21T10:01:00Z",
+    )
+    # Drop the trailered commit: git no longer knows the group happened, so
+    # neither should the timing that measured it.
+    _git(repo, "reset", "-q", "--hard", "HEAD~1")
+    timings = _ok(["timings", "--run", RUN], repo)
+    assert timings["groups"] == []
+
+
+def test_an_in_flight_group_keeps_its_start_stamp_through_a_read(repo: Path) -> None:
+    # The pruning above must not touch a group that is merely still running:
+    # it has a start stamp and no commit yet, which is the normal mid-group state.
+    _init(repo, at="2026-08-21T10:00:00Z")
+    _ok(["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:00:00Z")
+    _ok(["get", "--run", RUN], repo)
+    timings = _ok(["timings", "--run", RUN], repo, "2026-08-21T10:00:30Z")
+    assert [g["group"] for g in timings["groups"]] == [1]
+    assert timings["groups"][0]["started_at"] == "2026-08-21T10:00:00Z"
+    assert timings["groups"][0]["elapsed_s"] is None

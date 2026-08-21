@@ -154,52 +154,88 @@ A second copy of those prompts here is exactly how the two review call sites dri
 
 ---
 
-## Static-analyse dispatch (per task)
+## Verifier dispatches
+
+Every verifier dispatch passes **paths and intent**, never a resolved command. Both agents preload the project's tier/scoping policy (`bdk-lint-tools`, `bdk-test-tools`) and pick the command form themselves — which is what keeps the scoping correct when `.bdk/settings.json` changes, and what stops a stale command string in this file from being run for a year.
+
+### Static-analyse (per group)
 
 ```text
 Agent tool — subagent_type: "bdk:static-analyse", model: haiku:
 
-  description: "Lint changed files from Task {N}"
+  description: "Lint changed files from group {N}"
 
   prompt: |
-    Run the project's static analysis on these files only:
+    Static analysis, scoped to these files only:
 
     - {path 1}
     - {path 2}
 
-    Auto-fix what is auto-fixable. Escalate the rest.
+    Use the scoped form for lint/format and the incremental form for
+    typecheck. Auto-fix what is auto-fixable. Escalate the rest.
 ```
 
----
-
-## Test-runner dispatch (per task, smart cadence)
+### Test-runner (per group — changed source files)
 
 ```text
 Agent tool — subagent_type: "bdk:test-runner", model: haiku:
 
-  description: "Run tests after Task {N}"
+  description: "Run tests for group {N}"
 
   prompt: |
-    Run the project's test suite scoped to:
+    Changed source files — run the fast tier's tests covering them:
 
-    - {test path 1}
-    - {test path 2}
+    - {path 1}
+    - {path 2}
 
-    Report pass/fail counts and failure messages. Do not investigate causes.
-```
+    Use the `related` form if configured, otherwise `scoped` on the
+    matching test files. Fast tier only: no e2e/integration tier.
 
----
-
-## Test-runner dispatch (final, full suite)
-
-```text
-Agent tool — subagent_type: "bdk:test-runner", model: haiku:
-
-  description: "Final test suite for branch {branch-name}"
-
-  prompt: |
-    Run the full project test suite. Report pass/fail counts and failure
+    Report the exact command you ran, pass/fail counts, and failure
     messages. Do not investigate causes.
+```
+
+Add, **only** when the group added or modified e2e specs (or 3d's public-contract widening applies):
+
+```text
+    Also run these e2e specs, scoped to exactly these paths:
+    - {spec path 1}
+```
+
+### Test-runner (fix cycle — failed-first)
+
+```text
+Agent tool — subagent_type: "bdk:test-runner", model: haiku:
+
+  description: "Re-run failures after fix (cycle {N})"
+
+  prompt: |
+    Re-run the failures only — use each tier's `failed` form. These are
+    the failures being chased:
+
+    {failure list from the previous run}
+
+    Do not run the full suite; a confirming full run comes later.
+    Report the exact command you ran and pass/fail counts.
+```
+
+Prefer `SendMessage` to the verifier already holding this group's context over a fresh spawn (see SKILL 3f).
+
+### Test-runner (final gate — full suite)
+
+The one full-suite dispatch per run. Sent at SKILL step 4-0, in the background, before the review fan-out.
+
+```text
+Agent tool — subagent_type: "bdk:test-runner", model: haiku:
+
+  description: "Final gate: full suite for branch {branch-name}"
+
+  prompt: |
+    Final gate: run the FULL, unscoped suite of every tier configured in
+    test-tools, e2e/integration included.
+
+    Report the exact commands you ran, pass/fail counts per tier, and
+    failure messages. Do not investigate causes.
 ```
 
 ---

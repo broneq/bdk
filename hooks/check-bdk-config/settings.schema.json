@@ -21,12 +21,12 @@
     "test-tools": {
       "type": "array",
       "items": { "$ref": "#/definitions/tool" },
-      "description": "Commands to run the test suite"
+      "description": "Commands to run the test suite, one entry per tier. Give every entry a `tier` (fast | e2e) and a `scoped` template so callers can run only what changed; `command` is the full-suite form and runs once, at the end of a plan."
     },
     "lint-tools": {
       "type": "array",
       "items": { "$ref": "#/definitions/tool" },
-      "description": "Commands to run linters/formatters"
+      "description": "Commands to run linters/formatters/typecheckers, one entry per tier (lint | format | typecheck). Give lint/format entries a `scoped` template and typecheckers an `incremental` form so per-group checks do not re-analyse the whole project."
     },
     "build-tools": {
       "type": "array",
@@ -98,13 +98,38 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["npm", "yarn", "pnpm", "poetry", "bundle", "direct"],
-          "description": "Package manager or invocation method"
+          "minLength": 1,
+          "description": "The runner or framework this entry invokes (vitest, playwright, pytest, eslint, tsc, go-test, …). Free-form: it names the tool, and BDK reads it to infer a missing `tier`, so a framework name is more useful here than a package manager name."
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["fast", "e2e", "lint", "format", "typecheck"],
+          "description": "Which class of check this is. test-tools use fast | e2e; lint-tools use lint | format | typecheck. Omitted → BDK infers it from `type`/`command`, which is a guess: declare it. The tier decides when the command may run — a `fast` tier runs per group, an `e2e` tier only at the end of a plan (or scoped to specs the group itself touched)."
         },
         "command": {
           "type": "string",
           "minLength": 1,
-          "description": "Full shell command to run"
+          "description": "Full, unscoped shell command — the whole suite or the whole project. The slowest form: reserved for the one end-of-plan gate."
+        },
+        "scoped": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Command scoped to an explicit path list. Must contain the `{files}` placeholder, which the caller replaces with space-separated paths (e.g. `npx vitest run {files}`, `npx eslint {files}`)."
+        },
+        "related": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Command that runs the tests *covering* the given source files, for runners that can compute that themselves (e.g. `npx vitest related --run {files}`). Must contain `{files}`. Replaces asking an agent which tests cover a change."
+        },
+        "failed": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Command that re-runs only the previously failing tests (e.g. `npx vitest run --changed`, `npx playwright test --last-failed`). Used by fix cycles so a fix attempt does not pay for a full suite."
+        },
+        "incremental": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Cache-reusing form of a whole-project check that cannot be scoped to a file list — typecheckers above all (e.g. `tsc -b --incremental`). Preferred over `command` for repeated per-group runs in one worktree."
         }
       }
     }
