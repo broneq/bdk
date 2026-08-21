@@ -87,17 +87,12 @@ Use when writing to `.bdk/plans/YYYY-MM-DD-HHMM-<slug>.md`.
 
 **See:** `existing/pattern.ts:42-60` — mirror the error-handling shape  *(optional — pinpoint example with file:line)*
 
+**Verification:** none  *(optional - declare instead of `Test cases:` when Files are only non-executable content (yaml/json/md/config not consumed by build or codegen), pure wiring/glue, or a refactor fully covered by existing tests. Success criterion + end-of-plan review is the verification. Build-feeding config (tsconfig, lockfiles, codegen schemas) is code - it keeps test cases.)*
+
 **Test cases:**
-
-*For code tasks:*
 - ✅ Positive: given [input], expects [output]
-- ✅ Positive: given [edge case input], expects [edge case output]
+- ✅ Positive: given [edge case input], expects [edge case output] *(only when the edge case is real - do not pad)*
 - ❌ Negative: given [invalid input], raises [error] *(omit if no meaningful failure mode)*
-
-*For doc-only tasks* (Files: lists only `.md` / docs / templates — no code mutation):
-- ✅ `grep -q 'expected-pattern' path/to/file.md` exits 0
-- ✅ File `path/to/new.md` exists with non-zero size (`test -f path && test -s path`)
-- ❌ Avoid: "re-read and confirm" — that's not a test, that's a manual step
 
 **Test scaffold:**
 ```

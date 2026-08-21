@@ -75,6 +75,7 @@ For each finding:
 - Apply the suggested fix verbatim when it is concrete and correct.
 - Apply your own minimum-scope fix when the suggestion is vague.
 - Never expand scope: do not rename adjacent identifiers, do not add docstrings, do not "improve" formatting outside the affected lines.
+- Comment hygiene on the lines you touch: delete any comment that paraphrases the code or narrates the change; keep only non-obvious-constraint comments. Do not add new comments as part of a fix.
 
 ### 4. Verify
 

@@ -72,7 +72,9 @@ If anything is genuinely ambiguous — requirement, approach, naming, dependency
 
 ### 2. Run TDD via the skill
 
-Invoke `/bdk:test-driven-development` with the test cases block from your inputs. The skill enforces:
+**`Verification: none` branch:** if the task declares `Verification: none` (no `Test cases:` block), skip the TDD skill entirely - implement directly, then self-review (step 4). Do not write tests for it; the plan's success criterion plus end-of-plan review is the verification.
+
+Otherwise invoke `/bdk:test-driven-development` with the test cases block from your inputs. The skill enforces:
 
 - GATE 0: load project test conventions
 - GATE 1: write tests from ✅ bullets (and meaningful ❌ bullets)
@@ -96,6 +98,7 @@ Read your own changes with fresh eyes:
 - **Completeness:** every requirement implemented? edge cases handled?
 - **Quality:** names accurate (what, not how)? clean code?
 - **Discipline:** YAGNI respected? no scope creep?
+- **Comments:** delete any comment that paraphrases the code or narrates the change; keep only non-obvious-constraint comments.
 - **Tests:** verify behavior, not mock behavior? one test per ✅ bullet?
 
 Fix issues you find before reporting.

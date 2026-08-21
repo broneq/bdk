@@ -63,6 +63,17 @@ Every Agent tool result includes an `agentId:` envelope and a `SendMessage` hint
 
 Pattern: `SendMessage(to: "<agentId>", message: "...")` — never re-include the original prompt; the agent already has it.
 
+## Verification Proportionality
+
+Match verification to what changed. Never run the full suite "just to be safe" after a small edit.
+
+| Changed files | Verification |
+|---|---|
+| Non-executable content only (yaml/md/json/config not feeding build or codegen) | No tests, no typecheck. At most a syntax/schema validator if configured. |
+| Source files | Scoped/related tests + scoped lint; incremental typecheck. |
+| Build-feeding config (tsconfig, lockfile, codegen schema) | Treat as source. |
+| Full suite | Only when explicitly asked, or at a pipeline's end-of-plan gate. |
+
 ## Quality Rules
 
 BDK ships language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.

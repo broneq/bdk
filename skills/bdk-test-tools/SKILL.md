@@ -26,6 +26,7 @@ If a block has no `scoped` form, derive one from `full` by appending the paths t
 
 ## Tier policy
 
+- If **every** path you were given is non-executable content (yaml/md/json/plain config not feeding build or codegen), do not run any tier at all - report `nothing to verify for these paths: <list>` instead. Build-feeding config (tsconfig, lockfiles, codegen schemas) counts as source.
 - A `fast` tier is cheap: run it scoped whenever you have paths.
 - An `e2e` tier is the most expensive thing in the pipeline. Run it **only** when either the caller passed you e2e spec paths (because the work touched those specs), or the caller explicitly asked for the end-of-run full gate. Never reach for an e2e tier on your own initiative because a change "might" affect a flow.
 - **The unscoped `full` form of any tier runs once per plan, at the end-of-plan gate.** Everywhere else — per task, per group, per fix cycle — is scoped, related, or failed. If you cannot scope a tier you were asked to run and the caller did not ask for a full run, report that rather than silently running everything.

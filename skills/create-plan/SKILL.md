@@ -151,11 +151,13 @@ Build the plan **as a structured outline in conversation**, not on disk yet. Val
 7. Risks & open questions (include degraded-agent gaps from Phase 2)
 
 **Task-sizing rule** — one task =
-- one test file added or edited, AND
+- one test file added or edited (unless `Verification: none`), AND
 - ≤ 1 production file changed, AND
 - ≤ 40 LOC delta (excluding test scaffolding).
 
 Split anything that exceeds these thresholds.
+
+**`Verification: none` task class.** A task whose `Files:` are only non-executable content (yaml/json/md/config not consumed by build or codegen), pure wiring/glue, or a refactor fully covered by existing tests declares `Verification: none` instead of a `Test cases:` block. The executor skips TDD for it; its `Success criterion` plus the end-of-plan review is the verification. Do NOT invent grep-based or file-presence assertions for such tasks - that is padding, not testing. Exception: config that feeds the build or codegen (tsconfig, lockfiles, schemas used for generation) is treated as code and keeps test cases.
 
 **Decompose for parallel width.** After sizing, deliberately shape the task graph so the executor can fan out:
 
@@ -169,7 +171,7 @@ Split anything that exceeds these thresholds.
 **Verify the outline** — answer each:
 - [ ] Solves the stated problem in `$ARGUMENTS`?
 - [ ] Edge cases and failure modes covered?
-- [ ] Every task has exact file paths and a single TDD cycle?
+- [ ] Every task has exact file paths and either a single TDD cycle or an explicit `Verification: none` declaration?
 - [ ] Task-sizing rule respected?
 - [ ] Risks & open questions listed (including Phase 2 gaps)?
 - [ ] Success criteria observable and testable?
@@ -180,7 +182,7 @@ Split anything that exceeds these thresholds.
 - [ ] No two tasks in the same wave touch a shared file?
 - [ ] Task graph is wide, not a single serial chain? (If every task depends on the previous one, re-decompose — flag in Risks if genuinely unavoidable.)
 - [ ] Execution waves computed and recorded, consistent with the `Depends on:` edges?
-- [ ] Doc-only tasks (Files: lists only `.md` / templates) use grep-able / file-presence assertions, not "re-read and confirm"?
+- [ ] Doc-only and non-executable-content tasks declare `Verification: none` (no invented grep/file-presence assertions)? Build-feeding config keeps test cases?
 - [ ] Every task's `**Implementation:**` is a fenced code block (diff for edits, language-tagged for new code), not prose paragraphs?
 - [ ] Any rationale inside a task is a single `**Why:**` line above the code block — no multi-sentence reasoning embedded in the implementation?
 - [ ] Architectural / cross-component reasoning lives in the approach's Rationale section, not inside individual tasks?
@@ -229,7 +231,7 @@ Rule sections loaded for plan rendering — copy verbatim into the plan's Refere
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-language-rules.py`
 
-Render the verified outline to `<path>` using `references/plan-template.md`. For each `<!-- INJECT: <name> -->` and `<!-- INJECT-LANGUAGES -->` marker in the template, substitute verbatim with the matching section loaded above — do not summarize, paraphrase, or omit bullets. If a loaded section is empty (no languages configured, no override), drop the marker silently. Each task ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.`
+Render the verified outline to `<path>` using `references/plan-template.md`. For each `<!-- INJECT: <name> -->` and `<!-- INJECT-LANGUAGES -->` marker in the template, substitute verbatim with the matching section loaded above — do not summarize, paraphrase, or omit bullets. If a loaded section is empty (no languages configured, no override), drop the marker silently. Each task that has a `Test cases:` block ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.` - omit this line for `Verification: none` tasks.
 
 Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {K} files to create`
 
