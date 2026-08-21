@@ -93,7 +93,7 @@ Scan the plan as a whole:
 - Ambiguous instructions ("update X to do Y" without enough specifics to implement).
 - Missing implementation hints or absent test scaffolds where the rest of the plan has them.
 - **Decision gates inside tasks.** Flag any task body containing "Option A or B — user picks" or other unresolved decisions. Tasks describe committed actions, not branches; decisions belong in `## Open Questions` and must resolve before execution.
-- **Prose-task assertions.** For tasks whose `Files:` lists only `.md` / templates / non-executable docs, confirm Test cases are executable (`grep -q`, `test -f`, file-presence). Flag any "re-read and confirm" / "manual read" — those are not tests.
+- **`Verification: none` misuse.** Tasks whose `Files:` are only non-executable content (yaml/json/md/config not consumed by build or codegen) should declare `Verification: none`, not invented grep/file-presence assertions - flag padding. Conversely, flag `Verification: none` on a task touching source or build-feeding config (tsconfig, lockfiles, codegen schemas): those keep test cases.
 
 ## Confidence Scoring
 

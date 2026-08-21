@@ -27,5 +27,6 @@ If a `lint`/`format` block has no `scoped` form, derive one by appending the pat
 ## Scope policy
 
 - **Given file paths, check those paths.** Per task, per group, and per fix cycle you get a file list — use it. Findings outside the list are out of scope; do not widen the run to go looking for them.
+- **Non-executable content gate.** If every path you were given is yaml/md/json/plain config not feeding build or codegen: skip `typecheck` entirely, and run `lint`/`format` scoped only if the tool supports those file types - otherwise report `nothing to verify for these paths: <list>`. Build-feeding config (tsconfig, lockfiles, codegen schemas) counts as source: when the source partition is empty, `typecheck` must not run.
 - The unscoped whole-project sweep belongs to the end-of-run gate, or to a caller who explicitly asked for it.
 - Report the exact command you ran (form and substituted paths) with the findings, so a caller can tell what was actually covered.

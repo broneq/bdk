@@ -20,7 +20,7 @@ digraph tdd {
 
     start [label="Receive test cases\n+ implementation spec", shape=ellipse, fillcolor="#d4edda"]
     g0 [label="GATE 0\nLoad project context\nFind test conventions", fillcolor="#cce5ff"]
-    g1 [label="GATE 1\nWrite tests from ✅ bullets\nGap scan for edge cases", fillcolor="#cce5ff"]
+    g1 [label="GATE 1\nWrite tests from ✅ bullets\nOne test per bullet", fillcolor="#cce5ff"]
     g2 [label="GATE 2\nRun scoped tests via Bash\nExpect: ALL FAIL", fillcolor="#cce5ff"]
     tests_pass [label="Tests\nPASS?", shape=diamond, fillcolor="#fff3cd"]
     stop_investigate [label="STOP\nImplementation exists\nor test is wrong.", shape=ellipse, fillcolor="#f8d7da"]
@@ -62,6 +62,8 @@ Plan task provides:
 **Implementation:** [what to build — file path, class, method]
 ```
 
+A task marked `Verification: none` must never be routed to this skill - the coordinator dispatches it without TDD.
+
 ---
 
 ## GATE 0: Load Context
@@ -85,22 +87,9 @@ Identify test file path per project conventions.
 
 ## GATE 1: Write Tests
 
-**Branch on task type:**
+Write **exactly one test per ✅ bullet**, using the project's test framework and the conventions from GATE 0.
 
-- *Code task* (Files: lists code files): write tests per ✅ bullet using the project's test framework. Continue with the rest of this gate.
-- *Doc-only task* (Files: lists only `.md` / templates / non-executable docs): write **executable assertions** instead — never accept "re-read and confirm" as a test. Use POSIX primitives:
-  - `grep -q 'pattern' path` — checks content presence
-  - `test -f path && test -s path` — checks file exists and non-empty
-  - Save as a shell script (or single-file test that shells out) matching the project's test conventions from GATE 0. Then proceed to GATE 2 with that file as `{test_file_path}`.
-
-Write test per ✅ bullet. Follow conventions from GATE 0.
-
-**Before writing, scan spec for:**
-- Boundary conditions (empty list, zero, first/last element)
-- Invalid types or missing required fields
-- Unexpected None or absent optional data
-
-Add tests for meaningful gaps. **No padding.**
+Add an unlisted edge-case test ONLY when its absence would let a real production bug through - and name that bug in the test's name or docstring. Otherwise do not add it.
 
 **Negative tests (❌ bullets):** Write when real value exists. Skip if no meaningful failure modes.
 
@@ -153,4 +142,4 @@ Do **not** widen the scope on the way out — no full suite, no other tier, no "
 - ❌ Spawning `bdk:test-runner` (or any agent) for a GATE 2/4 run. The spawn costs more wall-clock than the run; use `Bash` directly
 - ❌ Falling back to a bare full-suite command (any tier) in GATE 2/4 because scoping "wasn't obvious" — escalate as `BLOCKED` instead; full-suite runs belong only to the coordinator's end-of-plan gate
 - ❌ Running an e2e/integration tier in GATE 2/4 for tests that are not e2e specs. Run the tier your new tests belong to, nothing else
-- ❌ Accepting "re-read and confirm" as a test case for a doc-only task — that's a manual step. Reject the plan task and ask `/bdk:create-plan` to rewrite with grep-able / file-presence assertions.
+- ❌ Padding GATE 1 with boundary/edge tests the spec never asked for and no real bug motivates

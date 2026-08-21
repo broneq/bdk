@@ -82,7 +82,7 @@ Reviewer / verification subagents have their own return formats — see `referen
 2. **Read plan once.** For each task extract:
    - Task number and title
    - Full task text
-   - `Test cases:` block (drives implementer's TDD)
+   - `Test cases:` block (drives implementer's TDD) - or `Verification: none` (task has no test cases; implementer skips TDD for it)
    - File paths the task touches
 3. **Branch check.** If on `main` / `master`, stop with error. Coordinator never auto-switches branches.
 4. **Working tree check.** `git status --porcelain` — if dirty, stop with error and list dirty paths. Refuse to commingle uncommitted user work with plan execution.
@@ -245,7 +245,7 @@ See `references/model-selection.md`.
 For a multi-task group, send **one message with multiple `Agent` calls**. Each call passes:
 
 - Full task text inline (do not make subagent re-read the plan)
-- Test cases block
+- Test cases block - or, for a `Verification: none` task, that declaration verbatim (the implementer then skips TDD and writes no tests)
 - File paths the task touches
 - One-paragraph architectural context
 - Branch name and the run's `base_sha` (the value `get`/`resume` returned in Step 0.6 - read it from the manifest, never re-derive it, or a mid-run branch move silently shifts the baseline)
@@ -299,6 +299,7 @@ After the Workflow (and any fallbacks) settle, proceed to **3d** with the merged
 
 After all implementers in the group return `DONE`, decide whether to verify. No fixed cadence. Heuristics, not rules:
 
+- **File-class gate (apply first).** Partition the group's `files_changed` into *source* vs *non-executable content* (yaml/md/json/config not feeding build or codegen; build-feeding config like tsconfig, lockfiles, or codegen schemas counts as source). If the source partition is empty → do not spawn `bdk:test-runner` and do not run typecheck at all; at most a scoped lint/syntax check if one is configured for those file types.
 - Schema / API / public-contract change → likely yes.
 - Trivial rename, comment-only edit, single-line tweak → likely no, batch with next group.
 - Group included a "verify" task whose `Test cases:` block IS the verification → yes, that's the whole point.
@@ -313,8 +314,8 @@ After all implementers in the group return `DONE`, decide whether to verify. No 
 
 In **parallel** (one message, multiple Agent calls). Both get the group's `files_changed` — the union reported by its implementers — and both are expected to run **scoped**, not project-wide:
 
-- `bdk:static-analyse` — pass `files_changed`. It resolves the scoped lint/format form and the incremental typecheck form itself from `lint-tools`; you pass paths, not commands.
-- `bdk:test-runner` — pass `files_changed` and say which job this is: *"changed source files — run the fast tier's `related`/`scoped` form."* The agent resolves the form from `test-tools`; you pass paths and intent, never a command string.
+- `bdk:static-analyse` — pass the full `files_changed`. It resolves the scoped lint/format form and the incremental typecheck form itself from `lint-tools`; you pass paths, not commands. Note in the dispatch that typecheck is warranted only when the source partition (per 3d's file-class gate) is non-empty.
+- `bdk:test-runner` — pass only the **source partition** of `files_changed` (skip the spawn entirely if it is empty, per 3d) and say which job this is: *"changed source files — run the fast tier's `related`/`scoped` form."* The agent resolves the form from `test-tools`; you pass paths and intent, never a command string.
   - The group added or modified e2e/integration spec files → also pass those exact spec paths for that tier.
   - The group changed a public contract per 3d's widening → also pass the e2e specs covering it, named by path or by the tier's `--grep`-style selector.
   - Otherwise **no e2e tier at all** for this group.
