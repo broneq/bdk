@@ -28,6 +28,39 @@ Run /bdk:setup --force to regenerate it."""
 
 _TOOL_ARRAY_KEYS = ("test-tools", "lint-tools", "build-tools")
 
+_TIERS = ("fast", "e2e", "lint", "format", "typecheck")
+
+# Templates the caller fills with a path list. A template without the
+# placeholder silently degrades to a whole-project run at every per-group
+# check — the exact cost the tier system exists to remove — so it is an error,
+# not a warning.
+_PLACEHOLDER_FIELDS = ("scoped", "related")
+_TEMPLATE_FIELDS = ("scoped", "related", "failed", "incremental")
+
+
+def _validate_tool(key: str, i: int, t: dict) -> list[str]:  # type: ignore[type-arg]
+    errors = []
+    where = f"'{key}[{i}]"
+    if "command" not in t or not isinstance(t["command"], str) or not t["command"].strip():
+        errors.append(f"{where}.command' must be a non-empty string")
+
+    tier = t.get("tier")
+    if tier is not None and tier not in _TIERS:
+        errors.append(f"{where}.tier' must be one of {', '.join(_TIERS)} (got {tier!r})")
+
+    for field in _TEMPLATE_FIELDS:
+        value = t.get(field)
+        if value is None:
+            continue
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{where}.{field}' must be a non-empty string")
+        elif field in _PLACEHOLDER_FIELDS and "{files}" not in value:
+            errors.append(
+                f"{where}.{field}' must contain the '{{files}}' placeholder — "
+                f"without it the command ignores the file list and runs everything"
+            )
+    return errors
+
 
 def validate_settings(settings: dict) -> list[str]:  # type: ignore[type-arg]
     """Return list of validation error strings. Empty = valid."""
@@ -50,8 +83,8 @@ def validate_settings(settings: dict) -> list[str]:  # type: ignore[type-arg]
         for i, t in enumerate(tools):
             if not isinstance(t, dict):
                 errors.append(f"'{key}[{i}]' must be an object")
-            elif "command" not in t or not isinstance(t["command"], str):
-                errors.append(f"'{key}[{i}].command' must be a non-empty string")
+            else:
+                errors.extend(_validate_tool(key, i, t))
 
     features = settings.get("features")
     if features is not None:
@@ -74,15 +107,20 @@ def read_stdin_json() -> dict:  # type: ignore[type-arg]
 
 
 def _format_tools(tools: list[dict]) -> str:  # type: ignore[type-arg]
-    """Format a list of tool dicts as 'command (type), command2 (type2)'."""
+    """Format a list of tool dicts as 'command (type, tier), command2 (type2)'.
+
+    The tier rides along because the session summary is where the orchestrator
+    learns which command is the expensive one; the scoped templates themselves
+    are read on demand via `get_settings.py`, not injected at every session
+    start.
+    """
     parts = []
     for t in tools:
         cmd = t.get("command", "")
-        typ = t.get("type", "")
-        if cmd and typ:
-            parts.append(f"{cmd} ({typ})")
-        elif cmd:
-            parts.append(cmd)
+        if not cmd:
+            continue
+        labels = [str(v) for v in (t.get("type"), t.get("tier")) if v]
+        parts.append(f"{cmd} ({', '.join(labels)})" if labels else cmd)
     return ", ".join(parts)
 
 

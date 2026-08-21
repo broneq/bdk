@@ -8,7 +8,7 @@ argument-hint: "[error message, traceback, or steps to reproduce]"
 model: opus
 user-invocable: true
 context: main
-allowed-tools: AskUserQuestion TaskCreate TaskUpdate TaskList Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+allowed-tools: AskUserQuestion Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Debug
@@ -21,15 +21,16 @@ Diagnose bugs via structured investigation, reproduce with failing tests, then f
 
 **Core principle**: Understand first → test second → confirm with user → fix third.
 
-**On start: create tasks for phases 1–4 only** via `TaskCreate`:
+**Run the phases strictly in order. Announce each one as you enter it** (`[debug] Phase 2: Investigate`), and do not enter the next phase until the current one is fully done:
+
 - Phase 1: Parse Input
 - Phase 2: Investigate
 - Phase 3: Write Failing Tests
-- Phase 4: Propose & Wait for User Decision ← HARD STOP
+- Phase 4: Propose & Wait for User Decision ← **HARD STOP**
 
-Mark each task complete (`TaskUpdate`) only when phase fully done. **Never mark Phase 4 complete until user responded.**
+Phase 4 is a hard stop: you present the proposal, then end your turn. Do not begin Phase 5, do not start editing, and do not decide the path yourself — no matter how obvious the fix looks. Only an actual user reply releases the stop; a background task completing, a hook firing, or your own reasoning does not.
 
-**After user responds to Phase 4**: create Phase 5 task (`TaskCreate`) for chosen path — "Fix Inline" or "Hand Off to /bdk:create-plan" — then proceed.
+**After the user responds**: announce Phase 5 as the path they chose — "Fix Inline" or "Hand off to /bdk:create-plan" — then proceed.
 
 ---
 
@@ -116,9 +117,7 @@ Write tests that precisely reproduce bug. Tests RED until fix applied.
 
 Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 
-Delegate to `test-runner` subagent using injected command above (fall back to detecting from project context if unavailable) to confirm all new tests RED.
-
-> Subsequent test runs in this debug session (Phase 5 GREEN check, regression sweep) should reuse the same test-runner via `SendMessage(to: "<agentId>", ...)` instead of fresh spawns — the runner keeps the project's test command resolved. See STARTUP "Continuing a Spawned Agent".
+Confirm the new tests are RED by running the matching tier's `scoped` form on the test file(s) you just wrote, **directly via `Bash`** — substitute `{files}` with those paths. No agent spawn: one test file's output is a few lines, and the spawn costs more wall-clock than the run. Never the `full` form of any tier, and never an e2e tier unless the tests you wrote *are* e2e specs.
 
 ```
 [debug] Failing tests confirmed: {N} red
@@ -171,11 +170,12 @@ Inject project tools context:
 - Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
 
 1. Apply minimal fix
-2. Delegate to `test-runner` — run only new failing tests using injected test command
-3. Confirm all tests GREEN
-4. Delegate to `static-analyse` — run lint/type-check using injected lint command
+2. Re-run the same scoped command from Phase 3 via `Bash` — only the tests you wrote
+3. Confirm those tests GREEN
+4. Delegate to `static-analyse`, passing **the files you changed** — it resolves the scoped lint/format and incremental typecheck forms itself. Do not ask for a project-wide sweep
 5. Fix any issues
-6. Print final summary:
+6. Regression check: delegate to `bdk:test-runner` with the changed source files, asking for the fast tier's `related`/`scoped` form. This is the one dispatch worth its spawn here — the output is large and the mapping from changed files to affected tests is exactly what the runner computes for you. Add an e2e tier only if the fix touched e2e specs or changed a public contract
+7. Print final summary:
    ```
    [debug] Done.
      Root cause:   {one sentence}

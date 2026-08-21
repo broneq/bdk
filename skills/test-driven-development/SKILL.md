@@ -21,11 +21,11 @@ digraph tdd {
     start [label="Receive test cases\n+ implementation spec", shape=ellipse, fillcolor="#d4edda"]
     g0 [label="GATE 0\nLoad project context\nFind test conventions", fillcolor="#cce5ff"]
     g1 [label="GATE 1\nWrite tests from ✅ bullets\nGap scan for edge cases", fillcolor="#cce5ff"]
-    g2 [label="GATE 2\nDelegate to test-runner\nExpect: ALL FAIL", fillcolor="#cce5ff"]
+    g2 [label="GATE 2\nRun scoped tests via Bash\nExpect: ALL FAIL", fillcolor="#cce5ff"]
     tests_pass [label="Tests\nPASS?", shape=diamond, fillcolor="#fff3cd"]
     stop_investigate [label="STOP\nImplementation exists\nor test is wrong.", shape=ellipse, fillcolor="#f8d7da"]
     g3 [label="GATE 3\nImplement as described in plan", fillcolor="#cce5ff"]
-    g4 [label="GATE 4\nDelegate to test-runner\nExpect: ALL PASS", fillcolor="#cce5ff"]
+    g4 [label="GATE 4\nRe-run same command\nExpect: ALL PASS", fillcolor="#cce5ff"]
     green_pass [label="Tests\nPASS?", shape=diamond, fillcolor="#fff3cd"]
     fix_attempt [label="Fix implementation\n(attempt N/3)", fillcolor="#fff3cd"]
     too_many [label="STOP\nAsk user", shape=ellipse, fillcolor="#f8d7da"]
@@ -112,14 +112,13 @@ Add tests for meaningful gaps. **No padding.**
 
 Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 
-Spawn a fresh `/bdk:test-runner` agent using injected command above (fall back to detecting from project context if unavailable):
+**Run it yourself, via `Bash`. Do not spawn a `bdk:test-runner` agent for this.** One test file's worth of output is a few lines; a spawn costs a cold start, a preload, and a model round-trip — an order of magnitude more wall-clock than the run it wraps, paid twice per task (RED and GREEN) and again on every fix attempt. `bdk:test-runner` exists to keep a *large* run's output out of a caller's context (group verification, the end-of-plan gate). This is not that.
 
-```
-Run the project's test suite against: {test_file_path}
-Expected: ALL written tests FAIL
-```
+Pick the command from the injected blocks: the tier matching the test cases you just wrote, `scoped` form, substituting `{files}` with `{test_file_path}`. **Never the `full` form of any tier.**
 
-**Record** the `agentId` from the spawn envelope into a local variable (e.g. `test_runner_agent_id`). Used by GATE 4 to avoid a redundant cold-start.
+If that tier has no `scoped` form, derive one from `full` — append `-- {test_file_path}` for an npm/yarn/pnpm script, or a bare path for most direct runners — and note in your report that you derived it, so the settings get fixed once instead of re-derived every run. Only if no scoped form is derivable at all: stop and return `Status: BLOCKED` rather than defaulting to a full run. The coordinator's end-of-plan gate is the only place a full suite runs.
+
+Record the exact command you ran; GATE 4 re-runs the same one.
 
 **Tests PASS:** Stop. Implementation already exists or test wrong.
 
@@ -135,18 +134,13 @@ Implement per plan task. Focused on passing tests — no extra features.
 
 ## GATE 4: Verify GREEN
 
-**Prefer `SendMessage` reuse over a fresh spawn:**
+Re-run the **same scoped command** from GATE 2 via `Bash`. Expect: ALL tests PASS. Still no agent spawn — same reasoning as GATE 2, and now the cost would be paid once per fix attempt.
 
-- If `test_runner_agent_id` was captured in GATE 2 and the cache window is likely warm (< 5 min since GATE 2): use `SendMessage(to: <test_runner_agent_id>, ...)` with the message:
-  ```
-  Run the project's test suite against: {test_file_path}
-  Expected: ALL tests PASS
-  ```
-- If `test_runner_agent_id` is not available (e.g. resumed session with no warm state) OR `SendMessage` errors: fall back to a fresh `/bdk:test-runner` spawn with the same prompt. Log "verifier cache miss" to run output.
-
-**Tests FAIL:** Fix implementation. Max 3 attempts. After 3, stop and ask user.
+**Tests FAIL:** Fix implementation, re-run the same command. Max 3 attempts. After 3, stop and ask user.
 
 **Tests PASS:** Proceed. ✓
+
+Do **not** widen the scope on the way out — no full suite, no other tier, no "while I'm here" sweep. Whoever called you owns the wider checks: the coordinator schedules group verification, and the end-of-plan gate runs the full suite once.
 
 ---
 
@@ -156,4 +150,7 @@ Implement per plan task. Focused on passing tests — no extra features.
 - ❌ Writing implementation before tests exist
 - ❌ Forcing negative test when no real failure mode exists
 - ❌ Hardcoding test commands — always detect project's test runner
+- ❌ Spawning `bdk:test-runner` (or any agent) for a GATE 2/4 run. The spawn costs more wall-clock than the run; use `Bash` directly
+- ❌ Falling back to a bare full-suite command (any tier) in GATE 2/4 because scoping "wasn't obvious" — escalate as `BLOCKED` instead; full-suite runs belong only to the coordinator's end-of-plan gate
+- ❌ Running an e2e/integration tier in GATE 2/4 for tests that are not e2e specs. Run the tier your new tests belong to, nothing else
 - ❌ Accepting "re-read and confirm" as a test case for a doc-only task — that's a manual step. Reject the plan task and ask `/bdk:create-plan` to rewrite with grep-able / file-presence assertions.

@@ -201,7 +201,9 @@ def test_unknown_mode_warns_and_extends(tmp_path, capsys):
 
     assert result == "default\n\nuser"
     captured = capsys.readouterr()
-    assert "unknown mode" in captured.err
+    assert "[bdk-inject-error]" in captured.out
+    assert "unknown mode" in captured.out
+    assert captured.err == ""
 
 
 def test_empty_user_file_extends(tmp_path):
@@ -230,7 +232,7 @@ def test_cli_emits_default_to_stdout(tmp_path):
     assert proc.stdout == "default content"
 
 
-def test_cli_missing_user_file_exits_one(tmp_path):
+def test_cli_missing_user_file_reports_on_stdout(tmp_path):
     plugin_root = tmp_path / "plugin"
     _write_plugin_default(plugin_root, "code-quality", "default")
     project = tmp_path / "project"
@@ -239,11 +241,13 @@ def test_cli_missing_user_file_exits_one(tmp_path):
 
     proc = _run_cli(["code-quality"], cwd=project, plugin_root=plugin_root)
 
-    assert proc.returncode == 1
-    assert "user file not found" in proc.stderr
+    assert proc.returncode == 0
+    assert "[bdk-inject-error]" in proc.stdout
+    assert "user file not found" in proc.stdout
+    assert proc.stderr == ""
 
 
-def test_cli_no_args_exits_one(tmp_path):
+def test_cli_no_args_reports_on_stdout(tmp_path):
     plugin_root = tmp_path / "plugin"
     _write_plugin_default(plugin_root, "code-quality", "default")
     project = tmp_path / "project"
@@ -251,8 +255,9 @@ def test_cli_no_args_exits_one(tmp_path):
 
     proc = _run_cli([], cwd=project, plugin_root=plugin_root)
 
-    assert proc.returncode == 1
-    assert "Usage" in proc.stderr
+    assert proc.returncode == 0
+    assert "[bdk-inject-error]" in proc.stdout
+    assert proc.stderr == ""
 
 
 def test_cli_falls_back_to_script_location_without_env(tmp_path):

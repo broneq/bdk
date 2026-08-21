@@ -7,7 +7,7 @@ effort: high
 user-invocable: true
 disable-model-invocation: true
 context: main
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(date *)
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(date *) Bash(lavish-axi *) AskUserQuestion
 hooks:
   UserPromptSubmit:
     - hooks:
@@ -126,6 +126,8 @@ Generate **2-3 implementation approaches.** Per approach:
 **Parallelism is a first-class design axis.** When comparing approaches, prefer the one that decomposes into more independent units of work — all else roughly equal, an approach that yields 6 file-disjoint tasks beats one that yields 3 tasks chained by shared-file edits. Note each approach's **parallel width** (how many tasks could run at once) alongside its complexity/risk. A lower-complexity approach that is fully serial may lose to a slightly more complex approach that fans out.
 
 **Decision resolution** — bundle every open decision into ONE `AskUserQuestion` call (multi-question form supports up to 4). Mark recommended approach as first option. Do not split into multiple sequential prompts.
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then ${CLAUDE_PLUGIN_ROOT}/fragments/decision-tier/lavish.md`
 
 **Decision gates rejected inside tasks.** A task body must describe a single committed action. If a task would contain "Option A or B — user picks" or any unresolved decision, split it: move the decision into the bundled `AskUserQuestion` call above, then write the chosen action as the task. Tasks describe what *will* happen, not what *might* happen.
 
@@ -250,8 +252,13 @@ Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {
   Next steps:
     1. Review the plan
     2. Edit if needed
-    3. Execute with /bdk:subagent-execute-plan (parallel fan-out) or /bdk:execute-plan (serial)
+    3. Verify with /bdk:verify-plan <path>
+    4. Execute with /bdk:subagent-execute-plan <path>
 ```
+
+Verification is step 3, not an optional extra: it checks the plan against the real code (signature drift, data traces, missing edge cases) before any subagent acts on it, and it stamps the plan's hash so the executor can tell whether what it is about to run is what was verified. The executor does not require the stamp - it warns and proceeds - but a plan executed unverified spends subagent time discovering what one Opus pass would have found.
+
+Edit **before** verifying. Any edit changes the plan's bytes, and the hash is over the bytes, so editing after verification invalidates the stamp.
 
 **Do NOT start implementing. Plan is the deliverable.**
 

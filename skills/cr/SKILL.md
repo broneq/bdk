@@ -1,20 +1,31 @@
 ---
 name: cr
-description: Run code review with dynamic agent scaling (3-13 agents based on change size)
+description: Run code review with dynamic agent scaling (3-13 agents based on change size). Reviews only what changed since the last review when a run exists; --full forces the whole branch.
 model: sonnet
 effort: high
-allowed-tools: Bash(git *) Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+argument-hint: "[--full] [focus]"
+allowed-tools: Bash(git *) Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/*) Write(.bdk/cr/**)
+disallowed-tools: Edit NotebookEdit
 ---
 
 # Dynamic Code Review Orchestrator
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
 
-Code review orchestrator. Determine change scope, dispatch specialized agents parallel, collect results, merge into unified report.
+Determine what changed, dispatch specialized reviewers in parallel, merge their findings into one report.
+
+**Delta by default.** On a branch with an execution run, this reviews only the commits added since the last review. Pass `--full` to review the whole branch - always do that for the review before opening a PR, since a delta pass cannot see a later commit breaking an earlier, already-reviewed one.
+
+## Safety Rules (MANDATORY)
+
+- **MUST NOT modify source files.** No `Edit`, no `NotebookEdit`, and no `Write` outside `.bdk/cr/`.
+- The first two are enforced mechanically: `disallowed-tools: Edit NotebookEdit` in the frontmatter removes them from the pool while this skill is active, so "review only" is a property of the turn rather than a promise in prose.
+- `Write` cannot be removed the same way - the report needs it. It stays bounded by the narrow `Write(.bdk/cr/**)` grant plus the rule above: a `Write` anywhere else is a rule violation, and the grant means it also costs a permission prompt, which is the signal that something has gone wrong. Stop and report instead of answering that prompt.
+- All sub-agents are read-only. Findings go into the report; fixing them is a separate, explicit decision by the user.
 
 ## Terminal Output
 
-**On Start:**
+**On start:**
 ```
 ┌─────────────────────────────────────────────────┐
 │  👁️  ORCHESTRATOR: code-review                   │
@@ -23,165 +34,70 @@ Code review orchestrator. Determine change scope, dispatch specialized agents pa
 └─────────────────────────────────────────────────┘
 ```
 
-**During Execution:**
+**During execution:**
 ```
-[cr] Step 1: Determining scope...
-[cr] Scope: {N} files changed, {N} lines total → {tiny|small|large|massive}
-[cr] Step 2: Dispatching {N} agents...
-[cr]   - {N}× layer-group reviewers (sonnet)
-[cr]   - 1× architecture reviewer (opus)
-[cr]   - 1× test reviewer (opus)
-[cr]   - {N}× duplicate detectors (haiku)
-[cr]   - 1× dead code detector (haiku)
-[cr]   - 1× static analyse (haiku)
-[cr]   - 1× test runner (haiku)
+[cr] Step 1: Resolving range...
+[cr] Range: {anchor}..{head} ({delta|full}, {anchor_source}) — {N} commits
+[cr] Scope: {N} files changed, {N} lines → {tiny|small|large|massive}
+[cr] Step 2: Dispatching {N} agents ({M} deferred findings suppressed)...
 [cr] Step 3: Waiting for agents...
 [cr] Step 4: Merging results...
 [cr] ✓ Complete ({N} findings: {critical}C/{high}H/{medium}M/{low}L)
+[cr] Report: {path}
 ```
 
-## Safety Rules (MANDATORY)
-
-- MUST NOT modify files. No Edit, Write, NotebookEdit tools.
-- All sub-agents read-only.
+The range line is not decoration. A reader must be able to tell a deliberate full review from one that fell back to full because the watermark was lost - `anchor_source` says which.
 
 ## Process
 
-### Step 1: Determine Scope
+Fill the `REVIEW_REQUEST` block, then follow the engine.
+
+!`cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/review-engine.md`
+
+### Filling the request
+
+```
+mode:        interactive
+run_id:      from `bdk_run_state.py list --branch $(git branch --show-current)`, or null
+base_sha:    the run's base_sha, or `git merge-base HEAD origin/HEAD` with no run
+head_sha:    git rev-parse HEAD
+range_mode:  full if $ARGUMENTS contains --full, else delta
+group:       null
+scaling:     from the resolved range (engine Step 2)
+focus:       the rest of $ARGUMENTS, or null
+```
+
+Tool tier for reading the change set:
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/review.chain.json`
 
-1. Get risk-scored changed file list with severity ratings
-2. Identify which changed files are architectural choke points (flag these for architecture-reviewer)
-3. Identify which execution paths are impacted (pass to test-reviewer as scope context)
-4. Fallback if graph unavailable: `git diff --name-only HEAD~1` + `git diff --stat HEAD~1`
-5. Classify changed files by directory/module (based on project structure)
-6. For each source file, find corresponding test file per project conventions
+Use it to add what the raw diff cannot give you, and pass the results into the dispatch as context: which changed files are architectural choke points (flag for `bdk:architecture-reviewer`), which execution paths are impacted (scope context for the test reviewer), and a risk score per file.
 
-### Step 2: Plan Dispatch
+Then classify changed files by module, and pair each source file with its test file per the project's own conventions.
 
-Based on total changed lines:
+### Rendering the report
 
-**Tiny (< 50 lines):**
-- 1× layer-group reviewer (sonnet) — reviews ALL code, checks architecture, duplicates, dead code inline
-- 1× test-reviewer (opus)
-- 1× static-analyse (haiku)
-- 1× test-runner (haiku)
-- **Total: 4 agents**
+The engine returns a flat findings array. Render it as the 13 sections below and write to:
 
-**Small (50–1000 lines):**
-- 1× layer-group reviewer (sonnet) — all changed files + tests
-- 1× architecture-reviewer (opus)
-- 1× test-reviewer (opus)
-- 1× duplicate-detector (haiku)
-- 1× dead-code-detector (haiku)
-- 1× static-analyse (haiku)
-- 1× test-runner (haiku)
-- **Total: 7 agents**
+```
+.bdk/cr/{stamp}-{branch-slug}-{delta|full}.md
+```
 
-**Large (1000–3000 lines):**
-- N× layer-group reviewers (sonnet), N = ceil(total_lines / 1000), capped at 5
-- 1× architecture-reviewer (opus)
-- 1× test-reviewer (opus)
-- N× duplicate-detectors (haiku)
-- 1× dead-code-detector (haiku)
-- 1× static-analyse (haiku)
-- 1× test-runner (haiku)
-- **Total: 2N + 5 agents**
+where `stamp=$(git log -1 --format=%cd --date=format:%Y-%m-%d-%H%M)` - the reviewed head's own commit date, not wall-clock time, so the filename identifies what was reviewed and re-running on an unchanged head overwrites rather than accumulates. Using `git log` also keeps this inside the existing `Bash(git *)` grant.
 
-**Massive (3000+ lines):** Same as Large, N capped at 5.
+Derive all 13 sections in one pass over the array - each section draws from its own category slice, so they are independent and there is no sequential construction to do.
 
-### Step 3: Dispatch ALL Agents in Parallel
-
-Launch ALL planned agents in a SINGLE message using multiple `Agent` calls. Subagents already run in the background - there is no `run_in_background` parameter on the `Agent` tool; passing one is an input-validation error.
-
-You will be notified as each agent completes. **Do not poll and do not schedule wake-ups** - no `ScheduleWakeup`, no `Monitor`, no `sleep`, no re-spawning an agent to check on another. Just wait for the notifications.
-
-> When a reviewer's report needs clarification on a specific finding, prefer `SendMessage(to: "<agentId>", ...)` over re-spawning — the reviewer keeps its scan context. See STARTUP "Continuing a Spawned Agent".
-
-For each layer-group reviewer (use `references/reviewer-prompt-template.md` for dispatch structure):
-- List source files assigned to group
-- List test files paired with source files
-
-For architecture-reviewer:
-- List ALL changed source files
-- Pass `detect_changes` output and `get_bridge_nodes_tool` results as initial context
-
-For test-reviewer:
-- List ALL test files AND corresponding source files
-- Pass `get_affected_flows` results as scope context
-
-For each duplicate-detector:
-- List symbols in its partition
-
-For dead-code-detector:
-- List ALL changed files
-
-For static-analyse:
-- Run project's static analysis command (read project context to determine it)
-
-For test-runner:
-- Pass relevant test file paths based on changed source files
-
-### Step 4: Collect & Merge Results
-
-All agent inputs are already in hand by this point — no sequential section construction needed.
-
-1. **Collect** all agent outputs (gathering pass). If agents are still running, wait for their completion notifications - do not poll, schedule wake-ups, or merge partial results.
-2. **Deduplicate**: build a flat findings array keyed by `(file, line, category)`; keep the more detailed entry when two agents report the same location.
-3. **Parallel section assembly**: derive all 13 report sections simultaneously from the flat array. Each section draws from its own category slice — they are independent. Phrase the assembly as a single pass: "For each section below, extract matching findings from the flat array."
-4. **Write report to artifact**: concatenate sections in order, write to `.bdk/cr/[TDP - dynamic path here]` — see IDEAS.md for dynamic path pattern.
+With a run, add a **Deferred - not auto-fixed** block listing what `findings-list` holds: those are findings someone already saw and declined, and a report that silently omits them looks cleaner than the branch is.
 
 ## Report Format
 
-See `references/report-format.md` for detailed 13-section structure and templates.
+Thirteen sections. The structure, checklists, and per-section source agents are defined once, here:
 
-### 1. Summary
-≤ 5 sentences: overall assessment, severity distribution, key wins/gaps.
-
-### 2. Style & Conventions
-Naming, formatting, import organization, code consistency.
-
-### 3. Functionality & Logic
-Correctness, error handling, edge cases, logic errors.
-
-### 4. Performance
-Algorithm choices, unnecessary iterations, hot path issues.
-
-### 5. Tests
-Test existence, coverage, edge cases, isolation, assertion quality.
-
-### 6. Type Hints & SOLID
-Type annotations, single responsibility, notable SOLID violations.
-
-### 7. Object-Oriented Design
-Classes, SRP, composition, DI, god classes, anemic models.
-
-### 8. Duplicate Code & Pattern Extraction
-Repeated blocks, structural patterns, extractable logic.
-
-### 9. Dead Code Detection
-Paste dead-code-detector output verbatim.
-
-### 10. Security
-SQL injection, unsafe deserialization, secrets in code.
-
-### 11. Architecture
-Layer boundaries, dependency injection, design patterns, data flow, directory structure.
-
-### 12. Positive Observations
-Good patterns worth reinforcing.
-
-### 13. All Issues
-All findings sorted by severity: CRITICAL → HIGH → MEDIUM → LOW.
-
-Each issue: **[SEVERITY] category** → `file:line` → problem → 1-sentence fix.
-
-## Error Handling
-
-- **No changed files**: Output "No changes to review" and stop
-- **Agent timeout**: Include partial results, note timeout in Summary
-- **Agent failure**: Report failure, continue with other agents' results
+!`cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/report-format.md`
 
 ## Rules
-- Always print terminal output on start and complete
+
+- Always print the terminal block on start and on completion.
+- The range line always states `delta` or `full` and the `anchor_source`.
+- Counts come from the merged findings array, never from recollection of what the agents reported.
+- An agent that failed or timed out is named in the report. A partial review must never present as a complete one.

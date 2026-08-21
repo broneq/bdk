@@ -1,6 +1,6 @@
 # Code Review Report Format
 
-14-section merged report structure.
+13-section merged report structure.
 
 ## Section Mapping
 
@@ -19,7 +19,8 @@
 | 11. Architecture | Architecture reviewer — or layer-group if tiny |
 | 12. Positive Observations | All agents |
 | 13. All Issues | All agents → all findings, sorted by severity (CRITICAL → HIGH → MEDIUM → LOW) |
-| 14. Baseline Comparison | Baseline comparator (skipped for tiny changes) |
+
+Checklists below are language-agnostic on purpose. Resolve each item against the project's **own** conventions - its linter config, its layer names, its patterns - discovered from project context, never from an assumed stack. A checklist item that names a specific tool or framework has drifted and should be generalized rather than answered.
 
 ---
 
@@ -31,8 +32,8 @@
 ### 2. Style & Conventions
 **Checklist** (✓/✗ + brief reason):
 - Naming (variables, functions, classes)
-- PEP 8 compliance (ruff-verified)
-- Import organization & clarity
+- Conforms to the project's own style guide, as enforced by its formatter/linter
+- Import/dependency organization & clarity
 - Code consistency across codebase
 
 **Recommendations** (max 3): `file:line` → issue → fix.
@@ -58,7 +59,7 @@
 **Checklist** (✓/✗):
 - Unit tests exist
 - Integration tests where needed
-- Coverage ≥80% for critical paths
+- Critical paths covered (against the project's own coverage threshold, if it declares one)
 - Edge cases tested
 - Test names semantically match what they assert
 - No near-duplicate tests (parametrize where appropriate)
@@ -67,7 +68,7 @@
 
 **Recommendations**: `file:line` → issue → fix.
 
-_(Populated from test-reviewer + test-runner + layer-group reviewer TESTS_GAPS output)_
+_(Populated from test-reviewer + test-runner + layer-group reviewer TEST_GAPS output)_
 
 ### 6. Type Hints & SOLID
 - Type hints on all public APIs (✓/✗)
@@ -100,16 +101,16 @@ _(Populated from test-reviewer + test-runner + layer-group reviewer TESTS_GAPS o
 Each recommendation includes:
 - **Files affected**: list of files containing the duplicate
 - **Pattern**: brief description of the repeated logic
-- **Extract to**: `path/to/module.py::ClassName/function_name` — concrete target
+- **Extract to**: concrete target — an existing module and symbol in this project, or a named new one alongside its peers
 - **Benefit**: why extraction improves the codebase (maintainability, consistency, testability)
 
-**Common extraction targets:**
-- Repeated validation logic → helper function in `utils/` or `validators.py`
-- Similar transformer/processor methods → base class with template method pattern
-- Repeated exception handling → decorator or context manager
-- Duplicated test setup/assertions → `tests/helpers/factories.py` or `tests/helpers/assertions.py`
-- Similar loop/filter patterns → extracted generator or utility function
-- Repeated Pydantic model conversions → static `from_*()` factory methods
+**Common extraction shapes** (name the project's own equivalent, not a generic one):
+- Repeated validation logic → a shared helper next to the other helpers
+- Similar transformer/processor implementations → a common base with the varying step overridden
+- Repeated error handling → the language's wrapping idiom (decorator, middleware, context manager, defer)
+- Duplicated test setup or assertions → a test factory/helper in the project's test-support location
+- Similar loop/filter chains → one named utility
+- Repeated data-shape conversions → a factory or constructor on the type itself
 
 ### 9. Dead Code Detection
 
@@ -123,26 +124,28 @@ Agent produces structured `DEAD_CODE_FINDINGS` / `DELETION_PLAN` blocks with pre
 
 ### 11. Architecture
 
-**Layer boundaries** (`[CLI] → [Use Cases] → [Services] → [Processors + Repository + Schemas]`):
-- No upward imports (e.g. service importing from CLI, processor importing from use case) (✓/✗)
-- CLI commands create `DefaultContainer` and delegate to use cases only (✓/✗)
-- Use cases orchestrate services, never contain business logic themselves (✓/✗)
+Resolve this project's actual layering first (from its directory structure, its architecture rules, or `bdk:architecture-reviewer`'s own reading), state it in the report, then check against it. Do not assume a layer stack.
+
+**Layer boundaries** (state the resolved layering, e.g. `[entrypoint] → [orchestration] → [domain] → [infrastructure]`):
+- No upward imports: an inner layer never depends on an outer one (✓/✗)
+- Entrypoints wire dependencies and delegate; they hold no business logic (✓/✗)
+- Orchestration coordinates; the logic itself lives in the domain layer (✓/✗)
 
 **Dependency injection**:
-- Dependencies injected via constructor, not created internally (✓/✗)
-- No global/shared mutable state (✓/✗)
-- Tests use `MockContainer` to swap dependencies (✓/✗)
+- Dependencies passed in, not constructed internally (✓/✗)
+- No global or shared mutable state (✓/✗)
+- Tests can substitute dependencies without patching internals (✓/✗)
 
-**Design patterns**:
-- Strategy pattern used for pluggable components (parsers, loaders) (✓/✗)
-- Repository pattern for storage abstraction (no direct file I/O in services) (✓/✗)
-- Pydantic models use `FrozenModel` / `frozen=True` for immutability (✓/✗)
-- `from __future__ import annotations` present in all Pydantic model files (✓/✗)
+**Design patterns** (only the ones this project actually uses):
+- Pluggable components go through one declared extension point, not scattered conditionals (✓/✗)
+- Storage and I/O sit behind an abstraction; the domain layer performs none directly (✓/✗)
+- Data carriers are immutable where the language supports it (✓/✗)
+- The project's declared conventions for its own model/type definitions are followed (✓/✗)
 
 **Data flow**:
-- Data flows unidirectionally: HTML → tokens → SourceDocument → transformations → output (✓/✗)
+- Data flows in one direction through the pipeline; state the actual stages (✓/✗)
 - No circular dependencies between modules (✓/✗)
-- Custom exceptions from `exceptions.py` with structlog before raising (✓/✗)
+- Errors surface as the project's own error types, logged through its own logger, before propagating (✓/✗)
 
 **Violations** (if any): `file:line` → which rule is broken → suggested fix.
 
@@ -152,18 +155,37 @@ Good patterns worth reinforcing.
 ### 13. All Issues
 All problems across all agents, sorted severity descending (CRITICAL → HIGH → MEDIUM → LOW).
 
-Each issue: **[SEVERITY] category** → `file:line` → problem → 1-sentence fix.
+Each issue: **[SEVERITY] category** → `file:line` (symbol, when the finding has one) → problem → 1-sentence fix.
 
-### 14. Baseline Comparison
+One row per **merged** finding, and `category` is one of the engine's ten slugs. The array reaching this section is already deduplicated by `(file, category, symbol-or-nearby-line)`; do not re-expand it back to per-agent rows, and derive the header's severity counts from the same rows so the count and the list agree.
 
-_(Skipped for tiny changes — run `baselines dump` first if no snapshots exist)_
+---
 
-Paste baseline-comparator agent output **verbatim**. Do NOT reformat or summarize.
+## Header and scope block
 
-**Status line format:**
-- `✅ UNCHANGED` — migration output matches baseline for all fixtures
-- `⚠️ CHANGED ({N} fixtures)` — output differs; list changed fixture names
-- `❌ FAILED` — command failed (show error output)
-- `⬜ NO BASELINE` — no snapshots found in `var/snapshots/`
+Every report opens with what was reviewed, before section 1:
 
-If `⚠️ CHANGED`, include diff summary from comparator output so reviewer knows whether change is intentional or regression.
+```markdown
+# Code Review: <branch>
+
+**Range**: `<anchor>..<head>` (<delta|full> — <anchor_source>), <N> commits
+**Files**: <N> reviewed<, plus M as cumulative context on a delta pass>
+**Size class**: tiny | small | large | massive
+**Agents**: <N> dispatched<, M degraded: names>
+**Suppressed**: <N> previously deferred findings withheld from reviewers
+```
+
+Omit nothing here. A report that does not say it was a delta pass reads as a full review of the branch, which is the one misreading that turns a clean report into a false assurance.
+
+## Deferred findings block
+
+With a run, close the report with what was previously triaged and declined:
+
+```markdown
+## Deferred — not auto-fixed
+
+| Severity | Category | Location | Problem |
+|---|---|---|---|
+```
+
+Sourced from `bdk_run_state.py findings-list`. These were withheld from this pass's reviewers on purpose; listing them keeps the report honest about the branch's actual state rather than about what was re-detected.

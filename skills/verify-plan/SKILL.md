@@ -7,6 +7,7 @@ description: >-
   writing code.
 argument-hint: "[plan-file]"
 disable-model-invocation: true
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Verify Plan
@@ -92,16 +93,41 @@ verdict envelope as the LAST block, with iteration: 2.
 
 ## Step 5 — Write Verification Report
 
-Render the report using `references/verdict-template.md`. Save to:
+First stamp the plan's identity:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py hash-plan <plan-path>
+```
+
+Render the report using `references/verdict-template.md`, filling the returned `plan_sha256` into the header. Save to:
 
 ```
 .bdk/verify-plan/<plan-slug>-verification.md
 ```
 
+The hash is over the plan file's bytes, so it identifies exactly the plan that was verified. `/bdk:subagent-execute-plan` re-computes it with the same subcommand at Step 0 and compares: equal means it is running the verified plan, different means the plan was edited after verification and the verdict above no longer describes it. Do not compute the hash any other way - one source keeps the two sides from disagreeing over an algorithm or a trailing newline.
+
 Confirm in chat with the report path and the pass/fail summary line.
+
+## Step 6 — Hand Off
+
+On `PASS` or `PASS_WITH_WARNINGS`, print the next step and stop:
+
+```
+  Verdict:  PASS | PASS_WITH_WARNINGS
+  Report:   .bdk/verify-plan/<plan-slug>-verification.md
+  Plan sha: <first 12 chars>
+
+  Next: /bdk:subagent-execute-plan <plan-path>
+```
+
+Do not execute the plan. On `PASS_WITH_WARNINGS`, name the warnings in the chat line - they are worth reading before execution, but they do not block it.
+
+On `FAIL` after two iterations, the handoff is `/bdk:design`, not the executor (Step 4 already covers this).
 
 ## Notes
 
 - Loop cap = 2 iterations. Third would be wasted work; escalation is the intended path.
 - The agent retains plan content + iteration-1 findings across SendMessage. Pass only the delta — do not re-include the full plan.
 - See STARTUP "Continuing a Spawned Agent" for the 5-min warm-cache window. If iteration 2 is delayed beyond that, the SendMessage still works but pays a cache miss.
+- **SendMessage iteration is same-session only.** `verifier_agent_id` is not addressable from a later session, so a re-verification after any session boundary is a fresh Step 2 spawn with the full plan - there is no cheap cross-session resume. If the plan changed, that is the correct behaviour anyway: the verdict is about specific bytes, and a fresh pass is what re-establishes it.

@@ -81,10 +81,10 @@ If `description:` present: WARN if >250 chars (truncated in skill listing).
 ### 11. Invalid frontmatter fields
 FAIL if file uses unsupported/obsolete frontmatter fields:
 - `arguments:` (list of objects) — replaced by `argument-hint:`
-- Any field not in: `name`, `description`, `argument-hint`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `model`, `effort`, `context`, `agent`, `hooks`, `paths`, `shell`
+- Any field not in: `name`, `description`, `argument-hint`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `disallowed-tools`, `model`, `effort`, `context`, `agent`, `background`, `hooks`, `paths`, `shell`
 
 ### 12. `effort` valid value
-If `effort:` present: must be one of `low`, `medium`, `high`, `max`.
+If `effort:` present: must be one of `low`, `medium`, `high`, `xhigh`, `max`.
 - FAIL on any other value.
 
 ### 13. `context` + `agent` combo
@@ -153,6 +153,33 @@ Rules:
 - WARN if any file at root level that is not `SKILL.md` (e.g. `.sh` scripts at root → `scripts/`, `.md` files → `references/`)
 - PASS if only `SKILL.md` present (minimal valid structure)
 
+### 21. Inject conditions use a recognised form
+
+For every `!`...inject.py ...`` call in the body, check each `--if` / `--prefer` condition against the three forms `scripts/inject.py` actually parses:
+
+| Form | Meaning |
+|---|---|
+| `features.<key>` | `settings.features.<key>` is true |
+| `tool.<binary>` | `<binary>` is on PATH |
+| `<field>[<value>]` | `<value>` is in the `settings.<field>` list |
+
+- FAIL on anything else (e.g. `languages.react`, `feature.react`, `tool[lavish-axi]`) — name the line and the correct spelling.
+- The two near-misses matter most because they fail **silently**: `languages.react` matches no regex and raises, while `tool[lavish-axi]` is happily parsed by the array rule as a lookup in a nonexistent `tool` list and evaluates false forever. Neither looks broken in the rendered skill.
+- Also FAIL a `--then` path that does not exist, for the same reason: a missing fragment renders as an absent one.
+
+### 22. Stated tool invariants are enforced
+
+`allowed-tools` is pre-approval, not a whitelist: listing tools there restricts nothing. When a skill's body states that it must **never** call a tool, the restriction belongs in `disallowed-tools`, which removes the tool from the pool.
+
+WARN when the body asserts such an invariant and the frontmatter does not back it:
+
+| Body says something like | Expected frontmatter |
+|---|---|
+| "autonomous", "no human-in-loop", "never ask the user mid-flow" | `disallowed-tools: AskUserQuestion` |
+| "read-only", "MUST NOT modify source files", "never edit" | `disallowed-tools: Edit NotebookEdit` (plus `Write` when the skill writes nothing at all) |
+
+Name the body line and the missing field. Do not FAIL: a skill may legitimately need the tool on some path, and the field cannot express "only for X". PASS when the invariant is absent or already backed.
+
 ## Output format
 
 One report block per file. Supporting files get abbreviated reports (checks 3–6 only).
@@ -195,7 +222,7 @@ No fixes beyond check results unless user asks.
 
 ## Checklist before responding
 
-Verify ALL 20 checks were executed for SKILL.md (not just the ones that seemed relevant):
+Verify ALL 21 checks were executed for SKILL.md (not just the ones that seemed relevant):
 
 - [ ] 1. Frontmatter present
 - [ ] 2. Model field
@@ -217,5 +244,6 @@ Verify ALL 20 checks were executed for SKILL.md (not just the ones that seemed r
 - [ ] 18. Artifacts go to `.bdk/`
 - [ ] 19. No unused files in skill directory
 - [ ] 20. Valid skill directory structure
+- [ ] 21. Inject conditions use a recognised form
 
 Do not output the checklist. Use it internally to confirm no check was skipped.

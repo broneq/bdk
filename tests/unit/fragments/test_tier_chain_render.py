@@ -69,12 +69,34 @@ def test_chain_renders_policy_with_graph_enabled(
     )
 
 
-def test_explore_chain_empty_when_no_features() -> None:
-    """When no chain entry matches, the chain must produce empty output."""
+ALL_CHAINS = sorted(p.name for p in CHAINS_DIR.glob("*.chain.json"))
+
+
+@pytest.mark.parametrize("chain_name", ALL_CHAINS)
+def test_chain_renders_a_tier_with_no_features(chain_name: str) -> None:
+    """Every chain must still name usable tools when no feature is enabled.
+
+    A chain that renders empty leaves the consuming skill or agent with no
+    tool guidance at all — the failure is invisible, because an empty
+    injection looks exactly like a skill that never asked for one.
+    """
     settings = {"features": {"code-review-graph": False, "serena": False}}
-    out = inject_chain(CHAINS_DIR / "explore.chain.json", settings=settings)
-    assert out == "", (
-        "explore.chain.json must produce empty output when no entry matches"
+    out = inject_chain(CHAINS_DIR / chain_name, settings=settings)
+    assert out.strip(), f"{chain_name} rendered empty with all features off"
+    assert "Tier 3" in out, (
+        f"{chain_name} fallback must identify itself as the Tier 3 tier"
+    )
+
+
+@pytest.mark.parametrize("chain_name", ALL_CHAINS)
+def test_additive_chain_suppresses_fallback_when_a_tier_matches(
+    chain_name: str,
+) -> None:
+    """The fallback tier must not stack on top of a higher tier."""
+    settings = {"features": {"code-review-graph": True, "serena": True}}
+    out = inject_chain(CHAINS_DIR / chain_name, settings=settings)
+    assert "Tier 3" not in out, (
+        f"{chain_name} injected its Tier 3 fallback alongside a higher tier"
     )
 
 

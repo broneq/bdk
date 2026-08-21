@@ -16,6 +16,11 @@ Behaviour:
     - Language listed but no rule file (default or override) → silent skip
     - Multiple languages → concatenated with blank-line separator
 
+Failures print ``[bdk-inject-error] <description>`` to **stdout** and exit 0.
+This script is consumed from a ``!`...`` `` block in a skill body, which captures
+stdout only and ignores the exit code, so stderr + exit 1 renders as silence.
+See scripts/inject.py for the same contract.
+
 Public API:
     from inject_language_rules import resolve_language_rule, resolve_all
 """
@@ -26,6 +31,8 @@ import json
 import os
 import sys
 from pathlib import Path
+
+ERR_PREFIX = "[bdk-inject-error]"
 
 
 def _load_settings(start: Path) -> dict | None:  # type: ignore[type-arg]
@@ -63,9 +70,8 @@ def _normalise_override(entry: object, lang: str) -> dict | None:  # type: ignor
         mode = entry.get("mode", "extends")
         if mode not in ("extends", "replace"):
             print(
-                f"[BDK inject-language-rules] language-rules.{lang}: "
-                f"unknown mode {mode!r}, treating as 'extends'",
-                file=sys.stderr,
+                f"{ERR_PREFIX} language-rules.{lang}: "
+                f"unknown mode {mode!r}, treating as 'extends'"
             )
             mode = "extends"
         return {"path": entry["path"], "mode": mode}
@@ -139,11 +145,8 @@ def resolve_all(
 
 def main() -> None:
     if len(sys.argv) > 2:
-        print(
-            "Usage: inject-language-rules.py [<lang>]",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+        print(f"{ERR_PREFIX} usage: inject-language-rules.py [<lang>]")
+        sys.exit(0)
 
     try:
         if len(sys.argv) == 2:
@@ -155,8 +158,8 @@ def main() -> None:
             if content:
                 print(content, end="")
     except (FileNotFoundError, ValueError, OSError) as e:
-        print(f"[BDK inject-language-rules] {e}", file=sys.stderr)
-        sys.exit(1)
+        print(f"{ERR_PREFIX} {e}")
+        sys.exit(0)
     sys.exit(0)
 
 

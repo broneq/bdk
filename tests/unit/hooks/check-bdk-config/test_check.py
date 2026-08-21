@@ -290,3 +290,144 @@ def test_invalid_structure_reason_mentions_force(tmp_path):
     result = _run_script(tmp_path)
     data = json.loads(result.stdout)
     assert "--force" in data["reason"]
+
+
+# ---------------------------------------------------------------------------
+# tiers and scoped templates
+# ---------------------------------------------------------------------------
+
+
+TIERED_SETTINGS = {
+    "test-tools": [
+        {
+            "type": "vitest",
+            "tier": "fast",
+            "command": "npm run test:unit",
+            "scoped": "npx vitest run {files}",
+            "related": "npx vitest related --run {files}",
+            "failed": "npx vitest run --changed",
+        },
+        {
+            "type": "playwright",
+            "tier": "e2e",
+            "command": "npm run test:e2e",
+            "scoped": "npx playwright test {files}",
+        },
+    ],
+    "lint-tools": [
+        {"type": "tsc", "tier": "typecheck", "command": "npm run typecheck",
+         "incremental": "npx tsc -b --incremental"},
+    ],
+}
+
+
+def test_a_tiered_settings_file_validates():
+    mod = _load_module()
+    assert mod.validate_settings(TIERED_SETTINGS) == []
+
+
+def test_the_session_summary_names_the_tier():
+    """The tier is how the orchestrator knows which command is the expensive one."""
+    mod = _load_module()
+    result = mod.format_settings_context(TIERED_SETTINGS)
+    assert "npm run test:unit (vitest, fast)" in result
+    assert "npm run test:e2e (playwright, e2e)" in result
+
+
+def test_a_tool_without_a_tier_still_formats_with_just_its_type():
+    mod = _load_module()
+    result = mod.format_settings_context(
+        {"test-tools": [{"type": "pytest", "command": "pytest"}]}
+    )
+    assert "pytest (pytest)" in result
+
+
+def test_a_tool_with_neither_type_nor_tier_formats_as_the_bare_command():
+    mod = _load_module()
+    result = mod.format_settings_context({"test-tools": [{"command": "make test"}]})
+    assert "Test commands: make test" in result
+
+
+def test_an_unknown_tier_is_rejected():
+    mod = _load_module()
+    errors = mod.validate_settings(
+        {"test-tools": [{"type": "vitest", "tier": "quick", "command": "npm t"}]}
+    )
+    assert len(errors) == 1
+    assert "tier" in errors[0]
+
+
+def test_a_scoped_template_without_the_placeholder_is_rejected():
+    """Without {files} the command ignores the file list and runs everything —
+    silently, which is the exact cost the tier system exists to remove."""
+    mod = _load_module()
+    errors = mod.validate_settings(
+        {
+            "test-tools": [
+                {"type": "vitest", "command": "npm run test:unit",
+                 "scoped": "npx vitest run"}
+            ]
+        }
+    )
+    assert len(errors) == 1
+    assert "{files}" in errors[0]
+
+
+def test_a_related_template_without_the_placeholder_is_rejected():
+    mod = _load_module()
+    errors = mod.validate_settings(
+        {"test-tools": [{"type": "vitest", "command": "npm t", "related": "npx vitest related"}]}
+    )
+    assert len(errors) == 1
+    assert "related" in errors[0]
+
+
+def test_failed_and_incremental_need_no_placeholder():
+    """Neither takes a path list: one asks the runner what failed, the other
+    reuses a cache."""
+    mod = _load_module()
+    assert (
+        mod.validate_settings(
+            {
+                "test-tools": [
+                    {"type": "playwright", "command": "npm run test:e2e",
+                     "failed": "npx playwright test --last-failed"}
+                ],
+                "lint-tools": [
+                    {"type": "tsc", "command": "npm run typecheck",
+                     "incremental": "npx tsc -b --incremental"}
+                ],
+            }
+        )
+        == []
+    )
+
+
+def test_a_non_string_template_is_rejected():
+    mod = _load_module()
+    errors = mod.validate_settings(
+        {"test-tools": [{"type": "vitest", "command": "npm t", "scoped": ["a", "b"]}]}
+    )
+    assert len(errors) == 1
+    assert "scoped" in errors[0]
+
+
+def test_an_empty_command_is_rejected():
+    mod = _load_module()
+    errors = mod.validate_settings({"test-tools": [{"type": "vitest", "command": "   "}]})
+    assert len(errors) == 1
+    assert "command" in errors[0]
+
+
+def test_every_bad_field_in_one_entry_is_reported_at_once():
+    """A user fixing settings should see the whole list, not one error per run."""
+    mod = _load_module()
+    errors = mod.validate_settings(
+        {
+            "test-tools": [
+                {"type": "vitest", "command": "npm t", "tier": "nope",
+                 "scoped": "npx vitest run", "related": 7}
+            ]
+        }
+    )
+    assert len(errors) == 3

@@ -44,12 +44,22 @@ Follow the tool-tier and quality-rule guidance from your preloaded skills.
 - You MUST NOT modify any files. You are read-only.
 - You MUST NOT spawn sub-agents.
 
+## Scope Rules
+
+Your prompt may carry a review range and up to two exclusion lists. They bound what counts as a finding, and ignoring them produces noise that reads exactly like a real defect.
+
+- **Files to Review** — the only files whose problems you report.
+- **Context — do NOT report findings in these** — files that changed earlier on the same branch. Read them freely to understand what you are reviewing; a finding located in one of them belongs to an earlier commit and was already reviewed. Report it only if the code under review *newly breaks* it, and say so explicitly.
+- **Already triaged — do NOT report these again** — findings someone saw and deliberately declined. Do not re-raise them, do not re-word them, and do not raise the same problem at a different severity. If you believe a triaged finding is worse than it was judged, say that once, in `POSITIVE_OBSERVATIONS`-adjacent prose at the end, rather than as a fresh finding.
+
+With no range given, review everything you are handed as one whole.
+
 ## Process
-1. Run `detect_changes(detail_level="minimal")` on assigned files — get risk-scored prioritization
-2. For each HIGH/CRITICAL risk symbol, run `query_graph(pattern="tests_for", node=<symbol>)` — populate TEST_GAPS without reading test files
-3. Run `get_impact_radius` on any CRITICAL risk symbol to understand blast radius
-4. Read files in risk order (highest first); use `get_review_context` instead of raw Read for token efficiency
-5. Use `get_affected_flows` to understand which execution paths are impacted by changes
+1. Run `mcp__plugin_bdk_code-review-graph__detect_changes_tool(detail_level="minimal")` on assigned files — get risk-scored prioritization
+2. For each HIGH/CRITICAL risk symbol, run `mcp__plugin_bdk_code-review-graph__query_graph_tool(pattern="tests_for", node=<symbol>)` — populate TEST_GAPS without reading test files
+3. Run `mcp__plugin_bdk_code-review-graph__get_impact_radius_tool` on any CRITICAL risk symbol to understand blast radius
+4. Read files in risk order (highest first); use `mcp__plugin_bdk_code-review-graph__get_review_context_tool` instead of raw Read for token efficiency
+5. Use `mcp__plugin_bdk_code-review-graph__get_affected_flows_tool` to understand which execution paths are impacted by changes
 6. Analyze against all criteria specified in your prompt
 7. Produce structured findings in the output format specified
 

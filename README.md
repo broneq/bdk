@@ -28,25 +28,67 @@ Invoke with `/bdk:<skill-name>`:
 | Skill | Description                                                                                         |
 |-------|-----------------------------------------------------------------------------------------------------|
 | `/bdk:setup` | Initialize `.bdk/settings.json` — run once per project before using other skills                    |
-| `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size)                                     |
+| `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size). Reviews the delta since the last review by default; `--full` reviews the whole branch |
 | `/bdk:commit` | Generate conventional commit message from git changes                                               |
 | `/bdk:create-plan` | Create TDD-driven implementation plans                                                              |
-| `/bdk:create-tasks` | Write PM-style task definitions (User Story + Given/When/Then ACs) from features or code findings   |
-| `/bdk:execute-plan` | Execute a plan with task tracking and verification                                                  |
 | `/bdk:subagent-execute-plan` | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review |
 | `/bdk:verify-plan` | Verify a plan against real code before execution                                                    |
 | `/bdk:debug` | Structured debugging: investigate → failing tests → fix or plan                                     |
-| `/bdk:refactor` | Propose object-oriented architecture for complex code                                               |
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                        |
 | `/bdk:design` | Design partner: classifies product vs architecture vs combined, 2+ approaches with Mermaid, self-critique, validation loop with warm-explorer reuse |
 | `/bdk:create-adr` | Generate Architecture Decision Records (MADR format)                                                |
-| `/bdk:save-progress` | Checkpoint in-progress work to `.bdk/save-progress/`                                                |
-| `/bdk:restore-progress` | Resume work from a saved checkpoint                                                                 |
 | `/bdk:explain-complex-code` | Generate architecture docs with Graphviz diagrams                                                   |
 | `/bdk:update-docs` | Refresh existing architecture docs after code changes                                               |
 | `/bdk:refine-rules` | Compact and verify `.claude/rules/*.md` against real code - four-part admission test, six verdicts, budgets, relocation to doc comments, uniform format |
 | `/bdk:add-rule` | Capture one lesson as a properly-homed rule - routes to a narrow-glob rule file, a wide one, a skill, a doc comment, a test signpost, or nothing; dedupes, respects budgets |
 | `/bdk:graphviz-docs-compiler` | Compile `.dot` files to SVG and update markdown references                                          |
+
+### Removed skills
+
+Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which several skills used as their only state mechanism. Those skills are gone rather than patched:
+
+| Removed | Use instead |
+|---|---|
+| `/bdk:execute-plan` | `/bdk:subagent-execute-plan` |
+| `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session |
+| `/bdk:create-tasks`, `/bdk:refactor` | `/bdk:create-plan` |
+| `/bdk:audit-prompt` | Nothing |
+
+---
+
+## The plan pipeline
+
+The four plan skills form one chain, each stage consuming the previous stage's output:
+
+```
+/bdk:design  →  /bdk:create-plan  →  /bdk:verify-plan  →  /bdk:subagent-execute-plan  →  /bdk:cr
+```
+
+The seams are files, not conversation state, so any stage can run in a fresh session:
+
+| Seam | Carrier |
+|---|---|
+| design → plan | the design doc at `.bdk/design/` |
+| plan → verify | the plan file |
+| verify → execute | `.bdk/verify-plan/<slug>-verification.md`, carrying the plan's sha256 |
+| execute → review | git commit trailers (`BDK-Run:`, `BDK-Group:`) plus `.bdk/runs/<run-id>.json` |
+
+**The plan file is immutable once verified.** Its sha256 is the run's identity, so edit before verifying, never after: the executor re-hashes the file and reports a post-verification edit as a stale stamp. To change course mid-run, stop, edit, re-verify, and start a new run - the already-committed groups stay committed and the new run picks up from the trailers.
+
+Progress is recorded per group, in two places: commit trailers are the durable ground truth (they survive a crash, a new session, a deleted `.bdk/`, and a rebase), and the run manifest is a cache that makes resume cheap. On any disagreement git wins and the manifest is corrected. Everything under `.bdk/runs/` is machine-owned and gitignored - read it with `python3 scripts/bdk_run_state.py print --run <id>`, never by hand.
+
+### Running plans in parallel worktrees
+
+Two plans that touch the same files cannot run in the same checkout - the executor's clean-tree precondition and its per-group commits would interleave. Give each run its own worktree:
+
+```bash
+git worktree add ../myproject-featA -b feat/a
+git worktree add ../myproject-featB -b feat/b
+```
+
+Then open a Claude Code session in each and run `/bdk:subagent-execute-plan` there. This works with no extra machinery because the run id is `<plan-slug>--<branch-slug>`: different branches mean different run ids, different manifests, and trailers that never match each other's `git log`. Nothing coordinates the two runs, which is the point - merge them the way you merge any two branches.
+
+One session per worktree. Two sessions in one worktree contend for the same run, and the second is refused by the session guard.
 
 ---
 
@@ -69,6 +111,52 @@ Used by skills internally (invoke via `subagent_type`):
 | `design-verifier` | opus | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. Used by `/bdk:design` Phase 3 |
 | `log-analyzer` | haiku | Parse and summarize error logs |
 | `web-researcher` | haiku | Search web for solutions and docs |
+
+---
+
+## Test & Lint Tiers
+
+BDK runs checks **scoped to what changed** for the whole length of a plan, and the full suite exactly once, at the end. That only works if it knows which of your commands is the cheap one and how to narrow it — so each `test-tools` / `lint-tools` entry in `.bdk/settings.json` carries a tier and the narrower forms of the same command. `/bdk:setup` fills these in; this is what it writes:
+
+```json
+{
+  "test-tools": [
+    {
+      "type": "vitest",
+      "tier": "fast",
+      "command": "npm run test:unit",
+      "scoped": "npx vitest run {files}",
+      "related": "npx vitest related --run {files}",
+      "failed": "npx vitest run --changed"
+    },
+    {
+      "type": "playwright",
+      "tier": "e2e",
+      "command": "npm run test:e2e",
+      "scoped": "npx playwright test {files}",
+      "failed": "npx playwright test --last-failed"
+    }
+  ],
+  "lint-tools": [
+    {"type": "eslint", "tier": "lint", "command": "npm run lint", "scoped": "npx eslint {files}"},
+    {"type": "tsc", "tier": "typecheck", "command": "npm run typecheck", "incremental": "npx tsc -b --incremental"}
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `type` | The runner or framework (`vitest`, `pytest`, `eslint`, `tsc`) — not the package manager. BDK reads it to infer a missing `tier`. |
+| `tier` | `fast` / `e2e` for tests; `lint` / `format` / `typecheck` for lint. Decides **when** the command may run. |
+| `command` | The full, unscoped form. The slowest one: reserved for the end-of-plan gate. |
+| `scoped` | Scoped to a path list. Must contain `{files}`. |
+| `related` | The tests *covering* given source files, for runners that compute that themselves. Must contain `{files}`. Replaces asking an agent which tests cover a change. |
+| `failed` | Re-runs only what failed. Used by fix cycles, so a fix attempt does not pay for a suite. |
+| `incremental` | Cache-reusing form of a check that cannot take a path list — typecheckers above all. |
+
+Omit any form your tool does not support; BDK falls back cleanly from a missing form. `tier` is optional but should always be set: BDK infers it from the tool name, and an inferred `fast` on an e2e runner means a slow suite runs at every group boundary.
+
+**What this buys.** Per task, only the task's own test file runs. Per group, only the tests covering the group's changed files — the fast tier alone, unless the group actually touched e2e specs. Fix cycles re-run failures, not suites. Lint runs on the changed files; typecheck reuses its cache between groups. The unscoped everything, e2e included, runs once per plan.
 
 ---
 
