@@ -114,11 +114,10 @@ Recommended: **B**. Cleanest, single source of truth.
 
 **Status:** ✅ Works. Skill markdown supports dynamic context injection per spec.
 
-**Six usages:**
+**Usages:**
 - `skills/cr/SKILL.md:52` — `review.chain.json`
 - `skills/create-plan/SKILL.md:52` — `explore.chain.json`
 - `skills/explain-complex-code/SKILL.md:34` — `explore.chain.json`
-- `skills/refactor/SKILL.md:19` — `explore.chain.json`
 - `skills/debug/SKILL.md:84` — `search.chain.json`
 - `skills/debug/SKILL.md:95` — `impact.chain.json`
 - `skills/test-driven-development/SKILL.md:76` — `search.chain.json`
@@ -143,9 +142,8 @@ The `cr` skill uses an instruction-driven loop (it's prose, the model walks the 
 
 **Status:** ✅ Works.
 
-**Six usages:**
+**Usages:**
 - `skills/test-driven-development/SKILL.md:105` — `test-tools`
-- `skills/execute-plan/SKILL.md:53,54` — `test-tools`, `lint-tools`
 - `skills/create-plan/SKILL.md:120,121` — `test-tools`, `lint-tools`
 - `skills/debug/SKILL.md:117,168,169` — `test-tools` (×2), `lint-tools`
 
@@ -157,7 +155,7 @@ Resolves project-level test/lint commands from `.bdk/settings.json`. Standard sk
 
 **Status:** ✅ Works (instruction-driven, not a Claude Code feature).
 
-**Three usages:**
+**Usages:**
 - `skills/cr/references/reviewer-prompt-template.md:18` — `code-quality`
 - `skills/cr/references/reviewer-prompt-template.md:22` — `architecture`
 - `skills/cr/references/reviewer-prompt-template.md:48` — `architecture`
@@ -171,14 +169,7 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 
 ### Flow 7 — Agent frontmatter `hooks: SessionStart`
 
-**Status:** ❌ **DEAD CODE.** Plugin agents drop `hooks` per spec.
-
-**Five agents affected:**
-- `agents/code-reviewer.md:23-29` — `review.chain.json`, `search.chain.json`
-- `agents/architecture-reviewer.md:20-26` — `explore.chain.json`, `search.chain.json`
-- `agents/explorer.md:24-30` — `explore.chain.json`, `search.chain.json`
-- `agents/dead-code-detector.md:17-21` — `search.chain.json`
-- `agents/duplicate-detector.md:17-21` — `search.chain.json`
+**Status:** ❌ **DEAD CODE — now removed.** Plugin agents drop `hooks` per spec. No agent declares `hooks:` any more; tier guidance reaches agents through `skills:` preload instead.
 
 **Why dead:** Verbatim from spec — *"plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin."*
 
@@ -192,15 +183,7 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 
 ### Flow 8 — Agent frontmatter `hooks: PostToolUse`
 
-**Status:** ❌ **DEAD CODE.** Same plugin restriction.
-
-**Two agents affected:**
-- `agents/implementer.md:25-34` — `PostToolUse: python3 .../context-usage.py`
-- `agents/fixer.md:22-29` — `PostToolUse: ...` (similar)
-
-**Impact:** Context-usage tracking for implementer/fixer agents is silently disabled when used as plugin agents.
-
-**Fix:** Same as Flow 7 — delete or move logic elsewhere (e.g., to a top-level `hooks.json` PostToolUse with a matcher).
+**Status:** ❌ **DEAD CODE — now removed.** Same plugin restriction. `implementer` and `fixer` declared `PostToolUse` hooks running a context-usage tracker; both the hooks and the tracker script are gone. Context budgeting is the coordinator's job, enforced in `subagent-execute-plan`'s own prose.
 
 ---
 
@@ -208,10 +191,9 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 
 **Status:** ✅ Works. Skill frontmatter `hooks:` is documented and supported, no plugin restriction.
 
-**Five skills using this:**
+**Skills using this:**
 - `skills/commit/SKILL.md:7-9`
 - `skills/update-docs/SKILL.md:8-10`
-- `skills/execute-plan/SKILL.md:8-15`
 - `skills/graphviz-docs-compiler/SKILL.md:6-14`
 - `skills/explain-complex-code/SKILL.md:8-10`
 
@@ -474,7 +456,6 @@ For each, decision based on the entity's actual job. "Inject only what's used."
 | `dead-code-detector` | haiku | Find unused symbols | — | ✅ | — | — | — | — | — |
 | `duplicate-detector` | haiku | Find duplicates | — | ✅ | — | — | — | — | — |
 | `explorer` | haiku | Fast codebase exploration | ✅ | ✅ | — | — | — | — | — |
-| `step-simulator` | opus | Dry-run plans, trace data | — | ✅ | — | ✅ | — | — | — |
 | `fixer` | sonnet | Apply specific findings to code | — | ✅ | — | ✅ | ✅ | — | — |
 | `implementer` | sonnet | Implement one plan task TDD-style | — | ✅ | — | ✅ | ✅ | — | ✅ |
 | `log-analyzer` | haiku | Triage stderr / stack traces | — | ✅ | — | — | — | — | — |
@@ -489,7 +470,6 @@ For each, decision based on the entity's actual job. "Inject only what's used."
 - `explorer` — purely informational. Returns context to caller; doesn't apply rules.
 - `fixer` — applies findings someone else generated. `code-quality` because it's writing code; `tier-impact` because every fix has a blast radius.
 - `implementer` — writes new code. `code-quality` for hygiene; `design-patterns` to encourage right shape from the start.
-- `step-simulator` — traces execution paths. Needs `tier-search` (finding callers) + `tier-impact` (what breaks).
 - `log-analyzer` — reads logs. Sometimes needs to find a symbol from a stack trace (`tier-search`).
 - `static-analyse`, `test-runner`, `web-researcher` — pure tool runners. No injection. Their bodies are short and self-contained.
 
@@ -502,24 +482,16 @@ Skills that ARE orchestrators (dispatch subagents) and skills that produce outpu
 | `cr` | Orchestrator | ✅ `tier-review` | Keep `tier-review` | — | Orchestrator dispatches reviewers; itself does not enforce rules. Rules go to subagents via `skills:` preload. **Remove `<!-- INJECT: -->` template markers** (redundant once subagents preload rules). |
 | `create-plan` | Output document | ✅ `tier-explore` | Keep `tier-explore` | Add `code-quality`, `architecture`, `design-patterns` | Plan output cites rules for the human reader. Add markers in `plan-template.md`. **Generalize hardcoded `inject-rules.py code-quality` to a marker loop like `cr` uses.** |
 | `debug` | Output document | ✅ `tier-search` + `tier-impact` | Keep both | — | Debug session is investigation; doesn't enforce rules per se. |
-| `refactor` | Output document | ✅ `tier-explore` | Keep | Add `design-patterns`, `architecture` | Refactor proposals should cite GoF + arch principles. |
 | `explain-complex-code` | Output document | ✅ `tier-explore` | Keep | — | Explanatory output, not enforcement. |
 | `test-driven-development` | Procedure | ✅ `tier-search` | Keep | — | TDD process; tests are the enforcement, no rule injection needed. |
-| `execute-plan` | Procedure | — (uses `get_settings.py`) | Add `tier-impact` | Add `code-quality` | Writes code to satisfy plan; benefits from impact awareness + quality rules. |
 | `subagent-execute-plan` | Orchestrator | — | Add `tier-impact` (orchestrator triages risk) | — | Dispatches `implementer`/`fixer`/reviewers. Rules go to those subagents. |
 | `design` | Output document | ✅ `tier-explore` (via `explore.chain.json`) | Keep | Add `architecture`, `design-patterns` | Design exploration; should know the constraints it's designing within. Replaces `brainstorming` + `brainstorm-architecture`. |
-| `verify-plan` | Orchestrator | — | Add `tier-impact` | — | Orchestrates `step-simulator` etc. Rules go to subagents. |
+| `verify-plan` | Orchestrator | — | Add `tier-impact` | — | Orchestrates `plan-verifier`. Rules go to subagents. |
 | `commit` | Procedure | — | — | — | Generates commit message from git diff. No code analysis. |
 | `setup` | Bootstrap | — | — | — | Initializes settings; no analysis. |
-| `save-progress` / `restore-progress` | Bookkeeping | — | — | — | File I/O around `.bdk/`. |
 | `create-adr` | Output document | — | — | Add `architecture` | ADRs document architectural decisions; arch rules give the reviewer's lens. |
-| `create-fixture` | Output document | — | — | — | Generates test fixtures; mechanical. |
 | `update-docs` | Output document | — | Add `tier-explore` | — | Compares docs to code; needs exploration. |
 | `graphviz-docs-compiler` | Tool wrapper | — | — | — | Compiles `.dot` → SVG. No analysis. |
-| `graph-explore` | Output document | (inherent — graph-only) | — | — | Per `.claude/rules/fragment-system.md`: graph-only skills don't get chain migration. |
-| `graph-debug` | Output document | (inherent — graph-only) | — | — | Same. |
-| `graph-review` | Output document | (inherent — graph-only) | — | — | Same. |
-| `graph-refactor` | Output document | (inherent — graph-only) | — | — | Same. |
 
 ### Cross-cutting observations from the audit
 
@@ -527,11 +499,9 @@ Skills that ARE orchestrators (dispatch subagents) and skills that produce outpu
 
 2. **`create-plan` hardcodes `inject-rules.py code-quality` and lacks `architecture`.** Generalize to a marker loop (mirroring `cr`'s pattern), then add markers for `code-quality`, `architecture`, and future `design-patterns` — a one-time refactor that makes future rules zero-touch.
 
-3. **`refactor` skill currently mentions Gang of Four inline (lines 4, 24, 27).** Replace inline mentions with `<!-- INJECT: design-patterns -->` once that rule file exists. Eliminates duplication between rule file and skill prose.
+3. **No agent currently reads `tier-impact` despite `impact.chain.json` existing.** Worth adding to `fixer` and `implementer` — they both reason about blast radius.
 
-4. **No agent currently reads `tier-impact` despite `impact.chain.json` existing.** Worth adding to `fixer`, `implementer`, `step-simulator` — they all reason about blast radius.
-
-5. **`design` should know architecture and design-patterns rules.** The skill currently injects `architecture` only; adding `design-patterns` would tighten its output toward project conventions.
+4. **`design` should know architecture and design-patterns rules.** The skill currently injects `architecture` only; adding `design-patterns` would tighten its output toward project conventions.
 
 6. **`graph-*` skills are deliberately frozen.** They only make sense when `code-review-graph` is enabled, so they hardcode graph tools instead of going through the chain mechanism. Don't migrate them.
 

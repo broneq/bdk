@@ -154,6 +154,13 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 | `features.react` | `settings.features.react == true` |
 | `features.code-review-graph` | `settings.features.code-review-graph == true` |
 | `languages[typescript]` | `"typescript" in settings.languages` |
+| `tool.lavish-axi` | an executable named `lavish-axi` is on `PATH` |
+
+The dotted spelling of `tool.` is the only accepted one. `tool[name]` is parsed by the array rule as a
+lookup in a nonexistent `tool` list and silently evaluates false - it never errors, so the condition
+reads as "tool absent" forever. Pair `tool.<binary>` with the matching `features.<flag>`: the flag says
+the user wants it, the probe says the machine has it.
+
 
 ## Examples
 
@@ -170,6 +177,12 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 - Put conditional fragments in `fragments/` subdir of the skill — see `.claude/rules/inject-fragments.md`
 - Use `--then-text` only for short snippets (1-2 lines); use `--then` + file for anything longer
 - Missing `.bdk/settings.json` = silent (exit 0) — graceful for projects not using BDK
+- A **false** condition is silent; a **broken** one is not. Unknown condition syntax, a missing `--then`
+  file, or a bad chain prints `[bdk-inject-error] <desc>` to **stdout** and still exits 0. That is
+  deliberate: a `!`...`` block captures stdout only and ignores the exit code, so stderr + exit 1 would
+  render a broken injection as an empty one. Same contract in `inject-rules.py` and
+  `inject-language-rules.py`; `render_startup.py` is exempt because it runs from a hook, where stderr
+  is visible.
 - Settings file searched upward from cwd — no need to specify path in skills
 
 ## Programmatic API

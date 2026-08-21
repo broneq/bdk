@@ -82,13 +82,9 @@ uv run pytest
 
 Dev dependencies (`pytest`) are declared in `pyproject.toml` under `[dependency-groups] dev` — uv installs them automatically on first run.
 
-Test files use `*.test.py` naming (e.g. `check.test.py`) alongside `test_*.py`. Both patterns are picked up automatically.
+Both `test_*.py` and `*.test.py` are collected (see `[tool.pytest.ini_options] python_files` in `pyproject.toml`); new tests should use `test_*.py`.
 
-### Hook tests
-
-| Hook | Test file |
-|------|-----------|
-| `is-skill-exist` | `tests/hooks/is-skill-exist/check.test.py` |
+Tests mirror the layout of what they cover: `tests/unit/scripts/`, `tests/unit/hooks/<hook-name>/`, `tests/unit/skills/<skill-name>/`, `tests/unit/agents/`, `tests/unit/fragments/`. Hook tests therefore live at `tests/unit/hooks/is-skill-exist/test_check.py`, not under a top-level `tests/hooks/`.
 
 ---
 
@@ -155,5 +151,5 @@ Fragments are conditional Markdown files injected into skills at load time.
 
 ### When NOT to Use Chains
 
-- **Graph-only skills** (`graph-explore`, `graph-debug`, `graph-review`, `graph-refactor`): these require code-review-graph by design; no chain migration applies
-- **Agents**: static markdown, no shell execution at load time; use body text subsections instead
+- **Graph-only skills**: a skill that requires code-review-graph by design has no lower tier to fall back to; no chain migration applies
+- **Agents**: static markdown, no shell execution at load time; preload a `bdk-tier-*` meta-skill via `skills:` frontmatter instead

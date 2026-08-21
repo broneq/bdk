@@ -2,11 +2,14 @@
 
 Use this layout when writing `.bdk/verify-plan/<plan-slug>-verification.md`. Section names map 1:1 to the YAML `checks:` keys returned by `bdk:plan-verifier`.
 
+The **Plan sha256** line is load-bearing, not decoration: `/bdk:subagent-execute-plan` reads it back and compares it against a fresh `hash-plan` of the file it is about to execute. Omit it and the executor reports the plan as unverified.
+
 ```markdown
 # Plan Verification Report: <plan-slug>
 
 **Date**: YYYY-MM-DD
 **Plan**: `<path-to-plan-file>`
+**Plan sha256**: `<full hash from bdk_run_state.py hash-plan>`
 **Verdict**: PASS | PASS_WITH_WARNINGS | FAIL
 **Iterations**: N/2
 **Overall confidence**: 0.00–1.00

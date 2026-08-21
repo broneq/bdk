@@ -179,7 +179,10 @@ def test_unknown_mode_warns_and_extends(tmp_path, capsys):
     result = resolve_language_rule("react", cwd=project, plugin_root=plugin_root)
 
     assert result == "default\n\nuser"
-    assert "unknown mode" in capsys.readouterr().err
+    captured = capsys.readouterr()
+    assert "[bdk-inject-error]" in captured.out
+    assert "unknown mode" in captured.out
+    assert captured.err == ""
 
 
 # ---------- resolve_all ----------
@@ -288,7 +291,7 @@ def test_cli_no_settings_silent_exit_zero(tmp_path):
     assert proc.stdout == ""
 
 
-def test_cli_missing_user_file_exits_one(tmp_path):
+def test_cli_missing_user_file_reports_on_stdout(tmp_path):
     plugin_root = tmp_path / "plugin"
     _write_default(plugin_root, "react", "default")
     project = tmp_path / "project"
@@ -300,16 +303,19 @@ def test_cli_missing_user_file_exits_one(tmp_path):
 
     proc = _run_cli([], cwd=project, plugin_root=plugin_root)
 
-    assert proc.returncode == 1
-    assert "user file not found" in proc.stderr
+    assert proc.returncode == 0
+    assert "[bdk-inject-error]" in proc.stdout
+    assert "user file not found" in proc.stdout
+    assert proc.stderr == ""
 
 
-def test_cli_too_many_args_exits_one(tmp_path):
+def test_cli_too_many_args_reports_on_stdout(tmp_path):
     plugin_root = tmp_path / "plugin"
     project = tmp_path / "project"
     project.mkdir()
 
     proc = _run_cli(["a", "b"], cwd=project, plugin_root=plugin_root)
 
-    assert proc.returncode == 1
-    assert "Usage" in proc.stderr
+    assert proc.returncode == 0
+    assert "[bdk-inject-error]" in proc.stdout
+    assert proc.stderr == ""

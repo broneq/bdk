@@ -112,6 +112,8 @@ Add tests for meaningful gaps. **No padding.**
 
 Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 
+`test-tools` may list more than one tier (e.g. a fast unit-test command and a slower e2e/integration one). Use the tier matching the test cases you just wrote, scoped to `{test_file_path}` — **never the bare full-suite form of any tier**. If the tier you need can't be invoked scoped to a single file/spec, stop and return `Status: BLOCKED` rather than defaulting to a full run; the coordinator's end-of-plan gate is the only place a full suite runs.
+
 Spawn a fresh `/bdk:test-runner` agent using injected command above (fall back to detecting from project context if unavailable):
 
 ```
@@ -156,4 +158,5 @@ Implement per plan task. Focused on passing tests — no extra features.
 - ❌ Writing implementation before tests exist
 - ❌ Forcing negative test when no real failure mode exists
 - ❌ Hardcoding test commands — always detect project's test runner
+- ❌ Falling back to a bare full-suite command (any tier) in GATE 2/4 because scoping "wasn't obvious" — escalate as `BLOCKED` instead; full-suite runs belong only to the coordinator's end-of-plan gate
 - ❌ Accepting "re-read and confirm" as a test case for a doc-only task — that's a manual step. Reject the plan task and ask `/bdk:create-plan` to rewrite with grep-able / file-presence assertions.

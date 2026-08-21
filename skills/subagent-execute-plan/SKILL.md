@@ -10,7 +10,7 @@ effort: high
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[plan-path]"
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(git *) Workflow
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(git *) Bash(cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/*) Workflow
 ---
 
 # Subagent-Execute-Plan (Coordinator)
@@ -19,7 +19,16 @@ allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(git *) Workflo
 
 This skill is a **coordinator only**. It holds plan state, builds an execution schedule, and dispatches subagents. It never edits files, never runs tests, never reads source code. Subagents do all work.
 
-**Why coordinator-only:** isolated context per subagent → no pollution. The coordinator's context stays small (plan, TaskList, last subagent return) so it can run a long plan without hitting its own context limit. Subagents do the heavy lifting and discard their context when they return.
+The coordinator's own mechanical work — `git add`, `git commit`, and every state mutation — goes through git and `scripts/bdk_run_state.py`. Those are judgment-free bookkeeping, not editing.
+
+**Why coordinator-only:** isolated context per subagent → no pollution. The coordinator's context stays small (a slice of the plan, the run manifest, the last subagent return) so it can run a long plan without hitting its own context limit. Subagents do the heavy lifting and discard their context when they return.
+
+**Where run state lives.** The plan file is immutable: its sha256 is the run's identity. Progress lives in two places:
+
+- **Git commit trailers** (`BDK-Run:`, `BDK-Group:`) — the durable ground truth. They survive a crash, a fresh session, a deleted `.bdk/`, and a rebase.
+- **A run manifest** at `.bdk/runs/<run-id>.json` — a cache that makes resume cheap.
+
+Both are mediated by `scripts/bdk_run_state.py`, the only thing that reads or writes the manifest. When the two disagree, git wins and the script corrects the manifest. Never read or write that JSON directly.
 
 **Core loop:**
 
@@ -76,18 +85,49 @@ Reviewer / verification subagents have their own return formats — see `referen
    - File paths the task touches
 3. **Branch check.** If on `main` / `master`, stop with error. Coordinator never auto-switches branches.
 4. **Working tree check.** `git status --porcelain` — if dirty, stop with error and list dirty paths. Refuse to commingle uncommitted user work with plan execution.
-5. **Record `BASE_SHA`.** `git rev-parse HEAD` → store as a coordinator-local variable. Used by Step 4a (`BASE_SHA..HEAD`) and Step 3g declared-vs-actual reconciliation.
-6. **Resume detection.** If a TaskList already exists for this plan slug (entries titled `[Group N] Task X.Y …`), load it and skip to the first `pending` group. Else rebuild from plan in Step 2.
-7. **Spawn `bdk:explorer`** to compute parallel groups (Step 1) — only if not resuming.
-8. **Build TaskList** (Step 2) — only if not resuming.
-9. **Print summary:**
+5. **Check the verification stamp.** Read `.bdk/verify-plan/<plan-slug>-verification.md`. Compare the `Plan sha256:` it records against `bdk_run_state.py hash-plan {plan-path}`.
+
+   ```bash
+   python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py hash-plan {plan-path}
+   ```
+
+   | Stamp | Meaning | Action |
+   |---|---|---|
+   | present, hash matches | this exact plan was verified | `stamped` |
+   | present, hash differs | the plan changed after verification | `stale` |
+   | absent | never verified | `missing` |
+
+   `stale` and `missing` **warn and continue**. Do not stop: skipping verification is the user's call to make, and blocking here would make the executor unusable on a hand-written plan. Report the verdict on the `Verification:` line of the summary below so it is visible rather than buried in a warning.
+
+6. **Register the run.** Compute the run id, then `init`:
+
+   ```bash
+   python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py run-id --plan {plan-path}
+   python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py init \
+     --run {run-id} --plan {plan-path} \
+     --base-sha $(git merge-base HEAD origin/HEAD || git merge-base HEAD main) \
+     --session ${CLAUDE_SESSION_ID}
+   ```
+
+   `init` is the resume path too — it is idempotent. It returns `resumed`, `groups_done`, `base_sha`, and `notes`.
+
+   - **`resumed: false`** → fresh run. Spawn `bdk:explorer` for groups (Step 1).
+   - **`resumed: true`** → run `resume` to get `next_group`, then spawn `bdk:explorer` for groups (the grouping is not persisted; it is re-derived from the immutable plan, which cannot have changed without `init` warning about it) and skip forward to `next_group`.
+   - **Refusal naming another session** → that run is held elsewhere. Report the message verbatim and stop. Re-invoke with `--force` **only** when the user confirms the other session is gone; `--force` prints exactly what it took over.
+   - **Any `notes`** → print them. They cover a `.gitignore` that had to be written, a changed plan file, and groups recovered from git that the manifest had lost.
+
+   The base SHA is a merge-base, not `HEAD`: it must stay fixed for the life of the run, since Step 4a reviews `base_sha..HEAD` and `resolve-range` anchors deltas to it. It lives in the manifest rather than a coordinator variable so a crash cannot lose the review baseline.
+
+7. **Print summary:**
 
    ```
    [subagent-execute-plan] Plan loaded: {path}
-     Resume: {yes|no}
+     Resume: {yes, from group N|no}
+     Verification: {stamped|stale|missing}
      Tasks: {N}
      Parallel groups: {G}  (e.g. [1.1,1.2] [1.3] [2.1,2.2,2.3] [3.1])
      Base SHA: {short-sha}
+     Manifest: .bdk/runs/{run-id}.json
      Worktree mode: same-worktree (disjoint files within group)
      Test/lint cadence: orchestrator judgment per group (max 2 consecutive skips)
    ```
@@ -110,9 +150,18 @@ The explorer returns the JSON envelope defined in `references/explorer-contract.
 
 ---
 
-## Step 2 — Build TaskList
+## Step 2 — Hold the schedule in context
 
-One `TaskCreate` per task, all `pending`. Track group membership in the task content (e.g. `[Group 1] Task 1.1 — Add lineChild group spec test`). The coordinator may add **dynamic** tasks during execution: verify-batch, fix-lint, fix-test. Add them as new TaskList entries when spawned, mark `completed` when their subagent returns success.
+There is nothing to build. Group membership comes from the immutable plan (or the explorer's derivation of it) and progress comes from the manifest, so the schedule needs no separate mirror — and a mirror is exactly what would drift.
+
+Keep the group list in context for the run and announce each transition:
+
+```
+[subagent-execute-plan] Group {n}/{G}: tasks {ids} — dispatching
+[subagent-execute-plan] Group {n}/{G}: committed {short-sha}
+```
+
+Ad-hoc dispatches inside a group (verify-batch, fix-lint, fix-test) are not tracked anywhere. They are transient: their result either lands in the group's commit or turns into a `BLOCKED` stop. Only **group** completion is durable state, and it is recorded once, at commit time, in Step 3h.
 
 ---
 
@@ -171,7 +220,7 @@ For a multi-task group, send **one message with multiple `Agent` calls**. Each c
 - Test cases block
 - File paths the task touches
 - One-paragraph architectural context
-- Branch name and `BASE_SHA`
+- Branch name and the run's `base_sha` (the value `get`/`resume` returned in Step 0.6 - read it from the manifest, never re-derive it, or a mid-run branch move silently shifts the baseline)
 - **Explicit instruction**: "Do not run final lint or test verification. The coordinator schedules those separately. Return the YAML envelope per the preloaded `bdk-implementer-return-contract` meta-skill (already on your `skills:` list) — final message MUST be that YAML, no prose before or after."
 
 For a single-task group: foreground or background — both fine. Background is cheaper if the orchestrator has nothing to do meanwhile.
@@ -187,7 +236,7 @@ Each implementer returns one of:
 | `DONE` | Record `files_changed`. Task is ready for verification. |
 | `DONE_WITH_CONCERNS` | Read concerns. Correctness/scope concern → queue a fixer. Observation only → log, proceed. |
 | `NEEDS_CONTEXT` | `SendMessage(to: agent_id, …)` with the missing context (cache likely warm). |
-| `BLOCKED` | Diagnose: bad context → SendMessage; reasoning gap → spawn fresh implementer one model tier up; task too large → split task in TaskList, re-dispatch first slice; plan wrong → log and stop with explicit error. |
+| `BLOCKED` | Diagnose: bad context → SendMessage; reasoning gap → spawn fresh implementer one model tier up; task too large → split it in context and re-dispatch the first slice (the plan is immutable, so the split lives in the coordinator's head for this group only and is not recorded anywhere); plan wrong → log and stop with explicit error. |
 | (malformed return) | Treat as `BLOCKED` with reason "malformed return." Re-dispatch fresh, same tier. |
 
 Max 3 re-dispatch cycles per task before stopping the whole skill with an error report.
@@ -201,7 +250,7 @@ Invoke the **`Workflow`** tool with one self-contained script that fans out over
 **Authoring rules for the script:**
 
 - **One `meta` block** (pure literal): `name: 'execute-wave-{N}'`, a one-line `description`, and `phases` matching the `phase()` calls below.
-- **`pipeline()` over the tasks**, not `parallel()` — each task flows implement → (optional) verify independently, no barrier. Pass the per-task data (full task text, `Test cases:` block, file paths, branch, `BASE_SHA`) as the `args` input — never make the script re-read the plan.
+- **`pipeline()` over the tasks**, not `parallel()` — each task flows implement → (optional) verify independently, no barrier. Pass the per-task data (full task text, `Test cases:` block, file paths, branch, the manifest's `base_sha`) as the `args` input — never make the script re-read the plan.
 - **Stage 1 — implement:** `agent(prompt, { agentType: 'bdk:implementer', phase: 'Implement', schema: RETURN_SCHEMA })`. The schema is a JSON-Schema transcription of the YAML return contract (`references/return-contract.md`): `status` enum `DONE|DONE_WITH_CONCERNS|NEEDS_CONTEXT|BLOCKED`, `files_changed[]`, `concerns[]`, `reason`. Pick the model per task with the same matrix as 3a via `model:`.
 - **Stage 2 — fix (conditional):** if a task returns `DONE_WITH_CONCERNS` with a correctness concern or `BLOCKED`, route it to `agent(..., { agentType: 'bdk:fixer', phase: 'Fix', schema: RETURN_SCHEMA })` inside the same pipeline item. A task that stays `BLOCKED` after one fixer attempt resolves to `null` for that item — do not loop inside the script.
 - **No nested verification inside the script for tests/lint** — the coordinator still owns 3d–3f. The script returns the union of `files_changed` and any unresolved `BLOCKED`/`NEEDS_CONTEXT` items.
@@ -235,7 +284,7 @@ After all implementers in the group return `DONE`, decide whether to verify. No 
 In **parallel** (one message, multiple Agent calls):
 
 - `bdk:static-analyse` — pass the union of `files_changed` reported by implementers in this group.
-- `bdk:test-runner` — pass relevant test paths if obvious from the group; otherwise full suite.
+- `bdk:test-runner` — pass the group's `files_changed`, scoped to the project's fast/unit-tier test command only (per `.bdk/settings.json` `test-tools`). If the group added or modified spec files belonging to a slower e2e/integration-tier test command, also pass those exact spec paths for that tier. **Never fall back to a bare full-suite invocation of any tier here** — if scoping isn't obvious, ask `bdk:explorer` which test files cover the changed paths rather than defaulting to "run everything." The one and only full-suite run happens once, at 4d.
 
 Both background. Wait for both.
 
@@ -254,18 +303,36 @@ After fixers/SendMessage rounds return → **re-engage the same verifiers** via 
 
 ### 3g. Commit group
 
+The coordinator is the **only** committer. Implementers and fixers leave their work uncommitted; if you find a subagent committed anyway, that is a bug in its prompt — reconcile and continue, then report it.
+
 When the group passes verification (or was skipped per 3d):
 
-1. **Reconcile declared-vs-actual files.** Run `git diff --name-only ${BASE_SHA_OR_LAST_COMMIT}` and compare to the union of `files_changed` returned by implementers. Log any mismatch as a warning (scope creep or undeclared edits) but proceed.
-2. Stage exactly the files in the actual diff for this group:
-   ```
+1. **Reconcile declared-vs-actual files.** Run `git diff --name-only HEAD` (the tree is clean at every group boundary, so `HEAD` is the previous group's commit, or `base_sha` for the first group) and compare to the union of `files_changed` returned by implementers. Log any mismatch as a warning (scope creep or undeclared edits) but proceed.
+2. Stage exactly the files in the actual diff for this group, and commit **with the run trailers**:
+
+   ```bash
    git add <reconciled-file-list>
-   git commit -m "<group summary>"
+   git commit -m "<group summary>" \
+     --trailer "BDK-Run={run-id}" \
+     --trailer "BDK-Group={n}"
    ```
 
-The coordinator runs `git` directly — that is the one tool category it owns (mechanical, no judgment about code).
+   Use `--trailer`, never repeated `-m`. Git parses only the **last** paragraph of a message as trailers, so `-m "BDK-Run: …" -m "BDK-Group: …"` produces two separate paragraphs and git recognises at most one of them as a trailer. The failure is silent: the commit looks right to a human and is invisible to `bdk_run_state.py`.
 
-`TaskUpdate` all group tasks to `completed`. Continue to next group.
+   These trailers are what makes the run survivable. They are the only record that outlives a deleted manifest or a rebase, and `resolve-range` recovers a rewritten review boundary from `BDK-Group` alone. A group committed without them cannot be recovered.
+
+### 3h. Record the group
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py group-done \
+  --run {run-id} --group {n} --commit HEAD
+```
+
+One call per **group**, never per task — this is the only per-group state mutation, and keeping it at group granularity is what keeps the bookkeeping off the critical path.
+
+If the result carries a note about a missing trailer, the commit in 3g was made wrong. Fix the commit (`git commit --amend --trailer …`) and re-run `group-done` before moving on, rather than continuing with an unrecoverable group.
+
+Continue to the next group.
 
 ---
 
@@ -275,14 +342,57 @@ All groups committed → run **once**, organized in two phases. Phase A converge
 
 ### Phase A — Code review + triage
 
-#### 4a. `bdk:code-reviewer` on `${BASE_SHA}..HEAD`
+#### 4a. Run the review engine
+
+Read the engine now, not earlier - this is the one place in the run that needs it, and Step 0 through Step 3 have no use for it:
+
+```bash
+cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/review-engine.md
+```
+
+Following that reference is **not** invoking `/bdk:cr`. The Rules section below forbids subagent-spawning skills *inside subagents*; you are the coordinator, and reading a reference doc spawns nothing. `cr` owns the engine because it is the skill whose whole purpose is review; you are the second caller of the same logic, and there is exactly one copy of it on purpose.
+
+Fill the request:
+
+```
+mode:        autonomous
+run_id:      {run-id}
+base_sha:    {manifest base_sha}
+head_sha:    $(git rev-parse HEAD)
+range_mode:  full
+group:       null
+scaling:     from the resolved range
+focus:       null
+```
+
+`range_mode: full` because this is the end-of-plan pass: a later group can break an earlier, already-reviewed one, so the whole `base_sha..HEAD` range is in scope. The engine's caller-specific skips apply - do **not** dispatch `bdk:static-analyse` or `bdk:test-runner` here. You ran them per group at 3e and run the full suite once at 4d; a third pass buys nothing and doubles the review's wall-clock.
+
+The engine returns a flat findings array. You do not render the 13-section report - that is `cr`'s output shape. Triage the array instead.
 
 #### 4b. Triage findings
 
-- `CRITICAL` / `HIGH` → spawn `bdk:fixer` per finding batch (group by file or by severity). After fixer commits, re-spawn `bdk:code-reviewer`.
-- `MEDIUM` / `LOW` → log to `.bdk/cr/{branch}-summary.md`. Do not auto-fix — risk of overcorrection on debatable findings.
+- `CRITICAL` / `HIGH` → spawn `bdk:fixer` per finding batch (group by file or by severity). The fixer leaves its work uncommitted; commit it yourself with the trailers of the group being fixed, then re-spawn `bdk:code-reviewer`.
+- `MEDIUM` / `LOW` → record each one:
+
+  ```bash
+  python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py findings-add \
+    --run {run-id} --severity MEDIUM --category {cat} \
+    --file {path} --line {n} --problem {one-line summary}
+  ```
+
+  Do not auto-fix — risk of overcorrection on debatable findings. Recording them is what stops the next review pass from re-reporting findings you deliberately declined: `findings-list --format prompt` emits the suppression block for the next reviewer prompt.
 
 Up to 2 review-fix cycles. Remaining `CRITICAL` after cycle 2 → stop with error.
+
+Once Phase A converges, record the watermark:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py review-done \
+  --run {run-id} --reviewed-sha $(git rev-parse HEAD) \
+  --counts {C},{H},{M},{L}
+```
+
+After a fixer round, `HEAD` has moved - pass the sha you actually reviewed last, which is the post-fix `HEAD`. The script refuses the literal string `HEAD` and refuses any sha that is not a descendant of the current watermark; both refusals mean the range was wrong, so fix the call rather than working around it.
 
 ### Phase B — Parallel final pass (architecture review || final tests)
 
@@ -296,11 +406,15 @@ Spawn only if **any** of:
 - Plan introduced new layers, public APIs, or cross-module dependencies
 - Any task had architectural surface (judgment call from plan text)
 
+Dispatch it per the engine's cumulative cohort: pass `cumulative_files`, the whole `base_sha..HEAD` set, never a delta. A layer violation is a property of the branch, so a delta-scoped architecture review reports clean while the violation stands. Prompt structure in `${CLAUDE_PLUGIN_ROOT}/skills/cr/references/reviewer-prompt-template.md`.
+
 Findings handled like 4b: `CRITICAL` / `HIGH` → `bdk:fixer`, then re-spawn `bdk:architecture-reviewer`. Up to 2 review-fix cycles.
 
 If none of the conditions hold, **skip** the spawn — log `architecture_review: skipped:<reason>` in the summary. Phase B then degenerates to just the final test-runner.
 
 #### 4d. Final `bdk:test-runner` (full suite)
+
+The only point in this skill where a bare, unscoped full-suite command runs for **every** tier in `test-tools`, including slower e2e/integration ones — deliberately placed here, after Phase A's code review has already converged, not per-group. Do not move this earlier or add an equivalent full-suite fallback elsewhere in this skill.
 
 Must pass. On failure, spawn `bdk:fixer` with failures, re-run. Up to 3 cycles.
 
@@ -308,11 +422,13 @@ Must pass. On failure, spawn `bdk:fixer` with failures, re-run. Up to 3 cycles.
 
 ### 4e. Print summary, stop
 
-Output exactly this fenced block (downstream tooling parses it). Keys are stable; values are scalars or short comma-lists.
+Output exactly this fenced block. No parser consumes it today - it is a stable contract for a future one, and a fixed shape a human can diff between runs. Keys are stable; values are scalars or short comma-lists. Do not add keys on the assumption something reads them.
 
 ```
 [subagent-execute-plan-summary]
 plan: {path}
+run: {run-id}
+manifest: .bdk/runs/{run-id}.json
 base_sha: {short-sha}
 head_sha: {short-sha}
 tasks_completed: {N}
@@ -336,6 +452,8 @@ context_stop_pct: 50
 status: success|partial|error
 ```
 
+`review_medium_logged` and `review_low_logged` come from `findings-list --run {run-id}`, not from your own recollection of Phase A - the manifest is the record, and counting from context is how the two drift.
+
 The coordinator does not push or open PRs. That belongs to a downstream skill (`/bdk:commit`, the user's PR workflow).
 
 ---
@@ -346,24 +464,25 @@ The coordinator monitors its own context usage between groups (not mid-group —
 
 - **Threshold:** **≥ 50%** of coordinator context used at the boundary between two groups → finish the in-flight group (commit per 3g), do **not** dispatch the next group.
 - **Action:**
-  1. Run `/bdk:save-progress {plan-slug}-context-stop` so the run is resumable.
+  1. Nothing to save. The last group's commit and its `group-done` call already made the run resumable - that is the point of committing per group instead of at the end.
   2. Print the paused summary block:
 
      ```
      [subagent-execute-plan-paused]
      plan: {path}
+     run: {run-id}
+     manifest: .bdk/runs/{run-id}.json
      reason: context_stop
      threshold_pct: 50
      context_used_pct: {observed}
      groups_committed: {G}
      groups_remaining: {R}
      resume: /bdk:subagent-execute-plan {plan-path}
-     save_progress_slug: {plan-slug}-context-stop
      ```
   3. Stop.
-- **Resume:** Re-invoke `/bdk:subagent-execute-plan {plan-path}`. Step 0.6 (resume detection) finds the existing TaskList and picks up at the first `pending` group.
+- **Resume:** Re-invoke `/bdk:subagent-execute-plan {plan-path}`. Step 0.6 reads the manifest, reconciles it against the commit trailers, and returns the first group with no `BDK-Group` trailer of its own. A resume in a **new session** hits the session guard: the manifest still holds the dead session's id, so pass `--force` to take the run over (`init` prints what it took over, so the takeover is visible rather than silent).
 
-**Why 50% (and why this differs from `execute-plan`'s 40%):** the coordinator's context is mostly TaskList + last subagent return envelope + a slice of the plan — light per tick. `execute-plan` runs the implementation inline and accumulates file reads, test output, and edit diffs in its own context, so its threshold is lower. Both are documented constants — not user-tunable in this version. Revisit if reports come in (the prior observation of "stops at 50%" tracked in `docs/BUGS.md` #7 was intentional but undocumented; this section closes that gap).
+**Why 50%:** the coordinator's context is the plan slice plus the last subagent return envelope - light per tick, but a long plan is many ticks, and the coordinator must have room left to *finish* a group after the boundary check, including a fixer round it did not anticipate. Stopping at half leaves that room. This is a documented constant, not user-tunable in this version; revisit if reports come in.
 
 The threshold actually used this run is surfaced in the Step 4e summary as `context_stop_pct: 50`.
 
@@ -375,8 +494,8 @@ Skill is autonomous, but not uninterruptible. If the user sends a message mid-ru
 
 1. Finish any **in-flight** subagents (do not cancel — they may already hold dirty state).
 2. Do **not** dispatch the next group.
-3. Run `/bdk:save-progress {plan-slug}-coordinator-interrupt` so the run is resumable.
-4. Surface the user's message + current progress, then stop.
+3. If the in-flight group completed and passed verification, commit it per 3g and record it per 3h. If it did not, leave the work in the tree and say exactly that, naming the files. Do **not** discard it yourself - that is the user's call, not yours. Point out that Step 0's clean-tree precondition means the next run cannot start until they either keep the work (`git commit`, but then it belongs to no group and the run's ranges will not account for it) or drop it (`git checkout -- .`), and that dropping is the clean option since the next run re-does that group from scratch.
+4. Surface the user's message + current progress (including the run id and which group is incomplete), then stop.
 
 The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.6.
 
@@ -384,14 +503,15 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 
 ## Rules
 
-- Coordinator never edits files, runs tests, runs lint, or reads source. It runs `git` (status, rev-parse, diff, add, commit) and dispatches subagents (directly, or via a `Workflow` script for a `workflow`-strategy group).
+- Coordinator never edits files, runs tests, runs lint, or reads source. It runs `git` (status, rev-parse, diff, add, commit), calls `scripts/bdk_run_state.py`, and dispatches subagents (directly, or via a `Workflow` script for a `workflow`-strategy group). Those two command families are the same category: mechanical, deterministic, no judgment about code.
+- Run state is never edited by hand. Every read and write of `.bdk/runs/` goes through `bdk_run_state.py`; the manifest is a cache and the commit trailers are the ground truth, so a hand-edit desyncs from git and is silently overwritten on the next reconcile.
 - Execution strategy is chosen per group in Step 3a-S: plan-declared `strategy:` tag is authoritative input, the executor override rubric may flip it, default is `subagents`. A `workflow` group requires file-disjoint tasks at `confidence ≥ 0.6` and >1 task — otherwise force `subagents`.
 - The `Workflow` script implements + optionally fixes only. Verification (3d–3f) and commits (3g) stay with the coordinator. Unresolved `BLOCKED`/`NEEDS_CONTEXT` items from a Workflow fall back to a single hand-orchestrated implementer each.
 - Implementer subagents **do not** run final lint or test verification. They do TDD red-green for their own task and stop. Verification is a separate subagent the coordinator schedules.
 - Parallel implementers are allowed only when `bdk:explorer` confirms file-disjoint sets within the group AND `confidence ≥ 0.6`.
 - For verification failures: try `SendMessage` to the original implementer first if cache likely warm and scope is narrow. Fall back to spawning `bdk:fixer`.
 - Verifiers (`bdk:static-analyse`, `bdk:test-runner`) are reused via `SendMessage` across verify-fix cycles **within a group**; fresh spawn only on cache miss. Never reuse verifiers across groups — each group's `files_changed` set differs.
-- Subagents may invoke skills (e.g. `/bdk:test-driven-development`, `/bdk:save-progress`, `/bdk:restore-progress`) but cannot spawn nested subagents. Skills that themselves spawn subagents (`/bdk:execute-plan`, `/bdk:cr`) are forbidden inside subagents — coordinator handles those flows directly.
+- Subagents may invoke skills (e.g. `/bdk:test-driven-development`) but cannot spawn nested subagents. Skills that themselves spawn subagents (`/bdk:cr`, `/bdk:debug`) are forbidden inside subagents — the coordinator handles those flows directly.
 - Reviewer findings → fixer subagent. Coordinator never patches code itself.
 - Max 3 re-dispatch cycles per task. Max 3 verify-fix cycles per group. Max 2 review-fix cycles at end-of-plan. Max 2 consecutive groups skipping verification.
 
@@ -421,4 +541,5 @@ The next `/bdk:subagent-execute-plan {plan-path}` invocation resumes via Step 0.
 - `references/return-contract.md` — REQUIRED YAML envelope every implementer/fixer subagent must emit. Source of truth.
 - `references/explorer-contract.md` — REQUIRED JSON envelope `bdk:explorer` returns for group planning. Source of truth.
 - `references/model-selection.md` — when to pick haiku vs sonnet vs opus for the implementer.
-- `references/dispatch-templates.md` — exact dispatch prompts for explorer, implementer, fixer, verification, and reviewers, plus the **Workflow wave dispatch** script skeleton + `RETURN_SCHEMA` for the `workflow` strategy. Cites the two contracts above.
+- `references/dispatch-templates.md` — exact dispatch prompts for implementer, fixer, and verification subagents, plus the **Workflow wave dispatch** script skeleton + `RETURN_SCHEMA` for the `workflow` strategy. Cites the two contracts above. `bdk:explorer` has no template: dispatch it ad hoc and hold it to `explorer-contract.md`.
+- `${CLAUDE_PLUGIN_ROOT}/skills/cr/references/review-engine.md` — the shared review process for Step 4a, owned by `/bdk:cr`. Read it at 4a, not at load: it is needed once, at the end of the run, and the coordinator is protecting a context budget. Reviewer dispatch prompts live beside it in `reviewer-prompt-template.md`.

@@ -7,7 +7,7 @@ effort: max
 user-invocable: true
 disable-model-invocation: true
 context: main
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(lavish-axi *) AskUserQuestion
 ---
 
 # Design
@@ -136,6 +136,8 @@ Iterate through these dimensions. One short turn per dimension; do not gate each
 
 Use `AskUserQuestion` when the answer space is bounded (consistency model, write path, storage choice, etc.). Free-form when genuinely open.
 
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then ${CLAUDE_PLUGIN_ROOT}/fragments/decision-tier/lavish.md`
+
 Always surface **2+ alternative product framings** when there's a real choice (e.g., "notify in-app vs email vs both"). Never single-track.
 
 Proceed to Phase 3 once the user signals the picture matches their intent.
@@ -206,7 +208,7 @@ Run these steps:
 
    Use a compact `erDiagram` (or before/after column table) so the delta is readable on its own. Mark each proposal's migration as **additive / backward-compatible** or **breaking**, and call out backfill, downtime, and rollback implications.
 
-3. **Get explicit approval** via `AskUserQuestion`. Options are the proposals plus an escape hatch:
+3. **Get explicit approval** via `AskUserQuestion` (or the lavish tier above, when injected - the approval gate is the same either way). Options are the proposals plus an escape hatch:
 
    | Header | Options |
    |---|---|

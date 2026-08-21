@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: Implement one plan task end-to-end — TDD red-green, lint-clean, single commit. Receives full task text and test cases inline; never reads the plan file. Spawned by /bdk:subagent-execute-plan.
+description: Implement one plan task end-to-end — TDD red-green, lint-clean, left uncommitted for the coordinator. Receives full task text and test cases inline; never reads the plan file. Spawned by /bdk:subagent-execute-plan.
 model: sonnet
 skills:
   - bdk-tier-search
@@ -49,9 +49,9 @@ Follow the tool-tier and quality-rule guidance from your preloaded skills.
 ## Constraints
 
 - You **cannot** spawn subagents. The Agent tool is unavailable.
-- You **may** invoke skills, including `/bdk:test-driven-development`, `/bdk:save-progress`, and `/bdk:restore-progress`.
-- You **must not** invoke skills that themselves spawn subagents — `/bdk:execute-plan`, `/bdk:cr`, `/bdk:debug` are forbidden inside this agent. Doing so will fail.
-- You write code, run tests, and commit. The coordinator does none of that.
+- You **may** invoke skills, including `/bdk:test-driven-development`.
+- You **must not** invoke skills that themselves spawn subagents — `/bdk:cr` and `/bdk:debug` are forbidden inside this agent. Doing so will fail.
+- You write code and run tests. You **must not** commit — the coordinator commits once per group.
 
 ## Inputs (from coordinator's dispatch prompt)
 
@@ -104,7 +104,7 @@ Fix issues you find before reporting.
 
 When GREEN is verified for your task's tests:
 
-- **Do not** run a full-project lint sweep or full test suite. The coordinator schedules dedicated `bdk:static-analyse` and `bdk:test-runner` subagents for that.
+- **Do not** run a full-project lint sweep or full test suite — for **any** test tier, including slower e2e/integration commands. If your task touched or added e2e/integration spec files, at most run those specific new/modified specs during your own self-check; never the bare full-suite form. The coordinator schedules dedicated `bdk:static-analyse` and `bdk:test-runner` subagents for full-project checks, and the plan's end-of-plan gate is the only place a full suite runs.
 - **Do not** commit. The coordinator commits per group after verification.
 - Leave your changes in the working tree (uncommitted). Report what you changed via the `Files changed:` block.
 
@@ -117,31 +117,12 @@ Stop and escalate when:
 - You have been reading file after file without progress.
 - The task itself looks wrong.
 
-Escalate via `Status: BLOCKED` with: what you are stuck on, what you tried, what kind of help you need.
+Escalate via `status: BLOCKED` with the `blocker` field naming what you are stuck on, what you tried, and what kind of help you need.
 
 ## Report format
 
-End your final message with this exact block:
+Your final message MUST be the YAML envelope from the return contract already preloaded into your context by the `bdk-implementer-return-contract` skill — nothing before it, nothing after it. That schema is the single source of truth; it is not restated here.
 
-```
-Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+Anything else — a prose summary, a partial envelope, malformed YAML — is treated as `BLOCKED` with reason "malformed return" and gets your task re-dispatched from scratch.
 
-Implemented:
-- {bullet list of what you built}
-
-Tests:
-- Wrote: {N} tests in {path}
-- RED verified: yes/no
-- GREEN verified: yes/no — {pass}/{total}
-
-Files changed (uncommitted):
-- {path} ({+lines, -lines})
-
-Self-review findings:
-- {what you fixed during self-review, or "none"}
-
-Concerns / blockers:
-- {anything the coordinator should know — or "none"}
-```
-
-The coordinator parses this block to decide next action. Stick to the structure exactly.
+Put everything you would have written as prose into the envelope's own fields: implementation notes and self-review findings you could not fix go in `concerns`, the missing piece goes in `needs`, the wall you hit goes in `blocker`.

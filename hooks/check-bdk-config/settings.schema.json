@@ -13,10 +13,10 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["python", "javascript", "typescript", "go", "rust", "java", "php", "ruby", "csharp", "dart", "react", "next"]
+        "minLength": 1
       },
       "minItems": 1,
-      "description": "Languages detected in this project"
+      "description": "Languages and frameworks detected in this project. Free-form: an entry only needs a matching rules/languages/<name>.md (shipped or user-supplied) to inject anything. See .claude/rules/language-rules.md."
     },
     "test-tools": {
       "type": "array",
@@ -48,11 +48,49 @@
         "code-review-graph": {
           "type": "boolean",
           "description": "code-review-graph MCP knowledge graph"
+        },
+        "lavish": {
+          "type": "boolean",
+          "description": "Route bundled multi-question decision points through the lavish-axi binary instead of terminal AskUserQuestion. Also requires the binary on PATH; skills check both and fall back silently when either is absent."
         }
       }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/ruleOverride" },
+      "description": "Per-category overrides for BDK's language-agnostic rules in rules/<name>.md. Read by scripts/inject-rules.py. Keys are rule names (code-quality, architecture, design-patterns, security, engineering-judgment)."
+    },
+    "language-rules": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/ruleOverride" },
+      "description": "Per-language overrides for rules/languages/<lang>.md. Read by scripts/inject-language-rules.py. Keys are entries from `languages`."
     }
   },
   "definitions": {
+    "ruleOverride": {
+      "description": "Either a bare path to the override file, or an object choosing how it combines with the BDK default.",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "required": ["path"],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Path to the override file, relative to project root"
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["extends", "replace"],
+              "default": "extends",
+              "description": "extends appends the override to the BDK default; replace discards the default"
+            }
+          }
+        }
+      ]
+    },
     "tool": {
       "type": "object",
       "required": ["type", "command"],

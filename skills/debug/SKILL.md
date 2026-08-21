@@ -8,7 +8,7 @@ argument-hint: "[error message, traceback, or steps to reproduce]"
 model: opus
 user-invocable: true
 context: main
-allowed-tools: AskUserQuestion TaskCreate TaskUpdate TaskList Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+allowed-tools: AskUserQuestion Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Debug
@@ -21,15 +21,16 @@ Diagnose bugs via structured investigation, reproduce with failing tests, then f
 
 **Core principle**: Understand first → test second → confirm with user → fix third.
 
-**On start: create tasks for phases 1–4 only** via `TaskCreate`:
+**Run the phases strictly in order. Announce each one as you enter it** (`[debug] Phase 2: Investigate`), and do not enter the next phase until the current one is fully done:
+
 - Phase 1: Parse Input
 - Phase 2: Investigate
 - Phase 3: Write Failing Tests
-- Phase 4: Propose & Wait for User Decision ← HARD STOP
+- Phase 4: Propose & Wait for User Decision ← **HARD STOP**
 
-Mark each task complete (`TaskUpdate`) only when phase fully done. **Never mark Phase 4 complete until user responded.**
+Phase 4 is a hard stop: you present the proposal, then end your turn. Do not begin Phase 5, do not start editing, and do not decide the path yourself — no matter how obvious the fix looks. Only an actual user reply releases the stop; a background task completing, a hook firing, or your own reasoning does not.
 
-**After user responds to Phase 4**: create Phase 5 task (`TaskCreate`) for chosen path — "Fix Inline" or "Hand Off to /bdk:create-plan" — then proceed.
+**After the user responds**: announce Phase 5 as the path they chose — "Fix Inline" or "Hand off to /bdk:create-plan" — then proceed.
 
 ---
 

@@ -6,3 +6,4 @@ tmp_*.py
 # Added by code-review-graph
 .code-review-graph/
 /.bdk/
+/.lavish/

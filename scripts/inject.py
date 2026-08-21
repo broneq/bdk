@@ -17,8 +17,20 @@ Condition syntax:
     features.react              settings["features"]["react"] is True
     features.code-review-graph  settings["features"]["code-review-graph"] is True
     languages[typescript]       "typescript" in settings["languages"]
+    tool.lavish-axi             an executable named "lavish-axi" is on PATH
 
 Multiple --if flags use AND logic (all must be true).
+
+The dotted spelling of ``tool.`` is mandatory. ``tool[name]`` would be parsed by
+the array rule as a lookup in a nonexistent ``tool`` list and silently evaluate
+false, which is exactly the kind of quiet wrong answer this script must not give.
+
+Failures (unknown condition, missing file, bad chain) print
+``[bdk-inject-error] <description>`` to **stdout** and exit 0. Stdout, because a
+``!`...`` `` block in a skill body captures stdout only - anything on stderr is
+invisible in the rendered skill and the failure reads as an empty condition. Exit
+0, because a nonzero exit from a skill-body injection is not surfaced either.
+A *false* condition is legitimately silent; a *broken* one never is.
 
 Public API (importable):
     from inject import load_settings, evaluate_condition, inject
@@ -29,12 +41,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import sys
 from pathlib import Path
 
-# Matches: features.some-key  OR  languages[value]
+# Matches: features.some-key  OR  tool.some-binary  OR  languages[value]
 _FEATURE_RE = re.compile(r'^features\.([\w-]+)$')
+_TOOL_RE = re.compile(r'^tool\.([\w.-]+)$')
 _ARRAY_RE = re.compile(r'^([\w-]+)\[([\w-]+)\]$')
+
+ERR_PREFIX = "[bdk-inject-error]"
 
 
 def load_settings(start: str | Path | None = None) -> dict | None:
@@ -69,6 +85,13 @@ def evaluate_condition(condition: str, settings: dict) -> bool:  # type: ignore[
             return False
         return bool(features.get(key, False))
 
+    tool_match = _TOOL_RE.match(condition)
+    if tool_match:
+        # Probes PATH, not settings: a feature flag says the user wants the
+        # tool, this says the machine actually has it. Both must hold, so
+        # callers pair `features.x` with `tool.x-binary`.
+        return shutil.which(tool_match.group(1)) is not None
+
     array_match = _ARRAY_RE.match(condition)
     if array_match:
         field, value = array_match.group(1), array_match.group(2)
@@ -79,7 +102,7 @@ def evaluate_condition(condition: str, settings: dict) -> bool:  # type: ignore[
 
     raise ValueError(
         f"Unrecognised condition syntax: {condition!r}. "
-        "Expected 'features.<key>' or '<field>[<value>]'."
+        "Expected 'features.<key>', 'tool.<binary>', or '<field>[<value>]'."
     )
 
 
@@ -131,7 +154,13 @@ def inject_chain(
 
     Each chain entry:
         {"if": ["condition", ...], "then": "relative/path.md"}
+        {"prefer": ["condition", ...], "then": "fallback.md"}
         {"then": "path.md"}  # unconditional fallback
+
+    ``prefer`` uses OR logic and *suppresses* the entry when any of its
+    conditions is true. In ``additive`` mode a plain unconditional entry always
+    injects, so a fallback tier there must guard itself with ``prefer`` listing
+    every higher tier it defers to.
 
     The optional ``header`` is prepended to the result whenever at least one
     chain entry produced content. Paths in chain entries and ``header`` are
@@ -163,12 +192,18 @@ def inject_chain(
 
     for entry in chain:
         conditions = entry.get("if", [])
+        prefer = entry.get("prefer", [])
         then_rel = entry.get("then")
         if then_rel is None:
             raise ValueError(f"inject: chain entry missing 'then' key in {chain_path}")
 
         then_path = base / then_rel if not Path(then_rel).is_absolute() else Path(then_rel)
-        content = inject(conditions=conditions, then_path=then_path, settings=settings)
+        content = inject(
+            conditions=conditions,
+            prefer_conditions=prefer,
+            then_path=then_path,
+            settings=settings,
+        )
 
         if content:
             parts.append(content)
@@ -223,8 +258,8 @@ def main() -> None:
     if args.chain_path:
         # Validate chain file existence before loading settings
         if not Path(args.chain_path).exists():
-            print(f"[BDK inject] inject: chain file not found: {args.chain_path}", file=sys.stderr)
-            sys.exit(1)
+            print(f"{ERR_PREFIX} inject: chain file not found: {args.chain_path}")
+            sys.exit(0)
         settings = (
             load_settings(args.settings_path) if args.settings_path else load_settings()
         )
@@ -233,8 +268,8 @@ def main() -> None:
         try:
             result = inject_chain(chain_path=args.chain_path, settings=settings)
         except (FileNotFoundError, ValueError) as e:
-            print(f"[BDK inject] {e}", file=sys.stderr)
-            sys.exit(1)
+            print(f"{ERR_PREFIX} {e}")
+            sys.exit(0)
         if result:
             print(result, end="")
         sys.exit(0)
@@ -260,8 +295,8 @@ def main() -> None:
             settings=settings,
         )
     except (ValueError, FileNotFoundError) as e:
-        print(f"[BDK inject] {e}", file=sys.stderr)
-        sys.exit(1)
+        print(f"{ERR_PREFIX} {e}")
+        sys.exit(0)
 
     if result:
         print(result, end="")

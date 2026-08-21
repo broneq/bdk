@@ -69,7 +69,7 @@ bdk/
 
 ### Skill-local fragment
 ```markdown
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if languages.react --then ${CLAUDE_SKILL_DIR}/fragments/react.md`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if languages[react] --then ${CLAUDE_SKILL_DIR}/fragments/react.md`
 ```
 
 ### Inline text (≤2 lines)

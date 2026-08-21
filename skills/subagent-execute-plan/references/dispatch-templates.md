@@ -17,7 +17,7 @@ Reviewers (`code-reviewer`, `architecture-reviewer`, `static-analyse`, `test-run
 ## Implementer dispatch
 
 ```text
-Agent tool — subagent_type: "implementer"
+Agent tool — subagent_type: "bdk:implementer"
   [optional] model: "haiku" | "opus"   # omit for default (sonnet)
 
   description: "Implement Task {N}: {short title}"
@@ -48,7 +48,8 @@ Agent tool — subagent_type: "implementer"
     - Branch: {branch-name}
     - Base SHA: {sha-before-task-N}
 
-    Commit your work to this branch. One commit per task.
+    Leave your changes uncommitted in the working tree. The coordinator
+    commits once per group after its own verification.
 
     Return the YAML envelope per the preloaded `bdk-implementer-return-contract` meta-skill. Final message MUST be that YAML — no prose before or after.
 ```
@@ -58,7 +59,7 @@ Agent tool — subagent_type: "implementer"
 ## Fixer dispatch (lint findings)
 
 ```text
-Agent tool — subagent_type: "fixer"
+Agent tool — subagent_type: "bdk:fixer"
   # default model (sonnet) is correct for almost all fixer dispatches
 
   description: "Fix lint issues from Task {N}"
@@ -80,8 +81,8 @@ Agent tool — subagent_type: "fixer"
     - Branch: {branch-name}
     - Base SHA: {current HEAD before fixer}
 
-    Verify by re-running the project's linter on the changed files. Commit
-    with subject: fix(lint): {short summary}
+    Verify by re-running the project's linter on the changed files. Leave
+    the fixes uncommitted — the coordinator commits.
 ```
 
 ---
@@ -89,7 +90,7 @@ Agent tool — subagent_type: "fixer"
 ## Fixer dispatch (test failures)
 
 ```text
-Agent tool — subagent_type: "fixer"
+Agent tool — subagent_type: "bdk:fixer"
 
   description: "Fix test failures from Task {N}"
 
@@ -110,7 +111,7 @@ Agent tool — subagent_type: "fixer"
     - Base SHA: {current HEAD}
 
     Diagnose the failure, apply minimum-scope fix, re-run the failing tests
-    to verify GREEN. Commit with subject: fix(tests): {short summary}
+    to verify GREEN. Leave the fix uncommitted — the coordinator commits.
 ```
 
 ---
@@ -118,7 +119,7 @@ Agent tool — subagent_type: "fixer"
 ## Fixer dispatch (code-review findings)
 
 ```text
-Agent tool — subagent_type: "fixer"
+Agent tool — subagent_type: "bdk:fixer"
 
   description: "Apply code-review findings (round {R})"
 
@@ -136,78 +137,27 @@ Agent tool — subagent_type: "fixer"
     - Branch: {branch-name}
     - Base SHA: {merge-base with main}
 
-    Verify each fix by re-reading the cited line. Commit with subject:
-    fix(review): {short summary of dominant finding}
+    Verify each fix by re-reading the cited line. Leave the fixes
+    uncommitted — the coordinator commits.
 ```
 
 ---
 
-## Code-reviewer dispatch
+## Reviewer dispatch — see the review engine
 
-```text
-Agent tool — subagent_type: "code-reviewer", model: sonnet:
+There is no reviewer template here. Step 4a runs the shared review engine, which owns range resolution, the size-based scaling table, the delta/cumulative cohort split, and the mandatory range-context and suppression blocks:
 
-  description: "Final code review on branch {branch-name}"
+- `${CLAUDE_PLUGIN_ROOT}/skills/cr/references/review-engine.md` — the process
+- `${CLAUDE_PLUGIN_ROOT}/skills/cr/references/reviewer-prompt-template.md` — the prompt structure for `bdk:code-reviewer` and `bdk:architecture-reviewer`
 
-  prompt: |
-    Review the cumulative diff for branch {branch-name}.
-
-    ## Scope
-
-    - Branch: {branch-name}
-    - Base SHA: {merge-base with main}
-    - Head SHA: HEAD
-    - Plan: {plan-path}
-
-    ## Files changed
-
-    {paste output of `git diff --name-only {base-sha}..HEAD`}
-
-    Use `detect_changes` and `get_review_context` from the codegraph for
-    risk-scored prioritization. Apply general best practices and any project
-    rules from CLAUDE.md / .claude/rules/.
-
-    Output the standard FINDINGS / POSITIVE_OBSERVATIONS / TEST_GAPS block
-    defined in your agent prompt. Group findings by file in the output so
-    the coordinator can batch them for the fixer.
-```
-
----
-
-## Architecture-reviewer dispatch (conditional)
-
-```text
-Agent tool — subagent_type: "architecture-reviewer", model: opus:
-
-  description: "Architecture review on branch {branch-name}"
-
-  prompt: |
-    Review the cumulative diff for branch {branch-name} for architectural
-    concerns only — layer boundaries, DI, design patterns, data flow,
-    directory structure, import direction.
-
-    ## Scope
-
-    - Branch: {branch-name}
-    - Base SHA: {merge-base with main}
-    - Head SHA: HEAD
-    - Plan: {plan-path}
-
-    ## Reason for review
-
-    {one sentence: why this branch needs architecture review — e.g.
-    "introduces a new module under src/foo and a new public API"}
-
-    Output the standard ARCHITECTURE_FINDINGS block defined in your
-    agent prompt.
-```
+A second copy of those prompts here is exactly how the two review call sites drifted apart in the first place. The fixer templates below stay, because routing findings back into code is the executor's own job and `cr` never does it.
 
 ---
 
 ## Static-analyse dispatch (per task)
 
 ```text
-Agent tool — subagent_type: "static-analyse", model: haiku:
+Agent tool — subagent_type: "bdk:static-analyse", model: haiku:
 
   description: "Lint changed files from Task {N}"
 
@@ -225,7 +175,7 @@ Agent tool — subagent_type: "static-analyse", model: haiku:
 ## Test-runner dispatch (per task, smart cadence)
 
 ```text
-Agent tool — subagent_type: "test-runner", model: haiku:
+Agent tool — subagent_type: "bdk:test-runner", model: haiku:
 
   description: "Run tests after Task {N}"
 
@@ -243,7 +193,7 @@ Agent tool — subagent_type: "test-runner", model: haiku:
 ## Test-runner dispatch (final, full suite)
 
 ```text
-Agent tool — subagent_type: "test-runner", model: haiku:
+Agent tool — subagent_type: "bdk:test-runner", model: haiku:
 
   description: "Final test suite for branch {branch-name}"
 
@@ -322,7 +272,7 @@ ${t.context}
 - Branch: ${args.branch}
 - Base SHA: ${args.base_sha}
 
-Commit your work to this branch. One commit per task.
+Leave your changes uncommitted in the working tree. The coordinator commits once per group.
 
 Return the YAML envelope per the preloaded \`bdk-implementer-return-contract\` meta-skill. Final message MUST be that YAML — no prose before or after.`
 
@@ -347,7 +297,7 @@ const results = await pipeline(
       `Reason/concerns: ${r.reason || (r.concerns || []).join('; ')}\n` +
       `Files: ${task.files.join(', ')}\n` +
       `Branch: ${args.branch}, Base SHA: ${args.base_sha}\n` +
-      `Apply minimum-scope fixes and commit. Return the YAML envelope per the preloaded contract.`,
+      `Apply minimum-scope fixes and leave them uncommitted. Return the YAML envelope per the preloaded contract.`,
       { agentType: 'bdk:fixer', label: `fix:${task.id}`, phase: 'Fix', schema: RETURN_SCHEMA },
     ).then((fixed) => ({ task, r, fixed }))
   },

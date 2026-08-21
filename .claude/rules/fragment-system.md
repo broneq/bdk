@@ -50,8 +50,16 @@ skills/<skill-name>/
 ```
 
 - `mode`: `"exclusive"` or `"additive"`
-- `chain`: array of entries, each with optional `"if"` (AND conditions) and required `"then"` (path relative to chain file)
+- `chain`: array of entries, each with optional `"if"` (AND conditions), optional `"prefer"` (OR conditions that **suppress** the entry), and required `"then"` (path relative to chain file)
 - Entry without `"if"` is an unconditional fallback
+
+**In an `additive` chain, a fallback must guard itself with `prefer`.** Additive mode injects *every* matching entry, so a bare unconditional fallback stacks on top of the higher tiers instead of replacing them - the reader gets the graph tools and the grep tools, with contradictory policy rules, and nothing errors. List every tier the fallback defers to:
+
+```json
+{ "prefer": ["features.code-review-graph", "features.serena"], "then": "explore-fallback.md" }
+```
+
+`exclusive` chains do not need this: they break on the first match, so a bare fallback is only reached when nothing above it matched. `tests/unit/fragments/test_tier_chain_render.py` enforces both halves - every chain renders a tier with all features off, and no additive chain emits its fallback when a higher tier matched.
 
 Each tier fragment is self-contained: it carries its own tool list AND the policy rules governing those tools. There is no shared header file.
 
@@ -79,7 +87,7 @@ Each tier fragment is self-contained: it carries its own tool list AND the polic
 | Fallback tier system | `--chain` with `exclusive` |
 | Complementary tools | `--chain` with `additive` |
 | Simple one-off conditional | `--if` / `--prefer` inline |
-| Suppress block when better tool available | `--prefer` |
+| Suppress block when better tool available | `--prefer` inline, or a `"prefer"` key on a chain entry |
 
 ## Agents vs Skills
 

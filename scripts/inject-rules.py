@@ -8,6 +8,12 @@ Reads BDK default at ${CLAUDE_PLUGIN_ROOT}/rules/<name>.md, optionally
 merges or replaces with user file from .bdk/settings.json `quality.<name>`
 entry, prints final content to stdout.
 
+Failures print ``[bdk-inject-error] <description>`` to **stdout** and exit 0.
+This script is consumed from a ``!`...`` `` block in a skill body, which captures
+stdout only and ignores the exit code, so stderr + exit 1 renders as silence -
+a missing rule file would look exactly like a rule set that is legitimately
+empty. See scripts/inject.py for the same contract.
+
 Public API:
     from inject_rules import resolve_rule
 """
@@ -17,6 +23,8 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+
+ERR_PREFIX = "[bdk-inject-error]"
 
 
 def _load_settings(start: Path) -> dict | None:
@@ -75,8 +83,7 @@ def resolve_rule(name: str, cwd: Path | None = None, plugin_root: Path | None = 
         mode = entry.get("mode", "extends")
         if mode not in ("extends", "replace"):
             print(
-                f"[BDK inject-rules] quality.{name}: unknown mode {mode!r}, treating as 'extends'",
-                file=sys.stderr,
+                f"{ERR_PREFIX} quality.{name}: unknown mode {mode!r}, treating as 'extends'"
             )
             mode = "extends"
         normalised = {"path": entry["path"], "mode": mode}
@@ -102,14 +109,14 @@ def resolve_rule(name: str, cwd: Path | None = None, plugin_root: Path | None = 
 
 def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: inject-rules.py <rule-name>", file=sys.stderr)
-        sys.exit(1)
+        print(f"{ERR_PREFIX} usage: inject-rules.py <rule-name>")
+        sys.exit(0)
     name = sys.argv[1]
     try:
         content = resolve_rule(name)
     except (FileNotFoundError, ValueError, OSError) as e:
-        print(f"[BDK inject-rules] {e}", file=sys.stderr)
-        sys.exit(1)
+        print(f"{ERR_PREFIX} {e}")
+        sys.exit(0)
     print(content, end="")
     sys.exit(0)
 

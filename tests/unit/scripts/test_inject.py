@@ -134,6 +134,46 @@ def test_evaluate_condition_plain_key_invalid():
 
 
 # ---------------------------------------------------------------------------
+# tool.<binary> — probes PATH, not settings
+# ---------------------------------------------------------------------------
+
+
+def test_evaluate_condition_tool_present(monkeypatch):
+    monkeypatch.setattr(inject_mod.shutil, "which", lambda name: f"/usr/bin/{name}")
+    assert evaluate_condition("tool.lavish-axi", {}) is True
+
+
+def test_evaluate_condition_tool_absent(monkeypatch):
+    monkeypatch.setattr(inject_mod.shutil, "which", lambda name: None)
+    assert evaluate_condition("tool.lavish-axi", {}) is False
+
+
+def test_evaluate_condition_tool_ignores_settings(monkeypatch):
+    """The probe is about the machine, not the config.
+
+    A `features.x` flag says the user wants the tool; `tool.x` says the tool is
+    actually installed. Callers AND them, so this condition must not consult
+    settings at all - reading a flag here would make a configured-but-missing
+    binary look present.
+    """
+    monkeypatch.setattr(inject_mod.shutil, "which", lambda name: None)
+    assert evaluate_condition("tool.lavish-axi", {"features": {"lavish-axi": True}}) is False
+
+
+def test_evaluate_condition_tool_bracket_form_is_rejected(monkeypatch):
+    """`tool[name]` must not silently work.
+
+    _ARRAY_RE would happily parse it as a lookup in a nonexistent `tool` list
+    and return False, so a typo'd condition would read as "tool absent" forever
+    instead of as an error. The dotted spelling is the only accepted one, and
+    the bracket form has to stay a quiet False that a lint catches - not a
+    second, subtly different way to spell the same thing.
+    """
+    monkeypatch.setattr(inject_mod.shutil, "which", lambda name: "/usr/bin/x")
+    assert evaluate_condition("tool[lavish-axi]", {}) is False
+
+
+# ---------------------------------------------------------------------------
 # inject (public API)
 # ---------------------------------------------------------------------------
 
@@ -263,8 +303,8 @@ def test_cli_error_file_not_found(tmp_path):
         ["--if", "features.react", "--then", "/nonexistent/file.md"],
         cwd=tmp_path,
     )
-    assert result.returncode == 1
-    assert "[BDK inject]" in result.stderr
+    assert result.returncode == 0
+    assert "[bdk-inject-error]" in result.stdout
 
 
 def test_cli_error_invalid_condition(tmp_path):
@@ -275,8 +315,26 @@ def test_cli_error_invalid_condition(tmp_path):
         ["--if", "bad.syntax.here", "--then", str(content_file)],
         cwd=tmp_path,
     )
-    assert result.returncode == 1
-    assert "[BDK inject]" in result.stderr
+    assert result.returncode == 0
+    assert "[bdk-inject-error]" in result.stdout
+
+
+def test_cli_errors_land_on_stdout_with_exit_zero(tmp_path):
+    """The whole point of the marker contract, pinned.
+
+    A `!`...`` block in a skill body captures stdout and ignores the exit code,
+    so an error on stderr is invisible in the rendered skill and a nonzero exit
+    changes nothing. Anything that moves these back to stderr or exit 1 silently
+    turns every broken injection into an empty one.
+    """
+    _write_settings(tmp_path, {"features": {"react": True}})
+    result = _run_cli(
+        ["--if", "no-such-form", "--then-text", "x"],
+        cwd=tmp_path,
+    )
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert result.stdout.startswith("[bdk-inject-error]")
 
 
 def test_cli_custom_settings_path(tmp_path):
@@ -580,10 +638,11 @@ def test_cli_chain_exclusive_first_match(tmp_path):
     assert result.stdout == "# Graph"
 
 
-def test_cli_chain_missing_file_exits_nonzero(tmp_path):
+def test_cli_chain_missing_file_reports_on_stdout(tmp_path):
     result = _run_cli(["--chain", str(tmp_path / "nonexistent.json")], cwd=tmp_path)
-    assert result.returncode == 1
-    assert "[BDK inject]" in result.stderr
+    assert result.returncode == 0
+    assert "[bdk-inject-error]" in result.stdout
+    assert result.stderr == ""
 
 
 def test_chain_none_settings_returns_empty(tmp_path):

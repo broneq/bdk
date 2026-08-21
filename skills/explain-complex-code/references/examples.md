@@ -24,11 +24,11 @@ mcp__plugin_bdk_serena__find_referencing_symbols(name_path="DocumentMigrationSer
 **Step 2.3 - Decision**: 12 files → Group by architectural layers (4 groups)
 
 **Step 3 - Subagent Launch** (parallel, all in ONE message):
-```python
-Task("Explore Service Layer (document_migration_service.py): ...", "Explore")
-Task("Explore Parser Block (parsers/html_parser.py, tokenizer.py, token_classifier.py): ...", "Explore")
-Task("Explore Transformation Block (transformers/line_transformer.py, position_mapper.py, context_resolver.py, change_detector.py): ...", "Explore")
-Task("Explore Storage Block (storage/repository.py, json_writer.py, xml_formatter.py, template_loader.py): ...", "Explore")
+```
+Agent(subagent_type="Explore", prompt="Explore Service Layer (document_migration_service.py): ...")
+Agent(subagent_type="Explore", prompt="Explore Parser Block (parsers/html_parser.py, tokenizer.py, token_classifier.py): ...")
+Agent(subagent_type="Explore", prompt="Explore Transformation Block (transformers/line_transformer.py, position_mapper.py, context_resolver.py, change_detector.py): ...")
+Agent(subagent_type="Explore", prompt="Explore Storage Block (storage/repository.py, json_writer.py, xml_formatter.py, template_loader.py): ...")
 ```
 
 **Output**: `docs/architecture/migration-pipeline.md` with:
@@ -53,8 +53,8 @@ mcp__plugin_bdk_serena__get_symbols_overview(relative_path="src/services/positio
 **Step 2.3 - Decision**: 2 files → 1 subagent to protect main context
 
 **Step 3 - Subagent Launch**:
-```python
-Task(prompt="Explore Token Alignment module (token_alignment.py + tests): Report core algorithm, key classes, dependencies, critical rules, test scenarios...", subagent_type="Explore")
+```
+Agent(subagent_type="Explore", prompt="Explore Token Alignment module (token_alignment.py + tests): Report core algorithm, key classes, dependencies, critical rules, test scenarios...")
 ```
 
 **Output**: `docs/architecture/token-alignment-algorithm.md` with:
@@ -85,9 +85,9 @@ mcp__plugin_bdk_serena__find_referencing_symbols(name_path="UnmarkedChangeDetect
 **Step 2.3 - Decision**: 7 files → Group into 2 logical blocks (not 3, keep simple)
 
 **Step 3 - Subagent Launch** (parallel, all in ONE message):
-```python
-Task("Explore Core Detection Block (unmarked_change_detector.py, rules/addition_rule.py, rules/deletion_rule.py): Report orchestration logic, rule evaluation, dependencies...", "Explore")
-Task("Explore Detection Utilities Block (detectors/text_differ.py, html_comparer.py, change_classifier.py, froala_marker.py): Report comparison algorithms, classification logic, Froala integration...", "Explore")
+```
+Agent(subagent_type="Explore", prompt="Explore Core Detection Block (unmarked_change_detector.py, rules/addition_rule.py, rules/deletion_rule.py): Report orchestration logic, rule evaluation, dependencies...")
+Agent(subagent_type="Explore", prompt="Explore Detection Utilities Block (detectors/text_differ.py, html_comparer.py, change_classifier.py, froala_marker.py): Report comparison algorithms, classification logic, Froala integration...")
 ```
 
 **Output**: `docs/architecture/change-detection-system.md` with:
@@ -111,8 +111,8 @@ mcp__plugin_bdk_serena__get_symbols_overview(relative_path="src/utils/position_c
 **Step 2.3 - Decision**: 1 file → 1 subagent to protect context
 
 **Step 3 - Subagent Launch**:
-```python
-Task(prompt="Explore position_calculator.py: Report all classes/functions, their purposes, key algorithms, edge cases, and how they relate to each other...", subagent_type="Explore")
+```
+Agent(subagent_type="Explore", prompt="Explore position_calculator.py: Report all classes/functions, their purposes, key algorithms, edge cases, and how they relate to each other...")
 ```
 
 **Output**: `docs/architecture/position-calculator.md` with:
@@ -144,11 +144,11 @@ mcp__plugin_bdk_serena__find_referencing_symbols(...)
 **Step 2.3 - Decision**: 18 files → Group by service categories (4 layers)
 
 **Step 3 - Subagent Launch** (parallel, all in ONE message):
-```python
-Task(prompt="Explore Migration Services (all files in migration/): For EACH file report: purpose, key classes, dependencies. Then synthesize: service orchestration, shared patterns, core workflows...", subagent_type="Explore")
-Task(prompt="Explore Transformation Services (all files in transformation/): For EACH file report: purpose, key classes, dependencies. Then synthesize: transformation pipeline, shared patterns, algorithms...", subagent_type="Explore")
-Task(prompt="Explore Change Detection Services (all files in change_detection/): For EACH file report: purpose, key classes, dependencies. Then synthesize: detection strategy, shared patterns, rule system...", subagent_type="Explore")
-Task(prompt="Explore Position Mapping Services (all files in position_mapping/): For EACH file report: purpose, key classes, dependencies. Then synthesize: mapping algorithms, shared patterns, edge cases...", subagent_type="Explore")
+```
+Agent(subagent_type="Explore", prompt="Explore Migration Services (all files in migration/): For EACH file report: purpose, key classes, dependencies. Then synthesize: service orchestration, shared patterns, core workflows...")
+Agent(subagent_type="Explore", prompt="Explore Transformation Services (all files in transformation/): For EACH file report: purpose, key classes, dependencies. Then synthesize: transformation pipeline, shared patterns, algorithms...")
+Agent(subagent_type="Explore", prompt="Explore Change Detection Services (all files in change_detection/): For EACH file report: purpose, key classes, dependencies. Then synthesize: detection strategy, shared patterns, rule system...")
+Agent(subagent_type="Explore", prompt="Explore Position Mapping Services (all files in position_mapping/): For EACH file report: purpose, key classes, dependencies. Then synthesize: mapping algorithms, shared patterns, edge cases...")
 ```
 
 **Output**: `docs/architecture/service-layer.md` with:
