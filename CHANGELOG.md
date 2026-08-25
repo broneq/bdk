@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.0](https://github.com/broneq/bdk/compare/v2.1.0...v2.2.0) (2026-08-25)
+
+
+### Features
+
+* ban worthless test patterns in TDD and create-plan ([571b0c3](https://github.com/broneq/bdk/commit/571b0c38d8b25857ec49973e2394ba04bfecd7ac))
+* forbid comment accretion in code-quality rules ([e6c936b](https://github.com/broneq/bdk/commit/e6c936b04fd40f45beda25495af58e81e1328525))
+
 ## [2.1.0](https://github.com/broneq/bdk/compare/v2.0.0...v2.1.0) (2026-08-21)
 
 
