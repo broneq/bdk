@@ -162,7 +162,7 @@ Omit any form your tool does not support; BDK falls back cleanly from a missing 
 
 ## Quality Rules
 
-BDK ships language-agnostic rule sets (`code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`) injected into `/bdk:cr`, `/bdk:create-plan`, and `/bdk:design` outputs.
+BDK ships language-agnostic rule sets (`code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`, `test-quality`) injected into `/bdk:cr`, `/bdk:create-plan`, and `/bdk:design` outputs.
 
 ### Four usage patterns
 

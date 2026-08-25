@@ -94,6 +94,8 @@ Use when writing to `.bdk/plans/YYYY-MM-DD-HHMM-<slug>.md`.
 - ✅ Positive: given [edge case input], expects [edge case output] *(only when the edge case is real - do not pad)*
 - ❌ Negative: given [invalid input], raises [error] *(omit if no meaningful failure mode)*
 
+*Every bullet must name an observable behavior a real product change could break - see the Test Quality rules in References. A bullet whose only implementation would be a prose-word assertion, a tautology, or a vacuous check does not belong here; use `Verification: none` instead.*
+
 **Test scaffold:**
 ```
 // language-agnostic pseudocode — write in the project's language/framework
@@ -284,6 +286,10 @@ Expected: exits 0 with no errors
 **Engineering Judgment:**
 
 <!-- INJECT: engineering-judgment -->
+
+**Test Quality:**
+
+<!-- INJECT: test-quality -->
 
 **Language Rules:**
 

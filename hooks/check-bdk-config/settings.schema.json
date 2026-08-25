@@ -58,7 +58,7 @@
     "quality": {
       "type": "object",
       "additionalProperties": { "$ref": "#/definitions/ruleOverride" },
-      "description": "Per-category overrides for BDK's language-agnostic rules in rules/<name>.md. Read by scripts/inject-rules.py. Keys are rule names (code-quality, architecture, design-patterns, security, engineering-judgment)."
+      "description": "Per-category overrides for BDK's language-agnostic rules in rules/<name>.md. Read by scripts/inject-rules.py. Keys are rule names (code-quality, architecture, design-patterns, security, engineering-judgment, test-quality)."
     },
     "language-rules": {
       "type": "object",

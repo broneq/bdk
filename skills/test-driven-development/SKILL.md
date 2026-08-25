@@ -87,13 +87,19 @@ Identify test file path per project conventions.
 
 ## GATE 1: Write Tests
 
+Test quality rules - a test that violates these is not written, whatever the plan says:
+
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py test-quality`
+
 Write **exactly one test per ✅ bullet**, using the project's test framework and the conventions from GATE 0.
 
 Add an unlisted edge-case test ONLY when its absence would let a real production bug through - and name that bug in the test's name or docstring. Otherwise do not add it.
 
 **Negative tests (❌ bullets):** Write when real value exists. Skip if no meaningful failure modes.
 
-**Cannot proceed until every ✅ bullet has corresponding test.**
+**No bullet is satisfied by a banned shape.** If the only faithful implementation of a ✅ bullet is on the banned list above - a word-presence assertion over prose, a tautology, a vacuous check - do not write a degraded test to satisfy the one-per-bullet rule. Stop and return `Status: BLOCKED`, naming the bullet and which ban it hits. The plan gets fixed; the test does not get faked.
+
+**Cannot proceed until every ✅ bullet has a corresponding test that a real product change could make fail.**
 
 ---
 
@@ -143,3 +149,7 @@ Do **not** widen the scope on the way out — no full suite, no other tier, no "
 - ❌ Falling back to a bare full-suite command (any tier) in GATE 2/4 because scoping "wasn't obvious" — escalate as `BLOCKED` instead; full-suite runs belong only to the coordinator's end-of-plan gate
 - ❌ Running an e2e/integration tier in GATE 2/4 for tests that are not e2e specs. Run the tier your new tests belong to, nothing else
 - ❌ Padding GATE 1 with boundary/edge tests the spec never asked for and no real bug motivates
+- ❌ Writing a test that asserts on prose: a phrase present in a documentation file, README, docstring, or comment. Documentation is not behavior
+- ❌ Writing a tautological test: asserting a literal the test's own stub supplied, or mirroring a constant's definition
+- ❌ Writing a vacuous test: an always-true assertion, a not-null check as the only check, an existence or callability probe, or a shape check that asserts no value's meaning
+- ❌ Faking a test to satisfy the one-per-bullet rule when the bullet itself asks for a banned shape - return `Status: BLOCKED` instead
