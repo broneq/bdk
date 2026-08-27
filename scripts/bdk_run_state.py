@@ -229,6 +229,24 @@ def trailer_commits(rid: str, base_sha: str | None = None) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
+IGNORE_RULE = "/.bdk/"
+IGNORE_COMMENT = "# BDK run state - machine-owned, never committed"
+# Rules that already cover `.bdk/` at the repo root. A `.gitignore` written by
+# hand rarely uses our exact spelling, and appending a second rule that changes
+# nothing is noise the user has to clean out of a diff.
+EQUIVALENT_RULES = frozenset({"/.bdk/", "/.bdk", ".bdk/", ".bdk"})
+
+
+def rule_already_present(gitignore: Path) -> bool:
+    """True when a line in `.gitignore` already ignores `.bdk/` at the root."""
+    if not gitignore.exists():
+        return False
+    return any(
+        line.strip() in EQUIVALENT_RULES
+        for line in gitignore.read_text(encoding="utf-8").splitlines()
+    )
+
+
 def ensure_ignored(manifest_path: Path) -> str | None:
     """Guarantee the manifest is not committable. Idempotent.
 
@@ -237,9 +255,15 @@ def ensure_ignored(manifest_path: Path) -> str | None:
     the path does this append to the project `.gitignore`, visibly, and say
     so. Runs on every write, not just init: a `.gitignore` can be edited
     mid-run.
+
+    Two things keep the append from repeating. `--no-index` on the probe:
+    without it git reports a *tracked* path as un-ignored no matter what the
+    rules say, so one manifest that slipped into the index used to re-append
+    the block on every single state mutation. And a direct scan of the file
+    before writing, so no probe result can ever produce a duplicate line.
     """
     proc = subprocess.run(
-        ["git", "check-ignore", "-q", str(manifest_path)],
+        ["git", "check-ignore", "-q", "--no-index", str(manifest_path)],
         capture_output=True,
         text=True,
         check=False,
@@ -248,13 +272,16 @@ def ensure_ignored(manifest_path: Path) -> str | None:
         return None
 
     gitignore = repo_root() / ".gitignore"
+    if rule_already_present(gitignore):
+        return None
+
     existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
     prefix = "" if (not existing or existing.endswith("\n")) else "\n"
     gitignore.write_text(
-        f"{existing}{prefix}# BDK run state - machine-owned, never committed\n/.bdk/\n",
+        f"{existing}{prefix}{IGNORE_COMMENT}\n{IGNORE_RULE}\n",
         encoding="utf-8",
     )
-    return f"appended '/.bdk/' to {gitignore}"
+    return f"appended '{IGNORE_RULE}' to {gitignore}"
 
 
 # ---------------------------------------------------------------------------
