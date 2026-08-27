@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.1](https://github.com/broneq/bdk/compare/v2.2.0...v2.2.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* stop re-appending the .bdk gitignore block on every write ([8dea914](https://github.com/broneq/bdk/commit/8dea9142b1667a67664f6d0da360344aaa723ca8))
+* stop re-appending the .bdk gitignore block on every write ([5941cfe](https://github.com/broneq/bdk/commit/5941cfe8ee401bb54f3052f587a58afe4a76a57e))
+
 ## [2.2.0](https://github.com/broneq/bdk/compare/v2.1.0...v2.2.0) (2026-08-25)
 
 
