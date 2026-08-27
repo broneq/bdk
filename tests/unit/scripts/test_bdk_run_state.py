@@ -978,3 +978,51 @@ def test_an_in_flight_group_keeps_its_start_stamp_through_a_read(repo: Path) -> 
     assert [g["group"] for g in timings["groups"]] == [1]
     assert timings["groups"][0]["started_at"] == "2026-08-21T10:00:00Z"
     assert timings["groups"][0]["elapsed_s"] is None
+
+
+def test_a_tracked_manifest_does_not_re_append_the_rule(repo: Path) -> None:
+    """`git check-ignore` reports a TRACKED path as un-ignored even when a rule
+    covers it. Probing without `--no-index` therefore re-appended the block on
+    every single write once a manifest had slipped into the index."""
+    _init(repo)
+    before = (repo / ".gitignore").read_text()
+    _git(repo, "add", "-f", f".bdk/runs/{RUN}.json")
+    _git(repo, "commit", "-q", "-m", "manifest slipped into the index")
+
+    out = _ok(
+        ["group-done", "--run", RUN, "--group", "1", "--commit", _commit_group(repo, 1)],
+        repo,
+    )
+    assert not any("/.bdk/" in n for n in out.get("notes", [])), out.get("notes")
+    assert (repo / ".gitignore").read_text() == before
+
+
+def test_an_existing_rule_line_is_never_duplicated(repo: Path) -> None:
+    """Belt and braces: whatever `check-ignore` says, the exact line we would
+    write must never be appended twice."""
+    (repo / ".gitignore").write_text("# BDK run state - machine-owned, never committed\n/.bdk/\n")
+    out = _init(repo)
+    assert not any("/.bdk/" in n for n in out["notes"]), out["notes"]
+    assert (repo / ".gitignore").read_text().count("/.bdk/") == 1
+
+
+@pytest.mark.parametrize("rule", ["/.bdk/", "/.bdk", ".bdk/", ".bdk", "  /.bdk/  "])
+def test_rule_already_present_recognises_every_spelling(tmp_path: Path, rule: str) -> None:
+    """The guard that runs whatever `check-ignore` answered, so it has to
+    recognise the hand-written spellings too - not just the one we emit."""
+    gitignore = tmp_path / ".gitignore"
+    gitignore.write_text(f"node_modules/\n{rule}\n*.log\n")
+    assert state_mod.rule_already_present(gitignore) is True
+
+
+@pytest.mark.parametrize("rule", ["/.bdk/plans/", "bdk", ".bdkx", "# .bdk/"])
+def test_rule_already_present_rejects_rules_that_do_not_cover_the_state_dir(
+    tmp_path: Path, rule: str
+) -> None:
+    gitignore = tmp_path / ".gitignore"
+    gitignore.write_text(f"{rule}\n")
+    assert state_mod.rule_already_present(gitignore) is False
+
+
+def test_rule_already_present_on_a_missing_gitignore(tmp_path: Path) -> None:
+    assert state_mod.rule_already_present(tmp_path / ".gitignore") is False
