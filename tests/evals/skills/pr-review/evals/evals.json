@@ -1,0 +1,117 @@
+{
+  "skill_name": "pr-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this PR: https://github.com/acme/widgets/pull/42",
+      "expected_output": "Skill prints the pr-review orchestrator block, fetches PR metadata via gh, creates a detached worktree, dispatches exactly one general-purpose subagent whose prompt mandates /bdk:cr --inline --full --base origin/<base> and forbids the Agent tool, and reports a single approve/request-changes verdict with comment counts.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "prints_orchestrator_block",
+          "description": "Prints the ORCHESTRATOR: pr-review terminal block on start with PR count and mode"
+        },
+        {
+          "name": "one_subagent_per_pr",
+          "description": "Dispatches exactly one subagent for the single PR URL (not zero, not a fan-out of reviewers at the orchestrator level)"
+        },
+        {
+          "name": "subagent_prompt_forbids_nested_agents",
+          "description": "The dispatched subagent prompt explicitly forbids using the Agent tool / spawning subagents"
+        },
+        {
+          "name": "subagent_prompt_mandates_cr_inline",
+          "description": "The dispatched subagent prompt instructs invoking /bdk:cr with --inline and --base pointing at the PR's base ref"
+        },
+        {
+          "name": "uses_detached_worktree",
+          "description": "Creates a detached git worktree from pull/<n>/head for the PR instead of checking the branch out in the user's working tree"
+        },
+        {
+          "name": "single_verdict",
+          "description": "The final report states exactly one verdict for the PR: approve or request changes"
+        },
+        {
+          "name": "worktree_cleanup",
+          "description": "Removes the worktree (git worktree remove/prune) after the review completes"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review these two PRs from my stack: https://github.com/acme/widgets/pull/51 and https://github.com/acme/widgets/pull/52 (52 is stacked on top of 51)",
+      "expected_output": "Skill detects the stack relationship, dispatches two parallel subagents in one message, scopes each review to the PR's own diff vs its parent branch (52 vs 51's head branch, 51 vs its base), and reports one verdict per PR.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "two_parallel_subagents_single_message",
+          "description": "Dispatches exactly two subagents, both launched in a single message"
+        },
+        {
+          "name": "stack_scoped_base",
+          "description": "The stacked PR's subagent prompt uses the parent PR's branch as --base, not the repo default branch"
+        },
+        {
+          "name": "no_stack_autoexpansion",
+          "description": "Reviews only the two given PRs - does not enqueue other PRs it discovers in the stack"
+        },
+        {
+          "name": "verdict_per_pr",
+          "description": "The final report contains one explicit verdict per PR (two verdicts total)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "/bdk:pr-review https://github.com/acme/widgets/pull/42 --verify",
+      "expected_output": "Skill dispatches a verify-mode subagent that locates the previous bdk-pr-review summary marker, classifies each previous finding as addressed/partial/not addressed, reviews only commits added since the recorded reviewed_sha, resolves addressed threads it authored, and posts a verification summary ending in approve or request changes.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "verify_prompt_recovers_markers",
+          "description": "The subagent prompt instructs finding the previous review via the bdk-pr-review hidden marker and parsing reviewed_sha from it"
+        },
+        {
+          "name": "verify_reviews_delta_only",
+          "description": "The new-code review is scoped to commits since reviewed_sha (base = reviewed_sha), not the whole PR again"
+        },
+        {
+          "name": "resolves_only_own_addressed_threads",
+          "description": "Thread resolution is restricted to threads the reviewer authored whose finding is fully addressed"
+        },
+        {
+          "name": "verify_ends_with_verdict",
+          "description": "The verification ends with a summary comment and exactly one verdict: approve or request changes"
+        },
+        {
+          "name": "partial_blocks",
+          "description": "Instructions treat partially-addressed blockers as blocking (not approve)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Review my own PR https://github.com/acme/widgets/pull/60 - I authored it myself.",
+      "expected_output": "Skill runs the normal review but the posted review uses event COMMENT (GitHub rejects self-approval), with the verdict stated in the summary body; nice-to-have findings are marked non-blocking.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "own_pr_comment_event",
+          "description": "Instructions/behavior use event COMMENT for the author's own PR, with the verdict carried in the summary body"
+        },
+        {
+          "name": "nice_to_haves_nonblocking",
+          "description": "MEDIUM/LOW findings are labeled nice-to-have / non-blocking and do not produce a request-changes verdict on their own"
+        },
+        {
+          "name": "nice_to_haves_not_inline",
+          "description": "MEDIUM/LOW findings appear only in the summary's nice-to-have section, never as inline review comments (no unresolved threads for non-blockers)"
+        },
+        {
+          "name": "templated_comments",
+          "description": "Posted comments follow the comment-templates reference (severity tag, hidden bdk-pr-review marker) rather than ad-hoc formats"
+        }
+      ]
+    }
+  ]
+}

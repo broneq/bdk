@@ -18,6 +18,7 @@ The caller fills this block before doing anything else. Every field is required;
 ```
 REVIEW_REQUEST
 mode:        interactive | autonomous
+dispatch:    agents | inline      # inline = caller performs every cohort itself, spawns nothing
 run_id:      <run-id> | null      # null = no run for this branch
 base_sha:    <sha>                # branch baseline, never HEAD
 head_sha:    <sha>                # resolved, never the literal "HEAD"
@@ -26,6 +27,8 @@ group:       <n> | null           # the group under review, when reviewing one
 scaling:     tiny | small | large | massive
 focus:       <free text> | null   # user's "review the auth changes" narrowing
 ```
+
+`dispatch: inline` exists for callers that are themselves subagents - a subagent must not spawn further agents, so the fan-out in Step 3 is unavailable to it. Everything else in this engine (range resolution, scaling, cohorts, merge, dedup, state advance) applies unchanged; only Step 3 differs. See "Step 3 - Dispatch" for the inline variant.
 
 `scaling` comes from the resolved range (see below), not from the whole branch: a delta review of 40 lines is `tiny` even on a branch of 4000.
 
@@ -155,6 +158,8 @@ The executor skips `bdk:static-analyse` and `bdk:test-runner` entirely: it alrea
 
 ## Step 3 - Dispatch
 
+With `dispatch: inline`, skip the fan-out below and follow "Inline dispatch" at the end of this step instead.
+
 Launch every planned agent in a **single message with multiple `Agent` calls**. Use `references/reviewer-prompt-template.md` for the prompt structure; it carries the mandatory range-context block.
 
 Subagents already run in the background - there is no `run_in_background` parameter on the `Agent` tool, and passing one is an input-validation error at runtime.
@@ -173,6 +178,17 @@ python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py findings-list \
 ```
 
 Without it, every delta pass re-reports the same debatable `MEDIUM`s that were deliberately deferred, and the caller's review-fix budget burns on noise. Record `suppressed` in the result so the report can say how many were withheld.
+
+### Inline dispatch (`dispatch: inline`)
+
+Spawn nothing - no `Agent` calls, for any reason. Instead, perform each planned cohort yourself as a sequential pass over the same scope the agent would have received:
+
+1. Plan the cohorts exactly as Step 2 says, with one change: multiple layer reviewers collapse into **one** layer pass - N parallel reviewers exist to cut wall-clock, and inline execution has no parallelism to buy. `large`/`massive` therefore means one thorough layer pass, not N.
+2. For each planned cohort, read the corresponding agent definition and apply its checklist yourself, in this order: layer review (`${CLAUDE_PLUGIN_ROOT}/agents/code-reviewer.md`), then on a full range the cumulative cohort (`architecture-reviewer.md`, `duplicate-detector.md`, `dead-code-detector.md`), then static analysis and tests per the caller-specific skip rules. The agent files are the single source of each checklist - do not reconstruct a checklist from memory, or inline review drifts from dispatched review.
+3. Emit each pass's findings in that agent's block shape, then continue to Step 4 (merge) unchanged. The merge still normalizes and dedups: sequential passes anchor the same defect at different lines just as parallel agents do.
+4. Suppression list, `degraded[]`, and state advance work as in `agents` dispatch. A pass you skipped (e.g. cumulative cohort on a delta range) is a documented skip, not a degraded entry; a pass you started and could not finish is `degraded`.
+
+Inline dispatch trades wall-clock and reviewer independence for the ability to run inside a single session. It is for callers that cannot spawn agents; never pick it just to save tokens when the fan-out is available.
 
 ## Step 4 - Merge
 
