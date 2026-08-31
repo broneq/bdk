@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.0](https://github.com/broneq/bdk/compare/v2.2.1...v2.3.0) (2026-08-31)
+
+
+### Features
+
+* add pr-review skill and inline/base dispatch to cr ([9fb19c7](https://github.com/broneq/bdk/commit/9fb19c7d2e4c921281cb932c6d121ab11f9884dc))
+* add pr-review skill and inline/base dispatch to cr ([3b60394](https://github.com/broneq/bdk/commit/3b603943461d80dadeda64d3ee7284e2c78babca))
+
 ## [2.2.1](https://github.com/broneq/bdk/compare/v2.2.0...v2.2.1) (2026-08-27)
 
 
