@@ -1,9 +1,9 @@
 ---
 name: cr
-description: Run code review with dynamic agent scaling (3-13 agents based on change size). Reviews only what changed since the last review when a run exists; --full forces the whole branch.
+description: Run code review with dynamic agent scaling (3-13 agents based on change size). Delta since the last review by default; --full whole branch; --inline runs in-session with no subagents; --base <ref> explicit baseline (stacks).
 model: sonnet
 effort: high
-argument-hint: "[--full] [focus]"
+argument-hint: "[--full] [--inline] [--base <ref>] [focus]"
 allowed-tools: Bash(git *) Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/*) Write(.bdk/cr/**)
 disallowed-tools: Edit NotebookEdit
 ---
@@ -58,14 +58,20 @@ Fill the `REVIEW_REQUEST` block, then follow the engine.
 
 ```
 mode:        interactive
+dispatch:    inline if $ARGUMENTS contains --inline, else agents
 run_id:      from `bdk_run_state.py list --branch $(git branch --show-current)`, or null
-base_sha:    the run's base_sha, or `git merge-base HEAD origin/HEAD` with no run
+base_sha:    `git merge-base HEAD <ref>` when --base <ref> is given;
+             otherwise the run's base_sha, or `git merge-base HEAD origin/HEAD` with no run
 head_sha:    git rev-parse HEAD
 range_mode:  full if $ARGUMENTS contains --full, else delta
 group:       null
 scaling:     from the resolved range (engine Step 2)
 focus:       the rest of $ARGUMENTS, or null
 ```
+
+`--base` exists for stacked branches, where the honest baseline is the parent branch of the stack, not the repo default - deriving it from `origin/HEAD` would blame this branch for every change below it in the stack. `--base` implies no run watermark applies: treat it as `run_id: null` even when a run exists, because the run's baseline and the explicit one disagree by construction.
+
+With `dispatch: inline` the Step 2 terminal line reads `Dispatching inline (no agents)` instead of an agent count, and Step 3 is the engine's "Inline dispatch" variant - every cohort performed sequentially in this session, spawning nothing.
 
 Tool tier for reading the change set:
 

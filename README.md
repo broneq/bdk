@@ -28,7 +28,8 @@ Invoke with `/bdk:<skill-name>`:
 | Skill | Description                                                                                         |
 |-------|-----------------------------------------------------------------------------------------------------|
 | `/bdk:setup` | Initialize `.bdk/settings.json` — run once per project before using other skills                    |
-| `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size). Reviews the delta since the last review by default; `--full` reviews the whole branch |
+| `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size). Reviews the delta since the last review by default; `--full` reviews the whole branch; `--inline` runs every cohort in-session with no subagents; `--base <ref>` reviews against an explicit base (stacked branches) |
+| `/bdk:pr-review` | Review GitHub PRs from URLs: one subagent per PR running `/bdk:cr --inline`, templated inline comments + summary on GitHub, approve / request-changes verdict; stack-aware (diff vs stack parent); `--verify` checks whether previous review comments were implemented and resolves addressed threads |
 | `/bdk:commit` | Generate conventional commit message from git changes                                               |
 | `/bdk:create-plan` | Create TDD-driven implementation plans                                                              |
 | `/bdk:subagent-execute-plan` | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review |
