@@ -112,9 +112,8 @@ Only create diagrams when they add genuine visual value:
 Skip for trivially simple or abstract decisions.
 
 If creating diagrams:
-- Embed Graphviz diagrams directly in ADR as fenced code blocks (` ```dot `), preceded by `###` header — compiler uses header as filename
-- After writing ADR file, invoke `/bdk:graphviz-docs-compiler` passing `docs/adr/` as target directory with `--mode both` to extract `.dot` files and compile to SVG
-- Compiler rewrites code blocks in-place with `![Description](images/name.svg)` references
+- Embed Mermaid diagrams directly in ADR as fenced ` ```mermaid ` code blocks — renders natively, no compile step
+- Follow `/bdk:mermaid-drawer` for type selection, node budget and colour - an ADR outlives the person who wrote it, so its diagrams have to stay legible in whatever renderer a future reader opens them in
 
 ### 6. Final Verification
 

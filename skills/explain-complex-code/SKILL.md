@@ -1,6 +1,6 @@
 ---
 name: explain-complex-code
-description: Generate comprehensive architecture documentation for complex code modules with Graphviz diagrams and examples. Use when user asks to "explain this code", "document the architecture", or wants to understand how a module/system works.
+description: Generate comprehensive architecture documentation for complex code modules with Mermaid diagrams and examples. Use when user asks to "explain this code", "document the architecture", or wants to understand how a module/system works.
 model: sonnet
 user-invocable: true
 argument-hint: "[path]"
@@ -9,7 +9,7 @@ hooks:
   Stop:
     - hooks:
         - type: prompt
-          prompt: "Verify documentation completeness: $ARGUMENTS\n\nRequired checks:\n1. File saved to .bdk/explain-complex-code/ directory\n2. Contains Overview section (2-3 sentences)\n3. Contains Core Architecture with file tree\n4. Contains at least ONE Graphviz diagram compiled to SVG (no raw ```dot or ```graphviz blocks remain — all replaced with ![...](*.svg) image references)\n5. Contains Critical Rules section with examples\n6. Contains Live Examples with PROTOTYPE code (not actual implementation)\n7. Contains Core Classes section\n8. Contains Testing Coverage section describing existing tests\n\nReview the conversation and tool outputs. If ANY required section is missing or incomplete, respond: {\"ok\": false, \"reason\": \"Missing: [list specific items]\"}\n\nIf all sections present and complete, respond: {\"ok\": true}"
+          prompt: "Verify documentation completeness: $ARGUMENTS\n\nRequired checks:\n1. File saved to .bdk/explain-complex-code/ directory\n2. Contains Overview section (2-3 sentences)\n3. Contains Core Architecture with file tree\n4. Contains at least ONE Mermaid diagram (fenced ```mermaid block)\n5. Contains Critical Rules section with examples\n6. Contains Live Examples with PROTOTYPE code (not actual implementation)\n7. Contains Core Classes section\n8. Contains Testing Coverage section describing existing tests\n\nReview the conversation and tool outputs. If ANY required section is missing or incomplete, respond: {\"ok\": false, \"reason\": \"Missing: [list specific items]\"}\n\nIf all sections present and complete, respond: {\"ok\": true}"
           timeout: 30
 ---
 
@@ -79,20 +79,17 @@ From subagent findings, create structured docs.
 **Structure:**
 1. **Overview**: 2-3 sentence summary
 2. **Core Architecture**: File tree + component diagram
-3. **Architecture Flow**: Process flow with Graphviz
+3. **Architecture Flow**: Process flow with Mermaid
 4. **Critical Rules**: Non-obvious rules with examples
 5. **Live Examples**: Prototype code (NOT actual implementation)
 6. **Core Classes**: Key classes with usage patterns
 7. **Testing Coverage**: Existing test structure and patterns
 
-### 5. Create Graphviz Diagrams
+### 5. Create Mermaid Diagrams
 
-Use for:
-- **Data flow**: How data moves through system
-- **Component architecture**: Layers and dependencies
-- **Algorithm flow**: Decision points and steps
+Embed diagrams directly as fenced ```mermaid``` code blocks — no separate source file, no compile step, renders natively wherever the doc is viewed.
 
-Under 15 nodes. Label edges clearly.
+**Follow `/bdk:mermaid-drawer`** for type selection, node budget and colour. It is the shared standard across every BDK skill that emits a diagram, so docs from different skills read alike. Architecture docs typically need a component `flowchart` with one `subgraph` per layer; add a `sequenceDiagram` when the module's behaviour is a call chain across boundaries, and a `stateDiagram-v2` when it drives an entity through named states.
 
 ### 6. Write Prototype Examples
 
@@ -121,16 +118,11 @@ return format_output(result)
 
 Save to `.bdk/explain-complex-code/[feature-name].md`.
 
-### 8. Compile Diagrams
-
-After saving, invoke `/bdk:graphviz-docs-compiler` to extract `.dot` files and compile to SVG.
-
 ## Quality Checklist
 
 - [ ] Overview (2-3 sentences)
 - [ ] File tree
-- [ ] At least one Graphviz diagram
-- [ ] Dot code blocks replaced with SVG image references
+- [ ] At least one Mermaid diagram
 - [ ] Critical rules with examples
 - [ ] Live examples with prototype code
 - [ ] Core classes with usage

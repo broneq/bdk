@@ -10,7 +10,7 @@ hooks:
   Stop:
     - hooks:
         - type: prompt
-          prompt: "Verify documentation update completeness: $ARGUMENTS\n\nRequired checks:\n1. File saved to original doc_path location\n2. Contains Overview section (2-3 sentences)\n3. Contains Core Architecture with file tree\n4. Contains at least ONE Graphviz diagram compiled to SVG (no raw ```dot or ```graphviz blocks remain — all replaced with ![...](*.svg) image references)\n5. Contains Critical Rules section with examples\n6. Contains Live Examples with PROTOTYPE code (not actual implementation)\n7. Contains Core Classes section\n8. Contains Testing Coverage section describing existing tests\n9. Updated sections read as uniform text — no changelog markers, no 'updated on' annotations, no diff markers\n\nReview the conversation and tool outputs. If ANY required section is missing or incomplete, respond: {\"ok\": false, \"reason\": \"Missing: [list specific items]\"}\n\nIf all sections present and complete, respond: {\"ok\": true}"
+          prompt: "Verify documentation update completeness: $ARGUMENTS\n\nRequired checks:\n1. File saved to original doc_path location\n2. Contains Overview section (2-3 sentences)\n3. Contains Core Architecture with file tree\n4. Contains at least ONE Mermaid diagram (fenced ```mermaid block)\n5. Contains Critical Rules section with examples\n6. Contains Live Examples with PROTOTYPE code (not actual implementation)\n7. Contains Core Classes section\n8. Contains Testing Coverage section describing existing tests\n9. Updated sections read as uniform text — no changelog markers, no 'updated on' annotations, no diff markers\n\nReview the conversation and tool outputs. If ANY required section is missing or incomplete, respond: {\"ok\": false, \"reason\": \"Missing: [list specific items]\"}\n\nIf all sections present and complete, respond: {\"ok\": true}"
           timeout: 30
 ---
 
@@ -32,10 +32,7 @@ Read the documentation file at `$ARGUMENTS` and extract:
 - **Module root**: From the file tree code block (e.g., `src/data_migrator/processors/loaders/xml/`)
 - **Code references**: Class/function names from `### Class:` patterns and code blocks
 - **File list**: Parse file tree to get documented files
-- **Diagram references**: Collect ALL diagram assets:
-  - `![...](*.svg)` image links → note the SVG path
-  - `Source: [...](*.dot)` links → note the `.dot` source path
-  - Inline ` ```dot ` / ` ```graphviz ` blocks → note content
+- **Diagram references**: Collect all embedded ` ```mermaid ` fenced blocks and their preceding headers
 
 Do this in main context — no subagent needed. Use regex and string matching.
 
@@ -56,7 +53,7 @@ Compare actual file list against the doc's file tree. Note added/removed/renamed
 
 For each diagram reference found in step 1:
 
-1. **Read the `.dot` source file** (from `Source: [...](.dot)` links or extracted `.dot` files)
+1. **Read the embedded Mermaid block content** directly from the doc
 2. **Compare diagram content against current code**: Do the nodes, edges, labels, and relationships in the diagram still match the actual classes, modules, and data flows?
 3. **Flag stale diagrams**: If a diagram references renamed/removed symbols, missing components, or outdated relationships, mark it as OUTDATED
 4. **Flag missing diagrams**: If new subsystems or major flows were added that have no diagram, mark as MISSING
@@ -166,11 +163,10 @@ Reconstruct the document:
 2. **Rewrite** outdated sections using patterns from `/bdk:explain-complex-code` references
 3. **Insert** new content where it fits logically within existing structure
 4. **Remove** orphaned references cleanly — no "removed" comments, just omit
-5. **Update diagrams**:
-   - Rewrite outdated `.dot` blocks / source files to reflect current code structure
+5. **Update diagrams** - per `/bdk:mermaid-drawer`:
+   - Rewrite outdated ` ```mermaid ` blocks to reflect current code structure
    - Add new diagrams for undocumented subsystems
-   - Keep accurate diagrams unchanged
-   - Ensure `![...](*.svg)` and `Source: [...](.dot)` references stay consistent
+   - Keep accurate diagrams unchanged. A diagram that is still correct but predates the standard is not "outdated" - leave it alone unless the code it describes moved, so updates stay reviewable as content changes rather than churn.
 
 The final file reads as one uniform document. No markers indicating which parts were updated.
 
@@ -180,11 +176,9 @@ The final file reads as one uniform document. No markers indicating which parts 
 - Keep under 20 lines per example
 - Never copy actual implementation
 
-### 5. Save and Compile Diagrams
+### 5. Save
 
 Save to the same path as the input `$ARGUMENTS`.
-
-After saving, invoke `/bdk:graphviz-docs-compiler` to extract `.dot` files and compile to SVG.
 
 ## Resources
 
@@ -214,5 +208,4 @@ Use `/bdk:explain-complex-code` references for section structure when rewriting 
 - [ ] Presented update plan and got user confirmation via single AskUserQuestion
 - [ ] Wrote updates preserving accurate sections verbatim
 - [ ] Updated/added/kept diagrams as approved
-- [ ] Invoked `/bdk:graphviz-docs-compiler` to compile diagrams to SVG
 - [ ] Final document reads as uniform text (no update markers)

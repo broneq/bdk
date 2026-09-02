@@ -29,20 +29,18 @@ module_name/
 
 ### Component Diagram
 
-\`\`\`dot
-digraph architecture {
-    // Your Graphviz diagram here
-}
+\`\`\`mermaid
+flowchart TB
+    %% Your Mermaid diagram here
 \`\`\`
 
 ## Architecture Flow
 
 ### High-Level Process
 
-\`\`\`dot
-digraph flow {
-    // Sequential flow diagram
-}
+\`\`\`mermaid
+flowchart LR
+    %% Sequential flow diagram
 \`\`\`
 
 ### Detailed Steps
@@ -170,20 +168,17 @@ processing paths worth demonstrating]
 - Responsibility 2
 
 **Structure**:
-\`\`\`dot
-digraph class_detail {
-    node [shape=record];
+\`\`\`mermaid
+classDiagram
+    class ClassName {
+        -field1
+        -field2
+        +method1()
+        +method2()
+    }
+    class Dependency
 
-    ClassName [label="{ClassName|
-        - field1\l
-        - field2\l
-        |+ method1()\l
-        + method2()\l
-    }"];
-
-    Dependency [label="{Dependency}"];
-    ClassName -> Dependency [label="uses"];
-}
+    ClassName --> Dependency : uses
 \`\`\`
 
 **Usage Pattern** (prototype):
