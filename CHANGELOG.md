@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/broneq/bdk/compare/v2.3.0...v2.4.0) (2026-09-02)
+
+
+### Features
+
+* add mermaid-drawer skill as shared diagram standard ([7c87389](https://github.com/broneq/bdk/commit/7c873899510e25d967c4da920a60d41f6731e20b))
+
 ## [2.3.0](https://github.com/broneq/bdk/compare/v2.2.1...v2.3.0) (2026-08-31)
 
 
