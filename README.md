@@ -38,11 +38,10 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                        |
 | `/bdk:design` | Design partner: classifies product vs architecture vs combined, 2+ approaches with Mermaid, self-critique, validation loop with warm-explorer reuse |
 | `/bdk:create-adr` | Generate Architecture Decision Records (MADR format)                                                |
-| `/bdk:explain-complex-code` | Generate architecture docs with Graphviz diagrams                                                   |
+| `/bdk:explain-complex-code` | Generate architecture docs with Mermaid diagrams                                                    |
 | `/bdk:update-docs` | Refresh existing architecture docs after code changes                                               |
 | `/bdk:refine-rules` | Compact and verify `.claude/rules/*.md` against real code - four-part admission test, six verdicts, budgets, relocation to doc comments, uniform format |
 | `/bdk:add-rule` | Capture one lesson as a properly-homed rule - routes to a narrow-glob rule file, a wide one, a skill, a doc comment, a test signpost, or nothing; dedupes, respects budgets |
-| `/bdk:graphviz-docs-compiler` | Compile `.dot` files to SVG and update markdown references                                          |
 
 ### Removed skills
 
@@ -54,6 +53,7 @@ Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which se
 | `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session |
 | `/bdk:create-tasks`, `/bdk:refactor` | `/bdk:create-plan` |
 | `/bdk:audit-prompt` | Nothing |
+| `/bdk:graphviz-docs-compiler` | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
 
 ---
 

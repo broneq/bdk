@@ -194,7 +194,6 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 **Skills using this:**
 - `skills/commit/SKILL.md:7-9`
 - `skills/update-docs/SKILL.md:8-10`
-- `skills/graphviz-docs-compiler/SKILL.md:6-14`
 - `skills/explain-complex-code/SKILL.md:8-10`
 
 These fire correctly when the skill is invoked.
@@ -492,7 +491,6 @@ Skills that ARE orchestrators (dispatch subagents) and skills that produce outpu
 | `setup` | Bootstrap | — | — | — | Initializes settings; no analysis. |
 | `create-adr` | Output document | — | — | Add `architecture` | ADRs document architectural decisions; arch rules give the reviewer's lens. |
 | `update-docs` | Output document | — | Add `tier-explore` | — | Compares docs to code; needs exploration. |
-| `graphviz-docs-compiler` | Tool wrapper | — | — | — | Compiles `.dot` → SVG. No analysis. |
 
 ### Cross-cutting observations from the audit
 
