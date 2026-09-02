@@ -168,13 +168,9 @@ Propose architecture. Each ideation turn MUST contain:
 - Data flow — how information moves on the happy path
 - Tradeoff axes — scalability, latency, consistency, operational complexity, cost, time-to-build, team familiarity. Concrete: *"p99 likely ~50ms higher due to extra hop"* not *"higher latency"*. List cost and time-to-build for transparency, but per engineering-judgment rules do not let them drive the recommendation - weight quality, simplicity, robustness, scalability, and long-term maintainability instead.
 
-**At least one Mermaid diagram per approach.** Pick the type that fits:
-- `flowchart` for component / boundary maps
-- `sequenceDiagram` for request flows
-- `stateDiagram-v2` for entity lifecycles
-- `erDiagram` for data-shape relationships
+**At least one Mermaid diagram per approach**, drawn per `/bdk:mermaid-drawer` - that skill owns type selection, node budget and colour, so approaches stay visually comparable instead of each getting its own dialect.
 
-Diagrams must be **readable on their own**. Label edges. Avoid mystery boxes.
+Diagrams must be **readable on their own**. Label edges. Avoid mystery boxes. When two approaches differ in *shape*, draw the same diagram type for both so the reader can compare them side by side.
 
 **A recommended option with reasoning.** One paragraph. Reasoning must reference user constraints from 2A.1.
 

@@ -40,6 +40,7 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:create-adr` | Generate Architecture Decision Records (MADR format)                                                |
 | `/bdk:explain-complex-code` | Generate architecture docs with Mermaid diagrams                                                    |
 | `/bdk:update-docs` | Refresh existing architecture docs after code changes                                               |
+| `/bdk:mermaid-drawer` | Shared Mermaid standard used by every diagram-emitting skill - type selection, node budget, and a palette verified legible in light and dark themes. Invoke directly to draw one diagram |
 | `/bdk:refine-rules` | Compact and verify `.claude/rules/*.md` against real code - four-part admission test, six verdicts, budgets, relocation to doc comments, uniform format |
 | `/bdk:add-rule` | Capture one lesson as a properly-homed rule - routes to a narrow-glob rule file, a wide one, a skill, a doc comment, a test signpost, or nothing; dedupes, respects budgets |
 

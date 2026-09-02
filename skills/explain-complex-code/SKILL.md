@@ -89,13 +89,7 @@ From subagent findings, create structured docs.
 
 Embed diagrams directly as fenced ```mermaid``` code blocks — no separate source file, no compile step, renders natively wherever the doc is viewed.
 
-Use for:
-- **Data flow**: How data moves through system (`flowchart`)
-- **Component architecture**: Layers and dependencies (`flowchart` with `subgraph` per layer)
-- **Algorithm flow**: Decision points and steps (`flowchart` with diamond decision nodes)
-- **Class relationships**: Inheritance and composition (`classDiagram`)
-
-Under 15 nodes. Label edges clearly. See `references/mermaid-patterns.md` for syntax patterns.
+**Follow `/bdk:mermaid-drawer`** for type selection, node budget and colour. It is the shared standard across every BDK skill that emits a diagram, so docs from different skills read alike. Architecture docs typically need a component `flowchart` with one `subgraph` per layer; add a `sequenceDiagram` when the module's behaviour is a call chain across boundaries, and a `stateDiagram-v2` when it drives an entity through named states.
 
 ### 6. Write Prototype Examples
 

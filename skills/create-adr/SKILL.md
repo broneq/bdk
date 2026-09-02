@@ -113,6 +113,7 @@ Skip for trivially simple or abstract decisions.
 
 If creating diagrams:
 - Embed Mermaid diagrams directly in ADR as fenced ` ```mermaid ` code blocks — renders natively, no compile step
+- Follow `/bdk:mermaid-drawer` for type selection, node budget and colour - an ADR outlives the person who wrote it, so its diagrams have to stay legible in whatever renderer a future reader opens them in
 
 ### 6. Final Verification
 

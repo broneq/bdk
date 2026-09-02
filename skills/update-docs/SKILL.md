@@ -163,10 +163,10 @@ Reconstruct the document:
 2. **Rewrite** outdated sections using patterns from `/bdk:explain-complex-code` references
 3. **Insert** new content where it fits logically within existing structure
 4. **Remove** orphaned references cleanly — no "removed" comments, just omit
-5. **Update diagrams**:
+5. **Update diagrams** - per `/bdk:mermaid-drawer`:
    - Rewrite outdated ` ```mermaid ` blocks to reflect current code structure
    - Add new diagrams for undocumented subsystems
-   - Keep accurate diagrams unchanged
+   - Keep accurate diagrams unchanged. A diagram that is still correct but predates the standard is not "outdated" - leave it alone unless the code it describes moved, so updates stay reviewable as content changes rather than churn.
 
 The final file reads as one uniform document. No markers indicating which parts were updated.
 

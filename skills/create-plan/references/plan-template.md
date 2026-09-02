@@ -126,7 +126,7 @@ Rules:
 - No prose paragraphs inside Implementation. Code only.
 - One short `**Why:**` line above the block iff the *why* is not obvious from the diff (hidden invariant, contract preserved, surprising choice). Omit otherwise.
 - For helper/utility references, use the `**Use:**` and `**See:**` fields above — not Implementation.
-- For non-trivial control flow (>2 branches or crosses >2 components), add a `**Flow:**` Mermaid block instead of describing it in prose.
+- For non-trivial control flow (>2 branches or crosses >2 components), add a `**Flow:**` Mermaid block instead of describing it in prose. Draw it per `/bdk:mermaid-drawer` - a flow crossing components over time is a `sequenceDiagram`, not a flowchart.
 
 **Example (diff):**
 
