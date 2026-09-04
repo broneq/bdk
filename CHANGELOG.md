@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.0](https://github.com/broneq/bdk/compare/v2.4.0...v2.5.0) (2026-09-04)
+
+
+### Features
+
+* **pr-review:** gate verdict on user confirmation, surface full nice-to-have list ([427cfbf](https://github.com/broneq/bdk/commit/427cfbf74f4565922c16878981044900076c7470))
+* **pr-review:** gate verdict on user confirmation, surface full nice… ([8b54352](https://github.com/broneq/bdk/commit/8b5435245fa8d5a74a77db665051510197d8559b))
+
 ## [2.4.0](https://github.com/broneq/bdk/compare/v2.3.0...v2.4.0) (2026-09-02)
 
 
