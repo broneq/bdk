@@ -21,7 +21,7 @@ Suggested fix: {one sentence}.
 
 MEDIUM/LOW findings are **never posted as inline comments**. An inline comment opens an unresolved review thread, and a thread's semantics on GitHub is "must be addressed" - with require-conversation-resolution branch protection it even blocks the merge that our own APPROVE just allowed. A "non-blocking" finding that opens a blocking thread contradicts itself.
 
-Instead, nice-to-haves become bullets in the summary's "Nice to have (non-blocking)" section (templates 3/4), each anchored by path and line:
+Instead, nice-to-haves become bullets in the summary's "Nice to have (non-blocking)" section (template 3, or 5 for `--verify`), each anchored by path and line:
 
 ```markdown
 - `{path}:{line}` - [{category}] {one-sentence problem}. {one-sentence fix}.
@@ -29,19 +29,26 @@ Instead, nice-to-haves become bullets in the summary's "Nice to have (non-blocki
 
 The invariant this buys: **the set of unresolved threads on a PR is exactly the set of open blockers.** `--verify` therefore only tracks threads for blockers; nice-to-haves are re-read from the previous summary's bullets.
 
-## 3. Review summary - approve
+## 3. Review summary
 
-Used as the review `body` with `event: APPROVE` (or `COMMENT` on own PRs, see below).
+Assembled by the **orchestrator**, after the user has confirmed or overridden the
+computed verdict (SKILL.md Step 5) - never pre-rendered by the reviewer subagent,
+since the verdict it renders may not be the one the subagent computed. Used as the
+review `body` with `event: APPROVE` / `REQUEST_CHANGES` (or `COMMENT` on own PRs,
+see "Own PR" in the Posting mechanics section below).
 
 ```markdown
 ## PR Review Summary
 
-**Verdict: ✅ Approve**
+**Verdict: {✅ Approve / ❌ Request changes}**{override note: " _(reviewer confirmed this after the automated pass computed {✅ Approve / ❌ Request changes})_" - only when final_verdict != computed_verdict}
 
 Reviewed `{base_ref}...{head_sha_short}` ({N} files, +{additions}/−{deletions}).{stack note: " Stack PR - reviewed only this PR's own diff vs `{parent_branch}`." when applicable}
 
 **What looks good**
 - {2-4 genuine positives - patterns followed, tests added, risky part handled well}
+
+**Blockers ({n})**{omit the entire section when `blockers` is empty}
+- `{path}:{line}` - **[{SEVERITY}]** {one line} (see inline comment)
 
 **Nice to have (non-blocking)**
 - `{path}:{line}` - [{category}] {one-sentence problem}. {one-sentence fix}.{repeat; omit section when empty}
@@ -49,30 +56,19 @@ Reviewed `{base_ref}...{head_sha_short}` ({N} files, +{additions}/−{deletions}
 **Context findings (outside the diff)**
 - {findings on unchanged code the change interacts with; omit section when empty}
 
-<!-- bdk-pr-review v1 kind=summary verdict=approve reviewed_sha={full head sha} -->
+<!-- bdk-pr-review v1 kind=summary verdict={approve|request-changes} reviewed_sha={full head sha} -->
 ```
 
-## 4. Review summary - request changes
-
-Same structure with `event: REQUEST_CHANGES` and a blockers section first:
-
-```markdown
-## PR Review Summary
-
-**Verdict: ❌ Request changes**
-
-Reviewed `{base_ref}...{head_sha_short}` ({N} files, +{additions}/−{deletions}).{stack note as above}
-
-**Blockers ({n})**
-- `{path}:{line}` - **[{SEVERITY}]** {one line} (see inline comment)
-
-**Nice to have (non-blocking)**
-- {as above; omit when empty}
-
-<!-- bdk-pr-review v1 kind=summary verdict=request-changes reviewed_sha={full head sha} -->
-```
+The Blockers section renders whenever `blockers` is non-empty - **even when the
+final verdict is Approve.** That combination only happens after a deliberate
+human override in Step 5; the section stays so the GitHub record still shows
+what was actually found, instead of silently disappearing because the verdict
+changed.
 
 ## 5. Verification summary (`--verify`)
+
+Assembled by the **orchestrator**, after the user has confirmed or overridden the
+computed verdict, same as template 3.
 
 ```markdown
 ## Review Verification
@@ -85,7 +81,10 @@ Checked the previous review ({link to summary comment}) against `{head_sha_short
 
 **New findings since last review:** {none / count + inline comments posted}
 
-**Verdict: {✅ Approve / ❌ Request changes}**
+**Nice to have (non-blocking)**
+- `{path}:{line}` - [{category}] {one-sentence problem}. {one-sentence fix}.{repeat; omit section when empty - includes both restated unaddressed nice-to-haves and new ones}
+
+**Verdict: {✅ Approve / ❌ Request changes}**{override note: " _(reviewer confirmed this after the automated pass computed {✅ Approve / ❌ Request changes})_" - only when final_verdict != computed_verdict}
 
 {one sentence: what remains, or "All blockers addressed."}
 
@@ -97,6 +96,8 @@ Checked the previous review ({link to summary comment}) against `{head_sha_short
 ---
 
 ## Posting mechanics
+
+**Performed by the orchestrator only, in SKILL.md Step 6 - after the user has confirmed or overridden every PR's verdict in this run.** Reviewer subagents compute the data these calls need (SKILL.md Step 3) but never make them; the diff templates in this file above are the orchestrator's rendering targets, filled from each subagent's returned payload plus the confirmed `final_verdict`.
 
 If the `gh-axi` skill is available in the session, prefer it for these operations; the raw `gh` calls below are the fallback and the source of truth for payload shapes.
 
@@ -112,7 +113,7 @@ gh api "repos/{owner}/{repo}/pulls/{number}/reviews" -X POST --input review.json
 {
   "commit_id": "{full head sha}",
   "event": "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
-  "body": "{summary from template 3/4/5}",
+  "body": "{summary from template 3, or 5 for --verify}",
   "comments": [
     { "path": "path/to/changed_file", "line": 42, "side": "RIGHT", "body": "{template 1 - blockers only}" },
     { "path": "path/to/other_file", "start_line": 10, "start_side": "RIGHT", "line": 14, "side": "RIGHT", "body": "..." }
@@ -144,4 +145,8 @@ gh api graphql -f query='mutation($t:ID!){
   resolveReviewThread(input:{threadId:$t}){ thread{ isResolved } }}' -F t={thread_id}
 ```
 
-Resolve only threads we authored, and only when the finding is ✅ addressed - resolving someone else's thread, or a 🟡, hides open feedback.
+Run this **after** the review call above has succeeded, once per id in the
+subagent's returned `threads_to_resolve` - those are already filtered to ✅
+findings we authored (SKILL.md Step 2 of the verify template does the
+classifying). Never resolve a thread outside that list - a 🟡 or someone else's
+thread hides open feedback.
