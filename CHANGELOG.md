@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.1](https://github.com/broneq/bdk/compare/v2.5.0...v2.5.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **check-rules-drift:** use content fingerprints instead of mtimes ([0ee6c3b](https://github.com/broneq/bdk/commit/0ee6c3ba96ff7a40448292dbbb796aed3f8894fd))
+* **check-rules-drift:** use content fingerprints instead of mtimes ([0d5c556](https://github.com/broneq/bdk/commit/0d5c5565ca0a0a7852169232dab0af4d1a61eed6))
+
 ## [2.5.0](https://github.com/broneq/bdk/compare/v2.4.0...v2.5.0) (2026-09-04)
 
 
