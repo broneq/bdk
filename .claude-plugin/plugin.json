@@ -1,10 +1,11 @@
 {
   "name": "bdk",
-  "description": "Broneq Dev Kit — reusable dev workflows, skills, and agents for any project",
+  "description": "Broneq Dev Kit - reusable dev workflows, skills, and agents for any project",
   "version": "2.5.1",
   "author": {
     "name": "broneq"
   },
+  "homepage": "https://broneq.github.io/bdk/",
   "repository": "https://github.com/broneq/bdk",
   "license": "MIT"
 }

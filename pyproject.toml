@@ -6,6 +6,7 @@ dependencies = []
 
 [dependency-groups]
 dev = ["pytest>=8.0"]
+docs = ["mkdocs-material>=9.5"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

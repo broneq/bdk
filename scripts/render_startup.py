@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render STARTUP_INSTRUCTIONS.md with chain markers expanded.
 
-Replaces dead Flow 2 from docs/INJECTION-FLOWS.md: the SessionStart hook
+Replaces dead Flow 2 from docs/contributing/injection-flows.md: the SessionStart hook
 used to `cat` STARTUP_INSTRUCTIONS.md, but the !-blocks inside it never
 re-evaluate — Claude Code's dynamic-injection only runs in skill bodies,
 not in hook stdout. This script does the substitution itself before the

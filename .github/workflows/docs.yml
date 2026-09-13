@@ -1,0 +1,63 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**
+      - mkdocs.yml
+      - README.md
+      - CHANGELOG.md
+      - CONTRIBUTING.md
+      - pyproject.toml
+      - .github/workflows/docs.yml
+  pull_request:
+    paths:
+      - docs/**
+      - mkdocs.yml
+      - README.md
+      - CHANGELOG.md
+      - CONTRIBUTING.md
+      - pyproject.toml
+      - .github/workflows/docs.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Build docs
+        run: uv run --group docs mkdocs build --strict
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: docs-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Configure git
+        # mkdocs gh-deploy commits the built site to the gh-pages branch,
+        # which needs an identity the runner does not ship with (mirrors the
+        # "Configure git" step in tests.yml, same underlying cause).
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy docs
+        run: uv run --group docs mkdocs gh-deploy --force
