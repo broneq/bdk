@@ -1,6 +1,6 @@
 {
   "skill_name": "docs-sync",
-  "notes": "Iteration 1 showed eval-0 (add an agent) and eval-2 (rename a flag) are non-discriminating: with_skill and without_skill produced identical file sets, and on the rename the diffs were byte-identical. Both are grep-complete tasks. They are retained below as regression guards but are not rerun every iteration. The discriminating cases are recall on an open-ended sweep (eval-1) and propagation of a fact that is enumerated in prose rather than named by a searchable token (eval-3).",
+  "notes": "A recall assertion about `/bdk:cr --inline` being misrecommended for top-level sessions was removed after iteration 2: both configurations 'failed' it, and on checking, the assertion was wrong. review-engine.md explains why inline dispatch exists (subagent callers cannot fan out) but does not forbid it elsewhere, and skills/cr/SKILL.md sets dispatch from the flag with no caller restriction, exposing --inline in its argument-hint. The assertion had been written from an unverified claim in an iteration-1 baseline report. Verify a defect against the source before turning it into an assertion. Iteration 1 showed eval-0 (add an agent) and eval-2 (rename a flag) are non-discriminating: with_skill and without_skill produced identical file sets, and on the rename the diffs were byte-identical. Both are grep-complete tasks. They are retained below as regression guards but are not rerun every iteration. The discriminating cases are recall on an open-ended sweep (eval-1) and propagation of a fact that is enumerated in prose rather than named by a searchable token (eval-3).",
   "evals": [
     {
       "id": 1,
@@ -16,10 +16,6 @@
         {
           "name": "recall_rule_sets_enumeration_incomplete",
           "description": "Finds that STARTUP_INSTRUCTIONS.md enumerates four quality rule sets (code-quality, architecture, design-patterns, security) while rules/ ships six - engineering-judgment and test-quality are real and injected by skills/create-plan/SKILL.md but missing from the sentence"
-        },
-        {
-          "name": "recall_inline_misrecommended",
-          "description": "Finds at least one workflow page recommending `/bdk:cr --inline` for a normal top-level session, contradicting skills/cr/references/review-engine.md which scopes --inline to subagent callers"
         },
         {
           "name": "recall_conditional_stated_as_unconditional",
