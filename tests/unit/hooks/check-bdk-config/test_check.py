@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import io
 import json
@@ -10,8 +11,6 @@ import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 SCRIPT = Path(__file__).parents[4] / "hooks" / "check-bdk-config" / "check.py"
 
@@ -36,11 +35,12 @@ def _load_module():
     fake_stdin = io.StringIO(json.dumps({"session_id": "test"}))
     spec = importlib.util.spec_from_file_location("check_bdk_config", SCRIPT)
     mod = importlib.util.module_from_spec(spec)
-    with patch("sys.stdin", fake_stdin), patch("sys.exit", side_effect=SystemExit):
-        try:
-            spec.loader.exec_module(mod)
-        except SystemExit:
-            pass
+    with (
+        patch("sys.stdin", fake_stdin),
+        patch("sys.exit", side_effect=SystemExit),
+        contextlib.suppress(SystemExit),
+    ):
+        spec.loader.exec_module(mod)
     return mod
 
 
@@ -122,6 +122,7 @@ def _run_script(cwd: Path, stdin_data: dict | None = None) -> subprocess.Complet
         input=stdin_json,
         cwd=str(cwd),
         env={**os.environ},
+        check=False,
     )
 
 

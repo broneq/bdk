@@ -54,9 +54,11 @@ TEMPLATE_FIELDS: tuple[tuple[str, str], ...] = (
     ("incremental", "incremental"),
 )
 
-_E2E_PATTERN = re.compile(r"e2e|playwright|cypress|selenium|puppeteer|nightwatch|integration", re.I)
-_TYPECHECK_PATTERN = re.compile(r"tsc|typecheck|type-check|mypy|pyright|flow", re.I)
-_FORMAT_PATTERN = re.compile(r"prettier|black|gofmt|rustfmt|fmt|format", re.I)
+_E2E_PATTERN = re.compile(
+    r"e2e|playwright|cypress|selenium|puppeteer|nightwatch|integration", re.IGNORECASE
+)
+_TYPECHECK_PATTERN = re.compile(r"tsc|typecheck|type-check|mypy|pyright|flow", re.IGNORECASE)
+_FORMAT_PATTERN = re.compile(r"prettier|black|gofmt|rustfmt|fmt|format", re.IGNORECASE)
 
 
 def infer_tier(key: str, tool: dict) -> str | None:  # type: ignore[type-arg]

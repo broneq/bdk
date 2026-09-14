@@ -43,7 +43,7 @@ CHAIN_EXPECTATIONS = [
 ]
 
 
-@pytest.mark.parametrize("chain_name,fragment_marker", CHAIN_EXPECTATIONS)
+@pytest.mark.parametrize(("chain_name", "fragment_marker"), CHAIN_EXPECTATIONS)
 def test_chain_renders_policy_with_graph_enabled(chain_name: str, fragment_marker: str) -> None:
     settings = {"features": {"code-review-graph": True, "serena": True}}
     out = inject_chain(CHAINS_DIR / chain_name, settings=settings)

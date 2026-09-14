@@ -69,7 +69,7 @@ def _frontmatter_field(frontmatter: str, field: str) -> str | None:
 def _skill_name(skill_md: Path) -> str:
     """Return the skill's canonical name: frontmatter `name`, else directory name."""
     name = _frontmatter_field(_extract_frontmatter(skill_md), "name")
-    return name if name else skill_md.parent.name
+    return name or skill_md.parent.name
 
 
 def _is_user_invocable(skill_md: Path) -> bool:
@@ -79,7 +79,7 @@ def _is_user_invocable(skill_md: Path) -> bool:
 
 def _agent_name(agent_md: Path) -> str:
     name = _frontmatter_field(_extract_frontmatter(agent_md), "name")
-    return name if name else agent_md.stem
+    return name or agent_md.stem
 
 
 # ---------------------------------------------------------------------------

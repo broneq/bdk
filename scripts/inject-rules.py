@@ -87,7 +87,12 @@ def resolve_rule(name: str, cwd: Path | None = None, plugin_root: Path | None = 
             mode = "extends"
         normalised = {"path": entry["path"], "mode": mode}
     else:
-        raise ValueError(f"quality.{name}: must be string or object, got {type(entry).__name__}")
+        # ValueError, not TypeError: it is this module's documented failure mode
+        # (see the docstring above) and main() catches exactly that triple, so a
+        # TypeError would sail straight past the handler.
+        raise ValueError(  # noqa: TRY004 - see comment above
+            f"quality.{name}: must be string or object, got {type(entry).__name__}"
+        )
 
     user_path = Path(normalised["path"])
     if not user_path.is_absolute():

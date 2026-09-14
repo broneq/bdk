@@ -69,9 +69,10 @@ def validate_settings(settings: dict) -> list[str]:  # type: ignore[type-arg]
         return ["root must be an object"]
 
     languages = settings.get("languages")
-    if languages is not None:
-        if not isinstance(languages, list) or not all(isinstance(l, str) for l in languages):
-            errors.append("'languages' must be array of strings")
+    if languages is not None and (
+        not isinstance(languages, list) or not all(isinstance(item, str) for item in languages)
+    ):
+        errors.append("'languages' must be array of strings")
 
     for key in _TOOL_ARRAY_KEYS:
         tools = settings.get(key)

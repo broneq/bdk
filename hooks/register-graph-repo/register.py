@@ -66,6 +66,7 @@ def main() -> None:
             capture_output=True,
             text=True,
             timeout=30,
+            check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
         print(f"[BDK] code-review-graph register failed: {exc}")

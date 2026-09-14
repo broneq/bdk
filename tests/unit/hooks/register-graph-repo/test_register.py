@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import io
 import json
 import subprocess
-import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -60,11 +60,9 @@ def _run_main(
         patch("sys.exit", side_effect=SystemExit),
         patch("shutil.which", return_value=uvx),
         patch("subprocess.run", side_effect=fake_run),
+        contextlib.suppress(SystemExit),
     ):
-        try:
-            register.main()
-        except SystemExit:
-            pass
+        register.main()
     return captured.getvalue(), calls
 
 

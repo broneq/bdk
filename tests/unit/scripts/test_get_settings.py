@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
-import io
 import json
 import os
 import subprocess
@@ -77,11 +77,9 @@ def _load_module():
     with (
         patch("sys.argv", ["get_settings.py", "languages"]),
         patch("sys.exit", side_effect=SystemExit),
+        contextlib.suppress(SystemExit),
     ):
-        try:
-            spec.loader.exec_module(mod)
-        except SystemExit:
-            pass
+        spec.loader.exec_module(mod)
     return mod
 
 
@@ -130,7 +128,7 @@ def test_get_build_tools_has_no_tier():
 
 
 @pytest.mark.parametrize(
-    "tool,expected",
+    ("tool", "expected"),
     [
         ({"type": "vitest", "command": "npm run test:unit"}, "fast"),
         ({"type": "pytest", "command": "pytest"}, "fast"),
@@ -146,7 +144,7 @@ def test_test_tier_is_inferred_from_name_or_command(tool, expected):
 
 
 @pytest.mark.parametrize(
-    "tool,expected",
+    ("tool", "expected"),
     [
         ({"type": "eslint", "command": "npm run lint"}, "lint"),
         ({"type": "tsc", "command": "npm run typecheck"}, "typecheck"),
@@ -233,6 +231,7 @@ def _run(cwd: Path, *args: str) -> subprocess.CompletedProcess:  # type: ignore[
         text=True,
         cwd=str(cwd),
         env={**os.environ},
+        check=False,
     )
 
 

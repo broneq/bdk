@@ -38,11 +38,12 @@ def _write_settings(tmp_path: Path, data: dict) -> Path:
 
 def _run_cli(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd) if cwd else None,
         env={**os.environ},
+        check=False,
     )
 
 
@@ -129,7 +130,7 @@ def test_evaluate_condition_invalid_syntax():
 
 
 def test_evaluate_condition_plain_key_invalid():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unrecognised condition syntax"):
         evaluate_condition("react", {})
 
 

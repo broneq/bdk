@@ -158,12 +158,15 @@ def test_synthetic_agent_missing_prefix_fails(tmp_path: Path) -> None:
     bad.write_text("---\nname: bad\ntools:\n  - mcp__code-review-graph__query_graph_tool\n---\n")
     tools = _tools(bad)
     assert isinstance(tools, set)
-    with pytest.raises(AssertionError, match="without the .* prefix"):
-        for entry in tools:
-            if "code-review-graph" in entry and not entry.startswith(CRG_PREFIX):
-                raise AssertionError(
-                    f"tool {entry!r} references code-review-graph without the {CRG_PREFIX} prefix"
-                )
+    offenders = [
+        entry
+        for entry in tools
+        if "code-review-graph" in entry and not entry.startswith(CRG_PREFIX)
+    ]
+    with pytest.raises(AssertionError, match=r"without the .* prefix"):
+        raise AssertionError(
+            f"tool {offenders[0]!r} references code-review-graph without the {CRG_PREFIX} prefix"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -252,7 +255,7 @@ def test_narrow_agent_spec_covers_only_existing_agents() -> None:
     assert not missing, f"NARROW_AGENT_TOOLS names agents that no longer exist: {missing}"
 
 
-@pytest.mark.parametrize("name,expected", sorted(NARROW_AGENT_TOOLS.items()))
+@pytest.mark.parametrize(("name", "expected"), sorted(NARROW_AGENT_TOOLS.items()))
 def test_narrow_agent_tools_unchanged(name: str, expected) -> None:
     actual = _tools(AGENTS_DIR / f"{name}.md")
     if expected == "ALL":

@@ -8,14 +8,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 SCRIPT = Path(__file__).parents[4] / "hooks" / "is-skill-exist" / "check.py"
 
 
 def _load_module():
     spec = importlib.util.spec_from_file_location("check", SCRIPT)
-    assert spec and spec.loader
+    assert spec
+    assert spec.loader
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
     return mod
@@ -49,6 +48,7 @@ mod.main()
         capture_output=True,
         text=True,
         env={**os.environ},
+        check=False,
     )
 
 
@@ -242,6 +242,7 @@ def test_no_skill_arg_exits_cleanly() -> None:
         capture_output=True,
         text=True,
         env={**os.environ},
+        check=False,
     )
     assert result.returncode == 0
     assert result.stderr == ""

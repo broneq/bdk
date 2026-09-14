@@ -47,6 +47,7 @@ def _run(args: list[str], cwd: Path, at: str | None = None) -> subprocess.Comple
         text=True,
         cwd=str(cwd),
         env=env,
+        check=False,
     )
 
 
@@ -135,7 +136,7 @@ def _init(
 
 
 @pytest.mark.parametrize(
-    "raw,expected",
+    ("raw", "expected"),
     [
         ("feat/foo", "feat-foo"),
         ("main", "main"),

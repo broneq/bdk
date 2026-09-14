@@ -169,8 +169,7 @@ def build_block_reason(matched: dict[str, list[str]]) -> str:
     ]
     for rule, triggering in matched.items():
         lines.append(f"  .claude/rules/{rule}")
-        for f in triggering:
-            lines.append(f"    triggered by: {f}")
+        lines.extend(f"    triggered by: {f}" for f in triggering)
     lines.append(
         "\nFor each rule file: based on what you changed this session, decide if the",
     )

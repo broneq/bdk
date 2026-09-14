@@ -42,6 +42,7 @@ def _run_cli(cwd: Path, source: Path | None = None) -> subprocess.CompletedProce
         text=True,
         cwd=str(cwd),
         env={**os.environ},
+        check=False,
     )
 
 

@@ -44,11 +44,12 @@ def _write_default(plugin_root: Path, lang: str, content: str) -> Path:
 def _run_cli(args: list[str], cwd: Path, plugin_root: Path) -> subprocess.CompletedProcess:
     env = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(plugin_root)}
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd),
         env=env,
+        check=False,
     )
 
 
@@ -161,7 +162,7 @@ def test_object_override_missing_path_raises(tmp_path):
         {"language-rules": {"react": {"mode": "replace"}}},
     )
 
-    with pytest.raises(ValueError, match="path.*required"):
+    with pytest.raises(ValueError, match=r"path.*required"):
         resolve_language_rule("react", cwd=project, plugin_root=plugin_root)
 
 

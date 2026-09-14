@@ -44,11 +44,12 @@ def _write_plugin_default(plugin_root: Path, name: str, content: str) -> Path:
 def _run_cli(args: list[str], cwd: Path, plugin_root: Path) -> subprocess.CompletedProcess:
     env = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(plugin_root)}
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd),
         env=env,
+        check=False,
     )
 
 
@@ -171,7 +172,7 @@ def test_object_entry_path_missing_raises(tmp_path):
     project.mkdir()
     _write_settings(project, {"quality": {"code-quality": {"mode": "replace"}}})
 
-    with pytest.raises(ValueError, match="path.*required"):
+    with pytest.raises(ValueError, match=r"path.*required"):
         resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
 
 
@@ -272,6 +273,7 @@ def test_cli_falls_back_to_script_location_without_env(tmp_path):
         text=True,
         cwd=str(project),
         env=env,
+        check=False,
     )
 
     # Real BDK plugin root contains rules/code-quality.md — script self-locates.
