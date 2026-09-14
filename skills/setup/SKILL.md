@@ -189,7 +189,9 @@ Call `mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool` (the MCP se
 
 Prefer the MCP tool over shelling out to `uvx code-review-graph build` — same binary under the hood, but the MCP path uses the already-running server and works inside sandboxed/restricted environments where `uvx` may not be available.
 
-**Serena** - no setup-time call required. Known limitation: Serena's active-project state is in-memory only and resets every Claude Code session, and BDK does not currently activate it per session. Tracked at https://github.com/broneq/bdk/issues/38.
+**Serena** - no setup-time call required, and none per session either. BDK's `.mcp.json` starts the server with `--project-from-cwd`, and a plugin's MCP servers run in the session working directory, so Serena detects and activates the project itself at server start.
+
+Detection walks up from the cwd for the nearest `.serena/project.yml` or `.git`. A directory with neither above it gets no active project; Serena then says so in its own tool errors and exposes `mcp__plugin_bdk_serena__activate_project` (the tool is hidden once a project is active) - call it once for that session.
 
 ### Phase 6: Git guidance
 
