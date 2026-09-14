@@ -32,25 +32,40 @@ def _extract_frontmatter(path: Path) -> str:
     return match.group(1)
 
 
+BLOCK_SCALAR_RE = re.compile(r"^[|>][+-]?\d*$")
+
+
 def _parse_tools_field(frontmatter: str) -> set[str] | str | None:
     """Return tools as set, the raw string if scalar, or None if absent.
 
     Hand-rolled parser keeps the test dependency-free. Handles:
       - `tools: Bash` (scalar)
       - `tools: WebSearch WebFetch Read` (space-separated scalar)
+      - `tools: >-` with the names on the indented lines below (block scalar)
       - YAML list with `- entry` lines below `tools:`
+
+    The block-scalar arm is not optional. Without it the indicator itself
+    (`>-`) comes back as a one-token scalar, and every caller that checks
+    `isinstance(tools, set)` - including the plugin-prefix guard below -
+    silently stops covering that agent instead of failing.
     """
     lines = frontmatter.splitlines()
     for i, line in enumerate(lines):
         if not line.startswith("tools:"):
             continue
         rest = line[len("tools:") :].strip()
-        if rest:
+        if rest and not BLOCK_SCALAR_RE.match(rest):
             tokens = [t.strip() for t in re.split(r"[\s,]+", rest) if t.strip()]
             if len(tokens) == 1:
                 return tokens[0]
             return set(tokens)
         items: set[str] = set()
+        if rest:
+            for next_line in lines[i + 1 :]:
+                if not next_line.startswith((" ", "\t")):
+                    break
+                items.update(t for t in re.split(r"[\s,]+", next_line) if t)
+            return items
         for next_line in lines[i + 1 :]:
             stripped = next_line.lstrip()
             if not stripped:

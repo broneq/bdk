@@ -8,30 +8,30 @@ skills:
   - bdk-tier-impact
   - bdk-rules-architecture
   - bdk-rules-design-patterns
-tools:
-  - Read
-  - Grep
-  - Glob
-  - mcp__plugin_bdk_serena__list_dir
-  - mcp__plugin_bdk_serena__find_file
-  - mcp__plugin_bdk_serena__search_for_pattern
-  - mcp__plugin_bdk_serena__get_symbols_overview
-  - mcp__plugin_bdk_serena__find_symbol
-  - mcp__plugin_bdk_serena__find_referencing_symbols
-  - mcp__plugin_bdk_serena__read_memory
-  - mcp__plugin_bdk_serena__list_memories
-  - mcp__plugin_bdk_code-review-graph__get_architecture_overview_tool
-  - mcp__plugin_bdk_code-review-graph__list_communities_tool
-  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__get_hub_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__get_surprising_connections_tool
-  - mcp__plugin_bdk_code-review-graph__query_graph_tool
-  - mcp__plugin_bdk_code-review-graph__get_impact_radius_tool
-  - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
-  - mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
-  - mcp__plugin_bdk_code-review-graph__list_flows_tool
-  - mcp__plugin_bdk_code-review-graph__get_flow_tool
+tools: >-
+  Read,
+  Grep,
+  Glob,
+  mcp__plugin_bdk_serena__list_dir,
+  mcp__plugin_bdk_serena__find_file,
+  mcp__plugin_bdk_serena__search_for_pattern,
+  mcp__plugin_bdk_serena__get_symbols_overview,
+  mcp__plugin_bdk_serena__find_symbol,
+  mcp__plugin_bdk_serena__find_referencing_symbols,
+  mcp__plugin_bdk_serena__read_memory,
+  mcp__plugin_bdk_serena__list_memories,
+  mcp__plugin_bdk_code-review-graph__get_architecture_overview_tool,
+  mcp__plugin_bdk_code-review-graph__list_communities_tool,
+  mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool,
+  mcp__plugin_bdk_code-review-graph__get_hub_nodes_tool,
+  mcp__plugin_bdk_code-review-graph__get_surprising_connections_tool,
+  mcp__plugin_bdk_code-review-graph__query_graph_tool,
+  mcp__plugin_bdk_code-review-graph__get_impact_radius_tool,
+  mcp__plugin_bdk_code-review-graph__get_affected_flows_tool,
+  mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool,
+  mcp__plugin_bdk_code-review-graph__list_graph_stats_tool,
+  mcp__plugin_bdk_code-review-graph__list_flows_tool,
+  mcp__plugin_bdk_code-review-graph__get_flow_tool
 ---
 
 # Architecture Reviewer Agent

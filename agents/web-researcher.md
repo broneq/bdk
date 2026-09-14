@@ -1,12 +1,12 @@
 ---
 name: web-researcher
 description: Internet research for debugging, finding solutions, and gathering technical information. Searches GitHub issues, Stack Overflow, Reddit, forums, and documentation.
-tools:
-  - WebSearch
-  - WebFetch
-  - Read
-  - Grep
-  - Glob
+tools: >-
+  WebSearch,
+  WebFetch,
+  Read,
+  Grep,
+  Glob
 model: haiku
 ---
 

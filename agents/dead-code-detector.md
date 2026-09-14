@@ -4,23 +4,23 @@ description: Find unused functions, methods, variables, and unreachable code blo
 model: haiku
 skills:
   - bdk-tier-search
-tools:
-  - Read
-  - Grep
-  - Glob
-  - mcp__plugin_bdk_serena__list_dir
-  - mcp__plugin_bdk_serena__find_file
-  - mcp__plugin_bdk_serena__search_for_pattern
-  - mcp__plugin_bdk_serena__get_symbols_overview
-  - mcp__plugin_bdk_serena__find_symbol
-  - mcp__plugin_bdk_serena__find_referencing_symbols
-  - mcp__plugin_bdk_code-review-graph__refactor_tool
-  - mcp__plugin_bdk_code-review-graph__query_graph_tool
-  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__traverse_graph_tool
-  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
-  - mcp__plugin_bdk_code-review-graph__find_large_functions_tool
-  - mcp__plugin_bdk_code-review-graph__list_flows_tool
+tools: >-
+  Read,
+  Grep,
+  Glob,
+  mcp__plugin_bdk_serena__list_dir,
+  mcp__plugin_bdk_serena__find_file,
+  mcp__plugin_bdk_serena__search_for_pattern,
+  mcp__plugin_bdk_serena__get_symbols_overview,
+  mcp__plugin_bdk_serena__find_symbol,
+  mcp__plugin_bdk_serena__find_referencing_symbols,
+  mcp__plugin_bdk_code-review-graph__refactor_tool,
+  mcp__plugin_bdk_code-review-graph__query_graph_tool,
+  mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool,
+  mcp__plugin_bdk_code-review-graph__traverse_graph_tool,
+  mcp__plugin_bdk_code-review-graph__list_graph_stats_tool,
+  mcp__plugin_bdk_code-review-graph__find_large_functions_tool,
+  mcp__plugin_bdk_code-review-graph__list_flows_tool
 ---
 
 # Dead Code Detector Agent

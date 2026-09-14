@@ -1,10 +1,6 @@
 ---
 name: verify-plan
-description: >-
-  Verify implementation plans before execution with a single Opus subagent
-  driven by a structured six-section checklist. Use when you have a written
-  plan (from /bdk:create-plan or manual) and want to check it works before
-  writing code.
+description: "Verify implementation plans before execution with a single Opus subagent driven by a structured six-section checklist. Use when you have a written plan and want to check it works before writing code."
 argument-hint: "[plan-file]"
 disable-model-invocation: true
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
