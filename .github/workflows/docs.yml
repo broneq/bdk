@@ -1,43 +1,17 @@
 name: docs
 
+# Build-and-verify lives in `make check` (the `docs` gate runs
+# `mkdocs build --strict` on every PR, unfiltered). This workflow only
+# publishes. The old path-filtered build job missed the case that matters
+# most: a change under skills/ that breaks the docs drift guard without
+# touching any path in the filter.
 on:
   push:
     branches:
       - main
-    paths:
-      - docs/**
-      - mkdocs.yml
-      - README.md
-      - CHANGELOG.md
-      - CONTRIBUTING.md
-      - pyproject.toml
-      - .github/workflows/docs.yml
-  pull_request:
-    paths:
-      - docs/**
-      - mkdocs.yml
-      - README.md
-      - CHANGELOG.md
-      - CONTRIBUTING.md
-      - pyproject.toml
-      - .github/workflows/docs.yml
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-
-      - name: Build docs
-        run: uv run --group docs mkdocs build --strict
-
   deploy:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -59,5 +33,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      # gh-deploy builds internally, so dropping the separate build job
+      # loses nothing.
       - name: Deploy docs
         run: uv run --group docs mkdocs gh-deploy --force

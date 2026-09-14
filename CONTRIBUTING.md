@@ -7,6 +7,7 @@
 Skills are thin workflow definitions. Environment discovery is handled by `STARTUP_INSTRUCTIONS.md`, injected at session start via the `SessionStart` hook.
 
 **Benefits:**
+
 - Single source of truth for BDK conventions
 - Skills stay clean - workflow logic only, no environment assumptions
 - New skills automatically inherit all rules
@@ -23,6 +24,7 @@ All BDK skills follow this tier system for codebase exploration:
 ### Skill Authoring Convention
 
 Every BDK skill:
+
 1. Starts with `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`
 2. Never hardcodes test runners, build tools, lint commands, or file paths
 3. References other skills with full namespace: `/bdk:create-plan`, `/bdk:debug`
@@ -32,17 +34,31 @@ Every BDK skill:
 
 ## Prerequisites
 
-- Claude Code CLI installed
+- [uv](https://docs.astral.sh/uv/) - installs and pins every lint/test tool
+- GNU Make - `make` is the single entrypoint for every check
+- Claude Code CLI on `PATH` - **required**, not optional: the `plugin` gate
+  shells out to `claude plugin validate`. The gate does not skip itself when
+  the CLI is missing, on purpose. A gate that quietly opts out is worse than
+  no gate, because it goes green on every machine where nobody installed it.
 - A separate test project to install BDK into (any language/stack)
 - (Optional) Serena and code-review-graph MCP servers - see `.mcp.json`
+
+One-time local setup, so `git blame` skips the formatting commit the way
+GitHub's web blame already does:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
 
 ## Workflow
 
 1. Edit skills, agents, or hooks in this repo
 2. Launch Claude Code from the test project directory with the local plugin directory:
+
    ```bash
    claude --plugin-dir ~/projects/bdk
    ```
+
 3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
 4. Run evals if available - see `.claude/rules/skill-test-eval.md`
 
@@ -72,15 +88,68 @@ Every BDK skill:
 
 ---
 
-## Running Tests
+## Checks
 
-Requires [uv](https://docs.astral.sh/uv/).
+One command validates the whole repo, and it is the same command CI runs:
 
 ```bash
-uv run pytest
+make check        # every gate, including the test suite (~45s)
+make check-fast   # everything except pytest (~7s) - the pre-push loop
+make fix          # autofix what is autofixable, then report what is left
+make help         # the target list, plus what `check` is composed of
 ```
 
-Dev dependencies (`pytest`) are declared in `pyproject.toml` under `[dependency-groups] dev` - uv installs them automatically on first run.
+`make check` runs **every** gate even after one fails, then prints the full
+list of failures. The gates are mutually independent, so stopping at the first
+one would turn a branch with three problems into three CI round-trips.
+
+Each gate is also a target on its own, which is what the failure summary tells
+you to re-run:
+
+| Target | What it runs |
+|---|---|
+| `format-check` | `ruff format --check` |
+| `lint` | `ruff check` |
+| `typecheck` | `mypy`, one invocation per source directory |
+| `actions` | `actionlint` on `.github/workflows` |
+| `plugin` | `claude plugin validate` on `skills/` and `agents/` |
+| `skills` | `skilllint` - skill/agent frontmatter and manifests |
+| `markdown` | `pymarkdown` on `docs/` |
+| `docs` | `mkdocs build --strict` |
+| `test` | `pytest tests/unit/ -q` |
+
+Tool versions are pinned exactly in `pyproject.toml` under
+`[dependency-groups] lint` and locked in `uv.lock`, so a bump arrives as a
+reviewable diff instead of as a red build one morning. `uv` installs them on
+first run.
+
+`.github/workflows/tests.yml` has exactly one command, `make check`. Keep it
+that way: the moment a workflow step inlines a tool invocation, local and CI
+can drift and the Makefile stops being the answer to "what does CI run".
+
+### Suppressed findings
+
+`.claude-plugin/validator.json` silences two skilllint codes repo-wide:
+
+- **AG002** (~160 hits, "MCP tool not found"). skilllint's
+  `rules/_mcp_tool_discovery.py::collect_plugin_names_from_ancestry` reads
+  `mcpServers` only from `.claude-plugin/plugin.json` and never from a
+  `.mcp.json` at the plugin root. The plugins reference allows both spellings,
+  and BDK uses `.mcp.json` - so this is a gap in the linter, not in BDK.
+  Duplicating the server definitions into `plugin.json` to appease it would
+  create two places to drift. Nothing is blinded by the suppression: the
+  `mcp__plugin_bdk_` prefix is enforced by
+  `tests/unit/agents/test_agent_tools.py`, which parametrizes over every agent
+  and carries a negative test. To be reported upstream.
+- **AS008**, plus **SK007** scoped to `skills/subagent-execute-plan` (that
+  skill's body is over the token budget; splitting it is a product change and
+  gets its own PR).
+
+`SK005`, `FM007` and `FM004` are deliberately left on: they are readable,
+non-blocking, and occasionally right. Only errors fail a gate; skilllint
+warnings do not.
+
+### Test layout
 
 Both `test_*.py` and `*.test.py` are collected (see `[tool.pytest.ini_options] python_files` in `pyproject.toml`); new tests should use `test_*.py`.
 
@@ -122,7 +191,14 @@ So adding a skill or an agent means updating the docs in the same commit.
 
 ### Deployment
 
-`.github/workflows/docs.yml` builds the site on every pull request and deploys it to GitHub Pages on merge to `main`. There is no manual publish step.
+`.github/workflows/docs.yml` deploys to GitHub Pages on merge to `main`, and
+does nothing else. There is no manual publish step.
+
+The build is verified by the `docs` gate in `make check`, which runs on every
+pull request without a path filter. That ordering matters: the workflow used
+to carry its own path-filtered build job, so a change under `skills/` could
+break the drift guard in `tests/unit/docs/test_docs_coverage.py` and still
+never run `mkdocs build --strict`.
 
 ### Writing rules
 

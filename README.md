@@ -80,7 +80,7 @@ BDK ships 13 subagents - `bdk:explorer`, `bdk:implementer`, `bdk:code-reviewer`,
 
 ## Documentation
 
-Full documentation: **https://broneq.github.io/bdk/** - installation, setup, the three workflow tiers, the concepts behind them, and reference for every skill, agent, setting, and hook.
+Full documentation: **<https://broneq.github.io/bdk/>** - installation, setup, the three workflow tiers, the concepts behind them, and reference for every skill, agent, setting, and hook.
 
 ## Contributing
 

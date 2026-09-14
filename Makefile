@@ -77,8 +77,11 @@ format-check:  ## ruff format --check
 lint:  ## ruff check
 	@$(RUN) ruff check --output-format concise .
 
+# `|| fail=1` rather than letting `set -e` do it: a bare loop reports the LAST
+# iteration's status, so an error in the first directory used to pass silently.
+# Collecting instead of aborting also matches the run-all-then-report contract.
 typecheck:  ## mypy, one run per source directory
-	@for d in $(MYPY_DIRS); do $(RUN) mypy "$$d"; done
+	@fail=0; for d in $(MYPY_DIRS); do $(RUN) mypy "$$d" || fail=1; done; exit $$fail
 
 actions:  ## actionlint on .github/workflows
 	@$(RUN) actionlint
@@ -98,8 +101,11 @@ plugin:  ## claude plugin validate (skills + agents)
 skills:  ## skilllint - skill/agent frontmatter and manifests
 	@$(RUN) skilllint check .
 
-markdown:  ## pymarkdown on docs/ only (skills/ and agents/ are prompts, not prose)
+# Prose only. skills/ and agents/ are LLM prompts, not documents - reflowing a
+# prompt rewrites what the model reads, so they stay out.
+markdown:  ## pymarkdown on docs/ + the two root documents
 	@$(RUN) pymarkdown --config .pymarkdown.json scan -r docs/
+	@$(RUN) pymarkdown --config .pymarkdown.json scan README.md CONTRIBUTING.md
 
 docs:  ## mkdocs build --strict
 	@$(UV) run --group docs mkdocs build --strict
@@ -111,5 +117,6 @@ fix:  ## Autofix what is autofixable, then say what is left
 	@$(RUN) ruff check --fix .
 	@$(RUN) ruff format .
 	@$(RUN) pymarkdown --config .pymarkdown.json fix -r docs/ || true
+	@$(RUN) pymarkdown --config .pymarkdown.json fix README.md CONTRIBUTING.md || true
 	@echo ""
 	@echo "Autofix done. Run 'make check' for what remains."

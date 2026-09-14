@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  pytest:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,6 +16,17 @@ jobs:
         with:
           enable-cache: true
 
+      # Node exists here for one reason: the `claude` CLI that backs the
+      # `plugin` gate. Every other tool comes from the `lint` dependency group.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code CLI
+        # Pinned deliberately: the plugin validator's output is a gate, so a
+        # CLI bump has to arrive as a reviewable diff, not overnight on main.
+        run: npm install -g @anthropic-ai/claude-code@2.1.270
+
       - name: Configure git
         # bdk_run_state.py's tests build throwaway repos and commit in them,
         # which needs an identity the runner does not ship with.
@@ -23,5 +34,7 @@ jobs:
           git config --global user.email "ci@example.com"
           git config --global user.name "CI"
 
-      - name: Run unit tests
-        run: uv run pytest tests/unit/ -q
+      # The only command in this workflow. `make check` is the contract; the
+      # moment a step inlines a tool invocation, local and CI can drift.
+      - name: make check
+        run: make check
