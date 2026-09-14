@@ -7,7 +7,6 @@ description: >
 argument-hint: "[error message, traceback, or steps to reproduce]"
 model: opus
 user-invocable: true
-context: main
 allowed-tools: AskUserQuestion Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 

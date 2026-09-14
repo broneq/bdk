@@ -1,12 +1,11 @@
 ---
 name: create-plan
 description: Create comprehensive implementation plan with exploration and trade-off analysis
-argument-hint: [feature description or design doc path]
+argument-hint: "[feature description or design doc path]"
 model: opus
 effort: high
 user-invocable: true
 disable-model-invocation: true
-context: main
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(date *) Bash(lavish-axi *) AskUserQuestion
 hooks:
   UserPromptSubmit:
