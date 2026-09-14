@@ -40,23 +40,23 @@ CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 # Path-like only: must contain a "/". Bare dotted symbols (`ctx.db`) are NOT paths -
 # counting them would flag legitimate multi-symbol rules.
 PATH_LIKE_RE = re.compile(r"^[\w.@~-]+(?:/[\w.@~*-]+)+$")
-TEST_HINT_RE = re.compile(r"test|spec|__tests__|enforced by", re.I)
+TEST_HINT_RE = re.compile(r"test|spec|__tests__|enforced by", re.IGNORECASE)
 TICKET_RE = re.compile(r"\b[A-Z]{2,4}-\d+\b")
-BOLD_CLAIM_RE = re.compile(r"\*\*(.+?)\*\*", re.S)
+BOLD_CLAIM_RE = re.compile(r"\*\*(.+?)\*\*", re.DOTALL)
 
 # (regex, severity, code) — narrative/transition language that marks a changelog
 # entry rather than a present-tense rule.
 NARRATIVE_MARKERS: list[tuple[re.Pattern[str], str, str]] = [
-    (re.compile(r"\bused to\b", re.I), "error", "narrative:used-to"),
-    (re.compile(r"\bpreviously\b", re.I), "error", "narrative:previously"),
-    (re.compile(r"\bno longer\b", re.I), "error", "narrative:no-longer"),
-    (re.compile(r"\brenamed from\b", re.I), "error", "narrative:renamed-from"),
-    (re.compile(r"\ban earlier attempt\b", re.I), "error", "narrative:earlier-attempt"),
-    (re.compile(r"\bthis session\b", re.I), "error", "narrative:this-session"),
-    (re.compile(r"\bobserved live\b", re.I), "error", "narrative:observed-live"),
-    (re.compile(r"\btook a bisection\b", re.I), "error", "narrative:bisection"),
-    (re.compile(r"\bwe tried\b", re.I), "error", "narrative:we-tried"),
-    (re.compile(r"\bthat argument lost\b", re.I), "error", "narrative:argument-lost"),
+    (re.compile(r"\bused to\b", re.IGNORECASE), "error", "narrative:used-to"),
+    (re.compile(r"\bpreviously\b", re.IGNORECASE), "error", "narrative:previously"),
+    (re.compile(r"\bno longer\b", re.IGNORECASE), "error", "narrative:no-longer"),
+    (re.compile(r"\brenamed from\b", re.IGNORECASE), "error", "narrative:renamed-from"),
+    (re.compile(r"\ban earlier attempt\b", re.IGNORECASE), "error", "narrative:earlier-attempt"),
+    (re.compile(r"\bthis session\b", re.IGNORECASE), "error", "narrative:this-session"),
+    (re.compile(r"\bobserved live\b", re.IGNORECASE), "error", "narrative:observed-live"),
+    (re.compile(r"\btook a bisection\b", re.IGNORECASE), "error", "narrative:bisection"),
+    (re.compile(r"\bwe tried\b", re.IGNORECASE), "error", "narrative:we-tried"),
+    (re.compile(r"\bthat argument lost\b", re.IGNORECASE), "error", "narrative:argument-lost"),
     (re.compile(r"\b[A-Z]{2,4}-\d+\b"), "warning", "narrative:bug-id"),
     (re.compile(r"\binvariant I\d\b"), "warning", "narrative:numbered-invariant"),
 ]
@@ -164,38 +164,39 @@ def lint_file(path: Path, root: Path | None = None) -> dict:
     findings: list[dict] = []
 
     def add(severity: str, code: str, message: str, line: int | None = None) -> None:
-        findings.append(
-            {"severity": severity, "code": code, "message": message, "line": line}
-        )
+        findings.append({"severity": severity, "code": code, "message": message, "line": line})
 
     byte_count = len(text.encode("utf-8", errors="replace"))
     if byte_count > MAX_BYTES:
         add(
             "error",
             "budget:bytes",
-            f"{byte_count} bytes exceeds the {MAX_BYTES}-byte budget — compact or split by paths scope",
+            f"{byte_count} bytes exceeds the {MAX_BYTES}-byte budget - "
+            "compact or split by paths scope",
         )
     if len(lines) > MAX_LINES:
         add(
             "error",
             "budget:lines",
-            f"{len(lines)} lines exceeds the {MAX_LINES}-line budget — compact or split by paths scope",
+            f"{len(lines)} lines exceeds the {MAX_LINES}-line budget - "
+            "compact or split by paths scope",
         )
 
     if not has_frontmatter_paths(lines):
         add(
             "warning",
             "structure:missing-paths",
-            "no `paths:` frontmatter — every session pays for this file; scope it if possible",
+            "no `paths:` frontmatter - every session pays for this file; scope it if possible",
         )
 
     if len(lines) > CRITICAL_INVARIANTS_MIN_LINES and not re.search(
-        r"^##\s+Critical Invariants\s*$", text, re.M
+        r"^##\s+Critical Invariants\s*$", text, re.MULTILINE
     ):
         add(
             "warning",
             "structure:missing-critical-invariants",
-            "no `## Critical Invariants` section — lead with the 3-6 constraints whose violation is data loss",
+            "no `## Critical Invariants` section - lead with the 3-6 constraints "
+            "whose violation is data loss",
         )
 
     for lineno, line in iter_prose_lines(lines):
@@ -205,7 +206,7 @@ def lint_file(path: Path, root: Path | None = None) -> dict:
                 add(
                     severity,
                     code,
-                    f"narrative marker {match.group(0)!r} — record the consequence, not the story",
+                    f"narrative marker {match.group(0)!r} - record the consequence, not the story",
                     lineno,
                 )
 

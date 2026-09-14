@@ -62,14 +62,14 @@ def _frontmatter_field(frontmatter: str, field: str) -> str | None:
     prefix = f"{field}:"
     for line in frontmatter.splitlines():
         if line.startswith(prefix):
-            return line[len(prefix):].strip().strip("\"'")
+            return line[len(prefix) :].strip().strip("\"'")
     return None
 
 
 def _skill_name(skill_md: Path) -> str:
     """Return the skill's canonical name: frontmatter `name`, else directory name."""
     name = _frontmatter_field(_extract_frontmatter(skill_md), "name")
-    return name if name else skill_md.parent.name
+    return name or skill_md.parent.name
 
 
 def _is_user_invocable(skill_md: Path) -> bool:
@@ -79,12 +79,13 @@ def _is_user_invocable(skill_md: Path) -> bool:
 
 def _agent_name(agent_md: Path) -> str:
     name = _frontmatter_field(_extract_frontmatter(agent_md), "name")
-    return name if name else agent_md.stem
+    return name or agent_md.stem
 
 
 # ---------------------------------------------------------------------------
 # Test 1 - user-invocable skills indexed in README + reference/skills.md
 # ---------------------------------------------------------------------------
+
 
 def _invocable_skill_paths() -> list[Path]:
     return sorted(p for p in SKILLS_DIR.glob("*/SKILL.md") if _is_user_invocable(p))
@@ -115,6 +116,7 @@ def test_skill_indexed_in_readme_and_reference(skill_md: Path) -> None:
 # ---------------------------------------------------------------------------
 # Test 2 - every agent named in docs/reference/agents.md
 # ---------------------------------------------------------------------------
+
 
 def _agent_paths() -> list[Path]:
     return sorted(AGENTS_DIR.glob("*.md"))

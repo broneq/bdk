@@ -1,9 +1,6 @@
 ---
 name: test-driven-development
-description: >-
-  Rigid TDD process for writing and verifying tests before implementation.
-  Use when implementing any feature or bugfix. Receives test case bullet points
-  from the plan and enforces red-green cycle.
+description: "Rigid TDD process for writing and verifying tests before implementation. Use when implementing any feature or bugfix. Receives test case bullet points from the plan and enforces the red-green cycle."
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 

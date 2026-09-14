@@ -1,0 +1,6 @@
+{
+  "ignore": {
+    "": ["AG002", "AS008"],
+    "skills/subagent-execute-plan": ["SK007"]
+  }
+}

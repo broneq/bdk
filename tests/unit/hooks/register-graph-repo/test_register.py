@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import io
 import json
 import subprocess
-import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -30,9 +30,13 @@ def _write(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload))
 
 
-def _run_main(cwd: Path, *, uvx: str | None = "/usr/bin/uvx",
-               run_result: subprocess.CompletedProcess | None = None,
-               run_exc: Exception | None = None) -> tuple[str, list]:
+def _run_main(
+    cwd: Path,
+    *,
+    uvx: str | None = "/usr/bin/uvx",
+    run_result: subprocess.CompletedProcess | None = None,
+    run_exc: Exception | None = None,
+) -> tuple[str, list]:
     """Invoke main() with cwd, uvx availability, and subprocess.run patched.
 
     Returns (stdout, captured_run_calls).
@@ -49,20 +53,21 @@ def _run_main(cwd: Path, *, uvx: str | None = "/usr/bin/uvx",
             args=args[0] if args else [], returncode=0, stdout="", stderr=""
         )
 
-    with patch("os.getcwd", return_value=str(cwd)), \
-         patch("sys.stdin", fake_stdin), \
-         patch("sys.stdout", captured), \
-         patch("sys.exit", side_effect=SystemExit), \
-         patch("shutil.which", return_value=uvx), \
-         patch("subprocess.run", side_effect=fake_run):
-        try:
-            register.main()
-        except SystemExit:
-            pass
+    with (
+        patch("os.getcwd", return_value=str(cwd)),
+        patch("sys.stdin", fake_stdin),
+        patch("sys.stdout", captured),
+        patch("sys.exit", side_effect=SystemExit),
+        patch("shutil.which", return_value=uvx),
+        patch("subprocess.run", side_effect=fake_run),
+        contextlib.suppress(SystemExit),
+    ):
+        register.main()
     return captured.getvalue(), calls
 
 
 # ---- _graph_enabled ----
+
 
 def test_enabled_when_features_missing():
     assert register._graph_enabled({}) is True
@@ -86,6 +91,7 @@ def test_enabled_when_features_not_dict():
 
 # ---- main() integration ----
 
+
 def test_silent_when_settings_missing(tmp_path: Path):
     out, calls = _run_main(tmp_path)
     assert out == ""
@@ -93,8 +99,7 @@ def test_silent_when_settings_missing(tmp_path: Path):
 
 
 def test_silent_when_graph_disabled(tmp_path: Path):
-    _write(tmp_path / ".bdk" / "settings.json",
-           {"features": {"code-review-graph": False}})
+    _write(tmp_path / ".bdk" / "settings.json", {"features": {"code-review-graph": False}})
     out, calls = _run_main(tmp_path)
     assert out == ""
     assert calls == []
@@ -139,7 +144,6 @@ def test_warns_on_register_failure(tmp_path: Path):
 
 def test_warns_on_subprocess_exception(tmp_path: Path):
     _write(tmp_path / ".bdk" / "settings.json", {"languages": ["python"]})
-    out, _calls = _run_main(tmp_path,
-                            run_exc=subprocess.TimeoutExpired(cmd="uvx", timeout=30))
+    out, _calls = _run_main(tmp_path, run_exc=subprocess.TimeoutExpired(cmd="uvx", timeout=30))
     assert "[BDK]" in out
     assert "register failed" in out

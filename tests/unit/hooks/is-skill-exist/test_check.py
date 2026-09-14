@@ -8,14 +8,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 SCRIPT = Path(__file__).parents[4] / "hooks" / "is-skill-exist" / "check.py"
 
 
 def _load_module():
     spec = importlib.util.spec_from_file_location("check", SCRIPT)
-    assert spec and spec.loader
+    assert spec
+    assert spec.loader
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
     return mod
@@ -43,11 +42,13 @@ mod._search_dirs = lambda: [Path(p) for p in {dirs_repr}]
 mod.main()
 """
     import os
+
     return subprocess.run(
         [sys.executable, "-c", wrapper],
         capture_output=True,
         text=True,
         env={**os.environ},
+        check=False,
     )
 
 
@@ -234,12 +235,14 @@ def test_different_skill_names_each_check(tmp_path: Path) -> None:
 def test_no_skill_arg_exits_cleanly() -> None:
     """No argument → exit 0, no output."""
     import os
+
     result = subprocess.run(
         [sys.executable, str(SCRIPT)],
         input=json.dumps({"session_id": "s"}),
         capture_output=True,
         text=True,
         env={**os.environ},
+        check=False,
     )
     assert result.returncode == 0
     assert result.stderr == ""

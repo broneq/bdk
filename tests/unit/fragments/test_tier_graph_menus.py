@@ -11,8 +11,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 REPO_ROOT = Path(__file__).resolve().parents[3]
 MENU_DIR = REPO_ROOT / "fragments/tool-tiers"
 
@@ -66,6 +64,5 @@ def test_no_plugin_prefix_in_menu_fragments() -> None:
     for f in files:
         body = f.read_text(encoding="utf-8")
         assert "mcp__plugin_bdk_" not in body, (
-            f"{f.name}: menus use unprefixed tool names; "
-            "plugin_bdk_ prefix is for allowlists only"
+            f"{f.name}: menus use unprefixed tool names; plugin_bdk_ prefix is for allowlists only"
         )

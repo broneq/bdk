@@ -38,11 +38,12 @@ def _write_settings(tmp_path: Path, data: dict) -> Path:
 
 def _run_cli(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd) if cwd else None,
         env={**os.environ},
+        check=False,
     )
 
 
@@ -129,7 +130,7 @@ def test_evaluate_condition_invalid_syntax():
 
 
 def test_evaluate_condition_plain_key_invalid():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unrecognised condition syntax"):
         evaluate_condition("react", {})
 
 
@@ -345,9 +346,12 @@ def test_cli_custom_settings_path(tmp_path):
     content_file.write_text("# React")
     result = _run_cli(
         [
-            "--if", "features.react",
-            "--then", str(content_file),
-            "--settings", str(custom_dir / ".bdk" / "settings.json"),
+            "--if",
+            "features.react",
+            "--then",
+            str(content_file),
+            "--settings",
+            str(custom_dir / ".bdk" / "settings.json"),
         ],
         cwd=tmp_path,
     )
@@ -358,6 +362,7 @@ def test_cli_custom_settings_path(tmp_path):
 # ---------------------------------------------------------------------------
 # inject with prefer_conditions
 # ---------------------------------------------------------------------------
+
 
 def test_inject_prefer_suppresses_when_preferred_true(tmp_path):
     """Block is suppressed when any prefer condition is true."""
@@ -433,8 +438,14 @@ def test_cli_prefer_suppresses_when_preferred_true(tmp_path):
     content_file = tmp_path / "serena.md"
     content_file.write_text("# Serena")
     result = _run_cli(
-        ["--if", "features.serena", "--prefer", "features.code-review-graph",
-         "--then", str(content_file)],
+        [
+            "--if",
+            "features.serena",
+            "--prefer",
+            "features.code-review-graph",
+            "--then",
+            str(content_file),
+        ],
         cwd=tmp_path,
     )
     assert result.returncode == 0
@@ -446,8 +457,14 @@ def test_cli_prefer_injects_when_preferred_false(tmp_path):
     content_file = tmp_path / "serena.md"
     content_file.write_text("# Serena")
     result = _run_cli(
-        ["--if", "features.serena", "--prefer", "features.code-review-graph",
-         "--then", str(content_file)],
+        [
+            "--if",
+            "features.serena",
+            "--prefer",
+            "features.code-review-graph",
+            "--then",
+            str(content_file),
+        ],
         cwd=tmp_path,
     )
     assert result.returncode == 0
@@ -459,8 +476,14 @@ def test_cli_prefer_multiple_or_semantics(tmp_path):
     content_file = tmp_path / "fallback.md"
     content_file.write_text("# Fallback")
     result = _run_cli(
-        ["--prefer", "features.code-review-graph", "--prefer", "features.serena",
-         "--then", str(content_file)],
+        [
+            "--prefer",
+            "features.code-review-graph",
+            "--prefer",
+            "features.serena",
+            "--then",
+            str(content_file),
+        ],
         cwd=tmp_path,
     )
     assert result.returncode == 0
@@ -476,6 +499,7 @@ def _write_chain(path, data):
 # inject_chain — exclusive mode
 # ---------------------------------------------------------------------------
 
+
 def test_chain_exclusive_first_match_returned(tmp_path):
     """Exclusive mode returns content from first matching block only."""
     settings = {"features": {"code-review-graph": True, "serena": True}}
@@ -485,13 +509,16 @@ def test_chain_exclusive_first_match_returned(tmp_path):
     serena_file = tmp_path / "search-serena.md"
     serena_file.write_text("# Serena search")
 
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-            {"if": ["features.serena"], "then": str(serena_file)},
-        ]
-    })
+    chain_file = _write_chain(
+        tmp_path / "search.chain.json",
+        {
+            "mode": "exclusive",
+            "chain": [
+                {"if": ["features.code-review-graph"], "then": str(graph_file)},
+                {"if": ["features.serena"], "then": str(serena_file)},
+            ],
+        },
+    )
     result = inject_chain(chain_file, settings)
     assert result == "# Graph search"
 
@@ -505,13 +532,16 @@ def test_chain_exclusive_skips_to_second_when_first_fails(tmp_path):
     serena_file = tmp_path / "search-serena.md"
     serena_file.write_text("# Serena search")
 
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-            {"if": ["features.serena"], "then": str(serena_file)},
-        ]
-    })
+    chain_file = _write_chain(
+        tmp_path / "search.chain.json",
+        {
+            "mode": "exclusive",
+            "chain": [
+                {"if": ["features.code-review-graph"], "then": str(graph_file)},
+                {"if": ["features.serena"], "then": str(serena_file)},
+            ],
+        },
+    )
     result = inject_chain(chain_file, settings)
     assert result == "# Serena search"
 
@@ -523,13 +553,16 @@ def test_chain_exclusive_unconditional_fallback(tmp_path):
     fallback_file = tmp_path / "fallback.md"
     fallback_file.write_text("# Fallback")
 
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(tmp_path / "graph.md")},
-            {"then": str(fallback_file)},
-        ]
-    })
+    chain_file = _write_chain(
+        tmp_path / "search.chain.json",
+        {
+            "mode": "exclusive",
+            "chain": [
+                {"if": ["features.code-review-graph"], "then": str(tmp_path / "graph.md")},
+                {"then": str(fallback_file)},
+            ],
+        },
+    )
     result = inject_chain(chain_file, settings)
     assert result == "# Fallback"
 
@@ -540,12 +573,15 @@ def test_chain_exclusive_no_match_returns_empty(tmp_path):
     graph_file = tmp_path / "graph.md"
     graph_file.write_text("content")
 
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-        ]
-    })
+    chain_file = _write_chain(
+        tmp_path / "search.chain.json",
+        {
+            "mode": "exclusive",
+            "chain": [
+                {"if": ["features.code-review-graph"], "then": str(graph_file)},
+            ],
+        },
+    )
     result = inject_chain(chain_file, settings)
     assert result == ""
 
@@ -553,6 +589,7 @@ def test_chain_exclusive_no_match_returns_empty(tmp_path):
 # ---------------------------------------------------------------------------
 # inject_chain — additive mode
 # ---------------------------------------------------------------------------
+
 
 def test_chain_additive_concatenates_all_matching(tmp_path):
     """Additive mode concatenates content from all matching blocks."""
@@ -563,13 +600,16 @@ def test_chain_additive_concatenates_all_matching(tmp_path):
     serena_file = tmp_path / "edit-serena.md"
     serena_file.write_text("# Serena edit")
 
-    chain_file = _write_chain(tmp_path / "edit.chain.json", {
-        "mode": "additive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-            {"if": ["features.serena"], "then": str(serena_file)},
-        ]
-    })
+    chain_file = _write_chain(
+        tmp_path / "edit.chain.json",
+        {
+            "mode": "additive",
+            "chain": [
+                {"if": ["features.code-review-graph"], "then": str(graph_file)},
+                {"if": ["features.serena"], "then": str(serena_file)},
+            ],
+        },
+    )
     result = inject_chain(chain_file, settings)
     assert "# Graph edit" in result
     assert "# Serena edit" in result
@@ -584,13 +624,16 @@ def test_chain_additive_only_matching_blocks(tmp_path):
     serena_file = tmp_path / "edit-serena.md"
     serena_file.write_text("# Serena edit")
 
-    chain_file = _write_chain(tmp_path / "edit.chain.json", {
-        "mode": "additive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-            {"if": ["features.serena"], "then": str(serena_file)},
-        ]
-    })
+    chain_file = _write_chain(
+        tmp_path / "edit.chain.json",
+        {
+            "mode": "additive",
+            "chain": [
+                {"if": ["features.code-review-graph"], "then": str(graph_file)},
+                {"if": ["features.serena"], "then": str(serena_file)},
+            ],
+        },
+    )
     result = inject_chain(chain_file, settings)
     assert "# Graph edit" in result
     assert "# Serena edit" not in result
@@ -599,6 +642,7 @@ def test_chain_additive_only_matching_blocks(tmp_path):
 # ---------------------------------------------------------------------------
 # inject_chain — path resolution
 # ---------------------------------------------------------------------------
+
 
 def test_chain_resolves_paths_relative_to_chain_file(tmp_path):
     """Paths in chain files resolve relative to chain file directory."""
@@ -609,12 +653,15 @@ def test_chain_resolves_paths_relative_to_chain_file(tmp_path):
     graph_file = subdir / "search-graph.md"
     graph_file.write_text("# Graph content")
 
-    chain_file = _write_chain(subdir / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": "search-graph.md"},
-        ]
-    })
+    chain_file = _write_chain(
+        subdir / "search.chain.json",
+        {
+            "mode": "exclusive",
+            "chain": [
+                {"if": ["features.code-review-graph"], "then": "search-graph.md"},
+            ],
+        },
+    )
     result = inject_chain(chain_file, settings)
     assert result == "# Graph content"
 
@@ -623,15 +670,19 @@ def test_chain_resolves_paths_relative_to_chain_file(tmp_path):
 # inject_chain — CLI
 # ---------------------------------------------------------------------------
 
+
 def test_cli_chain_exclusive_first_match(tmp_path):
     _write_settings(tmp_path, {"features": {"code-review-graph": True}})
 
     graph_file = tmp_path / "graph.md"
     graph_file.write_text("# Graph")
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [{"if": ["features.code-review-graph"], "then": str(graph_file)}],
-    })
+    chain_file = _write_chain(
+        tmp_path / "search.chain.json",
+        {
+            "mode": "exclusive",
+            "chain": [{"if": ["features.code-review-graph"], "then": str(graph_file)}],
+        },
+    )
 
     result = _run_cli(["--chain", str(chain_file)], cwd=tmp_path)
     assert result.returncode == 0
@@ -647,9 +698,12 @@ def test_cli_chain_missing_file_reports_on_stdout(tmp_path):
 
 def test_chain_none_settings_returns_empty(tmp_path):
     """inject_chain returns empty string when settings is None (file exists)."""
-    chain_file = _write_chain(tmp_path / "test.chain.json", {
-        "mode": "exclusive",
-        "chain": [{"then": str(tmp_path / "nonexistent.md")}],
-    })
+    chain_file = _write_chain(
+        tmp_path / "test.chain.json",
+        {
+            "mode": "exclusive",
+            "chain": [{"then": str(tmp_path / "nonexistent.md")}],
+        },
+    )
     result = inject_chain(chain_file, settings=None)
     assert result == ""

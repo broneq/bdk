@@ -1,6 +1,6 @@
 ---
 name: bdk-test-tools
-description: Project-configured test commands from .bdk/settings.json. Preloaded into agents that run tests; not user-facing.
+description: "Project-configured test commands from .bdk/settings.json. Used by agents that run tests - preloaded via skills: frontmatter, not user-facing."
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 user-invocable: false
 ---

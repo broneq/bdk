@@ -1,13 +1,9 @@
 ---
 name: debug
-description: >
-  Debug issues through structured investigation, failing test creation, and targeted fixes.
-  Use when the user provides an error message, traceback, steps-to-reproduce, or describes
-  unexpected behavior.
+description: "Debug issues through structured investigation, failing test creation, and targeted fixes. Use when the user provides an error message, traceback, steps-to-reproduce, or describes unexpected behavior."
 argument-hint: "[error message, traceback, or steps to reproduce]"
 model: opus
 user-invocable: true
-context: main
 allowed-tools: AskUserQuestion Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 

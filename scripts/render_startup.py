@@ -38,9 +38,7 @@ _MARKER_RE = re.compile(r"<!--\s*CHAIN:\s*([^\s]+)\s*-->")
 
 
 def _load_inject_module():
-    spec = importlib.util.spec_from_file_location(
-        "inject", PLUGIN_ROOT / "scripts" / "inject.py"
-    )
+    spec = importlib.util.spec_from_file_location("inject", PLUGIN_ROOT / "scripts" / "inject.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -95,7 +93,11 @@ def main() -> None:
         sys.exit(1)
 
     inject_mod = _load_inject_module()
-    settings = inject_mod.load_settings(args.settings_path) if args.settings_path else inject_mod.load_settings()
+    settings = (
+        inject_mod.load_settings(args.settings_path)
+        if args.settings_path
+        else inject_mod.load_settings()
+    )
 
     print(render(args.source, settings), end="")
 

@@ -169,8 +169,7 @@ def build_block_reason(matched: dict[str, list[str]]) -> str:
     ]
     for rule, triggering in matched.items():
         lines.append(f"  .claude/rules/{rule}")
-        for f in triggering:
-            lines.append(f"    triggered by: {f}")
+        lines.extend(f"    triggered by: {f}" for f in triggering)
     lines.append(
         "\nFor each rule file: based on what you changed this session, decide if the",
     )
@@ -214,13 +213,13 @@ def build_block_reason(matched: dict[str, list[str]]) -> str:
         "not a rule - it belongs at the code site or nowhere. Skip changelog-style",
     )
     lines.append(
-        "narration (\"switched from X to Y\"), dated notes, and ticket ids offered as the",
+        'narration ("switched from X to Y"), dated notes, and ticket ids offered as the',
     )
     lines.append(
         "only rationale.",
     )
     lines.append(
-        "\n\"Nothing\" is a frequent, correct outcome here - do not write a rule just to",
+        '\n"Nothing" is a frequent, correct outcome here - do not write a rule just to',
     )
     lines.append(
         "have written something. For a full routing pass, run /bdk:add-rule.",

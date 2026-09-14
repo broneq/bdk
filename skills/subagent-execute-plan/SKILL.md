@@ -1,10 +1,6 @@
 ---
 name: subagent-execute-plan
-description: >-
-  Coordinator that executes a plan in parallel groups via background subagents.
-  Spawns implementers, then dedicated test-runner / static-analyse subagents,
-  then routes failures back to the original implementer (SendMessage) or a fresh
-  fixer. Fully autonomous — no human-in-loop.
+description: "Fully autonomous coordinator that executes a plan in parallel groups via background subagents. Use when a written plan should run end to end with no human in the loop. Routes failures back to the original implementer or a fresh fixer."
 model: opus
 effort: high
 user-invocable: true

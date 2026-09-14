@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review GitHub PRs from URLs - templated inline comments, summary, and a verdict you confirm/override before it posts via gh. Stack-aware; one subagent per PR runs /bdk:cr --inline. --verify checks previous review comments were implemented.
+description: "Review GitHub PRs. Use when given one or more PR URLs: templated inline comments, a summary, and a verdict you confirm or override before it posts via gh. Stack-aware; one subagent per PR runs /bdk:cr --inline. --verify rechecks past comments."
 model: sonnet
 effort: medium
 argument-hint: "<pr-url> [<pr-url> ...] [--verify] [focus]"

@@ -18,7 +18,8 @@ SCRIPT = Path(__file__).parents[4] / "hooks" / "check-rules-drift" / "check.py"
 def _load_module():
     """Load check.py without executing main() — stdin may be irrelevant."""
     spec = importlib.util.spec_from_file_location("check_rules_drift", SCRIPT)
-    assert spec and spec.loader
+    assert spec
+    assert spec.loader
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
     return mod
@@ -76,6 +77,7 @@ with patch.object(mod, "get_changed_files", return_value=json.loads({changed_rep
         text=True,
         cwd=str(cwd) if cwd else None,
         env={**os.environ},
+        check=False,
     )
 
 
@@ -114,7 +116,7 @@ def test_extract_paths_missing_paths_key(tmp_path: Path) -> None:
 def test_extract_paths_quoted_patterns(tmp_path: Path) -> None:
     mod = _load_module()
     f = tmp_path / "rule.md"
-    f.write_text('---\npaths:\n  - "src/**"\n  - \'*.txt\'\n---\n')
+    f.write_text("---\npaths:\n  - \"src/**\"\n  - '*.txt'\n---\n")
     assert mod.extract_paths_from_frontmatter(f) == ["src/**", "*.txt"]
 
 
@@ -393,7 +395,8 @@ def test_scenario_incremental_turns_report_only_new_changes(tmp_path: Path) -> N
 
     a.write_text("a v1")
     block = _stop(tmp_path, sid, ["a.txt"])
-    assert block is not None and block["decision"] == "block"
+    assert block is not None
+    assert block["decision"] == "block"
     assert _reported_files(block) == ["a.txt"]
     assert _read_state(tmp_path, sid) == {"a.txt": _sha(a)}
 
@@ -448,7 +451,8 @@ def test_scenario_first_sight_reported_regardless_of_mtime(tmp_path: Path) -> No
 
 
 def test_scenario_revert_to_original_content_is_reported(tmp_path: Path) -> None:
-    """Content differs from what was seen last run → reported, even if it equals an older version."""
+    """Content differs from what was seen last run: reported, even if it
+    equals an older version."""
     sid = "revert"
     a = tmp_path / "a.txt"
 
@@ -587,8 +591,9 @@ def test_snapshot_without_rules_dir_writes_nothing(tmp_path: Path) -> None:
     old = os.getcwd()
     os.chdir(monkey_cwd)
     try:
-        with patch.object(mod, "read_stdin_json", return_value={"session_id": "s"}), patch.object(
-            mod, "get_changed_files", return_value=["a.txt"]
+        with (
+            patch.object(mod, "read_stdin_json", return_value={"session_id": "s"}),
+            patch.object(mod, "get_changed_files", return_value=["a.txt"]),
         ):
             mod.snapshot_baseline()
     finally:

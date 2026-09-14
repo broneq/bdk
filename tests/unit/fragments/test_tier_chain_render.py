@@ -43,10 +43,8 @@ CHAIN_EXPECTATIONS = [
 ]
 
 
-@pytest.mark.parametrize("chain_name,fragment_marker", CHAIN_EXPECTATIONS)
-def test_chain_renders_policy_with_graph_enabled(
-    chain_name: str, fragment_marker: str
-) -> None:
+@pytest.mark.parametrize(("chain_name", "fragment_marker"), CHAIN_EXPECTATIONS)
+def test_chain_renders_policy_with_graph_enabled(chain_name: str, fragment_marker: str) -> None:
     settings = {"features": {"code-review-graph": True, "serena": True}}
     out = inject_chain(CHAINS_DIR / chain_name, settings=settings)
 
@@ -64,9 +62,7 @@ def test_chain_renders_policy_with_graph_enabled(
         or "isolated change" in out
         or "mechanical change" in out
     ), f"{chain_name}: rendered chain missing negative-result rule"
-    assert fragment_marker in out, (
-        f"{chain_name}: menu fragment marker {fragment_marker!r} missing"
-    )
+    assert fragment_marker in out, f"{chain_name}: menu fragment marker {fragment_marker!r} missing"
 
 
 ALL_CHAINS = sorted(p.name for p in CHAINS_DIR.glob("*.chain.json"))
@@ -83,9 +79,7 @@ def test_chain_renders_a_tier_with_no_features(chain_name: str) -> None:
     settings = {"features": {"code-review-graph": False, "serena": False}}
     out = inject_chain(CHAINS_DIR / chain_name, settings=settings)
     assert out.strip(), f"{chain_name} rendered empty with all features off"
-    assert "Tier 3" in out, (
-        f"{chain_name} fallback must identify itself as the Tier 3 tier"
-    )
+    assert "Tier 3" in out, f"{chain_name} fallback must identify itself as the Tier 3 tier"
 
 
 @pytest.mark.parametrize("chain_name", ALL_CHAINS)
@@ -95,9 +89,7 @@ def test_additive_chain_suppresses_fallback_when_a_tier_matches(
     """The fallback tier must not stack on top of a higher tier."""
     settings = {"features": {"code-review-graph": True, "serena": True}}
     out = inject_chain(CHAINS_DIR / chain_name, settings=settings)
-    assert "Tier 3" not in out, (
-        f"{chain_name} injected its Tier 3 fallback alongside a higher tier"
-    )
+    assert "Tier 3" not in out, f"{chain_name} injected its Tier 3 fallback alongside a higher tier"
 
 
 def test_edit_chain_contains_additive_and_impact_and_structural() -> None:
@@ -116,7 +108,9 @@ def test_impact_chain_leads_with_impact_radius() -> None:
     impact_pos = out.find("get_impact_radius_tool")
     flows_pos = out.find("get_affected_flows_tool")
     assert impact_pos != -1, "impact chain missing get_impact_radius_tool"
-    assert impact_pos < flows_pos, "get_impact_radius_tool must appear before get_affected_flows_tool"
+    assert impact_pos < flows_pos, (
+        "get_impact_radius_tool must appear before get_affected_flows_tool"
+    )
 
 
 def test_review_chain_leads_with_detect_changes() -> None:
@@ -126,4 +120,6 @@ def test_review_chain_leads_with_detect_changes() -> None:
     detect_pos = out.find("detect_changes_tool")
     context_pos = out.find("get_review_context_tool")
     assert detect_pos != -1, "review chain missing detect_changes_tool"
-    assert detect_pos < context_pos, "detect_changes_tool must appear before get_review_context_tool"
+    assert detect_pos < context_pos, (
+        "detect_changes_tool must appear before get_review_context_tool"
+    )

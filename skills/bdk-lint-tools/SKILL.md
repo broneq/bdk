@@ -1,6 +1,6 @@
 ---
 name: bdk-lint-tools
-description: Project-configured lint/format/typecheck commands from .bdk/settings.json. Preloaded into agents that run static analysis; not user-facing.
+description: "Project-configured lint/format/typecheck commands from .bdk/settings.json. Used by agents that run static analysis - preloaded via skills: frontmatter, not user-facing."
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 user-invocable: false
 ---

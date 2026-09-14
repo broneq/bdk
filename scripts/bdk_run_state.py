@@ -52,7 +52,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 STATE_DIR = Path(".bdk/runs")
@@ -82,16 +82,14 @@ def now_iso() -> str:
     override = os.environ.get("BDK_NOW")
     if override:
         return override
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
-        "+00:00", "Z"
-    )
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def _parse_iso(value: str | None) -> datetime | None:
     if not value:
         return None
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return datetime.fromisoformat(value)
     except ValueError:
         return None
 
@@ -151,9 +149,7 @@ def hash_plan(plan_path: str | Path) -> str:
 
 
 def git(*args: str, check: bool = True) -> str:
-    proc = subprocess.run(
-        ["git", *args], capture_output=True, text=True, check=False
-    )
+    proc = subprocess.run(["git", *args], capture_output=True, text=True, check=False)
     if check and proc.returncode != 0:
         raise Refusal(f"git {' '.join(args)} failed: {proc.stderr.strip()}")
     return proc.stdout.strip()
@@ -206,8 +202,8 @@ def trailer_commits(rid: str, base_sha: str | None = None) -> list[dict]:
     )
     out = git("log", "--reverse", f"--format={fmt}", rev, check=False)
     commits: list[dict] = []
-    for record in out.split("\x1e"):
-        record = record.strip("\n")
+    for raw_record in out.split("\x1e"):
+        record = raw_record.strip("\n")
         if not record:
             continue
         parts = record.split("\x1f")
@@ -296,15 +292,12 @@ def manifest_path(rid: str) -> Path:
 def read_manifest(rid: str) -> dict:
     path = manifest_path(rid)
     if not path.exists():
-        raise Refusal(
-            f"no run '{rid}'. Start one with `init`, or list existing runs with `list`."
-        )
+        raise Refusal(f"no run '{rid}'. Start one with `init`, or list existing runs with `list`.")
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise Refusal(
-            f"manifest for '{rid}' is not valid JSON ({exc}). "
-            f"Recover with `rebuild --run {rid}`."
+            f"manifest for '{rid}' is not valid JSON ({exc}). Recover with `rebuild --run {rid}`."
         ) from exc
 
 
@@ -384,10 +377,12 @@ def claim_session(state: dict, session: str, force: bool) -> list[str]:
     last_sha = state.get("groups_done", {}).get(str(last), "") if last else ""
     state["session_id"] = session
     return [
-        f"took over run '{state['run_id']}' from session {owner} "
-        f"(plan {state.get('plan_slug')}, branch {state.get('branch')}, "
-        f"last group {last if last is not None else 'none'} "
-        f"{last_sha[:8] or '-'})"
+        (
+            f"took over run '{state['run_id']}' from session {owner} "
+            f"(plan {state.get('plan_slug')}, branch {state.get('branch')}, "
+            f"last group {last if last is not None else 'none'} "
+            f"{last_sha[:8] or '-'})"
+        )
     ]
 
 
@@ -484,7 +479,7 @@ def cmd_get(args: argparse.Namespace) -> dict:
     drift = reconcile(state)
     if drift:
         write_manifest(state)
-    return {**{k: v for k, v in state.items()}, "drift": drift}
+    return {**dict(state.items()), "drift": drift}
 
 
 def cmd_resume(args: argparse.Namespace) -> dict:
@@ -700,9 +695,7 @@ def cmd_resolve_range(args: argparse.Namespace) -> dict:
     count = git("rev-list", "--count", f"{anchor}..{head}", check=False)
     commits = int(count) if count.isdigit() else 0
     files = (
-        git("diff", "--name-only", f"{anchor}..{head}", check=False).splitlines()
-        if commits
-        else []
+        git("diff", "--name-only", f"{anchor}..{head}", check=False).splitlines() if commits else []
     )
     cumulative = git("diff", "--name-only", f"{base}..{head}", check=False).splitlines()
 
@@ -781,10 +774,8 @@ def _parse_counts(raw: str | None) -> dict:
         return {}
     parts = [p.strip() for p in raw.split(",")]
     if len(parts) != len(SEVERITIES) or not all(p.isdigit() for p in parts):
-        raise Refusal(
-            f"--counts must be four integers 'C,H,M,L' (got {raw!r})"
-        )
-    return dict(zip(SEVERITIES, (int(p) for p in parts)))
+        raise Refusal(f"--counts must be four integers 'C,H,M,L' (got {raw!r})")
+    return dict(zip(SEVERITIES, (int(p) for p in parts), strict=False))
 
 
 def normalize_category(raw: str) -> str:
@@ -819,10 +810,10 @@ def cmd_findings_add(args: argparse.Namespace) -> dict:
     findings = state.setdefault("deferred_findings", [])
     # A symbol survives edits that shift line numbers, so it keys the entry
     # whenever the caller resolved one; line is the fallback locus.
-    locus = args.symbol if args.symbol else args.line
+    locus = args.symbol or args.line
 
     def locus_of(f: dict) -> object:
-        return f.get("symbol") if f.get("symbol") else f.get("line")
+        return f.get("symbol") or f.get("line")
 
     key = (severity, category, args.file, locus, args.problem)
     if any(
@@ -853,8 +844,10 @@ def cmd_findings_list(args: argparse.Namespace) -> dict | str:
         lines = [
             "## Already triaged - do NOT report these again",
             "",
-            "The coordinator saw each of these and deliberately deferred it. "
-            "Re-reporting one is noise, not a finding.",
+            (
+                "The coordinator saw each of these and deliberately deferred it. "
+                "Re-reporting one is noise, not a finding."
+            ),
             "",
         ]
         for f in findings:
@@ -959,11 +952,9 @@ def cmd_print(args: argparse.Namespace) -> str:
         counts = review.get("counts") or {}
         summary = " ".join(f"{k[0]}{v}" for k, v in counts.items()) or "-"
         lines.append(
-            f"  review  {review['reviewed_sha'][:12]} group="
-            f"{review.get('group') or '-'} {summary}"
+            f"  review  {review['reviewed_sha'][:12]} group={review.get('group') or '-'} {summary}"
         )
-    for note in drift:
-        lines.append(f"  drift: {note}")
+    lines.extend(f"  drift: {note}" for note in drift)
     return "\n".join(lines)
 
 
@@ -973,9 +964,7 @@ def cmd_print(args: argparse.Namespace) -> str:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="bdk_run_state.py", description=__doc__.split("\n")[0]
-    )
+    parser = argparse.ArgumentParser(prog="bdk_run_state.py", description=__doc__.split("\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("hash-plan", help="sha256 of a plan file's bytes")

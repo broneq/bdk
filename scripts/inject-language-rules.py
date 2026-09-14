@@ -64,20 +64,15 @@ def _normalise_override(entry: object, lang: str) -> dict | None:  # type: ignor
         return {"path": entry, "mode": "extends"}
     if isinstance(entry, dict):
         if "path" not in entry:
-            raise ValueError(
-                f"language-rules.{lang}: 'path' is required in object form"
-            )
+            raise ValueError(f"language-rules.{lang}: 'path' is required in object form")
         mode = entry.get("mode", "extends")
         if mode not in ("extends", "replace"):
             print(
-                f"{ERR_PREFIX} language-rules.{lang}: "
-                f"unknown mode {mode!r}, treating as 'extends'"
+                f"{ERR_PREFIX} language-rules.{lang}: unknown mode {mode!r}, treating as 'extends'"
             )
             mode = "extends"
         return {"path": entry["path"], "mode": mode}
-    raise ValueError(
-        f"language-rules.{lang}: must be string or object, got {type(entry).__name__}"
-    )
+    raise ValueError(f"language-rules.{lang}: must be string or object, got {type(entry).__name__}")
 
 
 def resolve_language_rule(
@@ -104,9 +99,7 @@ def resolve_language_rule(
     if not user_path.is_absolute():
         user_path = cwd / user_path
     if not user_path.exists():
-        raise FileNotFoundError(
-            f"language-rules.{lang}: user file not found: {user_path}"
-        )
+        raise FileNotFoundError(f"language-rules.{lang}: user file not found: {user_path}")
     user_content = user_path.read_text(encoding="utf-8")
 
     if override["mode"] == "replace":

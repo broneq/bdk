@@ -24,7 +24,9 @@ def main() -> None:
     install_hint = sys.argv[2] if len(sys.argv) >= 3 else None
 
     if shutil.which(command) is None:
-        msg = f"[BDK] Command '{command}' not found in PATH. This skill requires it to be installed."
+        msg = (
+            f"[BDK] Command '{command}' not found in PATH. This skill requires it to be installed."
+        )
         if install_hint:
             msg += f" Install: {install_hint}"
         print(msg, file=sys.stderr)

@@ -6,7 +6,6 @@ model: opus
 effort: max
 user-invocable: true
 disable-model-invocation: true
-context: main
 allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(lavish-axi *) AskUserQuestion
 ---
 

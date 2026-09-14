@@ -1,6 +1,6 @@
 ---
 name: cr
-description: Run code review with dynamic agent scaling (3-13 agents based on change size). Delta since the last review by default; --full whole branch; --inline runs in-session with no subagents; --base <ref> explicit baseline (stacks).
+description: "Run code review with dynamic agent scaling (3-13 agents by change size). Use when reviewing local changes: delta since the last review by default; --full whole branch; --inline in-session with no subagents; --base <ref> explicit baseline."
 model: sonnet
 effort: high
 argument-hint: "[--full] [--inline] [--base <ref>] [focus]"

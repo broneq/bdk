@@ -1,9 +1,6 @@
 ---
 name: create-adr
-description: >-
-  Create Architecture Decision Records (ADRs) based on MADR template.
-  Use when the user asks to "create an ADR", "document a decision",
-  "write an ADR", or provides decision context that needs to be formalized.
+description: 'Create Architecture Decision Records (ADRs) based on the MADR template. Use when the user asks to "create an ADR", "document a decision", "write an ADR", or gives decision context that needs to be formalized.'
 model: opus
 user-invocable: true
 disable-model-invocation: true

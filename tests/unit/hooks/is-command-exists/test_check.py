@@ -7,8 +7,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 SCRIPT = Path(__file__).parents[4] / "hooks" / "is-command-exists" / "check.py"
 
 
@@ -18,6 +16,7 @@ def _run(*args: str) -> subprocess.CompletedProcess:  # type: ignore[type-arg]
         capture_output=True,
         text=True,
         env={**os.environ},
+        check=False,
     )
 
 

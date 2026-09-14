@@ -3,6 +3,10 @@ __pycache__/
 *.pyo
 tmp_*.py
 .idea/
+# uv virtualenv. It self-ignores via .venv/.gitignore, but that only hides it
+# from git - a filesystem-glob tool (ruff format ., pymarkdown scan -r .) still
+# descends into it. Anchored here so both agree.
+/.venv/
 # mkdocs build output (`mkdocs build` / `mkdocs gh-deploy`)
 /site/
 # Added by code-review-graph

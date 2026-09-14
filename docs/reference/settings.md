@@ -150,7 +150,7 @@ Four boolean keys, each with its own schema description:
 
 Every value must be a boolean (`check.py`'s `validate_settings` rejects a non-boolean `features.<key>`).
 
-No BDK behaviour currently reads `caveman` - no fragment, chain, hook or script consults it, even though `/bdk:setup` collects an answer for it. Tracked at https://github.com/broneq/bdk/issues/39.
+No BDK behaviour currently reads `caveman` - no fragment, chain, hook or script consults it, even though `/bdk:setup` collects an answer for it. Tracked at <https://github.com/broneq/bdk/issues/39>.
 
 The schema does not declare a default for these keys, and the two scripts that read them at runtime do not treat "missing" the same way:
 

@@ -46,9 +46,9 @@ import sys
 from pathlib import Path
 
 # Matches: features.some-key  OR  tool.some-binary  OR  languages[value]
-_FEATURE_RE = re.compile(r'^features\.([\w-]+)$')
-_TOOL_RE = re.compile(r'^tool\.([\w.-]+)$')
-_ARRAY_RE = re.compile(r'^([\w-]+)\[([\w-]+)\]$')
+_FEATURE_RE = re.compile(r"^features\.([\w-]+)$")
+_TOOL_RE = re.compile(r"^tool\.([\w.-]+)$")
+_ARRAY_RE = re.compile(r"^([\w-]+)\[([\w-]+)\]$")
 
 ERR_PREFIX = "[bdk-inject-error]"
 
@@ -127,7 +127,7 @@ def inject(
         if not evaluate_condition(condition, settings):
             return ""
 
-    for prefer in (prefer_conditions or []):
+    for prefer in prefer_conditions or []:
         if evaluate_condition(prefer, settings):
             return ""
 
@@ -244,8 +244,15 @@ def main() -> None:
         help="Suppress block if any of these conditions are true (repeatable, OR logic)",
     )
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument("--then", dest="then_path", metavar="FILE", help="File to print if conditions true")
-    group.add_argument("--then-text", dest="then_text", metavar="TEXT", help="Inline text to print if conditions true")
+    group.add_argument(
+        "--then", dest="then_path", metavar="FILE", help="File to print if conditions true"
+    )
+    group.add_argument(
+        "--then-text",
+        dest="then_text",
+        metavar="TEXT",
+        help="Inline text to print if conditions true",
+    )
     parser.add_argument(
         "--settings",
         dest="settings_path",
@@ -260,9 +267,7 @@ def main() -> None:
         if not Path(args.chain_path).exists():
             print(f"{ERR_PREFIX} inject: chain file not found: {args.chain_path}")
             sys.exit(0)
-        settings = (
-            load_settings(args.settings_path) if args.settings_path else load_settings()
-        )
+        settings = load_settings(args.settings_path) if args.settings_path else load_settings()
         if settings is None:
             sys.exit(0)
         try:
@@ -280,9 +285,7 @@ def main() -> None:
     if args.then_path is None and args.then_text is None:
         parser.error("one of the arguments --then --then-text is required")
 
-    settings = (
-        load_settings(args.settings_path) if args.settings_path else load_settings()
-    )
+    settings = load_settings(args.settings_path) if args.settings_path else load_settings()
     if settings is None:
         sys.exit(0)
 

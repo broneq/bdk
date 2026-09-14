@@ -7,8 +7,82 @@ dependencies = []
 [dependency-groups]
 dev = ["pytest>=8.0"]
 docs = ["mkdocs-material>=9.5"]
+# Gate tools are pinned exactly. A version bump has to be a reviewable commit,
+# never something that happens to a green build overnight - these tools decide
+# whether main is mergeable. uv.lock double-locks; the `==` keeps the intended
+# version greppable without opening a 98KB lockfile.
+lint = [
+  "ruff==0.16.7",
+  "mypy==2.3.1",
+  "skilllint==1.19.8",
+  "actionlint-py==1.7.12.24",
+  "pymarkdownlnt==0.9.40",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*.test.py"]
 addopts = "--import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# .venv, .pytest_cache and .ruff_cache self-ignore via their own .gitignore and
+# ruff honours gitignore, but a belt-and-braces list is cheap. tests/evals is
+# 254 tracked files with zero .py in them - captured LLM transcripts, not code.
+extend-exclude = [".venv", "site", "tests/evals", ".claude"]
+# Ruff formats fenced code blocks inside Markdown. Every .md in this repo is
+# either docs prose or an LLM prompt shipped to users, and reformatting a
+# prompt rewrites what the model reads - it turned three one-line tool calls
+# in skills/explain-complex-code/references/examples.md into three-line ones.
+include = ["*.py", "*.pyi"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W",               # pycodestyle
+  "F",                    # pyflakes
+  "I",                    # isort
+  "UP",                   # pyupgrade - matches the PEP 585/604-only house style
+  "B", "C4", "SIM", "RET", # bugbear, comprehensions, simplify, returns
+  "RUF", "PIE", "PERF", "FURB",
+  "LOG", "G",             # logging correctness
+  "ISC", "TID", "A", "DTZ",
+  "PT",                   # pytest style
+  "TRY",
+  "PL",                   # pylint port
+]
+ignore = [
+  "ISC001",   # conflicts with `ruff format`; ruff warns about the pairing itself
+  "EXE001",   # hooks/hooks.json invokes every script as `python3 <path>`, so the
+              # shebangs are decorative and the exec bit carries no meaning here
+  "TRY003",   # long messages at the raise site are the house style (32 hits)
+  "PLR2004",  # argv arity and small literals read better inline (30 hits)
+  "PLR0911", "PLR0912", "PLR0913", "PLR0915",  # complexity budgets: not this PR
+  "PLC0415",  # deliberate function-local imports in hook scripts (3 hits)
+]
+
+# Deliberately NOT selected, so nobody has to re-derive the reasoning:
+#   S      687x S101 - asserts are the test idiom; S603/S607 flag shelling out
+#          to git/python3, which is what these scripts exist to do
+#   COM    84x COM812 - redundant with, and hostile to, `ruff format`
+#   T20    39x T201 - hook and CLI scripts talk to the harness over stdout
+#   EM     32x - style opinion with no defect value
+#   ERA001 10x - 100% false positives, all `# ---- section ----` dividers
+#   INP001 18x, all under tests/ - the missing __init__.py is deliberate;
+#          collection works via --import-mode=importlib
+#   Q      `ruff format` already normalises quotes
+#   ANN, D would each be a multi-thousand-line project of their own
+
+[tool.ruff.lint.isort]
+# Every tracked .py file already opens with this. Codifying it stops a new file
+# from silently opting out of the convention.
+required-imports = ["from __future__ import annotations"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+# Invoked per-directory from the Makefile, never across the whole tree: five
+# hook modules share the basename `check.py` and there is no __init__.py
+# anywhere, so a single mypy run dies on a module-name collision that
+# --explicit-package-bases does not resolve. Every source directory is clean
+# today, which makes this a forward guard rather than a backlog.

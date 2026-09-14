@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import io
 import json
@@ -10,8 +11,6 @@ import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 SCRIPT = Path(__file__).parents[4] / "hooks" / "check-bdk-config" / "check.py"
 
@@ -36,11 +35,12 @@ def _load_module():
     fake_stdin = io.StringIO(json.dumps({"session_id": "test"}))
     spec = importlib.util.spec_from_file_location("check_bdk_config", SCRIPT)
     mod = importlib.util.module_from_spec(spec)
-    with patch("sys.stdin", fake_stdin), patch("sys.exit", side_effect=SystemExit):
-        try:
-            spec.loader.exec_module(mod)
-        except SystemExit:
-            pass
+    with (
+        patch("sys.stdin", fake_stdin),
+        patch("sys.exit", side_effect=SystemExit),
+        contextlib.suppress(SystemExit),
+    ):
+        spec.loader.exec_module(mod)
     return mod
 
 
@@ -122,6 +122,7 @@ def _run_script(cwd: Path, stdin_data: dict | None = None) -> subprocess.Complet
         input=stdin_json,
         cwd=str(cwd),
         env={**os.environ},
+        check=False,
     )
 
 
@@ -315,8 +316,12 @@ TIERED_SETTINGS = {
         },
     ],
     "lint-tools": [
-        {"type": "tsc", "tier": "typecheck", "command": "npm run typecheck",
-         "incremental": "npx tsc -b --incremental"},
+        {
+            "type": "tsc",
+            "tier": "typecheck",
+            "command": "npm run typecheck",
+            "incremental": "npx tsc -b --incremental",
+        },
     ],
 }
 
@@ -336,9 +341,7 @@ def test_the_session_summary_names_the_tier():
 
 def test_a_tool_without_a_tier_still_formats_with_just_its_type():
     mod = _load_module()
-    result = mod.format_settings_context(
-        {"test-tools": [{"type": "pytest", "command": "pytest"}]}
-    )
+    result = mod.format_settings_context({"test-tools": [{"type": "pytest", "command": "pytest"}]})
     assert "pytest (pytest)" in result
 
 
@@ -364,8 +367,7 @@ def test_a_scoped_template_without_the_placeholder_is_rejected():
     errors = mod.validate_settings(
         {
             "test-tools": [
-                {"type": "vitest", "command": "npm run test:unit",
-                 "scoped": "npx vitest run"}
+                {"type": "vitest", "command": "npm run test:unit", "scoped": "npx vitest run"}
             ]
         }
     )
@@ -390,12 +392,18 @@ def test_failed_and_incremental_need_no_placeholder():
         mod.validate_settings(
             {
                 "test-tools": [
-                    {"type": "playwright", "command": "npm run test:e2e",
-                     "failed": "npx playwright test --last-failed"}
+                    {
+                        "type": "playwright",
+                        "command": "npm run test:e2e",
+                        "failed": "npx playwright test --last-failed",
+                    }
                 ],
                 "lint-tools": [
-                    {"type": "tsc", "command": "npm run typecheck",
-                     "incremental": "npx tsc -b --incremental"}
+                    {
+                        "type": "tsc",
+                        "command": "npm run typecheck",
+                        "incremental": "npx tsc -b --incremental",
+                    }
                 ],
             }
         )
@@ -425,8 +433,13 @@ def test_every_bad_field_in_one_entry_is_reported_at_once():
     errors = mod.validate_settings(
         {
             "test-tools": [
-                {"type": "vitest", "command": "npm t", "tier": "nope",
-                 "scoped": "npx vitest run", "related": 7}
+                {
+                    "type": "vitest",
+                    "command": "npm t",
+                    "tier": "nope",
+                    "scoped": "npx vitest run",
+                    "related": 7,
+                }
             ]
         }
     )

@@ -3,6 +3,7 @@
 Audit of every dynamic-content injection mechanism in BDK, mapped against the Claude Code plugin spec. Documents what works, what's silently broken, and where every usage lives.
 
 **Sources verified against:**
+
 - `https://code.claude.com/docs/en/plugins-reference` — Plugins reference
 - `https://code.claude.com/docs/en/skills` — Skills (frontmatter, dynamic context injection)
 - `https://code.claude.com/docs/en/agents` — Subagents (supported frontmatter, plugin restrictions)
@@ -36,6 +37,7 @@ The whole confusion stems from **`!\`...\`` only working in some contexts, not o
 ### Where `!\`command\`` IS executed
 
 Per docs, dynamic context injection runs in:
+
 - **`SKILL.md` body** — verbatim quote: *"Each `!\`<command>\`` executes immediately (before Claude sees anything). The output replaces the placeholder in the skill content."*
 - **Custom commands** (`.claude/commands/*.md`) — same skill machinery
 
@@ -91,6 +93,7 @@ So plugin agents *cannot* attach hooks via frontmatter, period. Skills *can*.
 **File:** `STARTUP_INSTRUCTIONS.md`
 
 **Three usages, all dead:**
+
 - Line 11: `!\`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json\``
 - Line 15: `!\`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json\``
 - Line 19: `!\`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/impact.chain.json\``
@@ -102,6 +105,7 @@ So plugin agents *cannot* attach hooks via frontmatter, period. Skills *can*.
 **Impact:** The Tool Tier System — the central abstraction injected at session start — is not reaching the model. Skills that *do* invoke chains directly (Flow 3) still get them, but the session-level baseline is missing.
 
 **Fix options:**
+
 - **A.** Move expansion into the hook command itself: `bash -c 'cat .../STARTUP_INSTRUCTIONS.md && python3 .../inject.py --chain .../explore.chain.json && ...'`
 - **B.** Replace `STARTUP_INSTRUCTIONS.md` with a Python script that prints the resolved content (chains expanded inline). Hook calls the script directly.
 - **C.** Use `additionalContext` JSON form in the hook to assemble the final string in the script.
@@ -115,6 +119,7 @@ Recommended: **B**. Cleanest, single source of truth.
 **Status:** ✅ Works. Skill markdown supports dynamic context injection per spec.
 
 **Usages:**
+
 - `skills/cr/SKILL.md:52` — `review.chain.json`
 - `skills/create-plan/SKILL.md:52` — `explore.chain.json`
 - `skills/explain-complex-code/SKILL.md:34` — `explore.chain.json`
@@ -131,6 +136,7 @@ These run when the skill is invoked. Output replaces the placeholder before Clau
 **Status:** ✅ Works.
 
 **Two usages:**
+
 - `skills/create-plan/SKILL.md:122` — `code-quality`
 - `skills/cr/SKILL.md:99` — generic loop in prose: *"For each `<!-- INJECT: <name> -->` marker, run python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>"*
 
@@ -143,6 +149,7 @@ The `cr` skill uses an instruction-driven loop (it's prose, the model walks the 
 **Status:** ✅ Works.
 
 **Usages:**
+
 - `skills/test-driven-development/SKILL.md:105` — `test-tools`
 - `skills/create-plan/SKILL.md:120,121` — `test-tools`, `lint-tools`
 - `skills/debug/SKILL.md:117,168,169` — `test-tools` (×2), `lint-tools`
@@ -156,6 +163,7 @@ Resolves project-level test/lint commands from `.bdk/settings.json`. Standard sk
 **Status:** ✅ Works (instruction-driven, not a Claude Code feature).
 
 **Usages:**
+
 - `skills/cr/references/reviewer-prompt-template.md:18` — `code-quality`
 - `skills/cr/references/reviewer-prompt-template.md:22` — `architecture`
 - `skills/cr/references/reviewer-prompt-template.md:48` — `architecture`
@@ -192,6 +200,7 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 **Status:** ✅ Works. Skill frontmatter `hooks:` is documented and supported, no plugin restriction.
 
 **Skills using this:**
+
 - `skills/commit/SKILL.md:7-9`
 - `skills/update-docs/SKILL.md:8-10`
 - `skills/explain-complex-code/SKILL.md:8-10`
@@ -205,6 +214,7 @@ These fire correctly when the skill is invoked.
 **Status:** ✅ Works. Pure file-read at runtime, no special mechanism.
 
 **Two agents:**
+
 - `agents/code-reviewer.md:49` — reads `.claude/rules/` for project-specific quality standards
 - `agents/architecture-reviewer.md:39,73` — reads `.claude/rules/architecture.md`
 
@@ -463,6 +473,7 @@ For each, decision based on the entity's actual job. "Inject only what's used."
 | `web-researcher` | haiku | Internet research | — | — | — | — | — | — | — |
 
 **Notes per agent:**
+
 - `architecture-reviewer` — gets both `tier-explore` and `tier-search` because it traces structure AND symbols. No `code-quality` (not its job — it reviews layering, not function-level hygiene).
 - `code-reviewer` — gets all rules. Reviews function-level code AND structural choices.
 - `dead-code-detector` / `duplicate-detector` — narrow jobs. Only `tier-search`. No rules to enforce.
@@ -502,7 +513,7 @@ Skills that ARE orchestrators (dispatch subagents) and skills that produce outpu
 
 4. **`design` should know architecture and design-patterns rules.** The skill currently injects `architecture` only; adding `design-patterns` would tighten its output toward project conventions.
 
-6. **`graph-*` skills are deliberately frozen.** They only make sense when `code-review-graph` is enabled, so they hardcode graph tools instead of going through the chain mechanism. Don't migrate them.
+5. **`graph-*` skills are deliberately frozen.** They only make sense when `code-review-graph` is enabled, so they hardcode graph tools instead of going through the chain mechanism. Don't migrate them.
 
 ### Verification status
 
@@ -523,12 +534,12 @@ For future verification, here are the exact lines from Claude Code docs that thi
 
 **Hook stdout handling** (`/en/hooks`):
 > Any text your hook script prints to stdout is added as context for Claude.
-
+>
 > Once output is injected as context or additionalContext, it is static. The documentation contains no reference to re-parsing hook output for embedded commands or macros.
 
 **Skill dynamic context injection** (`/en/skills`):
 > The `!\`<command>\`` syntax runs shell commands before the skill content is sent to Claude. The command output replaces the placeholder, so Claude receives actual data, not the command itself.
-
+>
 > Each `!\`<command>\`` executes immediately (before Claude sees anything)
 > The output replaces the placeholder in the skill content
 > Claude receives the fully-rendered prompt with actual PR data

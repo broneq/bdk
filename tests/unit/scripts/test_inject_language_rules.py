@@ -44,15 +44,17 @@ def _write_default(plugin_root: Path, lang: str, content: str) -> Path:
 def _run_cli(args: list[str], cwd: Path, plugin_root: Path) -> subprocess.CompletedProcess:
     env = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(plugin_root)}
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd),
         env=env,
+        check=False,
     )
 
 
 # ---------- resolve_language_rule ----------
+
 
 def test_no_settings_returns_default_when_file_exists(tmp_path):
     plugin_root = tmp_path / "plugin"
@@ -160,7 +162,7 @@ def test_object_override_missing_path_raises(tmp_path):
         {"language-rules": {"react": {"mode": "replace"}}},
     )
 
-    with pytest.raises(ValueError, match="path.*required"):
+    with pytest.raises(ValueError, match=r"path.*required"):
         resolve_language_rule("react", cwd=project, plugin_root=plugin_root)
 
 
@@ -186,6 +188,7 @@ def test_unknown_mode_warns_and_extends(tmp_path, capsys):
 
 
 # ---------- resolve_all ----------
+
 
 def test_resolve_all_no_settings_returns_empty(tmp_path):
     plugin_root = tmp_path / "plugin"
@@ -251,6 +254,7 @@ def test_resolve_all_ignores_non_string_language_entries(tmp_path):
 
 
 # ---------- CLI ----------
+
 
 def test_cli_no_args_emits_all_to_stdout(tmp_path):
     plugin_root = tmp_path / "plugin"
