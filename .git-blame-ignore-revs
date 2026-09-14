@@ -2,3 +2,6 @@
 #
 # GitHub's web blame picks this file up automatically. Local git does not:
 #   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: apply ruff format
+f08fe2a192ed64f830314c1a525dc469fcde6101
