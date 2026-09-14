@@ -164,9 +164,7 @@ def lint_file(path: Path, root: Path | None = None) -> dict:
     findings: list[dict] = []
 
     def add(severity: str, code: str, message: str, line: int | None = None) -> None:
-        findings.append(
-            {"severity": severity, "code": code, "message": message, "line": line}
-        )
+        findings.append({"severity": severity, "code": code, "message": message, "line": line})
 
     byte_count = len(text.encode("utf-8", errors="replace"))
     if byte_count > MAX_BYTES:

@@ -62,7 +62,7 @@ def _frontmatter_field(frontmatter: str, field: str) -> str | None:
     prefix = f"{field}:"
     for line in frontmatter.splitlines():
         if line.startswith(prefix):
-            return line[len(prefix):].strip().strip("\"'")
+            return line[len(prefix) :].strip().strip("\"'")
     return None
 
 
@@ -85,6 +85,7 @@ def _agent_name(agent_md: Path) -> str:
 # ---------------------------------------------------------------------------
 # Test 1 - user-invocable skills indexed in README + reference/skills.md
 # ---------------------------------------------------------------------------
+
 
 def _invocable_skill_paths() -> list[Path]:
     return sorted(p for p in SKILLS_DIR.glob("*/SKILL.md") if _is_user_invocable(p))
@@ -115,6 +116,7 @@ def test_skill_indexed_in_readme_and_reference(skill_md: Path) -> None:
 # ---------------------------------------------------------------------------
 # Test 2 - every agent named in docs/reference/agents.md
 # ---------------------------------------------------------------------------
+
 
 def _agent_paths() -> list[Path]:
     return sorted(AGENTS_DIR.glob("*.md"))

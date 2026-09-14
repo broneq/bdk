@@ -64,7 +64,9 @@ def test_impact_graph_leads_with_impact_radius() -> None:
     impact_pos = body.find("get_impact_radius_tool")
     flows_pos = body.find("get_affected_flows_tool")
     assert impact_pos != -1, "impact-graph.md missing get_impact_radius_tool"
-    assert impact_pos < flows_pos, "get_impact_radius_tool must appear before get_affected_flows_tool"
+    assert impact_pos < flows_pos, (
+        "get_impact_radius_tool must appear before get_affected_flows_tool"
+    )
 
 
 def test_review_graph_leads_with_detect_changes() -> None:
@@ -72,4 +74,6 @@ def test_review_graph_leads_with_detect_changes() -> None:
     detect_pos = body.find("detect_changes_tool")
     context_pos = body.find("get_review_context_tool")
     assert detect_pos != -1, "review-graph.md missing detect_changes_tool"
-    assert detect_pos < context_pos, "detect_changes_tool must appear before get_review_context_tool"
+    assert detect_pos < context_pos, (
+        "detect_changes_tool must appear before get_review_context_tool"
+    )

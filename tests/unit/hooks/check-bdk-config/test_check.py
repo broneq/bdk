@@ -315,8 +315,12 @@ TIERED_SETTINGS = {
         },
     ],
     "lint-tools": [
-        {"type": "tsc", "tier": "typecheck", "command": "npm run typecheck",
-         "incremental": "npx tsc -b --incremental"},
+        {
+            "type": "tsc",
+            "tier": "typecheck",
+            "command": "npm run typecheck",
+            "incremental": "npx tsc -b --incremental",
+        },
     ],
 }
 
@@ -336,9 +340,7 @@ def test_the_session_summary_names_the_tier():
 
 def test_a_tool_without_a_tier_still_formats_with_just_its_type():
     mod = _load_module()
-    result = mod.format_settings_context(
-        {"test-tools": [{"type": "pytest", "command": "pytest"}]}
-    )
+    result = mod.format_settings_context({"test-tools": [{"type": "pytest", "command": "pytest"}]})
     assert "pytest (pytest)" in result
 
 
@@ -364,8 +366,7 @@ def test_a_scoped_template_without_the_placeholder_is_rejected():
     errors = mod.validate_settings(
         {
             "test-tools": [
-                {"type": "vitest", "command": "npm run test:unit",
-                 "scoped": "npx vitest run"}
+                {"type": "vitest", "command": "npm run test:unit", "scoped": "npx vitest run"}
             ]
         }
     )
@@ -390,12 +391,18 @@ def test_failed_and_incremental_need_no_placeholder():
         mod.validate_settings(
             {
                 "test-tools": [
-                    {"type": "playwright", "command": "npm run test:e2e",
-                     "failed": "npx playwright test --last-failed"}
+                    {
+                        "type": "playwright",
+                        "command": "npm run test:e2e",
+                        "failed": "npx playwright test --last-failed",
+                    }
                 ],
                 "lint-tools": [
-                    {"type": "tsc", "command": "npm run typecheck",
-                     "incremental": "npx tsc -b --incremental"}
+                    {
+                        "type": "tsc",
+                        "command": "npm run typecheck",
+                        "incremental": "npx tsc -b --incremental",
+                    }
                 ],
             }
         )
@@ -425,8 +432,13 @@ def test_every_bad_field_in_one_entry_is_reported_at_once():
     errors = mod.validate_settings(
         {
             "test-tools": [
-                {"type": "vitest", "command": "npm t", "tier": "nope",
-                 "scoped": "npx vitest run", "related": 7}
+                {
+                    "type": "vitest",
+                    "command": "npm t",
+                    "tier": "nope",
+                    "scoped": "npx vitest run",
+                    "related": 7,
+                }
             ]
         }
     )

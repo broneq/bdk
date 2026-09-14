@@ -57,9 +57,7 @@ def _ok(args: list[str], cwd: Path, at: str | None = None) -> dict:
 
 
 def _git(cwd: Path, *args: str) -> str:
-    proc = subprocess.run(
-        ["git", *args], cwd=str(cwd), capture_output=True, text=True, check=True
-    )
+    proc = subprocess.run(["git", *args], cwd=str(cwd), capture_output=True, text=True, check=True)
     return proc.stdout.strip()
 
 
@@ -290,9 +288,7 @@ def test_group_done_warns_when_the_commit_carries_no_trailer(repo: Path) -> None
 
 def test_group_done_refuses_a_nonexistent_commit(repo: Path) -> None:
     _init(repo)
-    proc = _run(
-        ["group-done", "--run", RUN, "--group", "1", "--commit", "0" * 40], repo
-    )
+    proc = _run(["group-done", "--run", RUN, "--group", "1", "--commit", "0" * 40], repo)
     assert proc.returncode == 1
     assert "[bdk-run-state]" in proc.stderr
 
@@ -444,9 +440,7 @@ def test_review_done_records_the_resolved_sha_and_counts(repo: Path) -> None:
 def test_review_done_rejects_malformed_counts(repo: Path) -> None:
     _init(repo)
     sha = _commit_group(repo, 1)
-    proc = _run(
-        ["review-done", "--run", RUN, "--reviewed-sha", sha, "--counts", "1,2"], repo
-    )
+    proc = _run(["review-done", "--run", RUN, "--reviewed-sha", sha, "--counts", "1,2"], repo)
     assert proc.returncode == 1
     assert "four integers" in proc.stderr
 
@@ -848,9 +842,7 @@ def test_group_done_without_a_start_reports_unknown_rather_than_guessing(repo: P
 def test_group_start_twice_resets_the_stamp_and_says_so(repo: Path) -> None:
     _init(repo, at="2026-08-21T10:00:00Z")
     _ok(["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:00:05Z")
-    again = _ok(
-        ["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:03:05Z"
-    )
+    again = _ok(["group-start", "--run", RUN, "--group", "1"], repo, "2026-08-21T10:03:05Z")
     assert again["started_at"] == "2026-08-21T10:03:05Z"
     assert any("re-dispatch" in n for n in again["notes"])
     _commit_group(repo, 1)

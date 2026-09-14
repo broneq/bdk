@@ -43,6 +43,7 @@ mod._search_dirs = lambda: [Path(p) for p in {dirs_repr}]
 mod.main()
 """
     import os
+
     return subprocess.run(
         [sys.executable, "-c", wrapper],
         capture_output=True,
@@ -234,6 +235,7 @@ def test_different_skill_names_each_check(tmp_path: Path) -> None:
 def test_no_skill_arg_exits_cleanly() -> None:
     """No argument → exit 0, no output."""
     import os
+
     result = subprocess.run(
         [sys.executable, str(SCRIPT)],
         input=json.dumps({"session_id": "s"}),

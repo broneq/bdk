@@ -114,7 +114,7 @@ def test_extract_paths_missing_paths_key(tmp_path: Path) -> None:
 def test_extract_paths_quoted_patterns(tmp_path: Path) -> None:
     mod = _load_module()
     f = tmp_path / "rule.md"
-    f.write_text('---\npaths:\n  - "src/**"\n  - \'*.txt\'\n---\n')
+    f.write_text("---\npaths:\n  - \"src/**\"\n  - '*.txt'\n---\n")
     assert mod.extract_paths_from_frontmatter(f) == ["src/**", "*.txt"]
 
 
@@ -587,8 +587,9 @@ def test_snapshot_without_rules_dir_writes_nothing(tmp_path: Path) -> None:
     old = os.getcwd()
     os.chdir(monkey_cwd)
     try:
-        with patch.object(mod, "read_stdin_json", return_value={"session_id": "s"}), patch.object(
-            mod, "get_changed_files", return_value=["a.txt"]
+        with (
+            patch.object(mod, "read_stdin_json", return_value={"session_id": "s"}),
+            patch.object(mod, "get_changed_files", return_value=["a.txt"]),
         ):
             mod.snapshot_baseline()
     finally:

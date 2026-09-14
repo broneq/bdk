@@ -82,9 +82,7 @@ def now_iso() -> str:
     override = os.environ.get("BDK_NOW")
     if override:
         return override
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
-        "+00:00", "Z"
-    )
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def _parse_iso(value: str | None) -> datetime | None:
@@ -151,9 +149,7 @@ def hash_plan(plan_path: str | Path) -> str:
 
 
 def git(*args: str, check: bool = True) -> str:
-    proc = subprocess.run(
-        ["git", *args], capture_output=True, text=True, check=False
-    )
+    proc = subprocess.run(["git", *args], capture_output=True, text=True, check=False)
     if check and proc.returncode != 0:
         raise Refusal(f"git {' '.join(args)} failed: {proc.stderr.strip()}")
     return proc.stdout.strip()
@@ -296,15 +292,12 @@ def manifest_path(rid: str) -> Path:
 def read_manifest(rid: str) -> dict:
     path = manifest_path(rid)
     if not path.exists():
-        raise Refusal(
-            f"no run '{rid}'. Start one with `init`, or list existing runs with `list`."
-        )
+        raise Refusal(f"no run '{rid}'. Start one with `init`, or list existing runs with `list`.")
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise Refusal(
-            f"manifest for '{rid}' is not valid JSON ({exc}). "
-            f"Recover with `rebuild --run {rid}`."
+            f"manifest for '{rid}' is not valid JSON ({exc}). Recover with `rebuild --run {rid}`."
         ) from exc
 
 
@@ -700,9 +693,7 @@ def cmd_resolve_range(args: argparse.Namespace) -> dict:
     count = git("rev-list", "--count", f"{anchor}..{head}", check=False)
     commits = int(count) if count.isdigit() else 0
     files = (
-        git("diff", "--name-only", f"{anchor}..{head}", check=False).splitlines()
-        if commits
-        else []
+        git("diff", "--name-only", f"{anchor}..{head}", check=False).splitlines() if commits else []
     )
     cumulative = git("diff", "--name-only", f"{base}..{head}", check=False).splitlines()
 
@@ -781,9 +772,7 @@ def _parse_counts(raw: str | None) -> dict:
         return {}
     parts = [p.strip() for p in raw.split(",")]
     if len(parts) != len(SEVERITIES) or not all(p.isdigit() for p in parts):
-        raise Refusal(
-            f"--counts must be four integers 'C,H,M,L' (got {raw!r})"
-        )
+        raise Refusal(f"--counts must be four integers 'C,H,M,L' (got {raw!r})")
     return dict(zip(SEVERITIES, (int(p) for p in parts)))
 
 
@@ -959,8 +948,7 @@ def cmd_print(args: argparse.Namespace) -> str:
         counts = review.get("counts") or {}
         summary = " ".join(f"{k[0]}{v}" for k, v in counts.items()) or "-"
         lines.append(
-            f"  review  {review['reviewed_sha'][:12]} group="
-            f"{review.get('group') or '-'} {summary}"
+            f"  review  {review['reviewed_sha'][:12]} group={review.get('group') or '-'} {summary}"
         )
     for note in drift:
         lines.append(f"  drift: {note}")
@@ -973,9 +961,7 @@ def cmd_print(args: argparse.Namespace) -> str:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="bdk_run_state.py", description=__doc__.split("\n")[0]
-    )
+    parser = argparse.ArgumentParser(prog="bdk_run_state.py", description=__doc__.split("\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("hash-plan", help="sha256 of a plan file's bytes")

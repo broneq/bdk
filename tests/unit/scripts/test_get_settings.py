@@ -74,8 +74,9 @@ LEGACY_SETTINGS = {
 def _load_module():
     spec = importlib.util.spec_from_file_location("get_settings", SCRIPT)
     mod = importlib.util.module_from_spec(spec)
-    with patch("sys.argv", ["get_settings.py", "languages"]), patch(
-        "sys.exit", side_effect=SystemExit
+    with (
+        patch("sys.argv", ["get_settings.py", "languages"]),
+        patch("sys.exit", side_effect=SystemExit),
     ):
         try:
             spec.loader.exec_module(mod)

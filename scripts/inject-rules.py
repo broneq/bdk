@@ -29,6 +29,7 @@ ERR_PREFIX = "[bdk-inject-error]"
 
 def _load_settings(start: Path) -> dict | None:
     import json
+
     current = start.resolve()
     while True:
         candidate = current / ".bdk" / "settings.json"
@@ -82,9 +83,7 @@ def resolve_rule(name: str, cwd: Path | None = None, plugin_root: Path | None = 
             raise ValueError(f"quality.{name}: 'path' is required in object form")
         mode = entry.get("mode", "extends")
         if mode not in ("extends", "replace"):
-            print(
-                f"{ERR_PREFIX} quality.{name}: unknown mode {mode!r}, treating as 'extends'"
-            )
+            print(f"{ERR_PREFIX} quality.{name}: unknown mode {mode!r}, treating as 'extends'")
             mode = "extends"
         normalised = {"path": entry["path"], "mode": mode}
     else:
@@ -102,7 +101,9 @@ def resolve_rule(name: str, cwd: Path | None = None, plugin_root: Path | None = 
 
     # extends mode
     if not default_path.exists():
-        raise FileNotFoundError(f"BDK default not found (required for extends mode): {default_path}")
+        raise FileNotFoundError(
+            f"BDK default not found (required for extends mode): {default_path}"
+        )
     default_content = default_path.read_text(encoding="utf-8")
     return f"{default_content}\n\n{user_content}"
 

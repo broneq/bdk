@@ -26,7 +26,7 @@ def _load_module():
 
 def test_extract_frontmatter_paths_present() -> None:
     mod = _load_module()
-    text = "---\npaths:\n  - src/**\n  - \"*.py\"\n---\n\n# Title\n"
+    text = '---\npaths:\n  - src/**\n  - "*.py"\n---\n\n# Title\n'
     assert mod.extract_frontmatter_paths(text) == ["src/**", "*.py"]
 
 

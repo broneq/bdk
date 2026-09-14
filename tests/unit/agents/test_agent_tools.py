@@ -44,14 +44,14 @@ def _parse_tools_field(frontmatter: str) -> set[str] | str | None:
     for i, line in enumerate(lines):
         if not line.startswith("tools:"):
             continue
-        rest = line[len("tools:"):].strip()
+        rest = line[len("tools:") :].strip()
         if rest:
             tokens = [t.strip() for t in re.split(r"[\s,]+", rest) if t.strip()]
             if len(tokens) == 1:
                 return tokens[0]
             return set(tokens)
         items: set[str] = set()
-        for next_line in lines[i + 1:]:
+        for next_line in lines[i + 1 :]:
             stripped = next_line.lstrip()
             if not stripped:
                 continue
@@ -104,9 +104,7 @@ def test_explorer_has_diagnostic_graph_tools() -> None:
 def test_code_reviewer_has_gap_and_flow_tools() -> None:
     tools = _expect_tool_set(AGENTS_DIR / "code-reviewer.md")
     for tool in ("get_knowledge_gaps_tool", "list_flows_tool"):
-        assert f"{CRG_PREFIX}{tool}" in tools, (
-            f"code-reviewer.md missing {CRG_PREFIX}{tool}"
-        )
+        assert f"{CRG_PREFIX}{tool}" in tools, f"code-reviewer.md missing {CRG_PREFIX}{tool}"
 
 
 def test_architecture_reviewer_has_diagnostic_tools() -> None:
@@ -125,9 +123,7 @@ def test_architecture_reviewer_has_diagnostic_tools() -> None:
 def test_dead_code_detector_has_specialist_tools() -> None:
     tools = _expect_tool_set(AGENTS_DIR / "dead-code-detector.md")
     for tool in ("find_large_functions_tool", "list_flows_tool"):
-        assert f"{CRG_PREFIX}{tool}" in tools, (
-            f"dead-code-detector.md missing {CRG_PREFIX}{tool}"
-        )
+        assert f"{CRG_PREFIX}{tool}" in tools, f"dead-code-detector.md missing {CRG_PREFIX}{tool}"
 
 
 def test_duplicate_detector_has_large_function_tool() -> None:
@@ -159,21 +155,14 @@ def test_every_crg_tool_uses_plugin_prefix(agent_name: str) -> None:
 
 def test_synthetic_agent_missing_prefix_fails(tmp_path: Path) -> None:
     bad = tmp_path / "bad-agent.md"
-    bad.write_text(
-        "---\n"
-        "name: bad\n"
-        "tools:\n"
-        "  - mcp__code-review-graph__query_graph_tool\n"
-        "---\n"
-    )
+    bad.write_text("---\nname: bad\ntools:\n  - mcp__code-review-graph__query_graph_tool\n---\n")
     tools = _tools(bad)
     assert isinstance(tools, set)
     with pytest.raises(AssertionError, match="without the .* prefix"):
         for entry in tools:
             if "code-review-graph" in entry and not entry.startswith(CRG_PREFIX):
                 raise AssertionError(
-                    f"tool {entry!r} references code-review-graph "
-                    f"without the {CRG_PREFIX} prefix"
+                    f"tool {entry!r} references code-review-graph without the {CRG_PREFIX} prefix"
                 )
 
 
@@ -267,18 +256,12 @@ def test_narrow_agent_spec_covers_only_existing_agents() -> None:
 def test_narrow_agent_tools_unchanged(name: str, expected) -> None:
     actual = _tools(AGENTS_DIR / f"{name}.md")
     if expected == "ALL":
-        assert actual is None, (
-            f"{name}: expected no tools field (all tools), got {actual!r}"
-        )
+        assert actual is None, f"{name}: expected no tools field (all tools), got {actual!r}"
         return
     if isinstance(expected, str):
-        assert actual == expected, (
-            f"{name}: expected scalar tools={expected!r}, got {actual!r}"
-        )
+        assert actual == expected, f"{name}: expected scalar tools={expected!r}, got {actual!r}"
         return
-    assert isinstance(actual, set), (
-        f"{name}: expected list-form tools, got {type(actual).__name__}"
-    )
+    assert isinstance(actual, set), f"{name}: expected list-form tools, got {type(actual).__name__}"
     assert actual == expected, (
         f"{name}: tools changed from spec — update NARROW_AGENT_TOOLS "
         f"intentionally if needed.\n  added: {actual - expected}\n  "

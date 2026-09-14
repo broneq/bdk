@@ -54,6 +54,7 @@ def _run_cli(args: list[str], cwd: Path, plugin_root: Path) -> subprocess.Comple
 
 # ---------- resolve_language_rule ----------
 
+
 def test_no_settings_returns_default_when_file_exists(tmp_path):
     plugin_root = tmp_path / "plugin"
     _write_default(plugin_root, "react", "react default")
@@ -187,6 +188,7 @@ def test_unknown_mode_warns_and_extends(tmp_path, capsys):
 
 # ---------- resolve_all ----------
 
+
 def test_resolve_all_no_settings_returns_empty(tmp_path):
     plugin_root = tmp_path / "plugin"
     project = tmp_path / "project"
@@ -251,6 +253,7 @@ def test_resolve_all_ignores_non_string_language_entries(tmp_path):
 
 
 # ---------- CLI ----------
+
 
 def test_cli_no_args_emits_all_to_stdout(tmp_path):
     plugin_root = tmp_path / "plugin"
