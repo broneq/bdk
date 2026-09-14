@@ -22,7 +22,7 @@ else, therefore already carries:
 | **Tool Tier System** | The best available tooling for exploration and architecture, symbol search and tracing, and impact analysis - resolved per your enabled features, so the session reaches for `code-review-graph`, then Serena, then grep. |
 | **Agents** | The BDK subagent fleet with models and selection criteria, plus the `SendMessage` rules for continuing a spawned agent instead of respawning it. |
 | **Verification Proportionality** | The rule that verification matches what changed: content-only edits get no tests and no typecheck, source files get scoped tests and lint plus an incremental typecheck, build-feeding config counts as source, and the full suite runs only on request or at a pipeline's end-of-plan gate. |
-| **Quality Rules** | The language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets, and how your project overrides them. |
+| **Quality Rules** | The six language-agnostic rule sets - `code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`, `test-quality` - and how your project overrides them. |
 | **Capture Conventions** | Where a lesson goes before you write it down anywhere - and that "nothing" is the frequent, correct answer. |
 
 So the same tool preferences, the same proportionality rule, and the same quality bar that

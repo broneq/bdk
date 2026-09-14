@@ -38,13 +38,30 @@ The unprefixed form (`mcp__serena__*`, `mcp__code-review-graph__*`) is what tool
 
 ## Where the rule applies
 
+Where a name is **matched mechanically**, it must be exact - a wrong prefix is a
+silent failure, never an error:
+
 | Location | Form |
 |---|---|
 | Agent frontmatter `tools:` list | `mcp__plugin_bdk_<server>__<tool>` |
 | Skill frontmatter `allowed-tools:` | `mcp__plugin_bdk_<server>__<tool>` |
-| SKILL.md / agent.md body prose | `mcp__plugin_bdk_<server>__<tool>` |
-| Tool-tier fragments under `fragments/tool-tiers/` | `mcp__plugin_bdk_<server>__<tool>` |
 | Hook scripts that invoke MCP tools | `mcp__plugin_bdk_<server>__<tool>` |
+| SKILL.md / agent.md body prose naming a tool as an identifier | `mcp__plugin_bdk_<server>__<tool>` |
+
+Where a name is **read rather than matched** - the tool-tier fragments under
+`fragments/tool-tiers/`, which teach call shapes like
+`find_symbol(name_path=<symbol>, relative_path=<file>)` - the bare tool name is
+correct and the prefix is deliberately omitted. Two reasons. The prefix is not
+fixed: the same server is `mcp__plugin_bdk_serena__*` when BDK ships it as a
+plugin and `mcp__serena__*` when the user configures it in `~/.claude/mcp.json`,
+so a hardcoded prefix is wrong for half the installs. And the reader always has
+the authoritative tool list in context, so it resolves the bare name against
+what is actually available.
+
+The bare name must still be the **real** tool name. `code-review-graph` suffixes
+its tools with `_tool` (`query_graph_tool`, `semantic_search_nodes_tool`) while
+Serena does not (`find_symbol`); dropping that suffix produces a name that
+resolves to nothing.
 
 ## Wildcard form in `allowed-tools`
 
