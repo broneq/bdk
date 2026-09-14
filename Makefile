@@ -98,8 +98,13 @@ plugin:  ## claude plugin validate (skills + agents)
 	@$(CLAUDE) plugin validate skills --strict
 	@$(CLAUDE) plugin validate agents --strict
 
-skills:  ## skilllint - skill/agent frontmatter and manifests
-	@$(RUN) skilllint check .
+# --show-summary is not cosmetic. Without it skilllint's output ends on its
+# last warning and never states a verdict, so ~30 advisory lines read as a
+# failure the gate then reports as PASS. With it the run closes on
+# "Failed: N / Warnings: N". Errors print as `ERROR` and exit 1; warnings
+# print as `WARN` and exit 0 - only errors block.
+skills:  ## skilllint - skill/agent frontmatter and manifests (warnings advisory)
+	@$(RUN) skilllint check . --show-summary
 
 # Prose only. skills/ and agents/ are LLM prompts, not documents - reflowing a
 # prompt rewrites what the model reads, so they stay out.
