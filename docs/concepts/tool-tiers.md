@@ -77,6 +77,12 @@ A second `SessionStart` hook registers the current working directory with the gr
 !!! note
     Graph and Serena tools are scoped to the session's working directory. Asking about code outside the cwd falls through to text search by design, not by failure.
 
+## Serena picks up the project from the cwd
+
+Serena needs no registration and no per-session activation. BDK launches it with `--project-from-cwd`, and a plugin's MCP servers run in the session working directory, so the server detects and activates the project at startup: it walks up from the cwd for the nearest `.serena/project.yml` or `.git`. Open a session anywhere inside a checkout and the symbol tools are live immediately.
+
+A directory with neither marker above it gets no active project. Serena reports that in its own tool errors and exposes an `activate_project` tool - hidden whenever a project is already active - to point it at a folder by hand for that session.
+
 ## Naming
 
 Inside prompts and frontmatter, BDK always writes MCP tools in their plugin-namespaced form, for example `mcp__plugin_bdk_code-review-graph__get_impact_radius_tool` and `mcp__plugin_bdk_serena__find_symbol`. The unprefixed `mcp__serena__*` form is what you would see if you had configured the server yourself at user level; it does not resolve for a server shipped inside a plugin.
