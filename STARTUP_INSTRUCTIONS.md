@@ -43,6 +43,7 @@ BDK ships these subagents. Invoke via the Agent tool with the listed `subagent_t
 | `bdk:code-reviewer` | sonnet | `/bdk:cr` |
 | `bdk:implementer` | sonnet | `/bdk:subagent-execute-plan` |
 | `bdk:fixer` | sonnet | `/bdk:subagent-execute-plan` |
+| `bdk:design-verifier` | opus | `/bdk:design` |
 
 ### Continuing a Spawned Agent (SendMessage)
 
@@ -76,7 +77,7 @@ Match verification to what changed. Never run the full suite "just to be safe" a
 
 ## Quality Rules
 
-BDK ships language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.
+BDK ships six language-agnostic rule sets - `code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`, and `test-quality` - injected into the skills that need them and reaching agents through the preloaded `bdk-rules-*` meta-skills. Override or extend via the `quality` section in `.bdk/settings.json`. See https://broneq.github.io/bdk/concepts/quality-and-language-rules/ for the four usage patterns.
 
 ## Capture Conventions
 

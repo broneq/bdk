@@ -4,7 +4,7 @@ Additive pairing — run impact lookup BEFORE structural edit; both this menu an
 
 - `get_impact_radius_tool(node=<symbol or file>)` — blast radius
 - `get_affected_flows_tool(target=<symbol>)` — impacted execution paths
-- `query_graph(pattern="callers_of", target=<symbol>)` — callers to update
+- `query_graph_tool(pattern="callers_of", target=<symbol>)` — callers to update
 - `list_graph_stats_tool` — verify coverage before trusting 0-result (once/session)
 
 **Rules:**

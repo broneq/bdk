@@ -44,7 +44,7 @@ pytest tests/unit/
 
 ## Adding a New Skill
 
-1. Create `skills/<name>/skill.md`
+1. Create `skills/<name>/SKILL.md`
 2. Verify: no project-specific paths, tool names, or commands
 3. Add entry to `## Skills` table in `README.md`
 4. Write eval in `tests/evals/skills/<name>/`

@@ -2,7 +2,7 @@
 
 - `list_communities_tool` — module groupings; names alone often answer "is X here?"
 - `get_community_tool(community=<name>)` — drill into one community's symbols
-- `semantic_search_nodes(query=<single token>)` — find symbols without browsing
+- `semantic_search_nodes_tool(query=<single token>)` — find symbols without browsing
 - `get_architecture_overview_tool(detail_level="minimal")` — community map + cross-coupling
 - `get_hub_nodes_tool` — high-dependency symbols
 - `get_surprising_connections_tool` — unexpected cross-module deps

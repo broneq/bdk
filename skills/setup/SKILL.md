@@ -189,21 +189,20 @@ Call `mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool` (the MCP se
 
 Prefer the MCP tool over shelling out to `uvx code-review-graph build` — same binary under the hood, but the MCP path uses the already-running server and works inside sandboxed/restricted environments where `uvx` may not be available.
 
-**Serena** — no manual action needed at setup time. Serena's active-project state is in-memory only (resets every Claude Code session), so per-session activation is handled by the `hooks/activate-serena/activate.py` SessionStart hook. The hook emits an instruction telling Claude to call `mcp__plugin_bdk_serena__activate_project` whenever both `features.serena` is enabled and `.mcp.json` declares a `serena` server. No setup-time call required.
+**Serena** - no setup-time call required. Known limitation: Serena's active-project state is in-memory only and resets every Claude Code session, and BDK does not currently activate it per session. Tracked at https://github.com/broneq/bdk/issues/38.
 
 ### Phase 6: Git guidance
 
-Recommend:
-- Commit `.bdk/settings.json` (shared with team — consistent commands for all contributors)
-- Add to `.gitignore`: `.bdk/plans/` and `.bdk/design/` (personal artifacts)
+Nothing under `.bdk/` is tracked - settings, plans, designs, reports and run state alike. `/.bdk/` is appended to `.gitignore` automatically on the first plan execution, so there is no manual step to remember.
 
-Show the gitignore lines to add:
+If `.gitignore` does not already carry an equivalent rule, offer to write it now:
 ```
-.bdk/plans/
-.bdk/design/
+/.bdk/
 ```
 
-Ask: "Add these to .gitignore now? [y/n]"
+Ask: "Add `/.bdk/` to .gitignore now? [y/n]"
+
+Because `/bdk:setup` derives its commands by probing the project's own files, two contributors on the same repo get the same settings without sharing a file through git. Every contributor runs `/bdk:setup` once after cloning.
 
 ### Completion
 

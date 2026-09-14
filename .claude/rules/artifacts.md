@@ -23,8 +23,10 @@ Examples:
 
 - Single discoverable location for all skill output
 - Never pollutes `docs/`, `src/`, or project dirs
-- Easy `.gitignore` or bulk inspect
+- Nothing to gitignore per skill, and easy to bulk inspect
 - Portable — works any project structure
+
+Nothing under `.bdk/` is tracked, `settings.json` included. `scripts/bdk_run_state.py` appends `/.bdk/` to `.gitignore` on the first plan run (`IGNORE_RULE`, with `EQUIVALENT_RULES` accepting the hand-written variants); `tests/unit/scripts/` covers it. A new artifact directory needs no gitignore work of its own.
 
 ## Exceptions
 

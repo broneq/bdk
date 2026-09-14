@@ -30,7 +30,7 @@ Files in `rules/` are **language-agnostic principles** injected into skill promp
 1. Write `rules/<name>.md` following the format above.
 2. Add `<!-- INJECT: <name> -->` marker in the consuming skill's template.
 3. Add resolution step to the skill's SKILL.md (see `skills/cr/SKILL.md` Step 2.5 as reference).
-4. Document in `README.md` "Quality Rules" section if user-overridable.
+4. Document in `docs/concepts/quality-and-language-rules.md` if user-overridable.
 
 ## Settings schema reminder
 

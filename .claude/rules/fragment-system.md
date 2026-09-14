@@ -80,6 +80,8 @@ Each tier fragment is self-contained: it carries its own tool list AND the polic
 | `review.chain.json` | exclusive | Codegraph first; grep fallback |
 | `explore.chain.json` | additive | Architecture overview + symbol detail = complementary |
 
+`scripts/inject.py` injects the graph tier only when `features.code-review-graph` is explicitly `true`, while `hooks/register-graph-repo/register.py` registers the repo unless the flag is explicitly `false`, and the asymmetry is deliberate: registering a repo is cheap and harmless when the server is absent, but promising an agent tools that may not exist is not.
+
 ## When to Use `--chain` vs `--if`/`--prefer`
 
 | Situation | Use |
@@ -98,7 +100,7 @@ Agent tool preferences are assembled by two complementary mechanisms instead:
 1. **`STARTUP_INSTRUCTIONS.md`** — rendered by `scripts/render_startup.py` before the SessionStart hook returns it, so chain markers (`<!-- CHAIN: <file> -->`) are resolved to real tier guidance. The **orchestrator** session sees this. Subagents do **not** inherit it.
 2. **`skills:` frontmatter on the agent** — preloads named meta-skills (e.g. `bdk-tier-search`, `bdk-rules-code-quality`) into the subagent's startup context. The skill bodies contain `!`...`` blocks that resolve at preload time, so the subagent receives the same tier/rule guidance the orchestrator gets.
 
-`skills:` is **not** in the plugin-restricted list — it is the supported substitute for the dead `hooks: SessionStart` pattern. See `docs/INJECTION-FLOWS.md` for the full audit and migration history.
+`skills:` is **not** in the plugin-restricted list — it is the supported substitute for the dead `hooks: SessionStart` pattern. See `docs/contributing/injection-flows.md` for the full audit and migration history.
 
 ## Naming Gotcha — Three `rules/` Directories
 

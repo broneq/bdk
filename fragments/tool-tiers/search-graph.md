@@ -1,7 +1,7 @@
 **Symbol Search & Trace (code-review-graph — Tier 1):**
 
-- `semantic_search_nodes(query=<single token>)` — locate by name/intent
-- `query_graph(pattern="callers_of"|"callees_of"|"tests_for", target=<symbol>)` — pick ONE direction
+- `semantic_search_nodes_tool(query=<single token>)` — locate by name/intent
+- `query_graph_tool(pattern="callers_of"|"callees_of"|"tests_for", target=<symbol>)` — pick ONE direction
 - `traverse_graph_tool` — multi-hop walk from a seed when single-hop insufficient
 - `list_graph_stats_tool` — verify coverage before trusting 0-result (once/session)
 
