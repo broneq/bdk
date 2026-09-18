@@ -12,6 +12,15 @@
       "description": "Broneq Dev Kit — reusable dev workflows, skills, agents, and hooks for any project",
       "source": "./",
       "category": "productivity"
+    },
+    {
+      "name": "git-identity",
+      "description": "Bind a project to a GitHub account and a git commit identity. Every gh call and every commit in it then uses the right one - carried by the environment, not by a prompt a subagent can miss.",
+      "source": {
+        "source": "github",
+        "repo": "broneq/git-identity"
+      },
+      "category": "productivity"
     }
   ]
 }
