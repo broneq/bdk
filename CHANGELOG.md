@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.0](https://github.com/broneq/bdk/compare/v2.5.1...v2.6.0) (2026-09-18)
+
+
+### Features
+
+* **marketplace:** list git-identity plugin ([6746f11](https://github.com/broneq/bdk/commit/6746f1179424dbdc4b359768c293c73ee707295e))
+* **marketplace:** list git-identity plugin ([83974c3](https://github.com/broneq/bdk/commit/83974c305cb18687620e028900c636292bb82eb7))
+
 ## [2.5.1](https://github.com/broneq/bdk/compare/v2.5.0...v2.5.1) (2026-09-09)
 
 
