@@ -33,7 +33,7 @@ docs/                    — design specs and analysis
 
 ## v3 Work Tracking
 
-- Roadmap and task scope: `docs/V3-IMPLEMENTATION-PLAN.md`. Status: one GitHub issue per task `Tnn` in the `v3.0` milestone, with "blocked by" links for dependencies.
+- Roadmap and task scope: `docs/V3-IMPLEMENTATION-PLAN.md`. Status: one GitHub issue per task `Tnn` in the `v3.0` milestone, with "blocked by" links for dependencies. Board: https://github.com/users/broneq/projects/1 (set `Status` to In progress when starting a task).
 - Pick the next task from issues whose blockers are all closed. Each task runs as an OpenSpec Change `v3-Tnn-<slug>` and ends with a PR containing `Closes #N`.
 
 ## Development Commands
