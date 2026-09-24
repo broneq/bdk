@@ -1,6 +1,6 @@
 # BDK v3 - implementation plan (tasks)
 
-**Sources**: `.bdk/design/2026-09-23-0703-bdk-v3-change-centric-design.md` (design, verifier PASS iteration 3, 2026-09-24) and `.bdk/design/2026-09-23-0703-bdk-v3-decisions.md` (decision register D1-D5, S1-S8, Q1-Q5, K1-K4, A-*, R-*, T1-T6, P1-P11).
+**Sources**: `docs/v3/2026-09-23-0703-bdk-v3-change-centric-design.md` (design, verifier PASS iteration 3, 2026-09-24) and `docs/v3/2026-09-23-0703-bdk-v3-decisions.md` (decision register D1-D5, S1-S8, Q1-Q5, K1-K4, A-*, R-*, T1-T6, P1-P11).
 **Date**: 2026-09-24
 **Status**: draft plan, to be run in OpenSpec
 
@@ -13,7 +13,7 @@
 
 ## Running the project in OpenSpec
 
-Convention (to be confirmed in T00):
+Convention (confirmed in T00; project context and artifact rules live in `openspec/config.yaml`):
 
 | Plan element | OpenSpec counterpart |
 |---|---|
@@ -24,7 +24,7 @@ Convention (to be confirmed in T00):
 | Work breakdown within a task | `tasks.md` (`## section`, `- [ ] N.M`) - written by AI in `/opsx:propose` or `/opsx:ff`, not here |
 | Closing a task | `/opsx:verify` then `/opsx:archive`; the BDK living spec grows in `openspec/specs/` |
 
-Status across tasks is tracked on GitHub, not in this file: every `Tnn` has one issue in the [`v3.0` milestone](https://github.com/broneq/bdk/milestone/1), labelled `v3:phase-N`, with native "blocked by" links that mirror the **Dependencies** line of each task. The [BDK v3 project board](https://github.com/users/broneq/projects/1) shows every issue with its `Status` (Todo / In progress / Done) and `Phase`. The issue holds status only; scope stays here and detail stays in the OpenSpec Change, whose `proposal.md` links the issue. The PR that archives the Change closes the issue with `Closes #N`. When a task's dependencies change, update this file and the issue links together.
+Status across tasks is tracked on GitHub, not in this file: every `Tnn` has one issue in the [`v3.0` milestone](https://github.com/broneq/bdk/milestone/1), labelled `v3:phase-N`, with native "blocked by" links that mirror the **Dependencies** line of each task. The [BDK v3 project board](https://github.com/users/broneq/projects/1) shows every issue with its `Status` (Todo / In progress / Done) and `Phase`. The issue holds status only; scope stays here and detail stays in the OpenSpec Change, whose `proposal.md` links the issue. The task's work happens on a branch `v3/Tnn-<slug>`; the PR that lands the archived Change targets `staging/v3`, and because closing keywords only fire on the default branch, the issue is closed by hand after the merge. When a task's dependencies change, update this file and the issue links together.
 
 Note on the seam: BDK v3 itself introduces a living spec in OpenSpec format under `.bdk/specs/` (D2). Until the v2 -> v3 cut, the BDK project is run with the OpenSpec tool (`openspec/`), and after T50 the BDK spec may be migrated to BDK's own mechanism (`bdk import` or by hand). Whether and when is a decision outside this plan, recorded in T50 as a question.
 
@@ -96,6 +96,13 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 **To resolve in the spec**: OpenSpec schema for kernel tasks (default spec-driven or tdd); whether the v3 design goes into git now; whether `openspec/specs/` stays after v3 or migrates to `.bdk/specs/`.
 
 **Dependencies**: none.
+
+**Resolution** (T00 ran directly, before OpenSpec existed, so it has no Change of its own):
+- Schema: `spec-driven`, the only schema OpenSpec 1.13.2 ships. Test-first work is enforced by a `tasks` rule in `openspec/config.yaml`, not by a separate schema.
+- The v3 design and decision register are in git under `docs/v3/` (commit 389557d). The `.md` files are authoritative; the Polish `.html` pages are background material.
+- Whether `openspec/specs/` stays after v3 or migrates to `.bdk/specs/` stays open until T50, as that task already records.
+- Workflow profile: `custom` with `propose, explore, new, continue, apply, update, ff, verify, sync, archive`; the default `core` profile lacks `ff` and `verify`, which this plan relies on.
+- The second half of the acceptance signal (the first Change links this document) is checked when T01 starts.
 
 ### T01 Host live checks and recorded hook payloads
 
@@ -517,7 +524,7 @@ Per the design's "Out of scope" and "What We Did NOT Decide", not planned here, 
 
 Things that must be settled but belong to no single spec; to be closed at T00 or in conversation:
 
-1. Where the v3 design lives during implementation (untracked today) - see T00.
+1. ~~Where the v3 design lives during implementation~~ - resolved in T00: `docs/v3/`.
 2. Whether the A/B result (T40) can change the scope of T41 to variant B - yes, and this is the only planned decision gate in the middle of the plan.
 3. Order of T31 relative to T41: `plan` needs `PL` rules with IDs for the tick list; if the rule measurement drags on, `plan` can start with rules by file and get IDs later (temporary mode in `ctx`).
 4. Whether the BDK repo keeps being run with OpenSpec after v3 or with its own `/bdk:change` - see T50.

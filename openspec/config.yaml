@@ -1,0 +1,47 @@
+schema: spec-driven
+
+context: |
+  BDK (Broneq Dev Kit) is a Claude Code plugin that ships reusable dev workflows
+  (skills, agents, hooks, rules) into user projects. v2 is Markdown skills plus
+  Python helper scripts. v3 rewrites it around a Node / TypeScript kernel
+  (`node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs`) and a change-centric pipeline.
+
+  Sources of truth for v3 work:
+  - Roadmap and task index: docs/V3-IMPLEMENTATION-PLAN.md. Every task Tnn has
+    Goal, Scope, Input, Acceptance signal, "To resolve in the spec" and
+    Dependencies sections.
+  - Design: docs/v3/2026-09-23-0703-bdk-v3-change-centric-design.md.
+  - Decision register: docs/v3/2026-09-23-0703-bdk-v3-decisions.md (IDs D*, S*,
+    Q*, K*, A-*, R-*, T1-T6, P1-P11, V*).
+  - docs/v3/*.html is Polish-language design-session material. The two .md
+    files above are authoritative; read the HTML only for background.
+  - Status tracking: one GitHub issue per task in the v3.0 milestone
+    (https://github.com/broneq/bdk/milestone/1) with "blocked by" links, shown
+    on https://github.com/users/broneq/projects/1.
+
+  Repository conventions live in CLAUDE.md and .claude/rules/. Everything
+  written into the repo is in English. Never use the em dash; use "-".
+
+rules:
+  proposal:
+    - A change for a roadmap task is named `v3-Tnn-<slug>` (Tnn is the plan task ID, slug is kebab-case). Changes outside the roadmap use a descriptive kebab-case name without the prefix.
+    - 'The first line under "Why" links the plan section and the tracking issue, e.g. "Plan: docs/V3-IMPLEMENTATION-PLAN.md, T01. Tracks #46."'
+    - Carry the task's Input over by citation - design section headings and decision IDs (e.g. D2, T1, P8). Do not restate a decision; do not reopen a decided one.
+    - Every item under the task's "To resolve in the spec" is either resolved in proposal.md / design.md or listed as an open question for the user with a recommendation.
+    - Stay inside the task's Scope. Work the plan assigns to another task is named as out of scope with that task's ID.
+  specs:
+    - Every item in the task's Acceptance signal becomes a Requirement with at least one "#### Scenario:" in WHEN / THEN form.
+    - 'A task whose output is only documents or research (no behaviour change) sets `skip_specs: true` instead of inventing requirements.'
+  design:
+    - Each decision records the alternatives considered and why they lost; cite the register ID when a choice follows from an existing decision.
+  tasks:
+    - Code tasks are test-first - the failing test is its own step before the implementation step.
+    - The last task group checks the Acceptance signal end to end and then runs `openspec validate <change> --strict`.
+
+operations:
+  apply:
+    guidance:
+      - When starting, set the tracking issue's card to "In progress" on the project board.
+  archive:
+    guidance:
+      - Archive only after /opsx:verify passes. The archived change lands through a PR into staging/v3; after the merge, close the tracking issue with gh issue close and move its card to Done.
