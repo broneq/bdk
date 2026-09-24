@@ -1,0 +1,35 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.281",
+    "check_id": "bash-mode",
+    "recordings": 2
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "scratchpad_dir": "<CLAUDE_TMP>/<PROJECT>/<SESSION-1>/scratchpad",
+      "prompt_id": "<PROMPT-1>",
+      "hook_event_name": "SessionEnd",
+      "reason": "prompt_input_exit"
+    },
+    {
+      "hook_event_name": "TranscriptExcerpt",
+      "turns": [
+        {
+          "role": "user",
+          "text": "<bash-input>touch probe-bang.txt</bash-input>"
+        },
+        {
+          "role": "user",
+          "text": "<bash-stdout>(Bash completed with no output)</bash-stdout><bash-stderr></bash-stderr>"
+        },
+        {
+          "role": "assistant",
+          "text": "File probe-bang.txt created."
+        }
+      ]
+    }
+  ]
+}

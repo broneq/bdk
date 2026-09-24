@@ -1,0 +1,70 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.281",
+    "check_id": "node-sqlite",
+    "recordings": 1
+  },
+  "payloads": [
+    {
+      "hook_event_name": "NodeSqlite",
+      "nvm_default_alias": "24",
+      "path_node": "/opt/homebrew/bin/node",
+      "binaries": [
+        {
+          "path": "/opt/homebrew/Cellar/node/26.9.0/bin/node",
+          "version": "v26.9.0",
+          "runs": [
+            {
+              "flag": "-",
+              "exit_code": 0,
+              "experimental_warning": false,
+              "first_line": "ok"
+            },
+            {
+              "flag": "--experimental-sqlite",
+              "exit_code": 0,
+              "experimental_warning": false,
+              "first_line": "ok"
+            }
+          ]
+        },
+        {
+          "path": "<HOME>/.nvm/versions/node/v20.20.2/bin/node",
+          "version": "v20.20.2",
+          "runs": [
+            {
+              "flag": "-",
+              "exit_code": 1,
+              "experimental_warning": false,
+              "first_line": "node:internal/modules/cjs/loader:1031"
+            },
+            {
+              "flag": "--experimental-sqlite",
+              "exit_code": 9,
+              "experimental_warning": false,
+              "first_line": "<HOME>/.nvm/versions/node/v20.20.2/bin/node: bad option: --experimental-sqlite"
+            }
+          ]
+        },
+        {
+          "path": "<HOME>/.nvm/versions/node/v24.21.0/bin/node",
+          "version": "v24.21.0",
+          "runs": [
+            {
+              "flag": "-",
+              "exit_code": 0,
+              "experimental_warning": false,
+              "first_line": "ok"
+            },
+            {
+              "flag": "--experimental-sqlite",
+              "exit_code": 0,
+              "experimental_warning": false,
+              "first_line": "ok"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "description": "Record every payload unchanged. Recorders print nothing and exit 0, so they never alter host behaviour.",
+  "hooks": {
+    "UserPromptExpansion": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/record.sh",
+              "UserPromptExpansion"
+            ]
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/record.sh",
+              "PreToolUse"
+            ]
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/record.sh",
+              "SessionEnd"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.281",
+    "check_id": "agent-bg",
+    "recordings": 3
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-7>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-7>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-6>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Probe worker run",
+        "prompt": "go",
+        "subagent_type": "bdk-probe:probe-worker",
+        "run_in_background": true
+      },
+      "tool_use_id": "<TOOL-USE-7>"
+    },
+    {
+      "session_id": "<SESSION-7>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-7>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-6>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-2>",
+      "agent_type": "bdk-probe:probe-worker",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "echo probe-worker"
+      },
+      "tool_use_id": "<TOOL-USE-8>"
+    },
+    {
+      "duration_api_ms": 16224,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-7>",
+      "total_cost_usd": 0.04431195,
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 579,
+        "cache_read_input_tokens": 28881,
+        "output_tokens": 471,
+        "output_tokens_details": {
+          "thinking_tokens": 284
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 579,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 10,
+            "output_tokens": 471,
+            "cache_read_input_tokens": 28881,
+            "cache_creation_input_tokens": 579,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 579
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 46,
+          "outputTokens": 1194,
+          "cacheReadInputTokens": 81947,
+          "cacheCreationInputTokens": 15375,
+          "webSearchRequests": 0,
+          "costUSD": 0.04431195,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 784,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "origin": {
+        "kind": "task-notification"
+      },
+      "subagent_stats": {
+        "spawned": 1,
+        "requested": {
+          "background": 1,
+          "foreground": 0,
+          "unset": 0
+        },
+        "started_in_background": 1,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 1,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "bdk-probe:probe-worker": 1
+        }
+      },
+      "is_error": false,
+      "num_turns": 1,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "Probe worker completed successfully.\n\nResult: **PROBE-WORKER-DONE**\n\nThe detailed output is available at:\n```\n<CLAUDE_TMP>/<PROJECT>/<SESSION-7>/tasks/<AGENT-2>.output\n```\n\n(The output file contains the full JSONL transcript and is too large to read here. If you need specific details from the probe output, let me know what you're looking for.)",
+      "ttft_ms": 4256,
+      "type": "result",
+      "duration_ms": 7180,
+      "uuid": "<UUID-7>",
+      "ttft_stream_ms": 906,
+      "time_to_request_ms": 134,
+      "first_content_frame_ms": 907,
+      "queued_turn_count": 0,
+      "result_index": 1
+    }
+  ]
+}
