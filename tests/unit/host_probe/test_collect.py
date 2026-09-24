@@ -6,6 +6,7 @@ part of the probe that must not regress.
 import getpass
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -150,13 +151,35 @@ def test_missing_recording_fails_and_names_the_check(tmp_path):
     assert not (dest / "absent.json").exists()
 
 
+def leaks(text: str, user: str) -> list[str]:
+    """Machine data found in text: home prefixes (plain or dash-encoded) and the username.
+
+    The username only counts as a standalone token, so a short CI user such as
+    `runner` does not match the agent name `bdk:test-runner`.
+    """
+    found = [marker for marker in ("/Users/", "/home/", "-Users-", "-home-") if marker in text]
+    if re.search(rf"(?<![A-Za-z0-9_-]){re.escape(user)}(?![A-Za-z0-9_])", text):
+        found.append(user)
+    return found
+
+
+@pytest.mark.parametrize("text", [
+    "/Users/alice/x", "-Users-alice-project", "/tmp/alice-scratch", "owner: alice",
+])
+def test_leak_guard_flags_machine_data(text):
+    assert leaks(text, "alice")
+
+
+@pytest.mark.parametrize("text", ["bdk:test-runner", "runners", "<USER>-scratch"])
+def test_leak_guard_ignores_username_inside_other_names(text):
+    assert leaks(text, "runner") == []
+
+
 def committed_fixtures():
     return sorted(FIXTURES.rglob("*.json")) if FIXTURES.exists() else []
 
 
 @pytest.mark.parametrize("fixture", committed_fixtures(), ids=lambda p: str(p.relative_to(FIXTURES)))
 def test_committed_fixtures_do_not_leak_machine_data(fixture):
-    text = fixture.read_text()
-    user = getpass.getuser()
-    for leak in ("/Users/", "/home/", "-Users-", "-home-", user):
-        assert leak not in text, f"{fixture} leaks {leak!r}"
+    found = leaks(fixture.read_text(), getpass.getuser())
+    assert not found, f"{fixture} leaks {found!r}"
