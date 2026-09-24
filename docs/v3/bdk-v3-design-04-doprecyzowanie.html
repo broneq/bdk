@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="pl" data-theme="luxury">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDK v3 - krok 2A.3: doprecyzowanie</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, dd, td, th, .badge) { overflow-wrap: anywhere; }
+  :where(img, svg, video, canvas, iframe) { max-width: 100%; height: auto; }
+  .opt { cursor: pointer; }
+  .opt:has(input:checked) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .queued { display: none; }
+  form[data-queued="1"] .queued { display: inline-flex; }
+  pre.code { font-size: 0.8rem; line-height: 1.4; white-space: pre; overflow-x: auto; tab-size: 2; }
+  pre.code .c { opacity: 0.55; }
+  pre.code .k { color: var(--color-primary); }
+  pre.code .s { color: var(--color-secondary); }
+</style>
+</head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-6xl p-4 lg:p-8 space-y-10">
+
+  <section class="hero bg-base-200 rounded-box">
+    <div class="hero-content flex-col items-start py-8 w-full">
+      <p class="text-sm uppercase tracking-widest text-primary font-semibold">/bdk:design &middot; BDK v3 &middot; krok 2 z 4 &middot; 2A.3</p>
+      <h1 class="text-4xl font-bold">Doprecyzowanie: format konfiguracji na przykładach, kontrakt CLI, model danych</h1>
+      <p class="max-w-3xl opacity-80">Ta sama konfiguracja projektu zapisana na trzy sposoby, żebyś mógł porównać wygląd, a nie opis. Potem zarys kontraktu CLI, model danych wpisu i pakietu, rodzaje artefaktów z przykładem <code>pipeline.yaml</code> i dwa pytania, które odsłoniły ostatnie decyzje. Inwentarz skilli zapisany jako PoC / TODO, zgodnie z Twoją uwagą.</p>
+      <ul class="steps steps-vertical lg:steps-horizontal mt-2 w-full">
+        <li class="step step-primary">0. Grunt</li>
+        <li class="step step-primary">1. Combined</li>
+        <li class="step step-primary">2P. Produkt</li>
+        <li class="step step-primary">2A.1 Pytania</li>
+        <li class="step step-primary">2A.2 Podejścia</li>
+        <li class="step step-primary">2A.3 Doprecyzowanie (ta strona)</li>
+        <li class="step">3. Weryfikacja</li>
+        <li class="step">4. Dokument</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 1. FORMAT ============ -->
+  <section class="space-y-4" id="format">
+    <h2 class="text-2xl font-bold">1. Format konfiguracji: jeden projekt, trzy zapisy</h2>
+    <p class="text-sm opacity-80 max-w-3xl">Przykładowy projekt: TypeScript z vitest, eslint i tsc, włączony code-review-graph, projekt chce dodać własną bramkę po planie, podnieść budżet fixów, dopisać dwie reguły projektowe i podać agentom opis celu produktu oraz dodatkową instrukcję dla implementera. Osoba pracująca w projekcie chce po polsku i z Lavish. Treść jest identyczna w każdym wariancie, różni się tylko zapis.</p>
+
+    <!-- Wariant 1 -->
+    <div class="card card-border bg-base-100" id="w1">
+      <div class="card-body space-y-3">
+        <h3 class="card-title text-base">Wariant 1: YAML na strukturę + katalog <code>prompts/</code> na tekst <span class="badge badge-primary badge-sm">rekomendacja</span></h3>
+        <div class="grid lg:grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs font-semibold opacity-75 mb-1">.bdk/settings.yaml (projekt, commitowane)</p>
+<pre class="code bg-base-200 rounded-box p-3"><span class="c"># schemat: bdk config schema  |  walidacja: bdk config check</span>
+<span class="k">bdk</span>: <span class="s">3</span>
+
+<span class="k">features</span>:
+  <span class="k">code-review-graph</span>: <span class="s">true</span>
+  <span class="k">serena</span>: <span class="s">false</span>
+
+<span class="k">tools</span>:
+  <span class="k">test</span>:
+    - <span class="k">id</span>: <span class="s">vitest</span>          <span class="c"># tablice łączone po id (B7)</span>
+      <span class="k">tier</span>: <span class="s">fast</span>
+      <span class="k">full</span>: <span class="s">npm run test:unit</span>
+      <span class="k">scoped</span>: <span class="s">npx vitest run {files}</span>
+      <span class="k">related</span>: <span class="s">npx vitest related --run {files}</span>
+      <span class="k">failed</span>: <span class="s">npx vitest run --changed</span>
+  <span class="k">lint</span>:
+    - { <span class="k">id</span>: <span class="s">eslint</span>, <span class="k">tier</span>: <span class="s">lint</span>, <span class="k">full</span>: <span class="s">npm run lint</span>, <span class="k">scoped</span>: <span class="s">npx eslint {files}</span> }
+    - { <span class="k">id</span>: <span class="s">tsc</span>, <span class="k">tier</span>: <span class="s">typecheck</span>, <span class="k">full</span>: <span class="s">npm run typecheck</span>, <span class="k">incremental</span>: <span class="s">npx tsc -b --incremental</span> }
+
+<span class="k">policy</span>:
+  <span class="k">gates</span>:
+    - <span class="k">id</span>: <span class="s">after-plan</span>        <span class="c"># węzeł grafu dodany przez projekt</span>
+      <span class="k">after</span>: <span class="s">plan</span>
+      <span class="k">who</span>: <span class="s">human</span>
+  <span class="k">budgets</span>:
+    <span class="k">review-fix</span>: <span class="s">3</span>          <span class="c"># domyślnie 2</span>
+  <span class="k">escalation</span>:
+    <span class="k">stronger-model</span>: <span class="s">true</span>
+
+<span class="k">rules</span>:
+  <span class="k">project</span>: <span class="s">.bdk/rules/</span>       <span class="c"># pliki .md z ID, mode w ich frontmatterze</span>
+
+<span class="c"># teksty: brak kluczy tutaj; katalog .bdk/prompts/ jest częścią konfiguracji</span></pre>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <p class="text-xs font-semibold opacity-75 mb-1">układ katalogów</p>
+<pre class="code bg-base-200 rounded-box p-3">~/.config/bdk/
+  settings.yaml            <span class="c"># language: pl</span>
+  prompts/
+    style.md               <span class="c"># jak do mnie pisać</span>
+.bdk/
+  settings.yaml
+  settings.local.yaml      <span class="c"># features.lavish: true</span>
+  rules/
+    api-errors.md          <span class="c"># reguły projektu z ID</span>
+  prompts/
+    project.goal.md        <span class="c"># klucz: project.goal</span>
+    role.worker.extra.md   <span class="c"># klucz: role.worker.extra</span>
+  prompts.local/
+    role.worker.extra.md   <span class="c"># nadpisanie osoby (D4)</span></pre>
+            </div>
+            <div>
+              <p class="text-xs font-semibold opacity-75 mb-1">.bdk/prompts/role.worker.extra.md</p>
+<pre class="code bg-base-200 rounded-box p-3">---
+<span class="k">mode</span>: <span class="s">extends</span>        <span class="c"># albo replace</span>
+<span class="k">applies</span>: [<span class="s">implementer</span>, <span class="s">fixer</span>]
+---
+## Konwencje tego repo
+
+- Błędy domenowe dziedziczą z `AppError` (`src/errors.ts`),
+  nigdy gołe `throw new Error`.
+- Każdy nowy endpoint ma test kontraktu w `tests/contract/`.
+- Nie dotykaj `src/legacy/**` bez wpisu `decision` w dzienniku.</pre>
+            </div>
+            <div>
+              <p class="text-xs font-semibold opacity-75 mb-1">.bdk/rules/api-errors.md (reguła z ID)</p>
+<pre class="code bg-base-200 rounded-box p-3">---
+<span class="k">id</span>: <span class="s">api-errors</span>
+<span class="k">mode</span>: <span class="s">extends</span>
+---
+- **[API-1] Kody błędów.** Każda odpowiedź 4xx niesie `code`
+  z `ErrorCode`; brak kodu = bug, nie styl.
+- **[API-2] Brak wycieków.** Komunikat 5xx nigdy nie zawiera
+  ścieżek ani stack trace.</pre>
+            </div>
+          </div>
+        </div>
+        <div class="grid lg:grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs font-semibold opacity-75 mb-1">~/.config/bdk/settings.yaml i .bdk/settings.local.yaml</p>
+<pre class="code bg-base-200 rounded-box p-3"><span class="c"># ~/.config/bdk/settings.yaml</span>
+<span class="k">bdk</span>: <span class="s">3</span>
+<span class="k">language</span>: <span class="s">pl</span>
+<span class="k">features</span>:
+  <span class="k">lavish</span>: <span class="s">true</span>
+
+<span class="c"># .bdk/settings.local.yaml</span>
+<span class="k">bdk</span>: <span class="s">3</span>
+<span class="k">policy</span>:
+  <span class="k">escalation</span>:
+    <span class="k">stronger-model</span>: <span class="s">false</span>   <span class="c"># u mnie taniej; trafi na listę D4b</span></pre>
+          </div>
+          <div>
+            <p class="text-xs font-semibold opacity-75 mb-1">bdk config show policy.escalation role.worker.extra</p>
+<pre class="code bg-base-200 rounded-box p-3">policy.escalation.stronger-model = false
+  ← .bdk/settings.local.yaml        (nadpisuje: .bdk/settings.yaml = true)
+role.worker.extra                   (Markdown, 3 akapity, mode=extends)
+  ← .bdk/prompts.local/role.worker.extra.md
+  + .bdk/prompts/role.worker.extra.md
+  + &lt;domyślne BDK&gt;
+D4b: 1 klucz nadpisany lokalnie w tej Zmianie</pre>
+          </div>
+        </div>
+        <p class="text-sm"><b>Ocena.</b> Tekst ma podświetlanie, diff per plik, frontmatter mówi, gdzie stosować. Struktura ma komentarze i schemat. Nazwa pliku jest kluczem, więc warstwowanie i D4b działają jednakowo dla tekstu i dla flag. Koszt: dwa miejsca, dlatego <code>bdk config show</code> pokazuje pochodzenie. Reguły projektu to ten sam mechanizm, tylko z ID w treści.</p>
+      </div>
+    </div>
+
+    <!-- Wariant 2 -->
+    <div class="card card-border bg-base-100" id="w2">
+      <div class="card-body space-y-3">
+        <h3 class="card-title text-base">Wariant 2: sam YAML, tekst w blokach <code>|</code></h3>
+        <div class="grid lg:grid-cols-2 gap-4">
+<pre class="code bg-base-200 rounded-box p-3"><span class="k">bdk</span>: <span class="s">3</span>
+<span class="k">features</span>: { <span class="k">code-review-graph</span>: <span class="s">true</span>, <span class="k">serena</span>: <span class="s">false</span> }
+<span class="k">tools</span>:
+  <span class="k">test</span>:
+    - { <span class="k">id</span>: <span class="s">vitest</span>, <span class="k">tier</span>: <span class="s">fast</span>, <span class="k">full</span>: <span class="s">npm run test:unit</span>,
+        <span class="k">scoped</span>: <span class="s">npx vitest run {files}</span>, <span class="k">related</span>: <span class="s">npx vitest related --run {files}</span> }
+  <span class="k">lint</span>:
+    - { <span class="k">id</span>: <span class="s">eslint</span>, <span class="k">tier</span>: <span class="s">lint</span>, <span class="k">full</span>: <span class="s">npm run lint</span>, <span class="k">scoped</span>: <span class="s">npx eslint {files}</span> }
+<span class="k">policy</span>:
+  <span class="k">gates</span>: [{ <span class="k">id</span>: <span class="s">after-plan</span>, <span class="k">after</span>: <span class="s">plan</span>, <span class="k">who</span>: <span class="s">human</span> }]
+  <span class="k">budgets</span>: { <span class="k">review-fix</span>: <span class="s">3</span> }
+
+<span class="k">prompts</span>:
+  <span class="k">project.goal</span>: |
+    Panel administracyjny dla operatorów sieci ładowarek.
+    Priorytet: poprawność rozliczeń nad wygodą UI.
+  <span class="k">role.worker.extra</span>:
+    <span class="k">mode</span>: <span class="s">extends</span>
+    <span class="k">applies</span>: [<span class="s">implementer</span>, <span class="s">fixer</span>]
+    <span class="k">text</span>: |
+      ## Konwencje tego repo
+
+      - Błędy domenowe dziedziczą z `AppError` (`src/errors.ts`),
+        nigdy gołe `throw new Error`.
+      - Każdy nowy endpoint ma test kontraktu w `tests/contract/`.
+      - Nie dotykaj `src/legacy/**` bez wpisu `decision` w dzienniku.
+
+<span class="k">rules</span>:
+  <span class="k">api-errors</span>:
+    <span class="k">mode</span>: <span class="s">extends</span>
+    <span class="k">text</span>: |
+      - **[API-1] Kody błędów.** Każda odpowiedź 4xx niesie `code`
+        z `ErrorCode`; brak kodu = bug, nie styl.
+      - **[API-2] Brak wycieków.** Komunikat 5xx nigdy nie zawiera
+        ścieżek ani stack trace.</pre>
+          <div class="text-sm space-y-2">
+            <p><b>Ocena.</b> Jeden plik, jedna składnia, nic do szukania. To, co widzisz po lewej, to już 40 linii przy dwóch tekstach i jednej regule; realny projekt z opisem celu, pięcioma tekstami dla ról i kilkoma plikami reguł ma 200-400 linii, czyli rozmiar dzisiejszego planu, którego chcieliśmy się pozbyć.</p>
+            <p>Konkretne koszty: Markdown w bloku <code>|</code> nie ma podświetlania w edytorze; wcięcie bloku zjada wcięcia list Markdown, więc listy zagnieżdżone i bloki kodu w tekście łatwo popsuć; diff zmiany w tekście miesza się z diffem flag; <code>mode</code> i <code>applies</code> muszą być rodzeństwem <code>text</code>, więc każdy tekst to trzy klucze zamiast jednego pliku.</p>
+            <p>Zalety, których wariant 1 nie ma: całość jednym <code>cat</code>; jeden schemat waliduje wszystko, także teksty.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wariant 3 -->
+    <div class="card card-border bg-base-100" id="w3">
+      <div class="card-body space-y-3">
+        <h3 class="card-title text-base">Wariant 3: Markdown z frontmatterem jako jedyny format</h3>
+        <div class="grid lg:grid-cols-2 gap-4">
+<pre class="code bg-base-200 rounded-box p-3"><span class="c"># .bdk/settings.md</span>
+---
+<span class="k">bdk</span>: <span class="s">3</span>
+<span class="k">features</span>: { <span class="k">code-review-graph</span>: <span class="s">true</span>, <span class="k">serena</span>: <span class="s">false</span> }
+<span class="k">tools</span>:
+  <span class="k">test</span>:
+    - { <span class="k">id</span>: <span class="s">vitest</span>, <span class="k">tier</span>: <span class="s">fast</span>, <span class="k">full</span>: <span class="s">npm run test:unit</span>,
+        <span class="k">scoped</span>: <span class="s">npx vitest run {files}</span> }
+  <span class="k">lint</span>:
+    - { <span class="k">id</span>: <span class="s">eslint</span>, <span class="k">tier</span>: <span class="s">lint</span>, <span class="k">full</span>: <span class="s">npm run lint</span>, <span class="k">scoped</span>: <span class="s">npx eslint {files}</span> }
+<span class="k">policy</span>:
+  <span class="k">gates</span>: [{ <span class="k">id</span>: <span class="s">after-plan</span>, <span class="k">after</span>: <span class="s">plan</span>, <span class="k">who</span>: <span class="s">human</span> }]
+  <span class="k">budgets</span>: { <span class="k">review-fix</span>: <span class="s">3</span> }
+---
+
+## project.goal
+
+Panel administracyjny dla operatorów sieci ładowarek.
+Priorytet: poprawność rozliczeń nad wygodą UI.
+
+## role.worker.extra {mode=extends applies=implementer,fixer}
+
+### Konwencje tego repo
+
+- Błędy domenowe dziedziczą z `AppError` (`src/errors.ts`),
+  nigdy gołe `throw new Error`.
+- Każdy nowy endpoint ma test kontraktu w `tests/contract/`.
+
+## rules.api-errors {mode=extends}
+
+- **[API-1] Kody błędów.** Każda odpowiedź 4xx niesie `code`
+  z `ErrorCode`; brak kodu = bug, nie styl.
+- **[API-2] Brak wycieków.** Komunikat 5xx nigdy nie zawiera
+  ścieżek ani stack trace.</pre>
+          <div class="text-sm space-y-2">
+            <p><b>Ocena.</b> Wygląda jak SKILL.md i agent.md, więc jest znajome. Tekst ma pełne podświetlanie. Jeden plik.</p>
+            <p>Koszty: nagłówek <code>##</code> pełni rolę klucza, więc tekst nie może sam używać <code>##</code> (w przykładzie musiałem zejść do <code>###</code>); atrybuty w klamrach po nagłówku to własna mini-składnia, którą trzeba parsować i dokumentować; frontmatter rośnie do 60-100 linii YAML dla realnego projektu i przestaje być "front"; merge warstw po nagłówkach jest kruchy (zmiana nazwy sekcji w projekcie cicho odłącza nadpisanie osoby); jeden plik miesza zmiany flag i tekstu w diffie, tak jak wariant 2.</p>
+            <p>Reguły z ID w tym wariancie tracą frontmatter per plik, więc <code>mode</code> ląduje w klamrze.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-200"><div class="card-body p-4 text-sm">
+      <h4 class="font-semibold">Dla kontrastu: dzisiejszy JSON z tym samym tekstem</h4>
+<pre class="code bg-base-100 rounded-box p-3">{ "prompts": { "role.worker.extra": { "mode": "extends", "text": "## Konwencje tego repo\n\n- Błędy domenowe dziedziczą z `AppError` (`src/errors.ts`),\n  nigdy gołe `throw new Error`.\n- Każdy nowy endpoint ma test kontraktu w `tests/contract/`.\n" } } }</pre>
+      <p class="mt-2">Bez komentarzy, jedna linia, każdy cudzysłów w tekście do escapowania. To jest powód, dla którego dzisiejsze <code>quality.*</code> już wskazuje na pliki <code>.md</code> zamiast trzymać tekst w JSON.</p>
+    </div></div>
+
+    <div class="card card-border bg-base-100 border-success/40" id="r-format"><div class="card-body gap-2">
+        <h3 class="card-title text-base">Format konfiguracji <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm"><b>Wariant 1.</b> YAML na strukturę (<code>settings.yaml</code>, <code>settings.local.yaml</code>, <code>~/.config/bdk/settings.yaml</code>) plus katalogi <code>prompts/</code> i <code>prompts.local/</code> z plikami Markdown jako kluczami i frontmatterem <code>mode</code>/<code>applies</code>; reguły projektu jako pliki Markdown z ID w <code>.bdk/rules/</code>. Warunek z Twojej uwagi: schemat dla IDE, opisany niżej.</p>
+      </div></div>
+
+    <div class="card card-border bg-base-100" id="schemat"><div class="card-body space-y-3 text-sm">
+      <h3 class="card-title text-base">Schemat YAML dla IDE: tak, i to z jednego źródła</h3>
+      <p>YAML nie ma własnego języka schematów, ale edytory walidują YAML <b>JSON Schema</b>: VS Code przez rozszerzenie Red Hat YAML (yaml-language-server), JetBrains wbudowanie (mapowanie schematów JSON na pliki YAML). Oba rozumieją modeline w pierwszej linii pliku, więc plik sam mówi, którym schematem go sprawdzać, bez konfiguracji edytora.</p>
+      <div class="grid lg:grid-cols-2 gap-4">
+        <div>
+          <p class="text-xs font-semibold opacity-75 mb-1">pierwsza linia .bdk/settings.yaml (dopisuje <code>bdk setup</code>)</p>
+<pre class="code bg-base-200 rounded-box p-3"><span class="c"># yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.schema.json</span>
+<span class="k">bdk</span>: <span class="s">3</span>
+...</pre>
+          <p class="text-xs opacity-75 mt-2">Wersja w URL jest przypięta do wersji pluginu, więc podpowiedzi zgadzają się z tym, co rdzeń akceptuje. Kopia offline w <code>.bdk/.machine/schema/</code>; <code>bdk setup</code> może przepiąć modeline na nią flagą <code>--offline-schema</code>.</p>
+        </div>
+        <div>
+          <ul class="list-disc pl-5 space-y-1">
+            <li><b>Jedno źródło prawdy.</b> Schemat zod w rdzeniu (ten, który waliduje przy <code>bdk config check</code>) jest eksportowany do JSON Schema (zod 4 ma wbudowany eksport) na CI i commitowany do <code>schema/</code>; test CI pilnuje, że plik jest aktualny (<code>git diff --exit-code</code>, jak bundel). Rejestr schematów per moduł (B9) składa się w jeden dokument z <code>$defs</code>.</li>
+            <li><b>Co dostaje IDE.</b> Podpowiedzi kluczy, enumy (<code>tier</code>, <code>who</code>, typy wpisów), opisy z <code>.describe()</code> jako hover, podkreślenie nieznanych kluczy, wymagane pola.</li>
+            <li><b>Czego IDE nie sprawdzi.</b> Reguł między plikami: czy <code>policy.gates[].after</code> wskazuje istniejący węzeł, czy <code>{files}</code> jest w komendzie <code>scoped</code>, czy plik <code>prompts/*.md</code> ma poprawny frontmatter. To robi <code>bdk config check</code>, uruchamiany też w hooku SessionStart w trybie tylko-ostrzeżenie.</li>
+            <li><b>Frontmatter w plikach .md</b> (prompts, reguły, wpisy dziennika) ma osobne schematy w tym samym rejestrze; IDE ich nie zastosuje automatycznie, więc tu <code>bdk config check</code> i <code>bdk log check</code> są jedyną walidacją.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. CLI ============ -->
+  <section class="space-y-4" id="cli">
+    <h2 class="text-2xl font-bold">2. Kontrakt CLI w zarysie</h2>
+    <p class="text-sm opacity-80 max-w-3xl">To jest zarys grup poleceń i zasad, nie pełna specyfikacja; pełny kontrakt (kształty JSON, kody błędów, przykłady) powstaje jako pierwszy artefakt planu, bo od niego zależą testy rdzenia i treść skilli. Każde polecenie ma <code>--json</code>. Bloki <code>!</code> wołają zawsze <code>bdk ctx</code> lub <code>bdk next</code>, nigdy polecenia zmieniające stan.</p>
+    <div class="overflow-x-auto rounded-box border border-base-content/10 bg-base-100">
+      <table class="table table-sm">
+        <thead><tr><th>Grupa</th><th>Polecenia</th><th>Kto woła</th><th>Zmienia stan</th></tr></thead>
+        <tbody class="text-sm">
+          <tr><td><code>change</code></td><td><code>new</code>, <code>status</code>, <code>list</code>, <code>resume</code>, <code>park</code>, <code>takeover</code>, <code>close</code></td><td>skille change/close</td><td>tak</td></tr>
+          <tr><td>graf</td><td><code>next</code>, <code>explain &lt;artefakt&gt;</code>, <code>validate &lt;artefakt&gt;</code>, <code>done &lt;artefakt&gt;</code></td><td>każdy skill etapu; <code>next</code> także z bloku <code>!</code></td><td><code>done</code> tak, reszta nie</td></tr>
+          <tr><td><code>part</code></td><td><code>list</code>, <code>start</code>, <code>done</code>, <code>split</code></td><td>plan, execute</td><td>tak</td></tr>
+          <tr><td><code>attempt</code></td><td><code>open &lt;pętla&gt; &lt;cel&gt;</code>, <code>close &lt;bilet&gt; ok|fail</code>, <code>list</code></td><td>execute, review, plan (verifier)</td><td>tak</td></tr>
+          <tr><td><code>log</code></td><td><code>add</code>, <code>list</code>, <code>show</code>, <code>resolve</code>, <code>route</code></td><td>subagenci (<code>add</code>), orkiestrator, close</td><td>tak</td></tr>
+          <tr><td><code>dispatch</code></td><td><code>build &lt;task&gt; &lt;rola&gt; &lt;bilet&gt;</code>, <code>show</code></td><td>execute, review</td><td>zapisuje pakiet</td></tr>
+          <tr><td><code>spec</code></td><td><code>delta check</code>, <code>merge</code>, <code>diff</code></td><td>plan, close, hook PreToolUse</td><td><code>merge</code> tak</td></tr>
+          <tr><td><code>config</code></td><td><code>show</code>, <code>check</code>, <code>schema</code>, <code>set --global|--local</code></td><td>setup, człowiek</td><td><code>set</code> tak</td></tr>
+          <tr><td><code>ctx</code></td><td><code>skill &lt;nazwa&gt;</code>, <code>role &lt;klasa&gt;</code>, <code>startup</code></td><td>bloki <code>!</code>, meta-skille, hook SessionStart</td><td>nie</td></tr>
+          <tr><td>serwis</td><td><code>doctor</code>, <code>rebuild</code>, <code>import</code>, <code>version</code></td><td>setup, człowiek, hook SessionStart (tylko <code>doctor --layout</code>)</td><td><code>rebuild</code>, <code>import</code> tak</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid md:grid-cols-3 gap-4 text-sm">
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Dwa tryby wyjścia</h4><p><b>Inject</b> (<code>ctx</code>, <code>next</code> z bloku <code>!</code>): zawsze exit 0; błąd to blok "BDK STOP: &lt;powód&gt; &lt;co zrobić&gt;" w treści, bo host gubi wyjście przy exit != 0. <b>Polecenie</b> (wszystko z Bash): exit 0 sukces, 2 odmowa (Refusal), 3 błąd wejścia, 4 stan uszkodzony (fail-closed, wskazuje <code>rebuild</code>), 5 brak runtime lub wersji.</p></div></div>
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Odmowa</h4><p>Ten sam kształt wszędzie: <code>refused</code>, <code>rule</code> (np. <code>attempt.budget</code>), <code>why</code> jedna linia, <code>instead</code> lista poleceń do wykonania zamiast. Skill nie interpretuje, tylko wykonuje <code>instead</code> albo pyta człowieka, gdy lista jest pusta.</p></div></div>
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Wycinki, nie całość</h4><p><code>status</code>, <code>log list</code>, <code>part list</code> zwracają domyślnie do 100 linii i mają <code>--for &lt;task|part|plik&gt;</code>; pełna treść tylko przez <code>show &lt;id&gt;</code>. Odmowa przy próbie zrzutu całego stanu bez <code>--all</code>.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 3. MODEL DANYCH ============ -->
+  <section class="space-y-4" id="dane">
+    <h2 class="text-2xl font-bold">3. Model danych: wpis, pakiet, bilet, envelope</h2>
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div>
+        <p class="text-xs font-semibold opacity-75 mb-1">wpis dziennika: changes/&lt;id&gt;/log/2026-09-23T10-14-decision-app-error-base.md</p>
+<pre class="code bg-base-200 rounded-box p-3">---
+<span class="k">id</span>: <span class="s">L-0042</span>
+<span class="k">type</span>: <span class="s">decision</span>          <span class="c"># 1 z 9 typów (K1)</span>
+<span class="k">summary</span>: <span class="s">Błędy domenowe dziedziczą z AppError, nie z Error</span>  <span class="c"># &lt;= 120 znaków</span>
+<span class="k">status</span>: <span class="s">accepted</span>         <span class="c"># proposed | accepted | superseded | resolved | routed</span>
+<span class="k">source</span>: <span class="s">user</span>             <span class="c"># user | agent:&lt;rola&gt; | kernel</span>
+<span class="k">author</span>: <span class="s">przemek</span>
+<span class="k">at</span>: <span class="s">2026-09-23T10:14:02+02:00</span>
+<span class="k">refs</span>:                    <span class="c"># &gt;= 1 wymagane (K2)</span>
+  <span class="k">files</span>: [<span class="s">src/errors.ts</span>]
+  <span class="k">parts</span>: [<span class="s">02</span>]
+  <span class="k">rules</span>: [<span class="s">API-1</span>]
+<span class="k">supersedes</span>: <span class="s">L-0017</span>       <span class="c"># historia zmiany decyzji</span>
+<span class="k">review</span>: <span class="s">false</span>            <span class="c"># true = "do przejrzenia" na bramce (D3)</span>
+---
+Powód: trzy miejsca w kodzie sprawdzają `instanceof AppError`
+i gubią błędy z `throw new Error`. Alternatywa (wrapper w
+middleware) odrzucona, bo maskuje miejsce powstania błędu.</pre>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <p class="text-xs font-semibold opacity-75 mb-1">pakiet dispatchu: changes/&lt;id&gt;/dispatch/02-3-worker-1.md (&lt;= 12 KB)</p>
+<pre class="code bg-base-200 rounded-box p-3">---
+<span class="k">ticket</span>: <span class="s">A-0007</span>           <span class="c"># bilet z attempt open, bez niego rdzeń odmawia</span>
+<span class="k">task</span>: <span class="s">02-3</span>
+<span class="k">role</span>: <span class="s">worker</span>
+<span class="k">attempt</span>: <span class="s">1/3</span>
+<span class="k">scope</span>: <span class="s">full</span>              <span class="c"># full | high+ | blockers (zwężanie)</span>
+---
+## Intencja (skrót)         <span class="c"># z change.md, 3-5 linii</span>
+## Task                     <span class="c"># pełna treść taska z części planu</span>
+## Decyzje (pełna treść)    <span class="c"># accepted, dopasowane po refs</span>
+## Blokery (pełna treść)
+## Streszczenia             <span class="c"># finding/observation/assumption po refs</span>
+## Reguły                   <span class="c"># wycinek po ID dla roli worker</span>
+## Kontrakt zwrotu          <span class="c"># envelope + log add</span></pre>
+        </div>
+        <div>
+          <p class="text-xs font-semibold opacity-75 mb-1">envelope zwrotny subagenta (&lt;= 15 linii)</p>
+<pre class="code bg-base-200 rounded-box p-3"><span class="k">status</span>: <span class="s">done</span>               <span class="c"># done | partial | blocked</span>
+<span class="k">ticket</span>: <span class="s">A-0007</span>
+<span class="k">files_changed</span>: [<span class="s">src/errors.ts</span>, <span class="s">src/api/orders.ts</span>]
+<span class="k">log</span>: [<span class="s">L-0043</span>, <span class="s">L-0044</span>]     <span class="c"># wpisy dodane przez log add</span>
+<span class="k">report</span>: <span class="s">reports/02-3-worker-1.md</span>
+<span class="k">needs</span>: []</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. ARTEFAKTY ============ -->
+  <section class="space-y-4" id="artefakty">
+    <h2 class="text-2xl font-bold">4. Rodzaje artefaktów i przykład <code>pipeline.yaml</code></h2>
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="overflow-x-auto rounded-box border border-base-content/10 bg-base-100">
+        <table class="table table-sm">
+          <thead><tr><th>Rodzaj (w TS)</th><th>Walidator "done"</th><th>Budżet</th></tr></thead>
+          <tbody class="text-sm">
+            <tr><td><code>intent</code></td><td>change.md ma cel, zakres, źródło</td><td>-</td></tr>
+            <tr><td><code>design</code></td><td>schemat sekcji, &gt;= 1 wpis decision, verdict verifiera PASS</td><td>iteracje verifiera</td></tr>
+            <tr><td><code>plan-part</code></td><td>&lt;= 8 KB, &lt;= 8 tasków, Depends on rozwiązywalne, spec-impact zadeklarowany</td><td>-</td></tr>
+            <tr><td><code>plan-verify</code></td><td>verdict PASS, checklista reguł po ID odhaczona</td><td>verify-fix części</td></tr>
+            <tr><td><code>gate</code></td><td>wpis decision od <code>who</code> (human | agent)</td><td>-</td></tr>
+            <tr><td><code>execute-part</code></td><td>wszystkie taski mają commit z trailerem, kroki po tasku zielone</td><td>re-dispatch taska</td></tr>
+            <tr><td><code>post-task-step</code></td><td>wynik kroku (tests-scoped, lint, simplify, pattern-check) zapisany</td><td>pominięcia z rzędu</td></tr>
+            <tr><td><code>review</code></td><td>findingi w dzienniku, brak otwartych HIGH+</td><td>review-fix</td></tr>
+            <tr><td><code>spec-delta</code></td><td>walidator semantyczny OK, merge na sucho bez konfliktu</td><td>-</td></tr>
+            <tr><td><code>close</code></td><td>spec zmergowany, learning routed, archiwum</td><td>-</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <p class="text-xs font-semibold opacity-75 mb-1">pipeline.yaml (BDK, profil small; projekt dopisuje tylko węzły i budżety)</p>
+<pre class="code bg-base-200 rounded-box p-3"><span class="k">profiles</span>:
+  <span class="k">tiny</span>:  { <span class="k">skip</span>: [<span class="s">design</span>, <span class="s">plan-verify</span>], <span class="k">parts</span>: <span class="s">1</span> }
+  <span class="k">small</span>: {}
+  <span class="k">large</span>: { <span class="k">gates</span>: [<span class="s">after-design</span>, <span class="s">after-plan</span>] }
+
+<span class="k">artifacts</span>:
+  - { <span class="k">id</span>: <span class="s">intent</span>,       <span class="k">kind</span>: <span class="s">intent</span> }
+  - { <span class="k">id</span>: <span class="s">design</span>,       <span class="k">kind</span>: <span class="s">design</span>,      <span class="k">requires</span>: [<span class="s">intent</span>], <span class="k">budget</span>: { <span class="k">verifier</span>: <span class="s">3</span> } }
+  - { <span class="k">id</span>: <span class="s">after-design</span>, <span class="k">kind</span>: <span class="s">gate</span>,        <span class="k">requires</span>: [<span class="s">design</span>], <span class="k">who</span>: <span class="s">human</span> }
+  - { <span class="k">id</span>: <span class="s">plan</span>,         <span class="k">kind</span>: <span class="s">plan-part</span>,   <span class="k">requires</span>: [<span class="s">after-design</span>], <span class="k">many</span>: <span class="s">true</span> }
+  - { <span class="k">id</span>: <span class="s">plan-verify</span>,  <span class="k">kind</span>: <span class="s">plan-verify</span>, <span class="k">requires</span>: [<span class="s">plan</span>], <span class="k">budget</span>: { <span class="k">fix</span>: <span class="s">2</span> } }
+  - { <span class="k">id</span>: <span class="s">execute</span>,      <span class="k">kind</span>: <span class="s">execute-part</span>, <span class="k">requires</span>: [<span class="s">plan-verify</span>], <span class="k">per</span>: <span class="s">plan</span>,
+      <span class="k">after-task</span>: [<span class="s">tests-scoped</span>, <span class="s">lint</span>, <span class="s">simplify</span>], <span class="k">budget</span>: { <span class="k">redispatch</span>: <span class="s">2</span> },
+      <span class="k">strategy</span>: <span class="s">sequential</span> }           <span class="c"># | workflow, gdy features.workflow (Q4)</span>
+  - { <span class="k">id</span>: <span class="s">review</span>,       <span class="k">kind</span>: <span class="s">review</span>,      <span class="k">requires</span>: [<span class="s">execute</span>], <span class="k">budget</span>: { <span class="k">fix</span>: <span class="s">2</span> } }
+  - { <span class="k">id</span>: <span class="s">final-gate</span>,   <span class="k">kind</span>: <span class="s">gate</span>,        <span class="k">requires</span>: [<span class="s">review</span>], <span class="k">who</span>: <span class="s">human</span> }
+  - { <span class="k">id</span>: <span class="s">close</span>,        <span class="k">kind</span>: <span class="s">close</span>,       <span class="k">requires</span>: [<span class="s">final-gate</span>, <span class="s">spec-delta</span>] }</pre>
+        <p class="text-xs opacity-75 mt-2">Brak pętli, brak wyrażeń poza <code>if: features.X</code>; wszystko, co wymaga logiki, jest rodzajem w TypeScript. Projekt w <code>policy.gates</code> dopisuje węzeł <code>gate</code>, w <code>policy.budgets</code> nadpisuje liczby, w <code>policy.after-task</code> dodaje krok (np. <code>pattern-check</code>), jeśli krok istnieje jako rodzaj.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. NOWE PYTANIA ============ -->
+  <section class="space-y-4" id="pytania">
+    <h2 class="text-2xl font-bold">5. Dwa pytania, które odsłoniły ostatnie decyzje</h2>
+
+    <div class="card card-border bg-base-100 border-success/40" id="r-profil"><div class="card-body gap-2">
+        <h3 class="card-title text-base">Profil skali <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm"><b>Pomiar + nadpisanie.</b> Rdzeń proponuje profil z pomiaru (pliki z intencji, wpływ z grafu kodu, dotknięte moduły), zapisuje jako wpis <code>assumption</code>; człowiek lub polityka nadpisuje flagą <code>--profile</code>; zmiana w trakcie tylko w górę. Heurystyka do kalibracji na fiksturze, trafia do "Czego nie zdecydowaliśmy".</p>
+      </div></div>
+
+    <div class="card card-border bg-base-100 border-success/40" id="r-rule-id"><div class="card-body gap-2">
+        <h3 class="card-title text-base">Identyfikatory reguł <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm"><b>Prefiks pliku + numer nadany raz</b>: <code>[CQ-4]</code>, <code>[ARCH-2]</code>, <code>[API-1]</code>. Numer nigdy nie jest reużywany; usunięta reguła zostaje jako wpis "(usunięta: powód)"; <code>bdk rules check</code> pilnuje unikalności i formatu. Cytaty w findingach i checklistach po ID, treść przez <code>bdk rules show</code>.</p>
+      </div></div>
+
+
+    <section class="space-y-4" id="dolt">
+      <h2 class="text-2xl font-bold">6. Dolt jako magazyn stanu? Twoje pytanie</h2>
+      <p class="text-sm opacity-80 max-w-3xl">Dolt to baza SQL (MySQL-kompatybilna) z semantyką gita na poziomie wierszy: commit, branch, merge, diff i blame na danych. Pytanie brzmi: czy trzymać w nim dziennik, stan Zmian i próby zamiast w plikach Markdown plus lokalnym indeksie. Rozbijam na to, co Dolt daje, co kosztuje w naszym układzie i czym da się dostać 90% korzyści.</p>
+      <div class="grid md:grid-cols-3 gap-4 text-sm">
+        <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Co Dolt daje naprawdę</h4><ul class="list-disc pl-5 space-y-1"><li>SQL po całym stanie: "pokaż findingi typu security z ostatnich 5 Zmian, które wróciły po fixie" to jedno zapytanie.</li><li>Historia i diff na poziomie wiersza, <code>dolt blame</code> na decyzji.</li><li>Branch i merge danych, gdy dwie osoby piszą do tej samej Zmiany (Q2b w przyszłości).</li><li>Jedna spójna transakcja zamiast wielu plików.</li></ul></div></div>
+        <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Co kosztuje u nas</h4><ul class="list-disc pl-5 space-y-1"><li><b>Drugi runtime.</b> Binarka Go około 100 MB, instalacja per maszyna i CI; łamie zasadę D5 "tylko Node" i regułę ADR 0001 o zachowaniu przy brakującym runtime.</li><li><b>Drugi system wersji.</b> Commit gita i commit Dolta trzeba spinać (który stan Dolta odpowiada któremu SHA); dziś prawdą są trailery w gicie, Dolt rozbiłby to na dwie prawdy.</li><li><b>Wiedza znika z PR.</b> D2b mówi: wiedza commitowana jako Markdown, czytelna w diffie PR i przez <code>grep</code>. Dane w Dolcie są w jego formacie; do PR trzeba eksportować, do agentów tłumaczyć przez SQL.</li><li><b>Współdzielenie.</b> Zespół potrzebuje zdalnego Dolta (DoltHub lub własny) albo commitowania katalogu <code>.dolt/</code> (binarny, duży) w gicie.</li><li><b>Skala nie wymaga.</b> Zmiana ma setki wpisów, projekt tysiące; to rozmiar, który SQLite w pamięci przeszukuje w milisekundach.</li></ul></div></div>
+        <div class="card bg-base-200 border border-primary/40"><div class="card-body p-4 gap-2"><h4 class="font-semibold">90% korzyści bez Dolta</h4><ul class="list-disc pl-5 space-y-1"><li><b>Indeks SQLite w <code>.machine/</code></b> budowany z plików Markdown przez <code>node:sqlite</code> (wbudowane w Node, bez zależności; status stabilności do potwierdzenia dla wersji minimalnej). Rebuildowalny, gitignorowany, jak cały <code>.machine/</code>.</li><li><code>bdk query "&lt;sql&gt;"</code> tylko do odczytu, do szukania błędów i raportów; te same tabele zasilają <code>log list --for</code> i detekcję oscylacji.</li><li>Historia i blame: git na plikach wpisów, bo każdy wpis to plik (K4), a decyzja zmieniona to nowy wpis z <code>supersedes</code>.</li><li>Branch i merge danych: git, bo katalog Zmiany jest w repo; walidator konfliktów wpisów to funkcja odłożona w Q2b.</li></ul></div></div>
+      </div>
+      <p class="text-sm"><b>Moja ocena.</b> Dolt jest właściwym narzędziem, gdy dane <i>same</i> są produktem i wielu pisarzy musi je gałęziować i mergować niezależnie od kodu. U nas dane są śladem pracy nad kodem, żyją obok kodu i mają być czytelne w tym samym PR. Wprowadzenie Dolta to przerost formy: drugi runtime i druga oś wersji za funkcje, które w 90% daje indeks SQLite nad plikami. Zostawiam furtkę: rdzeń czyta stan przez jeden moduł "store", więc gdy kiedyś pojawi się potrzeba wielu równoległych pisarzy na jednej Zmianie, wymiana magazynu nie dotyka skilli ani kontraktu CLI.</p>
+      <form class="card card-border bg-base-100" data-lavish-question="r-store" id="r-store" onsubmit="queueChoice(event, 'Magazyn stanu')">
+        <div class="card-body">
+          <h3 class="card-title text-base">Decyzja: magazyn stanu i wyszukiwanie</h3>
+          <div class="grid lg:grid-cols-3 gap-3">
+            <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Pliki Markdown jako prawda (jak D2b/K4) + rebuildowalny indeks SQLite w .machine/ przez node:sqlite + bdk query tylko do odczytu; moduł store jako jedyny punkt dostępu, wymienialny" class="radio radio-primary radio-sm" checked><span class="font-semibold">Markdown + indeks SQLite</span><span class="badge badge-primary badge-sm">rekomendacja</span></div><p class="text-xs opacity-75">Koszt: indeks trzeba odbudowywać po zmianach plików (hook lub leniwie po hashu katalogu).</p></div></label>
+            <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Dolt jako magazyn dziennika i stanu; Markdown tylko eksport do PR" class="radio radio-primary radio-sm"><span class="font-semibold">Dolt</span></div><p class="text-xs opacity-75">Koszt: drugi runtime, druga oś wersji, zdalny Dolt dla zespołu, zmiana D2b i D5.</p></div></label>
+            <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Pliki Markdown + indeks JSON w .machine/, bez SQL; wyszukiwanie tylko przez log list --for" class="radio radio-primary radio-sm"><span class="font-semibold">Bez SQL</span></div><p class="text-xs opacity-75">Najprostsze. Koszt: pytania ad hoc przy debugowaniu wymagają pisania kodu albo grepa po plikach.</p></div></label>
+          </div>
+          <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><input class="input w-full" name="note"></label>
+          <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź</button><span class="badge badge-success queued">w kolejce</span></div>
+        </div>
+      </form>
+    </section>
+
+    <div class="alert alert-soft alert-info" id="no-lavish" style="display:none"><span>Strona jest otwarta bez serwera Lavish. Otwórz ją przez <code>npx -y lavish-axi .lavish/bdk-v3-design-04-doprecyzowanie.html</code>.</span></div>
+    <div class="card bg-base-200"><div class="card-body text-sm"><h3 class="card-title text-base">Co dalej</h3><p>Po decyzji o magazynie stanu kończę krok 2 i przechodzę do Fazy 3: <code>bdk:design-verifier</code> (opus) czyta pełny szkic i zwraca werdykt YAML; pętla maks. 3 iteracje. Potem Faza 4: dokument w <code>.bdk/design/</code> z sekcją "Czego nie zdecydowaliśmy" (m.in. ryzyko D2a, inwentarz skilli jako PoC, kalibracja profilu skali, poprawka ADR 0001) i przekazanie do <code>/bdk:create-plan</code>.</p></div></div>
+  </section>
+</main>
+
+<div id="no-lavish-anchor"></div>
+<script>
+  function markNoLavish() { document.getElementById('no-lavish').style.display = ''; }
+  function queueChoice(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const choice = fd.get('answer'); const note = (fd.get('note') || '').trim();
+    if (!choice) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = label + ': ' + choice + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, data: { question: form.dataset.lavishQuestion, answer: choice, note: note } });
+    form.dataset.queued = '1';
+  }
+</script>
+</body>
+</html>

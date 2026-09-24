@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pl" data-theme="luxury">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDK v3 - werdykt weryfikatora i dwa pytania</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, dd, td, th, label) { overflow-wrap: anywhere; }
+  .badge { white-space: nowrap; }
+  .opt { cursor: pointer; }
+  .opt:has(input:checked) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .queued { display: none; }
+  form[data-queued="1"] .queued { display: inline-flex; }
+  code { font-size: 0.85em; }
+  .story { border-left: 3px solid var(--color-primary); }
+  .term { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; white-space: pre; overflow-x: auto; }
+</style>
+</head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-5xl p-4 lg:p-8 space-y-12">
+
+  <section class="hero bg-base-200 rounded-box">
+    <div class="hero-content flex-col items-start py-8 w-full">
+      <p class="text-sm uppercase tracking-widest text-primary font-semibold">/bdk:design &middot; BDK v3 &middot; faza 3: weryfikacja &middot; strona 08</p>
+      <h1 class="text-4xl font-bold">Weryfikator powiedział FAIL. Większość poprawiłem, dwie rzeczy są Twoje</h1>
+      <p class="max-w-3xl opacity-85">Niezależny agent <code>bdk:design-verifier</code> przeczytał design po korekcie TSH na zimno. Znalazł 9 rzeczy do obowiązkowego załatwienia i 7 drobiazgów. 7 z 9 to były luki w kształcie lub uczciwości opisu, te naprawiłem w dokumencie (lista niżej). Dwie dotyczą tego, jak ma wyglądać Twoja praca przy bramce, więc nie mogę o nich zdecydować za Ciebie. Przy każdej zaznaczyłem rekomendację i tak też zapisałem w designie na próbę; jeśli wybierzesz inaczej, poprawię.</p>
+      <div class="stats stats-vertical sm:stats-horizontal bg-base-100 mt-2">
+        <div class="stat"><div class="stat-title">Werdykt iteracji 1</div><div class="stat-value text-error text-3xl">FAIL</div><div class="stat-desc">9 must-address, 7 uwag</div></div>
+        <div class="stat"><div class="stat-title">Naprawione w dokumencie</div><div class="stat-value text-success text-3xl">7 + 7</div><div class="stat-desc">kształt, uczciwość, diagramy</div></div>
+        <div class="stat"><div class="stat-title">Do Twojej decyzji</div><div class="stat-value text-primary text-3xl">2</div><div class="stat-desc">Q1 hash, Q2 execute</div></div>
+        <div class="stat"><div class="stat-title">Pętle zużyte</div><div class="stat-value text-3xl">1 / 3</div><div class="stat-desc">po Twojej odpowiedzi: iteracja 2</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="pytania">
+    <h2 class="text-2xl font-bold">Dwa pytania</h2>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="q1-hash" id="q1" onsubmit="queueChoice(event, 'Q1 czy użytkownik wpisuje hash przy komendzie etapu')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">Q1. Czy wpisujesz hash razem z komendą etapu?</h3>
+        <div class="grid md:grid-cols-3 gap-3 text-sm">
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Co znalazł weryfikator</h4><p>Dokument mówił jednocześnie "nic nowego do wpisania" i "użytkownik wpisuje <code>/bdk:plan 3f9a</code>". Jedno z tych zdań musi odejść. Chodzi o to, jak zgoda jest przypięta do treści: skąd rdzeń wie, że zatwierdzasz <b>ten</b> design, a nie design sprzed pięciu minut, który model właśnie dopisał.</p></div></div>
+          <div class="card bg-base-200 story"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Przykład</h4><p>Patrzysz na status: "design gotowy, wpisz <code>/bdk:plan</code>". Zanim wpiszesz, model w tle dopisuje do designu sekcję o migracji bazy. Wpisujesz <code>/bdk:plan</code>. Co zatwierdziłeś?</p></div></div>
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Dlaczego to Twoja decyzja</h4><p>Obie opcje działają technicznie. Różnią się tym, ile wpisujesz i czy zgoda opiera się na tym, co <b>widziałeś</b>, czy na tym, co <b>przepisałeś</b>. To wybór ergonomii, nie architektury.</p></div></div>
+        </div>
+        <div class="grid lg:grid-cols-2 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Goła komenda, przypięcie przez pokazany hash: użytkownik wpisuje /bdk:plan bez argumentu; rdzeń przy każdym renderze statusu bramki zapisuje hash, który pokazał; hook blokuje komendę, gdy hash na dysku różni się od ostatnio pokazanego, z komunikatem 'design zmienił się od ostatniego statusu, uruchom bdk change status i wpisz ponownie'" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">Goła komenda, przypięcie przez pokazany hash <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Wpisujesz <code>/bdk:plan</code>, jak dziś. Rdzeń pamięta, jaki hash designu pokazał Ci w ostatnim statusie. Jeśli w chwili wpisania plik na dysku ma inny hash, komenda jest blokowana, a Ty widzisz: "design zmienił się od ostatniego statusu, obejrzyj go i wpisz ponownie". Zgoda przypina się do tego, co widziałeś.</p>
+            <p class="text-xs opacity-80"><b>Koszt:</b> zero wpisywania. <b>Słaby punkt:</b> jeśli status pokażesz i wpiszesz komendę po godzinie, a w międzyczasie nic się nie zmieniło, przejdzie; jeśli zmieniło się, zablokuje. Wymaga, żeby wyświetlenie statusu było zapisywane przez rdzeń, co i tak robimy dla dziennika.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Krótki hash w komendzie: użytkownik wpisuje /bdk:plan 3f9a; strona bramki pokazuje komendę z hashem do skopiowania; hook porównuje hash z argumentu z hashem na dysku; goła komenda bez hasha jest blokowana z podpowiedzią" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">Krótki hash w komendzie</span></div>
+            <p class="text-xs opacity-80">Strona bramki pokazuje gotowe <code>/bdk:plan 3f9a</code> do skopiowania. Hook porównuje to, co wpisałeś, z tym, co jest na dysku. Zgoda przypina się do tego, co przepisałeś, i nie zależy od pamięci rdzenia o pokazanym statusie.</p>
+            <p class="text-xs opacity-80"><b>Koszt:</b> cztery znaki do skopiowania przy każdej bramce, a przy każdej poprawce designu nowe cztery znaki. <b>Zysk:</b> prostszy rdzeń (nie trzeba pamiętać pokazanego hasha) i dowód zgody czytelny gołym okiem w transkrypcie.</p>
+          </div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź Q1</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="q2-execute" id="q2" onsubmit="queueChoice(event, 'Q2 rola /bdk:execute wobec bramek')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">Q2. Ile jest bramek i co robi <code>/bdk:execute</code>?</h3>
+        <div class="grid md:grid-cols-3 gap-3 text-sm">
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Co znalazł weryfikator</h4><p>Decyzja D3 mówi: dwie bramki domyślne (po designie i przy zamknięciu). Korekta TSH wymienia trzy komendy jako "punkty zgody": <code>plan</code>, <code>execute</code>, <code>close</code>. Więc czy <code>execute</code> jest bramką? Co zapisuje, gdy wpiszesz gołe <code>/bdk:execute</code>?</p></div></div>
+          <div class="card bg-base-200 story"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Przykład</h4><p>Plan gotowy, weryfikacja planu przeszła. Wpisujesz <code>/bdk:execute</code>. Czy to jest formalna zgoda "zatwierdzam plan o hashu X", czy zwykłe uruchomienie wykonania, po którym bramka jest dopiero przy <code>close</code>?</p></div></div>
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Dlaczego to Twoja decyzja</h4><p>To zmienia liczbę miejsc, w których rdzeń może Cię zatrzymać z komunikatem "plan zmienił się, wpisz ponownie". Więcej bramek to więcej pewności i więcej tarcia.</p></div></div>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Dwie bramki domyślne (D3 bez zmian): /bdk:plan zatwierdza design, /bdk:close zatwierdza review; /bdk:execute nie jest bramką i nic nie zapisuje, chyba że wpisane z --skip-verify, wtedy zapisuje zgodę na pominięcie weryfikacji przypiętą do hasha planu; projekt może dodać bramkę planu w pipeline.yaml i wtedy execute staje się jej punktem zgody" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">Dwie bramki, <code>execute</code> nie jest bramką <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">D3 zostaje: <code>/bdk:plan</code> zatwierdza design, <code>/bdk:close</code> zatwierdza review. <code>/bdk:execute</code> to zwykłe uruchomienie; zapisuje coś tylko, gdy dodasz <code>--skip-verify</code> (wtedy zgoda na pominięcie weryfikacji, przypięta do hasha planu). Projekt, który chce bramki po planie, dopisuje ją w <code>pipeline.yaml</code> i wtedy <code>execute</code> staje się jej punktem zgody.</p>
+            <p class="text-xs opacity-80"><b>Za:</b> zgodne z tym, co już zdecydowałeś; plan i tak ma weryfikator planu jako strażnika. <b>Przeciw:</b> błędny plan wykona się bez Twojego formalnego "tak".</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Trzy bramki domyślne: /bdk:plan zatwierdza design, /bdk:execute zatwierdza plan (hash planu w rekordzie zgody), /bdk:close zatwierdza review; D3 zaktualizowane z dwóch na trzy; profil tiny pomija bramkę designu i planu" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">Trzy bramki, <code>execute</code> zatwierdza plan</span></div>
+            <p class="text-xs opacity-80">Każde przejście etapu jest zgodą. D3 zmienia się z "dwie" na "trzy". Profil <code>tiny</code> pomija bramkę designu i planu, więc małe zmiany nie odczuwają różnicy.</p>
+            <p class="text-xs opacity-80"><b>Za:</b> plan po poprawce nie wykona się bez ponownego spojrzenia. <b>Przeciw:</b> jeden komunikat blokady więcej w typowej pracy; D3 do przepisania.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Bramka planu tylko w profilu large: dwie bramki w tiny i small, trzy w large; execute jest punktem zgody wyłącznie, gdy profil ma bramkę planu" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">Zależnie od profilu: trzecia bramka tylko w <code>large</code></span></div>
+            <p class="text-xs opacity-80">Małe i średnie zmiany: dwie bramki. Duże (<code>large</code>): trzy. D3 dostaje jedno zdanie o profilu.</p>
+            <p class="text-xs opacity-80"><b>Za:</b> tarcie tam, gdzie stawka jest wysoka. <b>Przeciw:</b> dwie różne mapy bramek do zapamiętania.</p>
+          </div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź Q2</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+  </section>
+
+  <section class="space-y-4" id="naprawione">
+    <h2 class="text-2xl font-bold">Co naprawiłem bez pytania (do wglądu)</h2>
+    <p class="text-sm opacity-85">Te punkty weryfikator zaliczył jako luki w kształcie lub w uczciwości opisu. Żaden nie zmienia Twoich decyzji T1-T6 i P1-P11; każdy je doprecyzowuje. Jeśli coś tu Ci nie pasuje, dopisz w uwadze ogólnej na dole.</p>
+    <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead><tr><th>#</th><th>Znalezisko</th><th>Co zapisałem w designie</th></tr></thead>
+        <tbody>
+          <tr><td>2</td><td>Model nie ma jak zapisać dyspozycji wpisu <code>review: true</code> (skoro P1 stempluje wszystko, co pisze model, jako "agent"), więc odpowiedź człowieka przekazana przez model wracała do bramki w kółko.</td><td>Dyspozycje wpisujesz w argumentach komendy etapu: <code>/bdk:plan accept L-0042 reject L-0044</code> lub <code>accept-all</code>. Status bramki pokazuje listę oczekujących wpisów. Komenda z oczekującymi wpisami i bez dyspozycji jest blokowana z tą listą.</td></tr>
+          <tr><td>3</td><td>Prefiltr hooka (odpalaj rdzeń tylko, gdy tekst zawiera <code>git</code> itd.) nigdy nie dochodził do strażnika narzędzia <code>Skill</code>.</td><td>Prefiltr per narzędzie: Bash po tekście komendy, Edit/Write po ścieżce pliku. Strażnik <code>Skill</code> usunięty, bo zastąpił go punkt 5.</td></tr>
+          <tr><td>4</td><td>Hooki strażnicze z opakowaniem "przy błędzie wypisz BDK STOP" przepuszczały wszystko, gdy rdzeń padł (fail-open).</td><td>Strażniki są fail-closed: bez rdzenia hook kończy się kodem 2 i host blokuje tylko ten jeden strzeżony ruch (git u subagenta, edycja specyfikacji, komenda etapu). Zwykła praca idzie dalej. Hooki treściowe (session-start, stop) zostają fail-open.</td></tr>
+          <tr><td>5</td><td>Przeoczyłem gotowe pole hosta: <code>disable-model-invocation: true</code> w nagłówku skilla sprawia, że tylko człowiek może go uruchomić.</td><td>Skille <code>plan</code>, <code>execute</code>, <code>close</code> dostają to pole jako główny strażnik T1. Odmowa przez hook zostaje jako druga linia obrony. Mniej własnego kodu, więcej dokumentowanego zachowania hosta.</td></tr>
+          <tr><td>7</td><td>Dwie rzeczy podane jako gwarancje były słabsze: <code>disallowed-tools</code> wraca po Twojej następnej wiadomości, a porównanie diff nie odróżni edycji orkiestratora w plikach zadania od edycji workera.</td><td>Oba ograniczenia wpisane wprost jako zaakceptowane pozostałości w "Czego nie zdecydowaliśmy".</td></tr>
+          <tr><td>9</td><td>Subagent z Bashem mógł wywołać komendy zarezerwowane dla orkiestratora (<code>bdk commit</code>, <code>attempt close</code>), bo rdzeń sam nie widzi, kto go woła.</td><td>Ten sam hook, który pilnuje gita u subagentów, odmawia im też komend orkiestratora. Subagent ma: <code>log add</code>, <code>log show</code>, <code>dispatch show</code>, <code>evidence record</code>, <code>ctx</code>.</td></tr>
+          <tr><td>12</td><td>"Wątek główny nigdy nie dostaje odmowy" było nieprawdą, bo T1 odmawia mu wywołania <code>bdk.mjs hooks</code>.</td><td>Przepisane na "komendy git w wątku głównym są nietknięte".</td></tr>
+          <tr><td>drobne</td><td>Kategorie blokerów P8 bez listy; audyt zgód zależny od transkryptu; brak celu opóźnienia hooków; rozdzielenie strzałek odmowy na diagramie; brak strzałek <code>log ingest</code> i <code>evidence record</code>; wiersz historii pętli w złym miejscu; code-reviewer i explorer mają Bash, a są "czytaczami".</td><td>Sześć kategorii domyślnych dopisanych; audyt opisany jako lokalny i best-effort; cele p95 w wierszu Latency; diagramy uzupełnione; wiersz TSH na końcu historii z miejscem na wynik weryfikacji; kanał zapisu zależy od klasy roli, nie od Basha.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="dalej">
+    <h2 class="text-2xl font-bold">Co się stanie po Twojej odpowiedzi</h2>
+    <ol class="list-decimal ml-6 space-y-1 text-sm">
+      <li>Jeśli wybierzesz rekomendacje, design jest już zgodny; jeśli inaczej, poprawiam sekcje UX Gates, flowchart, krok 2 przepływu danych, Key boundaries, tabelę hooków i wiersz ryzyka "approval friction".</li>
+      <li>Wysyłam do tego samego weryfikatora deltę (iteracja 2 z 3). Sprawdza tylko zmienione sekcje.</li>
+      <li>PASS: aktualizuję linię Status i historię pętli w obu plikach designu, koniec. FAIL: wracam do Ciebie z tym, co zostało, albo dokumentuję jako otwarte.</li>
+    </ol>
+    <form class="card card-border bg-base-100" data-lavish-question="uwagi-ogolne-08" onsubmit="queueNote(event)">
+      <div class="card-body gap-3">
+        <h3 class="card-title text-lg">Uwaga ogólna (opcjonalnie)</h3>
+        <textarea class="textarea w-full" name="note" rows="3" placeholder="Np. 'punkt 4 nie podoba mi się, bo...'"></textarea>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-outline btn-sm">Dodaj do kolejki</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+    <div class="alert alert-soft alert-info" id="no-lavish" style="display:none"><span>Strona jest otwarta bez serwera Lavish. Otwórz ją przez <code>npx -y lavish-axi .lavish/bdk-v3-design-08-werdykt.html</code>.</span></div>
+  </section>
+</main>
+<script>
+  function markNoLavish() { document.getElementById('no-lavish').style.display = ''; }
+  function queueChoice(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const choice = fd.get('answer'); const note = (fd.get('note') || '').trim();
+    if (!choice) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = label + ': ' + choice + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, queueKey: form.dataset.lavishQuestion, data: { question: form.dataset.lavishQuestion, answer: choice, note: note } });
+    form.dataset.queued = '1';
+  }
+  function queueNote(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const note = (new FormData(form).get('note') || '').trim();
+    if (!note) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    window.lavish.queuePrompt('Uwaga ogólna (strona 08): ' + note, { tag: 'note', text: note, element: form, data: { question: 'uwagi-ogolne-08', note: note } });
+    form.dataset.queued = '1';
+  }
+</script>
+</body>
+</html>

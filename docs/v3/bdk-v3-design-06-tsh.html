@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="pl" data-theme="luxury">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDK v3 - korekta designu po analizie TSH</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, dd, td, th, label) { overflow-wrap: anywhere; }
+  .badge { white-space: nowrap; }
+  :where(img, svg) { max-width: 100%; height: auto; }
+  .opt { cursor: pointer; }
+  .opt:has(input:checked) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .queued { display: none; }
+  form[data-queued="1"] .queued { display: inline-flex; }
+  code { font-size: 0.85em; }
+  .cmds code { white-space: nowrap; }
+  .diagram { overflow-x: auto; }
+  .diagram > svg { display: block; min-width: 760px; }
+  figure svg text { font-family: ui-sans-serif, system-ui, sans-serif; }
+  figure svg text.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-6xl p-4 lg:p-8 space-y-12">
+
+  <section class="hero bg-base-200 rounded-box">
+    <div class="hero-content flex-col items-start py-8 w-full">
+      <p class="text-sm uppercase tracking-widest text-primary font-semibold">/bdk:design &middot; BDK v3 &middot; korekta po analizie TSH &middot; strona 06</p>
+      <h1 class="text-4xl font-bold">Analiza TSH a design v3: co poprawić</h1>
+      <p class="max-w-4xl opacity-85">Przeczytałem analizę Copilot Collections od The Software House (<code>sdd-analysis/docs/analiza/12-copilot-collections.md</code>, 2026-09-24) i zestawiłem każde znalezisko z dokumentem designu v3, z rejestrem decyzji i z dzisiejszym kodem BDK. Najważniejszy wniosek: TSH trzyma prawie wszystkie gwarancje w prozie i sam to przyznaje, a design v3 w trzech miejscach, nie wprost, robi to samo. Chodzi o dowód, że bramkę otworzył człowiek, o kanał, którym subagenci piszą do dziennika, i o to, co weryfikator może uznać za bloker. Do tego dochodzą dwie luki, których v3 nie adresuje wcale (bezpieczeństwo working tree przy 15 agentach w jednym drzewie i weryfikacja UI), jeden defekt w dzisiejszym BDK oraz jedenaście drobnych uzupełnień.</p>
+      <div class="stats stats-vertical sm:stats-horizontal bg-base-100 mt-2">
+        <div class="stat"><div class="stat-title">Decyzje dla Ciebie</div><div class="stat-value text-primary">6</div><div class="stat-desc">T1-T6, sekcja 3</div></div>
+        <div class="stat"><div class="stat-title">Poprawki do przyjęcia</div><div class="stat-value">11</div><div class="stat-desc">P1-P11, każda osobno</div></div>
+        <div class="stat"><div class="stat-title">Potwierdzenia</div><div class="stat-value">6</div><div class="stat-desc">v3 już robi to dobrze</div></div>
+        <div class="stat"><div class="stat-title">Świadomie pomijam</div><div class="stat-value">8</div><div class="stat-desc">z uzasadnieniem</div></div>
+      </div>
+      <ul class="steps steps-vertical lg:steps-horizontal mt-4 w-full">
+        <li class="step step-primary" data-content="0">Grunt: TSH, kod, dokumentacja hooków</li>
+        <li class="step step-primary" data-content="1">Znaleziska i decyzje (ta strona)</li>
+        <li class="step" data-content="2">Aktualizacja szkicu</li>
+        <li class="step" data-content="3">Weryfikacja</li>
+        <li class="step" data-content="4">Zapis obu plików</li>
+      </ul>
+      <p class="text-sm opacity-75">Zakres pozostaje Combined (decyzja z kroku 1). Żadna propozycja nie zmienia schematu bazy danych: indeks SQLite pozostaje odtwarzalnym cache bez zaprojektowanego schematu, więc bramka schematu nie ma tu zastosowania.</p>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="grunt">
+    <h2 class="text-2xl font-bold">1. Grunt: co sprawdziłem, zanim cokolwiek zaproponowałem</h2>
+    <div class="grid lg:grid-cols-2 gap-4 text-sm">
+      <div class="card bg-base-200"><div class="card-body p-5 gap-2">
+        <h3 class="font-semibold text-base">Kod BDK dziś</h3>
+        <ul class="list-disc pl-5 space-y-1.5">
+          <li><b>7 z 13 agentów ma wyłącznie narzędzia do odczytu:</b> architecture-reviewer, dead-code-detector, design-verifier, duplicate-detector, log-analyzer, plan-verifier, web-researcher. Bash mają code-reviewer, explorer, test-runner, implementer i fixer; static-analyse nie ma pola <code>tools:</code>, więc dziedziczy wszystkie.</li>
+          <li><b>implementer i fixer nie mają żadnego zakazu destrukcyjnych komend git.</b> Jedyną ochroną jest warunek czystego drzewa na starcie runu (<code>skills/subagent-execute-plan/SKILL.md:88</code>). W pluginie nie ma dziś żadnego hooka <code>PreToolUse</code>.</li>
+          <li><b>Plan nieweryfikowany albo zmieniony po weryfikacji:</b> <code>stale</code> i <code>missing</code> "warn and continue" (<code>subagent-execute-plan/SKILL.md:101</code>). Rekordu zgody człowieka nie ma; zgodą jest samo uruchomienie wykonania.</li>
+          <li><b>Weryfikatory:</b> plan-verifier ma częściowe wyłączenia (padding przy <code>Verification: none</code>, bramki decyzji w taskach), ale nie ma zamkniętej listy "to nie jest FAIL"; design-verifier nie ma żadnej. verify-plan kończy po 2 iteracjach. Wyniki są binarne, bez stanu "nie uruchomiono".</li>
+          <li><b>Szablon planu:</b> jest <code>Goal</code> planu i <code>Success criterion</code> taska; nie ma <code>Do NOT touch</code>, <code>Stop Rule</code>, reguły Definition of Done ani zakazu placeholderów.</li>
+          <li><b>Weryfikacji UI nie ma nigdzie</b> (playwright pojawia się tylko jako nazwa test runnera w setup). Reguły: 162 punkty w 9 plikach (182 linie), bez źródeł i dat. <b>Dryf:</b> <code>bdk:design-verifier</code> nie występuje w ręcznie pisanej tabeli agentów w <code>STARTUP_INSTRUCTIONS.md</code> i żaden test tego nie wykrywa.</li>
+        </ul>
+      </div></div>
+      <div class="card bg-base-200"><div class="card-body p-5 gap-2">
+        <h3 class="font-semibold text-base">Host: dokumentacja Claude Code (hooks.md, skills.md), pobrana dziś</h3>
+        <ul class="list-disc pl-5 space-y-1.5">
+          <li><b><code>UserPromptExpansion</code> odpala się tylko dla komend wpisanych przez użytkownika.</b> Cytat: "a PreToolUse hook matching the Skill tool fires only when Claude calls the tool, but typing /skillname directly bypasses PreToolUse. UserPromptExpansion fires on that direct path." Wejście zawiera <code>command_name</code>, <code>command_args</code>, <code>command_source</code> i <code>prompt</code>. Dokumentacja podaje nawet przykład blokowania komendy, dopóki nie ma pliku zgody.</li>
+          <li><b>W subagencie wejście hooka ma <code>agent_id</code> i <code>agent_type</code></b>; w sesji głównej ich nie ma ("Use this to distinguish subagent hook calls from main-thread calls").</li>
+          <li><b><code>PreToolUse</code> zwraca allow, deny, ask albo defer.</b> Powód <code>deny</code> widzi model, powód <code>ask</code> widzi człowiek; <code>ask</code> wymusza pytanie także w auto mode (od v2.1.211), z etykietą <code>[plugin:bdk]</code>.</li>
+          <li><b><code>disallowed-tools</code> w skillu</b> usuwa narzędzia z puli na czas działania skilla; ograniczenie znika przy następnej wiadomości użytkownika.</li>
+          <li><code>session_id</code> jest w każdym wejściu hooka, <code>${CLAUDE_SESSION_ID}</code> w treści skilla; <code>SubagentStop</code> ma <code>last_assistant_message</code>.</li>
+          <li><b>Niepotwierdzone w dokumentacji</b> (idzie na listę testów na żywo): dokładna postać <code>command_name</code> dla skilla pluginu (<code>bdk:change</code> czy <code>change</code>), treść <code>tool_response</code> dla AskUserQuestion oraz to, czy Twoje komendy z prefiksem <code>!</code> przechodzą przez <code>PreToolUse</code>.</li>
+        </ul>
+      </div></div>
+    </div>
+    <div role="alert" class="alert alert-soft alert-warning text-sm items-start">
+      <span><b>Założenie do potwierdzenia: model niedbały, nie złośliwy.</b> Mechanizmy poniżej bronią przed modelem, który pomija kroki, zakłada zgodę albo myli odpowiedzi. To widać w historii TSH: wpis "Fixed chronic UI verification skipping" i akapit "Never assume capture is unavailable", bo model twierdził, że worker jest niedostępny. Nie bronią przed modelem, który celowo podrabia wejście hooka przez Bash; taka próba ma być wykrywalna, a nie niemożliwa. Jeśli chcesz mocniejszego modelu zagrożeń, zaznacz to w uwagach.</span>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="mapa">
+    <h2 class="text-2xl font-bold">2. Mapa: znalezisko TSH, stan v3, korekta</h2>
+    <p class="text-sm opacity-85 max-w-4xl">17 pozycji wymaga reakcji: pięć wyborów z realnymi kompromisami (T1-T5), jeden defekt w dzisiejszym BDK (T6) i jedenaście uzupełnień o jednym sensownym kształcie (P1-P11). Numery sekcji odnoszą się do analizy TSH. Potwierdzenia i rzeczy pomijane są w sekcji 5.</p>
+    <div class="overflow-x-auto rounded-box border border-base-content/10 bg-base-100">
+      <table class="table table-sm">
+        <thead><tr><th>ID</th><th>Znalezisko TSH</th><th>Co mówi v3 dziś</th><th>Korekta</th></tr></thead>
+        <tbody class="text-sm align-top">
+          <tr><td><span class="badge badge-primary badge-sm">T1</span></td><td>Protokół Human Approval: rekord zgody pisze i sprawdza model, więc jest "tak silny, jak posłuszeństwo modelu" (§3, §9 pkt 6)</td><td>Bramka przechodzi po wpisie <code>decision</code>, który orkiestrator dodaje przez <code>log add</code>, z <code>source: user</code> zadeklarowanym przez wywołującego</td><td>Zgoda tylko z komendy wpisanej przez człowieka, przechwyconej hookiem i związanej z hashem artefaktów</td></tr>
+          <tr><td><span class="badge badge-primary badge-sm">T2</span></td><td>Lista <code>tools:</code> jako jedyna twarda gwarancja; workery bez zapisu (§7, §8 pkt 4)</td><td>K2: subagent pisze dziennik sam przez CLI, więc 7 agentów tylko do odczytu musiałoby dostać Bash</td><td>Wąski serwer MCP rdzenia zamiast Bash dla agentów</td></tr>
+          <tr><td><span class="badge badge-primary badge-sm">T3</span></td><td>Blok <code>&lt;version-control-safety&gt;</code> w wykonawcach, dodany najpewniej po incydencie (§8 pkt 5)</td><td>Brak; w v3 do 15 agentów pracuje w jednym drzewie</td><td>Hook <code>PreToolUse</code>: deny w subagentach, ask w sesji głównej</td></tr>
+          <tr><td><span class="badge badge-primary badge-sm">T4</span></td><td>Kontrakt weryfikacji UI z Figmą i stan <code>VERIFICATION NOT RUN</code> (§5)</td><td>Brak; UI nie ma nawet na liście przyszłych modułów</td><td>Prymitywy w rdzeniu, rodzaj <code>ui-verify</code> jako pierwszy moduł po rdzeniu</td></tr>
+          <tr><td><span class="badge badge-primary badge-sm">T5</span></td><td>Test no-op: wiedza per język jest dla Sonneta prawie no-op, wartość jest w standardach zespołu (§13)</td><td>R-rule-id nadaje stałe ID wszystkim regułom, usunięte zostają jako nagrobki</td><td>Pomiar przed nadaniem ID, podział <code>house</code> / <code>knowledge</code></td></tr>
+          <tr><td><span class="badge badge-error badge-sm">T6</span></td><td>Proza powtarza frontmatter i dryfuje bez wykrywania (§2.3, §9 pkt 4)</td><td>Ten sam defekt jest w BDK: brak <code>bdk:design-verifier</code> w tabeli agentów STARTUP</td><td>Naprawa w v2 teraz albo tylko generowanie w v3</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P1</span></td><td>Znacznik czasu i rewizję wpisuje model, inny model je waliduje (§9 pkt 6)</td><td><code>at</code>, <code>author</code>, <code>source</code> we frontmatterze wpisu, bez reguły, kto je ustawia</td><td>Pola pochodzenia stempluje rdzeń</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P2</span></td><td>Werdykt związany z rewizją planu (§4, zmiana z 2026-08-03)</td><td>Hash wejścia jest w walidatorze rodzaju; v2 przy <code>stale</code> i <code>missing</code> ostrzega i jedzie dalej</td><td>Bilet zapisuje hashe wejść; pominięcie weryfikacji tylko jawną decyzją człowieka</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P3</span></td><td>Werdykt <code>APPROVED</code> recenzenta nigdy nie autoryzuje wykonania (§3.1)</td><td>Niejawne: rozdziela je tylko to, że człowiek sam uruchamia wykonanie</td><td>Zakaz w kontraktach ról i bramka przyjmująca wyłącznie rekord zgody</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P4</span></td><td><code>VERIFICATION NOT RUN</code> nie zużywa budżetu iteracji (§5.1)</td><td>Wynik próby: ok albo fail</td><td>Wynik <code>not-run</code> z własnym budżetem</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P5</span></td><td>Po każdej poprawce świeży capture, nigdy dowód sprzed fixa (§5.1)</td><td>Brak reguły świeżości dowodu</td><td>Dowód zapisuje hash stanu drzewa</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P6</span></td><td><code>Do NOT touch</code>, <code>Stop Rule</code>, zakaz komend-placeholderów (§8 pkt 6)</td><td>Brak; jest <code>Files:</code> i uzgadnianie plików w kroku 3g</td><td>Zakres części sprawdzany diffem przez rdzeń</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P7</span></td><td>Definition of Done tylko z tego, co sprawdzi recenzent (§8 pkt 7)</td><td>Brak reguły</td><td>Reguły jakości planu <code>[PL-n]</code></td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P8</span></td><td>Zamknięta lista kategorii BLOCKER i lista "to nie jest bloker" (§4.1)</td><td>plan-verifier ma częściowe wyłączenia, design-verifier żadnych</td><td>Zamknięta lista i degradacja przez rdzeń</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P9</span></td><td>Orkiestrator nie może edytować, bo nie ma narzędzia <code>edit</code> (§7)</td><td>Orkiestrator to sesja główna z kompletem narzędzi</td><td><code>disallowed-tools</code> w <code>/bdk:execute</code> i <code>/bdk:close</code></td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P10</span></td><td>Znaczniki wersji promptów do telemetrii (§7)</td><td>Brak</td><td>Wersja rdzenia i hash szablonu w pakiecie dispatchu</td></tr>
+          <tr><td><span class="badge badge-ghost badge-sm">P11</span></td><td>Nazwy modeli w prozie nieaktualne mimo wpisu o synchronizacji (§2.3, §9 pkt 4)</td><td>Testy treści A3 bez reguły dla faktów z frontmattera</td><td>Tabele generowane z frontmattera, test zabrania nazw modeli w prozie</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="space-y-6" id="decyzje">
+    <h2 class="text-2xl font-bold">3. Sześć decyzji dla Ciebie</h2>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="t1-bramka" id="t1" onsubmit="queueChoice(event, 'T1 dowód zgody na bramce')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T1. Dowód, że bramkę otworzył człowiek</h3>
+        <p class="text-sm opacity-85">D3 mówi, że bramki egzekwuje rdzeń. Design nie mówi jednak, skąd rdzeń wie, że zgodę dał człowiek: wpis <code>decision</code> z <code>source: user</code> dodaje orkiestrator, czyli model. To dokładnie słabość, którą analiza opisuje u TSH (§9 pkt 6). Analiza sama przewidziała, że v3 będzie tego potrzebować: gdy wykonanie przestaje zależeć od ręcznego wywołania, potrzebny jest rekord zgody zapisany skryptem jako para hash i czas (§3.3). W v3 tak właśnie jest, bo <code>next</code> prowadzi model od bramki do wykonania.</p>
+        <figure class="diagram rounded-box bg-base-200 p-3">
+          <svg viewBox="0 0 1200 540" width="100%" role="img" aria-labelledby="svg1t">
+            <title id="svg1t">Dwie drogi do komendy approve. Komenda wpisana przez człowieka przechodzi przez UserPromptExpansion, rdzeń sprawdza prefiks hasha i zapisuje rekord zgody. Wywołanie skilla przez model przechodzi przez PreToolUse i zostaje odrzucone.</title>
+            <defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+            <g fill="currentColor" text-anchor="middle">
+              <text x="300" y="30" font-weight="700" font-size="19">Droga człowieka</text>
+              <text x="900" y="30" font-weight="700" font-size="19">Droga modelu</text>
+              <g id="s1-l1"><title>Człowiek wpisuje komendę skopiowaną ze strony bramki</title>
+                <rect x="60" y="50" width="480" height="76" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/>
+                <text x="300" y="84" class="mono" font-size="17" font-weight="700">/bdk:change approve design 3f9a</text>
+                <text x="300" y="110" font-size="14" opacity="0.85">wpisane w terminalu, skopiowane ze strony bramki</text></g>
+              <g id="s1-l2"><title>Host odpala UserPromptExpansion tylko dla komend wpisanych przez człowieka</title>
+                <rect x="60" y="166" width="480" height="64" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/>
+                <text x="300" y="194" font-size="17" font-weight="700">UserPromptExpansion</text>
+                <text x="300" y="217" font-size="14" opacity="0.85">host: tylko komendy wpisane przez człowieka</text></g>
+              <g id="s1-l3"><title>Rdzeń porównuje prefiks z bieżącym hashem artefaktów bramki</title>
+                <rect x="60" y="270" width="480" height="76" rx="12" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)" stroke-width="2"/>
+                <text x="300" y="302" class="mono" font-size="16" font-weight="700">bdk hooks prompt-expansion</text>
+                <text x="300" y="327" font-size="14" opacity="0.9">prefiks zgodny z sha256: zapis; niezgodny: blokada i diff</text></g>
+              <g id="s1-l4"><title>Commitowany rekord zgody w katalogu Zmiany</title>
+                <rect x="60" y="386" width="480" height="76" rx="12" fill="var(--color-success)" fill-opacity="0.18" stroke="var(--color-success)" stroke-width="2"/>
+                <text x="300" y="418" class="mono" font-size="16" font-weight="700">approvals/design-1.md</text>
+                <text x="300" y="443" font-size="14" opacity="0.9">hashe, czas rdzenia, session_id, autor z git</text></g>
+              <g id="s1-r1"><title>Model sam wywołuje skill narzędziem Skill</title>
+                <rect x="660" y="50" width="480" height="76" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/>
+                <text x="900" y="84" class="mono" font-size="17" font-weight="700">Skill: change approve design</text>
+                <text x="900" y="110" font-size="14" opacity="0.85">model sam wywołuje skill</text></g>
+              <g id="s1-r2"><title>Wywołanie przez model odpala PreToolUse, a nie UserPromptExpansion</title>
+                <rect x="660" y="166" width="480" height="64" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/>
+                <text x="900" y="194" font-size="17" font-weight="700">PreToolUse (Skill)</text>
+                <text x="900" y="217" font-size="14" opacity="0.85">UserPromptExpansion nie odpala</text></g>
+              <g id="s1-r3"><title>Rdzeń odmawia i mówi modelowi, żeby poprosił człowieka</title>
+                <rect x="660" y="270" width="480" height="76" rx="12" fill="var(--color-error)" fill-opacity="0.18" stroke="var(--color-error)" stroke-width="2"/>
+                <text x="900" y="302" font-size="17" font-weight="700">deny</text>
+                <text x="900" y="327" font-size="14" opacity="0.9">powód dla modelu: poproś człowieka o wpisanie</text></g>
+              <text x="900" y="374" font-size="13" opacity="0.8">próba obejścia przez Bash</text>
+              <g id="s1-r4"><title>Obejście przez Bash jest blokowane w miarę możliwości i wykrywane audytem</title>
+                <rect x="660" y="386" width="480" height="76" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-dasharray="6 4" stroke-width="2"/>
+                <text x="900" y="418" class="mono" font-size="15" font-weight="700">Bash: bdk.mjs hooks ... = deny</text>
+                <text x="900" y="443" font-size="14" opacity="0.85">obejście wykrywa doctor --audit (transkrypt)</text></g>
+              <text x="600" y="512" font-size="15" opacity="0.9">Każda zmiana zatwierdzonego pliku zmienia sha256, więc bramka otwiera się ponownie bez udziału modelu</text>
+            </g>
+            <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#m1)">
+              <path d="M300 126 L300 164"/><path d="M300 230 L300 268"/><path d="M300 346 L300 384"/>
+              <path d="M900 126 L900 164"/><path d="M900 230 L900 268"/>
+            </g>
+          </svg>
+        </figure>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A: zgoda tylko z komendy /bdk:change approve gate hash wpisanej przez człowieka, przechwyconej hookiem UserPromptExpansion; rdzeń sprawdza prefiks sha256 artefaktów bramki razem z dyspozycjami wpisów review: true i zapisuje commitowany rekord approvals/; każda zmiana artefaktu otwiera bramkę ponownie; wywołanie przez model (Skill tool, Bash) dostaje deny; doctor --audit sprawdza transkrypt" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">A. Komenda wpisana przez człowieka, związana z hashem <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Strona bramki (Lavish albo status w terminalu) pokazuje gotową komendę, na przykład <code>/bdk:change approve design 3f9a</code>. Hook pluginu na <code>UserPromptExpansion</code> woła rdzeń, który sprawdza, czy <code>3f9a</code> to prefiks bieżącego sha256 artefaktów bramki razem z dyspozycjami wpisów <code>review: true</code>, i zapisuje commitowany rekord <code>approvals/design-1.md</code>. Bramka jest zamknięta, dopóki hashe się zgadzają; każda zmiana bajtu otwiera ją ponownie. To zastępuje całe "material kontra non-material" z TSH jednym porównaniem.</p>
+            <p class="text-xs opacity-80"><b>Koszt:</b> przy każdej bramce wpisujesz jedną komendę; poprawka literówki po zgodzie wymaga ponownej zgody. Nie dochodzi nowy skill, bo komenda to podkomenda istniejącego <code>/bdk:change</code>.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="B: zgoda jako odpowiedź w AskUserQuestion przechwycona hookiem PostToolUse, z ID bramki i hashem w nagłówku pytania" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">B. Odpowiedź w AskUserQuestion przechwycona hookiem</span></div>
+            <p class="text-xs opacity-80">Jedno kliknięcie zamiast wpisywania. Ale dokumentacja nie opisuje, co zawiera <code>tool_response</code> dla AskUserQuestion, a w kroku 1 zdecydowałeś, że rozmowa idzie przez Lavish. Odpowiedzi z Lavish przychodzą jako wynik polecenia Bash, którego hook nie przypisze człowiekowi.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="C: rekord zgody związany z hashami, ale zapisywany przez orkiestratora przez CLI po przeczytaniu odpowiedzi człowieka; source: user deklarowane" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">C. Hash tak, kanał nie</span></div>
+            <p class="text-xs opacity-80">Rekord zgody z hashami, ale zapisuje go orkiestrator po przeczytaniu Twojej odpowiedzi. To, co zostało zatwierdzone, jest deterministyczne; to, kto zatwierdził, już nie. Model może zapisać zgodę, której nie dałeś, albo przeczytać "wygląda dobrze" z innego pytania jako zgodę. Skill design sam ostrzega przed tym wzorcem przy bramce schematu.</p>
+          </div></label>
+        </div>
+        <div class="text-xs opacity-80 space-y-1">
+          <p><b>Przy okazji wchodzi wzorzec z discovery TSH (§6):</b> wpisy <code>review: true</code> przyjmujesz albo odrzucasz pojedynczo przed zgodą, a hash zgody obejmuje tę listę dyspozycji, więc zatwierdzasz dokładnie to, co widziałeś.</p>
+          <p><b>Ryzyko rekomendacji:</b> postać <code>command_name</code> dla skilla pluginu jest do potwierdzenia na żywo. Model, który celowo podrobi wejście hooka przez Bash, nie zostanie zatrzymany, tylko wykryty: <code>bdk doctor --audit</code> sprawdza, czy komenda z rekordu jest w transkrypcie sesji jako wpis użytkownika.</p>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T1</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="t2-kanal" id="t2" onsubmit="queueChoice(event, 'T2 kanał zapisu subagentów')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T2. Kanał zapisu subagentów a najmniejsze uprawnienia</h3>
+        <p class="text-sm opacity-85">U TSH jedyną twardą gwarancją jest lista <code>tools:</code>: workery nie mają zapisu, orkiestrator nie ma <code>edit</code>. BDK dziś korzysta z tego samego, bo 7 z 13 agentów ma wyłącznie narzędzia do odczytu. Decyzja K2 ("subagent pisze sam przez CLI, <code>log add</code>") w obecnym brzmieniu wymaga, żeby każdy z tych siedmiu dostał Bash, czyli możliwość uruchomienia dowolnej komendy, łącznie z <code>sed -i</code>, <code>rm</code> i <code>git</code>. Rekomendacja zmienia tylko transport K2, nie jego istotę (subagent pisze sam, envelope ma najwyżej 15 linii). Zmienia za to założenie wejściowe "jedyny interfejs = CLI rdzenia": rdzeń dostałby drugi, wąski adapter nad tym samym kontraktem.</p>
+        <figure class="diagram rounded-box bg-base-200 p-3">
+          <svg viewBox="0 0 1200 470" width="100%" role="img" aria-labelledby="svg2t">
+            <title id="svg2t">Wariant A: sesja główna pisze przez CLI, agenci tylko do odczytu i workerzy przez cztery narzędzia MCP rdzenia; rdzeń waliduje i zapisuje katalog Zmiany; kod projektu zapisują wyłącznie workerzy.</title>
+            <defs>
+              <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+              <marker id="m2p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--color-primary)"/></marker>
+              <marker id="m2s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--color-info)"/></marker>
+            </defs>
+            <g fill="currentColor" text-anchor="middle">
+              <g id="s2-a1"><title>Sesja główna woła rdzeń przez CLI</title>
+                <rect x="30" y="30" width="340" height="96" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/>
+                <text x="200" y="64" font-size="17" font-weight="700">Sesja główna (skill)</text>
+                <text x="200" y="88" font-size="14" opacity="0.85">CLI przez Bash</text>
+                <text x="200" y="110" class="mono" font-size="13" opacity="0.85">node dist/bdk.mjs ...</text></g>
+              <g id="s2-a2"><title>Agenci tylko do odczytu dostają wyłącznie cztery narzędzia MCP rdzenia</title>
+                <rect x="30" y="180" width="340" height="110" rx="12" fill="var(--color-base-100)" stroke="var(--color-primary)" stroke-width="2.5"/>
+                <text x="200" y="212" font-size="17" font-weight="700">7 agentów tylko do odczytu</text>
+                <text x="200" y="238" font-size="14" opacity="0.85">Read, Grep, Glob + MCP bdk</text>
+                <text x="200" y="264" font-size="14" fill="var(--color-error)">bez Bash, Edit i Write</text></g>
+              <g id="s2-a3"><title>Workerzy mają narzędzia zapisu kodu i narzędzia MCP rdzenia</title>
+                <rect x="30" y="344" width="340" height="96" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/>
+                <text x="200" y="376" font-size="17" font-weight="700">Workerzy</text>
+                <text x="200" y="400" font-size="14" opacity="0.85">implementer, fixer</text>
+                <text x="200" y="424" font-size="14" opacity="0.85">Bash, Edit, Write + MCP bdk</text></g>
+              <g id="s2-core"><title>Rdzeń: jeden kontrakt, walidacja i dwa cienkie adaptery</title>
+                <rect x="480" y="110" width="260" height="210" rx="12" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)" stroke-width="2"/>
+                <text x="610" y="146" font-size="17" font-weight="700">Rdzeń bdk.mjs</text>
+                <text x="610" y="172" font-size="14" opacity="0.9">jeden kontrakt i walidacja</text>
+                <text x="610" y="212" font-size="14" opacity="0.9">adapter CLI</text>
+                <text x="610" y="240" font-size="14" opacity="0.9">adapter MCP, 4 narzędzia:</text>
+                <text x="610" y="266" class="mono" font-size="12" opacity="0.9">log_add  log_show</text>
+                <text x="610" y="286" class="mono" font-size="12" opacity="0.9">report_write  dispatch_show</text></g>
+              <g id="s2-c1"><title>Katalog Zmiany: wpisy i raporty zapisuje tylko rdzeń</title>
+                <rect x="850" y="150" width="320" height="100" rx="12" fill="var(--color-info)" fill-opacity="0.15" stroke="var(--color-info)" stroke-width="2"/>
+                <text x="1010" y="184" font-size="17" font-weight="700">Katalog Zmiany</text>
+                <text x="1010" y="208" class="mono" font-size="13" opacity="0.9">log/ reports/ attempts/</text>
+                <text x="1010" y="232" font-size="14" opacity="0.9">id, at, source z biletu</text></g>
+              <g id="s2-c2"><title>Kod projektu zapisują wyłącznie workerzy</title>
+                <rect x="850" y="330" width="320" height="100" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/>
+                <text x="1010" y="370" font-size="17" font-weight="700">Kod projektu</text>
+                <text x="1010" y="396" font-size="14" opacity="0.85">piszą tylko workerzy</text></g>
+            </g>
+            <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#m2)">
+              <path d="M370 78 L478 150"/>
+              <path d="M370 235 L478 235" stroke="var(--color-primary)" marker-end="url(#m2p)"/>
+              <path d="M370 370 L478 300"/>
+              <path d="M740 200 L848 200" stroke="var(--color-info)" marker-end="url(#m2s)"/>
+              <path d="M370 410 L848 382"/>
+            </g>
+            <g fill="currentColor" font-size="13" text-anchor="middle">
+              <text x="425" y="96">CLI</text>
+              <text x="424" y="226" fill="var(--color-primary)">MCP</text>
+              <text x="440" y="358">MCP</text>
+              <text x="794" y="190" fill="var(--color-info)">waliduje</text>
+              <text x="610" y="384">Edit, Write</text>
+            </g>
+          </svg>
+        </figure>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A: rdzeń jako wąski serwer MCP dla agentów (node dist/bdk.mjs mcp w .mcp.json pluginu), narzędzia log_add, log_show, report_write, dispatch_show; agenci tylko do odczytu bez Bash, Edit, Write; typowane argumenty i natychmiastowa walidacja wpisu; rdzeń stempluje id, at, source z biletu; skille zostają przy CLI; K2 zmienia transport, nie istotę" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">A. Rdzeń jako wąski serwer MCP dla agentów <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Ten sam bundel uruchamia <code>node dist/bdk.mjs mcp</code>, zadeklarowany w <code>.mcp.json</code> pluginu obok serena i code-review-graph. Cztery narzędzia: <code>log_add</code>, <code>log_show</code>, <code>report_write</code> (tylko <code>reports/&lt;ticket&gt;.md</code> wywołującego) i <code>dispatch_show</code>. Agenci tylko do odczytu dostają wyłącznie je. Argumenty są typowanym JSON-em, więc treść w Markdown nie przechodzi przez cytowanie w shellu, a błąd walidacji wpisu wraca od razu i agent poprawia wpis, zanim skończy pracę.</p>
+            <p class="text-xs opacity-80"><b>Koszt:</b> trzeci proces MCP w sesji, dwa adaptery nad jednym rdzeniem, schematy czterech narzędzi w kontekście każdego agenta, który je ma.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="B: przechwycenie raportu przy handbacku: agent pisze wpisy blokiem w raporcie, hook PreToolUse na SubagentHandback wczytuje je do dziennika i podmienia wiadomość na envelope" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">B. Przechwycenie raportu przy handbacku</span></div>
+            <p class="text-xs opacity-80">Agent pisze wpisy jako blok w raporcie końcowym, a hook <code>PreToolUse</code> na <code>SubagentHandback</code> (od v2.1.271) wczytuje je do dziennika i podmienia wiadomość na envelope. Zero nowych narzędzi. Ale: parsowanie swobodnego tekstu zamiast typowanych argumentów, błędy wychodzą dopiero po całej pracy, a całość zależy od świeżej funkcji hosta: narzędzie <code>SubagentHandback</code> istnieje tylko w auto mode.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="C: Bash dla wszystkich agentów, hook PreToolUse z allowlistą po agent_type przepuszcza tylko node bdk.mjs log|report|dispatch" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">C. Bash dla wszystkich i allowlista w PreToolUse</span></div>
+            <p class="text-xs opacity-80">Zgodne z K2 dosłownie. Hook zna <code>agent_type</code>, więc może przepuszczać tylko <code>node .../bdk.mjs log|report|dispatch</code>. Ale regex na tekście polecenia shella da się obejść (<code>$(...)</code>, a do treści w Markdown i tak potrzebny jest heredoc), a powierzchnia siedmiu agentów rośnie.</p>
+          </div></label>
+        </div>
+        <p class="text-xs opacity-80"><b>Ryzyko rekomendacji:</b> gdy proces MCP padnie w środku fali, agenci nie zapiszą wpisów. <code>attempt close</code> sprawdza, czy ID wpisów podane w envelope istnieją, więc brak jest wykrywany deterministycznie, a nie po cichu.</p>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T2</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="t3-git" id="t3" onsubmit="queueChoice(event, 'T3 strażnik working tree')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T3. Strażnik working tree</h3>
+        <p class="text-sm opacity-85">implementer i fixer nie mają dziś żadnego zakazu destrukcyjnych komend git; jedyną ochroną jest warunek czystego drzewa na starcie runu. W v3 do 15 agentów pracuje równolegle w jednym drzewie, więc jedno <code>git stash</code> albo <code>git checkout -- .</code> kasuje pracę całej fali i Twoje niezacommitowane pliki. TSH dopisał blok prozy w commicie <code>3fd6eaa</code>, co według analizy sugeruje realny incydent. Raport zbiorczy każe w takim miejscu postawić bramę w kodzie, bo awaria jest cicha.</p>
+        <div class="overflow-x-auto rounded-box border border-base-content/10">
+          <table class="table table-sm cmds">
+            <thead><tr><th>Polecenia</th><th>Subagent (jest <code>agent_id</code>)</th><th>Sesja główna</th></tr></thead>
+            <tbody class="text-sm align-top">
+              <tr><td><code>git stash</code>, <code>git reset</code>, <code>git clean</code>, <code>git checkout -- &lt;ścieżka&gt;</code>, <code>git checkout .</code>, <code>git restore</code>, <code>git switch --discard-changes</code></td><td><span class="badge badge-error badge-sm">deny</span> powód trafia do modelu: "zwróć BLOCKED z przyczyną"</td><td><span class="badge badge-warning badge-sm">ask</span> pytanie z etykietą <code>[plugin:bdk]</code>, także w auto mode</td></tr>
+              <tr><td><code>git commit</code>, <code>git add</code>, <code>git merge</code>, <code>git rebase</code>, <code>git cherry-pick</code>, <code>git push</code></td><td><span class="badge badge-error badge-sm">deny</span> w v3 commit należy do rdzenia (<code>bdk commit</code>), a agenci dzielą drzewo</td><td>bez zmian, <code>/bdk:commit</code> działa jak dziś</td></tr>
+              <tr><td>git wywoływany przez sam rdzeń (<code>child_process</code>)</td><td colspan="2">nie przechodzi przez hook; wyjątek strukturalny, tak jak przy merge specu</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A: hook PreToolUse bdk hooks pre-tool: destrukcyjne komendy git deny w subagentach i ask w sesji głównej; komendy zapisujące historię deny w subagentach; git rdzenia przez child_process poza hookiem; blok prozy z TSH w roli worker; ten sam punkt wejścia niesie strażnika specu i strażnika zgód; prefiltr w shellu" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">A. deny w subagentach, ask w sesji głównej <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Jeden punkt wejścia <code>bdk hooks pre-tool</code>, który niesie też strażnika specu i strażnika zgód z T1, plus blok prozy z TSH w roli worker, z uzasadnieniem "mały zestaw zmian nigdy nie znaczy: usuń cudze zmiany".</p>
+            <p class="text-xs opacity-80"><b>Koszt:</b> start Node przy wywołaniach Bash i narzędzi edycji; ograniczony prefiltrem w shellu, który woła rdzeń tylko wtedy, gdy polecenie zawiera <code>git</code>, <code>.bdk/specs</code> albo <code>bdk.mjs hooks</code>.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="B: deny wszędzie, także w sesji głównej; takie polecenia człowiek uruchamia sam z prefiksem !" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">B. deny wszędzie</span></div>
+            <p class="text-xs opacity-80">Prostsza reguła; w sesji głównej takie polecenia uruchamiasz sam z prefiksem <code>!</code>. Koszt: więcej tarcia przy zwykłej pracy poza Zmianą.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="C: tylko blok prozy w roli worker, jak u TSH" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">C. Tylko proza, jak TSH</span></div>
+            <p class="text-xs opacity-80">Najtańsze, ale łamie regułę kontrolną z raportu zbiorczego: gdy model zignoruje instrukcję, praca znika po cichu.</p>
+          </div></label>
+        </div>
+        <p class="text-xs opacity-80"><b>Do sprawdzenia na żywo:</b> czy polecenia <code>!</code> wpisane przez Ciebie przechodzą przez <code>PreToolUse</code>. Jeśli tak, w wariancie A zobaczysz pytanie także przy własnym <code>! git stash</code>.</p>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T3</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="t4-ui" id="t4" onsubmit="queueChoice(event, 'T4 weryfikacja UI w v3')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T4. Weryfikacja UI: ile z tego wchodzi do v3</h3>
+        <p class="text-sm opacity-85">BDK nie ma dziś żadnej weryfikacji UI, a Twoje globalne instrukcje wymagają obsesji na punkcie pixel perfection w testach E2E. Kontrakt TSH jest najmocniejszą częścią ich repozytorium: EXPECTED wyłącznie z Figma MCP; ACTUAL jako trzy dowody (<code>actual.png</code>, <code>computed-styles.json</code>, <code>a11y-snapshot.yml</code>), bo drzewo dostępności nie zawiera wymiarów CSS; ścisły PASS z cytowanymi zmierzonymi wartościami; wszystkie kategorie w jednym przebiegu; świeży capture po każdej poprawce; stan <code>VERIFICATION NOT RUN</code>, który nie zużywa budżetu pięciu iteracji. Słaby punkt TSH: to, czy capture w ogóle się odbył, sprawdza model (wpis z 2026-04-10 "Fixed chronic UI verification skipping").</p>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A: rdzeń v3 dostaje trzy prymitywy (manifest dowodu z hashem stanu drzewa, wynik not-run z własnym budżetem, walidator PASS cytuje istniejące wartości dowodu); rodzaj ui-verify (runner capture, reviewer porównanie, EXPECTED z Figma MCP albo zrzutu referencyjnego, narzędzie capture konfigurowalne) jako pierwszy moduł po rdzeniu w osobnej Zmianie; obrazy w .machine/evidence/, commitowany manifest i werdykt" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">A. Prymitywy w rdzeniu v3, <code>ui-verify</code> jako pierwszy moduł po rdzeniu <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Rdzeń v3 dostaje trzy ogólne mechanizmy: manifest dowodu z hashem stanu drzewa (świeżość, P5), wynik próby <code>not-run</code> z własnym budżetem (P4) i walidator "PASS musi cytować istniejące wartości" (wskaźnik JSON musi się rozwiązać w <code>computed-styles.json</code> albo w snapshocie). Rodzaj <code>ui-verify</code> powstaje na nich jako osobna Zmiana zaraz po rdzeniu: capture w roli runner, porównanie w roli reviewer, EXPECTED z Figma MCP albo z commitowanego zrzutu referencyjnego, narzędzie capture konfigurowalne. To pierwszy żywy dowód obietnicy podejścia A: nowy rodzaj i węzeł YAML, zero zmian w skillach.</p>
+            <p class="text-xs opacity-80"><b>Koszt:</b> wartość dla UI przychodzi jedną Zmianę później niż w B. Obrazy leżą w <code>.machine/evidence/</code>, commitowany jest tylko manifest i werdykt.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="B: rodzaj ui-verify w zakresie v3.0, razem z prymitywami rdzenia" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">B. <code>ui-verify</code> w zakresie v3.0</span></div>
+            <p class="text-xs opacity-80">Wartość od pierwszego wydania. Koszt: dwie niewiadome w jednym wydaniu, czyli poprawność rdzenia i jakość porównania multimodalnego, które potrzebuje własnego zestawu promptfoo z fiksturami obrazów; regresję trudniej przypisać do przyczyny.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="C: poza v3; referencja references/ui-verification.md w istniejącym skillu, jak analiza proponuje dla v2" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">C. Poza v3, referencja w istniejącym skillu</span></div>
+            <p class="text-xs opacity-80">To, co analiza proponuje dla v2 (<code>references/ui-verification.md</code>). Najtaniej, ale sprawdzenie, czy capture się odbył, zostaje prozą, czyli dokładnie słabym punktem TSH.</p>
+          </div></label>
+        </div>
+        <p class="text-xs opacity-80"><b>Ryzyko rekomendacji:</b> prymitywy zaprojektowane bez pierwszego konsumenta mogą do niego nie pasować. Dlatego E2E rdzenia dostaje scenariusz z fikcyjnym rodzajem, który używa wszystkich trzech mechanizmów naraz.</p>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T4</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="t5-reguly" id="t5" onsubmit="queueChoice(event, 'T5 reguły przed nadaniem ID')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T5. Reguły: zmierzyć, zanim dostaną stałe ID</h3>
+        <p class="text-sm opacity-85">R-rule-id nadaje numer raz na zawsze, a usunięta reguła zostaje w pliku jako nagrobek. Test no-op z analizy (§13), wykonany na bazie skilli TSH, pokazał, że dla modelu klasy Sonnet wiedza podręcznikowa jest prawie w całości no-op: 55 z 74 jednostek COVERED, zero MISSED, a w 12 skill się mylił, a model miał rację. Realna wartość siedzi w decyzjach zespołu (jednostki HOUSE). Analiza sama zastrzega, że reguł BDK nikt w ten sposób nie mierzył (§13.7). BDK ma dziś 162 punkty w 9 plikach, bez źródeł i dat.</p>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A: pomiar przed migracją ID: test no-op wiedzy (Haiku i Sonnet na ślepo, sędzia) oraz ablacja zadaniowa w promptfoo na fiksturze z zasianymi naruszeniami i podłogą A/A; reguły COVERED w obu testach usuwane przed nadaniem numeru; pozostałe dostają kind: house albo knowledge; knowledge z faktem lub wersją wymaga source i verified, pilnuje bdk rules check; procedura obowiązuje każdy nowy plik rules/languages/" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">A. Pomiar przed migracją ID <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Przed nadaniem ID: (1) test no-op wiedzy jak u TSH, (2) ablacja zadaniowa w promptfoo dla reguł czytanych przez recenzentów: diffy z fikstury z celowo zasianymi naruszeniami, z plikiem reguł i bez, z podłogą szumu A/A, bo pytanie to nie zadanie (§13.5). Reguły COVERED w obu testach znikają, zanim dostaną numer. Każda pozostała dostaje <code>kind: house | knowledge</code>; reguła <code>knowledge</code> z twierdzeniem faktograficznym albo wersją wymaga <code>source</code> i <code>verified</code>, co sprawdza <code>bdk rules check</code>. Procedura obowiązuje każdy nowy plik w <code>rules/languages/</code>.</p>
+            <p class="text-xs opacity-80"><b>Koszt:</b> migracja reguł dostaje warunek wstępny w planie.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="B: ID teraz dla wszystkich reguł, pomiar później; usunięte po pomiarze zostają jako nagrobki" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">B. ID teraz, pomiar później</span></div>
+            <p class="text-xs opacity-80">Migracja jak w designie. Koszt: każda reguła usunięta po pomiarze zostaje na zawsze jako nagrobek <code>(removed: reason)</code>.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="C: bez pomiaru; ID dla wszystkich reguł jak w designie" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">C. Bez pomiaru</span></div>
+            <p class="text-xs opacity-80">182 linie kosztują mało. Koszt: reguły powtarzające wiedzę modelu rozwadniają checklistę S4, a plan-verifier odhacza ID, które niczego nie zmieniają.</p>
+          </div></label>
+        </div>
+        <p class="text-xs opacity-80"><b>Ryzyko rekomendacji:</b> ablacja na fiksturze mierzy tylko naruszenia, które umiemy zasiać, więc reguły o rzadkich błędach mogłyby wypaść niesłusznie. Dlatego usuwamy wyłącznie to, co jest COVERED w obu testach, a nie w jednym.</p>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T5</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100" data-lavish-question="t6-dryf" id="t6" onsubmit="queueChoice(event, 'T6 dryf tabeli agentów w STARTUP')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T6. Defekt w dzisiejszym BDK: brak <code>bdk:design-verifier</code> w tabeli agentów STARTUP</h3>
+        <p class="text-sm opacity-85">Tabela agentów w <code>STARTUP_INSTRUCTIONS.md</code> jest pisana ręcznie i trafia do każdej sesji. Modele w 12 wierszach zgadzają się dziś z frontmatterem, ale <code>bdk:design-verifier</code> nie ma w niej wcale i żaden test tego nie wykrywa. To ten sam mechanizm dryfu, który analiza opisuje u TSH (§2.3, §9 pkt 4). Naprawa dotyka repozytorium poza dokumentami designu, dlatego pytam.</p>
+        <div class="grid lg:grid-cols-2 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A: naprawić teraz w v2 osobnym małym commitem: dopisany wiersz i test porównujący tabelę z frontmatterem wszystkich agentów" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">A. Napraw teraz w v2 <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Osobny mały commit: dopisany wiersz i test porównujący tabelę z frontmatterem wszystkich agentów. W v3 tabelę i tak generuje <code>bdk ctx startup</code> (P11), więc test żyje do cięcia.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="B: tylko w v3; dryf zostaje do cięcia v2 na v3" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">B. Tylko w v3</span></div>
+            <p class="text-xs opacity-80">Dryf zostaje do cięcia v2 na v3; sesje do tego czasu nie widzą design-verifiera w tabeli.</p>
+          </div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><input class="input w-full" name="note"></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T6</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+  </section>
+
+  <section class="space-y-4" id="poprawki">
+    <h2 class="text-2xl font-bold">4. Jedenaście poprawek: przyjmij albo odrzuć każdą osobno</h2>
+    <p class="text-sm opacity-85 max-w-4xl">Każda ma jeden sensowny kształt. Alternatywą jest proza bez bramy, która przy zignorowaniu instrukcji zawodzi po cichu. Tak jak u TSH na bramce 1.5, decydujesz o każdej pozycji z osobna; domyślnie wszystkie są ustawione na "przyjmij". Po wysłaniu rozliczę każde ID osobno.</p>
+    <figure class="diagram rounded-box bg-base-200 p-3">
+      <svg viewBox="0 0 1200 330" width="100%" role="img" aria-labelledby="svg3t">
+        <title id="svg3t">P4: trzy wyniki zamknięcia próby. ok zamyka próbę, fail zużywa budżet i prowadzi do kolejnej próby z węższym zakresem albo do eskalacji, not-run nie zużywa budżetu i po przekroczeniu własnego limitu prowadzi do pytania do człowieka.</title>
+        <defs><marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><marker id="m3i" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--color-info)"/></marker></defs>
+        <g fill="currentColor" text-anchor="middle">
+          <g id="s3-p"><title>Otwarta próba z biletem</title>
+            <rect x="30" y="128" width="230" height="80" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/>
+            <text x="145" y="162" font-size="17" font-weight="700">Próba N</text>
+            <text x="145" y="188" font-size="14" opacity="0.85">bilet otwarty</text></g>
+          <g id="s3-ok"><title>Wynik ok</title>
+            <rect x="350" y="22" width="300" height="66" rx="12" fill="var(--color-base-100)" stroke="var(--color-success)" stroke-width="2"/>
+            <text x="500" y="61" class="mono" font-size="15" font-weight="700">attempt close ok</text></g>
+          <g id="s3-fail"><title>Wynik fail, odciski findingów zapisane</title>
+            <rect x="350" y="132" width="300" height="66" rx="12" fill="var(--color-base-100)" stroke="var(--color-warning)" stroke-width="2"/>
+            <text x="500" y="160" class="mono" font-size="15" font-weight="700">attempt close fail</text>
+            <text x="500" y="184" font-size="13" opacity="0.85">odciski findingów zapisane</text></g>
+          <g id="s3-nr"><title>Nowy wynik not-run: warunek wstępny niespełniony</title>
+            <rect x="350" y="242" width="300" height="72" rx="12" fill="var(--color-info)" fill-opacity="0.18" stroke="var(--color-info)" stroke-width="2.5"/>
+            <text x="500" y="271" class="mono" font-size="15" font-weight="700">attempt close not-run</text>
+            <text x="500" y="296" font-size="13" opacity="0.9">brak dowodu, zła strona, brak narzędzia</text></g>
+          <g id="s3-c1"><title>Zamknięcie z commitem</title>
+            <rect x="740" y="30" width="430" height="50" rx="10" fill="var(--color-success)" fill-opacity="0.18" stroke="var(--color-success)" stroke-width="1.5"/>
+            <text x="955" y="61" font-size="15">zamknięte: commit z trailerami</text></g>
+          <g id="s3-c2"><title>Kolejna próba z węższym zakresem</title>
+            <rect x="740" y="118" width="430" height="40" rx="10" fill="var(--color-base-100)" stroke="currentColor" stroke-width="1.5"/>
+            <text x="955" y="143" font-size="14">próba N+1, węższy zakres, budżet pętli -1</text></g>
+          <g id="s3-c3"><title>Eskalacja po wyczerpaniu budżetu albo oscylacji</title>
+            <rect x="740" y="166" width="430" height="40" rx="10" fill="var(--color-warning)" fill-opacity="0.15" stroke="var(--color-warning)" stroke-width="1.5"/>
+            <text x="955" y="191" font-size="14">eskalacja: budżet wyczerpany albo oscylacja</text></g>
+          <g id="s3-c4"><title>Ponowienie bez zużycia budżetu</title>
+            <rect x="740" y="228" width="430" height="40" rx="10" fill="var(--color-info)" fill-opacity="0.15" stroke="var(--color-info)" stroke-width="1.5"/>
+            <text x="955" y="253" font-size="14">ponów próbę: budżet pętli bez zmian, not-run +1</text></g>
+          <g id="s3-c5"><title>Limit not-run prowadzi do pytania do człowieka</title>
+            <rect x="740" y="276" width="430" height="40" rx="10" fill="var(--color-warning)" fill-opacity="0.15" stroke="var(--color-warning)" stroke-width="1.5"/>
+            <text x="955" y="301" font-size="14">limit not-run: Question, potem Parked</text></g>
+        </g>
+        <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#m3)">
+          <path d="M260 150 L348 58"/><path d="M260 168 L348 165"/><path d="M260 188 L348 272" stroke="var(--color-info)" marker-end="url(#m3i)"/>
+          <path d="M650 55 L738 55"/>
+          <path d="M650 158 L738 139"/><path d="M650 172 L738 186"/>
+          <path d="M650 270 L738 249" stroke="var(--color-info)" marker-end="url(#m3i)"/><path d="M650 286 L738 296" stroke="var(--color-info)" marker-end="url(#m3i)"/>
+        </g>
+      </svg>
+      <figcaption class="text-xs opacity-75 px-2 pt-1">Nowy jest tylko dolny tor. Budżet "consecutive skipped verifications" istnieje już w S2; P4 daje mu nazwany wynik w drabinie prób.</figcaption>
+    </figure>
+
+    <form class="card card-border bg-base-100" data-lavish-question="poprawki" id="batch" onsubmit="queueBatch(event)">
+      <div class="card-body gap-3">
+        <div class="overflow-x-auto rounded-box border border-base-content/10">
+          <table class="table table-sm">
+            <thead><tr><th>ID</th><th>Poprawka</th><th>Gdzie w dokumencie</th><th>Dyspozycja</th></tr></thead>
+            <tbody class="text-sm align-top">
+              <tr><td><span class="badge badge-ghost badge-sm">P1</span></td><td><b>Pola pochodzenia stempluje rdzeń.</b> <code>id</code>, <code>at</code> (zegar rdzenia), <code>author</code> (git config) i <code>source</code> wyprowadzane z biletu i roli, nigdy z argumentu wywołującego; <code>source: user</code> wyłącznie ze ścieżki zgód z T1. Wpis, który twierdzi, że człowiek coś zdecydował, a przyszedł od modelu, dostaje <code>review: true</code>.</td><td>Ledger entry, CLI contract</td><td><select class="select select-sm w-36" data-item="P1" data-label="Pola pochodzenia stempluje rdzeń"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P2</span></td><td><b>Werdykt i zgoda związane z hashem wejścia.</b> Bilet zapisuje sha256 każdego artefaktu wejściowego; werdykt weryfikatora dla innego hasha jest <code>stale</code> i nie zamyka węzła <code>plan-verify</code>. Dzisiejsze "stale i missing ostrzegają i jadą dalej" przestaje być ostrzeżeniem: pominięcie weryfikacji staje się jawną decyzją człowieka w komendzie zgody (<code>--skip-verify</code>), zapisaną w rekordzie.</td><td>Approach A (walidatory), Dispatch package, CLI contract</td><td><select class="select select-sm w-36" data-item="P2" data-label="Werdykt i zgoda związane z hashem wejścia"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P3</span></td><td><b>Recenzent nie autoryzuje.</b> Kontrakty weryfikatorów i recenzentów zabraniają wypowiedzi o zgodzie i o przejściu dalej; węzeł bramki przyjmuje wyłącznie rekord zgody, więc PASS weryfikatora strukturalnie nie może udawać zgody.</td><td>Key boundaries, kontrakty ról reviewer i verifier</td><td><select class="select select-sm w-36" data-item="P3" data-label="Recenzent nie autoryzuje"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P4</span></td><td><b>Wynik <code>not-run</code> w drabinie prób</b> (diagram wyżej). <code>attempt close not-run --reason &lt;warunek wstępny&gt;</code> nie zużywa budżetu pętli; kolejne <code>not-run</code> mają własny budżet i prowadzą do Question, potem Parked.</td><td>Loop protection (diagram stanów), S2</td><td><select class="select select-sm w-36" data-item="P4" data-label="Wynik not-run w drabinie prób"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P5</span></td><td><b>Świeżość dowodów.</b> Każdy artefakt weryfikacji (raport testów scoped, lint, capture UI) zapisuje hash stanu drzewa w chwili powstania; walidator rodzaju odrzuca dowód starszy niż ostatnia zmiana kodu.</td><td>Approach A (walidatory rodzajów), Change directory</td><td><select class="select select-sm w-36" data-item="P5" data-label="Świeżość dowodów"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P6</span></td><td><b>Zakres części planu sprawdzany diffem.</b> Część ma <code>goal</code>, <code>success-measure</code> i <code>do-not-touch</code> (globy); task ma opcjonalny <code>stop-rule</code>. Rdzeń: sprzeczność <code>do-not-touch</code> z <code>Files:</code> to błąd walidatora; placeholdery w polach wykonywalnych to odmowa <code>dispatch build</code>; przy <code>attempt close</code> i <code>bdk commit</code> porównanie rzeczywistego diffu z <code>Files:</code> i <code>do-not-touch</code> (zakazana ścieżka: odmowa, plik spoza <code>Files:</code>: finding). To uogólnia dzisiejszy krok 3g i regułę A2 "no self-grading". <code>stop-rule</code> daje nazwany powód <code>blocked</code>, który idzie od razu do Question.</td><td>Plan part, Attempts, CLI contract, Testing</td><td><select class="select select-sm w-36" data-item="P6" data-label="Zakres części planu sprawdzany diffem"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P7</span></td><td><b>Reguły jakości planu <code>[PL-n]</code>.</b> Nowy plik reguł z ID, sprawdzany przez plan-verifier (S4): Definition of Done tylko z warunków sprawdzalnych w review; bez kroków wdrożeniowych, manualnego QA i warunków typu "test wcześniej nie przechodził".</td><td>Rules with IDs (nowy prefiks <code>PL</code>)</td><td><select class="select select-sm w-36" data-item="P7" data-label="Reguły jakości planu PL-n"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P8</span></td><td><b>Zamknięta lista blokerów weryfikatorów.</b> plan-verifier i design-verifier dostają zamkniętą listę kategorii blokujących i jawną listę "to nie jest powód do FAIL" (styl, zgodność z szablonem, księgowość <code>Files:</code>, drobne sformułowania, rozwlekłość); defekt weryfikacji blokuje tylko wtedy, gdy usuwa jedyny realny dowód bezpieczeństwa zmiany; autor planu robi self-check na tych samych kategoriach. Rdzeń degraduje pozycję blokującą bez kategorii z listy do <code>observation</code> z <code>review: true</code>, więc jest widoczna na bramce i nie zapętla.</td><td>Kontrakty weryfikatorów, Ledger entry</td><td><select class="select select-sm w-36" data-item="P8" data-label="Zamknięta lista blokerów weryfikatorów"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P9</span></td><td><b>Orkiestrator bez narzędzi edycji.</b> <code>/bdk:execute</code> i <code>/bdk:close</code> deklarują <code>disallowed-tools: Edit Write NotebookEdit</code>; host usuwa te narzędzia na czas działania skilla, a ograniczenie znika przy Twojej następnej wiadomości. Obejście przez Bash łapie diff z P6.</td><td>Skill inventory, Key boundaries</td><td><select class="select select-sm w-36" data-item="P9" data-label="Orkiestrator bez narzędzi edycji"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P10</span></td><td><b>Znaczniki wersji w pakietach.</b> Frontmatter pakietu dispatchu zawiera wersję rdzenia i hash szablonu instrukcji, żeby A/B w promptfoo i post-mortem mogły przypisać zachowanie do wersji promptu.</td><td>Dispatch package</td><td><select class="select select-sm w-36" data-item="P10" data-label="Znaczniki wersji w pakietach"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+              <tr><td><span class="badge badge-ghost badge-sm">P11</span></td><td><b>Fakty z frontmattera tylko generowane.</b> Tabelę agentów w STARTUP generuje <code>bdk ctx startup</code> z frontmattera agentów; test treści zabrania nazw modeli w prozie skilli i agentów. Dowód, że to realne, jest w T6.</td><td>Testing and CI, <code>bdk ctx startup</code></td><td><select class="select select-sm w-36" data-item="P11" data-label="Fakty z frontmattera tylko generowane"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="do dyskusji">do dyskusji</option></select></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga do poprawek (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź dyspozycje P1-P11</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+  </section>
+
+  <section class="space-y-4" id="potwierdzenia">
+    <h2 class="text-2xl font-bold">5. Co TSH potwierdza w v3 i czego świadomie nie bierzemy</h2>
+    <div class="grid lg:grid-cols-2 gap-4 text-sm">
+      <div class="card bg-base-200"><div class="card-body p-5 gap-2">
+        <h3 class="font-semibold text-base">Potwierdzenia bez zmian w designie</h3>
+        <ol class="list-decimal pl-5 space-y-1.5">
+          <li><b>Plan niemutowalny, postęp w trailerach i <code>attempts/</code>.</b> U TSH całe "material kontra non-material" wynika z trzymania postępu w pliku planu (§12).</li>
+          <li><b>Profil liczony z pomiaru (R-profil).</b> TSH usunął Quick Flow 2026-08-04, a otwarty PR #80 przywraca "light-tier" z siedmiowarunkowym predykatem lekkości (§9 pkt 2); v3 liczy profil w kodzie, zapisuje go jako <code>assumption</code> i pozwala zmieniać tylko w górę.</li>
+          <li><b>Testy treści skilli (A3).</b> TSH nie ma testów ani CI do czasu PR #80, stąd dryf nazw modeli (§9 pkt 4).</li>
+          <li><b>Ścieżki podaje rdzeń.</b> TSH ma od kwietnia otwarty błąd rozwiązywania ścieżek do promptów wewnętrznych (issue #53, §9 pkt 3); v3 przekazuje subagentom ścieżki do pakietów w katalogu Zmiany.</li>
+          <li><b>Code review poza zakresem tej Zmiany.</b> U TSH to najsłabsze ogniwo (97 linii ogólnej checklisty, §9 pkt 5); <code>/bdk:cr</code> jest wyraźnie mocniejszy.</li>
+          <li><b>Odczyt zwrotny po zapisie (§6).</b> Walidator <code>part done</code> już sprawdza, że każdy task ma commit z trailerem; dopisuję tylko, że ten sam odczyt obowiązuje <code>close</code> po utworzeniu PR.</li>
+        </ol>
+      </div></div>
+      <div class="card bg-base-200"><div class="card-body p-5 gap-2">
+        <h3 class="font-semibold text-base">Świadomie nie bierzemy</h3>
+        <ol class="list-decimal pl-5 space-y-1.5">
+          <li><b>Protokół Human Approval w prozie</b> (186 wzmianek w 16 plikach, pięć przeredagowań w dwa tygodnie). Zastępuje go T1.</li>
+          <li><b>"Jedno wywołanie recenzenta na cykl życia" jako dogmat.</b> Kierunek jest niezmierzony, co przyznaje ich CHANGELOG; v3 ma budżet w polityce, domyślnie 2 iteracje jak dziś.</li>
+          <li><b>Wielodostawcowe tablice modeli.</b> Cecha hosta Copilot, niedostępna w tej formie w Claude Code, a nazwy modeli wymagają ciągłej synchronizacji. Tracimy przez to recenzję planu modelem innego dostawcy, którą analiza zalicza do przewag TSH (§13.7 pkt 4); jeśli jej chcesz, napisz w uwagach ogólnych.</li>
+          <li><b>25 agentów, w tym warianty "do porównania A/B".</b> Ten sam koszt rozrostu co w compound-engineering.</li>
+          <li><b>Szerokie bazy wiedzy per język.</b> Test no-op (§13) pokazał, że to głównie koszt kontekstu; zamiast tego T5.</li>
+          <li><b>Pipeline discovery do Jiry.</b> Poza zakresem BDK.</li>
+          <li><b>Instalacja przez "poproś agenta, żeby skonfigurował sam siebie".</b> Niepowtarzalna i nieweryfikowalna; <code>/bdk:setup</code> z walidacją schematu jest właściwym wzorcem.</li>
+          <li><b>Konwencje nazw pilnowane plikiem instrukcji.</b> BDK ma przestrzeń nazw pluginu <code>bdk:</code> na poziomie hosta.</li>
+        </ol>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="adwokat">
+    <h2 class="text-2xl font-bold">6. Adwokat diabła dla zestawu rekomendacji</h2>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+      <div class="card bg-base-200"><div class="card-body p-5 gap-2"><h3 class="font-semibold">Wąskie gardło</h3><p><code>PreToolUse</code> odpala się przy każdym wywołaniu Bash i narzędzi edycji. Start Node to 30-50 ms; fala 15 agentów po około 50 wywołań narzędzi to około 750 uruchomień hooka. Mitygacja: wąski matcher, prefiltr w shellu, który woła rdzeń tylko przy <code>git</code>, <code>.bdk/specs</code> albo <code>bdk.mjs hooks</code>, oraz pomiar czasu w E2E.</p></div></div>
+      <div class="card bg-base-200"><div class="card-body p-5 gap-2"><h3 class="font-semibold">Pojedynczy punkt awarii</h3><p>Rdzeń był nim już wcześniej (rejestr ryzyk, Q3 fail-closed); teraz dochodzą proces MCP i hooki zgód. Bez Node nie ma ani zgód, ani zapisu agentów, więc praca stanowa staje, zgodnie z fail-closed. Mitygacja: <code>bdk doctor</code> sprawdza serwer MCP i rejestrację hooków; <code>attempt close</code> wykrywa brakujące wpisy.</p></div></div>
+      <div class="card bg-base-200"><div class="card-body p-5 gap-2"><h3 class="font-semibold">Ukryty koszt</h3><p>Tarcie przy bramkach: komenda do wpisania przy każdej bramce i ponowna zgoda po każdej zmianie zatwierdzonego pliku. Profil <code>tiny</code> pomija design (S7), a polityka projektu może bramkę wyłączyć (D3); wtedy nie ma zgody człowieka, a decyzje trafiają do rejestru "do przejrzenia".</p></div></div>
+      <div class="card bg-base-200"><div class="card-body p-5 gap-2"><h3 class="font-semibold">Niepotwierdzone założenia (do listy testów na żywo)</h3><ul class="list-disc pl-5 space-y-1"><li>postać <code>command_name</code> skilla pluginu w <code>UserPromptExpansion</code>;</li><li>czy <code>PreToolUse</code> na narzędziu Skill dostaje argumenty, żeby rozpoznać <code>approve</code>;</li><li>czy Twoje komendy <code>!</code> przechodzą przez <code>PreToolUse</code>;</li><li>czy agenci pluginu działający w tle widzą narzędzia serwera MCP pluginu (agenci BDK mają je dziś w <code>tools:</code> dla serena i code-review-graph).</li></ul></div></div>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="dalej">
+    <h2 class="text-2xl font-bold">7. Co się stanie po Twoich odpowiedziach</h2>
+    <ol class="list-decimal pl-5 space-y-2 text-sm max-w-4xl">
+      <li><b>Naniosę odpowiedzi na oba pliki.</b> W dokumencie designu zmienią się: Existing Codebase Context, Success Criteria (przy T1 = A nowe S8: bramka przechodzi wyłącznie na rekordzie zgody z komendy wpisanej przez człowieka, związanym z sha256 zatwierdzonych artefaktów), Constraints &amp; NFRs (Security, Host), komponenty podejścia A i jego diagram, diagram sekwencji dispatchu, diagram drabiny prób, Key boundaries, układ katalogu Zmiany (<code>approvals/</code>, manifesty dowodów), wpis dziennika, pakiet dispatchu, reguły z ID, kontrakt CLI, tabela hooków, migracja, testy, rejestr ryzyk i "What We Did NOT Decide". Rejestr decyzji dostanie nową sekcję "Korekta po analizie TSH (strona 06)" z T1-T6 i P1-P11 zapisanymi dosłownie.</li>
+      <li><b>Uruchomię świeżego weryfikatora</b> <code>bdk:design-verifier</code> na całym szkicu z listą zmienionych sekcji. Poprzedni działał w innej sesji, więc nie da się go wznowić. Limit trzech pętli obowiązuje jak wcześniej.</li>
+      <li><b>Wynik weryfikacji i bramkę zapisu</b> pokażę na kolejnej stronie Lavish. T6 (jeśli wybierzesz A) zrobię osobnym commitem dopiero po zapisie designu, żeby nie mieszać zmian.</li>
+    </ol>
+    <form class="card card-border bg-base-100" data-lavish-question="uwagi-ogolne" id="uwagi" onsubmit="queueNote(event)">
+      <div class="card-body gap-3">
+        <h3 class="card-title text-base">Uwagi ogólne</h3>
+        <p class="text-xs opacity-75">Na przykład: coś, czego w mapie brakuje, inny model zagrożeń, inna kolejność. Możesz też zaznaczać fragmenty strony i dodawać adnotacje bezpośrednio.</p>
+        <textarea class="textarea w-full" name="note" rows="3"></textarea>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-sm">Dodaj uwagę do kolejki</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+    <div class="alert alert-soft alert-info" id="no-lavish" style="display:none"><span>Strona jest otwarta bez serwera Lavish. Otwórz ją przez <code>npx -y lavish-axi .lavish/bdk-v3-design-06-tsh.html</code>.</span></div>
+    <p class="text-sm opacity-80">Gdy zatwierdzisz decyzje, wyślij kolejkę przyciskiem Send w panelu Lavish.</p>
+  </section>
+</main>
+<script>
+  function markNoLavish() { document.getElementById('no-lavish').style.display = ''; }
+  function queueChoice(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const choice = fd.get('answer'); const note = (fd.get('note') || '').trim();
+    if (!choice) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = label + ': ' + choice + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, queueKey: form.dataset.lavishQuestion, data: { question: form.dataset.lavishQuestion, answer: choice, note: note } });
+    form.dataset.queued = '1';
+  }
+  function queueBatch(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const items = Array.from(form.querySelectorAll('select[data-item]')).map(function (s) { return { id: s.dataset.item, label: s.dataset.label, disposition: s.value }; });
+    const note = (new FormData(form).get('note') || '').trim();
+    if (!window.lavish) { markNoLavish(); return; }
+    const summary = items.map(function (i) { return i.id + '=' + i.disposition; }).join(', ');
+    const text = 'Poprawki P1-P11: ' + summary + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt('Zastosuj dyspozycję każdej poprawki i zwróć potwierdzenie pozycja po pozycji; rozlicz każde przesłane ID przed zgłoszeniem zakończenia. ' + text, { tag: 'tracked-batch', text: text, element: form, queueKey: 'poprawki', data: { question: 'poprawki', items: items, note: note } });
+    form.dataset.queued = '1';
+  }
+  function queueNote(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const note = (new FormData(form).get('note') || '').trim();
+    if (!note) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    window.lavish.queuePrompt('Uwaga ogólna do korekty TSH: ' + note, { tag: 'note', text: note, element: form, data: { question: 'uwagi-ogolne', note: note } });
+    form.dataset.queued = '1';
+  }
+</script>
+</body>
+</html>

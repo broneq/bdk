@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="pl" data-theme="luxury">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDK v3 - korekta po TSH: wyjaśnienia</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, dd, td, th, label) { overflow-wrap: anywhere; }
+  .badge { white-space: nowrap; }
+  .opt { cursor: pointer; }
+  .opt:has(input:checked) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .queued { display: none; }
+  form[data-queued="1"] .queued { display: inline-flex; }
+  code { font-size: 0.85em; }
+  .story { border-left: 3px solid var(--color-primary); }
+</style>
+</head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-5xl p-4 lg:p-8 space-y-12">
+
+  <section class="hero bg-base-200 rounded-box">
+    <div class="hero-content flex-col items-start py-8 w-full">
+      <p class="text-sm uppercase tracking-widest text-primary font-semibold">/bdk:design &middot; BDK v3 &middot; korekta po analizie TSH &middot; strona 07</p>
+      <h1 class="text-4xl font-bold">Po co to wszystko: wyjaśnienia prostym językiem</h1>
+      <p class="max-w-3xl opacity-85">Na stronie 06 przesadziłem z gęstością i żargonem. Tu każda pozycja ma trzy części: <b>jaki problem</b>, <b>przykład z życia</b> i uczciwą odpowiedź na pytanie <b>czy to naprawdę potrzebne</b>. Przy każdej jest też opcja "pomiń", bo część z tych rzeczy to ubezpieczenie od rzadkich zdarzeń, a o tym decydujesz Ty.</p>
+      <div class="stats stats-vertical sm:stats-horizontal bg-base-100 mt-2">
+        <div class="stat"><div class="stat-title">Zapisane ze strony 06</div><div class="stat-value text-success text-3xl">3</div><div class="stat-desc">T4 = A, T5 = A, T6 = B</div></div>
+        <div class="stat"><div class="stat-title">Do wyjaśnienia</div><div class="stat-value text-primary text-3xl">3</div><div class="stat-desc">T1, T2, T3</div></div>
+        <div class="stat"><div class="stat-title">Do dyskusji</div><div class="stat-value text-3xl">11</div><div class="stat-desc">P1-P11, dwie już wynikają z T4</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="tlo">
+    <h2 class="text-2xl font-bold">Jedno zdanie tła, bez którego T1-T3 nie mają sensu</h2>
+    <div class="card bg-base-200"><div class="card-body p-5 gap-3 text-sm">
+      <p>Dziś (v2) każdy etap uruchamiasz sam: <code>/bdk:design</code>, potem <code>/bdk:create-plan</code>, potem <code>/bdk:execute</code>. Między etapami siedzisz przy terminalu, więc <b>Ty jesteś bramką</b> i nic nie trzeba o tym zapisywać.</p>
+      <p>W v3 rdzeń prowadzi model przez etapy komendą <code>bdk next</code>, a decyzja D3 mówi: "domyślnie bramki człowieka na designie i review końcowym, egzekwuje je rdzeń". Skoro rdzeń ma egzekwować bramkę, musi wiedzieć, czy powiedziałeś "tak". Do tego dochodzi K2 (subagent sam zapisuje wnioski do dziennika) i fakt, że w jednej fali pracuje do 15 agentów w jednym katalogu. Z tych trzech faktów biorą się T1, T2 i T3. Analiza TSH tylko pokazała, że w tych miejscach łatwo zbudować coś, co działa wyłącznie wtedy, gdy model jest posłuszny.</p>
+    </div></div>
+  </section>
+
+  <section class="space-y-6" id="decyzje">
+    <h2 class="text-2xl font-bold">T1-T3 jeszcze raz</h2>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="t1-bramka-v2" id="t1" onsubmit="queueChoice(event, 'T1 dowód zgody na bramce (v2 pytania)')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T1. Skąd rdzeń ma wiedzieć, że to Ty powiedziałeś "tak"</h3>
+        <div class="grid md:grid-cols-3 gap-3 text-sm">
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Problem</h4><p>W szkicu v3 bramka przechodzi, gdy w dzienniku jest wpis <code>decision</code> z dopiskiem "zdecydował użytkownik". Ten wpis dodaje model. Nic nie sprawdza, czy naprawdę Cię zapytał.</p></div></div>
+          <div class="card bg-base-200 story"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Przykład</h4><p>Długa sesja, design gotowy. Model pisze: "Design wygląda kompletnie, przechodzę do planu", dopisuje wpis "user approved" i <code>bdk next</code> puszcza go dalej. Ty tego nie widziałeś, bo poszedłeś na kawę. U TSH dokładnie na to poszło 5 przeredagowań protokołu w 2 tygodnie i nadal nie działa inaczej niż "model obiecał".</p></div></div>
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Czy potrzebne?</h4><p><b>Tak, jeśli D3 ma zostać</b> ("bramki egzekwuje rdzeń"). Bez tego D3 trzeba uczciwie przepisać na "bramki egzekwuje model". Dobra wiadomość: da się to zrobić <b>bez żadnej nowej komendy</b>.</p></div></div>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A-lite: zgodą jest wpisanie przez człowieka komendy następnego etapu (/bdk:plan po designie, /bdk:close po review); hook UserPromptExpansion odpala się tylko dla komend wpisanych przez człowieka, rdzeń zapisuje w Zmianie rekord zgody z hashem zatwierdzonego artefaktu; komenda etapu wywołana przez model (Skill tool) dostaje deny z prośbą o wpisanie przez użytkownika; zmiana artefaktu po zgodzie otwiera bramkę ponownie; bez osobnej komendy approve" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">A-lite. Zgoda = Ty wpisujesz komendę następnego etapu <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Dokładnie tak, jak dziś: po designie wpisujesz <code>/bdk:plan</code>, po review <code>/bdk:close</code>. Nowe jest tylko to, że host odróżnia komendę wpisaną przez Ciebie od komendy wywołanej przez model (to udokumentowana funkcja Claude Code, sprawdziłem w źródle). Rdzeń zapisuje przy tym "zatwierdzono design o takiej treści" (hash pliku). Jeśli model spróbuje sam uruchomić <code>/bdk:plan</code>, dostaje odmowę i prośbę, żeby zapytał Ciebie. Jeśli design zmieni się po zgodzie, bramka zamyka się ponownie.</p>
+            <p class="text-xs opacity-80"><b>Koszt dla Ciebie:</b> zero nowych kroków. Jedyne, co możesz zauważyć: po poprawce w zatwierdzonym designie trzeba znów wpisać <code>/bdk:plan</code>.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A pełne: osobna komenda /bdk:change approve <bramka> <hash> wpisywana przez człowieka, reszta jak A-lite" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">A pełne. Osobna komenda <code>approve</code></span></div>
+            <p class="text-xs opacity-80">Wersja ze strony 06. Ma sens tylko wtedy, gdy zgoda i przejście do etapu mają być rozdzielone (na przykład ktoś inny zatwierdza, ktoś inny wykonuje). Dla pracy solo to dodatkowe wpisywanie bez zysku.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Pomiń: zgoda zostaje wpisem decision pisanym przez model; D3 przeredagowane na 'bramki egzekwuje model, rdzeń tylko sprawdza obecność wpisu'" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">Pomiń</span></div>
+            <p class="text-xs opacity-80">Zostaje jak w szkicu. Uczciwa konsekwencja: D3 przepisuję na "bramki egzekwuje model", a do ryzyk trafia "model może przejść bramkę bez pytania".</p>
+          </div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T1</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="t2-kanal-v2" id="t2" onsubmit="queueChoice(event, 'T2 kanał zapisu subagentów (v2 pytania)')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T2. Czy MCP jest naprawdę potrzebny? Krótko: nie</h3>
+        <div class="grid md:grid-cols-3 gap-3 text-sm">
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Problem</h4><p>K2 mówi: subagent sam zapisuje swoje wnioski komendą <code>bdk log add</code>. Żeby uruchomić komendę, agent musi mieć Bash. Siedem agentów (weryfikatory, recenzenci, detektory) celowo <b>nie ma</b> Bash, bo mają tylko czytać. K2 w obecnym brzmieniu zmusza nas do dania im Bash, czyli pełnego dostępu do shella.</p></div></div>
+          <div class="card bg-base-200 story"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Przykład</h4><p>plan-verifier ma dziś Read, Grep, Glob. Z Bash mógłby też uruchomić <code>rm -rf</code> albo <code>git push</code>. Nie dlatego, że chce, ale dlatego, że halucynuje polecenie. Lista narzędzi to jedyna rzecz, której model nie może obejść, i szkoda ją oddać tylko po to, żeby zapisać wpis do dziennika.</p></div></div>
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Czy MCP potrzebny?</h4><p><b>Nie.</b> MCP był najczystszym sposobem, żeby dać "tylko zapis do dziennika" bez Bash, ale to dodatkowy proces i dwa adaptery. Prostsze: zmiękczyć K2 dla agentów bez Bash.</p></div></div>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="D: K2 zmiękczone: workerzy (mają Bash) piszą sami przez CLI; agenci tylko do odczytu zwracają wpisy w ustalonym bloku raportu końcowego, a orkiestrator zapisuje je jedną komendą bdk log ingest, którą rdzeń waliduje (zły blok = odmowa z powodem); żaden agent nie dostaje nowych narzędzi; bez MCP" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">D. Bez MCP: kto ma Bash, pisze sam; kto nie ma, oddaje blok, a orkiestrator go wczytuje <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">implementer i fixer mają Bash, więc piszą do dziennika sami (K2 bez zmian). Weryfikatory i recenzenci kończą raport ustalonym blokiem wpisów; orkiestrator wkleja go do <code>bdk log ingest</code>, a rdzeń sprawdza strukturę i odrzuca zły blok z powodem. Nikt nie dostaje nowych narzędzi, nie ma nowego procesu.</p>
+            <p class="text-xs opacity-80"><b>Koszt:</b> wynik weryfikatora przechodzi przez kontekst orkiestratora, tak jak dziś. Gdyby to kiedyś bolało, MCP da się dołożyć później bez zmiany kontraktu.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="A: rdzeń jako wąski serwer MCP dla agentów (log_add, log_show, report_write, dispatch_show); agenci tylko do odczytu bez Bash" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">A. MCP jak na stronie 06</span></div>
+            <p class="text-xs opacity-80">Każdy agent pisze sam, bez pośrednika, nikt nie dostaje Bash. Najczystsze, ale najcięższe: trzeci proces MCP w sesji i schematy narzędzi w kontekście każdego agenta.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="C: Bash dla wszystkich agentów, K2 dosłownie, bez dodatkowej ochrony" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">C. Dać wszystkim Bash</span></div>
+            <p class="text-xs opacity-80">K2 dosłownie, zero pracy. Koszt: weryfikatory i recenzenci dostają pełny shell, którego nie potrzebują.</p>
+          </div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T2</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="t3-git-v2" id="t3" onsubmit="queueChoice(event, 'T3 strażnik working tree (v2 pytania)')">
+      <div class="card-body gap-4">
+        <h3 class="card-title text-lg">T3. Strażnik git: ubezpieczenie od rzadkiego, ale nieodwracalnego</h3>
+        <div class="grid md:grid-cols-3 gap-3 text-sm">
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Problem</h4><p>Kilku implementerów pracuje naraz w tym samym katalogu, z niezacommitowanymi zmianami (commituje dopiero orkiestrator). Jedno <code>git checkout -- .</code>, <code>git stash</code> albo <code>git reset --hard</code> wykonane przez jednego z nich kasuje pracę wszystkich pozostałych i Twoje własne niezacommitowane pliki.</p></div></div>
+          <div class="card bg-base-200 story"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Przykład</h4><p>Implementer nr 2 ma czerwone testy i "sprząta po sobie": <code>git checkout -- .</code>. Znika też praca implementerów 1, 3 i 4 z tej fali. Testy u nich nagle nie istnieją, nikt nie wie dlaczego. <code>stash</code> da się odzyskać, <code>checkout --</code> i <code>reset --hard</code> nie. TSH dopisał zakaz w osobnym commicie, co według analizy wygląda na reakcję na taki incydent.</p></div></div>
+          <div class="card bg-base-200"><div class="card-body p-4 gap-1"><h4 class="font-semibold">Czy potrzebne?</h4><p><b>Uczciwie: rzadko.</b> Tobie się nie zdarzyło i modele robią to rzadko. Ale v3 podnosi równoległość do 15 agentów, a skutek jest cichy i nieodwracalny. Wersja minimalna to hook na kilkanaście linii.</p></div></div>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Minimalna: hook PreToolUse odmawia subagentom (jest agent_id) komend git stash, reset, clean, checkout --, restore, switch --discard-changes oraz commit/add/merge/rebase/push (commit należy do rdzenia); sesja główna bez zmian; krótki zakaz w kontrakcie roli worker" class="radio radio-primary radio-sm shrink-0 mt-0.5" checked><span class="font-semibold">Minimalna. Tylko subagenci, tylko odmowa <span class="badge badge-primary badge-sm align-middle ml-1">rekomendacja</span></span></div>
+            <p class="text-xs opacity-80">Subagent, który spróbuje takiej komendy, dostaje odmowę i instrukcję "zgłoś blokadę zamiast cofać zmiany". W Twojej sesji głównej nic się nie zmienia, żadnych dodatkowych pytań. Do listy trafiają też <code>commit</code>, <code>add</code>, <code>push</code> i podobne, bo w v3 commituje wyłącznie rdzeń.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Pomiń: bez strażnika; pozycja trafia do 'What We Did NOT Decide' z wyzwalaczem 'pierwsza utrata pracy fali'" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">Pomiń</span></div>
+            <p class="text-xs opacity-80">Zapisuję to jako świadomie odłożone, z wyzwalaczem: pierwsza utrata pracy w fali. Koszt pierwszego incydentu: jedna fala do powtórzenia i ewentualnie Twoje niezacommitowane zmiany.</p>
+          </div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-start gap-2"><input type="radio" name="answer" value="Pełna A ze strony 06: deny w subagentach i ask w sesji głównej" class="radio radio-primary radio-sm shrink-0 mt-0.5"><span class="font-semibold">Pełna, jak na stronie 06</span></div>
+            <p class="text-xs opacity-80">Dodatkowo w sesji głównej każda taka komenda modelu wymaga Twojego potwierdzenia, także w auto mode. Więcej pytań, więcej ochrony Twoich plików.</p>
+          </div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź T3</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+  </section>
+
+  <section class="space-y-4" id="poprawki">
+    <h2 class="text-2xl font-bold">P1-P11: co każda zmienia i po co</h2>
+    <p class="text-sm opacity-85 max-w-3xl">Każda karta: problem, przykład, co zmienia się dla Ciebie. P4 i P5 już wybrałeś razem z T4 = A (są jego częścią), zostawiam je tylko do potwierdzenia. P11 to realizacja Twojego T6 = B. Dyspozycja przy każdej: przyjmij, odrzuć albo "nadal niejasne", wtedy wytłumaczę inaczej.</p>
+
+    <form class="card card-border bg-base-100" data-lavish-question="poprawki-v2" id="batch" onsubmit="queueBatch(event)">
+      <div class="card-body gap-3">
+        <div class="grid md:grid-cols-2 gap-3 text-sm">
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P1</span> Czas, numer i autora wpisu wstawia rdzeń</h4><select class="select select-sm w-40" data-item="P1" data-label="Pola pochodzenia stempluje rdzeń"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> we wpisie dziennika pola "kiedy, kto, jaki numer" podaje wywołujący komendę, czyli model.</p>
+            <p><b>Przykład:</b> model wpisuje datę sprzed tygodnia albo "autor: użytkownik", bo tak mu wyszło z kontekstu. U TSH numer rewizji i czas pisze model, a drugi model to potem sprawdza.</p>
+            <p><b>Zmiana:</b> jak znacznik czasu w bazie danych: rdzeń bierze czas z zegara, numer z licznika, autora z <code>git config</code>. Wywołujący tych pól nie podaje. Dla Ciebie: nic do robienia.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P2</span> Werdykt weryfikatora pamięta, co sprawdził</h4><select class="select select-sm w-40" data-item="P2" data-label="Werdykt związany z hashem wejścia"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> weryfikator sprawdził plan, potem plan został poprawiony. Dziś v2 tylko ostrzega ("stale") i jedzie dalej.</p>
+            <p><b>Przykład:</b> po weryfikacji dopisujesz do planu nowy task. Nikt go nie sprawdził, a wykonanie startuje jak gdyby nic.</p>
+            <p><b>Zmiana:</b> werdykt zapisuje hash sprawdzonego pliku. Zmieniony plan = werdykt nieważny, etap "plan zweryfikowany" nie jest gotowy, dopóki nie zweryfikujesz ponownie albo świadomie tego nie pominiesz. Dla Ciebie: czasem powtórna weryfikacja po edycji.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P3</span> "PASS" weryfikatora to nie zgoda na wykonanie</h4><select class="select select-sm w-40" data-item="P3" data-label="Recenzent nie autoryzuje"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> weryfikator mówi "PASS", orkiestrator czyta to jako "można jechać". A decyzja o wykonaniu jest Twoja.</p>
+            <p><b>Przykład:</b> plan-verifier kończy zdaniem "plan zatwierdzony, można przejść do implementacji". Model traktuje to jak Twoją zgodę.</p>
+            <p><b>Zmiana:</b> kontrakt weryfikatora zabrania zdań o zgodzie i przechodzeniu dalej; bramka przyjmuje tylko Twoją zgodę (T1), nigdy werdykt. To głównie tekst w kontraktach ról. Bez T1 nadal ma sens jako reguła.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P4</span> "Nie udało się uruchomić" to nie porażka <span class="badge badge-success badge-sm">część T4 = A</span></h4><select class="select select-sm w-40" data-item="P4" data-label="Wynik not-run w drabinie prób"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> próba ma dziś dwa wyniki: ok albo fail. Gdy weryfikacji nie dało się w ogóle uruchomić (brak narzędzia, zła strona, brak dowodu), liczy się jako fail i zjada budżet prób.</p>
+            <p><b>Przykład:</b> zrzut ekranu nie powstał, bo aplikacja nie wystartowała. Po trzech takich "porażkach" eskalacja, choć nikt nic nie sprawdził.</p>
+            <p><b>Zmiana:</b> trzeci wynik <code>not-run</code> z własnym, małym licznikiem; po jego wyczerpaniu pytanie do Ciebie. Wybrałeś to już w T4 = A.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P5</span> Dowód pamięta, dla jakiego kodu powstał <span class="badge badge-success badge-sm">część T4 = A</span></h4><select class="select select-sm w-40" data-item="P5" data-label="Świeżość dowodów"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> raport testów albo zrzut ekranu nie mówi, na jakim stanie kodu powstał.</p>
+            <p><b>Przykład:</b> fixer poprawia kod, ale zamyka zadanie zielonym raportem sprzed poprawki. U TSH stąd reguła "po każdej poprawce świeży capture".</p>
+            <p><b>Zmiana:</b> każdy dowód zapisuje hash stanu drzewa; dowód starszy niż ostatnia zmiana kodu nie zamyka zadania. Wybrałeś to już w T4 = A.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P6</span> Rdzeń porównuje, co miało być zmienione, z tym, co zmieniono</h4><select class="select select-sm w-40" data-item="P6" data-label="Zakres części planu sprawdzany diffem"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> plan mówi, których plików dotyczy task. Dziś porównanie deklaracji z rzeczywistym diffem robi orkiestrator "w głowie" (krok 3g). Nie ma sposobu, żeby powiedzieć "tych plików nie dotykaj".</p>
+            <p><b>Przykład:</b> implementer "przy okazji" refaktoruje moduł płatności, którego task nie dotyczył. Wychodzi w review, albo nie wychodzi.</p>
+            <p><b>Zmiana:</b> część planu może mieć listę "nie dotykaj"; przy zamknięciu próby rdzeń porównuje diff z planem: zakazany plik = odmowa, nieplanowany = finding do przejrzenia. Do tego zakaz pól typu "TODO: uzupełnić komendę" w miejscach, które ktoś ma wykonać. Dla Ciebie: czytelniejsze review, mniej niespodzianek.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P7</span> Reguły "jak wygląda dobry plan" z numerami</h4><select class="select select-sm w-40" data-item="P7" data-label="Reguły jakości planu PL-n"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> to, co plan-verifier uznaje za dobry plan, siedzi w prozie skilla. Nie da się na to wskazać ani tego zmierzyć.</p>
+            <p><b>Przykład:</b> task ma kryterium "użytkownik jest zadowolony". Nikt tego nie sprawdzi w review. U TSH reguła: do Definition of Done wchodzi tylko to, co recenzent może sprawdzić.</p>
+            <p><b>Zmiana:</b> osobny plik reguł <code>[PL-n]</code>, tak jak inne reguły w v3; weryfikator odhacza je po numerach. Mała rzecz, korzysta z mechanizmu, który już jest w designie (S4).</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P8</span> Zamknięta lista powodów FAIL u weryfikatorów</h4><select class="select select-sm w-40" data-item="P8" data-label="Zamknięta lista blokerów weryfikatorów"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> weryfikator sam decyduje, co jest blokerem. Modele lubią blokować za styl i drobiazgi, więc pętla popraw-sprawdź się ciągnie.</p>
+            <p><b>Przykład:</b> FAIL, bo "sekcja Risks jest za krótka". Iteracja 2: FAIL, bo "nazwa taska niespójna". U TSH po wprowadzeniu zamkniętej listy zeszli z nieskończonej pętli do jednego przebiegu.</p>
+            <p><b>Zmiana:</b> zamknięta lista kategorii, które mogą blokować, i jawna lista "to nie jest FAIL". Bloker spoza listy rdzeń zamienia na zwykłą uwagę do przejrzenia. Dla Ciebie: mniej iteracji, krótsze werdykty.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P9</span> Podczas <code>/bdk:execute</code> orkiestrator nie może sam edytować kodu</h4><select class="select select-sm w-40" data-item="P9" data-label="Orkiestrator bez narzędzi edycji"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> orkiestrator ma zlecać, nie pisać kodu. Dziś to prośba w prozie skilla.</p>
+            <p><b>Przykład:</b> "to tylko jedna linijka, poprawię sam" i zmiana omija testy, review i trailery.</p>
+            <p><b>Zmiana:</b> skill deklaruje, że na czas jego działania Edit i Write są wyłączone (funkcja hosta <code>disallowed-tools</code>, znika przy Twojej następnej wiadomości). U TSH to jedyna gwarancja, która naprawdę działa.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P10</span> Pakiet dla subagenta zapisuje wersję BDK i wersję promptu</h4><select class="select select-sm w-40" data-item="P10" data-label="Znaczniki wersji w pakietach"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> gdy agent zachowa się dziwnie, nie wiadomo, która wersja instrukcji to spowodowała.</p>
+            <p><b>Przykład:</b> po aktualizacji BDK implementerzy zaczynają pomijać testy. Bez znacznika nie da się powiązać tego z konkretną zmianą szablonu.</p>
+            <p><b>Zmiana:</b> dwa pola w nagłówku pakietu. Czysto diagnostyczne, zero kosztu dla Ciebie.</p>
+          </div></div>
+
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <div class="flex items-center justify-between gap-2"><h4 class="font-semibold"><span class="badge badge-ghost badge-sm">P11</span> Tabele o agentach generowane, nie pisane ręcznie <span class="badge badge-success badge-sm">realizuje T6 = B</span></h4><select class="select select-sm w-40" data-item="P11" data-label="Fakty z frontmattera tylko generowane"><option value="przyjmij" selected>przyjmij</option><option value="odrzuć">odrzuć</option><option value="nadal niejasne">nadal niejasne</option></select></div>
+            <p><b>Problem:</b> tabela agentów w STARTUP jest pisana ręcznie. Dziś brakuje w niej design-verifiera (T6) i nic tego nie wykrywa.</p>
+            <p><b>Przykład:</b> ktoś zmienia model agenta w jego pliku, tabela dalej pokazuje stary. U TSH tak zestarzały się nazwy modeli.</p>
+            <p><b>Zmiana:</b> rdzeń generuje tabelę z plików agentów, a test zabrania wpisywania nazw modeli w prozie. To dokładnie Twoje T6 = B ("tylko w v3").</p>
+          </div></div>
+
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga do poprawek (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź dyspozycje P1-P11</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+  </section>
+
+  <section class="space-y-3" id="dalej">
+    <h2 class="text-2xl font-bold">Co dalej</h2>
+    <p class="text-sm opacity-85 max-w-3xl">Po Twoich odpowiedziach nanoszę wszystko na oba pliki designu (T4, T5, T6 już zapisane jako decyzje), uruchamiam świeżego weryfikatora i pokazuję werdykt na kolejnej stronie. Jeśli coś jest nadal niejasne, napisz wprost, co: wolę wytłumaczyć trzeci raz, niż wpisać do designu rzecz, której nie kupujesz.</p>
+    <form class="card card-border bg-base-100" data-lavish-question="uwagi-ogolne-v2" id="uwagi" onsubmit="queueNote(event)">
+      <div class="card-body gap-3">
+        <h3 class="card-title text-base">Uwagi ogólne</h3>
+        <textarea class="textarea w-full" name="note" rows="3"></textarea>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-sm">Dodaj uwagę do kolejki</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+    <div class="alert alert-soft alert-info" id="no-lavish" style="display:none"><span>Strona jest otwarta bez serwera Lavish. Otwórz ją przez <code>npx -y lavish-axi .lavish/bdk-v3-design-07-tsh-wyjasnienia.html</code>.</span></div>
+  </section>
+</main>
+<script>
+  function markNoLavish() { document.getElementById('no-lavish').style.display = ''; }
+  function queueChoice(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const choice = fd.get('answer'); const note = (fd.get('note') || '').trim();
+    if (!choice) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = label + ': ' + choice + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, queueKey: form.dataset.lavishQuestion, data: { question: form.dataset.lavishQuestion, answer: choice, note: note } });
+    form.dataset.queued = '1';
+  }
+  function queueBatch(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const items = Array.from(form.querySelectorAll('select[data-item]')).map(function (s) { return { id: s.dataset.item, label: s.dataset.label, disposition: s.value }; });
+    const note = (new FormData(form).get('note') || '').trim();
+    if (!window.lavish) { markNoLavish(); return; }
+    const summary = items.map(function (i) { return i.id + '=' + i.disposition; }).join(', ');
+    const text = 'Poprawki P1-P11 (strona 07): ' + summary + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt('Zastosuj dyspozycję każdej poprawki i zwróć potwierdzenie pozycja po pozycji; rozlicz każde przesłane ID przed zgłoszeniem zakończenia. ' + text, { tag: 'tracked-batch', text: text, element: form, queueKey: 'poprawki-v2', data: { question: 'poprawki-v2', items: items, note: note } });
+    form.dataset.queued = '1';
+  }
+  function queueNote(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const note = (new FormData(form).get('note') || '').trim();
+    if (!note) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    window.lavish.queuePrompt('Uwaga ogólna (strona 07): ' + note, { tag: 'note', text: note, element: form, data: { question: 'uwagi-ogolne-v2', note: note } });
+    form.dataset.queued = '1';
+  }
+</script>
+</body>
+</html>

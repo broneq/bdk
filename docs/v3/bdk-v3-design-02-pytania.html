@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="pl" data-theme="luxury">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDK v3 - krok 2A.1: pytania doprecyzowujące przed architekturą</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, dd, td, th, .badge, .label) { overflow-wrap: anywhere; }
+  :where(img, svg, video, canvas, iframe) { max-width: 100%; height: auto; }
+  .ev { font-family: ui-monospace, monospace; font-size: 0.72rem; }
+  .opt { cursor: pointer; }
+  .opt:has(input:checked) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .queued { display: none; }
+  form[data-queued="1"] .queued { display: inline-flex; }
+</style>
+</head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-6xl p-4 lg:p-8 space-y-10">
+
+  <section class="hero bg-base-200 rounded-box">
+    <div class="hero-content flex-col items-start py-8 w-full">
+      <p class="text-sm uppercase tracking-widest text-primary font-semibold">/bdk:design &middot; BDK v3 &middot; krok 2 z 4 &middot; 2A.1 &middot; runda 4</p>
+      <h1 class="text-4xl font-bold">Pięć pytań przed rysowaniem architektury</h1>
+      <div role="alert" class="alert alert-success alert-soft text-sm"><span><b>Runda 4.</b> Zapisane K2 (subagent pisze sam), K3 (streszczenia wg odwołań), K4 (plik per wpis, pakiet 12 KB). Poprawki: K1 przerysowane jako lista kart, diagram komunikacji uproszczony z większą czcionką i przyciskiem "Pełny ekran" (działa na każdym rysunku na tej stronie). Czekają: Q2b i K1.</span></div>
+      <p class="max-w-3xl opacity-80">Krok 1 zamknięty: D1-D5 i progi S1 zapisane. Zanim pokażę podejścia architektoniczne, potrzebuję pięciu odpowiedzi, bo każda z nich zmienia kształt co najmniej jednego podejścia. Celowo nie ma tu jeszcze rozwiązań. Każde pytanie ma rekomendację, koszty opcji i pole na uwagę.</p>
+      <ul class="steps steps-vertical lg:steps-horizontal mt-2 w-full">
+        <li class="step step-primary">0. Grunt</li>
+        <li class="step step-primary">1. Combined</li>
+        <li class="step step-primary">2P. Produkt</li>
+        <li class="step step-primary">2A.1 Pytania (ta strona)</li>
+        <li class="step">2A.2 Podejścia</li>
+        <li class="step">3. Weryfikacja</li>
+        <li class="step">4. Dokument</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card bg-base-200" id="decyzje-dotychczas">
+    <div class="card-body">
+      <h2 class="card-title text-base">Co już przesądzone (skrót, do wglądu)</h2>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <span class="badge badge-success">D1 Zmiana jako obiekt</span>
+        <span class="badge badge-success">D2 OpenSpec: spec behawioralny + delty</span>
+        <span class="badge badge-success">D2b wiedza w repo, stan maszynowy lokalny</span>
+        <span class="badge badge-success">D3 autonomia z polityki projektu</span>
+        <span class="badge badge-success">D4 pełne nadpisanie lokalne, widoczne dla review</span>
+        <span class="badge badge-success">D5 Node + TypeScript, bundel na CI</span>
+        <span class="badge badge-success">S1: 8 KB / 8 tasków / 200 linii / 100 linii</span>
+        <span class="badge badge-success">stan przez zapytania CLI, nie pliki</span>
+        <span class="badge badge-success">promptfoo dla evali, node --test dla rdzenia</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-6" id="pytania">
+
+    <div class="card card-border bg-base-100 border-success/50" id="q1">
+      <div class="card-body">
+        <h3 class="card-title">Q1. <span class="text-success">Twarde cięcie + jednorazowy import + walidator na SessionStart</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">v3 nie czyta artefaktów v2. Hook SessionStart sprawdza wersję układu <code>.bdk/</code> (znacznik wersji w konfiguracji projektu); gdy wykryje v2, zgłasza to i wskazuje <code>bdk import</code>, który przepisuje <code>settings.json</code> na nową schemę i pozwala wskazać stare designy jako intencje nowych Zmian. Plany w toku kończysz na v2. Zgodnie z wynikiem testu poniżej, hook zgłasza to treścią komunikatu, nie kodem wyjścia.</p>
+      </div>
+    </div>
+
+    <div class="card card-border bg-base-100 border-success/50" id="q2">
+      <div class="card-body">
+        <h3 class="card-title">Q2. <span class="text-success">Wiele Zmian, jedna osoba prowadzi Zmianę</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Twoja wątpliwość: czy nie przygotować się na zespół na jednej Zmianie już teraz. Rozbijam to na dwie rzeczy, bo mają zupełnie różny koszt.</p>
+      </div>
+    </div>
+    <form class="card card-border bg-base-100" data-lavish-question="q2b-zespol" id="q2b" onsubmit="queueChoice(event, 'Q2b gotowość na zespół')">
+      <div class="card-body">
+        <h3 class="card-title text-base">Q2b. Na ile przygotować się na zespół na jednej Zmianie? <span class="badge badge-warning badge-sm">nowe</span></h3>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Format tak, funkcje nie: rejestr i postęp append-only z ID i autorem wpisu, właściciel per część; bez walidatora konfliktów i bez UI przejęcia części do czasu realnej potrzeby" class="radio radio-primary radio-sm" checked><span class="font-semibold">Format tak, funkcje nie</span><span class="badge badge-primary badge-sm">rekomendacja</span></div><p class="text-sm">Zaprojektować dane tak, żeby merge dwóch gałęzi z wpisami do tej samej Zmiany nie robił konfliktu: każdy wpis rejestru i postępu to osobny rekord z ID, autorem i znacznikiem czasu (plik per wpis albo linia JSONL), właściciel zapisany per część planu, a nie per Zmiana. Nie budować teraz walidatora sprzecznych decyzji ani przejmowania części. Zgodne z regułą z raportu: trzy realne przypadki przed abstrakcją.</p><p class="text-xs opacity-75"><b>Koszt:</b> prawie żaden na dziś (kilka pól więcej), a droga do zespołu bez migracji formatu.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Pełna obsługa zespołu teraz: właściciele per część, walidator konfliktów decyzji przy merge, przejęcie części" class="radio radio-primary radio-sm"><span class="font-semibold">Pełna obsługa teraz</span></div><p class="text-sm">Format plus walidator konfliktów decyzji, jawne przejmowanie części, blokady per część.</p><p class="text-xs opacity-75"><b>Koszt:</b> mechanizmy bez użytkownika, których poprawności nie da się sprawdzić na realnych przypadkach; więcej powierzchni rdzenia od pierwszego dnia.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Nic teraz: prosty format per Zmiana, ewentualna migracja później" class="radio radio-primary radio-sm"><span class="font-semibold">Nic teraz</span></div><p class="text-sm">Najprostszy format, migracja gdy zajdzie potrzeba.</p><p class="text-xs opacity-75"><b>Koszt:</b> migracja formatu commitowanych artefaktów u wszystkich użytkowników.</p></div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><input class="input w-full" name="note"></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź Q2b</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <div class="card card-border bg-base-100 border-success/50" id="q3">
+      <div class="card-body">
+        <h3 class="card-title">Q3. <span class="text-success">Fail-closed</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Każde przejście stanu idzie przez rdzeń. Bez rdzenia skill zatrzymuje się z diagnozą i jedną komendą naprawczą (odbudowa stanu z trailerów, instalacja Node). Odbudowa stanu z gita jest funkcją obowiązkową. Skille bez stanu (commit, debug, mermaid) działają dalej.</p>
+        <div role="alert" class="alert alert-warning text-sm">
+          <div>
+            <p class="font-semibold">Wynik testu na żywo (Claude Code 2.1.280): kod wyjścia w bloku <code>!</code> nic nie znaczy</p>
+            <p>Plugin testowy z trzema blokami: <code>!`echo OK`</code>, <code>!`echo X; echo Y 1&gt;&amp;2; exit 7`</code>, linia kontrolna po nich. Wynik: pierwszy blok wstrzyknięty poprawnie; <b>wyjście drugiego zostało po cichu odrzucone</b> (ani stdout, ani stderr) i zastąpione placeholderem <i>"[run this first, exactly as written, and use its output: ...]"</i>; linia kontrolna dotarła, czyli ładowanie skilla nie zostało przerwane; zero ostrzeżeń w stdout, stderr i zdarzeniach systemowych. W jednym z dwóch przebiegów model posłusznie uruchomił komendę sam przez Bash.</p>
+            <p><b>Konsekwencja dla fail-closed:</b> rdzeń wywoływany z bloków <code>!</code> musi <b>zawsze kończyć się kodem 0</b> i zgłaszać błąd treścią (ustrukturyzowany blok "BDK STOP: diagnoza + komenda naprawcza"), bo tylko treść dociera do modelu. Kod wyjścia różny od zera zostaje dla wywołań z Bash w trakcie skilla, gdzie model widzi wynik. Pliki testu leżą w scratchpadzie sesji do wglądu.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-border bg-base-100 border-success/50" id="q4">
+      <div class="card-body">
+        <h3 class="card-title">Q4. <span class="text-success">Workflow opcjonalny, tylko Claude Code</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Orkiestracja w rdzeniu i skillach; Workflow jako przyspieszenie fal z rozłącznymi zadaniami, włączane flagą. Jeden host, bez renderera dla innych narzędzi. W 2A.2 podejście "Workflow jako rdzeń" pokażę już tylko jako odrzucone z uzasadnieniem.</p>
+      </div>
+    </div>
+
+    <section class="space-y-6" id="komunikacja">
+      <div class="card card-border bg-base-100 border-primary/40">
+        <div class="card-body space-y-4">
+          <h3 class="card-title">Q5 rozwinięte: komunikacja między agentami <span class="badge badge-warning badge-sm">do przegadania</span></h3>
+          <p class="text-sm opacity-80">Zgadzam się, że to jest rdzeń sprawy, a nie pytanie o limit w KB. Twoja myśl "streszczenie + typ, lista do przejrzenia, całość na żądanie" to dokładnie wzorzec, którego BDK już używa w jednym miejscu: <code>deferred_findings</code> w run state (severity, category, file, symbol, problem, fix; deduplikacja po kluczu) plus YAML envelope implementera z polami <code>concerns</code>, <code>needs</code>, <code>blocker</code>. Propozycja polega na uogólnieniu tego jednego mechanizmu na całą Zmianę.</p>
+
+          <h4 class="font-semibold text-sm">Diagnoza: co dziś idzie wiadomością, a powinno iść zapisem</h4>
+          <div class="overflow-x-auto rounded-box border border-base-content/10">
+            <table class="table table-sm">
+              <thead><tr><th>Kanał</th><th>Dziś</th><th>Problem</th></tr></thead>
+              <tbody class="text-sm">
+                <tr><td>orkiestrator -&gt; implementer</td><td>tekst taska i przypadki testowe wklejone inline do promptu</td><td>zostaje w kontekście orkiestratora do końca sesji; pomiar z Superpowers: dispatch 42k znaków, 99% to wklejona historia</td></tr>
+                <tr><td>implementer -&gt; orkiestrator</td><td>YAML envelope (status, files_changed, concerns, needs, blocker)</td><td>dobry kształt, ale <code>concerns</code> to zdania w wiadomości; giną po zakończeniu grupy, nic ich nie zbiera</td></tr>
+                <tr><td>reviewer -&gt; orkiestrator</td><td>lista FINDINGS + POSITIVE_OBSERVATIONS + TEST_GAPS w wiadomości</td><td>tylko odłożone MEDIUM/LOW trafiają do stanu; obserwacje i luki testów znikają</td></tr>
+                <tr><td>explorer -&gt; orkiestrator</td><td>prozą lub w schemacie wołającego</td><td>wnioski o kodzie odkryte w designie nie docierają do planu ani review</td></tr>
+                <tr><td>między etapami</td><td>nic; kolejny skill czyta plik poprzedniego</td><td>spostrzeżenia z wykonania (np. "ten moduł nie ma testów") nie mają gdzie się odłożyć</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 class="font-semibold text-sm">Propozycja: dziennik Zmiany jako jedyny kanał wiedzy, wiadomości tylko jako wskaźniki</h4>
+          <figure class="card bg-base-200 zoomable">
+            <div class="card-body p-4">
+              <div class="flex justify-end"><button type="button" class="btn btn-xs btn-outline" onclick="openZoom(this)">Pełny ekran</button></div>
+              <svg viewBox="0 0 1200 640" width="100%" style="min-height: 420px" role="img" aria-labelledby="dk-t">
+                <title id="dk-t">Przepływ komunikacji: orkiestrator prosi rdzeń o pakiet dispatchu, rdzeń składa go z taska, intencji i streszczeń wpisów dziennika, subagent czyta pakiet z pliku, w trakcie pracy dopisuje wpisy do dziennika przez CLI, odsyła envelope do 15 linii; orkiestrator czyta listę streszczeń i pobiera pełną treść tylko wybranych wpisów.</title>
+                <defs><marker id="ak" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+                <g font-size="20" fill="currentColor" text-anchor="middle">
+                  <g id="k-orch"><rect x="30" y="60" width="300" height="110" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="180" y="105" font-weight="700">Orkiestrator</text><text x="180" y="140" font-size="16" opacity="0.85">czyta streszczenia i wskaźniki</text></g>
+                  <g id="k-kernel"><rect x="450" y="40" width="300" height="150" rx="12" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)" stroke-width="2"/><text x="600" y="80" font-weight="700">Rdzeń CLI</text><text x="600" y="115" font-size="16" opacity="0.9">dispatch build (pakiet do 12 KB)</text><text x="600" y="142" font-size="16" opacity="0.9">log add / list / show</text><text x="600" y="169" font-size="16" opacity="0.9">list do 100 linii</text></g>
+                  <g id="k-sub"><rect x="870" y="60" width="300" height="110" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="1020" y="105" font-weight="700">Subagent</text><text x="1020" y="140" font-size="16" opacity="0.85">implementer, fixer, reviewer, explorer</text></g>
+                  <g id="k-pkg"><rect x="870" y="260" width="300" height="90" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-dasharray="6 4" stroke-width="2"/><text x="1020" y="295" font-weight="600" font-size="18">Pakiet dispatchu (plik)</text><text x="1020" y="325" font-size="15" opacity="0.85">task + intencja + streszczenia + reguły</text></g>
+                  <g id="k-ledger"><rect x="380" y="400" width="440" height="200" rx="12" fill="var(--color-secondary)" fill-opacity="0.15" stroke="var(--color-secondary)" stroke-width="2"/><text x="600" y="440" font-weight="700">Dziennik Zmiany (w repo)</text><text x="600" y="475" font-size="16" opacity="0.9">wpis = id, typ, streszczenie, źródło,</text><text x="600" y="500" font-size="16" opacity="0.9">odwołania, status, zastępuje</text><text x="600" y="530" font-size="16" opacity="0.9">pełna treść w pliku wpisu</text><text x="600" y="570" font-size="15" opacity="0.8">decision, finding, observation, blocker, question, ...</text></g>
+                </g>
+                <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#ak)">
+                  <path d="M330 100 L448 100"/>
+                  <path d="M750 100 L868 100"/>
+                  <path d="M750 150 C820 200, 850 240, 880 258" stroke-dasharray="6 4"/>
+                  <path d="M1020 258 L1020 172" stroke-dasharray="6 4"/>
+                  <path d="M600 190 L600 398" stroke-dasharray="6 4"/>
+                  <path d="M950 170 C900 300, 860 400, 822 440" stroke="var(--color-secondary)" stroke-width="3"/>
+                  <path d="M868 130 L330 130" stroke-dasharray="3 4"/>
+                  <path d="M378 470 C300 430, 220 300, 180 172" stroke="var(--color-secondary)" stroke-width="3"/>
+                </g>
+                <g font-size="15" fill="currentColor">
+                  <text x="389" y="88" text-anchor="middle">1. zbuduj pakiet dla taska</text>
+                  <text x="809" y="88" text-anchor="middle">2. ścieżka + 2-3 linie</text>
+                  <text x="1040" y="222">3. czyta plik</text>
+                  <text x="760" y="240" text-anchor="end">rdzeń pisze pakiet</text>
+                  <text x="615" y="300">wybiera streszczenia</text>
+                  <text x="615" y="322">po odwołaniach</text>
+                  <text x="990" y="380" fill="var(--color-secondary)" font-weight="600" text-anchor="end">4. log add w trakcie pracy</text>
+                                    <text x="599" y="230" text-anchor="middle">5. envelope do 15 linii: status + id wpisów (cienka linia wyżej)</text>
+                  <text x="215" y="330" fill="var(--color-secondary)" font-weight="600" text-anchor="middle">6. log list: streszczenia</text>
+                  <text x="215" y="352" fill="var(--color-secondary)" font-weight="600" text-anchor="middle">7. log show tylko dla ważnych</text>
+                  <text x="600" y="628" text-anchor="middle" opacity="0.85">8. review i zamknięcie Zmiany czytają dziennik po typie i statusie</text>
+                </g>
+              </svg>
+            </div>
+          </figure>
+
+          <div class="grid md:grid-cols-2 gap-4 text-sm">
+            <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+              <h4 class="font-semibold">Co to daje</h4>
+              <ul class="list-disc pl-5 space-y-1">
+                <li>Orkiestrator nigdy nie ma w kontekście pełnej treści: ani taska, ani raportu. Ma listę streszczeń i pobiera całość wybiórczo. To realizuje S1 dla komunikacji, nie tylko dla plików.</li>
+                <li>Spostrzeżenia przeżywają etap: obserwacja explorera z designu jest w pakiecie implementera, jeśli dotyczy tych samych plików; luka testów z review jest w pakiecie fixera; pytanie z wykonania wypływa na bramce (D3).</li>
+                <li>Decyzje i ich historia (S3) to po prostu wpisy typu <code>decision</code> z polem <code>zastępuje</code>. Jeden mechanizm zamiast osobnego rejestru decyzji i osobnego rejestru findingów.</li>
+                <li>Pakiet dispatchu zostaje w Zmianie jako dowód, co dokładnie zobaczył agent (B10). Recenzent może to otworzyć.</li>
+                <li>Deduplikacja po kluczu (typ, odwołanie, streszczenie) jak dziś w <code>findings-add</code>: powtórzone spostrzeżenie nie jest nowym wpisem.</li>
+              </ul>
+            </div></div>
+            <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+              <h4 class="font-semibold">Ryzyka, które trzeba zaprojektować</h4>
+              <ul class="list-disc pl-5 space-y-1">
+                <li><b>Szum.</b> Agent, który może pisać do dziennika, będzie pisał dużo. Obrona: walidator wpisu (streszczenie do 120 znaków, typ z listy, co najmniej jedno odwołanie), dedup, a dla <code>observation</code> limit na dispatch, po którym rdzeń odrzuca kolejne z komunikatem "scal albo podnieś typ".</li>
+                <li><b>Trafność selekcji do pakietu.</b> Rdzeń dobiera wpisy po odwołaniach (plik, symbol, część), nie po treści. Wpis bez odwołań trafia tylko do listy dla orkiestratora. Na start prosta reguła, semantyka później (punkt rozszerzeń "wyszukiwanie artefaktów").</li>
+                <li><b>Przyrost dziennika.</b> Zamknięcie Zmiany: wpisy <code>learning</code> przechodzą routing (reguła / spec / nic), reszta idzie z Zmianą do archiwum. Dziennik nigdy nie jest czytany w całości przez nikogo poza CLI.</li>
+                <li><b>Zaufanie do wpisów agentów.</b> Pole źródła (user / inferred / agent) i status (open / accepted / rejected / superseded). Wpis agenta nie jest decyzją, dopóki bramka go nie zaakceptuje albo polityka nie pozwoli zaakceptować automatycznie.</li>
+              </ul>
+            </div></div>
+          </div>
+        </div>
+      </div>
+
+      <form class="card card-border bg-base-100" data-lavish-question="k1-typy" id="k1" onsubmit="queueMulti(event, 'K1 typy wpisów dziennika')">
+        <div class="card-body">
+          <h3 class="card-title text-base">K1. Jakie typy wpisów ma znać dziennik od pierwszego dnia?</h3>
+          <p class="text-sm opacity-80">Zaznacz te, które mają istnieć w v3.0. Typ to twarda lista w rdzeniu (walidator odrzuca nieznane). Dodanie typu później jest zmianą rdzenia, ale tanią. Domyślnie odznaczony jest tylko <code>risk</code>, bo w praktyce zlewa się z <code>observation</code> plus polem severity.</p>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="decision" checked><span class="text-sm"><b>decision</b><br><span class="opacity-80">co postanowiono, dlaczego, koszt pomyłki, co zastępuje</span></span></label>
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="finding" checked><span class="text-sm"><b>finding</b><br><span class="opacity-80">problem w kodzie: severity, plik, symbol, fix (dzisiejsze findings)</span></span></label>
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="observation" checked><span class="text-sm"><b>observation</b><br><span class="opacity-80">spostrzeżenie o kodzie lub procesie, bez wymaganego działania</span></span></label>
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="blocker" checked><span class="text-sm"><b>blocker</b><br><span class="opacity-80">agent nie może iść dalej; wymaga człowieka albo innej części</span></span></label>
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="question" checked><span class="text-sm"><b>question</b><br><span class="opacity-80">do rozstrzygnięcia na najbliższej bramce</span></span></label>
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="assumption" checked><span class="text-sm"><b>assumption</b><br><span class="opacity-80">agent przyjął coś bez potwierdzenia; review ma to zobaczyć</span></span></label>
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="risk"><span class="text-sm"><b>risk</b><br><span class="opacity-80">coś może pójść źle później; bez działania teraz</span></span></label>
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="learning" checked><span class="text-sm"><b>learning</b><br><span class="opacity-80">kandydat na regułę albo spec; routing przy zamknięciu Zmiany</span></span></label>
+            <label class="flex items-start gap-3 p-3 rounded-box bg-base-200 cursor-pointer has-[:checked]:outline-2 has-[:checked]:outline-primary"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" name="types" value="report" checked><span class="text-sm"><b>report</b><br><span class="opacity-80">wskaźnik do pełnego raportu agenta (plik); zawsze tworzony przez rdzeń</span></span></label>
+          </div>
+          <label class="fieldset"><span class="fieldset-legend">Brakujący typ albo uwaga (opcjonalnie)</span><input class="input w-full" name="note"></label>
+          <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź K1</button><span class="badge badge-success queued">w kolejce</span></div>
+        </div>
+      </form>
+
+      <div class="card card-border bg-base-100 border-success/50" id="k2"><div class="card-body"><h3 class="card-title text-base">K2. <span class="text-success">Subagent pisze sam, przez CLI</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3><p class="text-sm">Wpis powstaje tam, gdzie powstaje wiedza, z odwołaniami do plików. Envelope zwraca status i listę id. Walidator wpisu i deduplikacja w rdzeniu bronią przed szumem. Każdy subagent ma CLI w narzędziach i preload kontraktu wpisu.</p></div></div>
+
+      <div class="card card-border bg-base-100 border-success/50" id="k3"><div class="card-body"><h3 class="card-title text-base">K3. <span class="text-success">Streszczenia wg odwołań, pełna treść wybiórczo</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3><p class="text-sm">Rdzeń dobiera wpisy, których odwołania przecinają się z plikami i częścią taska, z typami właściwymi dla roli. Pełna treść tylko dla zaakceptowanych decyzji i blockerów. Subagent może dociągnąć resztę przez <code>log show</code>. Wpis bez odwołań trafia tylko do listy orkiestratora.</p></div></div>
+
+      <div class="card card-border bg-base-100 border-success/50" id="k4"><div class="card-body"><h3 class="card-title text-base">K4. <span class="text-success">Plik per wpis + lokalny indeks; pakiet do 12 KB</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3><p class="text-sm">Każdy wpis to osobny plik Markdown z frontmatterem w katalogu Zmiany (bezkonfliktowy merge, czytelny w PR). Indeks streszczeń to lokalny cache odbudowywany przez rdzeń. Limit pliku pakietu dispatchu: 12 KB.</p></div></div>
+    </section>
+
+    <div class="alert alert-soft alert-info" id="no-lavish" style="display:none"><span>Strona jest otwarta bez serwera Lavish. Otwórz ją przez <code>npx -y lavish-axi .lavish/bdk-v3-design-02-pytania.html</code>.</span></div>
+  </section>
+
+  <section class="card bg-base-200" id="dalej">
+    <div class="card-body">
+      <h2 class="card-title text-base">Po odpowiedziach: 2A.2</h2>
+      <p class="text-sm">Trzy podejścia narysowane tym samym typem diagramu (komponenty i przepływ sterowania), każde z modelem stanu Zmiany, ochroną przed pętlami, warstwami konfiguracji i punktami rozszerzeń. Rekomendacja z odwołaniem do Twoich odpowiedzi Q1-Q5 oraz adwokat diabła.</p>
+    </div>
+  </section>
+</main>
+<dialog id="zoom-modal" class="modal">
+  <div class="modal-box w-[96vw] max-w-[96vw] h-[92vh] max-h-[92vh] p-3 flex flex-col">
+    <form method="dialog" class="flex justify-end"><button class="btn btn-sm">Zamknij</button></form>
+    <div id="zoom-body" class="flex-1 min-h-0 overflow-auto flex items-center justify-center"></div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+<script>
+  function openZoom(btn) {
+    const svg = btn.closest('figure').querySelector('svg');
+    const body = document.getElementById('zoom-body');
+    body.innerHTML = '';
+    const clone = svg.cloneNode(true);
+    clone.removeAttribute('style'); clone.setAttribute('width', '100%'); clone.setAttribute('height', '100%');
+    clone.style.width = '100%'; clone.style.height = '100%';
+    body.appendChild(clone);
+    document.getElementById('zoom-modal').showModal();
+  }
+</script>
+
+
+<script>
+  function markNoLavish() { document.getElementById('no-lavish').style.display = ''; }
+  function queueChoice(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const choice = fd.get('answer'); const note = (fd.get('note') || '').trim();
+    if (!choice) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = label + ': ' + choice + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, data: { question: form.dataset.lavishQuestion, answer: choice, note: note } });
+    form.dataset.queued = '1';
+  }
+  function queueMulti(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const types = fd.getAll('types'); const note = (fd.get('note') || '').trim();
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = label + ': ' + types.join(', ') + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, data: { question: form.dataset.lavishQuestion, types: types, note: note } });
+    form.dataset.queued = '1';
+  }
+  function queueBudget(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const d = Object.fromEntries(fd.entries());
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = 'K4 zapis dziennika: ' + d.answer + ' | limit pakietu ' + d.payload_kb + ' KB' + (d.note ? ' | uwaga: ' + d.note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, data: d });
+    form.dataset.queued = '1';
+  }
+</script>
+</body>
+</html>

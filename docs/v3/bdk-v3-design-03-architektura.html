@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="pl" data-theme="luxury">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDK v3 - krok 2A.2: podejścia architektoniczne</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, dd, td, th, .badge) { overflow-wrap: anywhere; }
+  :where(img, svg, video, canvas, iframe) { max-width: 100%; height: auto; }
+  .opt { cursor: pointer; }
+  .opt:has(input:checked) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .queued { display: none; }
+  form[data-queued="1"] .queued { display: inline-flex; }
+  pre.tree { font-size: 0.78rem; line-height: 1.35; white-space: pre; overflow-x: auto; }
+</style>
+</head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-6xl p-4 lg:p-8 space-y-10">
+
+  <section class="hero bg-base-200 rounded-box">
+    <div class="hero-content flex-col items-start py-8 w-full">
+      <p class="text-sm uppercase tracking-widest text-primary font-semibold">/bdk:design &middot; BDK v3 &middot; krok 2 z 4 &middot; 2A.2</p>
+      <h1 class="text-4xl font-bold">Trzy podejścia do architektury BDK v3</h1>
+      <p class="max-w-3xl opacity-80">Wszystkie trzy stoją na tym samym fundamencie, który wynika z Twoich decyzji (sekcja 1). Różnią się jednym: <b>gdzie żyje wiedza o tym, co jest następnym krokiem</b>. Diagramy są tego samego typu, żeby dało się je porównać. Każdy rysunek ma przycisk "Pełny ekran". Na końcu rekomendacja z uzasadnieniem odwołującym się do Q1-Q5, adwokat diabła i cztery decyzje do podjęcia.</p>
+      <ul class="steps steps-vertical lg:steps-horizontal mt-2 w-full">
+        <li class="step step-primary">0. Grunt</li>
+        <li class="step step-primary">1. Combined</li>
+        <li class="step step-primary">2P. Produkt</li>
+        <li class="step step-primary">2A.1 Pytania</li>
+        <li class="step step-primary">2A.2 Podejścia (ta strona)</li>
+        <li class="step">3. Weryfikacja</li>
+        <li class="step">4. Dokument</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 1. FUNDAMENT ============ -->
+  <section class="space-y-4" id="fundament">
+    <h2 class="text-2xl font-bold">1. Wspólny fundament (wynika z decyzji, nie podlega już wyborowi)</h2>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+      <div class="card card-border bg-base-100"><div class="card-body p-4 gap-2">
+        <h3 class="font-semibold">Rdzeń: jeden bundel Node, jedno CLI</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>TypeScript, bundlowany esbuildem do jednego pliku ESM commitowanego w pluginie; <code>node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs &lt;komenda&gt;</code> z bloków <code>!</code>, z Bash w skillach i z hooków. Zero importów poza <code>node:</code> w runtime.</li>
+          <li>Kontrakt CLI jako dokument i cel testów: kształty JSON, kody błędów, dwa tryby wyjścia: <b>tryb inject</b> (zawsze exit 0, błąd jako blok "BDK STOP" treścią, bo host ignoruje kod wyjścia) i <b>tryb polecenia</b> (exit != 0 przy odmowie, model widzi wynik w Bash).</li>
+          <li>Odmowa (Refusal) jako mechanizm pierwszej klasy, jak dziś w <code>bdk_run_state.py</code>: rdzeń nie robi rzeczy niedozwolonej i mówi, co zrobić zamiast.</li>
+          <li>Odbudowa stanu maszynowego z gita (trailery) obowiązkowa; fail-closed.</li>
+        </ul>
+      </div></div>
+      <div class="card card-border bg-base-100"><div class="card-body p-4 gap-2">
+        <h3 class="font-semibold">Zmiana na dysku: wiedza w repo, maszyna lokalnie</h3>
+<pre class="tree bg-base-200 rounded-box p-3">.bdk/
+  settings.json            projekt, commitowane
+  settings.local.json      osoba, gitignorowane (D4)
+  rules/                   reguły projektu z ID (D2a)
+  specs/&lt;zdolność&gt;/spec.md  żywy spec behawioralny (D2)
+  changes/&lt;id&gt;/            Zmiana, commitowana
+    change.md              intencja, zakres, źródło (user/inferred)
+    log/&lt;ts&gt;-&lt;typ&gt;-&lt;slug&gt;.md   dziennik: plik per wpis (K4)
+    design.md
+    plan/index.md          graf części, fale
+    plan/parts/NN-*.md     &lt;= 8 KB, &lt;= 8 tasków (S1)
+    spec-delta/&lt;zdolność&gt;.md
+    dispatch/&lt;task&gt;-&lt;role&gt;-&lt;n&gt;.md   pakiety, ślad (B10)
+    reports/&lt;task&gt;-&lt;role&gt;-&lt;n&gt;.md   pełne raporty agentów
+  changes/archive/&lt;data&gt;-&lt;id&gt;/     po zamknięciu
+  .machine/                gitignorowane: indeksy, próby,
+                           czasy, sesja, zrzuty konfiguracji</pre>
+        <p class="text-xs opacity-75">Prawdą o postępie pozostają commit trailery (<code>BDK-Change</code>, <code>BDK-Part</code>, <code>BDK-Task</code>); <code>.machine/</code> to cache. Reguła gitignore dodawana przez rdzeń: <code>/.bdk/.machine/</code>, nie <code>/.bdk/</code>.</p>
+      </div></div>
+      <div class="card card-border bg-base-100"><div class="card-body p-4 gap-2">
+        <h3 class="font-semibold">Komunikacja: dziennik + pakiety (K1-K4)</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>Dziewięć typów wpisów, walidator wpisu, dedup po kluczu, źródło i status na każdym wpisie.</li>
+          <li><code>dispatch build</code> składa pakiet z taska, skrótu intencji, streszczeń wpisów dobranych po odwołaniach i wycinka reguł; odmawia ponad 12 KB.</li>
+          <li>Subagent: czyta pakiet, pisze <code>log add</code>, zwraca envelope do 15 linii. Orkiestrator: <code>log list</code>, wybiórczo <code>log show</code>.</li>
+        </ul>
+      </div></div>
+      <div class="card card-border bg-base-100"><div class="card-body p-4 gap-2">
+        <h3 class="font-semibold">Spec, reguły, konfiguracja</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>Spec behawioralny w formacie OpenSpec; delta w Zmianie; merge deterministyczny w rdzeniu; walidator semantyki; hook <code>PreToolUse</code> odmawia edycji <code>.bdk/specs/</code> poza <code>bdk close</code>.</li>
+          <li>Reguły z ID: <code>rules/*.md</code> BDK i <code>.bdk/rules/*.md</code> projektu; każdy punkt ma stabilny identyfikator; plan-verifier i reviewer cytują ID; wpisy <code>learning</code> proponują nowe.</li>
+          <li>Konfiguracja warstwowa z jednym resolverem <code>bdk ctx</code> zastępującym pięć dzisiejszych skryptów inject; szczegóły w sekcji 6.</li>
+        </ul>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ============ 2. PODEJŚCIA ============ -->
+  <section class="space-y-6" id="podejscia">
+    <h2 class="text-2xl font-bold">2. Podejścia: gdzie żyje "co dalej"</h2>
+
+    <!-- A -->
+    <div class="card card-border bg-base-100" id="podejscie-a">
+      <div class="card-body space-y-3">
+        <h3 class="card-title">A. Graf artefaktów sterowany danymi <span class="badge badge-primary badge-sm">rekomendacja, z kręgosłupem z B</span></h3>
+        <p class="text-sm"><b>Istota:</b> proces Zmiany to deklaratywny graf artefaktów (<code>pipeline.yaml</code> dostarczany przez BDK, rozszerzalny przez projekt), a rdzeń liczy z niego stan "gotowe / zablokowane / zrobione" i wydaje skillom instrukcje per artefakt. Skille nie znają kolejności etapów; pytają rdzeń, co dalej.</p>
+        <figure class="card bg-base-200"><div class="card-body p-4">
+          <div class="flex justify-end"><button type="button" class="btn btn-xs btn-outline" onclick="openZoom(this)">Pełny ekran</button></div>
+          <svg viewBox="0 0 1200 560" width="100%" style="min-height: 380px" role="img" aria-labelledby="ta">
+            <title id="ta">Podejście A: skille są cienkimi pętlami wołającymi bdk next; rdzeń czyta pipeline.yaml, polityki i stan Zmiany, zwraca następny artefakt z instrukcją; artefakty i dziennik leżą w katalogu Zmiany; subagenci dostają pakiety.</title>
+            <defs><marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+            <g font-size="19" fill="currentColor" text-anchor="middle">
+              <rect x="30" y="60" width="300" height="130" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="180" y="95" font-weight="700">Skille (cienkie)</text><text x="180" y="125" font-size="15" opacity="0.85">design, plan, execute, review, close</text><text x="180" y="150" font-size="15" opacity="0.85">każdy = pętla: next, zrób, zgłoś</text><text x="180" y="175" font-size="15" opacity="0.85">&lt;= 200 linii</text>
+              <rect x="450" y="40" width="300" height="170" rx="12" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)" stroke-width="2"/><text x="600" y="75" font-weight="700">Rdzeń: silnik grafu</text><text x="600" y="105" font-size="15" opacity="0.9">status: ready / blocked / done</text><text x="600" y="130" font-size="15" opacity="0.9">next: artefakt + instrukcja + kontekst</text><text x="600" y="155" font-size="15" opacity="0.9">validate: schemat i niepustość, nie existsSync</text><text x="600" y="180" font-size="15" opacity="0.9">budżety, bramki, dispatch, log</text>
+              <rect x="870" y="60" width="300" height="130" rx="12" fill="var(--color-secondary)" fill-opacity="0.15" stroke="var(--color-secondary)" stroke-width="2"/><text x="1020" y="95" font-weight="700">pipeline.yaml + polityka</text><text x="1020" y="125" font-size="15" opacity="0.9">artefakty, requires, bramki, kroki po tasku</text><text x="1020" y="150" font-size="15" opacity="0.9">profile: tiny / small / large</text><text x="1020" y="175" font-size="15" opacity="0.9">projekt może dodać bramkę lub krok</text>
+              <rect x="450" y="330" width="300" height="130" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-dasharray="6 4" stroke-width="2"/><text x="600" y="365" font-weight="700">Katalog Zmiany</text><text x="600" y="395" font-size="15" opacity="0.85">artefakty, dziennik, pakiety, raporty</text><text x="600" y="420" font-size="15" opacity="0.85">spec-delta</text><text x="600" y="445" font-size="15" opacity="0.85">.machine/ lokalnie</text>
+              <rect x="870" y="330" width="300" height="130" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="1020" y="365" font-weight="700">Subagenci</text><text x="1020" y="395" font-size="15" opacity="0.85">implementer, fixer, reviewer,</text><text x="1020" y="420" font-size="15" opacity="0.85">verifier, explorer</text><text x="1020" y="445" font-size="15" opacity="0.85">pakiet in, envelope + log out</text>
+            </g>
+            <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#aa)">
+              <path d="M330 110 L448 110"/><path d="M448 150 L330 150"/>
+              <path d="M868 125 L750 125" stroke="var(--color-secondary)"/>
+              <path d="M600 210 L600 328" stroke-dasharray="6 4"/><path d="M640 328 L640 210" stroke-dasharray="6 4"/>
+              <path d="M750 395 L868 395"/><path d="M868 430 L750 430"/>
+              <path d="M330 170 C420 260, 700 300, 868 350" stroke-dasharray="3 4"/>
+            </g>
+            <g font-size="14" fill="currentColor">
+              <text x="389" y="100" text-anchor="middle">bdk next</text><text x="389" y="172" text-anchor="middle">artefakt do napisania</text>
+              <text x="809" y="115" text-anchor="middle">czyta graf</text>
+              <text x="560" y="275" text-anchor="end">pisze / czyta</text><text x="655" y="275">waliduje</text>
+              <text x="809" y="385" text-anchor="middle">pakiet</text><text x="809" y="452" text-anchor="middle">envelope, log add</text>
+              <text x="560" y="520" text-anchor="middle" opacity="0.85">skill dispatchuje subagenta z ścieżką pakietu (linia kropkowana); wszystko inne idzie przez rdzeń</text>
+            </g>
+          </svg>
+        </div></figure>
+        <div class="grid md:grid-cols-2 gap-4 text-sm">
+          <div><h4 class="font-semibold">Komponenty i własność</h4><ul class="list-disc pl-5 space-y-1">
+            <li><b>Silnik grafu</b> (rdzeń): wczytuje <code>pipeline.yaml</code> BDK + rozszerzenia projektu, waliduje schematem (zod), liczy front gotowości z artefaktów Zmiany. Kręgosłup z B: <b>rodzaje artefaktów i przejścia są zakodowane w TS</b> (design, plan-part, verify, execute-part, review, spec-delta, gate, post-task-step); YAML mówi tylko, które z nich, w jakiej kolejności i z jakimi budżetami. Bez wyrażeń warunkowych poza <code>if: features.X</code>.</li>
+            <li><b>Instrukcje per artefakt</b>: szablon + reguły (po ID) + kontekst projektu + streszczenia dziennika; to samo, co OpenSpec <code>instructions --json</code>, ale liczone z warstw konfiguracji przez <code>bdk ctx</code>.</li>
+            <li><b>Skille</b>: zachowują dzisiejsze nazwy dla ergonomii, ale każdy jest tą samą pętlą "next, zrób, zgłoś" z inną rolą; <code>/bdk:change</code> pokazuje status i wznawia w dowolnym miejscu.</li>
+            <li><b>Profile</b>: klasyfikacja skali (B2 z raportu, liczona z pomiaru: pliki, moduły, wpływ z grafu kodu) wybiera profil grafu: tiny (bez designu, jedna część, review lekki), small, large. To realizuje S7.</li>
+          </ul></div>
+          <div><h4 class="font-semibold">Przepływ, ścieżka szczęśliwa</h4><ol class="list-decimal pl-5 space-y-1">
+            <li><code>bdk change new</code> z intencją; rdzeń klasyfikuje skalę i wybiera profil.</li>
+            <li><code>/bdk:design</code>: <code>next</code> zwraca artefakt design z instrukcją; skill prowadzi rozmowę (Lavish), pisze design, decyzje jako wpisy; <code>validate</code>; bramka człowieka wg polityki.</li>
+            <li><code>/bdk:plan</code>: części planu z <code>Depends on</code>, walidator rozmiaru i tasków; verifier jako artefakt z budżetem iteracji; checklista reguł po ID.</li>
+            <li><code>/bdk:execute</code>: per część: <code>attempt open</code>, <code>dispatch build</code>, subagent, envelope, kroki po tasku z grafu (testy scoped, lint, simplify, pattern-check), commit z trailerami, <code>part done</code>.</li>
+            <li><code>/bdk:review</code>: pakiet reviewera zawiera intencję, decyzje, założenia; findingi do dziennika; pętla fix z budżetem.</li>
+            <li><code>/bdk:close</code>: merge spec-delty, routing <code>learning</code>, archiwum, PR z podsumowaniem dziennika.</li>
+          </ol></div>
+        </div>
+        <div class="overflow-x-auto"><table class="table table-sm text-sm"><thead><tr><th>Oś</th><th>Ocena</th></tr></thead><tbody>
+          <tr><td>Rozszerzalność (design, wyszukiwanie artefaktów, wzorce)</td><td><b>Najlepsza.</b> Nowy moduł = nowy rodzaj artefaktu w rdzeniu + wpis w YAML; żaden skill się nie zmienia.</td></tr>
+          <tr><td>Polityka per projekt (D3)</td><td>Bramka to węzeł grafu; projekt dodaje ją w YAML bez zmiany BDK.</td></tr>
+          <tr><td>Odporność na pętle</td><td>Budżety są atrybutami węzłów, egzekwowane przez <code>attempt open</code>; szczegóły w sekcji 4.</td></tr>
+          <tr><td>Debugowalność</td><td><b>Słabsza niż B.</b> "Dlaczego X jest zablokowane" wymaga <code>bdk explain</code>, który wypisuje łańcuch requires. Musi istnieć od pierwszego dnia.</td></tr>
+          <tr><td>Złożoność rdzenia</td><td>Silnik grafu + walidatory per rodzaj: około 15-25% więcej kodu niż B, ale skille i dokumentacja procesu mniejsze.</td></tr>
+          <tr><td>Ryzyko znane z OpenSpec</td><td>Status z <code>existsSync</code>. Obrona: <code>done</code> tylko po walidatorze rodzaju artefaktu (schemat, niepustość, hash wejść).</td></tr>
+          <tr><td>Czas budowy</td><td>Największy z trzech; nie waży w rekomendacji zgodnie z zasadą projektu.</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="card card-border bg-base-100" id="podejscie-b">
+      <div class="card-body space-y-3">
+        <h3 class="card-title">B. Jawna maszyna stanów w kodzie</h3>
+        <p class="text-sm"><b>Istota:</b> cykl życia Zmiany to zakodowana w TypeScript maszyna stanów o stałych stanach i przejściach. Każdy skill etapu woła komendy właściwe dla etapu (<code>bdk design done</code>, <code>bdk part start 03</code>, <code>bdk review open</code>). Polityka to flagi (bramki włącz/wyłącz, budżety), bez definiowania własnych artefaktów.</p>
+        <figure class="card bg-base-200"><div class="card-body p-4">
+          <div class="flex justify-end"><button type="button" class="btn btn-xs btn-outline" onclick="openZoom(this)">Pełny ekran</button></div>
+          <svg viewBox="0 0 1200 560" width="100%" style="min-height: 380px" role="img" aria-labelledby="tb">
+            <title id="tb">Podejście B: skille per etap wołają komendy etapu; rdzeń ma zakodowaną maszynę stanów z flagami polityki; artefakty w katalogu Zmiany; subagenci dostają pakiety.</title>
+            <defs><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+            <g font-size="19" fill="currentColor" text-anchor="middle">
+              <rect x="30" y="60" width="300" height="130" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="180" y="95" font-weight="700">Skille per etap</text><text x="180" y="125" font-size="15" opacity="0.85">każdy zna swoje komendy rdzenia</text><text x="180" y="150" font-size="15" opacity="0.85">design: 6 komend, execute: 12 komend</text><text x="180" y="175" font-size="15" opacity="0.85">kolejność etapów w skillach</text>
+              <rect x="450" y="40" width="300" height="170" rx="12" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)" stroke-width="2"/><text x="600" y="75" font-weight="700">Rdzeń: maszyna stanów</text><text x="600" y="105" font-size="15" opacity="0.9">stany i przejścia w TS, typowane</text><text x="600" y="130" font-size="15" opacity="0.9">komendy per etap, precyzyjne odmowy</text><text x="600" y="155" font-size="15" opacity="0.9">budżety, bramki, dispatch, log</text><text x="600" y="180" font-size="15" opacity="0.9">testy właściwości maszyny</text>
+              <rect x="870" y="60" width="300" height="130" rx="12" fill="var(--color-secondary)" fill-opacity="0.15" stroke="var(--color-secondary)" stroke-width="2"/><text x="1020" y="95" font-weight="700">policy.json (flagi)</text><text x="1020" y="125" font-size="15" opacity="0.9">bramki on/off, budżety liczbowe</text><text x="1020" y="150" font-size="15" opacity="0.9">brak własnych artefaktów</text><text x="1020" y="175" font-size="15" opacity="0.9">nowa bramka = wydanie BDK</text>
+              <rect x="450" y="330" width="300" height="130" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-dasharray="6 4" stroke-width="2"/><text x="600" y="365" font-weight="700">Katalog Zmiany</text><text x="600" y="395" font-size="15" opacity="0.85">te same artefakty co w A</text><text x="600" y="420" font-size="15" opacity="0.85">dziennik, pakiety, raporty</text><text x="600" y="445" font-size="15" opacity="0.85">.machine/ lokalnie</text>
+              <rect x="870" y="330" width="300" height="130" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="1020" y="365" font-weight="700">Subagenci</text><text x="1020" y="395" font-size="15" opacity="0.85">jak w A</text><text x="1020" y="420" font-size="15" opacity="0.85">pakiet in, envelope + log out</text>
+            </g>
+            <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#ab)">
+              <path d="M330 110 L448 110"/><path d="M448 150 L330 150"/>
+              <path d="M868 125 L750 125" stroke="var(--color-secondary)"/>
+              <path d="M600 210 L600 328" stroke-dasharray="6 4"/><path d="M640 328 L640 210" stroke-dasharray="6 4"/>
+              <path d="M750 395 L868 395"/><path d="M868 430 L750 430"/>
+              <path d="M330 170 C420 260, 700 300, 868 350" stroke-dasharray="3 4"/>
+            </g>
+            <g font-size="14" fill="currentColor">
+              <text x="389" y="100" text-anchor="middle">bdk part start 03</text><text x="389" y="172" text-anchor="middle">ok / odmowa z powodem</text>
+              <text x="809" y="115" text-anchor="middle">czyta flagi</text>
+              <text x="560" y="275" text-anchor="end">pisze / czyta</text><text x="655" y="275">waliduje</text>
+              <text x="809" y="385" text-anchor="middle">pakiet</text><text x="809" y="452" text-anchor="middle">envelope, log add</text>
+              <text x="560" y="520" text-anchor="middle" opacity="0.85">różnica względem A: skill wie, co jest następne; rdzeń tylko sprawdza, czy wolno</text>
+            </g>
+          </svg>
+        </div></figure>
+        <div class="grid md:grid-cols-2 gap-4 text-sm">
+          <div><h4 class="font-semibold">Komponenty</h4><ul class="list-disc pl-5 space-y-1">
+            <li>Maszyna stanów Zmiany i części (stany: intent, designed, planned, verified, executing, reviewing, closing, parked, abandoned) z typowanymi przejściami i odmowami.</li>
+            <li>Komendy per etap, około 40-50 podkomend (dziś <code>bdk_run_state.py</code> ma 18 i rośnie z każdą funkcją).</li>
+            <li>Skille etapów znają kolejność i wołają właściwe komendy; kroki po tasku wpisane w skill execute.</li>
+          </ul></div>
+          <div><h4 class="font-semibold">Przepływ</h4><p>Identyczny z A na ścieżce szczęśliwej. Różnica pojawia się przy zmianie procesu: dodanie bramki po planie dla projektu o wysokim ryzyku (D3) wymaga nowej flagi w rdzeniu i nowej gałęzi w skillu; dodanie kroku "pattern-check" po tasku to edycja skilla execute i rdzenia.</p></div>
+        </div>
+        <div class="overflow-x-auto"><table class="table table-sm text-sm"><tbody>
+          <tr><td>Rozszerzalność</td><td><b>Słabsza.</b> Każdy nowy moduł dotyka rdzenia i co najmniej jednego skilla. Trzy zapowiedziane moduły = trzy rundy zmian w skillach.</td></tr>
+          <tr><td>Polityka per projekt</td><td>Tylko to, co BDK przewidziało flagą.</td></tr>
+          <tr><td>Odporność na pętle</td><td>Taka sama jak A (ten sam mechanizm prób).</td></tr>
+          <tr><td>Debugowalność</td><td><b>Najlepsza.</b> Odmowa mówi wprost: "part 03 nie może start, bo część 02 nie ma done".</td></tr>
+          <tr><td>Rozmiar skilli</td><td>Execute zostaje największy, bo kolejność kroków po tasku i strategia fal są w nim; realistycznie 250-300 linii, czyli ponad próg S1.</td></tr>
+          <tr><td>Czas budowy</td><td>Najmniejszy z podejść z rdzeniem.</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="card card-border bg-base-100 opacity-90" id="podejscie-c">
+      <div class="card-body space-y-3">
+        <h3 class="card-title">C. Ewoluowany monolit (punkt odniesienia)</h3>
+        <p class="text-sm"><b>Istota:</b> dzisiejsza architektura przeniesiona na Node: skille orkiestrują prozą, <code>run_state</code> rozszerzony o dziennik, budżety i warstwy konfiguracji. Pokazuję, bo to jest to, co powstałoby "po drodze" bez decyzji architektonicznej.</p>
+        <figure class="card bg-base-200"><div class="card-body p-4">
+          <div class="flex justify-end"><button type="button" class="btn btn-xs btn-outline" onclick="openZoom(this)">Pełny ekran</button></div>
+          <svg viewBox="0 0 1200 400" width="100%" style="min-height: 280px" role="img" aria-labelledby="tc">
+            <title id="tc">Podejście C: gruby skill executora trzyma proces; skrypt stanu zapisuje; subagenci dostają treść inline; polityka w prozie skilla.</title>
+            <defs><marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+            <g font-size="19" fill="currentColor" text-anchor="middle">
+              <rect x="30" y="60" width="420" height="170" rx="12" fill="var(--color-warning)" fill-opacity="0.15" stroke="var(--color-warning)" stroke-width="2"/><text x="240" y="95" font-weight="700">Skille grube (proces w prozie)</text><text x="240" y="125" font-size="15" opacity="0.9">executor 600+ linii: drzewa decyzyjne, pętle, limity</text><text x="240" y="150" font-size="15" opacity="0.9">polityka i budżety jako zdania</text><text x="240" y="175" font-size="15" opacity="0.9">skill woła skrypt stanu, gdy pamięta</text><text x="240" y="200" font-size="15" opacity="0.9">"co dalej" zna model</text>
+              <rect x="570" y="60" width="300" height="170" rx="12" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)" stroke-width="2"/><text x="720" y="95" font-weight="700">Skrypt stanu (rozszerzony)</text><text x="720" y="125" font-size="15" opacity="0.9">manifest + dziennik + liczniki</text><text x="720" y="150" font-size="15" opacity="0.9">zapisuje to, co skill zgłosi</text><text x="720" y="175" font-size="15" opacity="0.9">nie odmawia, bo nie zna procesu</text>
+              <rect x="900" y="60" width="270" height="170" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="1035" y="95" font-weight="700">Subagenci</text><text x="1035" y="125" font-size="15" opacity="0.9">treść taska inline</text><text x="1035" y="150" font-size="15" opacity="0.9">raport w wiadomości</text>
+            </g>
+            <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#ac)"><path d="M450 145 L568 145"/><path d="M450 110 L898 110" stroke-dasharray="3 4"/></g>
+            <g font-size="14" fill="currentColor"><text x="509" y="135" text-anchor="middle">zapisz</text><text x="680" y="100" text-anchor="middle">dispatch inline</text>
+              <text x="600" y="300" text-anchor="middle" opacity="0.9">Co się dzieje, gdy model zignoruje instrukcję: nic. Skrypt nie wie, że limit został przekroczony, bo limit jest w prozie.</text>
+              <text x="600" y="330" text-anchor="middle" opacity="0.9">To jest dzisiejszy stan z Fazy 0, tylko w innym języku. Kryteria S1, S2 i S3 nie są spełnialne w tym kształcie.</text></g>
+          </svg>
+        </div></figure>
+        <p class="text-sm"><b>Werdykt:</b> odrzucone. Nie spełnia S1 (skill 600+ linii), S2 (budżety w prozie) ani S3 (intencja bez miejsca). Warte pokazania tylko dlatego, że każda "szybka poprawka" w v2 zmierza dokładnie tu.</p>
+        <p class="text-xs opacity-75">Odrzucone też, zgodnie z Q4: <b>Workflow jako rdzeń orkiestracji</b>. Powody: zależność od planu płatnego, budżety egzekwowane przez runtime hosta poza Twoją kontrolą, brak Workflow w innych trybach uruchomienia. Workflow zostaje strategią wykonania fal pod flagą, jak dziś.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. REKOMENDACJA + ADWOKAT ============ -->
+  <section class="space-y-4" id="rekomendacja">
+    <h2 class="text-2xl font-bold">3. Rekomendacja i adwokat diabła</h2>
+    <div class="card card-border bg-base-100 border-primary/40"><div class="card-body space-y-3 text-sm">
+      <h3 class="card-title text-base">Rekomendacja: A z kręgosłupem z B</h3>
+      <p>Graf artefaktów jako dane decyduje <b>co i w jakiej kolejności</b>; zakodowane w TypeScript rodzaje artefaktów i przejścia decydują <b>co wolno i jak walidować</b>. Uzasadnienie w odwołaniu do Twoich odpowiedzi: D3 wymaga, żeby projekt mógł dodać bramkę bez wydania BDK, co B nie daje. Twoje trzy zapowiedziane moduły (design, wyszukiwanie artefaktów, wzorce) w A są nowymi rodzajami artefaktów i węzłami, w B trzema rundami zmian w skillach. S1 (skill do 200 linii) jest realne tylko wtedy, gdy kolejność kroków po tasku i strategia fal wyjdą ze skilla do grafu; w B execute zostaje ponad progiem. Q3 fail-closed działa identycznie w obu. Q4 (Workflow pod flagą) w A to atrybut węzła execute-part, w B gałąź w skillu. Słabość A, debugowalność, zamykam wymogiem: <code>bdk explain &lt;artefakt&gt;</code> istnieje od pierwszego wydania i jest testowany, a YAML nie ma wyrażeń poza <code>if: features.X</code>, żeby nie stać się językiem programowania.</p>
+      <h4 class="font-semibold">Adwokat diabła</h4>
+      <ul class="list-disc pl-5 space-y-1">
+        <li><b>Wąskie gardło:</b> każdy krok to proces Node (30-50 ms) plus odczyt Zmiany. Przy 8 taskach na część, 4 komendach na task i 5 częściach to około 200 wywołań na Zmianę, czyli sekundy, nie minuty. Realne gardło jest gdzie indziej: <b>indeks dziennika</b> przy Zmianie z setkami wpisów; stąd cache w <code>.machine/</code> i pomiar czasu list w telemetrii od pierwszego dnia.</li>
+        <li><b>Pojedynczy punkt awarii:</b> rdzeń. Fail-closed oznacza, że błąd w rdzeniu zatrzymuje wszystkich użytkowników. Obrona: bundel jest wersjonowany razem z pluginem, testy właściwości maszyny, <code>bdk doctor</code> i odbudowa z trailerów. Ryzyko akceptowane świadomie w Q3.</li>
+        <li><b>Ukryty koszt:</b> <code>pipeline.yaml</code> jako "dane" ma tendencję do obrastania warunkami. Twarda granica: bez pętli, bez wyrażeń, bez odwołań do plików spoza katalogu Zmiany; złamanie tej granicy to sygnał, że logika ma trafić do rodzaju artefaktu w TS. Drugi ukryty koszt: dokumentacja procesu przenosi się z czytelnych skilli do grafu, którego użytkownik nie czyta; <code>bdk explain</code> i <code>/bdk:change status</code> muszą to kompensować.</li>
+        <li><b>Niepotwierdzone założenie:</b> że model prowadzony przez wyjście CLI ("następny artefakt: X, instrukcja: ...") zachowuje się równie dobrze jak model prowadzony przez długi SKILL.md. OpenSpec na tym stoi, ale ich skille mają średnio 230 linii, nie 100. Do sprawdzenia promptfoo A/B na fiksturze przed przepisaniem wszystkich skilli; jeśli wynik zły, wracamy do B z tym samym rdzeniem, bo różnica jest w skillach, nie w danych.</li>
+        <li><b>Drugie założenie:</b> że plugin może wołać <code>node dist/bdk.mjs</code> z bloków <code>!</code> zanim cokolwiek zostanie zainstalowane. Bundel commitowany to gwarantuje, ale przy <code>npm ci</code> auto-install (gdyby kiedyś się pojawił <code>package-lock</code>) mógłby nadpisać katalog; stąd pnpm i brak lockfile npm, jak w ADR 0001.</li>
+      </ul>
+    </div></div>
+  </section>
+
+  <!-- ============ 4. PĘTLE ============ -->
+  <section class="space-y-4" id="petle">
+    <h2 class="text-2xl font-bold">4. Odporność na pętle: budżet, który zamienia się w pytanie</h2>
+    <p class="text-sm opacity-80 max-w-3xl">Twoja wątpliwość wobec twardej bramki jest słuszna w jednym sensie: bramka, która po prostu zatrzymuje, marnuje pracę i zostawia użytkownika z "nie wiem, co dalej". Propozycja: budżet jest twardy (rdzeń odmawia próby N+1), ale wyczerpanie budżetu <b>nie jest błędem, tylko przejściem</b> do zdefiniowanego stanu z wpisem typu question lub blocker i konkretnymi opcjami. Drabina eskalacji działa wcześniej niż budżet, gdy rdzeń widzi oscylację.</p>
+    <figure class="card bg-base-200"><div class="card-body p-4">
+      <div class="flex justify-end"><button type="button" class="btn btn-xs btn-outline" onclick="openZoom(this)">Pełny ekran</button></div>
+      <svg viewBox="0 0 1200 520" width="100%" style="min-height: 360px" role="img" aria-labelledby="tl">
+        <title id="tl">Maszyna stanów pętli poprawek: attempt open sprawdza budżet i oscylację; próba trwa; wynik OK zamyka; wynik FAIL wraca do attempt open ze zwężonym zakresem; oscylacja lub wyczerpany budżet prowadzi po drabinie: świeży kontekst i mocniejszy model, pytanie o architekturę, zaparkowanie z opcjami.</title>
+        <defs><marker id="al" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+        <g font-size="18" fill="currentColor" text-anchor="middle">
+          <rect x="40" y="200" width="240" height="90" rx="45" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)" stroke-width="2"/><text x="160" y="238" font-weight="700">attempt open</text><text x="160" y="266" font-size="14" opacity="0.9">budżet? oscylacja? zakres</text>
+          <rect x="380" y="200" width="220" height="90" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="490" y="238" font-weight="700">próba N</text><text x="490" y="266" font-size="14" opacity="0.9">dispatch, fix, weryfikacja</text>
+          <rect x="700" y="60" width="220" height="80" rx="12" fill="var(--color-success)" fill-opacity="0.25" stroke="var(--color-success)" stroke-width="2"/><text x="810" y="95" font-weight="700">zamknięte</text><text x="810" y="122" font-size="14" opacity="0.9">attempt close ok</text>
+          <rect x="700" y="200" width="220" height="90" rx="12" fill="var(--color-base-100)" stroke="currentColor" stroke-dasharray="6 4" stroke-width="2"/><text x="810" y="238" font-weight="700">FAIL</text><text x="810" y="266" font-size="14" opacity="0.9">odcisk findingów zapisany</text>
+          <rect x="380" y="380" width="220" height="90" rx="12" fill="var(--color-warning)" fill-opacity="0.2" stroke="var(--color-warning)" stroke-width="2"/><text x="490" y="415" font-weight="700">eskalacja</text><text x="490" y="443" font-size="14" opacity="0.9">świeży kontekst, mocniejszy model</text>
+          <rect x="700" y="380" width="220" height="90" rx="12" fill="var(--color-warning)" fill-opacity="0.2" stroke="var(--color-warning)" stroke-width="2"/><text x="810" y="415" font-weight="700">pytanie</text><text x="810" y="443" font-size="14" opacity="0.9">log add question: architektura?</text>
+          <rect x="980" y="380" width="200" height="90" rx="12" fill="var(--color-error)" fill-opacity="0.2" stroke="var(--color-error)" stroke-width="2"/><text x="1080" y="415" font-weight="700">zaparkowane</text><text x="1080" y="443" font-size="14" opacity="0.9">opcje dla człowieka</text>
+        </g>
+        <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#al)">
+          <path d="M280 245 L378 245"/>
+          <path d="M600 230 C650 200, 660 130, 698 105"/>
+          <path d="M600 260 L698 260"/>
+          <path d="M810 200 C810 150, 300 120, 170 198" stroke-dasharray="6 4"/>
+          <path d="M160 290 C160 420, 300 425, 378 425" stroke="var(--color-warning)"/>
+          <path d="M600 425 L698 425" stroke="var(--color-warning)"/>
+          <path d="M920 425 L978 425" stroke="var(--color-warning)"/>
+          <path d="M490 380 C520 330, 420 300, 380 292" stroke="var(--color-warning)" stroke-dasharray="6 4"/>
+        </g>
+        <g font-size="14" fill="currentColor">
+          <text x="329" y="235" text-anchor="middle">bilet N</text>
+          <text x="660" y="150">OK</text>
+          <text x="649" y="252" text-anchor="middle">FAIL</text>
+          <text x="500" y="165" text-anchor="middle">N+1 ze zwężonym zakresem: 1. wszystko, 2. tylko HIGH+, 3. tylko blokery; reszta do dziennika jako finding</text>
+          <text x="150" y="360" text-anchor="middle" fill="var(--color-warning)">budżet wyczerpany albo</text><text x="150" y="380" text-anchor="middle" fill="var(--color-warning)">ten sam odcisk 2x po fixie</text>
+          <text x="649" y="415" text-anchor="middle" fill="var(--color-warning)">bez skutku</text>
+          <text x="949" y="415" text-anchor="middle" fill="var(--color-warning)">brak odpowiedzi</text>
+          <text x="470" y="330" text-anchor="middle" fill="var(--color-warning)">eskalacja dostaje własny, jednorazowy bilet</text>
+          <text x="600" y="505" text-anchor="middle" opacity="0.85">Budżety per rodzaj pętli w polityce: re-dispatch taska, verify-fix części, review-fix Zmiany, iteracje verifierów, pominięcia weryfikacji z rzędu. Rdzeń nie wydaje pakietu bez otwartego biletu.</text>
+        </g>
+      </svg>
+    </div></figure>
+    <div class="grid md:grid-cols-3 gap-4 text-sm">
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Odcisk findingu</h4><p>(typ, plik, symbol, znormalizowany problem). Jeśli po fixie ten sam odcisk wraca drugi raz, to oscylacja: rdzeń nie wydaje kolejnego biletu tej samej roli, tylko przechodzi na drabinę, choć budżet jeszcze jest. To łapie "AI poprawia w nieskończoność" wcześniej niż licznik.</p></div></div>
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Zwężanie zakresu</h4><p>Kolejne próby nie mogą robić "wszystkiego jeszcze raz". Zakres N+1 jest podzbiorem zakresu N; to, co wypadło, ląduje w dzienniku jako finding do decyzji człowieka. Pętla zbiega z konstrukcji.</p></div></div>
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Zaparkowane to nie porażka</h4><p>Stan z wpisem question/blocker, listą opcji (przyjmij finding jako dług, zmień decyzję X, podziel część) i jedną komendą wznowienia. Zgodne z D3: decyzja, której agent nie mógł podjąć, trafia na bramkę.</p></div></div>
+    </div>
+    <div class="card card-border bg-base-100 border-success/40" id="a-drabina"><div class="card-body gap-2">
+        <h3 class="card-title text-base">Drabina eskalacji <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Cztery szczeble: zwężona próba, potem świeży kontekst i mocniejszy model (jednorazowo, wyłączalne w polityce), potem wpis <code>question</code> na bramkę, na końcu zaparkowane z opcjami. Oscylacja (ten sam odcisk findingu dwa razy po fixie) skraca drabinę niezależnie od budżetu.</p>
+      </div></div>
+  </section>
+
+  <!-- ============ 5. KONFIGURACJA ============ -->
+  <section class="space-y-4" id="konfiguracja">
+    <h2 class="text-2xl font-bold">5. Konfiguracja i składanie kontekstu</h2>
+    <div class="alert alert-soft alert-info text-sm"><span><b>Poprawka po Twojej uwadze o inject.</b> Dzisiejsze skrypty robią dwie różne rzeczy i pomieszałem je w jednym zdaniu. <code>get_settings.py</code> czyta ustawienia. <code>inject.py</code>, <code>inject-rules.py</code> i <code>inject-language-rules.py</code> <b>składają treść promptu</b>: wybierają fragmenty tool-tier po flagach <code>features.*</code>, wklejają zestawy reguł i reguły językowe do skilli w blokach <code>!</code>. <code>render_startup.py</code> robi to samo dla STARTUP. W v3 to są dwie komendy, nie jedna: <code>bdk config</code> (rozstrzyga warstwy ustawień) i <code>bdk ctx</code> (składa kontekst dla skilla lub roli z tych ustawień, fragmentów i reguł). Liczba "pięć skryptów" była prawdziwa, ale nazwanie ich wszystkich "inject" nie.</span></div>
+    <figure class="card bg-base-200"><div class="card-body p-4">
+      <div class="flex justify-end"><button type="button" class="btn btn-xs btn-outline" onclick="openZoom(this)">Pełny ekran</button></div>
+      <svg viewBox="0 0 1200 440" width="100%" style="min-height: 300px" role="img" aria-labelledby="tk">
+        <title id="tk">Warstwy konfiguracji od najniższej do najwyższej: domyślne BDK, globalne osoby w ~/.config/bdk, projekt, lokalne osoby w projekcie; bdk config łączy je głębokim merge z tablicami po id, odrzuca nieznane klucze według rejestru schematów per moduł, zapisuje zrzut i listę nadpisanych kluczy; bdk ctx bierze rozstrzygnięte ustawienia i składa kontekst z fragmentów tool-tier i reguł dla skilla, roli lub STARTUP.</title>
+        <defs><marker id="akf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+        <g font-size="17" fill="currentColor" text-anchor="middle">
+          <rect x="20" y="40" width="240" height="70" rx="10" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="140" y="70" font-weight="700">1. domyślne BDK</text><text x="140" y="95" font-size="14" opacity="0.85">w bundlu, wersjonowane</text>
+          <rect x="20" y="130" width="240" height="70" rx="10" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="140" y="160" font-weight="700">2. globalne osoby</text><text x="140" y="185" font-size="14" opacity="0.85">~/.config/bdk/ (XDG)</text>
+          <rect x="20" y="220" width="240" height="70" rx="10" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="140" y="250" font-weight="700">3. projekt</text><text x="140" y="275" font-size="14" opacity="0.85">.bdk/settings.*, commitowane</text>
+          <rect x="20" y="310" width="240" height="70" rx="10" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="140" y="340" font-weight="700">4. osoba w projekcie</text><text x="140" y="365" font-size="14" opacity="0.85">.bdk/settings.local.*, gitignore</text>
+          <rect x="360" y="110" width="300" height="200" rx="12" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)" stroke-width="2"/><text x="510" y="145" font-weight="700">bdk config</text><text x="510" y="178" font-size="14" opacity="0.9">głęboki merge; tablice po id (B7)</text><text x="510" y="202" font-size="14" opacity="0.9">rejestr schematów per moduł (B9)</text><text x="510" y="226" font-size="14" opacity="0.9">nieznany klucz = błąd z nazwą (B8)</text><text x="510" y="250" font-size="14" opacity="0.9">zrzut rozstrzygnięty do .machine/ (B10)</text><text x="510" y="274" font-size="14" opacity="0.9">nadpisane klucze do Zmiany (D4b)</text>
+          <rect x="740" y="110" width="220" height="200" rx="12" fill="var(--color-secondary)" fill-opacity="0.15" stroke="var(--color-secondary)" stroke-width="2"/><text x="850" y="145" font-weight="700">bdk ctx</text><text x="850" y="178" font-size="14" opacity="0.9">łańcuchy tool-tier</text><text x="850" y="202" font-size="14" opacity="0.9">fragmenty po flagach</text><text x="850" y="226" font-size="14" opacity="0.9">reguły po ID + językowe</text><text x="850" y="250" font-size="14" opacity="0.9">teksty MD z konfiguracji</text><text x="850" y="274" font-size="14" opacity="0.9">dawne inject*.py</text>
+          <rect x="1010" y="50" width="170" height="70" rx="10" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="1095" y="80" font-weight="700">skill (blok !)</text><text x="1095" y="104" font-size="14" opacity="0.85">ctx skill design</text>
+          <rect x="1010" y="175" width="170" height="70" rx="10" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="1095" y="205" font-weight="700">meta-skill roli</text><text x="1095" y="229" font-size="14" opacity="0.85">ctx role worker</text>
+          <rect x="1010" y="300" width="170" height="70" rx="10" fill="var(--color-base-100)" stroke="currentColor" stroke-width="2"/><text x="1095" y="330" font-weight="700">SessionStart</text><text x="1095" y="354" font-size="14" opacity="0.85">ctx startup</text>
+        </g>
+        <g stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#akf)">
+          <path d="M260 75 L358 160"/><path d="M260 165 L358 190"/><path d="M260 255 L358 230"/><path d="M260 345 L358 260"/>
+          <path d="M660 210 L738 210"/>
+          <path d="M960 170 L1008 100" stroke="var(--color-secondary)"/><path d="M960 210 L1008 210" stroke="var(--color-secondary)"/><path d="M960 250 L1008 320" stroke="var(--color-secondary)"/>
+        </g>
+        <text x="699" y="200" text-anchor="middle" font-size="14" fill="currentColor">rozstrzygnięte</text>
+        <text x="600" y="420" text-anchor="middle" font-size="14" fill="currentColor" opacity="0.85">wyżej wygrywa; pełne nadpisanie dozwolone (D4); pakiet dispatchu też bierze wycinek reguł z bdk ctx</text>
+      </svg>
+    </div></figure>
+
+    <form class="card card-border bg-base-100" data-lavish-question="a-warstwy" id="a-warstwy" onsubmit="queueChoice(event, 'Warstwy konfiguracji')">
+      <div class="card-body">
+        <h3 class="card-title text-base">Decyzja: nośnik ustawień globalnych osoby (warstwa 2)</h3>
+        <p class="text-sm opacity-80">Twoja uwaga o <code>~/.config/bdk/settings</code> to katalog XDG: <code>$XDG_CONFIG_HOME/bdk/</code>, domyślnie <code>~/.config/bdk/</code>. Tak robi OpenSpec dla konfiguracji globalnej. Różnica względem <code>${CLAUDE_PLUGIN_DATA}</code>: plik jest niezależny od hosta i cyklu życia pluginu, widoczny i edytowalny jak każdy dotfile, ten sam format co w projekcie. <code>CLAUDE_PLUGIN_DATA</code> zostaje na cache (np. indeksy), a <code>userConfig</code> pluginu tylko na to, czego rdzeń potrzebuje przed startem.</p>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Cztery warstwy: BDK < ~/.config/bdk (XDG, ten sam format co projekt) < projekt < lokalne osoby w projekcie; CLAUDE_PLUGIN_DATA tylko cache; userConfig tylko dla rzeczy potrzebnych przed startem rdzenia" class="radio radio-primary radio-sm" checked><span class="font-semibold">Cztery warstwy, globalne w ~/.config/bdk</span><span class="badge badge-primary badge-sm">rekomendacja</span></div><p class="text-xs opacity-75">Jeden format, jeden resolver, standardowa lokalizacja. Koszt: na Windows XDG jest umowne (<code>%APPDATA%\bdk</code> jako odpowiednik).</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Cztery warstwy, globalne osoby w CLAUDE_PLUGIN_DATA przez bdk config --global" class="radio radio-primary radio-sm"><span class="font-semibold">Globalne w CLAUDE_PLUGIN_DATA</span></div><p class="text-xs opacity-75">Host sprząta razem z pluginem. Koszt: ścieżka ukryta, znika przy reinstalacji pluginu, zależna od hosta.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Trzy warstwy: BDK < projekt < lokalne osoby w projekcie; bez globalnych" class="radio radio-primary radio-sm"><span class="font-semibold">Trzy warstwy, bez globalnych</span></div><p class="text-xs opacity-75">Prostsze; koszt: język i preferencje powtarzane w każdym projekcie.</p></div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><input class="input w-full" name="note"></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100" data-lavish-question="a-format" id="a-format" onsubmit="queueChoice(event, 'Format konfiguracji')">
+      <div class="card-body">
+        <h3 class="card-title text-base">Decyzja: format konfiguracji, gdy dużo w niej tekstu Markdown</h3>
+        <p class="text-sm opacity-80">Masz rację, że JSON się do tego nie nadaje: wieloliniowy Markdown w JSON to jedna linia z <code>\n</code>, bez komentarzy, nieczytelna w diffie. Dwa pytania są osobne: <b>format kluczy strukturalnych</b> (flagi, budżety, profile, listy po id) i <b>miejsce dla tekstu</b> (fragmenty promptów, opisy celów projektu, instrukcje dla roli, reguły). Dzisiejszy wzorzec <code>quality.&lt;name&gt;: {path, mode}</code> już wskazuje kierunek: tekst w plikach <code>.md</code>, konfiguracja tylko na niego wskazuje.</p>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="YAML dla kluczy strukturalnych (settings.yaml, settings.local.yaml, ~/.config/bdk/settings.yaml) + katalog prompts/ z plikami Markdown, gdzie nazwa pliku jest kluczem (prompts/design.intro.md), frontmatter mode: extends|replace, warstwowanie i lista nadpisań D4b dotyczą też tych plików" class="radio radio-primary radio-sm" checked><span class="font-semibold">YAML + katalog plików .md</span><span class="badge badge-primary badge-sm">rekomendacja</span></div><p class="text-xs opacity-75">Struktura z komentarzami i schematem; tekst w prawdziwych plikach Markdown z podświetlaniem, diffem per plik, frontmatterem <code>mode</code>. Każda warstwa ma swój <code>prompts/</code>, resolver traktuje plik jak klucz. Koszt: dwa miejsca do zajrzenia, więc <code>bdk config show &lt;klucz&gt;</code> musi pokazywać skąd co przyszło.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Jeden plik YAML z blokami | dla tekstu Markdown" class="radio radio-primary radio-sm"><span class="font-semibold">Sam YAML, tekst w blokach <code>|</code></span></div><p class="text-xs opacity-75">Wszystko w jednym pliku. Koszt: długie bloki tekstu w YAML tracą podświetlanie Markdown, wcięcia psują listy i bloki kodu, plik rośnie do rozmiaru dzisiejszego planu.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Markdown z frontmatterem YAML jako jedyny format: settings.md, gdzie frontmatter to klucze, a sekcje ## to teksty" class="radio radio-primary radio-sm"><span class="font-semibold">Markdown z frontmatterem jako jedyny format</span></div><p class="text-xs opacity-75">Jak SKILL.md i agent.md: jeden plik, frontmatter na klucze, nagłówki na teksty. Koszt: klucze strukturalne rosną, a frontmatter nie jest miejscem na 200 linii YAML; merge sekcji po nagłówkach jest kruchy.</p></div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><input class="input w-full" name="note"></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ 6. SKILLE ============ -->
+  <section class="space-y-4" id="skille">
+    <h2 class="text-2xl font-bold">6. Inwentarz skilli v3: kto co uruchamia</h2>
+    <p class="text-sm opacity-80 max-w-3xl">Trzy rodzaje bytów. <b>Skille użytkownika</b> wywołuje człowiek przez <code>/bdk:&lt;nazwa&gt;</code>. <b>Meta-skille</b> mają <code>user-invocable: false</code> i istnieją tylko po to, żeby <code>skills:</code> w frontmatterze agenta wstrzyknęło subagentowi kontekst przy starcie (plugin nie może użyć <code>hooks:</code> w agencie). <b>Agenci</b> są uruchamiani przez skille przez Agent tool. <code>/bdk:cr</code> i <code>/bdk:pr-review</code> zgodnie z Twoją uwagą zostają nietknięte: review to osobna kategoria problemu i osobna Zmiana; w v3 dostają tylko pakiet z intencją i decyzjami zamiast gołego diffu.</p>
+
+    <h3 class="font-semibold">Skille użytkownika (15)</h3>
+    <div class="overflow-x-auto rounded-box border border-base-content/10 bg-base-100">
+      <table class="table table-sm">
+        <thead><tr><th>v3</th><th>Rola</th><th>Z v2</th></tr></thead>
+        <tbody class="text-sm">
+          <tr><td><code>/bdk:setup</code></td><td>konfiguracja projektu, import z v2, doctor</td><td>setup</td></tr>
+          <tr><td><code>/bdk:change</code></td><td>nowa Zmiana, status, wznowienie, parkowanie, przejęcie</td><td>nowy (część subagent-execute-plan resume)</td></tr>
+          <tr><td><code>/bdk:design</code></td><td>rozmowa projektowa, decyzje do dziennika, verifier</td><td>design + create-adr (ADR = eksport wpisów decision)</td></tr>
+          <tr><td><code>/bdk:plan</code></td><td>części planu, fale, checklista reguł, verifier w pętli z budżetem</td><td>create-plan + verify-plan</td></tr>
+          <tr><td><code>/bdk:execute</code></td><td>pętla części: bilet, pakiet, subagent, kroki po tasku, commit</td><td>subagent-execute-plan</td></tr>
+          <tr><td><code>/bdk:cr</code></td><td><b>bez zmian w tej Zmianie</b>; wejście: pakiet z intencją i decyzjami</td><td>cr</td></tr>
+          <tr><td><code>/bdk:pr-review</code></td><td><b>bez zmian w tej Zmianie</b></td><td>pr-review</td></tr>
+          <tr><td><code>/bdk:close</code></td><td>merge spec-delty, routing learning, archiwum, podsumowanie do PR</td><td>nowy</td></tr>
+          <tr><td><code>/bdk:commit</code></td><td>trailery od rdzenia</td><td>commit</td></tr>
+          <tr><td><code>/bdk:debug</code></td><td>bez stanu, jak dziś</td><td>debug</td></tr>
+          <tr><td><code>/bdk:rules</code></td><td>dodaj, doprecyzuj, nadaj ID, routing z learning</td><td>add-rule + refine-rules</td></tr>
+          <tr><td><code>/bdk:tdd</code></td><td>bez zmian</td><td>test-driven-development</td></tr>
+          <tr><td><code>/bdk:docs</code></td><td>bez zmian</td><td>update-docs</td></tr>
+          <tr><td><code>/bdk:mermaid-drawer</code></td><td>bez zmian</td><td>mermaid-drawer</td></tr>
+          <tr><td><code>/bdk:explain-complex-code</code></td><td>bez zmian</td><td>explain-complex-code</td></tr>
+          <tr class="opacity-60"><td>usunięte</td><td>create-fixture, execute-plan (już martwe); skill-lint i agent-lint stają się testami CI treści skilli (A3)</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="font-semibold">Meta-skille preloadowane do agentów (dziś 13, w v3 5)</h3>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+        <h4 class="font-semibold">Dziś: 13 plików, każdy z własnymi blokami <code>!</code></h4>
+        <ul class="list-disc pl-5 space-y-1">
+          <li><code>bdk-tier-search</code>, <code>-explore</code>, <code>-impact</code>, <code>-edit</code>, <code>-review</code>: po jednym łańcuchu tool-tier.</li>
+          <li><code>bdk-rules-code-quality</code>, <code>-architecture</code>, <code>-design-patterns</code>, <code>-security</code>, <code>-languages</code>: po jednym zestawie reguł.</li>
+          <li><code>bdk-lint-tools</code>, <code>bdk-test-tools</code>: komendy lint i test z ustawień.</li>
+          <li><code>bdk-implementer-return-contract</code>: envelope zwrotny.</li>
+        </ul>
+        <p class="text-xs opacity-75">Agent preloaduje od 1 do 6 z nich; implementer i fixer po 6, plan-verifier 6, explorer 2. Każdy nowy zestaw reguł to nowy meta-skill i edycja frontmatteru kilku agentów.</p>
+      </div></div>
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+        <h4 class="font-semibold">v3: 5 meta-skilli per klasa roli, każdy to jedna linia</h4>
+        <div class="overflow-x-auto"><table class="table table-xs"><thead><tr><th>meta-skill</th><th>agenci</th><th>co składa <code>bdk ctx role</code></th></tr></thead><tbody>
+          <tr><td><code>bdk-role-worker</code></td><td>implementer, fixer</td><td>tiery search/impact/edit, reguły jakości, wzorce, bezpieczeństwo, językowe, kontrakt envelope i <code>log add</code></td></tr>
+          <tr><td><code>bdk-role-reader</code></td><td>explorer, log-analyzer, dead-code, duplicate</td><td>tiery explore/search, kontrakt raportu</td></tr>
+          <tr><td><code>bdk-role-reviewer</code></td><td>code-reviewer, architecture-reviewer</td><td>tiery search/review/impact, wszystkie reguły po ID, kontrakt findingu</td></tr>
+          <tr><td><code>bdk-role-verifier</code></td><td>plan-verifier, design-verifier</td><td>tiery search/impact/explore, reguły architektury i wzorców, kontrakt werdyktu YAML</td></tr>
+          <tr><td><code>bdk-role-runner</code></td><td>static-analyse, test-runner</td><td>komendy lint/test z ustawień, kontrakt raportu</td></tr>
+        </tbody></table></div>
+        <p class="text-xs opacity-75">Ciało każdego: <code>!node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs ctx role worker</code>. Skład per rola mieszka w rdzeniu i w konfiguracji, nie w plikach skilli; nowy zestaw reguł nie dotyka żadnego agenta. Dlaczego nie jeden meta-skill: skill nie wie, który agent go preloadował, więc rola musi być w nazwie.</p>
+      </div></div>
+    </div>
+
+    <h3 class="font-semibold">Agenci (13, bez zmian w liście, zmiana w wejściu i wyjściu)</h3>
+    <p class="text-sm opacity-80">implementer, fixer, code-reviewer, architecture-reviewer, plan-verifier, design-verifier, explorer, log-analyzer, dead-code-detector, duplicate-detector, static-analyse, test-runner, web-researcher. Każdy w v3 dostaje ścieżkę pakietu zamiast treści inline i zwraca envelope do 15 linii plus wpisy dziennika (K2, K3).</p>
+
+    <form class="card card-border bg-base-100" data-lavish-question="a-skille" id="a-skille" onsubmit="queueChoice(event, 'Inwentarz skilli')">
+      <div class="card-body">
+        <h3 class="card-title text-base">Decyzja: inwentarz</h3>
+        <div class="grid lg:grid-cols-2 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="15 skilli użytkownika jak w tabeli (cr i pr-review nietknięte), 5 meta-skilli per klasa roli, 13 agentów bez zmian w liście; plan+verify-plan, add-rule+refine-rules, design+create-adr połączone" class="radio radio-primary radio-sm" checked><span class="font-semibold">Jak w tabelach</span><span class="badge badge-primary badge-sm">rekomendacja</span></div><p class="text-xs opacity-75">Koszt: nowe nazwy dla plan i rules; verify-plan jako węzeł grafu z budżetem zamiast osobnego wywołania.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Skille użytkownika jak w tabeli, ale meta-skille zostają per zestaw (tier, reguły) zamiast per rola" class="radio radio-primary radio-sm"><span class="font-semibold">Meta-skille per zestaw, jak dziś</span></div><p class="text-xs opacity-75">Frontmatter agenta dokumentuje wprost, co dostaje. Koszt: 13+ plików, każdy nowy zestaw reguł edytuje kilku agentów.</p></div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Które połączenia odrzucasz albo czego brakuje (opcjonalnie)</span><input class="input w-full" name="note"></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ 7. WYBÓR PODEJŚCIA ============ -->
+  <section class="space-y-4" id="wybor">
+    <h2 class="text-2xl font-bold">7. Podejście (zdecydowane)</h2>
+    <div class="card card-border bg-base-100 border-success/40" id="a-podejscie"><div class="card-body gap-2">
+        <h3 class="card-title text-base">Podejście architektoniczne <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm"><b>A z kręgosłupem z B.</b> Graf artefaktów jako dane (<code>pipeline.yaml</code> bez wyrażeń poza <code>if: features.X</code>), rodzaje artefaktów i przejścia zakodowane w TypeScript, <code>bdk explain</code> od pierwszego wydania, promptfoo A/B cienkich skilli na fiksturze przed przepisaniem wszystkich skilli. Jeśli A/B wypadnie źle, powrót do B z tym samym rdzeniem.</p>
+      </div></div>
+    <div class="alert alert-soft alert-info" id="no-lavish" style="display:none"><span>Strona jest otwarta bez serwera Lavish. Otwórz ją przez <code>npx -y lavish-axi .lavish/bdk-v3-design-03-architektura.html</code>.</span></div>
+    <div class="card bg-base-200"><div class="card-body text-sm"><h3 class="card-title text-base">Co dalej</h3><p>Po decyzjach o warstwach, formacie i inwentarzu: 2A.3 doprecyzowanie (kontrakt CLI w zarysie, model danych wpisu i pakietu, profile skali, lista rodzajów artefaktów), potem Faza 3: <code>bdk:design-verifier</code> czyta całość i szuka dziur, a na końcu dokument w <code>.bdk/design/</code> z sekcją "Czego nie zdecydowaliśmy".</p></div></div>
+  </section>
+</main>
+
+<dialog id="zoom-modal" class="modal">
+  <div class="modal-box w-[96vw] max-w-[96vw] h-[92vh] max-h-[92vh] p-3 flex flex-col">
+    <form method="dialog" class="flex justify-end"><button class="btn btn-sm">Zamknij</button></form>
+    <div id="zoom-body" class="flex-1 min-h-0 overflow-auto flex items-center justify-center"></div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+<script>
+  function openZoom(btn) {
+    const svg = btn.closest('figure').querySelector('svg');
+    const body = document.getElementById('zoom-body');
+    body.innerHTML = '';
+    const clone = svg.cloneNode(true);
+    clone.removeAttribute('style'); clone.setAttribute('width', '100%'); clone.setAttribute('height', '100%');
+    clone.style.width = '100%'; clone.style.height = '100%';
+    body.appendChild(clone);
+    document.getElementById('zoom-modal').showModal();
+  }
+  function markNoLavish() { document.getElementById('no-lavish').style.display = ''; }
+  function queueChoice(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const choice = fd.get('answer'); const note = (fd.get('note') || '').trim();
+    if (!choice) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = label + ': ' + choice + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, data: { question: form.dataset.lavishQuestion, answer: choice, note: note } });
+    form.dataset.queued = '1';
+  }
+</script>
+</body>
+</html>

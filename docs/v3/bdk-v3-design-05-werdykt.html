@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pl" data-theme="luxury">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDK v3 - Faza 3: werdykt weryfikatora i bramka zapisu</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, dd, td, th, .badge) { overflow-wrap: anywhere; }
+  .opt { cursor: pointer; }
+  .opt:has(input:checked) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .queued { display: none; }
+  form[data-queued="1"] .queued { display: inline-flex; }
+  pre.code { font-size: 0.8rem; line-height: 1.4; white-space: pre; overflow-x: auto; }
+</style>
+</head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-6xl p-4 lg:p-8 space-y-10">
+
+  <section class="hero bg-base-200 rounded-box">
+    <div class="hero-content flex-col items-start py-8 w-full">
+      <p class="text-sm uppercase tracking-widest text-primary font-semibold">/bdk:design &middot; BDK v3 &middot; krok 3 z 4 &middot; weryfikacja</p>
+      <h1 class="text-4xl font-bold">Werdykt weryfikatora i bramka zapisu dokumentu</h1>
+      <p class="max-w-3xl opacity-80">Szkic dokumentu przeszedł dwie iteracje niezależnego weryfikatora (opus, pięć sekcji: zgodność z kodem, adwokat diabła, pokrycie wymagań, diagramy, uczciwość sekcji "Czego nie zdecydowaliśmy"). Iteracja 1: <b>FAIL</b> z sześcioma punktami obowiązkowymi. Iteracja 2 po poprawkach: <b>PASS_WITH_WARNINGS</b> z trzema punktami, z których dwa to decyzje należące do Ciebie. Poniżej co znalazł, co zmieniłem, i trzy pytania przed zapisem.</p>
+      <ul class="steps steps-vertical lg:steps-horizontal mt-2 w-full">
+        <li class="step step-primary">0. Grunt</li><li class="step step-primary">1. Combined</li><li class="step step-primary">2P. Produkt</li><li class="step step-primary">2A.1 Pytania</li><li class="step step-primary">2A.2 Podejścia</li><li class="step step-primary">2A.3 Doprecyzowanie</li><li class="step step-primary">3. Weryfikacja (ta strona)</li><li class="step">4. Dokument</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="iteracja1">
+    <h2 class="text-2xl font-bold">1. Iteracja 1: FAIL. Co weryfikator znalazł i jak to rozwiązałem</h2>
+    <div class="overflow-x-auto rounded-box border border-base-content/10 bg-base-100">
+      <table class="table table-sm">
+        <thead><tr><th>Luka</th><th>Dlaczego to ważne</th><th>Rozwiązanie w szkicu</th></tr></thead>
+        <tbody class="text-sm">
+          <tr><td><b>Hooki Pythona bez właściciela.</b> <code>hooks.json</code> ma 6 komend SessionStart i 2 Stop w <code>python3</code>; szkic mówił "dwa runtime'y" i o hookach ani słowa.</td><td>Bez tego v3 miałoby trzeci runtime albo martwe hooki.</td><td>Tabela "Hooks": każdy hook ma właściciela v3 (<code>bdk hooks session-start / stop / session-end / skill-exists</code> albo czysty shell dla <code>uvx</code>). Python znika z pluginu.</td></tr>
+          <tr><td><b>Istniejący <code>settings.schema.json</code> i <code>check-rules-drift</code></b> nie były nazwane jako zastępowane.</td><td>Ryzyko dwóch źródeł schematu w migracji.</td><td>Oba jawnie zastąpione przez eksport z rejestru zod i <code>bdk rules check</code>; stary plik usuwany w tym samym wydaniu.</td></tr>
+          <tr><td><b>Budżety i próby tylko w gitignorowanym <code>.machine/</code>.</b> Po <code>rebuild</code> na innej maszynie licznik prób zerował się po cichu.</td><td>Łamie S5 (wznowienie wszędzie) i S2 (budżet w stanie).</td><td>Próby, bilety i odciski to commitowane pliki <code>changes/&lt;id&gt;/attempts/</code>; jadą z commitem taska; do tego commit checkpoint (pytanie 2 niżej).</td></tr>
+          <tr><td><b>"Zawsze exit 0" w blokach <code>!</code> nie da się obiecać, gdy Node brakuje</b> (shell zwraca 127, host gubi wyjście).</td><td>Fail-closed bez komunikatu = użytkownik nie wie, co się stało.</td><td>Jedna stała forma bloku: <code>!`node "$ROOT/dist/bdk.mjs" ctx ... 2>&amp;1 || echo "BDK STOP: ..."`</code>, pilnowana testem treści skilli. Skille bezstanowe działają, ale bez podpowiedzi tierów; zapisane wprost.</td></tr>
+          <tr><td><b>Brak przydziału ID przy 15 równoległych agentach</b> i dwóch Zmianach na różnych gałęziach.</td><td>Kolizje <code>L-0042</code> w commitowanych plikach.</td><td>ID sekwencyjne per Zmiana; alokator czyta maksimum z commitowanych plików, blokada wyścigu przez atomowy <code>mkdir</code> w <code>.machine/</code>; odwołania między Zmianami kwalifikowane; numery reguł nadawane przy <code>close</code>, duplikaty łapie CI.</td></tr>
+          <tr><td><b>Strażnik specu omijalny przez Bash</b>, a wyjątek "chyba że <code>bdk close</code>" nie miał mechanizmu.</td><td>Ręczna edycja specu przeszłaby niezauważona.</td><td>Matchery wymienione (Edit/Write/MultiEdit/NotebookEdit po ścieżce, Bash po tekście); rdzeń pisze przez <code>node:fs</code>, więc wyjątek jest strukturalny; każdy plik specu ma hash merge'u, <code>doctor</code>/<code>close</code> wykrywają obejście.</td></tr>
+          <tr><td>Diagramy bez gita (trailery), bramek i źródeł konfiguracji; "tylko moduły node:" wbrew zod i parserowi YAML; koszt commitowanych pakietów; rejestr decyzji w katalogu tymczasowym sesji.</td><td>Spójność i uczciwość dokumentu.</td><td>Diagramy uzupełnione; wiersz Security poprawiony (zależności bundlowane, przypięte, audyt na CI); pakiety przycinane przy archiwizacji; rejestr decyzji zapisany obok dokumentu (pytanie 3 niżej).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="iteracja2">
+    <h2 class="text-2xl font-bold">2. Iteracja 2: PASS_WITH_WARNINGS</h2>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+      <div class="card bg-base-200"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Ostrzeżenia rozwiązane mechanicznie</h4><ul class="list-disc pl-5 space-y-1">
+        <li><b>Zły event dla checkpointu.</b> W Claude Code <code>Stop</code> odpala się po każdej turze, nie na końcu sesji; commit mógłby wyścigować z subagentami i zgarnąć pliki, które użytkownik miał w indeksie. Poprawka: event <code>SessionEnd</code>, commit pathspec <code>git commit --only -- .bdk/changes/&lt;id&gt;/</code>, pomijany w trakcie rebase/merge i przy otwartych biletach.</li>
+        <li><b>Alokator ID nie przeżywał świeżego klona</b> (git nie śledzi pustych katalogów). Poprawka: najpierw maksimum z commitowanych plików, potem blokada w <code>.machine/</code>.</li>
+        <li>Tabela hooków poprawiona na faktach: <code>create-plan</code> ma tylko <code>mkdir -p .bdk/plans</code> (znika), <code>update-docs</code> i <code>explain-complex-code</code> mają hooki typu <code>prompt</code> (bez zmian), <code>is-command-exists</code> nie jest używany przez żaden skill (usuwany, nie portowany).</li>
+        <li>Składnia bloku <code>!</code> w prawdziwej formie inline; reguła <code>allowed-tools</code> na <code>node</code>; do sprawdzenia na żywo, czy reguła preaprobuje złożone polecenie z <code>||</code>.</li>
+        <li>Zdania sprzeczne ze zmianami wyczyszczone (spec, wiersz SPOF, migracja, testy CI).</li>
+      </ul></div></div>
+      <div class="card bg-base-200 border border-primary/40"><div class="card-body p-4 gap-2"><h4 class="font-semibold">Dwie rzeczy, które weryfikator słusznie oddał Tobie</h4><ul class="list-disc pl-5 space-y-1">
+        <li><b>Automatyczne commity checkpoint na Twojej gałęzi.</b> Mechanizm jest bezpieczny (pathspec, pomijanie przy rebase), ale to nadal commit, którego nie robisz ręcznie. Pytanie 2.</li>
+        <li><b>Śledzenie plików design w tym repo.</b> <code>.gitignore</code> BDK ma <code>/.bdk/</code> i <code>/.lavish/</code>, więc ani dokument, ani rejestr decyzji, ani strony Lavish nie są dziś śledzone. To ten sam defekt <code>ensure_ignored()</code>, który v3 naprawia. Pytanie 3.</li>
+      </ul>
+      <p class="text-xs opacity-75">Oceny weryfikatora po iteracji 2: zgodność z kodem WARNING 0.80, adwokat diabła PASS 0.88, pokrycie wymagań WARNING 0.68, diagramy PASS 0.88, uczciwość WARNING 0.70. Ostrzeżenia dotyczyły dokładnie punktów powyżej, wszystkie są już w szkicu.</p></div></div>
+    </div>
+  </section>
+
+  <section class="space-y-4" id="bramka">
+    <h2 class="text-2xl font-bold">3. Bramka zapisu</h2>
+
+    <form class="card card-border bg-base-100" data-lavish-question="v-checkpoint" id="v-checkpoint" onsubmit="queueChoice(event, 'Commity checkpoint')">
+      <div class="card-body">
+        <h3 class="card-title text-base">Pytanie 2: automatyczne commity checkpoint stanu Zmiany</h3>
+        <p class="text-sm opacity-80">Zabezpieczają budżety i próby przed utratą przy zabitej sesji lub przejściu na inną maszynę. Commit zawiera wyłącznie <code>.bdk/changes/&lt;id&gt;/</code>, nigdy kod ani to, co masz w indeksie.</p>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Włączone domyślnie: bdk hooks session-end robi pathspec commit .bdk/changes/<id>/ na SessionEnd oraz przy park/eskalacji; pomijany przy rebase/merge i otwartych biletach; wyłączalne w polityce; squash przy close jako opcja" class="radio radio-primary radio-sm" checked><span class="font-semibold">Włączone domyślnie</span><span class="badge badge-primary badge-sm">rekomendacja</span></div><p class="text-xs opacity-75">S5 spełnione bez ręcznej dyscypliny. Koszt: commity <code>chore(bdk): checkpoint</code> w historii; squash przy <code>close</code> pod flagą.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Wyłączone domyślnie, opt-in w polityce; SessionEnd tylko przypomina komendą bdk change checkpoint" class="radio radio-primary radio-sm"><span class="font-semibold">Opt-in, domyślnie przypomnienie</span></div><p class="text-xs opacity-75">Czysta historia. Koszt: zabita sesja bez checkpointu traci próby od ostatniego commitu taska; budżet może się cofnąć.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Tylko przy park/eskalacji, nigdy na SessionEnd" class="radio radio-primary radio-sm"><span class="font-semibold">Tylko przy park / eskalacji</span></div><p class="text-xs opacity-75">Kompromis: commit tylko w chwilach, gdy stan i tak jest przełomowy. Koszt: zwykła zabita sesja w środku pętli traci próby.</p></div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><input class="input w-full" name="note"></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100" data-lavish-question="v-tracking" id="v-tracking" onsubmit="queueChoice(event, 'Śledzenie plików design')">
+      <div class="card-body">
+        <h3 class="card-title text-base">Pytanie 3: co zrobić z dokumentem, rejestrem decyzji i stronami Lavish w tym repo</h3>
+        <p class="text-sm opacity-80">Dotyczy tylko repo BDK dziś (v2). W v3 dokument projektowy żyje w <code>.bdk/changes/&lt;id&gt;/design.md</code> i jest śledzony z definicji.</p>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Dodać wyjątki !/.bdk/design/ i !/.lavish/ do .gitignore i zacommitować dokument, rejestr decyzji i pięć stron Lavish w osobnym commicie docs" class="radio radio-primary radio-sm" checked><span class="font-semibold">Wyjątki w .gitignore, commit docs</span><span class="badge badge-primary badge-sm">rekomendacja</span></div><p class="text-xs opacity-75">Ślad decyzji (D/Q/K/A/R) trwały i widoczny w PR. Koszt: pięć plików HTML (~230 KB) w historii.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Wyjątek tylko dla .bdk/design/ (dokument i rejestr); strony Lavish pozostają nieśledzone" class="radio radio-primary radio-sm"><span class="font-semibold">Tylko dokument i rejestr</span></div><p class="text-xs opacity-75">Mniejsza historia. Koszt: strony z rozmowami znikają przy czyszczeniu katalogu.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Zostawić nieśledzone; dokument tylko lokalnie do czasu Zmiany v3" class="radio radio-primary radio-sm"><span class="font-semibold">Zostawić nieśledzone</span></div><p class="text-xs opacity-75">Zero zmian w repo teraz. Koszt: dokument istnieje tylko na tej maszynie.</p></div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><input class="input w-full" name="note"></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+
+    <form class="card card-border bg-base-100 border-primary/40" data-lavish-question="v-gate" id="v-gate" onsubmit="queueChoice(event, 'Bramka zapisu')">
+      <div class="card-body">
+        <h3 class="card-title text-base">Pytanie 1: zapisać dokument z ostrzeżeniami przyjętymi jako rozwiązane?</h3>
+        <p class="text-sm opacity-80">Zapis tworzy <code>.bdk/design/2026-09-23-0703-bdk-v3-change-centric-design.md</code> (dokument, ~470 linii, po angielsku jak poprzedni design w repo) i <code>.bdk/design/2026-09-23-0703-bdk-v3-decisions.md</code> (rejestr decyzji, po polsku, verbatim z sesji). Sekcja "What We Did NOT Decide" ma 18 pozycji, m.in. ryzyko D2a, inwentarz skilli jako PoC, kalibrację profilu skali, poprawkę ADR 0001, politykę checkpointów, globalne findingi (Twoja uwaga przy Dolcie).</p>
+        <div class="grid lg:grid-cols-3 gap-3">
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Zapisz dokument i rejestr; ostrzeżenia przyjęte jako rozwiązane w szkicu" class="radio radio-primary radio-sm" checked><span class="font-semibold">Zapisz</span><span class="badge badge-primary badge-sm">rekomendacja</span></div></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Trzecia iteracja weryfikatora po naniesieniu odpowiedzi na pytania 2 i 3, potem zapis" class="radio radio-primary radio-sm"><span class="font-semibold">Jeszcze jedna iteracja</span></div><p class="text-xs opacity-75">Limit to 3 iteracje; ta byłaby ostatnią.</p></div></label>
+          <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Nie zapisuj; chcę najpierw zobaczyć pełny szkic w Lavish" class="radio radio-primary radio-sm"><span class="font-semibold">Najpierw pokaż szkic</span></div><p class="text-xs opacity-75">Otworzę dokument jako stronę do adnotacji przed zapisem.</p></div></label>
+        </div>
+        <label class="fieldset"><span class="fieldset-legend">Uwaga (opcjonalnie)</span><textarea class="textarea w-full" name="note" rows="2"></textarea></label>
+        <div class="card-actions items-center gap-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź</button><span class="badge badge-success queued">w kolejce</span></div>
+      </div>
+    </form>
+    <div class="alert alert-soft alert-info" id="no-lavish" style="display:none"><span>Strona jest otwarta bez serwera Lavish. Otwórz ją przez <code>npx -y lavish-axi .lavish/bdk-v3-design-05-werdykt.html</code>.</span></div>
+  </section>
+</main>
+<script>
+  function markNoLavish() { document.getElementById('no-lavish').style.display = ''; }
+  function queueChoice(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const choice = fd.get('answer'); const note = (fd.get('note') || '').trim();
+    if (!choice) return;
+    if (!window.lavish) { markNoLavish(); return; }
+    const text = label + ': ' + choice + (note ? ' | uwaga: ' + note : '');
+    window.lavish.queuePrompt(text, { tag: 'choice', text: text, element: form, data: { question: form.dataset.lavishQuestion, answer: choice, note: note } });
+    form.dataset.queued = '1';
+  }
+</script>
+</body>
+</html>

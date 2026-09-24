@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pl" data-theme="luxury">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDK v3 - projekt architektury, krok 1: grunt i rama produktowa</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, dd, td, th, .badge, .label) { overflow-wrap: anywhere; }
+  :where(img, svg, video, canvas, iframe) { max-width: 100%; height: auto; }
+  svg text { font-family: ui-sans-serif, system-ui, sans-serif; }
+  .ev { font-family: ui-monospace, monospace; font-size: 0.72rem; }
+  .opt { cursor: pointer; }
+  .opt:has(input:checked) { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .queued { display: none; }
+  form[data-queued="1"] .queued { display: inline-flex; }
+</style>
+</head>
+<body class="bg-base-100 text-base-content">
+<main class="mx-auto max-w-6xl p-4 lg:p-8 space-y-10">
+
+  <!-- ================= HEADER ================= -->
+  <section class="hero bg-base-200 rounded-box">
+    <div class="hero-content flex-col items-start py-8 w-full">
+      <p class="text-sm uppercase tracking-widest text-primary font-semibold">/bdk:design &middot; BDK v3 (breaking change) &middot; krok 1 z 4 &middot; runda 3</p>
+      <h1 class="text-4xl font-bold">Grunt pod nową architekturę BDK i rama produktowa</h1>
+      <div role="alert" class="alert alert-success alert-soft text-sm"><span><b>Runda 3.</b> Zamknięte: progi S1 (8 KB / 8 tasków / 200 linii / 100 linii), promptfoo dla evali, D2a = tylko zachowanie, D2b = wiedza w repo i stan lokalny, D4b = nadpisania widoczne dla review. Nowe: <b>D5 runtime rdzenia</b> po Twoim linku do ADR 0001 z git-identity. To ostatnie pytanie na tej stronie; potem krok 2A.</span></div>
+      <p class="max-w-3xl opacity-80">Ta strona zamyka Fazę 0 (co wiemy o dzisiejszym BDK) i Fazę 2P (dla kogo i po co budujemy). Na dole są <b>cztery decyzje produktowe</b> oraz progi kryteriów sukcesu do potwierdzenia. Architektura (dwa lub więcej podejść z diagramami) przyjdzie w kroku 2, po Twoich odpowiedziach. Adnotuj dowolny element, z którym się nie zgadzasz.</p>
+      <ul class="steps steps-vertical lg:steps-horizontal mt-2 w-full">
+        <li class="step step-primary">0. Grunt</li>
+        <li class="step step-primary">1. Zakres: Combined</li>
+        <li class="step step-primary">2P. Produkt (ta strona)</li>
+        <li class="step">2A. Architektura</li>
+        <li class="step">3. Weryfikacja</li>
+        <li class="step">4. Dokument</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= FAZA 0 ================= -->
+  <section class="space-y-4" id="faza-0">
+    <h2 class="text-2xl font-bold">Faza 0: co wiemy o dzisiejszym BDK</h2>
+    <p class="opacity-80 max-w-3xl">Źródła: cały <code>bdk-raport-koncowy.md</code>, analizy GSD, mattpocock i compound-engineering, raport o injekcji konfiguracji, mapa kodu z czterech agentów <code>bdk:explorer</code> oraz własna weryfikacja kluczowych twierdzeń. Jeden raport agenta twierdził, że run state nie jest podpięty do executora. Jest, potwierdziłem grepem.</p>
+
+    <figure class="card card-border bg-base-100">
+      <div class="card-body">
+        <h3 class="card-title text-base">Gdzie dziś żyje stan, a gdzie są szwy</h3>
+        <svg viewBox="0 0 960 300" width="100%" role="img" aria-labelledby="d1t">
+          <title id="d1t">Pięć etapów pipeline'u BDK. Run state obejmuje tylko wykonanie i review. Wcześniejsze szwy to proza i dopasowanie nazw.</title>
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+            <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" stroke-opacity="0.25" stroke-width="2"/></pattern>
+          </defs>
+          <g id="stages" font-size="14" text-anchor="middle">
+            <g id="st-design"><rect x="20" y="90" width="150" height="56" rx="8" fill="var(--color-base-200)" stroke="currentColor"/><text x="95" y="114" fill="currentColor">/bdk:design</text><text x="95" y="134" fill="currentColor" opacity="0.7" font-size="11">.bdk/design/*.md</text></g>
+            <g id="st-plan"><rect x="215" y="90" width="150" height="56" rx="8" fill="var(--color-base-200)" stroke="currentColor"/><text x="290" y="114" fill="currentColor">/bdk:create-plan</text><text x="290" y="134" fill="currentColor" opacity="0.7" font-size="11">.bdk/plans/*.md</text></g>
+            <g id="st-verify"><rect x="410" y="90" width="150" height="56" rx="8" fill="var(--color-base-200)" stroke="currentColor"/><text x="485" y="114" fill="currentColor">/bdk:verify-plan</text><text x="485" y="134" fill="currentColor" opacity="0.7" font-size="11">stempel sha256</text></g>
+            <g id="st-exec"><rect x="605" y="90" width="150" height="56" rx="8" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)"/><text x="680" y="114" fill="currentColor">subagent-execute-plan</text><text x="680" y="134" fill="currentColor" opacity="0.7" font-size="11">manifest + trailery</text></g>
+            <g id="st-cr"><rect x="800" y="90" width="140" height="56" rx="8" fill="var(--color-primary)" fill-opacity="0.18" stroke="var(--color-primary)"/><text x="870" y="114" fill="currentColor">/bdk:cr</text><text x="870" y="134" fill="currentColor" opacity="0.7" font-size="11">resolve-range</text></g>
+          </g>
+          <g id="seams" stroke="currentColor" fill="currentColor" font-size="11" text-anchor="middle">
+            <line x1="170" y1="118" x2="213" y2="118" stroke-dasharray="4 3" marker-end="url(#arr)"/><text x="192" y="80" opacity="0.85">słowa kluczowe</text><text x="192" y="66" opacity="0.85">w nazwie pliku</text>
+            <line x1="365" y1="118" x2="408" y2="118" stroke-dasharray="4 3" marker-end="url(#arr)"/><text x="387" y="80" opacity="0.85">handoff prozą,</text><text x="387" y="66" opacity="0.85">ręcznie</text>
+            <line x1="560" y1="118" x2="603" y2="118" marker-end="url(#arr)"/><text x="582" y="80" opacity="0.85">hash ostrzega,</text><text x="582" y="66" opacity="0.85">nie blokuje</text>
+            <line x1="755" y1="118" x2="798" y2="118" stroke-dasharray="4 3" marker-end="url(#arr)"/><text x="777" y="80" opacity="0.85">dwie ścieżki</text><text x="777" y="66" opacity="0.85">review, bez dedup</text>
+          </g>
+          <g id="runstate">
+            <path d="M605 160 L605 175 L940 175 L940 160" fill="none" stroke="var(--color-primary)" stroke-width="2"/>
+            <text x="772" y="196" text-anchor="middle" font-size="13" fill="var(--color-primary)" font-weight="600">run state: .bdk/runs/&lt;plan&gt;--&lt;branch&gt;.json + trailery BDK-Run / BDK-Group</text>
+            <text x="772" y="214" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.75">grupy, fazy, czasy, watermark review, odłożone findingi; limity pętli tylko w prozie</text>
+          </g>
+          <g id="nostate">
+            <rect x="20" y="160" width="540" height="60" rx="8" fill="url(#hatch)" stroke="currentColor" stroke-dasharray="4 3"/>
+            <text x="290" y="186" text-anchor="middle" font-size="13" fill="currentColor" font-weight="600">brak stanu maszynowego</text>
+            <text x="290" y="206" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.75">intencja, decyzje i ich zmiany, uzasadnienia, powiązanie task -&gt; cel: nigdzie</text>
+          </g>
+          <g id="reviewer" font-size="11" fill="currentColor" opacity="0.8">
+            <text x="480" y="262" text-anchor="middle">reviewer (AI i człowiek) widzi kod i plan, nie widzi designu ani intencji; fixer widzi tylko findingi</text>
+            <text x="480" y="282" text-anchor="middle">plan-verifier: 6 sekcji, żadna nie sprawdza zgodności ze wzorcami ani z regułami architektury</text>
+          </g>
+        </svg>
+      </div>
+    </figure>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="card card-border bg-base-100" id="f-runstate">
+        <div class="card-body">
+          <h3 class="card-title text-base">Run state jest dobry, ale wąski</h3>
+          <p class="text-sm">Manifest jest cache, prawdą są commit trailery. <code>reconcile()</code> przy każdym odczycie, <code>rebuild</code> po rebase, zapisy atomowe, przejęcie runu tylko z <code>--force</code>. 1028 linii testów.</p>
+          <p class="text-sm">Nie zna: intencji, decyzji, uzasadnień, historii zmian decyzji, stanu pojedynczego taska, wybranej strategii grupy ani ścieżki weryfikacji.</p>
+          <div class="flex flex-wrap gap-1"><span class="badge badge-ghost ev">scripts/bdk_run_state.py:439-456</span><span class="badge badge-ghost ev">tests/unit/scripts/test_bdk_run_state.py</span></div>
+        </div>
+      </div>
+      <div class="card card-border bg-base-100" id="f-loops">
+        <div class="card-body">
+          <h3 class="card-title text-base">Limity pętli istnieją tylko w prozie</h3>
+          <p class="text-sm">3 ponowne dispatche na task, 3 cykle verify-fix na grupę, 2 cykle review-fix na koniec, 2 pominięcia weryfikacji z rzędu, 3 powroty w <code>design</code>, 2 iteracje <code>verify-plan</code>.</p>
+          <p class="text-sm">Skrypt stanu nie liczy prób. Gdy model zignoruje limit, nic go nie zatrzyma. Według reguły kontrolnej z raportu to cicha awaria, która wymaga bramy w kodzie.</p>
+          <div class="flex flex-wrap gap-1"><span class="badge badge-ghost ev">subagent-execute-plan/SKILL.md:270,338,449,501</span></div>
+        </div>
+      </div>
+      <div class="card card-border bg-base-100" id="f-intent">
+        <div class="card-body">
+          <h3 class="card-title text-base">Intencja nie przepływa</h3>
+          <p class="text-sm">Design łączy się z planem przez dopasowanie słów kluczowych w nazwie pliku. Task ma jedną linię <code>**Why:**</code>. Implementer dostaje akapit kontekstu, fixer same findingi, reviewer ani designu, ani intencji. <code>create-adr</code> jest osierocony.</p>
+          <div class="flex flex-wrap gap-1"><span class="badge badge-ghost ev">create-plan/SKILL.md:188</span><span class="badge badge-ghost ev">agents/fixer.md:55-59</span><span class="badge badge-ghost ev">agents/plan-verifier.md:63-97</span></div>
+        </div>
+      </div>
+      <div class="card card-border bg-base-100" id="f-config">
+        <div class="card-body">
+          <h3 class="card-title text-base">Konfiguracja: mocna schema, brak warstwy osobistej</h3>
+          <p class="text-sm">Pięć ścieżek wstrzykiwania, jeden commitowany <code>.bdk/settings.json</code> z <code>additionalProperties: false</code>. Brak warstwy lokalnej, nadpisania reguł tylko <code>extends</code> i <code>replace</code>, brak zrzutu "co zobaczył agent".</p>
+          <p class="text-sm">Żywy przykład luki B8: <code>features.caveman</code> jest zbierane w <code>setup</code> i dozwolone w schemie, a nic go nie czyta (issue #39, gałąź z poprawką niezmergowana).</p>
+          <div class="flex flex-wrap gap-1"><span class="badge badge-ghost ev">skills/setup/SKILL.md:165</span><span class="badge badge-ghost ev">hooks/check-bdk-config/settings.schema.json:40</span><span class="badge badge-ghost ev">docs/INJECTION-FLOWS.md</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-border bg-base-100" id="f-50kb">
+      <div class="card-body">
+        <h3 class="card-title text-base">Skąd biorą się te ~50 KB</h3>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <p class="text-sm font-semibold mb-1">Skill executora: <code>subagent-execute-plan/SKILL.md</code>, 49,4 KB, 661 linii</p>
+            <progress class="progress progress-primary w-full" value="65" max="100"></progress>
+            <p class="text-xs opacity-75 mt-1">65% to kroki 3-4: drzewa decyzyjne i pętle retry opisane prozą. Mediana skilla BDK to 32 linie. Raport nazywa to "problemem do rozwiązania, nie wzorcem".</p>
+          </div>
+          <div>
+            <p class="text-sm font-semibold mb-1">Plan dokumentacji: rodzic 38,9 KB + 10 części, największa 50,7 KB</p>
+            <progress class="progress progress-secondary w-full" value="100" max="100"></progress>
+            <p class="text-xs opacity-75 mt-1">Części zawierają pełną treść plików do napisania. Rodzic ma sekcje <i>Resolutions</i>, <i>Changed from the draft</i> i <i>Draft corrections (apply while copying; the parts predate the decisions above)</i>. Zmiany decyzji są łatane prozą, a części rozjeżdżają się z rodzicem. To jest dokładnie Twój problem z historią decyzji, widoczny w realnym planie.</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-1"><span class="badge badge-ghost ev">.bdk/plans/docs/2026-09-13-0816-user-documentation-site.md:216-311</span><span class="badge badge-ghost ev">.bdk/plans/docs/parts/05-workflows.md</span></div>
+      </div>
+    </div>
+
+    <div role="alert" class="alert alert-warning" id="f-gitignore">
+      <div>
+        <p class="font-semibold">Znaleziony defekt: dwie sprzeczne reguły o tym, co z <code>.bdk/</code> jest współdzielone</p>
+        <p class="text-sm"><code>setup</code> (<span class="ev">skills/setup/SKILL.md:197-198</span>) każe commitować <code>.bdk/settings.json</code>, a <code>plans/</code> i <code>design/</code> ignorować jako artefakty osobiste. Tymczasem <code>ensure_ignored()</code> w <code>bdk_run_state.py</code> (<span class="ev">linia 231</span>) przy pierwszym zapisie manifestu dopisuje do <code>.gitignore</code> projektu regułę <code>/.bdk/</code>, czyli cały katalog, zamiast <code>/.bdk/runs/</code>. Jeśli <code>settings.json</code> nie był jeszcze commitowany, <code>git add</code> go odrzuci, a każdy nowy plik w <code>.bdk/</code> przeznaczony dla zespołu będzie po cichu ignorowany. To wprost dotyka decyzji 2 poniżej.</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="card bg-base-200" id="f-platform">
+        <div class="card-body">
+          <h3 class="card-title text-base">Platforma (sprawdzone w dokumentacji Claude Code)</h3>
+          <ul class="text-sm list-disc pl-5 space-y-1">
+            <li>Plugin może dostarczać skrypty <b>Workflow</b> (katalog <code>workflows/</code>, GA na planach płatnych, do 16 równoległych agentów). BDK już ich używa dla fal z rozłącznymi zadaniami (Step 3a-S / 3b-W).</li>
+            <li><code>userConfig</code> w <code>plugin.json</code> daje ustawienia per użytkownik: <code>${user_config.X}</code> w skillach, <code>CLAUDE_PLUGIN_OPTION_X</code> w hookach.</li>
+            <li><code>${CLAUDE_PLUGIN_DATA}</code> to trwały katalog per użytkownik i plugin, przeżywa aktualizacje.</li>
+            <li>Agenci z pluginu ignorują <code>hooks</code>, <code>mcpServers</code> i <code>permissionMode</code>. Preload przez <code>skills:</code> działa.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card bg-base-200" id="f-unknown">
+        <div class="card-body">
+          <h3 class="card-title text-base">Czego dokumentacja nie mówi (sprawdzę w trakcie)</h3>
+          <ul class="text-sm list-disc pl-5 space-y-1">
+            <li>Co host robi z blokiem <code>!`cmd`</code> zakończonym kodem niezerowym. Decyduje, czy składanie kontekstu może przerywać ładowanie skilla przy błędzie.</li>
+            <li>Czy hooki we frontmatterze skilla działają dla skilli z pluginu. Gdyby tak, budżety pętli dałoby się egzekwować w samym skillu.</li>
+            <li>Czy <code>userConfig</code> jest per użytkownik globalnie, czy per użytkownik i projekt.</li>
+          </ul>
+          <p class="text-xs opacity-70">Poza zakresem: lokalne katalogi <code>skills/execute-plan/</code> i <code>skills/create-fixture/</code> z samym <code>__pycache__</code> po usuniętych skillach; graf code-review-graph zbudowany na gałęzi <code>fix/39-...</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-border bg-base-100" id="f-unix">
+      <div class="card-body">
+        <h3 class="card-title text-base">Twoje pytanie o filozofię Unixa: wstępne stanowisko</h3>
+        <p class="text-sm">Kierunek zgadza się z najmocniejszym wnioskiem raportu: <b>jeśli krok da się policzyć skryptem, liczy go skrypt, a model rozstrzyga tylko to, co skrypt jawnie zgłosił jako niejednoznaczne</b>. Raport jednocześnie ostrzega przed mnożeniem skilli (compound-engineering: 36 skilli, siedem miejsc do synchronizacji przy każdym nowym). Dlatego "małe polecenia" powinny być <b>podkomendami jednego deterministycznego rdzenia</b>, a nie małymi skillami. Granica między nimi będzie główną decyzją kroku 2A.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PERSONY ================= -->
+  <section class="space-y-4" id="persony">
+    <h2 class="text-2xl font-bold">Faza 2P: dla kogo i po co</h2>
+    <div class="overflow-x-auto rounded-box border border-base-content/10 bg-base-100">
+      <table class="table table-zebra">
+        <thead><tr><th>Persona</th><th>Czego potrzebuje</th><th>Co przeszkadza dziś</th></tr></thead>
+        <tbody>
+          <tr id="p-owner"><td><b>Właściciel reguł projektu</b><br><span class="text-xs opacity-70">tech lead, architekt</span></td><td>Gwarancji, że każdy run, niezależnie od osoby i modelu, trzyma się reguł i wzorców projektu</td><td>Reguły trafiają do promptu, ale plan nie jest z nimi sprawdzany. Naruszenia wzorców wychodzą dopiero w code review</td></tr>
+          <tr id="p-dev"><td><b>Developer prowadzący zmianę</b></td><td>Szybkości przy małych rzeczach, wznowienia w dowolnym miejscu, śladu zmian decyzji, własnych ustawień bez commitowania</td><td>Plany po 40-50 KB, ta sama głębokość procesu dla wszystkiego, decyzje łatane prozą</td></tr>
+          <tr id="p-reviewer"><td><b>Recenzent końcowy</b><br><span class="text-xs opacity-70">często nie autor</span></td><td>Intencji i decyzji obok diffa, listy decyzji podjętych bez nadzoru</td><td>Nie widzi ani designu, ani intencji</td></tr>
+          <tr id="p-agents"><td><b>Agenci AI</b> jako czytelnicy artefaktów</td><td>Małych, adresowalnych porcji kontekstu i jawnych budżetów</td><td>50 KB skilla executora w kontekście, treść wklejana wprost do promptu</td></tr>
+          <tr id="p-maintainer"><td><b>Opiekun BDK</b> (Ty)</td><td>Miejsc, w które dołączą nowe moduły (design, wyszukiwanie artefaktów, wzorce) bez przepisywania rdzenia</td><td>Zachowanie rozproszone w długiej prozie, brak testów treści skilli</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= KRYTERIA SUKCESU ================= -->
+  <section class="space-y-4" id="kryteria">
+    <h2 class="text-2xl font-bold">Kryteria sukcesu</h2>
+    <p class="opacity-80 max-w-3xl">Każde kryterium ma sposób pomiaru. Progi liczbowe w S1 są propozycją: popraw wartości w polach i zatwierdź.</p>
+    <div class="overflow-x-auto rounded-box border border-base-content/10 bg-base-100">
+      <table class="table">
+        <thead><tr><th>#</th><th>Kryterium</th><th>Jak mierzymy</th></tr></thead>
+        <tbody>
+          <tr id="s1"><td>S1</td><td><b>Mała jednostka pracy.</b> Twarde limity rozmiaru wszystkiego, co agent czyta w jednym kroku</td><td>Test w CI liczący rozmiary (jak <code>workflow-size-budget</code> w GSD)</td></tr>
+          <tr id="s2"><td>S2</td><td><b>Każda pętla ma budżet zapisany w stanie.</b> Wyczerpanie budżetu kończy się zdefiniowanym stanem (zaparkowane, eskalowane), nigdy kolejną cichą iteracją</td><td>Test, że rdzeń odmawia próby N+1; licznik prób widoczny w stanie</td></tr>
+          <tr id="s3"><td>S3</td><td><b>Pełne śledzenie przyczyn.</b> Każdy task wskazuje cel, któremu służy. Każda decyzja ma ID, uzasadnienie, źródło (użytkownik / wniosek / agent), status i historię zastąpień</td><td>Deterministyczne zapytania "po co ten task?" i "co zmieniło się od designu?"</td></tr>
+          <tr id="s4"><td>S4</td><td><b>Wzorce łapane już przy planie</b>, sprawdzane po ID reguły i wzorca</td><td>Spada odsetek findingów "naruszenie wzorca" w review, których plan nie oznaczył</td></tr>
+          <tr id="s5"><td>S5</td><td><b>Wznowienie na każdym etapie</b> bez utraty stanu, także po zmianie maszyny</td><td>Scenariusze E2E z zabiciem sesji</td></tr>
+          <tr id="s6"><td>S6</td><td><b>Poprawna konfiguracja.</b> Klucz bez konsumenta to błąd. Warstwa osobista może nadpisać wszystko (D4), ale każde nadpisanie jest widoczne w zrzucie "co zobaczył agent" i odnotowane w Zmianie</td><td>Testy loadera; przypadek <code>features.caveman</code> wykrywany automatycznie</td></tr>
+          <tr id="s7"><td>S7</td><td><b>Proces proporcjonalny do zmiany.</b> Trywialna zmiana nie przechodzi pełnego pipeline'u</td><td>Koszt tokenowy małej zmiany w porównaniu z dzisiejszym</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card card-border bg-base-100 border-success/50" id="form-progi">
+      <div class="card-body">
+        <h3 class="card-title text-base">Progi S1 <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <div class="stats stats-vertical sm:stats-horizontal bg-base-200 w-full">
+          <div class="stat"><div class="stat-title">Część planu</div><div class="stat-value text-2xl">8 KB</div><div class="stat-desc">jeden plik wykonywany w jednym przebiegu</div></div>
+          <div class="stat"><div class="stat-title">Tasków w części</div><div class="stat-value text-2xl">8</div><div class="stat-desc">podniesione z 5 na Twoje życzenie</div></div>
+          <div class="stat"><div class="stat-title">SKILL.md</div><div class="stat-value text-2xl">200 linii</div><div class="stat-desc">dziś 7 skilli powyżej, executor 661</div></div>
+          <div class="stat"><div class="stat-title">Odpowiedź zapytania o stan</div><div class="stat-value text-2xl">100 linii</div><div class="stat-desc">wycinek, nie cały stan</div></div>
+        </div>
+        <p class="text-xs opacity-70 mt-2">Pilnowane testem w CI na treści repozytorium BDK (skille) i walidatorem rdzenia przy zapisie części planu (rozmiar, liczba tasków).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PUNKTY STYKU ================= -->
+  <section class="space-y-4" id="styk">
+    <h2 class="text-2xl font-bold">Punkty styku: cykl życia jednej zmiany</h2>
+    <p class="opacity-80 max-w-3xl">Rysunek pokazuje przepływy, które system musi obsłużyć, niezależnie od wybranego wariantu architektury. Powroty (zmiana decyzji, ponowne planowanie) i wyjścia awaryjne są równie ważne jak ścieżka główna.</p>
+    <figure class="card card-border bg-base-100">
+      <div class="card-body">
+        <svg viewBox="0 0 960 330" width="100%" role="img" aria-labelledby="d2t">
+          <title id="d2t">Cykl życia zmiany: intencja, design, części planu, wykonanie, review, zamknięcie; wyjścia do zaparkowania i porzucenia; powroty przy zmianie decyzji.</title>
+          <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+          <g font-size="13" text-anchor="middle" fill="currentColor">
+            <g id="l-intent"><rect x="20" y="110" width="130" height="50" rx="25" fill="var(--color-base-200)" stroke="currentColor"/><text x="85" y="140">Intencja</text></g>
+            <g id="l-design"><rect x="190" y="110" width="130" height="50" rx="8" fill="var(--color-base-200)" stroke="currentColor"/><text x="255" y="140">Design</text></g>
+            <g id="l-parts"><rect x="360" y="110" width="150" height="50" rx="8" fill="var(--color-base-200)" stroke="currentColor"/><text x="435" y="132">Części planu</text><text x="435" y="150" font-size="10" opacity="0.7">graf zależności</text></g>
+            <g id="l-exec"><rect x="550" y="110" width="140" height="50" rx="8" fill="var(--color-base-200)" stroke="currentColor"/><text x="620" y="132">Wykonanie</text><text x="620" y="150" font-size="10" opacity="0.7">część po części</text></g>
+            <g id="l-review"><rect x="730" y="110" width="110" height="50" rx="8" fill="var(--color-base-200)" stroke="currentColor"/><text x="785" y="140">Review</text></g>
+            <g id="l-closed"><rect x="870" y="110" width="80" height="50" rx="8" fill="var(--color-success)" fill-opacity="0.25" stroke="var(--color-success)"/><text x="910" y="140">Zamknięta</text></g>
+          </g>
+          <g stroke="currentColor" fill="none" marker-end="url(#arr2)">
+            <line x1="150" y1="135" x2="188" y2="135"/><line x1="320" y1="135" x2="358" y2="135"/><line x1="510" y1="135" x2="548" y2="135"/><line x1="690" y1="135" x2="728" y2="135"/><line x1="840" y1="135" x2="868" y2="135"/>
+            <path id="e-loop-parts" d="M620 110 C620 70, 470 70, 445 108" stroke-dasharray="4 3"/>
+            <path id="e-loop-design" d="M785 110 C785 40, 300 40, 262 108" stroke-dasharray="4 3"/>
+            <path id="e-park" d="M620 160 L620 220" stroke-dasharray="4 3"/>
+            <path id="e-abandon" d="M255 160 L255 220" stroke-dasharray="4 3"/>
+            <path id="e-resume" d="M540 245 L590 245" />
+          </g>
+          <g font-size="11" fill="currentColor" opacity="0.85" text-anchor="middle">
+            <text x="530" y="66">zmiana decyzji: dotknięte części do ponownego zaplanowania</text>
+            <text x="520" y="36">zmiana decyzji podważająca design</text>
+          </g>
+          <g font-size="12" text-anchor="middle" fill="currentColor">
+            <g id="l-parked"><rect x="560" y="222" width="120" height="44" rx="8" fill="var(--color-warning)" fill-opacity="0.25" stroke="var(--color-warning)"/><text x="620" y="241">Zaparkowana</text><text x="620" y="257" font-size="10" opacity="0.75">budżet, blokada, pytanie</text></g>
+            <g id="l-abandoned"><rect x="195" y="222" width="120" height="44" rx="8" fill="var(--color-error)" fill-opacity="0.2" stroke="var(--color-error)"/><text x="255" y="241">Porzucona</text><text x="255" y="257" font-size="10" opacity="0.75">z powodem</text></g>
+            <g id="l-resume"><rect x="400" y="222" width="140" height="44" rx="8" fill="var(--color-base-200)" stroke="currentColor" stroke-dasharray="4 3"/><text x="470" y="241">Wznowienie</text><text x="470" y="257" font-size="10" opacity="0.75">inna sesja, inna maszyna</text></g>
+          </g>
+          <g id="ledger">
+            <rect x="20" y="290" width="930" height="28" rx="6" fill="var(--color-primary)" fill-opacity="0.15" stroke="var(--color-primary)"/>
+            <text x="485" y="309" text-anchor="middle" font-size="12" fill="currentColor">intencja + rejestr decyzji towarzyszą zmianie na całej długości; review dostaje ich podsumowanie obok diffa</text>
+          </g>
+        </svg>
+      </div>
+    </figure>
+
+    <div class="card card-border bg-base-100 border-primary/40" id="f-cli-state">
+      <div class="card-body">
+        <h3 class="card-title text-base">Przyjęte z Twojej uwagi: stan to nie plik, stan to zapytania <span class="badge badge-warning badge-sm">nowe</span></h3>
+        <p class="text-sm">Zgadzam się i wpisuję to jako założenie wejściowe do architektury: stan Zmiany może być rozbity na wiele plików (albo bazę), a jedynym interfejsem dla agentów jest CLI rdzenia z zapytaniami zwracającymi wycinki. Konsekwencje, które zobaczysz w kroku 2A:</p>
+        <ul class="text-sm list-disc pl-5 space-y-1">
+          <li>Skille i agenci nigdy nie otwierają plików stanu wprost. Format na dysku staje się sprawą wewnętrzną rdzenia i można go zmieniać bez dotykania promptów. To samo robi OpenSpec (<code>status --json</code>, <code>instructions &lt;artefakt&gt; --json</code>).</li>
+          <li>Kontrakt CLI (kształty JSON, exit codes, kody błędów) staje się dokumentem pierwszej klasy i celem testów, tak jak <code>docs/agent-contract.md</code> w OpenSpec.</li>
+          <li>Podział na to, co commitowane (wiedza: intencja, decyzje, spec), i to, co lokalne (liczniki, czasy, właściciel sesji), jest sprawą układu plików rdzenia, a nie czymś, co agent musi rozumieć.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="grid md:grid-cols-3 gap-4 text-sm">
+      <div class="card bg-base-200"><div class="card-body"><h3 class="card-title text-base">Wejścia</h3><ul class="list-disc pl-5 space-y-1"><li>intencja w dowolnej formie: zdanie, ticket, błąd</li><li>wejście w środek: istniejący plan, wznowienie</li><li>status: gdzie jestem, co dalej, co czeka na decyzję</li></ul></div></div>
+      <div class="card bg-base-200"><div class="card-body"><h3 class="card-title text-base">Stany końcowe</h3><ul class="list-disc pl-5 space-y-1"><li>zamknięta (zmergowana)</li><li>zaparkowana, z powodem i opcjami</li><li>porzucona, z powodem</li></ul></div></div>
+      <div class="card bg-base-200"><div class="card-body"><h3 class="card-title text-base">Awarie widoczne dla użytkownika</h3><ul class="list-disc pl-5 space-y-1"><li>wyczerpany budżet pętli</li><li>błąd konfiguracji wskazujący winny klucz</li><li>konflikt decyzji pokazany na najbliższym etapie interaktywnym</li><li>rozjazd kodu z decyzjami wykryty w review</li></ul></div></div>
+    </div>
+  </section>
+
+  <!-- ================= TESTOWANIE ================= -->
+  <section class="space-y-4" id="testy">
+    <h2 class="text-2xl font-bold">Strategia testowania (akceptacja)</h2>
+    <div class="grid md:grid-cols-2 gap-4 text-sm">
+      <div class="card card-border bg-base-100" id="t-kernel"><div class="card-body"><h3 class="card-title text-base">Deterministyczny rdzeń</h3><p>Stan, rejestr decyzji, budżety, konfiguracja: testy jednostkowe i testy właściwości maszyny stanów. Przykłady: odtworzenie historii zawsze daje ten sam stan; żadne przejście nie przekracza budżetu.</p></div></div>
+      <div class="card card-border bg-base-100" id="t-content"><div class="card-body"><h3 class="card-title text-base">Treść skilli i agentów</h3><p>Testy mechaniczne z raportu (A3): kotwice kontraktów, istnienie ścieżek, budżety rozmiaru. Najmniejsza falsyfikowalna jednostka, nigdy snapshot całego ciała.</p></div></div>
+      <div class="card card-border bg-base-100" id="t-evals"><div class="card-body"><h3 class="card-title text-base">Zachowanie skilli</h3><p>Evale z podłogą szumu A/A (B4): compound-engineering zmierzył 7-krotny rozrzut tokenów na identycznym kodzie. Jeden przebieg na wariant niczego nie dowodzi.</p></div></div>
+      <div class="card card-border bg-base-100 border-success/50 md:col-span-2" id="t-promptfoo">
+        <div class="card-body">
+          <h3 class="card-title text-base">promptfoo dla evali zachowania, pytest dla rdzenia i E2E <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+          <p class="text-sm">promptfoo (natywny provider Claude Agent SDK, <code>repeat</code>, macierz A/B, <code>llm-rubric</code>, JUnit, GitHub Action) zastępuje własny harness w <code>tests/evals/</code>. Scenariusze E2E rdzenia (pętla poprawek, crash, rebase, konflikt konfiguracji) zostają testami deterministycznymi na repozytorium-fiksturze, bo sprawdzają stan dysku i gita. Uwaga: jeśli w D5 wybierzesz Node, "pytest" w tym zdaniu staje się <code>node --test</code>; kategoria testu się nie zmienia.</p>
+        </div>
+      </div>
+      <div class="card card-border bg-base-100" id="t-e2e"><div class="card-body"><h3 class="card-title text-base">Scenariusze E2E na repozytorium-fiksturze</h3><ul class="list-disc pl-5 space-y-1"><li>niekończąca się pętla poprawek</li><li>zmiana decyzji w trakcie wykonania</li><li>crash w połowie części planu</li><li>konflikt konfiguracji lokalnej z projektową</li><li>rebase w trakcie runu</li></ul></div></div>
+    </div>
+  </section>
+
+  <!-- ================= DECYZJE ================= -->
+  <section class="space-y-6" id="decyzje">
+    <h2 class="text-2xl font-bold">Decyzje produktowe</h2>
+    <p class="opacity-80 max-w-3xl">D1-D4 zamknięte. Zostało D5 (runtime rdzenia) na dole tej sekcji.</p>
+
+    <!-- D1 -->
+    <div class="card card-border bg-base-100 border-success/50" id="d1">
+      <div class="card-body">
+        <h3 class="card-title">D1. Centralny obiekt: <span class="text-success">Zmiana</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Zmiana ma ID od pierwszej intencji i trzyma intencję, rejestr decyzji, design, graf części planu, runy i review. Części planu tworzą graf (to, co dawał wariant C), ale intencja i decyzje żyją na poziomie Zmiany. Odrzucone: pipeline etapów (intencja bez naturalnego miejsca), graf ticketów (intencja się rozprasza).</p>
+      </div>
+    </div>
+
+    <!-- D2 -->
+    <div class="space-y-4" id="d2-block">
+    <div class="card card-border bg-base-100 border-primary/40" id="d2">
+      <div class="card-body space-y-3">
+        <h3 class="card-title">D2. Kierunek OpenSpec: co jest "specem", a co jest Zmianą <span class="badge badge-warning badge-sm">nowe</span></h3>
+        <p class="text-sm">Twoje odczytanie pokrywa się z Warstwą C raportu (C1-C3), a wątpliwość "dokumentacja produktowa czy architektoniczna?" jest dokładnie tym, co OpenSpec rozstrzygnął w jedną stronę. Najpierw jak jest u nich, potem dwa pytania dla BDK.</p>
+
+        <figure class="card bg-base-200">
+          <div class="card-body p-4">
+            <svg viewBox="0 0 960 300" width="100%" role="img" aria-labelledby="d3t">
+              <title id="d3t">Cykl OpenSpec: żywy spec w openspec/specs, Zmiana w openspec/changes z proposal, design, delta spec i tasks, po wykonaniu delta jest mergowana do specu, a katalog Zmiany trafia do archiwum. Design nie jest mergowany.</title>
+              <defs><marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+              <g font-size="13" fill="currentColor">
+                <g id="os-specs"><rect x="20" y="30" width="260" height="110" rx="8" fill="var(--color-primary)" fill-opacity="0.15" stroke="var(--color-primary)"/><text x="150" y="55" text-anchor="middle" font-weight="600">Żywy spec (commitowany)</text><text x="150" y="78" text-anchor="middle" font-size="11" opacity="0.8">specs/&lt;zdolność&gt;/spec.md</text><text x="150" y="98" text-anchor="middle" font-size="11" opacity="0.8">Requirement: System SHALL ...</text><text x="150" y="116" text-anchor="middle" font-size="11" opacity="0.8">Scenario: WHEN ... THEN ...</text><text x="150" y="134" text-anchor="middle" font-size="11" font-style="italic" opacity="0.8">tylko zachowanie, zero architektury</text></g>
+                <g id="os-change"><rect x="360" y="30" width="330" height="200" rx="8" fill="var(--color-base-100)" stroke="currentColor"/><text x="525" y="55" text-anchor="middle" font-weight="600">Zmiana (commitowana, potem archiwum)</text>
+                  <rect x="380" y="70" width="140" height="34" rx="6" fill="var(--color-base-200)" stroke="currentColor"/><text x="450" y="92" text-anchor="middle" font-size="12">proposal.md (why)</text>
+                  <rect x="530" y="70" width="140" height="34" rx="6" fill="var(--color-base-200)" stroke="currentColor"/><text x="600" y="92" text-anchor="middle" font-size="12">design.md (how)</text>
+                  <rect x="380" y="115" width="140" height="34" rx="6" fill="var(--color-primary)" fill-opacity="0.2" stroke="var(--color-primary)"/><text x="450" y="137" text-anchor="middle" font-size="12">delta spec</text>
+                  <rect x="530" y="115" width="140" height="34" rx="6" fill="var(--color-base-200)" stroke="currentColor"/><text x="600" y="137" text-anchor="middle" font-size="12">tasks.md</text>
+                  <text x="525" y="175" text-anchor="middle" font-size="11" opacity="0.8">delta = ADDED / MODIFIED / REMOVED / RENAMED Requirements</text>
+                  <text x="525" y="193" text-anchor="middle" font-size="11" opacity="0.8">zmiana bez wpływu na spec musi zadeklarować skip_specs: true</text>
+                  <text x="525" y="211" text-anchor="middle" font-size="11" opacity="0.8">design.md zostaje w archiwum, nigdzie nie jest mergowany</text>
+                </g>
+                <g id="os-archive"><rect x="760" y="150" width="180" height="80" rx="8" fill="var(--color-base-200)" stroke="currentColor" stroke-dasharray="4 3"/><text x="850" y="180" text-anchor="middle" font-weight="600">Archiwum</text><text x="850" y="200" text-anchor="middle" font-size="11" opacity="0.8">changes/archive/DATA-id/</text><text x="850" y="216" text-anchor="middle" font-size="11" opacity="0.8">dziennik decyzji, 83 wpisy u nich</text></g>
+              </g>
+              <g stroke="currentColor" fill="none" marker-end="url(#arr3)">
+                <path d="M280 85 C320 85, 320 132, 378 132" stroke-dasharray="4 3"/>
+                <path d="M450 149 C450 270, 150 270, 150 142" stroke="var(--color-primary)" stroke-width="2"/>
+                <path d="M690 190 L758 190"/>
+              </g>
+              <g font-size="11" fill="currentColor" opacity="0.85">
+                <text x="300" y="70">czyta, kopiuje</text><text x="300" y="84">cały blok</text>
+                <text x="300" y="262" fill="var(--color-primary)">merge delty do specu: u nich LLM (skill sync-specs) albo CLI (openspec archive), przepływ agentowy wybiera LLM</text>
+                <text x="700" y="180">mv katalogu</text>
+              </g>
+            </svg>
+          </div>
+        </figure>
+
+        <div class="grid md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <h4 class="font-semibold mb-1">Odpowiedź na Twoje pytanie</h4>
+            <p>W OpenSpec żywy spec to <b>dokumentacja zachowania</b> (co system robi, w formie wymagań i scenariuszy), nie architektura. Architektura ("jak") żyje w <code>design.md</code> per zmiana i po archiwizacji jest tylko historią. Więc Twój opis ("design, plany, cr, update specu zmiany, na koniec merge do głównego specu") odpowiada ich cyklowi 1:1, z jedną luką: <b>design nigdy nie zasila niczego trwałego</b>. Wiedza o kształcie systemu odkłada się wyłącznie w kodzie i archiwum.</p>
+          </div>
+          <div>
+            <h4 class="font-semibold mb-1">Dlaczego to ma znaczenie dla BDK</h4>
+            <p>Twoja kluczowa potrzeba to weryfikacja planu wobec wzorców i reguł architektury. Spec behawioralny na to nie odpowie: "System SHALL expire a session after 15 minutes" nic nie mówi o tym, że repozytoria są za interfejsem, a handlery nie znają bazy. Żeby plan-verifier miał <b>co</b> sprawdzać po ID, potrzebne jest miejsce, gdzie decyzje architektoniczne z designów odkładają się trwale, a nie tylko w archiwum.</p>
+          </div>
+        </div>
+
+        <div class="text-sm space-y-1">
+          <h4 class="font-semibold">Co bierzemy z OpenSpec bez zmian, co poprawiamy (z raportu C1-C3)</h4>
+          <ul class="list-disc pl-5 space-y-1">
+            <li><b>Bez zmian:</b> format wymagań i scenariuszy, cykl delta -> merge -> archiwum, jawny opt-out (<code>spec-impact: none</code>) odrzucany przez verify-plan, gdy nie ma ani delty, ani opt-outu.</li>
+            <li><b>Poprawka 1:</b> merge robi <b>skrypt</b>, deterministycznie, z walidatorem przed i po. LLM wchodzi tylko przy konflikcie, który pokazuje użytkownikowi. OpenSpec ma tu dwie równoległe implementacje, a przepływ agentowy wybiera tę probabilistyczną.</li>
+            <li><b>Poprawka 2:</b> walidator sprawdza semantykę (dokładny prefiks <code>Scenario:</code>, wiersze WHEN i THEN, utrata scenariuszy przy MODIFIED jako ERROR), z konfigurowalnym słowem normatywnym (SHALL/MUST albo MUSI/POWINIEN).</li>
+            <li><b>Poprawka 3:</b> edycja żywego specu poza syncem blokowana hookiem na ścieżkę, nie regułą w prozie.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-border bg-base-100 border-success/50" id="d2a">
+      <div class="card-body">
+        <h3 class="card-title text-base">D2a. Żywy spec: <span class="text-success">tylko zachowanie, jak w OpenSpec</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Wybrałeś wbrew rekomendacji; przyjmuję. Konsekwencja, którą zapiszę w designie: weryfikacja planu wobec architektury (S4) opiera się wyłącznie na <b>regułach projektu z ID</b> i na archiwum designów. Żeby to działało, reguły projektu muszą móc być konkretne dla tego systemu ("moduł płatności rozmawia z bankiem tylko przez port X"), a nie tylko ogólne zasady. To trafia do kroku 2A jako wymaganie wobec modelu reguł, a do sekcji "Czego nie zdecydowaliśmy" jako ryzyko: jeśli reguły okażą się za ogólne, wracamy do specu architektonicznego.</p>
+      </div>
+    </div>
+
+    <div class="card card-border bg-base-100 border-success/50" id="d2b">
+      <div class="card-body">
+        <h3 class="card-title text-base">D2b. <span class="text-success">Wiedza Zmiany w repo, stan maszynowy lokalny</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Żywy spec, katalog Zmiany (intencja, rejestr decyzji, design, delty, części planu) i archiwum są commitowane. Liczniki prób, czasy, właściciel sesji i cache są lokalne, gitignorowane i odtwarzalne z commit trailerów tam, gdzie to możliwe. Defekt <code>/.bdk/</code> w <code>ensure_ignored()</code> do naprawy w ramach v3.</p>
+      </div>
+    </div>
+    </div>
+
+    <!-- D3 -->
+    <div class="card card-border bg-base-100 border-success/50" id="d3">
+      <div class="card-body">
+        <h3 class="card-title">D3. Autonomia: <span class="text-success">ustala polityka projektu</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Domyślnie człowiek zatwierdza design i review końcowe, reszta idzie sama, a każda decyzja podjęta bez nadzoru trafia do rejestru jako "do przejrzenia". Bramki egzekwuje rdzeń, nie proza. Odrzucone: bramka po każdym etapie (koszt każdego zatrzymania), bramki na sztywno (projekty o wysokim ryzyku nie mogą dołożyć bramki po planie).</p>
+      </div>
+    </div>
+
+    <!-- D4 -->
+    <div class="card card-border bg-base-100 border-success/50" id="d4">
+      <div class="card-body">
+        <h3 class="card-title">D4. Konfiguracja osobista: <span class="text-success">pełne nadpisanie, widoczne dla review</span> <span class="badge badge-success badge-sm">zdecydowane</span></h3>
+        <p class="text-sm">Osoba może nadpisać wszystko, łącznie z regułami projektu. Rdzeń przy starcie runu zapisuje w Zmianie listę kluczy nadpisanych względem projektu (same klucze, bez wartości), a review końcowe dostaje ją w podsumowaniu obok intencji i decyzji.</p>
+      </div>
+    </div>
+
+
+    <div class="space-y-4" id="d5-block">
+    <div class="card card-border bg-base-100 border-primary/40" id="d5">
+      <div class="card-body space-y-3">
+        <h3 class="card-title">D5. Runtime rdzenia: Python czy Node <span class="badge badge-warning badge-sm">nowe</span></h3>
+        <p class="text-sm">Przeczytałem <code>git-identity/docs/decisions/0001-runtime-and-stack.md</code> w całości. To jest decyzja architektoniczna, więc formalnie należy do kroku 2A, ale rozstrzygam ją tu, bo wpływa na kształt każdego podejścia. Najpierw, co ADR mówi wprost o BDK, potem fakty o BDK, potem rekomendacja.</p>
+
+        <div class="grid md:grid-cols-2 gap-4 text-sm">
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <h4 class="font-semibold">Co ADR 0001 mówi i czego nie da się przenieść 1:1</h4>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>Node wybrany, bo <b>npm to jedyny wbudowany kanał dzielenia kodu między pluginami</b>; dla Pythona nie ma nic. Plus liczby: 3 672 wystąpień node wobec 2 800 python w hookach pluginów.</li>
+              <li>ADR sam zapisał: <i>"The ecosystem has two languages - bdk stays in Python. That is accepted"</i>, a jako warunek unieważnienia: <i>"The helpers are to be consumed by bdk. Then bdk dictates the language."</i> Czyli decyzja o BDK v3 jest tą, która rozstrzyga język całego ekosystemu.</li>
+              <li><b>Reguła 9 ADR ("rdzeń nie ma runtime'u, logika w SKILL.md") nie pasuje do BDK.</b> Fundament BDK v3 jest odwrotny: liczy skrypt, model decyduje. Rdzeń BDK jest kodem z definicji, a brak runtime'u nie może kończyć się cichym sukcesem (reguła 2). Rdzeń musi kończyć się głośnym błędem z instrukcją instalacji.</li>
+              <li>Reguły 1, 3, 4, 5, 7, 11, 15, 16 (nic poza <code>node:</code> w hookach, brak <code>npx</code>, <code>cwd</code> ze stdin, bundlowanie na CI, zapisy atomowe, weryfikacja mechanizmu na żywo, kontrola negatywna) przenoszą się bez zmian i większość z nich BDK już spełnia albo potrzebuje.</li>
+            </ul>
+          </div></div>
+          <div class="card bg-base-200"><div class="card-body p-4 gap-2">
+            <h4 class="font-semibold">Fakty o BDK, zmierzone teraz</h4>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>12 plików Python, 2 712 linii skryptów i hooków, 5 442 linie testów jednostkowych, zero zależności (stdlib), <code>requires-python &gt;= 3.12</code>.</li>
+              <li><b>Argument "Python jest wszędzie" już dla BDK nie działa:</b> macOS ma z Xcode 3.9.6, a BDK wymaga 3.12, więc użytkownik i tak instaluje runtime. Node i Python są tu na równi.</li>
+              <li>MCP (serena, code-review-graph) idzie przez <code>uvx</code>, czyli <code>uv</code> pozostaje wymagany niezależnie od języka rdzenia. Przy Node użytkownik BDK potrzebuje dwóch runtime'ów; przy Pythonie jednego.</li>
+              <li>v3 i tak przepisuje model stanu (Zmiana, rejestr decyzji, budżety), więc <code>bdk_run_state.py</code> i jego 1 028 linii testów są przepisywane w każdym wariancie. Koszt zmiany języka to głównie porting <code>inject*.py</code>, <code>get_settings.py</code> i hooków, a te też zmienia przebudowa konfiguracji.</li>
+              <li>Rdzeń v3 będzie potrzebował zależności, których stdlib nie ma w żadnym z języków: YAML (pipeline jako dane), walidator schematów, parser bloków Markdown. Node ma ścieżkę z ADR (esbuild, bundel commitowany). Python ma <code>zipapp</code> (<code>.pyz</code> ze spakowanymi czystymi zależnościami), mniej popularną, ale działającą offline tak samo.</li>
+              <li>Projekty referencyjne z analizy, które mają porównywalny rdzeń (OpenSpec 48k linii, Task Master, claude-flow), są w TypeScript. GSD w bash i node. Żaden w Pythonie.</li>
+              <li>Cały toolset, którego używasz wokół BDK (lavish-axi, gh-axi, chrome-devtools-axi, promptfoo wybrany wyżej), jest w Node.</li>
+            </ul>
+          </div></div>
+        </div>
+
+        <div class="card bg-base-200"><div class="card-body p-4 gap-2 text-sm">
+          <h4 class="font-semibold">Rekomendacja: Node z TypeScript jako źródłem, bundlowany na CI</h4>
+          <p>Zgadzam się z Twoim przeczuciem, ale z innego powodu niż ADR. Nie dlatego, że Node jest bardziej dostępny (nie jest), tylko dlatego, że (1) BDK v3 to jedyny moment, w którym zmiana języka nie kosztuje nic ekstra, bo rdzeń i tak powstaje od nowa; (2) jeden język w całym ekosystemie pluginów, z bundlowanymi helperami współdzielonymi przez git-identity i następne, to największy zysk w utrzymaniu na lata; (3) rdzeń v3 to maszyna stanów, rejestr z historią i walidatory schematów, czyli dokładnie to, gdzie statyczne typy i zod (jak w OpenSpec) zwracają się najbardziej; (4) testy zachowania (promptfoo) i tooling są już w Node.</p>
+          <p><b>Adwokat diabła:</b> użytkownik potrzebuje Node i <code>uv</code> jednocześnie; okres przejściowy, w którym v2 (Python) i v3 (Node) współistnieją, musi być krótki i z twardym cięciem, inaczej mamy dwa rdzenie; porting 5,4k linii testów to realna praca, choć większość dotyczy modelu, który i tak się zmienia; ADR 0001 trzeba zaktualizować (konsekwencja "bdk stays in Python" przestaje być prawdą).</p>
+        </div></div>
+
+        <form data-lavish-question="d5-runtime" id="d5-form" onsubmit="queueChoice(event, 'D5 runtime rdzenia')">
+          <div class="grid lg:grid-cols-3 gap-3">
+            <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Node: TypeScript jako źródło, bundel ESM commitowany i pilnowany na CI, node --test, Biome, reguły ADR 0001 poza regułą 9; rdzeń kończy się głośnym błędem bez runtime'u" class="radio radio-primary radio-sm" checked><span class="font-semibold">Node + TypeScript, bundlowany</span><span class="badge badge-primary badge-sm">rekomendacja</span></div><p class="text-xs opacity-75">Jeden język w ekosystemie, helpery współdzielone przez bundel, typy dla maszyny stanów. Koszt: dwa runtime'y u użytkownika (node + uv dla MCP), aktualizacja ADR 0001, twarde cięcie v2 -&gt; v3.</p></div></label>
+            <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Python >= 3.12: zależności spakowane do zipapp (.pyz) commitowanego i pilnowanego na CI, pytest" class="radio radio-primary radio-sm"><span class="font-semibold">Python + zipapp</span></div><p class="text-xs opacity-75">Jeden runtime u użytkownika (uv daje Pythona i MCP), ciągłość z dzisiejszymi testami i CI. Koszt: dwa języki w ekosystemie na stałe, brak współdzielenia z git-identity, typy tylko przez pyright.</p></div></label>
+            <label class="opt card bg-base-200"><div class="card-body p-4 gap-2"><div class="flex items-center gap-2"><input type="radio" name="answer" value="Python stdlib bez zależności, jak dziś; YAML i schematy zastąpione JSON i własnym walidatorem" class="radio radio-primary radio-sm"><span class="font-semibold">Python stdlib, jak dziś</span></div><p class="text-xs opacity-75">Zero bundlowania. Koszt: własny walidator schematów i brak YAML wymuszają JSON jako format pipeline'u i reguł; każdy przyszły moduł (wzorce, wyszukiwanie artefaktów) uderza w ten sam mur.</p></div></label>
+          </div>
+          <div class="flex items-center gap-3 mt-3"><button type="submit" class="btn btn-primary btn-sm">Zatwierdź D5</button><span class="badge badge-success queued">w kolejce</span></div>
+        </form>
+      </div>
+    </div>
+    </div>
+    <div class="alert alert-soft alert-info" id="no-lavish" style="display:none"><span>Strona jest otwarta bez serwera Lavish, więc odpowiedzi nie da się skolejkować. Otwórz ją przez <code>npx -y lavish-axi .lavish/bdk-v3-design-01-produkt.html</code>.</span></div>
+  </section>
+
+  <!-- ================= DALEJ ================= -->
+  <section class="card bg-base-200" id="dalej">
+    <div class="card-body">
+      <h2 class="card-title">Co będzie w kroku 2</h2>
+      <ol class="list-decimal pl-5 text-sm space-y-1">
+        <li><b>2A.1 Pytania doprecyzowujące</b> (3-5): zakres cięcia v2 -&gt; v3 i migracja istniejących planów, tolerancja awarii rdzenia, budżety kontekstu, granica między regułami projektu a regułami BDK (po D2a).</li>
+        <li><b>2A.2 Dwa lub więcej podejść architektonicznych</b> z diagramami tego samego typu: gdzie żyje sterowanie (proza skilli, deterministyczny rdzeń z maszyną stanów, skrypty Workflow), model stanu i rejestru decyzji, granulacja planu, ochrona przed pętlami, warstwy konfiguracji i składanie kontekstu, punkty rozszerzeń (design, wyszukiwanie artefaktów, wzorce).</li>
+        <li><b>Adwokat diabła</b> dla rekomendacji: wąskie gardło, pojedynczy punkt awarii, ukryty koszt, niepotwierdzone założenie.</li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<script>
+  function markNoLavish(form) {
+    document.getElementById('no-lavish').style.display = '';
+  }
+  function queueChoice(event, label) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const choice = new FormData(form).get('answer');
+    if (!choice) return;
+    if (!window.lavish) { markNoLavish(form); return; }
+    window.lavish.queuePrompt(label + ': ' + choice, {
+      tag: 'choice',
+      text: label + ': ' + choice,
+      element: form,
+      data: { question: form.dataset.lavishQuestion, answer: choice }
+    });
+    form.dataset.queued = '1';
+  }
+</script>
+</body>
+</html>
