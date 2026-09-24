@@ -25,6 +25,17 @@ docs/                    — design specs and analysis
 - Skills reference each other with full namespace: `/bdk:create-plan`, `/bdk:debug`
 - Every skill starts with: `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`
 
+## Language
+
+- Everything written into this repository is in English: `docs/`, plans, specs, `README.md`, `CONTRIBUTING.md`, skills, agents, rules, code comments, commit messages, GitHub issues and PR descriptions.
+- The conversation language does not change this. When the user writes in another language, reply in that language, but write files in English.
+- Exception: `docs/v3/` is a temporary archive of v3 design-session material and stays as written. Do not translate it.
+
+## v3 Work Tracking
+
+- Roadmap and task scope: `docs/V3-IMPLEMENTATION-PLAN.md`. Status: one GitHub issue per task `Tnn` in the `v3.0` milestone, with "blocked by" links for dependencies.
+- Pick the next task from issues whose blockers are all closed. Each task runs as an OpenSpec Change `v3-Tnn-<slug>` and ends with a PR containing `Closes #N`.
+
 ## Development Commands
 
 ```bash
