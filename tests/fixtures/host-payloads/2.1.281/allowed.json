@@ -1,0 +1,147 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.281",
+    "check_id": "allowed",
+    "recordings": 5
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-9>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-9>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-7>",
+      "permission_mode": "default",
+      "hook_event_name": "UserPromptExpansion",
+      "expansion_type": "slash_command",
+      "command_name": "bdk-probe:allowed",
+      "command_args": "",
+      "command_source": "plugin",
+      "prompt": "/bdk-probe:allowed"
+    },
+    {
+      "session_id": "<SESSION-9>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-9>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-7>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "node <PLUGIN_ROOT>/dist/bdk.mjs ping || echo \"BDK STOP: kernel unavailable\"",
+        "description": "Run BDK probe kernel ping command"
+      },
+      "tool_use_id": "<TOOL-USE-9>"
+    },
+    {
+      "session_id": "<SESSION-9>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-9>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-7>",
+      "hook_event_name": "SessionEnd",
+      "reason": "other"
+    },
+    {
+      "hook_event_name": "RenderedSkill",
+      "texts": [
+        "Base directory for this skill: <PLUGIN_ROOT>/skills/allowed\n\nProbe skill `allowed` loaded.\n\nPlain block output: pong ping\n\nCompound block output: pong ping\n\nDo these two steps, then stop:\n\n1. Report the two block outputs above exactly as you see them, one per line, prefixed `PLAIN=` and `COMPOUND=`.\n2. Run this exact command with the Bash tool and report its output prefixed `TOOL=`:\n\n   node <PLUGIN_ROOT>/dist/bdk.mjs ping || echo \"BDK STOP: kernel unavailable\"\n"
+      ]
+    },
+    {
+      "duration_api_ms": 3284,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-9>",
+      "total_cost_usd": 0.0322574,
+      "usage": {
+        "input_tokens": 17,
+        "cache_creation_input_tokens": 13192,
+        "cache_read_input_tokens": 42764,
+        "output_tokens": 316,
+        "output_tokens_details": {
+          "thinking_tokens": 162
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 13192,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 39,
+            "cache_read_input_tokens": 27814,
+            "cache_creation_input_tokens": 328,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 328
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 17,
+          "outputTokens": 316,
+          "cacheReadInputTokens": 42764,
+          "cacheCreationInputTokens": 13192,
+          "webSearchRequests": 0,
+          "costUSD": 0.0322574,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 162,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "subagent_stats": {
+        "spawned": 0,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 0
+        },
+        "started_in_background": 0,
+        "max_depth": 0,
+        "spawned_by_subagents": 0,
+        "completed": 0,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {}
+      },
+      "is_error": false,
+      "num_turns": 2,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "TOOL=pong ping",
+      "ttft_ms": 2655,
+      "type": "result",
+      "duration_ms": 5005,
+      "uuid": "<UUID-9>",
+      "ttft_stream_ms": 1896,
+      "time_to_request_ms": 1101,
+      "first_content_frame_ms": 1897,
+      "queued_turn_count": 0,
+      "result_index": 0
+    }
+  ]
+}

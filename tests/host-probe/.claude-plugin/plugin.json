@@ -1,0 +1,7 @@
+{
+  "name": "bdk-probe",
+  "description": "Test-only plugin that records Claude Code hook payloads for docs/HOST-FACTS.md. Never shipped; load with --plugin-dir.",
+  "version": "0.1.0",
+  "author": { "name": "broneq" },
+  "license": "MIT"
+}
