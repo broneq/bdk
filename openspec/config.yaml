@@ -24,7 +24,7 @@ context: |
 
 rules:
   proposal:
-    - A change for a roadmap task is named `v3-Tnn-<slug>` (Tnn is the plan task ID, slug is kebab-case). Changes outside the roadmap use a descriptive kebab-case name without the prefix.
+    - A change for a roadmap task is named `v3-tnn-<slug>` (tnn is the plan task ID in lowercase, e.g. v3-t01-host-live-checks; OpenSpec rejects capitals). Changes outside the roadmap use a descriptive kebab-case name without the prefix.
     - 'The first line under "Why" links the plan section and the tracking issue, e.g. "Plan: docs/V3-IMPLEMENTATION-PLAN.md, T01. Tracks #46."'
     - Carry the task's Input over by citation - design section headings and decision IDs (e.g. D2, T1, P8). Do not restate a decision; do not reopen a decided one.
     - Every item under the task's "To resolve in the spec" is either resolved in proposal.md / design.md or listed as an open question for the user with a recommendation.

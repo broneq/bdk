@@ -18,7 +18,7 @@ Convention (confirmed in T00; project context and artifact rules live in `opensp
 | Plan element | OpenSpec counterpart |
 |---|---|
 | This document | `docs/V3-IMPLEMENTATION-PLAN.md`, linked from `openspec/config.yaml` as project context |
-| One task `Tnn` | one Change `openspec/changes/v3-Tnn-<slug>/` |
+| One task `Tnn` | one Change `openspec/changes/v3-tnn-<slug>/` (lowercase task ID, e.g. `v3-t01-host-live-checks`; OpenSpec rejects capitals) |
 | "Input" column | `proposal.md` (why and what) plus `design.md` (how), with citations of v3 design sections |
 | "Acceptance signal" column | `specs/<capability>/spec.md` as `Requirement` / `#### Scenario:` WHEN / THEN |
 | Work breakdown within a task | `tasks.md` (`## section`, `- [ ] N.M`) - written by AI in `/opsx:propose` or `/opsx:ff`, not here |
@@ -91,7 +91,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Input**: the "Running the project in OpenSpec" section above; D2 (OpenSpec format as the target format of the BDK spec); V-tracking.
 
-**Acceptance signal**: `openspec validate` passes on an empty Change tree; the first Change (`v3-T01-...`) created by `/opsx:propose` links this document.
+**Acceptance signal**: `openspec validate` passes on an empty Change tree; the first Change (`v3-t01-...`) created by `/opsx:propose` links this document.
 
 **To resolve in the spec**: OpenSpec schema for kernel tasks (default spec-driven or tdd); whether the v3 design goes into git now; whether `openspec/specs/` stays after v3 or migrates to `.bdk/specs/`.
 
