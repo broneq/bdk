@@ -1,0 +1,31 @@
+schema: spec-driven
+
+context: |
+  bdk-skill-kit is a Claude Code plugin in the BDK marketplace
+  (https://github.com/broneq/bdk). It ships `skill-check`, a deterministic
+  validator for Agent Skills directories and Claude Code agent files (CLI,
+  config, plugin API, rule catalogue, profiles, baseline, output), and two
+  skills: `skill-authoring` and `skill-check`.
+
+  Tech: TypeScript strict, Node >= 22.18, pnpm, Vitest, ESLint, Prettier,
+  knip. esbuild bundles are committed in dist/ and rebuilt by `pnpm build`;
+  never edit them by hand. Releases come from release-please and Conventional
+  Commits; consumers pin a git tag.
+
+  The living spec is openspec/specs/skill-kit/spec.md. It is written for any
+  consumer, not only BDK: BDK-specific rules (`bdk/*`) are specified in BDK's
+  own `skill-content-checks` spec, never here.
+
+  Everything written into the repo is in English. Never use the em dash; use "-".
+
+rules:
+  proposal:
+    - Changes use a descriptive kebab-case name, e.g. add-rule-foo.
+  specs:
+    - A new generic rule adds a row to the rule catalogue requirement, a violation fixture under fixtures/violations/<rule-id>/ and a cited guideline in skills/skill-authoring/; the kit tests fail when one is missing.
+    - Every requirement has at least one "#### Scenario:" in WHEN / THEN form.
+  design:
+    - Each decision records the alternatives considered and why they lost.
+  tasks:
+    - Code tasks are test-first - the failing test is its own step before the implementation step.
+    - The last task runs the full local CI (build, lint, format check, typecheck, knip, test, self-check) and `openspec validate <change> --strict`.

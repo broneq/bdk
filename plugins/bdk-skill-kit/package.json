@@ -1,0 +1,65 @@
+{
+  "name": "bdk-skill-kit",
+  "version": "0.0.0",
+  "description": "Deterministic validation for Agent Skills and Claude Code agent files, plus the rules for writing them",
+  "license": "MIT",
+  "type": "module",
+  "repository": "github:broneq/bdk-skill-kit",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "bin": {
+    "skill-check": "dist/skill-check.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "hooks": "husky",
+    "build": "node build.mjs",
+    "lint": "eslint --max-warnings 0 src",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "knip": "knip",
+    "test": "vitest run --coverage",
+    "self-check": "node dist/skill-check.mjs --portable"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.4",
+    "@vitest/coverage-v8": "5.0.2",
+    "esbuild": "0.28.2",
+    "eslint": "10.11.0",
+    "eslint-config-prettier": "10.1.8",
+    "husky": "9.1.7",
+    "knip": "6.38.0",
+    "lint-staged": "17.5.1",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.1",
+    "vitest": "5.0.2",
+    "yaml": "2.9.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --max-warnings 0 --fix",
+      "prettier --write"
+    ],
+    "*.{js,mjs,json,yaml,yml,md}": "prettier --write"
+  }
+}
