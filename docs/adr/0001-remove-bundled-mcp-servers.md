@@ -38,17 +38,18 @@ BDK v2 ships two MCP servers in its plugin `.mcp.json`, serena and code-review-g
 - ✅ The `Stop` graph update and the `register-graph-repo` SessionStart hook go away. The latter cost about 0.4 s per session start even warm.
 - ❌ The one task where the graph looked consistently useful, dead-code detection (V7), loses that help. On V7 the graph's three runs were all 0.588 against a C0 median of 0.435, but inside C0's range, so it is not a measured win.
 - ❌ Users who relied on `semantic_search_nodes` / `get_symbols_overview` in their own workflow must install the servers themselves at user level.
-- 🟡 The result holds for one TypeScript monorepo with Haiku 4.5 as the worker. On another stack a server may perform differently; the harness in `docs/v3/t03-mcp-eval/` reruns on another repository.
+- 🟡 The result holds for one TypeScript monorepo with Haiku 4.5 as the worker. On another stack a server may perform differently; the harness (in git history, see Evidence) reruns on another repository.
 - 🟡 The repository's own `CLAUDE.md` graph section is a dev-time choice for BDK contributors, not part of the plugin, and is not decided here.
 
 ### Implementation Requirements
 
 - [ ] T13 `ctx` and content hooks: no `uvx` lines in `hooks.json`; `hooks session-start` drops graph repo registration; `ctx skill` tier chains carry only the built-in-tools tier, and the acceptance test "`features.code-review-graph` gives the graph tier" becomes "tier text is the same with or without the flag"; `features.code-review-graph` and `features.serena` become unknown keys that `config check` reports as removed.
 - [ ] T11 `doctor`: no `uv` / `uvx` check.
-- [ ] T32 import and cleanup: remove both servers from `.mcp.json` (delete the file if it is empty), `hooks/register-graph-repo/`, any `Stop` graph line and `.serena/`; drop `uv.lock` (not needed for MCP); the v2 -> v3 import reports the dropped `features` keys.
+- [ ] T04 remove the bundled MCP servers from the shipping v2 plugin: `.mcp.json` servers, the `uvx` hook lines (including the `Stop` graph update), `hooks/register-graph-repo/`, `.serena/`, the graph and serena tool tiers, MCP tools in agent `tools:` and skill `allowed-tools`, the `features.code-review-graph` / `features.serena` keys, and the tests and docs that name them.
+- [ ] T32 import and cleanup: drop `uv.lock` (not needed for MCP); the v2 -> v3 import reports the dropped `features` keys.
 - [ ] T41 stage skills: tool-tier guidance is the built-in-tools text; the CI content test "`mcp__plugin_bdk_` in tool names" becomes "no `mcp__plugin_bdk_` names".
 - [ ] T42 roles and adapters: adapter `tools:` without MCP tools; the `scout` adapter keeps the four former agents merged, with `Read`, `Grep`, `Glob`, `Bash` (T02 decision R-7).
-- [ ] Retire `.claude/rules/mcp-tool-naming.md` and the MCP parts of `.claude/rules/fragment-system.md` with v3.
+- [ ] Retire `.claude/rules/mcp-tool-naming.md` and the MCP parts of `.claude/rules/fragment-system.md` (T04).
 - [ ] `docs/V3-IMPLEMENTATION-PLAN.md`: T03 Resolution paragraph pointing to this ADR; T11, T13, T32, T41 and T42 name the outcome where it changes them.
 
 ## Pros and Cons of the Options
@@ -148,7 +149,7 @@ The orchestrator did the search tasks V1-V4 itself (one `bdk:explorer` spawn in 
 
 ### Evidence
 
-Everything is in `docs/v3/t03-mcp-eval/`, on branch `v3/T03-mcp-value-evaluation`:
+Harness and raw data were committed under `docs/v3/t03-mcp-eval/` and removed from the tree after this ADR was accepted. They stay in git history: `git show e061216:docs/v3/t03-mcp-eval/<path>` (or `git checkout e061216 -- docs/v3/t03-mcp-eval`). Paths below are relative to that directory:
 - harness and flags: `README.md`
 - raw runs: `runs/`
 - per-run table: `results/value-runs.md`

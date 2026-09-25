@@ -1,7 +1,0 @@
-{
-  "session_id": "d81b37bb-d635-47dc-9554-98a10baeca63",
-  "transcript_path": "<scratch>/d81b37bb-d635-47dc-9554-98a10baeca63.jsonl",
-  "cwd": "<scratch>/bench/wt/probe",
-  "hook_event_name": "SessionStart",
-  "source": "startup"
-}

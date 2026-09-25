@@ -1,1 +1,0 @@
-cat > <scratch>/bench/probe-ss/sessionstart-$$.json; env | grep -E '^CLAUDE' | sed 's/=.*//' > <scratch>/bench/probe-ss/env-$$.txt; /usr/bin/time -p claude mcp list > <scratch>/bench/probe-ss/mcp-list-$$.txt 2>&1 || true

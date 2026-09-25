@@ -70,9 +70,10 @@ flowchart LR
   T31 --> T41
   T42 --> T32
   T03 --> T13
-  T03 --> T32
+  T03 --> T04["T04 Remove<br/>bundled MCP"]
+  T04 --> T32
   T03 --> T41
-  class T00,T01,T02,T03,T10,T15 prep
+  class T00,T01,T02,T03,T04,T10,T15 prep
   class T11,T12,T13,T14,T20,T21,T22,T23,T24,T30,T31,T32 primary
   class T40,T41,T42 warn
   class T50 ok
@@ -189,12 +190,32 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Dependencies**: T00.
 
-**Resolution** (2026-09-25, user decision; the record is `docs/adr/0001-remove-bundled-mcp-servers.md`, data and harness in `docs/v3/t03-mcp-eval/`, OpenSpec change `v3-t03-mcp-value-evaluation`):
+**Resolution** (2026-09-25, user decision; the record is `docs/adr/0001-remove-bundled-mcp-servers.md`, data and harness in git history at `e061216:docs/v3/t03-mcp-eval/`, OpenSpec change `v3-t03-mcp-value-evaluation`):
 - Both bundled MCP servers are **removed**. On vibe-kanban (TypeScript, 8 tasks x 4 configurations x 3 Haiku 4.5 runs) neither passed the value rule: code-review-graph better on 0 of 8 tasks, serena on 0 of 8, serena on top of the graph better on 1 and worse on 1; in a Sonnet 5 slice no run called an MCP tool.
 - Cost that goes with them: +0.9-1.4 s per server at session start warm, 31-45 s (graph) and 19-34 s (serena) cold, past the 30 s default `MCP_TIMEOUT` for every cold graph start; 136-700 MB (graph) and about 450-500 MB (serena with its TypeScript language server) RSS per session. The parallel-load test was not run, since it cannot change a failed value verdict.
 - Failure mode: with a server missing, the model falls back to `grep` + `Read` on its own; nothing a hook or skill reads at session start knows whether a server connected, so tiers could not follow availability anyway.
 - R-7: `scout` stays one adapter; without MCP its four former agents need the same read-only tool set.
-- Plan impact applied on 2026-09-25: T11 (`doctor` without `uv`), T13 (no `uvx` lines, no graph registration, one tier text), T15 (no `mcp__plugin_bdk_` names), T23 and T42 (`scout` tools), T32 (`.mcp.json` servers, `register-graph-repo`, `.serena/`, `uv.lock` deleted), T41 (content test).
+- Plan impact applied on 2026-09-25: T11 (`doctor` without `uv`), T13 (no `uvx` lines, no graph registration, one tier text), T15 (no `mcp__plugin_bdk_` names), T23 and T42 (`scout` tools), T32 (`uv.lock` deleted), T41 (content test). Removing the servers from the plugin that ships today is its own task, T04.
+
+### T04 Remove the bundled MCP servers (serena, code-review-graph)
+
+**Goal**: carry out ADR-0001 in the plugin that ships today, so that no session pays for the two servers while v3 is being built, and the v3 tasks start from a tree with no MCP in it.
+
+**Scope**:
+- Plugin wiring: the `serena` and `code-review-graph` entries of `.mcp.json` (the file goes if empty); the `uvx` lines in `hooks/hooks.json` (the `uvx` presence warning, `code-review-graph status`, the `Stop` `code-review-graph update`); `hooks/register-graph-repo/` and its hook entry; `.serena/`.
+- Tool tiers: `fragments/tool-tiers/*-graph.md` and `*-serena.md` go; each chain keeps only its built-in-tools tier (or the chains collapse to plain fragments); `fragments/code-review-graph/`; the tier markers in `STARTUP_INSTRUCTIONS.md` and the `bdk-tier-*` meta-skills render the built-in-tools text.
+- Agents and skills: every `mcp__plugin_bdk_*` tool leaves agent `tools:` and skill `allowed-tools`; prose in agents, skills and references that names MCP tools is rewritten for `Read` / `Grep` / `Glob` / `Bash`; `skills/setup` no longer bootstraps the servers.
+- Settings: `features.code-review-graph` and `features.serena` leave `hooks/check-bdk-config/settings.schema.json`, `scripts/get_settings.py` and `scripts/inject.py`; a project that still sets them gets a warning, not an error.
+- Tests and docs: tests for the removed parts go, tests that assert tier or tool content are updated, and one test fails on any `mcp__plugin_bdk_` name in the plugin; `README.md`, `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md`, `.claude/rules/mcp-tool-naming.md` (retired), the MCP parts of `.claude/rules/fragment-system.md`, `.claude/rules/inject-fragments.md` and `.claude/rules/skill-creation-rules.md`, `.claude/settings.json`, `.gitignore`.
+- Branches: close `fix/38` without merging (it documented the serena hook in `setup`); `fix/stop-hook-graph-update` is superseded by this task.
+
+**Input**: `docs/adr/0001-remove-bundled-mcp-servers.md` (decision, consequences, implementation requirements); T03 Resolution; `.claude/rules/fragment-system.md` (chain rules the reduced chains must still satisfy).
+
+**Acceptance signal**: `git grep -E "mcp__plugin_bdk|code-review-graph|serena|uvx"` outside `docs/v3/`, `docs/adr/`, `openspec/` and `tests/evals/` iterations is empty; a session started with `--plugin-dir` on the result lists no BDK MCP server and runs no `uvx` process; the rendered `STARTUP_INSTRUCTIONS.md` and every `bdk-tier-*` skill show the built-in-tools tier with all features on and off; `pytest tests/unit/` passes.
+
+**To resolve in the spec**: whether the change lands only in `staging/v3` or also ships as a v2.x release on `main` (the per-session cost is paid in v2 today); whether the tier chains stay as one-entry chains or become plain fragments; whether the repository's own `CLAUDE.md` code-review-graph section (a dev-time choice for BDK contributors, left open by the ADR) goes too; what to do with `tests/evals/` iterations that mention MCP tools (historic output, left as is by default).
+
+**Dependencies**: T03 (done).
 
 ### T10 Kernel CLI contract (first-class document)
 
@@ -504,8 +525,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Scope**:
 - `bdk import`: `settings.json` -> `settings.yaml` (key mapping from T12), old `.bdk/design/*.md` -> intents of new Changes (`change new` with the content), `.bdk/runs/`, `.bdk/plans/`, `.bdk/verify-plan/` -> a report of what was ignored; `hooks session-start` detects the v2 layout and prints the instruction (content, exit 0); `doctor` does the same on demand.
-- Deletion: `scripts/*.py`, `hooks/*/check.py` and `register.py`, `hooks/check-rules-drift/` (not ported, T02 decision Q-6), `hooks/check-bdk-config/settings.schema.json`, `hooks/is-command-exists/` (not called), `tests/unit/` (pytest), `pyproject.toml`, `uv.lock` (not needed for MCP, T03), the `serena` and `code-review-graph` entries of `.mcp.json` (the file goes if empty), `hooks/register-graph-repo/`, `.serena/`, `__pycache__` in `skills/execute-plan`, `skills/create-fixture`, `skills/refine-rules/scripts`; `tests/evals/` after replacement by promptfoo (T40); the 13 `bdk-*` meta-skills and the eight agent files replaced by adapters (T42).
-- Side items: `ensure_ignored()` (if not done earlier in T20), `features.caveman` (#39: a consumer or removal of the key; in v3 a key without a consumer is an error, so it must either go or work), close `fix/38` without merging (#38 documented the Serena hook in `setup`; serena is removed by T03), merge or close `fix/39`.
+- Deletion: `scripts/*.py`, `hooks/*/check.py` and `register.py`, `hooks/check-rules-drift/` (not ported, T02 decision Q-6), `hooks/check-bdk-config/settings.schema.json`, `hooks/is-command-exists/` (not called), `tests/unit/` (pytest), `pyproject.toml`, `uv.lock` (not needed for MCP, T03), `__pycache__` in `skills/execute-plan`, `skills/create-fixture`, `skills/refine-rules/scripts`; `tests/evals/` after replacement by promptfoo (T40); the 13 `bdk-*` meta-skills and the eight agent files replaced by adapters (T42).
+- Side items: `ensure_ignored()` (if not done earlier in T20), `features.caveman` (#39: a consumer or removal of the key; in v3 a key without a consumer is an error, so it must either go or work), merge or close `fix/39` (`fix/38` is closed by T04).
 - BDK repo `.gitignore`: `/.bdk/` -> the two v3 paths; `/.lavish/` unchanged (user decision).
 - `plugin.json` 3.0.0 (breaking, release-please), `CHANGELOG` via release-please (not by hand).
 - Documentation: `README.md` (installation with the Node requirement, v3 pipeline section, skills table from T41 / T42), `CLAUDE.md` (Development Commands: pnpm, node --test), `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md` (mark as historical or rewrite), `STARTUP_INSTRUCTIONS.md` generated.
@@ -516,7 +537,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: what to do with `.bdk/verify-plan/` and `.bdk/runs/` (ignore / report); the fate of `docs/INJECTION-FLOWS.md`.
 
-**Dependencies**: T30, T31, T42 (skills table documentation), T03 (done: `uv.lock` does not stay for MCP), in practice the last one before T50.
+**Dependencies**: T30, T31, T42 (skills table documentation), T04 (the MCP servers are already gone; `uv.lock` does not stay for MCP, T03), in practice the last one before T50.
 
 ---
 

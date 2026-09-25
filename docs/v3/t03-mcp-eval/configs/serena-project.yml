@@ -1,7 +1,0 @@
-# serena project config copied into every benchmark worktree as .serena/project.yml.
-# TypeScript only: the benchmark measures vibe-kanban's TypeScript part (design D-1).
-project_name: "vibe-kanban"
-encoding: "utf-8"
-ignore_all_files_in_gitignore: true
-language_servers:
-- typescript
