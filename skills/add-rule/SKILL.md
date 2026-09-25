@@ -46,15 +46,15 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/refine-rules/references/rule-admission.md` an
 the four-part test (durability / decision / visibility / derivability) to route the
 sentence:
 
-| Verdict | Route |
-|---|---|
-| Passes all four, governs a broad surface | **Rule file** - continue to Step 3 |
-| Passes all four, but true only for a narrow subset of files | **Narrow-glob rule file** - a file whose `paths:` names just that subset; create one if none fits - Step 3 |
-| Procedural how-to behind an intent no glob expresses, AND a deterministic backstop (guard test / validator / deploy gate) catches a missed invocation, AND near-immutable | **Project skill** - extract it there; the rule file keeps nothing, or a one-line pointer |
-| True but pull-based (trap visible at the code site) | **Doc comment** at the code site - Step 5b |
-| A test/lint already enforces it | **Signpost** - one line naming the enforcer, only if a rule file section already covers the area; otherwise nothing |
-| Fails durability (an inventory, or a line a rename would force you to edit) | **Nothing** - report why and stop |
-| Fails the decision test | **Nothing** - report why and stop |
+| Verdict                                                                                                                                                                   | Route                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Passes all four, governs a broad surface                                                                                                                                  | **Rule file** - continue to Step 3                                                                                  |
+| Passes all four, but true only for a narrow subset of files                                                                                                               | **Narrow-glob rule file** - a file whose `paths:` names just that subset; create one if none fits - Step 3          |
+| Procedural how-to behind an intent no glob expresses, AND a deterministic backstop (guard test / validator / deploy gate) catches a missed invocation, AND near-immutable | **Project skill** - extract it there; the rule file keeps nothing, or a one-line pointer                            |
+| True but pull-based (trap visible at the code site)                                                                                                                       | **Doc comment** at the code site - Step 5b                                                                          |
+| A test/lint already enforces it                                                                                                                                           | **Signpost** - one line naming the enforcer, only if a rule file section already covers the area; otherwise nothing |
+| Fails durability (an inventory, or a line a rename would force you to edit)                                                                                               | **Nothing** - report why and stop                                                                                   |
+| Fails the decision test                                                                                                                                                   | **Nothing** - report why and stop                                                                                   |
 
 When several destinations fit, prefer in this order:
 `narrow glob > wide glob > skill > doc comment > nothing`. Skills fail open and rules

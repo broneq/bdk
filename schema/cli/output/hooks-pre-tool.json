@@ -5,15 +5,10 @@
   "description": "PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.mjs hooks` from Bash.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "decision"
-  ],
+  "required": ["decision"],
   "properties": {
     "decision": {
-      "enum": [
-        "pass",
-        "deny"
-      ]
+      "enum": ["pass", "deny"]
     },
     "rule": {
       "type": "string"

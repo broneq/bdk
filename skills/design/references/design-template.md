@@ -10,7 +10,7 @@ Include only the sections that fit the branch the skill took (Product, Architect
 
 ---
 
-```markdown
+````markdown
 # [Feature] — Design
 
 **Date**: YYYY-MM-DD
@@ -107,7 +107,7 @@ Measurable outcomes (not feature lists).
 
 ```mermaid
 [diagram]
-```
+````
 
 ---
 
@@ -174,8 +174,8 @@ erDiagram
 ### Considered & dropped
 
 | Proposal | Shape in one line | Why not chosen |
-|---|---|---|
-| [Y] | ... | ... |
+| -------- | ----------------- | -------------- |
+| [Y]      | ...               | ...            |
 
 ---
 
@@ -183,11 +183,11 @@ erDiagram
 
 Each item: what it is, when it bites, mitigation.
 
-| Risk | When it bites | Mitigation |
-|---|---|---|
-| [Bottleneck X] | Above ~Y throughput | [Cache / shard / async] |
-| [SPOF Y] | When Z is down | [Replica / fallback / degrade] |
-| [Hidden cost] | ... | ... |
+| Risk           | When it bites       | Mitigation                     |
+| -------------- | ------------------- | ------------------------------ |
+| [Bottleneck X] | Above ~Y throughput | [Cache / shard / async]        |
+| [SPOF Y]       | When Z is down      | [Replica / fallback / degrade] |
+| [Hidden cost]  | ...                 | ...                            |
 
 ---
 
@@ -204,9 +204,9 @@ Open questions left for later. Each should be answerable by the team or a follow
 
 If Validation triggered any loop-backs, summarize what changed.
 
-| Iteration | Gap surfaced | Looped to | Outcome |
-|---|---|---|---|
-| 1 | ... | Phase 0 / 1 / 2 | ... |
+| Iteration | Gap surfaced | Looped to       | Outcome |
+| --------- | ------------ | --------------- | ------- |
+| 1         | ...          | Phase 0 / 1 / 2 | ...     |
 
 ---
 
@@ -215,4 +215,7 @@ If Validation triggered any loop-backs, summarize what changed.
 - Implementation plan: `/bdk:create-plan`
 - Formal decision record: `/bdk:create-adr`
 - Deeper exploration of a specific component: re-run `/bdk:design` scoped to that component
+
+```
+
 ```

@@ -29,7 +29,7 @@ Getting design wrong costs weeks. Getting it right is the highest-leverage step 
 Absolute. Violating them defeats the skill's purpose.
 
 - **No code.** No implementation snippets, no pseudo-code, no function bodies. Schemas and API shapes only as small illustrative blocks when a sentence would be less clear.
-- **No file-level prescriptions.** Do not say "create `src/foo.ts`". Talk about *components* and *responsibilities*, not files.
+- **No file-level prescriptions.** Do not say "create `src/foo.ts`". Talk about _components_ and _responsibilities_, not files.
 - **No rushing.** Never present a full design in one turn. The loop is the product.
 - **No single solution.** Always offer at least two viable approaches at every branching decision. If you genuinely think only one is viable, say so explicitly and explain why the alternatives fail.
 - **No invented context.** Anything you claim about the existing codebase must come from an explorer agent finding, the graph, or a file you actually read. If you don't know, say "I need to check this" and dispatch the explorer.
@@ -84,9 +84,9 @@ Architecture proposals made without seeing the existing code produce:
 
 Compose 1–4 focused exploration questions based on `$ARGUMENTS`. Examples:
 
-- *"Map how the project currently handles `<adjacent concern>`. Return: modules involved, entry points, key data types, integration boundaries."*
-- *"Is there an existing abstraction for `<X>`? If yes, where does it live and what does it expose?"*
-- *"What execution flows touch `<area>`? Return flow names plus a one-line purpose for each."*
+- _"Map how the project currently handles `<adjacent concern>`. Return: modules involved, entry points, key data types, integration boundaries."_
+- _"Is there an existing abstraction for `<X>`? If yes, where does it live and what does it expose?"_
+- _"What execution flows touch `<area>`? Return flow names plus a one-line purpose for each."_
 
 Spawn explorers in **parallel** in a single turn — they are independent. Each ≤300 words.
 
@@ -101,7 +101,7 @@ Summarize for the user (3–6 bullets):
 - What exists today in the relevant area
 - What patterns the project already uses
 - What seems missing or weakly covered
-- What you are *uncertain* about and will need to recheck later
+- What you are _uncertain_ about and will need to recheck later
 
 Then proceed to Phase 1.
 
@@ -111,13 +111,13 @@ Then proceed to Phase 1.
 
 One `AskUserQuestion` with three options:
 
-| Option | When |
-|---|---|
-| **Product** | What to build & for whom — features, UX, user journeys, success criteria |
-| **Architecture** | How it's shaped — components, boundaries, data flow, NFRs |
-| **Combined** | Both — feature needs product framing AND architectural shape |
+| Option           | When                                                                     |
+| ---------------- | ------------------------------------------------------------------------ |
+| **Product**      | What to build & for whom — features, UX, user journeys, success criteria |
+| **Architecture** | How it's shaped — components, boundaries, data flow, NFRs                |
+| **Combined**     | Both — feature needs product framing AND architectural shape             |
 
-Heuristic phrasing for the question: *"Is this about what to build for users, how the system is shaped, or both?"*
+Heuristic phrasing for the question: _"Is this about what to build for users, how the system is shaped, or both?"_
 
 Branch on the user's answer.
 
@@ -161,18 +161,20 @@ Do not propose solutions yet. Wait for answers.
 Propose architecture. Each ideation turn MUST contain:
 
 **Two or more approaches.** For each:
+
 - One-sentence essence
 - Component sketch — what services / modules / boundaries exist, what owns what
 - Data flow — how information moves on the happy path
-- Tradeoff axes — scalability, latency, consistency, operational complexity, cost, time-to-build, team familiarity. Concrete: *"p99 likely ~50ms higher due to extra hop"* not *"higher latency"*. List cost and time-to-build for transparency, but per engineering-judgment rules do not let them drive the recommendation - weight quality, simplicity, robustness, scalability, and long-term maintainability instead.
+- Tradeoff axes — scalability, latency, consistency, operational complexity, cost, time-to-build, team familiarity. Concrete: _"p99 likely ~50ms higher due to extra hop"_ not _"higher latency"_. List cost and time-to-build for transparency, but per engineering-judgment rules do not let them drive the recommendation - weight quality, simplicity, robustness, scalability, and long-term maintainability instead.
 
 **At least one Mermaid diagram per approach**, drawn per `/bdk:mermaid-drawer` - that skill owns type selection, node budget and colour, so approaches stay visually comparable instead of each getting its own dialect.
 
-Diagrams must be **readable on their own**. Label edges. Avoid mystery boxes. When two approaches differ in *shape*, draw the same diagram type for both so the reader can compare them side by side.
+Diagrams must be **readable on their own**. Label edges. Avoid mystery boxes. When two approaches differ in _shape_, draw the same diagram type for both so the reader can compare them side by side.
 
 **A recommended option with reasoning.** One paragraph. Reasoning must reference user constraints from 2A.1.
 
 **Devil's advocate.** See [self-critique-checklist](references/self-critique-checklist.md). Find at minimum:
+
 - One bottleneck or scaling limit
 - One single point of failure or operational risk
 - One hidden cost
@@ -181,9 +183,10 @@ Diagrams must be **readable on their own**. Label edges. Avoid mystery boxes. Wh
 ### 2A.3 Refine
 
 After the user reacts:
+
 - Adjust components, boundaries, or flows based on feedback
 - Update or add Mermaid diagrams (show, don't describe)
-- Surface 1–2 *new* questions the latest decision unlocked
+- Surface 1–2 _new_ questions the latest decision unlocked
 - If a question requires codebase knowledge you don't have, **`SendMessage` to an existing Phase 0 explorer** whose scope matches; spawn fresh only if no live explorer covered that area or the cache is stale
 
 ### 2A.2.5 Schema-Change Gate (MANDATORY when the schema moves)
@@ -204,8 +207,8 @@ Run these steps:
 
 3. **Get explicit approval** via `AskUserQuestion` (or the lavish tier above, when injected - the approval gate is the same either way). Options are the proposals plus an escape hatch:
 
-   | Header | Options |
-   |---|---|
+   | Header      | Options                                              |
+   | ----------- | ---------------------------------------------------- |
    | "DB schema" | Proposal A / Proposal B / [more] / Revise — none fit |
 
    Approval is **mandatory**. "Revise — none fit" loops back to step 2 with the user's feedback. Do not treat silence, a thumbs-up on the broader design, or "looks good" on an unrelated question as schema approval — the approval must be against this gate specifically.
@@ -256,29 +259,29 @@ Capture `agent_id` from the spawn envelope. Store as `verifier_agent_id` — nee
 
 ### Step 2 — Parse YAML verdict
 
-Extract the final ```yaml ... ``` block. Required keys: `status`, `iteration`, `branch`, `checks`, `issues`, `must_address`. Malformed YAML → respawn once with identical message; if still malformed, surface the parse error to the user and abort.
+Extract the final `yaml ... ` block. Required keys: `status`, `iteration`, `branch`, `checks`, `issues`, `must_address`. Malformed YAML → respawn once with identical message; if still malformed, surface the parse error to the user and abort.
 
 ### Step 3 — Route by status
 
-| `status` | Action |
-|---|---|
-| `PASS` | Proceed to Phase 4 (Write). |
+| `status`             | Action                                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `PASS`               | Proceed to Phase 4 (Write).                                                                                  |
 | `PASS_WITH_WARNINGS` | Show summary to user; ask "Accept warnings and write, or address them via loop-back?" via `AskUserQuestion`. |
-| `FAIL` | Enter Validation Loop (Step 4). |
+| `FAIL`               | Enter Validation Loop (Step 4).                                                                              |
 
 ### Step 4 — Validation Loop (back-edges)
 
 For each issue in `must_address`, read its `suggested_loop_to` and `gap_type`:
 
-| `suggested_loop_to` | `gap_type` | Coordinator action |
-|---|---|---|
-| `phase_0` | `codebase` | `SendMessage(to: <explorer agent_id matching explorer_scope_hint>, message: "<delta question>")` to the warm Phase 0 explorer |
-| `phase_1` | `requirement` | `AskUserQuestion` for the missing requirement / NFR / user need — delta only |
-| `phase_2` | `shape` or `honesty` | Refine the chosen approach inline, or surface a new alternative |
+| `suggested_loop_to` | `gap_type`           | Coordinator action                                                                                                            |
+| ------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `phase_0`           | `codebase`           | `SendMessage(to: <explorer agent_id matching explorer_scope_hint>, message: "<delta question>")` to the warm Phase 0 explorer |
+| `phase_1`           | `requirement`        | `AskUserQuestion` for the missing requirement / NFR / user need — delta only                                                  |
+| `phase_2`           | `shape` or `honesty` | Refine the chosen approach inline, or surface a new alternative                                                               |
 
 **Back-edge gate (every loop):** before each loop-back, surface the issue's `message` field in one short sentence and confirm via `AskUserQuestion`:
 
-> Validation flagged *<message>*. Loop back to <phase> to address, or accept and document as open?
+> Validation flagged _<message>_. Loop back to <phase> to address, or accept and document as open?
 
 Two options: **Loop back** / **Document as open**. The "document as open" path adds the issue to the "What we did NOT decide" section and lets validation pass.
 
@@ -311,7 +314,7 @@ Two options: **Document as open & write** / **Abort**.
 - Verifier returns `status: PASS`
 - All `must_address` items resolved or explicitly converted to "What we did NOT decide" entries
 - The user has stopped finding gaps
-- Devil's-advocate critiques are about *tuning*, not *shape*
+- Devil's-advocate critiques are about _tuning_, not _shape_
 
 ---
 
@@ -321,7 +324,7 @@ Save to `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md` using the [design-templat
 
 - Embed final Mermaid diagrams verbatim
 - Include "What we did NOT decide" with every open question
-- Append handoff: *"To translate this into an implementation plan, run `/bdk:create-plan`. To formalize a specific decision, run `/bdk:create-adr`."*
+- Append handoff: _"To translate this into an implementation plan, run `/bdk:create-plan`. To formalize a specific decision, run `/bdk:create-adr`."_
 
 If the user declines the write step, end cleanly. The conversation itself is the artifact.
 
@@ -331,11 +334,11 @@ If the user declines the write step, end cleanly. The conversation itself is the
 
 Use `AskUserQuestion` when the answer space is small and discrete:
 
-| Topic | Header | Options |
-|---|---|---|
-| Consistency model | "Consistency" | Strong / Eventual / Mixed |
-| Write path | "Writes" | Sync via API / Async via queue / Both |
-| Storage | "Storage" | Existing SQL / New service / Cache + SQL |
+| Topic             | Header        | Options                                  |
+| ----------------- | ------------- | ---------------------------------------- |
+| Consistency model | "Consistency" | Strong / Eventual / Mixed                |
+| Write path        | "Writes"      | Sync via API / Async via queue / Both    |
+| Storage           | "Storage"     | Existing SQL / New service / Cache + SQL |
 
 Free-form is fine for numbers, names, genuinely open questions. One question per `AskUserQuestion` call is preferred; bundle up to 4 only if they're tightly related and clearly orthogonal.
 
@@ -363,10 +366,10 @@ Free-form is fine for numbers, names, genuinely open questions. One question per
 
 Produces a **design doc** at `.bdk/design/<ts>-<slug>-design.md`.
 
-| Artifact | Tool | Scope |
-|---|---|---|
-| Design doc | `/bdk:design` (this skill) | Product framing, architecture shape, tradeoffs, diagrams |
-| Architecture Decision Record | `/bdk:create-adr` | Single decision in MADR format |
-| Implementation plan | `/bdk:create-plan` | Task-level breakdown ready to execute |
+| Artifact                     | Tool                       | Scope                                                    |
+| ---------------------------- | -------------------------- | -------------------------------------------------------- |
+| Design doc                   | `/bdk:design` (this skill) | Product framing, architecture shape, tradeoffs, diagrams |
+| Architecture Decision Record | `/bdk:create-adr`          | Single decision in MADR format                           |
+| Implementation plan          | `/bdk:create-plan`         | Task-level breakdown ready to execute                    |
 
 Pick the right tool for the user's actual stage. If unsure, ask.

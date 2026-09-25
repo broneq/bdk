@@ -42,31 +42,40 @@ On iteration 2: only run the checks for task IDs listed in the delta hint. For e
 ## Six-Section Checklist
 
 ### 1. Signature drift
+
 For every function, method, or field the plan references or modifies, read the actual current signature and confirm the plan's snippet matches. Flag any mismatch — parameter renames, return-type changes, added/removed fields, decorators.
 
 ### 2. Data trace
+
 Invent 2–3 CONCRETE inputs from the problem description. Use real-looking domain values (`"user_42"`, `1500ms`, `[1, 2, 3]`) — never abstractions (`"some data"`, `"a value"`). Walk each input step-by-step through the proposed code. Show exact values at every transformation. Verify the output is what the next step actually consumes.
 
 ### 3. Edge cases
+
 Invent cases the plan does NOT explicitly handle:
+
 - Empty / null inputs
 - Boundary positions (first / last element, zero-length ranges)
 - Multi-unit spanning (multiple items, crossing boundaries)
 - Partial data / overlap between fix target and working cases
 - Upstream errors propagating into the new code path
-For each, mark **Handled?** and **Risk**.
+  For each, mark **Handled?** and **Risk**.
 
 ### 4. Regression flows
+
 Find the callers of every modified symbol and follow them to their entry points. For each other-caller flow, trace a representative existing scenario through both current and proposed code. Any output difference = potential regression — surface it explicitly with the concrete value that diverges.
 
 ### 5. Test coverage
+
 For the plan's "Test cases" block:
+
 - Every ✅ positive bullet → confirm the proposed code actually produces that behaviour.
 - Every ❌ negative bullet → confirm there is an enforcement path (raise, return error, guard).
 - Every edge case discovered in §3 → confirm there is a corresponding test or recommend one (`should-add`).
 
 ### 6. Plan completeness
+
 Scan the plan as a whole:
+
 - Files referenced in task bodies but not declared in any `Files:` block.
 - Undeclared cross-task dependencies (task B uses a symbol task A creates, with no ordering hint). Flag tasks that should carry `Depends on: Tn` but don't.
 - Ambiguous instructions ("update X to do Y" without enough specifics to implement).
@@ -78,11 +87,11 @@ Scan the plan as a whole:
 
 Every per-task outcome carries a confidence in `[0.0, 1.0]`:
 
-| Confidence | Outcome implication |
-|---|---|
-| `≥ 0.85` and PASS | High-confidence pass |
-| `0.60–0.84` | WARNING — pass but flag explicitly |
-| `< 0.60`, OR any FAIL | Surface in `must_fix` |
+| Confidence            | Outcome implication                |
+| --------------------- | ---------------------------------- |
+| `≥ 0.85` and PASS     | High-confidence pass               |
+| `0.60–0.84`           | WARNING — pass but flag explicitly |
+| `< 0.60`, OR any FAIL | Surface in `must_fix`              |
 
 ## YAML Verdict Envelope
 
@@ -120,6 +129,7 @@ recommendations:
 ```
 
 Field rules:
+
 - `status` rolls up from `per_task[].outcome`: any FAIL → FAIL; no FAIL but any WARNING → PASS_WITH_WARNINGS; all PASS → PASS.
 - `must_fix` lists `<task_id>#<section>` tokens for every issue the coordinator must surface to the user before the plan can be executed.
 - `recommendations` is for non-blocking improvements (extra tests, clearer docs).

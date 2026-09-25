@@ -5,11 +5,7 @@
   "description": "Ingest a `bdk-entries` block from a read-only role's report under its ticket.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "ticket",
-    "entries",
-    "downgraded"
-  ],
+  "required": ["ticket", "entries", "downgraded"],
   "properties": {
     "ticket": {
       "type": "string",
@@ -19,15 +15,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "type",
-          "summary",
-          "status",
-          "source",
-          "at",
-          "refs"
-        ],
+        "required": ["id", "type", "summary", "status", "source", "at", "refs"],
         "properties": {
           "id": {
             "type": "string",
@@ -52,13 +40,7 @@
             "maxLength": 120
           },
           "status": {
-            "enum": [
-              "proposed",
-              "accepted",
-              "superseded",
-              "resolved",
-              "routed"
-            ]
+            "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
           },
           "source": {
             "type": "string",
@@ -93,10 +75,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "entry",
-          "originalCategory"
-        ],
+        "required": ["entry", "originalCategory"],
         "properties": {
           "entry": {
             "type": "string",
@@ -121,10 +100,7 @@
           "status": "proposed",
           "source": "agent:plan-verifier",
           "at": "2026-09-25T10:31:44Z",
-          "refs": [
-            "plan/parts/02-login.md",
-            "src/auth/token.ts"
-          ]
+          "refs": ["plan/parts/02-login.md", "src/auth/token.ts"]
         }
       ],
       "downgraded": []

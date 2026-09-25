@@ -5,11 +5,7 @@
   "description": "Run an artifact's kind validator without marking it done.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "artifact",
-    "valid",
-    "checks"
-  ],
+  "required": ["artifact", "valid", "checks"],
   "properties": {
     "artifact": {
       "type": "string"
@@ -25,10 +21,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "ok"
-        ],
+        "required": ["id", "ok"],
         "properties": {
           "id": {
             "type": "string"

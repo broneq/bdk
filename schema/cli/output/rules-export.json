@@ -5,11 +5,7 @@
   "description": "Generate the host projection of the rules, `.claude/rules/bdk-generated.md`, with `paths:` from applies.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "path",
-    "rules",
-    "changed"
-  ],
+  "required": ["path", "rules", "changed"],
   "properties": {
     "path": {
       "type": "string",

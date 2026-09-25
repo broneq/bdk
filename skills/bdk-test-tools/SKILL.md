@@ -15,12 +15,12 @@ If the line above reads `run the project's test suite`, `.bdk/settings.json` is 
 
 Each block names a tier and up to four forms of the same command. `{files}` is a placeholder: replace it with the space-separated paths you were given, quoted.
 
-| Form | Run it when |
-|---|---|
-| `scoped` | **Default.** You were given file paths, or you know which test files matter. |
-| `related` | You were given *source* paths and need the tests covering them. Use this instead of asking another agent which tests cover a change — the runner computes it in a second. |
-| `failed` | Re-running after a fix, when the previous run in this session already failed. |
-| `full` | Only when the caller explicitly asked for a full suite. |
+| Form      | Run it when                                                                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scoped`  | **Default.** You were given file paths, or you know which test files matter.                                                                                              |
+| `related` | You were given _source_ paths and need the tests covering them. Use this instead of asking another agent which tests cover a change — the runner computes it in a second. |
+| `failed`  | Re-running after a fix, when the previous run in this session already failed.                                                                                             |
+| `full`    | Only when the caller explicitly asked for a full suite.                                                                                                                   |
 
 If a block has no `scoped` form, derive one from `full` by appending the paths the runner accepts (`<full> -- {files}` for an npm/yarn/pnpm script, a bare path list for most direct runners). Say in your report that you derived it, so the settings can be fixed once instead of re-derived forever.
 

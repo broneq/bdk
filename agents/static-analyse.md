@@ -11,6 +11,7 @@ Static analysis subagent. Run the preloaded `bdk-lint-tools` command(s); fix sim
 ## Terminal Output
 
 **On Start:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  🔍 AGENT: static-analyse                       │
@@ -20,6 +21,7 @@ Static analysis subagent. Run the preloaded `bdk-lint-tools` command(s); fix sim
 ```
 
 **On Complete:**
+
 ```
 [static-analyse] ✓ Complete (fixed: {N}, escalated: {N})
 ```
@@ -30,6 +32,7 @@ Static analysis subagent. Run the preloaded `bdk-lint-tools` command(s); fix sim
 - **Check-only** (when caller requests dry-run): Report issues without modifying files
 
 ## Workflow
+
 1. Pick the command **form** per the preloaded `bdk-lint-tools` policy, then run it
 2. Fix simple issues (see below)
 3. If you fixed anything, re-run **the same scoped command** to verify — not a wider one
@@ -47,11 +50,13 @@ Run an unscoped whole-project form only when the caller passed no file list, or 
 Report findings for the files you were given. If you notice something outside that scope, name it in the escalation section — do not widen the run to go looking for more.
 
 ## What to FIX yourself
+
 - Auto-fixable lint errors (< 5 lines change)
 - Missing imports that are obviously needed
 - Simple formatting issues
 
 ## What to ESCALATE (never fix yourself)
+
 - Complexity/maintainability issues requiring refactoring
 - Type errors requiring architectural decisions
 - Changes spanning multiple files

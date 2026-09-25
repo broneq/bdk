@@ -28,7 +28,11 @@ const project = process.env.PROBE_PROJECT ?? process.cwd();
 const encode = (path) => path.replace(/[^a-zA-Z0-9]/g, "-");
 const variants = (path) => {
   const all = new Set([path]);
-  try { all.add(realpathSync(path)); } catch { /* path may not exist on this machine */ }
+  try {
+    all.add(realpathSync(path));
+  } catch {
+    /* path may not exist on this machine */
+  }
   for (const p of [...all]) {
     if (p.startsWith("/private/")) all.add(p.slice("/private".length));
   }
@@ -38,13 +42,29 @@ const variants = (path) => {
 // Longest first, so the project path and the probe's own directory (the expanded
 // ${CLAUDE_PLUGIN_ROOT}) win over the home directory they may sit in.
 const replacements = [
-  ...variants(here).flatMap((p) => [[p, "<PLUGIN_ROOT>"], [encode(p), "<PLUGIN_ROOT>"]]),
-  ...variants(project).flatMap((p) => [[p, "<PROJECT>"], [encode(p), "<PROJECT>"]]),
-  ...(home ? [[home, "<HOME>"], [encode(home), "<HOME>"]] : []),
+  ...variants(here).flatMap((p) => [
+    [p, "<PLUGIN_ROOT>"],
+    [encode(p), "<PLUGIN_ROOT>"],
+  ]),
+  ...variants(project).flatMap((p) => [
+    [p, "<PROJECT>"],
+    [encode(p), "<PROJECT>"],
+  ]),
+  ...(home
+    ? [
+        [home, "<HOME>"],
+        [encode(home), "<HOME>"],
+      ]
+    : []),
 ].sort((a, b) => b[0].length - a[0].length);
 const user = basename(home);
 
-const ID_KEYS = { session_id: "SESSION", prompt_id: "PROMPT", agent_id: "AGENT", tool_use_id: "TOOL-USE" };
+const ID_KEYS = {
+  session_id: "SESSION",
+  prompt_id: "PROMPT",
+  agent_id: "AGENT",
+  tool_use_id: "TOOL-USE",
+};
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 // Claude Code's per-user temp root (e.g. scratchpad_dir) embeds the numeric user ID.
 const CLAUDE_TMP = /(?:\/private)?\/tmp\/claude-\d+/g;
@@ -88,7 +108,12 @@ const scrub = (node) => {
 };
 
 const globToRegExp = (glob) =>
-  new RegExp(`^${glob.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`);
+  new RegExp(
+    `^${glob
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*")
+      .replace(/\?/g, ".")}$`,
+  );
 
 let names;
 try {

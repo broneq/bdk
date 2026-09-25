@@ -11,22 +11,22 @@ paths:
 
 All fields optional except `description` (recommended).
 
-| Field | Description |
-|-------|-------------| 
-| `name` | Slash-command name. Lowercase, hyphens only, max 64 chars. Defaults to directory name. |
-| `description` | When to use the skill. Front-load use case. Max 250 chars. |
-| `argument-hint` | Autocomplete hint for args. Example: `[issue-number]` or `[filename] [format]`. |
-| `disable-model-invocation` | `true` = user-only (not Claude). Use for `/commit`, `/deploy`, etc. |
-| `user-invocable` | `false` = hidden from `/` menu. Claude-only background knowledge. |
-| `allowed-tools` | Tools auto-approved when skill active. Space-separated or YAML list. Supports glob patterns (e.g. `Bash(git *)`). **Pre-approval, not a whitelist** - a tool absent from this list still works, it just goes through the normal permission flow. |
-| `disallowed-tools` | Tools **removed from the pool** while the skill is active - the only frontmatter field that restricts rather than pre-approves. Use it when a skill's prose states an invariant about what it must never call, so the invariant is enforced instead of requested: `AskUserQuestion` for an autonomous background skill, `Edit`/`NotebookEdit` for a read-only reviewer. Same accepted forms as `allowed-tools`. `/bdk:skill-lint` check 22 flags a stated invariant with no matching field. |
-| `model` | Model override. |
-| `effort` | `low` / `medium` / `high` / `xhigh` / `max`. Overrides session effort; which levels exist depends on the model. |
-| `context` | `fork` = isolated subagent. |
-| `agent` | Subagent type when `context: fork`. Options: `Explore`, `Plan`, `general-purpose`, or custom. |
-| `hooks` | Skill-scoped hooks. See below. |
-| `paths` | Glob patterns — auto-activate when working with matching files. |
-| `shell` | `bash` (default) or `powershell`. |
+| Field                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                     | Slash-command name. Lowercase, hyphens only, max 64 chars. Defaults to directory name.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `description`              | When to use the skill. Front-load use case. Max 250 chars.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `argument-hint`            | Autocomplete hint for args. Example: `[issue-number]` or `[filename] [format]`.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `disable-model-invocation` | `true` = user-only (not Claude). Use for `/commit`, `/deploy`, etc.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `user-invocable`           | `false` = hidden from `/` menu. Claude-only background knowledge.                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `allowed-tools`            | Tools auto-approved when skill active. Space-separated or YAML list. Supports glob patterns (e.g. `Bash(git *)`). **Pre-approval, not a whitelist** - a tool absent from this list still works, it just goes through the normal permission flow.                                                                                                                                                                                                                                            |
+| `disallowed-tools`         | Tools **removed from the pool** while the skill is active - the only frontmatter field that restricts rather than pre-approves. Use it when a skill's prose states an invariant about what it must never call, so the invariant is enforced instead of requested: `AskUserQuestion` for an autonomous background skill, `Edit`/`NotebookEdit` for a read-only reviewer. Same accepted forms as `allowed-tools`. `/bdk:skill-lint` check 22 flags a stated invariant with no matching field. |
+| `model`                    | Model override.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `effort`                   | `low` / `medium` / `high` / `xhigh` / `max`. Overrides session effort; which levels exist depends on the model.                                                                                                                                                                                                                                                                                                                                                                             |
+| `context`                  | `fork` = isolated subagent.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `agent`                    | Subagent type when `context: fork`. Options: `Explore`, `Plan`, `general-purpose`, or custom.                                                                                                                                                                                                                                                                                                                                                                                               |
+| `hooks`                    | Skill-scoped hooks. See below.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `paths`                    | Glob patterns — auto-activate when working with matching files.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `shell`                    | `bash` (default) or `powershell`.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 **Wrong:** `arguments:` field does not exist. Use `argument-hint:` for autocomplete hints.
 
@@ -38,21 +38,21 @@ All fields optional except `description` (recommended).
 
 ### Invocation matrix
 
-| Frontmatter | User invoke | Claude invoke | When loaded |
-|-------------|-------------|---------------|-------------|
-| (default) | Yes | Yes | Description always in context |
-| `disable-model-invocation: true` | Yes | No | Not in context until user invokes |
-| `user-invocable: false` | No | Yes | Description always in context |
+| Frontmatter                      | User invoke | Claude invoke | When loaded                       |
+| -------------------------------- | ----------- | ------------- | --------------------------------- |
+| (default)                        | Yes         | Yes           | Description always in context     |
+| `disable-model-invocation: true` | Yes         | No            | Not in context until user invokes |
+| `user-invocable: false`          | No          | Yes           | Description always in context     |
 
 ### String substitutions in skill content
 
-| Variable | Value |
-|----------|-------|
-| `$ARGUMENTS` | Full argument string |
-| `$ARGUMENTS[N]` / `$N` | Nth argument (0-based) |
-| `${CLAUDE_SESSION_ID}` | Current session ID |
-| `${CLAUDE_SKILL_DIR}` | Directory of the skill's SKILL.md |
-| `${CLAUDE_PLUGIN_ROOT}` | Plugin root (for plugin skills) |
+| Variable                | Value                             |
+| ----------------------- | --------------------------------- |
+| `$ARGUMENTS`            | Full argument string              |
+| `$ARGUMENTS[N]` / `$N`  | Nth argument (0-based)            |
+| `${CLAUDE_SESSION_ID}`  | Current session ID                |
+| `${CLAUDE_SKILL_DIR}`   | Directory of the skill's SKILL.md |
+| `${CLAUDE_PLUGIN_ROOT}` | Plugin root (for plugin skills)   |
 
 ## Full Frontmatter Example
 
@@ -103,12 +103,12 @@ All standard Claude Code hook events: `PreToolUse`, `PostToolUse`, `UserPromptSu
 
 ## Key Fields
 
-| Field | Notes |
-|-------|-------|
+| Field     | Notes                                                        |
+| --------- | ------------------------------------------------------------ |
 | `matcher` | Filter by tool name pattern (e.g. `"Bash"`, `"Write\|Edit"`) |
-| `type` | `command` / `http` / `prompt` / `agent` |
-| `once` | `true` = fires once per session then removed. Skills only. |
-| `timeout` | Override default timeout (seconds) |
+| `type`    | `command` / `http` / `prompt` / `agent`                      |
+| `once`    | `true` = fires once per session then removed. Skills only.   |
+| `timeout` | Override default timeout (seconds)                           |
 
 ## Skill Dependency Check Pattern
 
@@ -154,17 +154,16 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 
 ## Condition Syntax
 
-| Condition | True when |
-|-----------|-----------|
-| `features.react` | `settings.features.react == true` |
-| `languages[typescript]` | `"typescript" in settings.languages` |
-| `tool.lavish-axi` | an executable named `lavish-axi` is on `PATH` |
+| Condition               | True when                                     |
+| ----------------------- | --------------------------------------------- |
+| `features.react`        | `settings.features.react == true`             |
+| `languages[typescript]` | `"typescript" in settings.languages`          |
+| `tool.lavish-axi`       | an executable named `lavish-axi` is on `PATH` |
 
 The dotted spelling of `tool.` is the only accepted one. `tool[name]` is parsed by the array rule as a
 lookup in a nonexistent `tool` list and silently evaluates false - it never errors, so the condition
 reads as "tool absent" forever. Pair `tool.<binary>` with the matching `features.<flag>`: the flag says
 the user wants it, the probe says the machine has it.
-
 
 ## Examples
 

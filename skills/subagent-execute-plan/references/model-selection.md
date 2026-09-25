@@ -1,6 +1,6 @@
 # Implementer Model Selection
 
-The plan was authored by Opus (`/bdk:create-plan`) — that is the judgment-heavy artifact. Implementation is closer to mechanical translation. The default for the implementer subagent is **Sonnet**. The question is when to step *down* to Haiku or *up* to Opus.
+The plan was authored by Opus (`/bdk:create-plan`) — that is the judgment-heavy artifact. Implementation is closer to mechanical translation. The default for the implementer subagent is **Sonnet**. The question is when to step _down_ to Haiku or _up_ to Opus.
 
 The same matrix applies to the `fixer` agent — Sonnet by default, escalate when a finding requires architectural reasoning.
 
@@ -28,17 +28,17 @@ flowchart TD
 
 ## Signals → model
 
-| Signal | Model |
-|---|---|
-| Pure CRUD or scaffolding from a complete spec | `haiku` |
-| Add a method to an existing class with explicit signature | `haiku` |
-| Translate a clear data shape (DTO, schema, fixture) | `haiku` |
-| Wire a new endpoint into an existing layered architecture | `sonnet` |
-| Refactor preserving behavior with test cases provided | `sonnet` |
-| Implement a parser, state machine, or non-trivial algorithm | `sonnet` |
-| Add a new layer / module / cross-cutting concern | `opus` |
-| Re-dispatch after Sonnet returned BLOCKED for reasoning reasons | `opus` |
-| Plan task body says "decide between X and Y" | `opus` (or stop and report — the plan should have decided) |
+| Signal                                                          | Model                                                      |
+| --------------------------------------------------------------- | ---------------------------------------------------------- |
+| Pure CRUD or scaffolding from a complete spec                   | `haiku`                                                    |
+| Add a method to an existing class with explicit signature       | `haiku`                                                    |
+| Translate a clear data shape (DTO, schema, fixture)             | `haiku`                                                    |
+| Wire a new endpoint into an existing layered architecture       | `sonnet`                                                   |
+| Refactor preserving behavior with test cases provided           | `sonnet`                                                   |
+| Implement a parser, state machine, or non-trivial algorithm     | `sonnet`                                                   |
+| Add a new layer / module / cross-cutting concern                | `opus`                                                     |
+| Re-dispatch after Sonnet returned BLOCKED for reasoning reasons | `opus`                                                     |
+| Plan task body says "decide between X and Y"                    | `opus` (or stop and report — the plan should have decided) |
 
 ---
 
@@ -68,10 +68,10 @@ Use Haiku when the task is genuinely "type the obvious code." If you find yourse
 
 For a typical 8-task plan:
 
-| Mix | Result |
-|---|---|
-| 100 % Opus implementers | Highest quality, ~6× the cost of mixed. |
-| Default Sonnet, occasional Haiku, Opus on escalation | Best price/quality. **Recommended.** |
-| 100 % Haiku | Brittle: drifts on style, misses cross-file consistency. |
+| Mix                                                  | Result                                                   |
+| ---------------------------------------------------- | -------------------------------------------------------- |
+| 100 % Opus implementers                              | Highest quality, ~6× the cost of mixed.                  |
+| Default Sonnet, occasional Haiku, Opus on escalation | Best price/quality. **Recommended.**                     |
+| 100 % Haiku                                          | Brittle: drifts on style, misses cross-file consistency. |
 
 The end-of-plan reviewers (Sonnet `code-reviewer` plus optional Opus `architecture-reviewer`) catch most of what a cheaper implementer would miss, so spending heavily on per-task models is rarely worth it.

@@ -6,7 +6,7 @@ Both templates compute and **return data**; neither ever posts to GitHub. The or
 
 ## Template A - review mode
 
-```
+````
 You are reviewing GitHub PR #{number} "{title}" ({url}).
 
 Working copy: a detached worktree at {worktree_dir}, checked out at the PR head
@@ -107,12 +107,14 @@ Followed immediately by the payload as a fenced json block:
     {"path": "...", "description": "..."}
   ]
 }
-```
+````
+
 ```
 
 ## Template B - verify mode (`--verify`)
 
 ```
+
 You are verifying that a previous review of GitHub PR #{number} "{title}" ({url})
 was implemented.
 
@@ -141,12 +143,13 @@ not yours).
 Find the newest summary comment authored by your `gh api user --jq .login` whose
 body contains `bdk-pr-review v1 kind=summary` or `kind=verify-summary`, and parse
 its `reviewed_sha`. Previous findings come from two places:
+
 - blockers: review threads we authored (first comment by our login, containing
   the finding marker) - list them via the GraphQL query in the templates file;
 - nice-to-haves: the bullets of that summary's "Nice to have" section (they
   have no threads, by design).
-If no previous bdk-pr-review summary exists, stop and report that in `notes` -
-there is nothing to verify.
+  If no previous bdk-pr-review summary exists, stop and report that in `notes` -
+  there is nothing to verify.
 
 ## Step 2 - check each finding
 
@@ -170,7 +173,7 @@ computed verdict.
 ## Step 4 - classify into the return payload
 
 Same shapes as template A's Step 2 (`blockers`, `nice_to_haves`, `context_findings`
-for the *new* findings only), plus:
+for the _new_ findings only), plus:
 
 - `computed_verdict`: approve when every previous blocker is ✅ and the new range
   added no blocker; otherwise request-changes. 🟡 counts as unaddressed - a
@@ -214,4 +217,7 @@ Followed immediately by the payload as a fenced json block:
   "context_findings": []
 }
 ```
+
+```
+
 ```

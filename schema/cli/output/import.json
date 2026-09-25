@@ -5,21 +5,11 @@
   "description": "One-time v2 to v3 import: settings, rules, old designs as intents of new Changes.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "settings",
-    "rules",
-    "changes",
-    "removed"
-  ],
+  "required": ["settings", "rules", "changes", "removed"],
   "properties": {
     "settings": {
       "type": "object",
-      "required": [
-        "from",
-        "to",
-        "keys",
-        "dropped"
-      ],
+      "required": ["from", "to", "keys", "dropped"],
       "properties": {
         "from": {
           "type": "string",
@@ -47,10 +37,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "from",
-          "change"
-        ],
+        "required": ["from", "change"],
         "properties": {
           "from": {
             "type": "string",
@@ -78,9 +65,7 @@
         "from": ".bdk/settings.json",
         "to": ".bdk/settings.yaml",
         "keys": 14,
-        "dropped": [
-          "features.caveman"
-        ]
+        "dropped": ["features.caveman"]
       },
       "rules": 6,
       "changes": [
@@ -89,10 +74,7 @@
           "change": "2026-09-25-auth-imported"
         }
       ],
-      "removed": [
-        ".bdk/runs",
-        ".bdk/plans"
-      ]
+      "removed": [".bdk/runs", ".bdk/plans"]
     }
   ]
 }

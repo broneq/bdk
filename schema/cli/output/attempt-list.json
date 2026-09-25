@@ -3,6 +3,7 @@
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/attempt-list.json",
   "title": "bdk attempt list --json",
   "description": "Tickets and attempt records, open first.",
+  "type": "object",
   "allOf": [
     {
       "$ref": "../common/list-page.json"
@@ -14,15 +15,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "ticket",
-              "loop",
-              "target",
-              "attempt",
-              "of",
-              "scope",
-              "openedAt"
-            ],
+            "required": ["ticket", "loop", "target", "attempt", "of", "scope", "openedAt"],
             "properties": {
               "ticket": {
                 "type": "string",
@@ -46,11 +39,7 @@
                 "description": "Budget for this loop kind."
               },
               "scope": {
-                "enum": [
-                  "full",
-                  "high+",
-                  "blockers"
-                ]
+                "enum": ["full", "high+", "blockers"]
               },
               "openedAt": {
                 "type": "string",
@@ -63,11 +52,7 @@
                 "description": "ISO 8601 UTC with seconds."
               },
               "outcome": {
-                "enum": [
-                  "ok",
-                  "fail",
-                  "not-run"
-                ]
+                "enum": ["ok", "fail", "not-run"]
               },
               "notRunCount": {
                 "type": "integer",
@@ -80,10 +65,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "object",
-            "required": [
-              "used",
-              "of"
-            ],
+            "required": ["used", "of"],
             "properties": {
               "used": {
                 "type": "integer"

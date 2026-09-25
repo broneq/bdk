@@ -5,10 +5,7 @@
   "description": "Validate a spec delta: Scenario prefix, WHEN / THEN, no silent scenario loss.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "valid",
-    "deltas"
-  ],
+  "required": ["valid", "deltas"],
   "properties": {
     "valid": {
       "type": "boolean"
@@ -17,12 +14,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "capability",
-          "path",
-          "valid",
-          "problems"
-        ],
+        "required": ["capability", "path", "valid", "problems"],
         "properties": {
           "capability": {
             "type": "string"
@@ -38,11 +30,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "line",
-                "code",
-                "message"
-              ],
+              "required": ["line", "code", "message"],
               "properties": {
                 "line": {
                   "type": "integer"

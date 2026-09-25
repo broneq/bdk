@@ -3,6 +3,7 @@
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/change-list.json",
   "title": "bdk change list --json",
   "description": "List Changes in this repository: active per branch, parked, archived.",
+  "type": "object",
   "allOf": [
     {
       "$ref": "../common/list-page.json"
@@ -14,12 +15,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "change",
-              "branch",
-              "stage",
-              "state"
-            ],
+            "required": ["change", "branch", "stage", "state"],
             "properties": {
               "change": {
                 "type": "string",
@@ -32,24 +28,13 @@
                 "type": "string"
               },
               "state": {
-                "enum": [
-                  "active",
-                  "parked",
-                  "archived"
-                ]
+                "enum": ["active", "parked", "archived"]
               },
               "kind": {
-                "enum": [
-                  "feature",
-                  "bug"
-                ]
+                "enum": ["feature", "bug"]
               },
               "profile": {
-                "enum": [
-                  "tiny",
-                  "small",
-                  "large"
-                ]
+                "enum": ["tiny", "small", "large"]
               },
               "updatedAt": {
                 "type": "string",

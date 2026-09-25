@@ -20,13 +20,13 @@ Source of truth for the JSON `bdk:explorer` returns when the coordinator (`/bdk:
 
 ## Field semantics
 
-| Field | Type | Meaning |
-|---|---|---|
-| `confidence` | float `[0.0, 1.0]` | How certain the explorer is that the file-disjointness signal is reliable. Lower when plan-declared paths are sparse, ambiguous, or absent. |
-| `groups` | ordered array | Groups execute in array order. Within a group, tasks may run in parallel. |
-| `groups[].tasks` | array of task ids | Task ids must reference real entries in the plan. |
-| `groups[].rationale` | short string | Why these tasks are grouped (or why this task is alone). |
-| `warnings` | array of strings | Anything the coordinator should know but is not a hard error (e.g., "task 2.1 declares no files; assumed serial"). |
+| Field                | Type               | Meaning                                                                                                                                     |
+| -------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `confidence`         | float `[0.0, 1.0]` | How certain the explorer is that the file-disjointness signal is reliable. Lower when plan-declared paths are sparse, ambiguous, or absent. |
+| `groups`             | ordered array      | Groups execute in array order. Within a group, tasks may run in parallel.                                                                   |
+| `groups[].tasks`     | array of task ids  | Task ids must reference real entries in the plan.                                                                                           |
+| `groups[].rationale` | short string       | Why these tasks are grouped (or why this task is alone).                                                                                    |
+| `warnings`           | array of strings   | Anything the coordinator should know but is not a hard error (e.g., "task 2.1 declares no files; assumed serial").                          |
 
 ## Grouping rules the explorer must follow
 
@@ -39,11 +39,11 @@ Source of truth for the JSON `bdk:explorer` returns when the coordinator (`/bdk:
 
 The coordinator switches to **full serial mode** (every task its own group, in plan order) if any of the following hold:
 
-| Trigger | `reason` to print |
-|---|---|
-| JSON malformed or missing required fields | `malformed envelope: {what was wrong}` |
-| `confidence < 0.6` | `confidence {value} < 0.6` |
-| Any `groups[].tasks` entry references an undefined task id | `unknown task id {id}` |
+| Trigger                                                    | `reason` to print                      |
+| ---------------------------------------------------------- | -------------------------------------- |
+| JSON malformed or missing required fields                  | `malformed envelope: {what was wrong}` |
+| `confidence < 0.6`                                         | `confidence {value} < 0.6`             |
+| Any `groups[].tasks` entry references an undefined task id | `unknown task id {id}`                 |
 
 Fallback **does not halt the run** - serial mode is always correct, just slow. It is never silent:
 

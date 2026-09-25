@@ -17,13 +17,14 @@ Take PR URLs, spawn one reviewer subagent per PR, and land the result where it b
 ## Safety Rules (MANDATORY)
 
 - **MUST NOT modify source files.** `disallowed-tools: Edit Write NotebookEdit` removes them mechanically; the subagents are instructed to be read-only in their worktrees. Findings become GitHub comments, never edits.
-- **Nothing is posted to GitHub until the user confirms.** Reviewer subagents compute findings, a verdict, and the data a review would be rendered from - they MUST NOT call the review-posting API or any thread-resolve mutation. The orchestrator aggregates every PR in this run, shows a full terminal report (verdict, blockers, and the *complete* nice-to-have list - nice-to-haves sometimes hide things that actually matter), and lets the user confirm or override each PR's verdict before any GitHub call happens.
-- **Once confirmed, post only through the templates.** Everything posted goes to GitHub where the PR author and team see it, rendered *only* from `references/comment-templates.md`. No ad-hoc comment shapes.
+- **Nothing is posted to GitHub until the user confirms.** Reviewer subagents compute findings, a verdict, and the data a review would be rendered from - they MUST NOT call the review-posting API or any thread-resolve mutation. The orchestrator aggregates every PR in this run, shows a full terminal report (verdict, blockers, and the _complete_ nice-to-have list - nice-to-haves sometimes hide things that actually matter), and lets the user confirm or override each PR's verdict before any GitHub call happens.
+- **Once confirmed, post only through the templates.** Everything posted goes to GitHub where the PR author and team see it, rendered _only_ from `references/comment-templates.md`. No ad-hoc comment shapes.
 - **One review call per PR.** All inline comments + summary + event in a single API call - per-finding top-level comments spam notifications.
 
 ## Terminal Output
 
 **On start:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  👁️  ORCHESTRATOR: pr-review                     │
@@ -33,6 +34,7 @@ Take PR URLs, spawn one reviewer subagent per PR, and land the result where it b
 ```
 
 **During execution:**
+
 ```
 [pr-review] PR #{n}: {title} ({base_ref} ← {head_ref}){ [stack: parent #{m}]}
 [pr-review] Worktrees ready: {N}
@@ -41,6 +43,7 @@ Take PR URLs, spawn one reviewer subagent per PR, and land the result where it b
 ```
 
 **Before asking for confirmation (Step 5), per PR:**
+
 ```
 ── PR #{n}: {title} ── computed verdict: {✅ Approve | ❌ Request changes}
 Blockers ({n}):
@@ -50,6 +53,7 @@ Nice to have ({n}) - review these, real issues sometimes land here:
 ```
 
 **After posting (Step 6):**
+
 ```
 [pr-review] PR #{n}: ✓ posted {event} ({k} inline comments){ - verdict overridden from {computed}}
 [pr-review] Done: {approved} approved, {changes_requested} changes requested
@@ -119,7 +123,7 @@ Own-PR note: still ask (the confirmed verdict still drives the summary body's ve
 
 For each PR, using its stored payload and `final_verdict`:
 
-1. Render the summary body from `references/comment-templates.md` template 3 (review) or template 5 (verify) - blockers section included whenever `blockers` is non-empty, *even when `final_verdict` is approve*, and the override note added whenever `final_verdict != computed_verdict`.
+1. Render the summary body from `references/comment-templates.md` template 3 (review) or template 5 (verify) - blockers section included whenever `blockers` is non-empty, _even when `final_verdict` is approve_, and the override note added whenever `final_verdict != computed_verdict`.
 2. Map to the GitHub `event`: `approve` → `APPROVE`, `request-changes` → `REQUEST_CHANGES`, own PR → `COMMENT` (see above).
 3. Post the one review call per PR (inline blocker comments + summary body + event) per the "Posting mechanics" section of `comment-templates.md`. On a 422 anchor failure, drop that comment into the summary's Context findings section and retry once - never retry the identical payload.
 4. Verify mode only: after the review call succeeds, resolve every thread in `threads_to_resolve` (ours, classified ✅ in Step 2 of the verify template).
@@ -129,13 +133,13 @@ Print the final `Done: {approved} approved, {changes_requested} changes requeste
 
 ## Verdict Policy (single source, mirrored in the prompts)
 
-| Findings | Computed verdict | User can override to | GitHub event |
-|---|---|---|---|
-| Any confirmed CRITICAL / HIGH | request changes | approve (Step 5) | `REQUEST_CHANGES`, or `APPROVE` if overridden |
-| Only MEDIUM / LOW (nice-to-haves) | approve | request changes (Step 5) | `APPROVE`, or `REQUEST_CHANGES` if overridden |
-| Reviewer is the PR author | unchanged by the above, confirmed the same way | - | `COMMENT` always (GitHub rejects self-approval) |
+| Findings                          | Computed verdict                               | User can override to     | GitHub event                                    |
+| --------------------------------- | ---------------------------------------------- | ------------------------ | ----------------------------------------------- |
+| Any confirmed CRITICAL / HIGH     | request changes                                | approve (Step 5)         | `REQUEST_CHANGES`, or `APPROVE` if overridden   |
+| Only MEDIUM / LOW (nice-to-haves) | approve                                        | request changes (Step 5) | `APPROVE`, or `REQUEST_CHANGES` if overridden   |
+| Reviewer is the PR author         | unchanged by the above, confirmed the same way | -                        | `COMMENT` always (GitHub rejects self-approval) |
 
-Nice-to-haves never block *by themselves* - the computed verdict never turns to request-changes for MEDIUM/LOW alone. But they are never silently dropped either: the full list reaches the user in Step 5, precisely so a nice-to-have that is actually important can get its own override. Nitpicks - style pedantry, linter-territory, personal taste - are at most nice-to-haves.
+Nice-to-haves never block _by themselves_ - the computed verdict never turns to request-changes for MEDIUM/LOW alone. But they are never silently dropped either: the full list reaches the user in Step 5, precisely so a nice-to-have that is actually important can get its own override. Nitpicks - style pedantry, linter-territory, personal taste - are at most nice-to-haves.
 
 ## Rules
 

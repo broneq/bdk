@@ -5,9 +5,7 @@
   "description": "The resolved configuration after the four layers, with the origin of every key.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "value"
-  ],
+  "required": ["value"],
   "properties": {
     "key": {
       "type": "string"
@@ -18,12 +16,7 @@
     "origins": {
       "type": "object",
       "additionalProperties": {
-        "enum": [
-          "default",
-          "global",
-          "project",
-          "local"
-        ]
+        "enum": ["default", "global", "project", "local"]
       },
       "description": "Dotted key -> layer, when --origins."
     },
@@ -31,19 +24,10 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "layer",
-          "path",
-          "present"
-        ],
+        "required": ["layer", "path", "present"],
         "properties": {
           "layer": {
-            "enum": [
-              "default",
-              "global",
-              "project",
-              "local"
-            ]
+            "enum": ["default", "global", "project", "local"]
           },
           "path": {
             "type": "string"

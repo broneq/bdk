@@ -7,16 +7,19 @@ Doc: realistic examples of explain-complex-code skill across codebase sizes.
 **Command**: `/explain-complex-code src/services/migration/`
 
 **Step 2.1 - Initial Discovery**:
+
 - Discover 12 files across 3 subdirectories
 - Files found: document_migration_service.py, + parsers/ (3 files) + transformers/ (4 files) + storage/ (4 files)
 
 **Step 2.2 - Map Dependencies**:
+
 - Find key classes
 - Discovers: Service orchestrates Parser → Transformer → Storage flow
 
 **Step 2.3 - Decision**: 12 files → Group by architectural layers (4 groups)
 
 **Step 3 - Subagent Launch** (parallel, all in ONE message):
+
 ```
 Agent(subagent_type="Explore", prompt="Explore Service Layer (document_migration_service.py): ...")
 Agent(subagent_type="Explore", prompt="Explore Parser Block (parsers/html_parser.py, tokenizer.py, token_classifier.py): ...")
@@ -25,6 +28,7 @@ Agent(subagent_type="Explore", prompt="Explore Storage Block (storage/repository
 ```
 
 **Output**: `docs/architecture/migration-pipeline.md` with:
+
 - Component diagram (4 layers, 12 files)
 - Data flow (HTML → Tokens → Transformed → XML)
 - Critical rules (position accuracy, change detection)
@@ -38,16 +42,19 @@ Agent(subagent_type="Explore", prompt="Explore Storage Block (storage/repository
 **Command**: `/explain-complex-code src/services/position_mapping/token_alignment.py`
 
 **Step 2.1 - Initial Discovery**:
+
 - Files found: token_alignment.py (450 lines), test file (300 lines)
 
 **Step 2.3 - Decision**: 2 files → 1 subagent to protect main context
 
 **Step 3 - Subagent Launch**:
+
 ```
 Agent(subagent_type="Explore", prompt="Explore Token Alignment module (token_alignment.py + tests): Report core algorithm, key classes, dependencies, critical rules, test scenarios...")
 ```
 
 **Output**: `docs/architecture/token-alignment-algorithm.md` with:
+
 - Algorithm flow diagram (decision tree)
 - Critical rules (boundary handling, whitespace)
 - Live examples (3 scenarios: exact match, partial, boundary)
@@ -60,20 +67,24 @@ Agent(subagent_type="Explore", prompt="Explore Token Alignment module (token_ali
 **Command**: `/explain-complex-code src/services/change_detection/`
 
 **Step 2.1 - Initial Discovery**:
+
 - Files found: 7 files (unmarked_change_detector.py, froala_marker.py, + detectors/ (3 files) + rules/ (2 files))
 
 **Step 2.2 - Map Dependencies**:
+
 - Discovers: Main detector orchestrates Rules → Detectors → Marker flow
 
 **Step 2.3 - Decision**: 7 files → Group into 2 logical blocks (not 3, keep simple)
 
 **Step 3 - Subagent Launch** (parallel, all in ONE message):
+
 ```
 Agent(subagent_type="Explore", prompt="Explore Core Detection Block (unmarked_change_detector.py, rules/addition_rule.py, rules/deletion_rule.py): Report orchestration logic, rule evaluation, dependencies...")
 Agent(subagent_type="Explore", prompt="Explore Detection Utilities Block (detectors/text_differ.py, html_comparer.py, change_classifier.py, froala_marker.py): Report comparison algorithms, classification logic, Froala integration...")
 ```
 
 **Output**: `docs/architecture/change-detection-system.md` with:
+
 - Component diagram (2 blocks, dependency arrows)
 - Algorithm flow (Rule evaluation → Detection → Classification → Marking)
 - Critical rules (unmarked text detection, Froala compatibility)
@@ -86,16 +97,19 @@ Agent(subagent_type="Explore", prompt="Explore Detection Utilities Block (detect
 **Command**: `/explain-complex-code src/utils/position_calculator.py`
 
 **Step 2.1 - Initial Discovery**:
+
 - File: 180 lines, 3 classes, 8 helper functions
 
 **Step 2.3 - Decision**: 1 file → 1 subagent to protect context
 
 **Step 3 - Subagent Launch**:
+
 ```
 Agent(subagent_type="Explore", prompt="Explore position_calculator.py: Report all classes/functions, their purposes, key algorithms, edge cases, and how they relate to each other...")
 ```
 
 **Output**: `docs/architecture/position-calculator.md` with:
+
 - Class relationship diagram
 - Algorithm descriptions
 - Usage examples
@@ -108,15 +122,18 @@ Agent(subagent_type="Explore", prompt="Explore position_calculator.py: Report al
 **Command**: `/explain-complex-code src/services/`
 
 **Step 2.1 - Initial Discovery**:
+
 - Files found: 18 files across migration/, transformation/, change_detection/, position_mapping/
 
 **Step 2.2 - Map Dependencies**:
+
 - Analyze top-level services
 - Discovers: 4 main service categories with clear boundaries
 
 **Step 2.3 - Decision**: 18 files → Group by service categories (4 layers)
 
 **Step 3 - Subagent Launch** (parallel, all in ONE message):
+
 ```
 Agent(subagent_type="Explore", prompt="Explore Migration Services (all files in migration/): For EACH file report: purpose, key classes, dependencies. Then synthesize: service orchestration, shared patterns, core workflows...")
 Agent(subagent_type="Explore", prompt="Explore Transformation Services (all files in transformation/): For EACH file report: purpose, key classes, dependencies. Then synthesize: transformation pipeline, shared patterns, algorithms...")
@@ -125,6 +142,7 @@ Agent(subagent_type="Explore", prompt="Explore Position Mapping Services (all fi
 ```
 
 **Output**: `docs/architecture/service-layer.md` with:
+
 - Service layer architecture diagram
 - Data flow between services
 - Dependency injection patterns
@@ -136,6 +154,7 @@ Agent(subagent_type="Explore", prompt="Explore Position Mapping Services (all fi
 ## Pattern: Multi-Module Feature
 
 For features spanning multiple files:
+
 1. One subagent per logical block (not per file)
 2. Overview diagram showing module relationships
 3. Detailed flow for main process
@@ -144,6 +163,7 @@ For features spanning multiple files:
 ## Pattern: Algorithm Documentation
 
 For complex algorithms:
+
 1. High-level flow diagram
 2. Critical rules with violation examples
 3. 2-3 live examples (simple → complex)
@@ -152,6 +172,7 @@ For complex algorithms:
 ## Pattern: Service Layer Documentation
 
 For service-oriented code:
+
 1. Layer architecture (CLI → Use Cases → Services → Data)
 2. Dependency injection pattern
 3. Data flow through layers

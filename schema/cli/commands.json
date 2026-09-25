@@ -20,10 +20,7 @@
   "commands": [
     {
       "id": "change-new",
-      "argv": [
-        "change",
-        "new"
-      ],
+      "argv": ["change", "new"],
       "summary": "Open a Change on the current branch from an intent; measure and propose the profile.",
       "availability": "orchestrator",
       "mode": "command",
@@ -40,19 +37,12 @@
       "flags": [
         {
           "name": "--kind",
-          "values": [
-            "feature",
-            "bug"
-          ],
+          "values": ["feature", "bug"],
           "description": "Graph variant; default feature (T02 decision R-8)."
         },
         {
           "name": "--profile",
-          "values": [
-            "tiny",
-            "small",
-            "large"
-          ],
+          "values": ["tiny", "small", "large"],
           "description": "Override the measured profile (R-profil)."
         },
         {
@@ -61,29 +51,13 @@
         }
       ],
       "output": "output/change-new.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
-      "refusals": [
-        "policy/change-exists",
-        "policy/profile-downgrade",
-        "runtime/git-missing"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/change.md",
-        ".bdk/changes/<id>/log/",
-        ".bdk/.machine/"
-      ]
+      "exits": [0, 2, 3, 5],
+      "refusals": ["policy/change-exists", "policy/profile-downgrade", "runtime/git-missing"],
+      "writes": [".bdk/changes/<id>/change.md", ".bdk/changes/<id>/log/", ".bdk/.machine/"]
     },
     {
       "id": "change-status",
-      "argv": [
-        "change",
-        "status"
-      ],
+      "argv": ["change", "status"],
       "summary": "The active Change at a glance: stage, graph state, gate status with pending review entries, parked options.",
       "availability": "read",
       "mode": "command",
@@ -93,22 +67,13 @@
       "args": [],
       "flags": [],
       "output": "output/change-status.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [],
       "writes": []
     },
     {
       "id": "change-list",
-      "argv": [
-        "change",
-        "list"
-      ],
+      "argv": ["change", "list"],
       "summary": "List Changes in this repository: active per branch, parked, archived.",
       "availability": "read",
       "mode": "command",
@@ -123,20 +88,13 @@
         }
       ],
       "output": "output/change-list.json",
-      "exits": [
-        0,
-        3,
-        5
-      ],
+      "exits": [0, 3, 5],
       "refusals": [],
       "writes": []
     },
     {
       "id": "change-resume",
-      "argv": [
-        "change",
-        "resume"
-      ],
+      "argv": ["change", "resume"],
       "summary": "Bind an existing Change to the current branch or leave the parked state with a chosen option.",
       "availability": "orchestrator",
       "mode": "command",
@@ -157,37 +115,23 @@
         },
         {
           "name": "--profile",
-          "values": [
-            "small",
-            "large"
-          ],
+          "values": ["small", "large"],
           "description": "Raise the profile mid-flight; never lowers it."
         }
       ],
       "output": "output/change-resume.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
+      "exits": [0, 2, 3, 5],
       "refusals": [
         "input/not-found",
         "policy/invalid-transition",
         "policy/change-exists",
         "policy/profile-downgrade"
       ],
-      "writes": [
-        ".bdk/changes/<id>/log/",
-        ".bdk/.machine/"
-      ]
+      "writes": [".bdk/changes/<id>/log/", ".bdk/.machine/"]
     },
     {
       "id": "change-park",
-      "argv": [
-        "change",
-        "park"
-      ],
+      "argv": ["change", "park"],
       "summary": "Park the active Change with a question or blocker entry, options and one resume command.",
       "availability": "orchestrator",
       "mode": "command",
@@ -208,28 +152,13 @@
         }
       ],
       "output": "output/change-park.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "policy/invalid-transition",
-        "policy/ticket-open"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/log/",
-        ".bdk/changes/<id>/attempts/"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["policy/invalid-transition", "policy/ticket-open"],
+      "writes": [".bdk/changes/<id>/log/", ".bdk/changes/<id>/attempts/"]
     },
     {
       "id": "change-takeover",
-      "argv": [
-        "change",
-        "takeover"
-      ],
+      "argv": ["change", "takeover"],
       "summary": "Take over a Change whose previous session died with open tickets.",
       "availability": "orchestrator",
       "mode": "command",
@@ -244,29 +173,13 @@
         }
       ],
       "output": "output/change-takeover.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "policy/invalid-transition",
-        "policy/ticket-open"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/attempts/",
-        ".bdk/changes/<id>/log/",
-        ".bdk/.machine/"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["policy/invalid-transition", "policy/ticket-open"],
+      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", ".bdk/.machine/"]
     },
     {
       "id": "change-checkpoint",
-      "argv": [
-        "change",
-        "checkpoint"
-      ],
+      "argv": ["change", "checkpoint"],
       "summary": "Pathspec commit of the Change directory: `chore(bdk): checkpoint <change>`.",
       "availability": "orchestrator",
       "mode": "command",
@@ -276,28 +189,13 @@
       "args": [],
       "flags": [],
       "output": "output/change-checkpoint.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "policy/git-in-progress",
-        "policy/ticket-open",
-        "runtime/git-missing"
-      ],
-      "writes": [
-        "git:commit"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["policy/git-in-progress", "policy/ticket-open", "runtime/git-missing"],
+      "writes": ["git:commit"]
     },
     {
       "id": "change-close",
-      "argv": [
-        "change",
-        "close"
-      ],
+      "argv": ["change", "close"],
       "summary": "Close the Change after the review gate: spec merge, learning routing, archive, PR summary.",
       "availability": "orchestrator",
       "mode": "command",
@@ -316,13 +214,7 @@
         }
       ],
       "output": "output/change-close.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "policy/gate-not-ready",
         "policy/ticket-open",
@@ -341,9 +233,7 @@
     },
     {
       "id": "measure",
-      "argv": [
-        "measure"
-      ],
+      "argv": ["measure"],
       "summary": "Measure the size of an intent or a diff: files, impacted modules, proposed profile.",
       "availability": "read",
       "mode": "command",
@@ -365,21 +255,13 @@
         }
       ],
       "output": "output/measure.json",
-      "exits": [
-        0,
-        3,
-        5
-      ],
-      "refusals": [
-        "runtime/git-missing"
-      ],
+      "exits": [0, 3, 5],
+      "refusals": ["runtime/git-missing"],
       "writes": []
     },
     {
       "id": "next",
-      "argv": [
-        "next"
-      ],
+      "argv": ["next"],
       "summary": "The next ready artifact with its instruction, plus the gate status; the skill's entry point.",
       "availability": "read",
       "mode": "inject",
@@ -389,17 +271,13 @@
       "args": [],
       "flags": [],
       "output": "output/next.json",
-      "exits": [
-        0
-      ],
+      "exits": [0],
       "refusals": [],
       "writes": []
     },
     {
       "id": "explain",
-      "argv": [
-        "explain"
-      ],
+      "argv": ["explain"],
       "summary": "Why an artifact is in its state: the `requires` chain with each node's state and input hash.",
       "availability": "read",
       "mode": "command",
@@ -415,23 +293,13 @@
       ],
       "flags": [],
       "output": "output/explain.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found"
-      ],
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found"],
       "writes": []
     },
     {
       "id": "validate",
-      "argv": [
-        "validate"
-      ],
+      "argv": ["validate"],
       "summary": "Run an artifact's kind validator without marking it done.",
       "availability": "read",
       "mode": "command",
@@ -447,13 +315,7 @@
       ],
       "flags": [],
       "output": "output/validate.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/validation-failed",
@@ -467,9 +329,7 @@
     },
     {
       "id": "done",
-      "argv": [
-        "done"
-      ],
+      "argv": ["done"],
       "summary": "Mark an artifact done after its validator passes and record the input hash.",
       "availability": "orchestrator",
       "mode": "command",
@@ -484,13 +344,7 @@
       ],
       "flags": [],
       "output": "output/done.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/not-ready",
@@ -498,17 +352,11 @@
         "policy/gate-not-ready",
         "policy/missing-citation"
       ],
-      "writes": [
-        ".bdk/changes/<id>/log/",
-        ".bdk/.machine/"
-      ]
+      "writes": [".bdk/changes/<id>/log/", ".bdk/.machine/"]
     },
     {
       "id": "part-list",
-      "argv": [
-        "part",
-        "list"
-      ],
+      "argv": ["part", "list"],
       "summary": "Plan parts with state, task counts, size, dependencies and wave.",
       "availability": "read",
       "mode": "command",
@@ -518,22 +366,13 @@
       "args": [],
       "flags": [],
       "output": "output/part-list.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [],
       "writes": []
     },
     {
       "id": "part-start",
-      "argv": [
-        "part",
-        "start"
-      ],
+      "argv": ["part", "start"],
       "summary": "Validate a part and record the start transition; required before its first ticket.",
       "availability": "orchestrator",
       "mode": "command",
@@ -548,13 +387,7 @@
       ],
       "flags": [],
       "output": "output/part-start.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/not-ready",
@@ -564,16 +397,11 @@
         "policy/do-not-touch-overlap",
         "policy/placeholder"
       ],
-      "writes": [
-        ".bdk/changes/<id>/log/"
-      ]
+      "writes": [".bdk/changes/<id>/log/"]
     },
     {
       "id": "part-done",
-      "argv": [
-        "part",
-        "done"
-      ],
+      "argv": ["part", "done"],
       "summary": "Close a part: every task has a trailer commit and no ticket is open.",
       "availability": "orchestrator",
       "mode": "command",
@@ -588,13 +416,7 @@
       ],
       "flags": [],
       "output": "output/part-done.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/invalid-transition",
@@ -603,16 +425,11 @@
         "state/trailer-mismatch",
         "runtime/git-missing"
       ],
-      "writes": [
-        ".bdk/changes/<id>/log/"
-      ]
+      "writes": [".bdk/changes/<id>/log/"]
     },
     {
       "id": "part-split",
-      "argv": [
-        "part",
-        "split"
-      ],
+      "argv": ["part", "split"],
       "summary": "Split an oversized or parked part into two parts with the same dependencies.",
       "availability": "orchestrator",
       "mode": "command",
@@ -632,18 +449,8 @@
       ],
       "flags": [],
       "output": "output/part-split.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/invalid-transition",
-        "policy/ticket-open"
-      ],
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/invalid-transition", "policy/ticket-open"],
       "writes": [
         ".bdk/changes/<id>/plan/parts/",
         ".bdk/changes/<id>/plan/index.md",
@@ -652,10 +459,7 @@
     },
     {
       "id": "attempt-open",
-      "argv": [
-        "attempt",
-        "open"
-      ],
+      "argv": ["attempt", "open"],
       "summary": "Open a ticket for one loop iteration, or refuse with the next rung of the ladder.",
       "availability": "orchestrator",
       "mode": "command",
@@ -676,13 +480,7 @@
       ],
       "flags": [],
       "output": "output/attempt-open.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/not-ready",
@@ -690,16 +488,11 @@
         "policy/oscillation",
         "policy/ticket-open"
       ],
-      "writes": [
-        ".bdk/changes/<id>/attempts/"
-      ]
+      "writes": [".bdk/changes/<id>/attempts/"]
     },
     {
       "id": "attempt-close",
-      "argv": [
-        "attempt",
-        "close"
-      ],
+      "argv": ["attempt", "close"],
       "summary": "Close a ticket with its outcome; check the diff, the evidence and the declared entries.",
       "availability": "orchestrator",
       "mode": "command",
@@ -714,11 +507,7 @@
         {
           "name": "outcome",
           "required": true,
-          "values": [
-            "ok",
-            "fail",
-            "not-run"
-          ],
+          "values": ["ok", "fail", "not-run"],
           "description": "ok: done; fail: findings remain (fingerprints stored); not-run: the check could not be performed (P4)."
         }
       ],
@@ -735,13 +524,7 @@
         }
       ],
       "output": "output/attempt-close.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/no-open-ticket",
@@ -751,17 +534,11 @@
         "policy/missing-citation",
         "runtime/git-missing"
       ],
-      "writes": [
-        ".bdk/changes/<id>/attempts/",
-        ".bdk/changes/<id>/log/"
-      ]
+      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/"]
     },
     {
       "id": "attempt-list",
-      "argv": [
-        "attempt",
-        "list"
-      ],
+      "argv": ["attempt", "list"],
       "summary": "Tickets and attempt records, open first.",
       "availability": "read",
       "mode": "command",
@@ -779,22 +556,13 @@
         }
       ],
       "output": "output/attempt-list.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [],
       "writes": []
     },
     {
       "id": "log-add",
-      "argv": [
-        "log",
-        "add"
-      ],
+      "argv": ["log", "add"],
       "summary": "Append one ledger entry; the kernel stamps id, time, author and source.",
       "availability": "agent",
       "mode": "command",
@@ -849,39 +617,18 @@
         },
         {
           "name": "--status",
-          "values": [
-            "proposed",
-            "accepted",
-            "superseded",
-            "resolved",
-            "routed"
-          ]
+          "values": ["proposed", "accepted", "superseded", "resolved", "routed"]
         }
       ],
       "stdin": "Body text when --body - is given.",
       "output": "output/log-add.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/forbidden-field",
-        "policy/no-open-ticket",
-        "policy/observation-cap"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/log/"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/forbidden-field", "policy/no-open-ticket", "policy/observation-cap"],
+      "writes": [".bdk/changes/<id>/log/"]
     },
     {
       "id": "log-ingest",
-      "argv": [
-        "log",
-        "ingest"
-      ],
+      "argv": ["log", "ingest"],
       "summary": "Ingest a `bdk-entries` block from a read-only role's report under its ticket.",
       "availability": "orchestrator",
       "mode": "command",
@@ -903,29 +650,18 @@
       ],
       "stdin": "The fenced bdk-entries YAML block, or a whole report containing exactly one such block.",
       "output": "output/log-ingest.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/invalid-block",
         "input/forbidden-field",
         "policy/no-open-ticket",
         "policy/observation-cap"
       ],
-      "writes": [
-        ".bdk/changes/<id>/log/"
-      ]
+      "writes": [".bdk/changes/<id>/log/"]
     },
     {
       "id": "log-list",
-      "argv": [
-        "log",
-        "list"
-      ],
+      "argv": ["log", "list"],
       "summary": "Ledger entries as summaries, filtered by type, status, review flag or reference.",
       "availability": "read",
       "mode": "command",
@@ -951,13 +687,7 @@
         },
         {
           "name": "--status",
-          "values": [
-            "proposed",
-            "accepted",
-            "superseded",
-            "resolved",
-            "routed"
-          ]
+          "values": ["proposed", "accepted", "superseded", "resolved", "routed"]
         },
         {
           "name": "--review",
@@ -972,22 +702,13 @@
         }
       ],
       "output": "output/log-list.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [],
       "writes": []
     },
     {
       "id": "log-show",
-      "argv": [
-        "log",
-        "show"
-      ],
+      "argv": ["log", "show"],
       "summary": "One entry in full, by bare or qualified id.",
       "availability": "agent",
       "mode": "command",
@@ -1003,24 +724,13 @@
       ],
       "flags": [],
       "output": "output/log-show.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found"
-      ],
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found"],
       "writes": []
     },
     {
       "id": "log-resolve",
-      "argv": [
-        "log",
-        "resolve"
-      ],
+      "argv": ["log", "resolve"],
       "summary": "Set an entry's status (resolved, accepted, superseded) with a reason.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1035,11 +745,7 @@
         {
           "name": "status",
           "required": true,
-          "values": [
-            "accepted",
-            "resolved",
-            "superseded"
-          ]
+          "values": ["accepted", "resolved", "superseded"]
         }
       ],
       "flags": [
@@ -1054,27 +760,13 @@
         }
       ],
       "output": "output/log-resolve.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/invalid-transition"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/log/"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/invalid-transition"],
+      "writes": [".bdk/changes/<id>/log/"]
     },
     {
       "id": "log-route",
-      "argv": [
-        "log",
-        "route"
-      ],
+      "argv": ["log", "route"],
       "summary": "Route learning entries at close: rule proposal, spec, or nothing, by the T31 thresholds.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1088,24 +780,13 @@
         }
       ],
       "output": "output/log-route.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [],
-      "writes": [
-        ".bdk/changes/<id>/log/"
-      ]
+      "writes": [".bdk/changes/<id>/log/"]
     },
     {
       "id": "dispatch-build",
-      "argv": [
-        "dispatch",
-        "build"
-      ],
+      "argv": ["dispatch", "build"],
       "summary": "Build the dispatch package file for a task, role and ticket.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1129,29 +810,18 @@
       ],
       "flags": [],
       "output": "output/dispatch-build.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/no-open-ticket",
         "policy/package-too-large",
         "policy/placeholder"
       ],
-      "writes": [
-        ".bdk/changes/<id>/dispatch/"
-      ]
+      "writes": [".bdk/changes/<id>/dispatch/"]
     },
     {
       "id": "dispatch-show",
-      "argv": [
-        "dispatch",
-        "show"
-      ],
+      "argv": ["dispatch", "show"],
       "summary": "Print a dispatch package by path or ticket.",
       "availability": "agent",
       "mode": "command",
@@ -1166,24 +836,13 @@
       ],
       "flags": [],
       "output": "output/dispatch-show.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found"
-      ],
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found"],
       "writes": []
     },
     {
       "id": "dispatch-run",
-      "argv": [
-        "dispatch",
-        "run"
-      ],
+      "argv": ["dispatch", "run"],
       "summary": "Headless runner: spawn one host CLI process per package of a wave and collect the reports.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1209,29 +868,13 @@
         }
       ],
       "output": "output/dispatch-run.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/no-open-ticket",
-        "policy/invalid-transition"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/reports/",
-        ".bdk/.machine/"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/no-open-ticket", "policy/invalid-transition"],
+      "writes": [".bdk/changes/<id>/reports/", ".bdk/.machine/"]
     },
     {
       "id": "evidence-record",
-      "argv": [
-        "evidence",
-        "record"
-      ],
+      "argv": ["evidence", "record"],
       "summary": "Register verification evidence: a manifest with the tree hash and the hashes of the files.",
       "availability": "agent",
       "mode": "command",
@@ -1258,11 +901,7 @@
         },
         {
           "name": "--verdict",
-          "values": [
-            "pass",
-            "fail",
-            "not-run"
-          ]
+          "values": ["pass", "fail", "not-run"]
         },
         {
           "name": "--cite",
@@ -1271,29 +910,13 @@
         }
       ],
       "output": "output/evidence-record.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/no-open-ticket",
-        "policy/missing-citation"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/evidence/",
-        ".bdk/.machine/evidence/"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/no-open-ticket", "policy/missing-citation"],
+      "writes": [".bdk/changes/<id>/evidence/", ".bdk/.machine/evidence/"]
     },
     {
       "id": "evidence-check",
-      "argv": [
-        "evidence",
-        "check"
-      ],
+      "argv": ["evidence", "check"],
       "summary": "Is the evidence for a task still fresh against the working tree?",
       "availability": "read",
       "mode": "command",
@@ -1308,26 +931,13 @@
       ],
       "flags": [],
       "output": "output/evidence-check.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/stale-evidence"
-      ],
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/stale-evidence"],
       "writes": []
     },
     {
       "id": "spec-delta-check",
-      "argv": [
-        "spec",
-        "delta",
-        "check"
-      ],
+      "argv": ["spec", "delta", "check"],
       "summary": "Validate a spec delta: Scenario prefix, WHEN / THEN, no silent scenario loss.",
       "availability": "read",
       "mode": "command",
@@ -1343,25 +953,13 @@
       ],
       "flags": [],
       "output": "output/spec-delta-check.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/spec-invalid"
-      ],
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/spec-invalid"],
       "writes": []
     },
     {
       "id": "spec-merge",
-      "argv": [
-        "spec",
-        "merge"
-      ],
+      "argv": ["spec", "merge"],
       "summary": "Deterministically merge the Change's deltas into `.bdk/specs/`; refuse on conflict.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1375,29 +973,18 @@
         }
       ],
       "output": "output/spec-merge.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "policy/spec-invalid",
         "policy/spec-conflict",
         "policy/merge-hash-mismatch",
         "policy/gate-not-ready"
       ],
-      "writes": [
-        ".bdk/specs/"
-      ]
+      "writes": [".bdk/specs/"]
     },
     {
       "id": "spec-diff",
-      "argv": [
-        "spec",
-        "diff"
-      ],
+      "argv": ["spec", "diff"],
       "summary": "What the merged spec would look like: requirement-level diff of the Change's deltas against `.bdk/specs/`.",
       "availability": "read",
       "mode": "command",
@@ -1412,24 +999,13 @@
       ],
       "flags": [],
       "output": "output/spec-diff.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found"
-      ],
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found"],
       "writes": []
     },
     {
       "id": "config-show",
-      "argv": [
-        "config",
-        "show"
-      ],
+      "argv": ["config", "show"],
       "summary": "The resolved configuration after the four layers, with the origin of every key.",
       "availability": "read",
       "mode": "command",
@@ -1450,25 +1026,13 @@
         }
       ],
       "output": "output/config-show.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/unknown-config-key",
-        "policy/config-invalid"
-      ],
+      "exits": [0, 2, 3, 5],
+      "refusals": ["input/not-found", "policy/unknown-config-key", "policy/config-invalid"],
       "writes": []
     },
     {
       "id": "config-check",
-      "argv": [
-        "config",
-        "check"
-      ],
+      "argv": ["config", "check"],
       "summary": "Validate every layer against the module schema registry; name unknown keys.",
       "availability": "read",
       "mode": "command",
@@ -1478,24 +1042,13 @@
       "args": [],
       "flags": [],
       "output": "output/config-check.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
-      "refusals": [
-        "policy/unknown-config-key",
-        "policy/config-invalid"
-      ],
+      "exits": [0, 2, 3, 5],
+      "refusals": ["policy/unknown-config-key", "policy/config-invalid"],
       "writes": []
     },
     {
       "id": "config-schema",
-      "argv": [
-        "config",
-        "schema"
-      ],
+      "argv": ["config", "schema"],
       "summary": "Print the JSON Schema of the settings (the file committed under `schema/`) or of one module.",
       "availability": "read",
       "mode": "command",
@@ -1515,22 +1068,13 @@
         }
       ],
       "output": "output/config-schema.json",
-      "exits": [
-        0,
-        3,
-        5
-      ],
-      "refusals": [
-        "input/not-found"
-      ],
+      "exits": [0, 3, 5],
+      "refusals": ["input/not-found"],
       "writes": []
     },
     {
       "id": "config-set",
-      "argv": [
-        "config",
-        "set"
-      ],
+      "argv": ["config", "set"],
       "summary": "Set one key in the project, local or global layer after validating the result.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1559,16 +1103,8 @@
         }
       ],
       "output": "output/config-set.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
-      "refusals": [
-        "policy/unknown-config-key",
-        "policy/config-invalid"
-      ],
+      "exits": [0, 2, 3, 5],
+      "refusals": ["policy/unknown-config-key", "policy/config-invalid"],
       "writes": [
         ".bdk/settings.yaml",
         ".bdk/settings.local.yaml",
@@ -1578,10 +1114,7 @@
     },
     {
       "id": "ctx-skill",
-      "argv": [
-        "ctx",
-        "skill"
-      ],
+      "argv": ["ctx", "skill"],
       "summary": "Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values.",
       "availability": "agent",
       "mode": "inject",
@@ -1597,21 +1130,13 @@
       ],
       "flags": [],
       "output": "output/ctx.json",
-      "exits": [
-        0
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/unknown-config-key"
-      ],
+      "exits": [0],
+      "refusals": ["input/not-found", "policy/unknown-config-key"],
       "writes": []
     },
     {
       "id": "ctx-role",
-      "argv": [
-        "ctx",
-        "role"
-      ],
+      "argv": ["ctx", "role"],
       "summary": "Compose the context for a role class (worker, reader, reviewer, verifier, runner).",
       "availability": "agent",
       "mode": "inject",
@@ -1622,32 +1147,18 @@
         {
           "name": "<class>",
           "required": true,
-          "values": [
-            "worker",
-            "reader",
-            "reviewer",
-            "verifier",
-            "runner"
-          ]
+          "values": ["worker", "reader", "reviewer", "verifier", "runner"]
         }
       ],
       "flags": [],
       "output": "output/ctx.json",
-      "exits": [
-        0
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/unknown-config-key"
-      ],
+      "exits": [0],
+      "refusals": ["input/not-found", "policy/unknown-config-key"],
       "writes": []
     },
     {
       "id": "ctx-startup",
-      "argv": [
-        "ctx",
-        "startup"
-      ],
+      "argv": ["ctx", "startup"],
       "summary": "Render the STARTUP instructions, including the agents table generated from agent frontmatter (P11).",
       "availability": "agent",
       "mode": "inject",
@@ -1657,19 +1168,13 @@
       "args": [],
       "flags": [],
       "output": "output/ctx.json",
-      "exits": [
-        0
-      ],
-      "refusals": [
-        "policy/unknown-config-key"
-      ],
+      "exits": [0],
+      "refusals": ["policy/unknown-config-key"],
       "writes": []
     },
     {
       "id": "query",
-      "argv": [
-        "query"
-      ],
+      "argv": ["query"],
       "summary": "Read-only SQL over the rebuildable index.",
       "availability": "read",
       "mode": "command",
@@ -1690,22 +1195,13 @@
         }
       ],
       "output": "output/query.json",
-      "exits": [
-        0,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "state/corrupted-index"
-      ],
+      "exits": [0, 3, 4, 5],
+      "refusals": ["state/corrupted-index"],
       "writes": []
     },
     {
       "id": "commit",
-      "argv": [
-        "commit"
-      ],
+      "argv": ["commit"],
       "summary": "Commit a task: code plus Change directory, with BDK trailers, after the diff check.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1726,13 +1222,7 @@
         }
       ],
       "output": "output/commit.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
+      "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
         "policy/do-not-touch",
@@ -1741,17 +1231,11 @@
         "policy/ticket-open",
         "runtime/git-missing"
       ],
-      "writes": [
-        "git:commit",
-        ".bdk/changes/<id>/log/"
-      ]
+      "writes": ["git:commit", ".bdk/changes/<id>/log/"]
     },
     {
       "id": "rules-check",
-      "argv": [
-        "rules",
-        "check"
-      ],
+      "argv": ["rules", "check"],
       "summary": "Check rule files: unique ids, `[PREFIX-n]` format, `source` / `verified` on knowledge rules, tombstones.",
       "availability": "read",
       "mode": "command",
@@ -1767,25 +1251,13 @@
       ],
       "flags": [],
       "output": "output/rules-check.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/rule-format",
-        "policy/duplicate-rule-id"
-      ],
+      "exits": [0, 2, 3, 5],
+      "refusals": ["input/not-found", "policy/rule-format", "policy/duplicate-rule-id"],
       "writes": []
     },
     {
       "id": "rules-show",
-      "argv": [
-        "rules",
-        "show"
-      ],
+      "argv": ["rules", "show"],
       "summary": "Print one rule by id.",
       "availability": "read",
       "mode": "command",
@@ -1801,22 +1273,13 @@
       ],
       "flags": [],
       "output": "output/rules-show.json",
-      "exits": [
-        0,
-        3,
-        5
-      ],
-      "refusals": [
-        "input/not-found"
-      ],
+      "exits": [0, 3, 5],
+      "refusals": ["input/not-found"],
       "writes": []
     },
     {
       "id": "rules-add",
-      "argv": [
-        "rules",
-        "add"
-      ],
+      "argv": ["rules", "add"],
       "summary": "Propose a rule from work in progress: writes a learning entry with applies globs; no rule file changes.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1837,10 +1300,7 @@
         },
         {
           "name": "--kind",
-          "values": [
-            "house",
-            "knowledge"
-          ]
+          "values": ["house", "knowledge"]
         },
         {
           "name": "--accept",
@@ -1849,28 +1309,13 @@
         }
       ],
       "output": "output/rules-add.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/rule-format"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/log/",
-        ".bdk/rules/"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/rule-format"],
+      "writes": [".bdk/changes/<id>/log/", ".bdk/rules/"]
     },
     {
       "id": "rules-explain",
-      "argv": [
-        "rules",
-        "explain"
-      ],
+      "argv": ["rules", "explain"],
       "summary": "Which rules apply to a file, and why.",
       "availability": "read",
       "mode": "command",
@@ -1886,32 +1331,17 @@
       "flags": [
         {
           "name": "--role",
-          "values": [
-            "worker",
-            "reader",
-            "reviewer",
-            "verifier",
-            "runner"
-          ]
+          "values": ["worker", "reader", "reviewer", "verifier", "runner"]
         }
       ],
       "output": "output/rules-explain.json",
-      "exits": [
-        0,
-        3,
-        5
-      ],
-      "refusals": [
-        "input/not-found"
-      ],
+      "exits": [0, 3, 5],
+      "refusals": ["input/not-found"],
       "writes": []
     },
     {
       "id": "rules-prune",
-      "argv": [
-        "rules",
-        "prune"
-      ],
+      "argv": ["rules", "prune"],
       "summary": "List rules whose globs match no file or that no Change cited in the last N closes.",
       "availability": "read",
       "mode": "command",
@@ -1927,20 +1357,13 @@
         }
       ],
       "output": "output/rules-prune.json",
-      "exits": [
-        0,
-        3,
-        5
-      ],
+      "exits": [0, 3, 5],
       "refusals": [],
       "writes": []
     },
     {
       "id": "rules-import",
-      "argv": [
-        "rules",
-        "import"
-      ],
+      "argv": ["rules", "import"],
       "summary": "Import a project's `.claude/rules/*.md` into `.bdk/rules/` with ids and applies from paths.",
       "availability": "orchestrator",
       "mode": "command",
@@ -1965,27 +1388,13 @@
         }
       ],
       "output": "output/rules-import.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
-      "refusals": [
-        "input/not-found",
-        "policy/rule-format",
-        "policy/duplicate-rule-id"
-      ],
-      "writes": [
-        ".bdk/rules/"
-      ]
+      "exits": [0, 2, 3, 5],
+      "refusals": ["input/not-found", "policy/rule-format", "policy/duplicate-rule-id"],
+      "writes": [".bdk/rules/"]
     },
     {
       "id": "rules-stats",
-      "argv": [
-        "rules",
-        "stats"
-      ],
+      "argv": ["rules", "stats"],
       "summary": "Recurrence by fingerprint and citations by rule id, from the index.",
       "availability": "read",
       "mode": "command",
@@ -1999,23 +1408,13 @@
         }
       ],
       "output": "output/rules-stats.json",
-      "exits": [
-        0,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "state/corrupted-index"
-      ],
+      "exits": [0, 3, 4, 5],
+      "refusals": ["state/corrupted-index"],
       "writes": []
     },
     {
       "id": "rules-export",
-      "argv": [
-        "rules",
-        "export"
-      ],
+      "argv": ["rules", "export"],
       "summary": "Generate the host projection of the rules, `.claude/rules/bdk-generated.md`, with `paths:` from applies.",
       "availability": "orchestrator",
       "mode": "command",
@@ -2034,25 +1433,13 @@
         }
       ],
       "output": "output/rules-export.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
-      "refusals": [
-        "policy/rule-format"
-      ],
-      "writes": [
-        ".claude/rules/bdk-generated.md"
-      ]
+      "exits": [0, 2, 3, 5],
+      "refusals": ["policy/rule-format"],
+      "writes": [".claude/rules/bdk-generated.md"]
     },
     {
       "id": "export-agents",
-      "argv": [
-        "export",
-        "agents"
-      ],
+      "argv": ["export", "agents"],
       "summary": "Generate a host's agent files from the role skills and the per-host tool map.",
       "availability": "orchestrator",
       "mode": "command",
@@ -2063,12 +1450,7 @@
       "flags": [
         {
           "name": "--host",
-          "values": [
-            "claude",
-            "gemini",
-            "cursor",
-            "opencode"
-          ],
+          "values": ["claude", "gemini", "cursor", "opencode"],
           "description": "Required."
         },
         {
@@ -2082,22 +1464,13 @@
         }
       ],
       "output": "output/export-agents.json",
-      "exits": [
-        0,
-        3,
-        5
-      ],
+      "exits": [0, 3, 5],
       "refusals": [],
-      "writes": [
-        "<host agents directory>"
-      ]
+      "writes": ["<host agents directory>"]
     },
     {
       "id": "hooks-session-start",
-      "argv": [
-        "hooks",
-        "session-start"
-      ],
+      "argv": ["hooks", "session-start"],
       "summary": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh.",
       "availability": "hook",
       "mode": "inject",
@@ -2108,23 +1481,13 @@
       "flags": [],
       "stdin": "SessionStart payload (section 8).",
       "output": "output/hooks-session-start.json",
-      "exits": [
-        0
-      ],
-      "refusals": [
-        "policy/unknown-config-key",
-        "policy/config-invalid"
-      ],
-      "writes": [
-        ".bdk/.machine/"
-      ]
+      "exits": [0],
+      "refusals": ["policy/unknown-config-key", "policy/config-invalid"],
+      "writes": [".bdk/.machine/"]
     },
     {
       "id": "hooks-session-end",
-      "argv": [
-        "hooks",
-        "session-end"
-      ],
+      "argv": ["hooks", "session-end"],
       "summary": "SessionEnd content hook: Change checkpoint commit when enabled and safe.",
       "availability": "hook",
       "mode": "inject",
@@ -2135,23 +1498,13 @@
       "flags": [],
       "stdin": "SessionEnd payload (section 8).",
       "output": "output/hooks-session-end.json",
-      "exits": [
-        0
-      ],
-      "refusals": [
-        "policy/git-in-progress",
-        "policy/ticket-open"
-      ],
-      "writes": [
-        "git:commit"
-      ]
+      "exits": [0],
+      "refusals": ["policy/git-in-progress", "policy/ticket-open"],
+      "writes": ["git:commit"]
     },
     {
       "id": "hooks-prompt-expansion",
-      "argv": [
-        "hooks",
-        "prompt-expansion"
-      ],
+      "argv": ["hooks", "prompt-expansion"],
       "summary": "UserPromptExpansion guard: the only writer of `source: user` stage transitions.",
       "availability": "hook",
       "mode": "guard",
@@ -2162,23 +1515,13 @@
       "flags": [],
       "stdin": "UserPromptExpansion payload (section 8).",
       "output": "output/hooks-prompt-expansion.json",
-      "exits": [
-        0,
-        2
-      ],
-      "refusals": [
-        "policy/gate-not-ready"
-      ],
-      "writes": [
-        ".bdk/changes/<id>/log/"
-      ]
+      "exits": [0, 2],
+      "refusals": ["policy/gate-not-ready"],
+      "writes": [".bdk/changes/<id>/log/"]
     },
     {
       "id": "hooks-pre-tool",
-      "argv": [
-        "hooks",
-        "pre-tool"
-      ],
+      "argv": ["hooks", "pre-tool"],
       "summary": "PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.mjs hooks` from Bash.",
       "availability": "hook",
       "mode": "guard",
@@ -2189,10 +1532,7 @@
       "flags": [],
       "stdin": "PreToolUse payload (section 8).",
       "output": "output/hooks-pre-tool.json",
-      "exits": [
-        0,
-        2
-      ],
+      "exits": [0, 2],
       "refusals": [
         "guard/spec-dir-write",
         "guard/subagent-git",
@@ -2203,10 +1543,7 @@
     },
     {
       "id": "hooks-skill-exists",
-      "argv": [
-        "hooks",
-        "skill-exists"
-      ],
+      "argv": ["hooks", "skill-exists"],
       "summary": "Skill-frontmatter UserPromptSubmit hook: warn as content when a named skill is not installed.",
       "availability": "hook",
       "mode": "inject",
@@ -2223,17 +1560,13 @@
       "flags": [],
       "stdin": "UserPromptSubmit payload; only the presence of a name matters.",
       "output": "output/hooks-skill-exists.json",
-      "exits": [
-        0
-      ],
+      "exits": [0],
       "refusals": [],
       "writes": []
     },
     {
       "id": "doctor",
-      "argv": [
-        "doctor"
-      ],
+      "argv": ["doctor"],
       "summary": "Diagnose the runtime, the layout and the state; one known repair action per finding.",
       "availability": "read",
       "mode": "command",
@@ -2248,22 +1581,13 @@
         }
       ],
       "output": "output/doctor.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
-      "refusals": [
-        "policy/merge-hash-mismatch"
-      ],
+      "exits": [0, 2, 3, 5],
+      "refusals": ["policy/merge-hash-mismatch"],
       "writes": []
     },
     {
       "id": "rebuild",
-      "argv": [
-        "rebuild"
-      ],
+      "argv": ["rebuild"],
       "summary": "Rebuild the index and the derived progress from committed files and git trailers.",
       "availability": "orchestrator",
       "mode": "command",
@@ -2278,26 +1602,13 @@
         }
       ],
       "output": "output/rebuild.json",
-      "exits": [
-        0,
-        2,
-        3,
-        4,
-        5
-      ],
-      "refusals": [
-        "state/trailer-mismatch",
-        "runtime/git-missing"
-      ],
-      "writes": [
-        ".bdk/.machine/"
-      ]
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["state/trailer-mismatch", "runtime/git-missing"],
+      "writes": [".bdk/.machine/"]
     },
     {
       "id": "import",
-      "argv": [
-        "import"
-      ],
+      "argv": ["import"],
       "summary": "One-time v2 to v3 import: settings, rules, old designs as intents of new Changes.",
       "availability": "orchestrator",
       "mode": "command",
@@ -2311,30 +1622,18 @@
         }
       ],
       "output": "output/import.json",
-      "exits": [
-        0,
-        2,
-        3,
-        5
-      ],
+      "exits": [0, 2, 3, 5],
       "refusals": [
         "input/not-found",
         "policy/config-invalid",
         "policy/duplicate-rule-id",
         "runtime/git-missing"
       ],
-      "writes": [
-        ".bdk/settings.yaml",
-        ".bdk/rules/",
-        ".bdk/changes/",
-        ".gitignore"
-      ]
+      "writes": [".bdk/settings.yaml", ".bdk/rules/", ".bdk/changes/", ".gitignore"]
     },
     {
       "id": "version",
-      "argv": [
-        "version"
-      ],
+      "argv": ["version"],
       "summary": "Kernel version, contract version, Node version.",
       "availability": "read",
       "mode": "command",
@@ -2345,14 +1644,8 @@
       "args": [],
       "flags": [],
       "output": "common/version.json",
-      "exits": [
-        0,
-        3
-      ],
-      "refusals": [
-        "input/unknown-flag",
-        "input/invalid-argument"
-      ],
+      "exits": [0, 3],
+      "refusals": ["input/unknown-flag", "input/invalid-argument"],
       "writes": []
     }
   ]

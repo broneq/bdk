@@ -5,12 +5,7 @@
   "description": "Validate a part and record the start transition; required before its first ticket.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "part",
-    "state",
-    "tasks",
-    "entry"
-  ],
+  "required": ["part", "state", "tasks", "entry"],
   "properties": {
     "part": {
       "type": "string"
@@ -22,10 +17,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "task",
-          "files"
-        ],
+        "required": ["task", "files"],
         "properties": {
           "task": {
             "type": "string"
@@ -67,20 +59,14 @@
       "tasks": [
         {
           "task": "02-1",
-          "files": [
-            "src/auth/login.ts"
-          ]
+          "files": ["src/auth/login.ts"]
         },
         {
           "task": "02-2",
-          "files": [
-            "src/auth/login.test.ts"
-          ]
+          "files": ["src/auth/login.test.ts"]
         }
       ],
-      "doNotTouch": [
-        "src/billing/**"
-      ],
+      "doNotTouch": ["src/billing/**"],
       "successMeasure": "POST /login returns a session for a valid magic link",
       "entry": "L-r2v8k"
     }

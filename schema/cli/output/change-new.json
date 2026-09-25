@@ -5,14 +5,7 @@
   "description": "Open a Change on the current branch from an intent; measure and propose the profile.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "change",
-    "branch",
-    "kind",
-    "profile",
-    "source",
-    "next"
-  ],
+  "required": ["change", "branch", "kind", "profile", "source", "next"],
   "properties": {
     "change": {
       "type": "string",
@@ -22,32 +15,17 @@
       "type": "string"
     },
     "kind": {
-      "enum": [
-        "feature",
-        "bug"
-      ]
+      "enum": ["feature", "bug"]
     },
     "profile": {
       "type": "object",
-      "required": [
-        "value",
-        "measured",
-        "entry"
-      ],
+      "required": ["value", "measured", "entry"],
       "properties": {
         "value": {
-          "enum": [
-            "tiny",
-            "small",
-            "large"
-          ]
+          "enum": ["tiny", "small", "large"]
         },
         "measured": {
-          "enum": [
-            "tiny",
-            "small",
-            "large"
-          ]
+          "enum": ["tiny", "small", "large"]
         },
         "overridden": {
           "type": "boolean"
@@ -59,10 +37,7 @@
       }
     },
     "source": {
-      "enum": [
-        "user",
-        "inferred"
-      ]
+      "enum": ["user", "inferred"]
     },
     "overriddenKeys": {
       "type": "array",
@@ -88,9 +63,7 @@
         "entry": "L-m2x9v"
       },
       "source": "user",
-      "overriddenKeys": [
-        "policy.escalation.enabled"
-      ],
+      "overriddenKeys": ["policy.escalation.enabled"],
       "next": "design"
     }
   ]

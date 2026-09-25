@@ -5,20 +5,13 @@
   "description": "Recurrence by fingerprint and citations by rule id, from the index.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "learning",
-    "citations"
-  ],
+  "required": ["learning", "citations"],
   "properties": {
     "learning": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "fingerprint",
-          "changes",
-          "authors"
-        ],
+        "required": ["fingerprint", "changes", "authors"],
         "properties": {
           "fingerprint": {
             "type": "string"
@@ -40,10 +33,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "count"
-        ],
+        "required": ["id", "count"],
         "properties": {
           "id": {
             "type": "string"

@@ -5,30 +5,18 @@
   "description": "Close a ticket with its outcome; check the diff, the evidence and the declared entries.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "ticket",
-    "outcome",
-    "next"
-  ],
+  "required": ["ticket", "outcome", "next"],
   "properties": {
     "ticket": {
       "type": "string",
       "description": "Opaque merge-safe id (T14)."
     },
     "outcome": {
-      "enum": [
-        "ok",
-        "fail",
-        "not-run"
-      ]
+      "enum": ["ok", "fail", "not-run"]
     },
     "diff": {
       "type": "object",
-      "required": [
-        "declared",
-        "touched",
-        "undeclared"
-      ],
+      "required": ["declared", "touched", "undeclared"],
       "properties": {
         "declared": {
           "type": "array",
@@ -69,26 +57,13 @@
     },
     "next": {
       "type": "object",
-      "required": [
-        "action"
-      ],
+      "required": ["action"],
       "properties": {
         "action": {
-          "enum": [
-            "post-task-steps",
-            "retry",
-            "narrow",
-            "escalate",
-            "question",
-            "parked"
-          ]
+          "enum": ["post-task-steps", "retry", "narrow", "escalate", "question", "parked"]
         },
         "scope": {
-          "enum": [
-            "full",
-            "high+",
-            "blockers"
-          ]
+          "enum": ["full", "high+", "blockers"]
         },
         "entry": {
           "type": "string",
@@ -108,23 +83,12 @@
       "ticket": "A-7f3k",
       "outcome": "fail",
       "diff": {
-        "declared": [
-          "src/auth/login.ts"
-        ],
-        "touched": [
-          "src/auth/login.ts",
-          "src/auth/util.ts"
-        ],
-        "undeclared": [
-          "src/auth/util.ts"
-        ]
+        "declared": ["src/auth/login.ts"],
+        "touched": ["src/auth/login.ts", "src/auth/util.ts"],
+        "undeclared": ["src/auth/util.ts"]
       },
-      "findings": [
-        "L-e8k2s"
-      ],
-      "fingerprints": [
-        "finding|src/auth/login.ts|verifyToken|expired token accepted"
-      ],
+      "findings": ["L-e8k2s"],
+      "fingerprints": ["finding|src/auth/login.ts|verifyToken|expired token accepted"],
       "next": {
         "action": "narrow",
         "scope": "blockers"

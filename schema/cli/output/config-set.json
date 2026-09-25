@@ -5,12 +5,7 @@
   "description": "Set one key in the project, local or global layer after validating the result.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "key",
-    "value",
-    "layer",
-    "path"
-  ],
+  "required": ["key", "value", "layer", "path"],
   "properties": {
     "key": {
       "type": "string"
@@ -18,12 +13,7 @@
     "value": {},
     "previous": {},
     "layer": {
-      "enum": [
-        "default",
-        "global",
-        "project",
-        "local"
-      ]
+      "enum": ["default", "global", "project", "local"]
     },
     "path": {
       "type": "string"

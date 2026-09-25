@@ -10,12 +10,14 @@ Creating or editing skills: verify portability before commit.
 ## Required: Language-Agnostic Commands
 
 Skills NEVER hardcode:
+
 - Test runners: `pytest`, `go test`, `npm test`, `cargo test`, `rspec`
 - Build tools: `make`, `gradle`, `cargo build`, `mvn`
 - Lint/format: `ruff`, `eslint`, `golangci-lint`, `rubocop`
 - File paths specific to one project structure
 
 Use generic phrasing:
+
 - "run the project's test suite"
 - "run the project's linter/formatter"
 - "build the project"
@@ -30,16 +32,16 @@ A command baked into a dispatch prompt runs correctly in the project it was writ
 
 ## Exception: Skills That Detect the Stack
 
-A skill whose job is *discovering* the environment names runners and frameworks by necessity — it maps a discovered runner to the command forms it writes into `.bdk/settings.json`. The ban above is on **consuming** a hardcoded command; naming one to derive settings is the whole function. Do not "portability-fix" such a table into generic prose: a derivation table that cannot name `vitest` cannot produce `vitest related --run`.
+A skill whose job is _discovering_ the environment names runners and frameworks by necessity — it maps a discovered runner to the command forms it writes into `.bdk/settings.json`. The ban above is on **consuming** a hardcoded command; naming one to derive settings is the whole function. Do not "portability-fix" such a table into generic prose: a derivation table that cannot name `vitest` cannot produce `vitest related --run`.
 
 ## Required: Agents Reading Tool Commands
 
 Agents needing project test/lint/build commands MUST preload the matching meta-skill via `skills:` frontmatter — never embed tool tables:
 
-| Agent need | Meta-skill to preload |
-|---|---|
-| Run tests | `bdk-test-tools` |
-| Run lint/format/typecheck | `bdk-lint-tools` |
+| Agent need                            | Meta-skill to preload |
+| ------------------------------------- | --------------------- |
+| Run tests                             | `bdk-test-tools`      |
+| Run lint/format/typecheck             | `bdk-lint-tools`      |
 | Language- or framework-specific rules | `bdk-rules-languages` |
 
 Meta-skill body resolves at agent spawn. Edits to `.bdk/settings.json` take effect on the next agent spawn, not retroactively.
@@ -57,12 +59,14 @@ Every **user-invocable workflow skill** must start with:
 ## Required: Skill References
 
 Referencing other BDK skills, use full namespace:
+
 - `/bdk:create-plan` not `/create-plan`
 - `/bdk:debug` not `/debug`
 
 ## Domain-Specific Skills Do Not Belong Here
 
 Skill useful for one language, framework, or domain:
+
 - NOT in `skills/`
 - Belongs in target project's `.claude/` directory
 - Document reasoning in comment if making exceptions

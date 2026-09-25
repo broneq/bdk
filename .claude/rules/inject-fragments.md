@@ -55,40 +55,44 @@ bdk/
 
 ## Decision tree
 
-| Fragment scope | Directory | Reference style | Example |
-|---|---|---|---|
-| Shared (>1 skill) | `fragments/<capability>/` | `${CLAUDE_PLUGIN_ROOT}/fragments/...` | decision routing, setup guides |
-| Skill-local (1 skill) | `skills/<name>/fragments/` | `${CLAUDE_SKILL_DIR}/fragments/...` | React checklist in `cr` skill |
+| Fragment scope        | Directory                  | Reference style                       | Example                        |
+| --------------------- | -------------------------- | ------------------------------------- | ------------------------------ |
+| Shared (>1 skill)     | `fragments/<capability>/`  | `${CLAUDE_PLUGIN_ROOT}/fragments/...` | decision routing, setup guides |
+| Skill-local (1 skill) | `skills/<name>/fragments/` | `${CLAUDE_SKILL_DIR}/fragments/...`   | React checklist in `cr` skill  |
 
 ## Inject call syntax
 
 ### Shared fragment
+
 ```markdown
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then ${CLAUDE_PLUGIN_ROOT}/fragments/decision-tier/lavish.md`
 ```
 
 ### Skill-local fragment
+
 ```markdown
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if languages[react] --then ${CLAUDE_SKILL_DIR}/fragments/react.md`
 ```
 
 ### Inline text (≤2 lines)
+
 ```markdown
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.embeddings --then-text "Enable embeddings in your STARTUP_INSTRUCTIONS.md"`
 ```
 
 ## `--then` vs `--then-text`
 
-| Use | When |
-|---|---|
-| `--then <file>` | Anything >2 lines or formatting-sensitive (lists, code blocks, tables) |
-| `--then-text "<text>"` | Single line or short, stable snippets (≤2 lines) |
+| Use                    | When                                                                   |
+| ---------------------- | ---------------------------------------------------------------------- |
+| `--then <file>`        | Anything >2 lines or formatting-sensitive (lists, code blocks, tables) |
+| `--then-text "<text>"` | Single line or short, stable snippets (≤2 lines)                       |
 
 ## Placement rule
 
 Place inject calls **immediately before** the section they augment — not clustered at top or bottom of SKILL.md.
 
 **Example:**
+
 ```markdown
 ### Decision points
 
@@ -110,11 +114,11 @@ Bundle the open questions for the user...
 
 Three mechanisms coexist — do not confuse them:
 
-| Mechanism | Trigger | Source | Use case |
-|---|---|---|---|
-| `inject.py` | `!`...`` shell line with `--if` / `--prefer` | Skill/agent body | Conditional fragments based on `features.*` or `languages[...]` |
-| `inject-rules.py` | `!`...`` shell line, name as arg | `rules/<name>.md` (BDK) + `quality.<name>` override | Language-agnostic quality rules - whatever `rules/*.md` ships |
-| `inject-language-rules.py` | `!`...`` shell line | `rules/languages/<lang>.md` per entry in `languages` + `language-rules.<lang>` override | Language- or framework-specific rule sheets |
+| Mechanism                  | Trigger                                      | Source                                                                                  | Use case                                                        |
+| -------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `inject.py`                | `!`...`` shell line with `--if` / `--prefer` | Skill/agent body                                                                        | Conditional fragments based on `features.*` or `languages[...]` |
+| `inject-rules.py`          | `!`...`` shell line, name as arg             | `rules/<name>.md` (BDK) + `quality.<name>` override                                     | Language-agnostic quality rules - whatever `rules/*.md` ships   |
+| `inject-language-rules.py` | `!`...`` shell line                          | `rules/languages/<lang>.md` per entry in `languages` + `language-rules.<lang>` override | Language- or framework-specific rule sheets                     |
 
 All three resolve at skill load-time via `!`command`` — the model receives substituted content, never raw markers or instructions to substitute.
 

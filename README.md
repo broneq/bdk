@@ -35,36 +35,36 @@ If you want a semantic code-navigation or code-graph MCP server, configure it yo
 
 Invoke with `/bdk:<skill-name>`:
 
-| Skill | Description                                                                                         |
-|-------|-----------------------------------------------------------------------------------------------------|
-| `/bdk:setup` | Initialize `.bdk/settings.json` — run once per project before using other skills                    |
-| `/bdk:cr` | Dynamic code review (3-13 parallel agents based on change size). Reviews the delta since the last review by default; `--full` reviews the whole branch; `--inline` runs every cohort in-session with no subagents; `--base <ref>` reviews against an explicit base (stacked branches) |
-| `/bdk:pr-review` | Review GitHub PRs from URLs: one subagent per PR running `/bdk:cr --inline`, templated inline comments + summary on GitHub, approve / request-changes verdict; stack-aware (diff vs stack parent); `--verify` checks whether previous review comments were implemented and resolves addressed threads |
-| `/bdk:commit` | Generate conventional commit message from git changes                                               |
-| `/bdk:create-plan` | Create TDD-driven implementation plans                                                              |
-| `/bdk:subagent-execute-plan` | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review |
-| `/bdk:verify-plan` | Verify a plan against real code before execution                                                    |
-| `/bdk:debug` | Structured debugging: investigate → failing tests → fix or plan                                     |
-| `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                        |
-| `/bdk:design` | Design partner: classifies product vs architecture vs combined, 2+ approaches with Mermaid, self-critique, validation loop with warm-explorer reuse |
-| `/bdk:create-adr` | Generate Architecture Decision Records (MADR format)                                                |
-| `/bdk:explain-complex-code` | Generate architecture docs with Mermaid diagrams                                                    |
-| `/bdk:update-docs` | Refresh existing architecture docs after code changes                                               |
-| `/bdk:mermaid-drawer` | Shared Mermaid standard used by every diagram-emitting skill - type selection, node budget, and a palette verified legible in light and dark themes. Invoke directly to draw one diagram |
-| `/bdk:refine-rules` | Compact and verify `.claude/rules/*.md` against real code - four-part admission test, six verdicts, budgets, relocation to doc comments, uniform format |
-| `/bdk:add-rule` | Capture one lesson as a properly-homed rule - routes to a narrow-glob rule file, a wide one, a skill, a doc comment, a test signpost, or nothing; dedupes, respects budgets |
+| Skill                          | Description                                                                                                                                                                                                                                                                                           |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/bdk:setup`                   | Initialize `.bdk/settings.json` — run once per project before using other skills                                                                                                                                                                                                                      |
+| `/bdk:cr`                      | Dynamic code review (3-13 parallel agents based on change size). Reviews the delta since the last review by default; `--full` reviews the whole branch; `--inline` runs every cohort in-session with no subagents; `--base <ref>` reviews against an explicit base (stacked branches)                 |
+| `/bdk:pr-review`               | Review GitHub PRs from URLs: one subagent per PR running `/bdk:cr --inline`, templated inline comments + summary on GitHub, approve / request-changes verdict; stack-aware (diff vs stack parent); `--verify` checks whether previous review comments were implemented and resolves addressed threads |
+| `/bdk:commit`                  | Generate conventional commit message from git changes                                                                                                                                                                                                                                                 |
+| `/bdk:create-plan`             | Create TDD-driven implementation plans                                                                                                                                                                                                                                                                |
+| `/bdk:subagent-execute-plan`   | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review                                                                                                                                                                                              |
+| `/bdk:verify-plan`             | Verify a plan against real code before execution                                                                                                                                                                                                                                                      |
+| `/bdk:debug`                   | Structured debugging: investigate → failing tests → fix or plan                                                                                                                                                                                                                                       |
+| `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                                                                                                                                                                                                                          |
+| `/bdk:design`                  | Design partner: classifies product vs architecture vs combined, 2+ approaches with Mermaid, self-critique, validation loop with warm-explorer reuse                                                                                                                                                   |
+| `/bdk:create-adr`              | Generate Architecture Decision Records (MADR format)                                                                                                                                                                                                                                                  |
+| `/bdk:explain-complex-code`    | Generate architecture docs with Mermaid diagrams                                                                                                                                                                                                                                                      |
+| `/bdk:update-docs`             | Refresh existing architecture docs after code changes                                                                                                                                                                                                                                                 |
+| `/bdk:mermaid-drawer`          | Shared Mermaid standard used by every diagram-emitting skill - type selection, node budget, and a palette verified legible in light and dark themes. Invoke directly to draw one diagram                                                                                                              |
+| `/bdk:refine-rules`            | Compact and verify `.claude/rules/*.md` against real code - four-part admission test, six verdicts, budgets, relocation to doc comments, uniform format                                                                                                                                               |
+| `/bdk:add-rule`                | Capture one lesson as a properly-homed rule - routes to a narrow-glob rule file, a wide one, a skill, a doc comment, a test signpost, or nothing; dedupes, respects budgets                                                                                                                           |
 
 ### Removed skills
 
 Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which several skills used as their only state mechanism. Those skills are gone rather than patched:
 
-| Removed | Use instead |
-|---|---|
-| `/bdk:execute-plan` | `/bdk:subagent-execute-plan` |
-| `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session |
-| `/bdk:create-tasks`, `/bdk:refactor` | `/bdk:create-plan` |
-| `/bdk:audit-prompt` | Nothing |
-| `/bdk:graphviz-docs-compiler` | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
+| Removed                                       | Use instead                                                                                                                                                                                         |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/bdk:execute-plan`                           | `/bdk:subagent-execute-plan`                                                                                                                                                                        |
+| `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session             |
+| `/bdk:create-tasks`, `/bdk:refactor`          | `/bdk:create-plan`                                                                                                                                                                                  |
+| `/bdk:audit-prompt`                           | Nothing                                                                                                                                                                                             |
+| `/bdk:graphviz-docs-compiler`                 | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
 
 ---
 
@@ -78,11 +78,11 @@ The four plan skills form one chain, each stage consuming the previous stage's o
 
 The seams are files, not conversation state, so any stage can run in a fresh session:
 
-| Seam | Carrier |
-|---|---|
-| design → plan | the design doc at `.bdk/design/` |
-| plan → verify | the plan file |
-| verify → execute | `.bdk/verify-plan/<slug>-verification.md`, carrying the plan's sha256 |
+| Seam             | Carrier                                                                       |
+| ---------------- | ----------------------------------------------------------------------------- |
+| design → plan    | the design doc at `.bdk/design/`                                              |
+| plan → verify    | the plan file                                                                 |
+| verify → execute | `.bdk/verify-plan/<slug>-verification.md`, carrying the plan's sha256         |
 | execute → review | git commit trailers (`BDK-Run:`, `BDK-Group:`) plus `.bdk/runs/<run-id>.json` |
 
 **The plan file is immutable once verified.** Its sha256 is the run's identity, so edit before verifying, never after: the executor re-hashes the file and reports a post-verification edit as a stale stamp. To change course mid-run, stop, edit, re-verify, and start a new run - the already-committed groups stay committed and the new run picks up from the trailers.
@@ -108,21 +108,21 @@ One session per worktree. Two sessions in one worktree contend for the same run,
 
 Used by skills internally (invoke via `subagent_type`):
 
-| Agent | Model | Purpose |
-|-------|-------|---------|
-| `code-reviewer` | sonnet | Layer-group deep code review |
-| `implementer` | sonnet | End-to-end task implementation (TDD, lint, commit) — used by `/bdk:subagent-execute-plan` |
-| `fixer` | sonnet | Apply specific findings (review, lint, test failures) — used by `/bdk:subagent-execute-plan` |
-| `explorer` | haiku | Fast read-only codebase exploration with the built-in tools |
-| `test-runner` | haiku | Run tests, parse and report results |
-| `dead-code-detector` | haiku | Find unreachable/unused code |
-| `duplicate-detector` | haiku | Find code duplication |
-| `architecture-reviewer` | opus | Audit against architectural rules |
-| `static-analyse` | haiku | Detect and run project lint/format/type-check |
-| `plan-verifier` | opus | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. Used by `/bdk:verify-plan` |
-| `design-verifier` | opus | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. Used by `/bdk:design` Phase 3 |
-| `log-analyzer` | haiku | Parse and summarize error logs |
-| `web-researcher` | haiku | Search web for solutions and docs |
+| Agent                   | Model  | Purpose                                                                                                                                                                            |
+| ----------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `code-reviewer`         | sonnet | Layer-group deep code review                                                                                                                                                       |
+| `implementer`           | sonnet | End-to-end task implementation (TDD, lint, commit) — used by `/bdk:subagent-execute-plan`                                                                                          |
+| `fixer`                 | sonnet | Apply specific findings (review, lint, test failures) — used by `/bdk:subagent-execute-plan`                                                                                       |
+| `explorer`              | haiku  | Fast read-only codebase exploration with the built-in tools                                                                                                                        |
+| `test-runner`           | haiku  | Run tests, parse and report results                                                                                                                                                |
+| `dead-code-detector`    | haiku  | Find unreachable/unused code                                                                                                                                                       |
+| `duplicate-detector`    | haiku  | Find code duplication                                                                                                                                                              |
+| `architecture-reviewer` | opus   | Audit against architectural rules                                                                                                                                                  |
+| `static-analyse`        | haiku  | Detect and run project lint/format/type-check                                                                                                                                      |
+| `plan-verifier`         | opus   | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. Used by `/bdk:verify-plan`                                         |
+| `design-verifier`       | opus   | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. Used by `/bdk:design` Phase 3 |
+| `log-analyzer`          | haiku  | Parse and summarize error logs                                                                                                                                                     |
+| `web-researcher`        | haiku  | Search web for solutions and docs                                                                                                                                                  |
 
 ---
 
@@ -156,15 +156,15 @@ BDK runs checks **scoped to what changed** for the whole length of a plan, and t
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `type` | The runner or framework (`vitest`, `pytest`, `eslint`, `tsc`) — not the package manager. BDK reads it to infer a missing `tier`. |
-| `tier` | `fast` / `e2e` for tests; `lint` / `format` / `typecheck` for lint. Decides **when** the command may run. |
-| `command` | The full, unscoped form. The slowest one: reserved for the end-of-plan gate. |
-| `scoped` | Scoped to a path list. Must contain `{files}`. |
-| `related` | The tests *covering* given source files, for runners that compute that themselves. Must contain `{files}`. Replaces asking an agent which tests cover a change. |
-| `failed` | Re-runs only what failed. Used by fix cycles, so a fix attempt does not pay for a suite. |
-| `incremental` | Cache-reusing form of a check that cannot take a path list — typecheckers above all. |
+| Field         | Meaning                                                                                                                                                         |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`        | The runner or framework (`vitest`, `pytest`, `eslint`, `tsc`) — not the package manager. BDK reads it to infer a missing `tier`.                                |
+| `tier`        | `fast` / `e2e` for tests; `lint` / `format` / `typecheck` for lint. Decides **when** the command may run.                                                       |
+| `command`     | The full, unscoped form. The slowest one: reserved for the end-of-plan gate.                                                                                    |
+| `scoped`      | Scoped to a path list. Must contain `{files}`.                                                                                                                  |
+| `related`     | The tests _covering_ given source files, for runners that compute that themselves. Must contain `{files}`. Replaces asking an agent which tests cover a change. |
+| `failed`      | Re-runs only what failed. Used by fix cycles, so a fix attempt does not pay for a suite.                                                                        |
+| `incremental` | Cache-reusing form of a check that cannot take a path list — typecheckers above all.                                                                            |
 
 Omit any form your tool does not support; BDK falls back cleanly from a missing form. `tier` is optional but should always be set: BDK infers it from the tool name, and an inferred `fast` on an e2e runner means a slow suite runs at every group boundary.
 

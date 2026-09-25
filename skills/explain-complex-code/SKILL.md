@@ -23,6 +23,7 @@ Generate architecture docs for complex code with visual diagrams and examples.
 ### 1. Understand Scope
 
 `path` arg specifies code to explain. Clarify:
+
 - **Focus areas**: Architecture, algorithms, data flow, testing strategy
 - **Audience level**: Team onboarding, external docs, debugging guide
 
@@ -39,12 +40,12 @@ For each key class/function: find its callers across the source tree, and read i
 
 Partition by file count, keeping each directory that forms one logical block together:
 
-| Files Count | Strategy | Subagent Count |
-|-------------|----------|----------------|
-| 1-2 files | One subagent for entire module | 1 subagent |
-| 3-5 files | Group into 1-2 logical blocks | 1-2 subagents |
-| 6-10 files | Group into 2-3 logical blocks | 2-3 subagents |
-| 10+ files | Group by architectural layers | 3-4 subagents |
+| Files Count | Strategy                       | Subagent Count |
+| ----------- | ------------------------------ | -------------- |
+| 1-2 files   | One subagent for entire module | 1 subagent     |
+| 3-5 files   | Group into 1-2 logical blocks  | 1-2 subagents  |
+| 6-10 files  | Group into 2-3 logical blocks  | 2-3 subagents  |
+| 10+ files   | Group by architectural layers  | 3-4 subagents  |
 
 **Never more than 3-4 subagents.**
 
@@ -74,6 +75,7 @@ Then synthesize:
 From subagent findings, create structured docs.
 
 **Structure:**
+
 1. **Overview**: 2-3 sentence summary
 2. **Core Architecture**: File tree + component diagram
 3. **Architecture Flow**: Process flow with Mermaid
@@ -84,7 +86,7 @@ From subagent findings, create structured docs.
 
 ### 5. Create Mermaid Diagrams
 
-Embed diagrams directly as fenced ```mermaid``` code blocks — no separate source file, no compile step, renders natively wherever the doc is viewed.
+Embed diagrams directly as fenced `mermaid` code blocks — no separate source file, no compile step, renders natively wherever the doc is viewed.
 
 **Follow `/bdk:mermaid-drawer`** for type selection, node budget and colour. It is the shared standard across every BDK skill that emits a diagram, so docs from different skills read alike. Architecture docs typically need a component `flowchart` with one `subgraph` per layer; add a `sequenceDiagram` when the module's behaviour is a call chain across boundaries, and a `stateDiagram-v2` when it drives an entity through named states.
 
@@ -93,6 +95,7 @@ Embed diagrams directly as fenced ```mermaid``` code blocks — no separate sour
 **CRITICAL RULE**: Prototype code only — NOT actual implementation.
 
 **Good Prototype:**
+
 ```
 # Parse and validate
 parsed = parse(input_data)
@@ -105,6 +108,7 @@ return format_output(result)
 ```
 
 **Prototype Rules:**
+
 - Placeholder function names
 - Clear control flow
 - Comments for key steps

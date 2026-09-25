@@ -5,14 +5,7 @@
   "description": "Open a ticket for one loop iteration, or refuse with the next rung of the ladder.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "ticket",
-    "loop",
-    "target",
-    "attempt",
-    "of",
-    "scope"
-  ],
+  "required": ["ticket", "loop", "target", "attempt", "of", "scope"],
   "properties": {
     "ticket": {
       "type": "string",
@@ -36,11 +29,7 @@
       "description": "Budget for this loop kind."
     },
     "scope": {
-      "enum": [
-        "full",
-        "high+",
-        "blockers"
-      ]
+      "enum": ["full", "high+", "blockers"]
     },
     "openedAt": {
       "type": "string",
@@ -53,31 +42,20 @@
       "description": "ISO 8601 UTC with seconds."
     },
     "outcome": {
-      "enum": [
-        "ok",
-        "fail",
-        "not-run"
-      ]
+      "enum": ["ok", "fail", "not-run"]
     },
     "notRunCount": {
       "type": "integer",
       "minimum": 0
     },
     "narrowedFrom": {
-      "enum": [
-        "full",
-        "high+",
-        "blockers"
-      ]
+      "enum": ["full", "high+", "blockers"]
     },
     "dropped": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "summary"
-        ],
+        "required": ["id", "summary"],
         "properties": {
           "id": {
             "type": "string",

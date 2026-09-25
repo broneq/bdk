@@ -36,20 +36,10 @@
       "type": "string"
     },
     "adapter": {
-      "enum": [
-        "worker",
-        "reader",
-        "reviewer",
-        "runner",
-        "scout"
-      ]
+      "enum": ["worker", "reader", "reviewer", "runner", "scout"]
     },
     "scope": {
-      "enum": [
-        "full",
-        "high+",
-        "blockers"
-      ]
+      "enum": ["full", "high+", "blockers"]
     },
     "kernelVersion": {
       "type": "string"
@@ -97,18 +87,10 @@
       "kernelVersion": "3.0.0",
       "templateHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
       "entries": {
-        "full": [
-          "L-a2s5d"
-        ],
-        "summaries": [
-          "L-e8k2s"
-        ]
+        "full": ["L-a2s5d"],
+        "summaries": ["L-e8k2s"]
       },
-      "rules": [
-        "CQ-4",
-        "SEC-2",
-        "PL-1"
-      ]
+      "rules": ["CQ-4", "SEC-2", "PL-1"]
     }
   ]
 }

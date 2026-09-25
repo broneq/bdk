@@ -5,12 +5,7 @@
   "description": "Rebuild the index and the derived progress from committed files and git trailers.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "changes",
-    "entries",
-    "attempts",
-    "commits"
-  ],
+  "required": ["changes", "entries", "attempts", "commits"],
   "properties": {
     "changes": {
       "type": "integer"

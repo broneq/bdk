@@ -25,7 +25,7 @@ Each fragment is self-contained: it carries everything the reader needs, with no
 
 ## Agents vs Skills
 
-Agent `.md` files are static markdown — shell commands do not execute at load time, and the `hooks:`, `mcpServers:`, and `permissionMode:` frontmatter fields are **stripped** when an agent ships in a plugin (verbatim from the Claude Code agents reference: *"For security reasons, plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin."*). `inject.py` cannot be used directly inside an agent file.
+Agent `.md` files are static markdown — shell commands do not execute at load time, and the `hooks:`, `mcpServers:`, and `permissionMode:` frontmatter fields are **stripped** when an agent ships in a plugin (verbatim from the Claude Code agents reference: _"For security reasons, plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin."_). `inject.py` cannot be used directly inside an agent file.
 
 Dynamic content reaches agents one way instead: **`skills:` frontmatter on the agent** preloads named meta-skills (e.g. `bdk-rules-code-quality`, `bdk-test-tools`) into the subagent's startup context. The skill bodies contain `!`...`` blocks that resolve at preload time.
 
@@ -37,10 +37,10 @@ Dynamic content reaches agents one way instead: **`skills:` frontmatter on the a
 
 BDK has three distinct `rules/` locations. Do not confuse them:
 
-| Path | Owner | Purpose |
-|------|-------|---------|
-| `rules/` (repo root) | BDK distributor | Language-agnostic rule files shipped to end-user projects (`code-quality.md`, `architecture.md`, `design-patterns.md`). Injected via `scripts/inject-rules.py`. |
-| `.claude/rules/` (this dir) | BDK dev-time | Internal conventions for developing BDK itself (`fragment-system.md`, `portability-check.md`, etc.). Not distributed. |
+| Path                            | Owner            | Purpose                                                                                                                                                                 |
+| ------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rules/` (repo root)            | BDK distributor  | Language-agnostic rule files shipped to end-user projects (`code-quality.md`, `architecture.md`, `design-patterns.md`). Injected via `scripts/inject-rules.py`.         |
+| `.claude/rules/` (this dir)     | BDK dev-time     | Internal conventions for developing BDK itself (`fragment-system.md`, `portability-check.md`, etc.). Not distributed.                                                   |
 | `<user-project>/.claude/rules/` | End-user project | Project-specific rules injected by Claude Code at session start. May collide in name with BDK's `rules/` if a user copies rule files in — treat as separate namespaces. |
 
 When a user project installs BDK as a plugin, the plugin's `rules/` files are accessed via `${CLAUDE_PLUGIN_ROOT}/rules/` (explicit path). The user project's `.claude/rules/` is loaded by Claude Code automatically and is a separate namespace — no collision at runtime, but the similar names can confuse contributors. Always use the full path (`${CLAUDE_PLUGIN_ROOT}/rules/`) when referencing BDK rules from scripts or skill inject calls.

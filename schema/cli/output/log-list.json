@@ -3,6 +3,7 @@
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/log-list.json",
   "title": "bdk log list --json",
   "description": "Ledger entries as summaries, filtered by type, status, review flag or reference.",
+  "type": "object",
   "allOf": [
     {
       "$ref": "../common/list-page.json"
@@ -14,15 +15,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "id",
-              "type",
-              "summary",
-              "status",
-              "source",
-              "at",
-              "refs"
-            ],
+            "required": ["id", "type", "summary", "status", "source", "at", "refs"],
             "properties": {
               "id": {
                 "type": "string",
@@ -47,13 +40,7 @@
                 "maxLength": 120
               },
               "status": {
-                "enum": [
-                  "proposed",
-                  "accepted",
-                  "superseded",
-                  "resolved",
-                  "routed"
-                ]
+                "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
               },
               "source": {
                 "type": "string",
@@ -98,9 +85,7 @@
           "status": "accepted",
           "source": "user",
           "at": "2026-09-25T09:12:30Z",
-          "refs": [
-            "design.md"
-          ]
+          "refs": ["design.md"]
         }
       ],
       "total": 1,

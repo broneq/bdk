@@ -5,9 +5,7 @@
   "description": "Propose a rule from work in progress: writes a learning entry with applies globs; no rule file changes.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "entry"
-  ],
+  "required": ["entry"],
   "properties": {
     "entry": {
       "type": "string",
@@ -15,12 +13,7 @@
     },
     "rule": {
       "type": "object",
-      "required": [
-        "id",
-        "file",
-        "kind",
-        "text"
-      ],
+      "required": ["id", "file", "kind", "text"],
       "properties": {
         "id": {
           "type": "string",
@@ -31,10 +24,7 @@
           "description": "Path relative to the project root."
         },
         "kind": {
-          "enum": [
-            "house",
-            "knowledge"
-          ]
+          "enum": ["house", "knowledge"]
         },
         "text": {
           "type": "string"

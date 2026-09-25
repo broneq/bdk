@@ -5,10 +5,7 @@
   "description": "Pathspec commit of the Change directory: `chore(bdk): checkpoint <change>`.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "change",
-    "done"
-  ],
+  "required": ["change", "done"],
   "properties": {
     "change": {
       "type": "string",
@@ -21,10 +18,7 @@
       "type": "string"
     },
     "skipped": {
-      "enum": [
-        "nothing-to-commit",
-        "policy-disabled"
-      ],
+      "enum": ["nothing-to-commit", "policy-disabled"],
       "description": "Why no commit was made although the command exited 0."
     },
     "deduplicated": {

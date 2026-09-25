@@ -90,13 +90,13 @@ The draft MUST end with an explicit open-questions list. Verify:
 
 For every issue you raise, classify the gap so the coordinator knows where to loop back:
 
-| `gap_type` | What it means | Coordinator loops to |
-|---|---|---|
-| `codebase` | Missing or wrong codebase fact (§1) | Phase 0 — `SendMessage` warm explorer |
-| `requirement` | Missing user-facing requirement or NFR (§3) | Phase 1 — `AskUserQuestion` delta |
-| `shape` | Design-shape weakness — bottleneck, SPOF, vague critique, missing alternative, weak diagram (§2, §4) | Phase 2 — refine approaches |
-| `honesty` | Silent assumption, missing open question (§5) | Phase 2 — surface the gap, then re-validate |
-| `none` | No gap, ready for write | n/a |
+| `gap_type`    | What it means                                                                                        | Coordinator loops to                        |
+| ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `codebase`    | Missing or wrong codebase fact (§1)                                                                  | Phase 0 — `SendMessage` warm explorer       |
+| `requirement` | Missing user-facing requirement or NFR (§3)                                                          | Phase 1 — `AskUserQuestion` delta           |
+| `shape`       | Design-shape weakness — bottleneck, SPOF, vague critique, missing alternative, weak diagram (§2, §4) | Phase 2 — refine approaches                 |
+| `honesty`     | Silent assumption, missing open question (§5)                                                        | Phase 2 — surface the gap, then re-validate |
+| `none`        | No gap, ready for write                                                                              | n/a                                         |
 
 When in doubt between `requirement` and `shape`, prefer `requirement` — it costs less to clarify with the user than to redesign.
 
@@ -104,11 +104,11 @@ When in doubt between `requirement` and `shape`, prefer `requirement` — it cos
 
 Every per-section outcome carries a confidence in `[0.0, 1.0]`:
 
-| Confidence | Outcome implication |
-|---|---|
-| `≥ 0.85` and PASS | High-confidence pass |
-| `0.60–0.84` | WARNING — pass but flag explicitly |
-| `< 0.60`, OR any FAIL | Surface in `must_address` |
+| Confidence            | Outcome implication                |
+| --------------------- | ---------------------------------- |
+| `≥ 0.85` and PASS     | High-confidence pass               |
+| `0.60–0.84`           | WARNING — pass but flag explicitly |
+| `< 0.60`, OR any FAIL | Surface in `must_address`          |
 
 ## YAML Verdict Envelope
 
@@ -149,6 +149,7 @@ recommendations:
 ```
 
 Field rules:
+
 - `status` rolls up from check outcomes: any FAIL → FAIL; no FAIL but any WARNING → PASS_WITH_WARNINGS; all PASS (or NA) → PASS.
 - `must_address` lists `<section>#<issue-index>` tokens for every issue the coordinator must surface to the user before the design can be written.
 - `suggested_loop_to` is mandatory on every issue — it tells the coordinator which phase to route the back-edge gate at.

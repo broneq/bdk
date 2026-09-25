@@ -5,10 +5,7 @@
   "description": "Print the JSON Schema of the settings (the file committed under `schema/`) or of one module.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema",
-    "url"
-  ],
+  "required": ["schema", "url"],
   "properties": {
     "module": {
       "type": "string"

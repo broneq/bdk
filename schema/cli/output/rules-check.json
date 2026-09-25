@@ -5,11 +5,7 @@
   "description": "Check rule files: unique ids, `[PREFIX-n]` format, `source` / `verified` on knowledge rules, tombstones.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "valid",
-    "rules",
-    "problems"
-  ],
+  "required": ["valid", "rules", "problems"],
   "properties": {
     "valid": {
       "type": "boolean"
@@ -21,12 +17,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "file",
-          "line",
-          "code",
-          "message"
-        ],
+        "required": ["file", "line", "code", "message"],
         "properties": {
           "file": {
             "type": "string",

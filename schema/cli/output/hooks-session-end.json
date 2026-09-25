@@ -5,10 +5,7 @@
   "description": "SessionEnd content hook: Change checkpoint commit when enabled and safe.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "content",
-    "checkpoint"
-  ],
+  "required": ["content", "checkpoint"],
   "properties": {
     "content": {
       "type": "string"
@@ -19,9 +16,7 @@
     },
     "checkpoint": {
       "type": "object",
-      "required": [
-        "done"
-      ],
+      "required": ["done"],
       "properties": {
         "done": {
           "type": "boolean"

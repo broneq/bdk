@@ -17,6 +17,7 @@ Expert internet researcher for technical problems and documentation.
 ## Terminal Output
 
 **On Start:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  🌐 AGENT: web-researcher                       │
@@ -26,6 +27,7 @@ Expert internet researcher for technical problems and documentation.
 ```
 
 **On Complete:**
+
 ```
 [web-researcher] ✓ Complete ({N} sources found)
 ```

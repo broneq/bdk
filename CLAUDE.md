@@ -12,6 +12,8 @@ rules/                   — convention docs distributed WITH the plugin to end-
 STARTUP_INSTRUCTIONS.md  — injected into user sessions at SessionStart via hook
 tests/evals/             — skill behavior evals (LLM output grading, iterations)
 tests/unit/              — pytest unit/integration tests for scripts
+kernel/                  - v3 TypeScript kernel: src/ (slices, shared/), tests/ (E2E harness, contract tests)
+dist/bdk.mjs             - committed kernel bundle built by `pnpm build`; never edit by hand
 docs/                    — temporary material, task artifacts, user docs, ADRs; never a living spec
 openspec/specs/          — living specs of BDK v3 (kernel-cli, kernel-architecture, ...)
 ```
@@ -53,6 +55,14 @@ claude --plugin-dir ~/projects/bdk
 # Run unit tests (deterministic, fast)
 pytest tests/unit/
 
+# Kernel (Node from .nvmrc, pnpm from packageManager); pnpm install also installs the git hooks
+pnpm install
+pnpm build            # rebuild dist/bdk.mjs: committed and generated, never edit it by hand
+pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip
+pnpm test:unit        # coverage thresholds apply
+pnpm test:e2e         # runs dist/bdk.mjs, so build first
+pnpm test:contract
+
 # Run skill evals — see .claude/rules/skill-test-eval.md for format
 ```
 
@@ -74,6 +84,7 @@ Portability rule: skill only makes sense for one language stack or domain → no
 ## Modifying the Shared Foundation
 
 `STARTUP_INSTRUCTIONS.md` injected into every user session. Changes affect all skills.
+
 - Keep concise — occupies context every session start
 - Verify skills relying on modified section still work
 - Test in isolated project after changes

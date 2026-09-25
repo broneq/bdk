@@ -5,39 +5,20 @@
   "description": "The active Change at a glance: stage, graph state, gate status with pending review entries, parked options.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "change",
-    "kind",
-    "profile",
-    "source",
-    "stage",
-    "nodes",
-    "gates",
-    "parts"
-  ],
+  "required": ["change", "kind", "profile", "source", "stage", "nodes", "gates", "parts"],
   "properties": {
     "change": {
       "type": "string",
       "description": "Opaque merge-safe id (T14)."
     },
     "kind": {
-      "enum": [
-        "feature",
-        "bug"
-      ]
+      "enum": ["feature", "bug"]
     },
     "profile": {
-      "enum": [
-        "tiny",
-        "small",
-        "large"
-      ]
+      "enum": ["tiny", "small", "large"]
     },
     "source": {
-      "enum": [
-        "user",
-        "inferred"
-      ]
+      "enum": ["user", "inferred"]
     },
     "confirmed": {
       "type": "boolean"
@@ -48,11 +29,7 @@
     },
     "parked": {
       "type": "object",
-      "required": [
-        "entry",
-        "options",
-        "resume"
-      ],
+      "required": ["entry", "options", "resume"],
       "properties": {
         "entry": {
           "type": "string",
@@ -74,11 +51,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "kind",
-          "state"
-        ],
+        "required": ["id", "kind", "state"],
         "properties": {
           "id": {
             "type": "string"
@@ -88,13 +61,7 @@
             "description": "Artifact kind from pipeline.yaml (T21)."
           },
           "state": {
-            "enum": [
-              "blocked",
-              "ready",
-              "done",
-              "stale",
-              "skipped"
-            ]
+            "enum": ["blocked", "ready", "done", "stale", "skipped"]
           },
           "requires": {
             "type": "array",
@@ -117,12 +84,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "gate",
-          "ready",
-          "done",
-          "pending"
-        ],
+        "required": ["gate", "ready", "done", "pending"],
         "description": "What the user sees before typing the next stage command (T1).",
         "properties": {
           "gate": {
@@ -136,10 +98,7 @@
             "type": "boolean"
           },
           "passedBy": {
-            "enum": [
-              "user",
-              "policy"
-            ]
+            "enum": ["user", "policy"]
           },
           "command": {
             "type": "string",
@@ -149,15 +108,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "id",
-                "type",
-                "summary",
-                "status",
-                "source",
-                "at",
-                "refs"
-              ],
+              "required": ["id", "type", "summary", "status", "source", "at", "refs"],
               "properties": {
                 "id": {
                   "type": "string",
@@ -182,13 +133,7 @@
                   "maxLength": 120
                 },
                 "status": {
-                  "enum": [
-                    "proposed",
-                    "accepted",
-                    "superseded",
-                    "resolved",
-                    "routed"
-                  ]
+                  "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
                 },
                 "source": {
                   "type": "string",
@@ -227,13 +172,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "part",
-          "title",
-          "state",
-          "tasks",
-          "bytes"
-        ],
+        "required": ["part", "title", "state", "tasks", "bytes"],
         "properties": {
           "part": {
             "type": "string",
@@ -243,12 +182,7 @@
             "type": "string"
           },
           "state": {
-            "enum": [
-              "blocked",
-              "ready",
-              "started",
-              "done"
-            ]
+            "enum": ["blocked", "ready", "started", "done"]
           },
           "tasks": {
             "type": "integer",
@@ -270,10 +204,7 @@
             }
           },
           "specImpact": {
-            "enum": [
-              "none",
-              "delta"
-            ]
+            "enum": ["none", "delta"]
           },
           "wave": {
             "type": "integer",
@@ -286,15 +217,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "ticket",
-          "loop",
-          "target",
-          "attempt",
-          "of",
-          "scope",
-          "openedAt"
-        ],
+        "required": ["ticket", "loop", "target", "attempt", "of", "scope", "openedAt"],
         "properties": {
           "ticket": {
             "type": "string",
@@ -318,11 +241,7 @@
             "description": "Budget for this loop kind."
           },
           "scope": {
-            "enum": [
-              "full",
-              "high+",
-              "blockers"
-            ]
+            "enum": ["full", "high+", "blockers"]
           },
           "openedAt": {
             "type": "string",
@@ -335,11 +254,7 @@
             "description": "ISO 8601 UTC with seconds."
           },
           "outcome": {
-            "enum": [
-              "ok",
-              "fail",
-              "not-run"
-            ]
+            "enum": ["ok", "fail", "not-run"]
           },
           "notRunCount": {
             "type": "integer",
@@ -389,9 +304,7 @@
               "status": "proposed",
               "source": "agent:design-verifier",
               "at": "2026-09-25T09:41:07Z",
-              "refs": [
-                "design.md"
-              ],
+              "refs": ["design.md"],
               "review": true
             }
           ]

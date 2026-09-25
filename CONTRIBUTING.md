@@ -7,6 +7,7 @@
 Skills are thin workflow definitions. Environment discovery is handled by `STARTUP_INSTRUCTIONS.md`, injected at session start via the `SessionStart` hook.
 
 **Benefits:**
+
 - Single source of truth for BDK conventions
 - Skills stay clean — workflow logic only, no environment assumptions
 - New skills automatically inherit all rules
@@ -19,6 +20,7 @@ BDK ships no MCP server (see `docs/adr/0001-remove-bundled-mcp-servers.md`). Ski
 ### Skill Authoring Convention
 
 Every BDK skill:
+
 1. Starts with `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`
 2. Never hardcodes test runners, build tools, lint commands, or file paths
 3. References other skills with full namespace: `/bdk:create-plan`, `/bdk:debug`
@@ -80,6 +82,30 @@ Dev dependencies (`pytest`) are declared in `pyproject.toml` under `[dependency-
 Both `test_*.py` and `*.test.py` are collected (see `[tool.pytest.ini_options] python_files` in `pyproject.toml`); new tests should use `test_*.py`.
 
 Tests mirror the layout of what they cover: `tests/unit/scripts/`, `tests/unit/hooks/<hook-name>/`, `tests/unit/skills/<skill-name>/`, `tests/unit/agents/`, `tests/unit/fragments/`. Hook tests therefore live at `tests/unit/hooks/is-skill-exist/test_check.py`, not under a top-level `tests/hooks/`.
+
+---
+
+## Kernel (Node / TypeScript)
+
+The v3 kernel lives in `kernel/`: sources in `kernel/src/` (one directory per slice plus `shared/`, see `openspec/specs/kernel-architecture/spec.md`), kernel-wide tests in `kernel/tests/`. esbuild bundles it into `dist/bdk.mjs`, the one file the plugin runs.
+
+Requires Node and pnpm. Use the Node version in `.nvmrc` (`nvm use`); any Node from 22.13.0 on works. pnpm comes from the `packageManager` field of `package.json` (`corepack enable`).
+
+```bash
+pnpm install          # also installs the git hooks (husky)
+pnpm build            # rebuild dist/bdk.mjs
+pnpm lint             # ESLint, type-aware
+pnpm format           # Prettier over the whole repository (pnpm format:check to only check)
+pnpm typecheck        # tsc --noEmit
+pnpm knip             # unused files, exports and dependencies
+pnpm test:unit        # unit tests from source, with coverage thresholds
+pnpm test:e2e         # E2E tests through dist/bdk.mjs (run pnpm build first)
+pnpm test:contract    # contract, structure, bundle and dependency tests
+```
+
+- `dist/bdk.mjs` is committed and generated. Never edit it: change `kernel/src/`, run `pnpm build` and commit the result with the source. CI rebuilds it and fails when `git diff --exit-code dist/` shows a difference.
+- The pre-commit hook formats and lints staged files; the commit-msg hook enforces Conventional Commits, which release-please reads. CI runs the same checks and does not rely on the hooks.
+- Dependencies are pinned to exact versions. Runtime dependencies are limited to `zod` and `yaml`; a test fails on anything else.
 
 ---
 

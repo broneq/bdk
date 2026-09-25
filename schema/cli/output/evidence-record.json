@@ -5,13 +5,7 @@
   "description": "Register verification evidence: a manifest with the tree hash and the hashes of the files.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "evidence",
-    "path",
-    "treeHash",
-    "files",
-    "deduplicated"
-  ],
+  "required": ["evidence", "path", "treeHash", "files", "deduplicated"],
   "properties": {
     "evidence": {
       "type": "string",
@@ -29,10 +23,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "path",
-          "hash"
-        ],
+        "required": ["path", "hash"],
         "properties": {
           "path": {
             "type": "string",
@@ -43,20 +34,13 @@
             "pattern": "^sha256:[0-9a-f]{64}$"
           },
           "stored": {
-            "enum": [
-              "committed",
-              "machine"
-            ]
+            "enum": ["committed", "machine"]
           }
         }
       }
     },
     "verdict": {
-      "enum": [
-        "pass",
-        "fail",
-        "not-run"
-      ]
+      "enum": ["pass", "fail", "not-run"]
     },
     "citations": {
       "type": "array",
@@ -81,9 +65,7 @@
         }
       ],
       "verdict": "pass",
-      "citations": [
-        "/summary/failed"
-      ],
+      "citations": ["/summary/failed"],
       "deduplicated": false
     }
   ]

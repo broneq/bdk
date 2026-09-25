@@ -1,0 +1,58 @@
+{
+  "name": "bdk",
+  "private": true,
+  "description": "BDK v3 kernel: the Node / TypeScript CLI behind the plugin (dist/bdk.mjs)",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "scripts": {
+    "build": "node kernel/build.mjs",
+    "lint": "eslint --max-warnings 0 kernel",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "knip": "knip",
+    "test:unit": "vitest run --project unit --coverage",
+    "test:e2e": "vitest run --project e2e",
+    "test:contract": "vitest run --project contract",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "yaml": "2.9.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.4",
+    "@vitest/coverage-v8": "5.0.2",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "esbuild": "0.28.2",
+    "eslint": "10.11.0",
+    "eslint-config-prettier": "10.1.8",
+    "husky": "9.1.7",
+    "knip": "6.38.0",
+    "lint-staged": "17.5.1",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.1",
+    "vitest": "5.0.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --max-warnings 0 --fix",
+      "prettier --write"
+    ],
+    "*.{js,mjs,json,yaml,yml,md}": "prettier --write"
+  }
+}

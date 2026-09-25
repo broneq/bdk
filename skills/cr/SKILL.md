@@ -26,6 +26,7 @@ Determine what changed, dispatch specialized reviewers in parallel, merge their 
 ## Terminal Output
 
 **On start:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  👁️  ORCHESTRATOR: code-review                   │
@@ -35,6 +36,7 @@ Determine what changed, dispatch specialized reviewers in parallel, merge their 
 ```
 
 **During execution:**
+
 ```
 [cr] Step 1: Resolving range...
 [cr] Range: {anchor}..{head} ({delta|full}, {anchor_source}) — {N} commits

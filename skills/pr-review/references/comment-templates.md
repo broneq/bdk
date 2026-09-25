@@ -8,14 +8,14 @@ Each template ends with an HTML comment invisible in the rendered view. Never om
 
 ## 1. Inline finding - blocker (CRITICAL / HIGH)
 
-```markdown
+````markdown
 **[{SEVERITY} · {category}]** {one-sentence problem}
 
 Suggested fix: {one sentence}.
 
 {optional ```suggestion fence with the concrete replacement, only when the fix fits in the commented lines}
 <!-- bdk-pr-review v1 kind=finding severity={SEVERITY} category={category} -->
-```
+````
 
 ## 2. Nice-to-have findings (MEDIUM / LOW) - summary only, never inline
 

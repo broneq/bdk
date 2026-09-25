@@ -28,6 +28,7 @@ $ARGUMENTS
 ### 1. Analyze Input
 
 Extract from free-form description:
+
 - Problem statement and context
 - Considered options
 - Constraints and decision drivers
@@ -38,9 +39,11 @@ Extract from free-form description:
 Use AskUserQuestion to fill gaps — only ask what's genuinely unclear.
 
 **Always ask:**
+
 - ADR status (proposed/accepted/rejected/deprecated)
 
 **Never ask — user adds manually after generation:**
+
 - Decision-makers, consulted, informed (use `{TBD}` placeholder in frontmatter)
 
 ### 3. Determine Next ADR Number
@@ -100,18 +103,21 @@ informed: {TBD}
 ```
 
 **Formatting rules:**
+
 - Use `✅` for pros, `❌` for cons, `🟡` for neutral
 - Never use "Good, because" / "Bad, because" — use symbols directly
 
 ### 5. Generate Diagrams (Optional)
 
 Only create diagrams when they add genuine visual value:
+
 - Architecture options with different component layouts
 - Options with different data flows or system interactions
 
 Skip for trivially simple or abstract decisions.
 
 If creating diagrams:
+
 - Embed Mermaid diagrams directly in ADR as fenced ` ```mermaid ` code blocks — renders natively, no compile step
 - Follow `/bdk:mermaid-drawer` for type selection, node budget and colour - an ADR outlives the person who wrote it, so its diagrams have to stay legible in whatever renderer a future reader opens them in
 

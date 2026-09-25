@@ -94,16 +94,16 @@ The tasks were: V1 symbol lookup, V2 call sites with same-name decoys, V3 type i
 
 ### Value (Haiku 4.5, median of 3 runs; D-7 verdict against the comparison)
 
-| Task | C0 score / USD / s | CG score / USD / s | CS score / USD / s | CGS score / USD / s | Measurable difference |
-|---|---|---|---|---|---|
-| V1 | 1.00 / 0.018 / 18 | 1.00 / 0.024 / 20 | 1.00 / 0.026 / 35 | 1.00 / 0.017 / 22 | CS slower than C0 |
-| V2 | 1.00 / 0.064 / 38 | 1.00 / 0.041 / 33 | 1.00 / 0.057 / 63 | 1.00 / 0.067 / 70 | none |
-| V3 | 0.60 / 0.051 / 33 | 0.60 / 0.031 / 33 | 0.60 / 0.048 / 48 | 0.60 / 0.090 / 196 | CGS slower than CG |
-| V4 | 1.00 / 0.141 / 59 | 0.95 / 0.102 / 50 | 1.00 / 0.193 / 85 | 1.00 / 0.148 / 71 | CGS better than CG (one package item) |
-| V5 | 1.00 / 0.014 / 15 | 1.00 / 0.013 / 17 | 1.00 / 0.033 / 15 | 1.00 / 0.013 / 16 | none (ceiling) |
-| V6 | 0.857 / 0.066 / 33 | 0.857 / 0.087 / 41 | 0.857 / 0.073 / 29 | 0.857 / 0.106 / 56 | CGS dearer and slower than C0 |
-| V7 | 0.435 / 0.363 / 336 | 0.588 / 0.194 / 111 | 0.286 / 0.303 / 274 | 0.500 / 0.224 / 146 | none (C0 range 0-0.545, 156-543 s) |
-| V8 | 1.00 / 0.164 / 57 | 1.00 / 0.113 / 54 | 1.00 / 0.148 / 80 | 1.00 / 0.109 / 52 | CGS cheaper than C0 |
+| Task | C0 score / USD / s  | CG score / USD / s  | CS score / USD / s  | CGS score / USD / s | Measurable difference                 |
+| ---- | ------------------- | ------------------- | ------------------- | ------------------- | ------------------------------------- |
+| V1   | 1.00 / 0.018 / 18   | 1.00 / 0.024 / 20   | 1.00 / 0.026 / 35   | 1.00 / 0.017 / 22   | CS slower than C0                     |
+| V2   | 1.00 / 0.064 / 38   | 1.00 / 0.041 / 33   | 1.00 / 0.057 / 63   | 1.00 / 0.067 / 70   | none                                  |
+| V3   | 0.60 / 0.051 / 33   | 0.60 / 0.031 / 33   | 0.60 / 0.048 / 48   | 0.60 / 0.090 / 196  | CGS slower than CG                    |
+| V4   | 1.00 / 0.141 / 59   | 0.95 / 0.102 / 50   | 1.00 / 0.193 / 85   | 1.00 / 0.148 / 71   | CGS better than CG (one package item) |
+| V5   | 1.00 / 0.014 / 15   | 1.00 / 0.013 / 17   | 1.00 / 0.033 / 15   | 1.00 / 0.013 / 16   | none (ceiling)                        |
+| V6   | 0.857 / 0.066 / 33  | 0.857 / 0.087 / 41  | 0.857 / 0.073 / 29  | 0.857 / 0.106 / 56  | CGS dearer and slower than C0         |
+| V7   | 0.435 / 0.363 / 336 | 0.588 / 0.194 / 111 | 0.286 / 0.303 / 274 | 0.500 / 0.224 / 146 | none (C0 range 0-0.545, 156-543 s)    |
+| V8   | 1.00 / 0.164 / 57   | 1.00 / 0.113 / 54   | 1.00 / 0.148 / 80   | 1.00 / 0.109 / 52   | CGS cheaper than C0                   |
 
 The rule: a gap counts only if the gap between medians exceeds the larger within-configuration range, and cost or time count only at equal correctness with a gap of at least 20%. Summed per server comparison:
 
@@ -115,13 +115,13 @@ In the Sonnet 5 slice (V2, V4, V5, V8 × 4 configurations × 1), every run score
 
 ### Cost
 
-| Measurement | code-review-graph | serena |
-|---|---|---|
-| Connect, warm, one session (C0 baseline 0.45 s) | +0.9 s (median 1.3 s) | +1.3-1.4 s (median 1.7-1.9 s) |
-| Connect, cold uv cache | 31-45 s; 6 of 6 over the 30 s default | 19-34 s; 2 of 9 over (both PyPI-pinned) |
-| Connect, 4 sessions starting together | median 7.4-7.8 s, max 20.1 s (both servers alike) | same |
-| RSS per session | 136-700 MB server, plus 178-182 MB database per worktree on disk | 165-220 MB server, plus about 285 MB TypeScript language server |
-| Other | `register-graph-repo` hook about 0.4 s per session start; full build 12 s wall, 20 CPU s; incremental update 1-2 s wall, under 1.5 CPU s | unpinned spec queries the GitHub API on every start and does not start offline |
+| Measurement                                     | code-review-graph                                                                                                                        | serena                                                                         |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Connect, warm, one session (C0 baseline 0.45 s) | +0.9 s (median 1.3 s)                                                                                                                    | +1.3-1.4 s (median 1.7-1.9 s)                                                  |
+| Connect, cold uv cache                          | 31-45 s; 6 of 6 over the 30 s default                                                                                                    | 19-34 s; 2 of 9 over (both PyPI-pinned)                                        |
+| Connect, 4 sessions starting together           | median 7.4-7.8 s, max 20.1 s (both servers alike)                                                                                        | same                                                                           |
+| RSS per session                                 | 136-700 MB server, plus 178-182 MB database per worktree on disk                                                                         | 165-220 MB server, plus about 285 MB TypeScript language server                |
+| Other                                           | `register-graph-repo` hook about 0.4 s per session start; full build 12 s wall, 20 CPU s; incremental update 1-2 s wall, under 1.5 CPU s | unpinned spec queries the GitHub API on every start and does not start offline |
 
 A single graph update is cheap. The v2.6.0 load came from running an update after every reply in every session, not from one update.
 
@@ -130,6 +130,7 @@ A single graph update is cheap. The v2.6.0 load came from running an update afte
 With a server forced past the connect timeout and default MCP settings, the server is `pending` at `init` and its tools never appear. The model fell back to `grep` + `Read` on its own and answered correctly in 4 of 4 runs; the wasted work was at most one `ToolSearch`.
 
 Nothing a hook or skill can read at session start knows whether a server connected:
+
 - The `SessionStart` input has no MCP field.
 - `claude mcp list` inside a hook starts every server again, and once hung session start for more than 5 minutes.
 - The `init` event says `pending` in the default nonblocking start.
@@ -140,6 +141,7 @@ A measurement finding for anyone who configures servers: `MCP_TIMEOUT` (default 
 ### Tier-vs-`tools:` drift in v2 (removed by this decision)
 
 Six agents are told by their preloaded tiers to use MCP tools they are not granted:
+
 - `architecture-reviewer`, `design-verifier`, `explorer` and `plan-verifier` lack graph tools such as `get_community_tool`, `get_knowledge_gaps_tool` and `find_large_functions_tool`.
 - `implementer` and `fixer` lack serena's `rename_symbol` and `safe_delete_symbol`.
 
@@ -150,6 +152,7 @@ The orchestrator did the search tasks V1-V4 itself (one `bdk:explorer` spawn in 
 ### Evidence
 
 Harness and raw data were committed under `docs/v3/t03-mcp-eval/` and removed from the tree after this ADR was accepted. They stay in git history: `git show e061216:docs/v3/t03-mcp-eval/<path>` (or `git checkout e061216 -- docs/v3/t03-mcp-eval`). Paths below are relative to that directory:
+
 - harness and flags: `README.md`
 - raw runs: `runs/`
 - per-run table: `results/value-runs.md`
