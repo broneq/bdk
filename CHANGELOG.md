@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.1](https://github.com/broneq/bdk/compare/v2.6.0...v2.6.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* **hooks:** stop updating code-review-graph after every reply ([8439e73](https://github.com/broneq/bdk/commit/8439e7306900b39357fc3439c899364d2038de6f))
+* **hooks:** stop updating code-review-graph after every reply ([cdea721](https://github.com/broneq/bdk/commit/cdea7214b6d02857ccc583290f9b266622107e29))
+
 ## [2.6.0](https://github.com/broneq/bdk/compare/v2.5.1...v2.6.0) (2026-09-18)
 
 
