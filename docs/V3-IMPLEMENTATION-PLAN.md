@@ -160,7 +160,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 - Core skills: stages `setup`, `change`, `design`, `plan`, `verify-plan`, `execute`, `close`, `run`; tools `cr`, `pr-review`, `docs`, `rules`, `commit`, `adr`, `doctor`, `bdk-cli`. `debug` becomes Change kind `bug` plus `bdk-craft:debugging`; `explain-complex-code` merges into `docs`; `create-adr` into `design` plus a thin `adr`; `verify-plan` stays separate (user decision).
 - Roles are skills under `skills/roles/` (`user-invocable: false`); agents shrink to five adapters (`worker`, `reader`, `reviewer`, `runner`, `scout`) generated per host; the `bdk-role-*` meta-skills disappear; two kernel runners (`host-agent`, `headless`) give parallel waves on every host.
 - Rules: `.bdk/rules/<id>.md` with `applies` globs, per-package selection, ID citations in reports; no automation writes a rule (candidates as `learning` entries with fingerprint and evidence, proposal at `close` on thresholds, manual accept); the `check-rules-drift` hook is not ported; `.claude/rules/` in the target project becomes a generated projection.
-- Text as the state's source of truth with a rebuilt SQLite index, non-sequential IDs, a two-branch merge contract test; no OpenSpec runtime dependency (format compatibility only); autonomy as per-gate policy plus `run`; `bdk measure` shared by `change new` and `cr`; `architecture.md` and design parts for the `large` profile; T40 measures `execute` thin vs long, Serena's value and the rules no-op test on one harness.
+- Text as the state's source of truth with a rebuilt SQLite index, non-sequential IDs, a two-branch merge contract test; no OpenSpec runtime dependency (format compatibility only); autonomy as per-gate policy plus `run`; `bdk measure` shared by `change new` and `cr`; `architecture.md` and design parts for the `large` profile; T40 measures `execute` thin vs long and the rules no-op test on one harness; Serena's value (R-16) is measured in T03.
 - Plan impact applied on 2026-09-25: new T14 and T15; scope changes in T11-T13, T20-T24, T30-T32, T40-T42, T50.
 
 ### T03 MCP value evaluation: serena and code-review-graph
@@ -176,12 +176,12 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Scope**:
 - **Cost**, on at least one large real repository (not the BDK repo, 38 files): cold start and time to connect per server, connect failure rate, CPU and wall time of `update` (incremental with and without changes, `--skip-flows`, postprocess) and of a full build, disk size of the graph, behaviour under parallel sessions.
-- **Value**: a fixed set of about 8 tasks covering the tiers (symbol search, reference tracing, impact / blast radius, change review, architecture overview, a structural refactor), run headless (`claude -p --output-format json`) in three configurations - no MCP, graph only, graph + serena - at least 3 runs each. Compare tokens, tool calls, wall time and correctness against a reference answer written before the runs. A lightweight precursor to T40, not a dependency on it.
+- **Value**: a fixed set of about 8 tasks covering the tiers (symbol search, reference tracing, impact / blast radius, change review, architecture overview, a structural refactor), run headless (`claude -p --output-format json`) in three configurations - no MCP, graph only, graph + serena - at least 3 runs each. Compare tokens, tool calls, wall time and correctness against a reference answer written before the runs. A lightweight precursor to T40, not a dependency on it. This is the only Serena value measurement in the plan: it absorbs T02 decision R-16, which first placed it in T40. R-16's proposed threshold is the starting point: serena is dropped if it neither improves correctness nor cuts tokens by at least 20% over graph only. The same data answers whether the `scout` adapter's four former agents (`explorer`, `log-analyzer`, `dead-code-detector`, `duplicate-detector`) stay merged (T02 decision R-7).
 - **Failure mode**: what agents and tier guidance do when a server is configured but not connected; whether the tier choice can follow availability rather than the flag.
 - **Update strategy** for the graph if it stays: on demand in the skills that use it, debounced, locked, or left to the server; which one survives parallel sessions.
 - **Pinning**: version pin for each server that stays (`uvx` spec or `uv.lock`), feeding the T32 question.
 
-**Input**: this section's "Why now" list; `hooks/hooks.json`; `.mcp.json`; `fragments/tool-tiers/`; `.claude/rules/fragment-system.md`; `.claude/rules/mcp-tool-naming.md`; agent `tools:` lists in `agents/*.md`; local transcripts for usage data; design "Integration points" (`.mcp.json` for serena and code-review-graph).
+**Input**: this section's "Why now" list; `hooks/hooks.json`; `.mcp.json`; `fragments/tool-tiers/`; `.claude/rules/fragment-system.md`; `.claude/rules/mcp-tool-naming.md`; agent `tools:` lists in `agents/*.md`; T02 decisions R-7 and R-16 (`docs/V3-SKILL-INVENTORY.md`, section 12); local transcripts for usage data; design "Integration points" (`.mcp.json` for serena and code-review-graph).
 
 **Acceptance signal**: `docs/V3-MCP-EVALUATION.md` with the cost table, the per-task value table (all configurations and runs, raw numbers kept next to the summary), and per server a disposition with rationale; the resulting changes listed per downstream task (T13 hook lines, T32 `uv.lock`, T41 / T42 tier fragments and agent `tools:`); open decisions for the user, each with a recommendation.
 
@@ -515,23 +515,22 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 ## Phase 4 - Skills and agents
 
-### T40 promptfoo harness: A/A noise floor, then three measurements (execute A/B, Serena, rules no-op)
+### T40 promptfoo harness: A/A noise floor, then two measurements (execute A/B, rules no-op)
 
-**Goal**: build the measurement harness first, then use it for the three questions the skill layer depends on: the design's unproven assumption (a model steered by CLI output does no worse than a 300-line SKILL.md), whether Serena adds anything over the code graph, and which rules are no-ops; replace `tests/evals/` (T02 decisions R-10, R-16, OD-8).
+**Goal**: build the measurement harness first, then use it for the two questions the skill layer depends on: the design's unproven assumption (a model steered by CLI output does no worse than a 300-line SKILL.md) and which rules are no-ops; replace `tests/evals/` (T02 decisions R-10, OD-8). Serena's value over the code graph (R-16) is measured earlier, in T03.
 
 **Scope**:
 - promptfoo via `npx` with the Claude Agent SDK provider on a repo fixture; `repeat` for the A/A noise floor; `llm-rubric` graded against the CLI contract (T10) and the envelope (T23). Fallback if promptfoo cannot drive Claude Code: a Node script around `claude -p` with the same fixture and rubrics.
 - Measurement A, thin vs long: `execute` (chosen in T02; `design` only if budget remains): a "thin" variant (`next` -> do -> report, <= 200 lines) vs today's long one; metrics: step completeness, correctness of CLI calls, envelope length, number of kernel refusals. Decision criterion written down up front (what "no worse" means); if thin loses: fallback to approach B with the same kernel (skills know the order, call stage commands) - this changes the scope of T41, so the A/B result is a **gate** for T41.
-- Measurement B, Serena (R-16): 8 tasks on the fixture, 3 runs each, 3 variants (Serena plus graph, graph only, plain Claude Code); measured: task success, tool calls, tokens, time; Serena is dropped from the tool tiers and `setup` if it neither improves success nor cuts tokens by at least 20% over graph only. The same data answers whether the `scout` adapter's four former agents stay merged.
-- Measurement C, rules no-op (T5): the harness side of T31's measurements 1 and 2; run here so T31 starts with data.
+- Measurement B, rules no-op (T5): the harness side of T31's measurements 1 and 2; run here so T31 starts with data.
 - Craft admission runs on this harness too: a `bdk-craft` skill is admitted only when the with / without run differs measurably (R-6), so the harness has a reusable "with skill / without skill" mode.
 - Running: locally and optionally in CI (cost); results with the model version and `template-hash`.
 
-**Input**: "Testing Strategy - Skill behaviour", "Evals" in the success criteria, assumption B4 (A/A), risk "Unconfirmed assumption: thin skills", T5 (ablation), P10; T02 decisions R-6, R-10, R-16.
+**Input**: "Testing Strategy - Skill behaviour", "Evals" in the success criteria, assumption B4 (A/A), risk "Unconfirmed assumption: thin skills", T5 (ablation), P10; T02 decisions R-6, R-10.
 
-**Acceptance signal**: three reports in `docs/` with the noise floor and a decision each (thin skills / fallback B; Serena kept / dropped; per-bullet rule table handed to T31); `tests/evals/` marked for removal in T32; the harness runs with one command on a clean machine with an API key, in "with / without" mode for any skill.
+**Acceptance signal**: two reports in `docs/` with the noise floor and a decision each (thin skills / fallback B; per-bullet rule table handed to T31); `tests/evals/` marked for removal in T32; the harness runs with one command on a clean machine with an API key, in "with / without" mode for any skill.
 
-**To resolve in the spec**: number of repetitions; rubrics; decision thresholds for A and B; whether promptfoo goes into CI or stays local; the fixture task set shared by the three measurements.
+**To resolve in the spec**: number of repetitions; rubrics; decision thresholds for A and B; whether promptfoo goes into CI or stays local; the fixture task set shared by the two measurements, and whether T03's task set and reference answers can be reused.
 
 **Dependencies**: T23 (the kernel provides `next`, `dispatch`, envelope), T02 (skill choice).
 
