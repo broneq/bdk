@@ -18,5 +18,6 @@ tests/fixtures/
 .pytest_cache/
 .serena/
 .lavish/
+.claude/worktrees/
 .code-review-graph/
 .venv/
