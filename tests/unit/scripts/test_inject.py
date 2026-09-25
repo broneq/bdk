@@ -25,7 +25,6 @@ inject_mod = _load_module()
 load_settings = inject_mod.load_settings
 evaluate_condition = inject_mod.evaluate_condition
 inject = inject_mod.inject
-inject_chain = inject_mod.inject_chain
 
 
 def _write_settings(tmp_path: Path, data: dict) -> Path:
@@ -104,8 +103,8 @@ def test_evaluate_condition_feature_missing_features_block():
 
 
 def test_evaluate_condition_feature_hyphenated_key():
-    settings = {"features": {"code-review-graph": True}}
-    assert evaluate_condition("features.code-review-graph", settings) is True
+    settings = {"features": {"vue": True}}
+    assert evaluate_condition("features.vue", settings) is True
 
 
 def test_evaluate_condition_languages_array_hit():
@@ -361,12 +360,12 @@ def test_cli_custom_settings_path(tmp_path):
 
 def test_inject_prefer_suppresses_when_preferred_true(tmp_path):
     """Block is suppressed when any prefer condition is true."""
-    settings = {"features": {"code-review-graph": True, "serena": True}}
-    content_file = tmp_path / "serena.md"
-    content_file.write_text("# Serena search")
+    settings = {"features": {"vue": True, "react": True}}
+    content_file = tmp_path / "react.md"
+    content_file.write_text("# React search")
     result = inject(
-        conditions=["features.serena"],
-        prefer_conditions=["features.code-review-graph"],
+        conditions=["features.react"],
+        prefer_conditions=["features.vue"],
         then_path=content_file,
         settings=settings,
     )
@@ -375,26 +374,26 @@ def test_inject_prefer_suppresses_when_preferred_true(tmp_path):
 
 def test_inject_prefer_passes_when_preferred_false(tmp_path):
     """Block is injected when prefer condition is false."""
-    settings = {"features": {"code-review-graph": False, "serena": True}}
-    content_file = tmp_path / "serena.md"
-    content_file.write_text("# Serena search")
+    settings = {"features": {"vue": False, "react": True}}
+    content_file = tmp_path / "react.md"
+    content_file.write_text("# React search")
     result = inject(
-        conditions=["features.serena"],
-        prefer_conditions=["features.code-review-graph"],
+        conditions=["features.react"],
+        prefer_conditions=["features.vue"],
         then_path=content_file,
         settings=settings,
     )
-    assert result == "# Serena search"
+    assert result == "# React search"
 
 
 def test_inject_prefer_or_semantics_any_true_suppresses(tmp_path):
     """Multiple --prefer flags use OR — any one true suppresses."""
-    settings = {"features": {"code-review-graph": False, "serena": True}}
+    settings = {"features": {"vue": False, "react": True}}
     content_file = tmp_path / "fallback.md"
     content_file.write_text("# Fallback")
     result = inject(
         conditions=[],
-        prefer_conditions=["features.code-review-graph", "features.serena"],
+        prefer_conditions=["features.vue", "features.react"],
         then_path=content_file,
         settings=settings,
     )
@@ -421,7 +420,7 @@ def test_inject_prefer_missing_settings_returns_empty(tmp_path):
     content_file.write_text("content")
     result = inject(
         conditions=[],
-        prefer_conditions=["features.code-review-graph"],
+        prefer_conditions=["features.vue"],
         then_path=content_file,
         settings=None,
     )
@@ -429,11 +428,11 @@ def test_inject_prefer_missing_settings_returns_empty(tmp_path):
 
 
 def test_cli_prefer_suppresses_when_preferred_true(tmp_path):
-    _write_settings(tmp_path, {"features": {"code-review-graph": True, "serena": True}})
-    content_file = tmp_path / "serena.md"
-    content_file.write_text("# Serena")
+    _write_settings(tmp_path, {"features": {"vue": True, "react": True}})
+    content_file = tmp_path / "react.md"
+    content_file.write_text("# React")
     result = _run_cli(
-        ["--if", "features.serena", "--prefer", "features.code-review-graph",
+        ["--if", "features.react", "--prefer", "features.vue",
          "--then", str(content_file)],
         cwd=tmp_path,
     )
@@ -442,24 +441,24 @@ def test_cli_prefer_suppresses_when_preferred_true(tmp_path):
 
 
 def test_cli_prefer_injects_when_preferred_false(tmp_path):
-    _write_settings(tmp_path, {"features": {"code-review-graph": False, "serena": True}})
-    content_file = tmp_path / "serena.md"
-    content_file.write_text("# Serena")
+    _write_settings(tmp_path, {"features": {"vue": False, "react": True}})
+    content_file = tmp_path / "react.md"
+    content_file.write_text("# React")
     result = _run_cli(
-        ["--if", "features.serena", "--prefer", "features.code-review-graph",
+        ["--if", "features.react", "--prefer", "features.vue",
          "--then", str(content_file)],
         cwd=tmp_path,
     )
     assert result.returncode == 0
-    assert result.stdout == "# Serena"
+    assert result.stdout == "# React"
 
 
 def test_cli_prefer_multiple_or_semantics(tmp_path):
-    _write_settings(tmp_path, {"features": {"code-review-graph": False, "serena": True}})
+    _write_settings(tmp_path, {"features": {"vue": False, "react": True}})
     content_file = tmp_path / "fallback.md"
     content_file.write_text("# Fallback")
     result = _run_cli(
-        ["--prefer", "features.code-review-graph", "--prefer", "features.serena",
+        ["--prefer", "features.vue", "--prefer", "features.react",
          "--then", str(content_file)],
         cwd=tmp_path,
     )
@@ -467,189 +466,22 @@ def test_cli_prefer_multiple_or_semantics(tmp_path):
     assert result.stdout == ""
 
 
-def _write_chain(path, data):
-    path.write_text(json.dumps(data))
-    return path
-
-
 # ---------------------------------------------------------------------------
-# inject_chain — exclusive mode
+# Argument errors follow the stdout error contract
 # ---------------------------------------------------------------------------
 
-def test_chain_exclusive_first_match_returned(tmp_path):
-    """Exclusive mode returns content from first matching block only."""
-    settings = {"features": {"code-review-graph": True, "serena": True}}
 
-    graph_file = tmp_path / "search-graph.md"
-    graph_file.write_text("# Graph search")
-    serena_file = tmp_path / "search-serena.md"
-    serena_file.write_text("# Serena search")
-
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-            {"if": ["features.serena"], "then": str(serena_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == "# Graph search"
-
-
-def test_chain_exclusive_skips_to_second_when_first_fails(tmp_path):
-    """Exclusive mode skips to next block when first condition fails."""
-    settings = {"features": {"code-review-graph": False, "serena": True}}
-
-    graph_file = tmp_path / "search-graph.md"
-    graph_file.write_text("# Graph search")
-    serena_file = tmp_path / "search-serena.md"
-    serena_file.write_text("# Serena search")
-
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-            {"if": ["features.serena"], "then": str(serena_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == "# Serena search"
-
-
-def test_chain_exclusive_unconditional_fallback(tmp_path):
-    """Block with no 'if' is an unconditional fallback."""
-    settings = {"features": {"code-review-graph": False, "serena": False}}
-
-    fallback_file = tmp_path / "fallback.md"
-    fallback_file.write_text("# Fallback")
-
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(tmp_path / "graph.md")},
-            {"then": str(fallback_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == "# Fallback"
-
-
-def test_chain_exclusive_no_match_returns_empty(tmp_path):
-    """Exclusive mode returns empty string when no block matches."""
-    settings = {"features": {"code-review-graph": False}}
-    graph_file = tmp_path / "graph.md"
-    graph_file.write_text("content")
-
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == ""
-
-
-# ---------------------------------------------------------------------------
-# inject_chain — additive mode
-# ---------------------------------------------------------------------------
-
-def test_chain_additive_concatenates_all_matching(tmp_path):
-    """Additive mode concatenates content from all matching blocks."""
-    settings = {"features": {"code-review-graph": True, "serena": True}}
-
-    graph_file = tmp_path / "edit-graph.md"
-    graph_file.write_text("# Graph edit")
-    serena_file = tmp_path / "edit-serena.md"
-    serena_file.write_text("# Serena edit")
-
-    chain_file = _write_chain(tmp_path / "edit.chain.json", {
-        "mode": "additive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-            {"if": ["features.serena"], "then": str(serena_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert "# Graph edit" in result
-    assert "# Serena edit" in result
-
-
-def test_chain_additive_only_matching_blocks(tmp_path):
-    """Additive mode skips blocks whose conditions are false."""
-    settings = {"features": {"code-review-graph": True, "serena": False}}
-
-    graph_file = tmp_path / "edit-graph.md"
-    graph_file.write_text("# Graph edit")
-    serena_file = tmp_path / "edit-serena.md"
-    serena_file.write_text("# Serena edit")
-
-    chain_file = _write_chain(tmp_path / "edit.chain.json", {
-        "mode": "additive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": str(graph_file)},
-            {"if": ["features.serena"], "then": str(serena_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert "# Graph edit" in result
-    assert "# Serena edit" not in result
-
-
-# ---------------------------------------------------------------------------
-# inject_chain — path resolution
-# ---------------------------------------------------------------------------
-
-def test_chain_resolves_paths_relative_to_chain_file(tmp_path):
-    """Paths in chain files resolve relative to chain file directory."""
-    settings = {"features": {"code-review-graph": True}}
-
-    subdir = tmp_path / "tool-tiers"
-    subdir.mkdir()
-    graph_file = subdir / "search-graph.md"
-    graph_file.write_text("# Graph content")
-
-    chain_file = _write_chain(subdir / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.code-review-graph"], "then": "search-graph.md"},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == "# Graph content"
-
-
-# ---------------------------------------------------------------------------
-# inject_chain — CLI
-# ---------------------------------------------------------------------------
-
-def test_cli_chain_exclusive_first_match(tmp_path):
-    _write_settings(tmp_path, {"features": {"code-review-graph": True}})
-
-    graph_file = tmp_path / "graph.md"
-    graph_file.write_text("# Graph")
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [{"if": ["features.code-review-graph"], "then": str(graph_file)}],
-    })
-
-    result = _run_cli(["--chain", str(chain_file)], cwd=tmp_path)
+def test_cli_unknown_flag_prints_error_on_stdout(tmp_path):
+    """A `!` block captures stdout only: an argparse error on stderr with exit 2
+    would render a stale call to a removed flag as an empty block."""
+    result = _run_cli(["--no-such-flag", "x"], cwd=tmp_path)
     assert result.returncode == 0
-    assert result.stdout == "# Graph"
-
-
-def test_cli_chain_missing_file_reports_on_stdout(tmp_path):
-    result = _run_cli(["--chain", str(tmp_path / "nonexistent.json")], cwd=tmp_path)
-    assert result.returncode == 0
-    assert "[bdk-inject-error]" in result.stdout
+    assert result.stdout.startswith("[bdk-inject-error]"), result.stdout
     assert result.stderr == ""
 
 
-def test_chain_none_settings_returns_empty(tmp_path):
-    """inject_chain returns empty string when settings is None (file exists)."""
-    chain_file = _write_chain(tmp_path / "test.chain.json", {
-        "mode": "exclusive",
-        "chain": [{"then": str(tmp_path / "nonexistent.md")}],
-    })
-    result = inject_chain(chain_file, settings=None)
-    assert result == ""
+def test_cli_missing_then_prints_error_on_stdout(tmp_path):
+    result = _run_cli(["--if", "features.react"], cwd=tmp_path)
+    assert result.returncode == 0
+    assert result.stdout.startswith("[bdk-inject-error]"), result.stdout
+    assert result.stderr == ""

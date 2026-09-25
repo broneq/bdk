@@ -14,8 +14,6 @@ allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(lavish-axi *) 
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
-
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py architecture`
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py engineering-judgment`

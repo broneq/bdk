@@ -59,7 +59,7 @@ actually works on that code.
    brand-new file far from the code that defines the invariant (no comment can warn in
    time). Fails: a subtlety local to one function, visible in the one file where it
    lives.
-3. **Derivability test.** Can the agent infer this from code, types, the code graph, or
+3. **Derivability test.** Can the agent infer this from code, types, imports and call sites, or
    a failing test within the same task? If a test enforces the constraint, the rule is
    one line naming the test - the test is the enforcer, the rule is a signpost.
 

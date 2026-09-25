@@ -10,6 +10,8 @@ Audit of every dynamic-content injection mechanism in BDK, mapped against the Cl
 
 **Audit date:** 2026-05-05
 
+> **Update 2026-09-25 (ADR-0001):** BDK no longer ships MCP servers. The tool-tier layer went with them: `fragments/tool-tiers/`, the `bdk-tier-*` meta-skills, `inject.py --chain` and `scripts/render_startup.py` are removed, and the SessionStart hook prints `STARTUP_INSTRUCTIONS.md` as a static file. Flows 2, 3 and the tier parts of the preload flow below describe the removed layer; the `skills:` preload of `bdk-rules-*` and the tool meta-skills is unchanged.
+
 ---
 
 ## TL;DR — Status of every flow
@@ -177,7 +179,7 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 
 **Reinforces an existing comment:** `.claude/rules/fragment-system.md:88` already says *"Agent `.md` files are static markdown — shell commands do not execute at load time."* The `hooks:` blocks contradict this and were never going to work.
 
-**Fix:** Delete the dead `hooks:` blocks. Move tool-tier guidance into the agent body (static prose: "Use `query_graph` for callers/callees, fall back to grep when graph unavailable"). Accept that subagent prompts cannot be dynamically composed.
+**Fix:** Delete the dead `hooks:` blocks. Move tool-tier guidance into the agent body (static prose naming the tools to use for callers and callees). Accept that subagent prompts cannot be dynamically composed.
 
 ---
 
@@ -501,8 +503,6 @@ Skills that ARE orchestrators (dispatch subagents) and skills that produce outpu
 3. **No agent currently reads `tier-impact` despite `impact.chain.json` existing.** Worth adding to `fixer` and `implementer` — they both reason about blast radius.
 
 4. **`design` should know architecture and design-patterns rules.** The skill currently injects `architecture` only; adding `design-patterns` would tighten its output toward project conventions.
-
-6. **`graph-*` skills are deliberately frozen.** They only make sense when `code-review-graph` is enabled, so they hardcode graph tools instead of going through the chain mechanism. Don't migrate them.
 
 ### Verification status
 

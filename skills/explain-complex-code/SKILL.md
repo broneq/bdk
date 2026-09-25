@@ -4,7 +4,6 @@ description: Generate comprehensive architecture documentation for complex code 
 model: sonnet
 user-invocable: true
 argument-hint: "[path]"
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 hooks:
   Stop:
     - hooks:
@@ -15,7 +14,7 @@ hooks:
 
 # Explain Complex Code
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 Generate architecture docs for complex code with visual diagrams and examples.
 
@@ -31,16 +30,14 @@ Generate architecture docs for complex code with visual diagrams and examples.
 
 **Step 2.1: Initial Discovery**
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
-
-Using the exploration tools above: find all symbols, identify high-dependency symbols, use community grouping to determine subagent partitioning where available.
+Find all symbols in the area and identify the high-dependency ones (most importers).
 
 **Step 2.2: Map Dependencies**
-For each key class/function: `query_graph(pattern="callers_of", node=<symbol>)` and `query_graph(pattern="callees_of", node=<symbol>)`. Fall back to Serena `find_referencing_symbols` if graph unavailable.
+For each key class/function: find its callers across the source tree, and read its body for the callees it uses.
 
 **Step 2.3: Decide Partitioning Strategy**
 
-When graph communities are available, use community boundaries as partitioning units — one community per subagent. Otherwise fall back to file-count rules:
+Partition by file count, keeping each directory that forms one logical block together:
 
 | Files Count | Strategy | Subagent Count |
 |-------------|----------|----------------|

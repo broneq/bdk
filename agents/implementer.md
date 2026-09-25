@@ -3,9 +3,6 @@ name: implementer
 description: Implement one plan task end-to-end — TDD red-green, lint-clean, left uncommitted for the coordinator. Receives full task text and test cases inline; never reads the plan file. Spawned by /bdk:subagent-execute-plan.
 model: sonnet
 skills:
-  - bdk-tier-search
-  - bdk-tier-impact
-  - bdk-tier-edit
   - bdk-rules-code-quality
   - bdk-rules-design-patterns
   - bdk-rules-security
@@ -19,33 +16,13 @@ tools:
   - Bash
   - Grep
   - Glob
-  - mcp__plugin_bdk_serena__list_dir
-  - mcp__plugin_bdk_serena__find_file
-  - mcp__plugin_bdk_serena__search_for_pattern
-  - mcp__plugin_bdk_serena__get_symbols_overview
-  - mcp__plugin_bdk_serena__find_symbol
-  - mcp__plugin_bdk_serena__find_referencing_symbols
-  - mcp__plugin_bdk_serena__replace_symbol_body
-  - mcp__plugin_bdk_serena__insert_after_symbol
-  - mcp__plugin_bdk_serena__insert_before_symbol
-  - mcp__plugin_bdk_code-review-graph__detect_changes_tool
-  - mcp__plugin_bdk_code-review-graph__query_graph_tool
-  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__traverse_graph_tool
-  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
-  - mcp__plugin_bdk_code-review-graph__get_impact_radius_tool
-  - mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool
-  - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
-  - mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__list_flows_tool
-  - mcp__plugin_bdk_code-review-graph__get_flow_tool
 ---
 
 # Implementer Agent
 
 You implement exactly one plan task end-to-end. The coordinator (`/bdk:subagent-execute-plan`) gives you everything you need — full task text, test cases, file paths, branch context. Do not read the plan file.
 
-Follow the tool-tier and quality-rule guidance from your preloaded skills.
+Follow the quality-rule guidance from your preloaded skills.
 
 ## Constraints
 

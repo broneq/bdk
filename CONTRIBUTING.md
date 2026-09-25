@@ -12,13 +12,9 @@ Skills are thin workflow definitions. Environment discovery is handled by `START
 - New skills automatically inherit all rules
 - Changes to conventions require editing one file, not 13
 
-### MCP Tool Preference (Tier System)
+### Built-in Tools Only
 
-All BDK skills follow this tier system for codebase exploration:
-
-- **Tier 1:** CodeGraph — symbol search, callers/callees, impact analysis
-- **Tier 2:** Serena — AST-level analysis, referencing symbols
-- **Tier 3:** Grep/Glob/Read — always available fallback
+BDK ships no MCP server (see `docs/adr/0001-remove-bundled-mcp-servers.md`). Skills and agents run on the host's built-in tools, and the host already tells the model how to use them. So BDK adds no tool guidance: a skill or agent step says what to find or check, not which tool to use for it.
 
 ### Skill Authoring Convention
 
@@ -34,7 +30,6 @@ Every BDK skill:
 
 - Claude Code CLI installed
 - A separate test project to install BDK into (any language/stack)
-- (Optional) Serena and CodeGraph MCP servers — see `.mcp.json`
 
 ## Workflow
 
@@ -110,46 +105,15 @@ These stay in the project-level `.claude/` of each repo:
 
 Fragments are conditional Markdown files injected into skills at load time.
 
-### Creating a Leaf Fragment
+### Creating a Fragment
 
 1. Decide scope: shared (`fragments/<capability>/`) or skill-local (`skills/<name>/fragments/`)
-2. Name the file after the tool tier or feature it teaches (e.g. `search-serena.md`)
-3. Write content that teaches Claude WHEN and HOW to use the tools — not just a tool list
-4. Keep content under 10 lines; longer content should be split into multiple fragments
-
-### Creating a Chain File
-
-1. Create `<purpose>.chain.json` in the same directory as the leaf files
-2. Choose mode:
-   - `exclusive` — fallback tiers (first match wins)
-   - `additive` — complementary tools (all matches combined)
-3. Paths are relative to the chain file's own directory
-4. The last entry in an exclusive chain may have no `"if"` — unconditional fallback
-
-```json
-{
-  "mode": "exclusive",
-  "chain": [
-    { "if": ["features.code-review-graph"], "then": "search-graph.md" },
-    { "if": ["features.serena"], "then": "search-serena.md" },
-    { "then": "search-fallback.md" }
-  ]
-}
-```
-
-### Referencing a Chain from a Skill
+2. Name the file after the feature it serves (e.g. `lavish.md`, `react.md`)
+3. Keep content under 10 lines; longer content should be split into multiple fragments
+4. Inject it with one `inject.py --if` call placed right before the section it augments:
 
 ```markdown
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --then ${CLAUDE_SKILL_DIR}/fragments/react.md`
 ```
 
-### Naming Conventions
-
-- Chain files: `<purpose>.chain.json`
-- Leaf files: `<purpose>-<tier>.md` (e.g. `search-graph.md`, `search-serena.md`, `search-fallback.md`)
-- Tier names: `graph`, `serena`, `fallback`
-
-### When NOT to Use Chains
-
-- **Graph-only skills**: a skill that requires code-review-graph by design has no lower tier to fall back to; no chain migration applies
-- **Agents**: static markdown, no shell execution at load time; preload a `bdk-tier-*` meta-skill via `skills:` frontmatter instead
+Agents are static markdown with no shell execution at load time: they get dynamic content by preloading a `bdk-rules-*` (or other meta-) skill via `skills:` frontmatter.

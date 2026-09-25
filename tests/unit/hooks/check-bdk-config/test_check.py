@@ -23,7 +23,7 @@ FULL_SETTINGS = {
     ],
     "lint-tools": [{"type": "eslint", "command": "npm run lint"}],
     "build-tools": [{"type": "tsc", "command": "npm run build"}],
-    "features": {"caveman": True, "serena": True, "code-review-graph": False},
+    "features": {"caveman": True, "lavish": False},
 }
 
 
@@ -84,8 +84,36 @@ def test_format_features_on_off():
     mod = _load_module()
     result = mod.format_settings_context(FULL_SETTINGS)
     assert "caveman=on" in result
-    assert "serena=on" in result
-    assert "code-review-graph=off" in result
+    assert "lavish=off" in result
+
+
+# A key no BDK feature declares. Stands in for keys BDK removed (ADR-0001
+# removed two MCP feature flags): a project that still sets one keeps
+# working and is told to drop it.
+UNKNOWN_KEY = "retired-server"
+
+
+def test_format_warns_on_unknown_feature_key():
+    mod = _load_module()
+    result = mod.format_settings_context({"features": {"caveman": True, UNKNOWN_KEY: True}})
+    warnings = [line for line in result.splitlines() if "WARNING" in line]
+    assert len(warnings) == 1
+    assert f"features.{UNKNOWN_KEY}" in warnings[0]
+    assert "remove" in warnings[0].lower()
+
+
+def test_format_lists_only_known_features():
+    mod = _load_module()
+    result = mod.format_settings_context({"features": {"caveman": True, UNKNOWN_KEY: False}})
+    features_line = next(line for line in result.splitlines() if line.startswith("Features:"))
+    assert "caveman=on" in features_line
+    assert UNKNOWN_KEY not in features_line
+
+
+def test_format_known_features_do_not_warn():
+    mod = _load_module()
+    result = mod.format_settings_context(FULL_SETTINGS)
+    assert "WARNING" not in result
 
 
 def test_format_empty_tools_omitted():
@@ -195,6 +223,17 @@ def test_empty_json_object_outputs_context(tmp_path):
     (bdk_dir / "settings.json").write_text("{}")
     result = _run_script(tmp_path)
     assert "## BDK Project Settings" in result.stdout
+
+
+def test_unknown_feature_key_warns_without_blocking(tmp_path):
+    bdk_dir = tmp_path / ".bdk"
+    bdk_dir.mkdir()
+    (bdk_dir / "settings.json").write_text(json.dumps({"features": {UNKNOWN_KEY: True}}))
+    result = _run_script(tmp_path)
+    assert result.returncode == 0
+    assert '"decision"' not in result.stdout
+    assert "## BDK Project Settings" in result.stdout
+    assert f"features.{UNKNOWN_KEY}" in result.stdout
 
 
 def test_settings_languages_in_output(tmp_path):

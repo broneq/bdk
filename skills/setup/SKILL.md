@@ -3,7 +3,7 @@ name: setup
 description: Initialize .bdk/settings.json for this project. Run once per project when BDK blocks session start with missing settings.
 argument-hint: "[--force to re-run even if settings exist]"
 disable-model-invocation: true
-allowed-tools: Read Bash Write AskUserQuestion mcp__plugin_bdk_*
+allowed-tools: Read Bash Write AskUserQuestion
 ---
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
@@ -117,7 +117,7 @@ Use the `AskUserQuestion` tool with up to 4 questions in a single call:
 2. **Lint commands** — multiSelect: true, same pattern
 
 Confirm the **full** commands only. Tiers and scoped forms are derived from Phase 2b for whatever the user confirms — they are mechanical consequences of the runner, not preferences worth a question. Show them in the completion summary instead so a wrong derivation is visible.
-3. **Features** — multiSelect: true, question: "Which features do you want to **disable**?", options: "Serena MCP", "CodeGraph MCP", "Caveman mode". Empty selection = all enabled.
+3. **Features** - single select, question: "Use caveman mode (terse replies)?", options: "On" (writes `"caveman": true`), "Off" (writes `"caveman": false`).
 4. **Build command** — only include if a build tool was detected or the language typically has one (e.g. TypeScript, Java, Rust); skip otherwise to stay under 4 questions
 
 If more than 4 confirmation categories exist, prioritize: test → lint → features → build. Handle remaining categories with a follow-up `AskUserQuestion` call after writing.
@@ -162,36 +162,14 @@ Write `settings.json` with confirmed values plus the tier/scoping forms from Pha
   ],
   "build-tools": [{"type": "tsc", "command": "npm run build"}],
   "features": {
-    "caveman": true,
-    "serena": false,
-    "code-review-graph": false
+    "caveman": true
   }
 }
 ```
 
 `type` names the runner or framework (`vitest`, `playwright`, `pytest`, `eslint`, `tsc`), not the package manager — BDK reads it to infer a missing `tier`. Omit empty arrays (e.g. no `build-tools` key if none detected/provided), and omit any per-entry form the tool does not support. `build-tools` need no `tier`.
 
-### Phase 5: Initialize MCP tools
-
-Run after writing `settings.json`.
-
-**code-review-graph** — only if both conditions met:
-1. `features.code-review-graph` is not `false` in written settings
-2. `.mcp.json` (project or `~/.claude/mcp.json`) contains a `code-review-graph` server entry
-
-Call `mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool` (the MCP server itself is the source of truth — no need to check `.code-review-graph/graph.db` from the filesystem; the tool is incremental and skips work when the index is current).
-
-- **Success** → print `[setup] code-review-graph: index built.`
-- **Failure** (MCP not reachable / tool error) → print warning and continue — do not abort setup:
-  ```
-  [setup] code-review-graph: build failed. Call `mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool` manually once MCP is reachable.
-  ```
-
-Prefer the MCP tool over shelling out to `uvx code-review-graph build` — same binary under the hood, but the MCP path uses the already-running server and works inside sandboxed/restricted environments where `uvx` may not be available.
-
-**Serena** — no manual action needed at setup time. Serena's active-project state is in-memory only (resets every Claude Code session), so per-session activation is handled by the `hooks/activate-serena/activate.py` SessionStart hook. The hook emits an instruction telling Claude to call `mcp__plugin_bdk_serena__activate_project` whenever both `features.serena` is enabled and `.mcp.json` declares a `serena` server. No setup-time call required.
-
-### Phase 6: Git guidance
+### Phase 5: Git guidance
 
 Recommend:
 - Commit `.bdk/settings.json` (shared with team — consistent commands for all contributors)

@@ -64,6 +64,8 @@ with pytest.raises(ValueError):
 - Subprocess invocation when script has top-level side effects
 - Use `tmp_path` fixture or `tempfile.NamedTemporaryFile(delete=False)` + `finally: os.unlink(path)`
 
+**Not kept:** a test that only asserts something removed is still absent. It may drive a removal (write it failing, make it pass), but delete it once the removal lands; the acceptance grep in the PR is the proof.
+
 ## Handling Ambient Input (Clock, Randomness)
 
 A script that stamps a timestamp reads an override env var first and falls back to the real clock:

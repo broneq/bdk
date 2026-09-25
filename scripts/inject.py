@@ -10,12 +10,10 @@ Usage:
     python3 inject.py --if features.react --if languages[typescript] --then react-ts.md
     python3 inject.py --if features.react --then-text "Prefer reducers over useState"
     python3 inject.py --if features.react --then file.md --settings /custom/.bdk/settings.json
-    python3 inject.py --if features.serena --prefer features.code-review-graph --then serena.md
-    python3 inject.py --chain fragments/tool-tiers/search.chain.json
+    python3 inject.py --if features.react --prefer features.vue --then react.md
 
 Condition syntax:
     features.react              settings["features"]["react"] is True
-    features.code-review-graph  settings["features"]["code-review-graph"] is True
     languages[typescript]       "typescript" in settings["languages"]
     tool.lavish-axi             an executable named "lavish-axi" is on PATH
 
@@ -25,7 +23,7 @@ The dotted spelling of ``tool.`` is mandatory. ``tool[name]`` would be parsed by
 the array rule as a lookup in a nonexistent ``tool`` list and silently evaluate
 false, which is exactly the kind of quiet wrong answer this script must not give.
 
-Failures (unknown condition, missing file, bad chain) print
+Failures (unknown condition, missing file, bad arguments) print
 ``[bdk-inject-error] <description>`` to **stdout** and exit 0. Stdout, because a
 ``!`...`` `` block in a skill body captures stdout only - anything on stderr is
 invisible in the rendered skill and the failure reads as an empty condition. Exit
@@ -143,88 +141,22 @@ def inject(
     return ""
 
 
-def inject_chain(
-    chain_path: str | Path,
-    settings: dict | None = None,
-) -> str:
-    """Resolve a chain config file and return assembled content.
+class _StdoutArgumentParser(argparse.ArgumentParser):
+    """Report argument errors on stdout with exit 0, like every other failure.
 
-    Chain file format:
-        {"mode": "exclusive"|"additive", "header": "header.md", "chain": [...]}
-
-    Each chain entry:
-        {"if": ["condition", ...], "then": "relative/path.md"}
-        {"prefer": ["condition", ...], "then": "fallback.md"}
-        {"then": "path.md"}  # unconditional fallback
-
-    ``prefer`` uses OR logic and *suppresses* the entry when any of its
-    conditions is true. In ``additive`` mode a plain unconditional entry always
-    injects, so a fallback tier there must guard itself with ``prefer`` listing
-    every higher tier it defers to.
-
-    The optional ``header`` is prepended to the result whenever at least one
-    chain entry produced content. Paths in chain entries and ``header`` are
-    resolved relative to ``chain_path``'s directory.
-
-    Returns empty string when settings is None or no chain entry matched.
-    Raises FileNotFoundError if chain_path or referenced files do not exist.
-    Raises ValueError for unrecognised mode or missing 'then'.
+    argparse's default (stderr, exit 2) renders as an empty `!` block, so a
+    stale call to a flag that no longer exists would look like a false
+    condition instead of a broken one.
     """
-    if settings is None:
-        return ""
 
-    chain_path = Path(chain_path)
-    if not chain_path.exists():
-        raise FileNotFoundError(f"inject: chain file not found: {chain_path}")
-
-    try:
-        config = json.loads(chain_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as e:
-        raise ValueError(f"inject: invalid JSON in chain file {chain_path}: {e}") from e
-
-    mode = config.get("mode")
-    if mode not in ("exclusive", "additive"):
-        raise ValueError(f"inject: unknown chain mode {mode!r} in {chain_path}")
-
-    chain = config.get("chain", [])
-    base = chain_path.parent
-    parts: list[str] = []
-
-    for entry in chain:
-        conditions = entry.get("if", [])
-        prefer = entry.get("prefer", [])
-        then_rel = entry.get("then")
-        if then_rel is None:
-            raise ValueError(f"inject: chain entry missing 'then' key in {chain_path}")
-
-        then_path = base / then_rel if not Path(then_rel).is_absolute() else Path(then_rel)
-        content = inject(
-            conditions=conditions,
-            prefer_conditions=prefer,
-            then_path=then_path,
-            settings=settings,
-        )
-
-        if content:
-            parts.append(content)
-            if mode == "exclusive":
-                break
-
-    if not parts:
-        return ""
-
-    return "\n".join(parts)
+    def error(self, message: str) -> None:  # type: ignore[override]
+        print(f"{ERR_PREFIX} inject: {message}")
+        sys.exit(0)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
+    parser = _StdoutArgumentParser(
         description="Conditionally inject file content based on .bdk/settings.json"
-    )
-    parser.add_argument(
-        "--chain",
-        dest="chain_path",
-        metavar="CHAIN_FILE",
-        help="JSON chain config file for multi-tier injection",
     )
     parser.add_argument(
         "--if",
@@ -254,29 +186,8 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Chain mode — mutually exclusive with --if/--then/--then-text
-    if args.chain_path:
-        # Validate chain file existence before loading settings
-        if not Path(args.chain_path).exists():
-            print(f"{ERR_PREFIX} inject: chain file not found: {args.chain_path}")
-            sys.exit(0)
-        settings = (
-            load_settings(args.settings_path) if args.settings_path else load_settings()
-        )
-        if settings is None:
-            sys.exit(0)
-        try:
-            result = inject_chain(chain_path=args.chain_path, settings=settings)
-        except (FileNotFoundError, ValueError) as e:
-            print(f"{ERR_PREFIX} {e}")
-            sys.exit(0)
-        if result:
-            print(result, end="")
-        sys.exit(0)
-
-    # Standard --if/--then mode
     if not args.conditions and not args.prefer_conditions:
-        parser.error("one of --if, --prefer, or --chain is required")
+        parser.error("one of --if or --prefer is required")
     if args.then_path is None and args.then_text is None:
         parser.error("one of the arguments --then --then-text is required")
 
