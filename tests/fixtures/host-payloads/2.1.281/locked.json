@@ -1,0 +1,156 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.281",
+    "check_id": "locked",
+    "recordings": 6
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "scratchpad_dir": "<CLAUDE_TMP>/<PROJECT>/<SESSION-2>/scratchpad",
+      "prompt_id": "<PROMPT-4>",
+      "permission_mode": "auto",
+      "hook_event_name": "UserPromptExpansion",
+      "expansion_type": "slash_command",
+      "command_name": "bdk-probe:locked",
+      "command_args": "",
+      "command_source": "plugin",
+      "prompt": "/bdk-probe:locked"
+    },
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "scratchpad_dir": "<CLAUDE_TMP>/<PROJECT>/<SESSION-2>/scratchpad",
+      "prompt_id": "<PROMPT-4>",
+      "permission_mode": "auto",
+      "effort": {
+        "level": "high"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "ToolSearch",
+      "tool_input": {
+        "query": "select:Write,Edit,NotebookEdit",
+        "max_results": 5
+      },
+      "tool_use_id": "<TOOL-USE-1>"
+    },
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "scratchpad_dir": "<CLAUDE_TMP>/<PROJECT>/<SESSION-2>/scratchpad",
+      "prompt_id": "<PROMPT-5>",
+      "permission_mode": "auto",
+      "effort": {
+        "level": "high"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "ToolSearch",
+      "tool_input": {
+        "query": "select:Write",
+        "max_results": 5
+      },
+      "tool_use_id": "<TOOL-USE-2>"
+    },
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "scratchpad_dir": "<CLAUDE_TMP>/<PROJECT>/<SESSION-2>/scratchpad",
+      "prompt_id": "<PROMPT-5>",
+      "permission_mode": "auto",
+      "effort": {
+        "level": "high"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Write",
+      "tool_input": {
+        "file_path": "<PROJECT>/probe-unlocked.txt",
+        "content": "unlocked"
+      },
+      "tool_use_id": "<TOOL-USE-3>"
+    },
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "scratchpad_dir": "<CLAUDE_TMP>/<PROJECT>/<SESSION-2>/scratchpad",
+      "prompt_id": "<PROMPT-6>",
+      "hook_event_name": "SessionEnd",
+      "reason": "prompt_input_exit"
+    },
+    {
+      "hook_event_name": "TranscriptExcerpt",
+      "turns": [
+        {
+          "role": "user",
+          "text": "<command-message>bdk-probe:locked</command-message>\n<command-name>/bdk-probe:locked</command-name>"
+        },
+        {
+          "role": "user",
+          "text": "Base directory for this skill: <PLUGIN_ROOT>/skills/locked\n\nProbe skill `locked` loaded. Do these two steps, then stop:\n\n1. Say whether the tools `Edit`, `Write` and `NotebookEdit` are in your tool list right now, as `LOCKED-TOOLS Edit=<yes|no> Write=<yes|no> NotebookEdit=<yes|no>`.\n2. Try to create the file `probe-locked.txt` containing `locked` with the Write tool. Report `LOCKED-WRITE=<done|unavailable|denied>`.\n"
+        },
+        {
+          "role": "assistant",
+          "tool_use": "ToolSearch",
+          "input": {
+            "query": "select:Write,Edit,NotebookEdit",
+            "max_results": 5
+          }
+        },
+        {
+          "role": "user",
+          "tool_result": "No matching deferred tools found"
+        },
+        {
+          "role": "assistant",
+          "text": "LOCKED-TOOLS Edit=no Write=no NotebookEdit=no\n\nLOCKED-WRITE=unavailable"
+        },
+        {
+          "role": "user",
+          "text": "Now use the Write tool to create probe-unlocked.txt containing unlocked."
+        },
+        {
+          "role": "assistant",
+          "tool_use": "ToolSearch",
+          "input": {
+            "query": "select:Write",
+            "max_results": 5
+          }
+        },
+        {
+          "role": "user",
+          "tool_result": [
+            {
+              "type": "tool_reference",
+              "tool_name": "Write"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "text": "Write tool is now available. Creating the file."
+        },
+        {
+          "role": "assistant",
+          "tool_use": "Write",
+          "input": {
+            "file_path": "<PROJECT>/probe-unlocked.txt",
+            "content": "unlocked"
+          }
+        },
+        {
+          "role": "user",
+          "tool_result": "File created successfully at: <PROJECT>/probe-unlocked.txt (file state is current in your context — no need to Read it back)"
+        },
+        {
+          "role": "assistant",
+          "text": "Created probe-unlocked.txt with contents `unlocked`."
+        }
+      ]
+    }
+  ]
+}

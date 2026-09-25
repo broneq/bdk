@@ -18,7 +18,7 @@ Convention (confirmed in T00; project context and artifact rules live in `opensp
 | Plan element | OpenSpec counterpart |
 |---|---|
 | This document | `docs/V3-IMPLEMENTATION-PLAN.md`, linked from `openspec/config.yaml` as project context |
-| One task `Tnn` | one Change `openspec/changes/v3-Tnn-<slug>/` |
+| One task `Tnn` | one Change `openspec/changes/v3-tnn-<slug>/` (lowercase task ID, e.g. `v3-t01-host-live-checks`; OpenSpec rejects capitals) |
 | "Input" column | `proposal.md` (why and what) plus `design.md` (how), with citations of v3 design sections |
 | "Acceptance signal" column | `specs/<capability>/spec.md` as `Requirement` / `#### Scenario:` WHEN / THEN |
 | Work breakdown within a task | `tasks.md` (`## section`, `- [ ] N.M`) - written by AI in `/opsx:propose` or `/opsx:ff`, not here |
@@ -34,6 +34,7 @@ Note on the seam: BDK v3 itself introduces a living spec in OpenSpec format unde
 flowchart LR
   T00["T00 OpenSpec<br/>bootstrap"] --> T01["T01 Host<br/>live checks"]
   T00 --> T02["T02 Skill and<br/>agent review"]
+  T00 --> T03["T03 MCP value<br/>evaluation"]
   T01 --> T11["T11 Kernel skeleton<br/>doctor, CI, bundle"]
   T10["T10 CLI contract"] --> T11
   T11 --> T12["T12 Configuration<br/>and schema"]
@@ -68,7 +69,10 @@ flowchart LR
   T30 --> T41
   T31 --> T41
   T42 --> T32
-  class T00,T01,T02,T10,T15 prep
+  T03 --> T13
+  T03 --> T32
+  T03 --> T41
+  class T00,T01,T02,T03,T10,T15 prep
   class T11,T12,T13,T14,T20,T21,T22,T23,T24,T30,T31,T32 primary
   class T40,T41,T42 warn
   class T50 ok
@@ -96,7 +100,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Input**: the "Running the project in OpenSpec" section above; D2 (OpenSpec format as the target format of the BDK spec); V-tracking.
 
-**Acceptance signal**: `openspec validate` passes on an empty Change tree; the first Change (`v3-T01-...`) created by `/opsx:propose` links this document.
+**Acceptance signal**: `openspec validate` passes on an empty Change tree; the first Change (`v3-t01-...`) created by `/opsx:propose` links this document.
 
 **To resolve in the spec**: OpenSpec schema for kernel tasks (default spec-driven or tdd); whether the v3 design goes into git now; whether `openspec/specs/` stays after v3 or migrates to `.bdk/specs/`.
 
@@ -158,6 +162,32 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 - Rules: `.bdk/rules/<id>.md` with `applies` globs, per-package selection, ID citations in reports; no automation writes a rule (candidates as `learning` entries with fingerprint and evidence, proposal at `close` on thresholds, manual accept); the `check-rules-drift` hook is not ported; `.claude/rules/` in the target project becomes a generated projection.
 - Text as the state's source of truth with a rebuilt SQLite index, non-sequential IDs, a two-branch merge contract test; no OpenSpec runtime dependency (format compatibility only); autonomy as per-gate policy plus `run`; `bdk measure` shared by `change new` and `cr`; `architecture.md` and design parts for the `large` profile; T40 measures `execute` thin vs long, Serena's value and the rules no-op test on one harness.
 - Plan impact applied on 2026-09-25: new T14 and T15; scope changes in T11-T13, T20-T24, T30-T32, T40-T42, T50.
+
+### T03 MCP value evaluation: serena and code-review-graph
+
+**Goal**: a measured decision for each bundled MCP server - **default-on / opt-in / removed** - instead of carrying both into v3 by assumption. Today the plan keeps them unchanged (T13 "The `uvx` lines unchanged", T11 `doctor` checks `uv`, T32 asks whether `uv.lock` stays for MCP), while the tool tiers and the `tools:` lists of every agent depend on them.
+
+**Why now** (observed on v2.6.0, 2026-09-25):
+- The plugin `Stop` hook runs `uvx code-review-graph update` after every assistant reply, in every session, with no `features.code-review-graph` or `.bdk/settings.json` check and no lock: parallel sessions in one repo update the graph concurrently. Even a no-change incremental update reports `postprocess=full`. Field report: the process held 30-60% CPU for 3-4 minutes under 8 parallel sessions, with endpoint security scanning every file read. The v2 hotfix removes the hook; this task decides the v3 update strategy.
+- Both servers start through `uvx` with no pinned version (serena from `git+https://github.com/oraios/serena` HEAD). Both hit `CONNECT_TIMEOUT` (30 s) at session start on 2026-09-25; `CONNECT_TIMEOUT` appears in 37 of 1932 local transcripts from the last 30 days.
+- Tier fragments are selected by `features.*` flags, not by server availability, so a server that fails to connect leaves agents instructed to use tools that do not exist.
+- Tier menus and agent `tools:` lists drift apart: `bdk-tier-explore` names graph tools that `architecture-reviewer`, `design-verifier`, `explorer` and `plan-verifier` are not granted (for example `get_community_tool`, `get_knowledge_gaps_tool`, `find_large_functions_tool`), and no test ties the two together.
+- Usage in the same 30 days (real `tool_use` calls): code-review-graph 1204 (`semantic_search_nodes` 536, `query_graph` 267), serena 467 (`get_symbols_overview` 254, `find_symbol` 117; editing tools 56 against 5670 `Edit`), against `Read` 13264, `Grep` 1060, `Glob` 223. Usage is not value: nothing shows the calls saved anything over `Grep` / `Read`.
+
+**Scope**:
+- **Cost**, on at least one large real repository (not the BDK repo, 38 files): cold start and time to connect per server, connect failure rate, CPU and wall time of `update` (incremental with and without changes, `--skip-flows`, postprocess) and of a full build, disk size of the graph, behaviour under parallel sessions.
+- **Value**: a fixed set of about 8 tasks covering the tiers (symbol search, reference tracing, impact / blast radius, change review, architecture overview, a structural refactor), run headless (`claude -p --output-format json`) in three configurations - no MCP, graph only, graph + serena - at least 3 runs each. Compare tokens, tool calls, wall time and correctness against a reference answer written before the runs. A lightweight precursor to T40, not a dependency on it.
+- **Failure mode**: what agents and tier guidance do when a server is configured but not connected; whether the tier choice can follow availability rather than the flag.
+- **Update strategy** for the graph if it stays: on demand in the skills that use it, debounced, locked, or left to the server; which one survives parallel sessions.
+- **Pinning**: version pin for each server that stays (`uvx` spec or `uv.lock`), feeding the T32 question.
+
+**Input**: this section's "Why now" list; `hooks/hooks.json`; `.mcp.json`; `fragments/tool-tiers/`; `.claude/rules/fragment-system.md`; `.claude/rules/mcp-tool-naming.md`; agent `tools:` lists in `agents/*.md`; local transcripts for usage data; design "Integration points" (`.mcp.json` for serena and code-review-graph).
+
+**Acceptance signal**: `docs/V3-MCP-EVALUATION.md` with the cost table, the per-task value table (all configurations and runs, raw numbers kept next to the summary), and per server a disposition with rationale; the resulting changes listed per downstream task (T13 hook lines, T32 `uv.lock`, T41 / T42 tier fragments and agent `tools:`); open decisions for the user, each with a recommendation.
+
+**To resolve in the spec**: the task set and reference answers; which large repository serves as the benchmark; the threshold that counts as "worth it" (for example, fewer tokens or fewer tool calls at equal correctness, beyond run-to-run noise); whether serena and code-review-graph are judged separately or only as a pair.
+
+**Dependencies**: T00.
 
 ### T10 Kernel CLI contract (first-class document)
 
@@ -235,7 +265,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - `ctx skill <name>`: conditional fragments and tool-tier chains (`exclusive` / `additive` with `if` / `prefer`, semantics from `.claude/rules/fragment-system.md`), quality rules (by file at this stage; by ID from T31), language rules from `languages`, values from `prompts/`.
 - No `ctx role`: roles are skills under `skills/roles/` (T02 decision Q-3) and `dispatch build` (T23) embeds the role body into the package, so nothing preloads role context by class. The Lavish question fragment is injected only when `features.lavish` is on; otherwise the `AskUserQuestion` fragment (T02, R-11).
 - `ctx startup`: STARTUP_INSTRUCTIONS with resolved chains and an **agents table generated from the five adapter files in `agents/`** (P11, closes the T6 drift); content test: the table in the repo is byte-identical to the output.
-- Content hooks in `hooks.json`: `hooks session-start` (STARTUP, `config check`, v2 layout detection, graph repo registration - one process instead of four), `hooks skill-exists <name>` (for `commit`); `|| echo "BDK STOP..."` wrapper (always exit 0). The `uvx` lines unchanged. No `hooks stop`: the rule drift check is not ported (T02 decision Q-6; its useful half becomes `rules prune` in T31).
+- Content hooks in `hooks.json`: `hooks session-start` (STARTUP, `config check`, v2 layout detection, graph repo registration - one process instead of four), `hooks skill-exists <name>` (for `commit`); `|| echo "BDK STOP..."` wrapper (always exit 0). The `uvx` lines follow the T03 disposition. No `hooks stop`: the rule drift check is not ported (T02 decision Q-6; its useful half becomes `rules prune` in T31).
 - A3 content test: every `!` block in `skills/` calls only `ctx` or `next` in the exact wrapper form; `allowed-tools` carries the rule `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)` (form confirmed in T01).
 - Migration of the existing `fragments/` and `rules/` to the format read by `ctx` without changing content (changing rule content = T31).
 
@@ -245,7 +275,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: whether `fragments/` stay files or go into `prompts/` defaults in the bundle; adapter frontmatter format required for generating the table.
 
-**Dependencies**: T12.
+**Dependencies**: T12, T03 (which `uvx` lines stay).
 
 ### T14 State schema and write map (first-class document, zod, JSON Schema)
 
@@ -479,7 +509,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: what to do with `.bdk/verify-plan/` and `.bdk/runs/` (ignore / report); whether `uv.lock` stays for MCP; the fate of `docs/INJECTION-FLOWS.md`.
 
-**Dependencies**: T30, T31, T42 (skills table documentation), in practice the last one before T50.
+**Dependencies**: T30, T31, T42 (skills table documentation), T03 (whether `uv.lock` stays for MCP), in practice the last one before T50.
 
 ---
 
@@ -528,7 +558,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: details of the wave strategy and the place of Workflow (the design leaves it open); how `design` drives Lavish in the thin version and what the AskUserQuestion fallback loses; content of the instructions returned by `next` per artifact (shared with T21 - who owns the templates); whether `run` re-renders after each gate or only at the stop.
 
-**Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`).
+**Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (tool tiers and agent `tools:`).
 
 ### T42 Remaining skills, role skills, adapters, `bdk-craft`, package input for `cr` / `pr-review`
 
