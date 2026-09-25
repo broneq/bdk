@@ -1,0 +1,20 @@
+{
+  "task": "V4",
+  "tier": "impact",
+  "grading": "set",
+  "key": "files",
+  "expected": [
+    "packages/web-core/src/shared/hooks/useWorkspaces.ts",
+    "packages/web-core/src/shared/lib/api.ts",
+    "packages/remote-web/src/shared/hooks/useRelayWorkspaceHostHealth.ts"
+  ],
+  "secondary": {
+    "key": "packages",
+    "expected": [
+      "@vibe/web-core",
+      "@vibe/local-web",
+      "@vibe/remote-web"
+    ]
+  },
+  "note": "Derived by applying the change on the snapshot and running each package's check (tsc): 6 errors in these 3 files; local-web and remote-web compile web-core sources through their '@/*' path alias. The repository has no test files, so no tests are listed."
+}

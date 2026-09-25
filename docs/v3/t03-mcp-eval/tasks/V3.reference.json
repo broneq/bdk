@@ -1,0 +1,16 @@
+{
+  "task": "V3",
+  "tier": "trace",
+  "grading": "set",
+  "key": "files",
+  "expected": [
+    "packages/web-core/src/features/workspace-chat/model/hooks/useCreateSession.ts",
+    "packages/web-core/src/features/workspace-chat/ui/SessionChatBoxContainer.tsx",
+    "packages/web-core/src/pages/workspaces/WorkspacesMainContainer.tsx",
+    "packages/web-core/src/shared/hooks/useWorkspaceContext.ts",
+    "packages/web-core/src/shared/hooks/useWorkspaceSessions.ts",
+    "packages/web-core/src/shared/lib/api.ts",
+    "packages/web-core/src/shared/types/attempt.ts"
+  ],
+  "note": "Derived by parsing import clauses of all packages/**/*.ts(x); 15 files contain the word Session, 8 of them are not importers of this type."
+}

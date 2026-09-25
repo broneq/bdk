@@ -63,3 +63,9 @@ The harness discards and reruns a run that fails the check.
 ## Worktree reuse
 
 Each configuration has its own worktree of the snapshot, prepared once: `pnpm install --frozen-lockfile --offline`, `.bdk/settings.json`, `.serena/project.yml`, and a built graph for CG / CGS. Before every run the worktree is reset with `git reset --hard && git clean -fdx -e node_modules -e .bdk -e .serena -e .code-review-graph`. So each run starts from the snapshot's files, with the warm caches a working developer has (installed dependencies, built graph, serena cache). The reset leaves files byte-identical to the state the graph was built from, so the graph is never stale at run start.
+
+## Task set
+
+`tasks/V<n>.prompt.md` is the exact prompt of each task, `tasks/V<n>.reference.json` its reference answer and grading mode (`exact`, `set`, `rubric`, `build`). Each prompt ends by asking for a fenced JSON block, so the deterministic graders read the answer rather than parse prose. How each reference was derived is in its `note`: by parsing import clauses (V3), by applying the change and running `tsc` (V4), by deleting the candidates and running `tsc` (V7), by performing the rename and running `tsc` (V8), from upstream commit `5a3dbfdc7` (V5), and from `package.json` plus import paths (V6). The references were committed before the first measured run.
+
+V5's working tree is the snapshot with upstream fix `5a3dbfdc7` reverse-applied and left uncommitted, so the diff under review reintroduces the defect that commit fixed.

@@ -1,0 +1,14 @@
+{
+  "task": "V1",
+  "tier": "search",
+  "grading": "exact",
+  "file": "packages/web-core/src/shared/lib/workspaceCreateState.ts",
+  "line": 52,
+  "signature_must_contain": [
+    "prompt: string | null",
+    "defaults?: WorkspaceDefaultsLike | null",
+    "linkedIssue?: CreateModeInitialState['linkedIssue']",
+    "executorConfig?: CreateModeInitialState['executorConfig']",
+    "CreateModeInitialState"
+  ]
+}

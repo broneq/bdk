@@ -1,0 +1,13 @@
+{
+  "task": "V5",
+  "tier": "review",
+  "grading": "rubric",
+  "setup": "git apply -R of upstream commit 5a3dbfdc7 (fix: reset new session mode when switching workspaces, #2986) on the snapshot, left uncommitted",
+  "reference": "The change removes the workspace-change check (prevWorkspaceIdRef / workspaceChanged) in useWorkspaceSessions: the auto-select effect now keeps a previous selection whenever it is in new-session mode (`if (prev?.mode === 'new') return prev;`), so new-session mode carries over when the user navigates to a different workspace instead of selecting that workspace's most recent session.",
+  "rubric": [
+    "names packages/web-core/src/shared/hooks/useWorkspaceSessions.ts",
+    "points at the new-session-mode early return / the removed workspace-changed check",
+    "states the effect: new-session mode (or the selection) persists across switching workspaces",
+    "does not present an unrelated or invented problem as the main defect"
+  ]
+}

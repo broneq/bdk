@@ -54,7 +54,7 @@ Each task is a single prompt run headless in a per-configuration worktree of a h
 | # | Tier | Task shape | Reference answer | Grading |
 |---|---|---|---|---|
 | V1 | search | Find where a named exported function or hook is defined and give its signature | file:line + signature | exact match |
-| V2 | trace | List every call site of a function used across several packages | set of file:line | precision / recall |
+| V2 | trace | List every call site of an exported function that has same-name local functions elsewhere (decoys a text search cannot tell apart) | set of file:line | precision / recall |
 | V3 | trace | List the consumers of one type from `shared/types.ts` across the packages | set of files | precision / recall |
 | V4 | impact | Given a signature change to a function, list the files and tests that must change | set of files | precision / recall |
 | V5 | review | Review the diff of a real bug-introducing commit (the parent of a later fix) and name the defect | the defect the fix commit repaired | rubric, judged |

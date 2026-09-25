@@ -1,0 +1,15 @@
+{
+  "task": "V2",
+  "tier": "trace",
+  "grading": "set",
+  "key": "call_sites",
+  "expected": [
+    "packages/web-core/src/shared/dialogs/auth/GhCliSetupDialog.tsx:148",
+    "packages/web-core/src/shared/dialogs/command-bar/EditBranchNameDialog.tsx:49",
+    "packages/web-core/src/shared/dialogs/shared/TagEditDialog.tsx:84"
+  ],
+  "decoys": [
+    "packages/remote-web/src/shared/hooks/useRelayWorkspaceHostHealth.ts:47 (local function of the same name, line 10)",
+    "packages/web-core/src/shared/dialogs/tasks/PrCommentsDialog.tsx:91 (local function of the same name, line 215; the file imports other names from modals.ts)"
+  ]
+}

@@ -8,8 +8,8 @@
 
 ## 2. Task set and reference answers (committed before any measured run)
 
-- [ ] 2.1 Pick the concrete targets for V1-V8 (design D-3) in vibe-kanban at `f4b0fd9`, including the bug-introducing commit for V5, and write one prompt file per task into `docs/v3/t03-mcp-eval/tasks/`; verify each prompt names its target unambiguously and fits one headless run
-- [ ] 2.2 Write the reference answer per task by hand from the code (sets of file:line, package graph from `package.json` and imports, defect of V5's fix commit, V7 list confirmed by removing the functions and running `check`) and the V5 / V6 rubrics; verify V7 and V8 references with the package's `check`, and the rest by a second read against the code
+- [x] 2.1 Pick the concrete targets for V1-V8 (design D-3) in vibe-kanban at `f4b0fd9`, including the bug-introducing commit for V5, and write one prompt file per task into `docs/v3/t03-mcp-eval/tasks/`; verify each prompt names its target unambiguously and fits one headless run
+- [x] 2.2 Write the reference answer per task by hand from the code (sets of file:line, package graph from `package.json` and imports, defect of V5's fix commit, V7 list confirmed by removing the functions and running `check`) and the V5 / V6 rubrics; verify V7 and V8 references with the package's `check`, and the rest by a second read against the code
 - [ ] 2.3 Commit the task set and references on the branch; verify the commit precedes every file in `docs/v3/t03-mcp-eval/runs/` in `git log`
 
 ## 3. Harness and pilot

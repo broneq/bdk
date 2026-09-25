@@ -1,0 +1,19 @@
+{
+  "task": "V8",
+  "tier": "edit",
+  "grading": "build",
+  "checks": [
+    "git grep -w getSortedExecutorVariantKeys returns nothing",
+    "git grep -lw sortExecutorVariantKeys returns exactly the 5 expected files",
+    "pnpm --filter @vibe/web-core run check exits 0",
+    "git diff --numstat touches only the 5 expected files"
+  ],
+  "expected_files": [
+    "packages/web-core/src/shared/components/CreateChatBoxContainer.tsx",
+    "packages/web-core/src/shared/components/VariantSelector.tsx",
+    "packages/web-core/src/shared/components/tasks/ConfigSelector.tsx",
+    "packages/web-core/src/shared/dialogs/settings/settings/GeneralSettingsSection.tsx",
+    "packages/web-core/src/shared/lib/executor.ts"
+  ],
+  "note": "Verified on the snapshot: the rename touches 9 lines in these 5 files and web-core, remote-web and local-web checks pass."
+}
