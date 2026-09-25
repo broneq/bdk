@@ -33,7 +33,7 @@ jobs:
       matrix:
         # The minimum the contract names (HOST-FACTS node-sqlite-min), the
         # active LTS and the current release. T11 runs the kernel suite on the
-        # same matrix (docs/CLI-CONTRACT.md, section 9).
+        # same matrix (openspec/specs/kernel-architecture/spec.md).
         node: ["22.13", "24", "26"]
     steps:
       - uses: actions/checkout@v4
@@ -43,6 +43,6 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - name: Run CLI contract tests
-        # Consistency of docs/CLI-CONTRACT.md with schema/cli/ (T10). T11 moves
+        # Consistency of openspec/specs/kernel-cli/ with schema/cli/ (T10). T11 moves
         # this into the kernel's own test harness.
         run: node --test tests/contract/*.test.mjs

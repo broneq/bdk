@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/commands.schema.json",
   "title": "Kernel command index",
-  "description": "Shape of schema/cli/commands.json: one record per kernel command. The join key to docs/CLI-CONTRACT.md is `id`, which appears as {#id} on the command's heading. T11 generates --help from these records and asserts that every id has a handler or a kernel/not-implemented stub; the hooks pre-tool guard reads `availability` from the same file.",
+  "description": "Shape of schema/cli/commands.json: one record per kernel command. The join key to the spec openspec/specs/kernel-cli/<group>/spec.md is `id`: the command's requirement heading is `### Requirement: bdk <argv...>` and `id` is argv joined by "-". T11 generates --help from these records and asserts that every id has a handler or a kernel/not-implemented stub; the hooks pre-tool guard reads `availability` from the same file.",
   "type": "object",
   "additionalProperties": false,
   "required": ["contract", "base", "commands"],

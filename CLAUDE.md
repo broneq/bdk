@@ -12,7 +12,8 @@ rules/                   — convention docs distributed WITH the plugin to end-
 STARTUP_INSTRUCTIONS.md  — injected into user sessions at SessionStart via hook
 tests/evals/             — skill behavior evals (LLM output grading, iterations)
 tests/unit/              — pytest unit/integration tests for scripts
-docs/                    — design specs and analysis
+docs/                    — temporary material, task artifacts, user docs, ADRs; never a living spec
+openspec/specs/          — living specs of BDK v3 (kernel-cli, kernel-architecture, ...)
 ```
 
 > `rules/` = BDK distributable output — ships to user projects. Not `.claude/rules/` (dev-time conventions for BDK itself).

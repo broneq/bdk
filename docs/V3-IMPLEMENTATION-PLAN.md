@@ -203,21 +203,21 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Input**: "CLI contract (outline)", "Key boundaries", "UX Touchpoints - Failure surface", input assumptions for 2A ("CLI contract as a first-class document"), Q3, T1-T3.
 
-**Acceptance signal**: `docs/CLI-CONTRACT.md` (or a directory) covers every command from the design; every refusal example has four fields; cross-review: every command called in the design sections (sequence diagram, hooks table, skill inventory) exists in the contract.
+**Acceptance signal**: the kernel CLI spec (`openspec/specs/kernel-cli/`, one file per command group) covers every command from the design; every refusal example has four fields; cross-review: every command called in the design sections (sequence diagram, hooks table, skill inventory) exists in the contract.
 
 **To resolve in the spec**: argument syntax (`attempt close ok` vs `--outcome ok`), contract versioning (`kernel-version` in the package, P10), whether output schemas live in `schema/cli/`.
 
 **Dependencies**: T01 (the live checks result affects `hooks` and a possible `stage enter`).
 
 **Resolution** (2026-09-25, Change `v3-t10-kernel-cli-contract`, #48):
-- Contract location: prose in `docs/CLI-CONTRACT.md`, machine data in `schema/cli/` (`commands.json` index, `output/<id>.json` per command, `common/*.json` shared shapes), kept consistent by `tests/contract/cli-contract.test.mjs` (`node:test`, no dependencies) on CI.
+- Contract location: prose as OpenSpec main specs, `openspec/specs/kernel-cli/spec.md` (cross-cutting rules) plus `openspec/specs/kernel-cli/<group>/spec.md` (one requirement per command, one scenario per declared rule), machine data in `schema/cli/` (`commands.json` index, `output/<id>.json` per command, `common/*.json` shared shapes), kept consistent by `tests/contract/cli-contract.test.mjs` (`node:test`, no dependencies) on CI.
 - Argument syntax: positional literals for meaning-changing choices (`attempt close <ticket> ok|fail|not-run`), flags for optional inputs; no `--outcome`.
 - One error shape for exit 2 / 3 / 4 / 5: `refused`, `rule`, `why`, `instead[]`; the rule class prefix maps to the exit code; exit 1 is a crash. Common rules live in the index's `base`, command-specific rules per record.
 - Contract version = kernel major (3); `bdk version --json` reports `kernel`, `contract`, `node`; the dispatch package keeps `kernel-version` as the full semver (P10).
 - Headless runner command is `bdk dispatch run <part> --wave <n>` (the outline's `bdk execute --wave N` and `bdk run` collided with the `execute` and `run` stage skills); T23 and T41 wording aligned below.
 - `stage enter` not added (HOST-FACTS `upe-fires`); `hooks stop` absent (T02 decision Q-6); `hooks prompt-expansion` parses the namespaced `command_name` (HOST-FACTS `upe-name`).
 - Availability classes `orchestrator | agent | hook | read` per command; the `pre-tool` guard denies by exact verb from the index, so read verbs inside guarded groups stay open to subagents.
-- Kernel architecture: vertical slices, one per command group, with `shared/` for OS boundaries and three-plus-consumer primitives; module list, dependency matrix, slice anatomy and the T11 build order are section 9 of the contract. T11's "kernel directory layout" item is resolved there.
+- Kernel architecture: vertical slices, one per command group, with `shared/` for OS boundaries and three-plus-consumer primitives; module list, dependency matrix, slice anatomy and the T11 build order are the `openspec/specs/kernel-architecture/spec.md` spec. T11's "kernel directory layout" item is resolved there.
 - Every command carries `owner: Tnn` and `slice`; T11 registers all 61 commands from day one and stubs the unlanded ones with `kernel/not-implemented`.
 
 ---
@@ -242,7 +242,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Acceptance signal**: CI green with the steps build, `git diff --exit-code dist/`, lint, unit, E2E; `bdk doctor` on a v2 fixture prints the import instruction; `bdk doctor` without `uv` prints the exact install command; a call from Node below the minimum ends with exit 5 and an instruction.
 
-**To resolve in the spec**: minimum Node version (based on T01); pinning policy and dependency update cadence; whether CI is GitHub Actions next to the existing release-please. The kernel's module layout is fixed by the CLI contract, section 9 (vertical slices with one directory per layer, `shared/`, dependency matrix, build order): T11 builds `shared/` and the `service` slice first. CI runs the kernel suite on the Node matrix named there (the 22.13 minimum, the active LTS, the current release); the contract-test job in `.github/workflows/tests.yml` already runs on it.
+**To resolve in the spec**: minimum Node version (based on T01); pinning policy and dependency update cadence; whether CI is GitHub Actions next to the existing release-please. The kernel's module layout is fixed by the `kernel-architecture` spec (`openspec/specs/kernel-architecture/spec.md`: vertical slices with one directory per layer, `shared/`, dependency matrix, build order): T11 builds `shared/` and the `service` slice first. CI runs the kernel suite on the Node matrix named there (the 22.13 minimum, the active LTS, the current release); the contract-test job in `.github/workflows/tests.yml` already runs on it.
 
 **Dependencies**: T10, T01.
 
@@ -296,13 +296,13 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - zod schemas in the kernel for: `change.md` frontmatter (id, kind `feature | bug`, profile, intent, `source: user | inferred`, overridden keys), ledger entry (10 types including `transition`; `learning` gains `fingerprint` and `evidence`), attempt record, evidence manifest, dispatch package frontmatter, report envelope, `plan/index.md`, `design/index.md`, rule file frontmatter (`id`, `applies`, `roles`, `severity`, `origin`, `since`).
 - JSON Schema export to `schema/state/` by the same mechanism T12 uses for configuration; `git diff --exit-code` on CI; `schema: 1` field in every file, migrations run by `bdk rebuild`.
 - Entry and ticket IDs are merge-safe, not sequential (ULID or `<timestamp>-<slug>`); cross-Change references `<changeId>/<id>`; a sequence exists only as an index view.
-- `docs/STATE-CONTRACT.md`: the Change directory, every file's schema, and the **write map**: which skill or role writes which file and which entry types, who stamps `source`, and the rule that `intent` lives only in `change.md`, written only by `change new` (stage skills started without a Change call `change new --inferred`; `plan` and `close` never create one).
+- The state spec `openspec/specs/kernel-state/spec.md` (an OpenSpec main spec, like the CLI contract): the Change directory, every file's schema, and the **write map**: which skill or role writes which file and which entry types, who stamps `source`, and the rule that `intent` lives only in `change.md`, written only by `change new` (stage skills started without a Change call `change new --inferred`; `plan` and `close` never create one).
 - Contract tests: every file in a fixture `.bdk/changes/` validates against its schema; a **two-branch merge test**: two branches run a Change in parallel (entries, attempts, reports, an accepted rule, a spec delta) and merge without conflict; the only permitted conflict is the same rule edited two ways.
 - Mutable shared files kept to a minimum by construction: Change status is derived from the latest `transition` entry, `plan/index.md` and `design/index.md` are regenerated from parts.
 
 **Input**: "Change directory", "Ledger entry", "Dispatch package", "Plan part fields", K1-K4, P1, P10, R-store; T02 decisions Q-2, Q-4, R-12 (write map).
 
-**Acceptance signal**: `schema/state/*.json` on CI consistent with the zod registry; the fixture validates; the two-branch merge test passes; `docs/STATE-CONTRACT.md` names a writer for every file and entry type in the Change directory (cross-checked against the CLI contract's command split).
+**Acceptance signal**: `schema/state/*.json` on CI consistent with the zod registry; the fixture validates; the two-branch merge test passes; the `kernel-state` spec names a writer for every file and entry type in the Change directory (cross-checked against the CLI contract's command split).
 
 **To resolve in the spec**: ID format (ULID vs timestamp-slug), fingerprint normalisation for `learning`, whether `schema/state/` and `schema/config/` share one export command, how much of the write map is enforced by the kernel versus documented.
 
@@ -604,7 +604,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - E2E consolidation: the full list of acceptance and TSH scenarios from the design as one suite named after the scenarios; NFR measurements (`log list` at 1 000 entries, hook p95, ~200 kernel calls per Change) reported in CI.
 - User edge cases: no kernel (fail-closed with an instruction), corrupted state (`rebuild` mandatory), two Changes on two branches in parallel (the T14 merge contract on a real fixture), a local override disabling escalation visible in D4b, a removed rule as a tombstone, a stage command with no kernel, a `bdk-entries` block rejected -> re-dispatch once -> `blocker`, `bdk-craft` installed without `bdk`.
 - Multi-host acceptance (T02 decision Q-3): one Change executed with the `headless` runner on at least one non-Claude host CLI (from the T23 list), with adapters from `bdk export agents --host`; the ledger from that run passes `doctor`.
-- User documentation: README v3 (installation with Node, two plugins, Change pipeline, gates and `run`, profiles, layered configuration, rules and the learning funnel, migration from v2), `docs/CLI-CONTRACT.md` and `docs/STATE-CONTRACT.md` synchronised with the code (contract tests); the kernel architecture stays section 9 of the CLI contract (written in T10, with Mermaid per the standard) and is checked against the code by T11's import scan, so no separate architecture document is written.
+- User documentation: README v3 (installation with Node, two plugins, Change pipeline, gates and `run`, profiles, layered configuration, rules and the learning funnel, migration from v2), the `kernel-cli` and `kernel-state` specs under `openspec/specs/` synchronised with the code (contract tests); the kernel architecture stays the `kernel-architecture` spec (written in T10, with Mermaid per the standard) and is checked against the code by T11's import scan, so no separate architecture document is written. `docs/` keeps only temporary material, task artifacts, user documentation and ADRs; every living spec lives under `openspec/specs/`.
 - BDK's own repository: `.claude/rules/` reduced to what the T31 admission test keeps, the rest imported with `rules import` into `.bdk/rules/` or deleted; `.claude/rules/bdk-generated.md` produced by `rules export --claude`.
 - Release: release-please 3.0.0 for both plugins, marketplace entry with `bdk` and `bdk-craft`, step-by-step migration instructions; breaking change announcement.
 - Decision on the BDK living spec after v3: whether `openspec/specs/` (from this implementation) migrates to `.bdk/specs/` with the mechanism from T30 and whether the BDK repo keeps being run with OpenSpec or with its own `/bdk:change` (a question for the user, not for this task).

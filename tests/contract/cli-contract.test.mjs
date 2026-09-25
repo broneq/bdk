@@ -1,5 +1,7 @@
-// Consistency tests for the kernel CLI contract (docs/CLI-CONTRACT.md and
-// schema/cli/). Runs with `node --test tests/contract/*.test.mjs` (the glob
+// Consistency tests for the kernel CLI contract: the OpenSpec main specs under
+// openspec/specs/kernel-cli/ (cross-cutting rules in spec.md, one spec per
+// command group in <group>/spec.md), openspec/specs/kernel-architecture/ and
+// schema/cli/. Runs with `node --test tests/contract/*.test.mjs` (the glob
 // form works on every Node from 22 on; a bare directory does not on 24); no
 // dependencies beyond node:. T11 folds these checks into the kernel's own test
 // harness and adds JSON Schema validation of the examples with zod.
@@ -11,7 +13,10 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const DOC_PATH = join(ROOT, "docs", "CLI-CONTRACT.md");
+const SPECS_DIR = join(ROOT, "openspec", "specs");
+const CLI_SPEC_DIR = join(SPECS_DIR, "kernel-cli");
+const CORE_SPEC_PATH = join(CLI_SPEC_DIR, "spec.md");
+const ARCH_SPEC_PATH = join(SPECS_DIR, "kernel-architecture", "spec.md");
 const SCHEMA_DIR = join(ROOT, "schema", "cli");
 const INDEX_PATH = join(SCHEMA_DIR, "commands.json");
 const DESIGN_PATH = join(ROOT, "docs", "v3", "2026-09-23-0703-bdk-v3-change-centric-design.md");
@@ -52,18 +57,31 @@ function loadIndex() {
   return index;
 }
 
-function loadDoc() {
-  return read(DOC_PATH);
+function loadCoreSpec() {
+  return read(CORE_SPEC_PATH);
 }
 
-function headingIds(doc) {
-  return [...doc.matchAll(/^#### .*\{#([a-z0-9-]+)\}\s*$/gm)].map((m) => m[1]);
+// The group specs, one per subdirectory of openspec/specs/kernel-cli/.
+function loadGroupSpecs() {
+  const groups = readdirSync(CLI_SPEC_DIR, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+  assert.ok(groups.length > 0, "no group specs under openspec/specs/kernel-cli/");
+  return groups.map((g) => ({ group: g, text: read(join(CLI_SPEC_DIR, g, "spec.md")) }));
 }
 
-function section(doc, number) {
-  const re = new RegExp(`^## ${number}\\. [^\\n]*\\n([\\s\\S]*?)(?=^## \\d+\\. |(?![\\s\\S]))`, "m");
-  const m = doc.match(re);
-  assert.ok(m, `section ${number} not found in the contract document`);
+// One requirement per command: `### Requirement: bdk <argv...>`; the id is the
+// argv joined by "-", the join key to commands.json.
+function commandRequirements(text) {
+  const parts = text.split(/^### Requirement: /m).slice(1);
+  return parts.filter((p) => p.startsWith("bdk ")).map((p) => {
+    const heading = p.split("\n")[0].trim();
+    return { id: heading.slice(4).split(/\s+/).join("-"), heading, body: p };
+  });
+}
+
+function requirement(text, title) {
+  const re = new RegExp(`^### Requirement: ${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\n([\\s\\S]*?)(?=^### Requirement: |(?![\\s\\S]))`, "m");
+  const m = text.match(re);
+  assert.ok(m, `requirement "${title}" not found`);
   return m[1];
 }
 
@@ -202,23 +220,27 @@ test("index: output schemas exist, parse, and their $refs resolve", () => {
   }
 });
 
-test("document: one #### heading with {#id} per command and no extras", () => {
+test("specs: one `### Requirement: bdk ...` per command across the group specs and no extras", () => {
   const index = loadIndex();
-  const docIds = headingIds(loadDoc());
+  const specIds = loadGroupSpecs().flatMap(({ text }) => commandRequirements(text).map((r) => r.id));
   const indexIds = index.commands.map((c) => c.id);
-  assert.deepEqual([...new Set(docIds)].sort(), [...indexIds].sort());
-  assert.equal(docIds.length, new Set(docIds).size, "duplicate heading ids");
+  assert.deepEqual([...new Set(specIds)].sort(), [...indexIds].sort());
+  assert.equal(specIds.length, new Set(specIds).size, "duplicate command requirements");
 });
 
-test("document: every command entry follows the mini-template", () => {
-  const doc = loadDoc();
+test("specs: every command requirement follows the mini-template and has a scenario per declared rule", () => {
   const index = loadIndex();
   const byId = new Map(index.commands.map((c) => [c.id, c]));
-  const parts = doc.split(/^#### /m).slice(1);
-  for (const part of parts) {
-    const id = part.match(/\{#([a-z0-9-]+)\}/)?.[1];
+  for (const { group, text } of loadGroupSpecs()) {
+    assert.match(text, /^## Purpose\s*$/m, `${group}: spec needs a Purpose section`);
+    assert.match(text, /^## Requirements\s*$/m, `${group}: spec needs a Requirements section`);
+  }
+  const parts = loadGroupSpecs().flatMap(({ text }) => commandRequirements(text));
+  for (const { id, body: part } of parts) {
     const c = byId.get(id);
-    assert.ok(c, `entry without index record: ${id}`);
+    assert.ok(c, `requirement without index record: ${id}`);
+    assert.match(part, /^#### Scenario: /m, `${id}: at least one scenario`);
+    for (const r of c.refusals) assert.ok(part.includes(`#### Scenario: ${r}`), `${id}: no scenario for rule ${r}`);
     for (const label of ["Synopsis", "Availability", "Mode", "Arguments", "Output", "Exit codes and rules", "Example", "Owner", "Slice"]) {
       assert.ok(new RegExp(`^(- )?\\*\\*${label}:?\\*\\*`, "m").test(part), `${id}: missing ${label}`);
     }
@@ -231,9 +253,9 @@ test("document: every command entry follows the mini-template", () => {
   }
 });
 
-test("document: every refusal example has exactly the four fields", () => {
-  const doc = loadDoc();
-  const blocks = fencedBlocks(doc, "json refusal");
+test("specs: every refusal example has exactly the four fields", () => {
+  const all = [loadCoreSpec(), ...loadGroupSpecs().map((g) => g.text)].join("\n");
+  const blocks = fencedBlocks(all, "json refusal");
   assert.ok(blocks.length > 0, "no `json refusal` examples found");
   for (const block of blocks) {
     const obj = JSON.parse(block);
@@ -245,24 +267,24 @@ test("document: every refusal example has exactly the four fields", () => {
   }
 });
 
-test("document: refusal rule catalogue covers every rule the index declares", () => {
-  const doc = loadDoc();
+const EXIT_CODES_REQUIREMENT = "Exit codes and the error object";
+
+test("specs: refusal rule catalogue covers every rule the index declares", () => {
   const index = loadIndex();
-  const catalogue = new Set(backticked(section(doc, 4)).filter((s) => RULE_ID.test(s)));
-  for (const r of [...index.base.all, ...index.base.changeScoped]) assert.ok(catalogue.has(r), `common rule ${r} missing from the section 4 catalogue`);
+  const catalogue = new Set(backticked(requirement(loadCoreSpec(), EXIT_CODES_REQUIREMENT)).filter((s) => RULE_ID.test(s)));
+  for (const r of [...index.base.all, ...index.base.changeScoped]) assert.ok(catalogue.has(r), `common rule ${r} missing from the rule catalogue`);
   for (const c of index.commands) {
-    for (const r of c.refusals) assert.ok(catalogue.has(r), `${c.id}: rule ${r} missing from the section 4 catalogue`);
+    for (const r of c.refusals) assert.ok(catalogue.has(r), `${c.id}: rule ${r} missing from the rule catalogue`);
   }
 });
 
-test("document: the catalogue's 'Emitted by' column matches the index for command-specific rules", () => {
-  const doc = loadDoc();
+test("specs: the catalogue's 'Emitted by' column matches the index for command-specific rules", () => {
   const index = loadIndex();
   const byArgv = new Map(index.commands.map((c) => [c.argv.join(" "), c]));
   const declaredBy = new Map();
   for (const c of index.commands) for (const r of c.refusals) declaredBy.set(r, [...(declaredBy.get(r) ?? []), c.argv.join(" ")]);
   const common = new Set([...index.base.all, ...index.base.changeScoped]);
-  for (const row of tableFirstColumn(section(doc, 4), "Rule")) {
+  for (const row of tableFirstColumn(requirement(loadCoreSpec(), EXIT_CODES_REQUIREMENT), "Rule")) {
     const rule = backticked(row[0])[0];
     if (!RULE_ID.test(rule) || common.has(rule)) continue;
     assert.equal(Number(row[1]), EXIT_OF_CLASS[rule.split("/")[0]], `${rule}: exit column must match the class`);
@@ -272,8 +294,8 @@ test("document: the catalogue's 'Emitted by' column matches the index for comman
   }
 });
 
-test("document: wrapper regexes accept the design's form and reject broken forms", () => {
-  const doc = loadDoc();
+test("specs: wrapper regexes accept the design's form and reject broken forms", () => {
+  const doc = loadCoreSpec();
   const [content] = fencedBlocks(doc, "regex content-wrapper");
   const [guard] = fencedBlocks(doc, "regex guard-wrapper");
   assert.ok(content && guard, "both wrapper regex blocks must exist");
@@ -291,18 +313,16 @@ test("document: wrapper regexes accept the design's form and reject broken forms
   assert.ok(!guardRe.test(goodGuard.replace("exit 2", "exit 0")), "guard with exit 0 must not match");
 });
 
-test("document: availability classes used in the index are the four defined ones", () => {
-  const doc = loadDoc();
-  const defined = new Set(tableFirstColumn(section(doc, 6), "Class").flatMap((row) => backticked(row[0])));
+test("specs: availability classes used in the index are the four defined ones", () => {
+  const defined = new Set(tableFirstColumn(requirement(loadCoreSpec(), "Availability classes"), "Class").flatMap((row) => backticked(row[0])));
   assert.deepEqual([...defined].sort(), [...AVAILABILITY].sort());
 });
 
 test("architecture: slices in the index equal the module list, matrix names only known slices", () => {
-  const doc = loadDoc();
-  const arch = section(doc, 9);
+  const arch = read(ARCH_SPEC_PATH);
   const modules = new Set(tableFirstColumn(arch, "Slice").flatMap((row) => backticked(row[0])));
   const inIndex = new Set(loadIndex().commands.map((c) => c.slice));
-  assert.deepEqual([...inIndex].sort(), [...modules].sort(), "slice parity between commands.json and section 9");
+  assert.deepEqual([...inIndex].sort(), [...modules].sort(), "slice parity between commands.json and the kernel-architecture spec");
   const matrix = tableFirstColumn(arch, "From");
   assert.ok(matrix.length > 0, "dependency matrix missing");
   for (const row of matrix) {

@@ -22,6 +22,14 @@ context: |
   Repository conventions live in CLAUDE.md and .claude/rules/. Everything
   written into the repo is in English. Never use the em dash; use "-".
 
+  Where documents live: every living specification of BDK v3 (the kernel CLI
+  contract `kernel-cli` and its `kernel-cli/<group>` specs, the
+  `kernel-architecture` spec, the T14 state spec) is an OpenSpec main spec
+  under openspec/specs/, grown through delta specs and archive. `docs/` holds
+  only temporary material (the v3 plan and design-session archive), task
+  artifacts (HOST-FACTS, evaluations), user documentation and ADRs; never a
+  living spec or product specification.
+
 rules:
   proposal:
     - A change for a roadmap task is named `v3-tnn-<slug>` (tnn is the plan task ID in lowercase, e.g. v3-t01-host-live-checks; OpenSpec rejects capitals). Changes outside the roadmap use a descriptive kebab-case name without the prefix.
@@ -32,7 +40,8 @@ rules:
   specs:
     - Every item in the task's Acceptance signal becomes a Requirement with at least one "#### Scenario:" in WHEN / THEN form.
     - 'A task whose output is only documents or research (no behaviour change) sets `skip_specs: true` instead of inventing requirements.'
-    - 'docs/CLI-CONTRACT.md and schema/cli/ are the spec of record for the kernel CLI. A kernel task edits them in its PR and sets `skip_specs: true` when the contract already carries its acceptance signal; delta specs are for capabilities outside the CLI surface.'
+    - 'A task that changes kernel CLI behaviour writes its delta against the existing main spec: `kernel-cli` for cross-cutting rules, `kernel-cli/<group>` for a command (one `### Requirement: bdk <argv>` per command with the mini-template body and one scenario per declared rule), `kernel-architecture` for the module layout. It edits schema/cli/ in the same PR; tests/contract/ keeps the pair consistent. Never restate a kernel behaviour in a new capability.'
+    - 'A living spec is never written under docs/. docs/ holds temporary material, task artifacts, user documentation and ADRs only.'
   design:
     - Each decision records the alternatives considered and why they lost; cite the register ID when a choice follows from an existing decision.
   tasks:
