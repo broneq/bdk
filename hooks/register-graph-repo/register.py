@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SessionStart hook: register cwd in code-review-graph multi-repo registry.
+"""SessionStart hook: register cwd in code-review-graph and print graph status.
 
 The graph MCP server (`code-review-graph serve`) auto-detects the active
 repo from the cwd of its host process. But the registry that powers
@@ -10,8 +10,13 @@ This hook registers the current cwd on every SessionStart. The CLI is
 idempotent — re-registering an existing path is a no-op — so it is safe
 to run unconditionally.
 
-Silent (exit 0, no output) on success. Prints a one-line warning if the
-CLI is missing or registration fails.
+It then prints `code-review-graph status` (node / edge counts, last
+update, branch) so the session knows how fresh the graph is, or a one-line
+note when no graph exists yet. Status lives here rather than in hooks.json
+so it shares the gating below: an ungated hooks.json line ran in every
+project with the plugin enabled.
+
+Prints a one-line warning if registration fails. Always exits 0.
 
 Skipped silently when:
 - .bdk/settings.json missing (project not configured for BDK)
@@ -64,6 +69,7 @@ def main() -> None:
         result = subprocess.run(
             ["uvx", "code-review-graph", "register", str(project_root), "--alias", alias],
             capture_output=True,
+            check=False,
             text=True,
             timeout=30,
         )
@@ -76,7 +82,29 @@ def main() -> None:
         first_line = stderr[0] if stderr else "unknown error"
         print(f"[BDK] code-review-graph register failed: {first_line}")
 
+    _print_status(project_root)
     sys.exit(0)
+
+
+def _print_status(project_root: Path) -> None:
+    try:
+        result = subprocess.run(
+            ["uvx", "code-review-graph", "status"],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=10,
+            cwd=str(project_root),
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        print(f"[BDK] code-review-graph status: {exc}")
+        return
+
+    if result.returncode == 0:
+        print(result.stdout, end="")
+        return
+    lines = (result.stdout or result.stderr or "").strip().splitlines()
+    print(f"[BDK] code-review-graph status: {lines[0] if lines else 'unknown error'}")
 
 
 if __name__ == "__main__":
