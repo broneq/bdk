@@ -17,7 +17,10 @@ export const frontmatter = defineRule({
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
   check(doc, ctx) {
-    if (doc.frontmatterError) ctx.report({ line: 1, message: doc.frontmatterError });
+    // The YAML error text carries a line and column, so it cannot be the match.
+    if (doc.frontmatterError) {
+      ctx.report({ line: 1, message: doc.frontmatterError, match: "frontmatter" });
+    }
   },
 });
 
@@ -43,6 +46,7 @@ export const nameFormat = defineRule<{ prefix?: string }>({
       ctx.report({
         line,
         message: `\`name\` is ${name.length} characters; the limit is 64`,
+        match: "name-length",
       });
       return;
     }
@@ -124,7 +128,11 @@ export const description = defineRule<{ max?: number }>({
     const length = text.length + (extra?.length ?? 0);
     if (length > max) {
       const what = extra === undefined ? "`description`" : "`description` plus `when_to_use`";
-      ctx.report({ line, message: `${what} is ${length} characters; the limit is ${max}` });
+      ctx.report({
+        line,
+        message: `${what} is ${length} characters; the limit is ${max}`,
+        match: "description-length",
+      });
     }
   },
 });
@@ -152,6 +160,7 @@ export const descriptionFrontLoaded = defineRule<{ trigger: string }>({
       ctx.report({
         line,
         message: `\`description\` has no trigger clause matching ${String(trigger)}`,
+        match: "trigger-clause",
       });
     }
   },

@@ -7586,7 +7586,9 @@ var frontmatter = defineRule({
   kinds: ["skills", "agents"],
   defaultSeverity: "error",
   check(doc, ctx) {
-    if (doc.frontmatterError) ctx.report({ line: 1, message: doc.frontmatterError });
+    if (doc.frontmatterError) {
+      ctx.report({ line: 1, message: doc.frontmatterError, match: "frontmatter" });
+    }
   }
 });
 var nameFormat = defineRule({
@@ -7610,7 +7612,8 @@ var nameFormat = defineRule({
     if (name.length > 64) {
       ctx.report({
         line,
-        message: `\`name\` is ${name.length} characters; the limit is 64`
+        message: `\`name\` is ${name.length} characters; the limit is 64`,
+        match: "name-length"
       });
       return;
     }
@@ -7685,7 +7688,11 @@ var description = defineRule({
     const length = text.length + (extra?.length ?? 0);
     if (length > max) {
       const what = extra === void 0 ? "`description`" : "`description` plus `when_to_use`";
-      ctx.report({ line, message: `${what} is ${length} characters; the limit is ${max}` });
+      ctx.report({
+        line,
+        message: `${what} is ${length} characters; the limit is ${max}`,
+        match: "description-length"
+      });
     }
   }
 });
@@ -7710,7 +7717,8 @@ var descriptionFrontLoaded = defineRule({
     if (!trigger.test(text)) {
       ctx.report({
         line,
-        message: `\`description\` has no trigger clause matching ${String(trigger)}`
+        message: `\`description\` has no trigger clause matching ${String(trigger)}`,
+        match: "trigger-clause"
       });
     }
   }

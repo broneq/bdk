@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Document, Report, Rule } from "../index.ts";
 import { agent, doc, skill } from "../test-helpers.ts";
+import { checkRule } from "../testing.ts";
 import {
   description,
   descriptionFrontLoaded,
@@ -33,7 +34,11 @@ describe("frontmatter", () => {
 
   it("reports the parse error at line 1", () => {
     expect(run(frontmatter, doc("# no frontmatter\n"))).toEqual([
-      { line: 1, message: "the file does not open with a `---` frontmatter block" },
+      {
+        line: 1,
+        message: "the file does not open with a `---` frontmatter block",
+        match: "frontmatter",
+      },
     ]);
   });
 });
@@ -287,5 +292,60 @@ describe("require-model", () => {
     expect(run(requireModel, doc(agent("rev", "model: inherit\n"), { kind: "agents" }))).toEqual(
       [],
     );
+  });
+});
+
+// A baseline entry must survive an edit that leaves the violation in place, so
+// no fingerprint may depend on a count, a position or an option value.
+describe("stable fingerprints", () => {
+  async function fingerprints<O extends object>(
+    rule: Rule<O>,
+    texts: string[],
+    options: Partial<O>[] = [],
+  ): Promise<string[]> {
+    const out: string[] = [];
+    for (const [i, text] of texts.entries()) {
+      const found = await checkRule(rule, {
+        files: { "demo/SKILL.md": text },
+        ...(options[i] === undefined ? {} : { options: options[i] }),
+      });
+      expect(found).toHaveLength(1);
+      out.push(found[0]?.fingerprint ?? "");
+    }
+    return out;
+  }
+
+  it("keeps the name length finding when the length changes", async () => {
+    const [a, b] = await fingerprints(nameFormat, [skill("a".repeat(65)), skill("a".repeat(70))]);
+    expect(a).toBe(b);
+  });
+
+  it("keeps the description length finding when the length changes", async () => {
+    const text = (d: string) => `---\nname: demo\ndescription: ${d}\n---\n\nBody.\n`;
+    const [a, b, c] = await fingerprints(
+      description,
+      [text("Checks a thing."), text("Checks a thing twice."), text("Checks a thing.")],
+      [{ max: 5 }, { max: 5 }, { max: 6 }],
+    );
+    expect(a).toBe(b);
+    expect(a).toBe(c);
+  });
+
+  it("keeps the frontmatter error when its position moves", async () => {
+    const [a, b] = await fingerprints(frontmatter, [
+      "---\na: 1\na: 2\n---\n",
+      "---\nb: 0\na: 1\na: 2\n---\n",
+    ]);
+    expect(a).toBe(b);
+  });
+
+  it("keeps the missing trigger finding when the trigger option changes", async () => {
+    const text = skill("demo").replace("Use when a thing needs checking.", "Checks.");
+    const [a, b] = await fingerprints(
+      descriptionFrontLoaded,
+      [text, text],
+      [{ trigger: "\\bUse when\\b" }, { trigger: "\\bTrigger\\b" }],
+    );
+    expect(a).toBe(b);
   });
 });
