@@ -8,19 +8,6 @@ tools:
   - Read
   - Grep
   - Glob
-  - mcp__plugin_bdk_serena__list_dir
-  - mcp__plugin_bdk_serena__find_file
-  - mcp__plugin_bdk_serena__search_for_pattern
-  - mcp__plugin_bdk_serena__get_symbols_overview
-  - mcp__plugin_bdk_serena__find_symbol
-  - mcp__plugin_bdk_serena__find_referencing_symbols
-  - mcp__plugin_bdk_code-review-graph__refactor_tool
-  - mcp__plugin_bdk_code-review-graph__query_graph_tool
-  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__traverse_graph_tool
-  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
-  - mcp__plugin_bdk_code-review-graph__find_large_functions_tool
-  - mcp__plugin_bdk_code-review-graph__list_flows_tool
 ---
 
 # Dead Code Detector Agent
@@ -38,20 +25,20 @@ Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 A symbol is dead if it has **zero callers in the source tree**:
 
-1. **No references at all** — `find_referencing_symbols` returns nothing
+1. **No references at all** - a `Grep` for the symbol name across the repository finds only its definition
 2. **Test-only usage** — symbol is referenced ONLY from test files (no production callers)
 3. **Unreachable code** — code after unconditional `return`, `raise`, `break`, `continue`, or inside impossible conditions
 
 ## Detection Process
 
-1. Run `refactor_tool(mode="dead_code")` on the target files — primary detection in one call
-2. For each flagged symbol, run `query_graph(pattern="callers_of", node=<symbol>)` to confirm zero production callers
-3. Fall back to `get_symbols_overview` + `find_referencing_symbols` for symbols not covered by graph
+1. List the symbols each target file defines (functions, methods, classes, module-level variables) by reading it
+2. For each symbol, `Grep` its name across the repository with a word boundary (`\bname\b`); also search for dynamic uses (string names, registries, reflection) where the language allows them
+3. Treat a symbol whose only match is its own definition as unreferenced
 
 4. **Classify each reference by path**: production vs test files
 5. Flag symbols where production reference count is zero
 6. Check for unreachable code after early returns
-7. For each dead symbol, use `find_symbol` with `include_body=False` to get line ranges
+7. For each dead symbol, record its line range from the file you read
 
 ## Exclusions (Do NOT flag)
 

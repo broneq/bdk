@@ -9,7 +9,7 @@ allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 # Test-Driven Development
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and tool guidance.
 
 Rigid, gated process. Follow every gate in order. No skipping.
 

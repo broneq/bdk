@@ -16,7 +16,7 @@ hooks:
 
 # Update Docs
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and tool guidance.
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
 
@@ -42,9 +42,9 @@ Do this in main context — no subagent needed. Use regex and string matching.
 
 **Step 2.1 — Discover Current State**
 
-```python
-mcp__plugin_bdk_serena__list_dir(relative_path="<module_root>", recursive=True)
-mcp__plugin_bdk_serena__get_symbols_overview(relative_path="<key_files>")
+```
+Glob(pattern="<module_root>/**")
+Grep(pattern="<definition keyword>", path="<key_files>", output_mode="content", "-n": true)
 ```
 
 Compare actual file list against the doc's file tree. Note added/removed/renamed files immediately.

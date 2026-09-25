@@ -10,12 +10,11 @@ Usage:
     python3 inject.py --if features.react --if languages[typescript] --then react-ts.md
     python3 inject.py --if features.react --then-text "Prefer reducers over useState"
     python3 inject.py --if features.react --then file.md --settings /custom/.bdk/settings.json
-    python3 inject.py --if features.serena --prefer features.code-review-graph --then serena.md
+    python3 inject.py --if features.react --prefer features.vue --then react.md
     python3 inject.py --chain fragments/tool-tiers/search.chain.json
 
 Condition syntax:
     features.react              settings["features"]["react"] is True
-    features.code-review-graph  settings["features"]["code-review-graph"] is True
     languages[typescript]       "typescript" in settings["languages"]
     tool.lavish-axi             an executable named "lavish-axi" is on PATH
 
@@ -166,12 +165,17 @@ def inject_chain(
     chain entry produced content. Paths in chain entries and ``header`` are
     resolved relative to ``chain_path``'s directory.
 
-    Returns empty string when settings is None or no chain entry matched.
+    A missing settings file (``settings is None``) is evaluated as empty
+    settings: conditional entries do not match, unconditional ones render.
+    An unconditional entry is the text for "nothing matched", and a project
+    without settings has matched nothing.
+
+    Returns empty string when no chain entry matched.
     Raises FileNotFoundError if chain_path or referenced files do not exist.
     Raises ValueError for unrecognised mode or missing 'then'.
     """
     if settings is None:
-        return ""
+        settings = {}
 
     chain_path = Path(chain_path)
     if not chain_path.exists():
@@ -263,8 +267,6 @@ def main() -> None:
         settings = (
             load_settings(args.settings_path) if args.settings_path else load_settings()
         )
-        if settings is None:
-            sys.exit(0)
         try:
             result = inject_chain(chain_path=args.chain_path, settings=settings)
         except (FileNotFoundError, ValueError) as e:

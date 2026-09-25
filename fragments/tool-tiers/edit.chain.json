@@ -1,8 +1,6 @@
 {
-  "mode": "additive",
+  "mode": "exclusive",
   "chain": [
-    { "if": ["features.code-review-graph"], "then": "edit-graph.md" },
-    { "if": ["features.serena"], "then": "edit-serena.md" },
-    { "prefer": ["features.code-review-graph", "features.serena"], "then": "edit-fallback.md" }
+    { "then": "edit-fallback.md" }
   ]
 }

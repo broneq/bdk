@@ -16,7 +16,7 @@ disallowed-tools: AskUserQuestion
 
 # Subagent-Execute-Plan (Coordinator)
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and tool guidance.
 
 This skill is a **coordinator only**. It holds plan state, builds an execution schedule, and dispatches subagents. It never edits files, never runs tests, never reads source code. Subagents do all work.
 

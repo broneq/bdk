@@ -31,9 +31,9 @@ bdk/
 │       └── ...
 ```
 
-**Use when:** Fragment content is injected into multiple skills (e.g., graph tool steps, setup instructions, reusable checklists).
+**Use when:** Fragment content is injected into multiple skills (e.g., decision-routing steps, setup instructions, reusable checklists).
 
-**Naming:** Capability directory = feature key verbatim (e.g., `code-review-graph/`, `embeddings/`).
+**Naming:** Capability directory names the capability the fragments serve (e.g., `decision-tier/`, `tool-tiers/`).
 
 ### Skill-local fragments
 
@@ -57,14 +57,14 @@ bdk/
 
 | Fragment scope | Directory | Reference style | Example |
 |---|---|---|---|
-| Shared (>1 skill) | `fragments/<capability>/` | `${CLAUDE_PLUGIN_ROOT}/fragments/...` | graph steps, setup guides |
+| Shared (>1 skill) | `fragments/<capability>/` | `${CLAUDE_PLUGIN_ROOT}/fragments/...` | decision routing, setup guides |
 | Skill-local (1 skill) | `skills/<name>/fragments/` | `${CLAUDE_SKILL_DIR}/fragments/...` | React checklist in `cr` skill |
 
 ## Inject call syntax
 
 ### Shared fragment
 ```markdown
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.code-review-graph --then ${CLAUDE_PLUGIN_ROOT}/fragments/code-review-graph/step1-scope.md`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then ${CLAUDE_PLUGIN_ROOT}/fragments/decision-tier/lavish.md`
 ```
 
 ### Skill-local fragment
@@ -90,11 +90,11 @@ Place inject calls **immediately before** the section they augment — not clust
 
 **Example:**
 ```markdown
-### Code Review Approach
+### Decision points
 
-Start with architecture and impact radius...
+Bundle the open questions for the user...
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.code-review-graph --then ${CLAUDE_PLUGIN_ROOT}/fragments/code-review-graph/step1-scope.md`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then ${CLAUDE_PLUGIN_ROOT}/fragments/decision-tier/lavish.md`
 
 ### When to use this skill
 ```

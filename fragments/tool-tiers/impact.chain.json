@@ -1,7 +1,6 @@
 {
   "mode": "exclusive",
   "chain": [
-    { "if": ["features.code-review-graph"], "then": "impact-graph.md" },
     { "then": "impact-fallback.md" }
   ]
 }

@@ -10,28 +10,22 @@ Fragments are Markdown files injected at skill load time based on `.bdk/settings
 
 ```
 fragments/
-  tool-tiers/          ← shared, multi-skill
+  tool-tiers/          <- shared, multi-skill
     search.chain.json
-    search-graph.md
-    search-serena.md
     search-fallback.md
     edit.chain.json
-    edit-graph.md
-    edit-serena.md
+    edit-fallback.md
     impact.chain.json
-    impact-graph.md
     impact-fallback.md
     review.chain.json
-    review-graph.md
     review-fallback.md
     explore.chain.json
-    explore-graph.md
-    explore-serena.md
-  <capability>/        ← other shared fragment groups
+    explore-fallback.md
+  <capability>/        <- other shared fragment groups
     step1-*.md
 
 skills/<skill-name>/
-  fragments/           ← skill-local conditional fragments
+  fragments/           <- skill-local conditional fragments
     react.md
     typescript-strict.md
 ```
@@ -42,52 +36,46 @@ skills/<skill-name>/
 {
   "mode": "exclusive",
   "chain": [
-    { "if": ["features.code-review-graph"], "then": "search-graph.md" },
-    { "if": ["features.serena"], "then": "search-serena.md" },
-    { "then": "search-fallback.md" }
+    { "if": ["features.react", "languages[typescript]"], "then": "react-ts.md" },
+    { "if": ["features.react"], "then": "react.md" },
+    { "then": "plain.md" }
   ]
 }
 ```
 
 - `mode`: `"exclusive"` or `"additive"`
 - `chain`: array of entries, each with optional `"if"` (AND conditions), optional `"prefer"` (OR conditions that **suppress** the entry), and required `"then"` (path relative to chain file)
-- Entry without `"if"` is an unconditional fallback
+- Entry without `"if"` is an unconditional fallback. It renders even when the project has no `.bdk/settings.json`; conditional entries need settings to match.
 
-**In an `additive` chain, a fallback must guard itself with `prefer`.** Additive mode injects *every* matching entry, so a bare unconditional fallback stacks on top of the higher tiers instead of replacing them - the reader gets the graph tools and the grep tools, with contradictory policy rules, and nothing errors. List every tier the fallback defers to:
+**In an `additive` chain, a fallback must guard itself with `prefer`.** Additive mode injects *every* matching entry, so a bare unconditional fallback stacks on top of the entries it was meant to replace - the reader gets both texts, with contradictory rules, and nothing errors. List every entry the fallback defers to:
 
 ```json
-{ "prefer": ["features.code-review-graph", "features.serena"], "then": "explore-fallback.md" }
+{ "prefer": ["features.react", "features.vue"], "then": "plain.md" }
 ```
 
-`exclusive` chains do not need this: they break on the first match, so a bare fallback is only reached when nothing above it matched. `tests/unit/fragments/test_tier_chain_render.py` enforces both halves - every chain renders a tier with all features off, and no additive chain emits its fallback when a higher tier matched.
+`exclusive` chains do not need this: they break on the first match, so a bare fallback is only reached when nothing above it matched. `tests/unit/fragments/test_tier_chain_render.py` enforces the additive half on every chain in `fragments/tool-tiers/`.
 
-Each tier fragment is self-contained: it carries its own tool list AND the policy rules governing those tools. There is no shared header file.
+Each fragment is self-contained: it carries its own tool list AND the policy rules governing those tools. There is no shared header file.
 
 ## Modes
 
 | Mode | Behaviour | Use when |
 |------|-----------|----------|
-| `exclusive` | Inject first matching entry only | Fallback tiers (codegraph → serena → grep) |
-| `additive` | Inject all matching entries | Complementary tools (both useful together) |
+| `exclusive` | Inject first matching entry only | Variants that replace each other (framework-specific text, plain fallback) |
+| `additive` | Inject all matching entries | Complementary fragments (both useful together) |
 
 ## Tool-Tier Chains
 
-| Chain | Mode | Reason |
-|-------|------|--------|
-| `search.chain.json` | exclusive | Redundant to use both codegraph and grep |
-| `edit.chain.json` | additive | Impact analysis + structural editing are complementary |
-| `impact.chain.json` | exclusive | Codegraph wins; Serena has no impact analysis |
-| `review.chain.json` | exclusive | Codegraph first; grep fallback |
-| `explore.chain.json` | additive | Architecture overview + symbol detail = complementary |
+Since ADR-0001 the plugin ships no MCP server, so each of the five tool-tier chains (`search`, `explore`, `impact`, `edit`, `review`) holds one unconditional entry naming built-in tools only. The chains stay chains so `render_startup.py`, `inject.py --chain` and the `bdk-tier-*` meta-skills keep one delivery path; `tests/unit/fragments/test_tier_chain_render.py` asserts the rendered text does not change with `features`.
 
 ## When to Use `--chain` vs `--if`/`--prefer`
 
 | Situation | Use |
 |-----------|-----|
-| Fallback tier system | `--chain` with `exclusive` |
-| Complementary tools | `--chain` with `additive` |
+| Variants that replace each other | `--chain` with `exclusive` |
+| Complementary fragments | `--chain` with `additive` |
 | Simple one-off conditional | `--if` / `--prefer` inline |
-| Suppress block when better tool available | `--prefer` inline, or a `"prefer"` key on a chain entry |
+| Suppress block when a better variant applies | `--prefer` inline, or a `"prefer"` key on a chain entry |
 
 ## Agents vs Skills
 

@@ -12,13 +12,9 @@ Skills are thin workflow definitions. Environment discovery is handled by `START
 - New skills automatically inherit all rules
 - Changes to conventions require editing one file, not 13
 
-### MCP Tool Preference (Tier System)
+### Built-in Tools Only
 
-All BDK skills follow this tier system for codebase exploration:
-
-- **Tier 1:** CodeGraph — symbol search, callers/callees, impact analysis
-- **Tier 2:** Serena — AST-level analysis, referencing symbols
-- **Tier 3:** Grep/Glob/Read — always available fallback
+BDK ships no MCP server (see `docs/adr/0001-remove-bundled-mcp-servers.md`). Skills and agents explore code with the host's built-in tools: `Grep`, `Glob` and `Read` in subagents, and `Bash` with `rg`, `grep`, `find` or `git` where a session has no `Grep` / `Glob`. The tool guidance lives in the `fragments/tool-tiers/` chains, one text per purpose.
 
 ### Skill Authoring Convention
 
@@ -34,7 +30,6 @@ Every BDK skill:
 
 - Claude Code CLI installed
 - A separate test project to install BDK into (any language/stack)
-- (Optional) Serena and CodeGraph MCP servers — see `.mcp.json`
 
 ## Workflow
 
@@ -113,7 +108,7 @@ Fragments are conditional Markdown files injected into skills at load time.
 ### Creating a Leaf Fragment
 
 1. Decide scope: shared (`fragments/<capability>/`) or skill-local (`skills/<name>/fragments/`)
-2. Name the file after the tool tier or feature it teaches (e.g. `search-serena.md`)
+2. Name the file after the purpose or feature it teaches (e.g. `search-fallback.md`, `react.md`)
 3. Write content that teaches Claude WHEN and HOW to use the tools — not just a tool list
 4. Keep content under 10 lines; longer content should be split into multiple fragments
 
@@ -130,9 +125,9 @@ Fragments are conditional Markdown files injected into skills at load time.
 {
   "mode": "exclusive",
   "chain": [
-    { "if": ["features.code-review-graph"], "then": "search-graph.md" },
-    { "if": ["features.serena"], "then": "search-serena.md" },
-    { "then": "search-fallback.md" }
+    { "if": ["features.react"], "then": "components-react.md" },
+    { "if": ["features.vue"], "then": "components-vue.md" },
+    { "then": "components-plain.md" }
   ]
 }
 ```
@@ -146,10 +141,9 @@ Fragments are conditional Markdown files injected into skills at load time.
 ### Naming Conventions
 
 - Chain files: `<purpose>.chain.json`
-- Leaf files: `<purpose>-<tier>.md` (e.g. `search-graph.md`, `search-serena.md`, `search-fallback.md`)
-- Tier names: `graph`, `serena`, `fallback`
+- Leaf files: `<purpose>-<variant>.md` (e.g. `components-react.md`, `components-plain.md`)
+- The tool-tier chains hold one entry each, `<purpose>-fallback.md`; the name stays so a future tier can be added without renaming consumers
 
 ### When NOT to Use Chains
 
-- **Graph-only skills**: a skill that requires code-review-graph by design has no lower tier to fall back to; no chain migration applies
 - **Agents**: static markdown, no shell execution at load time; preload a `bdk-tier-*` meta-skill via `skills:` frontmatter instead

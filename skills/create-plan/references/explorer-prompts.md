@@ -11,9 +11,9 @@ Each explorer answers one **question dimension**. Pick the agents whose question
 ```
 Feature: {feature}
 
-You are an explorer subagent. Use BDK tool tiers (code-review-graph → Serena → Grep) — your skills frontmatter has loaded the tier guidance.
+You are an explorer subagent. Use the tool guidance your skills frontmatter has loaded (built-in `Grep`, `Glob`, `Read`).
 
-Start with `get_minimal_context(task="{feature}")` for a quick snapshot, then dive deeper with the tools relevant to your question.
+Start with the directory shape of the area the feature names, then search for the concepts your question needs.
 
 Return STRICTLY this JSON (empty arrays allowed, never omit a key):
 
@@ -53,8 +53,8 @@ Question: what code already exists that this feature can reuse or build on?
 Question: what does this feature touch, and what depends on it?
 
 1. Identify which modules/layers the feature touches
-2. Find existing components needing changes (use query_graph callers_of/callees_of, get_impact_radius)
-3. Trace dependencies and named execution flows (get_affected_flows)
+2. Find existing components needing changes (search each touched symbol's callers and callees)
+3. Trace dependencies from each touched symbol back to its entry points
 4. Surface architectural constraints in `notes`
 ```
 
@@ -70,7 +70,7 @@ Question: what does this feature touch, and what depends on it?
 Question: how have similar features been implemented before?
 
 1. Search for features with similar purpose or structure
-2. Use get_review_context(node=<symbol>) to read implementation token-efficiently
+2. Read the matching implementation, sampling with line-numbered search before reading whole files
 3. Identify error-handling, validation, and test patterns
 4. Note 1-2 concrete reference implementations in `notes`
 ```

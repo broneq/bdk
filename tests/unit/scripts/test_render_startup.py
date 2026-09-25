@@ -50,21 +50,21 @@ def _run_cli(cwd: Path, source: Path | None = None) -> subprocess.CompletedProce
 # ---------------------------------------------------------------------------
 
 
-def test_render_substitutes_chain_marker_when_feature_enabled(tmp_path):
+def test_render_substitutes_chain_marker(tmp_path):
     src = tmp_path / "STARTUP.md"
     src.write_text("Header.\n<!-- CHAIN: explore.chain.json -->\nFooter.\n")
-    settings = {"features": {"code-review-graph": True}}
 
-    out = render(src, settings)
+    out = render(src, {"features": {}})
 
     assert "<!-- CHAIN:" not in out
     assert "Header." in out
     assert "Footer." in out
-    # explore-graph fragment should have been emitted
     assert len(out) > len("Header.\n\nFooter.\n")
 
 
-def test_render_with_no_settings_emits_prose_only(tmp_path):
+def test_render_with_no_settings_still_emits_tier_text(tmp_path):
+    """A project without .bdk/settings.json gets the same tier guidance:
+    the tier chains are unconditional (ADR-0001)."""
     src = tmp_path / "STARTUP.md"
     src.write_text("Prose.\n<!-- CHAIN: explore.chain.json -->\nMore prose.\n")
 
@@ -73,24 +73,14 @@ def test_render_with_no_settings_emits_prose_only(tmp_path):
     assert "<!-- CHAIN:" not in out
     assert "Prose." in out
     assert "More prose." in out
-
-
-def test_render_empty_features_emits_fallback_when_chain_has_one(tmp_path):
-    src = tmp_path / "STARTUP.md"
-    src.write_text("<!-- CHAIN: explore.chain.json -->\n")
-    settings = {"features": {}}
-
-    out = render(src, settings)
-
-    # explore.chain.json is additive; with no features true, output is empty
-    assert "<!-- CHAIN:" not in out
+    assert out == render(src, {"features": {}})
 
 
 def test_render_unknown_chain_file_emits_empty_and_warns(tmp_path, capsys):
     src = tmp_path / "STARTUP.md"
     src.write_text("Before.\n<!-- CHAIN: does-not-exist.chain.json -->\nAfter.\n")
 
-    out = render(src, settings={"features": {"code-review-graph": True}})
+    out = render(src, settings={"features": {}})
 
     assert "<!-- CHAIN:" not in out
     assert "Before." in out
@@ -113,7 +103,7 @@ def test_render_preserves_text_with_no_markers(tmp_path):
 
 
 def test_cli_renders_with_settings_in_cwd(tmp_path):
-    _write_settings(tmp_path, {"features": {"code-review-graph": True}})
+    _write_settings(tmp_path, {"features": {}})
     src = tmp_path / "STARTUP.md"
     src.write_text("X\n<!-- CHAIN: search.chain.json -->\nY\n")
 
@@ -145,35 +135,45 @@ def test_cli_missing_source_exits_nonzero(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Tier-rewrite regression — orchestrator codepath (Task 11)
+# Orchestrator tier guidance
 # ---------------------------------------------------------------------------
 #
 # Subagents read tier guidance through `bdk-tier-*` preload skills (covered
 # by tests/unit/fragments/test_tier_chain_render.py). The orchestrator gets
-# tier guidance through this script resolving `<!-- CHAIN: ... -->` markers
-# in STARTUP_INSTRUCTIONS.md — a separate codepath that must also land the
-# rewrite content.
+# it through this script resolving the markers in STARTUP_INSTRUCTIONS.md.
+
+# The heading each tier fragment opens with.
+TIER_HEADINGS = (
+    "**Codebase Exploration",
+    "**Search",
+    "**Impact Analysis",
+)
 
 
-def test_renders_new_tier_steps_in_orchestrator_startup():
-    """The real STARTUP_INSTRUCTIONS.md rendered with graph enabled must carry
-    tier-policy content, not just the tool menus. Guards the orchestrator
-    delivery path.
+def _tier_sections(text: str) -> dict[str, str]:
+    """Body under each tier heading, up to the next heading of any kind."""
+    sections = {}
+    for heading in TIER_HEADINGS:
+        start = text.index(heading) + len(heading)
+        rest = text[start:]
+        ends = [rest.find(h) for h in (*TIER_HEADINGS, "\n## ") if rest.find(h) != -1]
+        sections[heading] = rest[: min(ends)] if ends else rest
+    return sections
 
-    Asserted on the vocabulary the fragments actually use (see
-    tests/unit/fragments/test_tier_graph_fragments.py for the same three
-    policy checks applied per fragment): a coverage check, a per-question
-    call cap, and a negative-result rule.
-    """
-    settings = {"features": {"code-review-graph": True, "serena": True}}
-    out = render(PLUGIN_ROOT / "STARTUP_INSTRUCTIONS.md", settings)
 
-    assert "list_graph_stats_tool" in out or "coverage" in out, (
-        "orchestrator STARTUP render missing coverage-check reference"
-    )
-    assert "calls per question" in out or "Budget" in out, (
-        "orchestrator STARTUP render missing call-cap phrase"
-    )
-    assert "absent" in out or "no impact" in out, (
-        "orchestrator STARTUP render missing negative-result rule"
-    )
+def test_startup_tier_sections_carry_built_in_tools_text():
+    out = render(PLUGIN_ROOT / "STARTUP_INSTRUCTIONS.md", {"features": {}})
+    for heading, body in _tier_sections(out).items():
+        assert body.strip(), f"{heading} section rendered empty"
+        assert "Grep" in body or "grep" in body, f"{heading} names no search tool"
+        assert "mcp__" not in body and "_tool" not in body, f"{heading} names an MCP tool"
+
+
+def test_startup_render_is_independent_of_features_and_settings():
+    source = PLUGIN_ROOT / "STARTUP_INSTRUCTIONS.md"
+    plain = render(source, {"features": {}})
+    schema = PLUGIN_ROOT / "hooks" / "check-bdk-config" / "settings.schema.json"
+    declared = json.loads(schema.read_text())["properties"]["features"]["properties"]
+    all_on = {"features": {**{k: True for k in declared}, "retired-server": True}}
+    assert render(source, all_on) == plain
+    assert render(source, None) == plain

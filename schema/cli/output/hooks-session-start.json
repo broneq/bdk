@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-session-start.json",
   "title": "bdk hooks session-start --json",
-  "description": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh, graph registration.",
+  "description": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh.",
   "type": "object",
   "additionalProperties": false,
   "required": [

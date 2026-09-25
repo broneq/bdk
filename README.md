@@ -19,6 +19,16 @@ A personal Claude Code plugin packaging reusable dev workflows, skills, agents, 
    /plugin install bdk@bdk
    ```
 
+### Code tools
+
+BDK ships no MCP server and starts no background process. Skills and agents explore, search and trace code with Claude Code's built-in tools (`Grep`, `Glob`, `Read`, `Bash`), so nothing beyond Claude Code needs installing. The reasoning is in `docs/adr/0001-remove-bundled-mcp-servers.md`.
+
+If you want a semantic code-navigation or code-graph MCP server, configure it yourself at user or project level with `claude mcp add`. BDK neither depends on it nor tells its agents to call it.
+
+### Feature flags
+
+`.bdk/settings.json` `features` accepts `caveman` (terse replies) and `lavish` (decision points in the browser through `lavish-axi`). A key BDK does not declare, including the MCP flags earlier versions wrote, is ignored: the session start shows one warning line naming it and never blocks.
+
 ---
 
 ## Skills
@@ -103,7 +113,7 @@ Used by skills internally (invoke via `subagent_type`):
 | `code-reviewer` | sonnet | Layer-group deep code review |
 | `implementer` | sonnet | End-to-end task implementation (TDD, lint, commit) — used by `/bdk:subagent-execute-plan` |
 | `fixer` | sonnet | Apply specific findings (review, lint, test failures) — used by `/bdk:subagent-execute-plan` |
-| `explorer` | haiku | Fast codebase exploration (CodeGraph → Serena → Grep) |
+| `explorer` | haiku | Fast read-only codebase exploration with the built-in tools |
 | `test-runner` | haiku | Run tests, parse and report results |
 | `dead-code-detector` | haiku | Find unreachable/unused code |
 | `duplicate-detector` | haiku | Find code duplication |

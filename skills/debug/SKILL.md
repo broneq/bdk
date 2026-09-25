@@ -13,7 +13,7 @@ allowed-tools: AskUserQuestion Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 # Debug
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and tool guidance.
 
 Diagnose bugs via structured investigation, reproduce with failing tests, then fix or plan.
 

@@ -2098,7 +2098,7 @@
         "hooks",
         "session-start"
       ],
-      "summary": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh, graph registration.",
+      "summary": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh.",
       "availability": "hook",
       "mode": "inject",
       "slice": "hooks",

@@ -10,7 +10,7 @@ disallowed-tools: Edit NotebookEdit
 
 # Dynamic Code Review Orchestrator
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and tool guidance.
 
 Determine what changed, dispatch specialized reviewers in parallel, merge their findings into one report.
 

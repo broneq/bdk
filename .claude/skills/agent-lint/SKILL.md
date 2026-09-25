@@ -80,7 +80,8 @@ If agent in plugin's `agents/` directory (not `.claude/agents/` or `~/.claude/ag
 
 ### 11. `tools` field format
 If `tools:` present: must be string or YAML list of known tool names.
-- Valid: `Bash`, `Read`, `Write`, `Edit`, `Glob`, `Grep`, `WebFetch`, `WebSearch`, `Agent`, `mcp__*`, `Agent(name)` syntax
+- Valid: `Bash`, `Read`, `Write`, `Edit`, `Glob`, `Grep`, `WebFetch`, `WebSearch`, `Agent`, `Agent(name)` syntax
+- FAIL on any `mcp__*` entry in a plugin agent: BDK ships no MCP server (ADR-0001), and a tool the session does not have is dropped silently. `tests/unit/test_no_mcp_names.py` enforces this for plugin-namespaced names
 - WARN on non-standard tool names
 - PASS if absent (agent inherits default toolset)
 - NOTE: `disallowedTools` can be used alongside or instead of `tools`

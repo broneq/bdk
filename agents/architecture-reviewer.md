@@ -12,26 +12,6 @@ tools:
   - Read
   - Grep
   - Glob
-  - mcp__plugin_bdk_serena__list_dir
-  - mcp__plugin_bdk_serena__find_file
-  - mcp__plugin_bdk_serena__search_for_pattern
-  - mcp__plugin_bdk_serena__get_symbols_overview
-  - mcp__plugin_bdk_serena__find_symbol
-  - mcp__plugin_bdk_serena__find_referencing_symbols
-  - mcp__plugin_bdk_serena__read_memory
-  - mcp__plugin_bdk_serena__list_memories
-  - mcp__plugin_bdk_code-review-graph__get_architecture_overview_tool
-  - mcp__plugin_bdk_code-review-graph__list_communities_tool
-  - mcp__plugin_bdk_code-review-graph__semantic_search_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__get_hub_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__get_surprising_connections_tool
-  - mcp__plugin_bdk_code-review-graph__query_graph_tool
-  - mcp__plugin_bdk_code-review-graph__get_impact_radius_tool
-  - mcp__plugin_bdk_code-review-graph__get_affected_flows_tool
-  - mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool
-  - mcp__plugin_bdk_code-review-graph__list_graph_stats_tool
-  - mcp__plugin_bdk_code-review-graph__list_flows_tool
-  - mcp__plugin_bdk_code-review-graph__get_flow_tool
 ---
 
 # Architecture Reviewer Agent
@@ -78,12 +58,12 @@ Read project context (CLAUDE.md, .claude/rules/architecture.md if present) for p
 
 ## Process
 
-1. Run `get_architecture_overview(detail_level="minimal")` — establish community map before reading any file
-2. Run `get_surprising_connections_tool` — auto-detect cross-community coupling that may indicate layer violations
-3. Read project architectural rules from CLAUDE.md and .claude/rules/ if present
-4. Examine directory structure of changed files
-5. For each changed file, get symbols overview
-6. Use `query_graph(pattern="importers_of", node=<file>)` to trace import directions; fall back to `find_referencing_symbols` if graph unavailable
+1. Map the module layout with `Glob` over the source tree before reading any file - directory names are the first layer map
+2. Read project architectural rules from CLAUDE.md and .claude/rules/ if present
+3. Examine directory structure of changed files
+4. For each changed file, read its imports and top-level declarations
+5. Trace import directions with `Grep` for each changed module's import path across the source tree - who imports it, and what it imports
+6. Look for cross-layer coupling: imports that point from a lower layer into a higher one, or between modules that the directory layout keeps apart
 7. Check for architectural violations against project rules (or general best practices)
 8. Trace data flow through new/modified symbols
 

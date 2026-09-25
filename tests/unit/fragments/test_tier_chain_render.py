@@ -5,13 +5,15 @@ run `inject.py --chain` at preload time. The rendered string is what
 the subagent sees — a regression in `inject.py`, the chain JSON, or a
 tier fragment would silently break the prompt rewrite.
 
-These tests render each chain against synthetic settings and assert the
-policy content lands end-to-end.
+Since ADR-0001 the plugin ships no MCP server, so every chain renders one
+built-in-tools text, whatever `features` a project sets.
 """
 
 from __future__ import annotations
 
 import importlib.util
+import json
+import re
 from pathlib import Path
 
 import pytest
@@ -31,99 +33,64 @@ def _load_inject():
 inject_mod = _load_inject()
 inject_chain = inject_mod.inject_chain
 
-
-# Each chain must inject coverage / budget / negative-result content
-# AND a fragment-specific tool name that proves the menu fragment was pulled in.
-CHAIN_EXPECTATIONS = [
-    ("explore.chain.json", "list_communities_tool"),
-    ("search.chain.json", "semantic_search_nodes"),
-    ("impact.chain.json", "get_impact_radius_tool"),
-    ("review.chain.json", "detect_changes_tool"),
-    ("edit.chain.json", "get_impact_radius_tool"),
-]
-
-
-@pytest.mark.parametrize("chain_name,fragment_marker", CHAIN_EXPECTATIONS)
-def test_chain_renders_policy_with_graph_enabled(
-    chain_name: str, fragment_marker: str
-) -> None:
-    settings = {"features": {"code-review-graph": True, "serena": True}}
-    out = inject_chain(CHAINS_DIR / chain_name, settings=settings)
-
-    assert "coverage" in out or "list_graph_stats_tool" in out, (
-        f"{chain_name}: rendered chain missing coverage check reference"
-    )
-    assert "Budget" in out or "calls per question" in out or "max 2" in out, (
-        f"{chain_name}: rendered chain missing call budget phrase"
-    )
-    # Per-tier vocabulary for the same rule — see test_tier_graph_fragments.py.
-    assert (
-        "absent" in out
-        or "Stop" in out
-        or "no impact" in out
-        or "isolated change" in out
-        or "mechanical change" in out
-    ), f"{chain_name}: rendered chain missing negative-result rule"
-    assert fragment_marker in out, (
-        f"{chain_name}: menu fragment marker {fragment_marker!r} missing"
-    )
-
-
 ALL_CHAINS = sorted(p.name for p in CHAINS_DIR.glob("*.chain.json"))
 
+NO_FEATURES = {"features": {}}
+# Every declared feature on, plus a key the schema no longer declares (a
+# project that still sets one of the flags ADR-0001 removed). Either way the
+# guidance must not change.
+SCHEMA_PATH = REPO_ROOT / "hooks" / "check-bdk-config" / "settings.schema.json"
+_DECLARED = json.loads(SCHEMA_PATH.read_text())["properties"]["features"]["properties"]
+ALL_FEATURES_ON = {"features": {**{k: True for k in _DECLARED}, "retired-server": True}}
+
+MCP_TOOL_NAME = re.compile(r"mcp__\w+|_tool\b")
+
+
+def test_all_five_chains_exist() -> None:
+    assert ALL_CHAINS == [
+        "edit.chain.json",
+        "explore.chain.json",
+        "impact.chain.json",
+        "review.chain.json",
+        "search.chain.json",
+    ]
+
 
 @pytest.mark.parametrize("chain_name", ALL_CHAINS)
-def test_chain_renders_a_tier_with_no_features(chain_name: str) -> None:
-    """Every chain must still name usable tools when no feature is enabled.
+def test_chain_renders_built_in_tools_with_no_features(chain_name: str) -> None:
+    """An empty render leaves the consumer with no tool guidance, silently."""
+    out = inject_chain(CHAINS_DIR / chain_name, settings=NO_FEATURES)
+    assert out.strip(), f"{chain_name} rendered empty"
+    for tool in ("Grep", "Read", "Bash"):
+        assert tool in out, f"{chain_name} does not name {tool}"
+    assert not MCP_TOOL_NAME.search(out), f"{chain_name} names an MCP tool"
 
-    A chain that renders empty leaves the consuming skill or agent with no
-    tool guidance at all — the failure is invisible, because an empty
-    injection looks exactly like a skill that never asked for one.
-    """
-    settings = {"features": {"code-review-graph": False, "serena": False}}
-    out = inject_chain(CHAINS_DIR / chain_name, settings=settings)
-    assert out.strip(), f"{chain_name} rendered empty with all features off"
-    assert "Tier 3" in out, (
-        f"{chain_name} fallback must identify itself as the Tier 3 tier"
+
+@pytest.mark.parametrize("chain_name", ALL_CHAINS)
+def test_chain_text_is_independent_of_features(chain_name: str) -> None:
+    plain = inject_chain(CHAINS_DIR / chain_name, settings=NO_FEATURES)
+    flagged = inject_chain(CHAINS_DIR / chain_name, settings=ALL_FEATURES_ON)
+    assert plain == flagged, f"{chain_name} output changes with features"
+
+
+@pytest.mark.parametrize("chain_name", ALL_CHAINS)
+def test_chain_text_does_not_describe_other_tiers(chain_name: str) -> None:
+    out = inject_chain(CHAINS_DIR / chain_name, settings=NO_FEATURES)
+    assert not re.search(r"\bTier \d\b|at this tier", out), (
+        f"{chain_name} still describes itself as one tier among several"
     )
 
 
 @pytest.mark.parametrize("chain_name", ALL_CHAINS)
-def test_additive_chain_suppresses_fallback_when_a_tier_matches(
-    chain_name: str,
-) -> None:
-    """The fallback tier must not stack on top of a higher tier."""
-    settings = {"features": {"code-review-graph": True, "serena": True}}
-    out = inject_chain(CHAINS_DIR / chain_name, settings=settings)
-    assert "Tier 3" not in out, (
-        f"{chain_name} injected its Tier 3 fallback alongside a higher tier"
-    )
-
-
-def test_edit_chain_contains_additive_and_impact_and_structural() -> None:
-    """edit-graph.md must carry both 'impact' and 'structural' and 'additive'."""
-    settings = {"features": {"code-review-graph": True, "serena": False}}
-    out = inject_chain(CHAINS_DIR / "edit.chain.json", settings=settings)
-    assert "impact" in out, "edit chain missing 'impact' wording"
-    assert "structural" in out or "Structural" in out, "edit chain missing 'structural' wording"
-    assert "additive" in out or "Additive" in out, "edit chain missing 'additive' wording"
-
-
-def test_impact_chain_leads_with_impact_radius() -> None:
-    """impact-graph.md must lead with get_impact_radius_tool."""
-    settings = {"features": {"code-review-graph": True}}
-    out = inject_chain(CHAINS_DIR / "impact.chain.json", settings=settings)
-    impact_pos = out.find("get_impact_radius_tool")
-    flows_pos = out.find("get_affected_flows_tool")
-    assert impact_pos != -1, "impact chain missing get_impact_radius_tool"
-    assert impact_pos < flows_pos, "get_impact_radius_tool must appear before get_affected_flows_tool"
-
-
-def test_review_chain_leads_with_detect_changes() -> None:
-    """review-graph.md must lead with detect_changes_tool."""
-    settings = {"features": {"code-review-graph": True}}
-    out = inject_chain(CHAINS_DIR / "review.chain.json", settings=settings)
-    detect_pos = out.find("detect_changes_tool")
-    context_pos = out.find("get_review_context_tool")
-    assert detect_pos != -1, "review chain missing detect_changes_tool"
-    assert detect_pos < context_pos, "detect_changes_tool must appear before get_review_context_tool"
+def test_additive_chain_fallbacks_guard_with_prefer(chain_name: str) -> None:
+    """`.claude/rules/fragment-system.md`: in an additive chain a bare
+    unconditional entry stacks on top of every matching tier, so it must
+    carry `prefer`."""
+    config = json.loads((CHAINS_DIR / chain_name).read_text(encoding="utf-8"))
+    if config["mode"] != "additive":
+        return
+    for entry in config["chain"]:
+        if "if" not in entry:
+            assert entry.get("prefer"), (
+                f"{chain_name}: unconditional entry {entry['then']} lacks prefer"
+            )

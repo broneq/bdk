@@ -2,19 +2,13 @@
 
 This file is injected into every session via SessionStart hook. It defines the BDK contract inherited by all skills.
 
-## Tool Tier System
+## Tool Guidance
 
-When exploring, searching, editing, or reviewing code, use the best available tool tier. The instructions below are injected based on your project's enabled features.
-
-**Exploration & Architecture:**
+BDK ships no MCP server; explore, search and trace code with the host's built-in tools. Subagents use `Grep`, `Glob` and `Read`; where a session has no `Grep` / `Glob`, the same searches run through `Bash` (`rg`, `grep`, `find`, `git`).
 
 <!-- CHAIN: explore.chain.json -->
 
-**Symbol Search & Tracing:**
-
 <!-- CHAIN: search.chain.json -->
-
-**Impact Analysis:**
 
 <!-- CHAIN: impact.chain.json -->
 
