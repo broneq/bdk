@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/config-show.json",
+  "title": "bdk config show --json",
+  "description": "The resolved configuration after the four layers, with the origin of every key.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "value"
+  ],
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "value": {
+      "description": "The resolved value or subtree."
+    },
+    "origins": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": [
+          "default",
+          "global",
+          "project",
+          "local"
+        ]
+      },
+      "description": "Dotted key -> layer, when --origins."
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "layer",
+          "path",
+          "present"
+        ],
+        "properties": {
+          "layer": {
+            "enum": [
+              "default",
+              "global",
+              "project",
+              "local"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "present": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "key": "policy.budgets",
+      "value": {
+        "task-redispatch": 3,
+        "verify-fix": 2,
+        "review-fix": 2,
+        "verifier": 2,
+        "not-run": 3
+      },
+      "origins": {
+        "policy.budgets.task-redispatch": "project",
+        "policy.budgets.verify-fix": "default"
+      }
+    }
+  ]
+}

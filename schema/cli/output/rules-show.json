@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-show.json",
+  "title": "bdk rules show --json",
+  "description": "Print one rule by id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "rule"
+  ],
+  "properties": {
+    "rule": {
+      "type": "object",
+      "required": [
+        "id",
+        "file",
+        "kind",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9]*-\\d+$"
+        },
+        "file": {
+          "type": "string",
+          "description": "Path relative to the project root."
+        },
+        "kind": {
+          "enum": [
+            "house",
+            "knowledge"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "applies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "removed": {
+          "type": "string",
+          "description": "Tombstone reason when the rule was removed; the id is never reused."
+        },
+        "source": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "citedBy": {
+      "type": "integer",
+      "description": "Citations in reports and findings across Changes, from the index."
+    }
+  },
+  "examples": [
+    {
+      "rule": {
+        "id": "CQ-4",
+        "file": "rules/code-quality.md",
+        "kind": "house",
+        "text": "Early return over nested conditionals.",
+        "applies": [
+          "**/*.ts"
+        ]
+      },
+      "citedBy": 12
+    }
+  ]
+}

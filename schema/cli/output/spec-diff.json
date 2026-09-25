@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/spec-diff.json",
+  "title": "bdk spec diff --json",
+  "description": "What the merged spec would look like: requirement-level diff of the Change's deltas against `.bdk/specs/`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "capabilities"
+  ],
+  "properties": {
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "capability",
+          "requirements"
+        ],
+        "properties": {
+          "capability": {
+            "type": "string"
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "change"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "change": {
+                  "enum": [
+                    "added",
+                    "modified",
+                    "removed",
+                    "renamed",
+                    "unchanged"
+                  ]
+                },
+                "scenarios": {
+                  "type": "object",
+                  "properties": {
+                    "added": {
+                      "type": "integer"
+                    },
+                    "removed": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "capabilities": [
+        {
+          "capability": "auth/login",
+          "requirements": [
+            {
+              "name": "Magic link expires",
+              "change": "added",
+              "scenarios": {
+                "added": 2,
+                "removed": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

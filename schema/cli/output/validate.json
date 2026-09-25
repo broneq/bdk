@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/validate.json",
+  "title": "bdk validate --json",
+  "description": "Run an artifact's kind validator without marking it done.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact",
+    "valid",
+    "checks"
+  ],
+  "properties": {
+    "artifact": {
+      "type": "string"
+    },
+    "valid": {
+      "type": "boolean"
+    },
+    "inputHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "ok"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "why": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "artifact": "plan-part:01",
+      "valid": true,
+      "inputHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "checks": [
+        {
+          "id": "size",
+          "ok": true
+        },
+        {
+          "id": "tasks",
+          "ok": true
+        },
+        {
+          "id": "do-not-touch",
+          "ok": true
+        },
+        {
+          "id": "placeholders",
+          "ok": true
+        },
+        {
+          "id": "success-measure",
+          "ok": true
+        }
+      ]
+    }
+  ]
+}

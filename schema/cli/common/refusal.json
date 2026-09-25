@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/common/refusal.json",
+  "title": "Kernel error object",
+  "description": "Printed on stdout by every command that exits 2, 3, 4 or 5. Exactly four fields (design, UX Touchpoints: Failure surface; contract section 4).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["refused", "rule", "why", "instead"],
+  "properties": {
+    "refused": { "const": true },
+    "rule": {
+      "type": "string",
+      "pattern": "^(policy|guard|input|state|runtime|kernel)/[a-z0-9-]+$",
+      "description": "Stable identifier from the rule catalogue. The class before the slash maps to the exit code: policy, guard, kernel = 2; input = 3; state = 4; runtime = 5."
+    },
+    "why": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One sentence carrying the concrete values (ids, counts, paths)."
+    },
+    "instead": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Concrete commands or actions the caller can take next, most useful first."
+    }
+  },
+  "examples": [
+    {
+      "refused": true,
+      "rule": "policy/no-active-change",
+      "why": "no active Change on branch feat/login",
+      "instead": ["/bdk:change new \"<intent>\"", "bdk change resume <id>"]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/common/list-page.json",
+  "title": "List page",
+  "description": "Shape shared by every list verb and every collection-returning command (contract section 5). The first 100 items unless --all; `total` counts before truncation.",
+  "type": "object",
+  "required": ["items", "total", "truncated"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "Summaries, never full bodies. A command's own schema narrows the item type."
+    },
+    "total": { "type": "integer", "minimum": 0 },
+    "truncated": { "type": "boolean" },
+    "for": {
+      "type": "string",
+      "description": "The --for filter as given (task id, part id or file path); absent when none."
+    }
+  }
+}

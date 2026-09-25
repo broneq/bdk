@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/log-show.json",
+  "title": "bdk log show --json",
+  "description": "One entry in full, by bare or qualified id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entry"
+  ],
+  "properties": {
+    "entry": {
+      "allOf": [
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "type",
+            "summary",
+            "status",
+            "source",
+            "at",
+            "refs"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Opaque merge-safe id (T14)."
+            },
+            "type": {
+              "enum": [
+                "decision",
+                "finding",
+                "observation",
+                "blocker",
+                "question",
+                "assumption",
+                "risk",
+                "learning",
+                "report",
+                "transition"
+              ]
+            },
+            "summary": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "status": {
+              "enum": [
+                "proposed",
+                "accepted",
+                "superseded",
+                "resolved",
+                "routed"
+              ]
+            },
+            "source": {
+              "type": "string",
+              "pattern": "^(user|policy|inferred|kernel|agent:[a-z][a-z0-9-]*)$"
+            },
+            "author": {
+              "type": "string"
+            },
+            "at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 UTC with seconds."
+            },
+            "refs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            },
+            "review": {
+              "type": "boolean"
+            },
+            "supersedes": {
+              "type": "string",
+              "description": "Opaque merge-safe id (T14)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "body",
+            "path"
+          ],
+          "properties": {
+            "body": {
+              "type": "string",
+              "description": "Markdown body."
+            },
+            "path": {
+              "type": "string",
+              "description": "Path relative to the project root."
+            }
+          }
+        }
+      ]
+    },
+    "supersededBy": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    }
+  },
+  "examples": [
+    {
+      "entry": {
+        "id": "L-a2s5d",
+        "type": "decision",
+        "summary": "magic links, no passwords, WebAuthn later",
+        "status": "accepted",
+        "source": "user",
+        "author": "Przemysław Broniszewski",
+        "at": "2026-09-25T09:12:30Z",
+        "refs": [
+          "design.md"
+        ],
+        "body": "We ship magic links first ...",
+        "path": ".bdk/changes/2026-09-25-passwordless-login/log/20260925T091230-decision-magic-links.md"
+      }
+    }
+  ]
+}

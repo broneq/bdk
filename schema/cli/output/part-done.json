@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/part-done.json",
+  "title": "bdk part done --json",
+  "description": "Close a part: every task has a trailer commit and no ticket is open.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "part",
+    "state",
+    "commits",
+    "entry"
+  ],
+  "properties": {
+    "part": {
+      "type": "string"
+    },
+    "state": {
+      "const": "done"
+    },
+    "commits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "task",
+          "commit"
+        ],
+        "properties": {
+          "task": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "openFindings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Opaque merge-safe id (T14)."
+      }
+    },
+    "entry": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "next": {
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "part": "02",
+      "state": "done",
+      "commits": [
+        {
+          "task": "02-1",
+          "commit": "b4d2e1f"
+        },
+        {
+          "task": "02-2",
+          "commit": "c7a9d30"
+        }
+      ],
+      "openFindings": [],
+      "entry": "L-y5u3e",
+      "next": "execute-part:03"
+    }
+  ]
+}

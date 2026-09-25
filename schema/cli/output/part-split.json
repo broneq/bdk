@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/part-split.json",
+  "title": "bdk part split --json",
+  "description": "Split an oversized or parked part into two parts with the same dependencies.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "part",
+    "newPart",
+    "moved",
+    "entry"
+  ],
+  "properties": {
+    "part": {
+      "type": "string"
+    },
+    "newPart": {
+      "type": "string"
+    },
+    "moved": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "entry": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    }
+  },
+  "examples": [
+    {
+      "part": "02",
+      "newPart": "05",
+      "moved": [
+        "02-3",
+        "02-4"
+      ],
+      "entry": "L-n1b7c"
+    }
+  ]
+}

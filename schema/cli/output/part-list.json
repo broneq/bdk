@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/part-list.json",
+  "title": "bdk part list --json",
+  "description": "Plan parts with state, task counts, size, dependencies and wave.",
+  "allOf": [
+    {
+      "$ref": "../common/list-page.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "part",
+              "title",
+              "state",
+              "tasks",
+              "bytes"
+            ],
+            "properties": {
+              "part": {
+                "type": "string",
+                "pattern": "^\\d{2}$"
+              },
+              "title": {
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "blocked",
+                  "ready",
+                  "started",
+                  "done"
+                ]
+              },
+              "tasks": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 8
+              },
+              "done": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bytes": {
+                "type": "integer",
+                "maximum": 8192
+              },
+              "dependsOn": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "specImpact": {
+                "enum": [
+                  "none",
+                  "delta"
+                ]
+              },
+              "wave": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+  "examples": [
+    {
+      "items": [
+        {
+          "part": "01",
+          "title": "Token service",
+          "state": "done",
+          "tasks": 4,
+          "done": 4,
+          "bytes": 5120,
+          "specImpact": "delta",
+          "wave": 1
+        },
+        {
+          "part": "02",
+          "title": "Login endpoint",
+          "state": "started",
+          "tasks": 3,
+          "done": 1,
+          "bytes": 4210,
+          "dependsOn": [
+            "01"
+          ],
+          "specImpact": "none",
+          "wave": 2
+        }
+      ],
+      "total": 2,
+      "truncated": false
+    }
+  ]
+}

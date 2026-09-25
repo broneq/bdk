@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/change-takeover.json",
+  "title": "bdk change takeover --json",
+  "description": "Take over a Change whose previous session died with open tickets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "change",
+    "previousSession",
+    "closedTickets"
+  ],
+  "properties": {
+    "change": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "previousSession": {
+      "type": "string"
+    },
+    "closedTickets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Opaque merge-safe id (T14)."
+      }
+    },
+    "rebuilt": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "change": "2026-09-25-passwordless-login",
+      "previousSession": "<SESSION-3>",
+      "closedTickets": [
+        "A-7f3k"
+      ],
+      "rebuilt": true
+    }
+  ]
+}

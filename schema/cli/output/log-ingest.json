@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/log-ingest.json",
+  "title": "bdk log ingest --json",
+  "description": "Ingest a `bdk-entries` block from a read-only role's report under its ticket.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticket",
+    "entries",
+    "downgraded"
+  ],
+  "properties": {
+    "ticket": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "summary",
+          "status",
+          "source",
+          "at",
+          "refs"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          },
+          "type": {
+            "enum": [
+              "decision",
+              "finding",
+              "observation",
+              "blocker",
+              "question",
+              "assumption",
+              "risk",
+              "learning",
+              "report",
+              "transition"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "status": {
+            "enum": [
+              "proposed",
+              "accepted",
+              "superseded",
+              "resolved",
+              "routed"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^(user|policy|inferred|kernel|agent:[a-z][a-z0-9-]*)$"
+          },
+          "author": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 UTC with seconds."
+          },
+          "refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "review": {
+            "type": "boolean"
+          },
+          "supersedes": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          }
+        }
+      }
+    },
+    "downgraded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "entry",
+          "originalCategory"
+        ],
+        "properties": {
+          "entry": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          },
+          "originalCategory": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Blockers without a category from the closed list, stored as observation with review: true (P8)."
+    }
+  },
+  "examples": [
+    {
+      "ticket": "A-9c2d",
+      "entries": [
+        {
+          "id": "L-w4m1q",
+          "type": "blocker",
+          "summary": "plan claims verifyToken exists; it does not",
+          "status": "proposed",
+          "source": "agent:plan-verifier",
+          "at": "2026-09-25T10:31:44Z",
+          "refs": [
+            "plan/parts/02-login.md",
+            "src/auth/token.ts"
+          ]
+        }
+      ],
+      "downgraded": []
+    }
+  ]
+}

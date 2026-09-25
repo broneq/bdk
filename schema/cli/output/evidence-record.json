@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/evidence-record.json",
+  "title": "bdk evidence record --json",
+  "description": "Register verification evidence: a manifest with the tree hash and the hashes of the files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidence",
+    "path",
+    "treeHash",
+    "files",
+    "deduplicated"
+  ],
+  "properties": {
+    "evidence": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "path": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    },
+    "treeHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "hash"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "stored": {
+            "enum": [
+              "committed",
+              "machine"
+            ]
+          }
+        }
+      }
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "fail",
+        "not-run"
+      ]
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "deduplicated": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "evidence": "E-b6n9t",
+      "path": ".bdk/changes/2026-09-25-passwordless-login/evidence/02-3-1.md",
+      "treeHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "files": [
+        {
+          "path": ".bdk/.machine/evidence/02-3-tests.json",
+          "hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+          "stored": "machine"
+        }
+      ],
+      "verdict": "pass",
+      "citations": [
+        "/summary/failed"
+      ],
+      "deduplicated": false
+    }
+  ]
+}

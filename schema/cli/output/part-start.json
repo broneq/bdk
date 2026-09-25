@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/part-start.json",
+  "title": "bdk part start --json",
+  "description": "Validate a part and record the start transition; required before its first ticket.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "part",
+    "state",
+    "tasks",
+    "entry"
+  ],
+  "properties": {
+    "part": {
+      "type": "string"
+    },
+    "state": {
+      "const": "started"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "task",
+          "files"
+        ],
+        "properties": {
+          "task": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Path relative to the project root."
+            }
+          },
+          "stopRule": {
+            "type": "string"
+          },
+          "verification": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "doNotTouch": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "successMeasure": {
+      "type": "string"
+    },
+    "entry": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    }
+  },
+  "examples": [
+    {
+      "part": "02",
+      "state": "started",
+      "tasks": [
+        {
+          "task": "02-1",
+          "files": [
+            "src/auth/login.ts"
+          ]
+        },
+        {
+          "task": "02-2",
+          "files": [
+            "src/auth/login.test.ts"
+          ]
+        }
+      ],
+      "doNotTouch": [
+        "src/billing/**"
+      ],
+      "successMeasure": "POST /login returns a session for a valid magic link",
+      "entry": "L-r2v8k"
+    }
+  ]
+}

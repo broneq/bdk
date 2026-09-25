@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-explain.json",
+  "title": "bdk rules explain --json",
+  "description": "Which rules apply to a file, and why.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "file",
+    "rules"
+  ],
+  "properties": {
+    "file": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "matchedBy"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "matchedBy": {
+            "type": "string",
+            "description": "The applies glob that matched."
+          },
+          "kind": {
+            "enum": [
+              "house",
+              "knowledge"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "file": "src/auth/login.ts",
+      "rules": [
+        {
+          "id": "SEC-2",
+          "matchedBy": "src/auth/**",
+          "kind": "house"
+        },
+        {
+          "id": "CQ-4",
+          "matchedBy": "**/*.ts",
+          "kind": "house"
+        }
+      ]
+    }
+  ]
+}

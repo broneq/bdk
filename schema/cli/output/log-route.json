@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/log-route.json",
+  "title": "bdk log route --json",
+  "description": "Route learning entries at close: rule proposal, spec, or nothing, by the T31 thresholds.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposedRules",
+    "spec",
+    "nothing"
+  ],
+  "properties": {
+    "proposedRules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "entry",
+          "signals"
+        ],
+        "properties": {
+          "entry": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "signals": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "spec": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Opaque merge-safe id (T14)."
+      }
+    },
+    "nothing": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Opaque merge-safe id (T14)."
+      }
+    }
+  },
+  "examples": [
+    {
+      "proposedRules": [
+        {
+          "entry": "L-z1c4h",
+          "fingerprint": "tests|scoped|missing-negative-case",
+          "signals": {
+            "recurrence": 3,
+            "authors": 2,
+            "cost": 2
+          }
+        }
+      ],
+      "spec": [],
+      "nothing": [
+        "L-q8n2m"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/ctx.json",
+  "title": "bdk ctx skill --json",
+  "description": "Compose the prompt context a skill's `!` block injects: tool tiers, fragments, rules, prompt values.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "content",
+    "parts"
+  ],
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "The composed Markdown, identical to the inject-mode output."
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "source"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "tier",
+              "fragment",
+              "rules",
+              "language-rules",
+              "prompt",
+              "agents-table",
+              "stop"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "description": "File or chain that produced the part."
+          }
+        }
+      }
+    },
+    "stop": {
+      "type": "object",
+      "required": [
+        "why",
+        "instead"
+      ],
+      "properties": {
+        "why": {
+          "type": "string"
+        },
+        "instead": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Present when the content is a STOP block; the exit code is still 0 in inject mode."
+    }
+  },
+  "examples": [
+    {
+      "content": "## Tool tiers\n...",
+      "parts": [
+        {
+          "kind": "tier",
+          "source": "fragments/tool-tiers/search.chain.json"
+        },
+        {
+          "kind": "rules",
+          "source": "rules/code-quality.md"
+        }
+      ]
+    }
+  ]
+}

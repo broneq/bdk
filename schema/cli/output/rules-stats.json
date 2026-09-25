@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-stats.json",
+  "title": "bdk rules stats --json",
+  "description": "Recurrence by fingerprint and citations by rule id, from the index.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "learning",
+    "citations"
+  ],
+  "properties": {
+    "learning": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "fingerprint",
+          "changes",
+          "authors"
+        ],
+        "properties": {
+          "fingerprint": {
+            "type": "string"
+          },
+          "changes": {
+            "type": "integer"
+          },
+          "authors": {
+            "type": "integer"
+          },
+          "cost": {
+            "type": "integer",
+            "description": "Failed attempts joined through evidence."
+          }
+        }
+      }
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "count"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "learning": [
+        {
+          "fingerprint": "tests|scoped|missing-negative-case",
+          "changes": 3,
+          "authors": 2,
+          "cost": 2
+        }
+      ],
+      "citations": [
+        {
+          "id": "CQ-4",
+          "count": 12
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/spec-merge.json",
+  "title": "bdk spec merge --json",
+  "description": "Deterministically merge the Change's deltas into `.bdk/specs/`; refuse on conflict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "merged",
+    "conflicts"
+  ],
+  "properties": {
+    "merged": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "capability",
+          "path",
+          "mergeHash"
+        ],
+        "properties": {
+          "capability": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          },
+          "mergeHash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "added": {
+            "type": "integer"
+          },
+          "modified": {
+            "type": "integer"
+          },
+          "removed": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "capability",
+          "requirement",
+          "ours",
+          "theirs"
+        ],
+        "properties": {
+          "capability": {
+            "type": "string"
+          },
+          "requirement": {
+            "type": "string"
+          },
+          "ours": {
+            "type": "string"
+          },
+          "theirs": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "merged": [
+        {
+          "capability": "auth/login",
+          "path": ".bdk/specs/auth/login/spec.md",
+          "mergeHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+          "added": 2,
+          "modified": 1,
+          "removed": 0
+        }
+      ],
+      "conflicts": []
+    }
+  ]
+}

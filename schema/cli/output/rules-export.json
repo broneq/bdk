@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-export.json",
+  "title": "bdk rules export --json",
+  "description": "Generate the host projection of the rules, `.claude/rules/bdk-generated.md`, with `paths:` from applies.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "path",
+    "rules",
+    "changed"
+  ],
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    },
+    "rules": {
+      "type": "integer"
+    },
+    "changed": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "path": ".claude/rules/bdk-generated.md",
+      "rules": 41,
+      "changed": true
+    }
+  ]
+}

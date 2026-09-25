@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/dispatch-run.json",
+  "title": "bdk dispatch run --json",
+  "description": "Headless runner: spawn one host CLI process per package of a wave and collect the reports.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "part",
+    "wave",
+    "runner",
+    "runs"
+  ],
+  "properties": {
+    "part": {
+      "type": "string"
+    },
+    "wave": {
+      "type": "integer"
+    },
+    "runner": {
+      "const": "headless"
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ticket",
+          "task",
+          "status",
+          "report"
+        ],
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          },
+          "task": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string",
+            "description": "e.g. claude, codex, gemini"
+          },
+          "status": {
+            "enum": [
+              "done",
+              "blocked",
+              "failed",
+              "timeout"
+            ]
+          },
+          "report": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          },
+          "envelope": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "part": "02",
+      "wave": 2,
+      "runner": "headless",
+      "runs": [
+        {
+          "ticket": "A-7f3k",
+          "task": "02-3",
+          "host": "claude",
+          "status": "done",
+          "report": ".bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-2.md",
+          "durationMs": 184000
+        }
+      ]
+    }
+  ]
+}

@@ -25,3 +25,12 @@ jobs:
 
       - name: Run unit tests
         run: uv run pytest tests/unit/ -q
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run CLI contract tests
+        # Consistency of docs/CLI-CONTRACT.md with schema/cli/ (T10). T11 moves
+        # this into the kernel's own test harness.
+        run: node --test tests/contract/*.test.mjs

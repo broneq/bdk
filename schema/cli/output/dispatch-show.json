@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/dispatch-show.json",
+  "title": "bdk dispatch show --json",
+  "description": "Print a dispatch package by path or ticket.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "path",
+    "content",
+    "frontmatter"
+  ],
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    },
+    "content": {
+      "type": "string"
+    },
+    "frontmatter": {
+      "type": "object"
+    }
+  },
+  "examples": [
+    {
+      "path": ".bdk/changes/2026-09-25-passwordless-login/dispatch/02-3-implementer-2.md",
+      "content": "---\nticket: A-7f3k\n...",
+      "frontmatter": {
+        "ticket": "A-7f3k",
+        "task": "02-3",
+        "role": "implementer"
+      }
+    }
+  ]
+}

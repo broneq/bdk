@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/measure.json",
+  "title": "bdk measure --json",
+  "description": "Measure the size of an intent or a diff: files, impacted modules, proposed profile.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile",
+    "files",
+    "modules",
+    "signals"
+  ],
+  "properties": {
+    "profile": {
+      "enum": [
+        "tiny",
+        "small",
+        "large"
+      ]
+    },
+    "files": {
+      "type": "integer"
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "impact": {
+      "type": "integer",
+      "description": "Impact radius from the code graph when available."
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Raw heuristic inputs, for calibration (T20)."
+    }
+  },
+  "examples": [
+    {
+      "profile": "small",
+      "files": 6,
+      "modules": [
+        "auth",
+        "mail"
+      ],
+      "impact": 14,
+      "signals": {
+        "files": 6,
+        "modules": 2,
+        "impact": 14
+      }
+    }
+  ]
+}

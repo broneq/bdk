@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/dispatch-build.json",
+  "title": "bdk dispatch build --json",
+  "description": "Build the dispatch package file for a task, role and ticket.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "path",
+    "bytes",
+    "ticket",
+    "task",
+    "role",
+    "adapter",
+    "kernelVersion",
+    "templateHash",
+    "rules"
+  ],
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    },
+    "bytes": {
+      "type": "integer",
+      "maximum": 12288
+    },
+    "ticket": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "task": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "adapter": {
+      "enum": [
+        "worker",
+        "reader",
+        "reviewer",
+        "runner",
+        "scout"
+      ]
+    },
+    "scope": {
+      "enum": [
+        "full",
+        "high+",
+        "blockers"
+      ]
+    },
+    "kernelVersion": {
+      "type": "string"
+    },
+    "templateHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "entries": {
+      "type": "object",
+      "properties": {
+        "full": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          }
+        },
+        "summaries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Rule ids included, selected by role and applies globs."
+    }
+  },
+  "examples": [
+    {
+      "path": ".bdk/changes/2026-09-25-passwordless-login/dispatch/02-3-implementer-2.md",
+      "bytes": 9814,
+      "ticket": "A-7f3k",
+      "task": "02-3",
+      "role": "implementer",
+      "adapter": "worker",
+      "scope": "high+",
+      "kernelVersion": "3.0.0",
+      "templateHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "entries": {
+        "full": [
+          "L-a2s5d"
+        ],
+        "summaries": [
+          "L-e8k2s"
+        ]
+      },
+      "rules": [
+        "CQ-4",
+        "SEC-2",
+        "PL-1"
+      ]
+    }
+  ]
+}

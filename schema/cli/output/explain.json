@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/explain.json",
+  "title": "bdk explain --json",
+  "description": "Why an artifact is in its state: the `requires` chain with each node's state and input hash.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact",
+    "state",
+    "chain"
+  ],
+  "properties": {
+    "artifact": {
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "blocked",
+        "ready",
+        "done",
+        "stale",
+        "skipped"
+      ]
+    },
+    "chain": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Artifact kind from pipeline.yaml (T21)."
+          },
+          "state": {
+            "enum": [
+              "blocked",
+              "ready",
+              "done",
+              "stale",
+              "skipped"
+            ]
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputHash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "why": {
+            "type": "string",
+            "description": "For blocked and stale: what is missing or what changed."
+          }
+        }
+      },
+      "description": "Depth-first requires chain, the artifact itself first."
+    },
+    "profile": {
+      "enum": [
+        "tiny",
+        "small",
+        "large"
+      ]
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "if: features.X conditions that applied."
+    }
+  },
+  "examples": [
+    {
+      "artifact": "plan-verify",
+      "state": "blocked",
+      "chain": [
+        {
+          "id": "plan-verify",
+          "kind": "plan-verify",
+          "state": "blocked",
+          "requires": [
+            "plan-part:01"
+          ],
+          "why": "plan-part:01 is ready, not done"
+        },
+        {
+          "id": "plan-part:01",
+          "kind": "plan-part",
+          "state": "ready",
+          "requires": [
+            "gate:design"
+          ]
+        },
+        {
+          "id": "gate:design",
+          "kind": "gate",
+          "state": "done"
+        }
+      ]
+    }
+  ]
+}

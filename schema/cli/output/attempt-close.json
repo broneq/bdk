@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/attempt-close.json",
+  "title": "bdk attempt close --json",
+  "description": "Close a ticket with its outcome; check the diff, the evidence and the declared entries.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticket",
+    "outcome",
+    "next"
+  ],
+  "properties": {
+    "ticket": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "outcome": {
+      "enum": [
+        "ok",
+        "fail",
+        "not-run"
+      ]
+    },
+    "diff": {
+      "type": "object",
+      "required": [
+        "declared",
+        "touched",
+        "undeclared"
+      ],
+      "properties": {
+        "declared": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          }
+        },
+        "touched": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          }
+        },
+        "undeclared": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          },
+          "description": "Files outside Files:, recorded as a finding entry."
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Opaque merge-safe id (T14)."
+      }
+    },
+    "fingerprints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "enum": [
+            "post-task-steps",
+            "retry",
+            "narrow",
+            "escalate",
+            "question",
+            "parked"
+          ]
+        },
+        "scope": {
+          "enum": [
+            "full",
+            "high+",
+            "blockers"
+          ]
+        },
+        "entry": {
+          "type": "string",
+          "description": "Opaque merge-safe id (T14)."
+        },
+        "why": {
+          "type": "string"
+        }
+      }
+    },
+    "notRunCount": {
+      "type": "integer"
+    }
+  },
+  "examples": [
+    {
+      "ticket": "A-7f3k",
+      "outcome": "fail",
+      "diff": {
+        "declared": [
+          "src/auth/login.ts"
+        ],
+        "touched": [
+          "src/auth/login.ts",
+          "src/auth/util.ts"
+        ],
+        "undeclared": [
+          "src/auth/util.ts"
+        ]
+      },
+      "findings": [
+        "L-e8k2s"
+      ],
+      "fingerprints": [
+        "finding|src/auth/login.ts|verifyToken|expired token accepted"
+      ],
+      "next": {
+        "action": "narrow",
+        "scope": "blockers"
+      }
+    }
+  ]
+}

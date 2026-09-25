@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/change-list.json",
+  "title": "bdk change list --json",
+  "description": "List Changes in this repository: active per branch, parked, archived.",
+  "allOf": [
+    {
+      "$ref": "../common/list-page.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "change",
+              "branch",
+              "stage",
+              "state"
+            ],
+            "properties": {
+              "change": {
+                "type": "string",
+                "description": "Opaque merge-safe id (T14)."
+              },
+              "branch": {
+                "type": "string"
+              },
+              "stage": {
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "active",
+                  "parked",
+                  "archived"
+                ]
+              },
+              "kind": {
+                "enum": [
+                  "feature",
+                  "bug"
+                ]
+              },
+              "profile": {
+                "enum": [
+                  "tiny",
+                  "small",
+                  "large"
+                ]
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO 8601 UTC with seconds."
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+  "examples": [
+    {
+      "items": [
+        {
+          "change": "2026-09-25-passwordless-login",
+          "branch": "feat/login",
+          "stage": "design",
+          "state": "active",
+          "kind": "feature",
+          "profile": "small",
+          "updatedAt": "2026-09-25T09:41:07Z"
+        }
+      ],
+      "total": 1,
+      "truncated": false
+    }
+  ]
+}

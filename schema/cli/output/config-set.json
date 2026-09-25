@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/config-set.json",
+  "title": "bdk config set --json",
+  "description": "Set one key in the project, local or global layer after validating the result.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "key",
+    "value",
+    "layer",
+    "path"
+  ],
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "value": {},
+    "previous": {},
+    "layer": {
+      "enum": [
+        "default",
+        "global",
+        "project",
+        "local"
+      ]
+    },
+    "path": {
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "key": "policy.escalation.enabled",
+      "value": false,
+      "previous": true,
+      "layer": "local",
+      "path": ".bdk/settings.local.yaml"
+    }
+  ]
+}

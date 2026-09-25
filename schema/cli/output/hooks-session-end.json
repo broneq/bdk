@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-session-end.json",
+  "title": "bdk hooks session-end --json",
+  "description": "SessionEnd content hook: Change checkpoint commit when enabled and safe.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "content",
+    "checkpoint"
+  ],
+  "properties": {
+    "content": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string",
+      "description": "The host's SessionEnd reason."
+    },
+    "checkpoint": {
+      "type": "object",
+      "required": [
+        "done"
+      ],
+      "properties": {
+        "done": {
+          "type": "boolean"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "skipped": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "content": "",
+      "reason": "prompt_input_exit",
+      "checkpoint": {
+        "done": false,
+        "skipped": "open tickets"
+      }
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-add.json",
+  "title": "bdk rules add --json",
+  "description": "Propose a rule from work in progress: writes a learning entry with applies globs; no rule file changes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entry"
+  ],
+  "properties": {
+    "entry": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "rule": {
+      "type": "object",
+      "required": [
+        "id",
+        "file",
+        "kind",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9]*-\\d+$"
+        },
+        "file": {
+          "type": "string",
+          "description": "Path relative to the project root."
+        },
+        "kind": {
+          "enum": [
+            "house",
+            "knowledge"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "applies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "removed": {
+          "type": "string",
+          "description": "Tombstone reason when the rule was removed; the id is never reused."
+        },
+        "source": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "file": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    }
+  },
+  "examples": [
+    {
+      "entry": "L-z1c4h"
+    }
+  ]
+}

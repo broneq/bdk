@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-prompt-expansion.json",
+  "title": "bdk hooks prompt-expansion --json",
+  "description": "UserPromptExpansion guard: the only writer of `source: user` stage transitions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision",
+    "command",
+    "stage"
+  ],
+  "properties": {
+    "decision": {
+      "enum": [
+        "pass",
+        "block"
+      ]
+    },
+    "command": {
+      "type": "string",
+      "description": "Bare skill name parsed from the namespaced command_name (bdk:plan -> plan)."
+    },
+    "stage": {
+      "type": "string"
+    },
+    "gate": {
+      "type": "string"
+    },
+    "entry": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "wrote": {
+      "enum": [
+        "transition:user",
+        "transition:policy",
+        "transition:stage",
+        "none"
+      ]
+    },
+    "skipVerify": {
+      "type": "boolean"
+    },
+    "status": {
+      "type": "object",
+      "required": [
+        "gate",
+        "ready",
+        "done",
+        "pending"
+      ],
+      "description": "What the user sees before typing the next stage command (T1).",
+      "properties": {
+        "gate": {
+          "type": "string",
+          "description": "Gate node id, e.g. gate:design."
+        },
+        "ready": {
+          "type": "boolean"
+        },
+        "done": {
+          "type": "boolean"
+        },
+        "passedBy": {
+          "enum": [
+            "user",
+            "policy"
+          ]
+        },
+        "command": {
+          "type": "string",
+          "description": "The stage command the user types to pass it, e.g. /bdk:plan."
+        },
+        "pending": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "type",
+              "summary",
+              "status",
+              "source",
+              "at",
+              "refs"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Opaque merge-safe id (T14)."
+              },
+              "type": {
+                "enum": [
+                  "decision",
+                  "finding",
+                  "observation",
+                  "blocker",
+                  "question",
+                  "assumption",
+                  "risk",
+                  "learning",
+                  "report",
+                  "transition"
+                ]
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "status": {
+                "enum": [
+                  "proposed",
+                  "accepted",
+                  "superseded",
+                  "resolved",
+                  "routed"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^(user|policy|inferred|kernel|agent:[a-z][a-z0-9-]*)$"
+              },
+              "author": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO 8601 UTC with seconds."
+              },
+              "refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "review": {
+                "type": "boolean"
+              },
+              "supersedes": {
+                "type": "string",
+                "description": "Opaque merge-safe id (T14)."
+              }
+            }
+          },
+          "description": "review: true entries listed, never dispositioned."
+        }
+      }
+    },
+    "why": {
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "decision": "pass",
+      "command": "plan",
+      "stage": "plan",
+      "gate": "gate:design",
+      "entry": "L-g5h2j",
+      "wrote": "transition:user",
+      "skipVerify": false
+    }
+  ]
+}

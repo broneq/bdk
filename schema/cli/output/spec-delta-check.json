@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/spec-delta-check.json",
+  "title": "bdk spec delta check --json",
+  "description": "Validate a spec delta: Scenario prefix, WHEN / THEN, no silent scenario loss.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "valid",
+    "deltas"
+  ],
+  "properties": {
+    "valid": {
+      "type": "boolean"
+    },
+    "deltas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "capability",
+          "path",
+          "valid",
+          "problems"
+        ],
+        "properties": {
+          "capability": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "problems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "line",
+                "code",
+                "message"
+              ],
+              "properties": {
+                "line": {
+                  "type": "integer"
+                },
+                "code": {
+                  "enum": [
+                    "scenario-prefix",
+                    "when-missing",
+                    "then-missing",
+                    "scenario-lost",
+                    "normative-word",
+                    "requirement-unknown"
+                  ]
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "valid": false,
+      "deltas": [
+        {
+          "capability": "auth/login",
+          "path": ".bdk/changes/2026-09-25-passwordless-login/spec-delta/auth-login.md",
+          "valid": false,
+          "problems": [
+            {
+              "line": 14,
+              "code": "then-missing",
+              "message": "Scenario 'expired link' has WHEN without THEN"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

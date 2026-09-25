@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/attempt-open.json",
+  "title": "bdk attempt open --json",
+  "description": "Open a ticket for one loop iteration, or refuse with the next rung of the ladder.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ticket",
+    "loop",
+    "target",
+    "attempt",
+    "of",
+    "scope"
+  ],
+  "properties": {
+    "ticket": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "loop": {
+      "type": "string",
+      "description": "Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier, task-escalation."
+    },
+    "target": {
+      "type": "string",
+      "description": "Task, part or Change id the loop runs on."
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "of": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Budget for this loop kind."
+    },
+    "scope": {
+      "enum": [
+        "full",
+        "high+",
+        "blockers"
+      ]
+    },
+    "openedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC with seconds."
+    },
+    "closedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC with seconds."
+    },
+    "outcome": {
+      "enum": [
+        "ok",
+        "fail",
+        "not-run"
+      ]
+    },
+    "notRunCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "narrowedFrom": {
+      "enum": [
+        "full",
+        "high+",
+        "blockers"
+      ]
+    },
+    "dropped": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "summary"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Findings that fell out of scope N+1 and became finding entries for the human."
+    }
+  },
+  "examples": [
+    {
+      "ticket": "A-7f3k",
+      "loop": "task-redispatch",
+      "target": "02-3",
+      "attempt": 2,
+      "of": 3,
+      "scope": "high+",
+      "openedAt": "2026-09-25T10:02:11Z",
+      "narrowedFrom": "full",
+      "dropped": [
+        {
+          "id": "L-d3f6g",
+          "summary": "rename helper for clarity"
+        }
+      ]
+    }
+  ]
+}

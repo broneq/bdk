@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/config-check.json",
+  "title": "bdk config check --json",
+  "description": "Validate every layer against the module schema registry; name unknown keys.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "valid",
+    "problems",
+    "snapshot"
+  ],
+  "properties": {
+    "valid": {
+      "type": "boolean"
+    },
+    "problems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "layer",
+          "key",
+          "code",
+          "message"
+        ],
+        "properties": {
+          "layer": {
+            "enum": [
+              "default",
+              "global",
+              "project",
+              "local"
+            ]
+          },
+          "key": {
+            "type": "string"
+          },
+          "code": {
+            "enum": [
+              "unknown-key",
+              "invalid-value",
+              "missing-modeline",
+              "schema-outdated"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "snapshot": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    },
+    "overriddenKeys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "valid": false,
+      "problems": [
+        {
+          "layer": "project",
+          "key": "policy.budgets.retries",
+          "code": "unknown-key",
+          "message": "unknown key; did you mean policy.budgets.task-redispatch?"
+        }
+      ],
+      "snapshot": ".bdk/.machine/config/resolved.yaml",
+      "overriddenKeys": []
+    }
+  ]
+}
