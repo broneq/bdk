@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.2](https://github.com/broneq/bdk-skill-kit/compare/v0.1.1...v0.1.2) (2026-09-25)
+
+
+### Features
+
+* add in-process rule tester as bdk-skill-kit/testing ([6b35c22](https://github.com/broneq/bdk-skill-kit/commit/6b35c222b2dcb32eb428d616b2a2910aac6bf038))
+
+
+### Bug Fixes
+
+* keep baseline fingerprints stable across length, position and option changes ([31e7f61](https://github.com/broneq/bdk-skill-kit/commit/31e7f61a2862a2f26cd767d18932861deb1ee3c9))
+
 ## [0.1.1](https://github.com/broneq/bdk-skill-kit/compare/v0.1.0...v0.1.1) (2026-09-25)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "bdk-skill-kit",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Deterministic validation for Agent Skills and Claude Code agent files, plus the rules for writing them",
   "license": "MIT",
   "type": "module",
