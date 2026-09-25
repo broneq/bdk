@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """P1 connect (design D-6): time from process start to the init event, per MCP configuration.
 
-With MCP_CONNECTION_NONBLOCKING=0 the session emits init only after every server connected or hit
-the connect timeout, so time-to-init minus the C0 baseline is the servers' connect time. The
+With MCP_CONNECTION_NONBLOCKING=0 and MCP_CONNECT_TIMEOUT_MS=600000 the session emits init only
+after every server connected or failed, so time-to-init minus the C0 baseline is the servers' connect
+time. MCP_TIMEOUT (the per-server connect timeout, default 30000) is raised to 600000 so a slow cold
+start is measured rather than cut off; a start over 30 s is a failure under the default and is
+reported as such. The
 process is killed at init, before any model turn, so a start costs no tokens.
 
 Usage: p1.py --label <name> --plugin <dir> --cwd <worktree> --starts 10 [--cold] --out <file.jsonl>
-  --cold uses a fresh, empty UV_CACHE_DIR per start (the user's own uv cache is not touched).
+  --cold uses a fresh, empty UV_CACHE_DIR and UV_TOOL_DIR per start (the user's own uv cache and
+  installed tools are not touched). UV_TOOL_DIR matters: `uvx <pkg>` reuses a matching `uv tool
+  install` of the package, so a fresh cache alone is not a cold start.
 """
 
 import argparse
@@ -19,11 +24,12 @@ import time
 
 def one_start(plugin, cwd, cold):
     env = dict(os.environ, ENABLE_CLAUDEAI_MCP_SERVERS="false", MCP_CONNECTION_NONBLOCKING="0",
-               MCP_CONNECT_TIMEOUT_MS="120000")
+               MCP_CONNECT_TIMEOUT_MS="600000", MCP_TIMEOUT="600000")
     tmp = None
     if cold:
         tmp = tempfile.mkdtemp(prefix="uvcache-", dir=os.environ.get("BENCH"))
-        env["UV_CACHE_DIR"] = tmp
+        env["UV_CACHE_DIR"] = os.path.join(tmp, "cache")
+        env["UV_TOOL_DIR"] = os.path.join(tmp, "tools")
     t0 = time.time()
     p = subprocess.Popen(
         ["claude", "-p", "Reply OK.", "--model", "claude-haiku-4-5-20251001", "--output-format", "stream-json",

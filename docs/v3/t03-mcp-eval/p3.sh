@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # P3 parallel load (design D-6): N sessions at once, each in its own worktree, each spawning two
 # bdk:explorer subagents in that worktree. A sampler records host and benchmark process load.
+# MCP connect settings are the defaults a user has (nonblocking start, MCP_TIMEOUT 30 s per server),
+# so a slow server is absent or late exactly as it would be in the user's own sessions. Connect
+# status and time per server come from each session's MCP log, copied into the output directory.
 # Usage: BENCH=<scratch dir> p3.sh <C0|CG|CS|CGS> <N> [stop]
 #   "stop" runs the configuration with v2.6.0's hooks.json (graph update after every reply).
-# Output: results/p3/<cfg>[-stop]/N<N>/{s<i>.jsonl,s<i>.meta.json,sampler.jsonl}
+# Output: results/p3/<cfg>[-stop]/N<N>/{s<i>.jsonl,s<i>.meta.json,s<i>.mcp-logs/,sampler.jsonl}
 set -euo pipefail
 
 cfg="$1"; n="$2"; variant="${3:-}"
@@ -46,15 +49,23 @@ for i in $(seq 1 "$n"); do
   (
     cd "$BENCH/wt/p3-$i"
     start=$(python3 -c 'import time; print(time.time())')
-    ENABLE_CLAUDEAI_MCP_SERVERS=false MCP_CONNECTION_NONBLOCKING=0 MCP_CONNECT_TIMEOUT_MS=30000 \
+    touch "$out/s$i.started"
+    code=0
+    ENABLE_CLAUDEAI_MCP_SERVERS=false \
     claude -p "$prompt" --model claude-haiku-4-5-20251001 \
       --output-format stream-json --verbose --plugin-dir "$plugin" \
       --setting-sources project,local --no-session-persistence \
       --allowedTools 'Read,Edit,Write,Bash,Task,Skill,ToolSearch,mcp__plugin_bdk_code-review-graph__*,mcp__plugin_bdk_serena__*' \
-      </dev/null >"$out/s$i.jsonl" 2>"$out/s$i.stderr"
-    code=$?
+      </dev/null >"$out/s$i.jsonl" 2>"$out/s$i.stderr" || code=$?
     end=$(python3 -c 'import time; print(time.time())')
     printf '{"slot": %s, "exit_code": %s, "start": %s, "end": %s}\n' "$i" "$code" "$start" "$end" >"$out/s$i.meta.json"
+    # Claude Code keeps one MCP log per server and session under the cwd's cache directory.
+    logs="$HOME/Library/Caches/claude-cli-nodejs/$(pwd -P | tr '/.' '--')"
+    for d in "$logs"/mcp-logs-plugin-bdk-*; do
+      [ -d "$d" ] || continue
+      mkdir -p "$out/s$i.mcp-logs/$(basename "$d")"
+      find "$d" -name '*.jsonl' -newer "$out/s$i.started" -exec cp {} "$out/s$i.mcp-logs/$(basename "$d")/" \;
+    done
   ) & pids+=($!)
 done
 for p in "${pids[@]}"; do wait "$p" || true; done

@@ -1,0 +1,54 @@
+{
+  "cfg": "C0",
+  "task": "V8",
+  "model": "sonnet",
+  "rep": 1,
+  "exit_code": 0,
+  "valid": true,
+  "isolation_problems": [],
+  "started_at": "2026-09-25T12:18:36",
+  "answer": {
+    "files_changed": [
+      "packages/web-core/src/shared/components/VariantSelector.tsx",
+      "packages/web-core/src/shared/components/tasks/ConfigSelector.tsx",
+      "packages/web-core/src/shared/components/CreateChatBoxContainer.tsx",
+      "packages/web-core/src/shared/dialogs/settings/settings/GeneralSettingsSection.tsx",
+      "packages/web-core/src/shared/lib/executor.ts"
+    ]
+  },
+  "grade": {
+    "score": 1.0,
+    "checks": {
+      "old_name_gone": true,
+      "new_name_in_expected_files": true,
+      "only_expected_files_changed": true,
+      "web_core_check_passes": true
+    },
+    "changed": [
+      "packages/web-core/src/shared/components/CreateChatBoxContainer.tsx",
+      "packages/web-core/src/shared/components/VariantSelector.tsx",
+      "packages/web-core/src/shared/components/tasks/ConfigSelector.tsx",
+      "packages/web-core/src/shared/dialogs/settings/settings/GeneralSettingsSection.tsx",
+      "packages/web-core/src/shared/lib/executor.ts"
+    ],
+    "tsc_tail": ""
+  },
+  "cost_usd": 0.11759,
+  "input_tokens": 10,
+  "output_tokens": 938,
+  "cache_creation_tokens": 17756,
+  "cache_read_tokens": 185830,
+  "num_turns": 5,
+  "duration_ms": 27062,
+  "wall_s": 29.2,
+  "is_error": false,
+  "tool_calls": 4,
+  "tool_calls_by_kind": {
+    "Bash": 4
+  },
+  "tool_calls_by_name": {
+    "Bash": 4
+  },
+  "subagent_tool_calls": 0,
+  "result_text": "All occurrences renamed successfully across the 5 files \u2014 definition, all imports, and all call sites.\n\n```json\n{\"files_changed\": [\"packages/web-core/src/shared/components/VariantSelector.tsx\", \"packages/web-core/src/shared/components/tasks/ConfigSelector.tsx\", \"packages/web-core/src/shared/components/CreateChatBoxContainer.tsx\", \"packages/web-core/src/shared/dialogs/settings/settings/GeneralSettingsSection.tsx\", \"packages/web-core/src/shared/lib/executor.ts\"]}\n```"
+}
