@@ -41,14 +41,6 @@
           "type": "boolean",
           "description": "Caveman communication mode"
         },
-        "serena": {
-          "type": "boolean",
-          "description": "Serena MCP semantic code tools"
-        },
-        "code-review-graph": {
-          "type": "boolean",
-          "description": "code-review-graph MCP knowledge graph"
-        },
         "lavish": {
           "type": "boolean",
           "description": "Route bundled multi-question decision points through the lavish-axi binary instead of terminal AskUserQuestion. Also requires the binary on PATH; skills check both and fall back silently when either is absent."

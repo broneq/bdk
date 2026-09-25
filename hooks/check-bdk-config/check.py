@@ -6,6 +6,9 @@ If .bdk/settings.json exists in the project root:
 
 If missing or malformed:
     Prints decision=block JSON instructing user to run /bdk:setup.
+
+A `features` key the schema does not declare (for example one a past BDK
+version wrote) prints a warning line and never blocks.
 """
 
 from __future__ import annotations
@@ -25,6 +28,8 @@ INVALID_REASON = """\
 .bdk/settings.json is malformed or failed validation.
 
 Run /bdk:setup --force to regenerate it."""
+
+SCHEMA_PATH = Path(__file__).with_name("settings.schema.json")
 
 _TOOL_ARRAY_KEYS = ("test-tools", "lint-tools", "build-tools")
 
@@ -98,6 +103,12 @@ def validate_settings(settings: dict) -> list[str]:  # type: ignore[type-arg]
     return errors
 
 
+def known_feature_keys() -> frozenset[str]:
+    """Feature keys declared in settings.schema.json, the single source of truth."""
+    schema = json.loads(SCHEMA_PATH.read_text())
+    return frozenset(schema["properties"]["features"]["properties"])
+
+
 def read_stdin_json() -> dict:  # type: ignore[type-arg]
     """Read hook input from stdin."""
     try:
@@ -145,9 +156,16 @@ def format_settings_context(settings: dict) -> str:  # type: ignore[type-arg]
         lines.append(f"Build commands: {_format_tools(build_tools)}")
 
     features = settings.get("features", {})
-    if features:
-        feature_parts = [f"{k}={'on' if v else 'off'}" for k, v in features.items()]
+    known = known_feature_keys()
+    feature_parts = [f"{k}={'on' if v else 'off'}" for k, v in features.items() if k in known]
+    if feature_parts:
         lines.append(f"Features: {', '.join(feature_parts)}")
+    for key in features:
+        if key not in known:
+            lines.append(
+                f"[BDK] WARNING: features.{key} is not a BDK feature and is ignored. "
+                f"Remove it from .bdk/settings.json."
+            )
 
     return "\n".join(lines)
 

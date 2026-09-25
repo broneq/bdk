@@ -9,7 +9,7 @@ Keys:
     test-tools      → one block per tier (full / scoped / related / failed)
     lint-tools      → one block per tier (full / scoped / incremental)
     build-tools     → one block per tool
-    features        → caveman=on, serena=on, code-review-graph=off
+    features        → caveman=on, lavish=off
 
 Tool keys emit a block per entry rather than a flat prose string, because the
 scoping form of a command is what callers actually need most of the time and

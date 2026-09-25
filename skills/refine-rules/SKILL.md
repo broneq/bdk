@@ -5,7 +5,6 @@ model: sonnet
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[rules-dir]"
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Refine Rules
@@ -27,7 +26,7 @@ no trust just by being there; it earns trust by matching the code you actually r
 
 ### 1. Discover Rule Files
 
-Run the discovery script instead of hand-parsing with Read/Glob:
+Run the discovery script instead of parsing the files by hand:
 
 ```
 python3 ${CLAUDE_SKILL_DIR}/scripts/list_rule_files.py $ARGUMENTS
@@ -88,15 +87,13 @@ This is a fast text-judgment pass — do it in main context, no code access need
 This is the step that makes the output trustworthy. Do not skip it because a claim
 "sounds right" — that's exactly the failure mode this skill exists to catch.
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
-
 **3.1 — Split checkable vs. non-checkable claims.**
 
 - **Checkable** (has ground truth in the repo): file/dir locations, exports, config
   settings, exclusion lists, banned/required API patterns, index names, version pins,
   "X calls Y" relationships.
 - **Non-checkable** (process/preference statements): "ask before assuming",
-  "prefer composition over inheritance", team workflow conventions. Grep can't confirm
+  "prefer composition over inheritance", team workflow conventions. A code search can't confirm
   or refute a preference — don't force verification on these, just sanity-check they
   still make sense given what step 1–2 surfaced.
 

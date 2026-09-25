@@ -2,22 +2,6 @@
 
 This file is injected into every session via SessionStart hook. It defines the BDK contract inherited by all skills.
 
-## Tool Tier System
-
-When exploring, searching, editing, or reviewing code, use the best available tool tier. The instructions below are injected based on your project's enabled features.
-
-**Exploration & Architecture:**
-
-<!-- CHAIN: explore.chain.json -->
-
-**Symbol Search & Tracing:**
-
-<!-- CHAIN: search.chain.json -->
-
-**Impact Analysis:**
-
-<!-- CHAIN: impact.chain.json -->
-
 ## Agents
 
 BDK ships these subagents. Invoke via the Agent tool with the listed `subagent_type`.

@@ -18,7 +18,7 @@ All fields optional except `description` (recommended).
 | `argument-hint` | Autocomplete hint for args. Example: `[issue-number]` or `[filename] [format]`. |
 | `disable-model-invocation` | `true` = user-only (not Claude). Use for `/commit`, `/deploy`, etc. |
 | `user-invocable` | `false` = hidden from `/` menu. Claude-only background knowledge. |
-| `allowed-tools` | Tools auto-approved when skill active. Space-separated or YAML list. Supports glob patterns (e.g. `mcp__plugin_bdk_*` to grant access to all plugin-bundled MCP tools). For MCP tool naming convention see `.claude/rules/mcp-tool-naming.md`. **Pre-approval, not a whitelist** - a tool absent from this list still works, it just goes through the normal permission flow. |
+| `allowed-tools` | Tools auto-approved when skill active. Space-separated or YAML list. Supports glob patterns (e.g. `Bash(git *)`). **Pre-approval, not a whitelist** - a tool absent from this list still works, it just goes through the normal permission flow. |
 | `disallowed-tools` | Tools **removed from the pool** while the skill is active - the only frontmatter field that restricts rather than pre-approves. Use it when a skill's prose states an invariant about what it must never call, so the invariant is enforced instead of requested: `AskUserQuestion` for an autonomous background skill, `Edit`/`NotebookEdit` for a read-only reviewer. Same accepted forms as `allowed-tools`. `/bdk:skill-lint` check 22 flags a stated invariant with no matching field. |
 | `model` | Model override. |
 | `effort` | `low` / `medium` / `high` / `xhigh` / `max`. Overrides session effort; which levels exist depends on the model. |
@@ -29,6 +29,10 @@ All fields optional except `description` (recommended).
 | `shell` | `bash` (default) or `powershell`. |
 
 **Wrong:** `arguments:` field does not exist. Use `argument-hint:` for autocomplete hints.
+
+**No MCP tools.** BDK ships no MCP server (ADR-0001), so no skill or agent names an MCP tool, in frontmatter or in prose; a missing tool fails silently at user runtime.
+
+**No tool guidance.** Skill and agent prose says what to find or check, not which tool to use ("find the callers of X", not "Grep for X"). The host's system prompt already teaches its tools; repeating it costs context and goes stale. Naming a tool is fine only where the tool is the subject: `allowed-tools`, a dispatch to `Agent`, an `AskUserQuestion` call, or a script the step runs.
 
 **If the skill body runs a `!`...`` block against `${CLAUDE_PLUGIN_ROOT}/scripts/`:** add `allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)`. `${CLAUDE_PLUGIN_ROOT}` resolves inside `allowed-tools` Bash rules the same way it does in skill body content, so the rule stays correct wherever the plugin is installed. This pre-approves the call instead of leaving it to be decided fresh each time, which matters most for `user-invocable: false` meta-skills preloaded into background subagents.
 
@@ -153,7 +157,6 @@ Multiple `--if` = AND logic. Use `--then-text` for inline text instead of a file
 | Condition | True when |
 |-----------|-----------|
 | `features.react` | `settings.features.react == true` |
-| `features.code-review-graph` | `settings.features.code-review-graph == true` |
 | `languages[typescript]` | `"typescript" in settings.languages` |
 | `tool.lavish-axi` | an executable named `lavish-axi` is on `PATH` |
 
@@ -170,20 +173,19 @@ the user wants it, the probe says the machine has it.
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --if languages[typescript] --then ${CLAUDE_SKILL_DIR}/fragments/react-ts.md`
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.code-review-graph --then-text "Run detect_changes first for risk scoring."`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.caveman --then-text "Keep status lines terse."`
 ```
 
 ## Rules
 
 - Put conditional fragments in `fragments/` subdir of the skill — see `.claude/rules/inject-fragments.md`
 - Use `--then-text` only for short snippets (1-2 lines); use `--then` + file for anything longer
-- Missing `.bdk/settings.json` = silent (exit 0) — graceful for projects not using BDK
+- Missing `.bdk/settings.json` = silent (exit 0): no condition can match, so nothing renders
 - A **false** condition is silent; a **broken** one is not. Unknown condition syntax, a missing `--then`
-  file, or a bad chain prints `[bdk-inject-error] <desc>` to **stdout** and still exits 0. That is
+  file, or a bad argument (including a flag that no longer exists) prints `[bdk-inject-error] <desc>` to **stdout** and still exits 0. That is
   deliberate: a `!`...`` block captures stdout only and ignores the exit code, so stderr + exit 1 would
   render a broken injection as an empty one. Same contract in `inject-rules.py` and
-  `inject-language-rules.py`; `render_startup.py` is exempt because it runs from a hook, where stderr
-  is visible.
+  `inject-language-rules.py`.
 - Settings file searched upward from cwd — no need to specify path in skills
 
 ## Programmatic API

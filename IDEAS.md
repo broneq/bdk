@@ -3,10 +3,8 @@
 * [ ] Add rules for multi language support (TS, React, Python)
 * [ ] Add startup script — check if required skills from other marketplaces installed:
     * [ ] caveman
-    * [ ] codegraph
-    * [ ] serena
-* [X] Config in repo root — disable serena, set local doc dir, load project-specific docs deterministically
-* [ ] SessionStart script — check required tools available (uvx, npm, etc.)
+* [X] Config in repo root - set local doc dir, load project-specific docs deterministically
+* [ ] SessionStart script — check required tools available (npm, etc.)
 * [X] Inject into templates dynamic instructions for instance `! inject-language-specific-rules.py`
   * [X] skills/cr/reviewer-prompt-template.md (paths to docs)
   * [X] skills/create-adr/SKILL.md (adr docs path from config)
