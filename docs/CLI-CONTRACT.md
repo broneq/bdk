@@ -179,10 +179,10 @@ Each command carries exactly one class in the index (`availability`). The `hooks
 
 | Class | Who may call | Guarded | Verbs |
 |---|---|---|---|
-| `orchestrator` | The main thread (the orchestrating skill) and tests. | Yes: denied to subagents by `hooks pre-tool`. | Every command that writes into the Change, the working tree or the configuration: `change new|resume|park|takeover|checkpoint|close`, `done`, `part start|done|split`, `attempt open|close`, `log ingest|resolve|route`, `dispatch build|run`, `spec merge`, `config set`, `commit`, `rules add|import|export`, `export agents`, `rebuild`, `import`. |
-| `agent` | Subagents and the main thread. | No. | The five operations a worker or runner needs (T2, T3): `log add`, `log show`, `dispatch show`, `evidence record`, `ctx skill|role|startup`. |
-| `hook` | The host only, through `hooks.json` or skill frontmatter. | Yes: a Bash invocation is denied in every thread (T1 defence in depth). | `hooks session-start|session-end|prompt-expansion|pre-tool|skill-exists`. |
-| `read` | Anyone. | No. | Read-only queries with no side effect beyond the lazy index rebuild: `next`, `explain`, `validate`, `measure`, `change status|list`, `part list`, `attempt list`, `log list`, `evidence check`, `spec delta check|diff`, `config show|check|schema`, `query`, `rules check|show|explain|prune|stats`, `doctor`, `version`. |
+| `orchestrator` | The main thread (the orchestrating skill) and tests. | Yes: denied to subagents by `hooks pre-tool`. | Every command that writes into the Change, the working tree or the configuration: `change new\|resume\|park\|takeover\|checkpoint\|close`, `done`, `part start\|done\|split`, `attempt open\|close`, `log ingest\|resolve\|route`, `dispatch build\|run`, `spec merge`, `config set`, `commit`, `rules add\|import\|export`, `export agents`, `rebuild`, `import`. |
+| `agent` | Subagents and the main thread. | No. | The five operations a worker or runner needs (T2, T3): `log add`, `log show`, `dispatch show`, `evidence record`, `ctx skill\|role\|startup`. |
+| `hook` | The host only, through `hooks.json` or skill frontmatter. | Yes: a Bash invocation is denied in every thread (T1 defence in depth). | `hooks session-start\|session-end\|prompt-expansion\|pre-tool\|skill-exists`. |
+| `read` | Anyone. | No. | Read-only queries with no side effect beyond the lazy index rebuild: `next`, `explain`, `validate`, `measure`, `change status\|list`, `part list`, `attempt list`, `log list`, `evidence check`, `spec delta check\|diff`, `config show\|check\|schema`, `query`, `rules check\|show\|explain\|prune\|stats`, `doctor`, `version`. |
 
 `hooks prompt-expansion` is the only writer of `source: user` transition entries; there is no `approve`, no `gate pass`, and `log add` cannot produce `source: user` (T1, P1, S8). A model that wants a gate passed has exactly one option: render the gate status and stop, so that the user types the next stage command.
 
