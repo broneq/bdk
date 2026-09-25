@@ -19,10 +19,10 @@
 
 ## 3. shared/registry, main.ts and the E2E harness
 
-- [ ] 3.1 Build the E2E support: `kernel/tests/support/fixture.ts` (temp git repository with requested files, cleanup) and `kernel/tests/support/run.ts` (spawns `dist/bdk.mjs` with `process.execPath`, returns code, stdout, stderr, parsed JSON), with a unit test of the fixture itself; verify `pnpm test:unit` passes
-- [ ] 3.2 Write failing unit tests for the registry pipeline (design D-5): unknown command with the closest id, `--help` before any check, unknown flag, missing argument, literal outside `values`, runtime check order, the runtime floor with an injected Node version (22.12.9 gives exit 5 with an install line for an ordinary record, exit 0 for `version`), `nodeGate: false` registration, stub answer with owner task in `why` and `instead`, and the three mode wrappers (command exit by class, inject exit 0 with STOP block, guard exit 2 with stderr and never 3-5); verify they fail
-- [ ] 3.3 Implement `shared/registry` with the runtime checks as injected functions (the work tree check arrives with `shared/git` in 6.2) and `kernel/src/main.ts` (composition root, top-level catch per mode); verify 3.2 passes
-- [ ] 3.4 Write the `--help` parity contract test (usage text lists exactly the record's arguments, flags and exit codes, stubs included, `kernel-cli` Invocation scenarios help parity and help for a stubbed command); verify it passes
+- [x] 3.1 Build the E2E support: `kernel/tests/support/fixture.ts` (temp git repository with requested files, cleanup) and `kernel/tests/support/run.ts` (spawns `dist/bdk.mjs` with `process.execPath`, returns code, stdout, stderr, parsed JSON), with a unit test of the fixture itself; verify `pnpm test:unit` passes
+- [x] 3.2 Write failing unit tests for the registry pipeline (design D-5): unknown command with the closest id, `--help` before any check, unknown flag, missing argument, literal outside `values`, runtime check order, the runtime floor with an injected Node version (22.12.9 gives exit 5 with an install line for an ordinary record, exit 0 for `version`), `nodeGate: false` registration, stub answer with owner task in `why` and `instead`, and the three mode wrappers (command exit by class, inject exit 0 with STOP block, guard exit 2 with stderr and never 3-5); verify they fail
+- [x] 3.3 Implement `shared/registry` with the runtime checks as injected functions (the work tree check arrives with `shared/git` in 6.2) and `kernel/src/main.ts` (composition root, top-level catch per mode); verify 3.2 passes
+- [x] 3.4 Write the `--help` parity contract test (usage text lists exactly the record's arguments, flags and exit codes, stubs included, `kernel-cli` Invocation scenarios help parity and help for a stubbed command); verify it passes
 
 ## 4. shared/clock and shared/ids
 

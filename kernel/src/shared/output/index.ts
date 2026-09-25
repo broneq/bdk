@@ -34,7 +34,7 @@ export function refusalText(refusal: Refusal): string {
   return `${lines.join("\n")}\n`;
 }
 
-export function stopBlock(refusal: Refusal): string {
+export function stopBlock(refusal: Pick<Refusal, "why" | "instead">): string {
   return `BDK STOP: ${refusal.why}\nInstead: ${refusal.instead.join("; ")}\n`;
 }
 
