@@ -60,7 +60,7 @@
 
 ## 9. CI and dependency updates
 
-- [ ] 9.1 Rewrite `.github/workflows/tests.yml` per design D-9: keep `pytest`; add `kernel` (matrix 22.13 / 24 / 26 with every step of the `CI pipeline` requirement in order, identical on every line), `lint-repo` (actionlint over `.github/workflows/`; on pull requests commitlint `--from` base `--to` head), `audit` (`pnpm audit --prod --audit-level high`), `skill-check` (stub that prints "skill-check lands in T15" and exits 0); remove the T10 `contract` job; verify with `actionlint` locally and by the green run in 12.1
+- [x] 9.1 Rewrite `.github/workflows/tests.yml` per design D-9: keep `pytest`; add `kernel` (matrix 22.13 / 24 / 26 with every step of the `CI pipeline` requirement in order, identical on every line), `lint-repo` (actionlint over `.github/workflows/`; on pull requests commitlint `--from` base `--to` head), `audit` (`pnpm audit --prod --audit-level high`), `skill-check` (stub that prints "skill-check lands in T15" and exits 0); remove the T10 `contract` job; verify with `actionlint` locally and by the green run in 12.1
 - [x] 9.2 Add `.github/dependabot.yml` (npm and github-actions, monthly, one group each; design D-10); verify it parses and note in the PR description that it takes effect once it reaches `main`
 
 ## 10. Spec follow-up outside the delta
@@ -74,6 +74,6 @@
 
 ## 12. Acceptance
 
-- [ ] 12.1 Push the branch and open the PR into `staging/v3`; verify CI is green with the steps build, `git diff --exit-code dist/`, lint, format check, typecheck, knip, unit with coverage, E2E and contract on 22.13 / 24 / 26, plus `lint-repo`, `audit` and `skill-check`
+- [x] 12.1 Push the branch and open the PR into `staging/v3`; verify CI is green with the steps build, `git diff --exit-code dist/`, lint, format check, typecheck, knip, unit with coverage, E2E and contract on 22.13 / 24 / 26, plus `lint-repo`, `audit` and `skill-check`
 - [x] 12.2 Run the acceptance signal by hand on a v2 fixture: `node dist/bdk.mjs doctor` in a temp git repository with `.bdk/settings.json` prints the `v2-layout` finding with `bdk import`; `node dist/bdk.mjs change status` under Node 22.12.0 (`nvm exec 22.12`) exits 5 with an install line; verify both outputs are quoted in the PR description
 - [x] 12.3 Run `openspec validate v3-t11-kernel-skeleton --strict`; verify it reports the change as valid
