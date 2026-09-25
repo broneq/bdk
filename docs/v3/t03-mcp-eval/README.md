@@ -60,6 +60,8 @@ A run is valid only if its `system` / `init` event shows:
 
 The harness discards and reruns a run that fails the check.
 
+The Claude account was switched (`/login`) during the Haiku batch, before V8 r2. Every run after the switch passed the isolation check; the account does not enter any metric except that `cost_usd` is the list-price cost reported by the CLI, which is the same for both accounts.
+
 ## Worktree reuse
 
 Each configuration has its own worktree of the snapshot, prepared once: `pnpm install --frozen-lockfile --offline`, `.bdk/settings.json`, `.serena/project.yml`, and a built graph for CG / CGS. Before every run the worktree is reset with `git reset --hard && git clean -fdx -e node_modules -e .bdk -e .serena -e .code-review-graph`. So each run starts from the snapshot's files, with the warm caches a working developer has (installed dependencies, built graph, serena cache). The reset leaves files byte-identical to the state the graph was built from, so the graph is never stale at run start.

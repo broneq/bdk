@@ -1,0 +1,48 @@
+{
+  "cfg": "C0",
+  "task": "V3",
+  "model": "haiku",
+  "rep": 1,
+  "exit_code": 0,
+  "valid": true,
+  "isolation_problems": [],
+  "started_at": "2026-09-25T11:26:37",
+  "answer": {
+    "files": [
+      "packages/web-core/src/pages/workspaces/WorkspacesMainContainer.tsx",
+      "packages/web-core/src/shared/hooks/useWorkspaceSessions.ts",
+      "packages/web-core/src/shared/types/attempt.ts"
+    ]
+  },
+  "grade": {
+    "precision": 1.0,
+    "recall": 0.429,
+    "f1": 0.6,
+    "got": [
+      "packages/web-core/src/pages/workspaces/WorkspacesMainContainer.tsx",
+      "packages/web-core/src/shared/hooks/useWorkspaceSessions.ts",
+      "packages/web-core/src/shared/types/attempt.ts"
+    ],
+    "score": 0.6
+  },
+  "cost_usd": 0.0509039,
+  "input_tokens": 50,
+  "output_tokens": 1265,
+  "cache_creation_tokens": 13861,
+  "cache_read_tokens": 168069,
+  "num_turns": 6,
+  "duration_ms": 31253,
+  "wall_s": 33.3,
+  "is_error": false,
+  "tool_calls": 5,
+  "tool_calls_by_kind": {
+    "Bash": 2,
+    "Read": 3
+  },
+  "tool_calls_by_name": {
+    "Bash": 2,
+    "Read": 3
+  },
+  "subagent_tool_calls": 0,
+  "result_text": "```json\n{\"files\": [\"packages/web-core/src/pages/workspaces/WorkspacesMainContainer.tsx\", \"packages/web-core/src/shared/hooks/useWorkspaceSessions.ts\", \"packages/web-core/src/shared/types/attempt.ts\"]}\n```"
+}

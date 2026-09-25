@@ -1,0 +1,74 @@
+{
+  "cfg": "CG",
+  "task": "V7",
+  "model": "haiku",
+  "rep": 2,
+  "exit_code": 0,
+  "valid": true,
+  "isolation_problems": [],
+  "started_at": "2026-09-25T11:50:53",
+  "answer": {
+    "unused": [
+      "downloadBlobUrl",
+      "getCachedToken",
+      "calculateDefaultHeight",
+      "areProfilesEqual",
+      "isLocalApiPath",
+      "toPathAndQuery",
+      "listenToClickToComponent",
+      "sortByRecency",
+      "sortProvidersByRecency",
+      "bulkUpdateProjects",
+      "getRelationshipLabel",
+      "generateProjectNameFromPath"
+    ]
+  },
+  "grade": {
+    "precision": 0.417,
+    "recall": 1.0,
+    "f1": 0.588,
+    "got": [
+      "downloadBlobUrl",
+      "getCachedToken",
+      "calculateDefaultHeight",
+      "areProfilesEqual",
+      "isLocalApiPath",
+      "toPathAndQuery",
+      "listenToClickToComponent",
+      "sortByRecency",
+      "sortProvidersByRecency",
+      "bulkUpdateProjects",
+      "getRelationshipLabel",
+      "generateProjectNameFromPath"
+    ],
+    "score": 0.588
+  },
+  "cost_usd": 0.19391655,
+  "input_tokens": 10,
+  "output_tokens": 129,
+  "cache_creation_tokens": 664,
+  "cache_read_tokens": 31136,
+  "num_turns": 1,
+  "duration_ms": 1676,
+  "wall_s": 111.4,
+  "is_error": false,
+  "tool_calls": 37,
+  "tool_calls_by_kind": {
+    "Agent": 1,
+    "other": 9,
+    "graph": 16,
+    "Read": 11
+  },
+  "tool_calls_by_name": {
+    "Agent": 1,
+    "Glob": 1,
+    "mcp__plugin_bdk_code-review-graph__refactor_tool": 1,
+    "mcp__plugin_bdk_code-review-graph__list_graph_stats_tool": 1,
+    "Read": 11,
+    "Grep": 7,
+    "mcp__plugin_bdk_code-review-graph__query_graph_tool": 14,
+    "mcp__plugin_bdk_code-review_graph__query_graph_tool": 1
+  },
+  "subagent_tool_calls": 36,
+  "result_text": "```json\n{\"unused\": [\"downloadBlobUrl\", \"getCachedToken\", \"calculateDefaultHeight\", \"areProfilesEqual\", \"isLocalApiPath\", \"toPathAndQuery\", \"listenToClickToComponent\", \"sortByRecency\", \"sortProvidersByRecency\", \"bulkUpdateProjects\", \"getRelationshipLabel\", \"generateProjectNameFromPath\"]}\n```"
+}

@@ -1,0 +1,58 @@
+{
+  "cfg": "CGS",
+  "task": "V8",
+  "model": "haiku",
+  "rep": 3,
+  "exit_code": 0,
+  "valid": true,
+  "isolation_problems": [],
+  "started_at": "2026-09-25T12:10:22",
+  "answer": {
+    "files_changed": [
+      "packages/web-core/src/shared/lib/executor.ts",
+      "packages/web-core/src/shared/components/CreateChatBoxContainer.tsx",
+      "packages/web-core/src/shared/components/tasks/ConfigSelector.tsx",
+      "packages/web-core/src/shared/components/VariantSelector.tsx",
+      "packages/web-core/src/shared/dialogs/settings/settings/GeneralSettingsSection.tsx"
+    ]
+  },
+  "grade": {
+    "score": 1.0,
+    "checks": {
+      "old_name_gone": true,
+      "new_name_in_expected_files": true,
+      "only_expected_files_changed": true,
+      "web_core_check_passes": true
+    },
+    "changed": [
+      "packages/web-core/src/shared/components/CreateChatBoxContainer.tsx",
+      "packages/web-core/src/shared/components/VariantSelector.tsx",
+      "packages/web-core/src/shared/components/tasks/ConfigSelector.tsx",
+      "packages/web-core/src/shared/dialogs/settings/settings/GeneralSettingsSection.tsx",
+      "packages/web-core/src/shared/lib/executor.ts"
+    ],
+    "tsc_tail": ""
+  },
+  "cost_usd": 0.14285250000000002,
+  "input_tokens": 146,
+  "output_tokens": 4299,
+  "cache_creation_tokens": 23725,
+  "cache_read_tokens": 737615,
+  "num_turns": 18,
+  "duration_ms": 46420,
+  "wall_s": 56.0,
+  "is_error": false,
+  "tool_calls": 17,
+  "tool_calls_by_kind": {
+    "Bash": 3,
+    "Read": 5,
+    "edit": 9
+  },
+  "tool_calls_by_name": {
+    "Bash": 3,
+    "Read": 5,
+    "Edit": 9
+  },
+  "subagent_tool_calls": 0,
+  "result_text": "Perfect! I've successfully renamed the function `getSortedExecutorVariantKeys` to `sortExecutorVariantKeys` throughout the repository. The changes include:\n\n1. **Definition** in `packages/web-core/src/shared/lib/executor.ts`\n2. **Imports and calls** in 4 files:\n   - `packages/web-core/src/shared/components/CreateChatBoxContainer.tsx`\n   - `packages/web-core/src/shared/components/tasks/ConfigSelector.tsx`\n   - `packages/web-core/src/shared/components/VariantSelector.tsx`\n   - `packages/web-core/src/shared/dialogs/settings/settings/GeneralSettingsSection.tsx`\n\nAll occurrences have been updated, and no old function name references remain.\n\n```json\n{\"files_changed\": [\"packages/web-core/src/shared/lib/executor.ts\", \"packages/web-core/src/shared/components/CreateChatBoxContainer.tsx\", \"packages/web-core/src/shared/components/tasks/ConfigSelector.tsx\", \"packages/web-core/src/shared/components/VariantSelector.tsx\", \"packages/web-core/src/shared/dialogs/settings/settings/GeneralSettingsSection.tsx\"]}\n```"
+}

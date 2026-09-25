@@ -1,0 +1,74 @@
+{
+  "cfg": "CGS",
+  "task": "V7",
+  "model": "haiku",
+  "rep": 1,
+  "exit_code": 0,
+  "valid": true,
+  "isolation_problems": [],
+  "started_at": "2026-09-25T11:46:19",
+  "answer": {
+    "unused": [
+      "downloadBlobUrl",
+      "getCachedToken",
+      "calculateDefaultHeight",
+      "areProfilesEqual",
+      "isLocalApiPath",
+      "toPathAndQuery",
+      "listenToClickToComponent",
+      "sortByRecency",
+      "sortProvidersByRecency",
+      "bulkUpdateProjects",
+      "getRelationshipLabel",
+      "generateProjectNameFromPath"
+    ]
+  },
+  "grade": {
+    "precision": 0.417,
+    "recall": 1.0,
+    "f1": 0.588,
+    "got": [
+      "downloadBlobUrl",
+      "getCachedToken",
+      "calculateDefaultHeight",
+      "areProfilesEqual",
+      "isLocalApiPath",
+      "toPathAndQuery",
+      "listenToClickToComponent",
+      "sortByRecency",
+      "sortProvidersByRecency",
+      "bulkUpdateProjects",
+      "getRelationshipLabel",
+      "generateProjectNameFromPath"
+    ],
+    "score": 0.588
+  },
+  "cost_usd": 0.15864865000000003,
+  "input_tokens": 18,
+  "output_tokens": 726,
+  "cache_creation_tokens": 13756,
+  "cache_read_tokens": 48610,
+  "num_turns": 2,
+  "duration_ms": 74001,
+  "wall_s": 80.3,
+  "is_error": false,
+  "tool_calls": 20,
+  "tool_calls_by_kind": {
+    "Agent": 1,
+    "other": 4,
+    "serena": 1,
+    "Read": 12,
+    "graph": 2
+  },
+  "tool_calls_by_name": {
+    "Agent": 1,
+    "Glob": 1,
+    "mcp__plugin_bdk_serena__get_symbols_overview": 1,
+    "Read": 12,
+    "mcp__plugin_bdk_code-review-graph__list_graph_stats_tool": 1,
+    "Grep": 3,
+    "mcp__plugin_bdk_code-review-graph__refactor_tool": 1
+  },
+  "subagent_tool_calls": 19,
+  "result_text": "```json\n{\"unused\": [\"downloadBlobUrl\", \"getCachedToken\", \"calculateDefaultHeight\", \"areProfilesEqual\", \"isLocalApiPath\", \"toPathAndQuery\", \"listenToClickToComponent\", \"sortByRecency\", \"sortProvidersByRecency\", \"bulkUpdateProjects\", \"getRelationshipLabel\", \"generateProjectNameFromPath\"]}\n```"
+}

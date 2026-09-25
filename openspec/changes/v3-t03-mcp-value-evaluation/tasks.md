@@ -25,8 +25,8 @@
 
 ## 5. Value runs
 
-- [ ] 5.1 Run V1-V8 x C0 / CG / CS / CGS x 3 on Haiku 4.5 (96 runs); verify 96 raw run files exist, each passes the isolation check (rerun any that do not), and each has a correctness score
-- [ ] 5.2 Grade V5 and V6 with the Haiku 4.5 judge and the committed rubric, then spot-check every judged score by hand; verify each judged score has the judge output and the spot-check note next to it
+- [x] 5.1 Run V1-V8 x C0 / CG / CS / CGS x 3 on Haiku 4.5 (96 runs); verify 96 raw run files exist, each passes the isolation check (rerun any that do not), and each has a correctness score
+- [x] 5.2 Grade V5 and V6 with the Haiku 4.5 judge and the committed rubric, then spot-check every judged score by hand; verify each judged score has the judge output and the spot-check note next to it
 - [ ] 5.3 Run the Sonnet 5 confirmation slice (V2, V4, V5, V8 x 4 configurations x 1); verify whether the ranking of configurations per task matches the Haiku medians and record the result
 - [ ] 5.4 Build the value table (per task and configuration: median and range of correctness, `total_cost_usd`, tokens, turns, tool calls by kind, wall time) with raw numbers per run; apply the D-7 value rule per server and verify each verdict cites the cells it rests on
 - [ ] 5.5 From the V1-V4 and V7 tool-call data, answer R-7's `scout` merge question (do the four former agents need different tool sets); verify the answer cites the per-task tool usage

@@ -1,0 +1,74 @@
+{
+  "cfg": "CGS",
+  "task": "V7",
+  "model": "haiku",
+  "rep": 3,
+  "exit_code": 0,
+  "valid": true,
+  "isolation_problems": [],
+  "started_at": "2026-09-25T11:59:57",
+  "answer": {
+    "unused": [
+      "getCachedToken",
+      "downloadBlobUrl",
+      "calculateDefaultHeight",
+      "areProfilesEqual",
+      "isLocalApiPath",
+      "toPathAndQuery",
+      "listenToClickToComponent",
+      "sortByRecency",
+      "sortProvidersByRecency",
+      "getRelationshipLabel",
+      "generateProjectNameFromPath"
+    ]
+  },
+  "grade": {
+    "precision": 0.364,
+    "recall": 0.8,
+    "f1": 0.5,
+    "got": [
+      "getCachedToken",
+      "downloadBlobUrl",
+      "calculateDefaultHeight",
+      "areProfilesEqual",
+      "isLocalApiPath",
+      "toPathAndQuery",
+      "listenToClickToComponent",
+      "sortByRecency",
+      "sortProvidersByRecency",
+      "getRelationshipLabel",
+      "generateProjectNameFromPath"
+    ],
+    "score": 0.5
+  },
+  "cost_usd": 0.22382920000000003,
+  "input_tokens": 10,
+  "output_tokens": 257,
+  "cache_creation_tokens": 907,
+  "cache_read_tokens": 31699,
+  "num_turns": 1,
+  "duration_ms": 3406,
+  "wall_s": 146.3,
+  "is_error": false,
+  "tool_calls": 27,
+  "tool_calls_by_kind": {
+    "Agent": 1,
+    "other": 3,
+    "graph": 7,
+    "Read": 11,
+    "serena": 5
+  },
+  "tool_calls_by_name": {
+    "Agent": 1,
+    "Glob": 1,
+    "mcp__plugin_bdk_code-review-graph__list_graph_stats_tool": 1,
+    "Read": 11,
+    "mcp__plugin_bdk_serena__find_symbol": 4,
+    "mcp__plugin_bdk_serena__get_symbols_overview": 1,
+    "Grep": 2,
+    "mcp__plugin_bdk_code-review-graph__refactor_tool": 1,
+    "mcp__plugin_bdk_code-review-graph__query_graph_tool": 5
+  },
+  "subagent_tool_calls": 26,
+  "result_text": "```json\n{\"unused\": [\"getCachedToken\", \"downloadBlobUrl\", \"calculateDefaultHeight\", \"areProfilesEqual\", \"isLocalApiPath\", \"toPathAndQuery\", \"listenToClickToComponent\", \"sortByRecency\", \"sortProvidersByRecency\", \"getRelationshipLabel\", \"generateProjectNameFromPath\"]}\n```"
+}

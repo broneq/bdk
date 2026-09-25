@@ -1,0 +1,48 @@
+{
+  "cfg": "C0",
+  "task": "V2",
+  "model": "haiku",
+  "rep": 2,
+  "exit_code": 0,
+  "valid": true,
+  "isolation_problems": [],
+  "started_at": "2026-09-25T11:22:22",
+  "answer": {
+    "call_sites": [
+      "packages/web-core/src/shared/dialogs/auth/GhCliSetupDialog.tsx:148",
+      "packages/web-core/src/shared/dialogs/shared/TagEditDialog.tsx:84",
+      "packages/web-core/src/shared/dialogs/command-bar/EditBranchNameDialog.tsx:49"
+    ]
+  },
+  "grade": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "got": [
+      "packages/web-core/src/shared/dialogs/auth/GhCliSetupDialog.tsx:148",
+      "packages/web-core/src/shared/dialogs/shared/TagEditDialog.tsx:84",
+      "packages/web-core/src/shared/dialogs/command-bar/EditBranchNameDialog.tsx:49"
+    ],
+    "score": 1.0
+  },
+  "cost_usd": 0.0963883,
+  "input_tokens": 98,
+  "output_tokens": 4458,
+  "cache_creation_tokens": 15120,
+  "cache_read_tokens": 437603,
+  "num_turns": 12,
+  "duration_ms": 82332,
+  "wall_s": 84.3,
+  "is_error": false,
+  "tool_calls": 11,
+  "tool_calls_by_kind": {
+    "Read": 5,
+    "Bash": 6
+  },
+  "tool_calls_by_name": {
+    "Read": 5,
+    "Bash": 6
+  },
+  "subagent_tool_calls": 0,
+  "result_text": "```json\n{\"call_sites\": [\"packages/web-core/src/shared/dialogs/auth/GhCliSetupDialog.tsx:148\", \"packages/web-core/src/shared/dialogs/shared/TagEditDialog.tsx:84\", \"packages/web-core/src/shared/dialogs/command-bar/EditBranchNameDialog.tsx:49\"]}\n```"
+}

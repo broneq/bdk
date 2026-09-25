@@ -1,0 +1,52 @@
+{
+  "cfg": "CG",
+  "task": "V2",
+  "model": "haiku",
+  "rep": 3,
+  "exit_code": 0,
+  "valid": true,
+  "isolation_problems": [],
+  "started_at": "2026-09-25T11:23:47",
+  "answer": {
+    "call_sites": [
+      "packages/web-core/src/shared/dialogs/auth/GhCliSetupDialog.tsx:148",
+      "packages/web-core/src/shared/dialogs/command-bar/EditBranchNameDialog.tsx:49",
+      "packages/web-core/src/shared/dialogs/shared/TagEditDialog.tsx:84"
+    ]
+  },
+  "grade": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "got": [
+      "packages/web-core/src/shared/dialogs/auth/GhCliSetupDialog.tsx:148",
+      "packages/web-core/src/shared/dialogs/command-bar/EditBranchNameDialog.tsx:49",
+      "packages/web-core/src/shared/dialogs/shared/TagEditDialog.tsx:84"
+    ],
+    "score": 1.0
+  },
+  "cost_usd": 0.040993600000000005,
+  "input_tokens": 52,
+  "output_tokens": 1587,
+  "cache_creation_tokens": 6900,
+  "cache_read_tokens": 192066,
+  "num_turns": 6,
+  "duration_ms": 145377,
+  "wall_s": 169.2,
+  "is_error": false,
+  "tool_calls": 5,
+  "tool_calls_by_kind": {
+    "Read": 1,
+    "ToolSearch": 1,
+    "Bash": 1,
+    "graph": 2
+  },
+  "tool_calls_by_name": {
+    "Read": 1,
+    "ToolSearch": 1,
+    "Bash": 1,
+    "mcp__plugin_bdk_code-review-graph__query_graph_tool": 2
+  },
+  "subagent_tool_calls": 0,
+  "result_text": "```json\n{\"call_sites\": [\"packages/web-core/src/shared/dialogs/auth/GhCliSetupDialog.tsx:148\", \"packages/web-core/src/shared/dialogs/command-bar/EditBranchNameDialog.tsx:49\", \"packages/web-core/src/shared/dialogs/shared/TagEditDialog.tsx:84\"]}\n```"
+}
