@@ -85,6 +85,30 @@ Tests mirror the layout of what they cover: `tests/unit/scripts/`, `tests/unit/h
 
 ---
 
+## Kernel (Node / TypeScript)
+
+The v3 kernel lives in `kernel/`: sources in `kernel/src/` (one directory per slice plus `shared/`, see `openspec/specs/kernel-architecture/spec.md`), kernel-wide tests in `kernel/tests/`. esbuild bundles it into `dist/bdk.mjs`, the one file the plugin runs.
+
+Requires Node and pnpm. Use the Node version in `.nvmrc` (`nvm use`); any Node from 22.13.0 on works. pnpm comes from the `packageManager` field of `package.json` (`corepack enable`).
+
+```bash
+pnpm install          # also installs the git hooks (husky)
+pnpm build            # rebuild dist/bdk.mjs
+pnpm lint             # ESLint, type-aware
+pnpm format           # Prettier over the whole repository (pnpm format:check to only check)
+pnpm typecheck        # tsc --noEmit
+pnpm knip             # unused files, exports and dependencies
+pnpm test:unit        # unit tests from source, with coverage thresholds
+pnpm test:e2e         # E2E tests through dist/bdk.mjs (run pnpm build first)
+pnpm test:contract    # contract, structure, bundle and dependency tests
+```
+
+- `dist/bdk.mjs` is committed and generated. Never edit it: change `kernel/src/`, run `pnpm build` and commit the result with the source. CI rebuilds it and fails when `git diff --exit-code dist/` shows a difference.
+- The pre-commit hook formats and lints staged files; the commit-msg hook enforces Conventional Commits, which release-please reads. CI runs the same checks and does not rely on the hooks.
+- Dependencies are pinned to exact versions. Runtime dependencies are limited to `zod` and `yaml`; a test fails on anything else.
+
+---
+
 ## Modifying the Shared Foundation
 
 `STARTUP_INSTRUCTIONS.md` is injected into every user session. Edit with care — it affects all skills and occupies context on every session start. Test in a fresh session after changes.

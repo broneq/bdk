@@ -8,7 +8,7 @@
 - [x] 1.4 Run `pnpm format` over the repository as its own commit `style: format the repository with Prettier`; verify `tests/contract/cli-contract.test.mjs` (`node --test tests/contract/*.test.mjs`) and `pytest tests/unit/` still pass and that `docs/v3/`, `CHANGELOG.md` and `openspec/changes/archive/` are untouched
 - [x] 1.5 Add husky (`prepare` script) with `pre-commit` running lint-staged (`eslint --fix` and `prettier --write` on staged `*.ts`, `prettier --write` on staged JSON, YAML and Markdown) and `commit-msg` running commitlint (`commitlint.config.mjs` extending `@commitlint/config-conventional`); verify a commit with an unformatted file is formatted by the hook and a commit message `bad message` is rejected
 - [x] 1.6 Add the esbuild build (design D-3: `--target=node22.13`, ESM, `dist/bdk.mjs`, index inlined) over a placeholder `kernel/src/main.ts`; verify `pnpm build` twice in a row leaves `git diff --exit-code dist/` clean (deterministic output) and `pnpm lint`, `pnpm format:check`, `pnpm typecheck` and `pnpm knip` pass
-- [ ] 1.7 Document the Node toolchain in `CONTRIBUTING.md` and the Development Commands of `CLAUDE.md` (Node from `.nvmrc`, `pnpm install` installs the hooks, `pnpm build`, `pnpm lint`, `pnpm format`, `pnpm test:unit|e2e|contract`, `dist/bdk.mjs` is committed and rebuilt, never edited); verify every documented command runs as written
+- [x] 1.7 Document the Node toolchain in `CONTRIBUTING.md` and the Development Commands of `CLAUDE.md` (Node from `.nvmrc`, `pnpm install` installs the hooks, `pnpm build`, `pnpm lint`, `pnpm format`, `pnpm test:unit|e2e|contract`, `dist/bdk.mjs` is committed and rebuilt, never edited); verify every documented command runs as written
 
 ## 2. shared/refusal and shared/output
 
