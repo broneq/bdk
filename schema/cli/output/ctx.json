@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/ctx.json",
   "title": "bdk ctx skill --json",
-  "description": "Compose the prompt context a skill's `!` block injects: tool tiers, fragments, rules, prompt values.",
+  "description": "Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -25,7 +25,6 @@
         "properties": {
           "kind": {
             "enum": [
-              "tier",
               "fragment",
               "rules",
               "language-rules",
@@ -36,7 +35,7 @@
           },
           "source": {
             "type": "string",
-            "description": "File or chain that produced the part."
+            "description": "File that produced the part."
           }
         }
       }
@@ -63,12 +62,8 @@
   },
   "examples": [
     {
-      "content": "## Tool tiers\n...",
+      "content": "## Code quality\n...",
       "parts": [
-        {
-          "kind": "tier",
-          "source": "fragments/tool-tiers/search.chain.json"
-        },
         {
           "kind": "rules",
           "source": "rules/code-quality.md"

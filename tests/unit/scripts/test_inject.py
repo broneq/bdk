@@ -25,7 +25,6 @@ inject_mod = _load_module()
 load_settings = inject_mod.load_settings
 evaluate_condition = inject_mod.evaluate_condition
 inject = inject_mod.inject
-inject_chain = inject_mod.inject_chain
 
 
 def _write_settings(tmp_path: Path, data: dict) -> Path:
@@ -467,213 +466,22 @@ def test_cli_prefer_multiple_or_semantics(tmp_path):
     assert result.stdout == ""
 
 
-def _write_chain(path, data):
-    path.write_text(json.dumps(data))
-    return path
-
-
 # ---------------------------------------------------------------------------
-# inject_chain — exclusive mode
+# Argument errors follow the stdout error contract
 # ---------------------------------------------------------------------------
 
-def test_chain_exclusive_first_match_returned(tmp_path):
-    """Exclusive mode returns content from first matching block only."""
-    settings = {"features": {"vue": True, "react": True}}
 
-    vue_file = tmp_path / "search-vue.md"
-    vue_file.write_text("# Vue search")
-    react_file = tmp_path / "search-react.md"
-    react_file.write_text("# React search")
-
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.vue"], "then": str(vue_file)},
-            {"if": ["features.react"], "then": str(react_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == "# Vue search"
-
-
-def test_chain_exclusive_skips_to_second_when_first_fails(tmp_path):
-    """Exclusive mode skips to next block when first condition fails."""
-    settings = {"features": {"vue": False, "react": True}}
-
-    vue_file = tmp_path / "search-vue.md"
-    vue_file.write_text("# Vue search")
-    react_file = tmp_path / "search-react.md"
-    react_file.write_text("# React search")
-
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.vue"], "then": str(vue_file)},
-            {"if": ["features.react"], "then": str(react_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == "# React search"
-
-
-def test_chain_exclusive_unconditional_fallback(tmp_path):
-    """Block with no 'if' is an unconditional fallback."""
-    settings = {"features": {"vue": False, "react": False}}
-
-    fallback_file = tmp_path / "fallback.md"
-    fallback_file.write_text("# Fallback")
-
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.vue"], "then": str(tmp_path / "vue.md")},
-            {"then": str(fallback_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == "# Fallback"
-
-
-def test_chain_exclusive_no_match_returns_empty(tmp_path):
-    """Exclusive mode returns empty string when no block matches."""
-    settings = {"features": {"vue": False}}
-    vue_file = tmp_path / "vue.md"
-    vue_file.write_text("content")
-
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.vue"], "then": str(vue_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == ""
-
-
-# ---------------------------------------------------------------------------
-# inject_chain — additive mode
-# ---------------------------------------------------------------------------
-
-def test_chain_additive_concatenates_all_matching(tmp_path):
-    """Additive mode concatenates content from all matching blocks."""
-    settings = {"features": {"vue": True, "react": True}}
-
-    vue_file = tmp_path / "edit-vue.md"
-    vue_file.write_text("# Vue edit")
-    react_file = tmp_path / "edit-react.md"
-    react_file.write_text("# React edit")
-
-    chain_file = _write_chain(tmp_path / "edit.chain.json", {
-        "mode": "additive",
-        "chain": [
-            {"if": ["features.vue"], "then": str(vue_file)},
-            {"if": ["features.react"], "then": str(react_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert "# Vue edit" in result
-    assert "# React edit" in result
-
-
-def test_chain_additive_only_matching_blocks(tmp_path):
-    """Additive mode skips blocks whose conditions are false."""
-    settings = {"features": {"vue": True, "react": False}}
-
-    vue_file = tmp_path / "edit-vue.md"
-    vue_file.write_text("# Vue edit")
-    react_file = tmp_path / "edit-react.md"
-    react_file.write_text("# React edit")
-
-    chain_file = _write_chain(tmp_path / "edit.chain.json", {
-        "mode": "additive",
-        "chain": [
-            {"if": ["features.vue"], "then": str(vue_file)},
-            {"if": ["features.react"], "then": str(react_file)},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert "# Vue edit" in result
-    assert "# React edit" not in result
-
-
-# ---------------------------------------------------------------------------
-# inject_chain — path resolution
-# ---------------------------------------------------------------------------
-
-def test_chain_resolves_paths_relative_to_chain_file(tmp_path):
-    """Paths in chain files resolve relative to chain file directory."""
-    settings = {"features": {"vue": True}}
-
-    subdir = tmp_path / "tool-tiers"
-    subdir.mkdir()
-    vue_file = subdir / "search-vue.md"
-    vue_file.write_text("# Vue content")
-
-    chain_file = _write_chain(subdir / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [
-            {"if": ["features.vue"], "then": "search-vue.md"},
-        ]
-    })
-    result = inject_chain(chain_file, settings)
-    assert result == "# Vue content"
-
-
-# ---------------------------------------------------------------------------
-# inject_chain — CLI
-# ---------------------------------------------------------------------------
-
-def test_cli_chain_exclusive_first_match(tmp_path):
-    _write_settings(tmp_path, {"features": {"vue": True}})
-
-    vue_file = tmp_path / "vue.md"
-    vue_file.write_text("# Vue")
-    chain_file = _write_chain(tmp_path / "search.chain.json", {
-        "mode": "exclusive",
-        "chain": [{"if": ["features.vue"], "then": str(vue_file)}],
-    })
-
-    result = _run_cli(["--chain", str(chain_file)], cwd=tmp_path)
+def test_cli_unknown_flag_prints_error_on_stdout(tmp_path):
+    """A `!` block captures stdout only: an argparse error on stderr with exit 2
+    would render a stale call to a removed flag as an empty block."""
+    result = _run_cli(["--no-such-flag", "x"], cwd=tmp_path)
     assert result.returncode == 0
-    assert result.stdout == "# Vue"
-
-
-def test_cli_chain_missing_file_reports_on_stdout(tmp_path):
-    result = _run_cli(["--chain", str(tmp_path / "nonexistent.json")], cwd=tmp_path)
-    assert result.returncode == 0
-    assert "[bdk-inject-error]" in result.stdout
+    assert result.stdout.startswith("[bdk-inject-error]"), result.stdout
     assert result.stderr == ""
 
 
-def test_chain_none_settings_renders_unconditional_entry(tmp_path):
-    """Without project settings an unconditional entry still renders: it is
-    the text for "nothing matched", and no settings means nothing matched."""
-    body = tmp_path / "always.md"
-    body.write_text("always")
-    chain_file = _write_chain(tmp_path / "test.chain.json", {
-        "mode": "exclusive",
-        "chain": [{"then": str(body)}],
-    })
-    assert inject_chain(chain_file, settings=None) == "always"
-
-
-def test_chain_none_settings_skips_conditional_entry(tmp_path):
-    body = tmp_path / "flagged.md"
-    body.write_text("flagged")
-    chain_file = _write_chain(tmp_path / "test.chain.json", {
-        "mode": "exclusive",
-        "chain": [{"if": ["features.caveman"], "then": str(body)}],
-    })
-    assert inject_chain(chain_file, settings=None) == ""
-
-
-def test_cli_chain_without_settings_file_renders_unconditional_entry(tmp_path):
-    body = tmp_path / "always.md"
-    body.write_text("always")
-    chain_file = _write_chain(tmp_path / "test.chain.json", {
-        "mode": "exclusive",
-        "chain": [{"then": str(body)}],
-    })
-    result = _run_cli(["--chain", str(chain_file)], cwd=tmp_path)
+def test_cli_missing_then_prints_error_on_stdout(tmp_path):
+    result = _run_cli(["--if", "features.react"], cwd=tmp_path)
     assert result.returncode == 0
-    assert result.stdout == "always"
+    assert result.stdout.startswith("[bdk-inject-error]"), result.stdout
+    assert result.stderr == ""

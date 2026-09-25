@@ -3,8 +3,8 @@
 Narrow agents stay narrow: agents with tightly scoped tool sets
 (test-runner, static-analyse, web-researcher, log-analyzer, fixer,
 implementer) keep their declared sets. Adding a tool to one of these
-requires updating the spec inline. MCP tool names in any agent are
-rejected by `tests/unit/test_no_mcp_names.py`.
+requires updating the spec inline. `/agent-lint` fails on any MCP tool
+name in a plugin agent.
 """
 
 from __future__ import annotations

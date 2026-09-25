@@ -11,7 +11,7 @@ Each explorer answers one **question dimension**. Pick the agents whose question
 ```
 Feature: {feature}
 
-You are an explorer subagent. Use the tool guidance your skills frontmatter has loaded (built-in `Grep`, `Glob`, `Read`).
+You are an explorer subagent.
 
 Start with the directory shape of the area the feature names, then search for the concepts your question needs.
 

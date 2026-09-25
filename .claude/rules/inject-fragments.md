@@ -33,7 +33,7 @@ bdk/
 
 **Use when:** Fragment content is injected into multiple skills (e.g., decision-routing steps, setup instructions, reusable checklists).
 
-**Naming:** Capability directory names the capability the fragments serve (e.g., `decision-tier/`, `tool-tiers/`).
+**Naming:** Capability directory names the capability the fragments serve (e.g., `decision-tier/`).
 
 ### Skill-local fragments
 
@@ -99,16 +99,11 @@ Bundle the open questions for the user...
 ### When to use this skill
 ```
 
-## Chain files
-
-For multi-tier injection (fallback ladders, complementary tool sets), use a `*.chain.json` file with `inject.py --chain`. Each tier fragment is self-contained — it carries its own tool list and policy rules. Schema and examples in `.claude/rules/fragment-system.md`.
-
 ## Rules summary
 
 - **Fragments ≠ references**: Fragments are conditional; references are static. See decision tree above for placement.
 - **Syntax**: Use `--then <file>` for content >2 lines; `--then-text` for snippets.
 - **Placement**: Inject calls go immediately before the section they augment.
-- **Multi-tier**: Use `--chain <file>.chain.json` instead of multiple `--if/--then` calls. See `fragment-system.md`.
 - **Frontmatter**: a skill running these `!`...`` calls needs `allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)` — see `.claude/rules/skill-creation-rules.md`.
 
 ## Related: rule injection (not fragments)
@@ -117,7 +112,7 @@ Three mechanisms coexist — do not confuse them:
 
 | Mechanism | Trigger | Source | Use case |
 |---|---|---|---|
-| `inject.py` | `!`...`` shell line with `--if` / `--chain` | Skill/agent body | Conditional fragments based on `features.*` or `languages[...]` |
+| `inject.py` | `!`...`` shell line with `--if` / `--prefer` | Skill/agent body | Conditional fragments based on `features.*` or `languages[...]` |
 | `inject-rules.py` | `!`...`` shell line, name as arg | `rules/<name>.md` (BDK) + `quality.<name>` override | Language-agnostic quality rules - whatever `rules/*.md` ships |
 | `inject-language-rules.py` | `!`...`` shell line | `rules/languages/<lang>.md` per entry in `languages` + `language-rules.<lang>` override | Language- or framework-specific rule sheets |
 

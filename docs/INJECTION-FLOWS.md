@@ -10,7 +10,7 @@ Audit of every dynamic-content injection mechanism in BDK, mapped against the Cl
 
 **Audit date:** 2026-05-05
 
-> **Update 2026-09-25 (ADR-0001):** BDK no longer ships MCP servers. Each tool-tier chain now holds one unconditional entry with built-in tool guidance (`Grep`, `Glob`, `Read`, `Bash`), and no agent lists an MCP tool. The injection mechanisms audited below are unchanged; where this document talks about tiers choosing between tools, that choice no longer exists.
+> **Update 2026-09-25 (ADR-0001):** BDK no longer ships MCP servers. The tool-tier layer went with them: `fragments/tool-tiers/`, the `bdk-tier-*` meta-skills, `inject.py --chain` and `scripts/render_startup.py` are removed, and the SessionStart hook prints `STARTUP_INSTRUCTIONS.md` as a static file. Flows 2, 3 and the tier parts of the preload flow below describe the removed layer; the `skills:` preload of `bdk-rules-*` and the tool meta-skills is unchanged.
 
 ---
 

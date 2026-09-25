@@ -7,19 +7,12 @@ Doc: realistic examples of explain-complex-code skill across codebase sizes.
 **Command**: `/explain-complex-code src/services/migration/`
 
 **Step 2.1 - Initial Discovery**:
-```python
-# Discover 12 files across 3 subdirectories
-Glob(pattern="src/services/migration/**")
-# Files found: document_migration_service.py, + parsers/ (3 files) + transformers/ (4 files) + storage/ (4 files)
-```
+- Discover 12 files across 3 subdirectories
+- Files found: document_migration_service.py, + parsers/ (3 files) + transformers/ (4 files) + storage/ (4 files)
 
 **Step 2.2 - Map Dependencies**:
-```python
-# Find key classes
-Grep(pattern="class DocumentMigrationService", path="src/services/migration/")
-Grep(pattern="DocumentMigrationService", path="src/", output_mode="files_with_matches")
-# Discovers: Service orchestrates Parser → Transformer → Storage flow
-```
+- Find key classes
+- Discovers: Service orchestrates Parser → Transformer → Storage flow
 
 **Step 2.3 - Decision**: 12 files → Group by architectural layers (4 groups)
 
@@ -45,10 +38,7 @@ Agent(subagent_type="Explore", prompt="Explore Storage Block (storage/repository
 **Command**: `/explain-complex-code src/services/position_mapping/token_alignment.py`
 
 **Step 2.1 - Initial Discovery**:
-```python
-Grep(pattern="^(class|def) ", path="src/services/position_mapping/token_alignment.py", output_mode="content", "-n": true)
-# Files found: token_alignment.py (450 lines), test file (300 lines)
-```
+- Files found: token_alignment.py (450 lines), test file (300 lines)
 
 **Step 2.3 - Decision**: 2 files → 1 subagent to protect main context
 
@@ -70,17 +60,10 @@ Agent(subagent_type="Explore", prompt="Explore Token Alignment module (token_ali
 **Command**: `/explain-complex-code src/services/change_detection/`
 
 **Step 2.1 - Initial Discovery**:
-```python
-Glob(pattern="src/services/change_detection/**")
-# Files found: 7 files (unmarked_change_detector.py, froala_marker.py, + detectors/ (3 files) + rules/ (2 files))
-```
+- Files found: 7 files (unmarked_change_detector.py, froala_marker.py, + detectors/ (3 files) + rules/ (2 files))
 
 **Step 2.2 - Map Dependencies**:
-```python
-Grep(pattern="class UnmarkedChangeDetector", path="src/services/change_detection/")
-Grep(pattern="UnmarkedChangeDetector", path="src/", output_mode="files_with_matches")
-# Discovers: Main detector orchestrates Rules → Detectors → Marker flow
-```
+- Discovers: Main detector orchestrates Rules → Detectors → Marker flow
 
 **Step 2.3 - Decision**: 7 files → Group into 2 logical blocks (not 3, keep simple)
 
@@ -103,10 +86,7 @@ Agent(subagent_type="Explore", prompt="Explore Detection Utilities Block (detect
 **Command**: `/explain-complex-code src/utils/position_calculator.py`
 
 **Step 2.1 - Initial Discovery**:
-```python
-Grep(pattern="^(class|def) ", path="src/utils/position_calculator.py", output_mode="content", "-n": true)
-# File: 180 lines, 3 classes, 8 helper functions
-```
+- File: 180 lines, 3 classes, 8 helper functions
 
 **Step 2.3 - Decision**: 1 file → 1 subagent to protect context
 
@@ -128,18 +108,11 @@ Agent(subagent_type="Explore", prompt="Explore position_calculator.py: Report al
 **Command**: `/explain-complex-code src/services/`
 
 **Step 2.1 - Initial Discovery**:
-```python
-Glob(pattern="src/services/**")
-# Files found: 18 files across migration/, transformation/, change_detection/, position_mapping/
-```
+- Files found: 18 files across migration/, transformation/, change_detection/, position_mapping/
 
 **Step 2.2 - Map Dependencies**:
-```python
-# Analyze top-level services
-Grep(pattern="class \\w+Service", path="src/services/", output_mode="content", "-n": true)
-Grep(pattern="<ServiceName>", path="src/", output_mode="files_with_matches")
-# Discovers: 4 main service categories with clear boundaries
-```
+- Analyze top-level services
+- Discovers: 4 main service categories with clear boundaries
 
 **Step 2.3 - Decision**: 18 files → Group by service categories (4 layers)
 

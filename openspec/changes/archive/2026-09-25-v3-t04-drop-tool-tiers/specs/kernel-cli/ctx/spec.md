@@ -1,26 +1,6 @@
-# kernel-cli/ctx Specification
+# Spec Delta
 
-## Purpose
-
-Prompt context (`ctx`). The three inject-mode composers that replace the v2 injection scripts: `skill` for a skill's `!` block, `role` for a role class, `startup` for the session foundation.
-
-Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
-
-Representative refusal:
-
-```json refusal
-{
-  "refused": true,
-  "rule": "input/not-found",
-  "why": "no skill named debugg under skills/ or the configured fragment roots",
-  "instead": [
-    "bdk ctx skill debug",
-    "check the skill name in the ! block"
-  ]
-}
-```
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: bdk ctx skill
 

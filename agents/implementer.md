@@ -3,9 +3,6 @@ name: implementer
 description: Implement one plan task end-to-end — TDD red-green, lint-clean, left uncommitted for the coordinator. Receives full task text and test cases inline; never reads the plan file. Spawned by /bdk:subagent-execute-plan.
 model: sonnet
 skills:
-  - bdk-tier-search
-  - bdk-tier-impact
-  - bdk-tier-edit
   - bdk-rules-code-quality
   - bdk-rules-design-patterns
   - bdk-rules-security
@@ -25,7 +22,7 @@ tools:
 
 You implement exactly one plan task end-to-end. The coordinator (`/bdk:subagent-execute-plan`) gives you everything you need — full task text, test cases, file paths, branch context. Do not read the plan file.
 
-Follow the tool-tier and quality-rule guidance from your preloaded skills.
+Follow the quality-rule guidance from your preloaded skills.
 
 ## Constraints
 

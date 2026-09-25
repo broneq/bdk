@@ -10,7 +10,7 @@ disallowed-tools: Edit Write NotebookEdit
 
 # PR Review Orchestrator
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and tool guidance.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 Take PR URLs, spawn one reviewer subagent per PR, and land the result where it belongs: on GitHub, as inline comments plus a templated summary ending in an explicit verdict. `--verify` runs the follow-up pass instead: did the author implement what the previous review asked for?
 

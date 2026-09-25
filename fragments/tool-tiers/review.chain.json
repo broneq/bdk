@@ -1,6 +1,0 @@
-{
-  "mode": "exclusive",
-  "chain": [
-    { "then": "review-fallback.md" }
-  ]
-}

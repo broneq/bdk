@@ -24,7 +24,7 @@ The kernel source SHALL be organised as one slice per command group plus `shared
 | `evidence` | `evidence record`, `check` | T23 | Evidence manifests, tree hashes, citations and freshness (T4, P5). |
 | `spec` | `spec delta check`, `merge`, `diff` | T30 | Spec deltas and the deterministic merge (D2b, V1-7). |
 | `config` | `config show`, `check`, `schema`, `set` | T12 | The commands over the layered configuration; the layering itself is `shared/config`. |
-| `ctx` | `ctx skill`, `role`, `startup` | T13 | Prompt context composition: tiers, fragments, rules, prompt values, the agents table. |
+| `ctx` | `ctx skill`, `role`, `startup` | T13 | Prompt context composition: fragments, rules, prompt values, the agents table. |
 | `rules` | `rules check`, `show`, `add`, `explain`, `prune`, `import`, `stats`, `export` | T31 | Rule files, ids, `applies` selection and the learning funnel. |
 | `query` | `query` | T20 | Read-only SQL over the index. |
 | `commit` | `commit` | T22 | The task commit with BDK trailers. |

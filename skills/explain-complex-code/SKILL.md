@@ -4,7 +4,6 @@ description: Generate comprehensive architecture documentation for complex code 
 model: sonnet
 user-invocable: true
 argument-hint: "[path]"
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 hooks:
   Stop:
     - hooks:
@@ -15,7 +14,7 @@ hooks:
 
 # Explain Complex Code
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and tool guidance.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 Generate architecture docs for complex code with visual diagrams and examples.
 
@@ -31,12 +30,10 @@ Generate architecture docs for complex code with visual diagrams and examples.
 
 **Step 2.1: Initial Discovery**
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
-
-Using the exploration tools above: find all symbols and identify the high-dependency ones (most importers).
+Find all symbols in the area and identify the high-dependency ones (most importers).
 
 **Step 2.2: Map Dependencies**
-For each key class/function: `Grep` its name across the source tree for callers, and read its body for the callees it uses.
+For each key class/function: find its callers across the source tree, and read its body for the callees it uses.
 
 **Step 2.3: Decide Partitioning Strategy**
 

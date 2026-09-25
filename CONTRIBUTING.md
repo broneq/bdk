@@ -14,7 +14,7 @@ Skills are thin workflow definitions. Environment discovery is handled by `START
 
 ### Built-in Tools Only
 
-BDK ships no MCP server (see `docs/adr/0001-remove-bundled-mcp-servers.md`). Skills and agents explore code with the host's built-in tools: `Grep`, `Glob` and `Read` in subagents, and `Bash` with `rg`, `grep`, `find` or `git` where a session has no `Grep` / `Glob`. The tool guidance lives in the `fragments/tool-tiers/` chains, one text per purpose.
+BDK ships no MCP server (see `docs/adr/0001-remove-bundled-mcp-servers.md`). Skills and agents run on the host's built-in tools, and the host already tells the model how to use them. So BDK adds no tool guidance: a skill or agent step says what to find or check, not which tool to use for it.
 
 ### Skill Authoring Convention
 
@@ -105,45 +105,15 @@ These stay in the project-level `.claude/` of each repo:
 
 Fragments are conditional Markdown files injected into skills at load time.
 
-### Creating a Leaf Fragment
+### Creating a Fragment
 
 1. Decide scope: shared (`fragments/<capability>/`) or skill-local (`skills/<name>/fragments/`)
-2. Name the file after the purpose or feature it teaches (e.g. `search-fallback.md`, `react.md`)
-3. Write content that teaches Claude WHEN and HOW to use the tools — not just a tool list
-4. Keep content under 10 lines; longer content should be split into multiple fragments
-
-### Creating a Chain File
-
-1. Create `<purpose>.chain.json` in the same directory as the leaf files
-2. Choose mode:
-   - `exclusive` — fallback tiers (first match wins)
-   - `additive` — complementary tools (all matches combined)
-3. Paths are relative to the chain file's own directory
-4. The last entry in an exclusive chain may have no `"if"` — unconditional fallback
-
-```json
-{
-  "mode": "exclusive",
-  "chain": [
-    { "if": ["features.react"], "then": "components-react.md" },
-    { "if": ["features.vue"], "then": "components-vue.md" },
-    { "then": "components-plain.md" }
-  ]
-}
-```
-
-### Referencing a Chain from a Skill
+2. Name the file after the feature it serves (e.g. `lavish.md`, `react.md`)
+3. Keep content under 10 lines; longer content should be split into multiple fragments
+4. Inject it with one `inject.py --if` call placed right before the section it augments:
 
 ```markdown
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --then ${CLAUDE_SKILL_DIR}/fragments/react.md`
 ```
 
-### Naming Conventions
-
-- Chain files: `<purpose>.chain.json`
-- Leaf files: `<purpose>-<variant>.md` (e.g. `components-react.md`, `components-plain.md`)
-- The tool-tier chains hold one entry each, `<purpose>-fallback.md`; the name stays so a future tier can be added without renaming consumers
-
-### When NOT to Use Chains
-
-- **Agents**: static markdown, no shell execution at load time; preload a `bdk-tier-*` meta-skill via `skills:` frontmatter instead
+Agents are static markdown with no shell execution at load time: they get dynamic content by preloading a `bdk-rules-*` (or other meta-) skill via `skills:` frontmatter.

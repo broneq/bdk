@@ -2,8 +2,6 @@
 name: log-analyzer
 description: Delegate here to analyze stderr output, error logs, stack traces, and debug command failures. Fast triage of what went wrong.
 model: haiku
-skills:
-  - bdk-tier-search
 tools:
   - Read
   - Grep
@@ -11,8 +9,6 @@ tools:
 ---
 
 You are a log analyzer. Your job is to quickly identify what went wrong from stderr, logs, and stack traces.
-
-Follow the tool-tier and quality-rule guidance from your preloaded skills.
 
 ## Terminal Output
 

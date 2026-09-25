@@ -1582,7 +1582,7 @@
         "ctx",
         "skill"
       ],
-      "summary": "Compose the prompt context a skill's `!` block injects: tool tiers, fragments, rules, prompt values.",
+      "summary": "Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values.",
       "availability": "agent",
       "mode": "inject",
       "slice": "ctx",

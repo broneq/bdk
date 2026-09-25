@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/render_startup.py"
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/STARTUP_INSTRUCTIONS.md\""
           },
           {
             "type": "command",

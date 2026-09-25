@@ -10,7 +10,7 @@ disallowed-tools: Edit NotebookEdit
 
 # Dynamic Code Review Orchestrator
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and tool guidance.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 Determine what changed, dispatch specialized reviewers in parallel, merge their findings into one report.
 
@@ -73,11 +73,7 @@ focus:       the rest of $ARGUMENTS, or null
 
 With `dispatch: inline` the Step 2 terminal line reads `Dispatching inline (no agents)` instead of an agent count, and Step 3 is the engine's "Inline dispatch" variant - every cohort performed sequentially in this session, spawning nothing.
 
-Tool tier for reading the change set:
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/review.chain.json`
-
-Use it to add what the raw diff cannot give you, and pass the results into the dispatch as context: which changed files are architectural choke points (flag for `bdk:architecture-reviewer`), which execution paths are impacted (scope context for the test reviewer), and a risk score per file.
+Before dispatching, add what the raw diff cannot give you and pass it into the dispatch as context. `git diff --stat` against the baseline gives the size of each file's change. For each changed public symbol, find its callers across the source tree: files with many callers are architectural choke points (flag them for `bdk:architecture-reviewer`), and the callers name the execution paths the test reviewer should scope to.
 
 Then classify changed files by module, and pair each source file with its test file per the project's own conventions.
 

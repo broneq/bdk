@@ -1,7 +1,7 @@
 # plugin-tooling Specification
 
 ## Purpose
-Defines which tools the shipped BDK plugin relies on: built-in host tools only, with no bundled MCP server, no `uvx` process and one tool-tier text for every project (ADR-0001).
+Defines which tools the shipped BDK plugin relies on: built-in host tools only, with no bundled MCP server, no `uvx` process and no tool-guidance layer (ADR-0001).
 
 ## Requirements
 
@@ -18,39 +18,6 @@ The plugin SHALL NOT declare an MCP server, and none of its hooks SHALL start a 
 
 - **WHEN** the plugin tree is inspected
 - **THEN** it has no `.mcp.json`, no `.serena/` directory and no `hooks/register-graph-repo/` hook
-
-### Requirement: No MCP names in the plugin
-
-No file of the plugin outside its historic records SHALL name the removed servers, their tools or `uvx`. Historic records are `docs/v3/`, `docs/adr/`, `openspec/`, `tests/evals/**/iterations/`, `docs/V3-IMPLEMENTATION-PLAN.md` and `docs/V3-SKILL-INVENTORY.md`.
-
-#### Scenario: repository search
-
-- **WHEN** `git grep -E "mcp__plugin_bdk|code-review-graph|serena|uvx"` runs over the tree with the historic records excluded
-- **THEN** it finds no match
-
-#### Scenario: plugin-namespaced tool names are rejected by a test
-
-- **WHEN** an agent `tools:` list, a skill `allowed-tools` entry, or the body of a shipped agent, skill, fragment, rule or hook names a plugin-namespaced MCP tool (`mcp__plugin_<plugin>_<server>__<tool>`)
-- **THEN** the unit test suite fails and names the file and the tool
-
-### Requirement: One built-in-tools tier
-
-Every tool-tier text the plugin renders SHALL name only built-in host tools (`Read`, `Grep`, `Glob`, `Bash`) and SHALL be the same whatever `features` the project sets.
-
-#### Scenario: tier text independent of features
-
-- **WHEN** `STARTUP_INSTRUCTIONS.md` is rendered and each `bdk-tier-*` meta-skill (`search`, `explore`, `impact`, `edit`, `review`) is resolved, once with no `features` and once with every declared `features` key plus an undeclared one (such as `features.serena`) set to `true`
-- **THEN** each of the two renderings produces the same text, that text is non-empty for every tier, and it names no MCP tool
-
-#### Scenario: tier text without project settings
-
-- **WHEN** the project has no `.bdk/settings.json` and `STARTUP_INSTRUCTIONS.md` is rendered or a `bdk-tier-*` meta-skill is resolved
-- **THEN** each tier shows the same built-in-tools text as with settings, not an empty section
-
-#### Scenario: tier text serves both the main session and subagents
-
-- **WHEN** a tier text is read
-- **THEN** it names the subagent tools (`Grep`, `Glob`, `Read`) and the main-session path (`Bash` with `grep`, `rg`, `find` or `git`, and `Read`), and it does not describe itself as one tier among several
 
 ### Requirement: Removed feature keys warn
 
@@ -74,3 +41,36 @@ The unit test suite SHALL pass on the plugin without the MCP servers, with tests
 
 - **WHEN** `pytest tests/unit/` runs on the result
 - **THEN** every test passes
+
+### Requirement: No tool-tier layer
+
+The plugin SHALL NOT ship a tool-guidance layer on top of the host's built-in tools. There are no tool-tier chain files or fragments, no `bdk-tier-*` meta-skills, no agent preload of a tier skill, no chain markers in `STARTUP_INSTRUCTIONS.md`, and no `--chain` mode in `scripts/inject.py`. The SessionStart hook SHALL print `STARTUP_INSTRUCTIONS.md` unchanged.
+
+#### Scenario: plugin tree
+
+- **WHEN** the plugin tree is inspected
+- **THEN** it has no `fragments/tool-tiers/` directory, no `skills/bdk-tier-*` skill, no `*.chain.json` file and no `scripts/render_startup.py`
+
+#### Scenario: no reference to the tier layer
+
+- **WHEN** a shipped agent, skill, fragment, rule, hook, script or `STARTUP_INSTRUCTIONS.md` is scanned
+- **THEN** no agent `skills:` list names a `bdk-tier-*` skill, and no file calls `inject.py --chain` or holds a `<!-- CHAIN: ... -->` marker
+
+#### Scenario: STARTUP is served verbatim
+
+- **WHEN** the SessionStart hooks run in a project with or without `.bdk/settings.json`
+- **THEN** the STARTUP hook's stdout is byte-identical to `STARTUP_INSTRUCTIONS.md`
+
+#### Scenario: a stale chain call is visible
+
+- **WHEN** a skill body runs `inject.py --chain <file>`
+- **THEN** the command prints a line starting with `[bdk-inject-error]` on stdout and exits 0, so the rendered skill shows the error instead of an empty block
+
+### Requirement: Plugin names no removed MCP server
+
+No file of the plugin outside its historic records SHALL name the removed servers, their tools or `uvx`. Historic records are `docs/v3/`, `docs/adr/`, `openspec/`, `tests/evals/**/iterations/`, `docs/V3-IMPLEMENTATION-PLAN.md` and `docs/V3-SKILL-INVENTORY.md`.
+
+#### Scenario: repository search
+
+- **WHEN** `git grep -E "mcp__plugin_bdk|code-review-graph|serena|uvx"` runs over the tree with the historic records excluded
+- **THEN** it finds no match

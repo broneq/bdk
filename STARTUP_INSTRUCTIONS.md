@@ -2,16 +2,6 @@
 
 This file is injected into every session via SessionStart hook. It defines the BDK contract inherited by all skills.
 
-## Tool Guidance
-
-BDK ships no MCP server; explore, search and trace code with the host's built-in tools. Subagents use `Grep`, `Glob` and `Read`; where a session has no `Grep` / `Glob`, the same searches run through `Bash` (`rg`, `grep`, `find`, `git`).
-
-<!-- CHAIN: explore.chain.json -->
-
-<!-- CHAIN: search.chain.json -->
-
-<!-- CHAIN: impact.chain.json -->
-
 ## Agents
 
 BDK ships these subagents. Invoke via the Agent tool with the listed `subagent_type`.
