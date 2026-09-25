@@ -10,6 +10,7 @@ Reading order for a task that implements a command group: sections 2 to 6 once, 
 - **The only supported invocation** is `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs <args>`. `bdk <args>` in this document is shorthand. No PATH shim is installed, and the `hooks pre-tool` prefilter matches `bdk.mjs` for that reason.
 - **Owner tasks.** Every command carries `owner: Tnn`, the plan task that implements it (`docs/V3-IMPLEMENTATION-PLAN.md`). T11 registers every command in the index from day one; a command whose owner task has not landed is a stub that exits 2 with the rule `kernel/not-implemented` and an `instead` naming the task. Contract tests in T11 assert exactly that: handler or stub, nothing in between.
 - **Amendment rule.** A later task may change a command's arguments, output schema or rules only in the PR that implements the command, editing this document and `schema/cli/` together, with the reason in the PR. T12's zod export must reproduce `schema/cli/` byte for byte, so a schema drift fails CI.
+- **Spec of record.** This document and `schema/cli/` are the specification of the kernel CLI. A change that alters kernel behaviour edits them in the same PR (the contract tests keep the pair consistent) instead of restating the behaviour as OpenSpec requirements; OpenSpec delta specs are for capabilities outside the CLI surface, and a kernel task sets `skip_specs: true` when the contract already carries its acceptance signal.
 - **Versioning.** Additive changes (a new command, a new optional field, a new rule id, a new `since` field on an entry) stay within contract version 3. Removing or renaming a command, a field or an exit code needs a kernel major bump and a new contract version. `bdk version --json` reports both `kernel` (full semver) and `contract`. The dispatch package frontmatter keeps `kernel-version` as the full semver (P10).
 - **What is deliberately absent:** no `approve`, no `gate pass` (T1: a gate is passed by the user typing the next stage command; the only writer of `source: user` is `hooks prompt-expansion`); no `stage enter` (HOST-FACTS `upe-fires`: `UserPromptExpansion` fires for plugin skills, so the fallback is not needed); no `hooks stop` (T02 decision Q-6: the rule-drift Stop hook is not ported).
 - **Sources.** Design: "CLI contract (outline)", "Key boundaries", "UX Touchpoints", "Hooks (V1-1, V1-2)", the sequence diagram under "Selected Approach". Decisions: Q3, T1, T2, T3, P1, P2, P4, P6, P10, P11, K2-K4, R-store. Host facts: `docs/HOST-FACTS.md`. Where a host fact contradicts the design text, this document follows the host fact and cites the row.
@@ -3120,21 +3121,45 @@ Edges not in the table are forbidden, including the reverse of every listed edge
 
 ### Anatomy of one slice
 
+One directory per layer, one file per command inside each layer, so `close` sits at the same relative path in every layer of every slice: `commands/close.ts`, `use-cases/close.ts`, `render/close.ts`, `schema/close.ts`, `tests/close.test.ts`.
+
 ```
 kernel/src/attempt/
-  index.ts        public surface: the three command registrations and the use cases other slices may call
-  commands.ts     argv -> typed input for open, close, list (positional grammar of section 2), flag parsing, --help text from the index record
-  open.ts         use case: budgets, ladder, oscillation, ticket file
-  close.ts        use case: outcome, diff check (part), evidence freshness (evidence), entries check, findings (log), next action
-  list.ts         use case: read model over store queries
-  store.ts        this slice's writes on .bdk/changes/<id>/attempts/ and its index tables, built on shared/store primitives
-  render.ts       text rendering of the three outputs; JSON is the schema's object
-  schema.ts       zod schemas of the outputs; T12 exports them to schema/cli/output/attempt-*.json
-  attempt.test.ts unit tests of the use cases on an in-memory store
-  attempt.e2e.ts  E2E through bdk.mjs on a repository fixture, one case per exit code the index declares
+  index.ts              public surface: the three command registrations and the use cases other slices may call; the only file another slice may import
+  commands/             argv -> typed input, one file per command; --help text from the index record
+    parse.ts            the slice's positional grammar (section 2) and flag parsing, shared by the three commands
+    open.ts
+    close.ts
+    list.ts
+  use-cases/            one file per command; domain logic, no argv, no stdout
+    open.ts             budgets, ladder, oscillation, ticket file
+    close.ts            outcome, diff check (part), evidence freshness (evidence), entries check, findings (log), next action
+    list.ts             read model over store queries
+  domain/               slice-owned types and pure rules, no IO
+    ticket.ts           ticket record, outcome, fingerprint
+    budget.ts           not-run and retry budgets
+    ladder.ts           escalation ladder and the oscillation detector (A-drabina)
+  store/                this slice's persistence on .bdk/changes/<id>/attempts/ and its index tables, built on shared/store primitives
+    attempts.ts         writes: ticket record, outcome, fingerprints, next action
+    queries.ts          typed reads this slice owns (open tickets of a task, budgets)
+  render/               text rendering, one file per command; JSON is the schema's object
+    open.ts
+    close.ts
+    list.ts
+  schema/               zod schemas of the outputs, one file per command; T12 exports them to schema/cli/output/attempt-*.json
+    open.ts
+    close.ts
+    list.ts
+  tests/
+    open.test.ts        unit tests of the use case on an in-memory store
+    close.test.ts
+    list.test.ts
+    attempt.e2e.ts      E2E through bdk.mjs on a repository fixture, one case per exit code the index declares
 ```
 
-Every slice has the same files with the same responsibilities, so a reader who knows one slice knows all of them. A slice with one command (`commit`, `query`, `measure`) keeps the layout with one use-case file.
+Inside a slice the layers point one way: `commands/` imports `use-cases/`, `render/` and `schema/`; `use-cases/` imports `domain/`, `store/`, `schema/` and the `index.ts` of the slices in its matrix row; `store/` imports `domain/` and `shared/store`; `render/` and `schema/` import `domain/` only; `domain/` imports nothing but types from `shared/ids` and `shared/clock`. The import scan below enforces the direction.
+
+Every slice has the same directories with the same responsibilities, so a reader who knows one slice knows all of them. A slice with one command (`commit`, `query`, `measure`) keeps the directories with one file in each; a slice without pure rules omits `domain/`. `graph/domain/kinds/` holds one class per artifact kind, `hooks/domain/` the payload parsers per host event, `dispatch/use-cases/run.ts` is the headless runner.
 
 ### `shared/` inventory and the admission rule
 
@@ -3151,7 +3176,7 @@ Something enters `shared/` for one of two reasons and each entry states which: *
 | `shared/output` | (b) every slice | Text and JSON writers, list pages and the 100-item cap, the STOP block renderer (section 3). |
 | `shared/registry` | (b) every slice | Command registration from `schema/cli/commands.json`, dispatch by argv, `--help`, mode handling (inject always exits 0, guard fail-closed), the active-Change resolution for `changeScoped` records, the `kernel/not-implemented` stub for unregistered handlers. |
 
-A content test allows `node:fs` only in `shared/store`, `shared/config` and `shared/git`, `node:child_process` only in `shared/git` and the `dispatch` runner (`run.ts`, which spawns host CLIs and is the documented exception), and `node:sqlite` only in `shared/store`. `shared/` never imports a slice; the composition root (`kernel/src/main.ts`) wires the slices into the registry.
+A content test allows `node:fs` only in `shared/store`, `shared/config` and `shared/git`, `node:child_process` only in `shared/git` and the `dispatch` runner (`dispatch/use-cases/run.ts`, which spawns host CLIs and is the documented exception), and `node:sqlite` only in `shared/store`. `shared/` never imports a slice; the composition root (`kernel/src/main.ts`) wires the slices into the registry.
 
 ### The flow of one command
 
@@ -3162,8 +3187,8 @@ sequenceDiagram
     autonumber
     participant O as Orchestrator (Bash)
     participant R as shared/registry
-    participant P as attempt/commands
-    participant U as attempt/close
+    participant P as attempt/commands/close
+    participant U as attempt/use-cases/close
     participant PT as part (diff check)
     participant EV as evidence (freshness)
     participant L as log (entries)
@@ -3199,17 +3224,17 @@ sequenceDiagram
 
 ### Recipes
 
-**A new command** touches one slice and the contract: add the record to `schema/cli/commands.json` and its entry to section 7 (the contract test enforces the pair), add the parser case in `<slice>/commands.ts`, the use case file, the zod schema in `<slice>/schema.ts` (T12 exports it), the render case, one unit test per rule the record declares and one E2E case per exit code. Nothing outside the slice changes; the registry reads the index.
+**A new command** touches one slice and the contract: add the record to `schema/cli/commands.json` and its entry to section 7 (the contract test enforces the pair), add `<slice>/commands/<command>.ts`, `<slice>/use-cases/<command>.ts`, `<slice>/schema/<command>.ts` (T12 exports it), `<slice>/render/<command>.ts`, `<slice>/tests/<command>.test.ts` with one unit test per rule the record declares, and one E2E case per exit code. Nothing outside the slice changes; the registry reads the index.
 
-**A new artifact kind** touches `graph` and configuration only: a node in `pipeline.yaml` with its `requires` and `if:` conditions, a kind class in `graph/kinds/` with `validate()` and `instruction()`, the kind's template under `prompts/`. `next`, `explain`, `validate` and `done` need no change, and no other slice learns about the kind (the promise of approach A, kept at slice level).
+**A new artifact kind** touches `graph` and configuration only: a node in `pipeline.yaml` with its `requires` and `if:` conditions, a kind class in `graph/domain/kinds/` with `validate()` and `instruction()`, the kind's template under `prompts/`. `next`, `explain`, `validate` and `done` need no change, and no other slice learns about the kind (the promise of approach A, kept at slice level).
 
-**A new host hook** touches `hooks` only: a payload parser for the event, a decision function, and a fixture under `tests/fixtures/host-payloads/<version>/` recorded with the T01 probe.
+**A new host hook** touches `hooks` only: a payload parser in `hooks/domain/`, a use case with the decision, and a fixture under `tests/fixtures/host-payloads/<version>/` recorded with the T01 probe.
 
 ### Tests per slice and the two structural tests
 
-Each slice carries unit tests of its use cases on an in-memory `shared/store` (no file system, no git) and E2E tests through `dist/bdk.mjs` on a repository fixture. E2E cases are enumerated from the index: for every record, one case per value in `exits` and one per rule in `refusals`, asserting the exit code and, on `--json`, the schema. Two `node:test` structural tests run over the whole tree:
+Each slice carries unit tests of its use cases on an in-memory `shared/store` (no file system, no git) and E2E tests through `dist/bdk.mjs` on a repository fixture. E2E cases are enumerated from the index: for every record, one case per value in `exits` and one per rule in `refusals`, asserting the exit code and, on `--json`, the schema. CI runs the whole suite on a Node matrix of three lines: the minimum the contract names (22.13, HOST-FACTS `node-sqlite-min`), the active LTS and the current release (24 and 26 at the time of writing), because `node:sqlite` and the test runner differ between lines and a kernel that only ever ran on one of them would learn about the others from users. Two `node:test` structural tests run over the whole tree:
 
-1. **Import scan.** Parses every `import` in `kernel/src/`: a slice may import `shared/*` and the `index.ts` of the slices in its matrix row, nothing else (no deep imports, no reverse edges, no slice import from `shared/`). The matrix is read from this section's table, so the document and the code cannot drift apart silently.
+1. **Import scan.** Parses every `import` in `kernel/src/`: a slice may import `shared/*` and the `index.ts` of the slices in its matrix row, nothing else (no deep imports, no reverse edges, no slice import from `shared/`); inside a slice, only the layer direction of the anatomy above (`commands/` never reaches `store/`, `render/` never reaches `use-cases/`, `domain/` reaches nothing). The matrix is read from this section's table, so the document and the code cannot drift apart silently.
 2. **`node:` boundary.** `node:fs`, `node:child_process` and `node:sqlite` appear only in the files the inventory above names.
 
 ### What T11 builds first

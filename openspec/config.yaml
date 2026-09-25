@@ -32,6 +32,7 @@ rules:
   specs:
     - Every item in the task's Acceptance signal becomes a Requirement with at least one "#### Scenario:" in WHEN / THEN form.
     - 'A task whose output is only documents or research (no behaviour change) sets `skip_specs: true` instead of inventing requirements.'
+    - 'docs/CLI-CONTRACT.md and schema/cli/ are the spec of record for the kernel CLI. A kernel task edits them in its PR and sets `skip_specs: true` when the contract already carries its acceptance signal; delta specs are for capabilities outside the CLI surface.'
   design:
     - Each decision records the alternatives considered and why they lost; cite the register ID when a choice follows from an existing decision.
   tasks:
