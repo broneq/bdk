@@ -1,8 +1,0 @@
-{
-  "mode": "additive",
-  "chain": [
-    { "if": ["features.code-review-graph"], "then": "explore-graph.md" },
-    { "if": ["features.serena"], "then": "explore-serena.md" },
-    { "prefer": ["features.code-review-graph", "features.serena"], "then": "explore-fallback.md" }
-  ]
-}

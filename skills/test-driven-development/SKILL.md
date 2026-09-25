@@ -9,7 +9,7 @@ allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 # Test-Driven Development
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 Rigid, gated process. Follow every gate in order. No skipping.
 
@@ -73,11 +73,7 @@ Read project context:
 - Test framework
 - Existing patterns (fixtures, factories, assertions)
 
-Tool-assisted discovery:
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
-
-Using the search tools above: find existing tests to avoid duplication, understand blast radius to prioritize edge cases.
+Search the test directories for the code under change: find existing tests to avoid duplication, understand blast radius to prioritize edge cases.
 
 Identify test file path per project conventions.
 

@@ -1582,7 +1582,7 @@
         "ctx",
         "skill"
       ],
-      "summary": "Compose the prompt context a skill's `!` block injects: tool tiers, fragments, rules, prompt values.",
+      "summary": "Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values.",
       "availability": "agent",
       "mode": "inject",
       "slice": "ctx",
@@ -2098,7 +2098,7 @@
         "hooks",
         "session-start"
       ],
-      "summary": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh, graph registration.",
+      "summary": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh.",
       "availability": "hook",
       "mode": "inject",
       "slice": "hooks",

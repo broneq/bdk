@@ -24,14 +24,14 @@ Representative refusal:
 
 ### Requirement: bdk ctx skill
 
-Compose the prompt context a skill's `!` block injects: tool tiers, fragments, rules, prompt values. The kernel SHALL implement the command as this requirement and its output schema specify.
+Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values. The kernel SHALL implement the command as this requirement and its output schema specify.
 
 - **Synopsis:** `bdk ctx skill <name>`
 - **Availability:** `agent`
 - **Mode:** `inject`
 - **Arguments:**
   - `<name>` (required). Skill name, e.g. debug, plan.
-- **Behaviour:** Replaces `inject.py`, `inject-rules.py` and `inject-language-rules.py` (Configuration section). Inject mode: exits 0 always; a configuration error becomes a STOP block. Resolution order: feature flags from the resolved configuration, then fragment chains, then rules by id filtered by `applies`, then Markdown prompt values with `mode: extends|replace`.
+- **Behaviour:** Replaces `inject.py`, `inject-rules.py` and `inject-language-rules.py` (Configuration section). Inject mode: exits 0 always; a configuration error becomes a STOP block. Resolution order: feature flags from the resolved configuration, then fragments, then rules by id filtered by `applies`, then Markdown prompt values with `mode: extends|replace`.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/ctx.json` for `--json`; Markdown otherwise (`kernel-cli`, Output modes).
 - **Exit codes and rules:** `0` always (inject mode). Rules rendered as a STOP block: `input/not-found`, `policy/unknown-config-key`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -43,12 +43,8 @@ Compose the prompt context a skill's `!` block injects: tool tiers, fragments, r
 
   ```json
   {
-    "content": "## Tool tiers\n...",
+    "content": "## Code quality\n...",
     "parts": [
-      {
-        "kind": "tier",
-        "source": "fragments/tool-tiers/search.chain.json"
-      },
       {
         "kind": "rules",
         "source": "rules/code-quality.md"
@@ -98,10 +94,6 @@ Compose the context for a role class (worker, reader, reviewer, verifier, runner
   {
     "content": "## Worker role\n...",
     "parts": [
-      {
-        "kind": "tier",
-        "source": "fragments/tool-tiers/edit.chain.json"
-      },
       {
         "kind": "rules",
         "source": ".bdk/rules/"
@@ -154,10 +146,6 @@ Render the STARTUP instructions, including the agents table generated from agent
       {
         "kind": "agents-table",
         "source": "agents/"
-      },
-      {
-        "kind": "tier",
-        "source": "fragments/tool-tiers/explore.chain.json"
       }
     ]
   }

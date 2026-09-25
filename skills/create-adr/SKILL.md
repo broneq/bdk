@@ -13,7 +13,7 @@ allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 # Create ADR
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py architecture`
 

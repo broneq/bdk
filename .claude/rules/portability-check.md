@@ -52,7 +52,7 @@ Every **user-invocable workflow skill** must start with:
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 ```
 
-**Exempt:** meta-skills with `user-invocable: false` (e.g., `bdk-test-tools`, `bdk-lint-tools`, `bdk-rules-*`, `bdk-tier-*`). They are preloaded into agents, not invoked by users, and the foundation reference adds noise to the agent's context.
+**Exempt:** meta-skills with `user-invocable: false` (e.g., `bdk-test-tools`, `bdk-lint-tools`, `bdk-rules-*`). They are preloaded into agents, not invoked by users, and the foundation reference adds noise to the agent's context.
 
 ## Required: Skill References
 

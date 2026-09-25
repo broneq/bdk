@@ -298,12 +298,12 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 ### T13 `bdk ctx` and content hooks (replacing the Python injection scripts)
 
-**Goal**: one prompt context composer instead of `inject.py`, `inject-rules.py`, `inject-language-rules.py`, `render_startup.py`; STARTUP rendered by the kernel.
+**Goal**: one prompt context composer instead of `inject.py`, `inject-rules.py`, `inject-language-rules.py` and the static STARTUP hook; STARTUP rendered by the kernel.
 
 **Scope**:
-- `ctx skill <name>`: conditional fragments and tool-tier chains (`exclusive` / `additive` with `if` / `prefer`, semantics from `.claude/rules/fragment-system.md`), quality rules (by file at this stage; by ID from T31), language rules from `languages`, values from `prompts/`.
+- `ctx skill <name>`: conditional fragments (`if` / `prefer`; tool-tier chains were removed in T04, `v3-t04-drop-tool-tiers`), quality rules (by file at this stage; by ID from T31), language rules from `languages`, values from `prompts/`.
 - No `ctx role`: roles are skills under `skills/roles/` (T02 decision Q-3) and `dispatch build` (T23) embeds the role body into the package, so nothing preloads role context by class. The Lavish question fragment is injected only when `features.lavish` is on; otherwise the `AskUserQuestion` fragment (T02, R-11).
-- `ctx startup`: STARTUP_INSTRUCTIONS with resolved chains and an **agents table generated from the five adapter files in `agents/`** (P11, closes the T6 drift); content test: the table in the repo is byte-identical to the output.
+- `ctx startup`: STARTUP_INSTRUCTIONS with an **agents table generated from the five adapter files in `agents/`** (P11, closes the T6 drift); content test: the table in the repo is byte-identical to the output.
 - Content hooks in `hooks.json`: `hooks session-start` (STARTUP, `config check`, v2 layout detection - one process instead of four), `hooks skill-exists <name>` (for `commit`); `|| echo "BDK STOP..."` wrapper (always exit 0). No `uvx` lines: T03 removed both bundled MCP servers (`docs/adr/0001-remove-bundled-mcp-servers.md`). No `hooks stop`: the rule drift check is not ported (T02 decision Q-6; its useful half becomes `rules prune` in T31).
 - A3 content test: every `!` block in `skills/` calls only `ctx` or `next` in the exact wrapper form; `allowed-tools` carries the rule `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)` (form confirmed in T01).
 - Migration of the existing `fragments/` and `rules/` to the format read by `ctx` without changing content (changing rule content = T31).

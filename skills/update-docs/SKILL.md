@@ -5,7 +5,6 @@ model: sonnet
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[doc_path]"
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 hooks:
   Stop:
     - hooks:
@@ -16,9 +15,7 @@ hooks:
 
 # Update Docs
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json`
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 Refresh existing architecture documentation by comparing it against current code, merging updates while preserving accurate manual prose. The result is uniform text — no changelog, no diff markers, no "updated on" annotations.
 
@@ -42,10 +39,7 @@ Do this in main context — no subagent needed. Use regex and string matching.
 
 **Step 2.1 — Discover Current State**
 
-```python
-mcp__plugin_bdk_serena__list_dir(relative_path="<module_root>", recursive=True)
-mcp__plugin_bdk_serena__get_symbols_overview(relative_path="<key_files>")
-```
+List the files under the module root and the definitions in its key files.
 
 Compare actual file list against the doc's file tree. Note added/removed/renamed files immediately.
 

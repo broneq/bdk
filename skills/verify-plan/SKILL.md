@@ -12,7 +12,7 @@ allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 # Verify Plan
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 Verify plans against real code before execution. Spawns one Opus subagent (`bdk:plan-verifier`) that runs a six-section checklist and returns a YAML verdict envelope.
 

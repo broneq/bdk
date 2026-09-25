@@ -24,14 +24,14 @@ Representative refusal:
 
 ### Requirement: bdk hooks session-start
 
-SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh, graph registration. The kernel SHALL implement the command as this requirement and its output schema specify.
+SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh. The kernel SHALL implement the command as this requirement and its output schema specify.
 
 - **Synopsis:** `bdk hooks session-start`
 - **Availability:** `hook`
 - **Mode:** `inject`
 - **Arguments:**
   - stdin: SessionStart payload (`kernel-cli/hooks`, Hook payloads).
-- **Behaviour:** One process instead of four (hooks table). Inject mode: exits 0 always; a v2 layout or a configuration problem is reported as content, never as an exit code, because the hook must not break a session. The plain-shell `uvx` lines stay outside the kernel.
+- **Behaviour:** One process instead of four (hooks table). The hook starts no MCP server and registers no code graph (ADR-0001). Inject mode: exits 0 always; a v2 layout or a configuration problem is reported as content, never as an exit code, because the hook must not break a session.
 - **Writes:** `.bdk/.machine/`
 - **Output:** `schema/cli/output/hooks-session-start.json` for `--json`; Markdown otherwise (`kernel-cli`, Output modes).
 - **Exit codes and rules:** `0` always (inject mode). Rules rendered as a STOP block: `policy/unknown-config-key`, `policy/config-invalid`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -66,6 +66,11 @@ SessionStart content hook: STARTUP text, configuration check, v2 layout detectio
 
 - **WHEN** a value fails its module schema
 - **THEN** the exit code is 0 and the output is a STOP block whose `why` and `instead` are those of `policy/config-invalid`
+
+#### Scenario: no MCP work at session start
+
+- **WHEN** `bdk hooks session-start` runs in any project
+- **THEN** it starts no `uvx` process, registers no code graph, and its output contains no line about `uvx` or an MCP server
 
 ### Requirement: bdk hooks session-end
 
@@ -260,7 +265,7 @@ The `hooks` group reads the host's JSON payload from stdin and answers in the sh
 
 | Command | Event | Fixture | Input fields the kernel reads | stdout on pass (exit 0) | Block |
 |---|---|---|---|---|---|
-| `hooks session-start` | `SessionStart` | none in 2.1.281 (T24 records `session-start.json`; the field list is from the hooks reference) | `source` (`startup`, `resume`, `clear`, `compact`), `cwd` | The STARTUP Markdown, prepended to the session context by the host. A configuration problem, a v2 layout or a missing `uvx` is a line inside that Markdown. | Never. Inject mode: exit 0 always. |
+| `hooks session-start` | `SessionStart` | none in 2.1.281 (T24 records `session-start.json`; the field list is from the hooks reference) | `source` (`startup`, `resume`, `clear`, `compact`), `cwd` | The STARTUP Markdown, prepended to the session context by the host. A configuration problem or a v2 layout is a line inside that Markdown. | Never. Inject mode: exit 0 always. |
 | `hooks session-end` | `SessionEnd` | `session-end-clear.json` (`reason: "clear"`), `session-end-term.json` (`reason: "other"`), `upe-typed.json` (`reason: "prompt_input_exit"`) | `reason` | Empty, or one line naming the checkpoint commit. The host shows nothing from this event. | Never; the event cannot block. Fires on `/clear`, `/exit`, headless end and SIGTERM, not on SIGKILL (HOST-FACTS `end-clear`, `end-exit`, `end-headless`, `end-term`, `end-kill`). |
 | `hooks prompt-expansion` | `UserPromptExpansion` | `upe-typed.json` (interactive), `allowed.json` (headless `claude -p`) | `command_name` (namespaced, `bdk:plan`; HOST-FACTS `upe-name`), `command_args` (raw string, `""` when empty; `--skip-verify` is parsed from it, P2), `command_source` (`plugin`), `prompt`, `expansion_type` (`slash_command`) | Plain text: the gate status (the gate, what passed it, the pending `review: true` entries). The host prepends it to the expanded skill prompt. | Exit 2 with the reason on stderr; the host shows it and does not run the skill. |
 | `hooks pre-tool` | `PreToolUse` | `pre-bash.json` (main thread, no `agent_id`), `agent-fg.json` and `agent-bg.json` (subagent, `agent_id` and `agent_type` present), `pre-write.json`, `pre-edit.json`, `pre-notebookedit.json` | `tool_name`, `tool_input.command` (Bash), `tool_input.file_path` (Write, Edit), `tool_input.notebook_path` (NotebookEdit; HOST-FACTS `input-notebookedit`), `agent_id` (presence means subagent; HOST-FACTS `main-no-agent-id`) | Nothing: an empty stdout with exit 0 lets the host apply its normal permission flow. | Exit 2, the reason on stderr, and on stdout the host's decision object (below). |

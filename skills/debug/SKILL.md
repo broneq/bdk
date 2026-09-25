@@ -13,7 +13,7 @@ allowed-tools: AskUserQuestion Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 # Debug
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context and MCP tool preference.
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
 Diagnose bugs via structured investigation, reproduce with failing tests, then fix or plan.
 
@@ -80,20 +80,13 @@ digraph debug_flow {
 
 ### Phase 2: Investigate
 
-Inject available search tools:
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json`
-
-Using the search tools above:
 1. **Find entry point** — locate the error component or symbol
 2. **Trace callers** — trace up the call chain
 3. **Trace callees** — trace down to dependencies
 4. **Identify impacted paths** — named execution paths through the suspected area
 5. **Flag cascading risk** — highest-risk choke points in the affected module
 6. **Identify root cause**
-7. **Quantify blast radius** — understand scope before proposing fix:
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/impact.chain.json`
+7. **Quantify blast radius** — understand scope before proposing fix: find every reference to the symbols you will change, in source and in tests
 8. **Scan for related test gaps** — same class of problem in nearby code only
 9. **Print investigation summary**:
    ```

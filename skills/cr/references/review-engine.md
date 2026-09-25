@@ -195,7 +195,7 @@ Inline dispatch trades wall-clock and reviewer independence for the ability to r
 1. **Collect** every agent's output. If some are still running, wait for their notifications - do not merge partial results, and do not poll.
 2. **Normalize, then deduplicate** into one flat findings array. Two passes, in this order:
 
-   **a. Normalize.** Map each agent's block into the finding fields above: repo-relative `file`, one `category` slug from the vocabulary, `symbol` filled in from the block when it names one (dead-code-detector always does; the graph tier gives it for the rest) or `null`.
+   **a. Normalize.** Map each agent's block into the finding fields above: repo-relative `file`, one `category` slug from the vocabulary, `symbol` filled in from the block when it names one (dead-code-detector always does; other agents give it when their finding is about one symbol) or `null`.
 
    **b. Collapse.** Group by `(file, category)`, then merge findings that point at the same defect within that group:
 
