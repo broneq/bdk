@@ -8601,6 +8601,10 @@ function isArgError(error) {
 }
 
 // src/cli.ts
+process.stdout.on("error", (error) => {
+  if (error.code !== "EPIPE") throw error;
+  process.exit(process.exitCode ?? 0);
+});
 process.exitCode = await main(process.argv.slice(2), {
   cwd: process.cwd(),
   env: process.env,

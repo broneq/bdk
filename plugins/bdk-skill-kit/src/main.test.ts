@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "./main.ts";
@@ -149,5 +149,15 @@ export default defineConfig({ targets: [{ kind: "skills", dirs: ["skills"] }] })
     expect(run.stderr).toBe("");
     expect(run.status).toBe(0);
     expect((JSON.parse(run.stdout) as { summary: { files: number } }).summary.files).toBe(1);
+  });
+
+  it("exits quietly when the reader closes stdout early, as `| head` does", async () => {
+    const child = spawn(process.execPath, [bin, "--help"], { stdio: ["ignore", "pipe", "pipe"] });
+    child.stdout.destroy();
+    let stderr = "";
+    child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
+    const code = await new Promise<number | null>((done) => child.on("close", done));
+    expect(stderr).toBe("");
+    expect(code).toBe(0);
   });
 });
