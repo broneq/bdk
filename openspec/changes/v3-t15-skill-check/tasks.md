@@ -64,7 +64,7 @@ Groups 1-6 run in a new local repository `bdk-skill-kit`, a sibling of the BDK c
 - [x] 9.1 Write `skill-check.config.ts` (skills and agents targets, plugin, limits from `skill-content-checks`) and run `pnpm skill-check --baseline-init`. Verify that the baseline lists only v2 skills and agents and that `pnpm skill-check` then exits 0
 - [x] 9.2 Replace the stub in `.github/workflows/tests.yml` with the skill content job (pnpm, Node from `.nvmrc`, frozen install, `pnpm skill-check`), and verify actionlint passes
 - [x] 9.3 Add the lint-staged entry `"{skills,agents}/**": () => "pnpm skill-check"`, and verify that staging a seeded violation under `skills/` makes the commit fail
-- [ ] 9.4 Add the `bdk-skill-kit` entry to `.claude-plugin/marketplace.json` through a separate PR into `main` (#80), because the marketplace is read from the default branch, and verify `claude plugin validate .` passes and `staging/v3` picks the entry up from `main`
+- [x] 9.4 Add the `bdk-skill-kit` entry to `.claude-plugin/marketplace.json` through a separate PR into `main` (#80), because the marketplace is read from the default branch, and verify `claude plugin validate .` passes and `staging/v3` picks the entry up from `main` (cherry-picked with `-x` into this branch: a full merge of `main` into `staging/v3` conflicts in 19 v2 files and is its own task)
 
 ## 10. Dev-time lints and docs (D-15)
 
