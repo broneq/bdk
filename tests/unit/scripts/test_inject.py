@@ -1,9 +1,12 @@
-"""Tests for scripts/inject.py."""
+"""Tests for scripts/inject.py.
+
+The CLI and load_settings cases run the committed dist/bdk.mjs through
+scripts/kernel_settings.py, on `.bdk/settings.yaml` fixtures in a git work tree.
+"""
 
 from __future__ import annotations
 
 import importlib.util
-import json
 import os
 import subprocess
 import sys
@@ -27,20 +30,29 @@ evaluate_condition = inject_mod.evaluate_condition
 inject = inject_mod.inject
 
 
-def _write_settings(tmp_path: Path, data: dict) -> Path:
-    bdk = tmp_path / ".bdk"
-    bdk.mkdir()
-    settings = bdk / "settings.json"
-    settings.write_text(json.dumps(data))
+@pytest.fixture
+def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A git work tree with an empty global layer."""
+    root = tmp_path / "project"
+    root.mkdir()
+    subprocess.run(["git", "init", "--quiet"], cwd=root, check=True)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
+    return root
+
+
+def _write_settings(root: Path, yaml: str) -> Path:
+    settings = root / ".bdk" / "settings.yaml"
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text(yaml)
     return settings
 
 
-def _run_cli(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
+def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(SCRIPT)] + args,
         capture_output=True,
         text=True,
-        cwd=str(cwd) if cwd else None,
+        cwd=str(cwd),
         env={**os.environ},
     )
 
@@ -50,31 +62,30 @@ def _run_cli(args: list[str], cwd: Path | None = None) -> subprocess.CompletedPr
 # ---------------------------------------------------------------------------
 
 
-def test_load_settings_finds_file_in_cwd(tmp_path):
-    _write_settings(tmp_path, {"features": {"react": True}})
-    result = load_settings(tmp_path)
-    assert result == {"features": {"react": True}}
+def test_load_settings_resolves_the_yaml_layers(project):
+    _write_settings(project, "features:\n  lavish: false\nlanguages: [typescript]\n")
+    result = load_settings(project)
+    assert result["features"] == {"lavish": False}
+    assert result["languages"] == ["typescript"]
 
 
-def test_load_settings_finds_file_in_parent_dir(tmp_path):
-    _write_settings(tmp_path, {"languages": ["typescript"]})
-    nested = tmp_path / "src" / "components"
+def test_load_settings_from_a_nested_directory(project):
+    _write_settings(project, "languages: [typescript]\n")
+    nested = project / "src" / "components"
     nested.mkdir(parents=True)
-    result = load_settings(nested)
-    assert result == {"languages": ["typescript"]}
+    assert load_settings(nested)["languages"] == ["typescript"]
 
 
-def test_load_settings_returns_none_when_missing(tmp_path):
-    result = load_settings(tmp_path)
-    assert result is None
+def test_load_settings_without_a_file_is_the_defaults(project):
+    result = load_settings(project)
+    assert result["features"] == {"lavish": True}
+    assert result["languages"] == []
 
 
-def test_load_settings_returns_none_on_invalid_json(tmp_path):
-    bdk = tmp_path / ".bdk"
-    bdk.mkdir()
-    (bdk / "settings.json").write_text("not json")
-    result = load_settings(tmp_path)
-    assert result is None
+def test_load_settings_raises_on_an_unknown_key(project):
+    _write_settings(project, "features:\n  react: true\n")
+    with pytest.raises(inject_mod.KernelSettingsError, match="features.react"):
+        load_settings(project)
 
 
 # ---------------------------------------------------------------------------
@@ -247,78 +258,61 @@ def test_inject_file_not_found_raises():
 # ---------------------------------------------------------------------------
 
 
-def test_cli_injects_file_when_condition_true(tmp_path):
-    _write_settings(tmp_path, {"features": {"react": True}})
-    content_file = tmp_path / "react.md"
-    content_file.write_text("# React guidelines")
-    result = _run_cli(["--if", "features.react", "--then", str(content_file)], cwd=tmp_path)
+def test_cli_injects_file_when_condition_true(project):
+    _write_settings(project, "languages: [typescript]\n")
+    content_file = project / "ts.md"
+    content_file.write_text("# TS guidelines")
+    result = _run_cli(["--if", "languages[typescript]", "--then", str(content_file)], cwd=project)
     assert result.returncode == 0
-    assert result.stdout == "# React guidelines"
+    assert result.stdout == "# TS guidelines"
     assert result.stderr == ""
 
 
-def test_cli_silent_when_condition_false(tmp_path):
-    _write_settings(tmp_path, {"features": {"react": False}})
-    content_file = tmp_path / "react.md"
-    content_file.write_text("# React guidelines")
-    result = _run_cli(["--if", "features.react", "--then", str(content_file)], cwd=tmp_path)
+def test_cli_silent_when_feature_flag_false(project):
+    _write_settings(project, "features:\n  lavish: false\n")
+    result = _run_cli(["--if", "features.lavish", "--then-text", "x"], cwd=project)
     assert result.returncode == 0
     assert result.stdout == ""
 
 
-def test_cli_silent_when_settings_missing(tmp_path):
-    content_file = tmp_path / "react.md"
-    content_file.write_text("content")
-    result = _run_cli(["--if", "features.react", "--then", str(content_file)], cwd=tmp_path)
+def test_cli_default_applies_without_settings(project):
+    """No settings file is the default layer, not "no settings": lavish defaults to true."""
+    result = _run_cli(["--if", "features.lavish", "--then-text", "lavish"], cwd=project)
     assert result.returncode == 0
-    assert result.stdout == ""
+    assert result.stdout == "lavish"
 
 
-def test_cli_and_logic_both_must_be_true(tmp_path):
-    _write_settings(tmp_path, {"features": {"react": True}, "languages": ["python"]})
-    content_file = tmp_path / "file.md"
-    content_file.write_text("content")
+def test_cli_and_logic_both_must_be_true(project):
+    _write_settings(project, "features:\n  lavish: true\nlanguages: [python]\n")
     result = _run_cli(
-        ["--if", "features.react", "--if", "languages[typescript]", "--then", str(content_file)],
-        cwd=tmp_path,
+        ["--if", "features.lavish", "--if", "languages[typescript]", "--then-text", "x"],
+        cwd=project,
     )
     assert result.returncode == 0
     assert result.stdout == ""
 
 
-def test_cli_then_text(tmp_path):
-    _write_settings(tmp_path, {"features": {"react": True}})
-    result = _run_cli(
-        ["--if", "features.react", "--then-text", "Prefer reducers"],
-        cwd=tmp_path,
-    )
+def test_cli_then_text(project):
+    _write_settings(project, "languages: [go]\n")
+    result = _run_cli(["--if", "languages[go]", "--then-text", "Prefer tables"], cwd=project)
     assert result.returncode == 0
-    assert result.stdout == "Prefer reducers"
+    assert result.stdout == "Prefer tables"
 
 
-def test_cli_error_file_not_found(tmp_path):
-    _write_settings(tmp_path, {"features": {"react": True}})
-    result = _run_cli(
-        ["--if", "features.react", "--then", "/nonexistent/file.md"],
-        cwd=tmp_path,
-    )
+def test_cli_error_file_not_found(project):
+    _write_settings(project, "languages: [go]\n")
+    result = _run_cli(["--if", "languages[go]", "--then", "/nonexistent/file.md"], cwd=project)
     assert result.returncode == 0
     assert "[bdk-inject-error]" in result.stdout
 
 
-def test_cli_error_invalid_condition(tmp_path):
-    _write_settings(tmp_path, {"features": {"react": True}})
-    content_file = tmp_path / "file.md"
-    content_file.write_text("content")
-    result = _run_cli(
-        ["--if", "bad.syntax.here", "--then", str(content_file)],
-        cwd=tmp_path,
-    )
+def test_cli_error_invalid_condition(project):
+    result = _run_cli(["--if", "bad.syntax.here", "--then-text", "x"], cwd=project)
     assert result.returncode == 0
     assert "[bdk-inject-error]" in result.stdout
 
 
-def test_cli_errors_land_on_stdout_with_exit_zero(tmp_path):
+def test_cli_errors_land_on_stdout_with_exit_zero(project):
     """The whole point of the marker contract, pinned.
 
     A `!`...`` block in a skill body captures stdout and ignores the exit code,
@@ -326,32 +320,28 @@ def test_cli_errors_land_on_stdout_with_exit_zero(tmp_path):
     changes nothing. Anything that moves these back to stderr or exit 1 silently
     turns every broken injection into an empty one.
     """
-    _write_settings(tmp_path, {"features": {"react": True}})
-    result = _run_cli(
-        ["--if", "no-such-form", "--then-text", "x"],
-        cwd=tmp_path,
-    )
+    result = _run_cli(["--if", "no-such-form", "--then-text", "x"], cwd=project)
     assert result.returncode == 0
     assert result.stderr == ""
     assert result.stdout.startswith("[bdk-inject-error]")
 
 
-def test_cli_custom_settings_path(tmp_path):
-    custom_dir = tmp_path / "custom"
-    custom_dir.mkdir()
-    _write_settings(custom_dir, {"features": {"react": True}})
-    content_file = tmp_path / "react.md"
-    content_file.write_text("# React")
+def test_cli_kernel_refusal_is_one_error_line(project):
+    _write_settings(project, "features:\n  serena: true\n")
+    result = _run_cli(["--if", "features.lavish", "--then-text", "x"], cwd=project)
+    assert result.returncode == 0
+    assert result.stdout.startswith("[bdk-inject-error]")
+    assert "features.serena" in result.stdout
+    assert result.stdout.count("\n") == 1
+
+
+def test_cli_settings_flag_is_gone(project):
+    """`--settings` pointed at settings.json; a stale call must show, not read as false."""
     result = _run_cli(
-        [
-            "--if", "features.react",
-            "--then", str(content_file),
-            "--settings", str(custom_dir / ".bdk" / "settings.json"),
-        ],
-        cwd=tmp_path,
+        ["--if", "features.lavish", "--then-text", "x", "--settings", "x.json"], cwd=project
     )
     assert result.returncode == 0
-    assert result.stdout == "# React"
+    assert result.stdout.startswith("[bdk-inject-error]")
 
 
 # ---------------------------------------------------------------------------
@@ -427,40 +417,31 @@ def test_inject_prefer_missing_settings_returns_empty(tmp_path):
     assert result == ""
 
 
-def test_cli_prefer_suppresses_when_preferred_true(tmp_path):
-    _write_settings(tmp_path, {"features": {"vue": True, "react": True}})
-    content_file = tmp_path / "react.md"
-    content_file.write_text("# React")
+def test_cli_prefer_suppresses_when_preferred_true(project):
+    _write_settings(project, "languages: [typescript, rust]\n")
     result = _run_cli(
-        ["--if", "features.react", "--prefer", "features.vue",
-         "--then", str(content_file)],
-        cwd=tmp_path,
+        ["--if", "languages[typescript]", "--prefer", "languages[rust]", "--then-text", "ts"],
+        cwd=project,
     )
     assert result.returncode == 0
     assert result.stdout == ""
 
 
-def test_cli_prefer_injects_when_preferred_false(tmp_path):
-    _write_settings(tmp_path, {"features": {"vue": False, "react": True}})
-    content_file = tmp_path / "react.md"
-    content_file.write_text("# React")
+def test_cli_prefer_injects_when_preferred_false(project):
+    _write_settings(project, "languages: [typescript]\n")
     result = _run_cli(
-        ["--if", "features.react", "--prefer", "features.vue",
-         "--then", str(content_file)],
-        cwd=tmp_path,
+        ["--if", "languages[typescript]", "--prefer", "languages[rust]", "--then-text", "ts"],
+        cwd=project,
     )
     assert result.returncode == 0
-    assert result.stdout == "# React"
+    assert result.stdout == "ts"
 
 
-def test_cli_prefer_multiple_or_semantics(tmp_path):
-    _write_settings(tmp_path, {"features": {"vue": False, "react": True}})
-    content_file = tmp_path / "fallback.md"
-    content_file.write_text("# Fallback")
+def test_cli_prefer_multiple_or_semantics(project):
+    _write_settings(project, "languages: [typescript]\n")
     result = _run_cli(
-        ["--prefer", "features.vue", "--prefer", "features.react",
-         "--then", str(content_file)],
-        cwd=tmp_path,
+        ["--prefer", "languages[rust]", "--prefer", "languages[typescript]", "--then-text", "x"],
+        cwd=project,
     )
     assert result.returncode == 0
     assert result.stdout == ""
@@ -471,17 +452,17 @@ def test_cli_prefer_multiple_or_semantics(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_cli_unknown_flag_prints_error_on_stdout(tmp_path):
+def test_cli_unknown_flag_prints_error_on_stdout(project):
     """A `!` block captures stdout only: an argparse error on stderr with exit 2
     would render a stale call to a removed flag as an empty block."""
-    result = _run_cli(["--no-such-flag", "x"], cwd=tmp_path)
+    result = _run_cli(["--no-such-flag", "x"], cwd=project)
     assert result.returncode == 0
     assert result.stdout.startswith("[bdk-inject-error]"), result.stdout
     assert result.stderr == ""
 
 
-def test_cli_missing_then_prints_error_on_stdout(tmp_path):
-    result = _run_cli(["--if", "features.react"], cwd=tmp_path)
+def test_cli_missing_then_prints_error_on_stdout(project):
+    result = _run_cli(["--if", "features.lavish"], cwd=project)
     assert result.returncode == 0
     assert result.stdout.startswith("[bdk-inject-error]"), result.stdout
     assert result.stderr == ""

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Conditional content injector for BDK skills and agents.
 
-Evaluates conditions against .bdk/settings.json and prints file content
-(or inline text) to stdout when all conditions are true. Silent when any
-condition is false or settings file is missing.
+Evaluates conditions against the resolved settings (every layer merged,
+defaults included, read through the kernel by scripts/kernel_settings.py) and
+prints file content (or inline text) to stdout when all conditions are true.
+Silent when any condition is false.
 
 Usage:
-    python3 inject.py --if features.react --then path/to/react.md
-    python3 inject.py --if features.react --if languages[typescript] --then react-ts.md
-    python3 inject.py --if features.react --then-text "Prefer reducers over useState"
-    python3 inject.py --if features.react --then file.md --settings /custom/.bdk/settings.json
-    python3 inject.py --if features.react --prefer features.vue --then react.md
+    python3 inject.py --if features.lavish --then path/to/lavish.md
+    python3 inject.py --if features.lavish --if languages[typescript] --then file.md
+    python3 inject.py --if languages[react] --then-text "Prefer reducers over useState"
+    python3 inject.py --if languages[react] --prefer languages[vue] --then react.md
 
 Condition syntax:
     features.react              settings["features"]["react"] is True
@@ -23,7 +23,8 @@ The dotted spelling of ``tool.`` is mandatory. ``tool[name]`` would be parsed by
 the array rule as a lookup in a nonexistent ``tool`` list and silently evaluate
 false, which is exactly the kind of quiet wrong answer this script must not give.
 
-Failures (unknown condition, missing file, bad arguments) print
+Failures (unknown condition, missing file, bad arguments, a kernel refusal or
+a missing Node) print
 ``[bdk-inject-error] <description>`` to **stdout** and exit 0. Stdout, because a
 ``!`...`` `` block in a skill body captures stdout only - anything on stderr is
 invisible in the rendered skill and the failure reads as an empty condition. Exit
@@ -37,11 +38,16 @@ Public API (importable):
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import shutil
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from kernel_settings import KernelSettingsError, error_line, load_settings  # noqa: E402
+
+__all__ = ["KernelSettingsError", "evaluate_condition", "inject", "load_settings"]
 
 # Matches: features.some-key  OR  tool.some-binary  OR  languages[value]
 _FEATURE_RE = re.compile(r'^features\.([\w-]+)$')
@@ -49,25 +55,6 @@ _TOOL_RE = re.compile(r'^tool\.([\w.-]+)$')
 _ARRAY_RE = re.compile(r'^([\w-]+)\[([\w-]+)\]$')
 
 ERR_PREFIX = "[bdk-inject-error]"
-
-
-def load_settings(start: str | Path | None = None) -> dict | None:
-    """Walk up from start (default: cwd) until .bdk/settings.json found.
-
-    Returns parsed settings dict, or None if not found or unparseable.
-    """
-    current = Path(start).resolve() if start else Path.cwd()
-    while True:
-        candidate = current / ".bdk" / "settings.json"
-        if candidate.exists():
-            try:
-                return json.loads(candidate.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                return None
-        parent = current.parent
-        if parent == current:
-            return None
-        current = parent
 
 
 def evaluate_condition(condition: str, settings: dict) -> bool:  # type: ignore[type-arg]
@@ -156,7 +143,7 @@ class _StdoutArgumentParser(argparse.ArgumentParser):
 
 def main() -> None:
     parser = _StdoutArgumentParser(
-        description="Conditionally inject file content based on .bdk/settings.json"
+        description="Conditionally inject file content based on the BDK settings"
     )
     parser.add_argument(
         "--if",
@@ -178,12 +165,6 @@ def main() -> None:
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument("--then", dest="then_path", metavar="FILE", help="File to print if conditions true")
     group.add_argument("--then-text", dest="then_text", metavar="TEXT", help="Inline text to print if conditions true")
-    parser.add_argument(
-        "--settings",
-        dest="settings_path",
-        metavar="PATH",
-        help="Path to .bdk/settings.json (default: search upward from cwd)",
-    )
     args = parser.parse_args()
 
     if not args.conditions and not args.prefer_conditions:
@@ -191,10 +172,10 @@ def main() -> None:
     if args.then_path is None and args.then_text is None:
         parser.error("one of the arguments --then --then-text is required")
 
-    settings = (
-        load_settings(args.settings_path) if args.settings_path else load_settings()
-    )
-    if settings is None:
+    try:
+        settings = load_settings()
+    except KernelSettingsError as error:
+        print(error_line(error))
         sys.exit(0)
 
     try:

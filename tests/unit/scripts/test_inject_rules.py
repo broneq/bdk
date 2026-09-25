@@ -1,9 +1,14 @@
-"""Tests for scripts/inject-rules.py."""
+"""Tests for scripts/inject-rules.py.
+
+Rule overrides are prompt values (`kernel-settings`, Prompt values): files under
+`.bdk/prompts/rules/` or mapped by `prompts.files`, resolved by the committed
+dist/bdk.mjs through scripts/kernel_settings.py. Plugin defaults are the real
+`rules/*.md` files the kernel ships with.
+"""
 
 from __future__ import annotations
 
 import importlib.util
-import json
 import os
 import subprocess
 import sys
@@ -11,7 +16,8 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT = Path(__file__).parents[3] / "scripts" / "inject-rules.py"
+REPO = Path(__file__).parents[3]
+SCRIPT = REPO / "scripts" / "inject-rules.py"
 
 
 def _load_module():
@@ -25,255 +31,93 @@ inject_rules_mod = _load_module()
 resolve_rule = inject_rules_mod.resolve_rule
 
 
-def _write_settings(tmp_path: Path, data: dict) -> Path:
-    bdk = tmp_path / ".bdk"
-    bdk.mkdir()
-    settings = bdk / "settings.json"
-    settings.write_text(json.dumps(data))
-    return settings
+@pytest.fixture
+def project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A git work tree with an empty global layer."""
+    root = tmp_path / "project"
+    root.mkdir()
+    subprocess.run(["git", "init", "--quiet"], cwd=root, check=True)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
+    return root
 
 
-def _write_plugin_default(plugin_root: Path, name: str, content: str) -> Path:
-    rules = plugin_root / "rules"
-    rules.mkdir(parents=True, exist_ok=True)
-    target = rules / f"{name}.md"
+def _write(root: Path, relative: str, content: str) -> Path:
+    target = root / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content)
     return target
 
 
-def _run_cli(args: list[str], cwd: Path, plugin_root: Path) -> subprocess.CompletedProcess:
-    env = {**os.environ, "CLAUDE_PLUGIN_ROOT": str(plugin_root)}
+def _default(name: str) -> str:
+    return (REPO / "rules" / f"{name}.md").read_text(encoding="utf-8").strip()
+
+
+def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(SCRIPT)] + args,
         capture_output=True,
         text=True,
         cwd=str(cwd),
-        env=env,
+        env={**os.environ},
     )
 
 
-def test_no_settings_file_returns_bdk_default(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default content")
-    project = tmp_path / "project"
-    project.mkdir()
-
-    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-    assert result == "default content"
+def test_no_settings_returns_the_plugin_default(project):
+    assert resolve_rule("code-quality", cwd=project) == f"{_default('code-quality')}\n"
 
 
-def test_settings_without_quality_returns_bdk_default(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default content")
-    project = tmp_path / "project"
-    project.mkdir()
-    _write_settings(project, {"features": {"react": True}})
-
-    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-    assert result == "default content"
+def test_project_prompt_file_extends_the_default(project):
+    _write(project, ".bdk/prompts/rules/security.md", "- never log tokens\n")
+    assert resolve_rule("security", cwd=project) == f"{_default('security')}\n\n- never log tokens\n"
 
 
-def test_settings_with_quality_but_rule_missing_returns_bdk_default(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default content")
-    project = tmp_path / "project"
-    project.mkdir()
-    _write_settings(project, {"quality": {"architecture": "docs/arch.md"}})
-
-    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-    assert result == "default content"
+def test_replace_drops_the_default(project):
+    _write(project, ".bdk/prompts/rules/security.md", "---\nmode: replace\n---\n- only mine\n")
+    assert resolve_rule("security", cwd=project) == "- only mine\n"
 
 
-def test_string_entry_extends_default(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default content")
-    project = tmp_path / "project"
-    project.mkdir()
-    user_file = project / "docs" / "coding.md"
-    user_file.parent.mkdir(parents=True)
-    user_file.write_text("user additions")
-    _write_settings(project, {"quality": {"code-quality": "docs/coding.md"}})
-
-    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-    assert result == "default content\n\nuser additions"
+def test_local_replace_wins_over_project_extends(project):
+    _write(project, ".bdk/prompts/rules/architecture.md", "- project\n")
+    _write(project, ".bdk/prompts.local/rules/architecture.md", "---\nmode: replace\n---\n- local\n")
+    assert resolve_rule("architecture", cwd=project) == "- local\n"
 
 
-def test_object_entry_extends(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default content")
-    project = tmp_path / "project"
-    project.mkdir()
-    user_file = project / "user.md"
-    user_file.write_text("user additions")
-    _write_settings(
-        project,
-        {"quality": {"code-quality": {"path": "user.md", "mode": "extends"}}},
-    )
-
-    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-    assert result == "default content\n\nuser additions"
+def test_prompts_files_maps_a_file_from_anywhere(project):
+    _write(project, "docs/security-rules.md", "- mapped\n")
+    _write(project, ".bdk/settings.yaml", "prompts:\n  files:\n    rules/security: docs/security-rules.md\n")
+    assert resolve_rule("security", cwd=project) == f"{_default('security')}\n\n- mapped\n"
 
 
-def test_object_entry_replace(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default content")
-    project = tmp_path / "project"
-    project.mkdir()
-    user_file = project / "user.md"
-    user_file.write_text("user only")
-    _write_settings(
-        project,
-        {"quality": {"code-quality": {"path": "user.md", "mode": "replace"}}},
-    )
-
-    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-    assert result == "user only"
+def test_a_missing_mapped_file_raises(project):
+    _write(project, ".bdk/settings.yaml", "prompts:\n  files:\n    rules/security: missing.md\n")
+    with pytest.raises(inject_rules_mod.KernelSettingsError, match="prompts.files.rules/security"):
+        resolve_rule("security", cwd=project)
 
 
-def test_object_entry_replace_works_without_bdk_default(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    (plugin_root / "rules").mkdir(parents=True)  # rules/ exists but file missing
-    project = tmp_path / "project"
-    project.mkdir()
-    user_file = project / "user.md"
-    user_file.write_text("user only")
-    _write_settings(
-        project,
-        {"quality": {"unknown-rule": {"path": "user.md", "mode": "replace"}}},
-    )
-
-    result = resolve_rule("unknown-rule", cwd=project, plugin_root=plugin_root)
-
-    assert result == "user only"
+def test_an_unknown_rule_raises(project):
+    with pytest.raises(inject_rules_mod.KernelSettingsError, match="policy/unknown-config-key"):
+        resolve_rule("no-such-rule", cwd=project)
 
 
-def test_string_entry_user_file_missing_raises(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default")
-    project = tmp_path / "project"
-    project.mkdir()
-    _write_settings(project, {"quality": {"code-quality": "missing.md"}})
-
-    with pytest.raises(FileNotFoundError):
-        resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
+def test_cli_emits_the_default_to_stdout(project):
+    result = _run_cli(["test-quality"], cwd=project)
+    assert result.returncode == 0
+    assert result.stdout == f"{_default('test-quality')}\n"
+    assert result.stderr == ""
 
 
-def test_object_entry_path_missing_raises(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default")
-    project = tmp_path / "project"
-    project.mkdir()
-    _write_settings(project, {"quality": {"code-quality": {"mode": "replace"}}})
-
-    with pytest.raises(ValueError, match="path.*required"):
-        resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-
-def test_unknown_rule_no_bdk_default_raises(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    (plugin_root / "rules").mkdir(parents=True)
-    project = tmp_path / "project"
-    project.mkdir()
-
-    with pytest.raises(FileNotFoundError):
-        resolve_rule("nonexistent", cwd=project, plugin_root=plugin_root)
+def test_cli_kernel_refusal_reports_one_line_on_stdout(project):
+    _write(project, ".bdk/settings.yaml", "quality:\n  security: mine.md\n")
+    result = _run_cli(["security"], cwd=project)
+    assert result.returncode == 0
+    assert result.stdout.startswith("[bdk-inject-error]")
+    assert "quality" in result.stdout
+    assert result.stdout.count("\n") == 1
+    assert result.stderr == ""
 
 
-def test_unknown_mode_warns_and_extends(tmp_path, capsys):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default")
-    project = tmp_path / "project"
-    project.mkdir()
-    user_file = project / "user.md"
-    user_file.write_text("user")
-    _write_settings(
-        project,
-        {"quality": {"code-quality": {"path": "user.md", "mode": "garbage"}}},
-    )
-
-    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-    assert result == "default\n\nuser"
-    captured = capsys.readouterr()
-    assert "[bdk-inject-error]" in captured.out
-    assert "unknown mode" in captured.out
-    assert captured.err == ""
-
-
-def test_empty_user_file_extends(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default")
-    project = tmp_path / "project"
-    project.mkdir()
-    user_file = project / "user.md"
-    user_file.write_text("")
-    _write_settings(project, {"quality": {"code-quality": "user.md"}})
-
-    result = resolve_rule("code-quality", cwd=project, plugin_root=plugin_root)
-
-    assert result == "default\n\n"
-
-
-def test_cli_emits_default_to_stdout(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default content")
-    project = tmp_path / "project"
-    project.mkdir()
-
-    proc = _run_cli(["code-quality"], cwd=project, plugin_root=plugin_root)
-
-    assert proc.returncode == 0
-    assert proc.stdout == "default content"
-
-
-def test_cli_missing_user_file_reports_on_stdout(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default")
-    project = tmp_path / "project"
-    project.mkdir()
-    _write_settings(project, {"quality": {"code-quality": "missing.md"}})
-
-    proc = _run_cli(["code-quality"], cwd=project, plugin_root=plugin_root)
-
-    assert proc.returncode == 0
-    assert "[bdk-inject-error]" in proc.stdout
-    assert "user file not found" in proc.stdout
-    assert proc.stderr == ""
-
-
-def test_cli_no_args_reports_on_stdout(tmp_path):
-    plugin_root = tmp_path / "plugin"
-    _write_plugin_default(plugin_root, "code-quality", "default")
-    project = tmp_path / "project"
-    project.mkdir()
-
-    proc = _run_cli([], cwd=project, plugin_root=plugin_root)
-
-    assert proc.returncode == 0
-    assert "[bdk-inject-error]" in proc.stdout
-    assert proc.stderr == ""
-
-
-def test_cli_falls_back_to_script_location_without_env(tmp_path):
-    """When CLAUDE_PLUGIN_ROOT env var is unset, plugin root is derived from script location."""
-    project = tmp_path / "project"
-    project.mkdir()
-
-    env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PLUGIN_ROOT"}
-    proc = subprocess.run(
-        [sys.executable, str(SCRIPT), "code-quality"],
-        capture_output=True,
-        text=True,
-        cwd=str(project),
-        env=env,
-    )
-
-    # Real BDK plugin root contains rules/code-quality.md — script self-locates.
-    assert proc.returncode == 0, f"stderr: {proc.stderr}"
-    assert proc.stdout.strip(), "expected non-empty default content"
+def test_cli_no_args_reports_on_stdout(project):
+    result = _run_cli([], cwd=project)
+    assert result.returncode == 0
+    assert result.stdout.startswith("[bdk-inject-error]")
+    assert result.stderr == ""

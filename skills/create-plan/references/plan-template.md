@@ -224,7 +224,7 @@ Changed source files for this feature — run the fast tier's tests covering the
 
 [specific source or test paths]
 
-Use the `related` form from `.bdk/settings.json` `test-tools` if configured,
+Use the `related` form of the `tools.test` settings if configured,
 otherwise `scoped` on the matching test files. Fast tier only.
 ```
 
