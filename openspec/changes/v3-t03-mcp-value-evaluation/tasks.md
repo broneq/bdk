@@ -28,8 +28,8 @@
 - [x] 5.1 Run V1-V8 x C0 / CG / CS / CGS x 3 on Haiku 4.5 (96 runs); verify 96 raw run files exist, each passes the isolation check (rerun any that do not), and each has a correctness score
 - [x] 5.2 Grade V5 and V6 with the Haiku 4.5 judge and the committed rubric, then spot-check every judged score by hand; verify each judged score has the judge output and the spot-check note next to it
 - [x] 5.3 Run the Sonnet 5 confirmation slice (V2, V4, V5, V8 x 4 configurations x 1); verify whether the ranking of configurations per task matches the Haiku medians and record the result
-- [ ] 5.4 Build the value table (per task and configuration: median and range of correctness, `total_cost_usd`, tokens, turns, tool calls by kind, wall time) with raw numbers per run; apply the D-7 value rule per server and verify each verdict cites the cells it rests on
-- [ ] 5.5 From the V1-V4 and V7 tool-call data, answer R-7's `scout` merge question (do the four former agents need different tool sets); verify the answer cites the per-task tool usage
+- [x] 5.4 Build the value table (per task and configuration: median and range of correctness, `total_cost_usd`, tokens, turns, tool calls by kind, wall time) with raw numbers per run; apply the D-7 value rule per server and verify each verdict cites the cells it rests on
+- [x] 5.5 From the V1-V4 and V7 tool-call data, answer R-7's `scout` merge question (do the four former agents need different tool sets); verify the answer cites the per-task tool usage
 
 ## 6. Parallel load and update strategy
 
@@ -45,6 +45,6 @@
 
 ## 8. Evaluation document and acceptance
 
-- [ ] 8.1 Write `docs/V3-MCP-EVALUATION.md`: baseline (commits, versions, harness flags), cost table, per-task value table with raw numbers next to the summary, per server a disposition (default-on / opt-in / removed) with rationale, the update strategy, the failure-mode recommendation, pins, the R-7 answer, the tier-menu vs agent `tools:` drift list, the resulting changes per downstream task (T11 `doctor`, T13 hook lines, T32 `uv.lock`, T41 / T42 tier fragments and agent `tools:`), and open decisions for the user with a recommendation each; verify every number in the summary traces to a raw file
+- [x] 8.1 Write `docs/V3-MCP-EVALUATION.md`: baseline (commits, versions, harness flags), cost table, per-task value table with raw numbers next to the summary, per server a disposition (default-on / opt-in / removed) with rationale, the update strategy, the failure-mode recommendation, pins, the R-7 answer, the tier-menu vs agent `tools:` drift list, the resulting changes per downstream task (T11 `doctor`, T13 hook lines, T32 `uv.lock`, T41 / T42 tier fragments and agent `tools:`), and open decisions for the user with a recommendation each; verify every number in the summary traces to a raw file
 - [ ] 8.2 After the user decides on the dispositions, add the T03 Resolution paragraph to `docs/V3-IMPLEMENTATION-PLAN.md` and the downstream edits it causes, and update issue #68; verify the plan's T11, T13, T32, T41 and T42 sections name T03's outcome where it changes them
 - [ ] 8.3 Check the Acceptance signal end to end: the document exists with the cost table, the value table with all configurations and runs, a disposition with rationale per server, downstream changes per task, and open decisions with recommendations; then run `openspec validate v3-t03-mcp-value-evaluation --strict` and verify it passes
