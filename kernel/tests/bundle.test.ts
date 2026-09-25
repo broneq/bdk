@@ -83,6 +83,21 @@ describe("package.json", () => {
     expect(dependencyViolations(seeded)).toStrictEqual(["vitest@^5.0.2 is not an exact version"]);
   });
 
+  it("accepts a GitHub dependency pinned to a release tag, not to a branch", () => {
+    const pinned = {
+      ...pkg,
+      devDependencies: { ...pkg.devDependencies, kit: "github:o/kit#v1.2.3" },
+    };
+    expect(dependencyViolations(pinned)).toStrictEqual([]);
+    const branch = {
+      ...pkg,
+      devDependencies: { ...pkg.devDependencies, kit: "github:o/kit#main" },
+    };
+    expect(dependencyViolations(branch)).toStrictEqual([
+      "kit@github:o/kit#main is not an exact version",
+    ]);
+  });
+
   it("fails on a seeded extra runtime dependency", () => {
     const seeded = { ...pkg, dependencies: { ...pkg.dependencies, lodash: "4.17.21" } };
     expect(dependencyViolations(seeded)).toStrictEqual([

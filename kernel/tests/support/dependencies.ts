@@ -9,7 +9,9 @@ export interface PackageJson {
   readonly packageManager?: string;
 }
 
-const EXACT = /^\d+\.\d+\.\d+$/;
+// A registry version, or a GitHub dependency pinned to a release tag (the
+// lockfile then pins the commit); a branch or a bare repository is a range.
+const EXACT = /^(?:\d+\.\d+\.\d+|github:[\w.-]+\/[\w.-]+#v\d+\.\d+\.\d+)$/;
 
 export function dependencyViolations(pkg: PackageJson): string[] {
   const violations: string[] = [];
