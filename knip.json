@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["kernel/src/main.ts"],
+  "entry": ["kernel/src/main.ts", "kernel/src/shared/*/index.ts"],
   "project": ["kernel/**/*.ts", "kernel/**/*.mjs"],
   "tags": ["-public"]
 }

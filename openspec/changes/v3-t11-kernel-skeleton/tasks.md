@@ -26,8 +26,8 @@
 
 ## 4. shared/clock and shared/ids
 
-- [ ] 4.1 Write failing unit tests: system clock format `YYYY-MM-DDTHH:MM:SSZ`, fixed clock injection, id prefixes, qualified reference parse (`<changeId>/L-m2x9v`, bare id, malformed input); verify they fail
-- [ ] 4.2 Implement `shared/clock` and the provisional `shared/ids` (design D-6, format owned by T14); verify 4.1 passes
+- [x] 4.1 Write failing unit tests: system clock format `YYYY-MM-DDTHH:MM:SSZ`, fixed clock injection, id prefixes, qualified reference parse (`<changeId>/L-m2x9v`, bare id, malformed input); verify they fail
+- [x] 4.2 Implement `shared/clock` and the provisional `shared/ids` (design D-6, format owned by T14); verify 4.1 passes
 
 ## 5. shared/store
 
