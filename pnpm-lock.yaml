@@ -36,6 +36,9 @@ importers:
       ajv-formats:
         specifier: 3.0.1
         version: 3.0.1(ajv@8.20.0)
+      bdk-skill-kit:
+        specifier: github:broneq/bdk-skill-kit#v0.1.2
+        version: https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/a8d6c720ba2e6a58e0d846bf45a56efbd6f8f399
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -911,6 +914,12 @@ packages:
   balanced-match@4.0.4:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
+
+  bdk-skill-kit@https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/a8d6c720ba2e6a58e0d846bf45a56efbd6f8f399:
+    resolution: {tarball: https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/a8d6c720ba2e6a58e0d846bf45a56efbd6f8f399}
+    version: 0.1.2
+    engines: {node: '>=22.18.0'}
+    hasBin: true
 
   brace-expansion@5.0.12:
     resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
@@ -2324,6 +2333,8 @@ snapshots:
       js-tokens: 10.0.0
 
   balanced-match@4.0.4: {}
+
+  bdk-skill-kit@https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/a8d6c720ba2e6a58e0d846bf45a56efbd6f8f399: {}
 
   brace-expansion@5.0.12:
     dependencies:

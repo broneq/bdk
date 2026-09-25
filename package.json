@@ -10,7 +10,7 @@
   "packageManager": "pnpm@10.22.0",
   "scripts": {
     "build": "node kernel/build.mjs",
-    "lint": "eslint --max-warnings 0 kernel",
+    "lint": "eslint --max-warnings 0 kernel tools",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
@@ -18,6 +18,7 @@
     "test:unit": "vitest run --project unit --coverage",
     "test:e2e": "vitest run --project e2e",
     "test:contract": "vitest run --project contract",
+    "skill-check": "skill-check",
     "prepare": "husky"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "@vitest/coverage-v8": "5.0.2",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
+    "bdk-skill-kit": "github:broneq/bdk-skill-kit#v0.1.2",
     "esbuild": "0.28.2",
     "eslint": "10.11.0",
     "eslint-config-prettier": "10.1.8",
@@ -47,12 +49,5 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
-  },
-  "lint-staged": {
-    "*.ts": [
-      "eslint --max-warnings 0 --fix",
-      "prettier --write"
-    ],
-    "*.{js,mjs,json,yaml,yml,md}": "prettier --write"
   }
 }

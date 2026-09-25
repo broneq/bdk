@@ -1,6 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["kernel/src/main.ts", "kernel/src/shared/*/index.ts"],
-  "project": ["kernel/**/*.ts", "kernel/**/*.mjs"],
+  "entry": [
+    "kernel/src/main.ts",
+    "kernel/src/shared/*/index.ts",
+    "skill-check.config.ts",
+    "tools/skill-check/fixtures/skill-check.fixture.config.ts"
+  ],
+  "project": ["kernel/**/*.ts", "kernel/**/*.mjs", "tools/**/*.ts"],
   "tags": ["-public"]
 }

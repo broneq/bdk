@@ -17,5 +17,5 @@
     "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["kernel/**/*.ts", "*.config.ts"]
+  "include": ["kernel/**/*.ts", "tools/**/*.ts", "*.config.ts"]
 }

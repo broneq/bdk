@@ -1,0 +1,637 @@
+[
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/architecture-reviewer.md",
+    "fingerprint": "1bc26f5bba93b724"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/code-reviewer.md",
+    "fingerprint": "03837ee556e6c042"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/dead-code-detector.md",
+    "fingerprint": "fe9c87d4e8e29195"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/design-verifier.md",
+    "fingerprint": "656f233e8c8a96e3"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/duplicate-detector.md",
+    "fingerprint": "0fb09607ba7d64fb"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/explorer.md",
+    "fingerprint": "543d16520e672ca0"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/fixer.md",
+    "fingerprint": "541384e834ff44ee"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/implementer.md",
+    "fingerprint": "72b711f102dcd1bf"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/log-analyzer.md",
+    "fingerprint": "28b2ba2d3d1dcee2"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/plan-verifier.md",
+    "fingerprint": "d0ec27dc876205e3"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/static-analyse.md",
+    "fingerprint": "632eefdf4fddf8a4"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/test-runner.md",
+    "fingerprint": "b1648b02d292774a"
+  },
+  {
+    "rule": "bdk/adapter-shape",
+    "file": "agents/web-researcher.md",
+    "fingerprint": "326693e4c367eb6e"
+  },
+  {
+    "rule": "bdk/namespaced-refs",
+    "file": "skills/commit/SKILL.md",
+    "fingerprint": "62dccc51d7cb6d98"
+  },
+  {
+    "rule": "bdk/no-language-commands",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "62ea653726a62da6"
+  },
+  {
+    "rule": "bdk/no-language-commands",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "77a68a20f2abdf9c"
+  },
+  {
+    "rule": "bdk/no-language-commands",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "dbe6e52ffd21b701"
+  },
+  {
+    "rule": "bdk/no-language-commands",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "260c8ef7c285ce01"
+  },
+  {
+    "rule": "bdk/no-language-commands",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "d060dccbf85ec9d7"
+  },
+  {
+    "rule": "bdk/no-language-commands",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "edb5795d934999b4"
+  },
+  {
+    "rule": "bdk/no-language-commands",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "f11730af604405fb"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/bdk-implementer-return-contract/SKILL.md",
+    "fingerprint": "896990d65de3f015"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/bdk-lint-tools/SKILL.md",
+    "fingerprint": "4d91cf9642f35d05"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/bdk-rules-architecture/SKILL.md",
+    "fingerprint": "1cf354e9f3958072"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/bdk-rules-code-quality/SKILL.md",
+    "fingerprint": "767dbff7fbf3bb78"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/bdk-rules-design-patterns/SKILL.md",
+    "fingerprint": "1cf9fb0a63b825b8"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/bdk-rules-languages/SKILL.md",
+    "fingerprint": "4e139168e10a0c16"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/bdk-rules-security/SKILL.md",
+    "fingerprint": "9ffa4d9a98c8ca3c"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/bdk-test-tools/SKILL.md",
+    "fingerprint": "72aaea4b47d3266b"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/cr/SKILL.md",
+    "fingerprint": "a490372a23bab9ca"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/create-adr/SKILL.md",
+    "fingerprint": "10d5377b22748352"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "86ed62ad44c8a24b"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/debug/SKILL.md",
+    "fingerprint": "a9f5c617300f5bd2"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "34b705e386ecd686"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/pr-review/SKILL.md",
+    "fingerprint": "5e6bdce10c27ff04"
+  },
+  {
+    "rule": "bdk/wrapper-allowed-tools",
+    "file": "skills/test-driven-development/SKILL.md",
+    "fingerprint": "2edcfd530bc5874d"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/bdk-implementer-return-contract/SKILL.md",
+    "fingerprint": "ac6c72e2fc0f9f15"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/bdk-lint-tools/SKILL.md",
+    "fingerprint": "1d0a1d689c62a6f8"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/bdk-rules-architecture/SKILL.md",
+    "fingerprint": "3101664324f218e1"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/bdk-rules-code-quality/SKILL.md",
+    "fingerprint": "b12cce1824089d94"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/bdk-rules-design-patterns/SKILL.md",
+    "fingerprint": "b778acb0859846c4"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/bdk-rules-languages/SKILL.md",
+    "fingerprint": "28a1dd16a629ecbd"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/bdk-rules-security/SKILL.md",
+    "fingerprint": "ec2f7f31ce6e0265"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/bdk-test-tools/SKILL.md",
+    "fingerprint": "ff00b35cfece2558"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/cr/SKILL.md",
+    "fingerprint": "2af856630028c00f"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/cr/SKILL.md",
+    "fingerprint": "6965be4aa51d3eec"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-adr/SKILL.md",
+    "fingerprint": "9590c7318708aa6d"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "01f233431731ced2"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "0b935b0497b6f837"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "18d8c686abfa43de"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "2ffd7cf700a7b597"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "82109520b21b2939"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "82109520b21b2939"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "90239f43629d0a9d"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "a09f8b5752bbf8c9"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "cd8f09d7e29be4a2"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "e1dbfe48c28b2139"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "e268c482d37a3adb"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "f3a719b7442dd3f4"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/debug/SKILL.md",
+    "fingerprint": "1e562863f24146f8"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/debug/SKILL.md",
+    "fingerprint": "6a5f546fb62229ce"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/debug/SKILL.md",
+    "fingerprint": "94128282829aa9bd"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "4d76bf7cf69b76a8"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "53ef45604d029ea5"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "c3e8b51e6386566f"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/pr-review/SKILL.md",
+    "fingerprint": "b1b99ea858b29673"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/test-driven-development/SKILL.md",
+    "fingerprint": "b39fe5ed7db5b8cc"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/test-driven-development/SKILL.md",
+    "fingerprint": "bcf43a43ada474a0"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/bdk-implementer-return-contract/SKILL.md",
+    "fingerprint": "9e82187d65804c16"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/bdk-lint-tools/SKILL.md",
+    "fingerprint": "c84ca3bed3645d78"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/bdk-rules-architecture/SKILL.md",
+    "fingerprint": "8a0e3ec47eae0824"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/bdk-rules-code-quality/SKILL.md",
+    "fingerprint": "4080a6861bad09fa"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/bdk-rules-design-patterns/SKILL.md",
+    "fingerprint": "35664d79eb9ef811"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/bdk-rules-languages/SKILL.md",
+    "fingerprint": "004bc0bab9841917"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/bdk-rules-security/SKILL.md",
+    "fingerprint": "ebf0f0aad007b712"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/bdk-test-tools/SKILL.md",
+    "fingerprint": "e1a32ce67b108410"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/commit/SKILL.md",
+    "fingerprint": "c1ad4f39844e130d"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/cr/SKILL.md",
+    "fingerprint": "44f76a54a64494fc"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "2ae043ef6841bae5"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "0a9cf132ea0f5216"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/pr-review/SKILL.md",
+    "fingerprint": "67af1acd287d0b9d"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/setup/SKILL.md",
+    "fingerprint": "d8982b38e10a6245"
+  },
+  {
+    "rule": "description-front-loaded",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "4a884e506305ae0c"
+  },
+  {
+    "rule": "description",
+    "file": "agents/design-verifier.md",
+    "fingerprint": "7c6bcca4fd206399"
+  },
+  {
+    "rule": "description",
+    "file": "agents/plan-verifier.md",
+    "fingerprint": "e3322c2fe97fa491"
+  },
+  {
+    "rule": "description",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "71421b393ca5c362"
+  },
+  {
+    "rule": "field-values",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "2b96bda9fba211e1"
+  },
+  {
+    "rule": "field-values",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "9c3d4e10b7967a83"
+  },
+  {
+    "rule": "field-values",
+    "file": "skills/debug/SKILL.md",
+    "fingerprint": "176d206c50008a32"
+  },
+  {
+    "rule": "field-values",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "d3f2605911d84d43"
+  },
+  {
+    "rule": "line-limit",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "d907265c706f2f75"
+  },
+  {
+    "rule": "line-limit",
+    "file": "skills/debug/SKILL.md",
+    "fingerprint": "fc57e34fd1a7af05"
+  },
+  {
+    "rule": "line-limit",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "81f79d68c0b9e9c2"
+  },
+  {
+    "rule": "line-limit",
+    "file": "skills/refine-rules/SKILL.md",
+    "fingerprint": "79ffbc40832be199"
+  },
+  {
+    "rule": "line-limit",
+    "file": "skills/setup/SKILL.md",
+    "fingerprint": "bf1b2dc9b7b4feb2"
+  },
+  {
+    "rule": "line-limit",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "cb147be7bce843e0"
+  },
+  {
+    "rule": "line-limit",
+    "file": "skills/update-docs/SKILL.md",
+    "fingerprint": "3b7d74c7e59ac90b"
+  },
+  {
+    "rule": "model-names",
+    "file": "agents/explorer.md",
+    "fingerprint": "991b3373f91b82e5"
+  },
+  {
+    "rule": "model-names",
+    "file": "agents/log-analyzer.md",
+    "fingerprint": "f22fead5be883e52"
+  },
+  {
+    "rule": "model-names",
+    "file": "agents/static-analyse.md",
+    "fingerprint": "328628b27e54b3a8"
+  },
+  {
+    "rule": "model-names",
+    "file": "agents/test-runner.md",
+    "fingerprint": "a802448ed6782a0b"
+  },
+  {
+    "rule": "model-names",
+    "file": "agents/web-researcher.md",
+    "fingerprint": "55e7446010b6c6e9"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/cr/SKILL.md",
+    "fingerprint": "ee629fb76ed885ec"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "76379e4f1ef1ab77"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "a742b4332b66902f"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/design/SKILL.md",
+    "fingerprint": "a742b4332b66902f"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/pr-review/SKILL.md",
+    "fingerprint": "f4d3f0529fc5ae8e"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "6dcc9edc823fec3e"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "6dcc9edc823fec3e"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "6dcc9edc823fec3e"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "6dcc9edc823fec3e"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "6dcc9edc823fec3e"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "7494b166ac8e72b4"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "7494b166ac8e72b4"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "7494b166ac8e72b4"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "9ca7719aaf401bc4"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "9ca7719aaf401bc4"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "9ca7719aaf401bc4"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "9ca7719aaf401bc4"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "9ca7719aaf401bc4"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/verify-plan/SKILL.md",
+    "fingerprint": "48d203b8c6069d4c"
+  },
+  {
+    "rule": "model-names",
+    "file": "skills/verify-plan/SKILL.md",
+    "fingerprint": "ae137171d83fefd2"
+  },
+  {
+    "rule": "references",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "b77aa0084f38e558"
+  },
+  {
+    "rule": "references",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "b77aa0084f38e558"
+  },
+  {
+    "rule": "references",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "b77aa0084f38e558"
+  },
+  {
+    "rule": "unused-files",
+    "file": "skills/explain-complex-code/references/documentation-template.md",
+    "fingerprint": "24178806cad5aef8"
+  },
+  {
+    "rule": "unused-files",
+    "file": "skills/explain-complex-code/references/examples.md",
+    "fingerprint": "8f2b8964e32d07cb"
+  }
+]
