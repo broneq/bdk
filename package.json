@@ -46,5 +46,12 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --max-warnings 0 --fix",
+      "prettier --write"
+    ],
+    "*.{js,mjs,json,yaml,yml,md}": "prettier --write"
   }
 }
