@@ -7,7 +7,7 @@ effort: high
 user-invocable: true
 disable-model-invocation: true
 context: main
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(date *) Bash(lavish-axi *) AskUserQuestion
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(date *) Bash(lavish-axi *) AskUserQuestion
 hooks:
   UserPromptSubmit:
     - hooks:
@@ -208,10 +208,10 @@ Print: `[create-plan] Parallelism: {T} tasks in {W} waves (max width {widest wav
 
 Project tools context:
 
-- Test tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
-- Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
+- Test tools: !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
+- Lint tools: !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.lint 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
 
-If either command fails (no `.bdk/settings.json`), fall back to generic phrasing ("run the project's test suite", "run the project's linter") and continue — do not stop.
+If either list is empty (`[]`) or shows an error, fall back to generic phrasing ("run the project's test suite", "run the project's linter") and continue — do not stop.
 
 Rule sections loaded for plan rendering — copy verbatim into the plan's References section in place of the matching markers:
 

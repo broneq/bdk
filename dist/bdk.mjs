@@ -52,11 +52,11 @@ var require_identity = __commonJS({
     var NODE_TYPE = /* @__PURE__ */ Symbol.for("yaml.node.type");
     var isAlias = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === ALIAS;
     var isDocument = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === DOC;
-    var isMap = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === MAP;
+    var isMap2 = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === MAP;
     var isPair = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === PAIR;
-    var isScalar = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === SCALAR;
-    var isSeq = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === SEQ;
-    function isCollection(node2) {
+    var isScalar2 = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === SCALAR;
+    var isSeq2 = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === SEQ;
+    function isCollection2(node2) {
       if (node2 && typeof node2 === "object")
         switch (node2[NODE_TYPE]) {
           case MAP:
@@ -65,7 +65,7 @@ var require_identity = __commonJS({
         }
       return false;
     }
-    function isNode(node2) {
+    function isNode2(node2) {
       if (node2 && typeof node2 === "object")
         switch (node2[NODE_TYPE]) {
           case ALIAS:
@@ -76,7 +76,7 @@ var require_identity = __commonJS({
         }
       return false;
     }
-    var hasAnchor = (node2) => (isScalar(node2) || isCollection(node2)) && !!node2.anchor;
+    var hasAnchor = (node2) => (isScalar2(node2) || isCollection2(node2)) && !!node2.anchor;
     exports.ALIAS = ALIAS;
     exports.DOC = DOC;
     exports.MAP = MAP;
@@ -86,13 +86,13 @@ var require_identity = __commonJS({
     exports.SEQ = SEQ;
     exports.hasAnchor = hasAnchor;
     exports.isAlias = isAlias;
-    exports.isCollection = isCollection;
+    exports.isCollection = isCollection2;
     exports.isDocument = isDocument;
-    exports.isMap = isMap;
-    exports.isNode = isNode;
+    exports.isMap = isMap2;
+    exports.isNode = isNode2;
     exports.isPair = isPair;
-    exports.isScalar = isScalar;
-    exports.isSeq = isSeq;
+    exports.isScalar = isScalar2;
+    exports.isSeq = isSeq2;
   }
 });
 
@@ -1006,14 +1006,14 @@ var require_foldFlowLines = __commonJS({
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
-    function foldFlowLines(text, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+    function foldFlowLines(text2, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
       if (!lineWidth || lineWidth < 0)
-        return text;
+        return text2;
       if (lineWidth < minContentWidth)
         minContentWidth = 0;
       const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
-      if (text.length <= endStep)
-        return text;
+      if (text2.length <= endStep)
+        return text2;
       const folds = [];
       const escapedFolds = {};
       let end = lineWidth - indent.length;
@@ -1030,14 +1030,14 @@ var require_foldFlowLines = __commonJS({
       let escStart = -1;
       let escEnd = -1;
       if (mode === FOLD_BLOCK) {
-        i = consumeMoreIndentedLines(text, i, indent.length);
+        i = consumeMoreIndentedLines(text2, i, indent.length);
         if (i !== -1)
           end = i + endStep;
       }
-      for (let ch; ch = text[i += 1]; ) {
+      for (let ch; ch = text2[i += 1]; ) {
         if (mode === FOLD_QUOTED && ch === "\\") {
           escStart = i;
-          switch (text[i + 1]) {
+          switch (text2[i + 1]) {
             case "x":
               i += 3;
               break;
@@ -1054,12 +1054,12 @@ var require_foldFlowLines = __commonJS({
         }
         if (ch === "\n") {
           if (mode === FOLD_BLOCK)
-            i = consumeMoreIndentedLines(text, i, indent.length);
+            i = consumeMoreIndentedLines(text2, i, indent.length);
           end = i + indent.length + endStep;
           split = void 0;
         } else {
           if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
-            const next = text[i + 1];
+            const next = text2[i + 1];
             if (next && next !== " " && next !== "\n" && next !== "	")
               split = i;
           }
@@ -1071,12 +1071,12 @@ var require_foldFlowLines = __commonJS({
             } else if (mode === FOLD_QUOTED) {
               while (prev === " " || prev === "	") {
                 prev = ch;
-                ch = text[i += 1];
+                ch = text2[i += 1];
                 overflow = true;
               }
               const j = i > escEnd + 1 ? i - 2 : escStart - 1;
               if (escapedFolds[j])
-                return text;
+                return text2;
               folds.push(j);
               escapedFolds[j] = true;
               end = j + endStep;
@@ -1091,39 +1091,39 @@ var require_foldFlowLines = __commonJS({
       if (overflow && onOverflow)
         onOverflow();
       if (folds.length === 0)
-        return text;
+        return text2;
       if (onFold)
         onFold();
-      let res = text.slice(0, folds[0]);
+      let res = text2.slice(0, folds[0]);
       for (let i2 = 0; i2 < folds.length; ++i2) {
         const fold = folds[i2];
-        const end2 = folds[i2 + 1] || text.length;
+        const end2 = folds[i2 + 1] || text2.length;
         if (fold === 0)
           res = `
-${indent}${text.slice(0, end2)}`;
+${indent}${text2.slice(0, end2)}`;
         else {
           if (mode === FOLD_QUOTED && escapedFolds[fold])
-            res += `${text[fold]}\\`;
+            res += `${text2[fold]}\\`;
           res += `
-${indent}${text.slice(fold + 1, end2)}`;
+${indent}${text2.slice(fold + 1, end2)}`;
         }
       }
       return res;
     }
-    function consumeMoreIndentedLines(text, i, indent) {
+    function consumeMoreIndentedLines(text2, i, indent) {
       let end = i;
       let start = i + 1;
-      let ch = text[start];
+      let ch = text2[start];
       while (ch === " " || ch === "	") {
         if (i < start + indent) {
-          ch = text[++i];
+          ch = text2[++i];
         } else {
           do {
-            ch = text[++i];
+            ch = text2[++i];
           } while (ch && ch !== "\n");
           end = i;
           start = i + 1;
-          ch = text[start];
+          ch = text2[start];
         }
       }
       return end;
@@ -1509,7 +1509,7 @@ var require_stringify = __commonJS({
         props.push(doc.directives.tagString(tag));
       return props.join(" ");
     }
-    function stringify(item, ctx, onComment, onChompKeep) {
+    function stringify3(item, ctx, onComment, onChompKeep) {
       if (identity.isPair(item))
         return item.toString(ctx, onComment, onChompKeep);
       if (identity.isAlias(item)) {
@@ -1538,7 +1538,7 @@ var require_stringify = __commonJS({
 ${ctx.indent}${str}`;
     }
     exports.createStringifyContext = createStringifyContext;
-    exports.stringify = stringify;
+    exports.stringify = stringify3;
   }
 });
 
@@ -1548,7 +1548,7 @@ var require_stringifyPair = __commonJS({
     "use strict";
     var identity = require_identity();
     var Scalar = require_Scalar();
-    var stringify = require_stringify();
+    var stringify3 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
       const { allNullValues, doc, indent, indentStep, options: { commentString, indentSeq, simpleKeys } } = ctx;
@@ -1570,7 +1570,7 @@ var require_stringifyPair = __commonJS({
       });
       let keyCommentDone = false;
       let chompKeep = false;
-      let str = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
+      let str = stringify3.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
       if (!explicitKey && !ctx.inFlow && str.length > 1024) {
         if (simpleKeys)
           throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
@@ -1622,7 +1622,7 @@ ${indent}:`;
         ctx.indent = ctx.indent.substring(2);
       }
       let valueCommentDone = false;
-      const valueStr = stringify.stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
+      const valueStr = stringify3.stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
       let ws = " ";
       if (keyComment || vsb || vcb) {
         ws = vsb ? "\n" : "";
@@ -1719,14 +1719,14 @@ var require_merge = __commonJS({
       const source = resolveAliasValue(ctx, value);
       if (identity.isSeq(source))
         for (const it of source.items)
-          mergeValue(ctx, map, it);
+          mergeValue2(ctx, map, it);
       else if (Array.isArray(source))
         for (const it of source)
-          mergeValue(ctx, map, it);
+          mergeValue2(ctx, map, it);
       else
-        mergeValue(ctx, map, source);
+        mergeValue2(ctx, map, source);
     }
-    function mergeValue(ctx, map, value) {
+    function mergeValue2(ctx, map, value) {
       const source = resolveAliasValue(ctx, value);
       if (!identity.isMap(source))
         throw new Error("Merge sources must be maps or map aliases");
@@ -1763,7 +1763,7 @@ var require_addPairToJSMap = __commonJS({
     "use strict";
     var log = require_log();
     var merge2 = require_merge();
-    var stringify = require_stringify();
+    var stringify3 = require_stringify();
     var identity = require_identity();
     var toJS = require_toJS();
     function addPairToJSMap(ctx, map, { key, value }) {
@@ -1799,7 +1799,7 @@ var require_addPairToJSMap = __commonJS({
       if (typeof jsKey !== "object")
         return String(jsKey);
       if (identity.isNode(key) && ctx?.doc) {
-        const strCtx = stringify.createStringifyContext(ctx.doc, {});
+        const strCtx = stringify3.createStringifyContext(ctx.doc, {});
         strCtx.anchors = /* @__PURE__ */ new Set();
         for (const node2 of ctx.anchors.keys())
           strCtx.anchors.add(node2.anchor);
@@ -1866,12 +1866,12 @@ var require_stringifyCollection = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var stringify = require_stringify();
+    var stringify3 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyCollection(collection, ctx, options) {
       const flow = ctx.inFlow ?? collection.flow;
-      const stringify2 = flow ? stringifyFlowCollection : stringifyBlockCollection;
-      return stringify2(collection, ctx, options);
+      const stringify4 = flow ? stringifyFlowCollection : stringifyBlockCollection;
+      return stringify4(collection, ctx, options);
     }
     function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, flowChars, itemIndent, onChompKeep, onComment }) {
       const { indent, options: { commentString } } = ctx;
@@ -1896,7 +1896,7 @@ var require_stringifyCollection = __commonJS({
           }
         }
         chompKeep = false;
-        let str2 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
+        let str2 = stringify3.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
         if (comment2)
           str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment2));
         if (chompKeep && comment2)
@@ -1963,7 +1963,7 @@ ${indent}${line}` : "\n";
         }
         if (comment)
           reqNewline = true;
-        let str = stringify.stringify(item, itemCtx, () => comment = null);
+        let str = stringify3.stringify(item, itemCtx, () => comment = null);
         reqNewline || (reqNewline = lines.length > linesAtValue || str.includes("\n"));
         if (i < items.length - 1) {
           str += ",";
@@ -3324,7 +3324,7 @@ var require_stringifyDocument = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var stringify = require_stringify();
+    var stringify3 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyDocument(doc, options) {
       const lines = [];
@@ -3339,7 +3339,7 @@ var require_stringifyDocument = __commonJS({
       }
       if (hasDirectives)
         lines.push("---");
-      const ctx = stringify.createStringifyContext(doc, options);
+      const ctx = stringify3.createStringifyContext(doc, options);
       const { commentString } = ctx.options;
       if (doc.commentBefore) {
         if (lines.length !== 1)
@@ -3361,7 +3361,7 @@ var require_stringifyDocument = __commonJS({
           contentComment = doc.contents.comment;
         }
         const onChompKeep = contentComment ? void 0 : () => chompKeep = true;
-        let body = stringify.stringify(doc.contents, ctx, () => contentComment = null, onChompKeep);
+        let body = stringify3.stringify(doc.contents, ctx, () => contentComment = null, onChompKeep);
         if (contentComment)
           body += stringifyComment.lineComment(body, "", commentString(contentComment));
         if ((body[0] === "|" || body[0] === ">") && lines[lines.length - 1] === "---") {
@@ -3369,7 +3369,7 @@ var require_stringifyDocument = __commonJS({
         } else
           lines.push(body);
       } else {
-        lines.push(stringify.stringify(doc.contents, ctx));
+        lines.push(stringify3.stringify(doc.contents, ctx));
       }
       if (doc.directives?.docEnd) {
         if (doc.comment) {
@@ -3721,7 +3721,7 @@ var require_errors = __commonJS({
         this.pos = pos;
       }
     };
-    var YAMLParseError2 = class extends YAMLError {
+    var YAMLParseError3 = class extends YAMLError {
       constructor(pos, code, message) {
         super("YAMLParseError", pos, code, message);
       }
@@ -3767,7 +3767,7 @@ ${pointer}
       }
     };
     exports.YAMLError = YAMLError;
-    exports.YAMLParseError = YAMLParseError2;
+    exports.YAMLParseError = YAMLParseError3;
     exports.YAMLWarning = YAMLWarning;
     exports.prettifyError = prettifyError;
   }
@@ -4200,9 +4200,9 @@ var require_resolve_flow_collection = __commonJS({
     var blockMsg = "Block collections are not allowed within flow collections";
     var isBlock = (token) => token && (token.type === "block-map" || token.type === "block-seq");
     function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onError, tag) {
-      const isMap = fc.start.source === "{";
-      const fcName = isMap ? "flow map" : "flow sequence";
-      const NodeClass = tag?.nodeClass ?? (isMap ? YAMLMap.YAMLMap : YAMLSeq.YAMLSeq);
+      const isMap2 = fc.start.source === "{";
+      const fcName = isMap2 ? "flow map" : "flow sequence";
+      const NodeClass = tag?.nodeClass ?? (isMap2 ? YAMLMap.YAMLMap : YAMLSeq.YAMLSeq);
       const coll = new NodeClass(ctx.schema);
       coll.flow = true;
       const atRoot = ctx.atRoot;
@@ -4238,7 +4238,7 @@ var require_resolve_flow_collection = __commonJS({
             offset = props.end;
             continue;
           }
-          if (!isMap && ctx.options.strict && utilContainsNewline.containsNewline(key))
+          if (!isMap2 && ctx.options.strict && utilContainsNewline.containsNewline(key))
             onError(
               key,
               // checked by containsNewline()
@@ -4278,7 +4278,7 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep && !props.found) {
+        if (!isMap2 && !sep && !props.found) {
           const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
@@ -4301,7 +4301,7 @@ var require_resolve_flow_collection = __commonJS({
             startOnNewline: false
           });
           if (valueProps.found) {
-            if (!isMap && !props.found && ctx.options.strict) {
+            if (!isMap2 && !props.found && ctx.options.strict) {
               if (sep)
                 for (const st of sep) {
                   if (st === valueProps.found)
@@ -4333,7 +4333,7 @@ var require_resolve_flow_collection = __commonJS({
           const pair = new Pair.Pair(keyNode, valueNode);
           if (ctx.options.keepSourceTokens)
             pair.srcToken = collItem;
-          if (isMap) {
+          if (isMap2) {
             const map = coll;
             if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
               onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
@@ -4349,7 +4349,7 @@ var require_resolve_flow_collection = __commonJS({
           offset = valueNode ? valueNode.range[2] : valueProps.end;
         }
       }
-      const expectedEnd = isMap ? "}" : "]";
+      const expectedEnd = isMap2 ? "}" : "]";
       const [ce, ...ee] = fc.end;
       let cePos = offset;
       if (ce?.source === expectedEnd)
@@ -5505,7 +5505,7 @@ var require_cst_scalar = __commonJS({
 var require_cst_stringify = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
     "use strict";
-    var stringify = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
+    var stringify3 = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
     function stringifyToken(token) {
       switch (token.type) {
         case "block-scalar": {
@@ -5558,7 +5558,7 @@ var require_cst_stringify = __commonJS({
         res += stringifyToken(value);
       return res;
     }
-    exports.stringify = stringify;
+    exports.stringify = stringify3;
   }
 });
 
@@ -5635,8 +5635,8 @@ var require_cst = __commonJS({
     var DOCUMENT = "";
     var FLOW_END = "";
     var SCALAR = "";
-    var isCollection = (token) => !!token && "items" in token;
-    var isScalar = (token) => !!token && (token.type === "scalar" || token.type === "single-quoted-scalar" || token.type === "double-quoted-scalar" || token.type === "block-scalar");
+    var isCollection2 = (token) => !!token && "items" in token;
+    var isScalar2 = (token) => !!token && (token.type === "scalar" || token.type === "single-quoted-scalar" || token.type === "double-quoted-scalar" || token.type === "block-scalar");
     function prettyToken(token) {
       switch (token) {
         case BOM:
@@ -5719,8 +5719,8 @@ var require_cst = __commonJS({
     exports.DOCUMENT = DOCUMENT;
     exports.FLOW_END = FLOW_END;
     exports.SCALAR = SCALAR;
-    exports.isCollection = isCollection;
-    exports.isScalar = isScalar;
+    exports.isCollection = isCollection2;
+    exports.isScalar = isScalar2;
     exports.prettyToken = prettyToken;
     exports.tokenType = tokenType;
   }
@@ -7250,7 +7250,7 @@ var require_public_api = __commonJS({
         return docs;
       return Object.assign([], { empty: true }, composer$1.streamInfo());
     }
-    function parseDocument(source, options = {}) {
+    function parseDocument2(source, options = {}) {
       const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
       const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
       const composer$1 = new composer.Composer(options);
@@ -7269,14 +7269,14 @@ var require_public_api = __commonJS({
       }
       return doc;
     }
-    function parse4(src, reviver, options) {
+    function parse5(src, reviver, options) {
       let _reviver = void 0;
       if (typeof reviver === "function") {
         _reviver = reviver;
       } else if (options === void 0 && reviver && typeof reviver === "object") {
         options = reviver;
       }
-      const doc = parseDocument(src, options);
+      const doc = parseDocument2(src, options);
       if (!doc)
         return null;
       doc.warnings.forEach((warning) => log.warn(doc.options.logLevel, warning));
@@ -7288,7 +7288,7 @@ var require_public_api = __commonJS({
       }
       return doc.toJS(Object.assign({ reviver: _reviver }, options));
     }
-    function stringify(value, replacer, options) {
+    function stringify3(value, replacer, options) {
       let _replacer = null;
       if (typeof replacer === "function" || Array.isArray(replacer)) {
         _replacer = replacer;
@@ -7310,10 +7310,10 @@ var require_public_api = __commonJS({
         return value.toString(options);
       return new Document.Document(value, _replacer, options).toString(options);
     }
-    exports.parse = parse4;
+    exports.parse = parse5;
     exports.parseAllDocuments = parseAllDocuments;
-    exports.parseDocument = parseDocument;
-    exports.stringify = stringify;
+    exports.parseDocument = parseDocument2;
+    exports.stringify = stringify3;
   }
 });
 
@@ -8388,7 +8388,7 @@ var commands_default = {
         {
           name: "<key>",
           required: false,
-          description: "Dotted key; default the whole tree."
+          description: "Dotted key; default the whole tree. An element of an array merged by `id` is addressed by its `id` as a path segment (`tools.test.unit.scoped`)."
         }
       ],
       flags: [
@@ -8430,7 +8430,8 @@ var commands_default = {
       args: [
         {
           name: "<module>",
-          required: false
+          required: false,
+          description: "The root key of one registered module, e.g. `tools`."
         }
       ],
       flags: [
@@ -8456,7 +8457,8 @@ var commands_default = {
       args: [
         {
           name: "<key>",
-          required: true
+          required: true,
+          description: "Dotted key; array elements merged by `id` are addressed by `id`."
         },
         {
           name: "<value>",
@@ -8467,7 +8469,7 @@ var commands_default = {
       flags: [
         {
           name: "--global",
-          description: "Write ~/.config/bdk/settings.yaml."
+          description: "Write the global layer file (`kernel-settings`, Configuration layers)."
         },
         {
           name: "--local",
@@ -8480,7 +8482,7 @@ var commands_default = {
       writes: [
         ".bdk/settings.yaml",
         ".bdk/settings.local.yaml",
-        "~/.config/bdk/settings.yaml",
+        "the global layer file",
         ".bdk/.machine/config/"
       ]
     },
@@ -8949,7 +8951,7 @@ var commands_default = {
       flags: [
         {
           name: "--fix",
-          description: "Apply the repairs that need no system change (index rebuild, schema refresh); never installs software."
+          description: "Apply the repairs that need no system change (index rebuild, schema refresh, modeline); never installs software."
         }
       ],
       output: "output/doctor.json",
@@ -9023,25 +9025,70 @@ var commands_default = {
   ]
 };
 
-// kernel/src/service/render/version.ts
-function renderVersion(output) {
-  return `bdk ${output.kernel} (contract ${output.contract}, node ${output.node})
-`;
-}
+// kernel/src/main.ts
+import { homedir } from "node:os";
 
-// kernel/src/service/render/doctor.ts
-function renderDoctor(output) {
-  const lines = [renderVersion(output.version).trimEnd(), `layout: ${output.layout ?? "unknown"}`];
-  if (output.findings.length === 0) lines.push("no findings");
-  for (const finding of output.findings) {
-    lines.push(`${finding.level} ${finding.id}: ${finding.summary}`, `  repair: ${finding.repair}`);
+// kernel/src/config/render/check.ts
+function renderCheck(report) {
+  const lines = report.problems.map(
+    (problem) => `warn ${problem.code} ${problem.path}: ${problem.message}`
+  );
+  if (lines.length === 0) lines.push("settings valid");
+  if (report.snapshot !== void 0) lines.push(`snapshot: ${report.snapshot}`);
+  if (report.overriddenKeys.length > 0) {
+    lines.push(`overridden by global or local: ${report.overriddenKeys.join(", ")}`);
   }
   return `${lines.join("\n")}
 `;
 }
 
-// kernel/src/service/use-cases/doctor.ts
-import { join as join3 } from "node:path";
+// kernel/src/config/use-cases/check.ts
+import { join as join5 } from "node:path";
+
+// kernel/src/shared/config/manifest.ts
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// kernel/src/shared/config/values.ts
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isIdArray(value) {
+  return Array.isArray(value) && value.length > 0 && value.every((item) => isRecord(item) && typeof item.id === "string");
+}
+function joinKey(prefix, segment) {
+  return prefix === "" ? segment : `${prefix}.${segment}`;
+}
+function valueAt(root, steps) {
+  let value = root;
+  for (const { segment, id } of steps) {
+    if (id) value = isIdArray(value) ? value.find((item) => item.id === segment) : void 0;
+    else value = isRecord(value) ? value[segment] : void 0;
+    if (value === void 0) return void 0;
+  }
+  return value;
+}
+
+// kernel/src/shared/config/manifest.ts
+var UNKNOWN_VERSION = "0.0.0-unknown";
+function pluginRootOf(bundleUrl) {
+  return dirname(dirname(fileURLToPath(bundleUrl)));
+}
+function readKernelVersion(store, pluginRoot) {
+  const text2 = store.read(join(pluginRoot, ".claude-plugin", "plugin.json"));
+  if (text2 === void 0) return UNKNOWN_VERSION;
+  try {
+    const manifest = JSON.parse(text2);
+    const version3 = isRecord(manifest) ? manifest.version : void 0;
+    return typeof version3 === "string" ? version3 : UNKNOWN_VERSION;
+  } catch {
+    return UNKNOWN_VERSION;
+  }
+}
+
+// kernel/src/shared/config/layers.ts
+var import_yaml = __toESM(require_dist(), 1);
+import { posix, win32 } from "node:path";
 
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/core/util.js
 var util_exports = {};
@@ -10223,17 +10270,17 @@ var validateAsync = async (schema, value, _ctx) => {
   return result.issues.length === 0;
 };
 var _encode = (_Err) => {
-  const parse4 = _parse(_Err);
+  const parse5 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
     const ctx = _ctx ? { ..._ctx, direction: "backward" } : { direction: "backward" };
-    return parse4(schema, value, ctx, finalizeParams(fn, _params));
+    return parse5(schema, value, ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
 var _decode = (_Err) => {
-  const parse4 = _parse(_Err);
+  const parse5 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
-    return parse4(schema, value, _ctx, finalizeParams(fn, _params));
+    return parse5(schema, value, _ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
@@ -10319,6 +10366,7 @@ function datetime(args) {
   return new RegExp(`^${dateSource}T(?:${timeRegex})$`);
 }
 var anyString = /^[\s\S]{0,}$/;
+var integer = /^-?\d+$/;
 var number = /^-?\d+(?:\.\d+)?$/;
 var boolean = /^(?:true|false)$/i;
 var lowercase = /^[^A-Z]*$/;
@@ -11775,6 +11823,161 @@ function handleIntersectionResults(result, left, right) {
   result.value = merged.data;
   return result;
 }
+var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
+  $ZodType.init(inst, def);
+  const memo2 = globalConfig.memoizer;
+  memo2?.attach(inst);
+  inst._zod.parse = (payload, ctx) => {
+    const input = payload.value;
+    if (!isPlainObject(input)) {
+      payload.issues.push({
+        expected: "record",
+        code: "invalid_type",
+        input,
+        inst
+      });
+      return payload;
+    }
+    const proms = [];
+    const values = def.keyType._zod.values;
+    if (values && !def.partial) {
+      payload.value = memo2 ? memo2.alloc(inst, payload, {}, ctx) : {};
+      const recordKeys = /* @__PURE__ */ new Set();
+      for (const key of values) {
+        if (typeof key === "string" || typeof key === "number" || typeof key === "symbol") {
+          recordKeys.add(typeof key === "number" ? key.toString() : key);
+          if (key === "__proto__")
+            continue;
+          const keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
+          if (keyResult instanceof Promise) {
+            throw new Error("Async schemas not supported in object keys currently");
+          }
+          if (keyResult.issues.length) {
+            payload.issues.push({
+              code: "invalid_key",
+              origin: "record",
+              issues: keyResult.issues.map((iss) => finalizeIssue(iss, ctx, config())),
+              input: key,
+              path: [key],
+              inst
+            });
+            continue;
+          }
+          const outKey = keyResult.value;
+          if (outKey === "__proto__")
+            continue;
+          const result = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
+          if (result instanceof Promise) {
+            proms.push(result.then((result2) => {
+              if (result2.issues.length) {
+                payload.issues.push(...prefixIssues(key, result2.issues));
+              }
+              payload.value[outKey] = result2.value;
+            }));
+          } else {
+            if (result.issues.length) {
+              payload.issues.push(...prefixIssues(key, result.issues));
+            }
+            payload.value[outKey] = result.value;
+          }
+        }
+      }
+      let unrecognized;
+      for (const key in input) {
+        if (!recordKeys.has(key)) {
+          if (def.mode === "loose") {
+            if (key === "__proto__")
+              continue;
+            payload.value[key] = input[key];
+          } else {
+            unrecognized = unrecognized ?? [];
+            unrecognized.push(key);
+          }
+        }
+      }
+      if (unrecognized && unrecognized.length > 0) {
+        payload.issues.push({
+          code: "unrecognized_keys",
+          input,
+          inst,
+          keys: unrecognized,
+          continue: true
+        });
+      }
+    } else {
+      payload.value = memo2 ? memo2.alloc(inst, payload, {}, ctx) : {};
+      let unrecognized;
+      for (const key of Reflect.ownKeys(input)) {
+        if (key === "__proto__")
+          continue;
+        if (!Object.prototype.propertyIsEnumerable.call(input, key))
+          continue;
+        let keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
+        if (keyResult instanceof Promise) {
+          throw new Error("Async schemas not supported in object keys currently");
+        }
+        const checkNumericKey = typeof key === "string" && number.test(key) && keyResult.issues.length;
+        if (checkNumericKey) {
+          const retryResult = def.keyType._zod.run({ value: Number(key), issues: [] }, ctx);
+          if (retryResult instanceof Promise) {
+            throw new Error("Async schemas not supported in object keys currently");
+          }
+          if (retryResult.issues.length === 0) {
+            keyResult = retryResult;
+          }
+        }
+        if (keyResult.issues.length) {
+          if (def.mode === "loose") {
+            payload.value[key] = input[key];
+          } else if (values) {
+            unrecognized = unrecognized ?? [];
+            unrecognized.push(key);
+          } else {
+            payload.issues.push({
+              code: "invalid_key",
+              origin: "record",
+              issues: keyResult.issues.map((iss) => finalizeIssue(iss, ctx, config())),
+              input: key,
+              path: [key],
+              inst
+            });
+          }
+          continue;
+        }
+        const outKey = keyResult.value;
+        if (outKey === "__proto__")
+          continue;
+        const result = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
+        if (result instanceof Promise) {
+          proms.push(result.then((result2) => {
+            if (result2.issues.length) {
+              payload.issues.push(...prefixIssues(key, result2.issues));
+            }
+            payload.value[outKey] = result2.value;
+          }));
+        } else {
+          if (result.issues.length) {
+            payload.issues.push(...prefixIssues(key, result.issues));
+          }
+          payload.value[outKey] = result.value;
+        }
+      }
+      if (unrecognized && unrecognized.length > 0) {
+        payload.issues.push({
+          code: "unrecognized_keys",
+          input,
+          inst,
+          keys: unrecognized,
+          continue: true
+        });
+      }
+    }
+    if (proms.length) {
+      return Promise.all(proms).then(() => payload);
+    }
+    return payload;
+  };
+});
 var $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
   $ZodType.init(inst, def);
   const values = getEnumValues(def.entries);
@@ -12096,7 +12299,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve4) {
+function isRecursive(inst, stack, resolve5) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -12106,7 +12309,7 @@ function isRecursive(inst, stack, resolve4) {
   let result = NONE;
   const check = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve4);
+      const answer = isRecursive(child, stack, resolve5);
       if (answer > result)
         result = answer;
     }
@@ -12117,7 +12320,7 @@ function isRecursive(inst, stack, resolve4) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve4) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve5) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -12181,7 +12384,7 @@ function isRecursive(inst, stack, resolve4) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve4 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve5 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -13741,10 +13944,36 @@ var numberProcessor = (schema, ctx, _json, params) => {
 var booleanProcessor = (_schema, _ctx, json2, _params) => {
   json2.type = "boolean";
 };
+var bigintProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "BigInt cannot be represented in JSON Schema");
+};
+var symbolProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "Symbols cannot be represented in JSON Schema");
+};
+var nullProcessor = (_schema, ctx, json2, _params) => {
+  if (ctx.target === "openapi-3.0") {
+    json2.type = "string";
+    json2.nullable = true;
+    json2.enum = [null];
+  } else {
+    json2.type = "null";
+  }
+};
+var undefinedProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "Undefined cannot be represented in JSON Schema");
+};
+var voidProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "Void cannot be represented in JSON Schema");
+};
 var neverProcessor = (_schema, _ctx, json2, _params) => {
   json2.not = {};
 };
+var anyProcessor = (_schema, _ctx, _json, _params) => {
+};
 var unknownProcessor = (_schema, _ctx, _json, _params) => {
+};
+var dateProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "Date cannot be represented in JSON Schema");
 };
 var enumProcessor = (schema, _ctx, json2, _params) => {
   const def = schema._zod.def;
@@ -13799,11 +14028,53 @@ var literalProcessor = (schema, ctx, json2, params) => {
     json2.enum = vals;
   }
 };
+var nanProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "NaN cannot be represented in JSON Schema");
+};
+var templateLiteralProcessor = (schema, _ctx, json2, _params) => {
+  const _json = json2;
+  const pattern = schema._zod.pattern;
+  if (!pattern)
+    throw new Error("Pattern not found in template literal");
+  _json.type = "string";
+  _json.pattern = pattern.source;
+};
+var fileProcessor = (schema, _ctx, json2, _params) => {
+  const _json = json2;
+  _json.type = "string";
+  _json.format = "binary";
+  _json.contentEncoding = "binary";
+  const { minimum, maximum, mime } = aggregateChecks(schema);
+  if (minimum !== void 0)
+    _json.minLength = minimum;
+  if (maximum !== void 0)
+    _json.maxLength = maximum;
+  if (!mime)
+    return;
+  if (mime.length === 0)
+    _json.not = {};
+  else if (mime.length === 1)
+    _json.contentMediaType = mime[0];
+  else
+    _json.anyOf = mime.map((m) => ({ contentMediaType: m }));
+};
+var successProcessor = (_schema, _ctx, json2, _params) => {
+  json2.type = "boolean";
+};
 var customProcessor = (schema, ctx, json2, params) => {
   handleUnrepresentable(schema, ctx, json2, params, "Custom types cannot be represented in JSON Schema");
 };
+var functionProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "Function types cannot be represented in JSON Schema");
+};
 var transformProcessor = (schema, ctx, json2, params) => {
   handleUnrepresentable(schema, ctx, json2, params, "Transforms cannot be represented in JSON Schema");
+};
+var mapProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "Map cannot be represented in JSON Schema");
+};
+var setProcessor = (schema, ctx, json2, params) => {
+  handleUnrepresentable(schema, ctx, json2, params, "Set cannot be represented in JSON Schema");
 };
 var arrayProcessor = (schema, ctx, _json, params) => {
   const json2 = _json;
@@ -13898,6 +14169,176 @@ var intersectionProcessor = (schema, ctx, json2, params) => {
   json2.allOf = allOf;
   ctx.intersections.push(allOf);
 };
+var tupleProcessor = (schema, ctx, _json, params) => {
+  const json2 = _json;
+  const def = schema._zod.def;
+  json2.type = "array";
+  const prefixPath = ctx.target === "draft-2020-12" ? "prefixItems" : "items";
+  const restPath = ctx.target === "draft-2020-12" ? "items" : ctx.target === "openapi-3.0" ? "items" : "additionalItems";
+  const prefixItems = def.items.map((x, i) => processSchema(x, ctx, {
+    ...params,
+    path: [...params.path, prefixPath, i]
+  }));
+  const rest = def.rest ? processSchema(def.rest, ctx, {
+    ...params,
+    path: [...params.path, restPath, ...ctx.target === "openapi-3.0" ? [def.items.length] : []]
+  }) : null;
+  let minItems = def.items.length;
+  while (minItems > 0) {
+    const item = def.items[minItems - 1];
+    const optional2 = ctx.io === "input" ? inputOptin(item) !== void 0 : item._zod.optout === "optional";
+    if (!optional2)
+      break;
+    minItems--;
+  }
+  const maxItems = def.items.length;
+  const isClosed = !def.rest;
+  if (ctx.target === "draft-2020-12") {
+    json2.prefixItems = prefixItems;
+    if (isClosed) {
+      json2.items = false;
+    } else if (rest) {
+      json2.items = rest;
+    }
+    if (minItems > 0)
+      json2.minItems = minItems;
+    if (isClosed)
+      json2.maxItems = maxItems;
+  } else if (ctx.target === "openapi-3.0") {
+    json2.items = {
+      anyOf: prefixItems
+    };
+    if (rest) {
+      json2.items.anyOf.push(rest);
+    }
+    if (minItems > 0)
+      json2.minItems = minItems;
+    if (isClosed)
+      json2.maxItems = maxItems;
+  } else {
+    json2.items = prefixItems;
+    if (isClosed) {
+      json2.additionalItems = false;
+    } else if (rest) {
+      json2.additionalItems = rest;
+    }
+    if (minItems > 0)
+      json2.minItems = minItems;
+    if (isClosed)
+      json2.maxItems = maxItems;
+  }
+  const { minimum, maximum } = aggregateChecks(schema);
+  if (typeof minimum === "number")
+    json2.minItems = minimum;
+  if (typeof maximum === "number")
+    json2.maxItems = maximum;
+};
+function stringifyKeyNames(bySchema, json2, visited) {
+  if (json2.$ref) {
+    if (visited.has(json2))
+      return json2;
+    visited.add(json2);
+    const def = bySchema.get(json2)?.def;
+    if (!def)
+      return json2;
+    const inlined = stringifyKeyNames(bySchema, def, visited);
+    return inlined === def ? json2 : inlined;
+  }
+  for (const keyword of ["anyOf", "oneOf"]) {
+    const branches = json2[keyword];
+    if (!Array.isArray(branches))
+      continue;
+    const mapped = branches.map((branch) => stringifyKeyNames(bySchema, branch, visited));
+    if (mapped.some((branch, i) => branch !== branches[i]))
+      json2 = { ...json2, [keyword]: mapped };
+  }
+  const types = Array.isArray(json2.type) ? json2.type : [json2.type];
+  const numericType = !types.includes("string") && types.some((t) => t === "number" || t === "integer");
+  const values = json2.enum ?? (json2.const !== void 0 ? [json2.const] : void 0);
+  if (!numericType && !values?.some((v) => typeof v === "number"))
+    return json2;
+  const { minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf, format, id, ...rest } = json2;
+  if (rest.enum)
+    rest.enum = rest.enum.map((v) => typeof v === "number" ? String(v) : v);
+  else if (typeof rest.const === "number")
+    rest.const = String(rest.const);
+  if (!numericType)
+    return rest;
+  rest.type = "string";
+  if (!values)
+    rest.pattern = (types.includes("number") ? number : integer).source;
+  return rest;
+}
+var pendingRecords = /* @__PURE__ */ new WeakMap();
+function rewriteKeyNames(ctx) {
+  const bySchema = /* @__PURE__ */ new Map();
+  for (const entry of ctx.seen.values()) {
+    if (entry.def && !bySchema.has(entry.schema))
+      bySchema.set(entry.schema, entry);
+  }
+  const rewrites = /* @__PURE__ */ new Map();
+  for (const record3 of pendingRecords.get(ctx) ?? []) {
+    const seen = ctx.seen.get(record3);
+    const names = (seen?.def ?? seen?.schema)?.propertyNames;
+    if (!names || names === true || rewrites.has(names))
+      continue;
+    const rewritten = stringifyKeyNames(bySchema, names, /* @__PURE__ */ new Set());
+    if (rewritten !== names)
+      rewrites.set(names, rewritten);
+  }
+  if (!rewrites.size)
+    return;
+  for (const entry of ctx.seen.values()) {
+    for (const carrier of [entry.schema, entry.def]) {
+      const rewritten = carrier && rewrites.get(carrier.propertyNames);
+      if (rewritten)
+        carrier.propertyNames = rewritten;
+    }
+  }
+}
+var recordProcessor = (schema, ctx, _json, params) => {
+  const json2 = _json;
+  const def = schema._zod.def;
+  json2.type = "object";
+  const keyType = def.keyType;
+  const patterns = aggregateChecks(keyType).patterns;
+  if (def.mode === "loose" && patterns && patterns.size > 0) {
+    const valueSchema = processSchema(def.valueType, ctx, {
+      ...params,
+      path: [...params.path, "patternProperties", "*"]
+    });
+    json2.patternProperties = {};
+    for (const pattern of patterns) {
+      assignProp(json2.patternProperties, exactPattern(pattern).source, valueSchema);
+    }
+  } else {
+    if (ctx.target === "draft-07" || ctx.target === "draft-2020-12") {
+      json2.propertyNames = processSchema(def.keyType, ctx, {
+        ...params,
+        path: [...params.path, "propertyNames"]
+      });
+      let pending = pendingRecords.get(ctx);
+      if (!pending) {
+        pending = [];
+        pendingRecords.set(ctx, pending);
+        ctx.deferred.push(() => rewriteKeyNames(ctx));
+      }
+      pending.push(schema);
+    }
+    json2.additionalProperties = processSchema(def.valueType, ctx, {
+      ...params,
+      path: [...params.path, "additionalProperties"]
+    });
+  }
+  const keyValues = keyType._zod.values;
+  const omittableOnInput = ctx.io === "input" && inputOptin(def.valueType) !== void 0;
+  if (keyValues && !def.partial && !omittableOnInput) {
+    const validKeyValues = [...keyValues].filter((v) => typeof v === "string" || typeof v === "number");
+    if (validKeyValues.length > 0) {
+      json2.required = validKeyValues.map(String);
+    }
+  }
+};
 var nullableProcessor = (schema, ctx, json2, params) => {
   const def = schema._zod.def;
   const inner = processSchema(def.innerType, ctx, params);
@@ -13978,12 +14419,99 @@ var readonlyProcessor = (schema, ctx, json2, params) => {
   seen.ref = def.innerType;
   json2.readOnly = true;
 };
+var promiseProcessor = (schema, ctx, _json, params) => {
+  const def = schema._zod.def;
+  processSchema(def.innerType, ctx, params);
+  const seen = ctx.seen.get(schema);
+  seen.ref = def.innerType;
+};
 var optionalProcessor = (schema, ctx, _json, params) => {
   const def = schema._zod.def;
   processSchema(def.innerType, ctx, params);
   const seen = ctx.seen.get(schema);
   seen.ref = def.innerType;
 };
+var lazyProcessor = (schema, ctx, _json, params) => {
+  const innerType = schema._zod.innerType;
+  processSchema(innerType, ctx, params);
+  const seen = ctx.seen.get(schema);
+  seen.ref = innerType;
+};
+var allProcessors = {
+  string: stringProcessor,
+  number: numberProcessor,
+  boolean: booleanProcessor,
+  bigint: bigintProcessor,
+  symbol: symbolProcessor,
+  null: nullProcessor,
+  undefined: undefinedProcessor,
+  void: voidProcessor,
+  never: neverProcessor,
+  any: anyProcessor,
+  unknown: unknownProcessor,
+  date: dateProcessor,
+  enum: enumProcessor,
+  literal: literalProcessor,
+  nan: nanProcessor,
+  template_literal: templateLiteralProcessor,
+  file: fileProcessor,
+  success: successProcessor,
+  custom: customProcessor,
+  function: functionProcessor,
+  transform: transformProcessor,
+  map: mapProcessor,
+  set: setProcessor,
+  array: arrayProcessor,
+  object: objectProcessor,
+  union: unionProcessor,
+  intersection: intersectionProcessor,
+  tuple: tupleProcessor,
+  record: recordProcessor,
+  nullable: nullableProcessor,
+  nonoptional: nonoptionalProcessor,
+  default: defaultProcessor,
+  prefault: prefaultProcessor,
+  catch: catchProcessor,
+  pipe: pipeProcessor,
+  readonly: readonlyProcessor,
+  promise: promiseProcessor,
+  optional: optionalProcessor,
+  lazy: lazyProcessor
+};
+function toJSONSchema(input, params) {
+  if ("_idmap" in input) {
+    const registry3 = input;
+    const ctx2 = initializeContext({ ...params, processors: allProcessors });
+    const defs = {};
+    for (const entry of registry3._idmap.entries()) {
+      const [_, schema] = entry;
+      processSchema(schema, ctx2);
+    }
+    const schemas = {};
+    const external = {
+      registry: registry3,
+      uri: params?.uri,
+      defs
+    };
+    ctx2.external = external;
+    for (const entry of registry3._idmap.entries()) {
+      const [key, schema] = entry;
+      extractDefs(ctx2, schema);
+      assignProp(schemas, key, finalize(ctx2, schema));
+    }
+    if (Object.keys(defs).length > 0) {
+      const defsSegment = ctx2.target === "draft-2020-12" ? "$defs" : "definitions";
+      schemas.__shared = {
+        [defsSegment]: defs
+      };
+    }
+    return { schemas };
+  }
+  const ctx = initializeContext({ ...params, processors: allProcessors });
+  processSchema(input, ctx);
+  extractDefs(ctx, input);
+  return finalize(ctx, input);
+}
 
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/classic/errors.js
 var _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
@@ -14690,6 +15218,30 @@ function intersection(left, right) {
     right
   });
 }
+var ZodRecord = /* @__PURE__ */ $constructor("ZodRecord", (inst, def) => {
+  _ensureDefaultMemoizer();
+  $ZodRecord.init(inst, def);
+  ZodType.init(inst, def);
+  inst._zod.processJSONSchema = (ctx, json2, params) => recordProcessor(inst, ctx, json2, params);
+  inst.keyType = def.keyType;
+  inst.valueType = def.valueType;
+});
+function record(keyType, valueType, params) {
+  if (!valueType || !valueType._zod) {
+    return new ZodRecord({
+      type: "record",
+      keyType: string2(),
+      valueType: keyType,
+      ...util_exports.normalizeParams(valueType)
+    });
+  }
+  return new ZodRecord({
+    type: "record",
+    keyType,
+    valueType,
+    ...util_exports.normalizeParams(params)
+  });
+}
 var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
   $ZodEnum.init(inst, def);
   ZodType.init(inst, def);
@@ -15013,10 +15565,1313 @@ var KernelRefusal = class extends Error {
 };
 var refusalSchema = strictObject({
   refused: literal(true),
-  rule: _enum(RULES),
-  why: string2().min(1),
-  instead: array(string2().min(1)).min(1)
+  rule: _enum(RULES).meta({
+    description: "Stable identifier from the rule catalogue. The class before the slash maps to the exit code: policy, guard, kernel = 2; input = 3; state = 4; runtime = 5."
+  }),
+  why: string2().min(1).meta({ description: "One sentence carrying the concrete values (ids, counts, paths)." }),
+  instead: array(string2().min(1)).min(1).meta({
+    description: "Concrete commands or actions the caller can take next, most useful first."
+  })
+}).meta({
+  title: "Kernel error object",
+  description: "Printed on stdout by every command that exits 2, 3, 4 or 5. Exactly four fields (design, UX Touchpoints: Failure surface; contract section 4).",
+  examples: [
+    {
+      refused: true,
+      rule: "policy/no-active-change",
+      why: "no active Change on branch feat/login",
+      instead: ['/bdk:change new "<intent>"', "bdk change resume <id>"]
+    }
+  ]
 });
+
+// kernel/src/shared/config/layers.ts
+function globalDir({ env, platform, home }) {
+  const path = platform === "win32" ? win32 : posix;
+  const xdg = env.XDG_CONFIG_HOME;
+  if (xdg !== void 0 && xdg !== "" && path.isAbsolute(xdg)) return path.join(xdg, "bdk");
+  const appData = env.APPDATA;
+  if (platform === "win32" && appData !== void 0 && appData !== "") {
+    return path.join(appData, "bdk");
+  }
+  return path.join(home, ".config", "bdk");
+}
+function layerFiles(global, projectRoot) {
+  const path = global.includes("\\") ? win32 : posix;
+  return [
+    { name: "global", path: path.join(global, "settings.yaml") },
+    { name: "project", path: posix.join(projectRoot, ".bdk", "settings.yaml") },
+    { name: "local", path: posix.join(projectRoot, ".bdk", "settings.local.yaml") }
+  ];
+}
+function readLayers(store, paths) {
+  const layers = [];
+  for (const { name, path } of layerFiles(paths.globalDir, paths.projectRoot)) {
+    const text2 = store.read(path);
+    if (text2 !== void 0) layers.push({ name, path, text: text2, values: parseLayer(path, text2) });
+  }
+  return layers;
+}
+function parseLayer(path, text2) {
+  let values;
+  try {
+    values = (0, import_yaml.parse)(text2);
+  } catch (error2) {
+    if (!(error2 instanceof import_yaml.YAMLParseError)) throw error2;
+    const line = error2.linePos?.[0].line;
+    throw invalid(path, `is not valid YAML${line === void 0 ? "" : ` at line ${line}`}`);
+  }
+  if (values === null || values === void 0) return {};
+  if (!isRecord(values)) throw invalid(path, "must hold a mapping of keys at the top level");
+  return values;
+}
+function invalid(path, problem) {
+  return new KernelRefusal(
+    refuse("policy/config-invalid", `${path} ${problem}`, [`fix ${path}`, "bdk config check"])
+  );
+}
+
+// kernel/src/shared/config/merge.ts
+function mergeLayers(layers) {
+  const origins = {};
+  const problems = [];
+  let value = {};
+  for (const layer of layers) {
+    const context = { layer, origins, problems };
+    value = mergeMapping(value, layer.values, "", context);
+  }
+  return { value, origins, problems };
+}
+function mergeMapping(lower, higher, prefix, context) {
+  const out = { ...lower };
+  for (const [key, next] of Object.entries(higher)) {
+    const path = joinKey(prefix, key);
+    out[key] = mergeValue(lower[key], next, path, context);
+  }
+  return out;
+}
+function mergeValue(lower, next, path, context) {
+  if (isRecord(next) && Object.keys(next).length > 0) {
+    if (!isRecord(lower)) forget(context.origins, path);
+    return mergeMapping(isRecord(lower) ? lower : {}, next, path, context);
+  }
+  if (isIdArray(next)) {
+    reportDuplicates(next, path, context);
+    if (!isIdArray(lower)) forget(context.origins, path);
+    return mergeById(isIdArray(lower) ? lower : [], next, path, context);
+  }
+  forget(context.origins, path);
+  context.origins[path] = context.layer.name;
+  return next;
+}
+function mergeById(lower, higher, path, context) {
+  const out = [...lower];
+  for (const item of higher) {
+    const itemPath = joinKey(path, item.id);
+    const at = out.findIndex((existing) => existing.id === item.id);
+    const merged = mergeMapping(at === -1 ? {} : out[at] ?? {}, item, itemPath, context);
+    if (at === -1) out.push(merged);
+    else out[at] = merged;
+  }
+  return out;
+}
+function reportDuplicates(items, path, context) {
+  const seen = /* @__PURE__ */ new Set();
+  for (const { id } of items) {
+    if (seen.has(id)) {
+      context.problems.push({
+        rule: "policy/config-invalid",
+        key: path,
+        layer: context.layer.name,
+        path: context.layer.path,
+        message: `the id ${id} appears twice in one layer`
+      });
+    }
+    seen.add(id);
+  }
+}
+function forget(origins, path) {
+  for (const key of Object.keys(origins)) {
+    if (key === path || key.startsWith(`${path}.`)) Reflect.deleteProperty(origins, key);
+  }
+}
+
+// kernel/src/shared/config/keys.ts
+var LEAF = { kind: "leaf" };
+function keyTree(schema) {
+  const inner = unwrap(schema);
+  if (inner instanceof ZodObject) {
+    const children = /* @__PURE__ */ new Map();
+    const shape = inner.shape;
+    for (const [key, child] of Object.entries(shape)) {
+      children.set(key, keyTree(child));
+    }
+    return { kind: "object", children };
+  }
+  if (inner instanceof ZodArray) {
+    const item = unwrap(inner.element);
+    if (item instanceof ZodObject && "id" in item.shape) {
+      return { kind: "idArray", item: keyTree(item) };
+    }
+    return LEAF;
+  }
+  if (inner instanceof ZodRecord)
+    return { kind: "record", value: keyTree(inner.valueType) };
+  return LEAF;
+}
+function unwrap(schema) {
+  let current = schema;
+  for (; ; ) {
+    if (current instanceof ZodDefault || current instanceof ZodPrefault || current instanceof ZodOptional || current instanceof ZodNullable || current instanceof ZodReadonly) {
+      current = current.unwrap();
+    } else if (current instanceof ZodPipe) {
+      current = current.in;
+    } else {
+      return current;
+    }
+  }
+}
+function keyPaths(node2, prefix = "") {
+  if (node2.kind !== "object") return prefix === "" ? [] : [prefix];
+  const paths = prefix === "" ? [] : [prefix];
+  for (const [key, child] of node2.children) paths.push(...keyPaths(child, joinKey(prefix, key)));
+  return paths;
+}
+function keySteps(node2, key) {
+  if (key === "") return void 0;
+  const steps = [];
+  let current = node2;
+  for (const segment of key.split(".")) {
+    if (current.kind === "object") {
+      current = current.children.get(segment);
+      if (current === void 0) return void 0;
+      steps.push({ segment, id: false });
+    } else if (current.kind === "idArray") {
+      steps.push({ segment, id: true });
+      current = current.item;
+    } else if (current.kind === "record") {
+      steps.push({ segment, id: false });
+      current = current.value;
+    } else {
+      return void 0;
+    }
+  }
+  return steps;
+}
+
+// kernel/src/shared/config/registry.ts
+function defineConfigModule(module) {
+  return module;
+}
+function definePromptKey(prompt) {
+  return prompt;
+}
+var PROMPT_SEGMENT = /^[a-z0-9][a-z0-9-]*$/;
+var RESERVED = /* @__PURE__ */ new Set(["dir", "files"]);
+function createConfigRegistry(parts) {
+  const shape = {};
+  for (const module of parts.modules) {
+    if (module.key in shape) throw new Error(`config module ${module.key} is declared twice`);
+    shape[module.key] = module.schema.meta({ description: module.description });
+  }
+  const seen = /* @__PURE__ */ new Set();
+  for (const prompt of parts.prompts) checkPromptKey(prompt.key, seen);
+  const schema = strictObject(shape);
+  const tree = keyTree(schema);
+  const prompts2 = parts.prompts;
+  return {
+    modules: parts.modules,
+    prompts: prompts2,
+    schema,
+    tree,
+    keys: keyPaths(tree),
+    promptKey: (key) => prompts2.find((prompt) => matches(prompt.key, key))
+  };
+}
+function checkPromptKey(key, seen) {
+  const segments = key.split("/");
+  const last = segments.at(-1);
+  const literal2 = last === "*" ? segments.slice(0, -1) : segments;
+  const valid = literal2.length > 0 && literal2.every((segment) => PROMPT_SEGMENT.test(segment)) && !RESERVED.has(segments[0] ?? "");
+  if (!valid) throw new Error(`prompt key ${key} is not a valid prompt key`);
+  if (seen.has(key)) throw new Error(`prompt key ${key} is declared twice`);
+  seen.add(key);
+}
+function matches(pattern, key) {
+  if (!pattern.endsWith("/*")) return pattern === key;
+  const base = pattern.slice(0, -1);
+  const rest = key.slice(base.length);
+  return key.startsWith(base) && PROMPT_SEGMENT.test(rest);
+}
+
+// kernel/src/shared/config/hint.ts
+var MAX_DISTANCE = 2;
+function closest(key, candidates) {
+  let best;
+  let bestDistance = MAX_DISTANCE + 1;
+  for (const candidate of candidates) {
+    const distance = editDistance(key, candidate);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+function editDistance(a, b) {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const d = Array.from(
+    { length: rows },
+    (_, i) => Array.from({ length: cols }, (_2, j) => i === 0 ? j : j === 0 ? i : 0)
+  );
+  const at = (i, j) => d[i]?.[j] ?? 0;
+  for (let i = 1; i < rows; i++) {
+    for (let j = 1; j < cols; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(at(i - 1, j) + 1, at(i, j - 1) + 1, at(i - 1, j - 1) + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        value = Math.min(value, at(i - 2, j - 2) + 1);
+      }
+      const row = d[i];
+      if (row !== void 0) row[j] = value;
+    }
+  }
+  return at(a.length, b.length);
+}
+
+// kernel/src/shared/config/known.ts
+var PLANNED_KEYS = [
+  { key: "policy.gates.design", owner: "T21" },
+  { key: "policy.gates.review", owner: "T21" },
+  { key: "policy.budgets.task-redispatch", owner: "T22" },
+  { key: "policy.budgets.verify-fix", owner: "T22" },
+  { key: "policy.budgets.review-fix", owner: "T22" },
+  { key: "policy.budgets.verifier", owner: "T22" },
+  { key: "policy.budgets.not-run", owner: "T22" },
+  { key: "policy.oscillation.threshold", owner: "T22" },
+  { key: "policy.escalation.enabled", owner: "T22" },
+  { key: "policy.escalation.model", owner: "T22" },
+  { key: "policy.checkpoint.enabled", owner: "T22" },
+  { key: "policy.checkpoint.squash-at-close", owner: "T22" },
+  { key: "policy.verifier.blocking-categories", owner: "T23" },
+  { key: "policy.log.max-observations", owner: "T23" },
+  { key: "execution.runner", owner: "T23" },
+  { key: "execution.concurrency", owner: "T23" },
+  { key: "execution.host", owner: "T23" },
+  { key: "archive.keep-evidence", owner: "T23" },
+  { key: "rules.propose-when.changes", owner: "T31" },
+  { key: "rules.propose-when.authors", owner: "T31" },
+  { key: "rules.propose-when.failed-attempts", owner: "T31" },
+  { key: "rules.max-per-package", owner: "T31" },
+  { key: "rules.max-learnings-per-change", owner: "T31" },
+  { key: "rules.disabled", owner: "T31" },
+  { key: "spec.normative-word", owner: "T30" }
+];
+var MCP = "removed with the bundled MCP servers (ADR-0001)";
+var REMOVED_KEYS = [
+  { key: "test-tools", reason: "use tools.test" },
+  { key: "lint-tools", reason: "use tools.lint" },
+  { key: "build-tools", reason: "use tools.build" },
+  {
+    key: "quality",
+    reason: "use prompts.files.rules/<category> or .bdk/prompts/rules/<category>.md"
+  },
+  { key: "language-rules", reason: "use prompts.files.rules/languages/<language>" },
+  { key: "features.caveman", reason: "no consumer in v3 (#39)" },
+  { key: "features.serena", reason: MCP },
+  { key: "features.code-review-graph", reason: MCP },
+  { key: "$schema", reason: "use the yaml-language-server modeline" }
+];
+function within(key, base) {
+  return key === base || key.startsWith(`${base}.`);
+}
+function knownReason(key) {
+  const removed = REMOVED_KEYS.find((entry) => within(key, entry.key));
+  if (removed !== void 0) return `removed v2 key: ${removed.reason}`;
+  const owners = PLANNED_KEYS.filter(
+    (entry) => within(key, entry.key) || within(entry.key, key)
+  ).map((entry) => entry.owner);
+  if (owners.length === 0) return void 0;
+  return `lands with ${[...new Set(owners)].sort().join(", ")}`;
+}
+
+// kernel/src/shared/config/validate.ts
+function validateLayers(registry3, layers, merged) {
+  const candidates = candidatesOf(registry3);
+  const problems = [...merged.problems];
+  for (const layer of layers) {
+    walk(registry3, registry3.tree, layer.values, "", (key) => {
+      problems.push(unknown2(key, layer, candidates));
+    });
+  }
+  const parsed = registry3.schema.safeParse(merged.value);
+  if (!parsed.success) {
+    const reported = problems.map((problem) => problem.key);
+    for (const issue2 of parsed.error.issues) {
+      for (const problem of fromIssue(issue2, merged, layers, candidates)) {
+        if (reported.some((key) => within(key, problem.key))) continue;
+        problems.push(problem);
+        reported.push(problem.key);
+      }
+    }
+  }
+  return problems.length === 0 && parsed.success ? { value: parsed.data, problems } : { problems };
+}
+function walk(registry3, node2, value, prefix, report) {
+  if (node2.kind === "object" && isRecord(value)) {
+    for (const [key, child] of Object.entries(value)) {
+      const path = joinKey(prefix, key);
+      const childNode = node2.children.get(key);
+      if (childNode === void 0) leaves(child, path).forEach(report);
+      else walk(registry3, childNode, child, path, report);
+    }
+  } else if (node2.kind === "idArray" && Array.isArray(value)) {
+    value.forEach((item, index2) => {
+      const id = isRecord(item) && typeof item.id === "string" ? item.id : String(index2);
+      walk(registry3, node2.item, item, joinKey(prefix, id), report);
+    });
+  } else if (node2.kind === "record" && isRecord(value) && prefix === "prompts.files") {
+    for (const key of Object.keys(value)) {
+      if (registry3.promptKey(key) === void 0) report(joinKey(prefix, key));
+    }
+  }
+}
+function leaves(value, prefix) {
+  if (isRecord(value) && Object.keys(value).length > 0) {
+    return Object.entries(value).flatMap(([key, child]) => leaves(child, joinKey(prefix, key)));
+  }
+  return [prefix];
+}
+function declaredSteps(registry3, key) {
+  const steps = keySteps(registry3.tree, key);
+  const file = within(key, "prompts.files") ? key.split(".")[2] : void 0;
+  if (file !== void 0 && registry3.promptKey(file) === void 0) return void 0;
+  return steps;
+}
+function unknownKeyMessage(registry3, key) {
+  return unknownMessage(key, candidatesOf(registry3));
+}
+function candidatesOf(registry3) {
+  return [...registry3.keys, ...PLANNED_KEYS.map((entry) => entry.key)];
+}
+function unknownMessage(key, candidates) {
+  const known = knownReason(key);
+  const hint = known === void 0 ? closest(key, candidates) : void 0;
+  return known ?? (hint === void 0 ? "unknown key" : `unknown key; did you mean ${hint}?`);
+}
+function unknown2(key, layer, candidates) {
+  const message = unknownMessage(key, candidates);
+  return {
+    rule: "policy/unknown-config-key",
+    key,
+    layer: layer.name,
+    ...layer.path === void 0 ? {} : { path: layer.path },
+    message
+  };
+}
+function fromIssue(issue2, merged, layers, candidates) {
+  const key = dotted(issue2.path, merged.value);
+  if (issue2.code === "unrecognized_keys") {
+    return issue2.keys.map((name) => {
+      const path = joinKey(key, name);
+      return unknown2(path, layerOf(path, merged, layers), candidates);
+    });
+  }
+  const layer = layerOf(key, merged, layers);
+  return [
+    {
+      rule: "policy/config-invalid",
+      key,
+      layer: layer.name,
+      ...layer.path === void 0 ? {} : { path: layer.path },
+      message: issue2.message
+    }
+  ];
+}
+function dotted(path, root) {
+  let key = "";
+  let value = root;
+  for (const segment of path) {
+    if (Array.isArray(value) && typeof segment === "number") {
+      const item = value[segment];
+      key = joinKey(key, isRecord(item) && typeof item.id === "string" ? item.id : String(segment));
+      value = item;
+    } else {
+      key = joinKey(key, String(segment));
+      value = isRecord(value) ? value[String(segment)] : void 0;
+    }
+  }
+  return key;
+}
+var ORDER = ["default", "global", "project", "local"];
+function layerOf(key, merged, layers) {
+  let name = merged.origins[key];
+  if (name === void 0) {
+    const below = Object.entries(merged.origins).filter(([origin]) => within(origin, key)).map(([, layer2]) => layer2);
+    name = below.sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a))[0];
+  }
+  for (let parent = key; name === void 0 && parent.includes("."); ) {
+    parent = parent.slice(0, parent.lastIndexOf("."));
+    name = merged.origins[parent] ?? highestBelow(parent, merged);
+  }
+  const layer = layers.find((candidate) => candidate.name === name);
+  return layer === void 0 ? { name: "default" } : { name: layer.name, path: layer.path };
+}
+function highestBelow(key, merged) {
+  return Object.entries(merged.origins).filter(([origin]) => within(origin, key)).map(([, layer]) => layer).sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a))[0];
+}
+
+// kernel/src/shared/config/modules.ts
+var glob = string2().min(1).refine((value) => !/^(\/|[A-Za-z]:[\\/])/.test(value), "must be relative, not absolute").refine((value) => !value.split("/").includes(""), "must not hold an empty path segment");
+var promptFile = union([
+  string2().min(1),
+  strictObject({
+    path: string2().min(1),
+    mode: _enum(["extends", "replace"]).optional(),
+    applies: array(glob).optional()
+  })
+]);
+var promptsModule = defineConfigModule({
+  key: "prompts",
+  consumer: "shared/config",
+  owner: "T12",
+  description: "Where prompt values come from: a directory per layer and single mapped files.",
+  schema: strictObject({
+    dir: string2().min(1).optional().meta({
+      description: "This layer's prompts directory; read from each layer's own file, never inherited."
+    }),
+    files: record(string2(), promptFile).optional().meta({
+      description: "Prompt key -> a file path, or {path, mode, applies}; wins over the directory in the same layer."
+    })
+  }).prefault({})
+});
+
+// kernel/src/shared/config/prompts.ts
+var import_yaml2 = __toESM(require_dist(), 1);
+import { isAbsolute, join as join3, posix as posix2 } from "node:path";
+
+// kernel/src/shared/store/store.ts
+import { randomBytes } from "node:crypto";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync
+} from "node:fs";
+import { dirname as dirname2, join as join2, resolve } from "node:path";
+function fileStore() {
+  return {
+    read(path) {
+      try {
+        return readFileSync(path, "utf8");
+      } catch (error2) {
+        if (isCode(error2, "ENOENT")) return void 0;
+        throw error2;
+      }
+    },
+    write(path, content) {
+      mkdirSync(dirname2(path), { recursive: true });
+      const temp = `${path}.${randomBytes(4).toString("hex")}.tmp`;
+      writeFileSync(temp, content);
+      try {
+        renameSync(temp, path);
+      } catch (error2) {
+        rmSync(temp, { force: true });
+        throw error2;
+      }
+    },
+    list(dir) {
+      try {
+        return readdirSync(dir, { withFileTypes: true }).map((entry) => entry.isDirectory() ? `${entry.name}/` : entry.name).sort();
+      } catch (error2) {
+        if (isCode(error2, "ENOENT") || isCode(error2, "ENOTDIR")) return [];
+        throw error2;
+      }
+    },
+    exists: (path) => existsSync(path),
+    isDirectory: (path) => statSync(path, { throwIfNoEntry: false })?.isDirectory() === true
+  };
+}
+function findProjectRoot(store, cwd, workTreeRoot) {
+  const top = resolve(workTreeRoot);
+  for (let dir = resolve(cwd); ; dir = dirname2(dir)) {
+    if (store.isDirectory(join2(dir, ".bdk"))) return dir;
+    if (dir === top || dirname2(dir) === dir) return top;
+  }
+}
+function isCode(error2, code) {
+  return error2 instanceof Error && "code" in error2 && error2.code === code;
+}
+
+// kernel/src/shared/store/frontmatter.ts
+var BLOCK = /^---\r?\n(?<yaml>(?:.*\r?\n)*?)---(?:\r?\n|$)/;
+function splitFrontmatter(text2) {
+  const match = BLOCK.exec(text2);
+  const yaml = match?.groups?.yaml;
+  if (match === null || yaml === void 0) return { body: text2 };
+  return { frontmatter: yaml, body: text2.slice(match[0].length) };
+}
+
+// kernel/src/shared/config/prompts.ts
+var FILE_LAYERS = ["global", "project", "local"];
+var DEFAULT_DIRS = {
+  global: "prompts",
+  project: ".bdk/prompts",
+  local: ".bdk/prompts.local"
+};
+function resolvePrompts(input) {
+  const problems = [];
+  const byKey = /* @__PURE__ */ new Map();
+  const add = (key, contribution2) => {
+    byKey.set(key, [...byKey.get(key) ?? [], contribution2]);
+  };
+  for (const [key, path] of pluginDefaults(input))
+    add(key, { layer: "default", path, mode: "extends" });
+  for (const name of FILE_LAYERS) {
+    const layer = input.layers.find((candidate) => candidate.name === name);
+    for (const [key, contribution2] of layerContributions(input, name, layer, problems)) {
+      add(key, contribution2);
+    }
+  }
+  const values = /* @__PURE__ */ new Map();
+  const keys = /* @__PURE__ */ new Set([
+    ...input.registry.prompts.filter((prompt) => !prompt.key.endsWith("/*")).map((p) => p.key),
+    ...byKey.keys()
+  ]);
+  for (const key of [...keys].sort()) values.set(key, chain(byKey.get(key) ?? []));
+  return { values, problems };
+}
+function chain(contributions) {
+  const last = contributions.findLastIndex((item) => item.mode === "replace");
+  const kept = last === -1 ? contributions : contributions.slice(last);
+  return {
+    mode: last === -1 ? "extends" : "replace",
+    files: kept.map(
+      ({ layer, path, applies }) => applies === void 0 ? { layer, path } : { layer, path, applies }
+    )
+  };
+}
+function pluginDefaults(input) {
+  const found = [];
+  for (const prompt of input.registry.prompts) {
+    if (prompt.defaultFile === void 0) continue;
+    if (!prompt.key.endsWith("/*")) {
+      const path = join3(input.pluginRoot, prompt.defaultFile);
+      if (input.store.exists(path)) found.push([prompt.key, path]);
+      continue;
+    }
+    const [before = "", after = ""] = prompt.defaultFile.split("{name}");
+    const dir = join3(input.pluginRoot, posix2.dirname(before + "x"));
+    for (const entry of input.store.list(dir)) {
+      if (entry.endsWith("/") || !entry.endsWith(after)) continue;
+      const name = entry.slice(0, entry.length - after.length);
+      found.push([`${prompt.key.slice(0, -1)}${name}`, join3(dir, entry)]);
+    }
+  }
+  return found;
+}
+function layerContributions(input, name, layer, problems) {
+  const base = name === "global" ? input.globalDir : input.projectRoot;
+  const settings = isRecord(layer?.values.prompts) ? layer.values.prompts : {};
+  const dirSetting = typeof settings.dir === "string" ? settings.dir : DEFAULT_DIRS[name];
+  const dir = isAbsolute(dirSetting) ? dirSetting : join3(base, dirSetting);
+  const where = { layer: name, settingsPath: layer?.path };
+  const out = /* @__PURE__ */ new Map();
+  for (const [key, path] of listPrompts(input.store, dir)) {
+    const prompt = input.registry.promptKey(key);
+    if (prompt === void 0) {
+      problems.push(unknownPrompt(input.registry, key, name, path));
+      continue;
+    }
+    const contribution2 = readContribution(input.store, key, path, {}, where, problems);
+    if (contribution2 !== void 0) out.set(key, contribution2);
+  }
+  const files = isRecord(settings.files) ? settings.files : {};
+  for (const [key, entry] of Object.entries(files)) {
+    if (input.registry.promptKey(key) === void 0) continue;
+    const declared = isRecord(entry) ? entry : { path: entry };
+    if (typeof declared.path !== "string") continue;
+    const path = isAbsolute(declared.path) ? declared.path : join3(base, declared.path);
+    if (!input.store.exists(path)) {
+      problems.push({
+        rule: "policy/config-invalid",
+        key: `prompts.files.${key}`,
+        layer: name,
+        ...layer === void 0 ? {} : { path: layer.path },
+        message: `${path} does not exist`
+      });
+      continue;
+    }
+    const contribution2 = readContribution(input.store, key, path, declared, where, problems);
+    if (contribution2 !== void 0) out.set(key, contribution2);
+  }
+  return out;
+}
+function listPrompts(store, dir, prefix = "") {
+  return store.list(dir).flatMap((entry) => {
+    if (entry.endsWith("/")) {
+      return listPrompts(store, join3(dir, entry), `${prefix}${entry}`);
+    }
+    if (!entry.endsWith(".md")) return [];
+    return [[`${prefix}${entry.slice(0, -3)}`, join3(dir, entry)]];
+  });
+}
+function unknownPrompt(registry3, key, layer, path) {
+  const literal2 = registry3.prompts.map((prompt) => prompt.key).filter((k) => !k.endsWith("/*"));
+  const hint = closest(key, literal2);
+  return {
+    rule: "policy/unknown-config-key",
+    key: `prompts.${key}`,
+    layer,
+    path,
+    message: `no prompt key ${key} is registered${hint === void 0 ? "" : `; did you mean ${hint}?`}`
+  };
+}
+var FRONTMATTER_FIELDS = /* @__PURE__ */ new Set(["mode", "applies"]);
+function readContribution(store, key, path, declared, where, problems) {
+  const outcome = contribution(store.read(path) ?? "", declared, where);
+  if (typeof outcome !== "string") return { layer: where.layer, path, ...outcome };
+  problems.push({
+    rule: "policy/config-invalid",
+    key: `prompts.${key}`,
+    layer: where.layer,
+    path,
+    message: outcome
+  });
+  return void 0;
+}
+function contribution(text2, declared, where) {
+  const { frontmatter } = splitFrontmatter(text2);
+  let front;
+  try {
+    front = frontmatter === void 0 ? {} : (0, import_yaml2.parse)(frontmatter) ?? {};
+  } catch {
+    return "the frontmatter is not valid YAML";
+  }
+  if (!isRecord(front)) return "the frontmatter must be a mapping";
+  const extra = Object.keys(front).filter((field) => !FRONTMATTER_FIELDS.has(field));
+  if (extra.length > 0) return `unknown frontmatter field ${extra.join(", ")}`;
+  const settings = where.settingsPath ?? "the settings";
+  const mode = front.mode ?? declared.mode ?? "extends";
+  if (mode !== "extends" && mode !== "replace") return "mode must be extends or replace";
+  if (declared.mode !== void 0 && front.mode !== void 0 && declared.mode !== front.mode) {
+    return `the frontmatter mode ${mode} contradicts the mode in ${settings}`;
+  }
+  const applies = front.applies ?? declared.applies;
+  if (applies !== void 0 && !isGlobList(applies)) {
+    return "applies must be a list of relative globs without empty segments";
+  }
+  if (declared.applies !== void 0 && front.applies !== void 0 && JSON.stringify(declared.applies) !== JSON.stringify(front.applies)) {
+    return `the frontmatter applies contradicts ${settings}`;
+  }
+  return applies === void 0 ? { mode } : { mode, applies };
+}
+function isGlobList(value) {
+  return Array.isArray(value) && value.every(
+    (item) => typeof item === "string" && item !== "" && !/^(\/|[A-Za-z]:[\\/])/.test(item) && !item.split("/").includes("")
+  );
+}
+
+// kernel/src/shared/config/resolve.ts
+function resolveConfig(context) {
+  const layers = readLayers(context.store, context);
+  const merged = mergeLayers(layers);
+  const validated = validateLayers(context.registry, layers, merged);
+  const prompts2 = resolvePrompts({ ...context, layers });
+  const problems = [...validated.problems, ...prompts2.problems];
+  const base = { layers, merged, prompts: prompts2, problems };
+  return validated.value === void 0 || problems.length > 0 ? base : { ...base, value: validated.value };
+}
+
+// kernel/src/shared/config/snapshot.ts
+var import_yaml3 = __toESM(require_dist(), 1);
+import { join as join4 } from "node:path";
+var SNAPSHOT_PATH = ".bdk/.machine/config/resolved.yaml";
+var PERSONAL = /* @__PURE__ */ new Set(["global", "local"]);
+function overriddenKeys(resolution) {
+  const leaves2 = Object.entries(resolution.merged.origins).filter(([, layer]) => PERSONAL.has(layer)).map(([key]) => key);
+  const prompts2 = [...resolution.prompts.values].filter(([, value]) => value.files.some((file) => PERSONAL.has(file.layer))).map(([key]) => `prompts.${key}`);
+  return [...leaves2, ...prompts2].sort();
+}
+function writeSnapshot(store, projectRoot, resolution) {
+  if (resolution.value === void 0 || !store.isDirectory(join4(projectRoot, ".bdk"))) {
+    return void 0;
+  }
+  const snapshot = {
+    resolved: resolution.value,
+    prompts: Object.fromEntries(resolution.prompts.values),
+    overriddenKeys: overriddenKeys(resolution)
+  };
+  store.write(join4(projectRoot, SNAPSHOT_PATH), (0, import_yaml3.stringify)(snapshot));
+  return SNAPSHOT_PATH;
+}
+
+// kernel/src/shared/config/json-schema.ts
+var SETTINGS_SCHEMA_ID = "https://raw.githubusercontent.com/broneq/bdk/v3/schema/settings.json";
+function settingsJsonSchema(registry3) {
+  const { $schema, ...rest } = toJSONSchema(registry3.schema, {
+    target: "draft-2020-12",
+    io: "input",
+    unrepresentable: "throw"
+  });
+  return {
+    $schema,
+    $id: SETTINGS_SCHEMA_ID,
+    title: "BDK settings",
+    description: "One layer of the BDK settings: ~/.config/bdk/settings.yaml, .bdk/settings.yaml or .bdk/settings.local.yaml.",
+    ...rest
+  };
+}
+
+// kernel/src/shared/config/modeline.ts
+var MODELINE_PREFIX = "# yaml-language-server: $schema=";
+var OFFLINE_SCHEMA_PATH = ".bdk/.machine/schema/settings.json";
+function settingsSchemaUrl(version3) {
+  return `https://raw.githubusercontent.com/broneq/bdk/v${version3}/schema/settings.json`;
+}
+function modeline(version3) {
+  return `${MODELINE_PREFIX}${settingsSchemaUrl(version3)}`;
+}
+function modelineUrl(text2) {
+  const first = text2.split("\n", 1)[0] ?? "";
+  return first.startsWith(MODELINE_PREFIX) ? first.slice(MODELINE_PREFIX.length).trim() : void 0;
+}
+function withModeline(text2, version3) {
+  const line = modeline(version3);
+  if (modelineUrl(text2) === void 0) return text2 === "" ? `${line}
+` : `${line}
+${text2}`;
+  const newline = text2.indexOf("\n");
+  return newline === -1 ? `${line}
+` : `${line}${text2.slice(newline)}`;
+}
+function offlineSchemaText(registry3) {
+  return `${JSON.stringify(settingsJsonSchema(registry3), null, 2)}
+`;
+}
+
+// kernel/src/config/use-cases/input.ts
+function resolve2(input, store = input.store) {
+  const resolution = resolveConfig({
+    store,
+    registry: input.settings,
+    globalDir: input.globalDir,
+    projectRoot: input.projectRoot,
+    pluginRoot: input.pluginRoot
+  });
+  const [first, ...rest] = resolution.problems;
+  if (first !== void 0) return problemRefusal(input, first, rest.length);
+  if (resolution.value === void 0) throw new Error("a resolution without problems has a value");
+  return { ...resolution, value: resolution.value };
+}
+function problemRefusal(input, problem, more) {
+  const file = problem.path === void 0 ? void 0 : displayPath(input, problem.path);
+  const where = `the ${problem.layer} layer${file === void 0 ? "" : ` (${file})`}`;
+  const count = more === 0 ? "" : ` (${more} more error${more === 1 ? "" : "s"})`;
+  return refuse(problem.rule, `${problem.key} in ${where}: ${problem.message}${count}`, [
+    schemaCommand(input, problem.key),
+    ...file === void 0 ? [] : [`fix ${file}`]
+  ]);
+}
+function schemaCommand(input, key) {
+  const module = key.split(".")[0] ?? "";
+  return input.settings.modules.some((candidate) => candidate.key === module) ? `bdk config schema ${module}` : "bdk config schema";
+}
+function displayPath(input, path) {
+  const root = `${input.projectRoot}/`;
+  return path.startsWith(root) ? path.slice(root.length) : path;
+}
+function isRefusal(outcome) {
+  return "refused" in outcome;
+}
+
+// kernel/src/config/use-cases/check.ts
+var LEGACY_SETTINGS = ".bdk/settings.json";
+function checkConfig(input) {
+  const resolved = resolve2(input);
+  if (isRefusal(resolved)) return resolved;
+  const url = settingsSchemaUrl(readKernelVersion(input.store, input.pluginRoot));
+  const problems = [];
+  for (const layer of resolved.layers) {
+    const current = modelineUrl(layer.text);
+    const path = displayPath(input, layer.path);
+    if (current === void 0) {
+      problems.push({
+        layer: layer.name,
+        path,
+        code: "missing-modeline",
+        message: "no yaml-language-server modeline; bdk doctor --fix adds it"
+      });
+    } else if (current !== url) {
+      problems.push({
+        layer: layer.name,
+        path,
+        code: "schema-outdated",
+        message: `the modeline points at ${current}, not ${url}; bdk doctor --fix updates it`
+      });
+    }
+  }
+  if (input.store.exists(join5(input.projectRoot, LEGACY_SETTINGS))) {
+    problems.push({
+      layer: "project",
+      path: LEGACY_SETTINGS,
+      code: "legacy-settings",
+      message: "the v2 settings file is not read; bdk import converts it to .bdk/settings.yaml"
+    });
+  }
+  const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
+  if (snapshot !== void 0) {
+    input.store.write(
+      join5(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      offlineSchemaText(input.settings)
+    );
+  }
+  return {
+    problems,
+    ...snapshot === void 0 ? {} : { snapshot },
+    overriddenKeys: overriddenKeys(resolved)
+  };
+}
+
+// kernel/src/config/commands/input.ts
+function configInput(deps, context) {
+  const workTree = context.workTree ?? context.cwd;
+  return {
+    ...deps,
+    globalDir: globalDir(context.runtime),
+    projectRoot: findProjectRoot(deps.store, context.cwd, workTree)
+  };
+}
+
+// kernel/src/config/commands/check.ts
+function checkCommand(deps) {
+  return (context) => {
+    const outcome = checkConfig(configInput(deps, context));
+    return isRefusal(outcome) ? outcome : { data: outcome, text: renderCheck(outcome) };
+  };
+}
+
+// kernel/src/config/render/schema.ts
+function renderSchema(report) {
+  if (report.schema === void 0) {
+    return `${report.url}
+${report.offlineCopy === void 0 ? "" : `offline copy: ${report.offlineCopy}
+`}`;
+  }
+  return `${JSON.stringify(report.schema, null, 2)}
+`;
+}
+
+// kernel/src/config/use-cases/schema.ts
+function configSchema(input, request) {
+  const url = settingsSchemaUrl(readKernelVersion(input.store, input.pluginRoot));
+  const location = { url, offlineCopy: OFFLINE_SCHEMA_PATH };
+  const { module } = request;
+  const known = input.settings.modules.map((candidate) => candidate.key);
+  if (module !== void 0 && !known.includes(module)) {
+    return refuse(
+      "input/not-found",
+      `${module} is not a registered settings module; registered: ${known.join(", ")}`,
+      ["bdk config schema"]
+    );
+  }
+  if (request.url) return location;
+  const schema = settingsJsonSchema(input.settings);
+  if (module === void 0) return { schema, ...location };
+  const properties = schema.properties;
+  return { module, schema: properties[module] ?? {}, ...location };
+}
+
+// kernel/src/config/commands/schema.ts
+function schemaCommand2(deps) {
+  return (context) => {
+    const module = context.positionals["<module>"];
+    const outcome = configSchema(configInput(deps, context), {
+      ...module === void 0 ? {} : { module },
+      url: context.flags["--url"] === true
+    });
+    return isRefusal(outcome) ? outcome : { data: outcome, text: renderSchema(outcome) };
+  };
+}
+
+// kernel/src/config/render/set.ts
+function renderSet(report) {
+  const previous = report.previous === void 0 ? "" : ` (was ${JSON.stringify(report.previous)})`;
+  return `${report.key} = ${JSON.stringify(report.value)}${previous} in the ${report.layer} layer (${report.path})
+`;
+}
+
+// kernel/src/config/use-cases/set.ts
+var import_yaml4 = __toESM(require_dist(), 1);
+
+// kernel/src/config/domain/origins.ts
+function leafOrigins(value, key, set) {
+  const out = {};
+  for (const leaf of leafKeys(value, key)) out[leaf] = originOf(leaf, set);
+  return out;
+}
+function originOf(leaf, set) {
+  for (let key = leaf; key !== ""; key = key.includes(".") ? key.slice(0, key.lastIndexOf(".")) : "") {
+    const origin = set[key];
+    if (origin !== void 0) return origin;
+  }
+  return "default";
+}
+function leafKeys(value, prefix) {
+  if (isMapping(value) && Object.keys(value).length > 0) {
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join6(prefix, key)));
+  }
+  if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
+    return value.flatMap((item) => leafKeys(item, join6(prefix, item.id)));
+  }
+  return [prefix];
+}
+function isMapping(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function hasId(value) {
+  return isMapping(value) && typeof value.id === "string";
+}
+function join6(prefix, key) {
+  return prefix === "" ? key : `${prefix}.${key}`;
+}
+
+// kernel/src/config/use-cases/show.ts
+var PROMPT_PREFIX = "prompts.";
+var PROMPT_SETTINGS = /* @__PURE__ */ new Set(["dir", "files"]);
+function showConfig(input, request) {
+  const resolved = resolve2(input);
+  if (isRefusal(resolved)) return resolved;
+  const layers = fileLayers(input);
+  const { key } = request;
+  if (key === void 0) {
+    const value2 = {
+      ...resolved.value,
+      prompts: { ...promptSettings(resolved), ...prompts(input, resolved) }
+    };
+    return withOrigins(
+      { value: value2, layers },
+      request,
+      () => leafOrigins(resolved.value, "", resolved.merged.origins)
+    );
+  }
+  const promptKey = promptKeyOf(key);
+  if (promptKey !== void 0) {
+    if (input.settings.promptKey(promptKey) === void 0) return unknownKey(input, key);
+    const value2 = resolved.prompts.values.get(promptKey);
+    if (value2 === void 0) return notFound(key);
+    return { key, value: displayPrompt(input, value2), layers };
+  }
+  const steps = declaredSteps(input.settings, key);
+  if (steps === void 0) return unknownKey(input, key);
+  const value = valueAt(resolved.value, steps);
+  if (value === void 0) return notFound(key);
+  return withOrigins(
+    { key, value, layers },
+    request,
+    () => leafOrigins(value, key, resolved.merged.origins)
+  );
+}
+function withOrigins(report, request, origins) {
+  return request.origins ? { ...report, origins: origins() } : report;
+}
+function promptKeyOf(key) {
+  if (!key.startsWith(PROMPT_PREFIX)) return void 0;
+  const rest = key.slice(PROMPT_PREFIX.length);
+  return PROMPT_SETTINGS.has(rest.split(".")[0] ?? "") ? void 0 : rest;
+}
+function promptSettings(resolved) {
+  const settings = resolved.value.prompts;
+  return typeof settings === "object" && settings !== null ? { ...settings } : {};
+}
+function prompts(input, resolved) {
+  return Object.fromEntries(
+    [...resolved.prompts.values].map(([key, value]) => [key, displayPrompt(input, value)])
+  );
+}
+function displayPrompt(input, value) {
+  return {
+    mode: value.mode,
+    files: value.files.map((file) => ({ ...file, path: displayPath(input, file.path) }))
+  };
+}
+function fileLayers(input) {
+  return layerFiles(input.globalDir, input.projectRoot).map(({ name, path }) => ({
+    layer: name,
+    path: displayPath(input, path),
+    present: input.store.exists(path)
+  }));
+}
+function unknownKey(input, key) {
+  return refuse("policy/unknown-config-key", `${key}: ${unknownKeyMessage(input.settings, key)}`, [
+    schemaCommand(input, key),
+    "bdk config show"
+  ]);
+}
+function notFound(key) {
+  return refuse(
+    "input/not-found",
+    `${key} is declared, but no layer sets it and it has no default`,
+    [`bdk config set ${key} <value>`, "bdk config show"]
+  );
+}
+
+// kernel/src/config/use-cases/set.ts
+function setConfig(input, request) {
+  const { key } = request;
+  const usage = `bdk config set ${key} <value>`;
+  if (request.global === true && request.local === true) {
+    return refuse("input/invalid-argument", "--global and --local name two layers; give one", [
+      `${usage} --local`,
+      `${usage} --global`
+    ]);
+  }
+  const layer = request.global === true ? "global" : request.local === true ? "local" : "project";
+  const file = layerFiles(input.globalDir, input.projectRoot).find((entry) => entry.name === layer);
+  if (file === void 0) throw new Error(`no file for the ${layer} layer`);
+  const value = parseValue(request.value, usage);
+  if (isRefusal(value)) return value;
+  const steps = declaredSteps(input.settings, key);
+  if (steps === void 0) return unknownKey(input, key);
+  const text2 = input.store.read(file.path);
+  const document = (0, import_yaml4.parseDocument)(text2 ?? "");
+  if (document.errors.length > 0) {
+    return refuse("policy/config-invalid", `${displayPath(input, file.path)} is not valid YAML`, [
+      `fix ${displayPath(input, file.path)}`
+    ]);
+  }
+  const edit = editDocument(document, steps, value, request.value);
+  if (isRefusal(edit)) return edit;
+  const next = text2 === void 0 ? withModeline(document.toString(FORMAT), readKernelVersion(input.store, input.pluginRoot)) : edit.splice === void 0 ? document.toString(FORMAT) : `${text2.slice(0, edit.splice.start)}${edit.splice.text}${text2.slice(edit.splice.end)}`;
+  const resolved = resolve2(input, overlay(input.store, file.path, next));
+  if (isRefusal(resolved)) return resolved;
+  input.store.write(file.path, next);
+  writeSnapshot(input.store, input.projectRoot, resolved);
+  return {
+    key,
+    value: value.toJSON(),
+    ...edit.previous === void 0 ? {} : { previous: edit.previous },
+    layer,
+    path: displayPath(input, file.path)
+  };
+}
+function parseValue(raw, usage) {
+  const parsed = (0, import_yaml4.parseDocument)(raw);
+  const [error2] = parsed.errors;
+  if (error2 !== void 0 || !(0, import_yaml4.isNode)(parsed.contents)) {
+    const reason = error2 instanceof import_yaml4.YAMLParseError ? `: ${error2.message.split("\n")[0] ?? ""}` : "";
+    return refuse("input/invalid-argument", `${raw} is not a YAML value${reason}`, [usage]);
+  }
+  return parsed.contents;
+}
+var FORMAT = { flowCollectionPadding: false };
+function editDocument(document, steps, value, raw) {
+  const path = [];
+  for (const [index2, step] of steps.entries()) {
+    const last = index2 === steps.length - 1;
+    if (!step.id) {
+      path.push(step.segment);
+      continue;
+    }
+    const sequence = document.getIn(path, true);
+    const items = (0, import_yaml4.isSeq)(sequence) ? sequence.items : [];
+    const found = items.findIndex((item2) => (0, import_yaml4.isMap)(item2) && item2.get("id") === step.segment);
+    if (found !== -1) {
+      path.push(found);
+      continue;
+    }
+    const item = last ? withId(document, value, step.segment) : document.createNode({ id: step.segment });
+    if (isRefusal(item)) return item;
+    if ((0, import_yaml4.isSeq)(sequence)) sequence.add(item);
+    else document.setIn(path, document.createNode([item]));
+    if (last) return {};
+    path.push((0, import_yaml4.isSeq)(sequence) ? sequence.items.length - 1 : 0);
+  }
+  const current = document.getIn(path, true);
+  const previous = (0, import_yaml4.isNode)(current) ? current.toJSON() : void 0;
+  const kept = previous === void 0 ? {} : { previous };
+  if ((0, import_yaml4.isNode)(current) && inline(current) && inline(value) && !raw.includes("\n")) {
+    const [start, end] = current.range ?? [0, 0];
+    const [from, to] = value.range ?? [0, raw.length];
+    return { ...kept, splice: { start, end, text: raw.slice(from, to) } };
+  }
+  document.setIn(path, value);
+  return kept;
+}
+function inline(node2) {
+  return (0, import_yaml4.isScalar)(node2) || (0, import_yaml4.isCollection)(node2) && node2.flow === true;
+}
+function withId(document, value, id) {
+  if (!(0, import_yaml4.isMap)(value)) {
+    return refuse(
+      "input/invalid-argument",
+      `a new item ${id} needs a mapping value, e.g. {command: ...}`,
+      ["bdk config schema"]
+    );
+  }
+  const given = value.get("id");
+  if (given === void 0) value.items.unshift(document.createPair("id", id));
+  else if (given !== id) {
+    return refuse(
+      "input/invalid-argument",
+      `the value's id ${JSON.stringify(given)} differs from the key's ${id}`,
+      ["bdk config schema"]
+    );
+  }
+  return value;
+}
+function overlay(store, path, text2) {
+  return {
+    read: (candidate) => candidate === path ? text2 : store.read(candidate),
+    write: () => {
+      throw new Error("the validation overlay is read-only");
+    },
+    list: (dir) => store.list(dir),
+    exists: (candidate) => candidate === path || store.exists(candidate),
+    isDirectory: (candidate) => store.isDirectory(candidate)
+  };
+}
+
+// kernel/src/config/commands/set.ts
+function setCommand(deps) {
+  return (context) => {
+    const outcome = setConfig(configInput(deps, context), {
+      key: context.positionals["<key>"] ?? "",
+      value: context.positionals["<value>"] ?? "",
+      global: context.flags["--global"] === true,
+      local: context.flags["--local"] === true
+    });
+    return isRefusal(outcome) ? outcome : { data: outcome, text: renderSet(outcome) };
+  };
+}
+
+// kernel/src/config/commands/show.ts
+var import_yaml5 = __toESM(require_dist(), 1);
+function showCommand(deps) {
+  return (context) => {
+    const key = context.positionals["<key>"];
+    const outcome = showConfig(configInput(deps, context), {
+      ...key === void 0 ? {} : { key },
+      origins: context.flags["--origins"] === true
+    });
+    if (isRefusal(outcome)) return outcome;
+    const origins = outcome.origins === void 0 ? "" : `# origins
+${(0, import_yaml5.stringify)(outcome.origins)}`;
+    return { data: outcome, text: `${(0, import_yaml5.stringify)(outcome.value)}${origins}` };
+  };
+}
+
+// kernel/src/config/index.ts
+function configRegistrations(deps) {
+  return [
+    { id: "config-show", handler: showCommand(deps) },
+    { id: "config-check", handler: checkCommand(deps) },
+    { id: "config-schema", handler: schemaCommand2(deps) },
+    { id: "config-set", handler: setCommand(deps) }
+  ];
+}
+
+// kernel/src/ctx/config.ts
+var ID = /^[a-z0-9][a-z0-9-]*$/;
+var text = string2().min(1);
+var withFiles = text.regex(/\{files\}/, "must contain the {files} placeholder");
+var entryFields = {
+  id: string2().regex(ID, "must be kebab-case: lowercase letters, digits and -").meta({
+    description: "Unique within the array; the merge key and the path segment."
+  }),
+  command: text.meta({ description: "The full, unscoped command." }),
+  scoped: withFiles.optional().meta({ description: "The command for given paths ({files})." }),
+  related: withFiles.optional().meta({ description: "The command for the tests covering given source paths ({files})." }),
+  failed: text.optional().meta({ description: "Re-run of the previous failures." }),
+  incremental: text.optional().meta({ description: "The incremental form." }),
+  when: text.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
+};
+function tools(tier, description) {
+  const entry = (tier === void 0 ? strictObject(entryFields) : strictObject({ ...entryFields, tier })).meta({ title: "tool entry" });
+  return array(entry).default([]).meta({ description });
+}
+var languagesModule = defineConfigModule({
+  key: "languages",
+  consumer: "ctx",
+  owner: "T12",
+  description: "Languages and frameworks of the project; a name gets content from the rules/languages/<name> prompt value.",
+  schema: array(text).refine((names) => new Set(names).size === names.length, "names must be unique").meta({ uniqueItems: true }).default([])
+});
+var toolsModule = defineConfigModule({
+  key: "tools",
+  consumer: "ctx",
+  owner: "T12",
+  description: "The commands the project runs, one entry per command, merged by id.",
+  schema: strictObject({
+    test: tools(_enum(["fast", "e2e"]), "Test commands; tier fast or e2e."),
+    lint: tools(_enum(["lint", "format", "typecheck"]), "Lint, format and type check commands."),
+    build: tools(void 0, "Build commands; no tier.")
+  }).prefault({})
+});
+var featuresModule = defineConfigModule({
+  key: "features",
+  consumer: "ctx",
+  owner: "T12",
+  description: "Feature switches.",
+  schema: strictObject({
+    lavish: boolean2().default(true).meta({ description: "Review in Lavish; false falls back to AskUserQuestion (R-11)." })
+  }).prefault({})
+});
+var RULE_CATEGORIES = [
+  "code-quality",
+  "architecture",
+  "design-patterns",
+  "security",
+  "engineering-judgment",
+  "test-quality"
+];
+var rulePrompts = [
+  ...RULE_CATEGORIES.map(
+    (name) => definePromptKey({
+      key: `rules/${name}`,
+      consumer: "ctx",
+      owner: "T12",
+      defaultFile: `rules/${name}.md`
+    })
+  ),
+  definePromptKey({
+    key: "rules/languages/*",
+    consumer: "ctx",
+    owner: "T12",
+    defaultFile: "rules/languages/{name}.md"
+  })
+];
+
+// kernel/src/ctx/index.ts
+var ctxConfig = {
+  modules: [languagesModule, toolsModule, featuresModule],
+  prompts: rulePrompts
+};
+
+// kernel/src/service/render/version.ts
+function renderVersion(output) {
+  return `bdk ${output.kernel} (contract ${output.contract}, node ${output.node})
+`;
+}
+
+// kernel/src/service/render/doctor.ts
+function renderDoctor(output) {
+  const lines = [renderVersion(output.version).trimEnd(), `layout: ${output.layout ?? "unknown"}`];
+  if (output.findings.length === 0) lines.push("no findings");
+  for (const finding of output.findings) {
+    lines.push(`${finding.level} ${finding.id}: ${finding.summary}`, `  repair: ${finding.repair}`);
+  }
+  return `${lines.join("\n")}
+`;
+}
+
+// kernel/src/service/use-cases/doctor.ts
+import { join as join8 } from "node:path";
 
 // kernel/src/shared/registry/record.ts
 var rule = _enum(RULES);
@@ -15032,7 +16887,7 @@ var flag = object({
   values: array(string2()).optional(),
   description: string2().optional()
 });
-var record = object({
+var record2 = object({
   id: string2(),
   argv: array(string2()).min(1).max(3),
   summary: string2(),
@@ -15053,30 +16908,30 @@ var record = object({
 var commandIndexSchema = object({
   contract: literal(3),
   base: object({ all: array(rule), changeScoped: array(rule) }),
-  commands: array(record)
+  commands: array(record2)
 });
 function loadIndex(raw) {
   return commandIndexSchema.parse(raw);
 }
-function commandLine(record2) {
-  return `bdk ${record2.argv.join(" ")}`;
+function commandLine(record3) {
+  return `bdk ${record3.argv.join(" ")}`;
 }
 
 // kernel/src/shared/registry/parse.ts
 var IMPLICIT_FLAGS = ["--json", "--help"];
-function parse2(record2, tokens) {
-  const help = [`${commandLine(record2)} --help`];
+function parse4(record3, tokens) {
+  const help = [`${commandLine(record3)} --help`];
   const positionals = {};
   const flags = {};
   let position = 0;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i] ?? "";
     if (!token.startsWith("--")) {
-      const arg2 = record2.args[position++];
+      const arg2 = record3.args[position++];
       if (arg2 === void 0) {
         return refuse(
           "input/invalid-argument",
-          `${commandLine(record2)} takes ${record2.args.length} arguments; ${token} is one too many`,
+          `${commandLine(record3)} takes ${record3.args.length} arguments; ${token} is one too many`,
           help
         );
       }
@@ -15092,25 +16947,25 @@ function parse2(record2, tokens) {
     }
     const equals = token.indexOf("=");
     const name = equals === -1 ? token : token.slice(0, equals);
-    const inline = equals === -1 ? void 0 : token.slice(equals + 1);
-    if (IMPLICIT_FLAGS.includes(name) && inline === void 0) continue;
-    const spec = record2.flags.find((candidate) => candidate.name === name);
+    const inline2 = equals === -1 ? void 0 : token.slice(equals + 1);
+    if (IMPLICIT_FLAGS.includes(name) && inline2 === void 0) continue;
+    const spec = record3.flags.find((candidate) => candidate.name === name);
     if (spec === void 0) {
-      return refuse("input/unknown-flag", `${commandLine(record2)} has no flag ${name}`, help);
+      return refuse("input/unknown-flag", `${commandLine(record3)} has no flag ${name}`, help);
     }
     if (name in flags) return refuse("input/invalid-argument", `${name} is given twice`, help);
     if (!takesValue(spec)) {
-      if (inline !== void 0) {
+      if (inline2 !== void 0) {
         return refuse(
           "input/invalid-argument",
-          `${name} is a switch and takes no value (got ${inline})`,
+          `${name} is a switch and takes no value (got ${inline2})`,
           help
         );
       }
       flags[name] = true;
       continue;
     }
-    let value = inline;
+    let value = inline2;
     if (value === void 0) {
       const next = tokens[i + 1];
       if (next !== void 0 && !next.startsWith("--")) {
@@ -15134,11 +16989,11 @@ function parse2(record2, tokens) {
     }
     flags[name] = value;
   }
-  const missing = record2.args.find((arg2) => arg2.required && !(arg2.name in positionals));
+  const missing = record3.args.find((arg2) => arg2.required && !(arg2.name in positionals));
   if (missing !== void 0) {
     return refuse(
       "input/missing-argument",
-      `${commandLine(record2)} needs the argument ${missing.name}`,
+      `${commandLine(record3)} needs the argument ${missing.name}`,
       help
     );
   }
@@ -15149,59 +17004,59 @@ function takesValue(flag2) {
 }
 
 // kernel/src/shared/registry/help.ts
-function synopsis(record2) {
-  const args = record2.args.map((arg2) => {
+function synopsis(record3) {
+  const args = record3.args.map((arg2) => {
     const name = arg2.name.startsWith("<") ? arg2.name : `<${arg2.name}>`;
     return arg2.required ? name : `[${name}]`;
   });
-  const flags = record2.flags.map(
+  const flags = record3.flags.map(
     (flag2) => `[${flag2.name}${takesValue(flag2) ? ` ${flagValue(flag2)}` : ""}]`
   );
-  return [commandLine(record2), ...args, ...flags, "[--json]"].join(" ");
+  return [commandLine(record3), ...args, ...flags, "[--json]"].join(" ");
 }
-function commandHelp(index2, record2) {
+function commandHelp(index2, record3) {
   const lines = [
-    `usage: ${synopsis(record2)}`,
+    `usage: ${synopsis(record3)}`,
     "",
-    record2.summary,
+    record3.summary,
     "",
-    `availability: ${record2.availability}`,
-    `mode: ${record2.mode}`,
-    `owner: ${record2.owner}`
+    `availability: ${record3.availability}`,
+    `mode: ${record3.mode}`,
+    `owner: ${record3.owner}`
   ];
-  if (record2.args.length > 0) {
+  if (record3.args.length > 0) {
     lines.push("", "arguments:");
-    for (const arg2 of record2.args) {
+    for (const arg2 of record3.args) {
       const values = arg2.values === void 0 ? "" : ` (${arg2.values.join("|")})`;
       const detail = [arg2.required ? "required" : "optional", arg2.description].filter(Boolean).join("; ");
       lines.push(`  ${arg2.name}${values}  ${detail}`);
     }
   }
-  if (record2.flags.length > 0) {
+  if (record3.flags.length > 0) {
     lines.push("", "flags:");
-    for (const flag2 of record2.flags) {
+    for (const flag2 of record3.flags) {
       const value = takesValue(flag2) ? ` ${flagValue(flag2)}` : "";
       lines.push(
         `  ${flag2.name}${value}${flag2.description === void 0 ? "" : `  ${flag2.description}`}`
       );
     }
   }
-  if (record2.stdin !== void 0) lines.push("", `stdin: ${record2.stdin}`);
+  if (record3.stdin !== void 0) lines.push("", `stdin: ${record3.stdin}`);
   const rules = [
     ...index2.base.all,
-    ...record2.changeScoped ? index2.base.changeScoped : [],
-    ...record2.refusals
+    ...record3.changeScoped ? index2.base.changeScoped : [],
+    ...record3.refusals
   ];
   lines.push(
     "",
-    `exit codes: ${record2.exits.join(", ")}`,
+    `exit codes: ${record3.exits.join(", ")}`,
     `rules: ${[...new Set(rules)].join(", ")}`
   );
   return `${lines.join("\n")}
 `;
 }
 function groupHelp(index2, group) {
-  const records = index2.commands.filter((record2) => record2.argv[0] === group);
+  const records = index2.commands.filter((record3) => record3.argv[0] === group);
   if (records.length === 0) return void 0;
   return overview(
     records,
@@ -15215,9 +17070,9 @@ function globalHelp(index2) {
   );
 }
 function overview(records, header) {
-  const width = Math.max(...records.map((record2) => record2.argv.join(" ").length));
+  const width = Math.max(...records.map((record3) => record3.argv.join(" ").length));
   const lines = records.map(
-    (record2) => `  ${record2.argv.join(" ").padEnd(width)}  ${record2.summary}`
+    (record3) => `  ${record3.argv.join(" ").padEnd(width)}  ${record3.summary}`
   );
   return `${[header, "", ...lines].join("\n")}
 `;
@@ -15243,8 +17098,8 @@ function stopBlock(refusal) {
 Instead: ${refusal.instead.join("; ")}
 `;
 }
-function capLines(text, options = {}) {
-  const lines = text.replace(/\n+$/, "").split("\n");
+function capLines(text2, options = {}) {
+  const lines = text2.replace(/\n+$/, "").split("\n");
   if (options.all === true || lines.length <= TEXT_LINE_CAP) return `${lines.join("\n")}
 `;
   const kept = lines.slice(0, TEXT_LINE_CAP - 1);
@@ -15275,12 +17130,12 @@ function nodeVersionRefusal(version3) {
 }
 
 // kernel/src/shared/registry/resolve.ts
-function resolve(index2, argv) {
+function resolve3(index2, argv) {
   for (let length = 3; length >= 1; length--) {
     const words = argv.slice(0, length);
     if (words.length < length) continue;
-    const record2 = index2.commands.find((candidate) => sameWords(candidate.argv, words));
-    if (record2 !== void 0) return { record: record2, rest: argv.slice(length) };
+    const record3 = index2.commands.find((candidate) => sameWords(candidate.argv, words));
+    if (record3 !== void 0) return { record: record3, rest: argv.slice(length) };
   }
   return void 0;
 }
@@ -15288,25 +17143,25 @@ function unknownCommand(index2, argv) {
   const words = argv.filter((token) => !token.startsWith("--"));
   if (words.length === 0)
     return refuse("input/unknown-command", "no command given", ["bdk --help"]);
-  const closest = closestCommand(index2, words);
-  const typed = words.slice(0, closest.argv.length).join(" ");
+  const closest2 = closestCommand(index2, words);
+  const typed = words.slice(0, closest2.argv.length).join(" ");
   return refuse(
     "input/unknown-command",
-    `bdk ${typed} is not a command; the closest is bdk ${closest.argv.join(" ")}`,
-    ["bdk --help", `bdk ${closest.argv.join(" ")} --help`]
+    `bdk ${typed} is not a command; the closest is bdk ${closest2.argv.join(" ")}`,
+    ["bdk --help", `bdk ${closest2.argv.join(" ")} --help`]
   );
 }
 function closestCommand(index2, words) {
   let best;
   let bestScore = [Infinity, Infinity];
-  for (const record2 of index2.commands) {
-    const [group = "", ...verbs] = record2.argv;
+  for (const record3 of index2.commands) {
+    const [group = "", ...verbs] = record3.argv;
     const score = [
       levenshtein(words[0] ?? "", group),
-      levenshtein(words.slice(1, record2.argv.length).join(" "), verbs.join(" "))
+      levenshtein(words.slice(1, record3.argv.length).join(" "), verbs.join(" "))
     ];
     if (score[0] < bestScore[0] || score[0] === bestScore[0] && score[1] < bestScore[1]) {
-      [best, bestScore] = [record2, score];
+      [best, bestScore] = [record3, score];
     }
   }
   if (best === void 0) throw new Error("the command index is empty");
@@ -15332,7 +17187,7 @@ function levenshtein(a, b) {
 function createRegistry(index2, registrations2) {
   const byId = /* @__PURE__ */ new Map();
   for (const registration of registrations2) {
-    if (!index2.commands.some((record2) => record2.id === registration.id)) {
+    if (!index2.commands.some((record3) => record3.id === registration.id)) {
       throw new Error(`registration for ${registration.id}, which the command index does not know`);
     }
     if (byId.has(registration.id)) throw new Error(`${registration.id} is registered twice`);
@@ -15347,7 +17202,7 @@ async function run(index2, byId, invocation) {
   const { argv, streams } = invocation;
   const asJson = argv.includes("--json");
   const help = argv.includes("--help");
-  const resolved = resolve(index2, argv);
+  const resolved = resolve3(index2, argv);
   if (resolved === void 0) {
     const [first] = argv;
     const usage = first === void 0 || first === "--help" ? globalHelp(index2) : help ? groupHelp(index2, first) : void 0;
@@ -15357,37 +17212,37 @@ async function run(index2, byId, invocation) {
     }
     return writeCommand(streams, unknownCommand(index2, argv), asJson);
   }
-  const { record: record2, rest } = resolved;
+  const { record: record3, rest } = resolved;
   if (help) {
-    streams.stdout(commandHelp(index2, record2));
+    streams.stdout(commandHelp(index2, record3));
     return 0;
   }
   let outcome;
   try {
-    outcome = await dispatch(record2, byId.get(record2.id), rest, asJson, invocation);
+    outcome = await dispatch(record3, byId.get(record3.id), rest, asJson, invocation);
   } catch (error2) {
     if (error2 instanceof KernelRefusal) outcome = error2.refusal;
-    else if (record2.mode === "command") throw error2;
-    else return writeCrash(streams, record2, error2);
+    else if (record3.mode === "command") throw error2;
+    else return writeCrash(streams, record3, error2);
   }
-  if (isRefusal(outcome)) {
-    if (record2.mode === "inject") return writeInject(streams, outcome, asJson);
-    if (record2.mode === "guard") return writeBlock(streams, outcome, asJson);
+  if (isRefusal2(outcome)) {
+    if (record3.mode === "inject") return writeInject(streams, outcome, asJson);
+    if (record3.mode === "guard") return writeBlock(streams, outcome, asJson);
     return writeCommand(streams, outcome, asJson);
   }
   if (asJson) streams.stdout(json(outcome.data));
   else if (outcome.text !== "") {
     streams.stdout(
-      record2.mode === "command" ? capLines(outcome.text, { all: rest.includes("--all") }) : ensureNewline(outcome.text)
+      record3.mode === "command" ? capLines(outcome.text, { all: rest.includes("--all") }) : ensureNewline(outcome.text)
     );
   }
   return 0;
 }
-async function dispatch(record2, registration, rest, asJson, { cwd, runtime }) {
-  const parsed = parse2(record2, rest);
-  if (isRefusal(parsed)) return parsed;
+async function dispatch(record3, registration, rest, asJson, { cwd, runtime }) {
+  const parsed = parse4(record3, rest);
+  if (isRefusal2(parsed)) return parsed;
   let workTree;
-  if (record2.standalone !== true) {
+  if (record3.standalone !== true) {
     if (registration?.nodeGate !== false && !meetsNodeMinimum(runtime.nodeVersion)) {
       return nodeVersionRefusal(runtime.nodeVersion);
     }
@@ -15399,9 +17254,9 @@ async function dispatch(record2, registration, rest, asJson, { cwd, runtime }) {
       ]);
     }
   }
-  if (registration === void 0) return stub(record2);
+  if (registration === void 0) return stub(record3);
   const context = {
-    record: record2,
+    record: record3,
     positionals: parsed.positionals,
     flags: parsed.flags,
     json: asJson,
@@ -15411,11 +17266,11 @@ async function dispatch(record2, registration, rest, asJson, { cwd, runtime }) {
   };
   return registration.handler(context);
 }
-function stub(record2) {
+function stub(record3) {
   return refuse(
     "kernel/not-implemented",
-    `${commandLine(record2)} is not implemented yet; it lands with task ${record2.owner}`,
-    [`use a BDK release that includes task ${record2.owner}`, `bdk ${record2.argv[0] ?? ""} --help`]
+    `${commandLine(record3)} is not implemented yet; it lands with task ${record3.owner}`,
+    [`use a BDK release that includes task ${record3.owner}`, `bdk ${record3.argv[0] ?? ""} --help`]
   );
 }
 function writeCommand(streams, refusal, asJson) {
@@ -15432,10 +17287,10 @@ function writeBlock(streams, refusal, asJson) {
 `);
   return 2;
 }
-function writeCrash(streams, record2, error2) {
+function writeCrash(streams, record3, error2) {
   const message = error2 instanceof Error ? error2.message : String(error2);
-  const why = `${commandLine(record2)} failed: ${message}`;
-  if (record2.mode === "guard") {
+  const why = `${commandLine(record3)} failed: ${message}`;
+  if (record3.mode === "guard") {
     streams.stderr(`${why}
 `);
     return 2;
@@ -15448,69 +17303,12 @@ function writeCrash(streams, record2, error2) {
   );
   return 0;
 }
-function isRefusal(value) {
+function isRefusal2(value) {
   return "refused" in value;
 }
-function ensureNewline(text) {
-  return text.endsWith("\n") ? text : `${text}
+function ensureNewline(text2) {
+  return text2.endsWith("\n") ? text2 : `${text2}
 `;
-}
-
-// kernel/src/shared/store/store.ts
-import { randomBytes } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync,
-  writeFileSync
-} from "node:fs";
-import { dirname, join, resolve as resolve2 } from "node:path";
-function fileStore() {
-  return {
-    read(path) {
-      try {
-        return readFileSync(path, "utf8");
-      } catch (error2) {
-        if (isCode(error2, "ENOENT")) return void 0;
-        throw error2;
-      }
-    },
-    write(path, content) {
-      mkdirSync(dirname(path), { recursive: true });
-      const temp = `${path}.${randomBytes(4).toString("hex")}.tmp`;
-      writeFileSync(temp, content);
-      try {
-        renameSync(temp, path);
-      } catch (error2) {
-        rmSync(temp, { force: true });
-        throw error2;
-      }
-    },
-    list(dir) {
-      try {
-        return readdirSync(dir, { withFileTypes: true }).map((entry) => entry.isDirectory() ? `${entry.name}/` : entry.name).sort();
-      } catch (error2) {
-        if (isCode(error2, "ENOENT") || isCode(error2, "ENOTDIR")) return [];
-        throw error2;
-      }
-    },
-    exists: (path) => existsSync(path),
-    isDirectory: (path) => statSync(path, { throwIfNoEntry: false })?.isDirectory() === true
-  };
-}
-function findProjectRoot(store, cwd, workTreeRoot) {
-  const top = resolve2(workTreeRoot);
-  for (let dir = resolve2(cwd); ; dir = dirname(dir)) {
-    if (store.isDirectory(join(dir, ".bdk"))) return dir;
-    if (dir === top || dirname(dir) === dir) return top;
-  }
-}
-function isCode(error2, code) {
-  return error2 instanceof Error && "code" in error2 && error2.code === code;
 }
 
 // kernel/src/service/domain/layout.ts
@@ -15533,27 +17331,47 @@ function enumerate(items) {
   return `${items.slice(0, -1).join(", ")} and ${items.at(-1) ?? ""}`;
 }
 
-// kernel/src/shared/config/index.ts
-var import_yaml = __toESM(require_dist(), 1);
-import { dirname as dirname2, join as join2 } from "node:path";
-import { fileURLToPath } from "node:url";
-var UNKNOWN_VERSION = "0.0.0-unknown";
-function pluginRootOf(bundleUrl) {
-  return dirname2(dirname2(fileURLToPath(bundleUrl)));
-}
-function readKernelVersion(store, pluginRoot) {
-  const text = store.read(join2(pluginRoot, ".claude-plugin", "plugin.json"));
-  if (text === void 0) return UNKNOWN_VERSION;
-  try {
-    const manifest = JSON.parse(text);
-    const version3 = isRecord(manifest) ? manifest.version : void 0;
-    return typeof version3 === "string" ? version3 : UNKNOWN_VERSION;
-  } catch {
-    return UNKNOWN_VERSION;
+// kernel/src/service/use-cases/schema-checks.ts
+import { join as join7 } from "node:path";
+var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
+var REPAIR = "bdk doctor --fix";
+function schemaFindings(input) {
+  const { store, root } = input;
+  if (!store.exists(join7(root, SETTINGS_FILES[0]))) return [];
+  const version3 = readKernelVersion(store, input.pluginRoot);
+  const url = settingsSchemaUrl(version3);
+  const findings = [];
+  const stale = [];
+  for (const file of SETTINGS_FILES) {
+    const path = join7(root, file);
+    const text2 = store.read(path);
+    if (text2 === void 0 || modelineUrl(text2) === url) continue;
+    if (input.fix) store.write(path, withModeline(text2, version3));
+    else stale.push(file);
   }
-}
-function isRecord(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (stale.length > 0) {
+    findings.push({
+      id: "schema-modeline",
+      level: "warn",
+      summary: `${stale.join(" and ")} lack the yaml-language-server modeline of v${version3}`,
+      repair: REPAIR
+    });
+  }
+  const copy = join7(root, OFFLINE_SCHEMA_PATH);
+  const expected = offlineSchemaText(input.settings);
+  const current = store.read(copy);
+  if (current !== expected) {
+    if (input.fix) store.write(copy, expected);
+    else {
+      findings.push({
+        id: "schema-offline",
+        level: "warn",
+        summary: `${OFFLINE_SCHEMA_PATH} is ${current === void 0 ? "missing" : "outdated"}`,
+        repair: REPAIR
+      });
+    }
+  }
+  return findings;
 }
 
 // kernel/src/service/use-cases/version.ts
@@ -15578,10 +17396,11 @@ function doctor(input) {
   }
   const root = findProjectRoot(input.store, input.cwd, input.workTree);
   const { layout, finding } = classifyLayout({
-    bdk: input.store.isDirectory(join3(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => input.store.exists(join3(root, marker)))
+    bdk: input.store.isDirectory(join8(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => input.store.exists(join8(root, marker)))
   });
   if (finding !== void 0) findings.push(finding);
+  findings.push(...schemaFindings({ ...input, root }));
   return {
     ok: findings.every((item) => item.level === "ok"),
     version: version2(input),
@@ -15597,7 +17416,8 @@ function doctorCommand(deps) {
       ...deps,
       nodeVersion: context.runtime.nodeVersion,
       cwd: context.cwd,
-      workTree: context.workTree ?? context.cwd
+      workTree: context.workTree ?? context.cwd,
+      fix: context.flags["--fix"] === true
     });
     return { data, text: renderDoctor(data) };
   };
@@ -15622,15 +17442,21 @@ function serviceRegistrations(deps) {
 
 // kernel/src/registrations.ts
 function registrations(deps) {
-  return [...serviceRegistrations(deps)];
+  return [...serviceRegistrations(deps), ...configRegistrations(deps)];
+}
+function settingsRegistry() {
+  return createConfigRegistry({
+    modules: [...ctxConfig.modules, promptsModule],
+    prompts: [...ctxConfig.prompts]
+  });
 }
 
 // kernel/src/shared/git/index.ts
 import { existsSync as existsSync2, readFileSync as readFileSync2, statSync as statSync2 } from "node:fs";
-import { dirname as dirname3, join as join4, resolve as resolve3 } from "node:path";
+import { dirname as dirname3, join as join9, resolve as resolve4 } from "node:path";
 function findWorkTree(cwd) {
-  for (let dir = resolve3(cwd); ; dir = dirname3(dir)) {
-    if (existsSync2(join4(dir, ".git"))) return dir;
+  for (let dir = resolve4(cwd); ; dir = dirname3(dir)) {
+    if (existsSync2(join9(dir, ".git"))) return dir;
     if (dirname3(dir) === dir) return void 0;
   }
 }
@@ -15642,17 +17468,24 @@ var registry2 = createRegistry(
   registrations({
     store: fileStore(),
     pluginRoot: pluginRootOf(import.meta.url),
-    contract: index.contract
+    contract: index.contract,
+    settings: settingsRegistry()
   })
 );
 try {
   process.exitCode = await registry2.run({
     argv: process.argv.slice(2),
     cwd: process.cwd(),
-    runtime: { nodeVersion: process.versions.node, workTree: findWorkTree },
+    runtime: {
+      nodeVersion: process.versions.node,
+      env: process.env,
+      platform: process.platform,
+      home: homedir(),
+      workTree: findWorkTree
+    },
     streams: {
-      stdout: (text) => process.stdout.write(text),
-      stderr: (text) => process.stderr.write(text)
+      stdout: (text2) => process.stdout.write(text2),
+      stderr: (text2) => process.stderr.write(text2)
     }
   });
 } catch (error2) {

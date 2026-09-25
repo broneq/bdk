@@ -89,5 +89,12 @@ export function capture(): Captured {
 }
 
 export function runtime(overrides: Partial<Runtime> = {}): Runtime {
-  return { nodeVersion: "24.21.0", workTree: () => "/repo", ...overrides };
+  return {
+    nodeVersion: "24.21.0",
+    env: {},
+    platform: "linux",
+    home: "/home/dev",
+    workTree: () => "/repo",
+    ...overrides,
+  };
 }

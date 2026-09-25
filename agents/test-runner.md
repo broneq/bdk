@@ -48,7 +48,7 @@ The caller's prompt tells you which of three jobs this is. Match it:
 | a list of changed **source** files                  | the fast tier's `related` form on those files; `scoped` on their test files if no `related` form exists    |
 | a list of **test/spec** files                       | that tier's `scoped` form on exactly those paths                                                           |
 | "re-run the failures" / names the previous failures | the `failed` form (`--last-failed`, `--changed`, or the failing paths). Never a full suite for a fix cycle |
-| "full suite" / "final gate" / "every tier"          | the `full` form of **every** configured tier, e2e included                                                 |
+| "full suite" / "final gate" / "every tier"          | the `command` form of **every** configured tier, e2e included                                              |
 
 Only the last row runs an unscoped command, and only because the caller said so. If the prompt gives you paths and also says "full", the paths win — ask for clarification in your report rather than paying for a suite nobody asked for.
 

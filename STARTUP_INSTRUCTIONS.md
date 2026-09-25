@@ -62,7 +62,7 @@ Match verification to what changed. Never run the full suite "just to be safe" a
 
 ## Quality Rules
 
-BDK ships language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend via the `quality` section in `.bdk/settings.json`. See README "Quality Rules" for the four usage patterns.
+BDK ships language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend them with prompt values (`.bdk/prompts/rules/<name>.md`, or `prompts.files` in `.bdk/settings.yaml`). See README "Quality Rules" for the four usage patterns.
 
 ## Capture Conventions
 

@@ -15,6 +15,10 @@ import { resolve, unknownCommand } from "./resolve.ts";
 /** What the kernel asks of the machine; `main.ts` binds the real one, tests a fake. */
 export interface Runtime {
   readonly nodeVersion: string;
+  /** The process environment, the platform and the home directory (global layer path). */
+  readonly env: Readonly<Record<string, string | undefined>>;
+  readonly platform: string;
+  readonly home: string;
   /** The root of the git work tree containing `cwd`, or undefined outside one. */
   workTree(cwd: string): string | undefined;
 }

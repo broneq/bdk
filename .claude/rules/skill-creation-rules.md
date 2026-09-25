@@ -138,11 +138,11 @@ hooks:
 
 # Conditional Content Injection
 
-Skills and agents can conditionally include content based on `.bdk/settings.json` using the native `!`command`` shell injection syntax. Runs at skill load time — deterministic, works for both user and agent invocation.
+Skills and agents can conditionally include content based on the BDK settings using the native `!`command`` shell injection syntax. Runs at skill load time — deterministic, works for both user and agent invocation.
 
 ## Tool
 
-`scripts/inject.py` — evaluates conditions against `.bdk/settings.json`, prints file content or text if all conditions true, silent otherwise.
+`scripts/inject.py` — evaluates conditions against the merged settings (`bdk config show --json`, through `scripts/kernel_settings.py`), prints file content or text if all conditions true, silent otherwise.
 
 ## Syntax
 
@@ -172,27 +172,27 @@ the user wants it, the probe says the machine has it.
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --if languages[typescript] --then ${CLAUDE_SKILL_DIR}/fragments/react-ts.md`
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.caveman --then-text "Keep status lines terse."`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then-text "Offer the decision in lavish-axi."`
 ```
 
 ## Rules
 
 - Put conditional fragments in `fragments/` subdir of the skill — see `.claude/rules/inject-fragments.md`
 - Use `--then-text` only for short snippets (1-2 lines); use `--then` + file for anything longer
-- Missing `.bdk/settings.json` = silent (exit 0): no condition can match, so nothing renders
+- Without `.bdk/settings.yaml` the plugin defaults apply (`features.lavish` is `true`, `languages` is empty)
 - A **false** condition is silent; a **broken** one is not. Unknown condition syntax, a missing `--then`
   file, or a bad argument (including a flag that no longer exists) prints `[bdk-inject-error] <desc>` to **stdout** and still exits 0. That is
   deliberate: a `!`...`` block captures stdout only and ignores the exit code, so stderr + exit 1 would
   render a broken injection as an empty one. Same contract in `inject-rules.py` and
   `inject-language-rules.py`.
-- Settings file searched upward from cwd — no need to specify path in skills
+- The kernel finds the project from cwd, so skills need no path. It needs Node >= 22.13; without it, the scripts print a `[bdk-inject-error]` line naming the fix
 
 ## Programmatic API
 
 ```python
 from scripts.inject import load_settings, evaluate_condition, inject
 
-settings = load_settings()                                    # dict | None
+settings = load_settings()                                    # dict; raises KernelSettingsError
 ok = evaluate_condition("features.react", settings)           # bool
 content = inject(["features.react"], then_path="react.md", settings=settings)  # str
 ```

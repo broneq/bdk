@@ -13,7 +13,7 @@
           },
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-bdk-config/check.py"
+            "command": "test -d .bdk && node \"${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs\" config check 2>&1 || true"
           }
         ]
       }

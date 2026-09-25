@@ -1016,7 +1016,7 @@
         {
           "name": "<key>",
           "required": false,
-          "description": "Dotted key; default the whole tree."
+          "description": "Dotted key; default the whole tree. An element of an array merged by `id` is addressed by its `id` as a path segment (`tools.test.unit.scoped`)."
         }
       ],
       "flags": [
@@ -1058,7 +1058,8 @@
       "args": [
         {
           "name": "<module>",
-          "required": false
+          "required": false,
+          "description": "The root key of one registered module, e.g. `tools`."
         }
       ],
       "flags": [
@@ -1084,7 +1085,8 @@
       "args": [
         {
           "name": "<key>",
-          "required": true
+          "required": true,
+          "description": "Dotted key; array elements merged by `id` are addressed by `id`."
         },
         {
           "name": "<value>",
@@ -1095,7 +1097,7 @@
       "flags": [
         {
           "name": "--global",
-          "description": "Write ~/.config/bdk/settings.yaml."
+          "description": "Write the global layer file (`kernel-settings`, Configuration layers)."
         },
         {
           "name": "--local",
@@ -1108,7 +1110,7 @@
       "writes": [
         ".bdk/settings.yaml",
         ".bdk/settings.local.yaml",
-        "~/.config/bdk/settings.yaml",
+        "the global layer file",
         ".bdk/.machine/config/"
       ]
     },
@@ -1577,7 +1579,7 @@
       "flags": [
         {
           "name": "--fix",
-          "description": "Apply the repairs that need no system change (index rebuild, schema refresh); never installs software."
+          "description": "Apply the repairs that need no system change (index rebuild, schema refresh, modeline); never installs software."
         }
       ],
       "output": "output/doctor.json",

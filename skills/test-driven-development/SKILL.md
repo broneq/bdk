@@ -4,7 +4,7 @@ description: >-
   Rigid TDD process for writing and verifying tests before implementation.
   Use when implementing any feature or bugfix. Receives test case bullet points
   from the plan and enforces red-green cycle.
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
 ---
 
 # Test-Driven Development
@@ -102,13 +102,13 @@ Add an unlisted edge-case test ONLY when its absence would let a real production
 
 ## GATE 2: Verify RED
 
-Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
+Inject test commands (`tools.test`): !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
 
 **Run it yourself, via `Bash`. Do not spawn a `bdk:test-runner` agent for this.** One test file's worth of output is a few lines; a spawn costs a cold start, a preload, and a model round-trip — an order of magnitude more wall-clock than the run it wraps, paid twice per task (RED and GREEN) and again on every fix attempt. `bdk:test-runner` exists to keep a _large_ run's output out of a caller's context (group verification, the end-of-plan gate). This is not that.
 
-Pick the command from the injected blocks: the tier matching the test cases you just wrote, `scoped` form, substituting `{files}` with `{test_file_path}`. **Never the `full` form of any tier.**
+Pick the command from the injected entries: the tier matching the test cases you just wrote, `scoped` form, substituting `{files}` with `{test_file_path}`; an entry's `when` text says when it applies. **Never the unscoped `command` form of any tier.** An empty list (`[]`) means nothing is configured: detect the runner from project files and tell the user to run `/bdk:setup`.
 
-If that tier has no `scoped` form, derive one from `full` — append `-- {test_file_path}` for an npm/yarn/pnpm script, or a bare path for most direct runners — and note in your report that you derived it, so the settings get fixed once instead of re-derived every run. Only if no scoped form is derivable at all: stop and return `Status: BLOCKED` rather than defaulting to a full run. The coordinator's end-of-plan gate is the only place a full suite runs.
+If that tier has no `scoped` form, derive one from `command` — append `-- {test_file_path}` for an npm/yarn/pnpm script, or a bare path for most direct runners — and note in your report that you derived it, so the settings get fixed once instead of re-derived every run. Only if no scoped form is derivable at all: stop and return `Status: BLOCKED` rather than defaulting to a full run. The coordinator's end-of-plan gate is the only place a full suite runs.
 
 Record the exact command you ran; GATE 4 re-runs the same one.
 

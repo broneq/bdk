@@ -8,7 +8,7 @@ argument-hint: "[error message, traceback, or steps to reproduce]"
 model: opus
 user-invocable: true
 context: main
-allowed-tools: AskUserQuestion Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+allowed-tools: AskUserQuestion Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
 ---
 
 # Debug
@@ -109,9 +109,9 @@ Write tests that precisely reproduce bug. Tests RED until fix applied.
 - Follow project test conventions (check existing tests for patterns)
 - Place tests in correct existing test file
 
-Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
+Inject test commands (`tools.test`): !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
 
-Confirm the new tests are RED by running the matching tier's `scoped` form on the test file(s) you just wrote, **directly via `Bash`** — substitute `{files}` with those paths. No agent spawn: one test file's output is a few lines, and the spawn costs more wall-clock than the run. Never the `full` form of any tier, and never an e2e tier unless the tests you wrote _are_ e2e specs.
+Confirm the new tests are RED by running the matching tier's `scoped` form on the test file(s) you just wrote, **directly via `Bash`** — substitute `{files}` with those paths. No agent spawn: one test file's output is a few lines, and the spawn costs more wall-clock than the run. Never the unscoped `command` form of any tier, and never an e2e tier unless the tests you wrote _are_ e2e specs.
 
 ```
 [debug] Failing tests confirmed: {N} red
@@ -161,8 +161,8 @@ Confirm the new tests are RED by running the matching tier's `scoped` form on th
 
 Inject project tools context:
 
-- Test tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
-- Lint tools: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py lint-tools`
+- Test tools: !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
+- Lint tools: !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.lint 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
 
 1. Apply minimal fix
 2. Re-run the same scoped command from Phase 3 via `Bash` — only the tests you wrote

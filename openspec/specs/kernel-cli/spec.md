@@ -79,7 +79,7 @@ The content test (T15 `skill-check`, BDK rule plugin) accepts a `!` block only w
 ^!`node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" (ctx (skill|role) [a-z][a-z0-9-]*|ctx startup|next) 2>&1 \|\| echo "BDK STOP: kernel unavailable \(exit \$\?\)\. Install Node >= 22\.13 and run /bdk:setup\."`$
 ```
 
-The Node minimum `22.13` is HOST-FACTS `node-sqlite-min`; HOST-FACTS `allowed-compound` confirms that `allowed-tools: Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)` pre-approves the compound `node ... || echo ...` form, and `allowed-control` shows that a skill with a `!` block and without that rule is lost whole in `default` permission mode. Content hooks in `hooks.json` (`hooks session-start`, `hooks session-end`) use the same `2>&1 || echo "BDK STOP: ..."` branch without the `!` and backticks.
+The Node minimum `22.13` is HOST-FACTS `node-sqlite-min`. A skill with such a block SHALL carry `allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)`: HOST-FACTS `wrapper` confirms that this pair pre-approves the wrapper, and `wrapper-old-rule` shows that the unquoted rule alone does not, because the host matches the quoted path literally and asks approval for the `echo` branch with its `$?`. Without the pair the skill is lost whole in `default` permission mode (`allowed-control`). The content test checks the pair next to the wrapper. Content hooks in `hooks.json` (`hooks session-start`, `hooks session-end`) use the same `2>&1 || echo "BDK STOP: ..."` branch without the `!` and backticks.
 
 **Command mode (everything else).**
 
@@ -99,6 +99,11 @@ The shell prefilter that decides whether to start Node at all (T24) precedes thi
 
 - **WHEN** an inject-mode command hits an internal failure
 - **THEN** the exit code is 0 and stdout ends with a two-line STOP block (`BDK STOP: <why>` and `Instead: ...`)
+
+#### Scenario: wrapper pre-approved
+
+- **WHEN** a skill's `!` block uses the content wrapper and its `allowed-tools` carries the rule pair
+- **THEN** the skill loads in `default` permission mode with the kernel output in place of the block
 
 #### Scenario: guard mode fails closed
 

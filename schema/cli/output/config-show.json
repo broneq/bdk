@@ -4,55 +4,65 @@
   "title": "bdk config show --json",
   "description": "The resolved configuration after the four layers, with the origin of every key.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["value"],
   "properties": {
     "key": {
+      "description": "The requested dotted key; absent for the whole tree.",
       "type": "string"
     },
     "value": {
-      "description": "The resolved value or subtree."
+      "description": "The resolved value or subtree; a prompt value is its effective mode and contributing files."
     },
     "origins": {
+      "description": "Dotted leaf key -> the layer it came from, with --origins.",
       "type": "object",
+      "propertyNames": { "type": "string" },
       "additionalProperties": {
+        "type": "string",
         "enum": ["default", "global", "project", "local"]
-      },
-      "description": "Dotted key -> layer, when --origins."
+      }
     },
     "layers": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["layer", "path", "present"],
         "properties": {
-          "layer": {
-            "enum": ["default", "global", "project", "local"]
-          },
+          "layer": { "type": "string", "enum": ["global", "project", "local"] },
           "path": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "description": "The layer file: relative to the project root, absolute for the global layer."
           },
-          "present": {
-            "type": "boolean"
-          }
-        }
-      }
+          "present": { "type": "boolean" }
+        },
+        "required": ["layer", "path", "present"],
+        "additionalProperties": false
+      },
+      "description": "Every file layer, lowest first, and whether its file exists."
     }
   },
+  "required": ["value", "layers"],
+  "additionalProperties": false,
   "examples": [
     {
-      "key": "policy.budgets",
-      "value": {
-        "task-redispatch": 3,
-        "verify-fix": 2,
-        "review-fix": 2,
-        "verifier": 2,
-        "not-run": 3
-      },
+      "key": "tools.test",
+      "value": [
+        {
+          "id": "unit",
+          "tier": "fast",
+          "command": "pnpm test:unit",
+          "scoped": "pnpm vitest run {files}"
+        }
+      ],
       "origins": {
-        "policy.budgets.task-redispatch": "project",
-        "policy.budgets.verify-fix": "default"
-      }
+        "tools.test.unit.tier": "project",
+        "tools.test.unit.command": "project",
+        "tools.test.unit.scoped": "local"
+      },
+      "layers": [
+        { "layer": "global", "path": "/home/dev/.config/bdk/settings.yaml", "present": false },
+        { "layer": "project", "path": ".bdk/settings.yaml", "present": true },
+        { "layer": "local", "path": ".bdk/settings.local.yaml", "present": true }
+      ]
     }
   ]
 }

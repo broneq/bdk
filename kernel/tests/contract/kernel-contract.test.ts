@@ -1,15 +1,15 @@
 // The kernel against its contract (design D-8): every record answers, the
-// rule catalogue in code equals the spec's, and the committed JSON Schemas,
-// their examples and the zod schemas of the kernel agree.
+// rule catalogue in code equals the spec's, and the committed JSON Schemas
+// accept their examples. Files generated from zod (kernel/scripts/
+// export-schemas.ts) need no zod comparison: CI's `git diff --exit-code
+// schema/` keeps them equal to their source; `list-page.json` stays
+// hand-written and is compared below.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type * as z from "zod";
 
 import commands from "../../../schema/cli/commands.json" with { type: "json" };
-import { registrations } from "../../src/registrations.ts";
-import { doctorOutput } from "../../src/service/schema/doctor.ts";
-import { versionOutput } from "../../src/service/schema/version.ts";
+import { registrations, settingsRegistry } from "../../src/registrations.ts";
 import { listPage, listPageSchema } from "../../src/shared/output/index.ts";
 import { refusalSchema, RULES } from "../../src/shared/refusal/index.ts";
 import { createRegistry, loadIndex } from "../../src/shared/registry/index.ts";
@@ -21,7 +21,12 @@ import { backticked, requirement, tableFirstColumn } from "../support/specs.ts";
 const index = loadIndex(commands);
 const registry = createRegistry(
   index,
-  registrations({ store: memoryStore(), pluginRoot: "/", contract: index.contract }),
+  registrations({
+    store: memoryStore(),
+    pluginRoot: "/",
+    contract: index.contract,
+    settings: settingsRegistry(),
+  }),
 );
 
 function examplesOf(file: string): unknown[] {
@@ -45,9 +50,12 @@ describe("registry", () => {
     }
   });
 
-  it("registers a handler for every record whose owner task is this one", () => {
-    const owned = index.commands.filter((record) => record.owner === "T11");
-    expect(owned.map((record) => record.id).sort()).toStrictEqual(["doctor", "version"]);
+  it.each([
+    ["T11", ["doctor", "version"]],
+    ["T12", ["config-check", "config-schema", "config-set", "config-show"]],
+  ])("registers a handler for every record %s owns", (owner, ids) => {
+    const owned = index.commands.filter((record) => record.owner === owner);
+    expect(owned.map((record) => record.id).sort()).toStrictEqual(ids);
     for (const record of owned) expect(registry.implementation(record.id)).toBe("handler");
   });
 });
@@ -70,23 +78,6 @@ describe.each(SCHEMA_FILES)("%s", (file) => {
     for (const example of examplesOf(file)) {
       expect(validate(example), JSON.stringify(validate.errors)).toBe(true);
       expect(validate(broken(file, example))).toBe(false);
-    }
-  });
-});
-
-describe.each([
-  ["common/version.json", versionOutput],
-  ["output/doctor.json", doctorOutput],
-  ["common/refusal.json", refusalSchema],
-] as const)("zod schema of %s", (file, schema: z.ZodType) => {
-  it("has at least one example to parse", () => {
-    expect(examplesOf(file).length).toBeGreaterThan(0);
-  });
-
-  it("parses each example and rejects each without a required field", () => {
-    for (const example of examplesOf(file)) {
-      expect(schema.safeParse(example).error).toBeUndefined();
-      expect(schema.safeParse(broken(file, example)).success).toBe(false);
     }
   });
 });

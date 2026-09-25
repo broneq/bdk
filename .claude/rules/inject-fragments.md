@@ -9,7 +9,7 @@ paths:
 
 ## Fragments
 
-Fragments are Markdown files that are conditionally injected into skills at load time based on `.bdk/settings.json` feature flags. They differ from `references/` (static, always-included documentation) — fragments are **only included** when their condition is met.
+Fragments are Markdown files that are conditionally injected into skills at load time based on BDK settings (`features.*`, `languages`). They differ from `references/` (static, always-included documentation) — fragments are **only included** when their condition is met.
 
 Inject calls use `scripts/inject.py`:
 
@@ -114,11 +114,11 @@ Bundle the open questions for the user...
 
 Three mechanisms coexist — do not confuse them:
 
-| Mechanism                  | Trigger                                      | Source                                                                                  | Use case                                                        |
-| -------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `inject.py`                | `!`...`` shell line with `--if` / `--prefer` | Skill/agent body                                                                        | Conditional fragments based on `features.*` or `languages[...]` |
-| `inject-rules.py`          | `!`...`` shell line, name as arg             | `rules/<name>.md` (BDK) + `quality.<name>` override                                     | Language-agnostic quality rules - whatever `rules/*.md` ships   |
-| `inject-language-rules.py` | `!`...`` shell line                          | `rules/languages/<lang>.md` per entry in `languages` + `language-rules.<lang>` override | Language- or framework-specific rule sheets                     |
+| Mechanism                  | Trigger                                      | Source                                                         | Use case                                                        |
+| -------------------------- | -------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------- |
+| `inject.py`                | `!`...`` shell line with `--if` / `--prefer` | Skill/agent body                                               | Conditional fragments based on `features.*` or `languages[...]` |
+| `inject-rules.py`          | `!`...`` shell line, name as arg             | prompt value `rules/<name>` (default `rules/<name>.md`)        | Language-agnostic quality rules - whatever `rules/*.md` ships   |
+| `inject-language-rules.py` | `!`...`` shell line                          | prompt value `rules/languages/<lang>` per entry in `languages` | Language- or framework-specific rule sheets                     |
 
 All three resolve at skill load-time via `!`command`` — the model receives substituted content, never raw markers or instructions to substitute.
 
