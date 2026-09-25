@@ -123,5 +123,7 @@ selected skill-tool-plan && { run_check skill-tool-plan '"tool_name":"Skill"|dis
   "Call the Skill tool with skill bdk-probe:plan and args from-model. Do not type it as a slash command and do not use any other tool. Report exactly what the tool returned." || status=1; }
 selected allowed && { run_check allowed '.' "-" "/bdk-probe:allowed" || status=1; }
 selected allowed-control && { run_check allowed-control '.' "-" "/bdk-probe:unallowed" || status=1; }
+selected wrapper-old-rule && { run_check wrapper-old-rule '.' "-" "/bdk-probe:wrapper-old-rule" || status=1; }
+selected wrapper && { run_check wrapper '.' "-" "/bdk-probe:wrapper" || status=1; }
 
 exit $status
