@@ -40,9 +40,9 @@
 
 - [x] 6.1 Write failing unit tests for `shared/git`: work tree detection for a `.git` directory, a `.git` file (linked worktree) and no repository; `run()` maps a missing executable to `runtime/git-missing`; rebase, merge and cherry-pick markers map to `policy/git-in-progress`; verify they fail
 - [x] 6.2 Implement `shared/git`; verify 6.1 passes
-- [ ] 6.3 Write failing unit tests for `shared/config`: plugin manifest version read relative to the bundle and the `0.0.0-unknown` fallback (design D-4), the reading half of the four layers returns each present file's parsed object with its layer name and skips absent ones, a YAML syntax error names the file; verify they fail
-- [ ] 6.4 Implement `shared/config`; verify 6.3 passes
-- [ ] 6.5 Wire the Node and work tree checks into `main.ts`, then write the failing E2E enumeration `kernel/tests/contract.e2e.ts` over all 61 records (stub answer per mode plus `--help` per record, `runtime/not-a-repo` outside a work tree, `kernel-architecture` Tests per slice as modified) and rebuild the bundle; verify it passes and that no case sees exit 1
+- [x] 6.3 Write failing unit tests for `shared/config`: plugin manifest version read relative to the bundle and the `0.0.0-unknown` fallback (design D-4), the reading half of the four layers returns each present file's parsed object with its layer name and skips absent ones, a YAML syntax error names the file; verify they fail
+- [x] 6.4 Implement `shared/config`; verify 6.3 passes
+- [x] 6.5 Wire the Node and work tree checks into `main.ts`, then write the failing E2E enumeration `kernel/tests/contract.e2e.ts` over all 61 records (stub answer per mode plus `--help` per record, `runtime/not-a-repo` outside a work tree, `kernel-architecture` Tests per slice as modified) and rebuild the bundle; verify it passes and that no case sees exit 1
 
 ## 7. service slice: version and doctor
 

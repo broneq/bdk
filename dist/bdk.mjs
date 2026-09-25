@@ -1658,6 +1658,103 @@ var commands_default = {
   ]
 };
 
+// kernel/src/registrations.ts
+var registrations = [];
+
+// kernel/src/shared/git/index.ts
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+
+// kernel/src/shared/refusal/index.ts
+var RULES = [
+  "input/unknown-command",
+  "input/unknown-flag",
+  "input/missing-argument",
+  "input/invalid-argument",
+  "input/forbidden-field",
+  "input/invalid-block",
+  "input/not-found",
+  "policy/no-active-change",
+  "policy/change-exists",
+  "policy/gate-not-ready",
+  "policy/not-ready",
+  "policy/validation-failed",
+  "policy/part-too-large",
+  "policy/part-too-many-tasks",
+  "policy/do-not-touch-overlap",
+  "policy/placeholder",
+  "policy/budget-exhausted",
+  "policy/oscillation",
+  "policy/no-open-ticket",
+  "policy/ticket-open",
+  "policy/package-too-large",
+  "policy/do-not-touch",
+  "policy/entries-missing",
+  "policy/stale-evidence",
+  "policy/missing-citation",
+  "policy/observation-cap",
+  "policy/invalid-transition",
+  "policy/git-in-progress",
+  "policy/nothing-to-commit",
+  "policy/spec-invalid",
+  "policy/spec-conflict",
+  "policy/merge-hash-mismatch",
+  "policy/unknown-config-key",
+  "policy/config-invalid",
+  "policy/profile-downgrade",
+  "policy/rule-format",
+  "policy/duplicate-rule-id",
+  "guard/subagent-git",
+  "guard/subagent-kernel-command",
+  "guard/hooks-from-bash",
+  "guard/spec-dir-write",
+  "guard/kernel-unavailable",
+  "state/corrupted-index",
+  "state/ledger-invalid",
+  "state/trailer-mismatch",
+  "state/change-dir-missing",
+  "runtime/node-version",
+  "runtime/not-a-repo",
+  "runtime/git-missing",
+  "kernel/not-implemented"
+];
+var EXIT_BY_CLASS = {
+  policy: 2,
+  guard: 2,
+  kernel: 2,
+  input: 3,
+  state: 4,
+  runtime: 5
+};
+function ruleClass(rule2) {
+  return rule2.slice(0, rule2.indexOf("/"));
+}
+function exitCodeFor(rule2) {
+  return EXIT_BY_CLASS[ruleClass(rule2)];
+}
+function refuse(rule2, why, instead) {
+  const [first, ...rest] = instead;
+  if (why.length === 0) throw new Error(`refusal ${rule2} needs a why`);
+  if (first === void 0) throw new Error(`refusal ${rule2} needs at least one instead`);
+  return { refused: true, rule: rule2, why, instead: [first, ...rest] };
+}
+var KernelRefusal = class extends Error {
+  refusal;
+  constructor(refusal) {
+    super(`${refusal.rule}: ${refusal.why}`);
+    this.name = "KernelRefusal";
+    this.refusal = refusal;
+  }
+};
+
+// kernel/src/shared/git/index.ts
+function findWorkTree(cwd) {
+  for (let dir = resolve(cwd); ; dir = dirname(dir)) {
+    if (existsSync(join(dir, ".git"))) return dir;
+    if (dirname(dir) === dir) return void 0;
+  }
+}
+
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/core/util.js
 var util_exports = {};
 __export(util_exports, {
@@ -4689,7 +4786,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve2) {
+function isRecursive(inst, stack, resolve3) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -4699,7 +4796,7 @@ function isRecursive(inst, stack, resolve2) {
   let result = NONE;
   const check = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve2);
+      const answer = isRecursive(child, stack, resolve3);
       if (answer > result)
         result = answer;
     }
@@ -4710,7 +4807,7 @@ function isRecursive(inst, stack, resolve2) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve2) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve3) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -4774,7 +4871,7 @@ function isRecursive(inst, stack, resolve2) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve2 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve3 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -7454,88 +7551,6 @@ function superRefine(fn, params) {
   return _superRefine(fn, params);
 }
 
-// kernel/src/shared/refusal/index.ts
-var RULES = [
-  "input/unknown-command",
-  "input/unknown-flag",
-  "input/missing-argument",
-  "input/invalid-argument",
-  "input/forbidden-field",
-  "input/invalid-block",
-  "input/not-found",
-  "policy/no-active-change",
-  "policy/change-exists",
-  "policy/gate-not-ready",
-  "policy/not-ready",
-  "policy/validation-failed",
-  "policy/part-too-large",
-  "policy/part-too-many-tasks",
-  "policy/do-not-touch-overlap",
-  "policy/placeholder",
-  "policy/budget-exhausted",
-  "policy/oscillation",
-  "policy/no-open-ticket",
-  "policy/ticket-open",
-  "policy/package-too-large",
-  "policy/do-not-touch",
-  "policy/entries-missing",
-  "policy/stale-evidence",
-  "policy/missing-citation",
-  "policy/observation-cap",
-  "policy/invalid-transition",
-  "policy/git-in-progress",
-  "policy/nothing-to-commit",
-  "policy/spec-invalid",
-  "policy/spec-conflict",
-  "policy/merge-hash-mismatch",
-  "policy/unknown-config-key",
-  "policy/config-invalid",
-  "policy/profile-downgrade",
-  "policy/rule-format",
-  "policy/duplicate-rule-id",
-  "guard/subagent-git",
-  "guard/subagent-kernel-command",
-  "guard/hooks-from-bash",
-  "guard/spec-dir-write",
-  "guard/kernel-unavailable",
-  "state/corrupted-index",
-  "state/ledger-invalid",
-  "state/trailer-mismatch",
-  "state/change-dir-missing",
-  "runtime/node-version",
-  "runtime/not-a-repo",
-  "runtime/git-missing",
-  "kernel/not-implemented"
-];
-var EXIT_BY_CLASS = {
-  policy: 2,
-  guard: 2,
-  kernel: 2,
-  input: 3,
-  state: 4,
-  runtime: 5
-};
-function ruleClass(rule2) {
-  return rule2.slice(0, rule2.indexOf("/"));
-}
-function exitCodeFor(rule2) {
-  return EXIT_BY_CLASS[ruleClass(rule2)];
-}
-function refuse(rule2, why, instead) {
-  const [first, ...rest] = instead;
-  if (why.length === 0) throw new Error(`refusal ${rule2} needs a why`);
-  if (first === void 0) throw new Error(`refusal ${rule2} needs at least one instead`);
-  return { refused: true, rule: rule2, why, instead: [first, ...rest] };
-}
-var KernelRefusal = class extends Error {
-  refusal;
-  constructor(refusal) {
-    super(`${refusal.rule}: ${refusal.why}`);
-    this.name = "KernelRefusal";
-    this.refusal = refusal;
-  }
-};
-
 // kernel/src/shared/registry/record.ts
 var rule = _enum(RULES);
 var arg = object({
@@ -7793,7 +7808,7 @@ function nodeVersionRefusal(version2) {
 }
 
 // kernel/src/shared/registry/resolve.ts
-function resolve(index, argv) {
+function resolve2(index, argv) {
   for (let length = 3; length >= 1; length--) {
     const words = argv.slice(0, length);
     if (words.length < length) continue;
@@ -7847,9 +7862,9 @@ function levenshtein(a, b) {
 }
 
 // kernel/src/shared/registry/run.ts
-function createRegistry(index, registrations) {
+function createRegistry(index, registrations2) {
   const byId = /* @__PURE__ */ new Map();
-  for (const registration of registrations) {
+  for (const registration of registrations2) {
     if (!index.commands.some((record2) => record2.id === registration.id)) {
       throw new Error(`registration for ${registration.id}, which the command index does not know`);
     }
@@ -7865,7 +7880,7 @@ async function run(index, byId, invocation) {
   const { argv, streams } = invocation;
   const asJson = argv.includes("--json");
   const help = argv.includes("--help");
-  const resolved = resolve(index, argv);
+  const resolved = resolve2(index, argv);
   if (resolved === void 0) {
     const [first] = argv;
     const usage = first === void 0 || first === "--help" ? globalHelp(index) : help ? groupHelp(index, first) : void 0;
@@ -7975,12 +7990,12 @@ function ensureNewline(text) {
 }
 
 // kernel/src/main.ts
-var registry2 = createRegistry(loadIndex(commands_default), []);
+var registry2 = createRegistry(loadIndex(commands_default), registrations);
 try {
   process.exitCode = await registry2.run({
     argv: process.argv.slice(2),
     cwd: process.cwd(),
-    runtime: { nodeVersion: process.versions.node, workTree: (cwd) => cwd },
+    runtime: { nodeVersion: process.versions.node, workTree: findWorkTree },
     streams: {
       stdout: (text) => process.stdout.write(text),
       stderr: (text) => process.stderr.write(text)
