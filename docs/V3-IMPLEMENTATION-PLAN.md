@@ -70,9 +70,10 @@ flowchart LR
   T31 --> T41
   T42 --> T32
   T03 --> T13
-  T03 --> T32
+  T03 --> T04["T04 Remove<br/>bundled MCP"]
+  T04 --> T32
   T03 --> T41
-  class T00,T01,T02,T03,T10,T15 prep
+  class T00,T01,T02,T03,T04,T10,T15 prep
   class T11,T12,T13,T14,T20,T21,T22,T23,T24,T30,T31,T32 primary
   class T40,T41,T42 warn
   class T50 ok
@@ -183,11 +184,38 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Input**: this section's "Why now" list; `hooks/hooks.json`; `.mcp.json`; `fragments/tool-tiers/`; `.claude/rules/fragment-system.md`; `.claude/rules/mcp-tool-naming.md`; agent `tools:` lists in `agents/*.md`; T02 decisions R-7 and R-16 (`docs/V3-SKILL-INVENTORY.md`, section 12); local transcripts for usage data; design "Integration points" (`.mcp.json` for serena and code-review-graph).
 
-**Acceptance signal**: `docs/V3-MCP-EVALUATION.md` with the cost table, the per-task value table (all configurations and runs, raw numbers kept next to the summary), and per server a disposition with rationale; the resulting changes listed per downstream task (T13 hook lines, T32 `uv.lock`, T41 / T42 tier fragments and agent `tools:`); open decisions for the user, each with a recommendation.
+**Acceptance signal**: `docs/V3-MCP-EVALUATION.md` (delivered as `docs/adr/0001-remove-bundled-mcp-servers.md`, user decision) with the cost table, the per-task value table (all configurations and runs, raw numbers kept next to the summary), and per server a disposition with rationale; the resulting changes listed per downstream task (T13 hook lines, T32 `uv.lock`, T41 / T42 tier fragments and agent `tools:`); open decisions for the user, each with a recommendation.
 
 **To resolve in the spec**: the task set and reference answers; which large repository serves as the benchmark; the threshold that counts as "worth it" (for example, fewer tokens or fewer tool calls at equal correctness, beyond run-to-run noise); whether serena and code-review-graph are judged separately or only as a pair.
 
 **Dependencies**: T00.
+
+**Resolution** (2026-09-25, user decision; the record is `docs/adr/0001-remove-bundled-mcp-servers.md`, data and harness in git history at `e061216:docs/v3/t03-mcp-eval/`, OpenSpec change `v3-t03-mcp-value-evaluation`):
+- Both bundled MCP servers are **removed**. On vibe-kanban (TypeScript, 8 tasks x 4 configurations x 3 Haiku 4.5 runs) neither passed the value rule: code-review-graph better on 0 of 8 tasks, serena on 0 of 8, serena on top of the graph better on 1 and worse on 1; in a Sonnet 5 slice no run called an MCP tool.
+- Cost that goes with them: +0.9-1.4 s per server at session start warm, 31-45 s (graph) and 19-34 s (serena) cold, past the 30 s default `MCP_TIMEOUT` for every cold graph start; 136-700 MB (graph) and about 450-500 MB (serena with its TypeScript language server) RSS per session. The parallel-load test was not run, since it cannot change a failed value verdict.
+- Failure mode: with a server missing, the model falls back to `grep` + `Read` on its own; nothing a hook or skill reads at session start knows whether a server connected, so tiers could not follow availability anyway.
+- R-7: `scout` stays one adapter; without MCP its four former agents need the same read-only tool set.
+- Plan impact applied on 2026-09-25: T11 (`doctor` without `uv`), T13 (no `uvx` lines, no graph registration, one tier text), T15 (no `mcp__plugin_bdk_` names), T23 and T42 (`scout` tools), T32 (`uv.lock` deleted), T41 (content test). Removing the servers from the plugin that ships today is its own task, T04.
+
+### T04 Remove the bundled MCP servers (serena, code-review-graph)
+
+**Goal**: carry out ADR-0001 in the plugin that ships today, so that no session pays for the two servers while v3 is being built, and the v3 tasks start from a tree with no MCP in it.
+
+**Scope**:
+- Plugin wiring: the `serena` and `code-review-graph` entries of `.mcp.json` (the file goes if empty); the `uvx` lines in `hooks/hooks.json` (the `uvx` presence warning, `code-review-graph status`, the `Stop` `code-review-graph update`); `hooks/register-graph-repo/` and its hook entry; `.serena/`.
+- Tool tiers: `fragments/tool-tiers/*-graph.md` and `*-serena.md` go; each chain keeps only its built-in-tools tier (or the chains collapse to plain fragments); `fragments/code-review-graph/`; the tier markers in `STARTUP_INSTRUCTIONS.md` and the `bdk-tier-*` meta-skills render the built-in-tools text.
+- Agents and skills: every `mcp__plugin_bdk_*` tool leaves agent `tools:` and skill `allowed-tools`; prose in agents, skills and references that names MCP tools is rewritten for `Read` / `Grep` / `Glob` / `Bash`; `skills/setup` no longer bootstraps the servers.
+- Settings: `features.code-review-graph` and `features.serena` leave `hooks/check-bdk-config/settings.schema.json`, `scripts/get_settings.py` and `scripts/inject.py`; a project that still sets them gets a warning, not an error.
+- Tests and docs: tests for the removed parts go, tests that assert tier or tool content are updated, and one test fails on any `mcp__plugin_bdk_` name in the plugin; `README.md`, `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md`, `.claude/rules/mcp-tool-naming.md` (retired), the MCP parts of `.claude/rules/fragment-system.md`, `.claude/rules/inject-fragments.md` and `.claude/rules/skill-creation-rules.md`, `.claude/settings.json`, `.gitignore`.
+- Branches: close `fix/38` without merging (it documented the serena hook in `setup`); `fix/stop-hook-graph-update` is superseded by this task.
+
+**Input**: `docs/adr/0001-remove-bundled-mcp-servers.md` (decision, consequences, implementation requirements); T03 Resolution; `.claude/rules/fragment-system.md` (chain rules the reduced chains must still satisfy).
+
+**Acceptance signal**: `git grep -E "mcp__plugin_bdk|code-review-graph|serena|uvx"` outside `docs/v3/`, `docs/adr/`, `openspec/` and `tests/evals/` iterations is empty; a session started with `--plugin-dir` on the result lists no BDK MCP server and runs no `uvx` process; the rendered `STARTUP_INSTRUCTIONS.md` and every `bdk-tier-*` skill show the built-in-tools tier with all features on and off; `pytest tests/unit/` passes.
+
+**To resolve in the spec**: whether the change lands only in `staging/v3` or also ships as a v2.x release on `main` (the per-session cost is paid in v2 today); whether the tier chains stay as one-entry chains or become plain fragments; whether the repository's own `CLAUDE.md` code-review-graph section (a dev-time choice for BDK contributors, left open by the ADR) goes too; what to do with `tests/evals/` iterations that mention MCP tools (historic output, left as is by default).
+
+**Dependencies**: T03 (done).
 
 ### T10 Kernel CLI contract (first-class document)
 
@@ -232,7 +260,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 - A `kernel/` structure (name to be decided) in TS, pnpm dev-only, esbuild -> one ESM `dist/bdk.mjs`, **committed** and guarded by `git diff --exit-code` on CI; Biome; `node --test` for units.
 - Runtime dependencies: only `node:` plus bundled, pinned zod and a YAML parser; `pnpm audit` on CI (V1-8).
 - E2E harness: a repository fixture (created in `tmp`, with git), a helper that runs `bdk.mjs` and asserts exit code / JSON; contract tests that read `schema/cli/commands.json` from T10 (every command id has a handler or an explicit stub that returns `refused` with `kernel/not-implemented`; `--help` parity with the index; examples in `schema/cli/output/` validate with zod).
-- `bdk version`; `bdk doctor`: Node version (minimum from T01), `uv` / `uvx` presence, detection of the v2 layout (`settings.json`, `.bdk/runs/`, `.bdk/plans/`) with a `bdk import` instruction **as content**, never exit != 0 in inject mode.
+- `bdk version`; `bdk doctor`: Node version (minimum from T01), detection of the v2 layout (`settings.json`, `.bdk/runs/`, `.bdk/plans/`) with a `bdk import` instruction **as content**, never exit != 0 in inject mode.
 - Shared modules: error handling -> refusal shape; inject vs command mode; `--json`; the <= 100 lines limit.
 - A CI step reserved for skill content tests: `skill-check` (T15) plus the BDK rule plugin, run over `skills/` of both plugins; until T15 lands the step is a stub that passes.
 - Update of ADR 0001 in git-identity (the consequence "bdk stays in Python" is outdated; rule 9 for the bundle) - amendment text as part of the task or a separate PR in that repo.
@@ -240,7 +268,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Input**: D5, Q3, NFR "Runtime", "Security", risk "SPOF: the kernel", "Testing and CI", "Next Steps".
 
-**Acceptance signal**: CI green with the steps build, `git diff --exit-code dist/`, lint, unit, E2E; `bdk doctor` on a v2 fixture prints the import instruction; `bdk doctor` without `uv` prints the exact install command; a call from Node below the minimum ends with exit 5 and an instruction.
+**Acceptance signal**: CI green with the steps build, `git diff --exit-code dist/`, lint, unit, E2E; `bdk doctor` on a v2 fixture prints the import instruction; a call from Node below the minimum ends with exit 5 and an instruction.
 
 **To resolve in the spec**: minimum Node version (based on T01); pinning policy and dependency update cadence; whether CI is GitHub Actions next to the existing release-please. The kernel's module layout is fixed by the `kernel-architecture` spec (`openspec/specs/kernel-architecture/spec.md`: vertical slices with one directory per layer, `shared/`, dependency matrix, build order): T11 builds `shared/` and the `service` slice first. CI runs the kernel suite on the Node matrix named there (the 22.13 minimum, the active LTS, the current release); the contract-test job in `.github/workflows/tests.yml` already runs on it.
 
@@ -276,17 +304,17 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - `ctx skill <name>`: conditional fragments and tool-tier chains (`exclusive` / `additive` with `if` / `prefer`, semantics from `.claude/rules/fragment-system.md`), quality rules (by file at this stage; by ID from T31), language rules from `languages`, values from `prompts/`.
 - No `ctx role`: roles are skills under `skills/roles/` (T02 decision Q-3) and `dispatch build` (T23) embeds the role body into the package, so nothing preloads role context by class. The Lavish question fragment is injected only when `features.lavish` is on; otherwise the `AskUserQuestion` fragment (T02, R-11).
 - `ctx startup`: STARTUP_INSTRUCTIONS with resolved chains and an **agents table generated from the five adapter files in `agents/`** (P11, closes the T6 drift); content test: the table in the repo is byte-identical to the output.
-- Content hooks in `hooks.json`: `hooks session-start` (STARTUP, `config check`, v2 layout detection, graph repo registration - one process instead of four), `hooks skill-exists <name>` (for `commit`); `|| echo "BDK STOP..."` wrapper (always exit 0). The `uvx` lines follow the T03 disposition. No `hooks stop`: the rule drift check is not ported (T02 decision Q-6; its useful half becomes `rules prune` in T31).
+- Content hooks in `hooks.json`: `hooks session-start` (STARTUP, `config check`, v2 layout detection - one process instead of four), `hooks skill-exists <name>` (for `commit`); `|| echo "BDK STOP..."` wrapper (always exit 0). No `uvx` lines: T03 removed both bundled MCP servers (`docs/adr/0001-remove-bundled-mcp-servers.md`). No `hooks stop`: the rule drift check is not ported (T02 decision Q-6; its useful half becomes `rules prune` in T31).
 - A3 content test: every `!` block in `skills/` calls only `ctx` or `next` in the exact wrapper form; `allowed-tools` carries the rule `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)` (form confirmed in T01).
 - Migration of the existing `fragments/` and `rules/` to the format read by `ctx` without changing content (changing rule content = T31).
 
 **Input**: "Configuration" (the paragraph about `ctx`), "Hooks (V1-1, V1-2)", P11, T6, `docs/INJECTION-FLOWS.md`, `.claude/rules/fragment-system.md`, risk "SPOF" (stateless skills lose tier guidance, visible BDK STOP).
 
-**Acceptance signal**: E2E "`!`-block error rendering" (no Node -> a BDK STOP line in the skill content, exit 0); `ctx skill design` on a fixture with `features.code-review-graph` gives the graph tier, without flags gives the fallback; with `features.lavish: false` the `AskUserQuestion` fragment; `ctx startup` lists the five adapters; `hooks.json` without `python3` and without a Stop hook.
+**Acceptance signal**: E2E "`!`-block error rendering" (no Node -> a BDK STOP line in the skill content, exit 0); `ctx skill design` gives the same built-in-tools tier with or without `features.code-review-graph`, and `config check` reports `features.code-review-graph` / `features.serena` as removed keys; with `features.lavish: false` the `AskUserQuestion` fragment; `ctx startup` lists the five adapters; `hooks.json` without `python3` and without a Stop hook.
 
 **To resolve in the spec**: whether `fragments/` stay files or go into `prompts/` defaults in the bundle; adapter frontmatter format required for generating the table.
 
-**Dependencies**: T12, T03 (which `uvx` lines stay).
+**Dependencies**: T12, T03 (done: no `uvx` lines stay).
 
 ### T14 State schema and write map (first-class document, zod, JSON Schema)
 
@@ -314,7 +342,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Scope**:
 - Generic deterministic rules: frontmatter present and parseable, `name` equals the directory, description front-loaded and within the length cap, non-empty body, line limit, no absolute paths, no model names in prose, `--portable` mode that allows only the Agent Skills standard fields (`name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`).
-- BDK rule plugin: `!` blocks only in the exact wrapper form and only calling `ctx` / `next`, `allowed-tools` carries the node rule, `mcp__plugin_bdk_` prefix on MCP tools, `disable-model-invocation` on the gate skills, `disallowed-tools` where the prose states an invariant, adapters are frontmatter plus one sentence, skill names unique across the `skills` directories, `bdk-craft` skills pass `--portable`.
+- BDK rule plugin: `!` blocks only in the exact wrapper form and only calling `ctx` / `next`, `allowed-tools` carries the node rule, no `mcp__plugin_bdk_` tool names (T03 removed the bundled MCP servers), `disable-model-invocation` on the gate skills, `disallowed-tools` where the prose states an invariant, adapters are frontmatter plus one sentence, skill names unique across the `skills` directories, `bdk-craft` skills pass `--portable`.
 - The "skill fronting a CLI" authoring rule (T02, R-13): a thin skill (model-invocable, <= 30 lines) that says when to reach for the tool, the wrapper form and `--help` as the source of truth; a check that flags a CLI-fronting skill which duplicates usage documentation.
 - Configurable prefix and directories; JSON and human output; exit codes; runnable from BDK's CI (T11 step) and from a pre-commit hook.
 
@@ -412,7 +440,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **Scope**:
 - `dispatch build <task> <role> <ticket>`: package `changes/<id>/dispatch/<task>-<role>-<n>.md`; frontmatter `ticket`, `task`, `role`, `adapter`, `attempt n/N`, `scope`, `kernel-version`, `template-hash` (P10); sections: intent summary, full task text with `do-not-touch` and `stop-rule`, full `decision(accepted)` and `blocker`, summaries of `finding` / `observation` / `assumption` by `refs`, **the role skill body** from `skills/roles/<role>/SKILL.md`, rules selected by `applies` and role with IDs (by file until T31), return contract; refusal > 12 KB; refusal on placeholders; no open ticket = no package. `dispatch show`.
 - Roles are skills (T02 decision Q-3): `skills/roles/{implementer, verifier, design-verifier, reviewer, pr-reviewer, runner, scout}/SKILL.md`, `user-invocable: false`, standard fields plus `context: fork` and `agent: bdk:<adapter>`. Single-instance roles (verifier, design-verifier, pr-reviewer) run as forked skills whose `!` block inlines the package before the fork. Write channel by role (T2): implementer / runner `log add`; scout / reviewer / verifier a `bdk-entries` block at the end of the report. P3: verifier and reviewer make no statements about approval or moving on. T3: one sentence banning destructive git in the implementer contract, with the reason.
-- Five adapters in `agents/`, each frontmatter (`tools:`, `model:`) plus one sentence: `worker` (write set; implementer and fix packages), `reader` (read-only, opus), `reviewer` (read-only plus Bash for tests), `runner` (Bash), `scout` (read plus graph, haiku). `bdk export agents --host <claude | gemini | cursor | opencode>` generates the host's agent files from the role skills and a per-host tool map; the files in `agents/` are the Claude Code output of that generator, checked by a content test.
+- Five adapters in `agents/`, each frontmatter (`tools:`, `model:`) plus one sentence: `worker` (write set; implementer and fix packages), `reader` (read-only, opus), `reviewer` (read-only plus Bash for tests), `runner` (Bash), `scout` (read-only: `Read`, `Grep`, `Glob`, `Bash`; haiku; T03). `bdk export agents --host <claude | gemini | cursor | opencode>` generates the host's agent files from the role skills and a per-host tool map; the files in `agents/` are the Claude Code output of that generator, checked by a content test.
 - Two runners for waves, selected by `execution.runner`: `host-agent` (the orchestrator calls the host's Agent tool once per package; default where the kernel detects Claude Code) and `headless` (`bdk dispatch run <part> --wave <n>` spawns one headless process per package of the wave of the configured host CLI, e.g. `claude -p`, `codex exec`, `gemini -p`, each with a package, isolated by worktree or `do-not-touch`, concurrency from `execution.concurrency`, reports as files; default elsewhere). Per-host permission flags in the host map.
 - Spike before freezing the role mechanism: a plugin adapter in a forked skill's `agent:` works inside the same plugin; how many forked skills run concurrently; whether `!` blocks resolve when a subagent invokes a role skill. If the first fails, single-instance roles go through the Agent tool with no change to the role definitions.
 - Envelope <= 15 lines: `status`, `ticket`, `files`, `log ids`, `report path` (evolution of today's `return-contract.md` with `ticket` and `log`); full report in `changes/<id>/reports/`.
@@ -508,8 +536,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Scope**:
 - `bdk import`: `settings.json` -> `settings.yaml` (key mapping from T12), old `.bdk/design/*.md` -> intents of new Changes (`change new` with the content), `.bdk/runs/`, `.bdk/plans/`, `.bdk/verify-plan/` -> a report of what was ignored; `hooks session-start` detects the v2 layout and prints the instruction (content, exit 0); `doctor` does the same on demand.
-- Deletion: `scripts/*.py`, `hooks/*/check.py` and `register.py`, `hooks/check-rules-drift/` (not ported, T02 decision Q-6), `hooks/check-bdk-config/settings.schema.json`, `hooks/is-command-exists/` (not called), `tests/unit/` (pytest), `pyproject.toml`, `uv.lock` (unless needed for MCP), `__pycache__` in `skills/execute-plan`, `skills/create-fixture`, `skills/refine-rules/scripts`; `tests/evals/` after replacement by promptfoo (T40); the 13 `bdk-*` meta-skills and the eight agent files replaced by adapters (T42).
-- Side items: `ensure_ignored()` (if not done earlier in T20), `features.caveman` (#39: a consumer or removal of the key; in v3 a key without a consumer is an error, so it must either go or work), merge or close `fix/38`, `fix/39` (#38: documentation of the Serena hook in `setup`).
+- Deletion: `scripts/*.py`, `hooks/*/check.py` and `register.py`, `hooks/check-rules-drift/` (not ported, T02 decision Q-6), `hooks/check-bdk-config/settings.schema.json`, `hooks/is-command-exists/` (not called), `tests/unit/` (pytest), `pyproject.toml`, `uv.lock` (not needed for MCP, T03), `__pycache__` in `skills/execute-plan`, `skills/create-fixture`, `skills/refine-rules/scripts`; `tests/evals/` after replacement by promptfoo (T40); the 13 `bdk-*` meta-skills and the eight agent files replaced by adapters (T42).
+- Side items: `ensure_ignored()` (if not done earlier in T20), `features.caveman` (#39: a consumer or removal of the key; in v3 a key without a consumer is an error, so it must either go or work), merge or close `fix/39` (`fix/38` is closed by T04).
 - BDK repo `.gitignore`: `/.bdk/` -> the two v3 paths; `/.lavish/` unchanged (user decision).
 - `plugin.json` 3.0.0 (breaking, release-please), `CHANGELOG` via release-please (not by hand).
 - Documentation: `README.md` (installation with the Node requirement, v3 pipeline section, skills table from T41 / T42), `CLAUDE.md` (Development Commands: pnpm, node --test), `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md` (mark as historical or rewrite), `STARTUP_INSTRUCTIONS.md` generated.
@@ -518,9 +546,9 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Acceptance signal**: E2E "v2 import" on a v2 fixture (today's `settings.json` from BDK) -> `settings.yaml` passes `config check`, design -> Change with an intent; `grep -r python3` in `hooks/` and `skills/` empty; CI without a pytest step; issue #39 closed; `git ls-files | grep __pycache__` empty.
 
-**To resolve in the spec**: what to do with `.bdk/verify-plan/` and `.bdk/runs/` (ignore / report); whether `uv.lock` stays for MCP; the fate of `docs/INJECTION-FLOWS.md`.
+**To resolve in the spec**: what to do with `.bdk/verify-plan/` and `.bdk/runs/` (ignore / report); the fate of `docs/INJECTION-FLOWS.md`.
 
-**Dependencies**: T30, T31, T42 (skills table documentation), T03 (whether `uv.lock` stays for MCP), in practice the last one before T50.
+**Dependencies**: T30, T31, T42 (skills table documentation), T04 (the MCP servers are already gone; `uv.lock` does not stay for MCP, T03), in practice the last one before T50.
 
 ---
 
@@ -559,7 +587,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - `close`: `spec merge`, `learning` funnel (rule proposals per T31 thresholds, spec, nothing), archive per `archive.keep-evidence`, `rules export --claude` regeneration, PR summary from the ledger (intent, decisions, assumptions, open findings); `disable-model-invocation: true`, `disallowed-tools` (P9).
 - `run`: drives a Change through every gate whose `policy.gates.<gate>` is `auto`, writing `source: policy` transitions (T21, T24), and stops at the first `manual` gate with the same render as the stage skills; `disable-model-invocation: true`.
 - Every skill: `!` blocks only `ctx` / `next` in the wrapper form; `allowed-tools` with the node rule; `/bdk:` namespace; no model names in the prose (P11); the Lavish / AskUserQuestion fragment comes from `ctx` (T13).
-- CI content tests (A3): line limits, wrapper, `allowed-tools`, `disable-model-invocation` on `plan` / `execute` / `close` / `run`, `disallowed-tools` on `execute` / `close`, `mcp__plugin_bdk_` in tool names; `skill-check` (T15) over `skills/` in CI.
+- CI content tests (A3): line limits, wrapper, `allowed-tools`, `disable-model-invocation` on `plan` / `execute` / `close` / `run`, `disallowed-tools` on `execute` / `close`, no `mcp__plugin_bdk_` tool names (T03); `skill-check` (T15) over `skills/` in CI.
 - promptfoo eval per skill (from T40) on a fixture: happy path pass and reaction to a kernel refusal.
 
 **Input**: "Skill inventory", "UX Touchpoints", "Data flow (happy path)", the sequence diagram in "Selected Approach", T1, P8, P9, P11, S1, results of T02 (sections 12-13 of `docs/V3-SKILL-INVENTORY.md`) and T40, today's `skills/design`, `create-plan`, `verify-plan`, `subagent-execute-plan`, `setup`, `create-adr`.
@@ -568,7 +596,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: details of the wave strategy and the place of Workflow (the design leaves it open); how `design` drives Lavish in the thin version and what the AskUserQuestion fallback loses; content of the instructions returned by `next` per artifact (shared with T21 - who owns the templates); whether `run` re-renders after each gate or only at the stop.
 
-**Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (tool tiers and agent `tools:`).
+**Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
 
 ### T42 Remaining skills, role skills, adapters, `bdk-craft`, package input for `cr` / `pr-review`
 
@@ -579,7 +607,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - Tools skills (`bdk`): `commit` (`skill-exists` hook through the kernel), `docs`, `rules` (the T31 commands; replaces `add-rule` and `refine-rules`), `adr`, `doctor`, `bdk-cli` (kernel reference); each <= 200 lines, `!` through `ctx`; stateless skills work without a Change (with a visible BDK STOP when the kernel is missing).
 - `cr` and `pr-review`: internals untouched; **input** extended with the dispatch package (intent, decisions, assumptions) and the `applies`-selected rules (T31), findings to the ledger via `bdk-entries` (reviewer = read-only role by class, despite Bash), citing rule IDs; `cr` without a Change opens one with `change new --inferred`; review-fix loop with a budget from policy.
 - Role skills (7) under `skills/roles/`, each with `context: fork`, `agent: bdk:<adapter>` and `disable-model-invocation: true`: `implementer` (worker), `verifier` (runner), `design-verifier` (reader), `reviewer` (reviewer), `pr-reviewer` (reviewer), `runner` (runner), `scout` (scout); body = role contract only (input = package path, output = envelope + `log add` for worker / runner | `bdk-entries` block for reader / reviewer), P3 contracts (no statements about approval) and T3 (the git sentence); `plan-verifier` and `design-verifier` with the closed P8 list and an author self-check.
-- Adapters (5) generated per host by `bdk export agents --host` from `prompts/adapters/` (T23): `worker`, `reader`, `reviewer`, `runner`, `scout`; each carries only `tools:`, `model` tier and the adapter preamble; no `skills:` preload (the forked skill body is the prompt).
+- Adapters (5) generated per host by `bdk export agents --host` from `prompts/adapters/` (T23): `worker`, `reader`, `reviewer`, `runner`, `scout`; each carries only `tools:`, `model` tier and the adapter preamble; no `skills:` preload (the forked skill body is the prompt); no MCP tools in any `tools:` list, and `scout` keeps the four former agents merged with `Read`, `Grep`, `Glob`, `Bash` (T03, T02 decision R-7).
 - `bdk-craft` skills: `tdd`, `oop-design`, `api-design`, `debugging`, `refactoring`, `data-modeling`, `testing-strategy`, `modularizing`, `mermaid-drawer`; each admitted only after the T40 with / without measurement (R-6); `debugging` opens a Change with `--inferred` when `bdk` is present and runs stateless otherwise.
 - Removal: `debug`, `explain-complex-code` (absorbed into `docs`), the 13 `bdk-*` meta-skills, the eight agent files replaced by adapters; content tests: every role skill names an adapter that `export agents` produces; the agents table in STARTUP byte-identical to `ctx startup` (P11); no model names in agent and skill prose; every `bdk-craft` skill passes `skill-check --portable` (T15).
 - Update of the `README.md` Skills / Agents / Removed skills tables (finalised in T32).
