@@ -4,7 +4,7 @@ BDK's conditional injection system: how fragments are structured and how dynamic
 
 ## What Are Fragments
 
-Fragments are Markdown files injected at skill load time based on `.bdk/settings.json` feature flags. Unlike `references/` (always loaded), fragments are **only included** when their condition matches.
+Fragments are Markdown files injected at skill load time based on BDK settings (`features.*`, `languages`). Unlike `references/` (always loaded), fragments are **only included** when their condition matches.
 
 ## Directory Layout
 
