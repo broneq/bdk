@@ -49,22 +49,30 @@ def ancestors(pid, procs):
     return seen
 
 
+def is_serena_server(args):
+    return "serena" in args and "start-mcp-server" in args and os.path.basename(args.split()[0]) != "claude"
+
+
 def family(pid, procs, root):
     chain = ancestors(pid, procs)
     in_bench = root in chain
     args = procs[pid]["args"]
+    # Match on argv[0] only: the scratch path itself contains "claude", so a substring test on the
+    # whole command line misfiles every shell running inside the benchmark.
+    exe = os.path.basename(args.split()[0])
     name = "other"
-    if "code-review-graph" in args:
-        name = "graph"
-    elif "serena" in args and "start-mcp-server" in args:
-        name = "serena"
-    elif any("serena" in procs[a]["args"] for a in chain[1:]):
-        name = "language_servers"
-    elif os.path.basename(args.split()[0]) in ("uv", "uvx"):
-        name = "uv"
-    elif "claude" in args.split()[0] or "/claude" in args or args.startswith("claude"):
+    if exe == "claude":
+        # First: the session's own argv names the servers (--allowedTools, --plugin-dir).
         name = "claude"
-    elif "tsc" in args or "tsserver" in args or "typescript" in args:
+    elif "code-review-graph" in args:
+        name = "graph"
+    elif is_serena_server(args):
+        name = "serena"
+    elif any(is_serena_server(procs[a]["args"]) for a in chain[1:]):
+        name = "language_servers"
+    elif exe in ("uv", "uvx"):
+        name = "uv"
+    elif exe == "node" and ("tsserver" in args or "/tsc" in args):
         name = "tsc"
     return ("bench" if in_bench else "background"), name
 

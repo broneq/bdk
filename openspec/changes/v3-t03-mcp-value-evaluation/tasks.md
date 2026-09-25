@@ -15,8 +15,8 @@
 ## 3. Harness and pilot
 
 - [x] 3.1 Write the harness `docs/v3/t03-mcp-eval/run.sh` (per-configuration worktree of the snapshot reset before every run, configuration, model, task; `stream-json` output saved raw; `init` isolation check; running `total_cost_usd` with a USD 50 stop) and the grader for the deterministic tasks (V1-V4, V7, V8); verify the grader scores the reference answers 1.0 and an empty answer 0.0
-- [ ] 3.2 Write the process sampler for load runs (1 s interval; host CPU, load average, RSS per process family: `claude`, serena, language servers, code-review-graph, `uv`); verify on one CGS run that every family appears in the samples
-- [ ] 3.3 Pilot: V1 once per configuration on Haiku 4.5; verify each run passes the isolation check, is graded, and its metrics (design D-5) are extracted into the results table
+- [x] 3.2 Write the process sampler for load runs (1 s interval; host CPU, load average, RSS per process family: `claude`, serena, language servers, code-review-graph, `uv`); verify on one CGS run that every family appears in the samples
+- [x] 3.3 Pilot: V1 once per configuration on Haiku 4.5; verify each run passes the isolation check, is graded, and its metrics (design D-5) are extracted into the results table
 
 ## 4. Cost: connect and graph operations
 
