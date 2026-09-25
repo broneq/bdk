@@ -35,7 +35,7 @@ Diagnose the runtime, the layout and the state; one known repair action per find
         "id": "node-version",
         "level": "fail",
         "summary": "Node 22.12.0 is below 22.13.0; node:sqlite needs a flag",
-        "repair": "nvm use 24"
+        "repair": "nvm install 24 && nvm use 24"
       },
       {
         "id": "v2-layout",

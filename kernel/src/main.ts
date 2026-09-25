@@ -3,10 +3,20 @@
 // reaches the catch here is a kernel bug, reported as exit 1 with the stack.
 import commands from "../../schema/cli/commands.json" with { type: "json" };
 import { registrations } from "./registrations.ts";
+import { pluginRootOf } from "./shared/config/index.ts";
 import { findWorkTree } from "./shared/git/index.ts";
 import { createRegistry, loadIndex } from "./shared/registry/index.ts";
+import { fileStore } from "./shared/store/index.ts";
 
-const registry = createRegistry(loadIndex(commands), registrations);
+const index = loadIndex(commands);
+const registry = createRegistry(
+  index,
+  registrations({
+    store: fileStore(),
+    pluginRoot: pluginRootOf(import.meta.url),
+    contract: index.contract,
+  }),
+);
 
 try {
   process.exitCode = await registry.run({

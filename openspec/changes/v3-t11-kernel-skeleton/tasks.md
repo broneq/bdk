@@ -46,10 +46,10 @@
 
 ## 7. service slice: version and doctor
 
-- [ ] 7.1 Write failing unit tests for `service/domain` (semver compare against 22.13.0 including 22.12.9, 22.13.0, 26.9.0; layout classification v2 / v3 / none) and the `doctor` and `version` use cases on the in-memory store (v2 finding with `repair: bdk import`, Node finding with an install line, healthy project with empty findings); verify they fail
-- [ ] 7.2 Implement the slice in the anatomy of design D-7 (commands, use cases, domain, render, zod schemas), register `doctor` with `nodeGate: false`; verify 7.1 passes
-- [ ] 7.3 Write the failing E2E `kernel/src/service/tests/service.e2e.ts`: every `exits` value and rule the two records declare, the `kernel-cli/service` scenarios as modified (example runs validate against `schema/cli/output/doctor.json` and `schema/cli/common/version.json` with Ajv, v2 layout, healthy project, no `uv` finding, text form `bdk <version> (contract 3, node <version>)`), `runtime/not-a-repo` outside a work tree for `doctor` and exit 0 for `version`; rebuild the bundle; verify it passes
-- [ ] 7.4 Update the `examples` entry of `schema/cli/output/doctor.json` to the Node 22.12.0 example of the `kernel-cli/service` delta; verify the Ajv and zod example checks of 8.2 pass
+- [x] 7.1 Write failing unit tests for `service/domain` (semver compare against 22.13.0 including 22.12.9, 22.13.0, 26.9.0; layout classification v2 / v3 / none) and the `doctor` and `version` use cases on the in-memory store (v2 finding with `repair: bdk import`, Node finding with an install line, healthy project with empty findings); verify they fail
+- [x] 7.2 Implement the slice in the anatomy of design D-7 (commands, use cases, domain, render, zod schemas), register `doctor` with `nodeGate: false`; verify 7.1 passes
+- [x] 7.3 Write the failing E2E `kernel/src/service/tests/service.e2e.ts`: every `exits` value and rule the two records declare, the `kernel-cli/service` scenarios as modified (example runs validate against `schema/cli/output/doctor.json` and `schema/cli/common/version.json` with Ajv, v2 layout, healthy project, no `uv` finding, text form `bdk <version> (contract 3, node <version>)`), `runtime/not-a-repo` outside a work tree for `doctor` and exit 0 for `version`; rebuild the bundle; verify it passes
+- [x] 7.4 Update the `examples` entry of `schema/cli/output/doctor.json` to the Node 22.12.0 example of the `kernel-cli/service` delta; verify the Ajv and zod example checks of 8.2 pass
 
 ## 8. Contract, structure and dependency tests
 

@@ -46,15 +46,15 @@
       "version": {
         "kernel": "3.0.0",
         "contract": 3,
-        "node": "20.20.2"
+        "node": "22.12.0"
       },
       "layout": "v2",
       "findings": [
         {
           "id": "node-version",
           "level": "fail",
-          "summary": "Node 20.20.2 is below 22.13.0; node:sqlite is missing",
-          "repair": "nvm use 24"
+          "summary": "Node 22.12.0 is below 22.13.0; node:sqlite needs a flag",
+          "repair": "nvm install 24 && nvm use 24"
         },
         {
           "id": "v2-layout",

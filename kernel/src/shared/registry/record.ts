@@ -41,7 +41,7 @@ const record = z.object({
 });
 
 const commandIndexSchema = z.object({
-  contract: z.number().int(),
+  contract: z.literal(3),
   base: z.object({ all: z.array(rule), changeScoped: z.array(rule) }),
   commands: z.array(record),
 });

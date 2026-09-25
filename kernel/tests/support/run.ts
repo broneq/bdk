@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 export const BUNDLE = join(REPO_ROOT, "dist", "bdk.mjs");
 
 export interface RunResult {
@@ -15,12 +15,18 @@ export interface RunResult {
   readonly json: unknown;
 }
 
-export function runBdk(args: readonly string[], cwd: string, stdin?: string): RunResult {
+export interface RunOptions {
+  readonly stdin?: string;
+  /** Replaces the inherited environment; CLAUDE_PLUGIN_ROOT is always set. */
+  readonly env?: Readonly<Record<string, string>>;
+}
+
+export function runBdk(args: readonly string[], cwd: string, options: RunOptions = {}): RunResult {
   const result = spawnSync(process.execPath, [BUNDLE, ...args], {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, CLAUDE_PLUGIN_ROOT: REPO_ROOT },
-    input: stdin ?? "",
+    env: { ...(options.env ?? process.env), CLAUDE_PLUGIN_ROOT: REPO_ROOT },
+    input: options.stdin ?? "",
   });
   if (result.error !== undefined) throw result.error;
   return {

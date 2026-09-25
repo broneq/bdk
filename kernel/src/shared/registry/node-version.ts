@@ -3,10 +3,10 @@
 import { refuse } from "../refusal/index.ts";
 import type { Refusal } from "../refusal/index.ts";
 
-const NODE_MINIMUM = "22.13.0";
+export const NODE_MINIMUM = "22.13.0";
 
 /** The install line every Node refusal and `doctor` finding carries. */
-const NODE_INSTALL = [
+export const NODE_INSTALL = [
   "nvm install 24 && nvm use 24",
   "install Node 24 or newer from https://nodejs.org/",
 ] as const;
