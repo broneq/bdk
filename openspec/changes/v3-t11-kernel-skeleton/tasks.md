@@ -69,7 +69,7 @@
 
 ## 11. Decision records
 
-- [ ] 11.1 Write `docs/adr/0002-kernel-runtime-node-typescript.md` (D5, recording the development toolchain as amended by design D-2), `0003-artifact-graph-as-data.md` (A-podejście), `0004-configuration-yaml-and-markdown.md` (R-format) and `0005-markdown-truth-sqlite-index.md` (R-store) in the MADR template of `skills/create-adr/SKILL.md`, status `accepted`, each citing its register entry and design section and listing the rejected alternatives (design D-12), or have the user run `/bdk:create-adr` for each; verify the four files exist, follow the template's sections and contain no em dash
+- [x] 11.1 Write `docs/adr/0002-kernel-runtime-node-typescript.md` (D5, recording the development toolchain as amended by design D-2), `0003-artifact-graph-as-data.md` (A-podejście), `0004-configuration-yaml-and-markdown.md` (R-format) and `0005-markdown-truth-sqlite-index.md` (R-store) in the MADR template of `skills/create-adr/SKILL.md`, status `accepted`, each citing its register entry and design section and listing the rejected alternatives (design D-12), or have the user run `/bdk:create-adr` for each; verify the four files exist, follow the template's sections and contain no em dash
 - [ ] 11.2 Draft the ADR 0001 amendment for `broneq/git-identity` (design D-12, including the rule 2 sentence if the user agrees with the Open Question), show it to the user, and on approval open the PR in that repository; verify the PR URL is recorded in this Change's PR description
 
 ## 12. Acceptance
