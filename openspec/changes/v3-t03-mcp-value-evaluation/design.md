@@ -8,7 +8,7 @@ Facts that shape the approach (observed 2026-09-25):
 
 - `.mcp.json` starts both servers through `uvx` with no pin: serena from `git+https://github.com/oraios/serena` (HEAD, modes `interactive`, `editing`, `no-memories`, context `claude-code`), code-review-graph as `uvx code-review-graph serve` (resolves to 2.3.9 today).
 - code-review-graph keeps its database in `<repo>/.code-review-graph/graph.db`. Each worktree therefore has its own graph (built and updated separately), while subagents inside one worktree share that worktree's graph.
-- serena starts one server per session, and each server starts its own language servers for the project (for vibe-kanban: a Rust and a TypeScript server). N parallel sessions mean N sets of language servers.
+- serena starts one server per session, and each server starts its own language servers for the project (here: the TypeScript server only, see D-1). N parallel sessions mean N language server processes.
 - The v2 hotfix `cdea721` (branch `fix/stop-hook-graph-update`) removes the `Stop` hook's `uvx code-review-graph update`. v2.6.0 still has it. Both are available as baselines.
 - The user's machine also has serena and code-review-graph configured at user level (unprefixed `mcp__serena__*`, `mcp__code-review-graph__*`) and several user-level plugins. A "no MCP" run is only valid if those are excluded too.
 - The user's load profile: 5-10 Claude Code sessions in parallel, each in its own worktree, each spawning subagents in the same worktree.
@@ -28,9 +28,11 @@ Facts that shape the approach (observed 2026-09-25):
 
 ### D-1 Benchmark repository: vibe-kanban at `f4b0fd9`
 
-`BloopAI/vibe-kanban`, commit `f4b0fd955c1b6c94ff7907ca6b8b96eab9c6364a` (v0.1.32, 2026-03-18), 2116 tracked files, Rust crates under `crates/` plus TypeScript packages. Cloned fresh into the session scratch area (not the existing `~/projects/vibe-kanban`, which carries its own `.code-review-graph/` and `.serena/`), and worktrees are created from that clone.
+`BloopAI/vibe-kanban`, commit `f4b0fd955c1b6c94ff7907ca6b8b96eab9c6364a` (v0.1.32, 2026-03-18), 2116 tracked files. Measured on its **TypeScript part only**: the pnpm workspace `packages/*` (`web-core` 391, `ui` 163, `remote-web` 70, `local-web` 32 `.ts` / `.tsx` files) plus `shared/types.ts`, the types generated from the Rust backend. Tasks, reference answers and verification (`tsc` via each package's `check` script) stay inside that part. serena's project config lists `typescript` only. The graph parses the whole repository as it would in normal use, so its build and update cost includes the Rust files; the value tasks do not touch them. Cloned fresh into the session scratch area (not the existing `~/projects/vibe-kanban`, which carries its own `.code-review-graph/` and `.serena/`), and worktrees are created from that clone.
 
-Alternatives: `ocean-recap` (larger, about 2480 TS files, but private: task texts and reference answers could not be committed); `code-graph-rag` (public, 340 Python files: too small and single-language to load the servers). User decision.
+Why TypeScript only: the machine has no Rust toolchain (no `cargo`, `rustup` or `rust-analyzer`), and the user's own repositories are mostly TypeScript and PHP, so a `rust-analyzer` cost would not describe the user's load. Installing rustup was the alternative (about 1.5 GB plus several GB of `target/`, and a second stack in the performance gate that the user does not work in). User decision.
+
+Alternatives for the repository: `ocean-recap` (larger, about 2480 TS files, but private: task texts and reference answers could not be committed); `code-graph-rag` (public, 340 Python files: too small and single-language to load the servers). User decision.
 
 ### D-2 Four configurations, each server judged on its own
 
@@ -47,18 +49,18 @@ Alternatives: the plan's three configurations (serena only as an add-on to the g
 
 ### D-3 Task set: 8 tasks over the tiers
 
-Each task is a single prompt run headless in a fresh worktree at `f4b0fd9`. Concrete targets (symbol names, the commit for the review task) are chosen in the first task group and fixed, with reference answers, in `docs/v3/t03-mcp-eval/tasks/` and committed before the first measured run.
+Each task is a single prompt run headless in a per-configuration worktree of a history-free snapshot of `f4b0fd9` (same tree, one commit, so `git log` cannot reveal V5's fix), reset to the snapshot before every run while keeping `node_modules`, the built graph and serena's cache; setup and flags in `docs/v3/t03-mcp-eval/README.md`. Concrete targets (symbol names, the commit for the review task) are chosen in the first task group and fixed, with reference answers, in `docs/v3/t03-mcp-eval/tasks/` and committed before the first measured run.
 
 | # | Tier | Task shape | Reference answer | Grading |
 |---|---|---|---|---|
-| V1 | search | Find where a named Rust item is defined and give its signature | file:line + signature | exact match |
-| V2 | trace | List every call site of a Rust function used across several crates | set of file:line | precision / recall |
-| V3 | trace | List the TypeScript consumers of a Rust type exported to TS (`shared` / generated types) | set of files | precision / recall |
+| V1 | search | Find where a named exported function or hook is defined and give its signature | file:line + signature | exact match |
+| V2 | trace | List every call site of a function used across several packages | set of file:line | precision / recall |
+| V3 | trace | List the consumers of one type from `shared/types.ts` across the packages | set of files | precision / recall |
 | V4 | impact | Given a signature change to a function, list the files and tests that must change | set of files | precision / recall |
 | V5 | review | Review the diff of a real bug-introducing commit (the parent of a later fix) and name the defect | the defect the fix commit repaired | rubric, judged |
-| V6 | explore | Describe the crate layering and dependency direction | crate graph from `Cargo.toml` files | rubric, judged |
-| V7 | scout | Find unused functions in one crate | list checked by removing them and compiling | precision / recall |
-| V8 | edit | Rename a symbol used in several files | old name gone, crate builds | build + grep, binary |
+| V6 | explore | Describe the package layering and dependency direction of the pnpm workspace | package graph from `package.json` dependencies and import paths | rubric, judged |
+| V7 | scout | Find unused exported functions in one package | list checked by removing them and running the package's `check` | precision / recall |
+| V8 | edit | Rename a symbol used in several files | old name gone, `check` passes | build + grep, binary |
 
 V1-V4 and V7 are the `scout` adapter's former agents' work (explorer, dead-code-detector), so the per-task tool usage answers R-7's merge question. Correctness is a 0-1 score per run. The judge for V5 / V6 is Haiku 4.5 with the committed rubric, and the author spot-checks every judged score.
 
@@ -106,7 +108,8 @@ For each server that stays: the exact spec (PyPI version, or git SHA if no relea
 - [3 runs per cell is a small sample; noise may hide or fake a 20% gain] -> the range-based noise rule in D-7 is conservative; a borderline cell is reported as "no measurable difference", never as a win.
 - [Isolation leaks: a user-level MCP server or plugin ends up in a C0 run] -> per-run `init` check (D-2); a non-matching run is discarded and rerun.
 - [P3 at N = 10 loads the machine the user is working on and can disturb their sessions, and skew the numbers] -> P3 runs only when the user confirms the machine is otherwise idle; the sampler records background load, and a batch is repeated if background load exceeds 1 core.
-- [Language server indexing (rust-analyzer) dominates serena's cost and depends on the build cache] -> P1 / P3 record whether `target/` is warm; runs use a warm, shared cargo cache across worktrees, which matches normal work.
+- [TypeScript server indexing dominates serena's cost and depends on `node_modules` being present] -> every worktree gets `node_modules` from the shared pnpm store (`pnpm install --frozen-lockfile --offline`), so the cost matches normal work; P1 / P3 record the install state.
+- [TypeScript only leaves serena's value on other stacks unknown] -> the evaluation states the stack its dispositions hold for; a user on another stack reads them as a TypeScript result.
 - [The review task's reference depends on a commit whose fix may be ambiguous] -> V5's commit is chosen so the fix commit's message and diff name exactly one defect.
 - [Token cost of the measurement] -> estimate: about 112 value runs plus about 100 load sessions (16 sessions per P3 configuration pass, 6 passes), almost all on Haiku 4.5. The harness prints the running `total_cost_usd` and stops at a budget of USD 50 unless the user raises it.
 
