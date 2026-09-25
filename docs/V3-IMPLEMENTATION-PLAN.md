@@ -249,7 +249,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Resolution** (2026-09-25, Change `v3-t10-kernel-cli-contract`, #48):
 
-- Contract location: prose as OpenSpec main specs, `openspec/specs/kernel-cli/spec.md` (cross-cutting rules) plus `openspec/specs/kernel-cli/<group>/spec.md` (one requirement per command, one scenario per declared rule), machine data in `schema/cli/` (`commands.json` index, `output/<id>.json` per command, `common/*.json` shared shapes), kept consistent by `tests/contract/cli-contract.test.mjs` (`node:test`, no dependencies) on CI.
+- Contract location: prose as OpenSpec main specs, `openspec/specs/kernel-cli/spec.md` (cross-cutting rules) plus `openspec/specs/kernel-cli/<group>/spec.md` (one requirement per command, one scenario per declared rule), machine data in `schema/cli/` (`commands.json` index, `output/<id>.json` per command, `common/*.json` shared shapes), kept consistent by `tests/contract/cli-contract.test.mjs` (`node:test`, no dependencies) on CI; T11 moved the suite into the kernel harness as `kernel/tests/contract/cli-contract.test.ts` (Vitest).
 - Argument syntax: positional literals for meaning-changing choices (`attempt close <ticket> ok|fail|not-run`), flags for optional inputs; no `--outcome`.
 - One error shape for exit 2 / 3 / 4 / 5: `refused`, `rule`, `why`, `instead[]`; the rule class prefix maps to the exit code; exit 1 is a crash. Common rules live in the index's `base`, command-specific rules per record.
 - Contract version = kernel major (3); `bdk version --json` reports `kernel`, `contract`, `node`; the dispatch package keeps `kernel-version` as the full semver (P10).

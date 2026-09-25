@@ -65,7 +65,7 @@
 
 ## 10. Spec follow-up outside the delta
 
-- [ ] 10.1 Edit the Purpose paragraph of `openspec/specs/kernel-cli/service/spec.md` so its list of common rules says `runtime/node-version` does not apply to `doctor` (a delta cannot change a Purpose); verify the ported contract tests still pass
+- [x] 10.1 Edit the Purpose paragraph of `openspec/specs/kernel-cli/service/spec.md` so its list of common rules says `runtime/node-version` does not apply to `doctor` (a delta cannot change a Purpose); verify the ported contract tests still pass
 
 ## 11. Decision records
 
