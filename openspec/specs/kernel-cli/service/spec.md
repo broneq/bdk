@@ -31,7 +31,7 @@ Diagnose the runtime, the layout and the state; one known repair action per find
 - **Mode:** `command`
 - **Arguments:**
   - `--fix`. Apply the repairs that need no system change (index rebuild, schema refresh); never installs software.
-- **Behaviour:** Checks: Node version (HOST-FACTS `node-sqlite-min`, including a shell where nvm selects 20, `node-sqlite-local`), `uv` / `uvx` presence with the exact install line, the v2 layout with the `bdk import` instruction, spec `bdk-merge-hash` mismatches, index freshness, schema modeline and offline copy, graph registration. `/bdk:doctor` (T02 decision R-14) runs this and asks before every system change. Exits 0 with `ok: false` when findings exist; exit 5 only when the kernel itself cannot run.
+- **Behaviour:** Checks: Node version (HOST-FACTS `node-sqlite-min`, including a shell where nvm selects 20, `node-sqlite-local`), the v2 layout with the `bdk import` instruction, spec `bdk-merge-hash` mismatches, index freshness, schema modeline and offline copy. It does not check `uv`, `uvx` or any MCP server: the plugin ships none (ADR-0001). `/bdk:doctor` (T02 decision R-14) runs this and asks before every system change. Exits 0 with `ok: false` when findings exist; exit 5 only when the kernel itself cannot run.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/doctor.json`
 - **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `policy/merge-hash-mismatch`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -62,12 +62,6 @@ Diagnose the runtime, the layout and the state; one known repair action per find
         "level": "warn",
         "summary": ".bdk/settings.json and .bdk/plans/ found",
         "repair": "bdk import"
-      },
-      {
-        "id": "uv-missing",
-        "level": "warn",
-        "summary": "uvx not on PATH; MCP servers cannot start",
-        "repair": "curl -LsSf https://astral.sh/uv/install.sh | sh"
       }
     ]
   }
@@ -85,6 +79,11 @@ Diagnose the runtime, the layout and the state; one known repair action per find
 
 - **WHEN** a spec file's content hash differs from its `bdk-merge-hash` (V1-7)
 - **THEN** the exit code is 2 and the error object carries `rule: policy/merge-hash-mismatch`
+
+#### Scenario: no uv check
+
+- **WHEN** `bdk doctor --json` runs on a machine without `uv` or `uvx` on `PATH`
+- **THEN** no finding names `uv`, `uvx` or an MCP server
 
 ### Requirement: bdk rebuild
 
