@@ -4,57 +4,57 @@
   "title": "bdk config check --json",
   "description": "Validate every layer against the module schema registry; name unknown keys.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["valid", "problems", "snapshot"],
   "properties": {
-    "valid": {
-      "type": "boolean"
-    },
     "problems": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["layer", "key", "code", "message"],
         "properties": {
-          "layer": {
-            "enum": ["default", "global", "project", "local"]
+          "layer": { "type": "string", "enum": ["global", "project", "local"] },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The layer file: relative to the project root, absolute for the global layer."
           },
           "key": {
+            "description": "The dotted key, when the warning concerns one.",
             "type": "string"
           },
           "code": {
-            "enum": ["unknown-key", "invalid-value", "missing-modeline", "schema-outdated"]
+            "type": "string",
+            "enum": ["missing-modeline", "schema-outdated", "legacy-settings"]
           },
-          "message": {
-            "type": "string"
-          }
-        }
-      }
+          "message": { "type": "string", "minLength": 1 }
+        },
+        "required": ["layer", "path", "code", "message"],
+        "additionalProperties": false
+      },
+      "description": "Warnings; any error exits 2 with the refusal instead."
     },
     "snapshot": {
-      "type": "string",
-      "description": "Path relative to the project root."
+      "description": "The resolved snapshot written, relative to the project root; absent without .bdk/.",
+      "type": "string"
     },
     "overriddenKeys": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": { "type": "string" },
+      "description": "Sorted dotted keys the global or the local layer sets (D4b)."
     }
   },
+  "required": ["problems", "overriddenKeys"],
+  "additionalProperties": false,
   "examples": [
     {
-      "valid": false,
       "problems": [
         {
-          "layer": "project",
-          "key": "policy.budgets.retries",
-          "code": "unknown-key",
-          "message": "unknown key; did you mean policy.budgets.task-redispatch?"
+          "layer": "local",
+          "path": ".bdk/settings.local.yaml",
+          "code": "missing-modeline",
+          "message": "no yaml-language-server modeline; bdk doctor --fix adds it"
         }
       ],
       "snapshot": ".bdk/.machine/config/resolved.yaml",
-      "overriddenKeys": []
+      "overriddenKeys": ["features.lavish"]
     }
   ]
 }

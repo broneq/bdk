@@ -4,50 +4,37 @@
   "title": "bdk doctor --json",
   "description": "Diagnose the runtime, the layout and the state; one known repair action per finding.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["ok", "version", "findings"],
   "properties": {
-    "ok": {
-      "type": "boolean"
-    },
-    "version": {
-      "$ref": "../common/version.json"
-    },
-    "layout": {
-      "enum": ["v3", "v2", "none"]
-    },
+    "ok": { "type": "boolean" },
+    "version": { "$ref": "../common/version.json" },
+    "layout": { "type": "string", "enum": ["v3", "v2", "none"] },
     "findings": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "level", "summary", "repair"],
         "properties": {
           "id": {
             "type": "string",
             "description": "Stable check id, e.g. node-version, v2-layout, merge-hash, index-stale."
           },
-          "level": {
-            "enum": ["ok", "warn", "fail"]
-          },
-          "summary": {
-            "type": "string"
-          },
+          "level": { "type": "string", "enum": ["ok", "warn", "fail"] },
+          "summary": { "type": "string" },
           "repair": {
             "type": "string",
             "description": "Exactly one known repair action (R-14): a command or an install line."
           }
-        }
+        },
+        "required": ["id", "level", "summary", "repair"],
+        "additionalProperties": false
       }
     }
   },
+  "required": ["ok", "version", "findings"],
+  "additionalProperties": false,
   "examples": [
     {
       "ok": false,
-      "version": {
-        "kernel": "3.0.0",
-        "contract": 3,
-        "node": "22.12.0"
-      },
+      "version": { "kernel": "3.0.0", "contract": 3, "node": "22.12.0" },
       "layout": "v2",
       "findings": [
         {

@@ -3,7 +3,7 @@ import { renderDoctor } from "../render/doctor.ts";
 import { doctor } from "../use-cases/doctor.ts";
 import type { ServiceDeps } from "../use-cases/version.ts";
 
-/** `--fix` is accepted and has nothing to repair until the checks of T12, T14, T20 and T30 land. */
+/** `--fix` repairs the schema findings; the index and merge-hash repairs land with T14, T20 and T30. */
 export function doctorCommand(deps: ServiceDeps): Handler {
   return (context) => {
     const data = doctor({
@@ -11,6 +11,7 @@ export function doctorCommand(deps: ServiceDeps): Handler {
       nodeVersion: context.runtime.nodeVersion,
       cwd: context.cwd,
       workTree: context.workTree ?? context.cwd,
+      fix: context.flags["--fix"] === true,
     });
     return { data, text: renderDoctor(data) };
   };

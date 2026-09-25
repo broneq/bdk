@@ -4,24 +4,24 @@
   "title": "bdk config set --json",
   "description": "Set one key in the project, local or global layer after validating the result.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["key", "value", "layer", "path"],
   "properties": {
-    "key": {
-      "type": "string"
+    "key": { "type": "string", "minLength": 1 },
+    "value": { "description": "The value written, parsed from YAML." },
+    "previous": {
+      "description": "The value the layer file held before; absent when it held none."
     },
-    "value": {},
-    "previous": {},
-    "layer": {
-      "enum": ["default", "global", "project", "local"]
-    },
+    "layer": { "type": "string", "enum": ["global", "project", "local"] },
     "path": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1,
+      "description": "The layer file: relative to the project root, absolute for the global layer."
     }
   },
+  "required": ["key", "value", "layer", "path"],
+  "additionalProperties": false,
   "examples": [
     {
-      "key": "policy.escalation.enabled",
+      "key": "features.lavish",
       "value": false,
       "previous": true,
       "layer": "local",

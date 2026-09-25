@@ -1,4 +1,5 @@
 import { readKernelVersion } from "../../shared/config/index.ts";
+import type { ConfigRegistry } from "../../shared/config/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import type { VersionReport } from "../domain/report.ts";
 
@@ -10,7 +11,9 @@ export interface VersionInput {
 }
 
 /** What the composition root provides; the command adds the running Node. */
-export type ServiceDeps = Omit<VersionInput, "nodeVersion">;
+export interface ServiceDeps extends Omit<VersionInput, "nodeVersion"> {
+  readonly settings: ConfigRegistry;
+}
 
 export function version(input: VersionInput): VersionReport {
   return {

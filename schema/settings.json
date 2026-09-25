@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/settings.json",
+  "title": "BDK settings",
+  "description": "One layer of the BDK settings: ~/.config/bdk/settings.yaml, .bdk/settings.yaml or .bdk/settings.local.yaml.",
+  "type": "object",
+  "properties": {
+    "languages": {
+      "default": [],
+      "description": "Languages and frameworks of the project; a name gets content from the rules/languages/<name> prompt value.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "tools": {
+      "description": "The commands the project runs, one entry per command, merged by id.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "test": {
+          "default": [],
+          "description": "Test commands; tier fast or e2e.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "description": "Unique within the array; the merge key and the path segment."
+              },
+              "command": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The full, unscoped command."
+              },
+              "scoped": {
+                "description": "The command for given paths ({files}).",
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\{files\\}"
+              },
+              "related": {
+                "description": "The command for the tests covering given source paths ({files}).",
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\{files\\}"
+              },
+              "failed": {
+                "description": "Re-run of the previous failures.",
+                "type": "string",
+                "minLength": 1
+              },
+              "incremental": {
+                "description": "The incremental form.",
+                "type": "string",
+                "minLength": 1
+              },
+              "when": {
+                "description": "When this entry is the right one to run; passed to the model as is.",
+                "type": "string",
+                "minLength": 1
+              },
+              "tier": { "type": "string", "enum": ["fast", "e2e"] }
+            },
+            "required": ["id", "command", "tier"],
+            "additionalProperties": false,
+            "title": "tool entry"
+          }
+        },
+        "lint": {
+          "default": [],
+          "description": "Lint, format and type check commands.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "description": "Unique within the array; the merge key and the path segment."
+              },
+              "command": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The full, unscoped command."
+              },
+              "scoped": {
+                "description": "The command for given paths ({files}).",
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\{files\\}"
+              },
+              "related": {
+                "description": "The command for the tests covering given source paths ({files}).",
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\{files\\}"
+              },
+              "failed": {
+                "description": "Re-run of the previous failures.",
+                "type": "string",
+                "minLength": 1
+              },
+              "incremental": {
+                "description": "The incremental form.",
+                "type": "string",
+                "minLength": 1
+              },
+              "when": {
+                "description": "When this entry is the right one to run; passed to the model as is.",
+                "type": "string",
+                "minLength": 1
+              },
+              "tier": { "type": "string", "enum": ["lint", "format", "typecheck"] }
+            },
+            "required": ["id", "command", "tier"],
+            "additionalProperties": false,
+            "title": "tool entry"
+          }
+        },
+        "build": {
+          "default": [],
+          "description": "Build commands; no tier.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "description": "Unique within the array; the merge key and the path segment."
+              },
+              "command": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The full, unscoped command."
+              },
+              "scoped": {
+                "description": "The command for given paths ({files}).",
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\{files\\}"
+              },
+              "related": {
+                "description": "The command for the tests covering given source paths ({files}).",
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\{files\\}"
+              },
+              "failed": {
+                "description": "Re-run of the previous failures.",
+                "type": "string",
+                "minLength": 1
+              },
+              "incremental": {
+                "description": "The incremental form.",
+                "type": "string",
+                "minLength": 1
+              },
+              "when": {
+                "description": "When this entry is the right one to run; passed to the model as is.",
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["id", "command"],
+            "additionalProperties": false,
+            "title": "tool entry"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "features": {
+      "description": "Feature switches.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "lavish": {
+          "default": true,
+          "description": "Review in Lavish; false falls back to AskUserQuestion (R-11).",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "prompts": {
+      "description": "Where prompt values come from: a directory per layer and single mapped files.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "dir": {
+          "description": "This layer's prompts directory; read from each layer's own file, never inherited.",
+          "type": "string",
+          "minLength": 1
+        },
+        "files": {
+          "description": "Prompt key -> a file path, or {path, mode, applies}; wins over the directory in the same layer.",
+          "type": "object",
+          "propertyNames": { "type": "string" },
+          "additionalProperties": {
+            "anyOf": [
+              { "type": "string", "minLength": 1 },
+              {
+                "type": "object",
+                "properties": {
+                  "path": { "type": "string", "minLength": 1 },
+                  "mode": { "type": "string", "enum": ["extends", "replace"] },
+                  "applies": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+                },
+                "required": ["path"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
