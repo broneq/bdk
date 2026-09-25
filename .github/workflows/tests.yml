@@ -25,3 +25,24 @@ jobs:
 
       - name: Run unit tests
         run: uv run pytest tests/unit/ -q
+
+  contract:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The minimum the contract names (HOST-FACTS node-sqlite-min), the
+        # active LTS and the current release. T11 runs the kernel suite on the
+        # same matrix (openspec/specs/kernel-architecture/spec.md).
+        node: ["22.13", "24", "26"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Run CLI contract tests
+        # Consistency of openspec/specs/kernel-cli/ with schema/cli/ (T10). T11 moves
+        # this into the kernel's own test harness.
+        run: node --test tests/contract/*.test.mjs

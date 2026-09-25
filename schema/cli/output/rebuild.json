@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rebuild.json",
+  "title": "bdk rebuild --json",
+  "description": "Rebuild the index and the derived progress from committed files and git trailers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "changes",
+    "entries",
+    "attempts",
+    "commits"
+  ],
+  "properties": {
+    "changes": {
+      "type": "integer"
+    },
+    "entries": {
+      "type": "integer"
+    },
+    "attempts": {
+      "type": "integer"
+    },
+    "commits": {
+      "type": "integer",
+      "description": "Commits with BDK trailers read."
+    },
+    "durationMs": {
+      "type": "integer"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "changes": 1,
+      "entries": 38,
+      "attempts": 6,
+      "commits": 9,
+      "durationMs": 412,
+      "warnings": []
+    }
+  ]
+}

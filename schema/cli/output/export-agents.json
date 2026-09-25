@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/export-agents.json",
+  "title": "bdk export agents --json",
+  "description": "Generate a host's agent files from the role skills and the per-host tool map.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "host",
+    "files",
+    "changed"
+  ],
+  "properties": {
+    "host": {
+      "type": "string"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "adapter",
+          "path"
+        ],
+        "properties": {
+          "adapter": {
+            "enum": [
+              "worker",
+              "reader",
+              "reviewer",
+              "runner",
+              "scout"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          },
+          "changed": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "changed": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "host": "claude",
+      "files": [
+        {
+          "adapter": "worker",
+          "path": "agents/worker.md",
+          "changed": false
+        }
+      ],
+      "changed": false
+    }
+  ]
+}

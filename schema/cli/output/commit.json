@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/commit.json",
+  "title": "bdk commit --json",
+  "description": "Commit a task: code plus Change directory, with BDK trailers, after the diff check.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task",
+    "commit",
+    "trailers",
+    "files"
+  ],
+  "properties": {
+    "task": {
+      "type": "string"
+    },
+    "commit": {
+      "type": "string"
+    },
+    "trailers": {
+      "type": "object",
+      "required": [
+        "BDK-Change",
+        "BDK-Part",
+        "BDK-Task"
+      ],
+      "properties": {
+        "BDK-Change": {
+          "type": "string"
+        },
+        "BDK-Part": {
+          "type": "string"
+        },
+        "BDK-Task": {
+          "type": "string"
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Path relative to the project root."
+      }
+    },
+    "undeclared": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Path relative to the project root."
+      }
+    },
+    "finding": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    }
+  },
+  "examples": [
+    {
+      "task": "02-3",
+      "commit": "d8e4f21",
+      "trailers": {
+        "BDK-Change": "2026-09-25-passwordless-login",
+        "BDK-Part": "02",
+        "BDK-Task": "02-3"
+      },
+      "files": [
+        "src/auth/login.ts",
+        "src/auth/login.test.ts",
+        ".bdk/changes/2026-09-25-passwordless-login/log/20260925T101502-finding-expired-magic-link.md"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/change-checkpoint.json",
+  "title": "bdk change checkpoint --json",
+  "description": "Pathspec commit of the Change directory: `chore(bdk): checkpoint <change>`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "change",
+    "done"
+  ],
+  "properties": {
+    "change": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "done": {
+      "type": "boolean"
+    },
+    "commit": {
+      "type": "string"
+    },
+    "skipped": {
+      "enum": [
+        "nothing-to-commit",
+        "policy-disabled"
+      ],
+      "description": "Why no commit was made although the command exited 0."
+    },
+    "deduplicated": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "change": "2026-09-25-passwordless-login",
+      "done": true,
+      "commit": "a1b2c3d"
+    }
+  ]
+}

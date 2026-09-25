@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/change-resume.json",
+  "title": "bdk change resume --json",
+  "description": "Bind an existing Change to the current branch or leave the parked state with a chosen option.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "change",
+    "branch",
+    "stage",
+    "next"
+  ],
+  "properties": {
+    "change": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "branch": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string"
+    },
+    "resumedFrom": {
+      "enum": [
+        "parked",
+        "other-branch",
+        "other-machine"
+      ]
+    },
+    "decision": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "next": {
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "change": "2026-09-25-passwordless-login",
+      "branch": "feat/login",
+      "stage": "execute",
+      "resumedFrom": "parked",
+      "decision": "L-p9q2r",
+      "next": "execute-part:02"
+    }
+  ]
+}

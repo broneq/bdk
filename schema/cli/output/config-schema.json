@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/config-schema.json",
+  "title": "bdk config schema --json",
+  "description": "Print the JSON Schema of the settings (the file committed under `schema/`) or of one module.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "url"
+  ],
+  "properties": {
+    "module": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "object"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "offlineCopy": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    }
+  },
+  "examples": [
+    {
+      "schema": {},
+      "url": "https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json",
+      "offlineCopy": ".bdk/.machine/schema/settings.json"
+    }
+  ]
+}

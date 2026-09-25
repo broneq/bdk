@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/next.json",
+  "title": "bdk next --json",
+  "description": "The next ready artifact with its instruction, plus the gate status; the skill's entry point.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "change",
+    "stage",
+    "gates"
+  ],
+  "properties": {
+    "change": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "stage": {
+      "type": "string"
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "state"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "description": "Artifact kind from pipeline.yaml (T21)."
+        },
+        "state": {
+          "enum": [
+            "blocked",
+            "ready",
+            "done",
+            "stale",
+            "skipped"
+          ]
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inputHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "why": {
+          "type": "string",
+          "description": "For blocked and stale: what is missing or what changed."
+        }
+      }
+    },
+    "instruction": {
+      "type": "string",
+      "description": "Opaque Markdown built from the kind's template, rules and ctx (T21)."
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "gate",
+          "ready",
+          "done",
+          "pending"
+        ],
+        "description": "What the user sees before typing the next stage command (T1).",
+        "properties": {
+          "gate": {
+            "type": "string",
+            "description": "Gate node id, e.g. gate:design."
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "passedBy": {
+            "enum": [
+              "user",
+              "policy"
+            ]
+          },
+          "command": {
+            "type": "string",
+            "description": "The stage command the user types to pass it, e.g. /bdk:plan."
+          },
+          "pending": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "type",
+                "summary",
+                "status",
+                "source",
+                "at",
+                "refs"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Opaque merge-safe id (T14)."
+                },
+                "type": {
+                  "enum": [
+                    "decision",
+                    "finding",
+                    "observation",
+                    "blocker",
+                    "question",
+                    "assumption",
+                    "risk",
+                    "learning",
+                    "report",
+                    "transition"
+                  ]
+                },
+                "summary": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "status": {
+                  "enum": [
+                    "proposed",
+                    "accepted",
+                    "superseded",
+                    "resolved",
+                    "routed"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "pattern": "^(user|policy|inferred|kernel|agent:[a-z][a-z0-9-]*)$"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "ISO 8601 UTC with seconds."
+                },
+                "refs": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "review": {
+                  "type": "boolean"
+                },
+                "supersedes": {
+                  "type": "string",
+                  "description": "Opaque merge-safe id (T14)."
+                }
+              }
+            },
+            "description": "review: true entries listed, never dispositioned."
+          }
+        }
+      }
+    },
+    "waiting": {
+      "enum": [
+        "gate",
+        "user",
+        "nothing"
+      ],
+      "description": "Set when no artifact is ready: what the Change waits for."
+    },
+    "stop": {
+      "type": "object",
+      "required": [
+        "why",
+        "instead"
+      ],
+      "properties": {
+        "why": {
+          "type": "string"
+        },
+        "instead": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "change": "2026-09-25-passwordless-login",
+      "stage": "plan",
+      "artifact": {
+        "id": "plan-part:01",
+        "kind": "plan-part",
+        "state": "ready",
+        "requires": [
+          "gate:design"
+        ]
+      },
+      "instruction": "Write plan part 01 ...",
+      "gates": [
+        {
+          "gate": "gate:design",
+          "ready": true,
+          "done": true,
+          "passedBy": "user",
+          "pending": []
+        }
+      ]
+    }
+  ]
+}

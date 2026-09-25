@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/change-status.json",
+  "title": "bdk change status --json",
+  "description": "The active Change at a glance: stage, graph state, gate status with pending review entries, parked options.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "change",
+    "kind",
+    "profile",
+    "source",
+    "stage",
+    "nodes",
+    "gates",
+    "parts"
+  ],
+  "properties": {
+    "change": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "kind": {
+      "enum": [
+        "feature",
+        "bug"
+      ]
+    },
+    "profile": {
+      "enum": [
+        "tiny",
+        "small",
+        "large"
+      ]
+    },
+    "source": {
+      "enum": [
+        "user",
+        "inferred"
+      ]
+    },
+    "confirmed": {
+      "type": "boolean"
+    },
+    "stage": {
+      "type": "string",
+      "description": "Derived from the latest transition entry."
+    },
+    "parked": {
+      "type": "object",
+      "required": [
+        "entry",
+        "options",
+        "resume"
+      ],
+      "properties": {
+        "entry": {
+          "type": "string",
+          "description": "Opaque merge-safe id (T14)."
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resume": {
+          "type": "string",
+          "description": "The one command that resumes."
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Artifact kind from pipeline.yaml (T21)."
+          },
+          "state": {
+            "enum": [
+              "blocked",
+              "ready",
+              "done",
+              "stale",
+              "skipped"
+            ]
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputHash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "why": {
+            "type": "string",
+            "description": "For blocked and stale: what is missing or what changed."
+          }
+        }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "gate",
+          "ready",
+          "done",
+          "pending"
+        ],
+        "description": "What the user sees before typing the next stage command (T1).",
+        "properties": {
+          "gate": {
+            "type": "string",
+            "description": "Gate node id, e.g. gate:design."
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "passedBy": {
+            "enum": [
+              "user",
+              "policy"
+            ]
+          },
+          "command": {
+            "type": "string",
+            "description": "The stage command the user types to pass it, e.g. /bdk:plan."
+          },
+          "pending": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "type",
+                "summary",
+                "status",
+                "source",
+                "at",
+                "refs"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Opaque merge-safe id (T14)."
+                },
+                "type": {
+                  "enum": [
+                    "decision",
+                    "finding",
+                    "observation",
+                    "blocker",
+                    "question",
+                    "assumption",
+                    "risk",
+                    "learning",
+                    "report",
+                    "transition"
+                  ]
+                },
+                "summary": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "status": {
+                  "enum": [
+                    "proposed",
+                    "accepted",
+                    "superseded",
+                    "resolved",
+                    "routed"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "pattern": "^(user|policy|inferred|kernel|agent:[a-z][a-z0-9-]*)$"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "ISO 8601 UTC with seconds."
+                },
+                "refs": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "review": {
+                  "type": "boolean"
+                },
+                "supersedes": {
+                  "type": "string",
+                  "description": "Opaque merge-safe id (T14)."
+                }
+              }
+            },
+            "description": "review: true entries listed, never dispositioned."
+          }
+        }
+      }
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "part",
+          "title",
+          "state",
+          "tasks",
+          "bytes"
+        ],
+        "properties": {
+          "part": {
+            "type": "string",
+            "pattern": "^\\d{2}$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "blocked",
+              "ready",
+              "started",
+              "done"
+            ]
+          },
+          "tasks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "done": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bytes": {
+            "type": "integer",
+            "maximum": 8192
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specImpact": {
+            "enum": [
+              "none",
+              "delta"
+            ]
+          },
+          "wave": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "openTickets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ticket",
+          "loop",
+          "target",
+          "attempt",
+          "of",
+          "scope",
+          "openedAt"
+        ],
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          },
+          "loop": {
+            "type": "string",
+            "description": "Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier, task-escalation."
+          },
+          "target": {
+            "type": "string",
+            "description": "Task, part or Change id the loop runs on."
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "of": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Budget for this loop kind."
+          },
+          "scope": {
+            "enum": [
+              "full",
+              "high+",
+              "blockers"
+            ]
+          },
+          "openedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 UTC with seconds."
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 UTC with seconds."
+          },
+          "outcome": {
+            "enum": [
+              "ok",
+              "fail",
+              "not-run"
+            ]
+          },
+          "notRunCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "overriddenKeys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "change": "2026-09-25-passwordless-login",
+      "kind": "feature",
+      "profile": "small",
+      "source": "user",
+      "confirmed": true,
+      "stage": "design",
+      "nodes": [
+        {
+          "id": "design",
+          "kind": "design",
+          "state": "done"
+        },
+        {
+          "id": "gate:design",
+          "kind": "gate",
+          "state": "ready"
+        }
+      ],
+      "gates": [
+        {
+          "gate": "gate:design",
+          "ready": true,
+          "done": false,
+          "command": "/bdk:plan",
+          "pending": [
+            {
+              "id": "L-k3d8p",
+              "type": "question",
+              "summary": "Keep magic links or add WebAuthn?",
+              "status": "proposed",
+              "source": "agent:design-verifier",
+              "at": "2026-09-25T09:41:07Z",
+              "refs": [
+                "design.md"
+              ],
+              "review": true
+            }
+          ]
+        }
+      ],
+      "parts": []
+    }
+  ]
+}

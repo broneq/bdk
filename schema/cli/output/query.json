@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/query.json",
+  "title": "bdk query --json",
+  "description": "Read-only SQL over the rebuildable index.",
+  "allOf": [
+    {
+      "$ref": "../common/list-page.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "description": "One row as an array of scalars in column order."
+          }
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+  "examples": [
+    {
+      "columns": [
+        "type",
+        "count(*)"
+      ],
+      "items": [
+        [
+          "decision",
+          4
+        ],
+        [
+          "finding",
+          7
+        ]
+      ],
+      "total": 2,
+      "truncated": false
+    }
+  ]
+}

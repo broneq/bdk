@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/done.json",
+  "title": "bdk done --json",
+  "description": "Mark an artifact done after its validator passes and record the input hash.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact",
+    "state",
+    "inputHash",
+    "next"
+  ],
+  "properties": {
+    "artifact": {
+      "type": "string"
+    },
+    "state": {
+      "const": "done"
+    },
+    "inputHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "next": {
+      "type": "string",
+      "description": "The artifact next now returns, or the gate the Change waits for."
+    },
+    "entry": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    }
+  },
+  "examples": [
+    {
+      "artifact": "design",
+      "state": "done",
+      "inputHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "next": "gate:design",
+      "entry": "L-h6s1d"
+    }
+  ]
+}

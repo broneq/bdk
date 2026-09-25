@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/doctor.json",
+  "title": "bdk doctor --json",
+  "description": "Diagnose the runtime, the layout and the state; one known repair action per finding.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ok",
+    "version",
+    "findings"
+  ],
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "version": {
+      "$ref": "../common/version.json"
+    },
+    "layout": {
+      "enum": [
+        "v3",
+        "v2",
+        "none"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "level",
+          "summary",
+          "repair"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable check id, e.g. node-version, uv-missing, v2-layout, merge-hash, index-stale."
+          },
+          "level": {
+            "enum": [
+              "ok",
+              "warn",
+              "fail"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "repair": {
+            "type": "string",
+            "description": "Exactly one known repair action (R-14): a command or an install line."
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "ok": false,
+      "version": {
+        "kernel": "3.0.0",
+        "contract": 3,
+        "node": "20.20.2"
+      },
+      "layout": "v2",
+      "findings": [
+        {
+          "id": "node-version",
+          "level": "fail",
+          "summary": "Node 20.20.2 is below 22.13.0; node:sqlite is missing",
+          "repair": "nvm use 24"
+        },
+        {
+          "id": "v2-layout",
+          "level": "warn",
+          "summary": ".bdk/settings.json and .bdk/plans/ found",
+          "repair": "bdk import"
+        },
+        {
+          "id": "uv-missing",
+          "level": "warn",
+          "summary": "uvx not on PATH; MCP servers cannot start",
+          "repair": "curl -LsSf https://astral.sh/uv/install.sh | sh"
+        }
+      ]
+    }
+  ]
+}

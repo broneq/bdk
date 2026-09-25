@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/evidence-check.json",
+  "title": "bdk evidence check --json",
+  "description": "Is the evidence for a task still fresh against the working tree?",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fresh",
+    "treeHash",
+    "evidence"
+  ],
+  "properties": {
+    "fresh": {
+      "type": "boolean"
+    },
+    "treeHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "evidence",
+          "kind",
+          "treeHash",
+          "fresh"
+        ],
+        "properties": {
+          "evidence": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          },
+          "kind": {
+            "type": "string"
+          },
+          "treeHash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "fresh": {
+            "type": "boolean"
+          },
+          "verdict": {
+            "type": "string"
+          },
+          "changedSince": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Path relative to the project root."
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "fresh": false,
+      "treeHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "evidence": [
+        {
+          "evidence": "E-b6n9t",
+          "kind": "tests-scoped",
+          "treeHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+          "fresh": false,
+          "verdict": "pass",
+          "changedSince": [
+            "src/auth/login.ts"
+          ]
+        }
+      ]
+    }
+  ]
+}

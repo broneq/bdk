@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/import.json",
+  "title": "bdk import --json",
+  "description": "One-time v2 to v3 import: settings, rules, old designs as intents of new Changes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "settings",
+    "rules",
+    "changes",
+    "removed"
+  ],
+  "properties": {
+    "settings": {
+      "type": "object",
+      "required": [
+        "from",
+        "to",
+        "keys",
+        "dropped"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Path relative to the project root."
+        },
+        "to": {
+          "type": "string",
+          "description": "Path relative to the project root."
+        },
+        "keys": {
+          "type": "integer"
+        },
+        "dropped": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "integer"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from",
+          "change"
+        ],
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          },
+          "change": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          }
+        }
+      }
+    },
+    "removed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Path relative to the project root."
+      },
+      "description": "v2 directories removed (.bdk/runs/, .bdk/plans/) after conversion."
+    }
+  },
+  "examples": [
+    {
+      "settings": {
+        "from": ".bdk/settings.json",
+        "to": ".bdk/settings.yaml",
+        "keys": 14,
+        "dropped": [
+          "features.caveman"
+        ]
+      },
+      "rules": 6,
+      "changes": [
+        {
+          "from": ".bdk/design/2026-08-01-auth.md",
+          "change": "2026-09-25-auth-imported"
+        }
+      ],
+      "removed": [
+        ".bdk/runs",
+        ".bdk/plans"
+      ]
+    }
+  ]
+}

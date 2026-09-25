@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-prune.json",
+  "title": "bdk rules prune --json",
+  "description": "List rules whose globs match no file or that no Change cited in the last N closes.",
+  "allOf": [
+    {
+      "$ref": "../common/list-page.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "reason"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "reason": {
+                "enum": [
+                  "no-match",
+                  "uncited"
+                ]
+              },
+              "detail": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+  "examples": [
+    {
+      "items": [
+        {
+          "id": "DP-3",
+          "reason": "no-match",
+          "detail": "applies: [\"legacy/**\"] matches 0 files"
+        }
+      ],
+      "total": 1,
+      "truncated": false
+    }
+  ]
+}

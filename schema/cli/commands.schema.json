@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/commands.schema.json",
+  "title": "Kernel command index",
+  "description": "Shape of schema/cli/commands.json: one record per kernel command. The join key to the spec openspec/specs/kernel-cli/<group>/spec.md is `id`: the command's requirement heading is `### Requirement: bdk <argv...>` and `id` is argv joined by "-". T11 generates --help from these records and asserts that every id has a handler or a kernel/not-implemented stub; the hooks pre-tool guard reads `availability` from the same file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "base", "commands"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "contract": { "type": "integer", "const": 3 },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["all", "changeScoped"],
+      "description": "Common rules that are not repeated in each command's `refusals`. A command's full rule set is refusals + base.all (unless standalone) + base.changeScoped (when changeScoped); its `exits` follow from the classes of that set.",
+      "properties": {
+        "all": { "$ref": "#/$defs/ruleList", "description": "Rules every command may emit: dispatcher and runtime checks." },
+        "changeScoped": { "$ref": "#/$defs/ruleList", "description": "Rules every Change-scoped command may emit: no active Change and the state checks." }
+      }
+    },
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/command" }
+    }
+  },
+  "$defs": {
+    "ruleId": { "type": "string", "pattern": "^(policy|guard|input|state|runtime|kernel)/[a-z0-9-]+$" },
+    "ruleList": { "type": "array", "items": { "$ref": "#/$defs/ruleId" }, "uniqueItems": true },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "argv", "summary", "availability", "mode", "slice", "owner", "changeScoped", "args", "flags", "output", "exits", "refusals", "writes"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "argv joined by '-'." },
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "description": "Group, optional verb, optional sub-verb (spec delta check)."
+        },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "availability": { "enum": ["orchestrator", "agent", "hook", "read"] },
+        "mode": { "enum": ["inject", "command", "guard"] },
+        "slice": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "Kernel module that owns the command (contract section 9)." },
+        "owner": { "type": "string", "pattern": "^T\\d\\d$", "description": "Plan task that implements the command." },
+        "since": { "type": "string", "description": "Kernel version that introduced the command, when later than 3.0.0." },
+        "changeScoped": { "type": "boolean", "description": "The command resolves the active Change from the branch and may emit base.changeScoped rules." },
+        "standalone": { "const": true, "description": "The command runs without a project root, git or the Node minimum, so base.all does not apply (only `version`)." },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "required"],
+            "properties": {
+              "name": { "type": "string", "description": "`<placeholder>` for a value, a bare word for a positional discriminator whose literals are in `values`." },
+              "required": { "type": "boolean" },
+              "values": { "type": "array", "items": { "type": "string" }, "description": "Allowed literals for a positional discriminator." },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^--[a-z][a-z-]*$" },
+              "value": { "type": "string", "description": "Placeholder for the flag's value; absent for boolean flags." },
+              "values": { "type": "array", "items": { "type": "string" } },
+              "description": { "type": "string" }
+            }
+          },
+          "description": "Command-specific flags. --json and --help are implicit on every command."
+        },
+        "stdin": { "type": "string", "description": "What the command reads from stdin, when it does." },
+        "output": { "type": "string", "pattern": "^(output|common)/[a-z0-9-]+\\.json$", "description": "JSON Schema of the --json success output, relative to schema/cli/. Several commands may share one schema (ctx skill|role|startup share output/ctx.json; version uses common/version.json)." },
+        "exits": { "type": "array", "minItems": 1, "items": { "enum": [0, 2, 3, 4, 5] }, "uniqueItems": true, "description": "Derived: 0 plus the exit code of every rule class in the command's full rule set; [0] for inject mode, [0, 2] for guard mode." },
+        "refusals": { "$ref": "#/$defs/ruleList", "description": "Command-specific rules only; the common rules live in `base`." },
+        "writes": { "type": "array", "items": { "type": "string" }, "description": "Change directory, working tree or configuration paths the command may write, and `git:commit` when it creates a commit; empty for read commands (T14 cross-check)." }
+      }
+    }
+  }
+}

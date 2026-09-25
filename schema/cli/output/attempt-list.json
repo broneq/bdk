@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/attempt-list.json",
+  "title": "bdk attempt list --json",
+  "description": "Tickets and attempt records, open first.",
+  "allOf": [
+    {
+      "$ref": "../common/list-page.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ticket",
+              "loop",
+              "target",
+              "attempt",
+              "of",
+              "scope",
+              "openedAt"
+            ],
+            "properties": {
+              "ticket": {
+                "type": "string",
+                "description": "Opaque merge-safe id (T14)."
+              },
+              "loop": {
+                "type": "string",
+                "description": "Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier, task-escalation."
+              },
+              "target": {
+                "type": "string",
+                "description": "Task, part or Change id the loop runs on."
+              },
+              "attempt": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "of": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Budget for this loop kind."
+              },
+              "scope": {
+                "enum": [
+                  "full",
+                  "high+",
+                  "blockers"
+                ]
+              },
+              "openedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO 8601 UTC with seconds."
+              },
+              "closedAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO 8601 UTC with seconds."
+              },
+              "outcome": {
+                "enum": [
+                  "ok",
+                  "fail",
+                  "not-run"
+                ]
+              },
+              "notRunCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "budgets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "used",
+              "of"
+            ],
+            "properties": {
+              "used": {
+                "type": "integer"
+              },
+              "of": {
+                "type": "integer"
+              }
+            }
+          },
+          "description": "Per loop kind for the --for target."
+        }
+      }
+    }
+  ],
+  "unevaluatedProperties": false,
+  "examples": [
+    {
+      "items": [
+        {
+          "ticket": "A-7f3k",
+          "loop": "task-redispatch",
+          "target": "02-3",
+          "attempt": 2,
+          "of": 3,
+          "scope": "high+",
+          "openedAt": "2026-09-25T10:02:11Z",
+          "closedAt": "2026-09-25T10:19:40Z",
+          "outcome": "fail"
+        }
+      ],
+      "total": 1,
+      "truncated": false,
+      "for": "02-3",
+      "budgets": {
+        "task-redispatch": {
+          "used": 2,
+          "of": 3
+        },
+        "not-run": {
+          "used": 0,
+          "of": 3
+        }
+      }
+    }
+  ]
+}

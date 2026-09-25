@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/change-close.json",
+  "title": "bdk change close --json",
+  "description": "Close the Change after the review gate: spec merge, learning routing, archive, PR summary.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "change",
+    "archivedTo",
+    "spec",
+    "learning",
+    "summary"
+  ],
+  "properties": {
+    "change": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "archivedTo": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    },
+    "spec": {
+      "type": "object",
+      "required": [
+        "merged"
+      ],
+      "properties": {
+        "merged": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unchanged": {
+          "type": "boolean"
+        }
+      }
+    },
+    "learning": {
+      "type": "object",
+      "required": [
+        "proposedRules",
+        "spec",
+        "nothing"
+      ],
+      "properties": {
+        "proposedRules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          },
+          "description": "learning entries above the T31 thresholds; nothing under .bdk/rules/ changes before the user accepts."
+        },
+        "spec": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          }
+        },
+        "nothing": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Opaque merge-safe id (T14)."
+          }
+        }
+      }
+    },
+    "gatesByPolicy": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "PR summary from the ledger: intent, decisions, assumptions, open findings."
+    },
+    "squashed": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "change": "2026-09-25-passwordless-login",
+      "archivedTo": ".bdk/changes/archive/2026-09-26-2026-09-25-passwordless-login",
+      "spec": {
+        "merged": [
+          "auth/login"
+        ]
+      },
+      "learning": {
+        "proposedRules": [
+          "L-z1c4h"
+        ],
+        "spec": [],
+        "nothing": [
+          "L-q8n2m"
+        ]
+      },
+      "gatesByPolicy": [],
+      "summary": "## Passwordless login\n..."
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/change-park.json",
+  "title": "bdk change park --json",
+  "description": "Park the active Change with a question or blocker entry, options and one resume command.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "change",
+    "entry",
+    "options",
+    "resume",
+    "checkpoint"
+  ],
+  "properties": {
+    "change": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "entry": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "options": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "resume": {
+      "type": "string"
+    },
+    "checkpoint": {
+      "type": "object",
+      "required": [
+        "done"
+      ],
+      "properties": {
+        "done": {
+          "type": "boolean"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "skipped": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "change": "2026-09-25-passwordless-login",
+      "entry": "L-t4w7n",
+      "options": [
+        "accept as debt",
+        "split part 02"
+      ],
+      "resume": "bdk change resume 2026-09-25-passwordless-login --option <n>",
+      "checkpoint": {
+        "done": true,
+        "commit": "a1b2c3d"
+      }
+    }
+  ]
+}

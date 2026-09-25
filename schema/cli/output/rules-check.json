@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-check.json",
+  "title": "bdk rules check --json",
+  "description": "Check rule files: unique ids, `[PREFIX-n]` format, `source` / `verified` on knowledge rules, tombstones.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "valid",
+    "rules",
+    "problems"
+  ],
+  "properties": {
+    "valid": {
+      "type": "boolean"
+    },
+    "rules": {
+      "type": "integer"
+    },
+    "problems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "file",
+          "line",
+          "code",
+          "message"
+        ],
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Path relative to the project root."
+          },
+          "line": {
+            "type": "integer"
+          },
+          "code": {
+            "enum": [
+              "missing-id",
+              "bad-id",
+              "duplicate-id",
+              "reused-number",
+              "missing-source",
+              "missing-verified",
+              "missing-kind",
+              "bad-applies"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "valid": false,
+      "rules": 41,
+      "problems": [
+        {
+          "file": ".bdk/rules/api.md",
+          "line": 9,
+          "code": "duplicate-id",
+          "message": "[API-3] also defined in .bdk/rules/api-legacy.md:4 (parallel close?)"
+        }
+      ]
+    }
+  ]
+}

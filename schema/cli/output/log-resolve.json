@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/log-resolve.json",
+  "title": "bdk log resolve --json",
+  "description": "Set an entry's status (resolved, accepted, superseded) with a reason.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entry",
+    "status"
+  ],
+  "properties": {
+    "entry": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "status": {
+      "enum": [
+        "proposed",
+        "accepted",
+        "superseded",
+        "resolved",
+        "routed"
+      ]
+    },
+    "by": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "record": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "entry": "L-e8k2s",
+      "status": "resolved",
+      "record": "L-o7p3x",
+      "reason": "fixed in A-7f3k retry"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-session-start.json",
+  "title": "bdk hooks session-start --json",
+  "description": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh, graph registration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "content"
+  ],
+  "properties": {
+    "content": {
+      "type": "string"
+    },
+    "layout": {
+      "enum": [
+        "v3",
+        "v2",
+        "none"
+      ]
+    },
+    "configProblems": {
+      "type": "integer"
+    },
+    "activeChange": {
+      "type": "string",
+      "description": "Opaque merge-safe id (T14)."
+    }
+  },
+  "examples": [
+    {
+      "content": "# BDK Shared Foundation\n...\n\n[BDK] v2 layout detected: run `bdk import`.",
+      "layout": "v2",
+      "configProblems": 0
+    }
+  ]
+}

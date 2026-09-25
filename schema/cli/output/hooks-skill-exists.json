@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-skill-exists.json",
+  "title": "bdk hooks skill-exists --json",
+  "description": "Skill-frontmatter UserPromptSubmit hook: warn as content when a named skill is not installed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "installed"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "installed": {
+      "type": "boolean"
+    },
+    "foundIn": {
+      "type": "string",
+      "description": "Path relative to the project root."
+    },
+    "content": {
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "name": "caveman-commit",
+      "installed": false,
+      "content": "[BDK] skill caveman-commit is not installed; /bdk:commit falls back to its own message format."
+    }
+  ]
+}
