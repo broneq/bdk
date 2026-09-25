@@ -3,6 +3,7 @@
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/query.json",
   "title": "bdk query --json",
   "description": "Read-only SQL over the rebuildable index.",
+  "type": "object",
   "allOf": [
     {
       "$ref": "../common/list-page.json"

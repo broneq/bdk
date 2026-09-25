@@ -3,7 +3,7 @@ import * as z from "zod";
 
 import { versionOutput } from "./version.ts";
 
-export const finding = z.object({
+const finding = z.object({
   id: z.string(),
   level: z.enum(["ok", "warn", "fail"]),
   summary: z.string(),

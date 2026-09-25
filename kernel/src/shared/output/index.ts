@@ -1,6 +1,8 @@
 // Writers for the three output forms of `kernel-cli` (Output modes,
 // Conventions): the JSON object, the text rendering capped at 100 lines, the
 // four-line refusal and the two-line STOP block of inject mode.
+import * as z from "zod";
+
 import type { Refusal } from "../refusal/index.ts";
 
 /** The design's "<= 100 lines" rule: text output and list pages stop here unless `--all`. */
@@ -54,4 +56,14 @@ export function listPage<T>(items: readonly T[], options: PageOptions = {}): Lis
     truncated,
   };
   return options.for === undefined ? page : { ...page, for: options.for };
+}
+
+/** `schema/cli/common/list-page.json`; a command's own schema narrows `item`. */
+export function listPageSchema<T extends z.ZodType>(item: T) {
+  return z.object({
+    items: z.array(item),
+    total: z.int().min(0),
+    truncated: z.boolean(),
+    for: z.string().optional(),
+  });
 }

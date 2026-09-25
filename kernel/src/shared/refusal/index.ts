@@ -1,6 +1,7 @@
 // The one error shape of the kernel (`kernel-cli`, Exit codes and the error
 // object): every non-zero exit except 1 prints exactly these four fields, and
 // the class before the slash of `rule` decides the exit code.
+import * as z from "zod";
 
 /** The rule catalogue of `kernel-cli`; a contract test keeps the two equal. */
 export const RULES = [
@@ -104,3 +105,11 @@ export class KernelRefusal extends Error {
     this.refusal = refusal;
   }
 }
+
+/** `schema/cli/common/refusal.json`, narrowed to the catalogue; a contract test keeps them equal. */
+export const refusalSchema = z.strictObject({
+  refused: z.literal(true),
+  rule: z.enum(RULES),
+  why: z.string().min(1),
+  instead: z.array(z.string().min(1)).min(1),
+});

@@ -1,18 +1,16 @@
 // Consistency tests for the kernel CLI contract: the OpenSpec main specs under
 // openspec/specs/kernel-cli/ (cross-cutting rules in spec.md, one spec per
 // command group in <group>/spec.md), openspec/specs/kernel-architecture/ and
-// schema/cli/. Runs with `node --test tests/contract/*.test.mjs` (the glob
-// form works on every Node from 22 on; a bare directory does not on 24); no
-// dependencies beyond node:. T11 folds these checks into the kernel's own test
-// harness and adds JSON Schema validation of the examples with zod.
-
+// schema/cli/. Ported from the T10 `node --test` suite unchanged in substance;
+// the kernel-specific contract checks live next to it in this directory.
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { test } from "node:test";
-import { fileURLToPath } from "node:url";
+import { test } from "vitest";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+import { REPO_ROOT as ROOT } from "../support/run.ts";
+import { backticked, requirement, tableFirstColumn } from "../support/specs.ts";
+
 const SPECS_DIR = join(ROOT, "openspec", "specs");
 const CLI_SPEC_DIR = join(SPECS_DIR, "kernel-cli");
 const CORE_SPEC_PATH = join(CLI_SPEC_DIR, "spec.md");
@@ -22,6 +20,33 @@ const INDEX_PATH = join(SCHEMA_DIR, "commands.json");
 const DESIGN_PATH = join(ROOT, "docs", "v3", "2026-09-23-0703-bdk-v3-change-centric-design.md");
 const PLAN_PATH = join(ROOT, "docs", "V3-IMPLEMENTATION-PLAN.md");
 const HOST_FACTS_PATH = join(ROOT, "docs", "HOST-FACTS.md");
+
+// The raw index as the file holds it; the first test checks this shape. Arrays
+// stay mutable in the type: `Array.isArray` narrows a readonly array to any[].
+interface RawCommand {
+  readonly id: string;
+  readonly argv: string[];
+  readonly availability: string;
+  readonly mode: string;
+  readonly slice: string;
+  readonly owner: string;
+  readonly changeScoped: boolean;
+  readonly standalone?: boolean;
+  readonly args: unknown[];
+  readonly flags: { readonly name: string }[];
+  readonly output: string;
+  readonly exits: number[];
+  readonly refusals: string[];
+  readonly writes: string[];
+}
+
+interface RawIndex {
+  readonly contract: number;
+  readonly base: { readonly all: string[]; readonly changeScoped: string[] };
+  readonly commands: RawCommand[];
+}
+
+type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
 
 const AVAILABILITY = new Set(["orchestrator", "agent", "hook", "read"]);
 const MODES = new Set(["inject", "command", "guard"]);
@@ -49,23 +74,23 @@ const MENTION_ALLOWLIST = new Map([
   ["close", "design shorthand for change close in the V1-7 merge-hash paragraph"],
 ]);
 
-function read(path) {
+function read(path: string): string {
   assert.ok(existsSync(path), `missing file: ${path}`);
   return readFileSync(path, "utf8");
 }
 
-function loadIndex() {
-  const index = JSON.parse(read(INDEX_PATH));
+function loadIndex(): RawIndex {
+  const index = JSON.parse(read(INDEX_PATH)) as RawIndex;
   assert.ok(Array.isArray(index.commands), "commands.json must have a commands array");
   return index;
 }
 
-function loadCoreSpec() {
+function loadCoreSpec(): string {
   return read(CORE_SPEC_PATH);
 }
 
 // The group specs, one per subdirectory of openspec/specs/kernel-cli/.
-function loadGroupSpecs() {
+function loadGroupSpecs(): { group: string; text: string }[] {
   const groups = readdirSync(CLI_SPEC_DIR, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => d.name)
@@ -76,92 +101,61 @@ function loadGroupSpecs() {
 
 // One requirement per command: `### Requirement: bdk <argv...>`; the id is the
 // argv joined by "-", the join key to commands.json.
-function commandRequirements(text) {
+function commandRequirements(text: string): { id: string; heading: string; body: string }[] {
   const parts = text.split(/^### Requirement: /m).slice(1);
   return parts
     .filter((p) => p.startsWith("bdk "))
     .map((p) => {
-      const heading = p.split("\n")[0].trim();
+      const heading = (p.split("\n")[0] ?? "").trim();
       return { id: heading.slice(4).split(/\s+/).join("-"), heading, body: p };
     });
 }
 
-function requirement(text, title) {
-  const re = new RegExp(
-    `^### Requirement: ${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\n([\\s\\S]*?)(?=^### Requirement: |(?![\\s\\S]))`,
-    "m",
-  );
-  const m = text.match(re);
-  assert.ok(m, `requirement "${title}" not found`);
-  return m[1];
-}
-
-function fencedBlocks(doc, infoString) {
+function fencedBlocks(doc: string, infoString: string): string[] {
   const re = new RegExp(
     "^```" + infoString.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\n([\\s\\S]*?)^```",
     "gm",
   );
-  return [...doc.matchAll(re)].map((m) => m[1]);
-}
-
-// Rows of the one table whose header's first cell is `headerCell`; stops at
-// the first non-table line so a later table in the same section is not read.
-function tableFirstColumn(text, headerCell) {
-  const lines = text.split("\n");
-  const headerIndex = lines.findIndex(
-    (line) => line.startsWith("|") && line.split("|")[1]?.trim() === headerCell,
-  );
-  assert.ok(headerIndex >= 0, `table with first column "${headerCell}" not found`);
-  const out = [];
-  for (const line of lines.slice(headerIndex + 2)) {
-    if (!line.startsWith("|")) break;
-    out.push(
-      line
-        .split("|")
-        .slice(1, -1)
-        .map((c) => c.trim()),
-    );
-  }
-  return out;
-}
-
-// Inline code spans only: fenced blocks are removed first so their triple
-// backticks cannot pair with inline ones.
-function backticked(text) {
-  const noFences = text.replace(/^```[\s\S]*?^```/gm, "");
-  return [...noFences.matchAll(/(?<!`)`([^`\n]+)`(?!`)/g)].map((m) => m[1]);
+  return [...doc.matchAll(re)].map((m) => m[1] ?? "");
 }
 
 // The set of rules a command may emit: its own plus the common ones.
-function rulesOf(index, c) {
+function rulesOf(index: RawIndex, c: RawCommand): Set<string> {
   const rules = new Set(c.refusals);
-  if (!c.standalone) index.base.all.forEach((r) => rules.add(r));
-  if (c.changeScoped) index.base.changeScoped.forEach((r) => rules.add(r));
+  if (c.standalone !== true) for (const r of index.base.all) rules.add(r);
+  if (c.changeScoped) for (const r of index.base.changeScoped) rules.add(r);
   return rules;
 }
 
-const EXIT_OF_CLASS = { policy: 2, guard: 2, kernel: 2, input: 3, state: 4, runtime: 5 };
+const EXIT_OF_CLASS: Readonly<Record<string, number>> = {
+  policy: 2,
+  guard: 2,
+  kernel: 2,
+  input: 3,
+  state: 4,
+  runtime: 5,
+};
 
-function expectedExits(index, c) {
+function expectedExits(index: RawIndex, c: RawCommand): number[] {
   if (c.mode === "inject") return [0];
   if (c.mode === "guard") return [0, 2];
   const exits = new Set([0]);
-  for (const r of rulesOf(index, c)) exits.add(EXIT_OF_CLASS[r.split("/")[0]]);
-  return [...exits].sort();
+  for (const r of rulesOf(index, c)) exits.add(EXIT_OF_CLASS[r.split("/")[0] ?? ""] ?? -1);
+  return [...exits].sort((a, b) => a - b);
 }
 
 // Words of a `bdk ...` mention that name a command: placeholders (<x>, [x],
 // --flag, *, N, digits) are dropped.
-function commandWords(text) {
+function commandWords(text: string): string[] {
   return text
     .replace(/<[^>]*>/g, " ")
     .split(/\s+/)
     .filter((w) => /^[a-z]/.test(w));
 }
 
-function collectRefs(node, out = []) {
-  if (Array.isArray(node)) node.forEach((n) => collectRefs(n, out));
-  else if (node && typeof node === "object") {
+function collectRefs(node: Json, out: string[] = []): string[] {
+  if (Array.isArray(node)) for (const n of node as readonly Json[]) collectRefs(n, out);
+  else if (node !== null && typeof node === "object") {
     for (const [k, v] of Object.entries(node)) {
       if (k === "$ref" && typeof v === "string") out.push(v);
       else collectRefs(v, out);
@@ -170,12 +164,16 @@ function collectRefs(node, out = []) {
   return out;
 }
 
-function resolvePointer(schema, fragment) {
+function resolvePointer(schema: Json, fragment: string): Json | undefined {
   if (fragment === "" || fragment === "#") return schema;
   const parts = fragment.replace(/^#\//, "").split("/");
-  let node = schema;
+  let node: Json | undefined = schema;
   for (const p of parts) {
-    node = node?.[p.replace(/~1/g, "/").replace(/~0/g, "~")];
+    const key = p.replace(/~1/g, "/").replace(/~0/g, "~");
+    node =
+      node !== null && typeof node === "object" && !Array.isArray(node)
+        ? (node as Record<string, Json>)[key]
+        : undefined;
     if (node === undefined) return undefined;
   }
   return node;
@@ -185,9 +183,9 @@ test("index: shape of every command record", () => {
   const index = loadIndex();
   assert.equal(index.contract, 3, "contract version is the kernel major, 3");
   assert.ok(index.commands.length > 0, "the index is empty");
-  for (const key of ["all", "changeScoped"]) {
+  for (const key of ["all", "changeScoped"] as const) {
     assert.ok(
-      Array.isArray(index.base?.[key]) && index.base[key].length > 0,
+      Array.isArray(index.base[key]) && index.base[key].length > 0,
       `base.${key} must list the common rules`,
     );
     for (const r of index.base[key]) assert.match(r, RULE_ID, `base.${key}: rule id ${r}`);
@@ -209,7 +207,7 @@ test("index: shape of every command record", () => {
     for (const e of c.exits) assert.ok(EXIT_CODES.has(e), `${c.id}: exit code ${e}`);
     assert.equal(typeof c.changeScoped, "boolean", `${c.id}: changeScoped`);
     assert.deepEqual(
-      [...c.exits].sort(),
+      [...c.exits].sort((a, b) => a - b),
       expectedExits(index, c),
       `${c.id}: exits must follow from the classes of its rules (specific + common)`,
     );
@@ -218,7 +216,7 @@ test("index: shape of every command record", () => {
         c.refusals.some((r) => /^(policy|guard)\//.test(r)),
         `${c.id}: a guard needs at least one policy or guard rule for its block outcome`,
       );
-    if (c.standalone)
+    if (c.standalone === true)
       assert.equal(c.changeScoped, false, `${c.id}: a standalone command cannot be Change-scoped`);
     assert.match(c.owner, OWNER, `${c.id}: owner`);
     assert.equal(typeof c.slice, "string", `${c.id}: slice`);
@@ -227,11 +225,11 @@ test("index: shape of every command record", () => {
     for (const r of c.refusals) assert.match(r, RULE_ID, `${c.id}: rule id ${r}`);
     for (const r of c.refusals)
       assert.ok(
-        !(!c.standalone && index.base.all.includes(r)) &&
+        !(c.standalone !== true && index.base.all.includes(r)) &&
           !(c.changeScoped && index.base.changeScoped.includes(r)),
         `${c.id}: ${r} is a common rule; do not repeat it per command`,
       );
-    if (c.changeScoped === false && !c.standalone)
+    if (!c.changeScoped && c.standalone !== true)
       assert.ok(
         !c.refusals.some((r) => r === "policy/no-active-change"),
         `${c.id}: no-active-change implies changeScoped`,
@@ -255,7 +253,7 @@ test("index: output schemas exist, parse, and their $refs resolve", () => {
   for (const c of index.commands) {
     const path = join(SCHEMA_DIR, c.output);
     seen.add(resolve(path));
-    const schema = JSON.parse(read(path));
+    const schema = JSON.parse(read(path)) as Json & { $schema?: string };
     assert.equal(
       schema.$schema,
       "https://json-schema.org/draft/2020-12/schema",
@@ -263,9 +261,10 @@ test("index: output schemas exist, parse, and their $refs resolve", () => {
     );
     for (const ref of collectRefs(schema)) {
       const [file, fragment = ""] = ref.split("#");
-      const target = file === "" ? schema : JSON.parse(read(resolve(dirname(path), file)));
+      const target =
+        file === "" ? schema : (JSON.parse(read(resolve(dirname(path), file ?? ""))) as Json);
       assert.ok(
-        resolvePointer(target, fragment ? `#${fragment}` : ""),
+        resolvePointer(target, fragment ? `#${fragment}` : "") !== undefined,
         `${c.output}: unresolved $ref ${ref}`,
       );
     }
@@ -337,7 +336,12 @@ test("specs: every refusal example has exactly the four fields", () => {
   const blocks = fencedBlocks(all, "json refusal");
   assert.ok(blocks.length > 0, "no `json refusal` examples found");
   for (const block of blocks) {
-    const obj = JSON.parse(block);
+    const obj = JSON.parse(block) as {
+      refused: unknown;
+      rule: string;
+      why: unknown;
+      instead: unknown;
+    };
     assert.deepEqual(
       Object.keys(obj).sort(),
       ["instead", "refused", "rule", "why"],
@@ -371,19 +375,19 @@ test("specs: refusal rule catalogue covers every rule the index declares", () =>
 test("specs: the catalogue's 'Emitted by' column matches the index for command-specific rules", () => {
   const index = loadIndex();
   const byArgv = new Map(index.commands.map((c) => [c.argv.join(" "), c]));
-  const declaredBy = new Map();
+  const declaredBy = new Map<string, string[]>();
   for (const c of index.commands)
     for (const r of c.refusals) declaredBy.set(r, [...(declaredBy.get(r) ?? []), c.argv.join(" ")]);
   const common = new Set([...index.base.all, ...index.base.changeScoped]);
   for (const row of tableFirstColumn(requirement(loadCoreSpec(), EXIT_CODES_REQUIREMENT), "Rule")) {
-    const rule = backticked(row[0])[0];
+    const rule = backticked(row[0] ?? "")[0] ?? "";
     if (!RULE_ID.test(rule) || common.has(rule)) continue;
     assert.equal(
       Number(row[1]),
-      EXIT_OF_CLASS[rule.split("/")[0]],
+      EXIT_OF_CLASS[rule.split("/")[0] ?? ""],
       `${rule}: exit column must match the class`,
     );
-    const named = backticked(row[2])
+    const named = backticked(row[2] ?? "")
       .map((s) => commandWords(s).join(" "))
       .filter((s) => byArgv.has(s));
     if (named.length === 0) continue; // prose cell (e.g. "commands taking an id")
@@ -433,7 +437,7 @@ test("specs: wrapper regexes accept the design's form and reject broken forms", 
 test("specs: availability classes used in the index are the four defined ones", () => {
   const defined = new Set(
     tableFirstColumn(requirement(loadCoreSpec(), "Availability classes"), "Class").flatMap((row) =>
-      backticked(row[0]),
+      backticked(row[0] ?? ""),
     ),
   );
   assert.deepEqual([...defined].sort(), [...AVAILABILITY].sort());
@@ -441,7 +445,9 @@ test("specs: availability classes used in the index are the four defined ones", 
 
 test("architecture: slices in the index equal the module list, matrix names only known slices", () => {
   const arch = read(ARCH_SPEC_PATH);
-  const modules = new Set(tableFirstColumn(arch, "Slice").flatMap((row) => backticked(row[0])));
+  const modules = new Set(
+    tableFirstColumn(arch, "Slice").flatMap((row) => backticked(row[0] ?? "")),
+  );
   const inIndex = new Set(loadIndex().commands.map((c) => c.slice));
   assert.deepEqual(
     [...inIndex].sort(),
@@ -451,7 +457,7 @@ test("architecture: slices in the index equal the module list, matrix names only
   const matrix = tableFirstColumn(arch, "From");
   assert.ok(matrix.length > 0, "dependency matrix missing");
   for (const row of matrix) {
-    for (const name of backticked(row[0]).concat(backticked(row[1] ?? ""))) {
+    for (const name of backticked(row[0] ?? "").concat(backticked(row[1] ?? ""))) {
       if (name === "shared") continue;
       assert.ok(modules.has(name), `dependency matrix names unknown slice ${name}`);
     }
@@ -464,10 +470,10 @@ test("coverage: every bdk command mentioned in the design, the plan and HOST-FAC
   const groups = new Set(argvs.map((a) => a[0]));
   const sources = [DESIGN_PATH, PLAN_PATH, HOST_FACTS_PATH].map((p) => read(p)).join("\n");
   const mentions = new Set(
-    [...sources.matchAll(/`bdk(?:\.mjs)? ([^`]+)`/g)].map((m) => m[1].trim()),
+    [...sources.matchAll(/`bdk(?:\.mjs)? ([^`]+)`/g)].map((m) => (m[1] ?? "").trim()),
   );
-  const unresolved = [];
-  const resolves = (words) => {
+  const unresolved: string[] = [];
+  const resolves = (words: string[]): boolean => {
     if (words.length === 0) return true;
     if (words.length === 1) return groups.has(words[0]);
     return (
@@ -482,7 +488,7 @@ test("coverage: every bdk command mentioned in the design, the plan and HOST-FAC
       .replace(/<[^>]*>/g, " ")
       .split("|")
       .map((s) => commandWords(s));
-    const group = alternatives[0][0];
+    const group = alternatives[0]?.[0];
     const resolved = alternatives.every(
       (words, i) =>
         resolves(words) || (i > 0 && group !== undefined && resolves([group, ...words])),

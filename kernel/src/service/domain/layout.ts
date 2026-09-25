@@ -1,11 +1,11 @@
 // Which generation of BDK state a project holds: v2 left files under `.bdk/`
 // that v3 never writes, and `bdk import` (T32) converts them.
 
-export type Layout = "v3" | "v2" | "none";
+type Layout = "v3" | "v2" | "none";
 
 export const V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"] as const;
 
-export interface LayoutFinding {
+interface LayoutFinding {
   readonly id: "v2-layout";
   readonly level: "warn";
   readonly summary: string;

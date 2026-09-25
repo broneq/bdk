@@ -3,6 +3,7 @@
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/part-list.json",
   "title": "bdk part list --json",
   "description": "Plan parts with state, task counts, size, dependencies and wave.",
+  "type": "object",
   "allOf": [
     {
       "$ref": "../common/list-page.json"

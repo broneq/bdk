@@ -3,6 +3,7 @@
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/log-list.json",
   "title": "bdk log list --json",
   "description": "Ledger entries as summaries, filtered by type, status, review flag or reference.",
+  "type": "object",
   "allOf": [
     {
       "$ref": "../common/list-page.json"

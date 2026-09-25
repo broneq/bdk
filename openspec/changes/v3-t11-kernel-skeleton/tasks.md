@@ -7,7 +7,7 @@
 - [x] 1.3 Add `eslint.config.mjs` (type-checked `typescript-eslint`, `eslint-config-prettier`), `vitest.config.ts` (projects `unit`, `e2e`, `contract`; coverage thresholds of design D-2 on `unit`), `knip.json`, `.prettierrc.json` and `.prettierignore` (design D-2); verify each tool runs on the empty `kernel/` and that ESLint and knip fail on a seeded violation (negative control)
 - [x] 1.4 Run `pnpm format` over the repository as its own commit `style: format the repository with Prettier`; verify `tests/contract/cli-contract.test.mjs` (`node --test tests/contract/*.test.mjs`) and `pytest tests/unit/` still pass and that `docs/v3/`, `CHANGELOG.md` and `openspec/changes/archive/` are untouched
 - [x] 1.5 Add husky (`prepare` script) with `pre-commit` running lint-staged (`eslint --fix` and `prettier --write` on staged `*.ts`, `prettier --write` on staged JSON, YAML and Markdown) and `commit-msg` running commitlint (`commitlint.config.mjs` extending `@commitlint/config-conventional`); verify a commit with an unformatted file is formatted by the hook and a commit message `bad message` is rejected
-- [ ] 1.6 Add the esbuild build (design D-3: `--target=node22.13`, ESM, `dist/bdk.mjs`, index inlined) over a placeholder `kernel/src/main.ts`; verify `pnpm build` twice in a row leaves `git diff --exit-code dist/` clean (deterministic output) and `pnpm lint`, `pnpm format:check`, `pnpm typecheck` and `pnpm knip` pass
+- [x] 1.6 Add the esbuild build (design D-3: `--target=node22.13`, ESM, `dist/bdk.mjs`, index inlined) over a placeholder `kernel/src/main.ts`; verify `pnpm build` twice in a row leaves `git diff --exit-code dist/` clean (deterministic output) and `pnpm lint`, `pnpm format:check`, `pnpm typecheck` and `pnpm knip` pass
 - [ ] 1.7 Document the Node toolchain in `CONTRIBUTING.md` and the Development Commands of `CLAUDE.md` (Node from `.nvmrc`, `pnpm install` installs the hooks, `pnpm build`, `pnpm lint`, `pnpm format`, `pnpm test:unit|e2e|contract`, `dist/bdk.mjs` is committed and rebuilt, never edited); verify every documented command runs as written
 
 ## 2. shared/refusal and shared/output
@@ -53,8 +53,8 @@
 
 ## 8. Contract, structure and dependency tests
 
-- [ ] 8.1 Port `tests/contract/cli-contract.test.mjs` to Vitest as `kernel/tests/contract/cli-contract.test.ts` and delete the old file; verify the ported suite passes with the same test names under `pnpm test:contract`
-- [ ] 8.2 Add contract tests: every record has a handler or the stub, the `shared/refusal` catalogue union equals the spec catalogue, every `examples` entry in `schema/cli/output/` and `schema/cli/common/` validates with Ajv, and the zod schemas of `version`, `doctor`, the refusal and the list page parse their examples (design D-8); verify they pass and fail on a seeded broken example
+- [x] 8.1 Port `tests/contract/cli-contract.test.mjs` to Vitest as `kernel/tests/contract/cli-contract.test.ts` and delete the old file; verify the ported suite passes with the same test names under `pnpm test:contract`
+- [x] 8.2 Add contract tests: every record has a handler or the stub, the `shared/refusal` catalogue union equals the spec catalogue, every `examples` entry in `schema/cli/output/` and `schema/cli/common/` validates with Ajv, and the zod schemas of `version`, `doctor`, the refusal and the list page parse their examples (design D-8); verify they pass and fail on a seeded broken example
 - [ ] 8.3 Write the import scan and the `node:` boundary test (design D-8, matrix read from the `kernel-architecture` table); verify they pass on the tree and fail on a seeded deep import, a reverse edge, a `render/` to `use-cases/` import and a `node:fs` import in `service/`
 - [ ] 8.4 Write the bundle and dependency tests: `dist/bdk.mjs` imports only `node:` specifiers; runtime dependencies within `zod`, `yaml`; no range in any dependency version; verify they pass and fail on a seeded range and a seeded extra runtime dependency
 

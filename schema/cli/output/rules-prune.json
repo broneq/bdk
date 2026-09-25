@@ -3,6 +3,7 @@
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-prune.json",
   "title": "bdk rules prune --json",
   "description": "List rules whose globs match no file or that no Change cited in the last N closes.",
+  "type": "object",
   "allOf": [
     {
       "$ref": "../common/list-page.json"
