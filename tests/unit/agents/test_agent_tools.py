@@ -226,6 +226,7 @@ NARROW_AGENT_TOOLS: dict[str, set[str] | str] = {
         "mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool",
         "mcp__plugin_bdk_code-review-graph__list_flows_tool",
         "mcp__plugin_bdk_code-review-graph__get_flow_tool",
+        "mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool",
     },
     "implementer": {
         "Read",
@@ -253,6 +254,7 @@ NARROW_AGENT_TOOLS: dict[str, set[str] | str] = {
         "mcp__plugin_bdk_code-review-graph__get_bridge_nodes_tool",
         "mcp__plugin_bdk_code-review-graph__list_flows_tool",
         "mcp__plugin_bdk_code-review-graph__get_flow_tool",
+        "mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool",
     },
 }
 
@@ -284,3 +286,16 @@ def test_narrow_agent_tools_unchanged(name: str, expected) -> None:
         f"intentionally if needed.\n  added: {actual - expected}\n  "
         f"removed: {expected - actual}"
     )
+
+
+REFRESH_TOOL = "mcp__plugin_bdk_code-review-graph__build_or_update_graph_tool"
+
+
+@pytest.mark.parametrize("path", sorted(AGENTS_DIR.glob("*.md")), ids=lambda p: p.stem)
+def test_agents_preloading_review_or_impact_tier_can_refresh_graph(path: Path) -> None:
+    """The review and impact tiers tell the agent to refresh the graph first;
+    no hook updates it any more, so an agent without the tool reads a stale graph."""
+    frontmatter = _extract_frontmatter(path)
+    if not re.search(r"^\s*-\s*bdk-tier-(review|impact)\s*$", frontmatter, re.MULTILINE):
+        pytest.skip("does not preload the review or impact tier")
+    assert REFRESH_TOOL in _expect_tool_set(path)

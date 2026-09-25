@@ -6,7 +6,6 @@ import importlib.util
 import io
 import json
 import subprocess
-import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -32,10 +31,13 @@ def _write(path: Path, payload: dict) -> None:
 
 def _run_main(cwd: Path, *, uvx: str | None = "/usr/bin/uvx",
                run_result: subprocess.CompletedProcess | None = None,
-               run_exc: Exception | None = None) -> tuple[str, list]:
+               run_exc: Exception | None = None,
+               status_result: subprocess.CompletedProcess | None = None,
+               ) -> tuple[str, list]:
     """Invoke main() with cwd, uvx availability, and subprocess.run patched.
 
-    Returns (stdout, captured_run_calls).
+    `run_result` / `run_exc` apply to the register call, `status_result` to
+    the status call. Returns (stdout, captured_run_calls).
     """
     fake_stdin = io.StringIO("")
     captured = io.StringIO()
@@ -43,6 +45,11 @@ def _run_main(cwd: Path, *, uvx: str | None = "/usr/bin/uvx",
 
     def fake_run(*args, **kwargs):
         calls.append((args, kwargs))
+        cmd = args[0] if args else kwargs.get("args", [])
+        if "status" in cmd:
+            return status_result or subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout="", stderr=""
+            )
         if run_exc is not None:
             raise run_exc
         return run_result or subprocess.CompletedProcess(
@@ -111,7 +118,7 @@ def test_invokes_register_with_cwd_and_alias(tmp_path: Path):
     _write(tmp_path / ".bdk" / "settings.json", {"languages": ["python"]})
     out, calls = _run_main(tmp_path)
     assert out == ""
-    assert len(calls) == 1
+    assert len(calls) == 2
     args, _kwargs = calls[0]
     cmd = args[0]
     assert cmd[0:3] == ["uvx", "code-review-graph", "register"]
@@ -123,7 +130,7 @@ def test_invokes_register_with_cwd_and_alias(tmp_path: Path):
 def test_default_on_when_features_omitted(tmp_path: Path):
     _write(tmp_path / ".bdk" / "settings.json", {"languages": ["python"]})
     out, calls = _run_main(tmp_path)
-    assert len(calls) == 1
+    assert len(calls) == 2
     assert out == ""
 
 
@@ -143,3 +150,54 @@ def test_warns_on_subprocess_exception(tmp_path: Path):
                             run_exc=subprocess.TimeoutExpired(cmd="uvx", timeout=30))
     assert "[BDK]" in out
     assert "register failed" in out
+
+
+# ---- graph status (moved here from an ungated hooks.json line) ----
+
+def test_prints_graph_status_after_register(tmp_path: Path):
+    _write(tmp_path / ".bdk" / "settings.json", {"languages": ["python"]})
+    status = subprocess.CompletedProcess(
+        args=[], returncode=0, stdout="Nodes: 629\nEdges: 5196\n", stderr=""
+    )
+    out, calls = _run_main(tmp_path, status_result=status)
+    status_cmd = calls[1][0][0]
+    assert status_cmd == ["uvx", "code-review-graph", "status"]
+    assert calls[1][1].get("cwd") == str(tmp_path.resolve())
+    assert "Nodes: 629" in out
+
+
+def test_reports_missing_graph_in_one_line(tmp_path: Path):
+    _write(tmp_path / ".bdk" / "settings.json", {"languages": ["python"]})
+    missing = subprocess.CompletedProcess(
+        args=[], returncode=1,
+        stdout="No graph found at x/graph.db. Run `code-review-graph build` first.\n",
+        stderr="",
+    )
+    out, _calls = _run_main(tmp_path, status_result=missing)
+    assert out.count("\n") == 1
+    assert out.startswith("[BDK] code-review-graph status: No graph found")
+
+
+def test_no_status_when_graph_disabled(tmp_path: Path):
+    _write(tmp_path / ".bdk" / "settings.json",
+           {"features": {"code-review-graph": False}})
+    _out, calls = _run_main(tmp_path)
+    assert all("status" not in c[0][0] for c in calls)
+
+
+def test_status_still_runs_after_register_failure(tmp_path: Path):
+    _write(tmp_path / ".bdk" / "settings.json", {"languages": ["python"]})
+    failing = subprocess.CompletedProcess(
+        args=[], returncode=1, stdout="", stderr="boom: registry locked"
+    )
+    _out, calls = _run_main(tmp_path, run_result=failing)
+    assert calls[-1][0][0] == ["uvx", "code-review-graph", "status"]
+
+
+def test_plugin_hooks_do_not_update_graph():
+    """The Stop hook ran a graph update after every reply (full rebuild in
+    projects without a graph). Updates are on demand, from the graph tier."""
+    hooks = json.loads((REPO_ROOT / "hooks" / "hooks.json").read_text())
+    commands = [h["command"] for groups in hooks["hooks"].values()
+                for g in groups for h in g["hooks"]]
+    assert not [c for c in commands if "uvx code-review-graph" in c]
