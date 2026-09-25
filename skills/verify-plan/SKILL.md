@@ -67,7 +67,7 @@ Capture `agent_id` from the spawn envelope. Store as `verifier_agent_id` — nee
 
 ## Step 3 — Parse YAML Envelope
 
-Extract the final ```yaml ... ``` block from the agent's reply. Parse it. Required keys: `status`, `iteration`, `per_task`, `must_fix`.
+Extract the final `yaml ... ` block from the agent's reply. Parse it. Required keys: `status`, `iteration`, `per_task`, `must_fix`.
 
 Malformed YAML handling: respawn the agent once with the identical message. If the second reply is also malformed, abort and report the parse error to the user — do not silently continue.
 
@@ -75,11 +75,11 @@ Malformed YAML handling: respawn the agent once with the identical message. If t
 
 Branch on `status`:
 
-| `status` | Action |
-|---|---|
-| `PASS` or `PASS_WITH_WARNINGS` | Go to Step 5 (write report). |
-| `FAIL` and `iteration < 2` | Build a delta message (below). Call `SendMessage(to: verifier_agent_id, message: <delta>)`. Loop back to Step 3 with the new reply. |
-| `FAIL` and `iteration == 2` | Stop. Print a concise summary of remaining `must_fix` entries. Recommend `/bdk:design` — after two failed iterations the plan is structurally wrong, not detail-wrong. |
+| `status`                       | Action                                                                                                                                                                 |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PASS` or `PASS_WITH_WARNINGS` | Go to Step 5 (write report).                                                                                                                                           |
+| `FAIL` and `iteration < 2`     | Build a delta message (below). Call `SendMessage(to: verifier_agent_id, message: <delta>)`. Loop back to Step 3 with the new reply.                                    |
+| `FAIL` and `iteration == 2`    | Stop. Print a concise summary of remaining `must_fix` entries. Recommend `/bdk:design` — after two failed iterations the plan is structurally wrong, not detail-wrong. |
 
 **Delta message template (iteration 2):**
 

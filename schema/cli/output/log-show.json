@@ -5,23 +5,13 @@
   "description": "One entry in full, by bare or qualified id.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "entry"
-  ],
+  "required": ["entry"],
   "properties": {
     "entry": {
       "allOf": [
         {
           "type": "object",
-          "required": [
-            "id",
-            "type",
-            "summary",
-            "status",
-            "source",
-            "at",
-            "refs"
-          ],
+          "required": ["id", "type", "summary", "status", "source", "at", "refs"],
           "properties": {
             "id": {
               "type": "string",
@@ -46,13 +36,7 @@
               "maxLength": 120
             },
             "status": {
-              "enum": [
-                "proposed",
-                "accepted",
-                "superseded",
-                "resolved",
-                "routed"
-              ]
+              "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
             },
             "source": {
               "type": "string",
@@ -84,10 +68,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "body",
-            "path"
-          ],
+          "required": ["body", "path"],
           "properties": {
             "body": {
               "type": "string",
@@ -116,9 +97,7 @@
         "source": "user",
         "author": "Przemysław Broniszewski",
         "at": "2026-09-25T09:12:30Z",
-        "refs": [
-          "design.md"
-        ],
+        "refs": ["design.md"],
         "body": "We ship magic links first ...",
         "path": ".bdk/changes/2026-09-25-passwordless-login/log/20260925T091230-decision-magic-links.md"
       }

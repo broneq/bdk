@@ -5,13 +5,7 @@
   "description": "Park the active Change with a question or blocker entry, options and one resume command.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "change",
-    "entry",
-    "options",
-    "resume",
-    "checkpoint"
-  ],
+  "required": ["change", "entry", "options", "resume", "checkpoint"],
   "properties": {
     "change": {
       "type": "string",
@@ -33,9 +27,7 @@
     },
     "checkpoint": {
       "type": "object",
-      "required": [
-        "done"
-      ],
+      "required": ["done"],
       "properties": {
         "done": {
           "type": "boolean"
@@ -53,10 +45,7 @@
     {
       "change": "2026-09-25-passwordless-login",
       "entry": "L-t4w7n",
-      "options": [
-        "accept as debt",
-        "split part 02"
-      ],
+      "options": ["accept as debt", "split part 02"],
       "resume": "bdk change resume 2026-09-25-passwordless-login --option <n>",
       "checkpoint": {
         "done": true,

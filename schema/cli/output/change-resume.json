@@ -5,12 +5,7 @@
   "description": "Bind an existing Change to the current branch or leave the parked state with a chosen option.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "change",
-    "branch",
-    "stage",
-    "next"
-  ],
+  "required": ["change", "branch", "stage", "next"],
   "properties": {
     "change": {
       "type": "string",
@@ -23,11 +18,7 @@
       "type": "string"
     },
     "resumedFrom": {
-      "enum": [
-        "parked",
-        "other-branch",
-        "other-machine"
-      ]
+      "enum": ["parked", "other-branch", "other-machine"]
     },
     "decision": {
       "type": "string",

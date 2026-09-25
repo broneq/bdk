@@ -5,20 +5,13 @@
   "description": "Import a project's `.claude/rules/*.md` into `.bdk/rules/` with ids and applies from paths.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "imported",
-    "skipped"
-  ],
+  "required": ["imported", "skipped"],
   "properties": {
     "imported": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "from",
-          "to",
-          "rules"
-        ],
+        "required": ["from", "to", "rules"],
         "properties": {
           "from": {
             "type": "string",
@@ -41,10 +34,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "from",
-          "why"
-        ],
+        "required": ["from", "why"],
         "properties": {
           "from": {
             "type": "string",

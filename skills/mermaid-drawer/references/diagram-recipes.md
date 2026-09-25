@@ -78,7 +78,7 @@ sequenceDiagram
 
 Use when one thing moves through named states: an order, a background job, a connection, a subscription, a PR.
 
-States are **nouns** (what the entity *is*), transitions are **events** (what happened to it). If your state names are verbs, you have drawn a flowchart.
+States are **nouns** (what the entity _is_), transitions are **events** (what happened to it). If your state names are verbs, you have drawn a flowchart.
 
 ```mermaid
 stateDiagram-v2
@@ -160,18 +160,18 @@ erDiagram
 
 **Cardinality notation** - the half of `erDiagram` that gets guessed wrong. Read each side independently, left symbol describes the left entity:
 
-| Symbol | Meaning |
-|---|---|
-| `\|o` / `o\|` | zero or one |
-| `\|\|` | exactly one |
-| `}o` / `o{` | zero or more |
-| `}\|` / `\|{` | one or more |
+| Symbol        | Meaning      |
+| ------------- | ------------ |
+| `\|o` / `o\|` | zero or one  |
+| `\|\|`        | exactly one  |
+| `}o` / `o{`   | zero or more |
+| `}\|` / `\|{` | one or more  |
 
-So `ORDER ||--|{ LINE_ITEM` reads: an order has **one or more** line items, and a line item belongs to **exactly one** order. Contrast with `||--o{`, which allows an order with zero items. Choosing between those two *is* the design decision - do not default to `o{` because it is easier to type.
+So `ORDER ||--|{ LINE_ITEM` reads: an order has **one or more** line items, and a line item belongs to **exactly one** order. Contrast with `||--o{`, which allows an order with zero items. Choosing between those two _is_ the design decision - do not default to `o{` because it is easier to type.
 
 **What makes this one work:**
 
 - Attribute blocks are included only for the entities the change touches. Listing every column of every table turns the diagram into a schema dump nobody reads.
 - `PK` / `FK` / `UK` markers are cheap and answer the first question a reviewer asks.
-- Relationship labels are verbs read left-to-right: "CUSTOMER *places* ORDER".
+- Relationship labels are verbs read left-to-right: "CUSTOMER _places_ ORDER".
 - When documenting a migration, draw **two** diagrams - before and after - rather than one annotated with what is changing. The delta belongs in prose beside them.

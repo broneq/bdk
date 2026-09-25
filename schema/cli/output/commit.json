@@ -5,12 +5,7 @@
   "description": "Commit a task: code plus Change directory, with BDK trailers, after the diff check.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "task",
-    "commit",
-    "trailers",
-    "files"
-  ],
+  "required": ["task", "commit", "trailers", "files"],
   "properties": {
     "task": {
       "type": "string"
@@ -20,11 +15,7 @@
     },
     "trailers": {
       "type": "object",
-      "required": [
-        "BDK-Change",
-        "BDK-Part",
-        "BDK-Task"
-      ],
+      "required": ["BDK-Change", "BDK-Part", "BDK-Task"],
       "properties": {
         "BDK-Change": {
           "type": "string"

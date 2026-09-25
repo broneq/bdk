@@ -5,11 +5,7 @@
   "description": "Print a dispatch package by path or ticket.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "path",
-    "content",
-    "frontmatter"
-  ],
+  "required": ["path", "content", "frontmatter"],
   "properties": {
     "path": {
       "type": "string",

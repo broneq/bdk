@@ -113,12 +113,12 @@ the claim describes intent rather than a checkable artifact).
 
 **3.3 — Resolve each verdict.**
 
-| Verdict | Action |
-|---|---|
-| CONFIRMED | Keep, rewrite into uniform format (Step 4) |
-| CONTRADICTED | Drop — or correct, only if you have positive evidence of the replacement; never invent one |
-| UNVERIFIED | Keep, but flag it in the plan (Step 5) for the user to confirm |
-| NOISE (from Step 2) | Drop, regardless of verdict — noise doesn't get verified, it gets removed |
+| Verdict             | Action                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| CONFIRMED           | Keep, rewrite into uniform format (Step 4)                                                 |
+| CONTRADICTED        | Drop — or correct, only if you have positive evidence of the replacement; never invent one |
+| UNVERIFIED          | Keep, but flag it in the plan (Step 5) for the user to confirm                             |
+| NOISE (from Step 2) | Drop, regardless of verdict — noise doesn't get verified, it gets removed                  |
 
 RELOCATE and SIGNPOST candidates from Step 2 go through the same verification (a claim
 must be true before it earns a doc comment; an "Enforced by" clause must name a test

@@ -50,15 +50,15 @@ plan → explorer (group disjoint tasks) → for each group:
 
 ## Subagent fleet
 
-| Agent | Purpose | Model | Spawn timing |
-|---|---|---|---|
-| `bdk:explorer` | Analyze plan tasks for file-disjoint groups | haiku | once, upfront |
-| `bdk:implementer` | Implement one task end-to-end (TDD only — no final lint/test) | sonnet | per task, parallel where safe, background |
-| `bdk:test-runner` | Run tests (scoped per group; full suite once) | haiku | per group by orchestrator's judgment, plus once at 4-0 for the final gate |
-| `bdk:static-analyse` | Lint changed files | haiku | per group, orchestrator's judgment |
-| `bdk:fixer` | Apply specific findings | sonnet | on failures, when SendMessage to original is wrong fit |
-| `bdk:code-reviewer` | Review final branch diff | sonnet | once at end |
-| `bdk:architecture-reviewer` | Review architectural surface | opus | end, conditional |
+| Agent                       | Purpose                                                       | Model  | Spawn timing                                                              |
+| --------------------------- | ------------------------------------------------------------- | ------ | ------------------------------------------------------------------------- |
+| `bdk:explorer`              | Analyze plan tasks for file-disjoint groups                   | haiku  | once, upfront                                                             |
+| `bdk:implementer`           | Implement one task end-to-end (TDD only — no final lint/test) | sonnet | per task, parallel where safe, background                                 |
+| `bdk:test-runner`           | Run tests (scoped per group; full suite once)                 | haiku  | per group by orchestrator's judgment, plus once at 4-0 for the final gate |
+| `bdk:static-analyse`        | Lint changed files                                            | haiku  | per group, orchestrator's judgment                                        |
+| `bdk:fixer`                 | Apply specific findings                                       | sonnet | on failures, when SendMessage to original is wrong fit                    |
+| `bdk:code-reviewer`         | Review final branch diff                                      | sonnet | once at end                                                               |
+| `bdk:architecture-reviewer` | Review architectural surface                                  | opus   | end, conditional                                                          |
 
 The coordinator may spawn **multiple implementers in parallel** for a single group when `bdk:explorer` reports the tasks touch disjoint file sets. Same group → same worktree (disjoint files = no conflict).
 
@@ -92,11 +92,11 @@ Reviewer / verification subagents have their own return formats — see `referen
    python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py hash-plan {plan-path}
    ```
 
-   | Stamp | Meaning | Action |
-   |---|---|---|
-   | present, hash matches | this exact plan was verified | `stamped` |
-   | present, hash differs | the plan changed after verification | `stale` |
-   | absent | never verified | `missing` |
+   | Stamp                 | Meaning                             | Action    |
+   | --------------------- | ----------------------------------- | --------- |
+   | present, hash matches | this exact plan was verified        | `stamped` |
+   | present, hash differs | the plan changed after verification | `stale`   |
+   | absent                | never verified                      | `missing` |
 
    `stale` and `missing` **warn and continue**. Do not stop: skipping verification is the user's call to make, and blocking here would make the executor unusable on a hand-written plan. Report the verdict on the `Verification:` line of the summary below so it is visible rather than buried in a warning.
 
@@ -208,12 +208,12 @@ Decide once per group, **before** dispatching, how the group's tasks run. Two st
 
 **Executor override rubric.** The plan tag is a hint, not a mandate. Override toward each strategy when:
 
-| Choose `workflow` when | Choose `subagents` when |
-|---|---|
-| Wave has **≥ 4 file-disjoint tasks**, all with full `Test cases:` blocks (mechanical, low-ambiguity) | Wave has **≤ 3 tasks**, or any task is architectural / ambiguous / likely to return `NEEDS_CONTEXT` |
-| Tasks are uniform (same model tier, no expected escalation) | Tasks need **per-task model escalation** or tight SendMessage iteration |
-| Coordinator context is tight and a compact dispatch helps | A task may need the coordinator to split it mid-flight |
-| Explorer `confidence ≥ 0.6` on disjointness (Workflow runs tasks concurrently — collisions are unrecoverable mid-script) | Explorer flagged any collision risk for the wave |
+| Choose `workflow` when                                                                                                   | Choose `subagents` when                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Wave has **≥ 4 file-disjoint tasks**, all with full `Test cases:` blocks (mechanical, low-ambiguity)                     | Wave has **≤ 3 tasks**, or any task is architectural / ambiguous / likely to return `NEEDS_CONTEXT` |
+| Tasks are uniform (same model tier, no expected escalation)                                                              | Tasks need **per-task model escalation** or tight SendMessage iteration                             |
+| Coordinator context is tight and a compact dispatch helps                                                                | A task may need the coordinator to split it mid-flight                                              |
+| Explorer `confidence ≥ 0.6` on disjointness (Workflow runs tasks concurrently — collisions are unrecoverable mid-script) | Explorer flagged any collision risk for the wave                                                    |
 
 **Hard precondition for `workflow`:** the wave's tasks MUST be file-disjoint with `confidence ≥ 0.6` (same rule as parallel implementers — see Rules). If not, force `subagents`. A Workflow that mutates colliding files in parallel corrupts the worktree with no recovery path.
 
@@ -231,12 +231,12 @@ Record the chosen strategy per group in coordinator state and surface the counts
 
 > Steps 3a, 3b, and 3c apply to the **`subagents`** strategy. For a **`workflow`** group, skip to **3b-W**; the script handles model selection and dispatch internally. Both paths converge at **3d** (verification).
 
-| Task profile | Model |
-|---|---|
-| 1–2 files, mechanical, full spec | `haiku` |
-| Cross-file, integration, refactor | `sonnet` (default) |
-| Architectural decision, broad surface, ambiguous spec | `opus` |
-| Re-dispatch after `BLOCKED` due to reasoning gap | escalate one tier |
+| Task profile                                          | Model              |
+| ----------------------------------------------------- | ------------------ |
+| 1–2 files, mechanical, full spec                      | `haiku`            |
+| Cross-file, integration, refactor                     | `sonnet` (default) |
+| Architectural decision, broad surface, ambiguous spec | `opus`             |
+| Re-dispatch after `BLOCKED` due to reasoning gap      | escalate one tier  |
 
 See `references/model-selection.md`.
 
@@ -259,13 +259,13 @@ You will be notified when each background agent completes. Do not poll.
 
 Each implementer returns one of:
 
-| Status | Coordinator action |
-|---|---|
-| `DONE` | Record `files_changed`. Task is ready for verification. |
-| `DONE_WITH_CONCERNS` | Read concerns. Correctness/scope concern → queue a fixer. Observation only → log, proceed. |
-| `NEEDS_CONTEXT` | `SendMessage(to: agent_id, …)` with the missing context (cache likely warm). |
-| `BLOCKED` | Diagnose: bad context → SendMessage; reasoning gap → spawn fresh implementer one model tier up; task too large → split it in context and re-dispatch the first slice (the plan is immutable, so the split lives in the coordinator's head for this group only and is not recorded anywhere); plan wrong → log and stop with explicit error. |
-| (malformed return) | Treat as `BLOCKED` with reason "malformed return." Re-dispatch fresh, same tier. |
+| Status               | Coordinator action                                                                                                                                                                                                                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DONE`               | Record `files_changed`. Task is ready for verification.                                                                                                                                                                                                                                                                                     |
+| `DONE_WITH_CONCERNS` | Read concerns. Correctness/scope concern → queue a fixer. Observation only → log, proceed.                                                                                                                                                                                                                                                  |
+| `NEEDS_CONTEXT`      | `SendMessage(to: agent_id, …)` with the missing context (cache likely warm).                                                                                                                                                                                                                                                                |
+| `BLOCKED`            | Diagnose: bad context → SendMessage; reasoning gap → spawn fresh implementer one model tier up; task too large → split it in context and re-dispatch the first slice (the plan is immutable, so the split lives in the coordinator's head for this group only and is not recorded anywhere); plan wrong → log and stop with explicit error. |
+| (malformed return)   | Treat as `BLOCKED` with reason "malformed return." Re-dispatch fresh, same tier.                                                                                                                                                                                                                                                            |
 
 Max 3 re-dispatch cycles per task before stopping the whole skill with an error report.
 
@@ -299,7 +299,7 @@ After the Workflow (and any fallbacks) settle, proceed to **3d** with the merged
 
 After all implementers in the group return `DONE`, decide whether to verify. No fixed cadence. Heuristics, not rules:
 
-- **File-class gate (apply first).** Partition the group's `files_changed` into *source* vs *non-executable content* (yaml/md/json/config not feeding build or codegen; build-feeding config like tsconfig, lockfiles, or codegen schemas counts as source). If the source partition is empty → do not spawn `bdk:test-runner` and do not run typecheck at all; at most a scoped lint/syntax check if one is configured for those file types.
+- **File-class gate (apply first).** Partition the group's `files_changed` into _source_ vs _non-executable content_ (yaml/md/json/config not feeding build or codegen; build-feeding config like tsconfig, lockfiles, or codegen schemas counts as source). If the source partition is empty → do not spawn `bdk:test-runner` and do not run typecheck at all; at most a scoped lint/syntax check if one is configured for those file types.
 - Schema / API / public-contract change → likely yes.
 - Trivial rename, comment-only edit, single-line tweak → likely no, batch with next group.
 - Group included a "verify" task whose `Test cases:` block IS the verification → yes, that's the whole point.
@@ -308,14 +308,14 @@ After all implementers in the group return `DONE`, decide whether to verify. No 
 
 **Hard cap:** at most **2 consecutive groups** may skip verification. The 3rd group in a row MUST verify regardless of heuristic.
 
-**One conditional widening (judgment call, not a rule).** A group that changed a *public contract* — an exported signature, a route, a schema, a wire format — can break an e2e flow whose specs it never touched, and 4d is the most expensive place to discover that. For such a group only, add a **scoped** e2e run covering the changed area (3e below says how). Do not do this for every group: e2e per group is slower net than one late failure, which is why the default stays "e2e only if the group touched e2e specs."
+**One conditional widening (judgment call, not a rule).** A group that changed a _public contract_ — an exported signature, a route, a schema, a wire format — can break an e2e flow whose specs it never touched, and 4d is the most expensive place to discover that. For such a group only, add a **scoped** e2e run covering the changed area (3e below says how). Do not do this for every group: e2e per group is slower net than one late failure, which is why the default stays "e2e only if the group touched e2e specs."
 
 ### 3e. Spawn verification subagents (when 3d says yes)
 
 In **parallel** (one message, multiple Agent calls). Both get the group's `files_changed` — the union reported by its implementers — and both are expected to run **scoped**, not project-wide:
 
 - `bdk:static-analyse` — pass the full `files_changed`. It resolves the scoped lint/format form and the incremental typecheck form itself from `lint-tools`; you pass paths, not commands. Note in the dispatch that typecheck is warranted only when the source partition (per 3d's file-class gate) is non-empty.
-- `bdk:test-runner` — pass only the **source partition** of `files_changed` (skip the spawn entirely if it is empty, per 3d) and say which job this is: *"changed source files — run the fast tier's `related`/`scoped` form."* The agent resolves the form from `test-tools`; you pass paths and intent, never a command string.
+- `bdk:test-runner` — pass only the **source partition** of `files_changed` (skip the spawn entirely if it is empty, per 3d) and say which job this is: _"changed source files — run the fast tier's `related`/`scoped` form."_ The agent resolves the form from `test-tools`; you pass paths and intent, never a command string.
   - The group added or modified e2e/integration spec files → also pass those exact spec paths for that tier.
   - The group changed a public contract per 3d's widening → also pass the e2e specs covering it, named by path or by the tier's `--grep`-style selector.
   - Otherwise **no e2e tier at all** for this group.
@@ -389,7 +389,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py phase-start --run {run-id
 ```
 
 - Record `optimistic_sha = $(git rev-parse HEAD)` in coordinator state.
-- Spawn `bdk:test-runner` with: *"full suite, final gate — every tier in `test-tools`, e2e included."*
+- Spawn `bdk:test-runner` with: _"full suite, final gate — every tier in `test-tools`, e2e included."_
 - Immediately continue to 4a. **Do not wait.**
 
 Its completion notification will probably arrive in the middle of Phase A. **Hold the result; do not act on it before 4d.** A failing optimistic run is not a reason to interrupt review — the fix may be in the findings Phase A is still converging, and 4d is where the two meet.
@@ -412,7 +412,7 @@ Read the engine now, not earlier - this is the one place in the run that needs i
 cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/review-engine.md
 ```
 
-Following that reference is **not** invoking `/bdk:cr`. The Rules section below forbids subagent-spawning skills *inside subagents*; you are the coordinator, and reading a reference doc spawns nothing. `cr` owns the engine because it is the skill whose whole purpose is review; you are the second caller of the same logic, and there is exactly one copy of it on purpose.
+Following that reference is **not** invoking `/bdk:cr`. The Rules section below forbids subagent-spawning skills _inside subagents_; you are the coordinator, and reading a reference doc spawns nothing. `cr` owns the engine because it is the skill whose whole purpose is review; you are the second caller of the same logic, and there is exactly one copy of it on purpose.
 
 Fill the request:
 
@@ -481,20 +481,20 @@ If none of the conditions hold, **skip** the spawn — log `architecture_review:
 
 #### 4d. Final test gate
 
-The only place in this skill where a bare, unscoped full-suite command runs for **every** tier in `test-tools`, e2e included. It is *started* at 4-0 and *settled* here. Do not add an equivalent full-suite fallback anywhere else in this skill.
+The only place in this skill where a bare, unscoped full-suite command runs for **every** tier in `test-tools`, e2e included. It is _started_ at 4-0 and _settled_ here. Do not add an equivalent full-suite fallback anywhere else in this skill.
 
 **Step 1 — is the optimistic run still valid?** Compare `$(git rev-parse HEAD)` to the `optimistic_sha` recorded at 4-0.
 
-| HEAD vs `optimistic_sha` | What it means | Action |
-|---|---|---|
-| unchanged | Phase A fixed nothing — every reviewer finding was MEDIUM/LOW and got logged, not patched | The 4-0 run **is** the gate. Take its result. **No second full run.** |
-| moved | Phase A's fixers changed code, so the 4-0 result describes a tree that no longer exists | Go to step 2 |
+| HEAD vs `optimistic_sha` | What it means                                                                             | Action                                                                |
+| ------------------------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| unchanged                | Phase A fixed nothing — every reviewer finding was MEDIUM/LOW and got logged, not patched | The 4-0 run **is** the gate. Take its result. **No second full run.** |
+| moved                    | Phase A's fixers changed code, so the 4-0 result describes a tree that no longer exists   | Go to step 2                                                          |
 
 Log which branch you took: `[subagent-execute-plan] Final gate: optimistic run {valid|superseded by {n} fix commit(s)}`.
 
 **Step 2 — failed-first re-run.** Do not re-run everything to check a fix.
 
-1. **If the 4-0 run reported failures:** dispatch `bdk:test-runner` with *"re-run the failures"* plus the failure list — it uses each tier's `failed` form (`--last-failed`, `--changed`, or the failing paths).
+1. **If the 4-0 run reported failures:** dispatch `bdk:test-runner` with _"re-run the failures"_ plus the failure list — it uses each tier's `failed` form (`--last-failed`, `--changed`, or the failing paths).
 2. **If the 4-0 run was green and only Phase A's fix commits are new:** dispatch a run scoped to the fixed files plus the failures being chased — the tiers the change actually touches, not all of them.
 3. **Confirming run:** once failed-first comes back green, run the **full** suite once to confirm. That is the only full run in this step, and it happens at most once per fix chain — not once per attempt.
 
@@ -586,10 +586,11 @@ The coordinator monitors its own context usage between groups (not mid-group —
      groups_remaining: {R}
      resume: /bdk:subagent-execute-plan {plan-path}
      ```
+
   3. Stop.
 - **Resume:** Re-invoke `/bdk:subagent-execute-plan {plan-path}`. Step 0.6 reads the manifest, reconciles it against the commit trailers, and returns the first group with no `BDK-Group` trailer of its own. A resume in a **new session** hits the session guard: the manifest still holds the dead session's id, so pass `--force` to take the run over (`init` prints what it took over, so the takeover is visible rather than silent).
 
-**Why 50%:** the coordinator's context is the plan slice plus the last subagent return envelope - light per tick, but a long plan is many ticks, and the coordinator must have room left to *finish* a group after the boundary check, including a fixer round it did not anticipate. Stopping at half leaves that room. This is a documented constant, not user-tunable in this version; revisit if reports come in.
+**Why 50%:** the coordinator's context is the plan slice plus the last subagent return envelope - light per tick, but a long plan is many ticks, and the coordinator must have room left to _finish_ a group after the boundary check, including a fixer round it did not anticipate. Stopping at half leaves that room. This is a documented constant, not user-tunable in this version; revisit if reports come in.
 
 The threshold actually used this run is surfaced in the Step 4e summary as `context_stop_pct: 50`.
 

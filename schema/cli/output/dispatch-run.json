@@ -5,12 +5,7 @@
   "description": "Headless runner: spawn one host CLI process per package of a wave and collect the reports.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "part",
-    "wave",
-    "runner",
-    "runs"
-  ],
+  "required": ["part", "wave", "runner", "runs"],
   "properties": {
     "part": {
       "type": "string"
@@ -25,12 +20,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "ticket",
-          "task",
-          "status",
-          "report"
-        ],
+        "required": ["ticket", "task", "status", "report"],
         "properties": {
           "ticket": {
             "type": "string",
@@ -44,12 +34,7 @@
             "description": "e.g. claude, codex, gemini"
           },
           "status": {
-            "enum": [
-              "done",
-              "blocked",
-              "failed",
-              "timeout"
-            ]
+            "enum": ["done", "blocked", "failed", "timeout"]
           },
           "report": {
             "type": "string",

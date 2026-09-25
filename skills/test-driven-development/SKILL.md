@@ -69,6 +69,7 @@ A task marked `Verification: none` must never be routed to this skill - the coor
 ## GATE 0: Load Context
 
 Read project context:
+
 - Test file conventions (location, naming)
 - Test framework
 - Existing patterns (fixtures, factories, assertions)
@@ -103,7 +104,7 @@ Add an unlisted edge-case test ONLY when its absence would let a real production
 
 Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 
-**Run it yourself, via `Bash`. Do not spawn a `bdk:test-runner` agent for this.** One test file's worth of output is a few lines; a spawn costs a cold start, a preload, and a model round-trip — an order of magnitude more wall-clock than the run it wraps, paid twice per task (RED and GREEN) and again on every fix attempt. `bdk:test-runner` exists to keep a *large* run's output out of a caller's context (group verification, the end-of-plan gate). This is not that.
+**Run it yourself, via `Bash`. Do not spawn a `bdk:test-runner` agent for this.** One test file's worth of output is a few lines; a spawn costs a cold start, a preload, and a model round-trip — an order of magnitude more wall-clock than the run it wraps, paid twice per task (RED and GREEN) and again on every fix attempt. `bdk:test-runner` exists to keep a _large_ run's output out of a caller's context (group verification, the end-of-plan gate). This is not that.
 
 Pick the command from the injected blocks: the tier matching the test cases you just wrote, `scoped` form, substituting `{files}` with `{test_file_path}`. **Never the `full` form of any tier.**
 

@@ -5,11 +5,7 @@
   "description": "Validate every layer against the module schema registry; name unknown keys.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "valid",
-    "problems",
-    "snapshot"
-  ],
+  "required": ["valid", "problems", "snapshot"],
   "properties": {
     "valid": {
       "type": "boolean"
@@ -18,31 +14,16 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "layer",
-          "key",
-          "code",
-          "message"
-        ],
+        "required": ["layer", "key", "code", "message"],
         "properties": {
           "layer": {
-            "enum": [
-              "default",
-              "global",
-              "project",
-              "local"
-            ]
+            "enum": ["default", "global", "project", "local"]
           },
           "key": {
             "type": "string"
           },
           "code": {
-            "enum": [
-              "unknown-key",
-              "invalid-value",
-              "missing-modeline",
-              "schema-outdated"
-            ]
+            "enum": ["unknown-key", "invalid-value", "missing-modeline", "schema-outdated"]
           },
           "message": {
             "type": "string"

@@ -24,12 +24,12 @@ blocker: ""                   # required for BLOCKED
 
 ## Status semantics
 
-| Status | When the subagent emits it |
-|---|---|
-| `DONE` | Task complete, TDD red-green passed for its own scope. No remaining concerns. |
-| `DONE_WITH_CONCERNS` | Task implementation complete, but flagging a correctness/scope/architecture observation the coordinator should triage. Populate `concerns`. |
-| `NEEDS_CONTEXT` | Stuck on a missing piece of context (file, decision, clarification). Populate `needs`. Coordinator will `SendMessage` with the answer; subagent resumes. |
-| `BLOCKED` | Cannot proceed. Plan ambiguity, environment failure, contradictory spec. Populate `blocker`. Coordinator decides re-dispatch / split / abort. |
+| Status               | When the subagent emits it                                                                                                                               |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DONE`               | Task complete, TDD red-green passed for its own scope. No remaining concerns.                                                                            |
+| `DONE_WITH_CONCERNS` | Task implementation complete, but flagging a correctness/scope/architecture observation the coordinator should triage. Populate `concerns`.              |
+| `NEEDS_CONTEXT`      | Stuck on a missing piece of context (file, decision, clarification). Populate `needs`. Coordinator will `SendMessage` with the answer; subagent resumes. |
+| `BLOCKED`            | Cannot proceed. Plan ambiguity, environment failure, contradictory spec. Populate `blocker`. Coordinator decides re-dispatch / split / abort.            |
 
 ## Coordinator action map
 

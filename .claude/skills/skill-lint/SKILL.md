@@ -17,6 +17,7 @@ Verify BDK skill or agent file meets portability and quality conventions.
 - No arguments: ask user which file, or infer from recent context.
 
 Per path:
+
 1. Read file.
 2. List all files in skill directory (recursively). Every file other than `SKILL.md` is supporting file.
 3. Each supporting file: lint too (checks 3–6 only — portability checks), regardless of whether referenced in SKILL.md.
@@ -28,31 +29,41 @@ Print **separate report block** per file linted.
 Report each check as `PASS`, `FAIL`, or `WARN` with one-line reason.
 
 ### 1. Frontmatter present
+
 - File must start with `---`
 - Must contain `name:` field
 - Must contain `description:` field
 
 ### 2. Model field
+
 - **Agent files** (`agents/`): `model:` **required** — FAIL if missing
 - **Skill files** (`skills/`): `model:` recommended — WARN if missing (some skills intentionally inherit)
 
 ### 3. No absolute paths
+
 Fail if file contains:
+
 - `/Users/`, `/home/`, `/root/`, `/opt/`, `/var/`, `C:\`
 - Any hardcoded filesystem path
 
 ### 4. No project-specific file references
+
 Warn if file refs files only in one project:
+
 - Patterns: specific filenames like `src/foo.py`, `app/models/user.rb`, `internal/auth/handler.go`
 - Exception: generic illustrative examples (e.g. `<your-file>`, `path/to/file`)
 
 ### 5. No project-specific instructions
+
 Warn if file contains phrases tied to specific project:
+
 - "in this project", "this repo", "our codebase", specific org/team names
 - Hardcoded branch names, database names, service names
 
 ### 6. No language-specific commands
+
 Fail if file hardcodes language/framework tooling:
+
 - Test runners: `pytest`, `go test`, `npm test`, `yarn test`, `cargo test`, `rspec`, `jest`, `mocha`
 - Build tools: `mvn`, `gradle`, `cargo build`, `make` (as build command)
 - Linters: `ruff`, `eslint`, `golangci-lint`, `rubocop`, `flake8`
@@ -60,74 +71,99 @@ Fail if file hardcodes language/framework tooling:
 Use generic phrasing: "run the project's test suite", "run the linter".
 
 ### 7. BDK foundation header (skills only)
+
 Skills must start body (after frontmatter) with:
+
 ```
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...
 ```
+
 FAIL if missing.
 
 ### 8. Skill cross-references use full namespace
+
 Refs to other BDK skills must use `/bdk:` prefix.
+
 - FAIL on: `/commit`, `/debug`, `/create-plan` (bare names)
 - PASS on: `/bdk:commit`, `/bdk:debug`
 
 ### 9. `name` format valid
+
 If `name:` present: must match `^[a-z0-9-]{1,64}$`.
+
 - FAIL on uppercase, underscores, spaces, or >64 chars.
 
 ### 10. `description` length
+
 If `description:` present: WARN if >250 chars (truncated in skill listing).
 
 ### 11. Invalid frontmatter fields
+
 FAIL if file uses unsupported/obsolete frontmatter fields:
+
 - `arguments:` (list of objects) — replaced by `argument-hint:`
 - Any field not in: `name`, `description`, `argument-hint`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `disallowed-tools`, `model`, `effort`, `context`, `agent`, `background`, `hooks`, `paths`, `shell`
 
 ### 12. `effort` valid value
+
 If `effort:` present: must be one of `low`, `medium`, `high`, `xhigh`, `max`.
+
 - FAIL on any other value.
 
 ### 13. `context` + `agent` combo
+
 If `agent:` present but `context: fork` missing: WARN — `agent:` only applies with `context: fork`.
 
 ### 14. Dead skill combo
+
 If both `disable-model-invocation: true` AND `user-invocable: false`: FAIL — skill inaccessible.
 
 ### 15. `$ARGUMENT` typo
+
 If body uses `$ARGUMENT` (no S): FAIL — correct variable is `$ARGUMENTS` or `$ARGUMENTS[N]`.
 
 ### 16. External skill/agent references
+
 BDK skills depend only on BDK-owned skills. Flag `/slash-command` and agent name invocations NOT prefixed `/bdk:`.
 
 **Slash command refs** (`/name` in body):
+
 - WARN on bare `/name` refs (e.g. `/commit`, `/debug`) — ambiguous, may resolve to wrong skill
 - WARN on `/other-plugin:name` — hard dep on external plugin not guaranteed present
 - PASS on `/bdk:name` — BDK namespace, expected
 
 **Agent refs** (backtick or plain `agent-name` in body, e.g. `` `test-runner` ``):
+
 1. Check if `agents/<name>.md` exists in BDK repo.
 2. If exists → WARN: bare name found, use `/bdk:<name>` prefix.
 3. If not exists → WARN: unknown agent dependency, not shipped with BDK.
 
 ### 17. Skill directory format
+
 Per Claude Code skills spec, each skill must live at `<skill-name>/SKILL.md`.
+
 - FAIL if filename not exactly `SKILL.md` (case-sensitive)
 - WARN if parent dir name doesn't match `name` field in frontmatter (causes confusing dual identities)
 
 ### 18. Artifacts go to `.bdk/`
+
 Skills producing file output must write to `.bdk/` in project root, not arbitrary dirs.
+
 - FAIL if skill body instructs writing to `docs/`, `output/`, `tmp/`, `reports/`, or other non-`.bdk` paths
 - PASS if output path is `.bdk/...` or no file output produced
 - Exception: skills writing code/config into project structure as part of code-gen task (not report/artifact output)
 
 ### 19. No unused files in skill directory
+
 List all files in skill directory (recursively). Every file other than `SKILL.md` must be referenced in skill body (markdown link, inline code mention, or explicit filename reference).
+
 - WARN for each file present but not referenced anywhere in `SKILL.md`
 - Exception: `SKILL.md` itself always exempt
 
 Check: list dir contents, scan `SKILL.md` body for each filename. Not found → WARN.
 
 ### 20. Valid skill directory structure
+
 Allowed layout:
 
 ```
@@ -144,6 +180,7 @@ Allowed layout:
 ```
 
 Rules:
+
 - FAIL if any subdirectory other than `examples/`, `references/`, `scripts/`, or `fragments/` exists
 - WARN if `fragments/` contains non-`.md` files
 - WARN if `*.md` template/reference files sit at root level instead of `references/` — suggest moving
@@ -157,10 +194,10 @@ Rules:
 
 For every `!`...inject.py ...`` call in the body, check each `--if` / `--prefer` condition against the three forms `scripts/inject.py` actually parses:
 
-| Form | Meaning |
-|---|---|
-| `features.<key>` | `settings.features.<key>` is true |
-| `tool.<binary>` | `<binary>` is on PATH |
+| Form               | Meaning                                     |
+| ------------------ | ------------------------------------------- |
+| `features.<key>`   | `settings.features.<key>` is true           |
+| `tool.<binary>`    | `<binary>` is on PATH                       |
 | `<field>[<value>]` | `<value>` is in the `settings.<field>` list |
 
 - FAIL on anything else (e.g. `languages.react`, `feature.react`, `tool[lavish-axi]`) — name the line and the correct spelling.
@@ -173,10 +210,10 @@ For every `!`...inject.py ...`` call in the body, check each `--if` / `--prefer`
 
 WARN when the body asserts such an invariant and the frontmatter does not back it:
 
-| Body says something like | Expected frontmatter |
-|---|---|
-| "autonomous", "no human-in-loop", "never ask the user mid-flow" | `disallowed-tools: AskUserQuestion` |
-| "read-only", "MUST NOT modify source files", "never edit" | `disallowed-tools: Edit NotebookEdit` (plus `Write` when the skill writes nothing at all) |
+| Body says something like                                        | Expected frontmatter                                                                      |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| "autonomous", "no human-in-loop", "never ask the user mid-flow" | `disallowed-tools: AskUserQuestion`                                                       |
+| "read-only", "MUST NOT modify source files", "never edit"       | `disallowed-tools: Edit NotebookEdit` (plus `Write` when the skill writes nothing at all) |
 
 Name the body line and the missing field. Do not FAIL: a skill may legitimately need the tool on some path, and the field cannot express "only for X". PASS when the invariant is absent or already backed.
 

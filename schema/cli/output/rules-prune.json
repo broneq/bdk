@@ -14,19 +14,13 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "id",
-              "reason"
-            ],
+            "required": ["id", "reason"],
             "properties": {
               "id": {
                 "type": "string"
               },
               "reason": {
-                "enum": [
-                  "no-match",
-                  "uncited"
-                ]
+                "enum": ["no-match", "uncited"]
               },
               "detail": {
                 "type": "string"

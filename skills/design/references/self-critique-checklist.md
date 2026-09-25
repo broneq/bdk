@@ -1,6 +1,6 @@
 # Self-Critique Checklist — Devil's Advocate Pass
 
-Run through this list every time you recommend a design. The goal is to expose weaknesses *before* the user does. If every answer is "no risk", you have not pushed hard enough — keep looking.
+Run through this list every time you recommend a design. The goal is to expose weaknesses _before_ the user does. If every answer is "no risk", you have not pushed hard enough — keep looking.
 
 ## Bottlenecks & Limits
 
@@ -25,7 +25,7 @@ Run through this list every time you recommend a design. The goal is to expose w
 
 ## Assumptions
 
-- What did the user *not* explicitly confirm that this design depends on?
+- What did the user _not_ explicitly confirm that this design depends on?
 - What scale numbers did I assume?
 - What consistency expectations did I assume?
 - What team capability did I assume (e.g., "they have ops bandwidth for Kafka")?
@@ -56,4 +56,4 @@ Run through this list every time you recommend a design. The goal is to expose w
 - What success metric proves this worked? Can we measure it from day one?
 - What's the simplest version that would still deliver value?
 
-Pick at least **four** items across at least **three** categories and answer them concretely for the proposed design. Concrete = *"the dispatcher becomes a bottleneck above ~5k req/s because the routing table is rebuilt on every change"*, not *"scalability could be a concern."*
+Pick at least **four** items across at least **three** categories and answer them concretely for the proposed design. Concrete = _"the dispatcher becomes a bottleneck above ~5k req/s because the routing table is rebuilt on every change"_, not _"scalability could be a concern."_

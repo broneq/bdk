@@ -1,6 +1,7 @@
 # plugin-tooling Specification
 
 ## Purpose
+
 Defines which tools the shipped BDK plugin relies on: built-in host tools only, with no bundled MCP server, no `uvx` process and no tool-guidance layer (ADR-0001).
 
 ## Requirements

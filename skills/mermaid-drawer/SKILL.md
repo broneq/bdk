@@ -34,16 +34,16 @@ Three sequential steps with no branching is a sentence. A list of components wit
 
 ## Pick the type
 
-| What you need to show | Type | Why this one |
-|---|---|---|
-| Components, layers, ownership boundaries | `flowchart` + `subgraph` | Subgraph is the only clean way to draw a boundary |
-| An HTTP request, RPC, or message crossing services | `sequenceDiagram` | The only type with a time axis - shows who blocks on whom and what returns |
-| Lifecycle of one entity (order, job, connection, session) | `stateDiagram-v2` | States are nouns, transitions are events; terminal states are explicit |
-| Table/collection shape and cardinality | `erDiagram` | The only type that expresses 1:N vs N:M natively |
-| Inheritance, composition, interface conformance | `classDiagram` | Carries members and relationship kind together |
-| Branching logic inside one function or algorithm | `flowchart TD` with `{}` decisions | Diamonds make branch coverage visible |
+| What you need to show                                     | Type                               | Why this one                                                               |
+| --------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| Components, layers, ownership boundaries                  | `flowchart` + `subgraph`           | Subgraph is the only clean way to draw a boundary                          |
+| An HTTP request, RPC, or message crossing services        | `sequenceDiagram`                  | The only type with a time axis - shows who blocks on whom and what returns |
+| Lifecycle of one entity (order, job, connection, session) | `stateDiagram-v2`                  | States are nouns, transitions are events; terminal states are explicit     |
+| Table/collection shape and cardinality                    | `erDiagram`                        | The only type that expresses 1:N vs N:M natively                           |
+| Inheritance, composition, interface conformance           | `classDiagram`                     | Carries members and relationship kind together                             |
+| Branching logic inside one function or algorithm          | `flowchart TD` with `{}` decisions | Diamonds make branch coverage visible                                      |
 
-**The mistake that matters most:** drawing a flowchart for something that happens *over time*. A request path drawn as a flowchart silently loses the return leg, the waiting, and the ordering of concurrent calls - the three things a reader opened the diagram for. If the answer to "what does this show" contains the word *then*, or involves two parties exchanging messages, it is a `sequenceDiagram`.
+**The mistake that matters most:** drawing a flowchart for something that happens _over time_. A request path drawn as a flowchart silently loses the return leg, the waiting, and the ordering of concurrent calls - the three things a reader opened the diagram for. If the answer to "what does this show" contains the word _then_, or involves two parties exchanging messages, it is a `sequenceDiagram`.
 
 Recipes for the three types models get wrong - `sequenceDiagram` with `alt`/`loop`, `stateDiagram-v2`, `erDiagram` - are in [references/diagram-recipes.md](references/diagram-recipes.md). Read it when drawing one of those; plain flowcharts need no recipe.
 
@@ -58,7 +58,7 @@ Recipes for the three types models get wrong - `sequenceDiagram` with `alt`/`loo
 
 **Default to no colour.** Mermaid's built-in theme already adapts to the viewer's light or dark mode. An uncoloured diagram is correct everywhere and costs nothing to maintain. Reach for colour only when it **encodes** something a reader must see at a glance - the failure path, the third-party boundary, the thing that persists state. Colour applied for decoration adds a legend the reader has to learn for no return.
 
-**When you do colour, set `fill`, `stroke` and `color` together, always.** This is not style advice - it is the single defect that keeps producing unreadable diagrams. `classDef x fill:#ADD8E6` sets the box background only; the label keeps whatever colour the *renderer's theme* chose. In a dark-mode renderer that label is near-white, sitting on a pale blue box, and the node becomes unreadable. Nothing errors, and it looks fine to whoever authored it in light mode.
+**When you do colour, set `fill`, `stroke` and `color` together, always.** This is not style advice - it is the single defect that keeps producing unreadable diagrams. `classDef x fill:#ADD8E6` sets the box background only; the label keeps whatever colour the _renderer's theme_ chose. In a dark-mode renderer that label is near-white, sitting on a pale blue box, and the node becomes unreadable. Nothing errors, and it looks fine to whoever authored it in light mode.
 
 ### The palette
 
@@ -73,14 +73,14 @@ classDef error   fill:#b3352e,stroke:#e08a84,color:#ffffff
 classDef ext     fill:#5a6472,stroke:#98a2b3,color:#ffffff
 ```
 
-| Role | Use for |
-|---|---|
+| Role      | Use for                                                          |
+| --------- | ---------------------------------------------------------------- |
 | `primary` | The subject of the diagram - the code being explained or changed |
-| `store` | Anything that persists: DB, cache, queue, bucket, file |
-| `ok` | Success terminal state, happy-path outcome |
-| `warn` | Degraded, optional, or fallback path |
-| `error` | Failure state, error branch, rejected input |
-| `ext` | Third party or anything outside your control |
+| `store`   | Anything that persists: DB, cache, queue, bucket, file           |
+| `ok`      | Success terminal state, happy-path outcome                       |
+| `warn`    | Degraded, optional, or fallback path                             |
+| `error`   | Failure state, error branch, rejected input                      |
+| `ext`     | Third party or anything outside your control                     |
 
 Copy only the `classDef` lines you actually use. Declaring six and applying two leaves dead lines in the doc.
 
@@ -98,13 +98,13 @@ style <SubgraphName> fill:transparent,stroke:#8b93a1,stroke-dasharray:4 3
 
 Verified by rendering, because Mermaid fails silently here:
 
-| Diagram type | How to style | Note |
-|---|---|---|
-| `flowchart` | `classDef` + `class A,B name` | Also `A:::name` inline |
-| `stateDiagram-v2` | `classDef` + `class A,B name` | Works as in flowchart |
-| `erDiagram` | `classDef` + `class ENTITY name` | Entity boxes only |
-| `classDiagram` | `class Foo:::name` or `style Foo fill:...` | **`cssClass "Foo" name` is silently ignored** - it parses, renders, and changes nothing |
-| `sequenceDiagram` | no per-node styling | Tint a region with `rect rgba(59,110,165,0.25) ... end` |
+| Diagram type      | How to style                               | Note                                                                                    |
+| ----------------- | ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `flowchart`       | `classDef` + `class A,B name`              | Also `A:::name` inline                                                                  |
+| `stateDiagram-v2` | `classDef` + `class A,B name`              | Works as in flowchart                                                                   |
+| `erDiagram`       | `classDef` + `class ENTITY name`           | Entity boxes only                                                                       |
+| `classDiagram`    | `class Foo:::name` or `style Foo fill:...` | **`cssClass "Foo" name` is silently ignored** - it parses, renders, and changes nothing |
+| `sequenceDiagram` | no per-node styling                        | Tint a region with `rect rgba(59,110,165,0.25) ... end`                                 |
 
 ## Self-check before emitting
 

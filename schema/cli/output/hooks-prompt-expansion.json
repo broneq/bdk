@@ -5,17 +5,10 @@
   "description": "UserPromptExpansion guard: the only writer of `source: user` stage transitions.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "decision",
-    "command",
-    "stage"
-  ],
+  "required": ["decision", "command", "stage"],
   "properties": {
     "decision": {
-      "enum": [
-        "pass",
-        "block"
-      ]
+      "enum": ["pass", "block"]
     },
     "command": {
       "type": "string",
@@ -32,24 +25,14 @@
       "description": "Opaque merge-safe id (T14)."
     },
     "wrote": {
-      "enum": [
-        "transition:user",
-        "transition:policy",
-        "transition:stage",
-        "none"
-      ]
+      "enum": ["transition:user", "transition:policy", "transition:stage", "none"]
     },
     "skipVerify": {
       "type": "boolean"
     },
     "status": {
       "type": "object",
-      "required": [
-        "gate",
-        "ready",
-        "done",
-        "pending"
-      ],
+      "required": ["gate", "ready", "done", "pending"],
       "description": "What the user sees before typing the next stage command (T1).",
       "properties": {
         "gate": {
@@ -63,10 +46,7 @@
           "type": "boolean"
         },
         "passedBy": {
-          "enum": [
-            "user",
-            "policy"
-          ]
+          "enum": ["user", "policy"]
         },
         "command": {
           "type": "string",
@@ -76,15 +56,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "id",
-              "type",
-              "summary",
-              "status",
-              "source",
-              "at",
-              "refs"
-            ],
+            "required": ["id", "type", "summary", "status", "source", "at", "refs"],
             "properties": {
               "id": {
                 "type": "string",
@@ -109,13 +81,7 @@
                 "maxLength": 120
               },
               "status": {
-                "enum": [
-                  "proposed",
-                  "accepted",
-                  "superseded",
-                  "resolved",
-                  "routed"
-                ]
+                "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
               },
               "source": {
                 "type": "string",

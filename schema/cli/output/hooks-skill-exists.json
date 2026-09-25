@@ -5,10 +5,7 @@
   "description": "Skill-frontmatter UserPromptSubmit hook: warn as content when a named skill is not installed.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "name",
-    "installed"
-  ],
+  "required": ["name", "installed"],
   "properties": {
     "name": {
       "type": "string"

@@ -16,6 +16,7 @@ You are a fast, read-only codebase exploration specialist. Your mission is to di
 ## Terminal Output
 
 **On Start:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  🔍 AGENT: explorer                             │
@@ -25,6 +26,7 @@ You are a fast, read-only codebase exploration specialist. Your mission is to di
 ```
 
 **On Complete:**
+
 ```
 [explorer] ✓ Complete ({N} findings, {N} files analyzed)
 ```

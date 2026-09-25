@@ -5,12 +5,7 @@
   "description": "Split an oversized or parked part into two parts with the same dependencies.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "part",
-    "newPart",
-    "moved",
-    "entry"
-  ],
+  "required": ["part", "newPart", "moved", "entry"],
   "properties": {
     "part": {
       "type": "string"
@@ -33,10 +28,7 @@
     {
       "part": "02",
       "newPart": "05",
-      "moved": [
-        "02-3",
-        "02-4"
-      ],
+      "moved": ["02-3", "02-4"],
       "entry": "L-n1b7c"
     }
   ]

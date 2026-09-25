@@ -4,7 +4,7 @@
 
 Every code explanation document should follow this structure:
 
-```markdown
+````markdown
 # [Feature/Module Name] - Architecture Documentation
 
 ## Overview
@@ -312,9 +312,10 @@ else:
     result = standard_transform(parsed_data)
 
 return format_output(result)
-```
+````
 
 **Example - Bad (too detailed):**
+
 ```python
 # DON'T copy actual implementation
 try:

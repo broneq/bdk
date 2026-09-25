@@ -1,6 +1,6 @@
 **Decision tier: lavish**
 
-This project has `features.lavish` on and `lavish-axi` on PATH, so route this decision point through it instead of the terminal `AskUserQuestion`. Everything about *what* to ask is unchanged - the same bundled question set, the same recommended-option-first ordering, the same "no unresolved decision leaks into the output" rule. Only the surface changes.
+This project has `features.lavish` on and `lavish-axi` on PATH, so route this decision point through it instead of the terminal `AskUserQuestion`. Everything about _what_ to ask is unchanged - the same bundled question set, the same recommended-option-first ordering, the same "no unresolved decision leaks into the output" rule. Only the surface changes.
 
 Procedure:
 

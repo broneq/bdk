@@ -28,26 +28,31 @@ Read project context (CLAUDE.md, .claude/rules/architecture.md if present) for p
 ## General Review Criteria
 
 ### Layer Boundaries
+
 - No upward imports (lower layers importing from higher layers)
 - Clear separation of concerns between layers
 - Consistent dependency direction (outer layers depend on inner, never the reverse)
 
 ### Dependency Injection
+
 - Dependencies injected via constructor, not created internally
 - No global/shared mutable state
 - Tests can swap dependencies without modifying source
 
 ### Design Patterns
+
 - Appropriate use of established patterns (Strategy, Repository, Factory, etc.)
 - No anti-patterns (God classes, Spaghetti code, etc.)
 - Immutability preferred where appropriate
 
 ### Data Flow
+
 - Unidirectional data flow where applicable
 - No circular dependencies between modules
 - Clear ownership of data transformations
 
 ### Directory Structure
+
 - Files placed in appropriate layer directories
 - Module names reflect responsibility
 - Test files mirror source structure

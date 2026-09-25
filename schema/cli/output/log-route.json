@@ -5,20 +5,13 @@
   "description": "Route learning entries at close: rule proposal, spec, or nothing, by the T31 thresholds.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "proposedRules",
-    "spec",
-    "nothing"
-  ],
+  "required": ["proposedRules", "spec", "nothing"],
   "properties": {
     "proposedRules": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "entry",
-          "signals"
-        ],
+        "required": ["entry", "signals"],
         "properties": {
           "entry": {
             "type": "string",
@@ -65,9 +58,7 @@
         }
       ],
       "spec": [],
-      "nothing": [
-        "L-q8n2m"
-      ]
+      "nothing": ["L-q8n2m"]
     }
   ]
 }

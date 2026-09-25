@@ -3,6 +3,7 @@
 Audit of every dynamic-content injection mechanism in BDK, mapped against the Claude Code plugin spec. Documents what works, what's silently broken, and where every usage lives.
 
 **Sources verified against:**
+
 - `https://code.claude.com/docs/en/plugins-reference` — Plugins reference
 - `https://code.claude.com/docs/en/skills` — Skills (frontmatter, dynamic context injection)
 - `https://code.claude.com/docs/en/agents` — Subagents (supported frontmatter, plugin restrictions)
@@ -16,18 +17,18 @@ Audit of every dynamic-content injection mechanism in BDK, mapped against the Cl
 
 ## TL;DR — Status of every flow
 
-| # | Flow | Status | Severity |
-|---|------|--------|----------|
-| 1 | `hooks.json` SessionStart shells `cat STARTUP_INSTRUCTIONS.md` | ⚠️ **Partially broken** | High |
-| 2 | `STARTUP_INSTRUCTIONS.md` `!\`inject.py --chain\`` blocks | ❌ **Dead code** | High — defeats Tool Tier System |
-| 3 | Skill `SKILL.md` `!\`inject.py --chain\`` blocks | ✅ Works | — |
-| 4 | Skill `SKILL.md` `!\`inject-rules.py <name>\`` blocks | ✅ Works | — |
-| 5 | Skill `SKILL.md` `!\`get_settings.py <kind>\`` blocks | ✅ Works | — |
-| 6 | Skill template `<!-- INJECT: <name> -->` markers | ✅ Works (instruction-driven, not directive) | — |
-| 7 | Agent frontmatter `hooks: SessionStart: hook_inject.sh` | ❌ **Dead code** | High — 5 agents lose tool-tier guidance |
-| 8 | Agent frontmatter `hooks: PostToolUse: ...` | ❌ **Dead code** | High — `implementer`, `fixer` lose context-usage tracking |
-| 9 | Skill frontmatter `hooks:` blocks (e.g. `commit/SKILL.md`) | ✅ Works | — |
-| 10 | Agent body reading `.claude/rules/` from target project | ✅ Works | — |
+| #   | Flow                                                           | Status                                       | Severity                                                  |
+| --- | -------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------- |
+| 1   | `hooks.json` SessionStart shells `cat STARTUP_INSTRUCTIONS.md` | ⚠️ **Partially broken**                      | High                                                      |
+| 2   | `STARTUP_INSTRUCTIONS.md` `!\`inject.py --chain\`` blocks      | ❌ **Dead code**                             | High — defeats Tool Tier System                           |
+| 3   | Skill `SKILL.md` `!\`inject.py --chain\`` blocks               | ✅ Works                                     | —                                                         |
+| 4   | Skill `SKILL.md` `!\`inject-rules.py <name>\`` blocks          | ✅ Works                                     | —                                                         |
+| 5   | Skill `SKILL.md` `!\`get_settings.py <kind>\`` blocks          | ✅ Works                                     | —                                                         |
+| 6   | Skill template `<!-- INJECT: <name> -->` markers               | ✅ Works (instruction-driven, not directive) | —                                                         |
+| 7   | Agent frontmatter `hooks: SessionStart: hook_inject.sh`        | ❌ **Dead code**                             | High — 5 agents lose tool-tier guidance                   |
+| 8   | Agent frontmatter `hooks: PostToolUse: ...`                    | ❌ **Dead code**                             | High — `implementer`, `fixer` lose context-usage tracking |
+| 9   | Skill frontmatter `hooks:` blocks (e.g. `commit/SKILL.md`)     | ✅ Works                                     | —                                                         |
+| 10  | Agent body reading `.claude/rules/` from target project        | ✅ Works                                     | —                                                         |
 
 ---
 
@@ -38,14 +39,15 @@ The whole confusion stems from **`!\`...\`` only working in some contexts, not o
 ### Where `!\`command\`` IS executed
 
 Per docs, dynamic context injection runs in:
-- **`SKILL.md` body** — verbatim quote: *"Each `!\`<command>\`` executes immediately (before Claude sees anything). The output replaces the placeholder in the skill content."*
+
+- **`SKILL.md` body** — verbatim quote: _"Each `!\`<command>\`` executes immediately (before Claude sees anything). The output replaces the placeholder in the skill content."_
 - **Custom commands** (`.claude/commands/*.md`) — same skill machinery
 
 Output is **substituted before Claude sees the rendered skill**.
 
 ### Where `!\`command\`` is NOT executed
 
-- **Hook stdout** — verbatim quote: *"Any text your hook script prints to stdout is added as context for Claude."* Plus: *"There is no mention of processing embedded directives or expanding special syntax."*
+- **Hook stdout** — verbatim quote: _"Any text your hook script prints to stdout is added as context for Claude."_ Plus: _"There is no mention of processing embedded directives or expanding special syntax."_
 - **Agent body** (`agents/*.md` markdown body) — agents are static markdown; never re-parsed for directives.
 - **Files `cat`'d by hooks** — `cat` outputs the file verbatim. The hook then sends that verbatim text as additionalContext.
 
@@ -57,7 +59,7 @@ Verbatim from the agents doc:
 
 > **For security reasons, plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin.**
 
-So plugin agents *cannot* attach hooks via frontmatter, period. Skills *can*.
+So plugin agents _cannot_ attach hooks via frontmatter, period. Skills _can_.
 
 ---
 
@@ -93,6 +95,7 @@ So plugin agents *cannot* attach hooks via frontmatter, period. Skills *can*.
 **File:** `STARTUP_INSTRUCTIONS.md`
 
 **Three usages, all dead:**
+
 - Line 11: `!\`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/explore.chain.json\``
 - Line 15: `!\`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/search.chain.json\``
 - Line 19: `!\`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --chain ${CLAUDE_PLUGIN_ROOT}/fragments/tool-tiers/impact.chain.json\``
@@ -101,9 +104,10 @@ So plugin agents *cannot* attach hooks via frontmatter, period. Skills *can*.
 
 **Empirical verification:** Start a fresh Claude Code session in any test project with BDK installed. Inspect the SessionStart context. The "Tool Tier System" section should contain raw backtick-wrapped strings, not the resolved tier guidance.
 
-**Impact:** The Tool Tier System — the central abstraction injected at session start — is not reaching the model. Skills that *do* invoke chains directly (Flow 3) still get them, but the session-level baseline is missing.
+**Impact:** The Tool Tier System — the central abstraction injected at session start — is not reaching the model. Skills that _do_ invoke chains directly (Flow 3) still get them, but the session-level baseline is missing.
 
 **Fix options:**
+
 - **A.** Move expansion into the hook command itself: `bash -c 'cat .../STARTUP_INSTRUCTIONS.md && python3 .../inject.py --chain .../explore.chain.json && ...'`
 - **B.** Replace `STARTUP_INSTRUCTIONS.md` with a Python script that prints the resolved content (chains expanded inline). Hook calls the script directly.
 - **C.** Use `additionalContext` JSON form in the hook to assemble the final string in the script.
@@ -117,6 +121,7 @@ Recommended: **B**. Cleanest, single source of truth.
 **Status:** ✅ Works. Skill markdown supports dynamic context injection per spec.
 
 **Usages:**
+
 - `skills/cr/SKILL.md:52` — `review.chain.json`
 - `skills/create-plan/SKILL.md:52` — `explore.chain.json`
 - `skills/explain-complex-code/SKILL.md:34` — `explore.chain.json`
@@ -133,8 +138,9 @@ These run when the skill is invoked. Output replaces the placeholder before Clau
 **Status:** ✅ Works.
 
 **Two usages:**
+
 - `skills/create-plan/SKILL.md:122` — `code-quality`
-- `skills/cr/SKILL.md:99` — generic loop in prose: *"For each `<!-- INJECT: <name> -->` marker, run python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>"*
+- `skills/cr/SKILL.md:99` — generic loop in prose: _"For each `<!-- INJECT: <name> -->` marker, run python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py <name>"_
 
 The `cr` skill uses an instruction-driven loop (it's prose, the model walks the markers and shells the script per-marker). The `create-plan` skill hardcodes one rule name. **Inconsistent — see "Recommendations" at end.**
 
@@ -145,6 +151,7 @@ The `cr` skill uses an instruction-driven loop (it's prose, the model walks the 
 **Status:** ✅ Works.
 
 **Usages:**
+
 - `skills/test-driven-development/SKILL.md:105` — `test-tools`
 - `skills/create-plan/SKILL.md:120,121` — `test-tools`, `lint-tools`
 - `skills/debug/SKILL.md:117,168,169` — `test-tools` (×2), `lint-tools`
@@ -158,6 +165,7 @@ Resolves project-level test/lint commands from `.bdk/settings.json`. Standard sk
 **Status:** ✅ Works (instruction-driven, not a Claude Code feature).
 
 **Usages:**
+
 - `skills/cr/references/reviewer-prompt-template.md:18` — `code-quality`
 - `skills/cr/references/reviewer-prompt-template.md:22` — `architecture`
 - `skills/cr/references/reviewer-prompt-template.md:48` — `architecture`
@@ -173,11 +181,11 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 
 **Status:** ❌ **DEAD CODE — now removed.** Plugin agents drop `hooks` per spec. No agent declares `hooks:` any more; tier guidance reaches agents through `skills:` preload instead.
 
-**Why dead:** Verbatim from spec — *"plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin."*
+**Why dead:** Verbatim from spec — _"plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin."_
 
 **Impact:** These agents never receive the tool-tier guidance their frontmatter requests. Each runs with only the static markdown body for tool guidance.
 
-**Reinforces an existing comment:** `.claude/rules/fragment-system.md:88` already says *"Agent `.md` files are static markdown — shell commands do not execute at load time."* The `hooks:` blocks contradict this and were never going to work.
+**Reinforces an existing comment:** `.claude/rules/fragment-system.md:88` already says _"Agent `.md` files are static markdown — shell commands do not execute at load time."_ The `hooks:` blocks contradict this and were never going to work.
 
 **Fix:** Delete the dead `hooks:` blocks. Move tool-tier guidance into the agent body (static prose naming the tools to use for callers and callees). Accept that subagent prompts cannot be dynamically composed.
 
@@ -194,6 +202,7 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 **Status:** ✅ Works. Skill frontmatter `hooks:` is documented and supported, no plugin restriction.
 
 **Skills using this:**
+
 - `skills/commit/SKILL.md:7-9`
 - `skills/update-docs/SKILL.md:8-10`
 - `skills/explain-complex-code/SKILL.md:8-10`
@@ -207,6 +216,7 @@ These fire correctly when the skill is invoked.
 **Status:** ✅ Works. Pure file-read at runtime, no special mechanism.
 
 **Two agents:**
+
 - `agents/code-reviewer.md:49` — reads `.claude/rules/` for project-specific quality standards
 - `agents/architecture-reviewer.md:39,73` — reads `.claude/rules/architecture.md`
 
@@ -216,12 +226,12 @@ Note: This refers to **target project's** `.claude/rules/`, not BDK's internal `
 
 ## Two scripts, overlapping purpose
 
-| Script | Reads from | Used by |
-|---|---|---|
-| `scripts/inject.py` | `fragments/**/*.md` (chain JSON or `--if`/`--prefer`) | STARTUP, 6 skill `!\`...\`` blocks |
+| Script                    | Reads from                                                 | Used by                                                   |
+| ------------------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
+| `scripts/inject.py`       | `fragments/**/*.md` (chain JSON or `--if`/`--prefer`)      | STARTUP, 6 skill `!\`...\`` blocks                        |
 | `scripts/inject-rules.py` | `rules/*.md` (with `.bdk/settings.json` quality overrides) | 1 hardcoded skill block + 1 instruction-driven skill loop |
-| `scripts/get_settings.py` | `.bdk/settings.json` (specific keys) | 6 skill `!\`...\`` blocks |
-| `scripts/hook_inject.sh` | Wraps `inject.py` for hook stdout JSON output | **Only the dead agent SessionStart blocks** — Flow 7 |
+| `scripts/get_settings.py` | `.bdk/settings.json` (specific keys)                       | 6 skill `!\`...\`` blocks                                 |
+| `scripts/hook_inject.sh`  | Wraps `inject.py` for hook stdout JSON output              | **Only the dead agent SessionStart blocks** — Flow 7      |
 
 `hook_inject.sh` exists exclusively to feed the dead Flow 7. **If Flow 7 is removed, the script is dead too.**
 
@@ -229,11 +239,11 @@ Note: This refers to **target project's** `.claude/rules/`, not BDK's internal `
 
 ## Naming gotcha — three different `rules/` directories
 
-| Path | Owner | Read by |
-|---|---|---|
-| `rules/` (BDK plugin root) | BDK | `inject-rules.py` for skill injection |
-| `.claude/rules/` (BDK plugin internal) | BDK contributors | Dev-time conventions for BDK itself (per `CLAUDE.md`) |
-| `.claude/rules/` (target project) | end user | `code-reviewer.md` and `architecture-reviewer.md` read at runtime |
+| Path                                   | Owner            | Read by                                                           |
+| -------------------------------------- | ---------------- | ----------------------------------------------------------------- |
+| `rules/` (BDK plugin root)             | BDK              | `inject-rules.py` for skill injection                             |
+| `.claude/rules/` (BDK plugin internal) | BDK contributors | Dev-time conventions for BDK itself (per `CLAUDE.md`)             |
+| `.claude/rules/` (target project)      | end user         | `code-reviewer.md` and `architecture-reviewer.md` read at runtime |
 
 Three same-named-or-similar directories, three different purposes. Worth a rename pass eventually (e.g., BDK's internal one → `.claude/dev-rules/`).
 
@@ -243,8 +253,7 @@ Three same-named-or-similar directories, three different purposes. Worth a renam
 
 ### 1. `create-plan` hardcodes one rule, `cr` uses a generic loop
 
-`skills/create-plan/SKILL.md:122` — `!\`python3 ... inject-rules.py code-quality\`` (one rule name baked in)
-`skills/cr/SKILL.md:96-99` — instruction-driven loop over `<!-- INJECT: <name> -->` markers (any rule)
+`skills/create-plan/SKILL.md:122` — `!\`python3 ... inject-rules.py code-quality\``(one rule name baked in)`skills/cr/SKILL.md:96-99`— instruction-driven loop over`<!-- INJECT: <name> -->` markers (any rule)
 
 If `design-patterns.md` (or any future rule) is added, only `cr` picks it up automatically. `create-plan` requires editing SKILL.md.
 
@@ -296,7 +305,7 @@ If Flow 2 worked (it doesn't), the chains would be in the session baseline and s
 
 After empirically confirming agent `hooks:` frontmatter is dead in plugin mode (see Flow 7 + 8), the replacement strategy uses the `skills:` preload field, which IS supported for plugin subagents per spec.
 
-> **`skills`**: Skills to load into the subagent's context at startup. The full skill content is injected, not just made available for invocation. Subagents don't inherit skills from the parent conversation. *(verbatim from `/en/sub-agents`, supported frontmatter table)*
+> **`skills`**: Skills to load into the subagent's context at startup. The full skill content is injected, not just made available for invocation. Subagents don't inherit skills from the parent conversation. _(verbatim from `/en/sub-agents`, supported frontmatter table)_
 
 The `skills:` field is **not** in the plugin-restricted list (only `hooks`, `mcpServers`, `permissionMode` are). So this works for plugin agents.
 
@@ -434,15 +443,15 @@ flowchart TB
 
 ### Skills introduced by this design
 
-| Skill name | Body | Purpose |
-|---|---|---|
-| `bdk-tier-explore` | `!\`inject.py --chain explore.chain.json\`` | Architecture/codebase exploration tier |
-| `bdk-tier-search` | `!\`inject.py --chain search.chain.json\`` | Symbol search/tracing tier |
-| `bdk-tier-review` | `!\`inject.py --chain review.chain.json\`` | Code review tier |
-| `bdk-tier-impact` | `!\`inject.py --chain impact.chain.json\`` | Impact-radius analysis tier |
-| `bdk-rules-code-quality` | `!\`inject-rules.py code-quality\`` | Code quality principles |
-| `bdk-rules-architecture` | `!\`inject-rules.py architecture\`` | Architecture principles |
-| `bdk-rules-design-patterns` (future) | `!\`inject-rules.py design-patterns\`` | GoF + data-driven principles |
+| Skill name                           | Body                                        | Purpose                                |
+| ------------------------------------ | ------------------------------------------- | -------------------------------------- |
+| `bdk-tier-explore`                   | `!\`inject.py --chain explore.chain.json\`` | Architecture/codebase exploration tier |
+| `bdk-tier-search`                    | `!\`inject.py --chain search.chain.json\``  | Symbol search/tracing tier             |
+| `bdk-tier-review`                    | `!\`inject.py --chain review.chain.json\``  | Code review tier                       |
+| `bdk-tier-impact`                    | `!\`inject.py --chain impact.chain.json\``  | Impact-radius analysis tier            |
+| `bdk-rules-code-quality`             | `!\`inject-rules.py code-quality\``         | Code quality principles                |
+| `bdk-rules-architecture`             | `!\`inject-rules.py architecture\``         | Architecture principles                |
+| `bdk-rules-design-patterns` (future) | `!\`inject-rules.py design-patterns\``      | GoF + data-driven principles           |
 
 All marked `user-invocable: false` to hide from `/` menu. Cannot use `disable-model-invocation: true` because that blocks subagent preloading per spec.
 
@@ -450,21 +459,22 @@ All marked `user-invocable: false` to hide from `/` menu. Cannot use `disable-mo
 
 For each, decision based on the entity's actual job. "Inject only what's used."
 
-| Agent | Model | Job | tier-explore | tier-search | tier-review | tier-impact | rules-code-quality | rules-architecture | rules-design-patterns |
-|---|---|---|---|---|---|---|---|---|---|
-| `code-reviewer` | sonnet | Review files, find findings | — | ✅ | ✅ | — | ✅ | ✅ | ✅ |
-| `architecture-reviewer` | opus | Cross-cutting architecture analysis | ✅ | ✅ | — | ✅ | — | ✅ | ✅ |
-| `dead-code-detector` | haiku | Find unused symbols | — | ✅ | — | — | — | — | — |
-| `duplicate-detector` | haiku | Find duplicates | — | ✅ | — | — | — | — | — |
-| `explorer` | haiku | Fast codebase exploration | ✅ | ✅ | — | — | — | — | — |
-| `fixer` | sonnet | Apply specific findings to code | — | ✅ | — | ✅ | ✅ | — | — |
-| `implementer` | sonnet | Implement one plan task TDD-style | — | ✅ | — | ✅ | ✅ | — | ✅ |
-| `log-analyzer` | haiku | Triage stderr / stack traces | — | ✅ | — | — | — | — | — |
-| `static-analyse` | haiku | Run lint/format/typecheck tools | — | — | — | — | — | — | — |
-| `test-runner` | haiku | Run test suite, report results | — | — | — | — | — | — | — |
-| `web-researcher` | haiku | Internet research | — | — | — | — | — | — | — |
+| Agent                   | Model  | Job                                 | tier-explore | tier-search | tier-review | tier-impact | rules-code-quality | rules-architecture | rules-design-patterns |
+| ----------------------- | ------ | ----------------------------------- | ------------ | ----------- | ----------- | ----------- | ------------------ | ------------------ | --------------------- |
+| `code-reviewer`         | sonnet | Review files, find findings         | —            | ✅          | ✅          | —           | ✅                 | ✅                 | ✅                    |
+| `architecture-reviewer` | opus   | Cross-cutting architecture analysis | ✅           | ✅          | —           | ✅          | —                  | ✅                 | ✅                    |
+| `dead-code-detector`    | haiku  | Find unused symbols                 | —            | ✅          | —           | —           | —                  | —                  | —                     |
+| `duplicate-detector`    | haiku  | Find duplicates                     | —            | ✅          | —           | —           | —                  | —                  | —                     |
+| `explorer`              | haiku  | Fast codebase exploration           | ✅           | ✅          | —           | —           | —                  | —                  | —                     |
+| `fixer`                 | sonnet | Apply specific findings to code     | —            | ✅          | —           | ✅          | ✅                 | —                  | —                     |
+| `implementer`           | sonnet | Implement one plan task TDD-style   | —            | ✅          | —           | ✅          | ✅                 | —                  | ✅                    |
+| `log-analyzer`          | haiku  | Triage stderr / stack traces        | —            | ✅          | —           | —           | —                  | —                  | —                     |
+| `static-analyse`        | haiku  | Run lint/format/typecheck tools     | —            | —           | —           | —           | —                  | —                  | —                     |
+| `test-runner`           | haiku  | Run test suite, report results      | —            | —           | —           | —           | —                  | —                  | —                     |
+| `web-researcher`        | haiku  | Internet research                   | —            | —           | —           | —           | —                  | —                  | —                     |
 
 **Notes per agent:**
+
 - `architecture-reviewer` — gets both `tier-explore` and `tier-search` because it traces structure AND symbols. No `code-quality` (not its job — it reviews layering, not function-level hygiene).
 - `code-reviewer` — gets all rules. Reviews function-level code AND structural choices.
 - `dead-code-detector` / `duplicate-detector` — narrow jobs. Only `tier-search`. No rules to enforce.
@@ -479,20 +489,20 @@ For each, decision based on the entity's actual job. "Inject only what's used."
 
 Skills that ARE orchestrators (dispatch subagents) and skills that produce output documents need injection differently.
 
-| Skill | Type | Already injects tiers in body? | Needs tier injection (skill body) | Needs rules injection (skill body) | Notes |
-|---|---|---|---|---|---|
-| `cr` | Orchestrator | ✅ `tier-review` | Keep `tier-review` | — | Orchestrator dispatches reviewers; itself does not enforce rules. Rules go to subagents via `skills:` preload. **Remove `<!-- INJECT: -->` template markers** (redundant once subagents preload rules). |
-| `create-plan` | Output document | ✅ `tier-explore` | Keep `tier-explore` | Add `code-quality`, `architecture`, `design-patterns` | Plan output cites rules for the human reader. Add markers in `plan-template.md`. **Generalize hardcoded `inject-rules.py code-quality` to a marker loop like `cr` uses.** |
-| `debug` | Output document | ✅ `tier-search` + `tier-impact` | Keep both | — | Debug session is investigation; doesn't enforce rules per se. |
-| `explain-complex-code` | Output document | ✅ `tier-explore` | Keep | — | Explanatory output, not enforcement. |
-| `test-driven-development` | Procedure | ✅ `tier-search` | Keep | — | TDD process; tests are the enforcement, no rule injection needed. |
-| `subagent-execute-plan` | Orchestrator | — | Add `tier-impact` (orchestrator triages risk) | — | Dispatches `implementer`/`fixer`/reviewers. Rules go to those subagents. |
-| `design` | Output document | ✅ `tier-explore` (via `explore.chain.json`) | Keep | Add `architecture`, `design-patterns` | Design exploration; should know the constraints it's designing within. Replaces `brainstorming` + `brainstorm-architecture`. |
-| `verify-plan` | Orchestrator | — | Add `tier-impact` | — | Orchestrates `plan-verifier`. Rules go to subagents. |
-| `commit` | Procedure | — | — | — | Generates commit message from git diff. No code analysis. |
-| `setup` | Bootstrap | — | — | — | Initializes settings; no analysis. |
-| `create-adr` | Output document | — | — | Add `architecture` | ADRs document architectural decisions; arch rules give the reviewer's lens. |
-| `update-docs` | Output document | — | Add `tier-explore` | — | Compares docs to code; needs exploration. |
+| Skill                     | Type            | Already injects tiers in body?               | Needs tier injection (skill body)             | Needs rules injection (skill body)                    | Notes                                                                                                                                                                                                   |
+| ------------------------- | --------------- | -------------------------------------------- | --------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cr`                      | Orchestrator    | ✅ `tier-review`                             | Keep `tier-review`                            | —                                                     | Orchestrator dispatches reviewers; itself does not enforce rules. Rules go to subagents via `skills:` preload. **Remove `<!-- INJECT: -->` template markers** (redundant once subagents preload rules). |
+| `create-plan`             | Output document | ✅ `tier-explore`                            | Keep `tier-explore`                           | Add `code-quality`, `architecture`, `design-patterns` | Plan output cites rules for the human reader. Add markers in `plan-template.md`. **Generalize hardcoded `inject-rules.py code-quality` to a marker loop like `cr` uses.**                               |
+| `debug`                   | Output document | ✅ `tier-search` + `tier-impact`             | Keep both                                     | —                                                     | Debug session is investigation; doesn't enforce rules per se.                                                                                                                                           |
+| `explain-complex-code`    | Output document | ✅ `tier-explore`                            | Keep                                          | —                                                     | Explanatory output, not enforcement.                                                                                                                                                                    |
+| `test-driven-development` | Procedure       | ✅ `tier-search`                             | Keep                                          | —                                                     | TDD process; tests are the enforcement, no rule injection needed.                                                                                                                                       |
+| `subagent-execute-plan`   | Orchestrator    | —                                            | Add `tier-impact` (orchestrator triages risk) | —                                                     | Dispatches `implementer`/`fixer`/reviewers. Rules go to those subagents.                                                                                                                                |
+| `design`                  | Output document | ✅ `tier-explore` (via `explore.chain.json`) | Keep                                          | Add `architecture`, `design-patterns`                 | Design exploration; should know the constraints it's designing within. Replaces `brainstorming` + `brainstorm-architecture`.                                                                            |
+| `verify-plan`             | Orchestrator    | —                                            | Add `tier-impact`                             | —                                                     | Orchestrates `plan-verifier`. Rules go to subagents.                                                                                                                                                    |
+| `commit`                  | Procedure       | —                                            | —                                             | —                                                     | Generates commit message from git diff. No code analysis.                                                                                                                                               |
+| `setup`                   | Bootstrap       | —                                            | —                                             | —                                                     | Initializes settings; no analysis.                                                                                                                                                                      |
+| `create-adr`              | Output document | —                                            | —                                             | Add `architecture`                                    | ADRs document architectural decisions; arch rules give the reviewer's lens.                                                                                                                             |
+| `update-docs`             | Output document | —                                            | Add `tier-explore`                            | —                                                     | Compares docs to code; needs exploration.                                                                                                                                                               |
 
 ### Cross-cutting observations from the audit
 
@@ -519,14 +529,17 @@ Until these tests pass, the proposal stays a proposal. Do not migrate production
 For future verification, here are the exact lines from Claude Code docs that this audit relies on.
 
 **Plugin agent restrictions** (`/en/agents`):
+
 > For security reasons, plugin subagents do not support the `hooks`, `mcpServers`, or `permissionMode` frontmatter fields. These fields are ignored when loading agents from a plugin.
 
 **Hook stdout handling** (`/en/hooks`):
+
 > Any text your hook script prints to stdout is added as context for Claude.
 
 > Once output is injected as context or additionalContext, it is static. The documentation contains no reference to re-parsing hook output for embedded commands or macros.
 
 **Skill dynamic context injection** (`/en/skills`):
+
 > The `!\`<command>\`` syntax runs shell commands before the skill content is sent to Claude. The command output replaces the placeholder, so Claude receives actual data, not the command itself.
 
 > Each `!\`<command>\`` executes immediately (before Claude sees anything)
@@ -535,11 +548,13 @@ For future verification, here are the exact lines from Claude Code docs that thi
 > This is preprocessing, not something Claude executes. Claude only sees the final result.
 
 **Skill `hooks:` frontmatter field** (`/en/skills`, frontmatter table):
+
 > `hooks` — Hooks scoped to this skill's lifecycle. See [Hooks in skills and agents] for configuration format.
 
-(No equivalent restriction on plugin skills — only plugin *agents* drop hooks.)
+(No equivalent restriction on plugin skills — only plugin _agents_ drop hooks.)
 
 **Plugin path behavior** (`/en/plugins-reference`):
+
 > For `skills`, `commands`, `agents`, `outputStyles`, `themes`, and `monitors`, a custom path replaces the default.
 
 (Note: `rules/` is not in the list of recognized plugin directories — it's plugin payload, read by BDK's own scripts via `${CLAUDE_PLUGIN_ROOT}`. Not a bug, just clarifying.)

@@ -5,18 +5,13 @@
   "description": "What the merged spec would look like: requirement-level diff of the Change's deltas against `.bdk/specs/`.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "capabilities"
-  ],
+  "required": ["capabilities"],
   "properties": {
     "capabilities": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "capability",
-          "requirements"
-        ],
+        "required": ["capability", "requirements"],
         "properties": {
           "capability": {
             "type": "string"
@@ -25,22 +20,13 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "name",
-                "change"
-              ],
+              "required": ["name", "change"],
               "properties": {
                 "name": {
                   "type": "string"
                 },
                 "change": {
-                  "enum": [
-                    "added",
-                    "modified",
-                    "removed",
-                    "renamed",
-                    "unchanged"
-                  ]
+                  "enum": ["added", "modified", "removed", "renamed", "unchanged"]
                 },
                 "scenarios": {
                   "type": "object",

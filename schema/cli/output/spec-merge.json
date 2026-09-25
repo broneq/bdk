@@ -5,20 +5,13 @@
   "description": "Deterministically merge the Change's deltas into `.bdk/specs/`; refuse on conflict.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "merged",
-    "conflicts"
-  ],
+  "required": ["merged", "conflicts"],
   "properties": {
     "merged": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "capability",
-          "path",
-          "mergeHash"
-        ],
+        "required": ["capability", "path", "mergeHash"],
         "properties": {
           "capability": {
             "type": "string"
@@ -47,12 +40,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "capability",
-          "requirement",
-          "ours",
-          "theirs"
-        ],
+        "required": ["capability", "requirement", "ours", "theirs"],
         "properties": {
           "capability": {
             "type": "string"

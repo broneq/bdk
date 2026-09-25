@@ -98,21 +98,23 @@ Use when writing to `.bdk/plans/YYYY-MM-DD-HHMM-<slug>.md`.
 
 **Test scaffold:**
 ```
+
 // language-agnostic pseudocode — write in the project's language/framework
 
 // Setup: [fixture or setup needed, e.g. "none", "mock repo", "test container"]
 
 // test: [name matching first case]
-//   arrange: [concrete input]
-//   act:     [call under test]
-//   assert:  [expected output or side effect]
+// arrange: [concrete input]
+// act: [call under test]
+// assert: [expected output or side effect]
 
 // test: [name matching second case]
-//   [...]
+// [...]
 
 // CLI regression tasks: replace stubs with:
-//   run [command] — expect exit 0, no errors
-```
+// run [command] — expect exit 0, no errors
+
+````
 
 **Implementation:**
 
@@ -136,7 +138,7 @@ Rules:
 + if (!convexUrl) return err500();
 + const result = await attachmentRepository().download(attachment.blobKey);
 + if (!result.ok) return mapDownloadError(result.reason);
-```
+````
 
 **Example (new code):**
 
@@ -176,7 +178,7 @@ flowchart LR
 
 ## Execution Waves
 
-*Derived from the `Depends on:` edges. The executor (`/bdk:subagent-execute-plan`) fans out one wave at a time: all tasks in a wave run in parallel, the next wave starts when the current wave's tasks complete. Tasks within a wave have disjoint file sets and no inter-dependency.*
+_Derived from the `Depends on:` edges. The executor (`/bdk:subagent-execute-plan`) fans out one wave at a time: all tasks in a wave run in parallel, the next wave starts when the current wave's tasks complete. Tasks within a wave have disjoint file sets and no inter-dependency._
 
 - **Wave 1** (no dependencies): T1, T3, T4 — `strategy: workflow`
 - **Wave 2** (depends on Wave 1): T2, T5
@@ -194,15 +196,19 @@ flowchart LR
 ## Reusable Components
 
 **Existing utilities:**
+
 - `file:symbol_path` - [what it does]
 
 **Relevant schemas/models:**
+
 - `file_path` - [what it defines]
 
 **Patterns to follow:**
+
 - [pattern from existing codebase]
 
 **Test helpers:**
+
 - `file:function_path` - [what it does]
 
 ---
@@ -212,6 +218,7 @@ flowchart LR
 ### Tests
 
 Delegate to `test-runner` subagent, passing paths — not a command:
+
 ```
 Changed source files for this feature — run the fast tier's tests covering them:
 
@@ -226,6 +233,7 @@ The full suite of every tier, e2e included, runs once at the end of execution �
 ### Code Quality
 
 Delegate to `static-analyse` subagent, passing the changed file list:
+
 ```
 Static analysis, scoped to these files only:
 
@@ -236,9 +244,10 @@ Scoped form for lint/format; incremental form for typecheck.
 
 ### Regression
 
-*(Only if input provided a failing CLI command)*
+_(Only if input provided a failing CLI command)_
 
 Delegate to `test-runner` subagent:
+
 ```
 Run: [exact failing command from input]
 Expected: exits 0 with no errors
@@ -254,6 +263,7 @@ Expected: exits 0 with no errors
 ## Success Criteria
 
 **Must have:**
+
 - [requirement 1]
 - [requirement 2]
 - All tests pass
@@ -261,6 +271,7 @@ Expected: exits 0 with no errors
 - Coverage meets thresholds
 
 **Nice to have:**
+
 - [optional enhancement]
 
 ---
@@ -298,10 +309,13 @@ Expected: exits 0 with no errors
 **Design Doc:** [path if exists]
 
 **Memories Referenced:**
+
 - [memory_name] - [what was learned]
 
 **Similar Implementations:**
+
 - `file:symbol_path` - [serves as example for what]
+
 ```
 
 ---
@@ -332,3 +346,4 @@ Expected: exits 0 with no errors
 **Type shape inline** — for non-trivial discriminated unions or complex types (≥3 fields or ≥2 union variants AND not trivially importable), put the type in a language-tagged fence inside Implementation. Skip for types the implementer can `import`.
 
 **Rule of thumb:** every snippet costs plan length. Trivial one-line change → diff fence with two lines, no Why. Non-obvious mutation → diff fence + one Why line. Architectural choice with branching → Why + Flow. Prose belongs in the approach's Rationale, never inside a task.
+```

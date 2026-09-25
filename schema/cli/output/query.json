@@ -29,19 +29,10 @@
   "unevaluatedProperties": false,
   "examples": [
     {
-      "columns": [
-        "type",
-        "count(*)"
-      ],
+      "columns": ["type", "count(*)"],
       "items": [
-        [
-          "decision",
-          4
-        ],
-        [
-          "finding",
-          7
-        ]
+        ["decision", 4],
+        ["finding", 7]
       ],
       "total": 2,
       "truncated": false

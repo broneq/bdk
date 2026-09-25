@@ -39,9 +39,9 @@ rules:
     - Stay inside the task's Scope. Work the plan assigns to another task is named as out of scope with that task's ID.
   specs:
     - Every item in the task's Acceptance signal becomes a Requirement with at least one "#### Scenario:" in WHEN / THEN form.
-    - 'A task whose output is only documents or research (no behaviour change) sets `skip_specs: true` instead of inventing requirements.'
-    - 'A task that changes kernel CLI behaviour writes its delta against the existing main spec: `kernel-cli` for cross-cutting rules, `kernel-cli/<group>` for a command (one `### Requirement: bdk <argv>` per command with the mini-template body and one scenario per declared rule), `kernel-architecture` for the module layout. It edits schema/cli/ in the same PR; tests/contract/ keeps the pair consistent. Never restate a kernel behaviour in a new capability.'
-    - 'A living spec is never written under docs/. docs/ holds temporary material, task artifacts, user documentation and ADRs only.'
+    - "A task whose output is only documents or research (no behaviour change) sets `skip_specs: true` instead of inventing requirements."
+    - "A task that changes kernel CLI behaviour writes its delta against the existing main spec: `kernel-cli` for cross-cutting rules, `kernel-cli/<group>` for a command (one `### Requirement: bdk <argv>` per command with the mini-template body and one scenario per declared rule), `kernel-architecture` for the module layout. It edits schema/cli/ in the same PR; tests/contract/ keeps the pair consistent. Never restate a kernel behaviour in a new capability."
+    - "A living spec is never written under docs/. docs/ holds temporary material, task artifacts, user documentation and ADRs only."
   design:
     - Each decision records the alternatives considered and why they lost; cite the register ID when a choice follows from an existing decision.
   tasks:

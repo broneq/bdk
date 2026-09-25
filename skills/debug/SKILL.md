@@ -104,13 +104,14 @@ digraph debug_flow {
 Write tests that precisely reproduce bug. Tests RED until fix applied.
 
 **Rules:**
+
 - Each test concrete: specific input values, specific expected outcome
 - Follow project test conventions (check existing tests for patterns)
 - Place tests in correct existing test file
 
 Inject test command: !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/get_settings.py test-tools`
 
-Confirm the new tests are RED by running the matching tier's `scoped` form on the test file(s) you just wrote, **directly via `Bash`** — substitute `{files}` with those paths. No agent spawn: one test file's output is a few lines, and the spawn costs more wall-clock than the run. Never the `full` form of any tier, and never an e2e tier unless the tests you wrote *are* e2e specs.
+Confirm the new tests are RED by running the matching tier's `scoped` form on the test file(s) you just wrote, **directly via `Bash`** — substitute `{files}` with those paths. No agent spawn: one test file's output is a few lines, and the spawn costs more wall-clock than the run. Never the `full` form of any tier, and never an e2e tier unless the tests you wrote _are_ e2e specs.
 
 ```
 [debug] Failing tests confirmed: {N} red
@@ -127,6 +128,7 @@ Confirm the new tests are RED by running the matching tier's `scoped` form on th
 **Step 1**: Describe proposed solution (what changes, why it fixes root cause, risks)
 
 **Step 2**: Assess complexity:
+
 - **LOW** (inline fix): isolated change affecting one function/call site
 - **HIGH** (route to /bdk:create-plan): affects many call sites, introduces new abstractions, changes shared data models
 

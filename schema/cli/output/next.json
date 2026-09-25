@@ -5,11 +5,7 @@
   "description": "The next ready artifact with its instruction, plus the gate status; the skill's entry point.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "change",
-    "stage",
-    "gates"
-  ],
+  "required": ["change", "stage", "gates"],
   "properties": {
     "change": {
       "type": "string",
@@ -20,11 +16,7 @@
     },
     "artifact": {
       "type": "object",
-      "required": [
-        "id",
-        "kind",
-        "state"
-      ],
+      "required": ["id", "kind", "state"],
       "properties": {
         "id": {
           "type": "string"
@@ -34,13 +26,7 @@
           "description": "Artifact kind from pipeline.yaml (T21)."
         },
         "state": {
-          "enum": [
-            "blocked",
-            "ready",
-            "done",
-            "stale",
-            "skipped"
-          ]
+          "enum": ["blocked", "ready", "done", "stale", "skipped"]
         },
         "requires": {
           "type": "array",
@@ -66,12 +52,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "gate",
-          "ready",
-          "done",
-          "pending"
-        ],
+        "required": ["gate", "ready", "done", "pending"],
         "description": "What the user sees before typing the next stage command (T1).",
         "properties": {
           "gate": {
@@ -85,10 +66,7 @@
             "type": "boolean"
           },
           "passedBy": {
-            "enum": [
-              "user",
-              "policy"
-            ]
+            "enum": ["user", "policy"]
           },
           "command": {
             "type": "string",
@@ -98,15 +76,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "id",
-                "type",
-                "summary",
-                "status",
-                "source",
-                "at",
-                "refs"
-              ],
+              "required": ["id", "type", "summary", "status", "source", "at", "refs"],
               "properties": {
                 "id": {
                   "type": "string",
@@ -131,13 +101,7 @@
                   "maxLength": 120
                 },
                 "status": {
-                  "enum": [
-                    "proposed",
-                    "accepted",
-                    "superseded",
-                    "resolved",
-                    "routed"
-                  ]
+                  "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
                 },
                 "source": {
                   "type": "string",
@@ -173,19 +137,12 @@
       }
     },
     "waiting": {
-      "enum": [
-        "gate",
-        "user",
-        "nothing"
-      ],
+      "enum": ["gate", "user", "nothing"],
       "description": "Set when no artifact is ready: what the Change waits for."
     },
     "stop": {
       "type": "object",
-      "required": [
-        "why",
-        "instead"
-      ],
+      "required": ["why", "instead"],
       "properties": {
         "why": {
           "type": "string"
@@ -207,9 +164,7 @@
         "id": "plan-part:01",
         "kind": "plan-part",
         "state": "ready",
-        "requires": [
-          "gate:design"
-        ]
+        "requires": ["gate:design"]
       },
       "instruction": "Write plan part 01 ...",
       "gates": [

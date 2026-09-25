@@ -15,10 +15,10 @@ If the line above reads `run the project's linter/formatter`, `.bdk/settings.jso
 
 Each block names a tier and the forms of the same command. `{files}` is a placeholder: replace it with the space-separated paths you were given, quoted.
 
-| Tier | Given a file list | No file list |
-|---|---|---|
-| `lint`, `format` | `scoped` — these tools take paths natively, so a whole-project sweep on a three-file change is pure waste. | `full` |
-| `typecheck` | `incremental` — a typechecker resolves the whole program, so a path list buys little; the cache is what makes a repeat run cheap. Fall back to `full` if no `incremental` form is configured. | `incremental`, else `full` |
+| Tier             | Given a file list                                                                                                                                                                             | No file list               |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `lint`, `format` | `scoped` — these tools take paths natively, so a whole-project sweep on a three-file change is pure waste.                                                                                    | `full`                     |
+| `typecheck`      | `incremental` — a typechecker resolves the whole program, so a path list buys little; the cache is what makes a repeat run cheap. Fall back to `full` if no `incremental` form is configured. | `incremental`, else `full` |
 
 The `incremental` form's cache (`.tsbuildinfo` and equivalents) survives between runs in the same worktree, so the second and later checks of a run pay only for the delta. Do not delete it between checks.
 

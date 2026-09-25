@@ -14,13 +14,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "part",
-              "title",
-              "state",
-              "tasks",
-              "bytes"
-            ],
+            "required": ["part", "title", "state", "tasks", "bytes"],
             "properties": {
               "part": {
                 "type": "string",
@@ -30,12 +24,7 @@
                 "type": "string"
               },
               "state": {
-                "enum": [
-                  "blocked",
-                  "ready",
-                  "started",
-                  "done"
-                ]
+                "enum": ["blocked", "ready", "started", "done"]
               },
               "tasks": {
                 "type": "integer",
@@ -57,10 +46,7 @@
                 }
               },
               "specImpact": {
-                "enum": [
-                  "none",
-                  "delta"
-                ]
+                "enum": ["none", "delta"]
               },
               "wave": {
                 "type": "integer",
@@ -93,9 +79,7 @@
           "tasks": 3,
           "done": 1,
           "bytes": 4210,
-          "dependsOn": [
-            "01"
-          ],
+          "dependsOn": ["01"],
           "specImpact": "none",
           "wave": 2
         }

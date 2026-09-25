@@ -28,12 +28,12 @@ A rule file stores ONLY:
 
 Everything else is out of scope for a rule file:
 
-| Content | Home |
-|---|---|
-| How a module works, API shapes, collaborator inventories, file lists, method enumerations | doc comment at the code site |
-| Why this design; what was rejected | doc comment at the site, or the guard test's comment |
-| Step-by-step procedure behind an intent trigger | a skill |
-| History, incident narrative, a ticket id as the sole rationale | drop |
+| Content                                                                                   | Home                                                 |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| How a module works, API shapes, collaborator inventories, file lists, method enumerations | doc comment at the code site                         |
+| Why this design; what was rejected                                                        | doc comment at the site, or the guard test's comment |
+| Step-by-step procedure behind an intent trigger                                           | a skill                                              |
+| History, incident narrative, a ticket id as the sole rationale                            | drop                                                 |
 
 ## Push vs. pull
 
@@ -67,14 +67,14 @@ actually works on that code.
 
 Classify every candidate bullet with one of six verdicts:
 
-| Verdict | Meaning | Action |
-|---|---|---|
-| **RULE** | Passes all four admission tests | Keep; write per `uniform-rule-format.md` |
-| **NARROW-GLOB** | A true rule, but relevant only to a subset of the current `paths:` | Move or keep it in a file whose `paths:` names the narrow set (e.g. `convex/schema.ts` + `convex/cascade*`, not `convex/**`). Prefer this over SKILL: same on-demand loading, deterministic trigger |
-| **SKILL** | ALL of: (a) the trigger is an intent no glob expresses, (b) the content is procedural - a how-to, not an ambient constraint, (c) a deterministic backstop (guard test, validator, deploy gate) catches a missed invocation, (d) the content is near-immutable | Extract to a project skill; the rule file keeps nothing, or a one-line pointer |
-| **SIGNPOST** | True constraint, but a test/lint already enforces it | Compress to one line naming the enforcer |
-| **RELOCATE** | True and valuable, but pull-based (fails the visibility test) | Move to a doc comment at the code site; the rule keeps at most a one-line pointer |
-| **NOISE** | History, narration, hedges, archaeology | Drop (see the noise table in `uniform-rule-format.md`) |
+| Verdict         | Meaning                                                                                                                                                                                                                                                       | Action                                                                                                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **RULE**        | Passes all four admission tests                                                                                                                                                                                                                               | Keep; write per `uniform-rule-format.md`                                                                                                                                                            |
+| **NARROW-GLOB** | A true rule, but relevant only to a subset of the current `paths:`                                                                                                                                                                                            | Move or keep it in a file whose `paths:` names the narrow set (e.g. `convex/schema.ts` + `convex/cascade*`, not `convex/**`). Prefer this over SKILL: same on-demand loading, deterministic trigger |
+| **SKILL**       | ALL of: (a) the trigger is an intent no glob expresses, (b) the content is procedural - a how-to, not an ambient constraint, (c) a deterministic backstop (guard test, validator, deploy gate) catches a missed invocation, (d) the content is near-immutable | Extract to a project skill; the rule file keeps nothing, or a one-line pointer                                                                                                                      |
+| **SIGNPOST**    | True constraint, but a test/lint already enforces it                                                                                                                                                                                                          | Compress to one line naming the enforcer                                                                                                                                                            |
+| **RELOCATE**    | True and valuable, but pull-based (fails the visibility test)                                                                                                                                                                                                 | Move to a doc comment at the code site; the rule keeps at most a one-line pointer                                                                                                                   |
+| **NOISE**       | History, narration, hedges, archaeology                                                                                                                                                                                                                       | Drop (see the noise table in `uniform-rule-format.md`)                                                                                                                                              |
 
 **Skills fail open, rules fail closed.** A skill only helps if something invokes it;
 a rule attaches whether or not anyone thought to ask. Never route an ambient constraint
@@ -98,16 +98,16 @@ test and is written nowhere.
 
 ## Where knowledge lives
 
-| Knowledge | Home |
-|---|---|
-| Cross-file invariant; trap invisible at the error site | `.claude/rules/` |
-| Invariant true only for a subset of a wide `paths:` scope | a rule file with a narrower `paths:` |
-| Procedure behind an intent trigger, with a deterministic backstop | a project skill |
-| How a module/function works (API, protocol, shapes) | doc comment at the code site |
-| Why a design was chosen; rejected alternatives | doc comment at the site, or the guard test's comment |
-| Constraint with a guard test | the test + a one-line SIGNPOST |
-| Detail relevant to editing exactly one file | doc comment in that file |
-| Deliberate decision that LOOKS like a bug | one-line RULE ("deliberate, do not 'fix'") + doc comment with the full story |
+| Knowledge                                                         | Home                                                                         |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Cross-file invariant; trap invisible at the error site            | `.claude/rules/`                                                             |
+| Invariant true only for a subset of a wide `paths:` scope         | a rule file with a narrower `paths:`                                         |
+| Procedure behind an intent trigger, with a deterministic backstop | a project skill                                                              |
+| How a module/function works (API, protocol, shapes)               | doc comment at the code site                                                 |
+| Why a design was chosen; rejected alternatives                    | doc comment at the site, or the guard test's comment                         |
+| Constraint with a guard test                                      | the test + a one-line SIGNPOST                                               |
+| Detail relevant to editing exactly one file                       | doc comment in that file                                                     |
+| Deliberate decision that LOOKS like a bug                         | one-line RULE ("deliberate, do not 'fix'") + doc comment with the full story |
 
 ## Duplication policy
 

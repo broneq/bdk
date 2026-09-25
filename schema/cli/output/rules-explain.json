@@ -5,10 +5,7 @@
   "description": "Which rules apply to a file, and why.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "file",
-    "rules"
-  ],
+  "required": ["file", "rules"],
   "properties": {
     "file": {
       "type": "string",
@@ -18,10 +15,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "matchedBy"
-        ],
+        "required": ["id", "matchedBy"],
         "properties": {
           "id": {
             "type": "string"
@@ -31,10 +25,7 @@
             "description": "The applies glob that matched."
           },
           "kind": {
-            "enum": [
-              "house",
-              "knowledge"
-            ]
+            "enum": ["house", "knowledge"]
           }
         }
       }

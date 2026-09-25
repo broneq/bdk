@@ -95,4 +95,3 @@ The kernel job runs every step on each line of the Node matrix of `Tests per sli
 
 - **WHEN** a pull request into `staging/v3` or `main` changes the kernel
 - **THEN** CI runs build, `git diff --exit-code dist/`, lint, format check, typecheck, unused code check, unit with coverage, E2E and contract steps on Node 22.13, 24 and 26, the audit, the commit message check, the workflow lint and the skill content step, and the workflow run fails when any of them fails
-

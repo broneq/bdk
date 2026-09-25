@@ -5,12 +5,7 @@
   "description": "Mark an artifact done after its validator passes and record the input hash.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "artifact",
-    "state",
-    "inputHash",
-    "next"
-  ],
+  "required": ["artifact", "state", "inputHash", "next"],
   "properties": {
     "artifact": {
       "type": "string"

@@ -5,12 +5,7 @@
   "description": "Close a part: every task has a trailer commit and no ticket is open.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "part",
-    "state",
-    "commits",
-    "entry"
-  ],
+  "required": ["part", "state", "commits", "entry"],
   "properties": {
     "part": {
       "type": "string"
@@ -22,10 +17,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "task",
-          "commit"
-        ],
+        "required": ["task", "commit"],
         "properties": {
           "task": {
             "type": "string"

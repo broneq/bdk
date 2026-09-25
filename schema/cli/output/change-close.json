@@ -5,13 +5,7 @@
   "description": "Close the Change after the review gate: spec merge, learning routing, archive, PR summary.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "change",
-    "archivedTo",
-    "spec",
-    "learning",
-    "summary"
-  ],
+  "required": ["change", "archivedTo", "spec", "learning", "summary"],
   "properties": {
     "change": {
       "type": "string",
@@ -23,9 +17,7 @@
     },
     "spec": {
       "type": "object",
-      "required": [
-        "merged"
-      ],
+      "required": ["merged"],
       "properties": {
         "merged": {
           "type": "array",
@@ -40,11 +32,7 @@
     },
     "learning": {
       "type": "object",
-      "required": [
-        "proposedRules",
-        "spec",
-        "nothing"
-      ],
+      "required": ["proposedRules", "spec", "nothing"],
       "properties": {
         "proposedRules": {
           "type": "array",
@@ -89,18 +77,12 @@
       "change": "2026-09-25-passwordless-login",
       "archivedTo": ".bdk/changes/archive/2026-09-26-2026-09-25-passwordless-login",
       "spec": {
-        "merged": [
-          "auth/login"
-        ]
+        "merged": ["auth/login"]
       },
       "learning": {
-        "proposedRules": [
-          "L-z1c4h"
-        ],
+        "proposedRules": ["L-z1c4h"],
         "spec": [],
-        "nothing": [
-          "L-q8n2m"
-        ]
+        "nothing": ["L-q8n2m"]
       },
       "gatesByPolicy": [],
       "summary": "## Passwordless login\n..."

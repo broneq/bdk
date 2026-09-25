@@ -55,11 +55,13 @@ with pytest.raises(ValueError):
 ## What to Test
 
 **Unit** (`test_<module>.py`):
+
 - Each public function in isolation
 - Error/edge cases: invalid input, missing keys, empty files
 - Output contracts: correct types, field names, return values
 
 **Integration** (same file or `test_integration.py`):
+
 - Full pipeline round-trip
 - Subprocess invocation when script has top-level side effects
 - Use `tmp_path` fixture or `tempfile.NamedTemporaryFile(delete=False)` + `finally: os.unlink(path)`

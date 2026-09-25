@@ -5,11 +5,7 @@
   "description": "Is the evidence for a task still fresh against the working tree?",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "fresh",
-    "treeHash",
-    "evidence"
-  ],
+  "required": ["fresh", "treeHash", "evidence"],
   "properties": {
     "fresh": {
       "type": "boolean"
@@ -22,12 +18,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "evidence",
-          "kind",
-          "treeHash",
-          "fresh"
-        ],
+        "required": ["evidence", "kind", "treeHash", "fresh"],
         "properties": {
           "evidence": {
             "type": "string",
@@ -68,9 +59,7 @@
           "treeHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
           "fresh": false,
           "verdict": "pass",
-          "changedSince": [
-            "src/auth/login.ts"
-          ]
+          "changedSince": ["src/auth/login.ts"]
         }
       ]
     }

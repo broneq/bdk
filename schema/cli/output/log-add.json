@@ -5,23 +5,11 @@
   "description": "Append one ledger entry; the kernel stamps id, time, author and source.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "entry",
-    "path",
-    "deduplicated"
-  ],
+  "required": ["entry", "path", "deduplicated"],
   "properties": {
     "entry": {
       "type": "object",
-      "required": [
-        "id",
-        "type",
-        "summary",
-        "status",
-        "source",
-        "at",
-        "refs"
-      ],
+      "required": ["id", "type", "summary", "status", "source", "at", "refs"],
       "properties": {
         "id": {
           "type": "string",
@@ -46,13 +34,7 @@
           "maxLength": 120
         },
         "status": {
-          "enum": [
-            "proposed",
-            "accepted",
-            "superseded",
-            "resolved",
-            "routed"
-          ]
+          "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
         },
         "source": {
           "type": "string",
@@ -100,10 +82,7 @@
         "source": "agent:implementer",
         "author": "Przemysław Broniszewski",
         "at": "2026-09-25T10:15:02Z",
-        "refs": [
-          "src/auth/login.ts",
-          "02-3"
-        ],
+        "refs": ["src/auth/login.ts", "02-3"],
         "review": false
       },
       "path": ".bdk/changes/2026-09-25-passwordless-login/log/20260925T101502-finding-expired-magic-link.md",

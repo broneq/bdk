@@ -5,19 +5,13 @@
   "description": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "content"
-  ],
+  "required": ["content"],
   "properties": {
     "content": {
       "type": "string"
     },
     "layout": {
-      "enum": [
-        "v3",
-        "v2",
-        "none"
-      ]
+      "enum": ["v3", "v2", "none"]
     },
     "configProblems": {
       "type": "integer"

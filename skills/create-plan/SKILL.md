@@ -31,6 +31,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 **Announce at start:** "Using create-plan to build an implementation plan."
 
 **Hard rules:**
+
 - Do NOT implement code — plan is the only deliverable.
 - Do NOT hardcode language tools (`pytest`, `npm`, `cargo`) — use injected values or fall back to "run the project's test suite".
 - Every task MUST declare its `Files:` and its `Depends on:` (or `Depends on: none`). The executor uses both to compute parallel waves — omitting them forces conservative serial fallback.
@@ -76,11 +77,11 @@ Exploration runs in subagents — never in the orchestrator. Subagent context is
 
 **Pick agents by question** (see `references/explorer-prompts.md` for full prompts and shared output contract):
 
-| Agent | Question it answers | Always launch? |
-|---|---|---|
-| Agent 1 — Existing Code | What can be reused? | **Yes, always** |
-| Agent 2 — Architecture & Dependencies | What does it touch, what depends on it? | If feature modifies existing components or crosses module boundaries |
-| Agent 3 — Similar Features | How have comparable features been built before? | If a similar pattern likely exists in the codebase |
+| Agent                                 | Question it answers                             | Always launch?                                                       |
+| ------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- |
+| Agent 1 — Existing Code               | What can be reused?                             | **Yes, always**                                                      |
+| Agent 2 — Architecture & Dependencies | What does it touch, what depends on it?         | If feature modifies existing components or crosses module boundaries |
+| Agent 3 — Similar Features            | How have comparable features been built before? | If a similar pattern likely exists in the codebase                   |
 
 These dimensions are orthogonal — choosing one doesn't imply the others.
 
@@ -91,6 +92,7 @@ Print: `[create-plan] Launching {N} explorer(s): {list of agent names}`
 **Aggregation:** merge agent JSON outputs by `path`+`name` dedup. Keep the merged result in conversation context — do **not** persist a snapshot file. The plan's Context section will capture what's needed.
 
 Print:
+
 ```
 [create-plan] Exploration complete:
   - Utilities: {N}
@@ -106,11 +108,13 @@ Print:
 ### Phase 3: Design & Decisions
 
 Before generating approaches, write a **3-line Hypothesis**:
+
 1. Problem essence (one sentence).
 2. Primary constraint (perf / compat / scope / risk).
 3. Success criterion (observable, testable).
 
 Generate **2-3 implementation approaches.** Per approach:
+
 - Name, Description (2-3 sentences)
 - Design pattern, OO principles
 - Pros (2-3), Cons (1-2)
@@ -129,7 +133,7 @@ Generate **2-3 implementation approaches.** Per approach:
 
 !`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then ${CLAUDE_PLUGIN_ROOT}/fragments/decision-tier/lavish.md`
 
-**Decision gates rejected inside tasks.** A task body must describe a single committed action. If a task would contain "Option A or B — user picks" or any unresolved decision, split it: move the decision into the bundled `AskUserQuestion` call above, then write the chosen action as the task. Tasks describe what *will* happen, not what *might* happen.
+**Decision gates rejected inside tasks.** A task body must describe a single committed action. If a task would contain "Option A or B — user picks" or any unresolved decision, split it: move the decision into the bundled `AskUserQuestion` call above, then write the chosen action as the task. Tasks describe what _will_ happen, not what _might_ happen.
 
 Print: `[create-plan] Design complete: {selected approach name}`
 
@@ -142,6 +146,7 @@ Print: `[create-plan] Design complete: {selected approach name}`
 Build the plan **as a structured outline in conversation**, not on disk yet. Validation runs against the outline — cheap, already in context. No re-read of a written file.
 
 **Outline structure** (mirror Phase 5 final layout):
+
 1. Summary & selected approach
 2. Context (architectural snapshot from Phase 2 — inline, no external file)
 3. Files to create / modify (exact paths)
@@ -151,6 +156,7 @@ Build the plan **as a structured outline in conversation**, not on disk yet. Val
 7. Risks & open questions (include degraded-agent gaps from Phase 2)
 
 **Task-sizing rule** — one task =
+
 - one test file added or edited (unless `Verification: none`), AND
 - ≤ 1 production file changed, AND
 - ≤ 40 LOC delta (excluding test scaffolding).
@@ -161,7 +167,7 @@ Split anything that exceeds these thresholds.
 
 **Decompose for parallel width.** After sizing, deliberately shape the task graph so the executor can fan out:
 
-- **Disjoint files = parallel.** Two tasks that touch no common file and have no data dependency can run in the same wave. Actively split work along file boundaries so independent units exist. If two tasks both edit one shared file (e.g. a central registry), see if one task can *create* a new file the other consumes instead — converting a shared-file collision into a producer→consumer dependency that still parallelizes across other tasks.
+- **Disjoint files = parallel.** Two tasks that touch no common file and have no data dependency can run in the same wave. Actively split work along file boundaries so independent units exist. If two tasks both edit one shared file (e.g. a central registry), see if one task can _create_ a new file the other consumes instead — converting a shared-file collision into a producer→consumer dependency that still parallelizes across other tasks.
 - **Declare honest dependencies, nothing more.** `Depends on:` lists only tasks that produce a symbol, file, or contract this task consumes. Do NOT add dependencies for ordering preference, "feels safer", or narrative flow — every spurious edge serializes work the executor could have parallelized. When unsure whether a dependency is real, ask: "would this task's tests fail to even compile/import without the other task's output?" If no, it is independent.
 - **Wide and shallow beats deep.** Prefer a DAG with many roots (tasks depending on nothing) and few levels. A long `T1→T2→T3→T4→T5` chain is the worst case — the executor runs it fully serially. Look for chains and break them: can T3 and T4 both depend only on T2 instead of T4 depending on T3?
 - **Shared-foundation first.** If many tasks need one new type/interface/module, make that its own root task (wave 1, depends on nothing). Everything that consumes it forms a wide wave 2.
@@ -169,6 +175,7 @@ Split anything that exceeds these thresholds.
 **Compute execution waves.** From the `Depends on:` edges, group tasks into ordered waves: wave 1 = all tasks with `Depends on: none`; wave N = all tasks whose dependencies are all satisfied by waves < N and whose files are disjoint from other wave-N tasks. Two tasks in the same wave that share a file must be split across waves (or merged) — flag and fix. Record the waves explicitly; this is what the executor consumes to fan out without re-deriving the graph.
 
 **Verify the outline** — answer each:
+
 - [ ] Solves the stated problem in `$ARGUMENTS`?
 - [ ] Edge cases and failure modes covered?
 - [ ] Every task has exact file paths and either a single TDD cycle or an explicit `Verification: none` declaration?
@@ -178,7 +185,7 @@ Split anything that exceeds these thresholds.
 - [ ] No hardcoded language tools (`pytest`, `npm`, etc.)?
 - [ ] No task body contains an unresolved decision gate ("Option A or B — user picks")?
 - [ ] Every task declares both `Files:` and `Depends on:` (`none` if independent) — no omissions?
-- [ ] `Depends on:` lists only *real* producer→consumer edges (would the task fail to compile/import without the dependency)? No ordering-preference or "feels safer" edges?
+- [ ] `Depends on:` lists only _real_ producer→consumer edges (would the task fail to compile/import without the dependency)? No ordering-preference or "feels safer" edges?
 - [ ] No two tasks in the same wave touch a shared file?
 - [ ] Task graph is wide, not a single serial chain? (If every task depends on the previous one, re-decompose — flag in Risks if genuinely unavoidable.)
 - [ ] Execution waves computed and recorded, consistent with the `Depends on:` edges?

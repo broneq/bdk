@@ -5,18 +5,11 @@
   "description": "Print one rule by id.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "rule"
-  ],
+  "required": ["rule"],
   "properties": {
     "rule": {
       "type": "object",
-      "required": [
-        "id",
-        "file",
-        "kind",
-        "text"
-      ],
+      "required": ["id", "file", "kind", "text"],
       "properties": {
         "id": {
           "type": "string",
@@ -27,10 +20,7 @@
           "description": "Path relative to the project root."
         },
         "kind": {
-          "enum": [
-            "house",
-            "knowledge"
-          ]
+          "enum": ["house", "knowledge"]
         },
         "text": {
           "type": "string"
@@ -66,9 +56,7 @@
         "file": "rules/code-quality.md",
         "kind": "house",
         "text": "Early return over nested conditionals.",
-        "applies": [
-          "**/*.ts"
-        ]
+        "applies": ["**/*.ts"]
       },
       "citedBy": 12
     }

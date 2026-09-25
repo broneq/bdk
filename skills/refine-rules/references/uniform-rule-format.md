@@ -45,10 +45,12 @@ Follow with the reasoning. This mirrors how BDK's own `rules/architecture.md` an
 example of the target voice if you want calibration beyond this template.
 
 Good:
+
 > - **No `ctx.db` in an `action`.** Actions have no `ctx.db`. Read via
 >   `ctx.runQuery(...)`, write via `ctx.runMutation(...)`.
 
 Bad (buries the rule, no falsifiable claim up front):
+
 > - We generally try to be careful about how actions touch the database, since
 >   there have been issues in the past with this.
 
@@ -78,20 +80,20 @@ reader needs to know before writing code in this area.
 
 **Noise** — strip these on sight, regardless of how the original file phrased them:
 
-| Pattern | Why it's noise | Example |
-|---|---|---|
-| Changelog / dated narration | Describes what changed, not what's true now | "2024-03: switched from the bash script to `execute.ts`" |
-| "We used to… now we…" | The "used to" half is dead weight once the rule exists | "We used to validate in the mutation; now we validate in the action." |
-| Authorship / session notes | Not a property of the code | "Added by the auth refactor PR", "per discussion with X" |
-| Hedged, unverifiable language | If it's not confident enough to state as fact, it's not a rule yet | "I think we probably shouldn't...", "not 100% sure why but..." |
-| TODO / future-work notes | A rule describes what IS, not what's planned | "TODO: revisit this once we migrate to v2" |
-| Restated obvious framework behavior | Not project-specific, doesn't need to live here | "Functions in JS are first-class values" |
+| Pattern                             | Why it's noise                                                     | Example                                                               |
+| ----------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| Changelog / dated narration         | Describes what changed, not what's true now                        | "2024-03: switched from the bash script to `execute.ts`"              |
+| "We used to… now we…"               | The "used to" half is dead weight once the rule exists             | "We used to validate in the mutation; now we validate in the action." |
+| Authorship / session notes          | Not a property of the code                                         | "Added by the auth refactor PR", "per discussion with X"              |
+| Hedged, unverifiable language       | If it's not confident enough to state as fact, it's not a rule yet | "I think we probably shouldn't...", "not 100% sure why but..."        |
+| TODO / future-work notes            | A rule describes what IS, not what's planned                       | "TODO: revisit this once we migrate to v2"                            |
+| Restated obvious framework behavior | Not project-specific, doesn't need to live here                    | "Functions in JS are first-class values"                              |
 
-**Exception:** a version number or dated fact is NOT noise when the version *is* the
+**Exception:** a version number or dated fact is NOT noise when the version _is_ the
 rule — e.g. "Convex version: `^1.17.x` — API shapes below match this major" tells the
 reader why the documented behavior holds and when to distrust it. The test: delete the
 date/version and see if the sentence still makes an actionable claim. If yes, keep it
-(version-gated facts often *are* the rule). If the sentence only narrates a transition,
+(version-gated facts often _are_ the rule). If the sentence only narrates a transition,
 drop it.
 
 ## Verification, not transcription
@@ -100,7 +102,7 @@ Every rule file you touch was written by whichever agent or engineer was in the 
 that day, under whatever time pressure existed then. Treat every existing bullet as an
 unverified claim, not a fact, until you've checked it against the actual code — see
 `SKILL.md` Step 3 for how to scope and dispatch that verification. This reference file
-only defines the *output* shape; it does not replace checking each claim.
+only defines the _output_ shape; it does not replace checking each claim.
 
 ## Worked example
 

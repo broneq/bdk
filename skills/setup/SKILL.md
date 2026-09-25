@@ -17,6 +17,7 @@ Initializes `.bdk/settings.json` for this project. Probes project files to detec
 ### Phase 1: Check existing config
 
 If `.bdk/settings.json` already exists and `--force` was not passed:
+
 - Read the file and show current values
 - Ask user: "Settings already exist. Overwrite?" — if no, stop
 
@@ -25,12 +26,14 @@ If `.bdk/settings.json` already exists and `--force` was not passed:
 Read the following files if they exist and extract command/tool hints:
 
 **Command resolution priority** — always prefer running tools via the package manager over direct binary invocation:
+
 - `package.json` scripts → `npm run <script>` / `yarn <script>` / `pnpm <script>` (detect manager by lockfile: `package-lock.json` → npm, `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm)
 - Python with `pyproject.toml` → `poetry run <tool>` if `poetry.lock` exists, else direct
 - Ruby → `bundle exec <tool>` always
 - Direct binary only as last resort (no package manager detected)
 
 **JavaScript/TypeScript** (`package.json`):
+
 - Scan `scripts` for keys: `test`, `test:unit`, `test:e2e`, `test:integration`, `lint`, `lint:fix`, `build`, `typecheck`, `compile`
 - Emit as `npm run <key>` (or yarn/pnpm equivalent per lockfile)
 - Check `devDependencies`/`dependencies` for: `vitest`, `jest`, `@playwright/test`, `cypress`, `eslint`, `prettier`, `typescript` — only as fallback if no matching script key found
@@ -38,44 +41,52 @@ Read the following files if they exist and extract command/tool hints:
 - Presence of `react` in deps → add `react` to languages
 
 **Python** (`pyproject.toml`, `setup.py`, `requirements*.txt`):
+
 - Detect `pytest`, `ruff`, `mypy`, `black`, `flake8`
 - If `poetry.lock` present → `poetry run pytest`, `poetry run ruff`, etc.
 - Else direct: `pytest`, `ruff`, etc.
 - Language: `python`
 
 **Go** (`go.mod`):
+
 - Test: `go test ./...`
 - Check for `.golangci.yml` or `.golangci.toml` → lint: `golangci-lint run`
 - Else lint: `go vet ./...`
 - Language: `go`
 
 **Rust** (`Cargo.toml`):
+
 - Test: `cargo test`
 - Lint: `cargo clippy`
 - Build: `cargo build`
 - Language: `rust`
 
 **Java** (`pom.xml` or `build.gradle`):
+
 - Maven: `mvn test`, `mvn package`
 - Gradle: `./gradlew test`, `./gradlew build`
 - Language: `java`
 
 **PHP** (`composer.json`):
+
 - Check `scripts` for test key; else detect `phpunit` or `artisan test`
 - Check for `phpcs` or `pint` for lint
 - Language: `php`
 
 **Ruby** (`Gemfile`):
+
 - Test: `bundle exec rspec` (if rspec in Gemfile) or `bundle exec rake test`
 - Lint: `bundle exec rubocop`
 - Language: `ruby`
 
 **C#** (`*.csproj` or `*.sln`):
+
 - Test: `dotnet test`
 - Build: `dotnet build`
 - Language: `csharp`
 
 **Dart/Flutter** (`pubspec.yaml`):
+
 - Test: `flutter test` (if flutter sdk) or `dart test`
 - Language: `dart`
 
@@ -87,23 +98,24 @@ Set `tier` on every `test-tools` entry (`fast` | `e2e`) and every `lint-tools` e
 
 `{files}` is a literal placeholder in these templates — callers substitute a path list. Derive per runner:
 
-| Runner | `scoped` | `related` | `failed` | `incremental` |
-|---|---|---|---|---|
-| vitest | `npx vitest run {files}` | `npx vitest related --run {files}` | `npx vitest run --changed` | — |
-| jest | `npx jest {files}` | `npx jest --findRelatedTests {files}` | `npx jest --onlyFailures` | — |
-| playwright | `npx playwright test {files}` | — | `npx playwright test --last-failed` | — |
-| cypress | `npx cypress run --spec {files}` | — | — | — |
-| pytest | `pytest {files}` | — | `pytest --lf` | — |
-| go test | `go test {files}` | — | — | — |
-| cargo test | `cargo test {files}` | — | — | — |
-| rspec | `bundle exec rspec {files}` | — | `bundle exec rspec --only-failures` | — |
-| eslint | `npx eslint {files}` | — | — | — |
-| prettier | `npx prettier --check {files}` | — | — | — |
-| ruff | `ruff check {files}` | — | — | — |
-| tsc | — | — | — | `npx tsc -b --incremental` |
-| mypy | `mypy {files}` | — | — | `mypy --incremental .` |
+| Runner     | `scoped`                         | `related`                             | `failed`                            | `incremental`              |
+| ---------- | -------------------------------- | ------------------------------------- | ----------------------------------- | -------------------------- |
+| vitest     | `npx vitest run {files}`         | `npx vitest related --run {files}`    | `npx vitest run --changed`          | —                          |
+| jest       | `npx jest {files}`               | `npx jest --findRelatedTests {files}` | `npx jest --onlyFailures`           | —                          |
+| playwright | `npx playwright test {files}`    | —                                     | `npx playwright test --last-failed` | —                          |
+| cypress    | `npx cypress run --spec {files}` | —                                     | —                                   | —                          |
+| pytest     | `pytest {files}`                 | —                                     | `pytest --lf`                       | —                          |
+| go test    | `go test {files}`                | —                                     | —                                   | —                          |
+| cargo test | `cargo test {files}`             | —                                     | —                                   | —                          |
+| rspec      | `bundle exec rspec {files}`      | —                                     | `bundle exec rspec --only-failures` | —                          |
+| eslint     | `npx eslint {files}`             | —                                     | —                                   | —                          |
+| prettier   | `npx prettier --check {files}`   | —                                     | —                                   | —                          |
+| ruff       | `ruff check {files}`             | —                                     | —                                   | —                          |
+| tsc        | —                                | —                                     | —                                   | `npx tsc -b --incremental` |
+| mypy       | `mypy {files}`                   | —                                     | —                                   | `mypy --incremental .`     |
 
 Rules for anything not in the table:
+
 - Package-manager script wrapping a runner that takes paths → `<script> -- {files}` (`npm run test:unit -- {files}`). The `--` is required or the paths reach npm, not the runner.
 - A tool that takes no path list (most typecheckers, some build-mode linters) → omit `scoped`; give an `incremental` form if the tool has a cache flag.
 - Not sure a form exists → omit it. A wrong template is worse than a missing one: BDK falls back cleanly from a missing form, and silently runs the wrong thing with a broken one.
@@ -116,9 +128,7 @@ Use the `AskUserQuestion` tool with up to 4 questions in a single call:
 1. **Test commands** — multiSelect: true, options: each detected command as its own option + "None". User can add unlisted commands via "Other".
 2. **Lint commands** — multiSelect: true, same pattern
 
-Confirm the **full** commands only. Tiers and scoped forms are derived from Phase 2b for whatever the user confirms — they are mechanical consequences of the runner, not preferences worth a question. Show them in the completion summary instead so a wrong derivation is visible.
-3. **Features** - single select, question: "Use caveman mode (terse replies)?", options: "On" (writes `"caveman": true`), "Off" (writes `"caveman": false`).
-4. **Build command** — only include if a build tool was detected or the language typically has one (e.g. TypeScript, Java, Rust); skip otherwise to stay under 4 questions
+Confirm the **full** commands only. Tiers and scoped forms are derived from Phase 2b for whatever the user confirms — they are mechanical consequences of the runner, not preferences worth a question. Show them in the completion summary instead so a wrong derivation is visible. 3. **Features** - single select, question: "Use caveman mode (terse replies)?", options: "On" (writes `"caveman": true`), "Off" (writes `"caveman": false`). 4. **Build command** — only include if a build tool was detected or the language typically has one (e.g. TypeScript, Java, Rust); skip otherwise to stay under 4 questions
 
 If more than 4 confirmation categories exist, prioritize: test → lint → features → build. Handle remaining categories with a follow-up `AskUserQuestion` call after writing.
 
@@ -127,6 +137,7 @@ If more than 4 confirmation categories exist, prioritize: test → lint → feat
 ### Phase 4: Write .bdk/settings.json
 
 Create directory and file:
+
 ```
 .bdk/
 ├── settings.json
@@ -135,6 +146,7 @@ Create directory and file:
 ```
 
 Write `settings.json` with confirmed values plus the tier/scoping forms from Phase 2b:
+
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/broneq/bdk/main/hooks/check-bdk-config/settings.schema.json",
@@ -172,10 +184,12 @@ Write `settings.json` with confirmed values plus the tier/scoping forms from Pha
 ### Phase 5: Git guidance
 
 Recommend:
+
 - Commit `.bdk/settings.json` (shared with team — consistent commands for all contributors)
 - Add to `.gitignore`: `.bdk/plans/` and `.bdk/design/` (personal artifacts)
 
 Show the gitignore lines to add:
+
 ```
 .bdk/plans/
 .bdk/design/
@@ -186,6 +200,7 @@ Ask: "Add these to .gitignore now? [y/n]"
 ### Completion
 
 Print:
+
 ```
 [setup] .bdk/settings.json created.
 [setup] Test tiers: {tier}={command} (scoped: {scoped|none}) …

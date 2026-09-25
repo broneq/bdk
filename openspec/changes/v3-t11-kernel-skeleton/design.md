@@ -9,11 +9,13 @@ User decisions taken while writing this Change (2026-09-25): Node 20 is not supp
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Every later task adds files inside one slice plus its contract record, never build, test or CI infrastructure.
 - The committed bundle is provably the build of the committed source, and imports nothing but `node:`.
 - A user on the wrong Node or on a v2 layout gets a diagnosis and one repair command, never a loader stack trace.
 
 **Non-Goals:**
+
 - Final shapes of the index, ids or configuration (T14, T12); the skeletons expose the primitives the build order names and are allowed to change when their owner lands.
 - Performance tuning beyond keeping `version` and `doctor` inside the design's 30-50 ms Node start budget (no measurement gate in T11).
 - Windows support (an open design item).
@@ -75,16 +77,16 @@ Alternative: Change the index schema with a `nodeGate` field. It would put an im
 
 Following the build order in full (user decision). Each module holds only primitives with a named caller in T11 or a test, and its owner task may change the shape.
 
-| Module | T11 content | Later owner |
-|---|---|---|
-| `shared/refusal` | `Refusal` type, the rule catalogue as a TypeScript union (a contract test checks it equals the spec catalogue), class-to-exit mapping, `refuse()` helper | - |
-| `shared/output` | JSON writer, text writer with the 100-line cap, list page builder (`items`, `total`, `truncated`, `for`), four-line refusal text, STOP block renderer | - |
-| `shared/registry` | D-5 | T20 (active Change) |
-| `shared/clock` | `Clock` interface, system clock (ISO 8601 UTC, seconds), fixed clock for tests | - |
-| `shared/ids` | Prefix constants (`L-`, `A-`, `E-`), a provisional random base36 generator, the qualified reference parser `<changeId>/<id>` | T14 (format) |
-| `shared/config` | Plugin manifest read (D-4); the reading half of the four layers: locate and parse bundle defaults, `~/.config/bdk/settings.yaml`, `.bdk/settings.yaml`, `.bdk/settings.local.yaml` into raw objects with their layer names | T12 (merge, zod registry, snapshot) |
-| `shared/store` | `Store` interface with a file system and an in-memory implementation (the unit tests of `kernel-architecture` run on the latter); project root discovery (nearest `.bdk/`, else the work tree root); read, atomic write (temp file then rename), list, exists; frontmatter split; the index skeleton (lazy `node:sqlite`, busy timeout, one `meta` table with the schema version) | T14 (schemas), T20 |
-| `shared/git` | Work tree detection by walking up for a `.git` entry (directory or file, so linked worktrees count) without spawning `git`; `run()` over `execFile` mapping a missing executable to `runtime/git-missing`; in-progress detection from the rebase, merge and cherry-pick markers (`policy/git-in-progress`) | T20, T22 |
+| Module            | T11 content                                                                                                                                                                                                                                                                                                                                                                       | Later owner                         |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `shared/refusal`  | `Refusal` type, the rule catalogue as a TypeScript union (a contract test checks it equals the spec catalogue), class-to-exit mapping, `refuse()` helper                                                                                                                                                                                                                          | -                                   |
+| `shared/output`   | JSON writer, text writer with the 100-line cap, list page builder (`items`, `total`, `truncated`, `for`), four-line refusal text, STOP block renderer                                                                                                                                                                                                                             | -                                   |
+| `shared/registry` | D-5                                                                                                                                                                                                                                                                                                                                                                               | T20 (active Change)                 |
+| `shared/clock`    | `Clock` interface, system clock (ISO 8601 UTC, seconds), fixed clock for tests                                                                                                                                                                                                                                                                                                    | -                                   |
+| `shared/ids`      | Prefix constants (`L-`, `A-`, `E-`), a provisional random base36 generator, the qualified reference parser `<changeId>/<id>`                                                                                                                                                                                                                                                      | T14 (format)                        |
+| `shared/config`   | Plugin manifest read (D-4); the reading half of the four layers: locate and parse bundle defaults, `~/.config/bdk/settings.yaml`, `.bdk/settings.yaml`, `.bdk/settings.local.yaml` into raw objects with their layer names                                                                                                                                                        | T12 (merge, zod registry, snapshot) |
+| `shared/store`    | `Store` interface with a file system and an in-memory implementation (the unit tests of `kernel-architecture` run on the latter); project root discovery (nearest `.bdk/`, else the work tree root); read, atomic write (temp file then rename), list, exists; frontmatter split; the index skeleton (lazy `node:sqlite`, busy timeout, one `meta` table with the schema version) | T14 (schemas), T20                  |
+| `shared/git`      | Work tree detection by walking up for a `.git` entry (directory or file, so linked worktrees count) without spawning `git`; `run()` over `execFile` mapping a missing executable to `runtime/git-missing`; in-progress detection from the rebase, merge and cherry-pick markers (`policy/git-in-progress`)                                                                        | T20, T22                            |
 
 Work tree detection reads the file system instead of running `git rev-parse` because `base.all` does not include `runtime/git-missing`: a command that never shells out to git must not start failing because git is absent, and a spawn per call eats into the latency budget.
 

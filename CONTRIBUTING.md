@@ -7,6 +7,7 @@
 Skills are thin workflow definitions. Environment discovery is handled by `STARTUP_INSTRUCTIONS.md`, injected at session start via the `SessionStart` hook.
 
 **Benefits:**
+
 - Single source of truth for BDK conventions
 - Skills stay clean — workflow logic only, no environment assumptions
 - New skills automatically inherit all rules
@@ -19,6 +20,7 @@ BDK ships no MCP server (see `docs/adr/0001-remove-bundled-mcp-servers.md`). Ski
 ### Skill Authoring Convention
 
 Every BDK skill:
+
 1. Starts with `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`
 2. Never hardcodes test runners, build tools, lint commands, or file paths
 3. References other skills with full namespace: `/bdk:create-plan`, `/bdk:debug`

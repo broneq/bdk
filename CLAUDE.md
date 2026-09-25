@@ -74,6 +74,7 @@ Portability rule: skill only makes sense for one language stack or domain → no
 ## Modifying the Shared Foundation
 
 `STARTUP_INSTRUCTIONS.md` injected into every user session. Changes affect all skills.
+
 - Keep concise — occupies context every session start
 - Verify skills relying on modified section still work
 - Test in isolated project after changes

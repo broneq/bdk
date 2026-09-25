@@ -5,19 +5,10 @@
   "description": "Measure the size of an intent or a diff: files, impacted modules, proposed profile.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "profile",
-    "files",
-    "modules",
-    "signals"
-  ],
+  "required": ["profile", "files", "modules", "signals"],
   "properties": {
     "profile": {
-      "enum": [
-        "tiny",
-        "small",
-        "large"
-      ]
+      "enum": ["tiny", "small", "large"]
     },
     "files": {
       "type": "integer"
@@ -44,10 +35,7 @@
     {
       "profile": "small",
       "files": 6,
-      "modules": [
-        "auth",
-        "mail"
-      ],
+      "modules": ["auth", "mail"],
       "impact": 14,
       "signals": {
         "files": 6,

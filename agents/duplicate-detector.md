@@ -32,10 +32,12 @@ You are a specialized duplicate code detection agent. Your ONLY job is to find c
 ## Merging Judgement
 
 Only propose extraction when:
+
 - Duplicated logic would need updates in multiple places on requirement changes, OR
 - Extraction produces a clearly reusable, well-named abstraction
 
 Do NOT propose merging if:
+
 - Extraction requires complex parameterization that obscures intent
 - Shared helper would be used only twice with trivial bodies
 

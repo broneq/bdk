@@ -5,23 +5,14 @@
   "description": "Set an entry's status (resolved, accepted, superseded) with a reason.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "entry",
-    "status"
-  ],
+  "required": ["entry", "status"],
   "properties": {
     "entry": {
       "type": "string",
       "description": "Opaque merge-safe id (T14)."
     },
     "status": {
-      "enum": [
-        "proposed",
-        "accepted",
-        "superseded",
-        "resolved",
-        "routed"
-      ]
+      "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
     },
     "by": {
       "type": "string",

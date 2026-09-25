@@ -5,11 +5,7 @@
   "description": "Generate a host's agent files from the role skills and the per-host tool map.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "host",
-    "files",
-    "changed"
-  ],
+  "required": ["host", "files", "changed"],
   "properties": {
     "host": {
       "type": "string"
@@ -18,19 +14,10 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "adapter",
-          "path"
-        ],
+        "required": ["adapter", "path"],
         "properties": {
           "adapter": {
-            "enum": [
-              "worker",
-              "reader",
-              "reviewer",
-              "runner",
-              "scout"
-            ]
+            "enum": ["worker", "reader", "reviewer", "runner", "scout"]
           },
           "path": {
             "type": "string",

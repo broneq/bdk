@@ -59,7 +59,7 @@ Include diagram findings alongside code findings for subagents.
 Same rules as `/bdk:explain-complex-code`:
 
 | Files Count | Subagent Count |
-|-------------|----------------|
+| ----------- | -------------- |
 | 1-2 files   | 1 subagent     |
 | 3-5 files   | 1-2 subagents  |
 | 6-10 files  | 2-3 subagents  |
@@ -72,6 +72,7 @@ Same rules as `/bdk:explain-complex-code`:
 Each subagent receives existing doc claims alongside files to explore:
 
 **Subagent Instructions Template**:
+
 ```
 Explore these files: [FILE_LIST]
 
@@ -121,6 +122,7 @@ For each file:
 After subagents return, classify each section by content matching — no hardcoded section mapping.
 
 **Classification logic** (generic, works with any template):
+
 - Section mentions symbol X → subagent says X changed → **OUTDATED**
 - Section has file tree → actual files differ → **OUTDATED**
 - Subagent reports new symbol not mentioned anywhere → **MISSING**
@@ -165,6 +167,7 @@ Reconstruct the document:
 The final file reads as one uniform document. No markers indicating which parts were updated.
 
 **Prototype code rules** (same as `/bdk:explain-complex-code`):
+
 - Use placeholder names: `process()`, `transform()`, `calculate()`
 - Show control flow clearly, include comments for key steps
 - Keep under 20 lines per example
@@ -184,15 +187,15 @@ Use `/bdk:explain-complex-code` references for section structure when rewriting 
 
 ### Update Classification
 
-| Signal | Classification |
-|--------|---------------|
-| Symbol changed/renamed | Section OUTDATED |
-| File added/removed | File tree OUTDATED |
-| New undocumented symbol | Content MISSING |
-| Referenced symbol gone | Section OUTDATED |
-| Diagram references stale symbols | Diagram OUTDATED |
-| New subsystem without diagram | Diagram MISSING |
-| No discrepancies | Section ACCURATE |
+| Signal                           | Classification     |
+| -------------------------------- | ------------------ |
+| Symbol changed/renamed           | Section OUTDATED   |
+| File added/removed               | File tree OUTDATED |
+| New undocumented symbol          | Content MISSING    |
+| Referenced symbol gone           | Section OUTDATED   |
+| Diagram references stale symbols | Diagram OUTDATED   |
+| New subsystem without diagram    | Diagram MISSING    |
+| No discrepancies                 | Section ACCURATE   |
 
 ### Checklist
 

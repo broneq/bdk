@@ -5,10 +5,7 @@
   "description": "Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "content",
-    "parts"
-  ],
+  "required": ["content", "parts"],
   "properties": {
     "content": {
       "type": "string",
@@ -18,20 +15,10 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "kind",
-          "source"
-        ],
+        "required": ["kind", "source"],
         "properties": {
           "kind": {
-            "enum": [
-              "fragment",
-              "rules",
-              "language-rules",
-              "prompt",
-              "agents-table",
-              "stop"
-            ]
+            "enum": ["fragment", "rules", "language-rules", "prompt", "agents-table", "stop"]
           },
           "source": {
             "type": "string",
@@ -42,10 +29,7 @@
     },
     "stop": {
       "type": "object",
-      "required": [
-        "why",
-        "instead"
-      ],
+      "required": ["why", "instead"],
       "properties": {
         "why": {
           "type": "string"
