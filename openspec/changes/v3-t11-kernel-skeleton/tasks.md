@@ -31,10 +31,10 @@
 
 ## 5. shared/store
 
-- [ ] 5.1 Write failing unit tests against the `Store` interface, run on both the in-memory and the file system implementation: project root discovery (nearest `.bdk/`, else work tree root), read, atomic write leaves no temp file, list, exists, frontmatter split; verify they fail
-- [ ] 5.2 Implement `shared/store` without the index; verify 5.1 passes
-- [ ] 5.3 Write a failing test for the index skeleton: lazy `node:sqlite` open creates `.bdk/.machine/index.sqlite` with the `meta` schema version, sets the busy timeout, and emits no `ExperimentalWarning` on stderr (design D-3); verify it fails
-- [ ] 5.4 Implement the index skeleton with the dynamic `import("node:sqlite")`; verify 5.3 passes and the built bundle has no static `node:sqlite` import
+- [x] 5.1 Write failing unit tests against the `Store` interface, run on both the in-memory and the file system implementation: project root discovery (nearest `.bdk/`, else work tree root), read, atomic write leaves no temp file, list, exists, frontmatter split; verify they fail
+- [x] 5.2 Implement `shared/store` without the index; verify 5.1 passes
+- [x] 5.3 Write a failing test for the index skeleton: lazy `node:sqlite` open creates `.bdk/.machine/index.sqlite` with the `meta` schema version, sets the busy timeout, and emits no `ExperimentalWarning` on stderr (design D-3); verify it fails
+- [x] 5.4 Implement the index skeleton with the dynamic `import("node:sqlite")`; verify 5.3 passes and the built bundle has no static `node:sqlite` import
 
 ## 6. shared/git and shared/config
 
