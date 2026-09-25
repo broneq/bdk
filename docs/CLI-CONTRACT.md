@@ -3055,7 +3055,7 @@ flowchart TB
         commit["commit"]
         attempt["attempt"]
         part["part"]
-        graph["graph"]
+        graphSlice["graph"]
         ctx["ctx"]
         rules["rules"]
         log["log"]
@@ -3066,19 +3066,19 @@ flowchart TB
     end
     shared["shared/ (store, git, config, ids, clock, refusal, output, registry)"]
 
-    hooks -->|"next, gate status"| graph
+    hooks -->|"next, gate status"| graphSlice
     hooks -->|"status, checkpoint"| change
     hooks -->|"transition entries"| log
     hooks -->|"startup context"| ctx
     hooks -->|"config check"| config
     change -->|"profile"| measure
-    change -->|"first artifact"| graph
+    change -->|"first artifact"| graphSlice
     change -->|"entries"| log
     change -->|"merge at close"| spec
     change -->|"export at close"| rules
-    graph -->|"done entries"| log
-    graph -->|"instruction text"| ctx
-    part -->|"stale nodes on split"| graph
+    graphSlice -->|"done entries"| log
+    graphSlice -->|"instruction text"| ctx
+    part -->|"stale nodes on split"| graphSlice
     part -->|"transition entries"| log
     attempt -->|"diff check"| part
     attempt -->|"finding entries"| log
@@ -3093,7 +3093,7 @@ flowchart TB
 
     classDef primary fill:#3b6ea5,stroke:#7fa8d0,color:#ffffff
     classDef store fill:#5f4b8b,stroke:#9b8bc4,color:#ffffff
-    class hooks,change,dispatch,commit,attempt,part,graph,ctx,rules,log,evidence,spec,measure,config primary
+    class hooks,change,dispatch,commit,attempt,part,graphSlice,ctx,rules,log,evidence,spec,measure,config primary
     class shared store
     style Slices fill:transparent,stroke:#8b93a1,stroke-dasharray:4 3
 ```
