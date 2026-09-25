@@ -1,0 +1,7 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["kernel/src/main.ts", "kernel/build.mjs"],
+  "project": ["kernel/**/*.ts", "kernel/**/*.mjs"],
+  "tags": ["-public"],
+  "ignoreDependencies": ["@commitlint/config-conventional"]
+}
