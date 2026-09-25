@@ -55,8 +55,8 @@
 
 - [x] 8.1 Port `tests/contract/cli-contract.test.mjs` to Vitest as `kernel/tests/contract/cli-contract.test.ts` and delete the old file; verify the ported suite passes with the same test names under `pnpm test:contract`
 - [x] 8.2 Add contract tests: every record has a handler or the stub, the `shared/refusal` catalogue union equals the spec catalogue, every `examples` entry in `schema/cli/output/` and `schema/cli/common/` validates with Ajv, and the zod schemas of `version`, `doctor`, the refusal and the list page parse their examples (design D-8); verify they pass and fail on a seeded broken example
-- [ ] 8.3 Write the import scan and the `node:` boundary test (design D-8, matrix read from the `kernel-architecture` table); verify they pass on the tree and fail on a seeded deep import, a reverse edge, a `render/` to `use-cases/` import and a `node:fs` import in `service/`
-- [ ] 8.4 Write the bundle and dependency tests: `dist/bdk.mjs` imports only `node:` specifiers; runtime dependencies within `zod`, `yaml`; no range in any dependency version; verify they pass and fail on a seeded range and a seeded extra runtime dependency
+- [x] 8.3 Write the import scan and the `node:` boundary test (design D-8, matrix read from the `kernel-architecture` table); verify they pass on the tree and fail on a seeded deep import, a reverse edge, a `render/` to `use-cases/` import and a `node:fs` import in `service/`
+- [x] 8.4 Write the bundle and dependency tests: `dist/bdk.mjs` imports only `node:` specifiers; runtime dependencies within `zod`, `yaml`; no range in any dependency version; verify they pass and fail on a seeded range and a seeded extra runtime dependency
 
 ## 9. CI and dependency updates
 

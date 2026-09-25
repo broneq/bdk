@@ -14657,6 +14657,14 @@ function object(shape, params) {
   };
   return new ZodObject(def);
 }
+function strictObject(shape, params) {
+  return new ZodObject({
+    type: "object",
+    shape,
+    catchall: never(),
+    ...util_exports.normalizeParams(params)
+  });
+}
 var ZodUnion = /* @__PURE__ */ $constructor("ZodUnion", (inst, def) => {
   $ZodUnion.init(inst, def);
   ZodType.init(inst, def);
@@ -15003,6 +15011,12 @@ var KernelRefusal = class extends Error {
     this.refusal = refusal;
   }
 };
+var refusalSchema = strictObject({
+  refused: literal(true),
+  rule: _enum(RULES),
+  why: string2().min(1),
+  instead: array(string2().min(1)).min(1)
+});
 
 // kernel/src/shared/registry/record.ts
 var rule = _enum(RULES);

@@ -1,7 +1,7 @@
-import type { DoctorOutput } from "../schema/doctor.ts";
+import type { DoctorReport } from "../domain/report.ts";
 import { renderVersion } from "./version.ts";
 
-export function renderDoctor(output: DoctorOutput): string {
+export function renderDoctor(output: DoctorReport): string {
   const lines = [renderVersion(output.version).trimEnd(), `layout: ${output.layout ?? "unknown"}`];
   if (output.findings.length === 0) lines.push("no findings");
   for (const finding of output.findings) {

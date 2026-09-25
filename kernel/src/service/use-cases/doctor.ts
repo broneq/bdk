@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { meetsNodeMinimum, NODE_INSTALL, NODE_MINIMUM } from "../../shared/registry/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
 import { classifyLayout, V2_MARKERS } from "../domain/layout.ts";
-import type { DoctorOutput, Finding } from "../schema/doctor.ts";
+import type { DoctorReport, Finding } from "../domain/report.ts";
 import type { VersionInput } from "./version.ts";
 import { version } from "./version.ts";
 
@@ -15,7 +15,7 @@ export interface DoctorInput extends VersionInput {
   readonly workTree: string;
 }
 
-export function doctor(input: DoctorInput): DoctorOutput {
+export function doctor(input: DoctorInput): DoctorReport {
   const findings: Finding[] = [];
   if (!meetsNodeMinimum(input.nodeVersion)) {
     findings.push({

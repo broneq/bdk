@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { renderDoctor } from "../render/doctor.ts";
 import { renderVersion } from "../render/version.ts";
-import type { VersionOutput } from "../schema/version.ts";
+import type { VersionReport } from "../domain/report.ts";
 
-const VERSION: VersionOutput = { kernel: "3.0.0", contract: 3, node: "24.21.0" };
+const VERSION: VersionReport = { kernel: "3.0.0", contract: 3, node: "24.21.0" };
 
 describe("render", () => {
   it("prints the version line of the spec", () => {
