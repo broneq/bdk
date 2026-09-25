@@ -1,6 +1,6 @@
 # T03 MCP evaluation - benchmark setup
 
-Reproducibility data for `docs/V3-MCP-EVALUATION.md` (OpenSpec change `v3-t03-mcp-value-evaluation`). Everything here was fixed before the first measured run.
+Reproducibility data for `docs/adr/0001-remove-bundled-mcp-servers.md` (OpenSpec change `v3-t03-mcp-value-evaluation`). Everything here was fixed before the first measured run.
 
 ## Baseline
 

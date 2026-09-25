@@ -10,7 +10,7 @@ The user's working setup sets the bar: 5-10 Claude Code sessions run in parallel
 
 ## What Changes
 
-- New document `docs/V3-MCP-EVALUATION.md`: the cost table, the per-task value table (all configurations and runs, raw numbers next to the summary), a disposition per server (**default-on / opt-in / removed**) with rationale, the resulting changes per downstream task, and open decisions for the user with a recommendation each.
+- New ADR `docs/adr/0001-remove-bundled-mcp-servers.md` (replaces the evaluation document first planned as `docs/V3-MCP-EVALUATION.md`, user decision 2026-09-25): the cost table, the per-task value table (all configurations and runs, raw numbers next to the summary), a disposition per server (**default-on / opt-in / removed**) with rationale, the resulting changes per downstream task, and open decisions for the user with a recommendation each.
 - New directory `docs/v3/t03-mcp-eval/` with what makes the numbers reproducible: the task set with reference answers (written and committed before the first run), the four MCP configurations, the harness (a shell script around `claude -p --output-format json`), and the raw per-run results.
 - Resolutions of the plan's "To resolve in the spec" items (details in design.md):
   - **Benchmark repository**: `BloopAI/vibe-kanban`, public, pinned at `f4b0fd9` (v0.1.32, 2116 tracked files), measured on its TypeScript part only (about 660 `.ts` / `.tsx` files in five pnpm packages plus `shared/`). Public so reference answers and raw results can be committed. TypeScript only because the machine has no Rust toolchain and TypeScript matches the user's working stack; serena runs with the `typescript` language server only. User decisions, 2026-09-25.
@@ -40,6 +40,6 @@ None.
 
 ## Impact
 
-- New files only: `docs/V3-MCP-EVALUATION.md` and `docs/v3/t03-mcp-eval/`.
+- New files only: `docs/adr/0001-remove-bundled-mcp-servers.md` and `docs/v3/t03-mcp-eval/`; edits to `docs/V3-IMPLEMENTATION-PLAN.md` for the resolution.
 - `docs/V3-IMPLEMENTATION-PLAN.md`: a T03 Resolution paragraph and the downstream edits the dispositions cause (T11, T13, T32, T41, T42), made when the user accepts the dispositions.
 - Local machine: benchmark runs create worktrees of vibe-kanban in the session scratch area and spend model tokens (about 104 value runs on Haiku 4.5 and Sonnet 5, plus the parallel-load runs; estimate in design.md).

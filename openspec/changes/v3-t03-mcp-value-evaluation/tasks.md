@@ -33,9 +33,9 @@
 
 ## 6. Parallel load and update strategy
 
-- [ ] 6.1 Confirm with the user that the machine is otherwise idle, then run P3 (N = 1, 5, 10; every configuration; graph configurations also with the v2.6.0 `Stop` hook), each session spawning 2 subagents in its worktree; verify every batch has sampler output, per-session wall time and connect status, and that background load stayed under 1 core (repeat the batch otherwise)
-- [ ] 6.2 Run the four update strategies (design D-6) under P3 at N = 10 with the graph configuration, then a V2 run after an edit per strategy to measure staleness; verify each strategy has CPU, lock or database errors, and the staleness result
-- [ ] 6.3 Apply the D-7 performance gate per server at N = 10 and N = 1; verify each verdict cites the P1 and P3 cells it rests on
+- [x] 6.1 Confirm with the user that the machine is otherwise idle, then run P3 (N = 1, 5, 10; every configuration; graph configurations also with the v2.6.0 `Stop` hook), each session spawning 2 subagents in its worktree; verify every batch has sampler output, per-session wall time and connect status, and that background load stayed under 1 core (repeat the batch otherwise) - **Not run** (user decision 2026-09-25): both servers fail the D-7 value rule, so they are removed whatever the gate shows; `p3.sh` stays in the harness for a rerun.
+- [x] 6.2 Run the four update strategies (design D-6) under P3 at N = 10 with the graph configuration, then a V2 run after an edit per strategy to measure staleness; verify each strategy has CPU, lock or database errors, and the staleness result - **Not run** (user decision 2026-09-25): both servers fail the D-7 value rule, so they are removed whatever the gate shows; `p3.sh` stays in the harness for a rerun.
+- [x] 6.3 Apply the D-7 performance gate per server at N = 10 and N = 1; verify each verdict cites the P1 and P3 cells it rests on - **Not run** (user decision 2026-09-25): both servers fail the D-7 value rule, so they are removed whatever the gate shows; `p3.sh` stays in the harness for a rerun.
 
 ## 7. Failure mode and pinning
 
@@ -45,6 +45,6 @@
 
 ## 8. Evaluation document and acceptance
 
-- [x] 8.1 Write `docs/V3-MCP-EVALUATION.md`: baseline (commits, versions, harness flags), cost table, per-task value table with raw numbers next to the summary, per server a disposition (default-on / opt-in / removed) with rationale, the update strategy, the failure-mode recommendation, pins, the R-7 answer, the tier-menu vs agent `tools:` drift list, the resulting changes per downstream task (T11 `doctor`, T13 hook lines, T32 `uv.lock`, T41 / T42 tier fragments and agent `tools:`), and open decisions for the user with a recommendation each; verify every number in the summary traces to a raw file
+- [x] 8.1 Write the evaluation (first as `docs/V3-MCP-EVALUATION.md`; by user decision it became `docs/adr/0001-remove-bundled-mcp-servers.md`, which replaces it): baseline (commits, versions, harness flags), cost table, per-task value table with raw numbers next to the summary, per server a disposition (default-on / opt-in / removed) with rationale, the update strategy, the failure-mode recommendation, pins, the R-7 answer, the tier-menu vs agent `tools:` drift list, the resulting changes per downstream task (T11 `doctor`, T13 hook lines, T32 `uv.lock`, T41 / T42 tier fragments and agent `tools:`), and open decisions for the user with a recommendation each; verify every number in the summary traces to a raw file
 - [ ] 8.2 After the user decides on the dispositions, add the T03 Resolution paragraph to `docs/V3-IMPLEMENTATION-PLAN.md` and the downstream edits it causes, and update issue #68; verify the plan's T11, T13, T32, T41 and T42 sections name T03's outcome where it changes them
 - [ ] 8.3 Check the Acceptance signal end to end: the document exists with the cost table, the value table with all configurations and runs, a disposition with rationale per server, downstream changes per task, and open decisions with recommendations; then run `openspec validate v3-t03-mcp-value-evaluation --strict` and verify it passes
