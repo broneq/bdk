@@ -108,7 +108,7 @@ Bundle the open questions for the user...
 - **Fragments ≠ references**: Fragments are conditional; references are static. See decision tree above for placement.
 - **Syntax**: Use `--then <file>` for content >2 lines; `--then-text` for snippets.
 - **Placement**: Inject calls go immediately before the section they augment.
-- **Frontmatter**: a skill running these `!`...`` calls needs `allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)` — see `.claude/rules/skill-creation-rules.md`.
+- **v2 only**: `pnpm skill-check` (`bdk/wrapper-form`) rejects these `!`...`` calls; the existing ones sit in its baseline until `inject.py` goes. New skills call the kernel instead - see `.claude/rules/skill-creation-rules.md`.
 
 ## Related: rule injection (not fragments)
 

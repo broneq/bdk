@@ -370,6 +370,12 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Dependencies**: T02.
 
+**Resolution** (2026-09-25, OpenSpec Change `v3-t15-skill-check`; the kit's living spec is `openspec/specs/skill-kit/spec.md` in its own repository):
+
+- Package `bdk-skill-kit` in the public repository [broneq/bdk-skill-kit](https://github.com/broneq/bdk-skill-kit), released through release-please; BDK pins a release tag as a devDependency and runs `pnpm skill-check`. Beyond the CLI and library, the kit ships two Agent Skills: `skill-authoring` (the conventions its rules enforce, each citing the rule ID) and `skill-check` (fronting the CLI).
+- The BDK rules are a plugin in `tools/skill-check/bdk-rules.ts` (`bdk/*`), configured in `skill-check.config.ts`; seeded-violation fixtures and a wrapper-regex parity test against the kernel-cli spec run in the contract project. Agent adapters are checked by the same tool (an `agents` target), not by a kernel content test.
+- `--portable` became a per-target `profile: "portable"`. v2 content sits in `tools/skill-check/baseline.json`, which only shrinks. `.claude/skills/skill-lint` and `agent-lint` keep only the checks that need judgment.
+
 ---
 
 ## Phase 2 - Change, ledger, graph, attempts
@@ -638,6 +644,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - `bdk-craft` skills: `tdd`, `oop-design`, `api-design`, `debugging`, `refactoring`, `data-modeling`, `testing-strategy`, `modularizing`, `mermaid-drawer`; each admitted only after the T40 with / without measurement (R-6); `debugging` opens a Change with `--inferred` when `bdk` is present and runs stateless otherwise.
 - Removal: `debug`, `explain-complex-code` (absorbed into `docs`), the 13 `bdk-*` meta-skills, the eight agent files replaced by adapters; content tests: every role skill names an adapter that `export agents` produces; the agents table in STARTUP byte-identical to `ctx startup` (P11); no model names in agent and skill prose; every `bdk-craft` skill passes `skill-check --portable` (T15).
 - Update of the `README.md` Skills / Agents / Removed skills tables (finalised in T32).
+- `skill-check` handoff from T15: add a `profile: "portable"` target for the `bdk-craft` skills to `skill-check.config.ts`, and remove the baseline entries of every skill and agent this task replaces (`pnpm skill-check --baseline-prune`), so the baseline holds only content that still exists.
 
 **Input**: `docs/V3-SKILL-INVENTORY.md` sections 12-13 (decisions R-1..R-18, Q-1..Q-6, tables 13.1-13.2), T2, T3, P3, P8, P11, "Out of scope" (`cr` / `pr-review` only the package as input), "What We Did NOT Decide" (how `cr` consumes the package - to settle in this task's spec).
 
