@@ -90,7 +90,7 @@
 - [x] 9.1 Update the Purpose paragraph of `openspec/specs/kernel-architecture/spec.md` ("the zod output schema that T12 exports") to the generated-or-hand-written rule of design D-10 (a delta cannot change a Purpose); verify `pnpm test:contract` passes
   - Done; `pnpm test:contract` 249 passed. The `kernel-architecture` delta also corrects the slice anatomy line ("T12 exports them") and adds a MODIFIED "Change recipes": a new command adds its output schema to `kernel/scripts/export-schemas.ts`.
 - [x] 9.2 In `.github/workflows/tests.yml`, change the kernel job's diff step to `git diff --exit-code dist/ schema/` and add `actions/setup-node` with the `.nvmrc` version to the pytest job; verify with actionlint and on the PR's CI run
-  - Done; actionlint 1.7.12 passes. The PR's CI run is still to come.
+  - Done; actionlint 1.7.12 passes, and the CI run of PR #81 is green: `kernel` on Node 22.13, 24 and 26 (with `git diff --exit-code dist/ schema/`), `pytest` with Node, `lint-repo`, `audit`, `skill-check`.
 
 ## 10. Acceptance
 
