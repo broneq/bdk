@@ -61,7 +61,7 @@
 ## 9. CI and dependency updates
 
 - [ ] 9.1 Rewrite `.github/workflows/tests.yml` per design D-9: keep `pytest`; add `kernel` (matrix 22.13 / 24 / 26 with every step of the `CI pipeline` requirement in order, identical on every line), `lint-repo` (actionlint over `.github/workflows/`; on pull requests commitlint `--from` base `--to` head), `audit` (`pnpm audit --prod --audit-level high`), `skill-check` (stub that prints "skill-check lands in T15" and exits 0); remove the T10 `contract` job; verify with `actionlint` locally and by the green run in 12.1
-- [ ] 9.2 Add `.github/dependabot.yml` (npm and github-actions, monthly, one group each; design D-10); verify it parses and note in the PR description that it takes effect once it reaches `main`
+- [x] 9.2 Add `.github/dependabot.yml` (npm and github-actions, monthly, one group each; design D-10); verify it parses and note in the PR description that it takes effect once it reaches `main`
 
 ## 10. Spec follow-up outside the delta
 
