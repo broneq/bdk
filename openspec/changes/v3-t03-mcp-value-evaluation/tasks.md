@@ -20,8 +20,8 @@
 
 ## 4. Cost: connect and graph operations
 
-- [ ] 4.1 P1: 10 warm-cache and 3 cold-cache starts per server, unpinned and pinned (design D-6, D-9); record time to connected and failures; verify the table in `docs/v3/t03-mcp-eval/results/p1-connect.md` has all cells with raw times
-- [ ] 4.2 P2: full build, `update` with no change, 1 and 20 changed files, with and without `--skip-flows`, and `postprocess` on one worktree; record CPU seconds, peak RSS, wall time, `graph.db` size; verify `results/p2-graph-ops.md` has every operation with raw `/usr/bin/time -l` output kept
+- [x] 4.1 P1: 10 warm-cache and 3 cold-cache starts per server, unpinned and pinned (design D-6, D-9); record time to connected and failures; verify the table in `docs/v3/t03-mcp-eval/results/p1-connect.md` has all cells with raw times
+- [x] 4.2 P2: full build, `update` with no change, 1 and 20 changed files, with and without `--skip-flows`, and `postprocess` on one worktree; record CPU seconds, peak RSS, wall time, `graph.db` size; verify `results/p2-graph-ops.md` has every operation with raw `/usr/bin/time -l` output kept
 
 ## 5. Value runs
 
@@ -39,9 +39,9 @@
 
 ## 7. Failure mode and pinning
 
-- [ ] 7.1 Run V1 and V2 with each server forced past `CONNECT_TIMEOUT` (design D-8); record calls to missing tools, fallback, wasted turns and correctness; verify the raw runs are kept and the behaviour is summarised per server
-- [ ] 7.2 Check what `SessionStart` input, T01's recorded payloads, `claude mcp list` and the `init` event expose about MCP connect status; verify each source is cited (file, doc section or captured output) and give the recommendation for tier selection by availability
-- [ ] 7.3 Record the exact pin spec per server that may stay, whether `uvx` re-resolves it at start, and its P1 connect time; verify the spec starts the server in a clean shell
+- [x] 7.1 Run V1 and V2 with each server forced past `CONNECT_TIMEOUT` (design D-8); record calls to missing tools, fallback, wasted turns and correctness; verify the raw runs are kept and the behaviour is summarised per server
+- [x] 7.2 Check what `SessionStart` input, T01's recorded payloads, `claude mcp list` and the `init` event expose about MCP connect status; verify each source is cited (file, doc section or captured output) and give the recommendation for tier selection by availability
+- [x] 7.3 Record the exact pin spec per server that may stay, whether `uvx` re-resolves it at start, and its P1 connect time; verify the spec starts the server in a clean shell
 
 ## 8. Evaluation document and acceptance
 

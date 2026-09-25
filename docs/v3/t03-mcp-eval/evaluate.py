@@ -6,6 +6,8 @@ Subcommands:
   run --cfg ... --stream ...     evaluate one raw run, write <stream>.eval.json
   judge <runs dir> [--task V5]   grade rubric tasks (V5, V6) with a Haiku judge
   table <runs dir>               print per task x config medians and ranges (markdown)
+  raw <runs dir>                 print one row per valid run with its raw numbers (markdown)
+  verdict <runs dir>             apply the design D-7 value rule per task and comparison (markdown)
 """
 
 import argparse
@@ -33,7 +35,9 @@ def load_stream(path):
     return events
 
 
-def isolation_problems(events, cfg, bench):
+def isolation_problems(events, cfg, bench, plugin=None, failure_mode=False):
+    """Checks a run's init event against its configuration. failure_mode (design D-8): the servers
+    are expected to miss the connect timeout, so their connect status and tools are not checked."""
     init = next((e for e in events if e.get("type") == "system" and e.get("subtype") == "init"), None)
     if init is None:
         return ["no init event"]
@@ -41,21 +45,21 @@ def isolation_problems(events, cfg, bench):
     plugins = {p["name"]: p for p in init.get("plugins", [])}
     if set(plugins) != {"bdk"} | BUILTIN_PLUGINS:
         problems.append(f"plugins {sorted(plugins)}")
-    elif os.path.realpath(plugins["bdk"]["path"]) != os.path.realpath(f"{bench}/bdk-{cfg}"):
+    elif os.path.realpath(plugins["bdk"]["path"]) != os.path.realpath(f"{bench}/bdk-{plugin or cfg}"):
         problems.append(f"bdk path {plugins['bdk']['path']}")
     want = {f"plugin:bdk:{s}" for s in SERVERS[cfg]}
     got = {m["name"]: m["status"] for m in init.get("mcp_servers", [])}
     if set(got) != want:
         problems.append(f"mcp servers {got}")
     not_connected = [n for n, s in got.items() if s != "connected"]
-    if not_connected:
+    if not_connected and not failure_mode:
         problems.append(f"not connected {not_connected}")
     allowed = tuple(f"mcp__plugin_bdk_{s}__" for s in SERVERS[cfg])
     mcp_tools = [t for t in init.get("tools", []) if t.startswith("mcp__")]
     stray = [t for t in mcp_tools if not t.startswith(allowed)] if allowed else mcp_tools
     if stray:
         problems.append(f"stray mcp tools {stray[:5]}")
-    for prefix in allowed:
+    for prefix in allowed if not failure_mode else ():
         if not any(t.startswith(prefix) for t in mcp_tools):
             problems.append(f"no tools for {prefix}")
     return problems
@@ -187,14 +191,16 @@ def grade_build(ref, worktree):
 def cmd_run(a):
     events = load_stream(a.stream)
     ref = json.loads(Path(a.tasks, f"{a.task}.reference.json").read_text())
-    problems = isolation_problems(events, a.cfg, a.bench)
+    problems = isolation_problems(events, a.cfg, a.bench, a.plugin, a.failure_mode)
+    init = next((e for e in events if e.get("subtype") == "init"), {})
     m = metrics(events, float(a.start), float(a.end))
     answer = final_json(m["result_text"])
     g = grade(a.task, ref, answer, a.worktree) if not problems else {"score": None}
     record = {"cfg": a.cfg, "task": a.task, "model": a.model, "rep": int(a.rep),
               "exit_code": int(a.exit_code), "valid": not problems, "isolation_problems": problems,
               "started_at": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(float(a.start))),
-              "answer": answer, "grade": g, **m}
+              "mcp_status_at_init": {x["name"]: x["status"] for x in init.get("mcp_servers", [])},
+              "failure_mode": a.failure_mode, "answer": answer, "grade": g, **m}
     Path(a.stream + ".eval.json").write_text(json.dumps(record, indent=2) + "\n")
     print(json.dumps({k: record[k] for k in ("cfg", "task", "rep", "valid", "cost_usd", "wall_s", "tool_calls")}
                      | {"score": g.get("score"), "problems": problems}))
@@ -276,6 +282,72 @@ def cmd_table(a):
               f"{spread(k('graph'))} | {spread(k('serena'))} | {spread(k('Bash'))} | {spread(k('Read'))} |")
 
 
+def cmd_raw(a):
+    print("| model | task | cfg | rep | score | cost USD | input+cache tokens | output tokens | turns | wall s | tool calls | graph | serena | subagent calls | file |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    rs = [json.loads(p.read_text()) | {"_p": p} for p in all_evals(a.runs)]
+    order = lambda r: (r["model"], r["task"], list(SERVERS).index(r["cfg"]), r["rep"])
+    for r in sorted((r for r in rs if r["valid"]), key=order):
+        tin = sum(r.get(k) or 0 for k in ("input_tokens", "cache_creation_tokens", "cache_read_tokens"))
+        k = r["tool_calls_by_kind"]
+        score = r["grade"].get("score")
+        print(f"| {r['model']} | {r['task']} | {r['cfg']} | {r['rep']} | {'-' if score is None else round(score, 3)} | "
+              f"{r['cost_usd']:.4f} | {tin} | {r.get('output_tokens')} | {r['num_turns']} | {r['wall_s']} | "
+              f"{r['tool_calls']} | {k.get('graph', 0)} | {k.get('serena', 0)} | {r.get('subagent_tool_calls', 0)} | "
+              f"`{str(r["_p"]).removesuffix(".eval.json")}` |")
+
+
+# Design D-2: what each configuration is judged against.
+COMPARISONS = [("CG", "C0"), ("CS", "C0"), ("CGS", "CG"), ("CGS", "C0")]
+
+
+def compare(a, b, higher_is_better):
+    """D-7 noise rule: a gap between medians counts only if it exceeds the larger of the two ranges."""
+    ma, mb = statistics.median(a), statistics.median(b)
+    noise = max(max(a) - min(a), max(b) - min(b))
+    if abs(ma - mb) <= noise:
+        return 0, ma, mb
+    better = ma > mb if higher_is_better else ma < mb
+    return (1 if better else -1), ma, mb
+
+
+def cmd_verdict(a):
+    rows = {}
+    for p in all_evals(a.runs):
+        r = json.loads(p.read_text())
+        if r["valid"]:
+            rows.setdefault((r["task"], r["cfg"]), []).append(r)
+    tasks = sorted({t for t, _ in rows})
+    print("| comparison | task | correctness | cost USD | wall s | verdict |")
+    print("|---|---|---|---|---|---|")
+    for x, y in COMPARISONS:
+        for task in tasks:
+            if (task, x) not in rows or (task, y) not in rows:
+                continue
+            rx, ry = rows[(task, x)], rows[(task, y)]
+            col = lambda rs, f: [f(r) for r in rs]
+            score = lambda r: r["grade"].get("score")
+            if None in col(rx, score) + col(ry, score):
+                continue
+            c = compare(col(rx, score), col(ry, score), True)
+            cost = compare(col(rx, lambda r: r["cost_usd"]), col(ry, lambda r: r["cost_usd"]), False)
+            wall = compare(col(rx, lambda r: r["wall_s"]), col(ry, lambda r: r["wall_s"]), False)
+            # Cost and wall time count only at equal correctness, and only for a gap of at least 20%.
+            big = lambda m: abs(m[1] - m[2]) >= 0.2 * m[2]
+            if c[0]:
+                v = "better" if c[0] > 0 else "worse"
+            elif c[1] != c[2]:
+                v = "no measurable difference (correctness gap within noise)"
+            else:
+                wins = [n for n, m in (("cost", cost), ("wall", wall)) if m[0] > 0 and big(m)]
+                losses = [n for n, m in (("cost", cost), ("wall", wall)) if m[0] < 0 and big(m)]
+                v = ("better (" + ", ".join(wins) + ")") if wins else "no measurable difference"
+                if losses:
+                    v += "; worse " + ", ".join(losses)
+            fmt = lambda m, d: f"{m[1]:.{d}f} vs {m[2]:.{d}f}"
+            print(f"| {x} vs {y} | {task} | {fmt(c, 3)} | {fmt(cost, 3)} | {fmt(wall, 0)} | {v} |")
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -283,14 +355,18 @@ def main():
     r = sub.add_parser("run")
     for f in ("cfg", "task", "model", "rep", "stream", "exit-code", "start", "end", "tasks", "worktree", "bench"):
         r.add_argument(f"--{f}", required=True)
+    r.add_argument("--plugin", help="plugin copy label when it differs from --cfg (bench/bdk-<label>)")
+    r.add_argument("--failure-mode", action="store_true", help="servers expected down (design D-8)")
     j = sub.add_parser("judge"); j.add_argument("runs"); j.add_argument("--task"); j.add_argument("--force", action="store_true")
     t = sub.add_parser("table"); t.add_argument("runs"); t.add_argument("--model")
+    v = sub.add_parser("verdict"); v.add_argument("runs")
+    w = sub.add_parser("raw"); w.add_argument("runs")
     a = ap.parse_args()
     if a.cmd == "run":
         sys.exit(cmd_run(a))
     if a.cmd == "spent":
         Path(a.runs).mkdir(parents=True, exist_ok=True)
-    {"spent": cmd_spent, "judge": cmd_judge, "table": cmd_table}[a.cmd](a)
+    {"spent": cmd_spent, "judge": cmd_judge, "table": cmd_table, "verdict": cmd_verdict, "raw": cmd_raw}[a.cmd](a)
 
 
 if __name__ == "__main__":

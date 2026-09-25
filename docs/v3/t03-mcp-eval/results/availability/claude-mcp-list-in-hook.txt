@@ -1,0 +1,4 @@
+Checking MCP server health…
+
+plugin:bdk:serena: uvx --from git+https://github.com/oraios/serena serena start-mcp-server --context claude-code --project-from-cwd --mode interactive --mode editing --mode no-memories - ✔ Connected
+plugin:bdk:code-review-graph: uvx code-review-graph serve - ✔ Connected

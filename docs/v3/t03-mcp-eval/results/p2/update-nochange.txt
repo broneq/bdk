@@ -1,0 +1,20 @@
+INFO: Excluding 20 nested build-output directories (a sibling manifest marks them as build output; keep one with '!<path>' in .code-review-graphignore): crates/git/target, crates/db/target, crates/local-deployment/target, crates/executors/target, crates/tauri-app/target, crates/server-info/target, crates/deployment/target, crates/utils/target, crates/server/target, crates/git-host/target …
+Incremental: 0 files updated, 0 nodes, 0 edges (postprocess=full)
+        1.27 real         0.24 user         0.24 sys
+            57114624  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               14088  page reclaims
+                  66  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   1  messages sent
+                   1  messages received
+                   1  signals received
+                1653  voluntary context switches
+                3234  involuntary context switches
+           515064091  instructions retired
+           144010342  cycles elapsed
+            14484008  peak memory footprint

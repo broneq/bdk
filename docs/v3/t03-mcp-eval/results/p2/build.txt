@@ -1,0 +1,60 @@
+INFO: Schema version 1 -> 13: running migrations
+INFO: Running migration v2
+INFO: Migration v2: added 'signature' column to nodes
+INFO: Running migration v3
+INFO: Migration v3: created flows and flow_memberships tables
+INFO: Running migration v4
+INFO: Migration v4: added 'community_id' column to nodes
+INFO: Migration v4: created communities table
+INFO: Running migration v5
+INFO: Migration v5: created nodes_fts FTS5 virtual table
+INFO: Running migration v6
+INFO: Migration v6: created summary tables (community_summaries, flow_snapshots, risk_index)
+INFO: Running migration v7
+INFO: Migration v7: added compound edge indexes
+INFO: Running migration v8
+INFO: Migration v8: created composite edge index
+INFO: Running migration v9
+INFO: Migration v9: added edge confidence columns
+INFO: Running migration v10
+INFO: Migration v10: added indexed nodes.symbol column
+INFO: Running migration v11
+INFO: Migration v11: added indexed edges.target_resolution column
+INFO: Running migration v12
+INFO: Migration v12: added nodes_fts_state index mirror
+INFO: Running migration v13
+INFO: Migration v13: indexed nodes.docstring and nodes.name_tokens
+INFO: Migrations complete, now at schema version 13
+INFO: Excluding 20 nested build-output directories (a sibling manifest marks them as build output; keep one with '!<path>' in .code-review-graphignore): crates/deployment/target, crates/api-types/target, crates/tauri-app/target, crates/server-info/target, crates/services/target, crates/relay-control/target, crates/utils/target, crates/relay-tunnel/target, crates/server/target, crates/worktree-manager/target …
+INFO: Progress: 200/1193 files parsed
+INFO: Progress: 400/1193 files parsed
+INFO: Progress: 600/1193 files parsed
+INFO: Progress: 800/1193 files parsed
+INFO: Progress: 1000/1193 files parsed
+INFO: Progress: 1193/1193 files parsed
+INFO: Spring event resolver: indexed 0 events and emitted 0 CALLS edges
+INFO: Scoped resolver: resolved 107 CALLS edges across 397 files
+INFO: Resolved 1989 evidence-backed bare CALLS targets
+INFO: Resolved 34 evidence-backed bare TESTED_BY sources
+INFO: FTS index rebuilt: 9077 rows indexed
+INFO: Loaded 7899 unique nodes, 75739 edges
+INFO: igraph not available, using file-based community detection
+Full build: 1193 files, 9166 nodes, 77644 edges (postprocess=full)
+       12.25 real        12.21 user         8.30 sys
+           185352192  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              193715  page reclaims
+                 203  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   1  messages sent
+                   1  messages received
+                   1  signals received
+               51749  voluntary context switches
+              104322  involuntary context switches
+           542203881  instructions retired
+           182976917  cycles elapsed
+            14516776  peak memory footprint

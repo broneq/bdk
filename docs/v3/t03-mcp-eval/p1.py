@@ -35,7 +35,8 @@ def one_start(plugin, cwd, cold):
         ["claude", "-p", "Reply OK.", "--model", "claude-haiku-4-5-20251001", "--output-format", "stream-json",
          "--verbose", "--plugin-dir", plugin, "--setting-sources", "project,local", "--no-session-persistence"],
         cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
-    rec = {"cold": cold, "uv_cache": tmp}
+    load = subprocess.run(["sysctl", "-n", "vm.loadavg"], capture_output=True, text=True).stdout.strip("{} \n")
+    rec = {"cold": cold, "uv_cache": tmp, "load1_before": float(load.split()[0])}
     for line in p.stdout:
         try:
             e = json.loads(line)

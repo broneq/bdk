@@ -1,0 +1,22 @@
+INFO: Excluding 20 nested build-output directories (a sibling manifest marks them as build output; keep one with '!<path>' in .code-review-graphignore): crates/relay-tunnel/target, crates/trusted-key-auth/target, crates/git-host/target, crates/local-deployment/target, crates/git/target, crates/remote/target, crates/tauri-app/target, crates/deployment/target, crates/worktree-manager/target, crates/server/target …
+INFO: Resolved 4 evidence-backed bare CALLS targets
+INFO: FTS index delta: 91 entries removed, 91 indexed
+Incremental: 20 files updated, 91 nodes, 743 edges (postprocess=minimal)
+        1.47 real         0.77 user         0.39 sys
+            71254016  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               28712  page reclaims
+                  36  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   1  messages sent
+                   1  messages received
+                   1  signals received
+                1428  voluntary context switches
+                3891  involuntary context switches
+           478985899  instructions retired
+           131112344  cycles elapsed
+            14467600  peak memory footprint
