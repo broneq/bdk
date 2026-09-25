@@ -3,7 +3,7 @@
 // has a row with the same type, default, owner and consumer; a row that is
 // not registered is a planned key of the same owner; the removed v2 keys and
 // the prompt keys match their tables.
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -14,12 +14,7 @@ import { registeredLeaves } from "../support/settings-table.ts";
 import type { RegisteredLeaf } from "../support/settings-table.ts";
 import { backticked } from "../support/specs.ts";
 
-const LIVING = join(REPO_ROOT, "openspec/specs/kernel-settings/spec.md");
-const PROPOSED = join(
-  REPO_ROOT,
-  "openspec/changes/v3-t12-layered-config/specs/kernel-settings/spec.md",
-);
-const spec = readFileSync(existsSync(LIVING) ? LIVING : PROPOSED, "utf8");
+const spec = readFileSync(join(REPO_ROOT, "openspec/specs/kernel-settings/spec.md"), "utf8");
 
 interface Row {
   readonly cells: readonly string[];
