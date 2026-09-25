@@ -83,6 +83,8 @@ From `claude -p --output-format stream-json --verbose`: `total_cost_usd`, token 
 - **P3 Parallel load**: N = 1, 5, 10 sessions at once, each in its own worktree, each running one mid-size task that spawns 2 subagents in the same worktree, for every configuration. Graph configurations run twice, without and with the v2.6.0 `Stop` hook. A 1 s sampler records host CPU, load average and RSS summed per process family (`claude`, serena, language servers, code-review-graph, `uv`), plus per-session wall time, connect failures and graph lock or database errors.
 - **Update strategies** (graph only, under P3 at N = 10): none plus on-demand update in the skills that use the graph; `Stop` hook as in v2.6.0; `Stop` hook with a per-worktree lock and a 60 s debounce; `code-review-graph watch` per worktree. Each is scored on CPU and on staleness (V2 run after an edit, answer checked against the edited code).
 
+**As run**: P3 and the update strategies were not run. Both servers already fail the value half of D-7 ("Removed: fails value"), so the performance gate cannot change the disposition; the user decided on removal before the machine was free for P3 (see `docs/adr/0001-remove-bundled-mcp-servers.md` and tasks 6.1-6.3).
+
 ### D-7 Threshold
 
 A server is **default-on** only if it passes both:
