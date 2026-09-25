@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { loadConfig } from "../config.ts";
 import type { Finding } from "../index.ts";
 import { runChecks } from "../runner.ts";
-import { skill, tree } from "../testing.ts";
+import { skill, tree } from "../test-helpers.ts";
 
 // Structure rules read the skill directory, so they run end to end on a tree.
 async function findings(

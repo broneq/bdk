@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Document, Report, Rule } from "../index.ts";
-import { agent, doc, skill } from "../testing.ts";
+import { agent, doc, skill } from "../test-helpers.ts";
 import { absolutePaths, argumentsTypo, body, lineLimit, modelNames } from "./content.ts";
 
 function run<O>(rule: Rule<O>, d: Document, options: Partial<O> = {}): Report[] {

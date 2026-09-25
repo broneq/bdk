@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "./main.ts";
-import { skill, tree } from "./testing.ts";
+import { skill, tree } from "./test-helpers.ts";
 
 async function cli(cwd: string, args: string[]) {
   let stdout = "";

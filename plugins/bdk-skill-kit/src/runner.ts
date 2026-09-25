@@ -4,6 +4,9 @@ import { settingOf, type LoadedConfig, type Settings } from "./config.ts";
 import { discover } from "./discover.ts";
 import type { Document, Finding, Report, Rule, Severity } from "./index.ts";
 
+/** What the runner reads of a loaded config. */
+type CheckConfig = Pick<LoadedConfig, "root" | "targets" | "rules" | "settings">;
+
 export interface RunOptions {
   /** Directory the path arguments are relative to. */
   cwd: string;
@@ -20,7 +23,7 @@ export interface RunResult {
   inScope: (file: string) => boolean;
 }
 
-export function runChecks(config: LoadedConfig, options: RunOptions): RunResult {
+export function runChecks(config: CheckConfig, options: RunOptions): RunResult {
   const { docs, strays } = discover(config.root, config.targets);
   const findings: Finding[] = [];
   const narrow = options.paths.map((p) =>
@@ -69,7 +72,7 @@ export function compareFindings(a: Finding, b: Finding): number {
 }
 
 function context(
-  config: LoadedConfig,
+  config: CheckConfig,
   rule: Rule<object>,
   severity: Severity,
   options: Record<string, unknown>,
@@ -98,7 +101,7 @@ function fingerprint(rule: string, file: string, text: string): string {
   return createHash("sha256").update(`${rule}\0${file}\0${normalised}`).digest("hex").slice(0, 16);
 }
 
-function enabledRules(config: LoadedConfig): string[] {
+function enabledRules(config: CheckConfig): string[] {
   const all: Settings[] = [config.settings, ...config.targets.map((t) => t.settings)];
   return [...config.rules.values()]
     .filter((rule) => all.some((settings) => settingOf(rule, settings).severity !== "off"))

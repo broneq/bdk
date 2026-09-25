@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Document, Report, Rule } from "../index.ts";
-import { agent, doc, skill } from "../testing.ts";
+import { agent, doc, skill } from "../test-helpers.ts";
 import {
   description,
   descriptionFrontLoaded,

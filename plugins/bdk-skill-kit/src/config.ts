@@ -72,7 +72,7 @@ export async function loadConfig(cwd: string, explicit?: string): Promise<Loaded
 /** A target as written in the config file: its values are not trusted yet. */
 type RawTarget = Partial<Record<"kind" | "dirs" | "profile" | "name" | "rules", unknown>>;
 
-function loadTarget(
+export function loadTarget(
   value: unknown,
   index: number,
   root: string,

@@ -76,6 +76,21 @@ export default definePlugin({ name: "acme", rules: [noTodo] });
 
 List the plugin in the config with `plugins: [acme]`. A rule with `checkProject` instead of `check` runs once over every document of its kinds.
 
+## Testing rules
+
+`checkRule` from `bdk-skill-kit/testing` runs one rule in process, through the same parser, option merging and runner as the CLI, so a plugin's unit tests count toward its coverage:
+
+```ts
+import { checkRule } from "bdk-skill-kit/testing";
+
+const findings = await checkRule(noTodo, {
+  files: { "plan/SKILL.md": "---\nname: plan\n---\n\nTODO: finish\n" },
+});
+// [{ rule: "no-todo", severity: "error", file: "plan/SKILL.md", line: 5, message: "resolve the TODO", ... }]
+```
+
+`files` maps paths relative to one target directory to their contents; the tester writes them to a temporary directory and removes it afterwards. `kind` (`skills` or `agents`, default `skills`) and `profile` (default `claude-code`) set up the target, and `options` merges over the rule's `defaultOptions` like a config setting. It runs both `check` and `checkProject`, and runs a rule that is `off` by default at `error`. The finding's `rule` is the rule's own ID, without the plugin prefix.
+
 ## Adopt on an existing tree
 
 A baseline records today's findings so that only new ones fail. It can only shrink:

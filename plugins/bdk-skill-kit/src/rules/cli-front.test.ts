@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Report } from "../index.ts";
-import { doc } from "../testing.ts";
+import { doc } from "../test-helpers.ts";
 import { cliFront } from "./cli-front.ts";
 
 function run(text: string, options = {}): string[] {

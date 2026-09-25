@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ConfigError, loadConfig } from "./config.ts";
 import { genericRules } from "./rules/index.ts";
 import { runChecks } from "./runner.ts";
-import { agent, skill, tree } from "./testing.ts";
+import { agent, skill, tree } from "./test-helpers.ts";
 
 // A plugin module that reports one finding per document, used to observe what
 // the runner feeds to rules.
