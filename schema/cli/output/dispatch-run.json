@@ -24,7 +24,7 @@
         "properties": {
           "ticket": {
             "type": "string",
-            "description": "Opaque merge-safe id (T14)."
+            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           },
           "task": {
             "type": "string"

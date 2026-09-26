@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/plan-index.json",
+  "title": "Plan index",
+  "description": "Generated from the plan parts; never edited.",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1 },
+    "generated": { "type": "boolean", "const": true },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d{2}$",
+            "description": "Two digits, equal to `<nn>` of the file name."
+          },
+          "title": { "type": "string", "minLength": 1 },
+          "depends-on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^\\d{2}$",
+              "description": "Two digits, equal to `<nn>` of the file name."
+            }
+          },
+          "wave": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }
+        },
+        "required": ["id", "title", "depends-on", "wave"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["schema", "generated", "parts"],
+  "additionalProperties": false
+}

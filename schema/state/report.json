@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/report.json",
+  "title": "Report envelope",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1 },
+    "ticket": { "$ref": "common.json#/$defs/ticketId" },
+    "role": { "$ref": "common.json#/$defs/role" },
+    "status": {
+      "type": "string",
+      "enum": ["done", "done-with-concerns", "needs-context", "blocked"]
+    },
+    "files": { "type": "array", "items": { "$ref": "common.json#/$defs/relativePath" } },
+    "entries": { "type": "array", "items": { "$ref": "common.json#/$defs/ledgerId" } },
+    "evidence": { "type": "array", "items": { "$ref": "common.json#/$defs/evidenceId" } },
+    "reason": {
+      "description": "Required for `blocked` and `needs-context`.",
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": ["schema", "ticket", "role", "status", "files", "entries", "evidence"],
+  "additionalProperties": false
+}

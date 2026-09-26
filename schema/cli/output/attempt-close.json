@@ -9,7 +9,7 @@
   "properties": {
     "ticket": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "outcome": {
       "enum": ["ok", "fail", "not-run"]
@@ -46,7 +46,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "description": "Opaque merge-safe id (T14)."
+        "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
       }
     },
     "fingerprints": {
@@ -67,7 +67,7 @@
         },
         "entry": {
           "type": "string",
-          "description": "Opaque merge-safe id (T14)."
+          "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
         },
         "why": {
           "type": "string"

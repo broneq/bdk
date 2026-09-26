@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/rule.json",
+  "title": "Rule file",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1 },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$",
+      "description": "Equals the file name without `.md` (`CQ-4`, `BDK-SEC-2`)."
+    },
+    "kind": { "type": "string", "enum": ["house", "knowledge"] },
+    "applies": {
+      "description": "Absent: every file.",
+      "type": "array",
+      "items": { "$ref": "common.json#/$defs/glob" }
+    },
+    "roles": {
+      "description": "Absent: every role.",
+      "type": "array",
+      "items": { "$ref": "common.json#/$defs/role" }
+    },
+    "severity": { "$ref": "common.json#/$defs/severity" },
+    "origin": {
+      "anyOf": [
+        { "type": "string", "enum": ["bdk", "import"] },
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}-(?=[a-z0-9-]{1,40}(?:\\/|$))[a-z0-9]+(?:-[a-z0-9]+)*\\/L-[0-9a-z]{8}$"
+        }
+      ],
+      "description": "The shipped pack, `rules import`, or the learning it came from."
+    },
+    "since": { "$ref": "common.json#/$defs/date" },
+    "source": {
+      "description": "Required exactly when `kind` is `knowledge`: where the fact comes from.",
+      "type": "string",
+      "minLength": 1
+    },
+    "verified": {
+      "description": "Required exactly when `kind` is `knowledge`.",
+      "$ref": "common.json#/$defs/date"
+    },
+    "removed": {
+      "description": "Tombstone reason; the id is never reused.",
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": ["schema", "id", "kind", "severity", "origin", "since"],
+  "additionalProperties": false
+}

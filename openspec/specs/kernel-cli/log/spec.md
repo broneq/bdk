@@ -104,8 +104,8 @@ Ingest a `bdk-entries` block from a read-only role's report under its ticket. Th
   - `--ticket <ticket>`. Required; provenance comes from the ticket's role.
   - `--file <path>`. Read the block from a file instead of stdin (typically the report).
   - stdin: The fenced bdk-entries YAML block, or a whole report containing exactly one such block.
-- **Behaviour:** Verifier, reviewer and reader roles end their report with a fenced `bdk-entries` YAML block; the orchestrator passes it here verbatim (T2). Every entry is validated exactly like `log add`; one bad entry refuses the whole block with `input/invalid-block` naming the line and field, and the orchestrator re-dispatches once before the block becomes a `blocker` entry (design edge case). A blocking item whose category is not in the closed list is downgraded (P8). The ticket's entry counter is what `attempt close` checks against the envelope.
-- **Writes:** `.bdk/changes/<id>/log/`
+- **Behaviour:** Verifier, reviewer and reader roles end their report with a fenced `bdk-entries` YAML block; the orchestrator passes it here verbatim (T2). Every entry is validated exactly like `log add`; one bad entry refuses the whole block with `input/invalid-block` naming the line and field, and the orchestrator re-dispatches once before the block becomes a `blocker` entry (design edge case). A blocking item whose category is not in the closed list is downgraded (P8). The ticket's entry counter is what `attempt close` checks against the envelope. A whole report passed on stdin is first stored at the `report` path of the ticket's dispatch package, because a read-only role has no file tool and `execute` disallows `Write` (`kernel-state`, Write map); a report passed with `--file` is not copied.
+- **Writes:** `.bdk/changes/<id>/log/`, `.bdk/changes/<id>/reports/`
 - **Output:** `schema/cli/output/log-ingest.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/invalid-block`, `input/forbidden-field`, `policy/no-open-ticket`, `policy/observation-cap`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
 - **Example:**
@@ -277,7 +277,7 @@ Set an entry's status (resolved, accepted, superseded) with a reason. The kernel
   - `accepted|resolved|superseded` (required).
   - `--by <id>`. Superseding entry; required with superseded.
   - `--reason <text>`.
-- **Behaviour:** Entries are append-only files: the status change is itself a record (T14 decides whether as a frontmatter rewrite guarded by the merge test or as a follow-up entry; the output names the record either way). `source: user` cannot be produced here.
+- **Behaviour:** The status change rewrites the entry's frontmatter in place and appends the reason to its body, one of the mutations `kernel-state` allows (Derived state and mutation) and that its two-branch merge test covers. `superseded` is never stored: the kernel writes `supersedes: <id>` into the `--by` entry, and the status is derived from it. `record` names the rewritten entry: `<id>`, or the `--by` entry for `superseded`. `source: user` cannot be produced here.
 - **Writes:** `.bdk/changes/<id>/log/`
 - **Output:** `schema/cli/output/log-resolve.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/invalid-transition`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -291,7 +291,7 @@ Set an entry's status (resolved, accepted, superseded) with a reason. The kernel
   {
     "entry": "L-e8k2s",
     "status": "resolved",
-    "record": "L-o7p3x",
+    "record": "L-e8k2s",
     "reason": "fixed in A-7f3k retry"
   }
   ```

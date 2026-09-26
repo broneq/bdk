@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/change.json",
+  "title": "change.md",
+  "description": "The Change's identity and intent; never mutated.",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1 },
+    "id": { "$ref": "common.json#/$defs/changeId" },
+    "kind": { "type": "string", "enum": ["feature", "bug"] },
+    "profile": { "type": "string", "enum": ["tiny", "small", "large"] },
+    "intent": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "enum": ["user", "inferred"] },
+    "at": { "$ref": "common.json#/$defs/timestamp" },
+    "author": { "$ref": "common.json#/$defs/author" },
+    "overridden": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "required": ["schema", "id", "kind", "profile", "intent", "source", "at", "author", "overridden"],
+  "additionalProperties": false
+}

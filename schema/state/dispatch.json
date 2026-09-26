@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/dispatch.json",
+  "title": "Dispatch package",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1 },
+    "ticket": { "$ref": "common.json#/$defs/ticketId" },
+    "target": { "type": "string", "minLength": 1 },
+    "role": { "$ref": "common.json#/$defs/role" },
+    "attempt": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "of": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "scope": { "$ref": "common.json#/$defs/scope" },
+    "at": { "$ref": "common.json#/$defs/timestamp" },
+    "kernel-version": { "type": "string", "minLength": 1 },
+    "template-hash": { "$ref": "common.json#/$defs/hash" },
+    "report": {
+      "description": "Where the role's report is written.",
+      "$ref": "common.json#/$defs/relativePath"
+    }
+  },
+  "required": [
+    "schema",
+    "ticket",
+    "target",
+    "role",
+    "attempt",
+    "of",
+    "scope",
+    "at",
+    "kernel-version",
+    "template-hash",
+    "report"
+  ],
+  "additionalProperties": false
+}
