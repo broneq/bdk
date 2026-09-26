@@ -74,7 +74,7 @@ Groups 1-6 run in a new local repository `bdk-skill-kit`, a sibling of the BDK c
 
 ## 11. Acceptance
 
-- [ ] 11.1 Acceptance signal, end to end:
+- [x] 11.1 Acceptance signal, end to end:
   - the kit release `v0.1.0` exists with a green CI run of its own tests;
   - BDK's CI run on the PR is green with the skill content job running `skill-check` over `skills/` and `agents/`;
   - the fixture contract test shows exit 1 for a seeded violation of every enabled rule;

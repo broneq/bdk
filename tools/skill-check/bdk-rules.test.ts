@@ -51,6 +51,11 @@ describe("wrapper-form", () => {
     expect(lines(findings)).toEqual([6, 7]);
   });
 
+  it("reports a block inside a code fence, which the host runs too", async () => {
+    const body = "Example:\n```md\n!`date`\n```";
+    expect(lines(await checkRule(wrapperForm, { files: skill("review", "", body) }))).toEqual([8]);
+  });
+
   it("checks agents too", async () => {
     const files = { "reader.md": "---\nname: reader\ndescription: Reads.\n---\n\n!`date`\n" };
     expect(lines(await checkRule(wrapperForm, { kind: "agents", files }))).toEqual([6]);
