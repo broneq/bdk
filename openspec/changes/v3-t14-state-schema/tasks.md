@@ -44,8 +44,8 @@
 
 ## 9. JSON Schema export
 
-- [ ] 9.1 Extend `kernel/scripts/export-schemas.ts` with the state registry (design D-6: `$id` base `.../v3/schema/state/`, relative `$ref`s to `common.json`, `io: "output"`, `unrepresentable: "throw"`) and run `pnpm build`; verify `schema/state/` holds the thirteen files of the spec, a second `pnpm build` leaves `git status --porcelain schema/` empty, and `dist/bdk.mjs` is unchanged apart from the id and store code
-- [ ] 9.2 Extend `kernel/tests/support/schemas.ts` so Ajv also loads `schema/state/` (`validatorFor` by kind); verify the existing contract tests still pass with `pnpm test:contract`
+- [x] 9.1 Extend `kernel/scripts/export-schemas.ts` with the state registry (design D-6: `$id` base `.../v3/schema/state/`, relative `$ref`s to `common.json`, `io: "output"`, `unrepresentable: "throw"`) and run `pnpm build`; verify `schema/state/` holds the thirteen files of the spec, a second `pnpm build` leaves `git status --porcelain schema/` empty, and `dist/bdk.mjs` is unchanged apart from the id and store code
+- [x] 9.2 Extend `kernel/tests/support/schemas.ts` so Ajv also loads `schema/state/` (`validatorFor` by kind); verify the existing contract tests still pass with `pnpm test:contract`
 
 ## 10. Fixture and spec tables
 

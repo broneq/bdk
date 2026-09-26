@@ -1,5 +1,5 @@
-// Ajv over the JSON Schemas of `schema/cli/`: every file is registered under
-// its `$id`, so `$ref`s between output and common schemas resolve offline.
+// Ajv over the JSON Schemas of `schema/cli/` and `schema/state/`: every file is
+// registered under its `$id`, so `$ref`s to the common schemas resolve offline.
 import { readdirSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -9,6 +9,7 @@ import formats from "ajv-formats";
 import { REPO_ROOT } from "./run.ts";
 
 const SCHEMA_DIR = join(REPO_ROOT, "schema", "cli");
+const STATE_DIR = join(REPO_ROOT, "schema", "state");
 
 /** Relative paths under `schema/cli/` of the output and common schemas. */
 export const SCHEMA_FILES = ["output", "common"].flatMap((dir) =>
@@ -24,6 +25,25 @@ export function readSchema(file: string): Record<string, unknown> {
 const ajv = new Ajv2020({ strict: true, allErrors: true });
 formats.default(ajv);
 for (const file of SCHEMA_FILES) ajv.addSchema(readSchema(file));
+for (const name of readdirSync(STATE_DIR).filter((file) => file.endsWith(".json"))) {
+  ajv.addSchema(readStateSchema(name.slice(0, -".json".length)));
+}
+
+/** `schema/state/<kind>.json`, e.g. `entry` or `common`. */
+export function readStateSchema(kind: string): Record<string, unknown> {
+  return JSON.parse(readFileSync(join(STATE_DIR, `${kind}.json`), "utf8")) as Record<
+    string,
+    unknown
+  >;
+}
+
+/** The validator of a state document kind (`kernel-state`, State JSON Schema). */
+export function stateValidatorFor(kind: string): ValidateFunction {
+  const id = readStateSchema(kind).$id;
+  const validate = typeof id === "string" ? ajv.getSchema(id) : undefined;
+  if (validate === undefined) throw new Error(`no state schema registered for ${kind}`);
+  return validate;
+}
 
 export function validatorFor(file: string): ValidateFunction {
   const id = readSchema(file).$id;

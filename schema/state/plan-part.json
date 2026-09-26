@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/plan-part.json",
+  "title": "Plan part",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1 },
+    "id": {
+      "type": "string",
+      "pattern": "^\\d{2}$",
+      "description": "Two digits, equal to `<nn>` of the file name."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "goal": { "type": "string", "minLength": 1 },
+    "success-measure": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What a reviewer can observe."
+    },
+    "do-not-touch": { "type": "array", "items": { "$ref": "common.json#/$defs/glob" } },
+    "depends-on": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^\\d{2}$",
+        "description": "Two digits, equal to `<nn>` of the file name."
+      }
+    },
+    "spec-impact": {
+      "anyOf": [
+        { "type": "string", "const": "none" },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:\\/[a-z0-9]+(?:-[a-z0-9]+)*)*$"
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "title",
+    "goal",
+    "success-measure",
+    "do-not-touch",
+    "depends-on",
+    "spec-impact"
+  ],
+  "additionalProperties": false
+}

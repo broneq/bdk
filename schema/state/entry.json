@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/entry.json",
+  "title": "Ledger entry",
+  "description": "One file per entry; the body is free Markdown.",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "decision" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" }
+      },
+      "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "finding" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" },
+        "severity": { "$ref": "common.json#/$defs/severity" },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One of the P8 blocking categories."
+        }
+      },
+      "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "observation" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" },
+        "severity": { "$ref": "common.json#/$defs/severity" }
+      },
+      "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "blocker" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One of the P8 blocking categories."
+        }
+      },
+      "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "question" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" },
+        "options": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      },
+      "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "assumption" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" }
+      },
+      "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "risk" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" }
+      },
+      "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "learning" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" },
+        "fingerprint": {
+          "description": "Kernel-stamped (`kernel-state`, Fingerprints).",
+          "$ref": "common.json#/$defs/hash"
+        },
+        "evidence": { "type": "array", "items": { "$ref": "common.json#/$defs/idReference" } },
+        "applies": { "type": "array", "items": { "$ref": "common.json#/$defs/glob" } },
+        "routed-to": { "type": "string", "enum": ["rule", "spec", "nothing"] }
+      },
+      "required": [
+        "schema",
+        "id",
+        "type",
+        "summary",
+        "status",
+        "source",
+        "author",
+        "at",
+        "refs",
+        "fingerprint"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "report" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" },
+        "report": { "$ref": "common.json#/$defs/relativePath" }
+      },
+      "required": [
+        "schema",
+        "id",
+        "type",
+        "summary",
+        "status",
+        "source",
+        "author",
+        "at",
+        "refs",
+        "report"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "number", "const": 1 },
+        "id": { "$ref": "common.json#/$defs/ledgerId" },
+        "type": { "type": "string", "const": "transition" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "status": {
+          "type": "string",
+          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "description": "`superseded` is derived from `supersedes`, never stored."
+        },
+        "source": { "$ref": "common.json#/$defs/provenance" },
+        "author": { "$ref": "common.json#/$defs/author" },
+        "at": { "$ref": "common.json#/$defs/timestamp" },
+        "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "supersedes": { "$ref": "common.json#/$defs/idReference" },
+        "review": { "type": "boolean" },
+        "to": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stage, artifact id, gate id or `closed`."
+        },
+        "gate": { "type": "string", "minLength": 1 },
+        "session": { "type": "string", "minLength": 1 },
+        "command": { "type": "string", "minLength": 1 },
+        "skip-verify": { "type": "boolean" }
+      },
+      "required": [
+        "schema",
+        "id",
+        "type",
+        "summary",
+        "status",
+        "source",
+        "author",
+        "at",
+        "refs",
+        "to"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

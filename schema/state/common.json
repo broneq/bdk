@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/common.json",
+  "title": "Shared state definitions",
+  "description": "Ids, references, hashes, timestamps and paths the state documents share.",
+  "$defs": {
+    "agentSource": { "type": "string", "pattern": "^agent:[a-z][a-z0-9-]*$" },
+    "author": { "type": "string", "minLength": 1, "description": "Git `user.name <user.email>`." },
+    "changeId": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}-(?=[a-z0-9-]{1,40}(?:\\/|$))[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "`<yyyy-mm-dd>-<slug>`, the slug kebab-case and at most 40 characters."
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    "evidenceId": {
+      "type": "string",
+      "pattern": "^E-[0-9a-z]{8}$",
+      "description": "Evidence manifest id."
+    },
+    "glob": { "type": "string", "minLength": 1 },
+    "hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "idReference": {
+      "type": "string",
+      "pattern": "^(?:\\d{4}-\\d{2}-\\d{2}-(?=[a-z0-9-]{1,40}(?:\\/|$))[a-z0-9]+(?:-[a-z0-9]+)*\\/)?[LAE]-[0-9a-z]{8}$",
+      "description": "A bare id within the Change or `<changeId>/<id>` across Changes."
+    },
+    "ledgerId": {
+      "type": "string",
+      "pattern": "^L-[0-9a-z]{8}$",
+      "description": "Ledger entry id."
+    },
+    "provenance": {
+      "anyOf": [
+        { "type": "string", "enum": ["user", "policy", "inferred", "kernel"] },
+        { "$ref": "common.json#/$defs/agentSource" }
+      ],
+      "description": "Who produced the content (P1): a fixed value or `agent:<role>`."
+    },
+    "relativePath": {
+      "type": "string",
+      "pattern": "^(?!\\/|\\.\\/)(?!(?:.*\\/)?\\.\\.(?:\\/|$))[^\\\\]+$",
+      "description": "Relative to the project root, `/` separated, no `..` segment."
+    },
+    "role": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Role skill name (`implementer`, `plan-verifier`, ...)."
+    },
+    "scope": { "type": "string", "enum": ["full", "high+", "blockers"] },
+    "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+    "ticketId": {
+      "type": "string",
+      "pattern": "^A-[0-9a-z]{8}$",
+      "description": "Attempt ticket id."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z))$",
+      "description": "ISO 8601 UTC with seconds."
+    }
+  }
+}
