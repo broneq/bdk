@@ -8,9 +8,8 @@
 post-incident "rules" written as incident narratives, appended to whichever file was
 nearest, duplicating rules that already exist, in files already over budget.
 
-Two skills and one hook keep that from happening. `/bdk:add-rule` prevents accretion at
-the source; `/bdk:refine-rules` cleans up what accumulated; the rules-drift `Stop` hook
-tells you when the code moved out from under a rule.
+Two skills keep that from happening. `/bdk:add-rule` prevents accretion at the source;
+`/bdk:refine-rules` cleans up what accumulated.
 
 ## Route before you write - capture conventions
 
@@ -108,52 +107,15 @@ files overwritten second: cutting before relocating destroys knowledge if the ru
 interrupted.
 
 `paths:` frontmatter is preserved verbatim, because it is functional metadata read by the
-drift hook, not prose.
-
-## The rules-drift Stop hook
-
-BDK registers `hooks/check-rules-drift/check.py` on the `Stop` event. It reads the
-`paths:` frontmatter from each rule file dynamically - no hardcoded mappings, so a new
-path-scoped rule is included in drift detection automatically - and compares the files you
-changed against those globs.
-
-On a match it returns `decision=block`, which puts the review in front of you before the
-turn ends:
-
-```
-Documentation drift detected. The following rule files may need updating
-based on the code changes you made this session:
-
-  .claude/rules/<file>.md
-    triggered by: <path>
-```
-
-The block reason then tells the session to decide, from its own context, whether the
-documented patterns, class names, and examples are still accurate - and explicitly not to
-trust the existing wording just because it is already there.
-
-Two details keep it from crying wolf:
-
-- **Fingerprints are content hashes, not mtimes.** Formatters, codegen, and git checkouts
-  that rewrite identical bytes do not count as changes.
-- **The cursor advances on every run**, including silent ones. A file is reported only when
-  its content differs from the previous `Stop` of this session, so edits made while fixing
-  drift are absorbed rather than re-reported next turn.
-
-A rule whose `paths:` matches everything (`**`, `*`, `**/*`) is treated as global and
-excluded: nothing path-specific can drift, and matching it would turn every doc edit made
-in response to a block into the next turn's trigger.
-
-See [Hooks](../reference/hooks.md) for the full hook list.
+host to decide when a rule loads, not prose.
 
 ## A working rhythm
 
-| Moment                                                     | Command                                                           |
-| ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| You just learned something the hard way                    | `/bdk:add-rule` - and accept "nothing" as an answer               |
-| The drift hook blocked you                                 | Update the named file from session context, no exploration needed |
-| A rule file crossed its budget, or `_inbox.md` has entries | `/bdk:refine-rules`                                               |
-| Before a big refactor                                      | `/bdk:refine-rules`, so you refactor against verified claims      |
+| Moment                                                     | Command                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------------ |
+| You just learned something the hard way                    | `/bdk:add-rule` - and accept "nothing" as an answer          |
+| A rule file crossed its budget, or `_inbox.md` has entries | `/bdk:refine-rules`                                          |
+| Before a big refactor                                      | `/bdk:refine-rules`, so you refactor against verified claims |
 
 ## What you get
 

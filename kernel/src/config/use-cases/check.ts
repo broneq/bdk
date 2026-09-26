@@ -1,10 +1,14 @@
 // `bdk config check`: errors are refusals (design D-8); warnings name files
 // without a current modeline and a v2 settings file left behind. In a project
 // with `.bdk/` it refreshes the snapshot and the offline schema copy.
+// `inspectConfig` is the same check with every error kept, for
+// `hooks session-start`, which prints one line per problem.
 import { join } from "node:path";
 
 import {
   modelineUrl,
+  problemRefusal,
+  resolveConfig,
   OFFLINE_SCHEMA_PATH,
   offlineSchemaText,
   overriddenKeys,
@@ -15,14 +19,31 @@ import {
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { CheckReport, CheckWarning } from "../domain/report.ts";
 import { displayPath, isRefusal, resolve } from "./input.ts";
-import type { ConfigInput } from "./input.ts";
+import type { ConfigInput, Resolved } from "./input.ts";
 
 const LEGACY_SETTINGS = ".bdk/settings.json";
 
 export function checkConfig(input: ConfigInput): CheckReport | Refusal {
   const resolved = resolve(input);
-  if (isRefusal(resolved)) return resolved;
+  return isRefusal(resolved) ? resolved : report(input, resolved);
+}
 
+export interface Inspection {
+  /** One refusal per configuration error; empty when the configuration is valid. */
+  readonly errors: readonly Refusal[];
+  /** The check of a valid configuration: its warnings, snapshot and overridden keys. */
+  readonly report?: CheckReport;
+}
+
+export function inspectConfig(input: ConfigInput): Inspection {
+  const resolution = resolveConfig({ ...input, registry: input.settings });
+  if (resolution.problems.length > 0 || resolution.value === undefined) {
+    return { errors: resolution.problems.map((problem) => problemRefusal(input, problem, 0)) };
+  }
+  return { errors: [], report: report(input, { ...resolution, value: resolution.value }) };
+}
+
+function report(input: ConfigInput, resolved: Resolved): CheckReport {
   const url = settingsSchemaUrl(readKernelVersion(input.store, input.pluginRoot));
   const problems: CheckWarning[] = [];
   for (const layer of resolved.layers) {

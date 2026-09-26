@@ -235,7 +235,11 @@ describe("config consumers (S6)", async () => {
   });
 
   it("fails on a consumer with a handler whose use cases never read the module", () => {
-    const withHandler: ConsumerWorld = { ...world, handlerSlices: new Set([first.consumer]) };
+    const withHandler: ConsumerWorld = {
+      ...world,
+      handlerSlices: new Set([first.consumer]),
+      useCases: () => [],
+    };
     expect(consumerViolations([first], withHandler)).toHaveLength(1);
     const reading: ConsumerWorld = {
       ...withHandler,

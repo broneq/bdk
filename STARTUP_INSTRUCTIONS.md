@@ -4,29 +4,27 @@ This file is injected into every session via SessionStart hook. It defines the B
 
 ## Agents
 
-BDK ships these subagents. Invoke via the Agent tool with the listed `subagent_type`.
+BDK ships these subagents. Invoke one through the Agent tool with its `subagent_type`. An agent whose description names the skill that spawns it belongs to that skill: let the skill orchestrate it instead of invoking it directly.
 
-**Directly invokable by orchestrator** (general-purpose helpers):
+<!-- bdk:agents-table -->
 
-| `subagent_type`             | Model | When to pick                                               |
-| --------------------------- | ----- | ---------------------------------------------------------- |
-| `bdk:explorer`              | haiku | Broad codebase search spanning >3 queries                  |
-| `bdk:log-analyzer`          | haiku | Stderr/traceback/error-log triage                          |
-| `bdk:web-researcher`        | haiku | External docs, GitHub issues, Stack Overflow lookups       |
-| `bdk:static-analyse`        | haiku | Run project lint / format / typecheck                      |
-| `bdk:test-runner`           | haiku | Run tests and report results                               |
-| `bdk:dead-code-detector`    | haiku | Find unused/unreachable code                               |
-| `bdk:duplicate-detector`    | haiku | Find duplicated code and extractable patterns              |
-| `bdk:architecture-reviewer` | opus  | Cross-cutting architectural analysis                       |
-| `bdk:plan-verifier`         | opus  | Single-pass plan verification (used by `/bdk:verify-plan`) |
+| `subagent_type`             | Model  | When to pick                                                                                                                                                                                                                                                                                                 |
+| --------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bdk:architecture-reviewer` | opus   | Cross-cutting architectural analysis - layer boundaries, DI, design patterns, data flow, directory structure, import direction                                                                                                                                                                               |
+| `bdk:code-reviewer`         | sonnet | Layer-group code reviewer - deep review of assigned source files and their tests, produces structured findings. Spawned by /bdk:cr.                                                                                                                                                                          |
+| `bdk:dead-code-detector`    | haiku  | Find unused functions, methods, variables, and unreachable code blocks using reference checking                                                                                                                                                                                                              |
+| `bdk:design-verifier`       | opus   | Verify a design draft (product / architecture / combined) in a single pass — structured checklist covering self-critique completeness, Mermaid presence, NFR coverage, codebase grounding, and "What we did NOT decide" honesty. Spawned by /bdk:design Phase 3. Resume via SendMessage for delta iteration. |
+| `bdk:duplicate-detector`    | haiku  | Find duplicated code and extractable patterns - searches changed symbols for literal duplicates, structural patterns, and intra-function duplication                                                                                                                                                         |
+| `bdk:explorer`              | haiku  | Fast read-only codebase exploration - searches code, symbols, patterns, dependencies                                                                                                                                                                                                                         |
+| `bdk:fixer`                 | sonnet | Apply a specific list of findings (from a reviewer, linter, or test failure) to the codebase. Receives findings and file paths inline; never reads the plan file. Spawned by /bdk:subagent-execute-plan.                                                                                                     |
+| `bdk:implementer`           | sonnet | Implement one plan task end-to-end — TDD red-green, lint-clean, left uncommitted for the coordinator. Receives full task text and test cases inline; never reads the plan file. Spawned by /bdk:subagent-execute-plan.                                                                                       |
+| `bdk:log-analyzer`          | haiku  | Delegate here to analyze stderr output, error logs, stack traces, and debug command failures. Fast triage of what went wrong.                                                                                                                                                                                |
+| `bdk:plan-verifier`         | opus   | Verify an implementation plan against real code in a single pass — six-section structured checklist covering signature drift, data trace, edge cases, regression flows, test coverage, and plan completeness. Spawned by /bdk:verify-plan. Resume via SendMessage for delta iteration.                       |
+| `bdk:static-analyse`        | haiku  | Detect and run project-appropriate static analysis tools (lint, format, type check) across Python, JS, Go, Rust and other stacks                                                                                                                                                                             |
+| `bdk:test-runner`           | haiku  | Run test suite and report results. Pass test targets (files, dirs) in prompt or omit for full suite.                                                                                                                                                                                                         |
+| `bdk:web-researcher`        | haiku  | Internet research for debugging, finding solutions, and gathering technical information. Searches GitHub issues, Stack Overflow, Reddit, forums, and documentation.                                                                                                                                          |
 
-**Used by skills internally** — don't invoke directly; let the skill orchestrate:
-
-| `subagent_type`     | Model  | Owner skill                  |
-| ------------------- | ------ | ---------------------------- |
-| `bdk:code-reviewer` | sonnet | `/bdk:cr`                    |
-| `bdk:implementer`   | sonnet | `/bdk:subagent-execute-plan` |
-| `bdk:fixer`         | sonnet | `/bdk:subagent-execute-plan` |
+<!-- /bdk:agents-table -->
 
 ### Continuing a Spawned Agent (SendMessage)
 

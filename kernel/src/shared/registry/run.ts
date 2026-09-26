@@ -21,6 +21,8 @@ export interface Runtime {
   readonly home: string;
   /** The root of the git work tree containing `cwd`, or undefined outside one. */
   workTree(cwd: string): string | undefined;
+  /** The executable `name` resolves to on `PATH`, or undefined when not installed. */
+  which(name: string): string | undefined;
 }
 
 interface Invocation {

@@ -4,9 +4,13 @@ description: Run code review with dynamic agent scaling (3-13 agents based on ch
 model: sonnet
 effort: high
 argument-hint: "[--full] [--inline] [--base <ref>] [focus]"
-allowed-tools: Bash(git *) Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/*) Write(.bdk/cr/**)
+allowed-tools: Bash(git *) Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Write(.bdk/cr/**)
 disallowed-tools: Edit NotebookEdit
 ---
+
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill cr 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+
+If no "BDK context: cr" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill cr` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Dynamic Code Review Orchestrator
 
@@ -52,9 +56,9 @@ The range line is not decoration. A reader must be able to tell a deliberate ful
 
 ## Process
 
-Fill the `REVIEW_REQUEST` block, then follow the engine.
+Fill the `REVIEW_REQUEST` block, then follow the engine: the `Review engine` section of the BDK context above (`references/review-engine.md`).
 
-!`cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/review-engine.md`
+The engine's Step 3 prompt structure is `references/reviewer-prompt-template.md`; read it when you dispatch.
 
 ### Filling the request
 
@@ -95,9 +99,7 @@ With a run, add a **Deferred - not auto-fixed** block listing what `findings-lis
 
 ## Report Format
 
-Thirteen sections. The structure, checklists, and per-section source agents are defined once, here:
-
-!`cat ${CLAUDE_PLUGIN_ROOT}/skills/cr/references/report-format.md`
+Thirteen sections. The structure, checklists, and per-section source agents are defined once, in the `Report format` section of the BDK context above (`references/report-format.md`).
 
 ## Rules
 

@@ -4,9 +4,13 @@ description: Review GitHub PRs from URLs - templated inline comments, summary, a
 model: sonnet
 effort: medium
 argument-hint: "<pr-url> [<pr-url> ...] [--verify] [focus]"
-allowed-tools: Bash(git *) Bash(gh *) Bash(mktemp *) Bash(cat ${CLAUDE_PLUGIN_ROOT}/skills/pr-review/references/*)
+allowed-tools: Bash(git *) Bash(gh *) Bash(mktemp *) Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
 disallowed-tools: Edit Write NotebookEdit
 ---
+
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill pr-review 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+
+If no "BDK context: pr-review" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill pr-review` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # PR Review Orchestrator
 
@@ -98,9 +102,7 @@ git worktree add --detach "$dir" "$sha"
 
 ## Step 3 - Dispatch reviewers
 
-Read the prompt templates:
-
-!`cat ${CLAUDE_PLUGIN_ROOT}/skills/pr-review/references/reviewer-prompt.md`
+The prompt templates are the `Reviewer prompt` section of the BDK context above (`references/reviewer-prompt.md`).
 
 Fill template A (review) or B (verify) per PR - every placeholder, including `{plugin_root}` = `${CLAUDE_PLUGIN_ROOT}` - and launch all subagents as `general-purpose` in a **single message with multiple Agent calls**. The template's no-subagent rule is the load-bearing line: each reviewer runs the whole `/bdk:cr --inline` engine sequentially in its own session, because a subagent cannot spawn agents and must not try. The other load-bearing line is **no-posting**: a reviewer computes a verdict and the data a review renders from, and returns it - it never calls the GitHub posting API or a thread-resolve mutation. Posting happens once, in Step 6, after the user has seen every PR and confirmed.
 

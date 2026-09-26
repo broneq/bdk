@@ -8,6 +8,8 @@ import { showCommand } from "./commands/show.ts";
 import type { ConfigDeps } from "./use-cases/input.ts";
 
 export type { ConfigDeps } from "./use-cases/input.ts";
+export { detectLayout } from "./use-cases/layout.ts";
+export { inspectConfig } from "./use-cases/check.ts";
 
 export function configRegistrations(deps: ConfigDeps): Registration[] {
   return [

@@ -67,7 +67,7 @@ directory exists and prints what it finds, but it never blocks the session. See
 ## What you get
 
 - BDK installed as a Claude Code plugin, with its skills reachable as `/bdk:<name>`.
-- A `SessionStart` hook chain that injects the shared foundation and checks the
+- A `SessionStart` hook that injects the shared foundation and checks the
   project settings.
 - No project artifacts yet: `.bdk/` is created by `/bdk:setup`.
 

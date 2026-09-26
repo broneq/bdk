@@ -63,6 +63,11 @@ const MENTION_ALLOWLIST = new Map([
   ["stage enter", "fallback rejected by HOST-FACTS upe-fires; never added"],
   ["stage enter <gate>", "same fallback, with its argument"],
   ["hooks stop", "removed by T02 decision Q-6; the Stop hook is not ported"],
+  ["ctx role <class>", "removed by T13 (T02 decision Q-3): roles are skills"],
+  [
+    "ctx skill <name> | role <class> | startup",
+    "design's ctx synopsis from before T13 removed role",
+  ],
   ["design done", "Approach B command; Approach B was rejected"],
   ["review open", "Approach B command; Approach B was rejected"],
   ["execute --wave N", "plan wording replaced by dispatch run (design D-9)"],

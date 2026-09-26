@@ -8,7 +8,7 @@ import { registrations, settingsRegistry } from "./registrations.ts";
 import { pluginRootOf } from "./shared/config/index.ts";
 import { findWorkTree } from "./shared/git/index.ts";
 import { createRegistry, loadIndex } from "./shared/registry/index.ts";
-import { fileStore } from "./shared/store/index.ts";
+import { fileStore, findExecutable } from "./shared/store/index.ts";
 
 const index = loadIndex(commands);
 const registry = createRegistry(
@@ -31,6 +31,7 @@ try {
       platform: process.platform,
       home: homedir(),
       workTree: findWorkTree,
+      which: (name) => findExecutable(name, { env: process.env, platform: process.platform }),
     },
     streams: {
       stdout: (text) => process.stdout.write(text),

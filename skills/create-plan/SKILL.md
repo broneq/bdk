@@ -7,7 +7,7 @@ effort: high
 user-invocable: true
 disable-model-invocation: true
 context: main
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(date *) Bash(lavish-axi *) AskUserQuestion
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(date *) Bash(lavish-axi *) AskUserQuestion
 hooks:
   UserPromptSubmit:
     - hooks:
@@ -16,11 +16,15 @@ hooks:
           once: true
 ---
 
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill create-plan 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+
+If no "BDK context: create-plan" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill create-plan` first and apply its output; on a `BDK STOP` line, stop and report it.
+
 # Create Implementation Plan
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py engineering-judgment`
+Apply the `Rules: engineering-judgment` section of the BDK context above.
 
 Transform requirements into detailed, TDD-driven implementation plans via structured exploration and analysis.
 
@@ -33,7 +37,7 @@ Transform requirements into detailed, TDD-driven implementation plans via struct
 **Hard rules:**
 
 - Do NOT implement code — plan is the only deliverable.
-- Do NOT hardcode language tools (`pytest`, `npm`, `cargo`) — use injected values or fall back to "run the project's test suite".
+- Do NOT hardcode one stack's tool commands — use the BDK context's project commands or fall back to "run the project's test suite".
 - Every task MUST declare its `Files:` and its `Depends on:` (or `Depends on: none`). The executor uses both to compute parallel waves — omitting them forces conservative serial fallback.
 
 ---
@@ -131,7 +135,7 @@ Generate **2-3 implementation approaches.** Per approach:
 
 **Decision resolution** — bundle every open decision into ONE `AskUserQuestion` call (multi-question form supports up to 4). Mark recommended approach as first option. Do not split into multiple sequential prompts.
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then ${CLAUDE_PLUGIN_ROOT}/fragments/decision-tier/lavish.md`
+Ask as the `Asking the user` section of the BDK context above says.
 
 **Decision gates rejected inside tasks.** A task body must describe a single committed action. If a task would contain "Option A or B — user picks" or any unresolved decision, split it: move the decision into the bundled `AskUserQuestion` call above, then write the chosen action as the task. Tasks describe what _will_ happen, not what _might_ happen.
 
@@ -206,44 +210,13 @@ Print: `[create-plan] Parallelism: {T} tasks in {W} waves (max width {widest wav
 
 ### Phase 5: Write Plan (single pass)
 
-Project tools context:
+Project tools context: the `Project commands: test` and `Project commands: lint` sections of the BDK context above.
 
-- Test tools: !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
-- Lint tools: !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.lint 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
+If either section says `none configured`, fall back to generic phrasing ("run the project's test suite", "run the project's linter") and continue — do not stop.
 
-If either list is empty (`[]`) or shows an error, fall back to generic phrasing ("run the project's test suite", "run the project's linter") and continue — do not stop.
+Rule sections for plan rendering come from the BDK context above: `<!-- INJECT: <name> -->` maps to the `Rules: <name>` section, and `<!-- INJECT-LANGUAGES -->` maps to every `Language rules: <language>` section, in order.
 
-Rule sections loaded for plan rendering — copy verbatim into the plan's References section in place of the matching markers:
-
-**`<!-- INJECT: code-quality -->` →**
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py code-quality`
-
-**`<!-- INJECT: architecture -->` →**
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py architecture`
-
-**`<!-- INJECT: design-patterns -->` →**
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py design-patterns`
-
-**`<!-- INJECT: security -->` →**
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py security`
-
-**`<!-- INJECT: engineering-judgment -->` →**
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py engineering-judgment`
-
-**`<!-- INJECT: test-quality -->` →**
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py test-quality`
-
-**`<!-- INJECT-LANGUAGES -->` →**
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-language-rules.py`
-
-Render the verified outline to `<path>` using `references/plan-template.md`. For each `<!-- INJECT: <name> -->` and `<!-- INJECT-LANGUAGES -->` marker in the template, substitute verbatim with the matching section loaded above — do not summarize, paraphrase, or omit bullets. If a loaded section is empty (no languages configured, no override), drop the marker silently. Each task that has a `Test cases:` block ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.` - omit this line for `Verification: none` tasks.
+Render the verified outline to `<path>` using `references/plan-template.md`. For each `<!-- INJECT: <name> -->` and `<!-- INJECT-LANGUAGES -->` marker in the template, substitute verbatim with the body of the matching section — do not summarize, paraphrase, or omit bullets. If no section matches (no language rules configured), drop the marker silently. Each task that has a `Test cases:` block ends with: `> Follow /bdk:test-driven-development skill for the red-green-clean cycle.` - omit this line for `Verification: none` tasks.
 
 Print: `[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {K} files to create`
 
@@ -288,5 +261,5 @@ Edit **before** verifying. Any edit changes the plan's bytes, and the hash is ov
 - Trade-off analysis mandatory, even when one approach seems obvious.
 - Prefer quality, simplicity, robustness, scalability, and long-term maintainability over implementation effort - see engineering-judgment rules.
 - If exploration surfaces something clearly wrong or inconsistent outside the requested scope, call it out (as a task or an explicit note) rather than ignoring it.
-- Never hardcode language tools (`pytest`, `npm`, `cargo`, `uv run`, …) — use injected values or generic phrasing.
+- Never hardcode one stack's tool commands — use the BDK context's project commands or generic phrasing.
 - Never invent timestamps — shell out to `date`.

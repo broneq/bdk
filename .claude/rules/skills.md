@@ -20,10 +20,11 @@ BDK's settings of the kit rules live in `skill-check.config.ts`:
 - **Namespaced references.** `/bdk:<name>` and `subagent_type: bdk:<name>`; another plugin's skill is a warning, because BDK cannot rely on it being installed.
 - **Language-agnostic commands** (`.claude/rules/portability-check.md`); the `setup` skill is exempt.
 - **Listing budget.** A description is at most 250 characters, below the host cap.
+- **Context lines.** `kernel/tests/contract/skill-context.test.ts` checks the two context lines and the manifest (`.claude/rules/skill-context.md`).
 - **Baseline.** v2 findings sit in `skill-check.baseline.json` until T41 and T42 replace that content. It only shrinks: fix a finding and run `pnpm skill-check --baseline-prune`; never add entries.
 
 ## Not enforced
 
-- v2 skills inject conditional content with `inject.py` (`.claude/rules/inject-fragments.md`). New skills do not: they call the kernel, and a skill directory holds no `fragments/`.
+- A skill directory holds no `fragments/`: conditional content is a part of the skill's `ctx skill` manifest entry (`.claude/rules/skill-context.md`).
 - Hook scripts live in `hooks/<hook-name>/`, never in `skills/`. A skill hook must not duplicate a global hook in `hooks/hooks.json`.
-- A skill that needs another skill checks for it at start with a `UserPromptSubmit` hook running `python3 ${CLAUDE_PLUGIN_ROOT}/hooks/is-skill-exist/check.py <skill-name>` with `once: true`. The script warns when the skill is missing and stays silent otherwise.
+- A skill that needs another skill checks for it at start with a `UserPromptSubmit` hook running `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks skill-exists <skill-name>` with the kernel-unavailable `echo` fallback and `once: true` (see `skills/commit/SKILL.md`). The kernel prints one line when the skill is missing and nothing otherwise.

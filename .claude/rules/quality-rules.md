@@ -4,7 +4,7 @@ How and when to add a new rule category to BDK.
 
 ## What goes in `rules/`
 
-Files in `rules/` are **language-agnostic principles** injected into skill prompts via `scripts/inject-rules.py`. Each file is a Markdown bullet list.
+Files in `rules/` are **language-agnostic principles** injected into skill prompts by `bdk ctx skill` (`.claude/rules/skill-context.md`). Each file is a Markdown bullet list.
 
 ## Add a new rule category when
 
@@ -28,8 +28,8 @@ Files in `rules/` are **language-agnostic principles** injected into skill promp
 ## Adding a new category — steps
 
 1. Write `rules/<name>.md` following the format above, and declare the prompt key `rules/<name>` in `kernel/src/ctx/config.ts`.
-2. Add `<!-- INJECT: <name> -->` marker in the consuming skill's template.
-3. Add resolution step to the skill's SKILL.md (see `skills/cr/SKILL.md` Step 2.5 as reference).
+2. Add a `rules` part for it to the consuming skill's entry in `kernel/src/ctx/use-cases/manifest.ts`, and point the skill body to its `Rules: <name>` section.
+3. When the skill renders a template with rule markers (`create-plan`), add a `<!-- INJECT: <name> -->` marker to the template.
 4. Document in `README.md` "Quality Rules" section if user-overridable.
 
 ## Settings schema reminder

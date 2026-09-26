@@ -32,6 +32,7 @@ async function run(argv: string[], files: Record<string, string> = {}) {
       platform: "linux",
       home: HOME,
       workTree: () => ROOT,
+      which: () => undefined,
     },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });

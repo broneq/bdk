@@ -101,6 +101,20 @@ describe("bdk config show", () => {
     });
   });
 
+  it("exit 0: a project fragment with mode replace is the fragment's only file", () => {
+    const root = fixture({
+      ".bdk/prompts/fragments/decision/ask-user.md": "---\nmode: replace\n---\nOurs.\n",
+    }).root;
+    const result = bdk(["config", "show", "prompts.fragments/decision/ask-user", "--json"], root);
+    expect(result.code).toBe(0);
+    expect(result.json).toMatchObject({
+      value: {
+        mode: "replace",
+        files: [{ layer: "project", path: ".bdk/prompts/fragments/decision/ask-user.md" }],
+      },
+    });
+  });
+
   it("exit 3: input/not-found", () => {
     refused(bdk(["config", "show", "prompts.dir", "--json"], fixture().root), 3, "input/not-found");
   });

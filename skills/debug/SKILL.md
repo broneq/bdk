@@ -11,6 +11,10 @@ context: main
 allowed-tools: AskUserQuestion Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
 ---
 
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill debug 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+
+If no "BDK context: debug" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill debug` first and apply its output; on a `BDK STOP` line, stop and report it.
+
 # Debug
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
@@ -109,7 +113,7 @@ Write tests that precisely reproduce bug. Tests RED until fix applied.
 - Follow project test conventions (check existing tests for patterns)
 - Place tests in correct existing test file
 
-Inject test commands (`tools.test`): !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
+Test commands: the `Project commands: test` section of the BDK context above.
 
 Confirm the new tests are RED by running the matching tier's `scoped` form on the test file(s) you just wrote, **directly via `Bash`** — substitute `{files}` with those paths. No agent spawn: one test file's output is a few lines, and the spawn costs more wall-clock than the run. Never the unscoped `command` form of any tier, and never an e2e tier unless the tests you wrote _are_ e2e specs.
 
@@ -159,10 +163,7 @@ Confirm the new tests are RED by running the matching tier's `scoped` form on th
 
 ### Phase 5a: Fix Inline
 
-Inject project tools context:
-
-- Test tools: !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
-- Lint tools: !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.lint 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
+Project tools context: the `Project commands: test` and `Project commands: lint` sections of the BDK context above.
 
 1. Apply minimal fix
 2. Re-run the same scoped command from Phase 3 via `Bash` — only the tests you wrote

@@ -4,9 +4,11 @@ import {
   createConfigRegistry,
   mergeLayers,
   promptsModule,
+  resolveConfig,
   validateLayers,
 } from "../../shared/config/index.ts";
 import type { Layer } from "../../shared/config/index.ts";
+import { memoryStore } from "../../shared/store/index.ts";
 import { ctxConfig } from "../index.ts";
 
 const registry = createConfigRegistry({
@@ -154,6 +156,36 @@ describe("prompt keys", () => {
       ["rules/engineering-judgment", "rules/engineering-judgment.md"],
       ["rules/test-quality", "rules/test-quality.md"],
       ["rules/languages/*", "rules/languages/{name}.md"],
+      ["fragments/decision/lavish", "fragments/decision/lavish.md"],
+      ["fragments/decision/ask-user", "fragments/decision/ask-user.md"],
+    ]);
+    expect(new Set(ctxConfig.prompts.map((prompt) => prompt.consumer))).toStrictEqual(
+      new Set(["ctx"]),
+    );
+  });
+
+  it("resolves a fragment to its plugin default, and a project file with mode replace wins", () => {
+    const files = {
+      "/plugin/fragments/decision/ask-user.md": "Ask in the terminal.\n",
+      "/plugin/fragments/decision/lavish.md": "Ask in Lavish.\n",
+    };
+    const resolveWith = (extra: Record<string, string>) =>
+      resolveConfig({
+        store: memoryStore({ ...files, ...extra }),
+        registry,
+        globalDir: "/home/dev/.config/bdk",
+        projectRoot: "/repo",
+        pluginRoot: "/plugin",
+      }).prompts.values.get("fragments/decision/ask-user");
+    expect(resolveWith({})?.files.map((file) => file.path)).toStrictEqual([
+      "/plugin/fragments/decision/ask-user.md",
+    ]);
+    const replaced = resolveWith({
+      "/repo/.bdk/prompts/fragments/decision/ask-user.md": "---\nmode: replace\n---\nOurs.\n",
+    });
+    expect(replaced?.mode).toBe("replace");
+    expect(replaced?.files.map((file) => file.path)).toStrictEqual([
+      "/repo/.bdk/prompts/fragments/decision/ask-user.md",
     ]);
   });
 });

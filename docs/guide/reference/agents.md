@@ -4,7 +4,7 @@
 
     This page describes BDK v2. The v3 documentation replaces it (T50).
 
-BDK ships 13 subagents. Every agent is invoked via the `Agent` tool with the `subagent_type` shown below, always in the namespaced form `bdk:<name>`. This page mirrors the split `STARTUP_INSTRUCTIONS.md` injects into every session: agents an orchestrator picks directly, and agents a skill spawns as an internal implementation detail. For what each agent's own `tools:`/`skills:` frontmatter grants it, see the source files under `agents/*.md`; for how agents get resumed instead of respawned, see [Agents](../concepts/agents.md).
+BDK ships 13 subagents. Every agent is invoked via the `Agent` tool with the `subagent_type` shown below, always in the namespaced form `bdk:<name>`. This page splits them into agents an orchestrator picks directly and agents a skill spawns as an internal implementation detail. `STARTUP_INSTRUCTIONS.md` lists all of them in one table generated from the agent files, and an agent a skill spawns names that skill in its description. For what each agent's own `tools:`/`skills:` frontmatter grants it, see the source files under `agents/*.md`; for how agents get resumed instead of respawned, see [Agents](../concepts/agents.md).
 
 ## Directly invokable by the orchestrator
 

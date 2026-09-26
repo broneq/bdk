@@ -60,13 +60,13 @@ plan file changed since this run started - the plan is meant to be immutable. Gr
 
 ## Skill or command dependency missing
 
-**Symptom (skill missing, printed to stderr, exit code 2):**
+**Symptom (skill missing, session content, exit code 0):**
 
 ```
-[BDK] Skill '<skill-name>' not installed. Install it for full functionality. Expected location: ~/.claude/skills/ or .claude/skills/
+[BDK] skill <name> is not installed; the skill that needs it falls back to its own behaviour.
 ```
 
-**Cause:** `hooks/is-skill-exist/check.py <skill-name>` is wired into a skill's own `UserPromptSubmit` frontmatter hook (for example `/bdk:commit` checks for `caveman-commit` before delegating to it - see `skills/commit/SKILL.md`, which simply invokes `/caveman:caveman-commit $ARGUMENTS`). No skill file under `~/.claude/skills/`, `.claude/skills/`, or any installed plugin's `skills/` directory declares that `name:` in its frontmatter.
+**Cause:** `bdk hooks skill-exists <name>` runs from a skill's own `UserPromptSubmit` frontmatter hook (for example `/bdk:commit` checks for `caveman-commit` before delegating to it - see `skills/commit/SKILL.md`, which simply invokes `/caveman:caveman-commit $ARGUMENTS`). No `SKILL.md` under `~/.claude/skills/`, `.claude/skills/`, a plugin marketplace or an installed plugin version declares that `name:` in its frontmatter. See [Hooks reference](reference/hooks.md).
 
 **Fix:** Install the missing skill's plugin (for `/bdk:commit`, the `caveman` plugin providing `caveman-commit`). See [reference/skills.md](reference/skills.md).
 
@@ -81,42 +81,3 @@ optionally followed by `" Install: <install-hint>"` when the hook was called wit
 **Cause:** `hooks/is-command-exists/check.py <command> [install-hint]` is wired into a skill's frontmatter hook and `shutil.which(<command>)` returned nothing.
 
 **Fix:** Install the named command using the install hint if one was printed.
-
-## Rules drift detected at Stop
-
-**Symptom:**
-
-```
-Documentation drift detected. The following rule files may need updating
-based on the code changes you made this session:
-
-  .claude/rules/<rule-file>.md
-    triggered by: <changed-file>
-
-For each rule file: based on what you changed this session, decide if the
-documented patterns, class names, or examples are still accurate.
-Use your session context - no codebase exploration needed.
-
-Don't trust the existing wording just because it's already there - rule files
-accumulate content from many different sessions and agents, and prior text earns
-no credit for having survived this long. Verify any claim you touch against what
-you actually changed, not against what the file already asserts.
-
-Route anything you are tempted to write down:
-  cross-cutting invariant that fails silently -> a rule file
-  trap visible at the code site               -> a doc comment there
-  a test or lint already enforces it          -> one line naming the enforcer
-  anything else                               -> nothing
-
-A line that a rename or a file move would force you to edit is a code mirror,
-not a rule - it belongs at the code site or nowhere. Skip changelog-style
-narration ("switched from X to Y"), dated notes, and ticket ids offered as the
-only rationale.
-
-"Nothing" is a frequent, correct outcome here - do not write a rule just to
-have written something. For a full routing pass, run /bdk:add-rule.
-```
-
-**Cause:** `hooks/check-rules-drift/check.py` (a `Stop` hook) found that a file matching one of `.claude/rules/*.md`'s path-scoped frontmatter `paths:` patterns changed content since the last Stop hook run this session, and blocks so the affected rule file gets reviewed before the turn ends.
-
-**Fix:** For each named rule file, decide - using session context, no extra exploration - whether it still describes the code accurately, and edit it if not. "Nothing to change" is a valid, common outcome. Run `/bdk:add-rule` for a fuller routing pass. See [Rules hygiene](workflows/rules-hygiene.md).

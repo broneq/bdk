@@ -37,7 +37,7 @@ const registry = createConfigRegistry({
   prompts: [definePromptKey({ key: "rules/security", consumer: "ctx", owner: "T12" })],
 });
 
-function resolve(files: Record<string, string>) {
+function resolve(files: Record<string, string>, removed?: "ignore" | "report") {
   const store = memoryStore(files);
   const context = {
     store,
@@ -45,6 +45,7 @@ function resolve(files: Record<string, string>) {
     globalDir: GLOBAL,
     projectRoot: PROJECT,
     pluginRoot: "/plugin",
+    ...(removed === undefined ? {} : { removed }),
   };
   return { store, resolution: resolveConfig(context) };
 }
@@ -79,6 +80,43 @@ describe("resolveConfig", () => {
     expect(resolution.problems.map((problem) => problem.key)).toStrictEqual([
       "featurs",
       "prompts.rules/x",
+    ]);
+  });
+});
+
+describe("resolveConfig with removed v2 keys", () => {
+  const WITH = {
+    [`${PROJECT}/.bdk/settings.yaml`]: "features:\n  lavish: false\n  serena: true\n",
+    [`${PROJECT}/.bdk/settings.local.yaml`]: "test-tools: [pytest]\n",
+  };
+  const WITHOUT = { [`${PROJECT}/.bdk/settings.yaml`]: "features:\n  lavish: false\n" };
+
+  it("reports them by default", () => {
+    const { resolution } = resolve(WITH);
+    expect(resolution.problems.map((problem) => [problem.key, problem.rule])).toStrictEqual([
+      ["features.serena", "policy/unknown-config-key"],
+      ["test-tools", "policy/unknown-config-key"],
+    ]);
+    expect(resolution.value).toBeUndefined();
+  });
+
+  it("drops them without a problem when ignored, giving the value without them", () => {
+    const ignored = resolve(WITH, "ignore").resolution;
+    expect(ignored.problems).toStrictEqual([]);
+    expect(ignored.value).toStrictEqual(resolve(WITHOUT).resolution.value);
+  });
+
+  it("still reports unknown keys and invalid values when ignored", () => {
+    const { resolution } = resolve(
+      {
+        [`${PROJECT}/.bdk/settings.yaml`]:
+          "features:\n  serena: true\n  lavish: maybe\nlanguage: [go]\n",
+      },
+      "ignore",
+    );
+    expect(resolution.problems.map((problem) => [problem.key, problem.rule])).toStrictEqual([
+      ["language", "policy/unknown-config-key"],
+      ["features.lavish", "policy/config-invalid"],
     ]);
   });
 });

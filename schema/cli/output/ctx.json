@@ -1,11 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/ctx.json",
-  "title": "bdk ctx skill --json",
-  "description": "Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values.",
+  "title": "bdk ctx skill|startup --json",
+  "description": "The prompt context of a skill or the STARTUP instructions; an error is the refusal object, still with exit 0.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["content", "parts"],
   "properties": {
     "content": {
       "type": "string",
@@ -15,43 +13,39 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["kind", "source"],
         "properties": {
           "kind": {
-            "enum": ["fragment", "rules", "language-rules", "prompt", "agents-table", "stop"]
+            "type": "string",
+            "enum": [
+              "rules",
+              "language-rules",
+              "fragment",
+              "tools",
+              "file",
+              "startup",
+              "agents-table"
+            ]
           },
           "source": {
             "type": "string",
-            "description": "File that produced the part."
+            "description": "The prompt key (rules/security), tools group (tools.test) or plugin path that produced the part."
           }
-        }
-      }
-    },
-    "stop": {
-      "type": "object",
-      "required": ["why", "instead"],
-      "properties": {
-        "why": {
-          "type": "string"
         },
-        "instead": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
+        "required": ["kind", "source"],
+        "additionalProperties": false
       },
-      "description": "Present when the content is a STOP block; the exit code is still 0 in inject mode."
+      "description": "The parts of the content, in output order."
     }
   },
+  "required": ["content", "parts"],
+  "additionalProperties": false,
   "examples": [
     {
-      "content": "## Code quality\n...",
+      "content": "## BDK context: design\n\n### Rules: architecture\n...",
       "parts": [
-        {
-          "kind": "rules",
-          "source": "rules/code-quality.md"
-        }
+        { "kind": "rules", "source": "rules/architecture" },
+        { "kind": "rules", "source": "rules/engineering-judgment" },
+        { "kind": "fragment", "source": "fragments/decision/ask-user" }
       ]
     }
   ]

@@ -4,8 +4,12 @@ description: >-
   Rigid TDD process for writing and verifying tests before implementation.
   Use when implementing any feature or bugfix. Receives test case bullet points
   from the plan and enforces red-green cycle.
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
 ---
+
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill test-driven-development 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+
+If no "BDK context: test-driven-development" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill test-driven-development` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Test-Driven Development
 
@@ -84,9 +88,7 @@ Identify test file path per project conventions.
 
 ## GATE 1: Write Tests
 
-Test quality rules - a test that violates these is not written, whatever the plan says:
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py test-quality`
+Test quality rules are the `Rules: test-quality` section of the BDK context above. A test that violates them is not written, whatever the plan says.
 
 Write **exactly one test per ✅ bullet**, using the project's test framework and the conventions from GATE 0.
 
@@ -102,11 +104,11 @@ Add an unlisted edge-case test ONLY when its absence would let a real production
 
 ## GATE 2: Verify RED
 
-Inject test commands (`tools.test`): !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
+Test commands: the `Project commands: test` section of the BDK context above.
 
 **Run it yourself, via `Bash`. Do not spawn a `bdk:test-runner` agent for this.** One test file's worth of output is a few lines; a spawn costs a cold start, a preload, and a model round-trip — an order of magnitude more wall-clock than the run it wraps, paid twice per task (RED and GREEN) and again on every fix attempt. `bdk:test-runner` exists to keep a _large_ run's output out of a caller's context (group verification, the end-of-plan gate). This is not that.
 
-Pick the command from the injected entries: the tier matching the test cases you just wrote, `scoped` form, substituting `{files}` with `{test_file_path}`; an entry's `when` text says when it applies. **Never the unscoped `command` form of any tier.** An empty list (`[]`) means nothing is configured: detect the runner from project files and tell the user to run `/bdk:setup`.
+Pick the command from those entries: the tier matching the test cases you just wrote, `scoped` form, substituting `{files}` with `{test_file_path}`; an entry's `when` text says when it applies. **Never the unscoped `command` form of any tier.** `none configured` means nothing is configured: detect the runner from project files and tell the user to run `/bdk:setup`.
 
 If that tier has no `scoped` form, derive one from `command` — append `-- {test_file_path}` for an npm/yarn/pnpm script, or a bare path for most direct runners — and note in your report that you derived it, so the settings get fixed once instead of re-derived every run. Only if no scoped form is derivable at all: stop and return `Status: BLOCKED` rather than defaulting to a full run. The coordinator's end-of-plan gate is the only place a full suite runs.
 

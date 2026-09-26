@@ -4,55 +4,47 @@
 
     This page describes BDK v2. The v3 documentation replaces it (T50).
 
-BDK registers hooks via `hooks/hooks.json`. This page lists every entry in file order: the event it fires on, what it runs, what it prints (quoted from the script), and when it blocks the session.
-
-Every hook script here is invoked as `python3 ${CLAUDE_PLUGIN_ROOT}/hooks/<name>/<script>` (or a plain shell one-liner) and each hooks block in `hooks.json` groups the entries that fire together on that event.
+BDK registers hooks via `hooks/hooks.json`. This page lists every entry: the event it fires on, what it runs, what it prints, and when it blocks the session.
 
 ## SessionStart
 
-Three hooks fire in this order at the start of (or resume of) every session.
+One hook fires at the start (or resume) of every session.
 
-### 1. `STARTUP_INSTRUCTIONS.md` (inline shell)
+### `bdk hooks session-start`
 
-Command: `cat "${CLAUDE_PLUGIN_ROOT}/STARTUP_INSTRUCTIONS.md"`
+Command: `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks session-start 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-Prints the shared foundation as is, so it becomes session context. The file is static: Claude Code evaluates dynamic `` !`...` `` blocks only in skill bodies, never in hook output. Never blocks.
+Prints the shared foundation (`STARTUP_INSTRUCTIONS.md`, byte-identical to `bdk ctx startup`) so it becomes session context. In a project with a `.bdk/` directory it then validates the settings as `bdk config check` does, which also refreshes `.bdk/.machine/`, and appends one line per problem:
 
-### 2. `hooks/check-rules-drift/check.py --snapshot-baseline`
+```
+[BDK] config: <why> Instead: <what to do>
+[BDK] config warning: <path>: <message>
+[BDK] v2 layout detected (<paths>): run bdk import.
+```
 
-Command: `python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-rules-drift/check.py --snapshot-baseline`
+A configuration problem is session content, never a block: the hook always exits 0. Without Node on `PATH` the `echo` fallback prints the `BDK STOP: kernel unavailable` line instead.
 
-Seeds `.bdk/tmp/.rules_drift/drift-<session_id>.json` with content fingerprints of any `.claude/rules/*.md`-matched files already dirty at session start, so those pre-existing edits are never reported as drift caused by this session. Never overwrites an existing cursor for the same `session_id` (SessionStart also fires on resume). Silent on success; never blocks - it only writes state.
+BDK registers no `Stop` hook.
 
-### 3. `bdk config check` (inline shell)
+## Skill frontmatter hooks
 
-Command: `test -d .bdk && node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config check 2>&1 || true`
+A skill that delegates to another plugin's skill checks for it with its own `UserPromptSubmit` hook (see `.claude/rules/skills.md`).
 
-Runs only in a project that has a `.bdk/` directory. Validates the project settings against the kernel's schema and prints any error or warning it finds, including a `legacy-settings` warning when a `.bdk/settings.json` is present but no longer read. See the [README](https://github.com/broneq/bdk/blob/main/README.md#settings). The trailing `|| true` means it never blocks the session.
+### `bdk hooks skill-exists <name>`
 
-## Stop
+Command (from `skills/commit/SKILL.md`, which needs `caveman-commit`): `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks skill-exists caveman-commit 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`, with `once: true`.
 
-One hook fires when Claude finishes a turn.
+Searches `~/.claude/skills/`, `.claude/skills/`, every marketplace under `~/.claude/plugins/marketplaces/` and every installed plugin version under `~/.claude/plugins/cache/` for a `SKILL.md` whose frontmatter `name:` matches. Silent when found. When not found it prints one line and exits 0:
 
-### 1. `hooks/check-rules-drift/check.py`
+```
+[BDK] skill <name> is not installed; the skill that needs it falls back to its own behaviour.
+```
 
-Command: `python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-rules-drift/check.py`
-
-Re-fingerprints every file matched by a path-scoped `.claude/rules/*.md` frontmatter `paths:` list, compares against the session's stored cursor, and blocks with `decision: block` when any matched file changed content since the last Stop hook run this session. See [Troubleshooting](../troubleshooting.md) for the full block message text. Advances its cursor on every run - including a run that stays silent - before deciding anything, and skips deciding (but still records) when `stop_hook_active` is true (prevents an infinite block loop within one turn).
+See [Troubleshooting](../troubleshooting.md).
 
 ## Other hook scripts (not wired into `hooks.json`)
 
-Two more scripts live under `hooks/` but are not part of the always-on `hooks.json` chain above - they are invoked from individual skills' own `hooks:` frontmatter instead (see `.claude/rules/skills.md`):
-
-### `hooks/is-skill-exist/check.py`
-
-Usage: `check.py <skill-name>`, run as a `UserPromptSubmit` hook from a skill's own frontmatter (for example `skills/commit/SKILL.md` checks for `caveman-commit`). Searches `~/.claude/skills/`, `.claude/skills/`, and every installed plugin's `skills/` directory for a skill whose frontmatter `name:` matches. Warning message (to stderr, exit code 2) when not found:
-
-```
-[BDK] Skill '<skill-name>' not installed. Install it for full functionality. Expected location: ~/.claude/skills/ or .claude/skills/
-```
-
-Silent, exit 0, when the skill is found. See [Troubleshooting](../troubleshooting.md).
+One more script lives under `hooks/` but is not wired into `hooks.json` or any skill:
 
 ### `hooks/is-command-exists/check.py`
 

@@ -1509,7 +1509,7 @@ var require_stringify = __commonJS({
         props.push(doc.directives.tagString(tag));
       return props.join(" ");
     }
-    function stringify4(item, ctx, onComment, onChompKeep) {
+    function stringify5(item, ctx, onComment, onChompKeep) {
       if (identity.isPair(item))
         return item.toString(ctx, onComment, onChompKeep);
       if (identity.isAlias(item)) {
@@ -1538,7 +1538,7 @@ var require_stringify = __commonJS({
 ${ctx.indent}${str}`;
     }
     exports.createStringifyContext = createStringifyContext;
-    exports.stringify = stringify4;
+    exports.stringify = stringify5;
   }
 });
 
@@ -1548,7 +1548,7 @@ var require_stringifyPair = __commonJS({
     "use strict";
     var identity = require_identity();
     var Scalar = require_Scalar();
-    var stringify4 = require_stringify();
+    var stringify5 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
       const { allNullValues, doc, indent, indentStep, options: { commentString, indentSeq, simpleKeys } } = ctx;
@@ -1570,7 +1570,7 @@ var require_stringifyPair = __commonJS({
       });
       let keyCommentDone = false;
       let chompKeep = false;
-      let str = stringify4.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
+      let str = stringify5.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
       if (!explicitKey && !ctx.inFlow && str.length > 1024) {
         if (simpleKeys)
           throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
@@ -1622,7 +1622,7 @@ ${indent}:`;
         ctx.indent = ctx.indent.substring(2);
       }
       let valueCommentDone = false;
-      const valueStr = stringify4.stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
+      const valueStr = stringify5.stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
       let ws = " ";
       if (keyComment || vsb || vcb) {
         ws = vsb ? "\n" : "";
@@ -1763,7 +1763,7 @@ var require_addPairToJSMap = __commonJS({
     "use strict";
     var log = require_log();
     var merge2 = require_merge();
-    var stringify4 = require_stringify();
+    var stringify5 = require_stringify();
     var identity = require_identity();
     var toJS = require_toJS();
     function addPairToJSMap(ctx, map, { key, value }) {
@@ -1799,7 +1799,7 @@ var require_addPairToJSMap = __commonJS({
       if (typeof jsKey !== "object")
         return String(jsKey);
       if (identity.isNode(key) && ctx?.doc) {
-        const strCtx = stringify4.createStringifyContext(ctx.doc, {});
+        const strCtx = stringify5.createStringifyContext(ctx.doc, {});
         strCtx.anchors = /* @__PURE__ */ new Set();
         for (const node2 of ctx.anchors.keys())
           strCtx.anchors.add(node2.anchor);
@@ -1866,12 +1866,12 @@ var require_stringifyCollection = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var stringify4 = require_stringify();
+    var stringify5 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyCollection(collection, ctx, options) {
       const flow = ctx.inFlow ?? collection.flow;
-      const stringify5 = flow ? stringifyFlowCollection : stringifyBlockCollection;
-      return stringify5(collection, ctx, options);
+      const stringify6 = flow ? stringifyFlowCollection : stringifyBlockCollection;
+      return stringify6(collection, ctx, options);
     }
     function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, flowChars, itemIndent, onChompKeep, onComment }) {
       const { indent, options: { commentString } } = ctx;
@@ -1896,7 +1896,7 @@ var require_stringifyCollection = __commonJS({
           }
         }
         chompKeep = false;
-        let str2 = stringify4.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
+        let str2 = stringify5.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
         if (comment2)
           str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment2));
         if (chompKeep && comment2)
@@ -1963,7 +1963,7 @@ ${indent}${line}` : "\n";
         }
         if (comment)
           reqNewline = true;
-        let str = stringify4.stringify(item, itemCtx, () => comment = null);
+        let str = stringify5.stringify(item, itemCtx, () => comment = null);
         reqNewline || (reqNewline = lines.length > linesAtValue || str.includes("\n"));
         if (i < items.length - 1) {
           str += ",";
@@ -3324,7 +3324,7 @@ var require_stringifyDocument = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var stringify4 = require_stringify();
+    var stringify5 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyDocument(doc, options) {
       const lines = [];
@@ -3339,7 +3339,7 @@ var require_stringifyDocument = __commonJS({
       }
       if (hasDirectives)
         lines.push("---");
-      const ctx = stringify4.createStringifyContext(doc, options);
+      const ctx = stringify5.createStringifyContext(doc, options);
       const { commentString } = ctx.options;
       if (doc.commentBefore) {
         if (lines.length !== 1)
@@ -3361,7 +3361,7 @@ var require_stringifyDocument = __commonJS({
           contentComment = doc.contents.comment;
         }
         const onChompKeep = contentComment ? void 0 : () => chompKeep = true;
-        let body = stringify4.stringify(doc.contents, ctx, () => contentComment = null, onChompKeep);
+        let body = stringify5.stringify(doc.contents, ctx, () => contentComment = null, onChompKeep);
         if (contentComment)
           body += stringifyComment.lineComment(body, "", commentString(contentComment));
         if ((body[0] === "|" || body[0] === ">") && lines[lines.length - 1] === "---") {
@@ -3369,7 +3369,7 @@ var require_stringifyDocument = __commonJS({
         } else
           lines.push(body);
       } else {
-        lines.push(stringify4.stringify(doc.contents, ctx));
+        lines.push(stringify5.stringify(doc.contents, ctx));
       }
       if (doc.directives?.docEnd) {
         if (doc.comment) {
@@ -5505,7 +5505,7 @@ var require_cst_scalar = __commonJS({
 var require_cst_stringify = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
     "use strict";
-    var stringify4 = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
+    var stringify5 = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
     function stringifyToken(token) {
       switch (token.type) {
         case "block-scalar": {
@@ -5558,7 +5558,7 @@ var require_cst_stringify = __commonJS({
         res += stringifyToken(value);
       return res;
     }
-    exports.stringify = stringify4;
+    exports.stringify = stringify5;
   }
 });
 
@@ -7269,7 +7269,7 @@ var require_public_api = __commonJS({
       }
       return doc;
     }
-    function parse6(src, reviver, options) {
+    function parse8(src, reviver, options) {
       let _reviver = void 0;
       if (typeof reviver === "function") {
         _reviver = reviver;
@@ -7288,7 +7288,7 @@ var require_public_api = __commonJS({
       }
       return doc.toJS(Object.assign({ reviver: _reviver }, options));
     }
-    function stringify4(value, replacer, options) {
+    function stringify5(value, replacer, options) {
       let _replacer = null;
       if (typeof replacer === "function" || Array.isArray(replacer)) {
         _replacer = replacer;
@@ -7310,10 +7310,10 @@ var require_public_api = __commonJS({
         return value.toString(options);
       return new Document.Document(value, _replacer, options).toString(options);
     }
-    exports.parse = parse6;
+    exports.parse = parse8;
     exports.parseAllDocuments = parseAllDocuments;
     exports.parseDocument = parseDocument2;
-    exports.stringify = stringify4;
+    exports.stringify = stringify5;
   }
 });
 
@@ -8494,7 +8494,7 @@ var commands_default = {
     {
       id: "ctx-skill",
       argv: ["ctx", "skill"],
-      summary: "Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values.",
+      summary: "Compose the prompt context a skill's context line injects: rule sets, language rules, fragments, tool entries, plugin files.",
       availability: "agent",
       mode: "inject",
       slice: "ctx",
@@ -8504,35 +8504,13 @@ var commands_default = {
         {
           name: "<name>",
           required: true,
-          description: "Skill name, e.g. debug, plan."
+          description: "Skill name, e.g. debug, create-plan."
         }
       ],
       flags: [],
       output: "output/ctx.json",
       exits: [0],
-      refusals: ["input/not-found", "policy/unknown-config-key"],
-      writes: []
-    },
-    {
-      id: "ctx-role",
-      argv: ["ctx", "role"],
-      summary: "Compose the context for a role class (worker, reader, reviewer, verifier, runner).",
-      availability: "agent",
-      mode: "inject",
-      slice: "ctx",
-      owner: "T13",
-      changeScoped: false,
-      args: [
-        {
-          name: "<class>",
-          required: true,
-          values: ["worker", "reader", "reviewer", "verifier", "runner"]
-        }
-      ],
-      flags: [],
-      output: "output/ctx.json",
-      exits: [0],
-      refusals: ["input/not-found", "policy/unknown-config-key"],
+      refusals: ["input/not-found", "policy/unknown-config-key", "policy/config-invalid"],
       writes: []
     },
     {
@@ -8544,11 +8522,12 @@ var commands_default = {
       slice: "ctx",
       owner: "T13",
       changeScoped: false,
+      standalone: true,
       args: [],
       flags: [],
       output: "output/ctx.json",
       exits: [0],
-      refusals: ["policy/unknown-config-key"],
+      refusals: [],
       writes: []
     },
     {
@@ -8854,14 +8833,15 @@ var commands_default = {
       availability: "hook",
       mode: "inject",
       slice: "hooks",
-      owner: "T24",
+      owner: "T13",
       changeScoped: false,
+      standalone: true,
       args: [],
       flags: [],
       stdin: "SessionStart payload (section 8).",
       output: "output/hooks-session-start.json",
       exits: [0],
-      refusals: ["policy/unknown-config-key", "policy/config-invalid"],
+      refusals: [],
       writes: [".bdk/.machine/"]
     },
     {
@@ -8927,7 +8907,7 @@ var commands_default = {
       availability: "hook",
       mode: "inject",
       slice: "hooks",
-      owner: "T24",
+      owner: "T13",
       changeScoped: false,
       args: [
         {
@@ -9034,21 +9014,21 @@ var commands_default = {
 import { homedir } from "node:os";
 
 // kernel/src/config/render/check.ts
-function renderCheck(report) {
-  const lines = report.problems.map(
+function renderCheck(report2) {
+  const lines = report2.problems.map(
     (problem) => `warn ${problem.code} ${problem.path}: ${problem.message}`
   );
   if (lines.length === 0) lines.push("settings valid");
-  if (report.snapshot !== void 0) lines.push(`snapshot: ${report.snapshot}`);
-  if (report.overriddenKeys.length > 0) {
-    lines.push(`overridden by global or local: ${report.overriddenKeys.join(", ")}`);
+  if (report2.snapshot !== void 0) lines.push(`snapshot: ${report2.snapshot}`);
+  if (report2.overriddenKeys.length > 0) {
+    lines.push(`overridden by global or local: ${report2.overriddenKeys.join(", ")}`);
   }
   return `${lines.join("\n")}
 `;
 }
 
 // kernel/src/config/use-cases/check.ts
-import { join as join5 } from "node:path";
+import { join as join6 } from "node:path";
 
 // kernel/src/shared/config/manifest.ts
 import { dirname, join } from "node:path";
@@ -10275,17 +10255,17 @@ var validateAsync = async (schema, value, _ctx) => {
   return result.issues.length === 0;
 };
 var _encode = (_Err) => {
-  const parse6 = _parse(_Err);
+  const parse8 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
     const ctx = _ctx ? { ..._ctx, direction: "backward" } : { direction: "backward" };
-    return parse6(schema, value, ctx, finalizeParams(fn, _params));
+    return parse8(schema, value, ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
 var _decode = (_Err) => {
-  const parse6 = _parse(_Err);
+  const parse8 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
-    return parse6(schema, value, _ctx, finalizeParams(fn, _params));
+    return parse8(schema, value, _ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
@@ -12387,7 +12367,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve5) {
+function isRecursive(inst, stack, resolve4) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -12397,7 +12377,7 @@ function isRecursive(inst, stack, resolve5) {
   let result = NONE;
   const check = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve5);
+      const answer = isRecursive(child, stack, resolve4);
       if (answer > result)
         result = answer;
     }
@@ -12408,7 +12388,7 @@ function isRecursive(inst, stack, resolve5) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve5) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve4) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -12472,7 +12452,7 @@ function isRecursive(inst, stack, resolve5) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve5 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve4 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -15756,6 +15736,42 @@ function invalid(path, problem) {
   );
 }
 
+// kernel/src/shared/config/hint.ts
+var MAX_DISTANCE = 2;
+function closest(key, candidates) {
+  let best;
+  let bestDistance = MAX_DISTANCE + 1;
+  for (const candidate of candidates) {
+    const distance = editDistance(key, candidate);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+function editDistance(a, b) {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const d = Array.from(
+    { length: rows },
+    (_, i) => Array.from({ length: cols }, (_2, j) => i === 0 ? j : j === 0 ? i : 0)
+  );
+  const at = (i, j) => d[i]?.[j] ?? 0;
+  for (let i = 1; i < rows; i++) {
+    for (let j = 1; j < cols; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(at(i - 1, j) + 1, at(i, j - 1) + 1, at(i - 1, j - 1) + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        value = Math.min(value, at(i - 2, j - 2) + 1);
+      }
+      const row = d[i];
+      if (row !== void 0) row[j] = value;
+    }
+  }
+  return at(a.length, b.length);
+}
+
 // kernel/src/shared/config/merge.ts
 function mergeLayers(layers) {
   const origins = {};
@@ -15888,8 +15904,8 @@ function keySteps(node2, key) {
 function defineConfigModule(module) {
   return module;
 }
-function definePromptKey(prompt) {
-  return prompt;
+function definePromptKey(prompt2) {
+  return prompt2;
 }
 var PROMPT_SEGMENT = /^[a-z0-9][a-z0-9-]*$/;
 var RESERVED = /* @__PURE__ */ new Set(["dir", "files"]);
@@ -15900,7 +15916,7 @@ function createConfigRegistry(parts) {
     shape[module.key] = module.schema.meta({ description: module.description });
   }
   const seen = /* @__PURE__ */ new Set();
-  for (const prompt of parts.prompts) checkPromptKey(prompt.key, seen);
+  for (const prompt2 of parts.prompts) checkPromptKey(prompt2.key, seen);
   const schema = strictObject(shape);
   const tree = keyTree(schema);
   const prompts2 = parts.prompts;
@@ -15910,7 +15926,7 @@ function createConfigRegistry(parts) {
     schema,
     tree,
     keys: keyPaths(tree),
-    promptKey: (key) => prompts2.find((prompt) => matches(prompt.key, key))
+    promptKey: (key) => prompts2.find((prompt2) => matches(prompt2.key, key))
   };
 }
 function checkPromptKey(key, seen) {
@@ -15927,42 +15943,6 @@ function matches(pattern, key) {
   const base = pattern.slice(0, -1);
   const rest = key.slice(base.length);
   return key.startsWith(base) && PROMPT_SEGMENT.test(rest);
-}
-
-// kernel/src/shared/config/hint.ts
-var MAX_DISTANCE = 2;
-function closest(key, candidates) {
-  let best;
-  let bestDistance = MAX_DISTANCE + 1;
-  for (const candidate of candidates) {
-    const distance = editDistance(key, candidate);
-    if (distance < bestDistance) {
-      best = candidate;
-      bestDistance = distance;
-    }
-  }
-  return best;
-}
-function editDistance(a, b) {
-  const rows = a.length + 1;
-  const cols = b.length + 1;
-  const d = Array.from(
-    { length: rows },
-    (_, i) => Array.from({ length: cols }, (_2, j) => i === 0 ? j : j === 0 ? i : 0)
-  );
-  const at = (i, j) => d[i]?.[j] ?? 0;
-  for (let i = 1; i < rows; i++) {
-    for (let j = 1; j < cols; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      let value = Math.min(at(i - 1, j) + 1, at(i, j - 1) + 1, at(i - 1, j - 1) + cost);
-      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
-        value = Math.min(value, at(i - 2, j - 2) + 1);
-      }
-      const row = d[i];
-      if (row !== void 0) row[j] = value;
-    }
-  }
-  return at(a.length, b.length);
 }
 
 // kernel/src/shared/config/known.ts
@@ -16008,6 +15988,22 @@ var REMOVED_KEYS = [
   { key: "features.code-review-graph", reason: MCP },
   { key: "$schema", reason: "use the yaml-language-server modeline" }
 ];
+function withoutRemovedKeys(layer) {
+  let values = layer.values;
+  for (const { key } of REMOVED_KEYS) values = without(values, key.split("."));
+  return values === layer.values ? layer : { ...layer, values };
+}
+function without(values, steps) {
+  const [first, ...rest] = steps;
+  if (first === void 0 || !(first in values)) return values;
+  if (rest.length === 0) {
+    return Object.fromEntries(Object.entries(values).filter(([key]) => key !== first));
+  }
+  const child = values[first];
+  if (!isRecord(child)) return values;
+  const next = without(child, rest);
+  return next === child ? values : { ...values, [first]: next };
+}
 function within(key, base) {
   return key === base || key.startsWith(`${base}.`);
 }
@@ -16043,22 +16039,22 @@ function validateLayers(registry3, layers, merged) {
   }
   return problems.length === 0 && parsed.success ? { value: parsed.data, problems } : { problems };
 }
-function walk(registry3, node2, value, prefix, report) {
+function walk(registry3, node2, value, prefix, report2) {
   if (node2.kind === "object" && isRecord(value)) {
     for (const [key, child] of Object.entries(value)) {
       const path = joinKey(prefix, key);
       const childNode = node2.children.get(key);
-      if (childNode === void 0) leaves(child, path).forEach(report);
-      else walk(registry3, childNode, child, path, report);
+      if (childNode === void 0) leaves(child, path).forEach(report2);
+      else walk(registry3, childNode, child, path, report2);
     }
   } else if (node2.kind === "idArray" && Array.isArray(value)) {
     value.forEach((item, index2) => {
       const id = isRecord(item) && typeof item.id === "string" ? item.id : String(index2);
-      walk(registry3, node2.item, item, joinKey(prefix, id), report);
+      walk(registry3, node2.item, item, joinKey(prefix, id), report2);
     });
   } else if (node2.kind === "record" && isRecord(value) && prefix === "prompts.files") {
     for (const key of Object.keys(value)) {
-      if (registry3.promptKey(key) === void 0) report(joinKey(prefix, key));
+      if (registry3.promptKey(key) === void 0) report2(joinKey(prefix, key));
     }
   }
 }
@@ -16174,7 +16170,7 @@ var promptsModule = defineConfigModule({
 
 // kernel/src/shared/config/prompts.ts
 var import_yaml4 = __toESM(require_dist(), 1);
-import { isAbsolute, join as join3, posix as posix2 } from "node:path";
+import { isAbsolute, join as join4, posix as posix2 } from "node:path";
 
 // kernel/src/shared/store/store.ts
 import { randomBytes } from "node:crypto";
@@ -16240,6 +16236,37 @@ function splitFrontmatter(text2) {
   const yaml = match?.groups?.yaml;
   if (match === null || yaml === void 0) return { body: text2 };
   return { frontmatter: yaml, body: text2.slice(match[0].length) };
+}
+
+// kernel/src/shared/store/which.ts
+import { accessSync, constants, statSync as statSync2 } from "node:fs";
+import { join as join3 } from "node:path";
+function findExecutable(name, lookup) {
+  const windows = lookup.platform === "win32";
+  const path = envValue(lookup.env, "PATH", windows) ?? "";
+  const dirs = path.split(windows ? ";" : ":").filter((dir) => dir !== "");
+  const names = windows ? (envValue(lookup.env, "PATHEXT", windows) ?? ".COM;.EXE;.BAT;.CMD").split(";").filter((ext) => ext !== "").map((ext) => `${name}${ext}`) : [name];
+  for (const dir of dirs) {
+    for (const candidate of names) {
+      const file = join3(dir, candidate);
+      if (isExecutableFile(file, windows)) return file;
+    }
+  }
+  return void 0;
+}
+function envValue(env, name, windows) {
+  if (!windows) return env[name];
+  const key = Object.keys(env).find((candidate) => candidate.toUpperCase() === name);
+  return key === void 0 ? void 0 : env[key];
+}
+function isExecutableFile(file, windows) {
+  try {
+    if (!statSync2(file).isFile()) return false;
+    if (!windows) accessSync(file, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // kernel/src/shared/store/state/documents.ts
@@ -16680,11 +16707,15 @@ function resolvePrompts(input) {
   }
   const values = /* @__PURE__ */ new Map();
   const keys = /* @__PURE__ */ new Set([
-    ...input.registry.prompts.filter((prompt) => !prompt.key.endsWith("/*")).map((p) => p.key),
+    ...input.registry.prompts.filter((prompt2) => !prompt2.key.endsWith("/*")).map((p) => p.key),
     ...byKey.keys()
   ]);
   for (const key of [...keys].sort()) values.set(key, chain(byKey.get(key) ?? []));
   return { values, problems };
+}
+function promptContent(store, value) {
+  return value.files.map((file) => splitFrontmatter(store.read(file.path) ?? "").body.trim()).filter((body) => body !== "").map((body) => `${body}
+`).join("\n");
 }
 function chain(contributions) {
   const last = contributions.findLastIndex((item) => item.mode === "replace");
@@ -16698,19 +16729,19 @@ function chain(contributions) {
 }
 function pluginDefaults(input) {
   const found = [];
-  for (const prompt of input.registry.prompts) {
-    if (prompt.defaultFile === void 0) continue;
-    if (!prompt.key.endsWith("/*")) {
-      const path = join3(input.pluginRoot, prompt.defaultFile);
-      if (input.store.exists(path)) found.push([prompt.key, path]);
+  for (const prompt2 of input.registry.prompts) {
+    if (prompt2.defaultFile === void 0) continue;
+    if (!prompt2.key.endsWith("/*")) {
+      const path = join4(input.pluginRoot, prompt2.defaultFile);
+      if (input.store.exists(path)) found.push([prompt2.key, path]);
       continue;
     }
-    const [before = "", after = ""] = prompt.defaultFile.split("{name}");
-    const dir = join3(input.pluginRoot, posix2.dirname(before + "x"));
+    const [before = "", after = ""] = prompt2.defaultFile.split("{name}");
+    const dir = join4(input.pluginRoot, posix2.dirname(before + "x"));
     for (const entry of input.store.list(dir)) {
       if (entry.endsWith("/") || !entry.endsWith(after)) continue;
       const name = entry.slice(0, entry.length - after.length);
-      found.push([`${prompt.key.slice(0, -1)}${name}`, join3(dir, entry)]);
+      found.push([`${prompt2.key.slice(0, -1)}${name}`, join4(dir, entry)]);
     }
   }
   return found;
@@ -16719,12 +16750,12 @@ function layerContributions(input, name, layer, problems) {
   const base = name === "global" ? input.globalDir : input.projectRoot;
   const settings = isRecord(layer?.values.prompts) ? layer.values.prompts : {};
   const dirSetting = typeof settings.dir === "string" ? settings.dir : DEFAULT_DIRS[name];
-  const dir = isAbsolute(dirSetting) ? dirSetting : join3(base, dirSetting);
+  const dir = isAbsolute(dirSetting) ? dirSetting : join4(base, dirSetting);
   const where = { layer: name, settingsPath: layer?.path };
   const out = /* @__PURE__ */ new Map();
   for (const [key, path] of listPrompts(input.store, dir)) {
-    const prompt = input.registry.promptKey(key);
-    if (prompt === void 0) {
+    const prompt2 = input.registry.promptKey(key);
+    if (prompt2 === void 0) {
       problems.push(unknownPrompt(input.registry, key, name, path));
       continue;
     }
@@ -16734,9 +16765,9 @@ function layerContributions(input, name, layer, problems) {
   const files = isRecord(settings.files) ? settings.files : {};
   for (const [key, entry] of Object.entries(files)) {
     if (input.registry.promptKey(key) === void 0) continue;
-    const declared = isRecord(entry) ? entry : { path: entry };
-    if (typeof declared.path !== "string") continue;
-    const path = isAbsolute(declared.path) ? declared.path : join3(base, declared.path);
+    const declared2 = isRecord(entry) ? entry : { path: entry };
+    if (typeof declared2.path !== "string") continue;
+    const path = isAbsolute(declared2.path) ? declared2.path : join4(base, declared2.path);
     if (!input.store.exists(path)) {
       problems.push({
         rule: "policy/config-invalid",
@@ -16747,7 +16778,7 @@ function layerContributions(input, name, layer, problems) {
       });
       continue;
     }
-    const contribution2 = readContribution(input.store, key, path, declared, where, problems);
+    const contribution2 = readContribution(input.store, key, path, declared2, where, problems);
     if (contribution2 !== void 0) out.set(key, contribution2);
   }
   return out;
@@ -16755,14 +16786,14 @@ function layerContributions(input, name, layer, problems) {
 function listPrompts(store, dir, prefix = "") {
   return store.list(dir).flatMap((entry) => {
     if (entry.endsWith("/")) {
-      return listPrompts(store, join3(dir, entry), `${prefix}${entry}`);
+      return listPrompts(store, join4(dir, entry), `${prefix}${entry}`);
     }
     if (!entry.endsWith(".md")) return [];
-    return [[`${prefix}${entry.slice(0, -3)}`, join3(dir, entry)]];
+    return [[`${prefix}${entry.slice(0, -3)}`, join4(dir, entry)]];
   });
 }
 function unknownPrompt(registry3, key, layer, path) {
-  const literal2 = registry3.prompts.map((prompt) => prompt.key).filter((k) => !k.endsWith("/*"));
+  const literal2 = registry3.prompts.map((prompt2) => prompt2.key).filter((k) => !k.endsWith("/*"));
   const hint = closest(key, literal2);
   return {
     rule: "policy/unknown-config-key",
@@ -16773,8 +16804,8 @@ function unknownPrompt(registry3, key, layer, path) {
   };
 }
 var FRONTMATTER_FIELDS = /* @__PURE__ */ new Set(["mode", "applies"]);
-function readContribution(store, key, path, declared, where, problems) {
-  const outcome = contribution(store.read(path) ?? "", declared, where);
+function readContribution(store, key, path, declared2, where, problems) {
+  const outcome = contribution(store.read(path) ?? "", declared2, where);
   if (typeof outcome !== "string") return { layer: where.layer, path, ...outcome };
   problems.push({
     rule: "policy/config-invalid",
@@ -16785,7 +16816,7 @@ function readContribution(store, key, path, declared, where, problems) {
   });
   return void 0;
 }
-function contribution(text2, declared, where) {
+function contribution(text2, declared2, where) {
   const { frontmatter } = splitFrontmatter(text2);
   let front;
   try {
@@ -16797,16 +16828,16 @@ function contribution(text2, declared, where) {
   const extra = Object.keys(front).filter((field2) => !FRONTMATTER_FIELDS.has(field2));
   if (extra.length > 0) return `unknown frontmatter field ${extra.join(", ")}`;
   const settings = where.settingsPath ?? "the settings";
-  const mode = front.mode ?? declared.mode ?? "extends";
+  const mode = front.mode ?? declared2.mode ?? "extends";
   if (mode !== "extends" && mode !== "replace") return "mode must be extends or replace";
-  if (declared.mode !== void 0 && front.mode !== void 0 && declared.mode !== front.mode) {
+  if (declared2.mode !== void 0 && front.mode !== void 0 && declared2.mode !== front.mode) {
     return `the frontmatter mode ${mode} contradicts the mode in ${settings}`;
   }
-  const applies = front.applies ?? declared.applies;
+  const applies = front.applies ?? declared2.applies;
   if (applies !== void 0 && !isGlobList(applies)) {
     return "applies must be a list of relative globs without empty segments";
   }
-  if (declared.applies !== void 0 && front.applies !== void 0 && JSON.stringify(declared.applies) !== JSON.stringify(front.applies)) {
+  if (declared2.applies !== void 0 && front.applies !== void 0 && JSON.stringify(declared2.applies) !== JSON.stringify(front.applies)) {
     return `the frontmatter applies contradicts ${settings}`;
   }
   return applies === void 0 ? { mode } : { mode, applies };
@@ -16819,7 +16850,8 @@ function isGlobList(value) {
 
 // kernel/src/shared/config/resolve.ts
 function resolveConfig(context) {
-  const layers = readLayers(context.store, context);
+  const read2 = readLayers(context.store, context);
+  const layers = context.removed === "ignore" ? read2.map(withoutRemovedKeys) : read2;
   const merged = mergeLayers(layers);
   const validated = validateLayers(context.registry, layers, merged);
   const prompts2 = resolvePrompts({ ...context, layers });
@@ -16828,9 +16860,42 @@ function resolveConfig(context) {
   return validated.value === void 0 || problems.length > 0 ? base : { ...base, value: validated.value };
 }
 
+// kernel/src/shared/config/refusal.ts
+function resolveOrRefuse(scope2, options = {}) {
+  const resolution = resolveConfig({
+    store: options.store ?? scope2.store,
+    registry: scope2.settings,
+    globalDir: scope2.globalDir,
+    projectRoot: scope2.projectRoot,
+    pluginRoot: scope2.pluginRoot,
+    ...options.removed === void 0 ? {} : { removed: options.removed }
+  });
+  const [first, ...rest] = resolution.problems;
+  if (first !== void 0) return problemRefusal(scope2, first, rest.length);
+  if (resolution.value === void 0) throw new Error("a resolution without problems has a value");
+  return { ...resolution, value: resolution.value };
+}
+function problemRefusal(scope2, problem, more) {
+  const file = problem.path === void 0 ? void 0 : displayPath(scope2, problem.path);
+  const where = `the ${problem.layer} layer${file === void 0 ? "" : ` (${file})`}`;
+  const count = more === 0 ? "" : ` (${more} more error${more === 1 ? "" : "s"})`;
+  return refuse(problem.rule, `${problem.key} in ${where}: ${problem.message}${count}`, [
+    schemaCommand(scope2, problem.key),
+    ...file === void 0 ? [] : [`fix ${file}`]
+  ]);
+}
+function schemaCommand(scope2, key) {
+  const module = key.split(".")[0] ?? "";
+  return scope2.settings.modules.some((candidate) => candidate.key === module) ? `bdk config schema ${module}` : "bdk config schema";
+}
+function displayPath(scope2, path) {
+  const root = `${scope2.projectRoot}/`;
+  return path.startsWith(root) ? path.slice(root.length) : path;
+}
+
 // kernel/src/shared/config/snapshot.ts
 var import_yaml5 = __toESM(require_dist(), 1);
-import { join as join4 } from "node:path";
+import { join as join5 } from "node:path";
 var SNAPSHOT_PATH = ".bdk/.machine/config/resolved.yaml";
 var PERSONAL = /* @__PURE__ */ new Set(["global", "local"]);
 function overriddenKeys(resolution) {
@@ -16839,7 +16904,7 @@ function overriddenKeys(resolution) {
   return [...leaves2, ...prompts2].sort();
 }
 function writeSnapshot(store, projectRoot, resolution) {
-  if (resolution.value === void 0 || !store.isDirectory(join4(projectRoot, ".bdk"))) {
+  if (resolution.value === void 0 || !store.isDirectory(join5(projectRoot, ".bdk"))) {
     return void 0;
   }
   const snapshot = {
@@ -16847,7 +16912,7 @@ function writeSnapshot(store, projectRoot, resolution) {
     prompts: Object.fromEntries(resolution.prompts.values),
     overriddenKeys: overriddenKeys(resolution)
   };
-  store.write(join4(projectRoot, SNAPSHOT_PATH), (0, import_yaml5.stringify)(snapshot));
+  store.write(join5(projectRoot, SNAPSHOT_PATH), (0, import_yaml5.stringify)(snapshot));
   return SNAPSHOT_PATH;
 }
 
@@ -16896,36 +16961,6 @@ function offlineSchemaText(registry3) {
 }
 
 // kernel/src/config/use-cases/input.ts
-function resolve2(input, store = input.store) {
-  const resolution = resolveConfig({
-    store,
-    registry: input.settings,
-    globalDir: input.globalDir,
-    projectRoot: input.projectRoot,
-    pluginRoot: input.pluginRoot
-  });
-  const [first, ...rest] = resolution.problems;
-  if (first !== void 0) return problemRefusal(input, first, rest.length);
-  if (resolution.value === void 0) throw new Error("a resolution without problems has a value");
-  return { ...resolution, value: resolution.value };
-}
-function problemRefusal(input, problem, more) {
-  const file = problem.path === void 0 ? void 0 : displayPath(input, problem.path);
-  const where = `the ${problem.layer} layer${file === void 0 ? "" : ` (${file})`}`;
-  const count = more === 0 ? "" : ` (${more} more error${more === 1 ? "" : "s"})`;
-  return refuse(problem.rule, `${problem.key} in ${where}: ${problem.message}${count}`, [
-    schemaCommand(input, problem.key),
-    ...file === void 0 ? [] : [`fix ${file}`]
-  ]);
-}
-function schemaCommand(input, key) {
-  const module = key.split(".")[0] ?? "";
-  return input.settings.modules.some((candidate) => candidate.key === module) ? `bdk config schema ${module}` : "bdk config schema";
-}
-function displayPath(input, path) {
-  const root = `${input.projectRoot}/`;
-  return path.startsWith(root) ? path.slice(root.length) : path;
-}
 function isRefusal(outcome) {
   return "refused" in outcome;
 }
@@ -16933,8 +16968,17 @@ function isRefusal(outcome) {
 // kernel/src/config/use-cases/check.ts
 var LEGACY_SETTINGS = ".bdk/settings.json";
 function checkConfig(input) {
-  const resolved = resolve2(input);
-  if (isRefusal(resolved)) return resolved;
+  const resolved = resolveOrRefuse(input);
+  return isRefusal(resolved) ? resolved : report(input, resolved);
+}
+function inspectConfig(input) {
+  const resolution = resolveConfig({ ...input, registry: input.settings });
+  if (resolution.problems.length > 0 || resolution.value === void 0) {
+    return { errors: resolution.problems.map((problem) => problemRefusal(input, problem, 0)) };
+  }
+  return { errors: [], report: report(input, { ...resolution, value: resolution.value }) };
+}
+function report(input, resolved) {
   const url = settingsSchemaUrl(readKernelVersion(input.store, input.pluginRoot));
   const problems = [];
   for (const layer of resolved.layers) {
@@ -16956,7 +17000,7 @@ function checkConfig(input) {
       });
     }
   }
-  if (input.store.exists(join5(input.projectRoot, LEGACY_SETTINGS))) {
+  if (input.store.exists(join6(input.projectRoot, LEGACY_SETTINGS))) {
     problems.push({
       layer: "project",
       path: LEGACY_SETTINGS,
@@ -16967,7 +17011,7 @@ function checkConfig(input) {
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
   if (snapshot !== void 0) {
     input.store.write(
-      join5(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      join6(input.projectRoot, OFFLINE_SCHEMA_PATH),
       offlineSchemaText(input.settings)
     );
   }
@@ -16997,13 +17041,13 @@ function checkCommand(deps) {
 }
 
 // kernel/src/config/render/schema.ts
-function renderSchema(report) {
-  if (report.schema === void 0) {
-    return `${report.url}
-${report.offlineCopy === void 0 ? "" : `offline copy: ${report.offlineCopy}
+function renderSchema(report2) {
+  if (report2.schema === void 0) {
+    return `${report2.url}
+${report2.offlineCopy === void 0 ? "" : `offline copy: ${report2.offlineCopy}
 `}`;
   }
-  return `${JSON.stringify(report.schema, null, 2)}
+  return `${JSON.stringify(report2.schema, null, 2)}
 `;
 }
 
@@ -17040,9 +17084,9 @@ function schemaCommand2(deps) {
 }
 
 // kernel/src/config/render/set.ts
-function renderSet(report) {
-  const previous = report.previous === void 0 ? "" : ` (was ${JSON.stringify(report.previous)})`;
-  return `${report.key} = ${JSON.stringify(report.value)}${previous} in the ${report.layer} layer (${report.path})
+function renderSet(report2) {
+  const previous = report2.previous === void 0 ? "" : ` (was ${JSON.stringify(report2.previous)})`;
+  return `${report2.key} = ${JSON.stringify(report2.value)}${previous} in the ${report2.layer} layer (${report2.path})
 `;
 }
 
@@ -17064,10 +17108,10 @@ function originOf(leaf, set) {
 }
 function leafKeys(value, prefix) {
   if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join6(prefix, key)));
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join7(prefix, key)));
   }
   if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item) => leafKeys(item, join6(prefix, item.id)));
+    return value.flatMap((item) => leafKeys(item, join7(prefix, item.id)));
   }
   return [prefix];
 }
@@ -17077,7 +17121,7 @@ function isMapping(value) {
 function hasId(value) {
   return isMapping(value) && typeof value.id === "string";
 }
-function join6(prefix, key) {
+function join7(prefix, key) {
   return prefix === "" ? key : `${prefix}.${key}`;
 }
 
@@ -17085,7 +17129,7 @@ function join6(prefix, key) {
 var PROMPT_PREFIX = "prompts.";
 var PROMPT_SETTINGS = /* @__PURE__ */ new Set(["dir", "files"]);
 function showConfig(input, request) {
-  const resolved = resolve2(input);
+  const resolved = resolveOrRefuse(input);
   if (isRefusal(resolved)) return resolved;
   const layers = fileLayers(input);
   const { key } = request;
@@ -17117,8 +17161,8 @@ function showConfig(input, request) {
     () => leafOrigins(value, key, resolved.merged.origins)
   );
 }
-function withOrigins(report, request, origins) {
-  return request.origins ? { ...report, origins: origins() } : report;
+function withOrigins(report2, request, origins) {
+  return request.origins ? { ...report2, origins: origins() } : report2;
 }
 function promptKeyOf(key) {
   if (!key.startsWith(PROMPT_PREFIX)) return void 0;
@@ -17188,7 +17232,7 @@ function setConfig(input, request) {
   const edit = editDocument(document, steps, value, request.value);
   if (isRefusal(edit)) return edit;
   const next = text2 === void 0 ? withModeline(document.toString(FORMAT), readKernelVersion(input.store, input.pluginRoot)) : edit.splice === void 0 ? document.toString(FORMAT) : `${text2.slice(0, edit.splice.start)}${edit.splice.text}${text2.slice(edit.splice.end)}`;
-  const resolved = resolve2(input, overlay(input.store, file.path, next));
+  const resolved = resolveOrRefuse(input, { store: overlay(input.store, file.path, next) });
   if (isRefusal(resolved)) return resolved;
   input.store.write(file.path, next);
   writeSnapshot(input.store, input.projectRoot, resolved);
@@ -17306,6 +17350,25 @@ ${(0, import_yaml7.stringify)(outcome.origins)}`;
   };
 }
 
+// kernel/src/config/use-cases/layout.ts
+import { join as join8 } from "node:path";
+
+// kernel/src/config/domain/layout.ts
+var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
+function classifyLayout(state) {
+  if (!state.bdk) return { layout: "none", present: [] };
+  if (state.present.length === 0) return { layout: "v3", present: [] };
+  return { layout: "v2", present: state.present };
+}
+
+// kernel/src/config/use-cases/layout.ts
+function detectLayout(store, root) {
+  return classifyLayout({
+    bdk: store.isDirectory(join8(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store.exists(join8(root, marker)))
+  });
+}
+
 // kernel/src/config/index.ts
 function configRegistrations(deps) {
   return [
@@ -17315,6 +17378,72 @@ function configRegistrations(deps) {
     { id: "config-set", handler: setCommand(deps) }
   ];
 }
+
+// kernel/src/ctx/render/sections.ts
+function renderContext({ heading, sections }) {
+  const blocks = sections.map(({ title, body }) => `### ${title}
+
+${body.trimEnd()}
+`);
+  return {
+    content: [`## ${heading}
+`, ...blocks].join("\n"),
+    parts: sections.map((section) => section.part)
+  };
+}
+
+// kernel/src/ctx/use-cases/manifest.ts
+var rules = (category2) => ({ kind: "rules", category: category2 });
+var tools = (group) => ({ kind: "tools", group });
+var decision = { kind: "fragment", id: "decision" };
+var languageRules = { kind: "language-rules" };
+var SKILL_CONTEXT = {
+  "bdk-implementer-return-contract": [
+    {
+      kind: "file",
+      path: "skills/subagent-execute-plan/references/return-contract.md",
+      title: "Return contract"
+    }
+  ],
+  "bdk-lint-tools": [tools("lint")],
+  "bdk-rules-architecture": [rules("architecture")],
+  "bdk-rules-code-quality": [rules("code-quality")],
+  "bdk-rules-design-patterns": [rules("design-patterns")],
+  "bdk-rules-languages": [languageRules],
+  "bdk-rules-security": [rules("security")],
+  "bdk-test-tools": [tools("test")],
+  cr: [
+    { kind: "file", path: "skills/cr/references/review-engine.md", title: "Review engine" },
+    { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" }
+  ],
+  "create-adr": [rules("architecture")],
+  "create-plan": [
+    rules("engineering-judgment"),
+    decision,
+    tools("test"),
+    tools("lint"),
+    rules("code-quality"),
+    rules("architecture"),
+    rules("design-patterns"),
+    rules("security"),
+    rules("test-quality"),
+    languageRules
+  ],
+  debug: [tools("test"), tools("lint")],
+  design: [rules("architecture"), rules("engineering-judgment"), decision],
+  "pr-review": [
+    {
+      kind: "file",
+      path: "skills/pr-review/references/reviewer-prompt.md",
+      title: "Reviewer prompt"
+    }
+  ],
+  "test-driven-development": [rules("test-quality"), tools("test")]
+};
+
+// kernel/src/ctx/use-cases/parts.ts
+var import_yaml8 = __toESM(require_dist(), 1);
+import { join as join9 } from "node:path/posix";
 
 // kernel/src/ctx/config.ts
 var ID3 = /^[a-z0-9][a-z0-9-]*$/;
@@ -17331,7 +17460,7 @@ var entryFields = {
   incremental: text.optional().meta({ description: "The incremental form." }),
   when: text.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
 };
-function tools(tier, description) {
+function tools2(tier, description) {
   const entry = (tier === void 0 ? strictObject(entryFields) : strictObject({ ...entryFields, tier })).meta({ title: "tool entry" });
   return array(entry).default([]).meta({ description });
 }
@@ -17348,9 +17477,9 @@ var toolsModule = defineConfigModule({
   owner: "T12",
   description: "The commands the project runs, one entry per command, merged by id.",
   schema: strictObject({
-    test: tools(_enum(["fast", "e2e"]), "Test commands; tier fast or e2e."),
-    lint: tools(_enum(["lint", "format", "typecheck"]), "Lint, format and type check commands."),
-    build: tools(void 0, "Build commands; no tier.")
+    test: tools2(_enum(["fast", "e2e"]), "Test commands; tier fast or e2e."),
+    lint: tools2(_enum(["lint", "format", "typecheck"]), "Lint, format and type check commands."),
+    build: tools2(void 0, "Build commands; no tier.")
   }).prefault({})
 });
 var featuresModule = defineConfigModule({
@@ -17386,12 +17515,353 @@ var rulePrompts = [
     defaultFile: "rules/languages/{name}.md"
   })
 ];
+var fragmentPrompts = ["lavish", "ask-user"].map(
+  (name) => definePromptKey({
+    key: `fragments/decision/${name}`,
+    consumer: "ctx",
+    owner: "T13",
+    defaultFile: `fragments/decision/${name}.md`
+  })
+);
+
+// kernel/src/ctx/use-cases/parts.ts
+function sectionsOf(input, resolved, part) {
+  switch (part.kind) {
+    case "rules": {
+      const key = declared(rulePrompts, `rules/${part.category}`);
+      return [
+        {
+          title: `Rules: ${part.category}`,
+          body: prompt(input, resolved, key),
+          part: { kind: "rules", source: key }
+        }
+      ];
+    }
+    case "language-rules":
+      return read(languagesModule, resolved).flatMap((language) => {
+        const key = declared(rulePrompts, `rules/languages/${language}`);
+        if (!resolved.prompts.values.has(key)) return [];
+        return [
+          {
+            title: `Language rules: ${language}`,
+            body: prompt(input, resolved, key),
+            part: { kind: "language-rules", source: key }
+          }
+        ];
+      });
+    case "fragment": {
+      const choice = lavish(input, resolved) ? "lavish" : "ask-user";
+      const key = declared(fragmentPrompts, `fragments/decision/${choice}`);
+      return [
+        {
+          title: "Asking the user",
+          body: prompt(input, resolved, key),
+          part: { kind: "fragment", source: key }
+        }
+      ];
+    }
+    case "tools": {
+      const entries = read(toolsModule, resolved)[part.group];
+      return [
+        {
+          title: `Project commands: ${part.group}`,
+          body: entries.length === 0 ? "none configured\n" : (0, import_yaml8.stringify)(entries),
+          part: { kind: "tools", source: `tools.${part.group}` }
+        }
+      ];
+    }
+    case "file": {
+      const text2 = input.store.read(join9(input.pluginRoot, part.path));
+      if (text2 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
+      return [{ title: part.title, body: text2, part: { kind: "file", source: part.path } }];
+    }
+  }
+}
+function prompt(input, resolved, key) {
+  const value = resolved.prompts.values.get(key);
+  if (value === void 0) throw new Error(`the prompt value ${key} has no file in any layer`);
+  return promptContent(input.store, value);
+}
+function declared(prompts2, key) {
+  const found = prompts2.some(
+    (prompt2) => prompt2.key.endsWith("/*") ? key.startsWith(prompt2.key.slice(0, -1)) : prompt2.key === key
+  );
+  if (!found) throw new Error(`${key} is not a prompt key ctx declares`);
+  return key;
+}
+function read(module, resolved) {
+  return module.schema.parse(resolved.value[module.key]);
+}
+function lavish(input, resolved) {
+  return read(featuresModule, resolved).lavish && input.which("lavish-axi") !== void 0;
+}
+
+// kernel/src/ctx/use-cases/skill.ts
+function composeSkill(input, name) {
+  const parts = Object.hasOwn(SKILL_CONTEXT, name) ? SKILL_CONTEXT[name] : void 0;
+  if (parts === void 0) return notFound2(name);
+  const resolved = resolveOrRefuse(input, { removed: "ignore" });
+  if ("refused" in resolved) return resolved;
+  return {
+    heading: `BDK context: ${name}`,
+    sections: parts.flatMap((part) => sectionsOf(input, resolved, part))
+  };
+}
+function notFound2(name) {
+  const hint = closest(name, Object.keys(SKILL_CONTEXT));
+  return refuse("input/not-found", `${name} is not a skill with a BDK context`, [
+    hint === void 0 ? "bdk ctx skill <name>, with the name of the skill being loaded" : `bdk ctx skill ${hint}`,
+    "check the skill name in the context lines"
+  ]);
+}
+
+// kernel/src/ctx/commands/skill.ts
+function skillCommand(deps) {
+  return (context) => {
+    const outcome = composeSkill(
+      {
+        ...deps,
+        globalDir: globalDir(context.runtime),
+        projectRoot: findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd),
+        which: (name) => context.runtime.which(name)
+      },
+      context.positionals["<name>"] ?? ""
+    );
+    if ("refused" in outcome) return outcome;
+    const report2 = renderContext(outcome);
+    return { data: report2, text: report2.content };
+  };
+}
+
+// kernel/src/ctx/render/startup.ts
+function renderStartup({ before, rows, after }) {
+  const table = agentsTable(rows).trimEnd().split("\n");
+  return {
+    content: [...before, "", ...table, "", ...after].join("\n"),
+    parts: [
+      { kind: "startup", source: "STARTUP_INSTRUCTIONS.md" },
+      { kind: "agents-table", source: "agents/" }
+    ]
+  };
+}
+var HEADER = ["`subagent_type`", "Model", "When to pick"];
+function agentsTable(rows) {
+  const cells = [
+    [...HEADER],
+    ...rows.map((row) => [
+      `\`bdk:${row.name}\``,
+      row.model,
+      row.description.replaceAll("|", "\\|")
+    ])
+  ];
+  const widths = HEADER.map(
+    (_, column) => Math.max(3, ...cells.map((row) => width(row[column] ?? "")))
+  );
+  const line = (row) => `| ${row.map((cell, column) => cell + " ".repeat((widths[column] ?? 0) - width(cell))).join(" | ")} |`;
+  const [header, ...body] = cells;
+  return [line(header ?? []), line(widths.map((size) => "-".repeat(size))), ...body.map(line)].join(
+    "\n"
+  ) + "\n";
+}
+var graphemes = new Intl.Segmenter();
+function width(text2) {
+  return [...graphemes.segment(text2)].length;
+}
+
+// kernel/src/ctx/use-cases/startup.ts
+var import_yaml9 = __toESM(require_dist(), 1);
+import { join as join10 } from "node:path/posix";
+var STARTUP_FILE = "STARTUP_INSTRUCTIONS.md";
+var AGENTS_DIR = "agents";
+var OPEN = "<!-- bdk:agents-table -->";
+var CLOSE = "<!-- /bdk:agents-table -->";
+function readStartup(deps) {
+  const text2 = deps.store.read(join10(deps.pluginRoot, STARTUP_FILE));
+  if (text2 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
+  const lines = text2.split("\n");
+  const open2 = lines.indexOf(OPEN);
+  const close = lines.indexOf(CLOSE);
+  if (open2 === -1 || close < open2) {
+    throw new Error(`${STARTUP_FILE} has no ${OPEN} ... ${CLOSE} block`);
+  }
+  return { before: lines.slice(0, open2 + 1), rows: agents(deps), after: lines.slice(close) };
+}
+function agents(deps) {
+  const dir = join10(deps.pluginRoot, AGENTS_DIR);
+  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join10(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
+}
+function agentRow(path, text2) {
+  const { frontmatter } = splitFrontmatter(text2);
+  const data = frontmatter === void 0 ? void 0 : (0, import_yaml9.parse)(frontmatter);
+  const field2 = (name) => {
+    const value = typeof data === "object" && data !== null ? data[name] : void 0;
+    if (typeof value !== "string" || value.trim() === "") {
+      throw new Error(`${path} has no ${name} in its frontmatter`);
+    }
+    return value.trim().replace(/\s+/g, " ");
+  };
+  return { name: field2("name"), model: field2("model"), description: field2("description") };
+}
+
+// kernel/src/ctx/commands/startup.ts
+function startupCommand(deps) {
+  return () => {
+    const report2 = renderStartup(readStartup(deps));
+    return { data: report2, text: report2.content };
+  };
+}
 
 // kernel/src/ctx/index.ts
+function startupContext(deps) {
+  return renderStartup(readStartup(deps));
+}
 var ctxConfig = {
   modules: [languagesModule, toolsModule, featuresModule],
-  prompts: rulePrompts
+  prompts: [...rulePrompts, ...fragmentPrompts]
 };
+function ctxRegistrations(deps) {
+  return [
+    { id: "ctx-skill", handler: skillCommand(deps) },
+    { id: "ctx-startup", handler: startupCommand(deps) }
+  ];
+}
+
+// kernel/src/hooks/render/session-start.ts
+function renderSessionStart({ startup, project }) {
+  if (project === void 0) return { content: startup };
+  const lines = [
+    ...project.errors.map(
+      ({ why, instead }) => `[BDK] config: ${why} Instead: ${instead.join("; ")}`
+    ),
+    ...project.warnings.map((warning) => `[BDK] config warning: ${warning}`),
+    ...project.v2Markers.length === 0 ? [] : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run bdk import.`]
+  ];
+  return {
+    content: lines.length === 0 ? startup : `${startup.trimEnd()}
+
+${lines.join("\n")}
+`,
+    layout: project.layout,
+    configProblems: project.errors.length + project.warnings.length
+  };
+}
+
+// kernel/src/hooks/use-cases/session-start.ts
+import { join as join11 } from "node:path";
+function sessionStart(input) {
+  const startup = startupContext(input).content;
+  if (input.workTree === void 0) return { startup };
+  const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
+  if (!input.store.isDirectory(join11(projectRoot, ".bdk"))) return { startup };
+  const { errors, report: report2 } = inspectConfig({ ...input, projectRoot });
+  const { layout, present } = detectLayout(input.store, projectRoot);
+  const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
+  return {
+    startup,
+    project: {
+      layout,
+      v2Markers: present,
+      errors: errors.map(({ why, instead }) => ({ why, instead })),
+      warnings
+    }
+  };
+}
+
+// kernel/src/hooks/commands/session-start.ts
+function sessionStartCommand(deps) {
+  return (context) => {
+    const report2 = renderSessionStart(
+      sessionStart({
+        ...deps,
+        cwd: context.cwd,
+        workTree: context.workTree ?? context.runtime.workTree(context.cwd),
+        globalDir: globalDir(context.runtime)
+      })
+    );
+    return { data: report2, text: report2.content };
+  };
+}
+
+// kernel/src/hooks/render/skill-exists.ts
+function renderSkillExists(name, foundIn) {
+  if (foundIn !== void 0) return { name, installed: true, foundIn, content: "" };
+  return {
+    name,
+    installed: false,
+    content: `[BDK] skill ${name} is not installed; the skill that needs it falls back to its own behaviour.`
+  };
+}
+
+// kernel/src/hooks/use-cases/skill-exists.ts
+var import_yaml10 = __toESM(require_dist(), 1);
+import { join as join12 } from "node:path";
+function findSkill(input, name) {
+  for (const skills of skillDirs(input)) {
+    for (const entry of subdirs(input.store, skills)) {
+      const file = join12(skills, entry, "SKILL.md");
+      const text2 = input.store.read(file);
+      if (text2 !== void 0 && frontmatterName(text2) === name) return file;
+    }
+  }
+  return void 0;
+}
+function skillDirs({ store, home, projectRoot }) {
+  const plugins = join12(home, ".claude", "plugins");
+  const marketplaces = join12(plugins, "marketplaces");
+  const cache = join12(plugins, "cache");
+  const versions = subdirs(store, cache).flatMap(
+    (marketplace) => subdirs(store, join12(cache, marketplace)).flatMap(
+      (plugin) => subdirs(store, join12(cache, marketplace, plugin)).map(
+        (version3) => join12(cache, marketplace, plugin, version3)
+      )
+    )
+  );
+  return [
+    join12(home, ".claude", "skills"),
+    join12(projectRoot, ".claude", "skills"),
+    ...subdirs(store, marketplaces).map((marketplace) => join12(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join12(version3, "skills"))
+  ];
+}
+function subdirs(store, dir) {
+  return store.list(dir).filter((entry) => entry.endsWith("/")).map((entry) => entry.slice(0, -1));
+}
+function frontmatterName(text2) {
+  const { frontmatter } = splitFrontmatter(text2);
+  if (frontmatter === void 0) return void 0;
+  try {
+    const data = (0, import_yaml10.parse)(frontmatter);
+    const name = typeof data === "object" && data !== null ? data.name : void 0;
+    return typeof name === "string" ? name : void 0;
+  } catch {
+    return void 0;
+  }
+}
+
+// kernel/src/hooks/commands/skill-exists.ts
+function skillExistsCommand(deps) {
+  return (context) => {
+    const name = context.positionals["<name>"] ?? "";
+    const foundIn = findSkill(
+      {
+        store: deps.store,
+        home: context.runtime.home,
+        projectRoot: findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd)
+      },
+      name
+    );
+    const report2 = renderSkillExists(name, foundIn);
+    return { data: report2, text: report2.content };
+  };
+}
+
+// kernel/src/hooks/index.ts
+function hooksRegistrations(deps) {
+  return [
+    { id: "hooks-session-start", handler: sessionStartCommand(deps) },
+    { id: "hooks-skill-exists", handler: skillExistsCommand(deps) }
+  ];
+}
 
 // kernel/src/service/render/version.ts
 function renderVersion(output) {
@@ -17409,9 +17879,6 @@ function renderDoctor(output) {
   return `${lines.join("\n")}
 `;
 }
-
-// kernel/src/service/use-cases/doctor.ts
-import { join as join8 } from "node:path";
 
 // kernel/src/shared/registry/record.ts
 var rule = _enum(RULES);
@@ -17459,7 +17926,7 @@ function commandLine(record3) {
 
 // kernel/src/shared/registry/parse.ts
 var IMPLICIT_FLAGS = ["--json", "--help"];
-function parse5(record3, tokens) {
+function parse7(record3, tokens) {
   const help = [`${commandLine(record3)} --help`];
   const positionals = {};
   const flags = {};
@@ -17582,7 +18049,7 @@ function commandHelp(index2, record3) {
     }
   }
   if (record3.stdin !== void 0) lines.push("", `stdin: ${record3.stdin}`);
-  const rules = [
+  const rules2 = [
     ...index2.base.all,
     ...record3.changeScoped ? index2.base.changeScoped : [],
     ...record3.refusals
@@ -17590,7 +18057,7 @@ function commandHelp(index2, record3) {
   lines.push(
     "",
     `exit codes: ${record3.exits.join(", ")}`,
-    `rules: ${[...new Set(rules)].join(", ")}`
+    `rules: ${[...new Set(rules2)].join(", ")}`
   );
   return `${lines.join("\n")}
 `;
@@ -17610,9 +18077,9 @@ function globalHelp(index2) {
   );
 }
 function overview(records, header) {
-  const width = Math.max(...records.map((record3) => record3.argv.join(" ").length));
+  const width2 = Math.max(...records.map((record3) => record3.argv.join(" ").length));
   const lines = records.map(
-    (record3) => `  ${record3.argv.join(" ").padEnd(width)}  ${record3.summary}`
+    (record3) => `  ${record3.argv.join(" ").padEnd(width2)}  ${record3.summary}`
   );
   return `${[header, "", ...lines].join("\n")}
 `;
@@ -17670,7 +18137,7 @@ function nodeVersionRefusal(version3) {
 }
 
 // kernel/src/shared/registry/resolve.ts
-function resolve3(index2, argv) {
+function resolve2(index2, argv) {
   for (let length = 3; length >= 1; length--) {
     const words = argv.slice(0, length);
     if (words.length < length) continue;
@@ -17742,7 +18209,7 @@ async function run(index2, byId, invocation) {
   const { argv, streams } = invocation;
   const asJson = argv.includes("--json");
   const help = argv.includes("--help");
-  const resolved = resolve3(index2, argv);
+  const resolved = resolve2(index2, argv);
   if (resolved === void 0) {
     const [first] = argv;
     const usage = first === void 0 || first === "--help" ? globalHelp(index2) : help ? groupHelp(index2, first) : void 0;
@@ -17779,7 +18246,7 @@ async function run(index2, byId, invocation) {
   return 0;
 }
 async function dispatch(record3, registration, rest, asJson, { cwd, runtime }) {
-  const parsed = parse5(record3, rest);
+  const parsed = parse7(record3, rest);
   if (isRefusal2(parsed)) return parsed;
   let workTree;
   if (record3.standalone !== true) {
@@ -17852,18 +18319,13 @@ function ensureNewline(text2) {
 }
 
 // kernel/src/service/domain/layout.ts
-var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
-function classifyLayout(state) {
-  if (!state.bdk) return { layout: "none" };
-  if (state.present.length === 0) return { layout: "v3" };
+function layoutFinding(present) {
+  if (present.length === 0) return void 0;
   return {
-    layout: "v2",
-    finding: {
-      id: "v2-layout",
-      level: "warn",
-      summary: `${enumerate(state.present)} found`,
-      repair: "bdk import"
-    }
+    id: "v2-layout",
+    level: "warn",
+    summary: `${enumerate(present)} found`,
+    repair: "bdk import"
   };
 }
 function enumerate(items) {
@@ -17872,18 +18334,18 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join7 } from "node:path";
+import { join as join13 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store, root } = input;
-  if (!store.exists(join7(root, SETTINGS_FILES[0]))) return [];
+  if (!store.exists(join13(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join7(root, file);
+    const path = join13(root, file);
     const text2 = store.read(path);
     if (text2 === void 0 || modelineUrl(text2) === url) continue;
     if (input.fix) store.write(path, withModeline(text2, version3));
@@ -17897,7 +18359,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join7(root, OFFLINE_SCHEMA_PATH);
+  const copy = join13(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store.read(copy);
   if (current !== expected) {
@@ -17935,10 +18397,8 @@ function doctor(input) {
     });
   }
   const root = findProjectRoot(input.store, input.cwd, input.workTree);
-  const { layout, finding } = classifyLayout({
-    bdk: input.store.isDirectory(join8(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => input.store.exists(join8(root, marker)))
-  });
+  const { layout, present } = detectLayout(input.store, root);
+  const finding = layoutFinding(present);
   if (finding !== void 0) findings.push(finding);
   findings.push(...schemaFindings({ ...input, root }));
   return {
@@ -17982,7 +18442,12 @@ function serviceRegistrations(deps) {
 
 // kernel/src/registrations.ts
 function registrations(deps) {
-  return [...serviceRegistrations(deps), ...configRegistrations(deps)];
+  return [
+    ...serviceRegistrations(deps),
+    ...configRegistrations(deps),
+    ...ctxRegistrations(deps),
+    ...hooksRegistrations(deps)
+  ];
 }
 function settingsRegistry() {
   return createConfigRegistry({
@@ -17992,11 +18457,11 @@ function settingsRegistry() {
 }
 
 // kernel/src/shared/git/index.ts
-import { existsSync as existsSync2, readFileSync as readFileSync2, statSync as statSync2 } from "node:fs";
-import { dirname as dirname3, join as join9, resolve as resolve4 } from "node:path";
+import { existsSync as existsSync2, readFileSync as readFileSync2, statSync as statSync3 } from "node:fs";
+import { dirname as dirname3, join as join14, resolve as resolve3 } from "node:path";
 function findWorkTree(cwd) {
-  for (let dir = resolve4(cwd); ; dir = dirname3(dir)) {
-    if (existsSync2(join9(dir, ".git"))) return dir;
+  for (let dir = resolve3(cwd); ; dir = dirname3(dir)) {
+    if (existsSync2(join14(dir, ".git"))) return dir;
     if (dirname3(dir) === dir) return void 0;
   }
 }
@@ -18021,7 +18486,8 @@ try {
       env: process.env,
       platform: process.platform,
       home: homedir(),
-      workTree: findWorkTree
+      workTree: findWorkTree,
+      which: (name) => findExecutable(name, { env: process.env, platform: process.platform })
     },
     streams: {
       stdout: (text2) => process.stdout.write(text2),

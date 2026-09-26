@@ -4,6 +4,9 @@
 // spec's tables; an owner task moves its keys out of PLANNED_KEYS when it
 // registers its module.
 
+import { isRecord } from "./values.ts";
+import type { Mapping } from "./values.ts";
+
 export interface PlannedKey {
   readonly key: string;
   readonly owner: string;
@@ -58,6 +61,25 @@ export const REMOVED_KEYS: readonly RemovedKey[] = [
   { key: "features.code-review-graph", reason: MCP },
   { key: "$schema", reason: "use the yaml-language-server modeline" },
 ];
+
+/** The layer with every removed v2 key taken out of its values. */
+export function withoutRemovedKeys<L extends { readonly values: Readonly<Mapping> }>(layer: L): L {
+  let values: Readonly<Mapping> = layer.values;
+  for (const { key } of REMOVED_KEYS) values = without(values, key.split("."));
+  return values === layer.values ? layer : { ...layer, values };
+}
+
+function without(values: Readonly<Mapping>, steps: readonly string[]): Readonly<Mapping> {
+  const [first, ...rest] = steps;
+  if (first === undefined || !(first in values)) return values;
+  if (rest.length === 0) {
+    return Object.fromEntries(Object.entries(values).filter(([key]) => key !== first));
+  }
+  const child = values[first];
+  if (!isRecord(child)) return values;
+  const next = without(child, rest);
+  return next === child ? values : { ...values, [first]: next };
+}
 
 /** Whether `key` is `base` or lies below it. */
 export function within(key: string, base: string): boolean {
