@@ -9,11 +9,11 @@
 
 ## 2. Merge `improvements-pack` (design D-3)
 
-- [ ] 2.1 `git merge --no-ff --no-commit origin/improvements-pack`. Keep deleted every file that `staging/v3` deleted, and take the v3 side for `skills/`, `agents/`, `STARTUP_INSTRUCTIONS.md`, `.claude/rules/`, `scripts/`, `hooks/` and `tests/unit/`. Verify `git diff --name-only --diff-filter=U` is empty for those paths
-- [ ] 2.2 Take the branch side for `mkdocs.yml`, the site pages, `.claude/skills/docs-sync/`, `tests/evals/skills/docs-sync/`, `.git-blame-ignore-revs` and the `BUGS.md` move. Remove `Makefile`, `.pymarkdown.json`, `.claude-plugin/validator.json` and `tests/unit/docs/`. Verify with `git status`
-- [ ] 2.3 Resolve by hand: `pyproject.toml` (`docs` group, a `lint` group with only `ruff==0.16.7`, the ruff config, no mypy config), `.gitignore` (union), `tests.yml`, `CLAUDE.md`, `CONTRIBUTING.md` and `README.md` (v3 side, no `make check`), and `plugin.json` (the task 1 result). Run `uv lock` and verify `uv lock --check`
-- [ ] 2.4 Commit the merge. Verify `pytest tests/unit/`, `pnpm test:contract` and `pnpm skill-check` pass, and that the baseline has not grown
-- [ ] 2.5 Try each hunk of `c6a05f4` and `ece50d5` on files that still exist, one at a time, and keep a hunk only if `pnpm skill-check --baseline-prune` removes an entry. Commit what stays with the pruned baseline. Verify that `pnpm skill-check` passes and that `git diff b47aeaa -- skill-check.baseline.json` shows only removals
+- [x] 2.1 `git merge --no-ff --no-commit origin/improvements-pack`. Keep deleted every file that `staging/v3` deleted, and take the v3 side for `skills/`, `agents/`, `STARTUP_INSTRUCTIONS.md`, `.claude/rules/`, `scripts/`, `hooks/` and `tests/unit/`. Verify `git diff --name-only --diff-filter=U` is empty for those paths
+- [x] 2.2 Take the branch side for `mkdocs.yml`, the site pages, `.claude/skills/docs-sync/`, `tests/evals/skills/docs-sync/`, `.git-blame-ignore-revs` and the `BUGS.md` move. Remove `Makefile`, `.pymarkdown.json`, `.claude-plugin/validator.json` and `tests/unit/docs/`. Verify with `git status`
+- [x] 2.3 Resolve by hand: `pyproject.toml` (`docs` group, a `lint` group with only `ruff==0.16.7`, the ruff config, no mypy config), `.gitignore` (union), `tests.yml`, `CLAUDE.md`, `CONTRIBUTING.md` and `README.md` (v3 side, no `make check`), and `plugin.json` (the task 1 result). Run `uv lock` and verify `uv lock --check`
+- [x] 2.4 Commit the merge. Verify `pytest tests/unit/`, `pnpm test:contract` and `pnpm skill-check` pass, and that the baseline has not grown
+- [x] 2.5 Try each hunk of `c6a05f4` and `ece50d5` on files that still exist, one at a time, and keep a hunk only if `pnpm skill-check --baseline-prune` removes an entry. Commit what stays with the pruned baseline. Verify that `pnpm skill-check` passes and that `git diff b47aeaa -- skill-check.baseline.json` shows only removals Outcome: no hunk kept. 17 file patches do not apply to the v3 files, 9 apply without pruning an entry, and 4 (`skills/design`, `cr`, `pr-review`, `subagent-execute-plan`) add an unbaselined finding. The baseline is unchanged
 
 ## 3. Site location and content (design D-4, D-6, D-10)
 
