@@ -39,3 +39,37 @@ export function backticked(text: string): string[] {
   const noFences = text.replace(/^```[\s\S]*?^```/gm, "");
   return [...noFences.matchAll(/(?<!`)`([^`\n]+)`(?!`)/g)].map((m) => m[1] ?? "");
 }
+
+export interface Row {
+  readonly cells: readonly string[];
+  readonly header: readonly string[];
+}
+
+/** Every row of every table whose first header cell is `first`; `\|` stays inside a cell. */
+export function tableRows(text: string, first: string): Row[] {
+  const out: Row[] = [];
+  const lines = text.split("\n");
+  lines.forEach((line, at) => {
+    const header = cells(line);
+    if (header[0] !== first || !(lines[at + 1] ?? "").startsWith("| -")) return;
+    for (const row of lines.slice(at + 2)) {
+      if (!row.startsWith("|")) break;
+      out.push({ header, cells: cells(row) });
+    }
+  });
+  return out;
+}
+
+function cells(line: string): string[] {
+  if (!line.startsWith("|")) return [];
+  return line
+    .split(/(?<!\\)\|/)
+    .slice(1, -1)
+    .map((cell) => cell.trim());
+}
+
+export function column(row: Row, name: string): string {
+  const at = row.header.indexOf(name);
+  if (at === -1) throw new Error(`no column ${name} in ${row.header.join(" | ")}`);
+  return row.cells[at] ?? "";
+}
