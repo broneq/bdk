@@ -1,4 +1,5 @@
 import { defineRule } from "../index.ts";
+import { isBlockLine } from "./shared.ts";
 
 export const body = defineRule({
   id: "body",
@@ -87,6 +88,35 @@ export const argumentsTypo = defineRule({
           line: i + 1,
           message: "`$ARGUMENT` is not substituted; write `$ARGUMENTS`",
           match: line,
+        });
+      }
+    });
+  },
+});
+
+const CLAUDE_VARIABLE = /\$\{CLAUDE_[A-Z0-9_]+\}/g;
+
+/** A portable skill runs on hosts other than Claude Code, which run no `!` block and substitute no `${CLAUDE_*}`. */
+export const portableSyntax = defineRule({
+  id: "portable-syntax",
+  kinds: ["skills"],
+  defaultSeverity: "error",
+  check(doc, ctx) {
+    if (doc.target.profile !== "portable") return;
+    doc.lines.forEach((text, i) => {
+      for (const variable of new Set(text.match(CLAUDE_VARIABLE))) {
+        ctx.report({
+          line: i + 1,
+          message: `\`${variable}\` is Claude Code syntax; other hosts pass it through as literal text`,
+          match: `${variable}\0${text}`,
+        });
+      }
+      if (i + 1 >= doc.bodyStart && isBlockLine(text)) {
+        ctx.report({
+          line: i + 1,
+          message:
+            "a `!` block is Claude Code syntax; other hosts show the command as text instead of running it",
+          match: `!\0${text}`,
         });
       }
     });

@@ -36,6 +36,20 @@ export default {
       defaultSeverity: "off",
       checkProject(docs, ctx) { for (const s of ctx.strays) ctx.report({ message: s, file: s }); },
     },
+    {
+      id: "needs",
+      kinds: ["skills"],
+      defaultSeverity: "off",
+      validateOptions(o) { return typeof o.x === "string" ? undefined : "option \`x\` must be a string"; },
+      check() {},
+    },
+    {
+      id: "needs-project",
+      kinds: ["skills"],
+      defaultSeverity: "off",
+      validateOptions(o) { return o.x ? undefined : "option \`x\` is required"; },
+      checkProject() {},
+    },
   ],
 };
 `;
@@ -127,6 +141,42 @@ describe("loadConfig", () => {
     ],
   ])("rejects %s", async (_label, text, message) => {
     await expect(loadConfig(project(text))).rejects.toThrow(new ConfigError(message));
+  });
+
+  it.each([
+    [
+      "a per-file rule enabled without its option",
+      config(`rules: { "probe/needs": "error" }`),
+      "rule `probe/needs` in target `skills`: option `x` must be a string",
+    ],
+    [
+      "a per-file rule enabled in one target with a bad option",
+      base
+        .replace(
+          `dirs: ["skills"] }`,
+          `dirs: ["skills"], rules: { "probe/needs": ["warning", { x: 1 }] } }`,
+        )
+        .replace("RULES", ""),
+      "rule `probe/needs` in target `skills`: option `x` must be a string",
+    ],
+    [
+      "a project rule enabled without its option",
+      config(`rules: { "probe/needs-project": "error" }`),
+      "rule `probe/needs-project`: option `x` is required",
+    ],
+  ])("rejects %s", async (_label, text, message) => {
+    await expect(loadConfig(project(text))).rejects.toThrow(new ConfigError(message));
+  });
+
+  it("validates options only where a rule is enabled for a matching kind", async () => {
+    const agentsOnly = base
+      .replace(`dirs: ["agents"] }`, `dirs: ["agents"], rules: { "probe/needs": "error" } }`)
+      .replace("RULES", "");
+    await expect(loadConfig(project(agentsOnly))).resolves.toBeDefined();
+    const valid = config(
+      `rules: { "probe/needs": ["error", { x: "y" }], "probe/needs-project": ["error", { x: 1 }] }`,
+    );
+    await expect(loadConfig(project(valid))).resolves.toBeDefined();
   });
 
   it("rejects a config whose plugin fails to load", async () => {

@@ -53,6 +53,32 @@ export default defineConfig({
 
 A rule setting is `"off"`, `"warning"`, `"error"` or `[severity, options]`. A target can override settings with its own `rules`.
 
+### Project policy rules
+
+Six generic rules encode a project's own choices, so they are off by default and take those choices as options. Enabling one without the options it needs, or with malformed ones, exits 2 and names the rule.
+
+```ts
+rules: {
+  // `!` blocks: only this whole-line form, and the allowed-tools entries it needs.
+  "block-form": ["error", { patterns: ["!`node \"\\$\\{CLAUDE_PLUGIN_ROOT\\}/dist/tool\\.mjs\" ctx [a-z-]+`"] }],
+  "block-allowed-tools": ["error", { require: ['Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/tool.mjs" *)'] }],
+  // Words or substrings, anywhere or only in code; `allow` exempts skills or agents by name.
+  "forbidden-text": ["error", { terms: [
+    { words: ["mcp__plugin_acme_"], match: "substring", message: "call the CLI instead" },
+    { words: ["make", "jest"], where: "code", message: "name the task, not one stack's command", allow: ["setup"] },
+  ] }],
+  // Frontmatter that named skills or agents must carry.
+  "required-fields": ["error", { entries: [
+    { names: ["ship"], field: "disable-model-invocation", equals: true, reason: "only the user starts it" },
+    { names: ["execute"], field: "disallowed-tools", includes: ["Edit", "Write", "NotebookEdit"] },
+  ] }],
+  // `/name` and `subagent_type: name` of the checked skills and agents must carry the namespace.
+  "namespaced-refs": ["error", { namespace: "acme" }],
+},
+```
+
+`body-shape` (`maxLines`, `maxSentences`, `endsWith`) fixes the shape of a body, usually as a target setting on an agents target. `portable-syntax`, on by default, reports `!` blocks and `${CLAUDE_*}` variables in skills of the portable profile.
+
 ## Add project rules
 
 A plugin adds rules under its own name, so rule `x` of plugin `acme` is `acme/x`:
@@ -74,7 +100,7 @@ const noTodo = defineRule({
 export default definePlugin({ name: "acme", rules: [noTodo] });
 ```
 
-List the plugin in the config with `plugins: [acme]`. A rule with `checkProject` instead of `check` runs once over every document of its kinds.
+List the plugin in the config with `plugins: [acme]`. A rule with `checkProject` instead of `check` runs once over every document of its kinds. A rule that takes options can declare `validateOptions(options)`, returning what is wrong with them or `undefined`; the loader calls it for every enabled rule, so a bad setting exits 2 instead of failing mid-run.
 
 ## Testing rules
 

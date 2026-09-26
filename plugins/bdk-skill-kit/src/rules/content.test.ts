@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { Document, Report, Rule } from "../index.ts";
 import { agent, doc, skill } from "../test-helpers.ts";
-import { absolutePaths, argumentsTypo, body, lineLimit, modelNames } from "./content.ts";
+import { checkRule } from "../testing.ts";
+import {
+  absolutePaths,
+  argumentsTypo,
+  body,
+  lineLimit,
+  modelNames,
+  portableSyntax,
+} from "./content.ts";
 
 function run<O>(rule: Rule<O>, d: Document, options: Partial<O> = {}): Report[] {
   const reports: Report[] = [];
@@ -116,5 +124,35 @@ describe("arguments-typo", () => {
     expect(run(argumentsTypo, doc(skill("demo", "", "$ARGUMENTS and $ARGUMENTS[0]\n")))).toEqual(
       [],
     );
+  });
+});
+
+describe("portable-syntax", () => {
+  const text = skill(
+    "craft",
+    "allowed-tools: Bash(${CLAUDE_SKILL_DIR}/run.sh *)\n",
+    "Read ${CLAUDE_PLUGIN_ROOT}/x and ${CLAUDE_PLUGIN_ROOT}/y.\n!`date`\n```!\ndate\n```\nPlain text, $ARGUMENTS and ${HOME}.\n",
+  );
+  const files = { "craft/SKILL.md": text };
+
+  it("reports Claude Code substitutions and blocks in a portable skill", async () => {
+    const findings = await checkRule(portableSyntax, { profile: "portable", files });
+    expect(findings.map((f) => [f.line, f.message.split(";")[0]])).toEqual([
+      [4, "`${CLAUDE_SKILL_DIR}` is Claude Code syntax"],
+      [7, "`${CLAUDE_PLUGIN_ROOT}` is Claude Code syntax"],
+      [8, "a `!` block is Claude Code syntax"],
+      [9, "a `!` block is Claude Code syntax"],
+    ]);
+  });
+
+  it("ignores skills outside the portable profile", async () => {
+    expect(await checkRule(portableSyntax, { files })).toEqual([]);
+  });
+
+  it("keys the fingerprint on the construct and the line text", async () => {
+    const moved = { "craft/SKILL.md": text.replace("\n\nRead", "\n\nIntro.\n\nRead") };
+    const a = await checkRule(portableSyntax, { profile: "portable", files });
+    const b = await checkRule(portableSyntax, { profile: "portable", files: moved });
+    expect(b.map((f) => f.fingerprint)).toEqual(a.map((f) => f.fingerprint));
   });
 });

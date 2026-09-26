@@ -7376,7 +7376,7 @@ import { existsSync as existsSync2, readFileSync as readFileSync3, writeFileSync
 
 // src/config.ts
 import { existsSync, statSync } from "node:fs";
-import { basename as basename3, dirname, resolve } from "node:path";
+import { basename as basename4, dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 // src/index.ts
@@ -7443,6 +7443,44 @@ var cliFront = defineRule({
     }
   }
 });
+
+// src/rules/shared.ts
+import { basename } from "node:path";
+var NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+function nameOf(doc) {
+  if (typeof doc.frontmatter?.name === "string") return doc.frontmatter.name;
+  return doc.kind === "skills" ? basename(doc.dir) : basename(doc.path, ".md");
+}
+function toolList(value) {
+  if (Array.isArray(value)) return value.filter((v) => typeof v === "string");
+  if (typeof value !== "string") return [];
+  return value.match(/[^\s,(]+(?:\([^)]*\))?/g) ?? [];
+}
+var INLINE_BLOCK = /(?:^|\s)!`/;
+var FENCED_BLOCK = /^\s{0,3}`{3,}!/;
+var isBlockLine = (line) => INLINE_BLOCK.test(line) || FENCED_BLOCK.test(line);
+function blockLines(doc) {
+  const out = [];
+  for (let i = doc.bodyStart - 1; i < doc.lines.length; i++) {
+    if (isBlockLine(doc.lines[i] ?? "")) out.push(i + 1);
+  }
+  return out;
+}
+function listOf(items) {
+  const ticked = items.map((item) => `\`${item}\``);
+  const last = ticked.pop() ?? "";
+  return ticked.length === 0 ? last : `${ticked.join(", ")} and ${last}`;
+}
+var isStringList = (value) => Array.isArray(value) && value.every((v) => typeof v === "string");
+var isNonEmptyString = (value) => typeof value === "string" && value.trim() !== "";
+function regexProblem(source) {
+  try {
+    new RegExp(source);
+    return void 0;
+  } catch {
+    return `\`${source}\` is not a valid regular expression`;
+  }
+}
 
 // src/rules/content.ts
 var body = defineRule({
@@ -7527,9 +7565,34 @@ var argumentsTypo = defineRule({
     });
   }
 });
+var CLAUDE_VARIABLE = /\$\{CLAUDE_[A-Z0-9_]+\}/g;
+var portableSyntax = defineRule({
+  id: "portable-syntax",
+  kinds: ["skills"],
+  defaultSeverity: "error",
+  check(doc, ctx) {
+    if (doc.target.profile !== "portable") return;
+    doc.lines.forEach((text, i) => {
+      for (const variable of new Set(text.match(CLAUDE_VARIABLE))) {
+        ctx.report({
+          line: i + 1,
+          message: `\`${variable}\` is Claude Code syntax; other hosts pass it through as literal text`,
+          match: `${variable}\0${text}`
+        });
+      }
+      if (i + 1 >= doc.bodyStart && isBlockLine(text)) {
+        ctx.report({
+          line: i + 1,
+          message: "a `!` block is Claude Code syntax; other hosts show the command as text instead of running it",
+          match: `!\0${text}`
+        });
+      }
+    });
+  }
+});
 
 // src/rules/frontmatter.ts
-import { basename } from "node:path";
+import { basename as basename2 } from "node:path";
 
 // src/profiles.ts
 var PORTABLE_FIELDS = [
@@ -7584,7 +7647,6 @@ function descriptionCap(profile) {
 }
 
 // src/rules/frontmatter.ts
-var NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 var lineOf = (doc, key2) => doc.keyLines[key2] ?? 1;
 var frontmatter = defineRule({
   id: "frontmatter",
@@ -7641,7 +7703,7 @@ var nameMatchesDir = defineRule({
   defaultSeverity: "error",
   check(doc, ctx) {
     const name = doc.frontmatter?.name;
-    const dir = basename(doc.dir);
+    const dir = basename2(doc.dir);
     if (typeof name === "string" && name !== dir) {
       ctx.report({
         line: lineOf(doc, "name"),
@@ -7655,7 +7717,7 @@ var skillFileName = defineRule({
   kinds: ["skills"],
   defaultSeverity: "error",
   check(doc, ctx) {
-    const file = basename(doc.path);
+    const file = basename2(doc.path);
     if (file !== "SKILL.md") {
       ctx.report({ message: `the skill file is \`${file}\`; hosts load only \`SKILL.md\`` });
     }
@@ -7754,7 +7816,7 @@ var fields = defineRule({
 var EFFORT = ["low", "medium", "high", "xhigh", "max"];
 var COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan"];
 var TOOL = /^(?:[A-Z][A-Za-z0-9]*(?:\(.*\))?|mcp__[\w-]+)$/;
-var isStringList = (v) => typeof v === "string" || Array.isArray(v) && v.every((x) => typeof x === "string");
+var isStringList2 = (v) => typeof v === "string" || Array.isArray(v) && v.every((x) => typeof x === "string");
 var fieldValues = defineRule({
   id: "field-values",
   kinds: ["skills", "agents"],
@@ -7794,7 +7856,7 @@ var fieldValues = defineRule({
       if (has(key2) && typeof fm[key2] !== "boolean") fail(key2, `\`${key2}\` must be true or false`);
     }
     for (const key2 of ["allowed-tools", "disallowed-tools", "arguments", "paths", "skills"]) {
-      if (has(key2) && !isStringList(fm[key2]))
+      if (has(key2) && !isStringList2(fm[key2]))
         fail(key2, `\`${key2}\` must be a string or a list of strings`);
     }
     if (has("compatibility")) {
@@ -7816,7 +7878,7 @@ var fieldValues = defineRule({
     for (const key2 of ["tools", "disallowedTools"]) {
       if (!has(key2)) continue;
       const value = fm[key2];
-      if (!isStringList(value)) {
+      if (!isStringList2(value)) {
         fail(key2, `\`${key2}\` must be a comma-separated string or a list of strings`);
         continue;
       }
@@ -7886,9 +7948,241 @@ var requireModel = defineRule({
   }
 });
 
+// src/rules/policy.ts
+import { isDeepStrictEqual } from "node:util";
+var escape2 = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+var blockForm = defineRule({
+  id: "block-form",
+  kinds: ["skills", "agents"],
+  defaultSeverity: "off",
+  defaultOptions: { patterns: [] },
+  validateOptions({ patterns }) {
+    if (!isStringList(patterns)) return "option `patterns` must be a list of regular expressions";
+    const bad = patterns.map(regexProblem).find((p) => p !== void 0);
+    return bad === void 0 ? void 0 : `option \`patterns\`: ${bad}`;
+  },
+  check(doc, ctx) {
+    const forms = ctx.options.patterns.map((p) => new RegExp(`^(?:${p})$`));
+    const message = forms.length === 0 ? "a `!` block runs a shell command when the file loads; this project allows none" : "a `!` block must be the whole line and match one of the forms in the option `patterns`";
+    for (const line of blockLines(doc)) {
+      const text = doc.lines[line - 1] ?? "";
+      if (!forms.some((form) => form.test(text))) ctx.report({ line, message, match: text });
+    }
+  }
+});
+var blockAllowedTools = defineRule({
+  id: "block-allowed-tools",
+  kinds: ["skills"],
+  defaultSeverity: "off",
+  defaultOptions: { require: [] },
+  validateOptions: ({ require: require2 }) => isStringList(require2) && require2.length > 0 ? void 0 : "option `require` must list at least one `allowed-tools` entry",
+  check(doc, ctx) {
+    if (blockLines(doc).length === 0) return;
+    const listed = toolList(doc.frontmatter?.["allowed-tools"]);
+    const missing = ctx.options.require.filter((entry) => !listed.includes(entry));
+    if (missing.length === 0) return;
+    ctx.report({
+      line: doc.keyLines["allowed-tools"] ?? 1,
+      message: `a skill with a \`!\` block must list ${listOf(missing)} in \`allowed-tools\`; outside auto mode the host aborts a skill whose block command is not pre-approved`,
+      match: "block-allowed-tools"
+    });
+  }
+});
+function termProblem(value) {
+  const term = typeof value === "object" && value !== null ? value : {};
+  if (!isStringList(term.words) || term.words.length === 0 || !term.words.every(isNonEmptyString))
+    return "`words` must list at least one word";
+  if (!isNonEmptyString(term.message)) return "`message` must be a non-empty string";
+  if (term.match !== void 0 && term.match !== "word" && term.match !== "substring")
+    return "`match` must be word or substring";
+  if (term.where !== void 0 && term.where !== "anywhere" && term.where !== "code")
+    return "`where` must be anywhere or code";
+  if (term.allow !== void 0 && !isStringList(term.allow))
+    return "`allow` must be a list of names";
+  return void 0;
+}
+function termPattern(term) {
+  const words = term.words.map((w) => escape2(w.trim()).replace(/\s+/g, "\\s+")).join("|");
+  return new RegExp(term.match === "substring" ? words : `(?<![\\w-])(?:${words})(?![\\w-])`, "g");
+}
+var forbiddenText = defineRule({
+  id: "forbidden-text",
+  kinds: ["skills", "agents"],
+  defaultSeverity: "off",
+  defaultOptions: { terms: [] },
+  validateOptions({ terms }) {
+    if (!Array.isArray(terms) || terms.length === 0)
+      return "option `terms` must list at least one term";
+    for (const [i, term] of terms.entries()) {
+      const problem = termProblem(term);
+      if (problem) return `option \`terms[${i}]\`: ${problem}`;
+    }
+    return void 0;
+  },
+  check(doc, ctx) {
+    const name = nameOf(doc);
+    const terms = ctx.options.terms.filter((term) => !(term.allow ?? []).includes(name)).map((term) => ({ term, pattern: termPattern(term) }));
+    doc.lines.forEach((text, i) => {
+      const code = doc.inFence(i + 1) ? text : [...text.matchAll(/`([^`]+)`/g)].map((m) => m[1]).join(" ");
+      for (const { term, pattern } of terms) {
+        const haystack = term.where === "code" ? code : text;
+        for (const found of new Set([...haystack.matchAll(pattern)].map((m) => m[0]))) {
+          ctx.report({
+            line: i + 1,
+            message: `\`${found}\`: ${term.message}`,
+            match: `${found}\0${text}`
+          });
+        }
+      }
+    });
+  }
+});
+function requirementProblem(value) {
+  const entry = typeof value === "object" && value !== null ? value : {};
+  if (!isStringList(entry.names) || entry.names.length === 0)
+    return "`names` must list at least one name";
+  if (!isNonEmptyString(entry.field)) return "`field` must be a non-empty string";
+  if (entry.equals === void 0 && entry.includes === void 0)
+    return "set `equals`, `includes` or both";
+  if (entry.includes !== void 0 && !isStringList(entry.includes))
+    return "`includes` must be a list of strings";
+  if (entry.reason !== void 0 && typeof entry.reason !== "string")
+    return "`reason` must be a string";
+  return void 0;
+}
+var requiredFields = defineRule({
+  id: "required-fields",
+  kinds: ["skills", "agents"],
+  defaultSeverity: "off",
+  defaultOptions: { entries: [] },
+  validateOptions({ entries }) {
+    if (!Array.isArray(entries) || entries.length === 0)
+      return "option `entries` must list at least one entry";
+    for (const [i, entry] of entries.entries()) {
+      const problem = requirementProblem(entry);
+      if (problem) return `option \`entries[${i}]\`: ${problem}`;
+    }
+    return void 0;
+  },
+  check(doc, ctx) {
+    const fm = doc.frontmatter;
+    if (!fm) return;
+    const name = nameOf(doc);
+    for (const entry of ctx.options.entries) {
+      if (!entry.names.includes(name)) continue;
+      const line = doc.keyLines[entry.field] ?? doc.keyLines.name ?? 1;
+      const why = entry.reason ? `; ${entry.reason}` : "";
+      const value = fm[entry.field];
+      if (entry.equals !== void 0 && !isDeepStrictEqual(value, entry.equals)) {
+        ctx.report({
+          line,
+          message: `\`${name}\` must set \`${entry.field}: ${JSON.stringify(entry.equals)}\`${why}`,
+          match: `${entry.field}\0equals`
+        });
+      }
+      const listed = toolList(value);
+      const missing = (entry.includes ?? []).filter((item) => !listed.includes(item));
+      if (missing.length > 0) {
+        ctx.report({
+          line,
+          message: `\`${name}\` must list ${listOf(missing)} in \`${entry.field}\`${why}`,
+          match: `${entry.field}\0includes`
+        });
+      }
+    }
+  }
+});
+var isPositiveInteger = (v) => Number.isInteger(v) && v > 0;
+var bodyShape = defineRule({
+  id: "body-shape",
+  kinds: ["skills", "agents"],
+  defaultSeverity: "off",
+  defaultOptions: {},
+  validateOptions({ maxLines, maxSentences, endsWith }) {
+    if (maxLines === void 0 && maxSentences === void 0 && endsWith === void 0)
+      return "set at least one of the options `maxLines`, `maxSentences` and `endsWith`";
+    if (maxLines !== void 0 && !isPositiveInteger(maxLines))
+      return "option `maxLines` must be a positive integer";
+    if (maxSentences !== void 0 && !isPositiveInteger(maxSentences))
+      return "option `maxSentences` must be a positive integer";
+    if (endsWith !== void 0 && !isNonEmptyString(endsWith))
+      return "option `endsWith` must be a non-empty string";
+    return void 0;
+  },
+  check(doc, ctx) {
+    if (doc.frontmatterError?.includes("not closed")) return;
+    const { maxLines, maxSentences, endsWith } = ctx.options;
+    const body2 = doc.lines.slice(doc.bodyStart - 1).filter((text) => text.trim() !== "");
+    const sentences = body2.join(" ").match(/[.!?](?=\s|$)/g)?.length ?? 0;
+    const problems = [];
+    if (maxLines !== void 0 && body2.length > maxLines)
+      problems.push(`${body2.length} non-blank lines (limit ${maxLines})`);
+    if (maxSentences !== void 0 && sentences > maxSentences)
+      problems.push(`${sentences} sentences (limit ${maxSentences})`);
+    if (endsWith !== void 0 && !(body2.at(-1)?.trimEnd().endsWith(endsWith) ?? false))
+      problems.push(`no final \`${endsWith}\``);
+    if (problems.length === 0) return;
+    ctx.report({
+      line: doc.bodyStart,
+      message: `the body has ${problems.join(", ")}`,
+      // The counts change with every body edit; the fingerprint must not.
+      match: "body-shape"
+    });
+  }
+});
+var SLASH_REF = /(?<![\w./:-])\/([a-z][a-z0-9-]*)(?::([a-z][a-z0-9-]*))?(?![\w/-]|\.\w)/g;
+var SUBAGENT_TYPE = /subagent_type\W{1,4}([a-z][\w-]*(?::[a-z][\w-]*)?)/g;
+var namespacedRefs = defineRule({
+  id: "namespaced-refs",
+  kinds: ["skills", "agents"],
+  defaultSeverity: "off",
+  defaultOptions: { namespace: "", foreign: "warning" },
+  validateOptions({ namespace, foreign }) {
+    if (typeof namespace !== "string" || !NAME.test(namespace))
+      return "option `namespace` must be a kebab-case plugin name";
+    if (foreign !== "warning" && foreign !== "off")
+      return "option `foreign` must be warning or off";
+    return void 0;
+  },
+  checkProject(docs, ctx) {
+    const { namespace: ns, foreign } = ctx.options;
+    const names = new Set(docs.map(nameOf));
+    for (const doc of docs) {
+      doc.lines.forEach((text, i) => {
+        const at = { file: doc.path, line: i + 1 };
+        for (const [ref, first = "", second] of text.matchAll(SLASH_REF)) {
+          if (second === void 0 && names.has(first)) {
+            ctx.report({
+              ...at,
+              message: `write \`/${ns}:${first}\`, not \`${ref}\`; an unqualified name can resolve to another plugin's skill`,
+              match: ref
+            });
+          } else if (second !== void 0 && first !== ns && foreign === "warning") {
+            ctx.report({
+              ...at,
+              severity: "warning",
+              message: `\`${ref}\` names another plugin's skill, which may not be installed`,
+              match: ref
+            });
+          }
+        }
+        for (const [, value = ""] of text.matchAll(SUBAGENT_TYPE)) {
+          if (!value.includes(":") && names.has(value)) {
+            ctx.report({
+              ...at,
+              message: `write \`subagent_type: ${ns}:${value}\`; a plugin agent is registered under its plugin's namespace`,
+              match: value
+            });
+          }
+        }
+      });
+    }
+  }
+});
+
 // src/rules/structure.ts
 import { readFileSync } from "node:fs";
-import { basename as basename2, join } from "node:path";
+import { basename as basename3, join } from "node:path";
 
 // src/document.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -7996,7 +8290,7 @@ function topLevelOf(doc) {
 }
 function resolves(doc, target) {
   const t = target.replace(/\/$/, "");
-  return doc.files.some((f) => f === t || f.startsWith(`${t}/`)) || t === basename2(doc.path);
+  return doc.files.some((f) => f === t || f.startsWith(`${t}/`)) || t === basename3(doc.path);
 }
 function readSkillFile(root, doc, file) {
   return splitLines(readFileSync(join(root, doc.dir, file), "utf8"));
@@ -8085,7 +8379,7 @@ var uniqueNames = defineRule({
   checkProject(docs, ctx) {
     const byName = /* @__PURE__ */ new Map();
     for (const doc of docs) {
-      const name = typeof doc.frontmatter?.name === "string" ? doc.frontmatter.name : basename2(doc.dir);
+      const name = typeof doc.frontmatter?.name === "string" ? doc.frontmatter.name : basename3(doc.dir);
       byName.set(name, [...byName.get(name) ?? [], doc]);
     }
     for (const [name, group] of byName) {
@@ -8120,11 +8414,18 @@ var genericRules = [
   absolutePaths,
   modelNames,
   argumentsTypo,
+  portableSyntax,
   referencesRule,
   unusedFiles,
   layout,
   uniqueNames,
-  cliFront
+  cliFront,
+  blockForm,
+  blockAllowedTools,
+  forbiddenText,
+  requiredFields,
+  bodyShape,
+  namespacedRefs
 ];
 
 // src/config.ts
@@ -8140,7 +8441,7 @@ async function loadConfig(cwd, explicit) {
   try {
     config = (await import(pathToFileURL(file).href)).default;
   } catch (error) {
-    throw new ConfigError(`cannot load ${basename3(file)}: ${error.message}`);
+    throw new ConfigError(`cannot load ${basename4(file)}: ${error.message}`);
   }
   if (!isConfig(config)) {
     throw new ConfigError("the config must export a default object with a `targets` array");
@@ -8152,6 +8453,7 @@ async function loadConfig(cwd, explicit) {
   const targets = config.targets.map(
     (target, index) => loadTarget(target, index, root, rules, settings)
   );
+  validateOptions(rules, settings, targets);
   return {
     root,
     file,
@@ -8189,6 +8491,26 @@ function loadTarget(value, index, root, rules, settings) {
   const own = target.rules ?? {};
   checkSettings(own, rules, `target \`${name}\``);
   return { kind, dirs, profile, name, settings: { ...settings, ...own } };
+}
+function validateOptions(rules, settings, targets) {
+  for (const rule of rules.values()) {
+    if (!rule.validateOptions) continue;
+    const scopes = [];
+    if (rule.check) {
+      for (const target of targets) {
+        if (rule.kinds.includes(target.kind)) {
+          scopes.push([target.settings, ` in target \`${target.name}\``]);
+        }
+      }
+    }
+    if (rule.checkProject) scopes.push([settings, ""]);
+    for (const [scope, where] of scopes) {
+      const setting = settingOf(rule, scope);
+      if (setting.severity === "off") continue;
+      const problem = rule.validateOptions(setting.options);
+      if (problem !== void 0) throw new ConfigError(`rule \`${rule.id}\`${where}: ${problem}`);
+    }
+  }
 }
 function isConfig(value) {
   return typeof value === "object" && value !== null && Array.isArray(value.targets);
@@ -8436,7 +8758,7 @@ function formatHuman(outcome, github) {
   if (github) {
     for (const f of outcome.findings) {
       lines.push(
-        `::${f.severity} file=${f.file},line=${f.line},title=${f.rule}::${escape2(f.message)}`
+        `::${f.severity} file=${f.file},line=${f.line},title=${f.rule}::${escape3(f.message)}`
       );
     }
   }
@@ -8468,7 +8790,7 @@ function count(findings) {
   const errors = findings.filter((f) => f.severity === "error").length;
   return { errors, warnings: findings.length - errors };
 }
-function escape2(text) {
+function escape3(text) {
   return text.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
 }
 

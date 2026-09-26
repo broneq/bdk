@@ -51,17 +51,39 @@ The description is the only part an agent sees before it decides to load the ski
 - Write a body. A skill with only frontmatter does nothing when it runs. (`body`)
 - Keep `SKILL.md` short: at most 500 lines, and far less for most skills. Move detail that only some runs need into `references`. (`line-limit`)
 - Name capabilities, not models. "A fast model" or "the most capable model" stays true when the model line-up changes; a model name goes stale. (`model-names`)
-- Point at files with paths relative to the skill directory, or through a variable such as `${CLAUDE_SKILL_DIR}`. An absolute path works only on the author's machine. (`absolute-paths`)
-- Write the argument placeholder as `$ARGUMENTS`, plural. The singular spelling is not substituted and reaches the agent as literal text. (`arguments-typo`)
+- Point at files with paths relative to the skill directory, or through the host's variable for that directory. An absolute path works only on the author's machine. (`absolute-paths`)
+- Write the argument placeholder in its plural spelling. The singular spelling is not substituted and reaches the agent as literal text. (`arguments-typo`)
 
 How to write the steps themselves:
 
 - Write imperative steps the agent can follow and check: "List the callers of X", not "It may be useful to consider callers".
-- Say what to find, decide or produce, not which tool to use. The host already teaches its tools, and tool advice goes stale.
+- Say what to find, check or produce, not which tool to use: "find the callers of X", not a tool call that searches for X. The host's system prompt teaches its tools; repeating it costs context and goes stale. Name a tool only where the tool is the subject: `allowed-tools` and `disallowed-tools`, a subagent dispatch, a question to the user through the host's question tool, or a script the step runs.
 - Give each step a clear end: the output it produces or the condition that ends it.
 - State invariants once, where they apply, and say what happens when one is violated.
 - Prefer one worked example over three abstract rules. Put long examples in `references`.
 - Match the level of freedom to the task: exact commands for fragile operations, heuristics for judgment calls.
+
+## Portability
+
+- A skill or agent meant for reuse names nothing that exists in one project only: no file of one repository (a placeholder such as `path/to/file` is fine), no "in this repo" or "our codebase", no team or organisation name, and no hardcoded branch, database or service name. Let the project's own configuration supply such values.
+- A skill in the portable profile uses no Claude Code syntax: no `!` block and no Claude Code substitution variable. Other hosts show both as literal text. (`portable-syntax`)
+- A project can forbid its own names, tool prefixes or stack-specific commands in reusable skills, anywhere or only in code. (`forbidden-text`)
+
+## Claude Code features
+
+[Claude Code features](references/claude-code.md) lists the string substitutions, how `!` blocks run, how to dispatch subagents and wait for them, skill-scoped hooks and how skills of one plugin share files. The rules below apply to skills that use them:
+
+- A `!` block runs a shell command before the agent sees the skill. Pre-approve its command in `allowed-tools`: outside auto mode, an unapproved command aborts the whole skill. A project lists the entries its blocks need. (`block-allowed-tools`)
+- A project that wraps its CLI in blocks can allow only whole-line blocks of that form, so no skill runs an arbitrary command at load time. (`block-form`)
+- In a plugin, name the plugin's own skills and agents with its namespace, as `/<plugin>:<name>` and `subagent_type: <plugin>:<name>`. An unqualified name can resolve to another plugin's skill, and a reference to another plugin's skill depends on that plugin being installed. (`namespaced-refs`)
+- A skill that only the user may start sets `disable-model-invocation: true`, and a skill that delegates edits removes the edit tools with `disallowed-tools`. A project lists such skills with the fields they require. (`required-fields`)
+
+## Agents
+
+An agent is one Markdown file whose body becomes the subagent's system prompt. The frontmatter and body rules above apply to it too.
+
+- Give an agent only the tools its job needs. When an agent must not change anything but its `tools` include Bash or an edit tool, remove those tools, or, when it needs Bash to read, state the constraint in the body: "MUST NOT modify files". A narrower `tools` list or `disallowedTools` is enforced; a sentence in the body is only followed.
+- A project can fix the shape of an agent body, for example an adapter that is one sentence loading a skill. (`body-shape`)
 
 ## Layout and references
 

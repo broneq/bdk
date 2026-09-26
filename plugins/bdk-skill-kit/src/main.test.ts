@@ -100,6 +100,19 @@ describe("main", () => {
     });
   });
 
+  it("exits 2 naming a rule enabled without the option it needs", async () => {
+    const root = tree({
+      "skill-check.config.mjs": `export default { targets: [{ kind: "skills", dirs: ["skills"] }], rules: { "block-allowed-tools": "error" } };`,
+      "skills/alpha/SKILL.md": skill("alpha"),
+    });
+    expect(await cli(root, [])).toEqual({
+      code: 2,
+      stdout: "",
+      stderr:
+        "skill-check: rule `block-allowed-tools` in target `skills`: option `require` must list at least one `allowed-tools` entry\n",
+    });
+  });
+
   it("exits 2 on an unknown flag", async () => {
     const out = await cli(project(), ["--nope"]);
     expect(out.code).toBe(2);

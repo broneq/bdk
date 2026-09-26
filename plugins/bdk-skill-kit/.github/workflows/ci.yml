@@ -52,7 +52,7 @@ jobs:
       - name: Unit, CLI and fixture tests with coverage
         run: pnpm test
 
-      - name: The kit's own skills pass the portable profile
+      - name: The kit's own skills pass every generic rule
         run: pnpm self-check
 
   lint-repo:

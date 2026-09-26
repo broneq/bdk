@@ -85,6 +85,12 @@ export interface Rule<O = Record<string, unknown>> {
     kinds: TargetKind[];
     defaultSeverity: Severity | "off";
     defaultOptions?: O;
+    /**
+     * Checks the merged options of an enabled rule, as the config wrote them and
+     * so not yet of type `O`, and returns what is wrong with them, or undefined.
+     * A problem makes the config invalid (exit 2).
+     */
+    validateOptions?(options: Record<string, unknown>): string | undefined;
     /** Runs once per document of a matching kind. */
     check?(doc: Document, ctx: RuleContext<O>): void;
     /** Runs once over every document of a matching kind (all targets). */
