@@ -7,5 +7,6 @@
     "skill-check.config.ts"
   ],
   "project": ["kernel/**/*.ts", "kernel/**/*.mjs"],
-  "tags": ["-public"]
+  "tags": ["-public"],
+  "ignoreBinaries": ["uv"]
 }

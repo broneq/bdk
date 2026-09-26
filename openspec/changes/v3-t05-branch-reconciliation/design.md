@@ -103,7 +103,7 @@ The `pytest` job in `tests.yml` gains two steps before the tests: `uv run --grou
 
 ### D-9 `docs-sync` repointed at the v3 tree
 
-The skill's step 1 runs `pnpm test:contract` instead of pytest. The docs map drops rows for removed files (`render_startup.py`, `register-graph-repo`, `.mcp.json`, `fragments/tool-tiers/`, `get_settings.py`, `hooks/check-bdk-config/settings.schema.json`, `Makefile`) and repoints settings rows at `kernel/src/ctx/config.ts` and `schema/settings.schema.json`. All page paths become `docs/guide/...`. The skill stays under `.claude/skills/`, so it does not ship with the plugin. `skill-check` targets only `skills/` and `agents/`.
+The skill's step 1 runs `pnpm test:contract` instead of pytest. The docs map drops rows for removed files (`render_startup.py`, `register-graph-repo`, `.mcp.json`, `fragments/tool-tiers/`, `get_settings.py`, `hooks/check-bdk-config/settings.schema.json`, `Makefile`) and repoints settings rows at `kernel/src/ctx/config.ts` and `schema/settings.json`. Page paths are relative to `docs/guide/`. The skill stays under `.claude/skills/`, so it does not ship with the plugin. `skill-check` targets only `skills/` and `agents/`.
 
 ### D-10 Small items
 

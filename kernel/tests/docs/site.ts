@@ -7,7 +7,7 @@ import type { ScalarTag } from "yaml";
 
 import { REPO_ROOT } from "../support/run.ts";
 
-export const SITE_DIR = join(REPO_ROOT, "docs", "guide");
+const SITE_DIR = join(REPO_ROOT, "docs", "guide");
 
 // mkdocs.yml names a Python callable for the mermaid fence; the tag only has
 // to parse, its value is never read.
