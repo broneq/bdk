@@ -61,7 +61,7 @@
 
 ## 12. Two-branch merge
 
-- [ ] 12.1 Write `kernel/tests/contract/state-merge.test.ts` (design D-11, `kernel-state` Two-branch merge): temporary repository with the fixture committed; branches A and B each write through `writeDocument` entries of several types, an attempt opened and closed, evidence, a dispatch package, a report, a different accepted rule and a spec delta for a different capability; `git merge --no-ff` of B into A has no conflict, every merged file validates and ids are unique. Second case: both branches edit the same rule body; the conflict list is exactly that file. Verify both pass, and verify the first fails when D-2 is violated on purpose (both branches write `attempts/<loop>-<target>.md`), then remove the seed
+- [x] 12.1 Write `kernel/tests/contract/state-merge.test.ts` (design D-11, `kernel-state` Two-branch merge): temporary repository with the fixture committed; branches A and B each write through `writeDocument` entries of several types, an attempt opened and closed, evidence, a dispatch package, a report, a different accepted rule and a spec delta for a different capability; `git merge --no-ff` of B into A has no conflict, every merged file validates and ids are unique. Second case: both branches edit the same rule body; the conflict list is exactly that file. Verify both pass, and verify the first fails when D-2 is violated on purpose (both branches write `attempts/<loop>-<target>.md`), then remove the seed
 
 ## 13. Acceptance
 
