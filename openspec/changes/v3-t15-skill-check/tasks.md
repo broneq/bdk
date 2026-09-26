@@ -1,6 +1,6 @@
 # Tasks
 
-Groups 1-6 run in a new local repository `bdk-skill-kit`, a sibling of the BDK checkout. Groups 7-11 run in this BDK worktree. Specs in BDK: `skill-content-checks`, `kernel-architecture` (CI pipeline). The kit's own spec `skill-kit` lives in the kit's OpenSpec root (D-2). Design references are D-n in design.md.
+Groups 1-6 run in a new local repository `bdk-skill-kit`, a sibling of the BDK checkout. Groups 7-11 run in this BDK worktree. Group 12 moves the BDK rules into the kit (D-10, D-12, D-15); task 12.1 runs in the kit. Specs in BDK: `skill-content-checks`, `kernel-architecture` (CI pipeline). The kit's own spec `skill-kit` lives in the kit's OpenSpec root (D-2). Design references are D-n in design.md.
 
 ## 1. Kit scaffold (D-1, D-3)
 
@@ -52,12 +52,12 @@ Groups 1-6 run in a new local repository `bdk-skill-kit`, a sibling of the BDK c
 
 ## 8. BDK rule plugin (D-10, D-12)
 
-- [x] 8.1 Add `tools/skill-check/fixtures/` (clean tree with skills, a gate skill, adapters and a portable craft target, plus `skill-check.fixture.config.ts`) and the contract test in the `contract` Vitest project: clean exit 0, each rule fixture exit 1 with only its rule, fixture set equals enabled rule set, skip below Node 22.18 with a stated reason. Verify it fails for every `bdk/*` rule
-- [x] 8.2 Write the wrapper-regex parity contract test against the `content-wrapper` block of `openspec/specs/kernel-cli/spec.md`, and verify it fails before the plugin exists
-- [x] 8.3 Implement `bdk/wrapper-form` and `bdk/wrapper-allowed-tools` in `tools/skill-check/bdk-rules.ts`, and verify their unit tests, fixtures and the parity test pass
-- [x] 8.4 Write failing unit tests, then implement `bdk/no-mcp-tools`, `bdk/gate-invocation` and `bdk/gate-disallowed-tools`, and verify the unit tests and their fixtures pass
-- [x] 8.5 Write failing unit tests, then implement `bdk/adapter-shape` and `bdk/craft-no-kernel`, and verify the unit tests and their fixtures pass. The `fields` fixture in the portable target sets `disable-model-invocation` and is reported
-- [x] 8.6 Write failing unit tests, then implement `bdk/no-language-commands` (with the `setup` exemption) and `bdk/namespaced-refs` (skills and `subagent_type`, other plugins as warnings), and verify the unit tests and their fixtures pass, with the whole fixture contract test green
+- [x] 8.1 Add `tools/skill-check/fixtures/` (clean tree with skills, a gate skill, adapters and a portable craft target, plus `skill-check.fixture.config.ts`) and the contract test in the `contract` Vitest project: clean exit 0, each rule fixture exit 1 with only its rule, fixture set equals enabled rule set, skip below Node 22.18 with a stated reason. Verify it fails for every `bdk/*` rule (superseded by group 12)
+- [x] 8.2 Write the wrapper-regex parity contract test against the `content-wrapper` block of `openspec/specs/kernel-cli/spec.md`, and verify it fails before the plugin exists (superseded by group 12)
+- [x] 8.3 Implement `bdk/wrapper-form` and `bdk/wrapper-allowed-tools` in `tools/skill-check/bdk-rules.ts`, and verify their unit tests, fixtures and the parity test pass (superseded by group 12)
+- [x] 8.4 Write failing unit tests, then implement `bdk/no-mcp-tools`, `bdk/gate-invocation` and `bdk/gate-disallowed-tools`, and verify the unit tests and their fixtures pass (superseded by group 12)
+- [x] 8.5 Write failing unit tests, then implement `bdk/adapter-shape` and `bdk/craft-no-kernel`, and verify the unit tests and their fixtures pass. The `fields` fixture in the portable target sets `disable-model-invocation` and is reported (superseded by group 12)
+- [x] 8.6 Write failing unit tests, then implement `bdk/no-language-commands` (with the `setup` exemption) and `bdk/namespaced-refs` (skills and `subagent_type`, other plugins as warnings), and verify the unit tests and their fixtures pass, with the whole fixture contract test green (superseded by group 12)
 
 ## 9. BDK config, baseline, CI, pre-commit (D-11, D-13)
 
@@ -68,7 +68,7 @@ Groups 1-6 run in a new local repository `bdk-skill-kit`, a sibling of the BDK c
 
 ## 10. Dev-time lints and docs (D-15)
 
-- [x] 10.1 Reduce `.claude/skills/skill-lint/SKILL.md` to skill-lint 4, 5 and the prose half of 22, and `.claude/skills/agent-lint/SKILL.md` to agent-lint 4, 5, 15, each opening with "run `pnpm skill-check` first". Verify `pnpm skill-check` still exits 0
+- [x] 10.1 Reduce `.claude/skills/skill-lint/SKILL.md` to skill-lint 4, 5 and the prose half of 22, and `.claude/skills/agent-lint/SKILL.md` to agent-lint 4, 5, 15, each opening with "run `pnpm skill-check` first". Verify `pnpm skill-check` still exits 0 (superseded by group 12)
 - [x] 10.2 Update `CLAUDE.md` Development Commands and `CONTRIBUTING.md` with `pnpm skill-check` and the baseline rule (prune, never add). In `.claude/rules/skill-creation-rules.md`, replace the outdated description cap and the `arguments` ban with a pointer to the kit's rules. Verify the documented commands run as written
 - [x] 10.3 Mark T15 in `docs/V3-IMPLEMENTATION-PLAN.md` with the resolved package name, and add the handoff to T42: add the `bdk-craft` portable target and remove the baseline entries of replaced skills. Verify `pnpm format:check` passes
 
@@ -83,3 +83,12 @@ Groups 1-6 run in a new local repository `bdk-skill-kit`, a sibling of the BDK c
   Record the run links in the PR description
 
 - [x] 11.2 Run `openspec validate v3-t15-skill-check --strict` and verify it passes
+
+## 12. Rules into the kit (D-10, D-12, D-15)
+
+- [ ] 12.1 In the kit: generic rules with options for every convention of D-10, the portable-profile check for Claude-only syntax, option validation (exit 2 naming the rule), unit tests and a seeded fixture per rule, the `skill-authoring` additions of D-14 and D-15, and the kit spec updated. Release `v0.2.0` and verify its CI run is green
+- [ ] 12.2 Pin `bdk-skill-kit` to `v0.2.0`, and verify `pnpm install --frozen-lockfile` and `pnpm skill-check --list-rules` show the new rules
+- [ ] 12.3 Rewrite `skill-check.config.ts` with the kit rules and BDK's options, reading the `content-wrapper` regex and the `allowed-tools` pair from `openspec/specs/kernel-cli/spec.md`. Verify that a seeded wrapper violation under `skills/` makes `pnpm skill-check` exit 1, and that a spec copy without the regex block makes it exit 2 naming the spec
+- [ ] 12.4 Remove `tools/skill-check/` and its entries in `tsconfig.json`, `knip.json`, the ESLint scope, `vitest.config.ts` and `.prettierignore`; delete the old baseline and run `pnpm skill-check --baseline-init` into `skill-check.baseline.json`. Verify the baseline lists only v2 skills and agents, and that `pnpm lint && pnpm typecheck && pnpm knip && pnpm format:check && pnpm test:unit && pnpm test:contract` pass
+- [ ] 12.5 Merge `.claude/rules/skill-creation-rules.md` and `skill-structure.md` into `.claude/rules/skills.md` (BDK conventions only, pointing at `/bdk-skill-kit:skill-authoring`), move the `inject.py` details to `.claude/rules/inject-fragments.md`, delete `.claude/skills/skill-lint` and `agent-lint`, and update `CLAUDE.md` and `CONTRIBUTING.md`. Verify no file outside `docs/v3/`, `docs/V3-SKILL-INVENTORY.md` and archived changes names the removed files
+- [ ] 12.6 Update the T15 Resolution in `docs/V3-IMPLEMENTATION-PLAN.md`, including the acceptance departure of D-12, and the PR description. Verify CI on the PR is green and `openspec validate v3-t15-skill-check --strict` passes

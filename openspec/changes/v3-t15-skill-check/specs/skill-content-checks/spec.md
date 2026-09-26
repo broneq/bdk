@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines how BDK checks the content of its own skills and agents with `skill-check`, whose contract is the `skill-kit` spec in the kit repository (`broneq/bdk-skill-kit`, `openspec/specs/skill-kit/spec.md`). It covers the BDK rule plugin, BDK's targets and limits, the baseline for v2 content, the seeded-violation fixtures, and where the check runs (CI, pre-commit).
+Defines how BDK checks the content of its own skills and agents with `skill-check`, whose contract is the `skill-kit` spec in the kit repository (`broneq/bdk-skill-kit`, `openspec/specs/skill-kit/spec.md`). It covers the BDK conventions as settings of the kit's rules, BDK's targets and limits, the baseline for v2 content, and where the check runs (CI, pre-commit).
 
 ## ADDED Requirements
 
@@ -12,8 +12,8 @@ BDK SHALL depend on `bdk-skill-kit` as a devDependency pinned to a release tag. 
 
 - a skills target over `skills/` in the `claude-code` profile;
 - an agents target over `agents/`;
-- the BDK rule plugin;
-- the baseline file.
+- the rule settings of the BDK conventions;
+- the baseline file `skill-check.baseline.json`.
 
 It SHALL override these limits:
 
@@ -26,7 +26,7 @@ It SHALL override these limits:
 #### Scenario: whole-tree run
 
 - **WHEN** `pnpm skill-check` runs on the repository
-- **THEN** it checks every skill under `skills/` and every agent under `agents/` with the generic rules and the `bdk/*` rules, and exits 0
+- **THEN** it checks every skill under `skills/` and every agent under `agents/` with the kit's rules in BDK's settings, and exits 0
 
 ### Requirement: Marketplace listing
 
@@ -37,60 +37,60 @@ The BDK marketplace SHALL list `bdk-skill-kit` with a `github` source, unpinned 
 - **WHEN** `claude plugin validate` runs on BDK's marketplace
 - **THEN** it passes, and the marketplace lists `bdk-skill-kit` with source `{ "source": "github", "repo": "broneq/bdk-skill-kit" }`
 
-### Requirement: BDK rule plugin
+### Requirement: BDK conventions as kit rule settings
 
-BDK SHALL provide a `skill-check` plugin named `bdk` with these rules, each at error severity:
+BDK SHALL carry no rule code of its own. Each BDK convention below SHALL be enforced at error severity by a rule of `bdk-skill-kit`, enabled and parametrised in `skill-check.config.ts`:
 
-| ID                          | Rule                                                                                                                                                   |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `bdk/wrapper-form`          | Every occurrence of a `!` block opener, in prose or in a code fence, is a whole line matching the `content-wrapper` regex of `kernel-cli`, Invocation. |
-| `bdk/wrapper-allowed-tools` | A skill with a `!` block lists the pair `Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)` of the kernel-cli spec in `allowed-tools`.    |
-| `bdk/no-mcp-tools`          | No file names a `mcp__plugin_bdk_` tool.                                                                                                               |
-| `bdk/gate-invocation`       | The gate skills `plan`, `execute`, `close` and `run` set `disable-model-invocation: true`.                                                             |
-| `bdk/gate-disallowed-tools` | The skills `execute` and `close` list `Edit`, `Write` and `NotebookEdit` in `disallowed-tools`.                                                        |
-| `bdk/adapter-shape`         | An agent file in an adapter target is frontmatter plus a body of exactly one sentence.                                                                 |
-| `bdk/craft-no-kernel`       | A skill in a portable target has no `!` block and no `${CLAUDE_PLUGIN_ROOT}` reference.                                                                |
-| `bdk/no-language-commands`  | No hardcoded test runner, build tool or linter command. The `setup` skill is exempt, because stack detection must name what it maps.                   |
-| `bdk/namespaced-refs`       | A reference to a skill or agent of a BDK target is written `/bdk:<name>` or `bdk:<name>`. A reference to another plugin's skill is a warning.          |
+| Convention                 | Setting                                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Kernel wrapper form        | Every occurrence of a `!` block opener, in prose or in a code fence, is a whole line matching the `content-wrapper` regex of `kernel-cli`, Invocation. |
+| Wrapper permission         | A skill with a `!` block lists the `allowed-tools` pair that `kernel-cli`, Invocation names.                                                           |
+| No MCP tools               | No file names a `mcp__plugin_bdk_` tool.                                                                                                               |
+| User-only gates            | The skills `plan`, `execute`, `close` and `run` set `disable-model-invocation: true`.                                                                  |
+| Read-only gates            | The skills `execute` and `close` list `Edit`, `Write` and `NotebookEdit` in `disallowed-tools`.                                                        |
+| Adapter shape              | An agent file in an adapter target is frontmatter plus a body of exactly one sentence.                                                                 |
+| Portable craft skills      | A skill in a portable target has no `!` block and no `${CLAUDE_PLUGIN_ROOT}` reference.                                                                |
+| Language-agnostic commands | No hardcoded test runner, build tool or linter command. The `setup` skill is exempt, because stack detection must name what it maps.                   |
+| Namespaced references      | A reference to a skill or agent of a BDK target is written `/bdk:<name>` or `bdk:<name>`. A reference to another plugin's skill is a warning.          |
 
 #### Scenario: v2 inject block
 
 - **WHEN** a skill contains the line ``!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.x --then f.md` ``
-- **THEN** a `bdk/wrapper-form` error is reported for that line
+- **THEN** `pnpm skill-check` reports a wrapper form error for that line
 
 #### Scenario: correct wrapper without its permission rule
 
 - **WHEN** a skill contains a line matching the `content-wrapper` regex and its `allowed-tools` lacks the kernel rule
-- **THEN** `bdk/wrapper-allowed-tools` reports an error and `bdk/wrapper-form` reports nothing
+- **THEN** `pnpm skill-check` reports a permission error naming the missing rule, and no wrapper form error
 
 #### Scenario: unquoted kernel rule
 
 - **WHEN** a skill with the wrapper lists `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *) Bash(echo *)`, without the quotes around the path
-- **THEN** `bdk/wrapper-allowed-tools` reports an error naming the quoted rule
+- **THEN** `pnpm skill-check` reports a permission error naming the quoted rule
 
 #### Scenario: gate skill invocable by the model
 
 - **WHEN** the skill `execute` omits `disable-model-invocation: true`
-- **THEN** a `bdk/gate-invocation` error is reported
+- **THEN** `pnpm skill-check` reports an error
 
 #### Scenario: bare reference to a BDK skill
 
 - **WHEN** a skill body tells the reader to run `/commit` and `commit` is a BDK skill
-- **THEN** a `bdk/namespaced-refs` error asks for `/bdk:commit`
+- **THEN** `pnpm skill-check` reports an error asking for `/bdk:commit`
 
-### Requirement: Wrapper regex cannot drift from the spec
+### Requirement: Wrapper form read from the spec
 
-A contract test SHALL assert that the regex applied by `bdk/wrapper-form` equals the ` ```regex content-wrapper ` block of `openspec/specs/kernel-cli/spec.md`, and that the rule pair required by `bdk/wrapper-allowed-tools` equals the `allowed-tools` pair that section names.
+`skill-check.config.ts` SHALL read the ` ```regex content-wrapper ` block and the `allowed-tools` pair from the Invocation section of `openspec/specs/kernel-cli/spec.md` when it loads, and SHALL hold no copy of either. When the block or the pair cannot be found, loading the config SHALL fail, so `pnpm skill-check` exits 2 with a reason naming the spec.
 
 #### Scenario: spec edited alone
 
-- **WHEN** the `content-wrapper` regex in the spec changes and the plugin does not
-- **THEN** the contract test fails
+- **WHEN** the `content-wrapper` regex in the spec changes and nothing else does
+- **THEN** the next `pnpm skill-check` run applies the new regex
 
-#### Scenario: permission pair edited alone
+#### Scenario: spec block missing
 
-- **WHEN** the `allowed-tools` pair in the kernel-cli spec changes and the plugin does not
-- **THEN** the contract test fails
+- **WHEN** the ` ```regex content-wrapper ` block is removed or renamed in the spec
+- **THEN** `pnpm skill-check` exits 2 and names the spec file
 
 ### Requirement: Baseline for v2 content
 
@@ -106,30 +106,19 @@ BDK SHALL keep a `skill-check` baseline that holds only findings in v2 skills an
 - **WHEN** a v2 skill directory is removed and its baseline entries remain
 - **THEN** `pnpm skill-check` reports `baseline-stale` and exits 1 until the entries are pruned
 
-### Requirement: Seeded violations for every rule
+### Requirement: Rule tests live in the kit
 
-BDK SHALL carry one clean fixture tree and one fixture per enabled rule. Each rule fixture SHALL be the clean tree with exactly one seeded violation of that rule. The clean tree SHALL contain a skills target, an agents target with adapters, and a portable target that stands in for `bdk-craft`. A contract test SHALL run the `skill-check` CLI with the BDK plugin over each fixture and assert:
+BDK SHALL carry no rule tests and no seeded-violation fixtures. Every kit rule that BDK's config enables SHALL have unit tests and a seeded-violation fixture in the kit's own CI, and BDK SHALL pin only a kit release tag whose CI run is green. The kit's option validation SHALL reject a malformed option in BDK's config with exit 2.
 
-- the clean tree exits 0 without findings;
-- each rule fixture exits 1, and the rule ID of every finding is that fixture's rule;
-- the set of rule fixtures equals the set of rules the fixture config enables, both generic and `bdk/*`.
+#### Scenario: seeded violations at the pinned tag
 
-The test SHALL skip, with a stated reason, on a Node line that cannot load a TypeScript config (below 22.18).
+- **WHEN** BDK pins a kit release tag
+- **THEN** the kit's CI run on that tag shows exit 1 for a seeded violation of every rule, including a `fields` error for a Claude-only field in a portable skill
 
-#### Scenario: CI fails on each seeded rule
+#### Scenario: malformed option
 
-- **WHEN** the contract step runs the fixture test
-- **THEN** every rule fixture produces exit 1 with findings of only its own rule
-
-#### Scenario: portable target rejects a Claude-only field
-
-- **WHEN** the fixture for `fields` in the portable target has a craft skill that sets `disable-model-invocation`
-- **THEN** `skill-check` exits 1 with a `fields` error naming the portable profile
-
-#### Scenario: new rule without a fixture
-
-- **WHEN** a rule is enabled in the fixture config and has no fixture directory
-- **THEN** the contract test fails and names the rule
+- **WHEN** BDK's config gives a kit rule an option of the wrong shape
+- **THEN** `pnpm skill-check` exits 2 and names the rule
 
 ### Requirement: Where the check runs
 

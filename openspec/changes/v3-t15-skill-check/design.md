@@ -20,13 +20,14 @@ See proposal.md, Why. Current state:
 **Goals:**
 
 - One deterministic pass tells an author, a pre-commit hook and CI the same thing, with a rule ID per finding.
-- A BDK rule that restates a spec (the wrapper regex) cannot drift from that spec.
+- BDK does not restate a spec it checks against: the wrapper regex and its permission pair are read from `kernel-cli`.
+- Rule logic and rule tests live in one place, the kit. BDK holds only data: targets, options, baseline.
 - The authoring guidance an agent reads and the rules CI enforces are one catalogue. Every checkable guideline has a rule, and every rule is explained in the guidance.
 - v2 content does not block v3 work, and it cannot grow new violations.
 
 **Non-Goals:**
 
-- Heuristic or model-judged checks (T02 dev-time rows). They stay in the dev-time lints.
+- Heuristic or model-judged checks (T02 dev-time rows). They are authoring guidance in the kit's `skill-authoring`, not rules.
 - Autofix. The checker reports and never edits.
 - Validating hooks, `plugin.json` or `marketplace.json`. `claude plugin validate` owns those.
 
@@ -49,7 +50,7 @@ Alternatives:
 
 ### D-2 Spec home: the kit's own `openspec/specs/skill-kit`
 
-The kit's contract is a living spec in an OpenSpec root inside the kit repository, `openspec/specs/skill-kit/spec.md`, next to the code it specifies (user decision during apply). Later kit changes run as OpenSpec Changes in the kit, so a new rule, its fixture, its guideline in `skill-authoring` and its catalogue row land in one PR of one repository. The kit is a public, standalone package whose README points at that spec. BDK keeps only what is BDK's: `skill-content-checks` (the `bdk/*` rules, BDK's config, baseline, fixtures, CI and pre-commit), which cites the kit's spec at a release tag. The kit's spec entered as a baseline living spec when the kit repository was created, so this Change carries no `skill-kit` delta.
+The kit's contract is a living spec in an OpenSpec root inside the kit repository, `openspec/specs/skill-kit/spec.md`, next to the code it specifies (user decision during apply). Later kit changes run as OpenSpec Changes in the kit, so a new rule, its fixture, its guideline in `skill-authoring` and its catalogue row land in one PR of one repository. The kit is a public, standalone package whose README points at that spec. BDK keeps only what is BDK's: `skill-content-checks` (BDK's rule settings, config, baseline, CI and pre-commit), which cites the kit's spec at a release tag. The kit's spec entered as a baseline living spec when the kit repository was created, so this Change carries no `skill-kit` delta.
 
 Alternative: the spec in BDK's `openspec/specs/skill-kit`, as first proposed. BDK is the planning home of the BDK family and one T15 Change could have archived everything. But every kit change would then need a PR in two repositories, the spec could drift from the code it lives apart from, and an outside contributor would have to open a Change in BDK. Lost.
 
@@ -158,58 +159,62 @@ Alternative: detect a CLI-fronting skill by prose, such as a skill whose body is
 
 Alternative: BMAD's severity ladder CRITICAL / HIGH / MEDIUM / LOW with `--strict` at HIGH+. Two levels plus per-rule overrides express the same thing with less to explain. Lost.
 
-### D-10 BDK rule plugin (`tools/skill-check/bdk-rules.ts`)
+### D-10 BDK conventions as options of generic kit rules
 
-| ID                          | Checks                                                                                                                                                                                  | Source                             |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `bdk/wrapper-form`          | every occurrence of `` !` `` (in code fences too, since the host runs them there) is a whole line that matches the `content-wrapper` regex                                              | `kernel-cli` Invocation, V1-5      |
-| `bdk/wrapper-allowed-tools` | a skill with a `!` block lists the pair `Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)` in `allowed-tools` (kernel-cli Invocation, parity-tested)                      | HOST-FACTS `allowed-control`       |
-| `bdk/no-mcp-tools`          | no `mcp__plugin_bdk_` in frontmatter or body                                                                                                                                            | T03, `plugin-tooling`              |
-| `bdk/gate-invocation`       | skills named in option `gates` (default `plan`, `execute`, `close`, `run`) set `disable-model-invocation: true`                                                                         | T1                                 |
-| `bdk/gate-disallowed-tools` | skills in option `readOnlyGates` (default `execute`, `close`) list `Edit`, `Write` and `NotebookEdit` in `disallowed-tools`                                                             | P9, skill-lint 22 fixed list       |
-| `bdk/adapter-shape`         | an agent file in an adapter target is frontmatter plus a body of exactly one sentence (one non-empty line, one terminal `.`)                                                            | plan scope (adapters)              |
-| `bdk/craft-no-kernel`       | a skill in a portable target has no `` !` `` and no `${CLAUDE_PLUGIN_ROOT}`                                                                                                             | R-1 criterion                      |
-| `bdk/no-language-commands`  | no hardcoded test, build or lint command from the skill-lint 6 denylist; option `allow` names skills that are exempt (`setup`, the stack-detection exception of `portability-check.md`) | skill-lint 6, agent-lint 6         |
-| `bdk/namespaced-refs`       | a `/<name>` or a `subagent_type` value naming a skill or agent of a `bdk` target is written `/bdk:<name>` or `bdk:<name>`; `/<other-plugin>:<name>` is a warning                        | skill-lint 8, 16, agent-lint 7, 14 |
+The BDK conventions of `skill-content-checks` are settings of generic kit rules (kit `v0.2.0`), not a BDK plugin. Each kit rule takes the BDK-specific part as an option:
 
-`bdk/wrapper-form` holds the regex as a constant. A contract test in BDK extracts the ` ```regex content-wrapper ` block from `openspec/specs/kernel-cli/spec.md` and asserts equality, so a spec edit without a plugin edit fails CI.
+| BDK convention                  | Kit rule shape                                                                  | Source                             |
+| ------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------- |
+| Kernel wrapper form             | `!` blocks must match a `pattern` (in code fences too); no pattern forbids them | `kernel-cli` Invocation, V1-5      |
+| Wrapper permission              | a skill with a `!` block lists every `require`d `allowed-tools` entry           | HOST-FACTS `allowed-control`       |
+| No MCP tools, language commands | forbidden terms, anywhere or only in code, with per-term exempt names           | T03, skill-lint 6, agent-lint 6    |
+| User-only and read-only gates   | named skills must set a field to a value or include listed entries              | T1, P9, skill-lint 22 fixed list   |
+| Adapter shape                   | an agent body of at most N lines and N sentences, ending with a period          | plan scope (adapters)              |
+| Portable craft skills           | the portable profile rejects `!` blocks and `${CLAUDE_*}` variables             | R-1 criterion                      |
+| Namespaced references           | bare references to names of the checked targets must carry a `namespace`        | skill-lint 8, 16, agent-lint 7, 14 |
 
-Alternative: the plugin reads the regex from the spec at run time. A skill check would then depend on the spec's Markdown layout at every pre-commit. The contract test gives the same no-drift guarantee with a fixed runtime input. Lost.
+The final rule IDs and option shapes are the kit's (`openspec/specs/skill-kit` at `v0.2.0`). The kit tests every rule with unit tests and a seeded fixture, and rejects a malformed option with exit 2.
+
+`skill-check.config.ts` reads the ` ```regex content-wrapper ` block and the `allowed-tools` pair from `openspec/specs/kernel-cli/spec.md` when it loads and passes them as options. A missing block fails the load, so the run exits 2 naming the spec.
+
+Alternatives:
+
+- **A BDK plugin in `tools/skill-check/` with its own unit tests, fixtures and a parity test** (first implementation). It re-tests in BDK what is the kit's job, and the kit exists to keep that separation. Lost (user decision).
+- **The BDK plugin moved into the kit as it is.** The kit would then carry BDK's gate names, prefix and wrapper, and stop being generic. Lost.
+- **A regex constant in the config plus a parity test against the spec.** Two copies and a test to keep them equal. Reading the spec removes the copy; a layout change in the spec fails loudly with exit 2 instead of drifting. The cost is a few milliseconds of Markdown parsing per run. Lost.
 
 ### D-11 BDK configuration
 
 `skill-check.config.ts` at the repository root declares:
 
 - target `skills` over `skills/` in the claude-code profile;
-- target `agents` over `agents/`, with `bdk/adapter-shape` on;
-- plugin `./tools/skill-check/bdk-rules.ts`;
-- baseline `tools/skill-check/baseline.json`.
+- target `agents` over `agents/`, with the adapter shape on;
+- the rule settings of D-10, with the wrapper regex and pair read from `kernel-cli`;
+- baseline `skill-check.baseline.json` at the repository root.
 
 Overrides against the generic defaults:
 
 - `line-limit` 200 (S1);
-- `description` 250, BDK's listing budget from `.claude/rules/skill-creation-rules.md`, kept below the host cap of 1,536;
+- `description` 250, BDK's listing budget (`.claude/rules/skills.md`), kept below the host cap of 1,536;
 - `description-front-loaded` at error;
 - `require-model` on for agents;
-- `layout.allowed` = `references`, `examples`, `scripts`, `assets` (`skill-structure.md` without v2 `fragments/`, which dies with `inject.py`; v2 skills that still use it sit in the baseline).
+- `layout.allowed` = `references`, `examples`, `scripts`, `assets` (without v2 `fragments/`, which dies with `inject.py`; v2 skills that still use it sit in the baseline).
 
-The `bdk-craft` target (portable profile, `bdk/craft-no-kernel`) is added by T42 together with its directory. T15 proves the configuration on a fixture tree with a craft target.
+The `bdk-craft` target (portable profile) is added by T42 together with its directory. The kit's fixtures prove the portable profile.
 
 Alternative: create an empty `craft/skills/` now so that the real config carries the target. That is a directory whose location T42 decides, created only to satisfy a config. Lost.
 
-### D-12 Seeded violations and the rule-coverage test
+### D-12 Seeded violations live in the kit
 
-`tools/skill-check/fixtures/clean/` is a minimal tree with a `bdk` skill, a gate skill, an adapter and a craft skill that pass every rule. `tools/skill-check/fixtures/violations/<rule-id>/` is the clean tree with one seeded violation. A Vitest contract test (added to the `contract` project) runs the installed `skill-check` CLI with the BDK plugin and the fixture config and asserts:
+BDK carries no fixtures and no rule tests. The kit's CI runs a seeded-violation fixture per rule, plus the coverage test that fixture names equal the rule catalogue, on every commit and tag. BDK pins only a tag with a green run.
 
-- clean: exit 0 and no finding;
-- each violation directory: exit 1 and a finding set whose only rule ID is that directory's name;
-- the fixture directory names equal the set of rule IDs that the config enables (generic plus `bdk/*`), so a new rule without a fixture fails.
+This departs from the plan's acceptance wording, "BDK's CI … fails on a seeded violation of each rule" (user decision): the seeded run is the kit's CI at the pinned tag, and BDK's CI runs that tag over BDK's tree.
 
-The kit carries its own fixture suite for the generic rules. BDK's suite re-covers them through the CLI because the acceptance signal asks BDK's CI to fail on each seeded rule.
+Alternative: one seeded-violation test in BDK. It re-tests the kit in BDK, which the separation exists to avoid. Lost.
 
 ### D-13 CI and pre-commit
 
-- **CI.** The `skill-check` job replaces its stub. It sets up pnpm and Node from `.nvmrc`, runs `pnpm install --frozen-lockfile` and `pnpm skill-check` (`skill-check` with the root config). The fixture test runs in the existing `contract` step. That step also runs on 22.13, where a `.ts` plugin cannot load, so the fixture test skips below 22.18 with a stated reason. The contract step on 24 and 26 runs it, and the `skill-check` job covers the real tree.
+- **CI.** The `skill-check` job replaces its stub. It sets up pnpm and Node from `.nvmrc`, runs `pnpm install --frozen-lockfile` and `pnpm skill-check` (`skill-check` with the root config).
 - **Pre-commit.** lint-staged gets `"{skills,agents}/**": () => "pnpm skill-check"`. The function form runs one whole-tree check, because `unique-names`, `unused-files` and `references` need the whole tree and not only the staged files. The run takes well under a second.
 
 Alternative for the pre-commit hook: pass only the staged files. Project rules would then see a partial tree. Lost.
@@ -223,27 +228,26 @@ Alternative for the pre-commit hook: pass only the staged files. Project rules w
   - `process-vs-knowledge.md`: the T02 test and the R-6 admission rule;
   - `cli-fronting.md`: R-13.
 
-  Each guideline that a rule checks ends with the rule ID in backticks. A kit test asserts that the set of generic rule IDs in the catalogue equals the set of IDs cited in `skill-authoring`, so a rule without guidance, or guidance that cites a missing rule, fails the kit's CI. BDK-specific rules are explained in BDK's `.claude/rules/`, not in the kit.
+  Each guideline that a rule checks ends with the rule ID in backticks. A kit test asserts that the set of generic rule IDs in the catalogue equals the set of IDs cited in `skill-authoring`, so a rule without guidance, or guidance that cites a missing rule, fails the kit's CI. BDK-specific conventions are in BDK's `.claude/rules/skills.md`, which points at `skill-authoring` for everything generic.
+
+  From `v0.2.0` the skill also holds the generic Claude Code authoring knowledge BDK's rules used to carry: string substitutions, no tool guidance in prose, subagent dispatch, skill-scoped hooks, sharing files across skills, portability of reusable skills, and the read-only statement of agents.
 
 Alternative: the authoring guidance in `bdk-craft` (T42). The guidance and the checker would then ship in different plugins, and the sync test would cross repositories. Lost (user decision to put it in T15 and in the kit).
 
-### D-15 Dev-time lints shrink to judgment
+### D-15 Dev-time lints removed, rules reduced to BDK
 
-`.claude/skills/skill-lint` and `agent-lint` keep only the rows T02 section 9 classes "dev-time":
+`.claude/skills/skill-lint` and `agent-lint` are deleted. Their judgment checks (project-specific references and phrasing, stated tool invariants, read-only agents) are generic authoring guidance and move to the kit's `skill-authoring`. `.claude/rules/skill-creation-rules.md` and `skill-structure.md` merge into `.claude/rules/skills.md`, which holds only BDK conventions and points at `/bdk-skill-kit:skill-authoring`. The `inject.py` details move to `.claude/rules/inject-fragments.md`. That leaves one owner per piece of guidance.
 
-- skill-lint 4, 5 and the prose-invariant half of 22;
-- agent-lint 4, 5, 15.
-
-Each opens by telling the reader to run `pnpm skill-check` first for the deterministic rules. The v2-only checks classed "dropped" (skill-lint 7, 18, 21; agent-lint 16) are removed with the rest. That leaves one owner per check.
-
-Alternative: leave the lints as they are until T42. Two owners of one check drift. skill-lint 11 already disagrees with the host. Lost.
+Alternative: keep the lints with only the judgment checks (first implementation). They restate what `skill-authoring` teaches. Lost (user decision).
 
 ## Risks / Trade-offs
 
 - [The host adds or renames a frontmatter field and the kit reports a valid field as unknown] → The field lists are one dated file (D-6), and the error message names the profile and the URL to recheck. A fix is a patch release plus a tag bump in BDK.
 - [Fingerprints collide or break when the triggering text is reworded] → A reworded violation shows up as new plus stale. That is the intended outcome: a touched v2 violation must be fixed or re-baselined visibly.
 - [Git-tag dependencies cannot be updated by Dependabot as easily as npm ones] → The kit is BDK's own. A kit release PR is followed by a one-line tag bump in BDK, and the fixture test catches a behaviour change.
-- [`.ts` config needs Node >= 22.18 while BDK's contract step also runs on 22.13] → The fixture test skips below 22.18 with a stated reason (D-13). The `skill-check` job and the other matrix lines cover it.
+- [`.ts` config needs Node >= 22.18] → Only the `skill-check` job and the pre-commit hook load it; the job uses `.nvmrc`.
+- [The config depends on the Markdown layout of the kernel-cli spec] → A missing block fails the load with exit 2 naming the spec, so a layout change cannot pass silently.
+- [BDK's option values (gate names, command lists) have no test in BDK] → The kit validates option shapes (exit 2). A wrong value such as a misspelled gate name is caught only by review.
 - [`description-front-loaded` filler list and trigger regex are English-only] → They are options. The authoring skill states the convention. Projects in other languages override the option.
 - [The `!` detection in code fences flags documentation examples] → No BDK skill has a reason to show a `!` block example. A skill that must can write the example indented, without the leading `!` at column 0.
 - [Creating a public repository is outward-facing] → The repository is created and `v0.1.0` is cut only after the user confirms during apply.
@@ -254,11 +258,11 @@ Alternative: leave the lints as they are until T42. Two owners of one check drif
 2. With the user's confirmation, create `broneq/bdk-skill-kit`, push, let CI pass and tag `v0.1.0` (release-please or a manual first tag).
 3. In BDK:
    1. add the devDependency;
-   2. add the plugin, config and fixtures;
+   2. add the config with the rule settings;
    3. generate the baseline over the v2 tree with `--baseline-init`;
    4. switch the CI step and add the pre-commit hook;
    5. add the marketplace entry;
-   6. reduce the lints.
+   6. remove the lints and reduce the rules to BDK (D-15).
 
 Rollback: revert the BDK commits. The CI step returns to the stub. The kit repository can stay; nothing in BDK's runtime depends on it.
 
