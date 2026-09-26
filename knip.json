@@ -3,6 +3,7 @@
   "entry": [
     "kernel/src/main.ts",
     "kernel/src/shared/*/index.ts",
+    "kernel/scripts/export-schemas.ts",
     "skill-check.config.ts",
     "tools/skill-check/fixtures/skill-check.fixture.config.ts"
   ],

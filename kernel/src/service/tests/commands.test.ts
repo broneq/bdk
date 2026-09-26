@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import commands from "../../../../schema/cli/commands.json" with { type: "json" };
+import { settingsRegistry } from "../../registrations.ts";
 import { createRegistry, loadIndex } from "../../shared/registry/index.ts";
 import { memoryStore } from "../../shared/store/index.ts";
 import { serviceRegistrations } from "../index.ts";
@@ -11,7 +12,12 @@ const index = loadIndex(commands);
 const store = memoryStore({ "/plugins/bdk/.claude-plugin/plugin.json": '{"version":"3.0.0"}' });
 const registry = createRegistry(
   index,
-  serviceRegistrations({ store, pluginRoot: "/plugins/bdk", contract: index.contract }),
+  serviceRegistrations({
+    store,
+    pluginRoot: "/plugins/bdk",
+    contract: index.contract,
+    settings: settingsRegistry(),
+  }),
 );
 
 async function run(argv: string[], nodeVersion: string, workTree: string | undefined) {
@@ -19,7 +25,13 @@ async function run(argv: string[], nodeVersion: string, workTree: string | undef
   const code = await registry.run({
     argv,
     cwd: "/work/repo",
-    runtime: { nodeVersion, workTree: () => workTree },
+    runtime: {
+      nodeVersion,
+      env: {},
+      platform: "linux",
+      home: "/home/dev",
+      workTree: () => workTree,
+    },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });
   return { code, stdout };

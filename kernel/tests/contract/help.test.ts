@@ -15,7 +15,13 @@ async function help(record: CommandRecord): Promise<{ code: number; text: string
   const code = await registry.run({
     argv: [...record.argv, "--help"],
     cwd: "/nowhere",
-    runtime: { nodeVersion: "20.0.0", workTree: () => undefined },
+    runtime: {
+      nodeVersion: "20.0.0",
+      env: {},
+      platform: "linux",
+      home: "/home/dev",
+      workTree: () => undefined,
+    },
     streams: { stdout: (chunk) => (text += chunk), stderr: () => undefined },
   });
   return { code, text };

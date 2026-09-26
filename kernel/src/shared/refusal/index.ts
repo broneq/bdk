@@ -106,10 +106,32 @@ export class KernelRefusal extends Error {
   }
 }
 
-/** `schema/cli/common/refusal.json`, narrowed to the catalogue; a contract test keeps them equal. */
-export const refusalSchema = z.strictObject({
-  refused: z.literal(true),
-  rule: z.enum(RULES),
-  why: z.string().min(1),
-  instead: z.array(z.string().min(1)).min(1),
-});
+/** Generates `schema/cli/common/refusal.json` (kernel/scripts/export-schemas.ts). */
+export const refusalSchema = z
+  .strictObject({
+    refused: z.literal(true),
+    rule: z.enum(RULES).meta({
+      description:
+        "Stable identifier from the rule catalogue. The class before the slash maps to the exit code: policy, guard, kernel = 2; input = 3; state = 4; runtime = 5.",
+    }),
+    why: z
+      .string()
+      .min(1)
+      .meta({ description: "One sentence carrying the concrete values (ids, counts, paths)." }),
+    instead: z.array(z.string().min(1)).min(1).meta({
+      description: "Concrete commands or actions the caller can take next, most useful first.",
+    }),
+  })
+  .meta({
+    title: "Kernel error object",
+    description:
+      "Printed on stdout by every command that exits 2, 3, 4 or 5. Exactly four fields (design, UX Touchpoints: Failure surface; contract section 4).",
+    examples: [
+      {
+        refused: true,
+        rule: "policy/no-active-change",
+        why: "no active Change on branch feat/login",
+        instead: ['/bdk:change new "<intent>"', "bdk change resume <id>"],
+      },
+    ],
+  });

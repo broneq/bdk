@@ -156,7 +156,7 @@ A second copy of those prompts here is exactly how the two review call sites dri
 
 ## Verifier dispatches
 
-Every verifier dispatch passes **paths and intent**, never a resolved command. Both agents preload the project's tier/scoping policy (`bdk-lint-tools`, `bdk-test-tools`) and pick the command form themselves — which is what keeps the scoping correct when `.bdk/settings.json` changes, and what stops a stale command string in this file from being run for a year.
+Every verifier dispatch passes **paths and intent**, never a resolved command. Both agents preload the project's tier/scoping policy (`bdk-lint-tools`, `bdk-test-tools`) and pick the command form themselves — which is what keeps the scoping correct when the BDK settings change, and what stops a stale command string in this file from being run for a year.
 
 ### Static-analyse (per group)
 

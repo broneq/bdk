@@ -1,5 +1,7 @@
 // `kernel-cli/service` through the committed bundle: every exit code and rule
 // the two records declare, the scenarios of the spec, the JSON Schemas.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createFixture } from "../../../tests/support/fixture.ts";
@@ -51,10 +53,7 @@ describe("bdk version", () => {
 
 describe("bdk doctor", () => {
   it("exit 0: a healthy project is ok with no findings", () => {
-    const result = runBdk(
-      ["doctor", "--json"],
-      fixture({ files: { ".bdk/settings.yaml": "" } }).root,
-    );
+    const result = runBdk(["doctor", "--json"], fixture({ files: { ".bdk/": "" } }).root);
     expect(result.code).toBe(0);
     expect(validDoctor(result.json), JSON.stringify(validDoctor.errors)).toBe(true);
     expect(result.json).toMatchObject({ ok: true, layout: "v3", findings: [] });
@@ -84,6 +83,37 @@ describe("bdk doctor", () => {
     const result = runBdk(["doctor", "--fix"], root);
     expect(result.code).toBe(0);
     expect(result.stdout).toContain("warn v2-layout: .bdk/runs/ found\n  repair: bdk import\n");
+  });
+
+  it("exit 0: a settings file without modeline is a schema-modeline finding", () => {
+    const root = fixture({ files: { ".bdk/settings.yaml": "languages: [go]\n" } }).root;
+    const result = runBdk(["doctor", "--json"], root);
+    expect(result.code).toBe(0);
+    expect(validDoctor(result.json), JSON.stringify(validDoctor.errors)).toBe(true);
+    expect(result.json).toMatchObject({ ok: false });
+    expect((result.json as { findings: unknown[] }).findings).toContainEqual({
+      id: "schema-modeline",
+      level: "warn",
+      summary: expect.stringContaining(".bdk/settings.yaml") as unknown,
+      repair: "bdk doctor --fix",
+    });
+  });
+
+  it("exit 0: --fix repairs the schema findings", () => {
+    const content = "# mine\nlanguages: [go]\n";
+    const root = fixture({ files: { ".bdk/settings.yaml": content } }).root;
+    const result = runBdk(["doctor", "--fix", "--json"], root);
+    expect(result.code).toBe(0);
+    expect(result.json).toMatchObject({ ok: true, findings: [] });
+    const url = (runBdk(["config", "schema", "--url", "--json"], root).json as { url: string }).url;
+    expect(readFileSync(join(root, ".bdk/settings.yaml"), "utf8")).toBe(
+      `# yaml-language-server: $schema=${url}\n${content}`,
+    );
+    const schema = (runBdk(["config", "schema", "--json"], root).json as { schema: unknown })
+      .schema;
+    expect(
+      JSON.parse(readFileSync(join(root, ".bdk/.machine/schema/settings.json"), "utf8")),
+    ).toStrictEqual(schema);
   });
 
   it("names no uv, uvx or MCP server on a machine without them", () => {

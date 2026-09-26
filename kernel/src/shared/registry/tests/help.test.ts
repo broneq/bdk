@@ -45,7 +45,13 @@ describe("usage", () => {
     const code = await createRegistry(INDEX, []).run({
       argv: ["nope", "--help"],
       cwd: "/",
-      runtime: { nodeVersion: "24.0.0", workTree: () => "/" },
+      runtime: {
+        nodeVersion: "24.0.0",
+        env: {},
+        platform: "linux",
+        home: "/home/dev",
+        workTree: () => "/",
+      },
       streams: { stdout: (text) => (out += text), stderr: () => undefined },
     });
     expect(code).toBe(3);

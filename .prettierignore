@@ -20,5 +20,6 @@ tools/skill-check/fixtures/**/*.md
 .pytest_cache/
 .serena/
 .lavish/
+.claude/worktrees/
 .code-review-graph/
 .venv/

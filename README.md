@@ -25,9 +25,20 @@ BDK ships no MCP server and starts no background process. Skills and agents expl
 
 If you want a semantic code-navigation or code-graph MCP server, configure it yourself at user or project level with `claude mcp add`. BDK neither depends on it nor tells its agents to call it.
 
-### Feature flags
+### Settings
 
-`.bdk/settings.json` `features` accepts `caveman` (terse replies) and `lavish` (decision points in the browser through `lavish-axi`). A key BDK does not declare, including the MCP flags earlier versions wrote, is ignored: the session start shows one warning line naming it and never blocks.
+A project keeps its settings in `.bdk/settings.yaml`, which `/bdk:setup` writes. Its first line is a `yaml-language-server` modeline pointing at the versioned JSON Schema (`schema/settings.json`), so an IDE with the YAML extension completes and validates keys. Four layers merge, lowest first: the plugin defaults, your global file (`$XDG_CONFIG_HOME/bdk/settings.yaml`, else `~/.config/bdk/settings.yaml`; `%APPDATA%\bdk\settings.yaml` on Windows), the project's `.bdk/settings.yaml` and a personal, uncommitted `.bdk/settings.local.yaml`. Maps merge deeply, lists of entries with an `id` merge by `id`, other lists are replaced whole.
+
+The kernel reads the settings; skills and scripts ask it. Skills need Node >= 22.13.
+
+| Command                                             | What it does                                                                           |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `node "$BDK/dist/bdk.mjs" config show [<key>]`      | Prints the merged value as YAML (`--json` for JSON, `--origins` for the layers).       |
+| `node "$BDK/dist/bdk.mjs" config check`             | Validates every layer and refreshes `.bdk/.machine/config/resolved.yaml`.              |
+| `node "$BDK/dist/bdk.mjs" config set <key> <value>` | Edits `.bdk/settings.yaml` (`--global`, `--local` for the other files), comments kept. |
+| `node "$BDK/dist/bdk.mjs" config schema [<module>]` | Prints the JSON Schema; `--url` prints the modeline URL.                               |
+
+`$BDK` is the plugin directory. `features.lavish` (default `true`) turns on decision points in the browser through `lavish-axi`. A key BDK does not declare is refused, with a "did you mean" hint or, for a key earlier versions wrote (`test-tools`, `quality`, `features.caveman`, the MCP flags), the key that replaces it or why it is gone. The session start shows that refusal and never blocks. `.bdk/settings.json` from BDK 2 is not read; `bdk import` (planned) converts it.
 
 ---
 
@@ -37,7 +48,7 @@ Invoke with `/bdk:<skill-name>`:
 
 | Skill                          | Description                                                                                                                                                                                                                                                                                           |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/bdk:setup`                   | Initialize `.bdk/settings.json` — run once per project before using other skills                                                                                                                                                                                                                      |
+| `/bdk:setup`                   | Initialize `.bdk/settings.yaml` — run once per project before using other skills                                                                                                                                                                                                                      |
 | `/bdk:cr`                      | Dynamic code review (3-13 parallel agents based on change size). Reviews the delta since the last review by default; `--full` reviews the whole branch; `--inline` runs every cohort in-session with no subagents; `--base <ref>` reviews against an explicit base (stacked branches)                 |
 | `/bdk:pr-review`               | Review GitHub PRs from URLs: one subagent per PR running `/bdk:cr --inline`, templated inline comments + summary on GitHub, approve / request-changes verdict; stack-aware (diff vs stack parent); `--verify` checks whether previous review comments were implemented and resolves addressed threads |
 | `/bdk:commit`                  | Generate conventional commit message from git changes                                                                                                                                                                                                                                                 |
@@ -128,45 +139,45 @@ Used by skills internally (invoke via `subagent_type`):
 
 ## Test & Lint Tiers
 
-BDK runs checks **scoped to what changed** for the whole length of a plan, and the full suite exactly once, at the end. That only works if it knows which of your commands is the cheap one and how to narrow it — so each `test-tools` / `lint-tools` entry in `.bdk/settings.json` carries a tier and the narrower forms of the same command. `/bdk:setup` fills these in; this is what it writes:
+BDK runs checks **scoped to what changed** for the whole length of a plan, and the full suite exactly once, at the end. That only works if it knows which of your commands is the cheap one and how to narrow it — so each `tools.test` / `tools.lint` entry in `.bdk/settings.yaml` carries a tier and the narrower forms of the same command. `/bdk:setup` fills these in; this is what it writes:
 
-```json
-{
-  "test-tools": [
-    {
-      "type": "vitest",
-      "tier": "fast",
-      "command": "npm run test:unit",
-      "scoped": "npx vitest run {files}",
-      "related": "npx vitest related --run {files}",
-      "failed": "npx vitest run --changed"
-    },
-    {
-      "type": "playwright",
-      "tier": "e2e",
-      "command": "npm run test:e2e",
-      "scoped": "npx playwright test {files}",
-      "failed": "npx playwright test --last-failed"
-    }
-  ],
-  "lint-tools": [
-    {"type": "eslint", "tier": "lint", "command": "npm run lint", "scoped": "npx eslint {files}"},
-    {"type": "tsc", "tier": "typecheck", "command": "npm run typecheck", "incremental": "npx tsc -b --incremental"}
-  ]
-}
+```yaml
+tools:
+  test:
+    - id: vitest
+      tier: fast
+      command: npm run test:unit
+      scoped: npx vitest run {files}
+      related: npx vitest related --run {files}
+      failed: npx vitest run --changed
+    - id: playwright
+      tier: e2e
+      command: npm run test:e2e
+      scoped: npx playwright test {files}
+      failed: npx playwright test --last-failed
+  lint:
+    - id: eslint
+      tier: lint
+      command: npm run lint
+      scoped: npx eslint {files}
+    - id: tsc
+      tier: typecheck
+      command: npm run typecheck
+      incremental: npx tsc -b --incremental
 ```
 
-| Field         | Meaning                                                                                                                                                         |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`        | The runner or framework (`vitest`, `pytest`, `eslint`, `tsc`) — not the package manager. BDK reads it to infer a missing `tier`.                                |
-| `tier`        | `fast` / `e2e` for tests; `lint` / `format` / `typecheck` for lint. Decides **when** the command may run.                                                       |
-| `command`     | The full, unscoped form. The slowest one: reserved for the end-of-plan gate.                                                                                    |
-| `scoped`      | Scoped to a path list. Must contain `{files}`.                                                                                                                  |
-| `related`     | The tests _covering_ given source files, for runners that compute that themselves. Must contain `{files}`. Replaces asking an agent which tests cover a change. |
-| `failed`      | Re-runs only what failed. Used by fix cycles, so a fix attempt does not pay for a suite.                                                                        |
-| `incremental` | Cache-reusing form of a check that cannot take a path list — typecheckers above all.                                                                            |
+| Field         | Meaning                                                                                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | The runner or framework (`vitest`, `pytest`, `eslint`, `tsc`) — not the package manager. Kebab-case, unique in its list; a layer above overrides an entry by it. |
+| `tier`        | `fast` / `e2e` for tests; `lint` / `format` / `typecheck` for lint. Decides **when** the command may run. Required for tests and lint.                           |
+| `command`     | The full, unscoped form. The slowest one: reserved for the end-of-plan gate.                                                                                     |
+| `scoped`      | Scoped to a path list. Must contain `{files}`.                                                                                                                   |
+| `related`     | The tests _covering_ given source files, for runners that compute that themselves. Must contain `{files}`. Replaces asking an agent which tests cover a change.  |
+| `failed`      | Re-runs only what failed. Used by fix cycles, so a fix attempt does not pay for a suite.                                                                         |
+| `incremental` | Cache-reusing form of a check that cannot take a path list — typecheckers above all.                                                                             |
+| `when`        | Optional free text telling the model when this entry is the right one, e.g. when two entries share a tier.                                                       |
 
-Omit any form your tool does not support; BDK falls back cleanly from a missing form. `tier` is optional but should always be set: BDK infers it from the tool name, and an inferred `fast` on an e2e runner means a slow suite runs at every group boundary.
+Omit any form your tool does not support; BDK falls back cleanly from a missing form. `tools.build` entries take the same fields without `tier`.
 
 **What this buys.** Per task, only the task's own test file runs. Per group, only the tests covering the group's changed files — the fast tier alone, unless the group actually touched e2e specs. Fix cycles re-run failures, not suites. Lint runs on the changed files; typecheck reuses its cache between groups. The unscoped everything, e2e included, runs once per plan.
 
@@ -178,38 +189,34 @@ BDK ships language-agnostic rule sets (`code-quality`, `architecture`, `design-p
 
 ### Four usage patterns
 
-**1. Zero config (recommended for most projects).** No settings entry. BDK defaults are used as-is.
+Each rule set is a prompt value: the prompt key `rules/<name>` (`rules/code-quality`, `rules/security`, ...), whose default is the plugin's `rules/<name>.md`.
 
-**2. Extend defaults.** Point `.bdk/settings.json` at a file with project-specific additions:
+**1. Zero config (recommended for most projects).** No file. BDK defaults are used as-is.
 
-```json
-{
-  "quality": {
-    "code-quality": "docs/standards/coding.md"
-  }
-}
+**2. Extend defaults.** Put your additions in `.bdk/prompts/rules/code-quality.md`. The BDK default content is emitted first, then your file's content appended.
+
+**3. Replace defaults.** When your project has its own complete rule set, start the file with frontmatter:
+
+```markdown
+---
+mode: replace
+---
 ```
 
-The BDK default content is emitted first, then your file's content appended.
+**4. Point at existing project doc.** Map the key to any file instead of copying it:
 
-**3. Replace defaults.** When your project has its own complete rule set:
-
-```json
-{
-  "quality": {
-    "code-quality": {
-      "path": "docs/standards/coding.md",
-      "mode": "replace"
-    }
-  }
-}
+```yaml
+prompts:
+  files:
+    rules/code-quality: docs/standards/coding.md
+    rules/security: {path: docs/standards/security.md, mode: replace}
 ```
 
-**4. Point at existing project doc.** Same as pattern 2, but the path can be any existing standards doc — no copy needed.
+The same works one layer up (your global prompts directory next to the global settings file) and one layer down (`.bdk/prompts.local/`, personal). `prompts.dir` moves a layer's prompts directory. `bdk config show prompts.rules/code-quality` lists the files that make up the value.
 
 ### Behaviour on misconfiguration
 
-If `.bdk/settings.json` references a file that doesn't exist (or is unreadable), `inject-rules.py` exits 1 with a clear error. `/bdk:cr` and `/bdk:create-plan` will surface the error and stop, rather than silently dropping the rule context.
+A prompt file whose key BDK does not declare (`.bdk/prompts/rules/secrity.md`) or a `prompts.files` entry that names a missing file is refused by `bdk config check`, with the key, the layer and the file. `/bdk:cr` and `/bdk:create-plan` surface the error and stop, rather than silently dropping the rule context.
 
 ### Adding a new rule category
 
@@ -221,23 +228,18 @@ See `.claude/rules/quality-rules.md` (BDK-dev convention).
 
 Companion to Quality Rules, but keyed by the project's `languages` array rather than a flat rule name. BDK ships per-language principle sheets in `rules/languages/<lang>.md` (React, TypeScript, and JavaScript today; Vue, Python, Go, … follow the same pattern). Each agent that writes or reviews code (`code-reviewer`, `implementer`, `fixer`, `plan-verifier`) preloads them via the `bdk-rules-languages` meta-skill; plan and execution templates pull them through a `<!-- INJECT-LANGUAGES -->` marker.
 
-Declare the project's stack in `.bdk/settings.json`:
+Declare the project's stack in `.bdk/settings.yaml`:
 
-```json
-{
-  "languages": ["react", "typescript"]
-}
+```yaml
+languages: [react, typescript]
 ```
 
-Override or extend a default rule sheet per language (same `extends` | `replace` semantics as quality rules):
+Override or extend a default rule sheet per language through the prompt key `rules/languages/<lang>` (same `extends` | `replace` semantics as quality rules): a file `.bdk/prompts/rules/languages/react.md`, or
 
-```json
-{
-  "languages": ["react"],
-  "language-rules": {
-    "react": "docs/team-react-conventions.md"
-  }
-}
+```yaml
+prompts:
+  files:
+    rules/languages/react: docs/team-react-conventions.md
 ```
 
 A language listed without a matching `rules/languages/<lang>.md` (and no override) is silently skipped — no error.

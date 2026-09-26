@@ -5,7 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import commands from "../../schema/cli/commands.json" with { type: "json" };
-import { registrations } from "../src/registrations.ts";
+import { registrations, settingsRegistry } from "../src/registrations.ts";
 import { loadIndex } from "../src/shared/registry/index.ts";
 import { memoryStore } from "../src/shared/store/index.ts";
 import type { CommandRecord } from "../src/shared/registry/index.ts";
@@ -15,9 +15,12 @@ import { runBdk } from "./support/run.ts";
 
 const index = loadIndex(commands);
 const implemented = new Set(
-  registrations({ store: memoryStore(), pluginRoot: "/", contract: index.contract }).map(
-    (registration) => registration.id,
-  ),
+  registrations({
+    store: memoryStore(),
+    pluginRoot: "/",
+    contract: index.contract,
+    settings: settingsRegistry(),
+  }).map((registration) => registration.id),
 );
 const stubs = index.commands.filter((record) => !implemented.has(record.id));
 

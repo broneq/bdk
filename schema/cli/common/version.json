@@ -4,8 +4,6 @@
   "title": "Kernel version",
   "description": "Output of `bdk version --json` and the version block other outputs embed (contract section 1, design D-7).",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["kernel", "contract", "node"],
   "properties": {
     "kernel": {
       "type": "string",
@@ -13,7 +11,7 @@
       "description": "Full kernel semver, the same value the dispatch package frontmatter carries as kernel-version (P10)."
     },
     "contract": {
-      "type": "integer",
+      "type": "number",
       "const": 3,
       "description": "Contract version: the kernel's major version."
     },
@@ -23,5 +21,7 @@
       "description": "The Node.js version running the kernel, without the leading v."
     }
   },
+  "required": ["kernel", "contract", "node"],
+  "additionalProperties": false,
   "examples": [{ "kernel": "3.0.0", "contract": 3, "node": "24.21.0" }]
 }

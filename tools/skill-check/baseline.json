@@ -187,7 +187,7 @@
   {
     "rule": "bdk/wrapper-form",
     "file": "skills/bdk-lint-tools/SKILL.md",
-    "fingerprint": "1d0a1d689c62a6f8"
+    "fingerprint": "1f718121f1e75893"
   },
   {
     "rule": "bdk/wrapper-form",
@@ -217,7 +217,7 @@
   {
     "rule": "bdk/wrapper-form",
     "file": "skills/bdk-test-tools/SKILL.md",
-    "fingerprint": "ff00b35cfece2558"
+    "fingerprint": "9535ce762757ef87"
   },
   {
     "rule": "bdk/wrapper-form",
@@ -252,11 +252,6 @@
   {
     "rule": "bdk/wrapper-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "2ffd7cf700a7b597"
-  },
-  {
-    "rule": "bdk/wrapper-form",
-    "file": "skills/create-plan/SKILL.md",
     "fingerprint": "82109520b21b2939"
   },
   {
@@ -277,6 +272,11 @@
   {
     "rule": "bdk/wrapper-form",
     "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "a193da908c42a39c"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/create-plan/SKILL.md",
     "fingerprint": "cd8f09d7e29be4a2"
   },
   {
@@ -287,27 +287,27 @@
   {
     "rule": "bdk/wrapper-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "e268c482d37a3adb"
-  },
-  {
-    "rule": "bdk/wrapper-form",
-    "file": "skills/create-plan/SKILL.md",
     "fingerprint": "f3a719b7442dd3f4"
   },
   {
     "rule": "bdk/wrapper-form",
-    "file": "skills/debug/SKILL.md",
-    "fingerprint": "1e562863f24146f8"
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "f56bbe6c44dc73d4"
   },
   {
     "rule": "bdk/wrapper-form",
     "file": "skills/debug/SKILL.md",
-    "fingerprint": "6a5f546fb62229ce"
+    "fingerprint": "2465971179561b14"
   },
   {
     "rule": "bdk/wrapper-form",
     "file": "skills/debug/SKILL.md",
-    "fingerprint": "94128282829aa9bd"
+    "fingerprint": "a25e03c65046a29f"
+  },
+  {
+    "rule": "bdk/wrapper-form",
+    "file": "skills/debug/SKILL.md",
+    "fingerprint": "a6d88ceb2233c67a"
   },
   {
     "rule": "bdk/wrapper-form",
@@ -332,7 +332,7 @@
   {
     "rule": "bdk/wrapper-form",
     "file": "skills/test-driven-development/SKILL.md",
-    "fingerprint": "b39fe5ed7db5b8cc"
+    "fingerprint": "b7338d931b87518e"
   },
   {
     "rule": "bdk/wrapper-form",

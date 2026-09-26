@@ -15,7 +15,7 @@ Files in `rules/` are **language-agnostic principles** injected into skill promp
 ## Do NOT add a rule file for
 
 - Language-specific tooling rules (those belong in skill consumer logic).
-- Project-conventions a single user has (those belong in their `.bdk/settings.json` `quality` override).
+- Project-conventions a single user has (those belong in their `rules/<name>` prompt value).
 - Rules referenced by zero skills (YAGNI).
 
 ## File format
@@ -27,22 +27,20 @@ Files in `rules/` are **language-agnostic principles** injected into skill promp
 
 ## Adding a new category — steps
 
-1. Write `rules/<name>.md` following the format above.
+1. Write `rules/<name>.md` following the format above, and declare the prompt key `rules/<name>` in `kernel/src/ctx/config.ts`.
 2. Add `<!-- INJECT: <name> -->` marker in the consuming skill's template.
 3. Add resolution step to the skill's SKILL.md (see `skills/cr/SKILL.md` Step 2.5 as reference).
 4. Document in `README.md` "Quality Rules" section if user-overridable.
 
 ## Settings schema reminder
 
-User overrides live in `.bdk/settings.json`:
+Each rule file is the default of the prompt key `rules/<name>`, which the kernel must declare (`kernel/src/ctx/config.ts`); an undeclared key is refused. User overrides are prompt values: a file `.bdk/prompts/rules/<name>.md`, or a mapping in `.bdk/settings.yaml`:
 
-```json
-{
-  "quality": {
-    "<name>": "path/to/file.md",
-    "<name>": {"path": "path/to/file.md", "mode": "extends" | "replace"}
-  }
-}
+```yaml
+prompts:
+  files:
+    rules/<name>: path/to/file.md
+    rules/<other>: {path: path/to/file.md, mode: replace}
 ```
 
 `extends` (default) appends user content to BDK default. `replace` discards default.

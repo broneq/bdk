@@ -23,16 +23,19 @@ interface Import {
 export type Matrix = ReadonlyMap<string, ReadonlySet<string> | "all">;
 
 const LAYERS = ["commands", "use-cases", "domain", "store", "render", "schema"] as const;
-type Layer = (typeof LAYERS)[number];
+/** A slice's `config.ts` (its config modules) counts as a layer of its own. */
+const CONFIG = "config";
+type Layer = (typeof LAYERS)[number] | typeof CONFIG;
 
 /** Same-slice edges of the anatomy; a layer always reaches its own directory. */
 const LAYER_MAY_IMPORT: Readonly<Record<Layer, readonly Layer[]>> = {
   commands: ["use-cases", "render", "schema"],
-  "use-cases": ["domain", "store", "schema"],
+  "use-cases": ["domain", "store", "schema", "config"],
   store: ["domain"],
   render: ["domain"],
   schema: ["domain"],
   domain: [],
+  config: [],
 };
 
 /** Layers that import no package and no `node:` module. */
@@ -126,9 +129,11 @@ function place(path: string): Place {
   const layer =
     second === "index.ts"
       ? "index"
-      : (LAYERS as readonly string[]).includes(second)
-        ? (second as Layer)
-        : undefined;
+      : second === `${CONFIG}.ts`
+        ? CONFIG
+        : (LAYERS as readonly string[]).includes(second)
+          ? (second as Layer)
+          : undefined;
   return layer === undefined
     ? { kind: "slice", unit: top, path }
     : { kind: "slice", unit: top, layer, path };
@@ -146,14 +151,17 @@ export function importViolations(files: readonly SourceFile[], matrix: Matrix): 
             edge,
             matrix,
           )
-        : packageProblem(from);
+        : packageProblem(from, edge.specifier);
       if (problem !== undefined) violations.push(`${file.path} -> ${edge.specifier}: ${problem}`);
     }
   }
   return violations;
 }
 
-function packageProblem(from: Place): string | undefined {
+function packageProblem(from: Place, specifier: string): string | undefined {
+  if (from.kind === "slice" && from.layer === CONFIG && specifier !== "zod") {
+    return "config.ts imports only shared/config and zod";
+  }
   if (
     from.kind === "slice" &&
     from.layer !== undefined &&
@@ -186,6 +194,9 @@ function internalProblem(from: Place, to: Place, edge: Import, matrix: Matrix): 
     }
     if (from.layer === "render" || from.layer === "schema")
       return `${from.layer}/ imports domain/ only`;
+    if (from.layer === CONFIG && to.unit !== "config") {
+      return "config.ts imports only shared/config and zod";
+    }
     return undefined;
   }
 

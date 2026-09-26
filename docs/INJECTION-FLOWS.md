@@ -23,7 +23,7 @@ Audit of every dynamic-content injection mechanism in BDK, mapped against the Cl
 | 2   | `STARTUP_INSTRUCTIONS.md` `!\`inject.py --chain\`` blocks      | ❌ **Dead code**                             | High — defeats Tool Tier System                           |
 | 3   | Skill `SKILL.md` `!\`inject.py --chain\`` blocks               | ✅ Works                                     | —                                                         |
 | 4   | Skill `SKILL.md` `!\`inject-rules.py <name>\`` blocks          | ✅ Works                                     | —                                                         |
-| 5   | Skill `SKILL.md` `!\`get_settings.py <kind>\`` blocks          | ✅ Works                                     | —                                                         |
+| 5   | Skill `SKILL.md` `!\`bdk config show tools.<kind>\`` blocks    | ✅ Works                                     | —                                                         |
 | 6   | Skill template `<!-- INJECT: <name> -->` markers               | ✅ Works (instruction-driven, not directive) | —                                                         |
 | 7   | Agent frontmatter `hooks: SessionStart: hook_inject.sh`        | ❌ **Dead code**                             | High — 5 agents lose tool-tier guidance                   |
 | 8   | Agent frontmatter `hooks: PostToolUse: ...`                    | ❌ **Dead code**                             | High — `implementer`, `fixer` lose context-usage tracking |
@@ -146,17 +146,17 @@ The `cr` skill uses an instruction-driven loop (it's prose, the model walks the 
 
 ---
 
-### Flow 5 — Skill `!\`get_settings.py <kind>\`` blocks
+### Flow 5 — Skill `!\`bdk config show tools.<kind>\`` blocks
 
-**Status:** ✅ Works.
+**Status:** ✅ Works. Transitional: T13 replaces these blocks with `ctx skill`.
 
 **Usages:**
 
-- `skills/test-driven-development/SKILL.md:105` — `test-tools`
-- `skills/create-plan/SKILL.md:120,121` — `test-tools`, `lint-tools`
-- `skills/debug/SKILL.md:117,168,169` — `test-tools` (×2), `lint-tools`
+- `skills/bdk-test-tools/SKILL.md`, `skills/test-driven-development/SKILL.md`: `tools.test`
+- `skills/bdk-lint-tools/SKILL.md`: `tools.lint`
+- `skills/create-plan/SKILL.md`, `skills/debug/SKILL.md`: `tools.test`, `tools.lint`
 
-Resolves project-level test/lint commands from `.bdk/settings.json`. Standard skill-runtime injection.
+Prints the project's merged `tools.test` / `tools.lint` list as YAML from the kernel (`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.<kind>`), with a `|| echo "BDK STOP: ..."` fallback. The skill pre-approves it with `allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)`; without both rules the block is left unexpanded. `scripts/get_settings.py`, which read `.bdk/settings.json` before, is deleted.
 
 ---
 
@@ -226,12 +226,11 @@ Note: This refers to **target project's** `.claude/rules/`, not BDK's internal `
 
 ## Two scripts, overlapping purpose
 
-| Script                    | Reads from                                                 | Used by                                                   |
-| ------------------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
-| `scripts/inject.py`       | `fragments/**/*.md` (chain JSON or `--if`/`--prefer`)      | STARTUP, 6 skill `!\`...\`` blocks                        |
-| `scripts/inject-rules.py` | `rules/*.md` (with `.bdk/settings.json` quality overrides) | 1 hardcoded skill block + 1 instruction-driven skill loop |
-| `scripts/get_settings.py` | `.bdk/settings.json` (specific keys)                       | 6 skill `!\`...\`` blocks                                 |
-| `scripts/hook_inject.sh`  | Wraps `inject.py` for hook stdout JSON output              | **Only the dead agent SessionStart blocks** — Flow 7      |
+| Script                    | Reads from                                                | Used by                                                   |
+| ------------------------- | --------------------------------------------------------- | --------------------------------------------------------- |
+| `scripts/inject.py`       | `fragments/**/*.md` (chain JSON or `--if`/`--prefer`)     | STARTUP, 6 skill `!\`...\`` blocks                        |
+| `scripts/inject-rules.py` | `rules/*.md` (with `rules/<name>` prompt value overrides) | 1 hardcoded skill block + 1 instruction-driven skill loop |
+| `scripts/hook_inject.sh`  | Wraps `inject.py` for hook stdout JSON output             | **Only the dead agent SessionStart blocks** — Flow 7      |
 
 `hook_inject.sh` exists exclusively to feed the dead Flow 7. **If Flow 7 is removed, the script is dead too.**
 
@@ -341,7 +340,7 @@ flowchart TD
     Run3 --> InjectRulesPy[(scripts/inject-rules.py)]
     Run4 --> InjectRulesPy
     InjectRulesPy --> Rules[(rules/*.md)]
-    InjectRulesPy --> Settings[(.bdk/settings.json<br/>quality overrides)]
+    InjectRulesPy --> Settings[(bdk config show<br/>rules/&lt;name&gt; prompt values)]
 
     Run1 --> SubCtx
     Run2 --> SubCtx
