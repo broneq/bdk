@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/broneq/bdk-skill-kit/compare/v0.1.2...v0.2.0) (2026-09-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* portable-syntax is on by default and reports Claude Code syntax in portable skills that passed before.
+
+### Features
+
+* add project policy rules and portable-syntax ([297d836](https://github.com/broneq/bdk-skill-kit/commit/297d836f505482d69ff4f30d66fc92fa25ee1425))
+
 ## [0.1.2](https://github.com/broneq/bdk-skill-kit/compare/v0.1.1...v0.1.2) (2026-09-25)
 
 
