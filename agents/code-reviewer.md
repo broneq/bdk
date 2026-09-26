@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Layer-group code reviewer - deep review of assigned source files and their tests, produces structured findings
+description: Layer-group code reviewer - deep review of assigned source files and their tests, produces structured findings. Spawned by /bdk:cr.
 model: sonnet
 skills:
   - bdk-rules-code-quality

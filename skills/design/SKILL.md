@@ -7,16 +7,18 @@ effort: max
 user-invocable: true
 disable-model-invocation: true
 context: main
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*) Bash(lavish-axi *) AskUserQuestion
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(lavish-axi *) AskUserQuestion
 ---
+
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill design 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+
+If no "BDK context: design" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill design` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Design
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py architecture`
-
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py engineering-judgment`
+Apply the `Rules: architecture` and `Rules: engineering-judgment` sections of the BDK context above.
 
 You are the user's **strategic design partner**. Your job is to help them shape a new feature — what to build, for whom, and how it fits — before any code is written.
 
@@ -134,7 +136,7 @@ Iterate through these dimensions. One short turn per dimension; do not gate each
 
 Use `AskUserQuestion` when the answer space is bounded (consistency model, write path, storage choice, etc.). Free-form when genuinely open.
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.lavish --if tool.lavish-axi --then ${CLAUDE_PLUGIN_ROOT}/fragments/decision-tier/lavish.md`
+Ask as the `Asking the user` section of the BDK context above says.
 
 Always surface **2+ alternative product framings** when there's a real choice (e.g., "notify in-app vs email vs both"). Never single-track.
 
@@ -205,7 +207,7 @@ Run these steps:
 
    Use a compact `erDiagram` (or before/after column table) so the delta is readable on its own. Mark each proposal's migration as **additive / backward-compatible** or **breaking**, and call out backfill, downtime, and rollback implications.
 
-3. **Get explicit approval** via `AskUserQuestion` (or the lavish tier above, when injected - the approval gate is the same either way). Options are the proposals plus an escape hatch:
+3. **Get explicit approval** via `AskUserQuestion` (or the Lavish flow of the `Asking the user` section, when it holds one - the approval gate is the same either way). Options are the proposals plus an escape hatch:
 
    | Header      | Options                                              |
    | ----------- | ---------------------------------------------------- |

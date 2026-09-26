@@ -8,7 +8,7 @@ hooks:
   UserPromptSubmit:
     - hooks:
         - type: command
-          command: "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/is-skill-exist/check.py caveman-commit"
+          command: 'node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks skill-exists caveman-commit 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."'
           once: true
 ---
 

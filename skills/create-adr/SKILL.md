@@ -8,14 +8,18 @@ model: opus
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[decision context, options, constraints, preferences]"
-allowed-tools: Bash(python3 ${CLAUDE_PLUGIN_ROOT}/scripts/*)
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
 ---
+
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill create-adr 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+
+If no "BDK context: create-adr" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill create-adr` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Create ADR
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py architecture`
+Apply the `Rules: architecture` section of the BDK context above.
 
 Generate ADR following MADR format.
 

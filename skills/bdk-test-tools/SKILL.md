@@ -5,11 +5,13 @@ allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
 user-invocable: false
 ---
 
-Test command(s) for this project, as the YAML list `tools.test`, one entry per command:
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill bdk-test-tools 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" config show tools.test 2>&1 || echo "BDK STOP: bdk config show failed (exit $?). Install Node >= 22.13, then run bdk config check."`
+If no "BDK context: bdk-test-tools" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill bdk-test-tools` first and apply its output; on a `BDK STOP` line, stop and report it.
 
-If the list above is empty (`[]`), no test command is configured: emit one warning line `[bdk] no tools.test entry in .bdk/settings.yaml - run /bdk:setup`, then detect from project files (`package.json` scripts, `Makefile`, `pyproject.toml`, `go.mod`, `Cargo.toml`, etc.) and proceed under the same policy below. If it shows an error or a `BDK STOP` line instead, repeat that line to the user and detect the same way.
+Test command(s) for this project are the `Project commands: test` section of the BDK context above: the YAML list `tools.test`, one entry per command.
+
+If that section says `none configured`, no test command is configured: emit one warning line `[bdk] no tools.test entry in .bdk/settings.yaml - run /bdk:setup`, then detect from project files (`package.json` scripts, `Makefile`, `pyproject.toml`, `go.mod`, `Cargo.toml`, etc.) and proceed under the same policy below.
 
 ## Pick the form, not just the command
 

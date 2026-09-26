@@ -19,8 +19,7 @@ jobs:
         with:
           enable-cache: true
 
-      # The injection scripts read settings through the committed kernel
-      # bundle (scripts/kernel_settings.py), so their tests need Node.
+      # The host probe tests run its collector script with Node.
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
