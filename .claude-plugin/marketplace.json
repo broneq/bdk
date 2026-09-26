@@ -21,6 +21,15 @@
         "repo": "broneq/git-identity"
       },
       "category": "productivity"
+    },
+    {
+      "name": "bdk-skill-kit",
+      "description": "Deterministic checks and authoring guidance for Agent Skills and Claude Code subagents: the skill-check validator plus the skill-authoring and skill-check skills.",
+      "source": {
+        "source": "github",
+        "repo": "broneq/bdk-skill-kit"
+      },
+      "category": "development"
     }
   ]
 }

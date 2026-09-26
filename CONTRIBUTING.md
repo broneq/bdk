@@ -47,17 +47,25 @@ Every BDK skill:
 
 ## Adding a Skill
 
-1. Create `skills/<name>/skill.md`
+1. Create `skills/<name>/SKILL.md`
 2. Keep it language-agnostic — no hardcoded tool names, paths, or commands
 3. Start with the standard header (see `.claude/rules/portability-check.md`)
 4. Add an entry to the Skills table in `README.md`
 5. Write an eval in `tests/skills/<name>/`
+6. Review it with `/bdk-skill-kit:skill-authoring` and run `pnpm skill-check` (conventions: `.claude/rules/skills.md`)
 
 ## Adding an Agent
 
 1. Create `agents/<name>.md`
 2. Assign a model (`haiku` / `sonnet` / `opus`) based on task complexity
 3. Add an entry to the Agents table in `README.md`
+4. Review it with `/bdk-skill-kit:skill-authoring` and run `pnpm skill-check`
+
+## Skill Content Checks
+
+`pnpm skill-check` runs [`bdk-skill-kit`](https://github.com/broneq/bdk-skill-kit) over `skills/` and `agents/`: the kit's rules with BDK's settings in `skill-check.config.ts`, which reads the kernel wrapper form from the kernel-cli spec. `pnpm skill-check --list-rules` prints every enforced rule. It runs in CI and in the pre-commit hook whenever a staged file is under `skills/` or `agents/`. It needs Node 22.18 or later, because the config is TypeScript.
+
+`skill-check.baseline.json` suppresses the known findings of v2 content. It only shrinks: when you fix a baselined finding, `pnpm skill-check` reports the entry as stale, and `pnpm skill-check --baseline-prune` removes it. Never add entries to it; fix a new finding instead.
 
 ---
 

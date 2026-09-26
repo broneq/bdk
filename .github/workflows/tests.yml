@@ -132,6 +132,19 @@ jobs:
   skill-check:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      # The config and the BDK rule plugin are TypeScript, which needs type
+      # stripping (Node >= 22.18); .nvmrc pins a line that has it.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
       - name: Skill content check
-        # T15 replaces this stub with skill-check and the BDK rule plugin over skills/.
-        run: echo "skill-check lands in T15; nothing is checked yet"
+        run: pnpm skill-check

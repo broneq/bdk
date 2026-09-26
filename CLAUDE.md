@@ -63,13 +63,18 @@ pnpm test:unit        # coverage thresholds apply
 pnpm test:e2e         # runs dist/bdk.mjs, so build first
 pnpm test:contract
 
+# Skill and agent content checks (Node >= 22.18); the baseline only shrinks:
+# fix a finding and run --baseline-prune, never add entries
+pnpm skill-check
+pnpm skill-check --baseline-prune
+
 # Run skill evals — see .claude/rules/skill-test-eval.md for format
 ```
 
 ## Adding a New Skill
 
-1. Create `skills/<name>/skill.md`
-2. Verify: no project-specific paths, tool names, or commands
+1. Create `skills/<name>/SKILL.md`
+2. Review with `/bdk-skill-kit:skill-authoring`, run `pnpm skill-check`; BDK-only conventions: `.claude/rules/skills.md`
 3. Add entry to `## Skills` table in `README.md`
 4. Write eval in `tests/evals/skills/<name>/`
 
