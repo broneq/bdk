@@ -11,6 +11,7 @@
   "scripts": {
     "build": "node kernel/build.mjs",
     "lint": "eslint --max-warnings 0 kernel",
+    "lint:py": "uv run --group lint ruff check && uv run --group lint ruff format --check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",

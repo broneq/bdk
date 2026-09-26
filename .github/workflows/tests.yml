@@ -32,6 +32,14 @@ jobs:
           git config --global user.email "ci@example.com"
           git config --global user.name "CI"
 
+      # ruff covers the Python scripts until T32 removes them (pnpm lint:py
+      # runs the same two checks locally).
+      - name: Lint Python
+        run: uv run --group lint ruff check
+
+      - name: Format check Python
+        run: uv run --group lint ruff format --check
+
       - name: Run unit tests
         run: uv run pytest tests/unit/ -q
 
