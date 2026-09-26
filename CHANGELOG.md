@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.7.0](https://github.com/broneq/bdk/compare/v2.6.1...v2.7.0) (2026-09-25)
+
+
+### Features
+
+* remove the bundled MCP servers and the tool-tier layer ([e40cb06](https://github.com/broneq/bdk/commit/e40cb06c6e4a9b2be283d6bafba7856d7135a3fc))
+* remove the bundled MCP servers and the tool-tier layer (T04 backport) ([7107bbf](https://github.com/broneq/bdk/commit/7107bbffbe058bfa877de53ef97e9952c880f0a2))
+
+## [2.6.1](https://github.com/broneq/bdk/compare/v2.6.0...v2.6.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* **hooks:** stop updating code-review-graph after every reply ([8439e73](https://github.com/broneq/bdk/commit/8439e7306900b39357fc3439c899364d2038de6f))
+* **hooks:** stop updating code-review-graph after every reply ([cdea721](https://github.com/broneq/bdk/commit/cdea7214b6d02857ccc583290f9b266622107e29))
+
 ## [2.6.0](https://github.com/broneq/bdk/compare/v2.5.1...v2.6.0) (2026-09-18)
 
 
