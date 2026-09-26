@@ -17,7 +17,7 @@ The site SHALL be an MkDocs Material site configured by `mkdocs.yml` at the repo
 
 ### Requirement: Strict build
 
-`mkdocs build --strict` SHALL pass on the repository. The build SHALL run through the `pnpm docs:build` script and in the docs workflow on every pull request and every push to `main`, and a warning SHALL fail it.
+`mkdocs build --strict` SHALL pass on the repository. The build SHALL run through the `pnpm docs:build` script and in the docs workflow on every pull request and every push to `main` or `staging/v3`, and a warning SHALL fail it.
 
 #### Scenario: broken link
 

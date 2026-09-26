@@ -1,17 +1,34 @@
 name: docs
 
-# Build-and-verify lives in `make check` (the `docs` gate runs
-# `mkdocs build --strict` on every PR, unfiltered). This workflow only
-# publishes. The old path-filtered build job missed the case that matters
-# most: a change under skills/ that breaks the docs drift guard without
-# touching any path in the filter.
+# The documentation site (capability `docs-site`): a strict build on every
+# pull request and push, a deploy only from main. main carries no mkdocs.yml
+# before the 3.0 release, so the first deploy is the 3.0 release.
 on:
   push:
     branches:
       - main
+      - staging/v3
+  pull_request:
+
+permissions:
+  contents: read
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+
+      - name: Build the site strictly
+        run: uv run --group docs mkdocs build --strict
+
   deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,21 +36,18 @@ jobs:
       group: docs-deploy
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
 
+      # mkdocs gh-deploy commits the built site to the gh-pages branch, which
+      # needs an identity the runner does not ship with.
       - name: Configure git
-        # mkdocs gh-deploy commits the built site to the gh-pages branch,
-        # which needs an identity the runner does not ship with (mirrors the
-        # "Configure git" step in tests.yml, same underlying cause).
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      # gh-deploy builds internally, so dropping the separate build job
-      # loses nothing.
-      - name: Deploy docs
+      - name: Deploy the site
         run: uv run --group docs mkdocs gh-deploy --force
