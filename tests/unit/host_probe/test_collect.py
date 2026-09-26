@@ -4,6 +4,8 @@ Recorded host payloads are committed to a public repo, so anonymisation is the
 part of the probe that must not regress.
 """
 
+from __future__ import annotations
+
 import getpass
 import json
 import os
@@ -66,6 +68,7 @@ def run_collect(tmp_path: Path, *pairs: str, recordings: dict[str, dict] | None 
         text=True,
         env=env,
         cwd=tmp_path,
+        check=False,
     )
     return result, dest / "9.9.9"
 

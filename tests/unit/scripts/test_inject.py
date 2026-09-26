@@ -49,11 +49,12 @@ def _write_settings(root: Path, yaml: str) -> Path:
 
 def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd),
         env={**os.environ},
+        check=False,
     )
 
 
@@ -84,7 +85,7 @@ def test_load_settings_without_a_file_is_the_defaults(project):
 
 def test_load_settings_raises_on_an_unknown_key(project):
     _write_settings(project, "features:\n  react: true\n")
-    with pytest.raises(inject_mod.KernelSettingsError, match="features.react"):
+    with pytest.raises(inject_mod.KernelSettingsError, match=r"features\.react"):
         load_settings(project)
 
 
@@ -139,7 +140,7 @@ def test_evaluate_condition_invalid_syntax():
 
 
 def test_evaluate_condition_plain_key_invalid():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unrecognised condition syntax"):
         evaluate_condition("react", {})
 
 

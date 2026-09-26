@@ -45,7 +45,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from kernel_settings import KernelSettingsError, error_line, load_settings  # noqa: E402
+from kernel_settings import KernelSettingsError, error_line, load_settings
 
 __all__ = ["KernelSettingsError", "evaluate_condition", "inject", "load_settings"]
 

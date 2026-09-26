@@ -7,7 +7,9 @@ from the working directory and returns what it resolves. It is transitional:
 T13 deletes the injection scripts, and this module with them.
 
 Public API:
-    from kernel_settings import load_settings, prompt_files, prompt_text, error_line, KernelSettingsError
+    from kernel_settings import (
+        load_settings, prompt_files, prompt_text, error_line, KernelSettingsError,
+    )
 
 A missing Node or a kernel refusal raises ``KernelSettingsError``; callers print
 ``error_line(error)``, one ``[bdk-inject-error]`` line on stdout, and exit 0, so
@@ -79,7 +81,8 @@ def _show(args: list[str], cwd: Path | None, missing_ok: bool = False) -> dict |
         result = subprocess.run(command, cwd=cwd, capture_output=True, text=True, check=False)
     except FileNotFoundError as error:
         raise KernelSettingsError(
-            "node not found: BDK settings need Node >= 22.13 (install it, then run bdk config check)"
+            "node not found: BDK settings need Node >= 22.13 "
+            "(install it, then run bdk config check)"
         ) from error
     try:
         report = json.loads(result.stdout)

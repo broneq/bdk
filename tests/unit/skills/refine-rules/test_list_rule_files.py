@@ -13,7 +13,8 @@ SCRIPT = Path(__file__).parents[4] / "skills" / "refine-rules" / "scripts" / "li
 
 def _load_module():
     spec = importlib.util.spec_from_file_location("list_rule_files", SCRIPT)
-    assert spec and spec.loader
+    assert spec
+    assert spec.loader
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
     return mod

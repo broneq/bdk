@@ -54,11 +54,12 @@ def _default(lang: str) -> str:
 
 def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd),
         env={**os.environ},
+        check=False,
     )
 
 

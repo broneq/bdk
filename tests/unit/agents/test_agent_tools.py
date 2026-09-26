@@ -110,7 +110,7 @@ def test_narrow_agent_spec_covers_only_existing_agents() -> None:
     assert not missing, f"NARROW_AGENT_TOOLS names agents that no longer exist: {missing}"
 
 
-@pytest.mark.parametrize("name,expected", sorted(NARROW_AGENT_TOOLS.items()))
+@pytest.mark.parametrize(("name", "expected"), sorted(NARROW_AGENT_TOOLS.items()))
 def test_narrow_agent_tools_unchanged(name: str, expected) -> None:
     actual = _tools(AGENTS_DIR / f"{name}.md")
     if expected == "ALL":

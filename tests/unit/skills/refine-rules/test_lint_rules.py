@@ -13,7 +13,8 @@ SCRIPT = Path(__file__).parents[4] / "skills" / "refine-rules" / "scripts" / "li
 
 def _load_module():
     spec = importlib.util.spec_from_file_location("lint_rules", SCRIPT)
-    assert spec and spec.loader
+    assert spec
+    assert spec.loader
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
     return mod
@@ -57,9 +58,7 @@ def test_over_byte_budget_is_error(tmp_path: Path) -> None:
     f = tmp_path / "fat.md"
     f.write_text(
         "---\npaths:\n  - a/**\n---\n\n## Critical Invariants\n\n1. x\n\n"
-        + "- **Rule.** "
-        + "x" * 9000
-        + "\n"
+        "- **Rule.** " + "x" * 9000 + "\n"
     )
     result = mod.lint_file(f)
     assert "budget:bytes" in _codes(result["errors"])
@@ -321,6 +320,7 @@ def _run_cli(*args: str, cwd: str | None = None) -> subprocess.CompletedProcess[
         capture_output=True,
         text=True,
         cwd=cwd,
+        check=False,
     )
 
 

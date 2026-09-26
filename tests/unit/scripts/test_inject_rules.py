@@ -54,11 +54,12 @@ def _default(name: str) -> str:
 
 def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd),
         env={**os.environ},
+        check=False,
     )
 
 
@@ -98,7 +99,9 @@ def test_prompts_files_maps_a_file_from_anywhere(project):
 
 def test_a_missing_mapped_file_raises(project):
     _write(project, ".bdk/settings.yaml", "prompts:\n  files:\n    rules/security: missing.md\n")
-    with pytest.raises(inject_rules_mod.KernelSettingsError, match="prompts.files.rules/security"):
+    with pytest.raises(
+        inject_rules_mod.KernelSettingsError, match=r"prompts\.files\.rules/security"
+    ):
         resolve_rule("security", cwd=project)
 
 
