@@ -9,6 +9,7 @@ import bdk, {
   craftNoKernel,
   gateDisallowedTools,
   gateInvocation,
+  KERNEL_TOOL_RULES,
   namespacedRefs,
   noLanguageCommands,
   noMcpTools,
@@ -16,7 +17,7 @@ import bdk, {
   wrapperForm,
 } from "./bdk-rules.ts";
 
-const KERNEL_RULE = "Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)";
+const [KERNEL_RULE = "", ECHO_RULE = ""] = KERNEL_TOOL_RULES;
 const WRAPPER =
   '!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill review 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`';
 
@@ -63,14 +64,26 @@ describe("wrapper-allowed-tools", () => {
     );
   });
 
-  it("accepts the kernel rule in a space-separated string", async () => {
-    const files = skill("review", `allowed-tools: Read ${KERNEL_RULE}\n`, WRAPPER);
+  it("accepts the rule pair in a space-separated string", async () => {
+    const files = skill("review", `allowed-tools: Read ${KERNEL_RULE} ${ECHO_RULE}\n`, WRAPPER);
     expect(await checkRule(wrapperAllowedTools, { files })).toEqual([]);
   });
 
-  it("accepts the kernel rule in a YAML list", async () => {
-    const files = skill("review", `allowed-tools:\n  - Read\n  - "${KERNEL_RULE}"\n`, WRAPPER);
-    expect(await checkRule(wrapperAllowedTools, { files })).toEqual([]);
+  it("accepts the rule pair in a YAML list", async () => {
+    const list = `allowed-tools:\n  - Read\n  - '${KERNEL_RULE}'\n  - ${ECHO_RULE}\n`;
+    expect(await checkRule(wrapperAllowedTools, { files: skill("review", list, WRAPPER) })).toEqual(
+      [],
+    );
+  });
+
+  it.each([
+    ["the unquoted rule", "Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *) Bash(echo *)", "node"],
+    ["the kernel rule without echo", KERNEL_RULE, "echo"],
+  ])("reports %s and names what is missing", async (_, tools, missing) => {
+    const files = skill("review", `allowed-tools: ${tools}\n`, WRAPPER);
+    const findings = await checkRule(wrapperAllowedTools, { files });
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.message).toContain(`\`Bash(${missing}`);
   });
 
   it("reports a missing field at line 1 and a wrong one at its key", async () => {

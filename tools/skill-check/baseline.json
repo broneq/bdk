@@ -107,77 +107,52 @@
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/bdk-implementer-return-contract/SKILL.md",
-    "fingerprint": "896990d65de3f015"
-  },
-  {
-    "rule": "bdk/wrapper-allowed-tools",
-    "file": "skills/bdk-lint-tools/SKILL.md",
-    "fingerprint": "4d91cf9642f35d05"
+    "fingerprint": "4c64f5ca93240cf8"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/bdk-rules-architecture/SKILL.md",
-    "fingerprint": "1cf354e9f3958072"
+    "fingerprint": "3422a292dead0dff"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/bdk-rules-code-quality/SKILL.md",
-    "fingerprint": "767dbff7fbf3bb78"
+    "fingerprint": "9bb46d6089a4de96"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/bdk-rules-design-patterns/SKILL.md",
-    "fingerprint": "1cf9fb0a63b825b8"
+    "fingerprint": "01ec434a27a11c05"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/bdk-rules-languages/SKILL.md",
-    "fingerprint": "4e139168e10a0c16"
+    "fingerprint": "05723245807eb4c4"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/bdk-rules-security/SKILL.md",
-    "fingerprint": "9ffa4d9a98c8ca3c"
-  },
-  {
-    "rule": "bdk/wrapper-allowed-tools",
-    "file": "skills/bdk-test-tools/SKILL.md",
-    "fingerprint": "72aaea4b47d3266b"
+    "fingerprint": "69a989194dbab8bf"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/cr/SKILL.md",
-    "fingerprint": "a490372a23bab9ca"
+    "fingerprint": "9b2b4921e3546c5a"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/create-adr/SKILL.md",
-    "fingerprint": "10d5377b22748352"
-  },
-  {
-    "rule": "bdk/wrapper-allowed-tools",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "86ed62ad44c8a24b"
-  },
-  {
-    "rule": "bdk/wrapper-allowed-tools",
-    "file": "skills/debug/SKILL.md",
-    "fingerprint": "a9f5c617300f5bd2"
+    "fingerprint": "f00f3100e5a86231"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/design/SKILL.md",
-    "fingerprint": "34b705e386ecd686"
+    "fingerprint": "8cec91572a2ba8f0"
   },
   {
     "rule": "bdk/wrapper-allowed-tools",
     "file": "skills/pr-review/SKILL.md",
-    "fingerprint": "5e6bdce10c27ff04"
-  },
-  {
-    "rule": "bdk/wrapper-allowed-tools",
-    "file": "skills/test-driven-development/SKILL.md",
-    "fingerprint": "2edcfd530bc5874d"
+    "fingerprint": "eff163a54a7417ee"
   },
   {
     "rule": "bdk/wrapper-form",

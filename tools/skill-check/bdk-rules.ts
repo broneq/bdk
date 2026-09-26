@@ -17,7 +17,16 @@ const CONTENT_WRAPPER = new RegExp(CONTENT_WRAPPER_PATTERN);
 
 /** The host runs a `!` block that opens at the start of a line or after whitespace. */
 const BLOCK_OPENER = /(?:^|\s)!`/;
-const KERNEL_RULE = "Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)";
+
+/**
+ * The `allowed-tools` pair the kernel-cli spec (Invocation) requires next to
+ * the wrapper: the host matches the quoted path literally and asks approval
+ * for the `echo` branch otherwise. wrapper-parity.test.ts keeps it equal to the spec.
+ */
+export const KERNEL_TOOL_RULES = [
+  'Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *)',
+  "Bash(echo *)",
+];
 
 const nameOf = (doc: Document): string =>
   typeof doc.frontmatter?.name === "string"
@@ -60,10 +69,13 @@ export const wrapperAllowedTools = defineRule({
   defaultSeverity: "error",
   check(doc, ctx) {
     if (!doc.lines.some((text) => BLOCK_OPENER.test(text))) return;
-    if (toolList(doc.frontmatter?.["allowed-tools"]).includes(KERNEL_RULE)) return;
+    const listed = toolList(doc.frontmatter?.["allowed-tools"]);
+    const missing = KERNEL_TOOL_RULES.filter((rule) => !listed.includes(rule));
+    if (missing.length === 0) return;
     ctx.report({
       line: doc.keyLines["allowed-tools"] ?? 1,
-      message: `a skill with a \`!\` block must list \`${KERNEL_RULE}\` in \`allowed-tools\`, or the host drops the whole skill in default permission mode`,
+      message: `a skill with a \`!\` block must list ${missing.map((r) => `\`${r}\``).join(" and ")} in \`allowed-tools\`, or the host drops the whole skill in default permission mode`,
+      match: "wrapper-allowed-tools",
     });
   },
 });

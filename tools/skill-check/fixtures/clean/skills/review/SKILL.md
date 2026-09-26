@@ -1,7 +1,7 @@
 ---
 name: review
 description: Reviews a change against the project rules. Use when a change is ready for review.
-allowed-tools: Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
 ---
 
 !`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill review 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`

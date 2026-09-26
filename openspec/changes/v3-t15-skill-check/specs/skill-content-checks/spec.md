@@ -44,7 +44,7 @@ BDK SHALL provide a `skill-check` plugin named `bdk` with these rules, each at e
 | ID                          | Rule                                                                                                                                                   |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `bdk/wrapper-form`          | Every occurrence of a `!` block opener, in prose or in a code fence, is a whole line matching the `content-wrapper` regex of `kernel-cli`, Invocation. |
-| `bdk/wrapper-allowed-tools` | A skill with a `!` block lists `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)` in `allowed-tools`.                                                   |
+| `bdk/wrapper-allowed-tools` | A skill with a `!` block lists the pair `Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)` of the kernel-cli spec in `allowed-tools`.    |
 | `bdk/no-mcp-tools`          | No file names a `mcp__plugin_bdk_` tool.                                                                                                               |
 | `bdk/gate-invocation`       | The gate skills `plan`, `execute`, `close` and `run` set `disable-model-invocation: true`.                                                             |
 | `bdk/gate-disallowed-tools` | The skills `execute` and `close` list `Edit`, `Write` and `NotebookEdit` in `disallowed-tools`.                                                        |
@@ -63,6 +63,11 @@ BDK SHALL provide a `skill-check` plugin named `bdk` with these rules, each at e
 - **WHEN** a skill contains a line matching the `content-wrapper` regex and its `allowed-tools` lacks the kernel rule
 - **THEN** `bdk/wrapper-allowed-tools` reports an error and `bdk/wrapper-form` reports nothing
 
+#### Scenario: unquoted kernel rule
+
+- **WHEN** a skill with the wrapper lists `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *) Bash(echo *)`, without the quotes around the path
+- **THEN** `bdk/wrapper-allowed-tools` reports an error naming the quoted rule
+
 #### Scenario: gate skill invocable by the model
 
 - **WHEN** the skill `execute` omits `disable-model-invocation: true`
@@ -75,11 +80,16 @@ BDK SHALL provide a `skill-check` plugin named `bdk` with these rules, each at e
 
 ### Requirement: Wrapper regex cannot drift from the spec
 
-A contract test SHALL assert that the regex applied by `bdk/wrapper-form` equals the ` ```regex content-wrapper ` block of `openspec/specs/kernel-cli/spec.md`.
+A contract test SHALL assert that the regex applied by `bdk/wrapper-form` equals the ` ```regex content-wrapper ` block of `openspec/specs/kernel-cli/spec.md`, and that the rule pair required by `bdk/wrapper-allowed-tools` equals the `allowed-tools` pair that section names.
 
 #### Scenario: spec edited alone
 
 - **WHEN** the `content-wrapper` regex in the spec changes and the plugin does not
+- **THEN** the contract test fails
+
+#### Scenario: permission pair edited alone
+
+- **WHEN** the `allowed-tools` pair in the kernel-cli spec changes and the plugin does not
 - **THEN** the contract test fails
 
 ### Requirement: Baseline for v2 content

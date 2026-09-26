@@ -34,7 +34,7 @@ All fields optional except `description` (recommended).
 
 **No tool guidance.** Skill and agent prose says what to find or check, not which tool to use ("find the callers of X", not "Grep for X"). The host's system prompt already teaches its tools; repeating it costs context and goes stale. Naming a tool is fine only where the tool is the subject: `allowed-tools`, a dispatch to `Agent`, an `AskUserQuestion` call, or a script the step runs.
 
-**`!` blocks call only the kernel.** A `!` block is a whole line in the content-wrapper form of the kernel-cli spec (Invocation), and the skill lists `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)` in `allowed-tools`; without that rule the host drops the whole skill in default permission mode. `pnpm skill-check` (`bdk/wrapper-form`, `bdk/wrapper-allowed-tools`) enforces both.
+**`!` blocks call only the kernel.** A `!` block is a whole line in the content-wrapper form of the kernel-cli spec (Invocation), and the skill lists the pair `Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)` in `allowed-tools`; without it the host drops the whole skill in default permission mode. `pnpm skill-check` (`bdk/wrapper-form`, `bdk/wrapper-allowed-tools`) enforces both.
 
 ### Invocation matrix
 
