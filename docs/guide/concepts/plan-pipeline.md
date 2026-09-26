@@ -20,11 +20,11 @@ Every edge label is a file. Nothing is carried in conversation state, which is w
 
 The plan's sha256 is the run's identity. `/bdk:verify-plan` stamps that hash into its report, and the executor re-hashes the file at startup and compares:
 
-| Stamp | Meaning | What the executor does |
-|---|---|---|
-| Present, hash matches | this exact plan was verified | proceeds, reports `stamped` |
-| Present, hash differs | the plan changed after verification | warns, reports `stale`, proceeds |
-| Absent | never verified | warns, reports `missing`, proceeds |
+| Stamp                 | Meaning                             | What the executor does             |
+| --------------------- | ----------------------------------- | ---------------------------------- |
+| Present, hash matches | this exact plan was verified        | proceeds, reports `stamped`        |
+| Present, hash differs | the plan changed after verification | warns, reports `stale`, proceeds   |
+| Absent                | never verified                      | warns, reports `missing`, proceeds |
 
 So edit **before** verifying, never after. The verdict appears on the `Verification:` line of the executor's opening summary rather than being buried in a warning.
 
@@ -42,7 +42,7 @@ Progress is recorded per group in two places:
 Every read cross-checks the trailers on the branch and corrects the manifest in place when they disagree. Git always wins. After a rebase or a squash, `rebuild` throws the manifest away and re-derives it from trailers alone.
 
 !!! warning
-    Never hand-edit a file under `.bdk/runs/`. `scripts/bdk_run_state.py` is the only reader and writer; an edit git does not agree with is discarded on the next read. For a human-readable view, run the script's `print` subcommand. See [Artifacts](../reference/artifacts.md).
+Never hand-edit a file under `.bdk/runs/`. `scripts/bdk_run_state.py` is the only reader and writer; an edit git does not agree with is discarded on the next read. For a human-readable view, run the script's `print` subcommand. See [Artifacts](../reference/artifacts.md).
 
 ## Resume, session guard, and `--force`
 
@@ -82,7 +82,7 @@ Committing at each group boundary is what makes the run resumable at all. There 
 
 Two stop paths exist, both at group boundaries and never mid-group, because in-flight subagents are never abandoned.
 
-**Context stop.** When the coordinator has used 50% or more of its own context at a boundary, it finishes the in-flight group, commits it, prints a paused summary block naming the plan, run id, manifest, groups committed, groups remaining, and the command to resume, and stops. Half is chosen so the coordinator still has room to *finish* a group after the check, including an unanticipated fix round.
+**Context stop.** When the coordinator has used 50% or more of its own context at a boundary, it finishes the in-flight group, commits it, prints a paused summary block naming the plan, run id, manifest, groups committed, groups remaining, and the command to resume, and stops. Half is chosen so the coordinator still has room to _finish_ a group after the check, including an unanticipated fix round.
 
 **User interrupt.** If you send a message mid-run, in-flight subagents are allowed to finish, the next group is not dispatched, and a completed and verified group is committed. Work that did not pass verification is left in the tree and named file by file rather than being discarded for you, because the clean-tree precondition means the next run cannot start until you either keep it or drop it.
 

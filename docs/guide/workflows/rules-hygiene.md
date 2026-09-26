@@ -16,19 +16,19 @@ tells you when the code moved out from under a rule.
 
 This table is in every session already, from `STARTUP_INSTRUCTIONS.md`:
 
-| The knowledge | Where it goes |
-|---|---|
-| Cross-cutting invariant whose violation fails silently | `.claude/rules/`, scoped by the narrowest `paths:` that covers it |
-| Trap visible at the code site where the mistake happens | a doc comment there |
-| Something a test or lint already enforces | one line naming the enforcer |
-| Anything else | nothing |
+| The knowledge                                           | Where it goes                                                     |
+| ------------------------------------------------------- | ----------------------------------------------------------------- |
+| Cross-cutting invariant whose violation fails silently  | `.claude/rules/`, scoped by the narrowest `paths:` that covers it |
+| Trap visible at the code site where the mistake happens | a doc comment there                                               |
+| Something a test or lint already enforces               | one line naming the enforcer                                      |
+| Anything else                                           | nothing                                                           |
 
 A line that a rename or file move would force you to edit is a code mirror, not a rule.
 
 !!! warning
-    **"Nothing" is the frequent, correct answer.** Never write something down just to have
-    written it. The worst outcome is not a badly-routed rule - it is a rule written at all
-    when none was warranted.
+**"Nothing" is the frequent, correct answer.** Never write something down just to have
+written it. The worst outcome is not a badly-routed rule - it is a rule written at all
+when none was warranted.
 
 ## Capture one lesson - `/bdk:add-rule`
 
@@ -40,14 +40,14 @@ It distils one imperative, falsifiable MUST/NEVER sentence - never the incident 
 only the consequence - then applies a four-part admission test (durability, decision,
 visibility, derivability) and routes the result:
 
-| Verdict | Route |
-|---|---|
-| Passes all four, governs a broad surface | Rule file |
-| Passes all four, true only for a subset of files | Narrow-glob rule file, created if none fits |
-| Procedural how-to with a deterministic backstop, near-immutable | Project skill |
-| True but pull-based - the trap is visible at the code site | Doc comment there |
-| A test or lint already enforces it | One-line signpost naming the enforcer |
-| Fails durability, or fails the decision test | Nothing, with a reason |
+| Verdict                                                         | Route                                       |
+| --------------------------------------------------------------- | ------------------------------------------- |
+| Passes all four, governs a broad surface                        | Rule file                                   |
+| Passes all four, true only for a subset of files                | Narrow-glob rule file, created if none fits |
+| Procedural how-to with a deterministic backstop, near-immutable | Project skill                               |
+| True but pull-based - the trap is visible at the code site      | Doc comment there                           |
+| A test or lint already enforces it                              | One-line signpost naming the enforcer       |
+| Fails durability, or fails the decision test                    | Nothing, with a reason                      |
 
 When several destinations fit, the preference order is
 `narrow glob > wide glob > skill > doc comment > nothing`. Skills fail open and rules fail
@@ -80,14 +80,14 @@ code you actually read.
 
 Six verdicts, one per bullet:
 
-| Verdict | Meaning |
-|---|---|
-| RULE | Present-tense, falsifiable, passes all four admission tests |
-| NARROW-GLOB | True, but only for a subset - moves to a file whose `paths:` names that subset |
-| SKILL | Procedural how-to with a deterministic backstop - extracted to a project skill |
-| SIGNPOST | Already enforced by a test or lint - compressed to one line naming the enforcer |
-| RELOCATE | True and valuable but pull-based - becomes a doc comment at the code site |
-| NOISE | Changelog, history, narration, hedged guess, TODO - dropped outright |
+| Verdict     | Meaning                                                                         |
+| ----------- | ------------------------------------------------------------------------------- |
+| RULE        | Present-tense, falsifiable, passes all four admission tests                     |
+| NARROW-GLOB | True, but only for a subset - moves to a file whose `paths:` names that subset  |
+| SKILL       | Procedural how-to with a deterministic backstop - extracted to a project skill  |
+| SIGNPOST    | Already enforced by a test or lint - compressed to one line naming the enforcer |
+| RELOCATE    | True and valuable but pull-based - becomes a doc comment at the code site       |
+| NOISE       | Changelog, history, narration, hedged guess, TODO - dropped outright            |
 
 Surviving RULE claims are then **verified against real code**. Checkable claims (file
 locations, exports, config settings, banned API patterns, "X calls Y") are dispatched to
@@ -101,11 +101,11 @@ content that still exceeds them gets split into narrower `paths:` scopes, not an
 exemption.
 
 !!! warning
-    You approve the plan before anything is written, and the plan lists every target -
-    relocation doc comments, narrowed globs, extracted skills - so you see the full blast
-    radius. Relocation happens in the same change set, doc comments written **first**, rule
-    files overwritten second: cutting before relocating destroys knowledge if the run is
-    interrupted.
+You approve the plan before anything is written, and the plan lists every target -
+relocation doc comments, narrowed globs, extracted skills - so you see the full blast
+radius. Relocation happens in the same change set, doc comments written **first**, rule
+files overwritten second: cutting before relocating destroys knowledge if the run is
+interrupted.
 
 `paths:` frontmatter is preserved verbatim, because it is functional metadata read by the
 drift hook, not prose.
@@ -148,21 +148,21 @@ See [Hooks](../reference/hooks.md) for the full hook list.
 
 ## A working rhythm
 
-| Moment | Command |
-|---|---|
-| You just learned something the hard way | `/bdk:add-rule` - and accept "nothing" as an answer |
-| The drift hook blocked you | Update the named file from session context, no exploration needed |
-| A rule file crossed its budget, or `_inbox.md` has entries | `/bdk:refine-rules` |
-| Before a big refactor | `/bdk:refine-rules`, so you refactor against verified claims |
+| Moment                                                     | Command                                                           |
+| ---------------------------------------------------------- | ----------------------------------------------------------------- |
+| You just learned something the hard way                    | `/bdk:add-rule` - and accept "nothing" as an answer               |
+| The drift hook blocked you                                 | Update the named file from session context, no exploration needed |
+| A rule file crossed its budget, or `_inbox.md` has entries | `/bdk:refine-rules`                                               |
+| Before a big refactor                                      | `/bdk:refine-rules`, so you refactor against verified claims      |
 
 ## What you get
 
-| Artifact | Path |
-|---|---|
-| New or sharpened rules | `.claude/rules/<file>.md`, with `paths:` frontmatter |
-| Staged candidates for an over-budget file | `.claude/rules/_inbox.md` |
-| Relocated knowledge | doc comments at the code sites |
-| Lint status | zero errors from the rule linter, as the exit gate of both skills |
+| Artifact                                  | Path                                                              |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| New or sharpened rules                    | `.claude/rules/<file>.md`, with `paths:` frontmatter              |
+| Staged candidates for an over-budget file | `.claude/rules/_inbox.md`                                         |
+| Relocated knowledge                       | doc comments at the code sites                                    |
+| Lint status                               | zero errors from the rule linter, as the exit gate of both skills |
 
 ## Next step
 

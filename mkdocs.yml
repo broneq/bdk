@@ -47,29 +47,29 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting started:
-    - Installation: getting-started/installation.md
-    - Setup: getting-started/setup.md
-    - Your first feature: getting-started/first-feature.md
+      - Installation: getting-started/installation.md
+      - Setup: getting-started/setup.md
+      - Your first feature: getting-started/first-feature.md
   - Workflows:
-    - Full pipeline: workflows/full-pipeline.md
-    - Standard: workflows/standard.md
-    - Trivial: workflows/trivial.md
-    - Debugging: workflows/debugging.md
-    - Code review: workflows/code-review.md
-    - Docs and decisions: workflows/docs-and-decisions.md
-    - Rules hygiene: workflows/rules-hygiene.md
+      - Full pipeline: workflows/full-pipeline.md
+      - Standard: workflows/standard.md
+      - Trivial: workflows/trivial.md
+      - Debugging: workflows/debugging.md
+      - Code review: workflows/code-review.md
+      - Docs and decisions: workflows/docs-and-decisions.md
+      - Rules hygiene: workflows/rules-hygiene.md
   - Concepts:
-    - Shared foundation: concepts/shared-foundation.md
-    - Verification scoping: concepts/verification-scoping.md
-    - Plan pipeline: concepts/plan-pipeline.md
-    - Agents: concepts/agents.md
-    - Quality and language rules: concepts/quality-and-language-rules.md
+      - Shared foundation: concepts/shared-foundation.md
+      - Verification scoping: concepts/verification-scoping.md
+      - Plan pipeline: concepts/plan-pipeline.md
+      - Agents: concepts/agents.md
+      - Quality and language rules: concepts/quality-and-language-rules.md
   - Reference:
-    - Skills: reference/skills.md
-    - Agents: reference/agents.md
-    - Hooks: reference/hooks.md
-    - Artifacts: reference/artifacts.md
+      - Skills: reference/skills.md
+      - Agents: reference/agents.md
+      - Hooks: reference/hooks.md
+      - Artifacts: reference/artifacts.md
   - Troubleshooting: troubleshooting.md
   - Contributing:
-    - Overview: contributing/index.md
+      - Overview: contributing/index.md
   - Changelog: changelog.md

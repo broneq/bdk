@@ -47,15 +47,15 @@ to the terminal silently when either is absent.
 
 1. Add the BDK marketplace source:
 
-    ```
-    /plugin marketplace add broneq/bdk
-    ```
+   ```
+   /plugin marketplace add broneq/bdk
+   ```
 
 2. Install the plugin:
 
-    ```
-    /plugin install bdk@bdk
-    ```
+   ```
+   /plugin install bdk@bdk
+   ```
 
 ## Configure the project before the first real task
 

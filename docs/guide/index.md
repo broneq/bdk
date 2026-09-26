@@ -34,11 +34,11 @@ flowchart LR
     E -->|"--inline"| CR
 ```
 
-| Tier | When | Flow |
-|---|---|---|
-| Full | new feature, architecture or schema change, ambiguous scope | `/bdk:design` -> `/bdk:create-plan` -> `/bdk:verify-plan` -> `/bdk:subagent-execute-plan` -> `/bdk:cr --full` |
-| Standard | clear scope, several files, no design questions | `/bdk:create-plan` -> (`/bdk:verify-plan`) -> `/bdk:subagent-execute-plan` -> `/bdk:cr` |
-| Trivial | one or two files, obvious change | Claude Code built-in plan mode -> edit -> `/bdk:cr --inline` |
+| Tier     | When                                                        | Flow                                                                                                          |
+| -------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Full     | new feature, architecture or schema change, ambiguous scope | `/bdk:design` -> `/bdk:create-plan` -> `/bdk:verify-plan` -> `/bdk:subagent-execute-plan` -> `/bdk:cr --full` |
+| Standard | clear scope, several files, no design questions             | `/bdk:create-plan` -> (`/bdk:verify-plan`) -> `/bdk:subagent-execute-plan` -> `/bdk:cr`                       |
+| Trivial  | one or two files, obvious change                            | Claude Code built-in plan mode -> edit -> `/bdk:cr --inline`                                                  |
 
 The trivial tier needs no BDK skill at all: the SessionStart hook injects the [shared foundation](concepts/shared-foundation.md) - the agent fleet, verification proportionality, quality rules, capture conventions - into every session.
 

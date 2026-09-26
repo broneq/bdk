@@ -4,7 +4,7 @@
 
     This page describes BDK v2. The v3 documentation replaces it (T50).
 
-Every BDK skill starts with the same line: *relies on BDK foundation (`STARTUP_INSTRUCTIONS.md`)*. That file is the contract each skill inherits instead of restating. It is what makes a plain session, with no BDK skill invoked at all, still behave like a BDK session.
+Every BDK skill starts with the same line: _relies on BDK foundation (`STARTUP_INSTRUCTIONS.md`)_. That file is the contract each skill inherits instead of restating. It is what makes a plain session, with no BDK skill invoked at all, still behave like a BDK session.
 
 ## What gets injected, and when
 
@@ -12,12 +12,12 @@ Every BDK skill starts with the same line: *relies on BDK foundation (`STARTUP_I
 
 It carries four things:
 
-| Section | What it settles |
-|---|---|
-| Agents | The subagent fleet, each one's model, and when to continue one rather than spawn a new one. See [Agents](agents.md). |
-| Verification Proportionality | How much checking a change of a given size deserves. See [Verification scoping](verification-scoping.md). |
-| Quality Rules | That BDK ships language-agnostic rule sets and how to override them. See [Quality and language rules](quality-and-language-rules.md). |
-| Capture Conventions | Where a lesson or convention belongs, including the case where the answer is "nowhere". |
+| Section                      | What it settles                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Agents                       | The subagent fleet, each one's model, and when to continue one rather than spawn a new one. See [Agents](agents.md).                  |
+| Verification Proportionality | How much checking a change of a given size deserves. See [Verification scoping](verification-scoping.md).                             |
+| Quality Rules                | That BDK ships language-agnostic rule sets and how to override them. See [Quality and language rules](quality-and-language-rules.md). |
+| Capture Conventions          | Where a lesson or convention belongs, including the case where the answer is "nowhere".                                               |
 
 Everything else that could vary per project, including the test runner, the lint command, and the build tool, is deliberately absent. Skills never name a runner. The commands live in `.bdk/settings.json` and reach the agents that need them through preloaded meta-skills, which is what keeps a single skill body correct in a Python repo and a TypeScript repo at once.
 
@@ -56,12 +56,12 @@ The meta-skills are marked `user-invocable: false`. They are listed in [Skills](
 
 The last section of the foundation is a routing table for knowledge. Before recording a convention or a lesson anywhere, decide where it belongs:
 
-| The knowledge | Where it goes |
-|---|---|
-| Cross-cutting invariant whose violation fails silently | `.claude/rules/`, scoped by the narrowest path glob that covers it |
-| Trap visible at the code site where the mistake happens | a doc comment there |
-| Something a test or a linter already enforces | one line naming the enforcer |
-| Anything else | nothing |
+| The knowledge                                           | Where it goes                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------------ |
+| Cross-cutting invariant whose violation fails silently  | `.claude/rules/`, scoped by the narrowest path glob that covers it |
+| Trap visible at the code site where the mistake happens | a doc comment there                                                |
+| Something a test or a linter already enforces           | one line naming the enforcer                                       |
+| Anything else                                           | nothing                                                            |
 
 A line that a rename or a file move would force you to edit is a mirror of the code, not a rule. The fourth row is the frequent and correct answer: never write something down just to have written it. `/bdk:add-rule` runs this routing properly and `/bdk:refine-rules` cleans up what accumulated anyway; see [Rules hygiene](../workflows/rules-hygiene.md).
 
@@ -74,4 +74,4 @@ This table is in the foundation rather than in those two skills because the deci
 - **No prompt drift between orchestrator and subagent.** Both read the same rules, resolved from the same settings.
 
 !!! warning
-    The foundation occupies context in every single session. Keep additions to it short, and prefer putting detail in a skill that loads on demand.
+The foundation occupies context in every single session. Keep additions to it short, and prefer putting detail in a skill that loads on demand.

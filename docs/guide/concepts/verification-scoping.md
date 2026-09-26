@@ -10,12 +10,12 @@ Running the whole test suite after every edit feels safe and is the main reason 
 
 This table is in the shared foundation, so it applies in every session, including ones where you never invoke a BDK skill:
 
-| Changed files | Verification |
-|---|---|
+| Changed files                                                                     | Verification                                                                       |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Non-executable content only (yaml, md, json, config not feeding build or codegen) | No tests, no typecheck. At most a syntax or schema validator if one is configured. |
-| Source files | Scoped or related tests, scoped lint, incremental typecheck. |
-| Build-feeding config (tsconfig, lockfile, codegen schema) | Treat as source. |
-| Full suite | Only when explicitly asked, or at a pipeline's end-of-plan gate. |
+| Source files                                                                      | Scoped or related tests, scoped lint, incremental typecheck.                       |
+| Build-feeding config (tsconfig, lockfile, codegen schema)                         | Treat as source.                                                                   |
+| Full suite                                                                        | Only when explicitly asked, or at a pipeline's end-of-plan gate.                   |
 
 The third row is the one that is easy to get wrong. A lockfile or a codegen schema is not executable, but changing it can break compilation without a single source file being touched, so it counts as source.
 
@@ -34,20 +34,20 @@ Such a task carries no `Test cases:` block, never enters `/bdk:test-driven-devel
 This exists because forcing a test onto a documentation task produces a test that asserts the file exists, which is a maintenance cost with no signal. Declaring the exemption in the plan makes it visible and reviewable instead of leaving the implementer to improvise.
 
 !!! warning
-    `Verification: none` is a claim about every file in the task. One source file in the `Files:` list disqualifies it.
+`Verification: none` is a claim about every file in the task. One source file in the `Files:` list disqualifies it.
 
 ## Tiers and command forms
 
 Scoped verification only works if BDK knows which of your commands is the cheap one and how to narrow it. That is what the `test-tools` and `lint-tools` entries in `.bdk/settings.json` encode. Each entry declares a `tier` and the narrower forms of the same command:
 
-| Field | What it is for |
-|---|---|
-| `tier` | `fast` or `e2e` for tests; `lint`, `format`, or `typecheck` for lint. Decides **when** the command may run. |
-| `command` | The full unscoped form. The slowest one, reserved for the end-of-plan gate. |
-| `scoped` | Narrowed to an explicit path list. Contains `{files}`. |
-| `related` | The tests *covering* given source files, for runners that compute that themselves. Contains `{files}`. |
-| `failed` | Re-runs only what failed, so a fix attempt does not pay for a suite. |
-| `incremental` | Cache-reusing form of a check that cannot take a path list, typecheckers above all. |
+| Field         | What it is for                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------- |
+| `tier`        | `fast` or `e2e` for tests; `lint`, `format`, or `typecheck` for lint. Decides **when** the command may run. |
+| `command`     | The full unscoped form. The slowest one, reserved for the end-of-plan gate.                                 |
+| `scoped`      | Narrowed to an explicit path list. Contains `{files}`.                                                      |
+| `related`     | The tests _covering_ given source files, for runners that compute that themselves. Contains `{files}`.      |
+| `failed`      | Re-runs only what failed, so a fix attempt does not pay for a suite.                                        |
+| `incremental` | Cache-reusing form of a check that cannot take a path list, typecheckers above all.                         |
 
 Omit any form your tool does not have; BDK falls back cleanly from a missing one. `tier` is technically optional and should always be set anyway: BDK infers a missing tier from the tool name, and an inferred `fast` on an end-to-end runner means a slow suite runs at every group boundary. The v3 settings are described in the [README](https://github.com/broneq/bdk/blob/main/README.md#settings).
 

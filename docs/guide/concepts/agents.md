@@ -10,26 +10,26 @@ BDK ships thirteen subagents. The reason there are that many, rather than one ca
 
 **Directly invokable** general-purpose helpers. Reach for these from any session via the Agent tool with the listed `subagent_type`:
 
-| `subagent_type` | Model | When to pick |
-|---|---|---|
-| `bdk:explorer` | haiku | Broad codebase search spanning more than three queries |
-| `bdk:log-analyzer` | haiku | Stderr, traceback, and error-log triage |
-| `bdk:web-researcher` | haiku | External docs, GitHub issues, Stack Overflow lookups |
-| `bdk:static-analyse` | haiku | Run project lint, format, or typecheck |
-| `bdk:test-runner` | haiku | Run tests and report results |
-| `bdk:dead-code-detector` | haiku | Find unused or unreachable code |
-| `bdk:duplicate-detector` | haiku | Find duplicated code and extractable patterns |
-| `bdk:architecture-reviewer` | opus | Cross-cutting architectural analysis |
-| `bdk:plan-verifier` | opus | Single-pass plan verification, used by `/bdk:verify-plan` |
+| `subagent_type`             | Model | When to pick                                              |
+| --------------------------- | ----- | --------------------------------------------------------- |
+| `bdk:explorer`              | haiku | Broad codebase search spanning more than three queries    |
+| `bdk:log-analyzer`          | haiku | Stderr, traceback, and error-log triage                   |
+| `bdk:web-researcher`        | haiku | External docs, GitHub issues, Stack Overflow lookups      |
+| `bdk:static-analyse`        | haiku | Run project lint, format, or typecheck                    |
+| `bdk:test-runner`           | haiku | Run tests and report results                              |
+| `bdk:dead-code-detector`    | haiku | Find unused or unreachable code                           |
+| `bdk:duplicate-detector`    | haiku | Find duplicated code and extractable patterns             |
+| `bdk:architecture-reviewer` | opus  | Cross-cutting architectural analysis                      |
+| `bdk:plan-verifier`         | opus  | Single-pass plan verification, used by `/bdk:verify-plan` |
 
 **Used by skills internally.** Let the owning skill orchestrate these rather than calling them yourself:
 
-| `subagent_type` | Model | Owner skill |
-|---|---|---|
-| `bdk:code-reviewer` | sonnet | `/bdk:cr` |
-| `bdk:implementer` | sonnet | `/bdk:subagent-execute-plan` |
-| `bdk:fixer` | sonnet | `/bdk:subagent-execute-plan` |
-| `bdk:design-verifier` | opus | `/bdk:design` |
+| `subagent_type`       | Model  | Owner skill                  |
+| --------------------- | ------ | ---------------------------- |
+| `bdk:code-reviewer`   | sonnet | `/bdk:cr`                    |
+| `bdk:implementer`     | sonnet | `/bdk:subagent-execute-plan` |
+| `bdk:fixer`           | sonnet | `/bdk:subagent-execute-plan` |
+| `bdk:design-verifier` | opus   | `/bdk:design`                |
 
 Full descriptions, tool lists, and preloaded skills are in [Agents reference](../reference/agents.md).
 
@@ -65,7 +65,7 @@ Every Agent result includes an `agentId` and a `SendMessage` hint, so you can re
 
 The five-minute window is a cost boundary, not a correctness one. A `SendMessage` past it pays a full cache miss for the resumed agent's entire prior context, which is usually worse than a fresh spawn for a small self-contained follow-up. When you do continue, never re-send the original prompt: the agent still has it.
 
-The plan executor applies the same reasoning with two extra constraints. A verification failure goes back to the original implementer when the cache is likely warm and the scope is narrow, and otherwise to a fresh `bdk:fixer`. Verifier agents are reused across fix cycles *within* a group but never across groups, because each group's changed-file set is different.
+The plan executor applies the same reasoning with two extra constraints. A verification failure goes back to the original implementer when the cache is likely warm and the scope is narrow, and otherwise to a fresh `bdk:fixer`. Verifier agents are reused across fix cycles _within_ a group but never across groups, because each group's changed-file set is different.
 
 ## Structured returns, not prose
 

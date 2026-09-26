@@ -19,14 +19,14 @@ Pass `--force` to re-run it over existing settings.
 
 ## What the phases do
 
-| Phase | What happens |
-|---|---|
-| 1. Check existing config | If `.bdk/settings.json` exists and `--force` was not passed, it shows the current values and asks whether to overwrite. |
-| 2. Probe project files | Reads `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `composer.json`, `Gemfile`, `*.csproj`, `pubspec.yaml` and friends, and extracts test, lint, and build commands. Package-manager invocation always wins over a bare binary: a lockfile decides `npm`/`yarn`/`pnpm`, `poetry.lock` decides `poetry run`, Ruby is always `bundle exec`. |
-| 2b. Fill in tier and scoping forms | Derives the narrow command forms from the detected runner (table below). |
-| 3. Confirm via AskUserQuestion | Up to four questions in one call: test commands, lint commands, features to **disable**, and a build command when one was detected. Only the full commands are confirmed; tiers and scoped forms are mechanical consequences of the runner and are shown in the completion summary instead. |
-| 4. Write `.bdk/settings.json` | Writes the confirmed values plus the derived forms, and creates the directory tree. |
-| 5. Git guidance | Confirms that `.bdk/` stays out of git and offers to write the rule. |
+| Phase                              | What happens                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Check existing config           | If `.bdk/settings.json` exists and `--force` was not passed, it shows the current values and asks whether to overwrite.                                                                                                                                                                                                                                          |
+| 2. Probe project files             | Reads `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `composer.json`, `Gemfile`, `*.csproj`, `pubspec.yaml` and friends, and extracts test, lint, and build commands. Package-manager invocation always wins over a bare binary: a lockfile decides `npm`/`yarn`/`pnpm`, `poetry.lock` decides `poetry run`, Ruby is always `bundle exec`. |
+| 2b. Fill in tier and scoping forms | Derives the narrow command forms from the detected runner (table below).                                                                                                                                                                                                                                                                                         |
+| 3. Confirm via AskUserQuestion     | Up to four questions in one call: test commands, lint commands, features to **disable**, and a build command when one was detected. Only the full commands are confirmed; tiers and scoped forms are mechanical consequences of the runner and are shown in the completion summary instead.                                                                      |
+| 4. Write `.bdk/settings.json`      | Writes the confirmed values plus the derived forms, and creates the directory tree.                                                                                                                                                                                                                                                                              |
+| 5. Git guidance                    | Confirms that `.bdk/` stays out of git and offers to write the rule.                                                                                                                                                                                                                                                                                             |
 
 ### Why tiers matter
 
@@ -39,21 +39,21 @@ means a slow suite runs at every group boundary.
 
 `{files}` is a literal placeholder; callers substitute a path list.
 
-| Runner | `scoped` | `related` | `failed` | `incremental` |
-|---|---|---|---|---|
-| vitest | `npx vitest run {files}` | `npx vitest related --run {files}` | `npx vitest run --changed` | - |
-| jest | `npx jest {files}` | `npx jest --findRelatedTests {files}` | `npx jest --onlyFailures` | - |
-| playwright | `npx playwright test {files}` | - | `npx playwright test --last-failed` | - |
-| cypress | `npx cypress run --spec {files}` | - | - | - |
-| pytest | `pytest {files}` | - | `pytest --lf` | - |
-| go test | `go test {files}` | - | - | - |
-| cargo test | `cargo test {files}` | - | - | - |
-| rspec | `bundle exec rspec {files}` | - | `bundle exec rspec --only-failures` | - |
-| eslint | `npx eslint {files}` | - | - | - |
-| prettier | `npx prettier --check {files}` | - | - | - |
-| ruff | `ruff check {files}` | - | - | - |
-| tsc | - | - | - | `npx tsc -b --incremental` |
-| mypy | `mypy {files}` | - | - | `mypy --incremental .` |
+| Runner     | `scoped`                         | `related`                             | `failed`                            | `incremental`              |
+| ---------- | -------------------------------- | ------------------------------------- | ----------------------------------- | -------------------------- |
+| vitest     | `npx vitest run {files}`         | `npx vitest related --run {files}`    | `npx vitest run --changed`          | -                          |
+| jest       | `npx jest {files}`               | `npx jest --findRelatedTests {files}` | `npx jest --onlyFailures`           | -                          |
+| playwright | `npx playwright test {files}`    | -                                     | `npx playwright test --last-failed` | -                          |
+| cypress    | `npx cypress run --spec {files}` | -                                     | -                                   | -                          |
+| pytest     | `pytest {files}`                 | -                                     | `pytest --lf`                       | -                          |
+| go test    | `go test {files}`                | -                                     | -                                   | -                          |
+| cargo test | `cargo test {files}`             | -                                     | -                                   | -                          |
+| rspec      | `bundle exec rspec {files}`      | -                                     | `bundle exec rspec --only-failures` | -                          |
+| eslint     | `npx eslint {files}`             | -                                     | -                                   | -                          |
+| prettier   | `npx prettier --check {files}`   | -                                     | -                                   | -                          |
+| ruff       | `ruff check {files}`             | -                                     | -                                   | -                          |
+| tsc        | -                                | -                                     | -                                   | `npx tsc -b --incremental` |
+| mypy       | `mypy {files}`                   | -                                     | -                                   | `mypy --incremental .`     |
 
 For anything not in the table: a package-manager script wrapping a runner that
 takes paths becomes `<script> -- {files}` (the `--` is required or the paths
@@ -62,16 +62,16 @@ no `scoped` form. If you are not sure a form exists, omit it - BDK falls back
 cleanly from a missing form and silently runs the wrong thing with a broken one.
 
 !!! warning
-    `scoped` and `related` must contain `{files}`. The config hook rejects
-    settings where they do not, because such a command ignores the file list and
-    quietly runs everything.
+`scoped` and `related` must contain `{files}`. The config hook rejects
+settings where they do not, because such a command ignores the file list and
+quietly runs everything.
 
 ## The two feature flags
 
-| Flag | What it toggles |
-|---|---|
-| `caveman` | Caveman communication mode. |
-| `lavish` | Routes bundled multi-question decision points through the `lavish-axi` binary instead of the terminal `AskUserQuestion`. Also requires the binary on `PATH`; skills check both and fall back silently when either is absent. |
+| Flag      | What it toggles                                                                                                                                                                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `caveman` | Caveman communication mode.                                                                                                                                                                                                  |
+| `lavish`  | Routes bundled multi-question decision points through the `lavish-axi` binary instead of the terminal `AskUserQuestion`. Also requires the binary on `PATH`; skills check both and fall back silently when either is absent. |
 
 Phase 3 asks whether to **disable** `caveman` - an empty selection leaves it
 enabled. `lavish` is not offered there; add it to `features` by hand if

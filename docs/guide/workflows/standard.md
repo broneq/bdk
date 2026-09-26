@@ -64,8 +64,8 @@ Skip it when the plan is small, mechanical, and you have read every task. Run it
 plan touches code you have not read recently.
 
 !!! note
-    Verification also stamps the plan's sha256, which is what lets the executor tell you
-    whether what it is about to run is what was verified.
+Verification also stamps the plan's sha256, which is what lets the executor tell you
+whether what it is about to run is what was verified.
 
 ## 3 - Execute
 
@@ -120,26 +120,26 @@ Before opening a pull request, run `/bdk:cr --full` instead. See
 
 ## When a standard run goes sideways
 
-| Symptom | Do this |
-|---|---|
-| `/bdk:create-plan` redirects you to `/bdk:design` | The scope is ambiguous. Take the redirect. |
-| `/bdk:verify-plan` returns `FAIL` twice | It stops and recommends `/bdk:design`. The plan is structurally wrong. |
-| Executor stops: working tree dirty | Commit or drop your own edits. It refuses to commingle them with plan execution. |
-| Executor stops: run held by another session | That run is live elsewhere. Re-invoke with `--force` only after confirming the other session is gone. |
-| Executor pauses at 50% context | Re-invoke the same command. It resumes from the commit trailers. |
+| Symptom                                           | Do this                                                                                               |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `/bdk:create-plan` redirects you to `/bdk:design` | The scope is ambiguous. Take the redirect.                                                            |
+| `/bdk:verify-plan` returns `FAIL` twice           | It stops and recommends `/bdk:design`. The plan is structurally wrong.                                |
+| Executor stops: working tree dirty                | Commit or drop your own edits. It refuses to commingle them with plan execution.                      |
+| Executor stops: run held by another session       | That run is live elsewhere. Re-invoke with `--force` only after confirming the other session is gone. |
+| Executor pauses at 50% context                    | Re-invoke the same command. It resumes from the commit trailers.                                      |
 
 More symptoms and their exact messages are in
 [Troubleshooting](../troubleshooting.md).
 
 ## What you get
 
-| Artifact | Path |
-|---|---|
-| Plan | `.bdk/plans/<ts>-<slug>.md` |
-| Verification report (if you verified) | `.bdk/verify-plan/<plan-slug>-verification.md` |
-| Run manifest (machine-owned, gitignored) | `.bdk/runs/<run-id>.json` |
-| One commit per group, with `BDK-Run:` / `BDK-Group:` trailers | your branch |
-| Review report | `.bdk/cr/<stamp>-<branch-slug>-delta.md` |
+| Artifact                                                      | Path                                           |
+| ------------------------------------------------------------- | ---------------------------------------------- |
+| Plan                                                          | `.bdk/plans/<ts>-<slug>.md`                    |
+| Verification report (if you verified)                         | `.bdk/verify-plan/<plan-slug>-verification.md` |
+| Run manifest (machine-owned, gitignored)                      | `.bdk/runs/<run-id>.json`                      |
+| One commit per group, with `BDK-Run:` / `BDK-Group:` trailers | your branch                                    |
+| Review report                                                 | `.bdk/cr/<stamp>-<branch-slug>-delta.md`       |
 
 ## Next step
 

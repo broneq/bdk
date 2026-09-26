@@ -14,14 +14,14 @@ It also enforces portability. A rule file is a bullet list of principles with no
 
 ## The shipped rule sets
 
-| Rule set | Covers |
-|---|---|
-| `code-quality` | Function-level hygiene |
-| `architecture` | Layering, boundaries, dependency direction |
-| `design-patterns` | Pattern choice and anti-patterns |
-| `security` | Trust boundaries, injection, secrets, authorization, least privilege |
-| `engineering-judgment` | Weighing quality and maintainability against implementation effort |
-| `test-quality` | What a test should assert and what it should not |
+| Rule set               | Covers                                                               |
+| ---------------------- | -------------------------------------------------------------------- |
+| `code-quality`         | Function-level hygiene                                               |
+| `architecture`         | Layering, boundaries, dependency direction                           |
+| `design-patterns`      | Pattern choice and anti-patterns                                     |
+| `security`             | Trust boundaries, injection, secrets, authorization, least privilege |
+| `engineering-judgment` | Weighing quality and maintainability against implementation effort   |
+| `test-quality`         | What a test should assert and what it should not                     |
 
 They are consumed by `/bdk:cr`, `/bdk:create-plan`, and `/bdk:design`, and preloaded into the agents that need them (see [Agents](agents.md)).
 
@@ -59,7 +59,7 @@ The BDK default is emitted first, then your file's content is appended.
 A bare string means `extends`. The object form exists only so you can say `replace`. Keys are the rule-set names in the table above; the v3 settings are described in the [README](https://github.com/broneq/bdk/blob/main/README.md#settings).
 
 !!! note
-    Prefer `extends`. `replace` discards principles you may not have noticed you were relying on, and a later BDK release that adds a principle to that set will not reach your project.
+Prefer `extends`. `replace` discards principles you may not have noticed you were relying on, and a later BDK release that adds a principle to that set will not reach your project.
 
 ## Language rules
 

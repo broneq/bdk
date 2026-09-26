@@ -232,12 +232,12 @@ Eight skills carry `user-invocable: false` and are never typed as `/bdk:<name>` 
 
 Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which several skills used as their only state mechanism. Those skills are gone rather than patched:
 
-| Removed | Use instead |
-|---|---|
-| `/bdk:execute-plan` | `/bdk:subagent-execute-plan` |
-| `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session |
-| `/bdk:create-tasks`, `/bdk:refactor` | `/bdk:create-plan` |
-| `/bdk:audit-prompt` | Nothing |
-| `/bdk:graphviz-docs-compiler` | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
-| `/bdk:brainstorming` | `/bdk:design` |
-| `/bdk:brainstorm-architecture` | `/bdk:design` |
+| Removed                                       | Use instead                                                                                                                                                                                         |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/bdk:execute-plan`                           | `/bdk:subagent-execute-plan`                                                                                                                                                                        |
+| `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session             |
+| `/bdk:create-tasks`, `/bdk:refactor`          | `/bdk:create-plan`                                                                                                                                                                                  |
+| `/bdk:audit-prompt`                           | Nothing                                                                                                                                                                                             |
+| `/bdk:graphviz-docs-compiler`                 | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
+| `/bdk:brainstorming`                          | `/bdk:design`                                                                                                                                                                                       |
+| `/bdk:brainstorm-architecture`                | `/bdk:design`                                                                                                                                                                                       |

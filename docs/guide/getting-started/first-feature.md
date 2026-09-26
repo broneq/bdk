@@ -12,8 +12,8 @@ Every stage is a seam. The artifact is the hand-off, so you can close the
 session after any step and pick up in a fresh one.
 
 !!! note
-    Work on a branch. `/bdk:subagent-execute-plan` refuses to run on `main` or
-    `master`, and refuses to start with a dirty working tree.
+Work on a branch. `/bdk:subagent-execute-plan` refuses to run on `main` or
+`master`, and refuses to start with a dirty working tree.
 
 ## 1. Design
 

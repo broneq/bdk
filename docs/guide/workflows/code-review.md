@@ -10,12 +10,12 @@ to GitHub.
 
 ## The four modes
 
-| Mode | Command | Baseline reviewed |
-|---|---|---|
-| Delta (default) | `/bdk:cr` | Only the commits added since the last review on this branch |
-| Full | `/bdk:cr --full` | The whole branch, from its base |
-| Inline | `/bdk:cr --inline` | Same range rules, but every cohort runs sequentially in this session with no subagents |
-| Explicit base | `/bdk:cr --base <ref>` | `git merge-base HEAD <ref>` - for stacked branches |
+| Mode            | Command                | Baseline reviewed                                                                      |
+| --------------- | ---------------------- | -------------------------------------------------------------------------------------- |
+| Delta (default) | `/bdk:cr`              | Only the commits added since the last review on this branch                            |
+| Full            | `/bdk:cr --full`       | The whole branch, from its base                                                        |
+| Inline          | `/bdk:cr --inline`     | Same range rules, but every cohort runs sequentially in this session with no subagents |
+| Explicit base   | `/bdk:cr --base <ref>` | `git merge-base HEAD <ref>` - for stacked branches                                     |
 
 Modes combine: `--full --inline` is a whole-branch review inside one session.
 
@@ -74,12 +74,12 @@ which.
 
 The size class comes from the resolved range's changed lines, not the whole branch:
 
-| Class | Lines | Reviewers |
-|---|---|---|
-| tiny | < 50 | one `bdk:code-reviewer` covering everything, checking duplicates and dead code inline |
-| small | 50-1000 | one layer reviewer, plus architecture, test, duplicate, dead-code, static-analyse, test-runner |
-| large | 1000-3000 | N layer reviewers, N = ceil(lines / 1000), capped at 5 |
-| massive | 3000+ | as large, N capped at 5 |
+| Class   | Lines     | Reviewers                                                                                      |
+| ------- | --------- | ---------------------------------------------------------------------------------------------- |
+| tiny    | < 50      | one `bdk:code-reviewer` covering everything, checking duplicates and dead code inline          |
+| small   | 50-1000   | one layer reviewer, plus architecture, test, duplicate, dead-code, static-analyse, test-runner |
+| large   | 1000-3000 | N layer reviewers, N = ceil(lines / 1000), capped at 5                                         |
+| massive | 3000+     | as large, N capped at 5                                                                        |
 
 That is the 3 to 13 agents the skill advertises. With `--inline`, multiple layer reviewers
 collapse into one thorough pass - inline execution has no parallelism to buy.
@@ -120,8 +120,8 @@ and listed at the end so the report stays honest about the branch's actual state
 than about what was re-detected.
 
 !!! note
-    `/bdk:cr` never fixes anything. All sub-agents are read-only; findings go into the
-    report, and fixing them is a separate, explicit decision by you.
+`/bdk:cr` never fixes anything. All sub-agents are read-only; findings go into the
+report, and fixing them is a separate, explicit decision by you.
 
 ## Reviewing GitHub pull requests
 
@@ -142,9 +142,9 @@ Nice to have ({n}) - review these, real issues sometimes land here:
 ```
 
 !!! warning
-    Nothing is posted to GitHub until you confirm. You confirm or override each PR's
-    verdict, and only then does a single review call per PR post the inline comments,
-    the summary, and the event.
+Nothing is posted to GitHub until you confirm. You confirm or override each PR's
+verdict, and only then does a single review call per PR post the inline comments,
+the summary, and the event.
 
 Verdict policy: any confirmed CRITICAL or HIGH computes to request-changes; only MEDIUM or
 LOW computes to approve. Nice-to-haves never block by themselves, but the complete list
@@ -167,10 +167,10 @@ resolves the threads that were addressed.
 
 ## What you get
 
-| Artifact | Path |
-|---|---|
-| Review report | `.bdk/cr/<stamp>-<branch-slug>-delta.md` or `-full.md` |
-| PR review | inline comments plus one templated summary on GitHub, with an approve or request-changes event |
+| Artifact      | Path                                                                                           |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Review report | `.bdk/cr/<stamp>-<branch-slug>-delta.md` or `-full.md`                                         |
+| PR review     | inline comments plus one templated summary on GitHub, with an approve or request-changes event |
 
 ## Next step
 

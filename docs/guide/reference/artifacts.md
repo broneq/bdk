@@ -14,16 +14,16 @@ This page lists every directory under `.bdk/` that appears in BDK's own sources,
 
 ## Layout
 
-| Path | Written by | Contents |
-|---|---|---|
-| `.bdk/settings.json` | `/bdk:setup` | Project configuration - see the [README](https://github.com/broneq/bdk/blob/main/README.md#settings) |
-| `.bdk/plans/` | `/bdk:create-plan` | Implementation plans (`mkdir -p .bdk/plans` runs from the skill's `UserPromptSubmit` hook) |
-| `.bdk/design/` | `/bdk:design` | Design docs, `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md` |
-| `.bdk/verify-plan/` | `/bdk:verify-plan` | Verification reports, `.bdk/verify-plan/<plan-slug>-verification.md` |
-| `.bdk/runs/` | `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited |
-| `.bdk/cr/` | `/bdk:cr` | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md` |
-| `.bdk/explain-complex-code/` | `/bdk:explain-complex-code` | Architecture docs, `.bdk/explain-complex-code/[feature-name].md` |
-| `.bdk/tmp/.rules_drift/` | `hooks/check-rules-drift/check.py` | Per-session drift-detection cursor, `.bdk/tmp/.rules_drift/drift-<session_id>.json` (content fingerprints, not human-readable) |
+| Path                         | Written by                                                    | Contents                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `.bdk/settings.json`         | `/bdk:setup`                                                  | Project configuration - see the [README](https://github.com/broneq/bdk/blob/main/README.md#settings)                           |
+| `.bdk/plans/`                | `/bdk:create-plan`                                            | Implementation plans (`mkdir -p .bdk/plans` runs from the skill's `UserPromptSubmit` hook)                                     |
+| `.bdk/design/`               | `/bdk:design`                                                 | Design docs, `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md`                                                                    |
+| `.bdk/verify-plan/`          | `/bdk:verify-plan`                                            | Verification reports, `.bdk/verify-plan/<plan-slug>-verification.md`                                                           |
+| `.bdk/runs/`                 | `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited                                                    |
+| `.bdk/cr/`                   | `/bdk:cr`                                                     | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md`                                                          |
+| `.bdk/explain-complex-code/` | `/bdk:explain-complex-code`                                   | Architecture docs, `.bdk/explain-complex-code/[feature-name].md`                                                               |
+| `.bdk/tmp/.rules_drift/`     | `hooks/check-rules-drift/check.py`                            | Per-session drift-detection cursor, `.bdk/tmp/.rules_drift/drift-<session_id>.json` (content fingerprints, not human-readable) |
 
 ## Run state: the one directory no skill reads or writes directly
 

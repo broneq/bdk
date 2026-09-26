@@ -38,11 +38,11 @@ Verification: missing
 
 **Cause:** `/bdk:subagent-execute-plan` Step 0.5 compares the `Plan sha256:` recorded in `.bdk/verify-plan/<plan-slug>-verification.md` against a fresh hash of the plan file (`bdk_run_state.py hash-plan <plan-path>`):
 
-| Stamp | Meaning |
-|---|---|
-| present, hash matches | `stamped` - this exact plan was verified |
+| Stamp                 | Meaning                                       |
+| --------------------- | --------------------------------------------- |
+| present, hash matches | `stamped` - this exact plan was verified      |
 | present, hash differs | `stale` - the plan changed after verification |
-| absent | `missing` - never verified |
+| absent                | `missing` - never verified                    |
 
 **Fix:** Nothing is blocked - per the skill, `stale` and `missing` "warn and continue. Do not stop: skipping verification is the user's call to make". If the verdict matters, run `/bdk:verify-plan` again before continuing, or accept the risk and proceed. See [Full pipeline](workflows/full-pipeline.md).
 

@@ -31,10 +31,10 @@ draft cold - the author of a design has confirmation bias against it, so the cri
 moves out of the author's head.
 
 !!! warning
-    If the chosen approach changes the database schema, the Schema-Change Gate is
-    non-skippable. `/bdk:design` shows the current schema, presents 2+ proposals with
-    migration and rollback implications, and requires explicit approval. A thumbs-up on
-    the broader design is not schema approval.
+If the chosen approach changes the database schema, the Schema-Change Gate is
+non-skippable. `/bdk:design` shows the current schema, presents 2+ proposals with
+migration and rollback implications, and requires explicit approval. A thumbs-up on
+the broader design is not schema approval.
 
 Output: `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md`, including a "What we did NOT
 decide" section listing every open question.
@@ -121,11 +121,11 @@ command. Re-invoking the same skill resumes from the commit trailers.
 
 ## The seams are files
 
-| Seam | Carrier |
-|---|---|
-| design -> plan | the design doc at `.bdk/design/` |
-| plan -> verify | the plan file |
-| verify -> execute | `.bdk/verify-plan/<slug>-verification.md`, carrying the plan's sha256 |
+| Seam              | Carrier                                                                       |
+| ----------------- | ----------------------------------------------------------------------------- |
+| design -> plan    | the design doc at `.bdk/design/`                                              |
+| plan -> verify    | the plan file                                                                 |
+| verify -> execute | `.bdk/verify-plan/<slug>-verification.md`, carrying the plan's sha256         |
 | execute -> review | git commit trailers (`BDK-Run:`, `BDK-Group:`) plus `.bdk/runs/<run-id>.json` |
 
 No stage depends on conversation state, so any stage can run in a fresh session - or on
@@ -163,9 +163,9 @@ match each other's `git log`. Nothing coordinates the two runs, which is the poi
 merge them the way you merge any two branches.
 
 !!! warning
-    One session per worktree. Two sessions in one worktree contend for the same run, and
-    the second is refused by the session guard. Take over a run held by a dead session
-    with `--force`, which prints exactly what it took over.
+One session per worktree. Two sessions in one worktree contend for the same run, and
+the second is refused by the session guard. Take over a run held by a dead session
+with `--force`, which prints exactly what it took over.
 
 ## Stage 5 - Review
 
@@ -178,14 +178,14 @@ breaking an earlier, already-reviewed one. See [Code review](code-review.md).
 
 ## What you get
 
-| Artifact | Path |
-|---|---|
-| Design doc | `.bdk/design/<ts>-<slug>-design.md` |
-| Plan | `.bdk/plans/<ts>-<slug>.md` |
-| Verification report | `.bdk/verify-plan/<plan-slug>-verification.md` |
-| Run manifest (machine-owned, gitignored) | `.bdk/runs/<run-id>.json` |
-| One commit per group, with `BDK-Run:` / `BDK-Group:` trailers | your branch |
-| Review report | `.bdk/cr/<stamp>-<branch-slug>-full.md` |
+| Artifact                                                      | Path                                           |
+| ------------------------------------------------------------- | ---------------------------------------------- |
+| Design doc                                                    | `.bdk/design/<ts>-<slug>-design.md`            |
+| Plan                                                          | `.bdk/plans/<ts>-<slug>.md`                    |
+| Verification report                                           | `.bdk/verify-plan/<plan-slug>-verification.md` |
+| Run manifest (machine-owned, gitignored)                      | `.bdk/runs/<run-id>.json`                      |
+| One commit per group, with `BDK-Run:` / `BDK-Group:` trailers | your branch                                    |
+| Review report                                                 | `.bdk/cr/<stamp>-<branch-slug>-full.md`        |
 
 ## Next step
 

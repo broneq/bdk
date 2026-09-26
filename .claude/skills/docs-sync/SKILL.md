@@ -21,7 +21,7 @@ Two things go wrong, and they need different hunting:
 
 - **Drift** - the page disagrees with the code. Found by checking a claim against
   its ground truth.
-- **Contradiction** - the page disagrees with *another page*, or with
+- **Contradiction** - the page disagrees with _another page_, or with
   `README.md`, or with `STARTUP_INSTRUCTIONS.md`. No single ground-truth check
   catches this, because each copy looks locally plausible. These are the most
   damaging findings, because a reader has no way to tell which copy is the
@@ -61,12 +61,12 @@ nothing checks.
 
 ## 2. Scope the audit
 
-| `$ARGUMENTS` | Scope |
-|---|---|
-| A page under `docs/` | Audit that page in full against its ground truth. |
-| A source path (`skills/cr/SKILL.md`, `agents/`, `hooks/hooks.json`) | Reverse-map it to pages, then widen by the shared-facts index. |
-| Empty | The branch's changes: `git diff --name-only $(git merge-base HEAD main)...HEAD` plus uncommitted files from `git status --porcelain`. |
-| Empty and the branch is clean and equal to `main` | Nothing to reverse-map. Sweep the whole site - 27 pages is small, and the reference pages alone are not where the interesting lies live. |
+| `$ARGUMENTS`                                                        | Scope                                                                                                                                    |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| A page under `docs/`                                                | Audit that page in full against its ground truth.                                                                                        |
+| A source path (`skills/cr/SKILL.md`, `agents/`, `hooks/hooks.json`) | Reverse-map it to pages, then widen by the shared-facts index.                                                                           |
+| Empty                                                               | The branch's changes: `git diff --name-only $(git merge-base HEAD main)...HEAD` plus uncommitted files from `git status --porcelain`.    |
+| Empty and the branch is clean and equal to `main`                   | Nothing to reverse-map. Sweep the whole site - 27 pages is small, and the reference pages alone are not where the interesting lies live. |
 
 Report the candidate page list before auditing, so the user can see the blast
 radius and cut it if it is wider than they want.
@@ -95,7 +95,7 @@ The claim classes that actually drift in this repo:
 - **Enumerations that must be exhaustive.** A sentence listing the shipped rule
   sets, the injected chains, the hook entries. An enumeration is a count with
   names - check that nothing is missing, not just that what is named exists.
-- **Mechanism claims.** *How* something is enforced, not just that it is:
+- **Mechanism claims.** _How_ something is enforced, not just that it is:
   "read-only by `disallowed-tools`" versus read-only by a `tools:` allowlist.
   These read fluently while being exactly wrong, and they are what a reader
   copies into their own project.
@@ -134,13 +134,13 @@ checklist returns exactly the checklist and nothing else.
 Present the findings as a table - page, claim, classification, evidence - and get
 approval with a single `AskUserQuestion` (Approve / Approve with changes /
 Cancel). Two reasons this gate is not ceremony: the docs carry editorial
-judgement a diff cannot distinguish from drift, and a page can be *intentionally*
+judgement a diff cannot distinguish from drift, and a page can be _intentionally_
 ahead of or behind the code during a migration
 (`contributing/injection-flows.md` is exactly that).
 
 Separate out anything that is not yours to decide, and list it rather than
 patching it: a number that disagrees with the code in a way that suggests the
-*code* is wrong, a convention violation in the source, a page whose whole framing
+_code_ is wrong, a convention violation in the source, a page whose whole framing
 is outdated. Silently making the docs match a bug is worse than leaving the
 mismatch visible.
 
