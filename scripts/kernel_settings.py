@@ -85,7 +85,9 @@ def _show(args: list[str], cwd: Path | None, missing_ok: bool = False) -> dict |
         report = json.loads(result.stdout)
     except json.JSONDecodeError as error:
         detail = (result.stdout or result.stderr).strip()
-        raise KernelSettingsError(f"bdk config show failed (exit {result.returncode}): {detail}") from error
+        raise KernelSettingsError(
+            f"bdk config show failed (exit {result.returncode}): {detail}"
+        ) from error
     if result.returncode == 0:
         return report
     rule = report.get("rule", "unknown")

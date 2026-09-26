@@ -3,6 +3,7 @@
 Recorded host payloads are committed to a public repo, so anonymisation is the
 part of the probe that must not regress.
 """
+
 import getpass
 import json
 import os
@@ -36,7 +37,11 @@ def payload(session: str = SESSION, **extra) -> dict:
         "permission_mode": "default",
         "hook_event_name": "PreToolUse",
         "tool_name": "Bash",
-        "tool_input": {"command": f"ls {PROJECT}/src", "timeout": 120000, "run_in_background": False},
+        "tool_input": {
+            "command": f"ls {PROJECT}/src",
+            "timeout": 120000,
+            "run_in_background": False,
+        },
         "tool_use_id": "toolu_01AbCdEf",
         **extra,
     }
@@ -57,7 +62,10 @@ def run_collect(tmp_path: Path, *pairs: str, recordings: dict[str, dict] | None 
     }
     result = subprocess.run(
         ["node", str(COLLECT), "9.9.9", *pairs],
-        capture_output=True, text=True, env=env, cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=tmp_path,
     )
     return result, dest / "9.9.9"
 
@@ -67,8 +75,9 @@ def read_fixture(dest: Path, check_id: str) -> dict:
 
 
 def test_paths_are_replaced_including_encoded_forms(tmp_path):
-    result, dest = run_collect(tmp_path, "pre-bash=*-PreToolUse.json",
-                               recordings={"1-1-PreToolUse.json": payload()})
+    result, dest = run_collect(
+        tmp_path, "pre-bash=*-PreToolUse.json", recordings={"1-1-PreToolUse.json": payload()}
+    )
     assert result.returncode == 0, result.stderr
     text = (dest / "pre-bash.json").read_text()
     for leak in (HOME, PROJECT, encoded(PROJECT), encoded(HOME), "alice"):
@@ -83,8 +92,9 @@ def test_paths_are_replaced_including_encoded_forms(tmp_path):
 def test_plugin_root_is_replaced(tmp_path):
     probe_dir = str(COLLECT.parent)
     body = payload(tool_input={"command": f"node {probe_dir}/dist/bdk.mjs ping"})
-    result, dest = run_collect(tmp_path, "root=*-PreToolUse.json",
-                               recordings={"1-1-PreToolUse.json": body})
+    result, dest = run_collect(
+        tmp_path, "root=*-PreToolUse.json", recordings={"1-1-PreToolUse.json": body}
+    )
     assert result.returncode == 0, result.stderr
     p = read_fixture(dest, "root")["payloads"][0]
     assert p["tool_input"]["command"] == "node <PLUGIN_ROOT>/dist/bdk.mjs ping"
@@ -93,8 +103,9 @@ def test_plugin_root_is_replaced(tmp_path):
 @pytest.mark.parametrize("prefix", ["/private/tmp/claude-502", "/tmp/claude-502"])
 def test_per_user_claude_temp_dir_is_replaced(tmp_path, prefix):
     body = payload(scratchpad_dir=f"{prefix}/{encoded(PROJECT)}/{SESSION}/scratchpad")
-    result, dest = run_collect(tmp_path, "tmp=*-PreToolUse.json",
-                               recordings={"1-1-PreToolUse.json": body})
+    result, dest = run_collect(
+        tmp_path, "tmp=*-PreToolUse.json", recordings={"1-1-PreToolUse.json": body}
+    )
     assert result.returncode == 0, result.stderr
     p = read_fixture(dest, "tmp")["payloads"][0]
     assert p["scratchpad_dir"] == f"<CLAUDE_TMP>/<PROJECT>/{p['session_id']}/scratchpad"
@@ -102,7 +113,8 @@ def test_per_user_claude_temp_dir_is_replaced(tmp_path, prefix):
 
 def test_ids_map_to_stable_placeholders(tmp_path):
     result, dest = run_collect(
-        tmp_path, "two=*-PreToolUse.json",
+        tmp_path,
+        "two=*-PreToolUse.json",
         recordings={
             "1-1-PreToolUse.json": payload(),
             "2-2-PreToolUse.json": payload(),
@@ -122,8 +134,9 @@ def test_ids_map_to_stable_placeholders(tmp_path):
 
 def test_keys_types_and_nesting_are_kept(tmp_path):
     body = payload(agent_id="a1b2c3d4e5", agent_type="bdk-probe:probe-worker")
-    result, dest = run_collect(tmp_path, "agent=*-PreToolUse.json",
-                               recordings={"1-1-PreToolUse.json": body})
+    result, dest = run_collect(
+        tmp_path, "agent=*-PreToolUse.json", recordings={"1-1-PreToolUse.json": body}
+    )
     assert result.returncode == 0, result.stderr
     p = read_fixture(dest, "agent")["payloads"][0]
     assert set(p) == set(body)
@@ -134,8 +147,9 @@ def test_keys_types_and_nesting_are_kept(tmp_path):
 
 
 def test_probe_metadata_is_added(tmp_path):
-    result, dest = run_collect(tmp_path, "meta=*-PreToolUse.json",
-                               recordings={"1-1-PreToolUse.json": payload()})
+    result, dest = run_collect(
+        tmp_path, "meta=*-PreToolUse.json", recordings={"1-1-PreToolUse.json": payload()}
+    )
     assert result.returncode == 0, result.stderr
     probe = read_fixture(dest, "meta")["_probe"]
     assert probe["claude_code_version"] == "9.9.9"
@@ -144,8 +158,9 @@ def test_probe_metadata_is_added(tmp_path):
 
 
 def test_missing_recording_fails_and_names_the_check(tmp_path):
-    result, dest = run_collect(tmp_path, "absent=*-SessionEnd.json",
-                               recordings={"1-1-PreToolUse.json": payload()})
+    result, dest = run_collect(
+        tmp_path, "absent=*-SessionEnd.json", recordings={"1-1-PreToolUse.json": payload()}
+    )
     assert result.returncode != 0
     assert "absent" in result.stderr
     assert not (dest / "absent.json").exists()
@@ -163,9 +178,15 @@ def leaks(text: str, user: str) -> list[str]:
     return found
 
 
-@pytest.mark.parametrize("text", [
-    "/Users/alice/x", "-Users-alice-project", "/tmp/alice-scratch", "owner: alice",
-])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "/Users/alice/x",
+        "-Users-alice-project",
+        "/tmp/alice-scratch",
+        "owner: alice",
+    ],
+)
 def test_leak_guard_flags_machine_data(text):
     assert leaks(text, "alice")
 
@@ -179,7 +200,9 @@ def committed_fixtures():
     return sorted(FIXTURES.rglob("*.json")) if FIXTURES.exists() else []
 
 
-@pytest.mark.parametrize("fixture", committed_fixtures(), ids=lambda p: str(p.relative_to(FIXTURES)))
+@pytest.mark.parametrize(
+    "fixture", committed_fixtures(), ids=lambda p: str(p.relative_to(FIXTURES))
+)
 def test_committed_fixtures_do_not_leak_machine_data(fixture):
     found = leaks(fixture.read_text(), getpass.getuser())
     assert not found, f"{fixture} leaks {found!r}"

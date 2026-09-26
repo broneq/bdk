@@ -57,7 +57,9 @@ def test_over_byte_budget_is_error(tmp_path: Path) -> None:
     f = tmp_path / "fat.md"
     f.write_text(
         "---\npaths:\n  - a/**\n---\n\n## Critical Invariants\n\n1. x\n\n"
-        + "- **Rule.** " + "x" * 9000 + "\n"
+        + "- **Rule.** "
+        + "x" * 9000
+        + "\n"
     )
     result = mod.lint_file(f)
     assert "budget:bytes" in _codes(result["errors"])
@@ -81,16 +83,12 @@ def test_missing_critical_invariants_warned_only_for_long_files(tmp_path: Path) 
     mod = _load_module()
     short = tmp_path / "short.md"
     short.write_text(CLEAN_RULE)
-    assert "structure:missing-critical-invariants" not in _codes(
-        mod.lint_file(short)["warnings"]
-    )
+    assert "structure:missing-critical-invariants" not in _codes(mod.lint_file(short)["warnings"])
 
     long_file = tmp_path / "long.md"
     filler = "\n".join(f"- **Rule {i}.** why" for i in range(60))
     long_file.write_text("---\npaths:\n  - a/**\n---\n\n# Long\n\n" + filler + "\n")
-    assert "structure:missing-critical-invariants" in _codes(
-        mod.lint_file(long_file)["warnings"]
-    )
+    assert "structure:missing-critical-invariants" in _codes(mod.lint_file(long_file)["warnings"])
 
 
 def test_critical_invariants_section_satisfies_check(tmp_path: Path) -> None:
@@ -98,13 +96,9 @@ def test_critical_invariants_section_satisfies_check(tmp_path: Path) -> None:
     f = tmp_path / "long.md"
     filler = "\n".join(f"- **Rule {i}.** why" for i in range(60))
     f.write_text(
-        "---\npaths:\n  - a/**\n---\n\n# Long\n\n## Critical Invariants\n\n1. x\n\n"
-        + filler
-        + "\n"
+        "---\npaths:\n  - a/**\n---\n\n# Long\n\n## Critical Invariants\n\n1. x\n\n" + filler + "\n"
     )
-    assert "structure:missing-critical-invariants" not in _codes(
-        mod.lint_file(f)["warnings"]
-    )
+    assert "structure:missing-critical-invariants" not in _codes(mod.lint_file(f)["warnings"])
 
 
 # ---------------------------------------------------------------------------
@@ -132,13 +126,10 @@ def test_bug_id_and_numbered_invariant_are_warnings(tmp_path: Path) -> None:
     mod = _load_module()
     f = tmp_path / "ids.md"
     f.write_text(
-        "---\npaths:\n  - a/**\n---\n\n# Ids\n\n"
-        "- **A rule.** Closes CUR-11 (invariant I3).\n"
+        "---\npaths:\n  - a/**\n---\n\n# Ids\n\n- **A rule.** Closes CUR-11 (invariant I3).\n"
     )
     result = mod.lint_file(f)
-    assert {"narrative:bug-id", "narrative:numbered-invariant"} <= _codes(
-        result["warnings"]
-    )
+    assert {"narrative:bug-id", "narrative:numbered-invariant"} <= _codes(result["warnings"])
     assert result["errors"] == []
 
 
@@ -214,11 +205,7 @@ def test_multi_symbol_rule_is_not_a_code_mirror(tmp_path: Path) -> None:
 
 def test_code_mirror_ignores_fenced_examples(tmp_path: Path) -> None:
     mod = _load_module()
-    body = (
-        "```markdown\n"
-        "- **Bad.** `a/one.ts`, `a/two.ts`, `a/three.ts`\n"
-        "```\n"
-    )
+    body = "```markdown\n- **Bad.** `a/one.ts`, `a/two.ts`, `a/three.ts`\n```\n"
     assert "admission:code-mirror" not in _warn_codes(mod, tmp_path, body)
 
 
@@ -346,9 +333,7 @@ def test_cli_exit_zero_on_clean_dir(tmp_path: Path) -> None:
 
 
 def test_cli_exit_one_on_errors(tmp_path: Path) -> None:
-    (tmp_path / "story.md").write_text(
-        "---\npaths:\n  - a/**\n---\n\n- **R.** We used to do X.\n"
-    )
+    (tmp_path / "story.md").write_text("---\npaths:\n  - a/**\n---\n\n- **R.** We used to do X.\n")
     result = _run_cli(str(tmp_path))
     assert result.returncode == 1
     payload = json.loads(result.stdout)

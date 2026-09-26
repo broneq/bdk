@@ -94,7 +94,9 @@ def test_an_override_without_a_default(project):
 
 def test_a_mapped_language_file(project):
     _write(project, "rules/go.md", "- errors are values\n")
-    _write(project, ".bdk/settings.yaml", "prompts:\n  files:\n    rules/languages/go: rules/go.md\n")
+    _write(
+        project, ".bdk/settings.yaml", "prompts:\n  files:\n    rules/languages/go: rules/go.md\n"
+    )
     assert resolve_language_rule("go", cwd=project) == "- errors are values\n"
 
 

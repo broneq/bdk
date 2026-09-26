@@ -68,7 +68,9 @@ def test_no_settings_returns_the_plugin_default(project):
 
 def test_project_prompt_file_extends_the_default(project):
     _write(project, ".bdk/prompts/rules/security.md", "- never log tokens\n")
-    assert resolve_rule("security", cwd=project) == f"{_default('security')}\n\n- never log tokens\n"
+    assert (
+        resolve_rule("security", cwd=project) == f"{_default('security')}\n\n- never log tokens\n"
+    )
 
 
 def test_replace_drops_the_default(project):
@@ -78,13 +80,19 @@ def test_replace_drops_the_default(project):
 
 def test_local_replace_wins_over_project_extends(project):
     _write(project, ".bdk/prompts/rules/architecture.md", "- project\n")
-    _write(project, ".bdk/prompts.local/rules/architecture.md", "---\nmode: replace\n---\n- local\n")
+    _write(
+        project, ".bdk/prompts.local/rules/architecture.md", "---\nmode: replace\n---\n- local\n"
+    )
     assert resolve_rule("architecture", cwd=project) == "- local\n"
 
 
 def test_prompts_files_maps_a_file_from_anywhere(project):
     _write(project, "docs/security-rules.md", "- mapped\n")
-    _write(project, ".bdk/settings.yaml", "prompts:\n  files:\n    rules/security: docs/security-rules.md\n")
+    _write(
+        project,
+        ".bdk/settings.yaml",
+        "prompts:\n  files:\n    rules/security: docs/security-rules.md\n",
+    )
     assert resolve_rule("security", cwd=project) == f"{_default('security')}\n\n- mapped\n"
 
 

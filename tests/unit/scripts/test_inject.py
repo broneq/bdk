@@ -348,6 +348,7 @@ def test_cli_settings_flag_is_gone(project):
 # inject with prefer_conditions
 # ---------------------------------------------------------------------------
 
+
 def test_inject_prefer_suppresses_when_preferred_true(tmp_path):
     """Block is suppressed when any prefer condition is true."""
     settings = {"features": {"vue": True, "react": True}}
