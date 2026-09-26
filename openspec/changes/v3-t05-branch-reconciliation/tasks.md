@@ -35,7 +35,7 @@
 - [x] 5.1 Add the ruff steps to the `pytest` job in `tests.yml` and the `lint:py` script to `package.json`. Verify that `pnpm lint:py` fails on the merged tree (the v3-side files were never formatted)
 - [x] 5.2 Run `uv run --group lint ruff format` and commit only that as `style: apply ruff format to the v3 scripts`. Verify that `ruff format --check` passes and that `pytest tests/unit/` still passes
 - [x] 5.3 Fix the `ruff check` findings in a `fix:` commit. Verify that `pnpm lint:py` exits 0 and `pytest tests/unit/` passes
-- [ ] 5.4 Append the task 5.2 SHA with its subject to `.git-blame-ignore-revs`, and verify that `git blame --ignore-revs-file .git-blame-ignore-revs scripts/inject.py` runs without error
+- [x] 5.4 Append the task 5.2 SHA with its subject to `.git-blame-ignore-revs`, and verify that `git blame --ignore-revs-file .git-blame-ignore-revs scripts/inject.py` runs without error
 
 ## 6. Docs workflow and docs-sync (design D-7, D-9)
 

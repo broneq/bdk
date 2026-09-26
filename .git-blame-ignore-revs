@@ -5,3 +5,9 @@
 
 # style: apply ruff format
 f08fe2a192ed64f830314c1a525dc469fcde6101
+
+# style: apply ruff format to the v3 scripts (T05)
+36c8d2c60e61d82d65e4d6a2dd61d8bb6197993a
+
+# style: format the imported site pages and docs-sync with Prettier (T05)
+abbc20415206d4b57f4128a1fee7c400649b138f
