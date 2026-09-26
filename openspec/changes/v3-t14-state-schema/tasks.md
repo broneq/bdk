@@ -65,5 +65,5 @@
 
 ## 13. Acceptance
 
-- [ ] 13.1 Check the Acceptance signal end to end: `pnpm build` then `git diff --exit-code dist/ schema/` is clean; `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e` and `pnpm test:contract` pass; the fixture, write map and merge tests are in the contract run; every file and entry type of the Change directory has a writer cross-checked against `commands.json`
-- [ ] 13.2 Run `openspec validate v3-t14-state-schema --strict`; verify it is valid
+- [x] 13.1 Check the Acceptance signal end to end: `pnpm build` then `git diff --exit-code dist/ schema/` is clean; `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e` and `pnpm test:contract` pass; the fixture, write map and merge tests are in the contract run; every file and entry type of the Change directory has a writer cross-checked against `commands.json`
+- [x] 13.2 Run `openspec validate v3-t14-state-schema --strict`; verify it is valid
