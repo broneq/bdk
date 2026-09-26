@@ -9,7 +9,7 @@
   "properties": {
     "change": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "previousSession": {
       "type": "string"
@@ -18,7 +18,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "description": "Opaque merge-safe id (T14)."
+        "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
       }
     },
     "rebuilt": {

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/design-part.json",
+  "title": "Design part",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1 },
+    "id": {
+      "type": "string",
+      "pattern": "^\\d{2}$",
+      "description": "Two digits, equal to `<nn>` of the file name."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "depends-on": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^\\d{2}$",
+        "description": "Two digits, equal to `<nn>` of the file name."
+      }
+    }
+  },
+  "required": ["schema", "id", "title", "depends-on"],
+  "additionalProperties": false
+}

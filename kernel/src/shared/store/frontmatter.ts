@@ -1,5 +1,5 @@
 // Change files are YAML frontmatter plus Markdown (R-format). This only cuts
-// the two apart; parsing and schemas belong to the reader (T12, T14).
+// the two apart; `state/documents.ts` parses and validates the documents.
 
 export interface Split {
   readonly frontmatter?: string;

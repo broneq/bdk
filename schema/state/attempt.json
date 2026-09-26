@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/state/attempt.json",
+  "title": "Attempt record",
+  "description": "The body is the close reason.",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1 },
+    "ticket": { "$ref": "common.json#/$defs/ticketId" },
+    "loop": { "type": "string", "minLength": 1, "description": "Loop kind from policy." },
+    "target": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Task, part, artifact or Change id."
+    },
+    "attempt": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "of": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "scope": { "$ref": "common.json#/$defs/scope" },
+    "narrowed-from": { "$ref": "common.json#/$defs/scope" },
+    "escalation": { "type": "boolean" },
+    "opened-at": { "$ref": "common.json#/$defs/timestamp" },
+    "author": { "$ref": "common.json#/$defs/author" },
+    "closed-at": {
+      "description": "Present exactly when `outcome` is.",
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "outcome": { "type": "string", "enum": ["ok", "fail", "not-run"] },
+    "findings": {
+      "description": "Finding fingerprints of a `fail` (oscillation check).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fingerprint": { "$ref": "common.json#/$defs/hash" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "decision",
+              "finding",
+              "observation",
+              "blocker",
+              "question",
+              "assumption",
+              "risk",
+              "learning",
+              "report",
+              "transition"
+            ]
+          },
+          "file": { "$ref": "common.json#/$defs/relativePath" },
+          "symbol": { "type": "string", "minLength": 1 }
+        },
+        "required": ["fingerprint", "type", "file"],
+        "additionalProperties": false
+      }
+    },
+    "dropped": { "type": "array", "items": { "$ref": "common.json#/$defs/ledgerId" } }
+  },
+  "required": [
+    "schema",
+    "ticket",
+    "loop",
+    "target",
+    "attempt",
+    "of",
+    "scope",
+    "opened-at",
+    "author"
+  ],
+  "additionalProperties": false
+}

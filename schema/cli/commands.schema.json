@@ -156,7 +156,7 @@
         "writes": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Change directory, working tree or configuration paths the command may write, and `git:commit` when it creates a commit; empty for read commands (T14 cross-check)."
+          "description": "Change directory, working tree or configuration paths the command may write, and `git:commit` when it creates a commit; empty for read commands (cross-checked by the `kernel-state` write map)."
         }
       }
     }

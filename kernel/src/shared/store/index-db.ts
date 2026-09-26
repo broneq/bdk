@@ -1,6 +1,6 @@
 // The rebuildable SQLite index (R-store). T11 ships the skeleton: the file,
-// the busy timeout and a `meta` table with the schema version; T14 adds the
-// tables. `node:sqlite` is imported on first open only, so commands that
+// the busy timeout and a `meta` table with the schema version; T20 adds the
+// tables and the freshness check. `node:sqlite` is imported on first open only, so commands that
 // never touch the index never load it.
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";

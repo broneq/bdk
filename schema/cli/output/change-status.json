@@ -9,7 +9,7 @@
   "properties": {
     "change": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "kind": {
       "enum": ["feature", "bug"]
@@ -33,7 +33,7 @@
       "properties": {
         "entry": {
           "type": "string",
-          "description": "Opaque merge-safe id (T14)."
+          "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
         },
         "options": {
           "type": "array",
@@ -112,7 +112,7 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "description": "Opaque merge-safe id (T14)."
+                  "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
                 },
                 "type": {
                   "enum": [
@@ -159,7 +159,7 @@
                 },
                 "supersedes": {
                   "type": "string",
-                  "description": "Opaque merge-safe id (T14)."
+                  "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
                 }
               }
             },
@@ -221,7 +221,7 @@
         "properties": {
           "ticket": {
             "type": "string",
-            "description": "Opaque merge-safe id (T14)."
+            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           },
           "loop": {
             "type": "string",

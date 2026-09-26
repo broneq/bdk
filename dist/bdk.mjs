@@ -1509,7 +1509,7 @@ var require_stringify = __commonJS({
         props.push(doc.directives.tagString(tag));
       return props.join(" ");
     }
-    function stringify3(item, ctx, onComment, onChompKeep) {
+    function stringify4(item, ctx, onComment, onChompKeep) {
       if (identity.isPair(item))
         return item.toString(ctx, onComment, onChompKeep);
       if (identity.isAlias(item)) {
@@ -1538,7 +1538,7 @@ var require_stringify = __commonJS({
 ${ctx.indent}${str}`;
     }
     exports.createStringifyContext = createStringifyContext;
-    exports.stringify = stringify3;
+    exports.stringify = stringify4;
   }
 });
 
@@ -1548,7 +1548,7 @@ var require_stringifyPair = __commonJS({
     "use strict";
     var identity = require_identity();
     var Scalar = require_Scalar();
-    var stringify3 = require_stringify();
+    var stringify4 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
       const { allNullValues, doc, indent, indentStep, options: { commentString, indentSeq, simpleKeys } } = ctx;
@@ -1570,7 +1570,7 @@ var require_stringifyPair = __commonJS({
       });
       let keyCommentDone = false;
       let chompKeep = false;
-      let str = stringify3.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
+      let str = stringify4.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
       if (!explicitKey && !ctx.inFlow && str.length > 1024) {
         if (simpleKeys)
           throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
@@ -1622,7 +1622,7 @@ ${indent}:`;
         ctx.indent = ctx.indent.substring(2);
       }
       let valueCommentDone = false;
-      const valueStr = stringify3.stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
+      const valueStr = stringify4.stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
       let ws = " ";
       if (keyComment || vsb || vcb) {
         ws = vsb ? "\n" : "";
@@ -1763,7 +1763,7 @@ var require_addPairToJSMap = __commonJS({
     "use strict";
     var log = require_log();
     var merge2 = require_merge();
-    var stringify3 = require_stringify();
+    var stringify4 = require_stringify();
     var identity = require_identity();
     var toJS = require_toJS();
     function addPairToJSMap(ctx, map, { key, value }) {
@@ -1799,7 +1799,7 @@ var require_addPairToJSMap = __commonJS({
       if (typeof jsKey !== "object")
         return String(jsKey);
       if (identity.isNode(key) && ctx?.doc) {
-        const strCtx = stringify3.createStringifyContext(ctx.doc, {});
+        const strCtx = stringify4.createStringifyContext(ctx.doc, {});
         strCtx.anchors = /* @__PURE__ */ new Set();
         for (const node2 of ctx.anchors.keys())
           strCtx.anchors.add(node2.anchor);
@@ -1866,12 +1866,12 @@ var require_stringifyCollection = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var stringify3 = require_stringify();
+    var stringify4 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyCollection(collection, ctx, options) {
       const flow = ctx.inFlow ?? collection.flow;
-      const stringify4 = flow ? stringifyFlowCollection : stringifyBlockCollection;
-      return stringify4(collection, ctx, options);
+      const stringify5 = flow ? stringifyFlowCollection : stringifyBlockCollection;
+      return stringify5(collection, ctx, options);
     }
     function stringifyBlockCollection({ comment, items }, ctx, { blockItemPrefix, flowChars, itemIndent, onChompKeep, onComment }) {
       const { indent, options: { commentString } } = ctx;
@@ -1896,7 +1896,7 @@ var require_stringifyCollection = __commonJS({
           }
         }
         chompKeep = false;
-        let str2 = stringify3.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
+        let str2 = stringify4.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
         if (comment2)
           str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment2));
         if (chompKeep && comment2)
@@ -1963,7 +1963,7 @@ ${indent}${line}` : "\n";
         }
         if (comment)
           reqNewline = true;
-        let str = stringify3.stringify(item, itemCtx, () => comment = null);
+        let str = stringify4.stringify(item, itemCtx, () => comment = null);
         reqNewline || (reqNewline = lines.length > linesAtValue || str.includes("\n"));
         if (i < items.length - 1) {
           str += ",";
@@ -3117,7 +3117,7 @@ var require_timestamp = __commonJS({
       resolve: (str) => parseSexagesimal(str, false),
       stringify: stringifySexagesimal
     };
-    var timestamp = {
+    var timestamp2 = {
       identify: (value) => value instanceof Date,
       default: true,
       tag: "tag:yaml.org,2002:timestamp",
@@ -3126,26 +3126,26 @@ var require_timestamp = __commonJS({
       // assumed to be 00:00:00Z (start of day, UTC).
       test: RegExp("^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:(?:t|T|[ \\t]+)([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\\.[0-9]+)?)(?:[ \\t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?)?$"),
       resolve(str) {
-        const match = str.match(timestamp.test);
+        const match = str.match(timestamp2.test);
         if (!match)
           throw new Error("!!timestamp expects a date, starting with yyyy-mm-dd");
         const [, year, month, day, hour, minute, second] = match.map(Number);
         const millisec = match[7] ? Number((match[7] + "00").substr(1, 3)) : 0;
-        let date2 = Date.UTC(year, month - 1, day, hour || 0, minute || 0, second || 0, millisec);
+        let date4 = Date.UTC(year, month - 1, day, hour || 0, minute || 0, second || 0, millisec);
         const tz = match[8];
         if (tz && tz !== "Z") {
           let d = parseSexagesimal(tz, false);
           if (Math.abs(d) < 30)
             d *= 60;
-          date2 -= 6e4 * d;
+          date4 -= 6e4 * d;
         }
-        return new Date(date2);
+        return new Date(date4);
       },
       stringify: ({ value }) => value?.toISOString().replace(/(T00:00:00)?\.000Z$/, "") ?? ""
     };
     exports.floatTime = floatTime;
     exports.intTime = intTime;
-    exports.timestamp = timestamp;
+    exports.timestamp = timestamp2;
   }
 });
 
@@ -3165,7 +3165,7 @@ var require_schema3 = __commonJS({
     var omap = require_omap();
     var pairs = require_pairs();
     var set = require_set();
-    var timestamp = require_timestamp();
+    var timestamp2 = require_timestamp();
     var schema = [
       map.map,
       seq.seq,
@@ -3185,9 +3185,9 @@ var require_schema3 = __commonJS({
       omap.omap,
       pairs.pairs,
       set.set,
-      timestamp.intTime,
-      timestamp.floatTime,
-      timestamp.timestamp
+      timestamp2.intTime,
+      timestamp2.floatTime,
+      timestamp2.timestamp
     ];
     exports.schema = schema;
   }
@@ -3212,7 +3212,7 @@ var require_tags = __commonJS({
     var pairs = require_pairs();
     var schema$2 = require_schema3();
     var set = require_set();
-    var timestamp = require_timestamp();
+    var timestamp2 = require_timestamp();
     var schemas = /* @__PURE__ */ new Map([
       ["core", schema.schema],
       ["failsafe", [map.map, seq.seq, string3.string]],
@@ -3226,11 +3226,11 @@ var require_tags = __commonJS({
       float: float.float,
       floatExp: float.floatExp,
       floatNaN: float.floatNaN,
-      floatTime: timestamp.floatTime,
+      floatTime: timestamp2.floatTime,
       int: int2.int,
       intHex: int2.intHex,
       intOct: int2.intOct,
-      intTime: timestamp.intTime,
+      intTime: timestamp2.intTime,
       map: map.map,
       merge: merge2.merge,
       null: _null3.nullTag,
@@ -3238,7 +3238,7 @@ var require_tags = __commonJS({
       pairs: pairs.pairs,
       seq: seq.seq,
       set: set.set,
-      timestamp: timestamp.timestamp
+      timestamp: timestamp2.timestamp
     };
     var coreKnownTags = {
       "tag:yaml.org,2002:binary": binary.binary,
@@ -3246,7 +3246,7 @@ var require_tags = __commonJS({
       "tag:yaml.org,2002:omap": omap.omap,
       "tag:yaml.org,2002:pairs": pairs.pairs,
       "tag:yaml.org,2002:set": set.set,
-      "tag:yaml.org,2002:timestamp": timestamp.timestamp
+      "tag:yaml.org,2002:timestamp": timestamp2.timestamp
     };
     function getTags(customTags, schemaName, addMergeTag) {
       const schemaTags = schemas.get(schemaName);
@@ -3324,7 +3324,7 @@ var require_stringifyDocument = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var stringify3 = require_stringify();
+    var stringify4 = require_stringify();
     var stringifyComment = require_stringifyComment();
     function stringifyDocument(doc, options) {
       const lines = [];
@@ -3339,7 +3339,7 @@ var require_stringifyDocument = __commonJS({
       }
       if (hasDirectives)
         lines.push("---");
-      const ctx = stringify3.createStringifyContext(doc, options);
+      const ctx = stringify4.createStringifyContext(doc, options);
       const { commentString } = ctx.options;
       if (doc.commentBefore) {
         if (lines.length !== 1)
@@ -3361,7 +3361,7 @@ var require_stringifyDocument = __commonJS({
           contentComment = doc.contents.comment;
         }
         const onChompKeep = contentComment ? void 0 : () => chompKeep = true;
-        let body = stringify3.stringify(doc.contents, ctx, () => contentComment = null, onChompKeep);
+        let body = stringify4.stringify(doc.contents, ctx, () => contentComment = null, onChompKeep);
         if (contentComment)
           body += stringifyComment.lineComment(body, "", commentString(contentComment));
         if ((body[0] === "|" || body[0] === ">") && lines[lines.length - 1] === "---") {
@@ -3369,7 +3369,7 @@ var require_stringifyDocument = __commonJS({
         } else
           lines.push(body);
       } else {
-        lines.push(stringify3.stringify(doc.contents, ctx));
+        lines.push(stringify4.stringify(doc.contents, ctx));
       }
       if (doc.directives?.docEnd) {
         if (doc.comment) {
@@ -5505,7 +5505,7 @@ var require_cst_scalar = __commonJS({
 var require_cst_stringify = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
     "use strict";
-    var stringify3 = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
+    var stringify4 = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
     function stringifyToken(token) {
       switch (token.type) {
         case "block-scalar": {
@@ -5558,7 +5558,7 @@ var require_cst_stringify = __commonJS({
         res += stringifyToken(value);
       return res;
     }
-    exports.stringify = stringify3;
+    exports.stringify = stringify4;
   }
 });
 
@@ -5579,8 +5579,8 @@ var require_cst_visit = __commonJS({
     visit.REMOVE = REMOVE;
     visit.itemAtPath = (cst, path) => {
       let item = cst;
-      for (const [field, index2] of path) {
-        const tok = item?.[field];
+      for (const [field2, index2] of path) {
+        const tok = item?.[field2];
         if (tok && "items" in tok) {
           item = tok.items[index2];
         } else
@@ -5590,8 +5590,8 @@ var require_cst_visit = __commonJS({
     };
     visit.parentCollection = (cst, path) => {
       const parent = visit.itemAtPath(cst, path.slice(0, -1));
-      const field = path[path.length - 1][0];
-      const coll = parent?.[field];
+      const field2 = path[path.length - 1][0];
+      const coll = parent?.[field2];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
@@ -5600,11 +5600,11 @@ var require_cst_visit = __commonJS({
       let ctrl = visitor(item, path);
       if (typeof ctrl === "symbol")
         return ctrl;
-      for (const field of ["key", "value"]) {
-        const token = item[field];
+      for (const field2 of ["key", "value"]) {
+        const token = item[field2];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path.concat([[field2, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -5614,7 +5614,7 @@ var require_cst_visit = __commonJS({
               i -= 1;
             }
           }
-          if (typeof ctrl === "function" && field === "key")
+          if (typeof ctrl === "function" && field2 === "key")
             ctrl = ctrl(item, path);
         }
       }
@@ -7269,7 +7269,7 @@ var require_public_api = __commonJS({
       }
       return doc;
     }
-    function parse5(src, reviver, options) {
+    function parse6(src, reviver, options) {
       let _reviver = void 0;
       if (typeof reviver === "function") {
         _reviver = reviver;
@@ -7288,7 +7288,7 @@ var require_public_api = __commonJS({
       }
       return doc.toJS(Object.assign({ reviver: _reviver }, options));
     }
-    function stringify3(value, replacer, options) {
+    function stringify4(value, replacer, options) {
       let _replacer = null;
       if (typeof replacer === "function" || Array.isArray(replacer)) {
         _replacer = replacer;
@@ -7310,10 +7310,10 @@ var require_public_api = __commonJS({
         return value.toString(options);
       return new Document.Document(value, _replacer, options).toString(options);
     }
-    exports.parse = parse5;
+    exports.parse = parse6;
     exports.parseAllDocuments = parseAllDocuments;
     exports.parseDocument = parseDocument2;
-    exports.stringify = stringify3;
+    exports.stringify = stringify4;
   }
 });
 
@@ -7724,7 +7724,12 @@ var commands_default = {
         "policy/gate-not-ready",
         "policy/missing-citation"
       ],
-      writes: [".bdk/changes/<id>/log/", ".bdk/.machine/"]
+      writes: [
+        ".bdk/changes/<id>/log/",
+        ".bdk/changes/<id>/plan/index.md",
+        ".bdk/changes/<id>/design/index.md",
+        ".bdk/.machine/"
+      ]
     },
     {
       id: "part-list",
@@ -8029,7 +8034,7 @@ var commands_default = {
         "policy/no-open-ticket",
         "policy/observation-cap"
       ],
-      writes: [".bdk/changes/<id>/log/"]
+      writes: [".bdk/changes/<id>/log/", ".bdk/changes/<id>/reports/"]
     },
     {
       id: "log-list",
@@ -8978,7 +8983,7 @@ var commands_default = {
       output: "output/rebuild.json",
       exits: [0, 2, 3, 4, 5],
       refusals: ["state/trailer-mismatch", "runtime/git-missing"],
-      writes: [".bdk/.machine/"]
+      writes: [".bdk/.machine/", ".bdk/changes/<id>/", ".bdk/rules/"]
     },
     {
       id: "import",
@@ -10270,17 +10275,17 @@ var validateAsync = async (schema, value, _ctx) => {
   return result.issues.length === 0;
 };
 var _encode = (_Err) => {
-  const parse5 = _parse(_Err);
+  const parse6 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
     const ctx = _ctx ? { ..._ctx, direction: "backward" } : { direction: "backward" };
-    return parse5(schema, value, ctx, finalizeParams(fn, _params));
+    return parse6(schema, value, ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
 var _decode = (_Err) => {
-  const parse5 = _parse(_Err);
+  const parse6 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
-    return parse5(schema, value, _ctx, finalizeParams(fn, _params));
+    return parse6(schema, value, _ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
@@ -11458,14 +11463,14 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
     const shape = zod.def.shape;
     const propValues = {};
     for (const key in shape) {
-      const field = shape[key]._zod;
-      if (field.values) {
+      const field2 = shape[key]._zod;
+      if (field2.values) {
         if (!Object.prototype.hasOwnProperty.call(propValues, key)) {
           assignProp(propValues, key, /* @__PURE__ */ new Set());
         }
-        for (const v of field.values)
+        for (const v of field2.values)
           propValues[key].add(v);
-        if (field.optin !== void 0)
+        if (field2.optin !== void 0)
           propValues[key].add(void 0);
       }
     }
@@ -11541,9 +11546,9 @@ var $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) =>
           }`;
     doc.write(`const input = payload.value;`);
     const ids = /* @__PURE__ */ Object.create(null);
-    let counter = 0;
+    let counter2 = 0;
     for (const key of normalized.allKeys) {
-      ids[key] = `key_${counter++}`;
+      ids[key] = `key_${counter2++}`;
     }
     doc.write(memo2 ? `const newResult = memo.alloc(inst, payload, {}, ctx);` : `const newResult = {};`);
     for (const key of normalized.allKeys) {
@@ -11707,6 +11712,89 @@ var $ZodUnion = /* @__PURE__ */ $constructor("$ZodUnion", (inst, def) => {
     return Promise.all(results).then((results2) => {
       return handleUnionResults(results2, payload, inst, ctx);
     });
+  };
+});
+function discriminatorMap(def) {
+  const map = /* @__PURE__ */ new Map();
+  for (const option of def.options) {
+    const values = option._zod.propValues?.[def.discriminator];
+    if (!values || values.size === 0)
+      throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(option)}"`);
+    for (const value of values) {
+      if (map.has(value)) {
+        if (value !== void 0)
+          throw new Error(`Duplicate discriminator value "${String(value)}"`);
+        map.set(value, null);
+      } else {
+        map.set(value, option);
+      }
+    }
+  }
+  return map;
+}
+var $ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("$ZodDiscriminatedUnion", (inst, def) => {
+  def.inclusive = false;
+  $ZodUnion.init(inst, def);
+  const _super = inst._zod.parse;
+  defineLazyInternal(inst, "propValues", (zod) => {
+    const propValues = {};
+    let undefinedCount = 0;
+    for (const option of zod.def.options) {
+      const pv = option._zod.propValues;
+      if (!pv || Object.keys(pv).length === 0)
+        throw new Error(`Invalid discriminated union option at index "${zod.def.options.indexOf(option)}"`);
+      if (pv[zod.def.discriminator]?.has(void 0))
+        undefinedCount++;
+      for (const [k, v] of Object.entries(pv)) {
+        if (!Object.prototype.hasOwnProperty.call(propValues, k)) {
+          assignProp(propValues, k, /* @__PURE__ */ new Set());
+        }
+        for (const val of v) {
+          propValues[k].add(val);
+        }
+      }
+    }
+    if (!zod.def.unionFallback && undefinedCount > 1)
+      propValues[zod.def.discriminator]?.delete(void 0);
+    return propValues;
+  });
+  def.options.forEach((option, i) => {
+    const propShape = rawShape(option._zod.def);
+    if (propShape && !Object.prototype.hasOwnProperty.call(propShape, def.discriminator)) {
+      throw new Error(`Invalid discriminated union option at index "${i}"`);
+    }
+  });
+  const disc = cached(() => discriminatorMap(def));
+  inst._zod.parse = (payload, ctx) => {
+    const input = payload.value;
+    if (!isObject(input)) {
+      payload.issues.push({
+        code: "invalid_type",
+        expected: "object",
+        input,
+        inst
+      });
+      return payload;
+    }
+    const value = input?.[def.discriminator];
+    const opt = disc.value.get(value);
+    if (opt && (value !== void 0 || ctx.direction !== "backward")) {
+      return opt._zod.run(payload, ctx);
+    }
+    if (def.unionFallback || ctx.direction === "backward") {
+      return _super(payload, ctx);
+    }
+    payload.issues.push({
+      code: "invalid_union",
+      errors: [],
+      note: "No matching discriminator",
+      discriminator: def.discriminator,
+      options: Array.from(disc.value.keys()).filter((value2) => disc.value.get(value2) !== null),
+      input,
+      path: [def.discriminator],
+      inst
+    });
+    return payload;
   };
 });
 var $ZodIntersection = /* @__PURE__ */ $constructor("$ZodIntersection", (inst, def) => {
@@ -14118,8 +14206,8 @@ var objectProcessor = (schema, ctx, _json, params) => {
   }
   const requiredKeys = [];
   for (const key of Object.keys(shape)) {
-    const field = def.shape[key];
-    if (ctx.io === "input" ? inputOptin(field) === void 0 : field._zod.optout === void 0) {
+    const field2 = def.shape[key];
+    if (ctx.io === "input" ? inputOptin(field2) === void 0 : field2._zod.optout === void 0) {
       requiredKeys.push(key);
     }
   }
@@ -15206,6 +15294,18 @@ function union(options, params) {
     ...util_exports.normalizeParams(params)
   });
 }
+var ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("ZodDiscriminatedUnion", (inst, def) => {
+  ZodUnion.init(inst, def);
+  $ZodDiscriminatedUnion.init(inst, def);
+});
+function discriminatedUnion(discriminator, options, params) {
+  return new ZodDiscriminatedUnion({
+    type: "union",
+    options,
+    discriminator,
+    ...util_exports.normalizeParams(params)
+  });
+}
 var ZodIntersection = /* @__PURE__ */ $constructor("ZodIntersection", (inst, def) => {
   $ZodIntersection.init(inst, def);
   ZodType.init(inst, def);
@@ -15480,6 +15580,31 @@ function refine(fn, _params = {}) {
 }
 function superRefine(fn, params) {
   return _superRefine(fn, params);
+}
+
+// node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/classic/iso.js
+var iso_exports = {};
+__export(iso_exports, {
+  ZodISODate: () => ZodISODate,
+  ZodISODateTime: () => ZodISODateTime,
+  ZodISODuration: () => ZodISODuration,
+  ZodISOTime: () => ZodISOTime,
+  date: () => date2,
+  datetime: () => datetime2,
+  duration: () => duration2,
+  time: () => time2
+});
+function datetime2(params) {
+  return _isoDateTime(ZodISODateTime, params);
+}
+function date2(params) {
+  return _isoDate(ZodISODate, params);
+}
+function time2(params) {
+  return _isoTime(ZodISOTime, params);
+}
+function duration2(params) {
+  return _isoDuration(ZodISODuration, params);
 }
 
 // kernel/src/shared/refusal/index.ts
@@ -16048,7 +16173,7 @@ var promptsModule = defineConfigModule({
 });
 
 // kernel/src/shared/config/prompts.ts
-var import_yaml2 = __toESM(require_dist(), 1);
+var import_yaml4 = __toESM(require_dist(), 1);
 import { isAbsolute, join as join3, posix as posix2 } from "node:path";
 
 // kernel/src/shared/store/store.ts
@@ -16116,6 +16241,421 @@ function splitFrontmatter(text2) {
   if (match === null || yaml === void 0) return { body: text2 };
   return { frontmatter: yaml, body: text2.slice(match[0].length) };
 }
+
+// kernel/src/shared/store/state/documents.ts
+var import_yaml3 = __toESM(require_dist(), 1);
+
+// kernel/src/shared/ids/index.ts
+var ID_PATTERN = "[LAE]-[0-9a-z]{8}";
+var CHANGE_ID_PATTERN = String.raw`\d{4}-\d{2}-\d{2}-(?=[a-z0-9-]{1,40}(?:/|$))[a-z0-9]+(?:-[a-z0-9]+)*`;
+var ID = new RegExp(`^${ID_PATTERN}$`);
+var CHANGE_ID = new RegExp(`^${CHANGE_ID_PATTERN}$`);
+
+// kernel/src/shared/store/state/common.ts
+var ID_BODY = "[0-9a-z]{8}";
+var ledgerId = string2().regex(new RegExp(`^L-${ID_BODY}$`)).meta({ description: "Ledger entry id." });
+var ticketId = string2().regex(new RegExp(`^A-${ID_BODY}$`)).meta({ description: "Attempt ticket id." });
+var evidenceId = string2().regex(new RegExp(`^E-${ID_BODY}$`)).meta({ description: "Evidence manifest id." });
+var changeId = string2().regex(new RegExp(`^${CHANGE_ID_PATTERN}$`)).meta({ description: "`<yyyy-mm-dd>-<slug>`, the slug kebab-case and at most 40 characters." });
+var idReference = string2().regex(new RegExp(`^(?:${CHANGE_ID_PATTERN}/)?[LAE]-${ID_BODY}$`)).meta({ description: "A bare id within the Change or `<changeId>/<id>` across Changes." });
+var hash = string2().regex(/^sha256:[0-9a-f]{64}$/);
+var timestamp = iso_exports.datetime({ precision: 0 }).meta({ description: "ISO 8601 UTC with seconds." });
+var date3 = iso_exports.date();
+var relativePath = string2().regex(/^(?!\/|\.\/)(?!(?:.*\/)?\.\.(?:\/|$))[^\\]+$/).meta({ description: "Relative to the project root, `/` separated, no `..` segment." });
+var role = string2().regex(/^[a-z][a-z0-9-]*$/).meta({ description: "Role skill name (`implementer`, `plan-verifier`, ...)." });
+var agentSource = string2().regex(/^agent:[a-z][a-z0-9-]*$/);
+var provenance = union([_enum(["user", "policy", "inferred", "kernel"]), agentSource]).meta({ description: "Who produced the content (P1): a fixed value or `agent:<role>`." });
+var author = string2().min(1).meta({ description: "Git `user.name <user.email>`." });
+var severity = _enum(["critical", "high", "medium", "low"]);
+var scope = _enum(["full", "high+", "blockers"]);
+var glob2 = string2().min(1);
+
+// kernel/src/shared/store/state/entry.ts
+var VERSION = 1;
+var ENTRY_TYPES = [
+  "decision",
+  "finding",
+  "observation",
+  "blocker",
+  "question",
+  "assumption",
+  "risk",
+  "learning",
+  "report",
+  "transition"
+];
+var category = string2().min(1).meta({ description: "One of the P8 blocking categories." });
+function variant(type, own2) {
+  return strictObject({
+    schema: literal(VERSION),
+    id: ledgerId,
+    type: literal(type),
+    summary: string2().min(1).max(120),
+    status: _enum(["proposed", "accepted", "resolved", "routed"]).meta({
+      description: "`superseded` is derived from `supersedes`, never stored."
+    }),
+    source: provenance,
+    author,
+    at: timestamp,
+    ticket: ticketId.optional(),
+    refs: array(string2().min(1)).min(1),
+    supersedes: idReference.optional(),
+    review: boolean2().optional(),
+    ...own2
+  });
+}
+var learning = variant("learning", {
+  fingerprint: hash.meta({ description: "Kernel-stamped (`kernel-state`, Fingerprints)." }),
+  evidence: array(idReference).optional(),
+  applies: array(glob2).optional(),
+  "routed-to": _enum(["rule", "spec", "nothing"]).optional()
+}).superRefine((data, context) => {
+  if (data.status === "routed" && data["routed-to"] === void 0) {
+    context.addIssue({
+      code: "custom",
+      path: ["routed-to"],
+      message: "required when status is routed"
+    });
+  }
+});
+var entryKind = {
+  name: "entry",
+  version: VERSION,
+  schema: discriminatedUnion("type", [
+    variant("decision", {}),
+    variant("finding", { severity: severity.optional(), category: category.optional() }),
+    variant("observation", { severity: severity.optional() }),
+    variant("blocker", { category: category.optional() }),
+    variant("question", { options: array(string2().min(1)).optional() }),
+    variant("assumption", {}),
+    variant("risk", {}),
+    learning,
+    variant("report", { report: relativePath }),
+    variant("transition", {
+      to: string2().min(1).meta({ description: "Stage, artifact id, gate id or `closed`." }),
+      gate: string2().min(1).optional(),
+      session: string2().min(1).optional(),
+      command: string2().min(1).optional(),
+      "skip-verify": boolean2().optional()
+    })
+  ]).meta({ title: "Ledger entry", description: "One file per entry; the body is free Markdown." }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/attempt.ts
+var VERSION2 = 1;
+var counter = int().min(1);
+var attemptKind = {
+  name: "attempt",
+  version: VERSION2,
+  schema: strictObject({
+    schema: literal(VERSION2),
+    ticket: ticketId,
+    loop: string2().min(1).meta({ description: "Loop kind from policy." }),
+    target: string2().min(1).meta({ description: "Task, part, artifact or Change id." }),
+    attempt: counter,
+    of: counter,
+    scope,
+    "narrowed-from": scope.optional(),
+    escalation: boolean2().optional(),
+    "opened-at": timestamp,
+    author,
+    "closed-at": timestamp.optional().meta({ description: "Present exactly when `outcome` is." }),
+    outcome: _enum(["ok", "fail", "not-run"]).optional(),
+    findings: array(
+      strictObject({
+        fingerprint: hash,
+        type: _enum(ENTRY_TYPES),
+        file: relativePath,
+        symbol: string2().min(1).optional()
+      })
+    ).optional().meta({ description: "Finding fingerprints of a `fail` (oscillation check)." }),
+    dropped: array(ledgerId).optional()
+  }).superRefine((data, context) => {
+    const closed = data["closed-at"] !== void 0;
+    if (closed === (data.outcome !== void 0)) return;
+    context.addIssue({
+      code: "custom",
+      path: [closed ? "outcome" : "closed-at"],
+      message: "closed-at and outcome are present together or not at all"
+    });
+  }).meta({ title: "Attempt record", description: "The body is the close reason." }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/change.ts
+var VERSION3 = 1;
+var changeKind = {
+  name: "change",
+  version: VERSION3,
+  schema: strictObject({
+    schema: literal(VERSION3),
+    id: changeId,
+    kind: _enum(["feature", "bug"]),
+    profile: _enum(["tiny", "small", "large"]),
+    intent: string2().min(1),
+    source: _enum(["user", "inferred"]),
+    at: timestamp,
+    author,
+    overridden: array(string2().min(1))
+  }).meta({ title: "change.md", description: "The Change's identity and intent; never mutated." }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/plan.ts
+var VERSION4 = 1;
+var partId = string2().regex(/^\d{2}$/).meta({ description: "Two digits, equal to `<nn>` of the file name." });
+var capability = string2().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/);
+var planPartKind = {
+  name: "plan-part",
+  version: VERSION4,
+  schema: strictObject({
+    schema: literal(VERSION4),
+    id: partId,
+    title: string2().min(1),
+    goal: string2().min(1),
+    "success-measure": string2().min(1).meta({ description: "What a reviewer can observe." }),
+    "do-not-touch": array(glob2),
+    "depends-on": array(partId),
+    "spec-impact": union([literal("none"), array(capability)])
+  }).meta({ title: "Plan part" }),
+  migrations: []
+};
+var planIndexKind = {
+  name: "plan-index",
+  version: VERSION4,
+  schema: strictObject({
+    schema: literal(VERSION4),
+    generated: literal(true),
+    parts: array(
+      strictObject({
+        id: partId,
+        title: string2().min(1),
+        "depends-on": array(partId),
+        wave: int().min(1)
+      })
+    )
+  }).meta({ title: "Plan index", description: "Generated from the plan parts; never edited." }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/design.ts
+var VERSION5 = 1;
+var designKind = {
+  name: "design",
+  version: VERSION5,
+  schema: strictObject({ schema: literal(VERSION5), title: string2().min(1) }).meta({ title: "Design artifact", description: "`design.md` and `architecture.md`." }),
+  migrations: []
+};
+var designPartKind = {
+  name: "design-part",
+  version: VERSION5,
+  schema: strictObject({
+    schema: literal(VERSION5),
+    id: partId,
+    title: string2().min(1),
+    "depends-on": array(partId)
+  }).meta({ title: "Design part" }),
+  migrations: []
+};
+var designIndexKind = {
+  name: "design-index",
+  version: VERSION5,
+  schema: strictObject({
+    schema: literal(VERSION5),
+    generated: literal(true),
+    parts: array(
+      strictObject({ id: partId, title: string2().min(1), "depends-on": array(partId) })
+    )
+  }).meta({ title: "Design index", description: "Generated from the design parts; never edited." }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/dispatch.ts
+var VERSION6 = 1;
+var dispatchKind = {
+  name: "dispatch",
+  version: VERSION6,
+  schema: strictObject({
+    schema: literal(VERSION6),
+    ticket: ticketId,
+    target: string2().min(1),
+    role,
+    attempt: int().min(1),
+    of: int().min(1),
+    scope,
+    at: timestamp,
+    "kernel-version": string2().min(1),
+    "template-hash": hash,
+    report: relativePath.meta({ description: "Where the role's report is written." })
+  }).meta({ title: "Dispatch package" }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/evidence.ts
+var VERSION7 = 1;
+var evidenceKind = {
+  name: "evidence",
+  version: VERSION7,
+  schema: strictObject({
+    schema: literal(VERSION7),
+    id: evidenceId,
+    kind: string2().min(1).meta({
+      description: "`tests-scoped`, `lint`, `typecheck`, `ui-capture` or a project kind."
+    }),
+    ticket: ticketId,
+    target: string2().min(1),
+    at: timestamp,
+    author,
+    source: union([literal("kernel"), agentSource]),
+    "tree-hash": hash,
+    files: array(
+      strictObject({
+        path: relativePath,
+        hash,
+        stored: _enum(["committed", "machine"])
+      })
+    ).min(1),
+    verdict: _enum(["pass", "fail", "not-run"]).optional(),
+    citations: array(string2().min(1)).optional().meta({
+      description: "JSON pointers or snapshot lines (citation validator)."
+    })
+  }).meta({ title: "Evidence manifest" }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/report.ts
+var VERSION8 = 1;
+var reportKind = {
+  name: "report",
+  version: VERSION8,
+  schema: strictObject({
+    schema: literal(VERSION8),
+    ticket: ticketId,
+    role,
+    status: _enum(["done", "done-with-concerns", "needs-context", "blocked"]),
+    files: array(relativePath),
+    entries: array(ledgerId),
+    evidence: array(evidenceId),
+    reason: string2().min(1).optional().meta({
+      description: "Required for `blocked` and `needs-context`."
+    })
+  }).superRefine((data, context) => {
+    if (data.status !== "blocked" && data.status !== "needs-context") return;
+    if (data.reason !== void 0) return;
+    context.addIssue({
+      code: "custom",
+      path: ["reason"],
+      message: `required when status is ${data.status}`
+    });
+  }).meta({ title: "Report envelope" }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/rule.ts
+var VERSION9 = 1;
+var RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
+var ruleKind = {
+  name: "rule",
+  version: VERSION9,
+  schema: strictObject({
+    schema: literal(VERSION9),
+    id: string2().regex(RULE_ID).meta({ description: "Equals the file name without `.md` (`CQ-4`, `BDK-SEC-2`)." }),
+    kind: _enum(["house", "knowledge"]),
+    applies: array(glob2).optional().meta({ description: "Absent: every file." }),
+    roles: array(role).optional().meta({ description: "Absent: every role." }),
+    severity,
+    origin: union([
+      _enum(["bdk", "import"]),
+      string2().regex(new RegExp(`^${CHANGE_ID_PATTERN}/L-[0-9a-z]{8}$`))
+    ]).meta({ description: "The shipped pack, `rules import`, or the learning it came from." }),
+    since: date3,
+    source: string2().min(1).optional().meta({
+      description: "Required exactly when `kind` is `knowledge`: where the fact comes from."
+    }),
+    verified: date3.optional().meta({ description: "Required exactly when `kind` is `knowledge`." }),
+    removed: string2().min(1).optional().meta({
+      description: "Tombstone reason; the id is never reused."
+    })
+  }).superRefine((data, context) => {
+    const knowledge = data.kind === "knowledge";
+    for (const key of ["source", "verified"]) {
+      if (knowledge === (data[key] !== void 0)) continue;
+      context.addIssue({
+        code: "custom",
+        path: [key],
+        message: knowledge ? "required when kind is knowledge" : "only for kind knowledge"
+      });
+    }
+  }).meta({ title: "Rule file" }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/registry.ts
+var ID2 = "[0-9a-z]{8}";
+var SLUG = "[a-z0-9]+(?:-[a-z0-9]+)*";
+function same(fields) {
+  return (data, groups) => Object.entries(fields).find(([group, value]) => String(value(data)) !== groups[group])?.[0];
+}
+var field = (name) => (data) => data[name];
+var stamp = (data) => String(data.at).replaceAll("-", "").replaceAll(":", "");
+var CHANGE_ROWS = [
+  {
+    pattern: new RegExp(`^log/(?<at>\\d{8}T\\d{6}Z)-(?<type>[a-z]+)-(?<id>L-${ID2})\\.md$`),
+    kind: "entry",
+    check: same({ type: field("type"), id: field("id"), at: stamp })
+  },
+  { pattern: /^(?:design|architecture)\.md$/, kind: "design" },
+  {
+    pattern: new RegExp(`^design/parts/(?<id>\\d{2})-${SLUG}\\.md$`),
+    kind: "design-part",
+    check: same({ id: field("id") })
+  },
+  { pattern: /^design\/index\.md$/, kind: "design-index" },
+  {
+    pattern: new RegExp(`^plan/parts/(?<id>\\d{2})-${SLUG}\\.md$`),
+    kind: "plan-part",
+    check: same({ id: field("id") })
+  },
+  { pattern: /^plan\/index\.md$/, kind: "plan-index" },
+  { pattern: new RegExp(`^spec-delta/${SLUG}\\.md$`), kind: "spec-delta" },
+  {
+    pattern: new RegExp(`^attempts/(?<loop>.+)-(?<ticket>A-${ID2})\\.md$`),
+    kind: "attempt",
+    check: same({
+      ticket: field("ticket"),
+      loop: (data) => `${String(data.loop)}-${String(data.target)}`
+    })
+  },
+  {
+    pattern: new RegExp(`^evidence/(?<target>.+)-(?<id>E-${ID2})\\.md$`),
+    kind: "evidence",
+    check: same({ id: field("id"), target: field("target") })
+  },
+  { pattern: new RegExp(`^evidence/.+-E-${ID2}\\.(?!md$)[a-z0-9.]+$`), kind: "evidence-capture" },
+  {
+    pattern: new RegExp(`^dispatch/(?<role>.+)-(?<ticket>A-${ID2})\\.md$`),
+    kind: "dispatch",
+    check: same({
+      ticket: field("ticket"),
+      role: (data) => `${String(data.target)}-${String(data.role)}`
+    })
+  },
+  {
+    pattern: new RegExp(`^reports/(?<role>.+)-(?<ticket>A-${ID2})\\.md$`),
+    kind: "report",
+    check: (data, groups) => same({ ticket: field("ticket") })(data, groups) ?? (groups.role?.endsWith(`-${String(data.role)}`) === true ? void 0 : "role")
+  }
+];
+var CHANGE_DIR = new RegExp(
+  `^changes/(?:archive/)?(?<changeId>${CHANGE_ID_PATTERN})/(?<rest>.+)$`
+);
+
+// kernel/src/shared/store/state/render.ts
+var import_yaml2 = __toESM(require_dist(), 1);
+
+// kernel/src/shared/store/state/fingerprint.ts
+var DIGITS = new RegExp("\\p{Nd}+", "gu");
 
 // kernel/src/shared/config/prompts.ts
 var FILE_LAYERS = ["global", "project", "local"];
@@ -16249,12 +16789,12 @@ function contribution(text2, declared, where) {
   const { frontmatter } = splitFrontmatter(text2);
   let front;
   try {
-    front = frontmatter === void 0 ? {} : (0, import_yaml2.parse)(frontmatter) ?? {};
+    front = frontmatter === void 0 ? {} : (0, import_yaml4.parse)(frontmatter) ?? {};
   } catch {
     return "the frontmatter is not valid YAML";
   }
   if (!isRecord(front)) return "the frontmatter must be a mapping";
-  const extra = Object.keys(front).filter((field) => !FRONTMATTER_FIELDS.has(field));
+  const extra = Object.keys(front).filter((field2) => !FRONTMATTER_FIELDS.has(field2));
   if (extra.length > 0) return `unknown frontmatter field ${extra.join(", ")}`;
   const settings = where.settingsPath ?? "the settings";
   const mode = front.mode ?? declared.mode ?? "extends";
@@ -16289,7 +16829,7 @@ function resolveConfig(context) {
 }
 
 // kernel/src/shared/config/snapshot.ts
-var import_yaml3 = __toESM(require_dist(), 1);
+var import_yaml5 = __toESM(require_dist(), 1);
 import { join as join4 } from "node:path";
 var SNAPSHOT_PATH = ".bdk/.machine/config/resolved.yaml";
 var PERSONAL = /* @__PURE__ */ new Set(["global", "local"]);
@@ -16307,7 +16847,7 @@ function writeSnapshot(store, projectRoot, resolution) {
     prompts: Object.fromEntries(resolution.prompts.values),
     overriddenKeys: overriddenKeys(resolution)
   };
-  store.write(join4(projectRoot, SNAPSHOT_PATH), (0, import_yaml3.stringify)(snapshot));
+  store.write(join4(projectRoot, SNAPSHOT_PATH), (0, import_yaml5.stringify)(snapshot));
   return SNAPSHOT_PATH;
 }
 
@@ -16507,7 +17047,7 @@ function renderSet(report) {
 }
 
 // kernel/src/config/use-cases/set.ts
-var import_yaml4 = __toESM(require_dist(), 1);
+var import_yaml6 = __toESM(require_dist(), 1);
 
 // kernel/src/config/domain/origins.ts
 function leafOrigins(value, key, set) {
@@ -16639,7 +17179,7 @@ function setConfig(input, request) {
   const steps = declaredSteps(input.settings, key);
   if (steps === void 0) return unknownKey(input, key);
   const text2 = input.store.read(file.path);
-  const document = (0, import_yaml4.parseDocument)(text2 ?? "");
+  const document = (0, import_yaml6.parseDocument)(text2 ?? "");
   if (document.errors.length > 0) {
     return refuse("policy/config-invalid", `${displayPath(input, file.path)} is not valid YAML`, [
       `fix ${displayPath(input, file.path)}`
@@ -16661,10 +17201,10 @@ function setConfig(input, request) {
   };
 }
 function parseValue(raw, usage) {
-  const parsed = (0, import_yaml4.parseDocument)(raw);
+  const parsed = (0, import_yaml6.parseDocument)(raw);
   const [error2] = parsed.errors;
-  if (error2 !== void 0 || !(0, import_yaml4.isNode)(parsed.contents)) {
-    const reason = error2 instanceof import_yaml4.YAMLParseError ? `: ${error2.message.split("\n")[0] ?? ""}` : "";
+  if (error2 !== void 0 || !(0, import_yaml6.isNode)(parsed.contents)) {
+    const reason = error2 instanceof import_yaml6.YAMLParseError ? `: ${error2.message.split("\n")[0] ?? ""}` : "";
     return refuse("input/invalid-argument", `${raw} is not a YAML value${reason}`, [usage]);
   }
   return parsed.contents;
@@ -16679,23 +17219,23 @@ function editDocument(document, steps, value, raw) {
       continue;
     }
     const sequence = document.getIn(path, true);
-    const items = (0, import_yaml4.isSeq)(sequence) ? sequence.items : [];
-    const found = items.findIndex((item2) => (0, import_yaml4.isMap)(item2) && item2.get("id") === step.segment);
+    const items = (0, import_yaml6.isSeq)(sequence) ? sequence.items : [];
+    const found = items.findIndex((item2) => (0, import_yaml6.isMap)(item2) && item2.get("id") === step.segment);
     if (found !== -1) {
       path.push(found);
       continue;
     }
     const item = last ? withId(document, value, step.segment) : document.createNode({ id: step.segment });
     if (isRefusal(item)) return item;
-    if ((0, import_yaml4.isSeq)(sequence)) sequence.add(item);
+    if ((0, import_yaml6.isSeq)(sequence)) sequence.add(item);
     else document.setIn(path, document.createNode([item]));
     if (last) return {};
-    path.push((0, import_yaml4.isSeq)(sequence) ? sequence.items.length - 1 : 0);
+    path.push((0, import_yaml6.isSeq)(sequence) ? sequence.items.length - 1 : 0);
   }
   const current = document.getIn(path, true);
-  const previous = (0, import_yaml4.isNode)(current) ? current.toJSON() : void 0;
+  const previous = (0, import_yaml6.isNode)(current) ? current.toJSON() : void 0;
   const kept = previous === void 0 ? {} : { previous };
-  if ((0, import_yaml4.isNode)(current) && inline(current) && inline(value) && !raw.includes("\n")) {
+  if ((0, import_yaml6.isNode)(current) && inline(current) && inline(value) && !raw.includes("\n")) {
     const [start, end] = current.range ?? [0, 0];
     const [from, to] = value.range ?? [0, raw.length];
     return { ...kept, splice: { start, end, text: raw.slice(from, to) } };
@@ -16704,10 +17244,10 @@ function editDocument(document, steps, value, raw) {
   return kept;
 }
 function inline(node2) {
-  return (0, import_yaml4.isScalar)(node2) || (0, import_yaml4.isCollection)(node2) && node2.flow === true;
+  return (0, import_yaml6.isScalar)(node2) || (0, import_yaml6.isCollection)(node2) && node2.flow === true;
 }
 function withId(document, value, id) {
-  if (!(0, import_yaml4.isMap)(value)) {
+  if (!(0, import_yaml6.isMap)(value)) {
     return refuse(
       "input/invalid-argument",
       `a new item ${id} needs a mapping value, e.g. {command: ...}`,
@@ -16751,7 +17291,7 @@ function setCommand(deps) {
 }
 
 // kernel/src/config/commands/show.ts
-var import_yaml5 = __toESM(require_dist(), 1);
+var import_yaml7 = __toESM(require_dist(), 1);
 function showCommand(deps) {
   return (context) => {
     const key = context.positionals["<key>"];
@@ -16761,8 +17301,8 @@ function showCommand(deps) {
     });
     if (isRefusal(outcome)) return outcome;
     const origins = outcome.origins === void 0 ? "" : `# origins
-${(0, import_yaml5.stringify)(outcome.origins)}`;
-    return { data: outcome, text: `${(0, import_yaml5.stringify)(outcome.value)}${origins}` };
+${(0, import_yaml7.stringify)(outcome.origins)}`;
+    return { data: outcome, text: `${(0, import_yaml7.stringify)(outcome.value)}${origins}` };
   };
 }
 
@@ -16777,11 +17317,11 @@ function configRegistrations(deps) {
 }
 
 // kernel/src/ctx/config.ts
-var ID = /^[a-z0-9][a-z0-9-]*$/;
+var ID3 = /^[a-z0-9][a-z0-9-]*$/;
 var text = string2().min(1);
 var withFiles = text.regex(/\{files\}/, "must contain the {files} placeholder");
 var entryFields = {
-  id: string2().regex(ID, "must be kebab-case: lowercase letters, digits and -").meta({
+  id: string2().regex(ID3, "must be kebab-case: lowercase letters, digits and -").meta({
     description: "Unique within the array; the merge key and the path segment."
   }),
   command: text.meta({ description: "The full, unscoped command." }),
@@ -16919,7 +17459,7 @@ function commandLine(record3) {
 
 // kernel/src/shared/registry/parse.ts
 var IMPLICIT_FLAGS = ["--json", "--help"];
-function parse4(record3, tokens) {
+function parse5(record3, tokens) {
   const help = [`${commandLine(record3)} --help`];
   const positionals = {};
   const flags = {};
@@ -17239,7 +17779,7 @@ async function run(index2, byId, invocation) {
   return 0;
 }
 async function dispatch(record3, registration, rest, asJson, { cwd, runtime }) {
-  const parsed = parse4(record3, rest);
+  const parsed = parse5(record3, rest);
   if (isRefusal2(parsed)) return parsed;
   let workTree;
   if (record3.standalone !== true) {

@@ -12,43 +12,9 @@ import { PLANNED_KEYS, REMOVED_KEYS } from "../../src/shared/config/index.ts";
 import { REPO_ROOT } from "../support/run.ts";
 import { registeredLeaves } from "../support/settings-table.ts";
 import type { RegisteredLeaf } from "../support/settings-table.ts";
-import { backticked } from "../support/specs.ts";
+import { backticked, column, tableRows } from "../support/specs.ts";
 
 const spec = readFileSync(join(REPO_ROOT, "openspec/specs/kernel-settings/spec.md"), "utf8");
-
-interface Row {
-  readonly cells: readonly string[];
-  readonly header: readonly string[];
-}
-
-/** Every row of every table whose first header cell is `first`. */
-function rows(text: string, first: string): Row[] {
-  const out: Row[] = [];
-  const lines = text.split("\n");
-  lines.forEach((line, at) => {
-    const header = cells(line);
-    if (header[0] !== first || !(lines[at + 1] ?? "").startsWith("| -")) return;
-    for (const row of lines.slice(at + 2)) {
-      if (!row.startsWith("|")) break;
-      out.push({ header, cells: cells(row) });
-    }
-  });
-  return out;
-}
-
-function cells(line: string): string[] {
-  if (!line.startsWith("|")) return [];
-  return line
-    .split(/(?<!\\)\|/)
-    .slice(1, -1)
-    .map((cell) => cell.trim());
-}
-
-function column(row: Row, name: string): string {
-  const at = row.header.indexOf(name);
-  if (at === -1) throw new Error(`no column ${name} in ${row.header.join(" | ")}`);
-  return row.cells[at] ?? "";
-}
 
 /** A default cell: its code span when it is one, else the cell text. */
 function defaultOf(cell: string): string {
@@ -57,7 +23,7 @@ function defaultOf(cell: string): string {
 }
 
 const settings = settingsRegistry();
-const keyRows = rows(spec, "Key");
+const keyRows = tableRows(spec, "Key");
 const tableKeys = new Map(keyRows.map((row) => [backticked(column(row, "Key"))[0] ?? "", row]));
 
 describe("key tables", () => {
@@ -92,14 +58,14 @@ describe("key tables", () => {
 
 describe("removed v2 keys", () => {
   it("equal the table", () => {
-    const table = rows(spec, "v2 key").map((row) => backticked(column(row, "v2 key"))[0]);
+    const table = tableRows(spec, "v2 key").map((row) => backticked(column(row, "v2 key"))[0]);
     expect(table).toStrictEqual(REMOVED_KEYS.map((entry) => entry.key));
   });
 });
 
 describe("prompt keys", () => {
   it("equal the table with default file, owner and consumer", () => {
-    const table = rows(spec, "Prompt key").map((row) => ({
+    const table = tableRows(spec, "Prompt key").map((row) => ({
       key: backticked(column(row, "Prompt key"))[0],
       defaultFile: backticked(column(row, "Default file (plugin)"))[0],
       owner: column(row, "Owner"),

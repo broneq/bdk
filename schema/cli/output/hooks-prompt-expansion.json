@@ -22,7 +22,7 @@
     },
     "entry": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "wrote": {
       "enum": ["transition:user", "transition:policy", "transition:stage", "none"]
@@ -60,7 +60,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "description": "Opaque merge-safe id (T14)."
+                "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
               },
               "type": {
                 "enum": [
@@ -107,7 +107,7 @@
               },
               "supersedes": {
                 "type": "string",
-                "description": "Opaque merge-safe id (T14)."
+                "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
               }
             }
           },
