@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/broneq/bdk-skill-kit/compare/v0.2.0...v0.2.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* skip gitignored files in skill discovery ([540eb03](https://github.com/broneq/bdk-skill-kit/commit/540eb0341ca83b886be43eff9c88add62a357bd1))
+* skip gitignored files in skill discovery ([57da5a0](https://github.com/broneq/bdk-skill-kit/commit/57da5a0f2d4a62c08ae043886d657c18bbe664ee)), closes [#6](https://github.com/broneq/bdk-skill-kit/issues/6)
+
 ## [0.2.0](https://github.com/broneq/bdk-skill-kit/compare/v0.1.2...v0.2.0) (2026-09-26)
 
 
