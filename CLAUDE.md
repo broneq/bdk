@@ -14,7 +14,8 @@ tests/evals/             — skill behavior evals (LLM output grading, iteration
 tests/unit/              — pytest unit/integration tests for scripts
 kernel/                  - v3 TypeScript kernel: src/ (slices, shared/), tests/ (E2E harness, contract tests)
 dist/bdk.mjs             - committed kernel bundle built by `pnpm build`; never edit by hand
-docs/                    — temporary material, task artifacts, user docs, ADRs; never a living spec
+docs/                    — temporary material, task artifacts, ADRs and the user documentation site (docs/guide/); never a living spec
+mkdocs.yml               - MkDocs Material config of the site in docs/guide/ (built strictly on every PR, deployed only from main)
 openspec/specs/          — living specs of BDK v3 (kernel-cli, kernel-architecture, ...)
 ```
 
@@ -62,6 +63,12 @@ pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip
 pnpm test:unit        # coverage thresholds apply
 pnpm test:e2e         # runs dist/bdk.mjs, so build first
 pnpm test:contract
+
+# Python lint and format (ruff) until T32 removes the scripts
+pnpm lint:py
+
+# Documentation site: strict build; the drift guards run in pnpm test:contract
+pnpm docs:build
 
 # Skill and agent content checks (Node >= 22.18); the baseline only shrinks:
 # fix a finding and run --baseline-prune, never add entries

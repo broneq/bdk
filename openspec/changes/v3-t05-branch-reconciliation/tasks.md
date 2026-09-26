@@ -23,7 +23,7 @@
 - [x] 3.4 Add the D-6 banner to one page and run `uv run --group docs mkdocs build --strict`. Check the built HTML for a rendered admonition and run `pnpm format:check`. Then add the banner to every page except the two snippet pages, and verify that `banner.test.ts` and the coverage test pass
 - [x] 3.5 Add `"docs:build": "uv run --group docs mkdocs build --strict"` to `package.json`, and verify that `pnpm docs:build` exits 0
 - [x] 3.6 Run `pnpm format` over `docs/guide/` and `mkdocs.yml` and commit it as its own `style:` commit. Verify `pnpm format:check` and `pnpm docs:build`
-- [ ] 3.7 Move `BUGS.md` to the root and drop its MCP row. Update the `docs/` line, the Architecture tree and Development Commands in `CLAUDE.md`, and the docs section of `CONTRIBUTING.md`. Verify that `grep -rn 'docs/BUGS.md\|make check' --exclude-dir=node_modules --exclude-dir=archive --exclude-dir=v3 .` has no match outside history files
+- [x] 3.7 Move `BUGS.md` to the root (the merge kept the `staging/v3` content, which has no MCP row, so nothing is dropped). Update the `docs/` line, the Architecture tree and Development Commands in `CLAUDE.md`, and the docs section of `CONTRIBUTING.md`. Verify that `grep -rn 'docs/BUGS.md\|make check' --exclude-dir=node_modules --exclude-dir=archive --exclude-dir=v3 .` has no match outside history files
 
 ## 4. Hook-path guard (design D-5)
 

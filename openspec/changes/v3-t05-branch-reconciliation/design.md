@@ -107,7 +107,7 @@ The skill's step 1 runs `pnpm test:contract` instead of pytest. The docs map dro
 
 ### D-10 Small items
 
-- `BUGS.md` moves to the root. Its one row ("Add MCP tool injections into newly added agents") is dropped, because ADR-0001 removed the bundled MCP servers, and the file says a row goes when it lands or dies.
+- `BUGS.md` moves to the root with the `staging/v3` content. The branch's MCP row is not in it, so no row is dropped.
 - `CLAUDE.md`'s `docs/` line becomes: temporary material, task artifacts, ADRs and the user documentation site (`docs/guide/`). The Architecture tree gains `mkdocs.yml`, and Development Commands gains `pnpm lint:py` and `pnpm docs:build`.
 - `improvements-pack` is deleted on `origin` after the PR merges. The branch tip is then reachable from `staging/v3`, so nothing is lost.
 
