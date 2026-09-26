@@ -1,6 +1,7 @@
 // The settings `ctx` reads (`kernel-settings`, Keys of the project toolchain,
 // Tool entries, Prompt values): the project's languages and commands, the
-// Lavish switch, and the rule texts a project may extend or replace.
+// Lavish switch, and the rule and fragment texts a project may extend or
+// replace.
 import * as z from "zod";
 
 import { defineConfigModule, definePromptKey } from "../shared/config/index.ts";
@@ -84,6 +85,8 @@ const RULE_CATEGORIES = [
   "test-quality",
 ] as const;
 
+export type RuleCategory = (typeof RULE_CATEGORIES)[number];
+
 export const rulePrompts = [
   ...RULE_CATEGORIES.map((name) =>
     definePromptKey({
@@ -100,3 +103,13 @@ export const rulePrompts = [
     defaultFile: "rules/languages/{name}.md",
   }),
 ];
+
+/** The two texts of the `decision` fragment; the manifest picks one (R-11). */
+export const fragmentPrompts = (["lavish", "ask-user"] as const).map((name) =>
+  definePromptKey({
+    key: `fragments/decision/${name}`,
+    consumer: "ctx",
+    owner: "T13",
+    defaultFile: `fragments/decision/${name}.md`,
+  }),
+);

@@ -95,6 +95,7 @@ export function runtime(overrides: Partial<Runtime> = {}): Runtime {
     platform: "linux",
     home: "/home/dev",
     workTree: () => "/repo",
+    which: () => undefined,
     ...overrides,
   };
 }

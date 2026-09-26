@@ -1117,7 +1117,7 @@
     {
       "id": "ctx-skill",
       "argv": ["ctx", "skill"],
-      "summary": "Compose the prompt context a skill's `!` block injects: fragments, rules, prompt values.",
+      "summary": "Compose the prompt context a skill's context line injects: rule sets, language rules, fragments, tool entries, plugin files.",
       "availability": "agent",
       "mode": "inject",
       "slice": "ctx",
@@ -1127,35 +1127,13 @@
         {
           "name": "<name>",
           "required": true,
-          "description": "Skill name, e.g. debug, plan."
+          "description": "Skill name, e.g. debug, create-plan."
         }
       ],
       "flags": [],
       "output": "output/ctx.json",
       "exits": [0],
-      "refusals": ["input/not-found", "policy/unknown-config-key"],
-      "writes": []
-    },
-    {
-      "id": "ctx-role",
-      "argv": ["ctx", "role"],
-      "summary": "Compose the context for a role class (worker, reader, reviewer, verifier, runner).",
-      "availability": "agent",
-      "mode": "inject",
-      "slice": "ctx",
-      "owner": "T13",
-      "changeScoped": false,
-      "args": [
-        {
-          "name": "<class>",
-          "required": true,
-          "values": ["worker", "reader", "reviewer", "verifier", "runner"]
-        }
-      ],
-      "flags": [],
-      "output": "output/ctx.json",
-      "exits": [0],
-      "refusals": ["input/not-found", "policy/unknown-config-key"],
+      "refusals": ["input/not-found", "policy/unknown-config-key", "policy/config-invalid"],
       "writes": []
     },
     {
@@ -1167,11 +1145,12 @@
       "slice": "ctx",
       "owner": "T13",
       "changeScoped": false,
+      "standalone": true,
       "args": [],
       "flags": [],
       "output": "output/ctx.json",
       "exits": [0],
-      "refusals": ["policy/unknown-config-key"],
+      "refusals": [],
       "writes": []
     },
     {
@@ -1477,14 +1456,15 @@
       "availability": "hook",
       "mode": "inject",
       "slice": "hooks",
-      "owner": "T24",
+      "owner": "T13",
       "changeScoped": false,
+      "standalone": true,
       "args": [],
       "flags": [],
       "stdin": "SessionStart payload (section 8).",
       "output": "output/hooks-session-start.json",
       "exits": [0],
-      "refusals": ["policy/unknown-config-key", "policy/config-invalid"],
+      "refusals": [],
       "writes": [".bdk/.machine/"]
     },
     {
@@ -1550,7 +1530,7 @@
       "availability": "hook",
       "mode": "inject",
       "slice": "hooks",
-      "owner": "T24",
+      "owner": "T13",
       "changeScoped": false,
       "args": [
         {

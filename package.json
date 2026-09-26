@@ -35,7 +35,7 @@
     "@vitest/coverage-v8": "5.0.2",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
-    "bdk-skill-kit": "github:broneq/bdk-skill-kit#v0.2.0",
+    "bdk-skill-kit": "github:broneq/bdk-skill-kit#v0.2.1",
     "esbuild": "0.28.2",
     "eslint": "10.11.0",
     "eslint-config-prettier": "10.1.8",

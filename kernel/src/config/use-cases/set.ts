@@ -63,7 +63,7 @@ export function setConfig(input: ConfigInput, request: SetRequest): SetReport | 
         ? document.toString(FORMAT)
         : `${text.slice(0, edit.splice.start)}${edit.splice.text}${text.slice(edit.splice.end)}`;
 
-  const resolved = resolve(input, overlay(input.store, file.path, next));
+  const resolved = resolve(input, { store: overlay(input.store, file.path, next) });
   if (isRefusal(resolved)) return resolved;
   input.store.write(file.path, next);
   writeSnapshot(input.store, input.projectRoot, resolved);

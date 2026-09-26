@@ -4,6 +4,7 @@
 export { pluginRootOf, readKernelVersion, UNKNOWN_VERSION } from "./manifest.ts";
 export { globalDir, LAYER_NAMES, layerFiles, readLayers } from "./layers.ts";
 export type { Environment, FileLayerName, Layer, LayerName, LayerPaths } from "./layers.ts";
+export { closest } from "./hint.ts";
 export { mergeLayers } from "./merge.ts";
 export type { Merged } from "./merge.ts";
 export type { ConfigProblem } from "./problems.ts";
@@ -19,6 +20,8 @@ export { promptsModule } from "./modules.ts";
 export { promptContent, resolvePrompts } from "./prompts.ts";
 export type { PromptFile, PromptInput, PromptMode, PromptValue, Prompts } from "./prompts.ts";
 export { resolveConfig } from "./resolve.ts";
+export { displayPath, problemRefusal, resolveOrRefuse, schemaCommand } from "./refusal.ts";
+export type { ResolveScope, Resolved } from "./refusal.ts";
 export type { ConfigContext, Resolution } from "./resolve.ts";
 export { overriddenKeys, SNAPSHOT_PATH, writeSnapshot } from "./snapshot.ts";
 export { SETTINGS_SCHEMA_ID, settingsJsonSchema } from "./json-schema.ts";

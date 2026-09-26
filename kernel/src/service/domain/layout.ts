@@ -1,37 +1,21 @@
-// Which generation of BDK state a project holds: v2 left files under `.bdk/`
-// that v3 never writes, and `bdk import` (T32) converts them.
+// The doctor finding for a v2 layout; the detection itself belongs to the
+// config slice.
 
-type Layout = "v3" | "v2" | "none";
-
-export const V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"] as const;
-
-interface LayoutFinding {
+export interface LayoutFinding {
   readonly id: "v2-layout";
   readonly level: "warn";
   readonly summary: string;
   readonly repair: "bdk import";
 }
 
-export interface LayoutReport {
-  readonly layout: Layout;
-  readonly finding?: LayoutFinding;
-}
-
-/** `present` lists the V2_MARKERS found, in their order. */
-export function classifyLayout(state: {
-  readonly bdk: boolean;
-  readonly present: readonly string[];
-}): LayoutReport {
-  if (!state.bdk) return { layout: "none" };
-  if (state.present.length === 0) return { layout: "v3" };
+/** `present` lists the v2 markers found; undefined when there are none. */
+export function layoutFinding(present: readonly string[]): LayoutFinding | undefined {
+  if (present.length === 0) return undefined;
   return {
-    layout: "v2",
-    finding: {
-      id: "v2-layout",
-      level: "warn",
-      summary: `${enumerate(state.present)} found`,
-      repair: "bdk import",
-    },
+    id: "v2-layout",
+    level: "warn",
+    summary: `${enumerate(present)} found`,
+    repair: "bdk import",
   };
 }
 

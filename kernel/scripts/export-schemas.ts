@@ -12,6 +12,9 @@ import { configCheckOutput } from "../src/config/schema/check.ts";
 import { configSchemaOutput } from "../src/config/schema/schema.ts";
 import { configSetOutput } from "../src/config/schema/set.ts";
 import { configShowOutput } from "../src/config/schema/show.ts";
+import { ctxOutput } from "../src/ctx/schema/ctx.ts";
+import { sessionStartOutput } from "../src/hooks/schema/session-start.ts";
+import { skillExistsOutput } from "../src/hooks/schema/skill-exists.ts";
 import { settingsRegistry } from "../src/registrations.ts";
 import { doctorOutput } from "../src/service/schema/doctor.ts";
 import { versionOutput } from "../src/service/schema/version.ts";
@@ -29,6 +32,9 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/config-check.json", configCheckOutput],
   ["output/config-schema.json", configSchemaOutput],
   ["output/config-set.json", configSetOutput],
+  ["output/ctx.json", ctxOutput],
+  ["output/hooks-session-start.json", sessionStartOutput],
+  ["output/hooks-skill-exists.json", skillExistsOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {

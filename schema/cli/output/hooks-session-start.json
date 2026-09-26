@@ -4,26 +4,28 @@
   "title": "bdk hooks session-start --json",
   "description": "SessionStart content hook: STARTUP text, configuration check, v2 layout detection, schema refresh.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["content"],
   "properties": {
     "content": {
-      "type": "string"
+      "type": "string",
+      "description": "The STARTUP text followed by one [BDK] line per problem found."
     },
     "layout": {
+      "description": "The state layout of the project; absent outside a BDK project.",
+      "type": "string",
       "enum": ["v3", "v2", "none"]
     },
     "configProblems": {
-      "type": "integer"
-    },
-    "activeChange": {
-      "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Configuration errors and warnings reported; absent outside a BDK project.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
     }
   },
+  "required": ["content"],
+  "additionalProperties": false,
   "examples": [
     {
-      "content": "# BDK Shared Foundation\n...\n\n[BDK] v2 layout detected: run `bdk import`.",
+      "content": "# BDK Shared Foundation\n...\n\n[BDK] v2 layout detected (.bdk/settings.json): run bdk import.",
       "layout": "v2",
       "configProblems": 0
     }

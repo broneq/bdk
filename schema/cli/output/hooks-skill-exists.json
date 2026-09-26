@@ -4,28 +4,22 @@
   "title": "bdk hooks skill-exists --json",
   "description": "Skill-frontmatter UserPromptSubmit hook: warn as content when a named skill is not installed.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["name", "installed"],
   "properties": {
-    "name": {
-      "type": "string"
-    },
-    "installed": {
-      "type": "boolean"
-    },
+    "name": { "type": "string", "description": "The skill name asked for." },
+    "installed": { "type": "boolean" },
     "foundIn": {
-      "type": "string",
-      "description": "Path relative to the project root."
-    },
-    "content": {
+      "description": "The SKILL.md whose frontmatter name matched, under ~/.claude/skills, the project's .claude/skills, a marketplace or an installed plugin version.",
       "type": "string"
-    }
+    },
+    "content": { "type": "string", "description": "Empty when installed, else the one [BDK] line." }
   },
+  "required": ["name", "installed", "content"],
+  "additionalProperties": false,
   "examples": [
     {
       "name": "caveman-commit",
       "installed": false,
-      "content": "[BDK] skill caveman-commit is not installed; /bdk:commit falls back to its own message format."
+      "content": "[BDK] skill caveman-commit is not installed; the skill that needs it falls back to its own behaviour."
     }
   ]
 }

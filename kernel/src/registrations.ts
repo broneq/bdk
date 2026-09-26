@@ -3,17 +3,25 @@
 // owner task adds one; a module is registered with its consumer (S6).
 import { configRegistrations } from "./config/index.ts";
 import type { ConfigDeps } from "./config/index.ts";
-import { ctxConfig } from "./ctx/index.ts";
+import { ctxConfig, ctxRegistrations } from "./ctx/index.ts";
+import type { CtxDeps } from "./ctx/index.ts";
+import { hooksRegistrations } from "./hooks/index.ts";
+import type { HooksDeps } from "./hooks/index.ts";
 import { serviceRegistrations } from "./service/index.ts";
 import type { ServiceDeps } from "./service/index.ts";
 import { createConfigRegistry, promptsModule } from "./shared/config/index.ts";
 import type { ConfigRegistry } from "./shared/config/index.ts";
 import type { Registration } from "./shared/registry/index.ts";
 
-export type KernelDeps = ServiceDeps & ConfigDeps;
+export type KernelDeps = ServiceDeps & ConfigDeps & CtxDeps & HooksDeps;
 
 export function registrations(deps: KernelDeps): Registration[] {
-  return [...serviceRegistrations(deps), ...configRegistrations(deps)];
+  return [
+    ...serviceRegistrations(deps),
+    ...configRegistrations(deps),
+    ...ctxRegistrations(deps),
+    ...hooksRegistrations(deps),
+  ];
 }
 
 /** The settings registry: every slice's modules plus the ones `shared/config` consumes. */
