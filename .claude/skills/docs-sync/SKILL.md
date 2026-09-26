@@ -31,7 +31,7 @@ Two things go wrong, and they need different hunting:
 
 `references/docs-map.md` holds three indexes: source file to endangered pages,
 page to its ground truth, and the facts this repo asserts in more than one
-place. Read it first - rediscovering which of 27 pages a change touches is
+place. Read it first - rediscovering which of 23 pages a change touches is
 wasted work.
 
 Then treat it as a **starting point and never a boundary**. Measured against an
@@ -48,25 +48,31 @@ A page absent from the map is a page this skill will never audit again.
 ## 1. Let the machine do the mechanical checks first
 
 ```bash
-uv run pytest tests/unit/docs/          # drift guard, ~57 parametrised cases
+pnpm test:contract          # includes the site guards in kernel/tests/docs/
 ```
 
-`tests/unit/docs/test_docs_coverage.py` already enforces three invariants:
-every user-invocable skill is in `README.md` and has a `## /bdk:<name>` heading
-in `reference/skills.md`; every `agents/*.md` is named in `reference/agents.md`;
-every page under `docs/` appears in `mkdocs.yml` `nav`. Run it, read the
-failures, and do not re-derive those three checks by hand - spending attention
+The guards in `kernel/tests/docs/` already enforce five invariants: every
+user-invocable skill is in `README.md` and has a `## /bdk:<name>` heading in
+`reference/skills.md`; every `agents/*.md` is named in `reference/agents.md`;
+the `mkdocs.yml` `nav` lists exactly the pages under `docs/guide/`; every page
+opens with the v2 banner; every `hooks/...` path named in prose exists. Run
+them, read the failures, and do not re-derive those checks by hand - spending attention
 where a test already holds the line is attention not spent on the prose, which
 nothing checks.
+
+Until T50 rewrites the site for v3, every page opens with a banner saying it
+describes v2. Such a page is behind the code on purpose: report a claim about a
+mechanism v3 removed (it must go), and leave v2 behaviour that the banner
+covers for T50.
 
 ## 2. Scope the audit
 
 | `$ARGUMENTS`                                                        | Scope                                                                                                                                    |
 | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| A page under `docs/`                                                | Audit that page in full against its ground truth.                                                                                        |
+| A page under `docs/guide/`                                          | Audit that page in full against its ground truth.                                                                                        |
 | A source path (`skills/cr/SKILL.md`, `agents/`, `hooks/hooks.json`) | Reverse-map it to pages, then widen by the shared-facts index.                                                                           |
 | Empty                                                               | The branch's changes: `git diff --name-only $(git merge-base HEAD main)...HEAD` plus uncommitted files from `git status --porcelain`.    |
-| Empty and the branch is clean and equal to `main`                   | Nothing to reverse-map. Sweep the whole site - 27 pages is small, and the reference pages alone are not where the interesting lies live. |
+| Empty and the branch is clean and equal to `main`                   | Nothing to reverse-map. Sweep the whole site - 23 pages is small, and the reference pages alone are not where the interesting lies live. |
 
 Report the candidate page list before auditing, so the user can see the blast
 radius and cut it if it is wider than they want.
@@ -78,8 +84,8 @@ an artifact path - then `grep -rn` over the repo finds every site that mentions
 it, mechanically and exhaustively. Do that, fix every hit, and move on quickly.
 Reading pages closely adds nothing here, and the budget is better spent on the
 claims below that no grep can surface. The one judgement call a rename needs is
-telling the renamed thing from a homonym: BDK's `features.serena` flag and the
-`serena` MCP server share a word and must not be renamed together.
+telling the renamed thing from a homonym: a settings key and a skill that share
+a word must not be renamed together.
 
 ## 3. Read each page as a skeptical user
 
@@ -136,7 +142,7 @@ approval with a single `AskUserQuestion` (Approve / Approve with changes /
 Cancel). Two reasons this gate is not ceremony: the docs carry editorial
 judgement a diff cannot distinguish from drift, and a page can be _intentionally_
 ahead of or behind the code during a migration
-(`contributing/injection-flows.md` is exactly that).
+(every page under the v2 banner is exactly that).
 
 Separate out anything that is not yours to decide, and list it rather than
 patching it: a number that disagrees with the code in a way that suggests the
@@ -158,20 +164,19 @@ mismatch visible.
 - **New page** - write it, add it to `mkdocs.yml` `nav` in the right section,
   link it from the pages that should point at it, add it to the map.
 - **Moved or retired page** - fix `nav`, fix every inbound link (grep the old
-  path across `docs/` and `README.md`), update the map.
-- **Never hand-edit** `docs/changelog.md` or `docs/contributing/index.md`. They
+  path across `docs/guide/` and `README.md`), update the map.
+- **Never hand-edit** `docs/guide/changelog.md` or `docs/guide/contributing/index.md`. They
   are `--8<--` snippet includes; the content lives in `CHANGELOG.md` (which is
   release-please output and off-limits entirely) and `CONTRIBUTING.md`.
 
 ## 6. Prove the site still builds
 
 ```bash
-uv run --group docs mkdocs build --strict
-uv run pytest tests/unit/docs/
+pnpm docs:build
+pnpm test:contract
 ```
 
-CI runs the build on any change under `docs/`, `mkdocs.yml`, `README.md`, or
-`CONTRIBUTING.md`, and `--strict` promotes warnings - an orphan page, a broken
+CI runs the build on every pull request, and `--strict` promotes warnings - an orphan page, a broken
 snippet path, an unresolvable link - into failures.
 
 Then report: pages changed, claims fixed, contradictions resolved and which copy

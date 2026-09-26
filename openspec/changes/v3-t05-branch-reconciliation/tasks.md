@@ -40,8 +40,8 @@
 ## 6. Docs workflow and docs-sync (design D-7, D-9)
 
 - [x] 6.1 Rewrite `.github/workflows/docs.yml` with a `build` job (pull request and push to `main` and `staging/v3`) and a `deploy` job gated on a push to `main`, using `actions/checkout@v7` and `astral-sh/setup-uv`. Verify with the workflow lint step's tool (`actionlint`) locally
-- [ ] 6.2 Repoint `.claude/skills/docs-sync/SKILL.md` step 1 at `pnpm test:contract`. Update `references/docs-map.md`: drop rows for removed files, repoint settings rows at `kernel/src/ctx/config.ts` and `schema/settings.schema.json`, and prefix page paths with `docs/guide/`. Verify with a script that every backticked repository path in the map exists
-- [ ] 6.3 Update the `tests/evals/skills/docs-sync/` eval for the new test command and paths, and verify that the JSON parses
+- [x] 6.2 Repoint `.claude/skills/docs-sync/SKILL.md` step 1 at `pnpm test:contract`. Update `references/docs-map.md`: drop rows for removed files, repoint settings rows at `kernel/src/ctx/config.ts` and `schema/settings.json`, and make page paths relative to `docs/guide/`. Verify with a script that every backticked repository path in the map exists
+- [x] 6.3 Update the `tests/evals/skills/docs-sync/` eval for the new test command and paths, and verify that the JSON parses
 
 ## 7. Acceptance
 

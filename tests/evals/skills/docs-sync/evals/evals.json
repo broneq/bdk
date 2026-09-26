@@ -1,17 +1,17 @@
 {
   "skill_name": "docs-sync",
-  "notes": "A recall assertion about `/bdk:cr --inline` being misrecommended for top-level sessions was removed after iteration 2: both configurations 'failed' it, and on checking, the assertion was wrong. review-engine.md explains why inline dispatch exists (subagent callers cannot fan out) but does not forbid it elsewhere, and skills/cr/SKILL.md sets dispatch from the flag with no caller restriction, exposing --inline in its argument-hint. The assertion had been written from an unverified claim in an iteration-1 baseline report. Verify a defect against the source before turning it into an assertion. Iteration 1 showed eval-0 (add an agent) and eval-2 (rename a flag) are non-discriminating: with_skill and without_skill produced identical file sets, and on the rename the diffs were byte-identical. Both are grep-complete tasks. They are retained below as regression guards but are not rerun every iteration. The discriminating cases are recall on an open-ended sweep (eval-1) and propagation of a fact that is enumerated in prose rather than named by a searchable token (eval-3).",
+  "notes": "A recall assertion about `/bdk:cr --inline` being misrecommended for top-level sessions was removed after iteration 2: both configurations 'failed' it, and on checking, the assertion was wrong. review-engine.md explains why inline dispatch exists (subagent callers cannot fan out) but does not forbid it elsewhere, and skills/cr/SKILL.md sets dispatch from the flag with no caller restriction, exposing --inline in its argument-hint. The assertion had been written from an unverified claim in an iteration-1 baseline report. Verify a defect against the source before turning it into an assertion. Iteration 1 showed eval-0 (add an agent) and eval-2 (rename a flag) are non-discriminating: with_skill and without_skill produced identical file sets, and on the rename the diffs were byte-identical. Both are grep-complete tasks. They are retained below as regression guards but are not rerun every iteration. The discriminating cases are recall on an open-ended sweep (eval-1) and propagation of a fact that is enumerated in prose rather than named by a searchable token (eval-3). T05 moved the site to docs/guide/, retired the injection-flows, settings, tool-tiers and choosing-a-tier pages, and moved the drift guards to Vitest (pnpm test:contract): the injection-flows recall assertion went with its page, and eval-2 now renames the one v3 feature flag.",
   "evals": [
     {
       "id": 1,
       "name": "release-readiness-sweep",
       "discriminating": true,
-      "prompt": "Za chwilę tniemy release. Sprawdź czy dokumentacja w docs/ jest jeszcze prawdziwa - nie chcę wypuścić strony, która kłamie o tym co BDK robi.",
+      "prompt": "Za chwilę tniemy release. Sprawdź czy dokumentacja w docs/guide/ jest jeszcze prawdziwa - nie chcę wypuścić strony, która kłamie o tym co BDK robi.",
       "expected_output": "Sweeps the whole site, not just the reference pages, and reports findings with file-and-line evidence classified as stale/missing/contradictory/accurate. Recall is the point: the fixture repo contains several known real defects (listed in the assertions) that an unaided audit does find, so finding only the two most obvious ones is a failure, not a pass.",
       "assertions": [
         {
           "name": "recall_readonly_mechanism_contradiction",
-          "description": "Finds that docs/index.md and README.md attribute plan-verifier/design-verifier read-only status to `disallowed-tools`, which no agents/*.md carries - docs/reference/agents.md states the correct mechanism (tools: allowlist), so the site contradicts itself"
+          "description": "Finds that docs/guide/index.md and README.md attribute plan-verifier/design-verifier read-only status to `disallowed-tools`, which no agents/*.md carries - docs/guide/reference/agents.md states the correct mechanism (tools: allowlist), so the site contradicts itself"
         },
         {
           "name": "recall_rule_sets_enumeration_incomplete",
@@ -19,11 +19,7 @@
         },
         {
           "name": "recall_conditional_stated_as_unconditional",
-          "description": "Finds that docs/workflows/full-pipeline.md presents the end-of-plan architecture review as always running when the skill body gates it behind triggers"
-        },
-        {
-          "name": "recall_injection_flows_status_stale",
-          "description": "Finds that docs/contributing/injection-flows.md still describes as broken/dead/proposed several mechanisms that have since shipped, without rewriting the page into a plain reference"
+          "description": "Finds that docs/guide/workflows/full-pipeline.md presents the end-of-plan architecture review as always running when the skill body gates it behind triggers"
         },
         {
           "name": "total_recall_at_least_six",
@@ -51,7 +47,7 @@
         },
         {
           "name": "runs_existing_drift_tests",
-          "description": "Runs tests/unit/docs/ rather than re-deriving by hand the three invariants it already enforces (skill indexed, agent documented, page in nav)"
+          "description": "Runs pnpm test:contract (the site guards in kernel/tests/docs/) rather than re-deriving by hand the invariants they already enforce (skill indexed, agent documented, nav matches pages, v2 banner, hook paths exist)"
         }
       ],
       "files": []
@@ -61,7 +57,7 @@
       "name": "enumerated-fact-propagation",
       "discriminating": true,
       "prompt": "Dodaj nowy zestaw reguł rules/observability.md - logowanie, metryki, tracing, language-agnostic jak reszta - i podłącz go tak, żeby /bdk:create-plan go wstrzykiwał.",
-      "expected_output": "Writes rules/observability.md in the house format, wires it into skills/create-plan/SKILL.md (INJECT marker plus the inject-rules.py call), and then propagates the change to every place that ENUMERATES the shipped rule sets in prose: STARTUP_INSTRUCTIONS.md, docs/concepts/quality-and-language-rules.md, and docs/reference/settings.md. The point of this eval is that the new name is absent from those sentences, so grep for 'observability' finds nothing there - the enumeration has to be recognised as a claim that must stay exhaustive. Ideally also notices the pre-existing gap: that sentence already omits engineering-judgment and test-quality.",
+      "expected_output": "Writes rules/observability.md in the house format, declares the prompt key rules/observability in kernel/src/ctx/config.ts, wires it into skills/create-plan/SKILL.md (INJECT marker plus the inject-rules.py call), and then propagates the change to every place that ENUMERATES the shipped rule sets in prose: STARTUP_INSTRUCTIONS.md, docs/guide/concepts/quality-and-language-rules.md, and the Settings section of README.md. The point of this eval is that the new name is absent from those sentences, so grep for 'observability' finds nothing there - the enumeration has to be recognised as a claim that must stay exhaustive. Ideally also notices the pre-existing gap: that sentence already omits engineering-judgment and test-quality.",
       "assertions": [
         {
           "name": "rule_file_created_in_house_format",
@@ -69,7 +65,7 @@
         },
         {
           "name": "wired_into_create_plan",
-          "description": "skills/create-plan/SKILL.md gains both an INJECT marker and an inject-rules.py invocation for observability, matching the pattern of the existing five"
+          "description": "kernel/src/ctx/config.ts declares rules/observability, and skills/create-plan/SKILL.md gains both an INJECT marker and an inject-rules.py invocation for observability, matching the pattern of the existing ones"
         },
         {
           "name": "startup_enumeration_updated",
@@ -77,11 +73,11 @@
         },
         {
           "name": "concepts_page_updated",
-          "description": "docs/concepts/quality-and-language-rules.md's 'shipped rule sets' section lists observability"
+          "description": "docs/guide/concepts/quality-and-language-rules.md's 'shipped rule sets' section lists observability"
         },
         {
           "name": "settings_reference_updated",
-          "description": "docs/reference/settings.md's quality section accounts for the new rule set where it enumerates overridable categories"
+          "description": "The Settings section of README.md accounts for the new rule set where it enumerates overridable rules/<name> prompt values"
         },
         {
           "name": "notices_preexisting_enumeration_gap",
@@ -89,15 +85,15 @@
         },
         {
           "name": "no_generated_pages_edited",
-          "description": "docs/changelog.md and docs/contributing/index.md are untouched - they are snippet includes"
+          "description": "docs/guide/changelog.md and docs/guide/contributing/index.md are untouched - they are snippet includes"
         },
         {
           "name": "site_builds_strict",
-          "description": "uv run --group docs mkdocs build --strict is run and passes"
+          "description": "pnpm docs:build (mkdocs build --strict) is run and passes"
         },
         {
           "name": "drift_tests_pass",
-          "description": "uv run pytest tests/unit/docs/ is run and passes"
+          "description": "pnpm test:contract is run and passes"
         }
       ],
       "files": []
@@ -107,7 +103,7 @@
       "name": "new-agent-propagates-to-docs",
       "discriminating": false,
       "prompt": "Dodaj nowego agenta bdk:perf-profiler - model haiku, read-only (bez Edit/Write), ma szukać wąskich gardeł wydajności: hot paths, pętle w pętlach, powtarzane I/O. Zrób co trzeba, żeby był normalną częścią BDK, tak jak pozostałe agenty.",
-      "expected_output": "Creates agents/perf-profiler.md, read-only via its tools: allowlist, and propagates to README.md, STARTUP_INSTRUCTIONS.md, docs/reference/agents.md (including the hardcoded count) and docs/concepts/agents.md. Iteration 1: both configurations scored 8/8 - retained as a regression guard only.",
+      "expected_output": "Creates agents/perf-profiler.md, read-only via its tools: allowlist, and propagates to README.md, STARTUP_INSTRUCTIONS.md, docs/guide/reference/agents.md (including the hardcoded count) and docs/guide/concepts/agents.md. Iteration 1: both configurations scored 8/8 - retained as a regression guard only.",
       "assertions": [
         {
           "name": "agent_file_created_read_only",
@@ -115,11 +111,11 @@
         },
         {
           "name": "hardcoded_agent_count_updated",
-          "description": "The literal count in docs/reference/agents.md matches the actual number of files in agents/"
+          "description": "The literal count in docs/guide/reference/agents.md matches the actual number of files in agents/"
         },
         {
           "name": "all_fleet_rosters_updated",
-          "description": "README.md, STARTUP_INSTRUCTIONS.md, docs/reference/agents.md and docs/concepts/agents.md all gain the new agent - the shared-facts index lists all four as copies of one fact"
+          "description": "README.md, STARTUP_INSTRUCTIONS.md, docs/guide/reference/agents.md and docs/guide/concepts/agents.md all gain the new agent - the shared-facts index lists all four as copies of one fact"
         },
         {
           "name": "no_collateral_page_rewrites",
@@ -127,7 +123,7 @@
         },
         {
           "name": "site_builds_strict",
-          "description": "mkdocs build --strict is run and passes"
+          "description": "pnpm docs:build (mkdocs build --strict) is run and passes"
         }
       ],
       "files": []
@@ -136,24 +132,24 @@
       "id": 2,
       "name": "settings-flag-rename-reverse-map",
       "discriminating": false,
-      "prompt": "Zmieniamy nazwę feature flagi z features.serena na features.serena-lsp. Przeprowadź tę zmianę w repo.",
-      "expected_output": "Renames the flag in the schema, the chain conditions, the scripts and the three docs pages, while leaving the unrelated serena MCP server alone. Iteration 1: with_skill and without_skill produced byte-identical diffs - the task is grep-complete. Retained as a regression guard only.",
+      "prompt": "Zmieniamy nazwę feature flagi z features.lavish na features.lavish-review. Przeprowadź tę zmianę w repo.",
+      "expected_output": "Renames the flag in kernel/src/ctx/config.ts (regenerating schema/settings.json with pnpm build rather than editing it), every inject.py --if condition, the scripts and tests that read it, and the docs pages that name it, while leaving the lavish-axi binary name and the tool.lavish-axi probe alone. Iteration 1 ran on the retired features.serena flag, where with_skill and without_skill produced byte-identical diffs - the task is grep-complete. Retained as a regression guard only.",
       "assertions": [
         {
-          "name": "schema_and_chains_renamed",
-          "description": "settings.schema.json and every fragments/tool-tiers/*.chain.json condition referencing the flag are updated"
+          "name": "config_and_conditions_renamed",
+          "description": "kernel/src/ctx/config.ts, the regenerated schema/settings.json and every inject.py --if features.* condition referencing the flag use the new name"
         },
         {
           "name": "docs_pages_renamed",
-          "description": "docs/reference/settings.md, docs/getting-started/setup.md and docs/concepts/tool-tiers.md use the new name"
+          "description": "docs/guide/getting-started/installation.md and README.md use the new name"
         },
         {
-          "name": "mcp_server_not_renamed",
-          "description": "The serena MCP server entry in .mcp.json and every mcp__plugin_bdk_serena__* tool name are left untouched - a homonym, not the flag"
+          "name": "binary_not_renamed",
+          "description": "The lavish-axi binary name and every tool.lavish-axi condition are left untouched - a homonym, not the flag"
         },
         {
           "name": "no_stale_flag_references_left",
-          "description": "A repo-wide grep finds no live reference to the old flag name"
+          "description": "A repo-wide grep finds no live reference to the old flag name outside docs/v3/ and CHANGELOG.md"
         }
       ],
       "files": []
