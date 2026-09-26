@@ -74,7 +74,7 @@ pnpm skill-check --baseline-prune
 ## Adding a New Skill
 
 1. Create `skills/<name>/SKILL.md`
-2. Run `pnpm skill-check`, then `/skill-lint` for project-specific paths and instructions
+2. Review with `/bdk-skill-kit:skill-authoring`, run `pnpm skill-check`; BDK-only conventions: `.claude/rules/skills.md`
 3. Add entry to `## Skills` table in `README.md`
 4. Write eval in `tests/evals/skills/<name>/`
 

@@ -103,12 +103,49 @@ Bundle the open questions for the user...
 ### When to use this skill
 ```
 
+## Condition syntax
+
+Multiple `--if` = AND logic.
+
+| Condition               | True when                                     |
+| ----------------------- | --------------------------------------------- |
+| `features.react`        | `settings.features.react == true`             |
+| `languages[typescript]` | `"typescript" in settings.languages`          |
+| `tool.lavish-axi`       | an executable named `lavish-axi` is on `PATH` |
+
+The dotted spelling of `tool.` is the only accepted one. `tool[name]` is parsed by the array rule as a
+lookup in a nonexistent `tool` list and silently evaluates false - it never errors, so the condition
+reads as "tool absent" forever. Pair `tool.<binary>` with the matching `features.<flag>`: the flag says
+the user wants it, the probe says the machine has it.
+
+Without `.bdk/settings.yaml` the plugin defaults apply (`features.lavish` is `true`, `languages` is empty).
+
+## Errors
+
+A **false** condition is silent; a **broken** one is not. Unknown condition syntax, a missing `--then`
+file, or a bad argument (including a flag that no longer exists) prints `[bdk-inject-error] <desc>` to
+**stdout** and still exits 0. That is deliberate: a `!`...`` block captures stdout only and ignores the
+exit code, so stderr + exit 1 would render a broken injection as an empty one. Same contract in
+`inject-rules.py` and `inject-language-rules.py`.
+
+The scripts read settings through the kernel (`bdk config show --json`, via `scripts/kernel_settings.py`),
+which finds the project from cwd and needs Node >= 22.13; without it they print a `[bdk-inject-error]`
+line naming the fix.
+
+```python
+from scripts.inject import load_settings, evaluate_condition, inject
+
+settings = load_settings()                                    # dict; raises KernelSettingsError
+ok = evaluate_condition("features.react", settings)           # bool
+content = inject(["features.react"], then_path="react.md", settings=settings)  # str
+```
+
 ## Rules summary
 
 - **Fragments ≠ references**: Fragments are conditional; references are static. See decision tree above for placement.
 - **Syntax**: Use `--then <file>` for content >2 lines; `--then-text` for snippets.
 - **Placement**: Inject calls go immediately before the section they augment.
-- **v2 only**: `pnpm skill-check` (`bdk/wrapper-form`) rejects these `!`...`` calls; the existing ones sit in its baseline until `inject.py` goes. New skills call the kernel instead - see `.claude/rules/skill-creation-rules.md`.
+- **v2 only**: `pnpm skill-check` (`bdk/wrapper-form`) rejects these `!`...`` calls; the existing ones sit in its baseline until `inject.py` goes. New skills call the kernel instead - see `.claude/rules/skills.md`.
 
 ## Related: rule injection (not fragments)
 

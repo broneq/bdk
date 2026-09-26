@@ -7,7 +7,7 @@ import bdk from "./tools/skill-check/bdk-rules.ts";
 // violations are checked with exactly these settings.
 export const rules = {
   "line-limit": ["error", { max: 200 }],
-  // BDK's listing budget (.claude/rules/skill-creation-rules.md), below the host cap.
+  // BDK's listing budget (.claude/rules/skills.md), below the host cap.
   description: ["error", { max: 250 }],
   "description-front-loaded": "error",
   "require-model": "error",
