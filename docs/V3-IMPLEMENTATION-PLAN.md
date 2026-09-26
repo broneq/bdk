@@ -72,8 +72,15 @@ flowchart LR
   T03 --> T13
   T03 --> T04["T04 Remove<br/>bundled MCP"]
   T04 --> T32
+  T04 --> T05["T05 Branch<br/>reconciliation"]
+  T15 --> T05
+  T05 --> T13
+  T05 --> T32
+  T05 --> T41
+  T05 --> T42
+  T05 --> T50
   T03 --> T41
-  class T00,T01,T02,T03,T04,T10,T15 prep
+  class T00,T01,T02,T03,T04,T05,T10,T15 prep
   class T11,T12,T13,T14,T20,T21,T22,T23,T24,T30,T31,T32 primary
   class T40,T41,T42 warn
   class T50 ok
@@ -226,6 +233,30 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Dependencies**: T03 (done).
 
+### T05 Branch reconciliation: `main` and `improvements-pack` into `staging/v3`
+
+**Goal**: one line of history before the v3 tasks that rewrite the most shared files (T13 the injection scripts and hooks, T32 the Python cut, T41 / T42 the skills and agents), so that no later task inherits a growing merge, and the documentation site and its tooling from `improvements-pack` survive as mechanisms for v3.
+
+**Scope**:
+
+- `main` into `staging/v3`: a merge commit, not a rebase. The conflicts (about 20 files at the time of writing) come mostly from T04, which landed on both lines (`staging/v3` directly, `main` as the 2.7.0 backport); the v3 side wins unless `main` carries a fix that `staging/v3` lacks (the stop-hook graph fix, the release-please files, the marketplace entries).
+- `improvements-pack` into `staging/v3` by triage, not by a blind merge (about 54 conflicting files, mostly files v3 already removed or rewrote). The branch does not go to `main`: v2 gets no documentation site, and the site starts on the v3 line.
+  - Kept as mechanisms: the MkDocs Material site (`mkdocs.yml`, `.github/workflows/docs.yml`, the navigation and page structure under `docs/`), the dev-time `docs-sync` skill (`.claude/skills/docs-sync/`, its docs map repointed at the v3 tree) and its docs tests, `.git-blame-ignore-revs`.
+  - Site content: pages about mechanisms v3 already removed go (tool tiers, `choosing-a-tier`, the MCP parts of the concept and reference pages). Every other page stays and opens with a banner saying it describes v2 and is rewritten for v3 by T50; the v3 user documentation of T50 is written on this site, and `docs-sync` keeps it true to the code.
+  - Toolchain: ruff lint and format cover the Python scripts until T32 removes them, run from the existing CI jobs and a `pnpm` script, not from a second entry point (`Makefile` / `make check` do not come over). The `ruff format` commit comes over with the history, so `.git-blame-ignore-revs` stays valid.
+  - Not taken: the frontmatter fixes made for the external "skilllint" (T15's `skill-check` and its baseline own those checks; a fix that removes a baselined finding comes over with a `--baseline-prune`), edits to files v3 removed (`bdk-tier-*`, `fragments/tool-tiers/`, graph hooks, `mcp-tool-naming.md`), the README rewrite where it describes v2 behaviour.
+  - `BUGS.md` moves to the root as on the branch, unless `staging/v3` has moved it already.
+- `docs/` convention in `CLAUDE.md` names the site: `docs/` holds temporary material, task artifacts, ADRs and the user documentation site.
+- Branches: `improvements-pack` is deleted after the merge.
+
+**Input**: `origin/improvements-pack` (17 commits, PRs #40, #41, #42), `origin/main` since the `staging/v3` fork (T04 backport, releases 2.6.0 to 2.7.0, marketplace entries), ADR-0001, T15 Resolution (skill-check baseline).
+
+**Acceptance signal**: `git merge-base --is-ancestor` holds for the `main` tip and the `improvements-pack` tip against `staging/v3`; `mkdocs build --strict` passes; no site page describes tool tiers or a BDK MCP server, and every remaining v2 page carries the banner; `pnpm skill-check` passes with a baseline that did not grow; the full CI, including the docs workflow and ruff, is green on the PR.
+
+**To resolve in the spec**: whether `.pymarkdown.json` stays next to Prettier or goes (overlapping Markdown rules); whether the docs tests stay Python until T32 or move to Vitest now; which branch and trigger `docs.yml` deploys from while the site shows v2 pages (no deploy before the 3.0 release is the default); whether the kept concept pages are few enough to rewrite now instead of bannering them.
+
+**Dependencies**: T04 (done), T15 (done).
+
 ### T10 Kernel CLI contract (first-class document)
 
 **Goal**: the full contract of `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs <args>` before any code exists; the design calls it "the first plan artifact".
@@ -338,7 +369,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: whether `fragments/` stay files or go into `prompts/` defaults in the bundle; adapter frontmatter format required for generating the table.
 
-**Dependencies**: T12, T03 (done: no `uvx` lines stay).
+**Dependencies**: T12, T03 (done: no `uvx` lines stay), T05 (the injection scripts and hooks are rewritten on the reconciled tree).
 
 ### T14 State schema and write map (first-class document, zod, JSON Schema)
 
@@ -589,7 +620,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: what to do with `.bdk/verify-plan/` and `.bdk/runs/` (ignore / report); the fate of `docs/INJECTION-FLOWS.md`.
 
-**Dependencies**: T30, T31, T42 (skills table documentation), T04 (the MCP servers are already gone; `uv.lock` does not stay for MCP, T03), in practice the last one before T50.
+**Dependencies**: T30, T31, T42 (skills table documentation), T04 (the MCP servers are already gone; `uv.lock` does not stay for MCP, T03), T05 (ruff and the docs tests go with the Python), in practice the last one before T50.
 
 ---
 
@@ -639,7 +670,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: details of the wave strategy and the place of Workflow (the design leaves it open); how `design` drives Lavish in the thin version and what the AskUserQuestion fallback loses; content of the instructions returned by `next` per artifact (shared with T21 - who owns the templates); whether `run` re-renders after each gate or only at the stop.
 
-**Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
+**Dependencies**: T02, T05, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
 
 ### T42 Remaining skills, role skills, adapters, `bdk-craft`, package input for `cr` / `pr-review`
 
@@ -663,7 +694,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: exact shape of the package input for `cr` (how it combines with `--full`, `--base`, `--inline`); adapter preamble content and the `model` tier per adapter; whether `pr-reviewer` and `reviewer` share one skill body with a mode flag.
 
-**Dependencies**: T41, T02, T15.
+**Dependencies**: T41, T02, T05, T15.
 
 ---
 
@@ -690,7 +721,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: what happens to `openspec/` after the release; whether promptfoo is in CI; v2 support policy (none, hard cut); which non-Claude host is the acceptance target.
 
-**Dependencies**: T32, T42.
+**Dependencies**: T32, T42, T05 (the documentation site).
 
 ---
 
