@@ -63,6 +63,54 @@ export function readDocument(
   };
 }
 
+/** The field that must be unique in a Change for each kind that carries an id. */
+const IDENTITY: Partial<Readonly<Record<KindName, string>>> = {
+  entry: "id",
+  evidence: "id",
+  attempt: "ticket",
+};
+
+/**
+ * Every document under a Change directory by absolute path, each validated,
+ * then checked for ids used twice (`kernel-state`, Identifiers): two branches
+ * can draw the same id into different file names, and the merged Change must
+ * refuse loudly instead of letting one entry shadow the other.
+ */
+export function readChange(
+  store: Store,
+  dir: string,
+  kinds: KindOverrides = {},
+): Map<string, StateDocument> {
+  const documents = new Map<string, StateDocument>();
+  const owners = new Map<string, string>();
+  const visit = (current: string): void => {
+    for (const name of store.list(current)) {
+      const path = `${current}/${name.replace(/\/$/, "")}`;
+      if (name.endsWith("/")) {
+        visit(path);
+        continue;
+      }
+      const document = readDocument(store, path, kinds);
+      if (document === undefined) continue;
+      documents.set(path, document);
+      if (!("data" in document)) continue;
+      const field = IDENTITY[document.kind];
+      if (field === undefined) continue;
+      const id = String(document.data[field]);
+      const display = locate(path)?.display ?? path;
+      const first = owners.get(id);
+      if (first !== undefined) {
+        throw invalid("state/ledger-invalid", `${id} is used by both ${first} and ${display}`, [
+          `give one of the two a fresh id and fix the references to it`,
+        ]);
+      }
+      owners.set(id, display);
+    }
+  };
+  visit(dir.replace(/\/$/, ""));
+  return documents;
+}
+
 /** Validates, then writes in one step; an invalid document leaves the store unchanged. */
 export function writeDocument(
   store: Store,

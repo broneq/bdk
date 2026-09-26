@@ -3,7 +3,7 @@ export type { Store } from "./store.ts";
 export { splitFrontmatter } from "./frontmatter.ts";
 export { INDEX_SCHEMA_VERSION, openIndex } from "./index-db.ts";
 export type { IndexDb } from "./index-db.ts";
-export { migrateDocument, readDocument, writeDocument } from "./state/documents.ts";
+export { migrateDocument, readChange, readDocument, writeDocument } from "./state/documents.ts";
 export type { KindOverrides, MigrationResult, StateDocument } from "./state/documents.ts";
 export { ENTRY_TYPES } from "./state/entry.ts";
 export type { EntryType } from "./state/entry.ts";

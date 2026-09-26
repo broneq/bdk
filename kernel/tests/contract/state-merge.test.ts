@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { newId } from "../../src/shared/ids/index.ts";
 import {
   fileStore,
+  readChange,
   learningFingerprint,
   readDocument,
   writeDocument,
@@ -203,21 +204,16 @@ function work(root: string, branch: string, at: string, rule: string, capability
   });
 }
 
-/** Reads every state file of the work tree through the store; the entry, evidence and ticket ids. */
-function validateTree(root: string): string[] {
+/**
+ * Reads the merged Change through `readChange` (every file valid, no id used
+ * twice) and every rule file; the number of Change documents.
+ */
+function validateTree(root: string): number {
   const store = fileStore();
-  const ids: string[] = [];
-  const bdk = join(root, ".bdk");
-  for (const entry of readdirSync(bdk, { withFileTypes: true, recursive: true })) {
-    if (!entry.isFile()) continue;
-    const document = readDocument(store, join(entry.parentPath, entry.name));
-    if (document === undefined || !("data" in document)) continue;
-    if (document.kind === "attempt") ids.push(String(document.data.ticket));
-    if (document.kind === "entry" || document.kind === "evidence") {
-      ids.push(String(document.data.id));
-    }
+  for (const name of store.list(join(root, ".bdk/rules"))) {
+    readDocument(store, join(root, ".bdk/rules", name));
   }
-  return ids;
+  return readChange(store, join(root, ".bdk/changes", CHANGE_ID)).size;
 }
 
 describe("two-branch merge", () => {
@@ -230,9 +226,38 @@ describe("two-branch merge", () => {
       work(root, "b", "2026-09-26T08:00:00Z", "TQ-9", "auth-mail");
     });
     expect(merge(root)).toStrictEqual([]);
-    const ids = validateTree(root);
-    expect(ids.length).toBeGreaterThan(20);
-    expect(new Set(ids).size).toBe(ids.length);
+    expect(validateTree(root)).toBeGreaterThan(50);
+  });
+
+  it("merges an id drawn on both branches, and reading the Change names both files", () => {
+    const root = forked();
+    const write = (type: string, at: string) => () => {
+      const stamp = at.replaceAll("-", "").replaceAll(":", "");
+      writeDocument(
+        fileStore(),
+        join(root, `.bdk/changes/${CHANGE_ID}/log/${stamp}-${type}-L-dup00000.md`),
+        {
+          data: {
+            schema: 1,
+            id: "L-dup00000",
+            type,
+            summary: `${type} with a colliding id`,
+            status: "proposed",
+            source: "kernel",
+            author: AUTHOR,
+            at,
+            refs: ["design.md"],
+          },
+          body: "",
+        },
+      );
+    };
+    on(root, "a", write("decision", "2026-09-26T08:00:00Z"));
+    on(root, "b", write("risk", "2026-09-26T08:00:01Z"));
+    expect(merge(root)).toStrictEqual([]);
+    expect(() => validateTree(root)).toThrow(
+      /L-dup00000 is used by both .*decision-L-dup00000\.md and .*risk-L-dup00000\.md/,
+    );
   });
 
   it("conflicts only on a rule both branches edit", () => {
