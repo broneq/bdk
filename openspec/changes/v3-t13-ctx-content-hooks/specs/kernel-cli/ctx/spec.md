@@ -1,26 +1,6 @@
-# kernel-cli/ctx Specification
+# Spec Delta
 
-## Purpose
-
-Prompt context (`ctx`). The two inject-mode composers that replace the v2 injection scripts: `skill` for a skill's context lines, `startup` for the session foundation. Roles have no composer: a role is a skill, and `dispatch build` embeds its body.
-
-Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
-
-Representative refusal:
-
-```json refusal
-{
-  "refused": true,
-  "rule": "input/not-found",
-  "why": "debugg is not a skill with a BDK context",
-  "instead": [
-    "bdk ctx skill debug",
-    "check the skill name in the context lines"
-  ]
-}
-```
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: bdk ctx skill
 
@@ -182,3 +162,11 @@ Render the STARTUP instructions, including the agents table generated from agent
 
 - **WHEN** `.bdk/settings.yaml` sets a key no module schema declares and `bdk ctx startup` runs
 - **THEN** the exit code is 0 and stdout is the rendered STARTUP text without a STOP block, because the command reads no configuration
+
+## REMOVED Requirements
+
+### Requirement: bdk ctx role
+
+**Reason**: Roles are skills under `skills/roles/` (T02 decision Q-3), and `dispatch build` (T23) embeds the role body into the package, so nothing preloads role context by class.
+
+**Migration**: A role's context reaches the subagent through its dispatch package (`kernel-cli/dispatch`, `bdk dispatch build`). A preloaded meta-skill that needs rules uses its own `ctx skill <name>` entry until T42 removes the meta-skills.

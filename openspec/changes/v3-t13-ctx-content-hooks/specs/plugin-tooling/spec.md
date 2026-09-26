@@ -1,33 +1,6 @@
-# plugin-tooling Specification
+# Spec Delta
 
-## Purpose
-
-Defines which tools the shipped BDK plugin relies on: built-in host tools only, with no bundled MCP server, no `uvx` process and no tool-guidance layer (ADR-0001).
-
-## Requirements
-
-### Requirement: No bundled MCP server
-
-The plugin SHALL NOT declare an MCP server, and none of its hooks SHALL start a `uvx` process.
-
-#### Scenario: session start with the plugin
-
-- **WHEN** a Claude Code session starts with `--plugin-dir` pointing at the plugin
-- **THEN** the session lists no MCP server contributed by BDK, and no `uvx` process is started by any BDK hook during the session start or at `Stop`
-
-#### Scenario: plugin tree
-
-- **WHEN** the plugin tree is inspected
-- **THEN** it has no `.mcp.json`, no `.serena/` directory and no `hooks/register-graph-repo/` hook
-
-### Requirement: Unit suite green after the removal
-
-The unit test suite SHALL pass on the plugin without the MCP servers, with tests for removed parts deleted and tests that assert tier or tool content updated.
-
-#### Scenario: the unit suite passes
-
-- **WHEN** `pytest tests/unit/` runs on the result
-- **THEN** every test passes
+## MODIFIED Requirements
 
 ### Requirement: No tool-tier layer
 
@@ -57,15 +30,6 @@ The plugin SHALL NOT ship a tool-guidance layer on top of the host's built-in to
 
 - **WHEN** `bdk ctx skill design` runs with and without `features.code-review-graph: true` in `.bdk/settings.yaml`
 - **THEN** both outputs are byte-identical
-
-### Requirement: Plugin names no removed MCP server
-
-No file of the plugin outside its historic records SHALL name the removed servers, their tools or `uvx`. Historic records are `docs/v3/`, `docs/adr/`, `openspec/`, `tests/evals/**/iterations/`, `docs/V3-IMPLEMENTATION-PLAN.md` and `docs/V3-SKILL-INVENTORY.md`.
-
-#### Scenario: repository search
-
-- **WHEN** `git grep -E "mcp__plugin_bdk|code-review-graph|serena|uvx"` runs over the tree with the historic records excluded
-- **THEN** it finds no match
 
 ### Requirement: Settings read through the kernel
 
@@ -123,6 +87,8 @@ The SessionStart hook SHALL run `bdk hooks session-start`, which prints STARTUP 
 
 - **WHEN** a session starts on a machine without `node` on `PATH`
 - **THEN** the hook exits 0 and the session context ends with the `BDK STOP: kernel unavailable` line
+
+## ADDED Requirements
 
 ### Requirement: Skill context lines
 

@@ -1,21 +1,6 @@
-# kernel-cli Specification
+# Spec Delta
 
-## Purpose
-
-Contract version **3** (the kernel's major version). Status: **first-class document, written before the kernel exists** (design, "What We Did NOT Decide": "Exact CLI contract ... is the first plan artifact"; plan task T10). The prose half is this capability (cross-cutting rules), one spec per command group under `kernel-cli/<group>/` and the `kernel-architecture` spec; the machine-readable half lives in `schema/cli/`: `commands.json` is the command index, `output/<command-id>.json` the JSON Schema of each `--json` success output, `common/*.json` the shared shapes. `kernel/tests/contract/cli-contract.test.ts` keeps the specs and `schema/cli/` consistent, and checks that every `bdk ...` mention in the design, the plan and HOST-FACTS resolves to a command or to an allowlisted reason.
-
-Reading order for a task that implements a command group: the requirements below once, then the group's spec under `kernel-cli/<group>/`, then the `kernel-architecture` spec for where the code goes.
-
-- **What this capability fixes:** for every kernel command, the invocation, who may call it, the output mode, the arguments, the `--json` output shape, the exit codes and the refusal rules it may emit. It does not fix internals (store layout, graph semantics, budgets, heuristics); those belong to the command's owner task.
-- **The only supported invocation** is `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs <args>`. `bdk <args>` in these specs is shorthand. No PATH shim is installed, and the `hooks pre-tool` prefilter matches `bdk.mjs` for that reason.
-- **Owner tasks.** Every command carries `owner: Tnn`, the plan task that implements it (`docs/V3-IMPLEMENTATION-PLAN.md`). T11 registers every command in the index from day one; a command whose owner task has not landed is a stub that exits 2 with the rule `kernel/not-implemented` and an `instead` naming the task. Contract tests in T11 assert exactly that: handler or stub, nothing in between.
-- **Amendment rule.** A later task may change a command's arguments, output schema or rules only in the PR that implements the command, editing the command's spec (through a delta spec in its Change, synced here at archive) and `schema/cli/` together, with the reason in the PR. T12's zod export must reproduce `schema/cli/` byte for byte, so a schema drift fails CI.
-- **Living spec.** This capability, its group specs under `kernel-cli/<group>/`, the `kernel-architecture` spec and `schema/cli/` are the specification of the kernel CLI. A Change that alters kernel behaviour carries a delta spec against the affected group and edits `schema/cli/` in the same PR; `kernel/tests/contract/cli-contract.test.ts` keeps the specs and the schemas consistent. `docs/` holds no living specification.
-- **Versioning.** Additive changes (a new command, a new optional field, a new rule id, a new `since` field on an entry) stay within contract version 3. Removing or renaming a command, a field or an exit code needs a kernel major bump and a new contract version. `bdk version --json` reports both `kernel` (full semver) and `contract`. The dispatch package frontmatter keeps `kernel-version` as the full semver (P10).
-- **What is deliberately absent:** no `approve`, no `gate pass` (T1: a gate is passed by the user typing the next stage command; the only writer of `source: user` is `hooks prompt-expansion`); no `stage enter` (HOST-FACTS `upe-fires`: `UserPromptExpansion` fires for plugin skills, so the fallback is not needed); no `hooks stop` (T02 decision Q-6: the rule-drift Stop hook is not ported).
-- **Sources.** Design: "CLI contract (outline)", "Key boundaries", "UX Touchpoints", "Hooks (V1-1, V1-2)", the sequence diagram under "Selected Approach". Decisions: Q3, T1, T2, T3, P1, P2, P4, P6, P10, P11, K2-K4, R-store. Host facts: `docs/HOST-FACTS.md`. Where a host fact contradicts the design text, the spec follows the host fact and cites the row.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Invocation
 
@@ -243,35 +228,6 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 
 - **WHEN** a command record declares a rule in `refusals` that the catalogue does not list
 - **THEN** the contract test fails
-
-### Requirement: Conventions
-
-Success output, list pages, identifiers, timestamps, idempotence and the refusal-versus-finding split SHALL follow these conventions in every command.
-
-- **Success output is a plain object.** No envelope: the `--json` output of a command is the object its schema under `schema/cli/output/` describes. Optional fields are absent when unknown, never `null`. Enumerations are lowercase words. Text mode renders the same data; only JSON is the contract.
-- **List pages.** Every `list` verb and every command that returns a collection uses `schema/cli/common/list-page.json`: `items[]`, `total` (the count before truncation), `truncated` (boolean), and `for` (the `--for` filter as given, absent when none). The default page is the first 100 items, which is the design's "<= 100 lines" rule; `--all` lifts it. Text mode prints at most 100 lines for the same reason. `--for <ref>` narrows a list to what references a task (`02-3`), a part (`02`) or a file path; the list verbs that accept it say so in their entry.
-- **Full bodies only via `show`.** `list` returns summaries (id, type, summary, status, refs). `show <id>` returns the whole entry, package or attempt record. Dumping the whole state needs `query` with `--all`.
-- **Kernel-stamped fields.** `id`, `at`, `author` and `source` on ledger entries, tickets, attempts and manifests are stamped by the kernel from its clock, git config and the ticket's role (P1). They appear in outputs and never in inputs; passing one is `input/forbidden-field`. `source: user` exists only on the stage-transition path (`hooks prompt-expansion`); `source: policy` only when `policy.gates.<gate>: auto` passes a gate (T02 decision R-9); `source: inferred` only from `change new --inferred`.
-- **Identifiers.** Change ids, ledger ids (`L-`), ticket ids (`A-`), evidence ids (`E-`) and rule ids (`[PREFIX-n]`) are opaque strings; their exact merge-safe format is T14's (non-sequential, no allocator lock). Within the active Change an id is bare (`L-m2x9v`); across Changes it is qualified (`<changeId>/L-m2x9v`). Task ids are `<part>-<n>` (`02-3`), part ids two digits (`02`), artifact ids the node names of `pipeline.yaml` (`design`, `plan-verify`, `gate:design`). Ids in the examples of these specs are illustrative.
-- **Time, hashes, sizes, paths.** `at` and every other timestamp is ISO 8601 UTC with seconds, `2026-09-25T09:41:07Z`. Hashes are `sha256:<64 hex>`. Sizes are bytes. Paths in outputs are relative to the project root with `/` separators; inputs accept absolute paths inside the project.
-- **Idempotence and deduplication.** A command that would create an object identical by its dedupe key returns the existing object with `deduplicated: true` and exits 0 (`log add`, `evidence record`, `change checkpoint` when nothing changed). Commands that transition state refuse a repeated transition with `policy/invalid-transition` rather than silently succeeding, except where an entry says otherwise (`hooks prompt-expansion` on an already passed gate passes without writing, S5).
-- **Refusal versus finding.** The kernel refuses (exit 2) when proceeding would break an invariant: a forbidden path, a missing ticket, a stale manifest. It records a `finding` entry and exits 0 when the deviation is information for the human: a file outside a task's `Files:`, an uncategorised verifier blocker (downgraded to `observation` with `review: true`, P8). Each entry names which of the two it does.
-- **Clock and budgets are not arguments.** No command takes a timestamp, an author, a budget or a model name as input; budgets and the escalation model come from policy (T22), time from the kernel.
-
-#### Scenario: list page cap
-
-- **WHEN** a `list` verb runs without `--all` over more than 100 matching items
-- **THEN** `items` holds the first 100, `total` the full count and `truncated` is `true`
-
-#### Scenario: kernel-stamped field in input
-
-- **WHEN** `log add` or `log ingest` receives `id`, `at`, `author` or `source` as input
-- **THEN** the exit code is 3 with `rule: input/forbidden-field`
-
-#### Scenario: duplicate by dedupe key
-
-- **WHEN** `log add`, `evidence record` or `change checkpoint` would create an object identical by its dedupe key
-- **THEN** the existing object is returned with `deduplicated: true` and the exit code is 0
 
 ### Requirement: Availability classes
 
