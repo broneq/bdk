@@ -118,7 +118,7 @@ The config SHALL also declare the plugins to load, per-rule settings, per-target
 
 A rule SHALL declare an ID, the target kinds it applies to, a default severity (`off`, `warning` or `error`) and optional default options, and SHALL implement `check`, `checkProject` or both.
 
-- `check(doc, ctx)` SHALL run once per document of a matching kind, with the settings of the document's target. A document SHALL expose its kind, target, path, directory, text, lines, parsed frontmatter or the parse error, the line of each frontmatter key, the first body line, a code-fence test per line and, for a skill, the files of its directory.
+- `check(doc, ctx)` SHALL run once per document of a matching kind, with the settings of the document's target. A document SHALL expose its kind, target, path, directory, text, lines, parsed frontmatter or the parse error, the line of each frontmatter key, the first body line, a code-fence test per line and, for a skill, the files of its directory. Inside a git work tree those files SHALL be the ones git tracks or would track, so files that `.gitignore`, `.git/info/exclude` or the global excludes file ignore are left out and untracked files that none of them ignore are kept; outside a git work tree they SHALL be every file on disk. Dotfiles are left out in both cases.
 - `checkProject(docs, ctx)` SHALL run once over every document of a matching kind in all targets, with the global settings, and SHALL receive the skill directories that hold Markdown but no skill file.
 - A rule MAY implement `validateOptions(options)`, returning a problem or `undefined`. The config loader SHALL call it with the merged options of every target whose kind the rule applies to when the rule has `check` and is enabled for that target, and with the global settings when the rule has `checkProject` and is enabled globally. A problem SHALL be a configuration error (exit 2) whose message names the rule, the target when there is one, and the problem.
 - A report SHALL carry a message and MAY carry a line, a file, the matched text for the fingerprint and `severity: "warning"`, which caps that finding at warning.
@@ -234,6 +234,11 @@ A backticked path counts for `references` only outside code fences and only when
 
 - **WHEN** a skill directory holds `references/old.md` and no referenced file mentions it
 - **THEN** an `unused-files` error names `references/old.md`
+
+#### Scenario: ignored file
+
+- **WHEN** a skill directory inside a git work tree holds `scripts/__pycache__/a.pyc` and `.gitignore` ignores `__pycache__/`
+- **THEN** no rule reports `scripts/__pycache__/a.pyc`
 
 #### Scenario: duplicate names across directories
 

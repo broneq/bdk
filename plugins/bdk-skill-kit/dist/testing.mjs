@@ -8479,7 +8479,8 @@ import { createHash } from "node:crypto";
 import { relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
 
 // src/discover.ts
-import { readdirSync, readFileSync as readFileSync2 } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { lstatSync, readdirSync, readFileSync as readFileSync2 } from "node:fs";
 import { join as join2, relative, sep } from "node:path";
 var toPosix = (path) => path.split(sep).join("/");
 function discover(root, targets) {
@@ -8497,15 +8498,16 @@ function discover(root, targets) {
         }
         continue;
       }
+      const list = lister(base);
       for (const entry of sorted(base)) {
         if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
         const skillDir = join2(base, entry.name);
         const names = sorted(skillDir);
         const skillFile = names.find((e) => e.isFile() && e.name.toLowerCase() === "skill.md");
         if (skillFile) {
-          const files = walk(skillDir).filter((f) => f !== skillFile.name);
+          const files = list(entry.name).filter((f) => f !== skillFile.name);
           docs.push(read(root, target, join2(skillDir, skillFile.name), skillDir, files));
-        } else if (walk(skillDir).some((f) => f.endsWith(".md"))) {
+        } else if (list(entry.name).some((f) => f.endsWith(".md"))) {
           strays.push(toPosix(relative(root, skillDir)));
         }
       }
@@ -8525,6 +8527,27 @@ function read(root, target, file, dir, files) {
 }
 function sorted(dir) {
   return readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+}
+function lister(base) {
+  const files = gitFiles(base);
+  if (!files) return (name) => walk(join2(base, name));
+  return (name) => files.filter((f) => f.startsWith(`${name}/`)).map((f) => f.slice(name.length + 1));
+}
+function gitFiles(dir) {
+  const run = spawnSync(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "--", "."],
+    { cwd: dir, encoding: "utf8" }
+  );
+  if (run.error || run.status !== 0) return null;
+  return [...new Set(run.stdout.split("\0"))].filter((f) => f && !f.split("/").some((part) => part.startsWith(".")) && isFile(join2(dir, f))).sort((a, b) => a.localeCompare(b));
+}
+function isFile(path) {
+  try {
+    return lstatSync(path).isFile();
+  } catch {
+    return false;
+  }
 }
 function walk(dir, prefix = "") {
   const out = [];
