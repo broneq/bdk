@@ -1,6 +1,13 @@
 import type { Rule } from "../index.ts";
 import { cliFront } from "./cli-front.ts";
-import { absolutePaths, argumentsTypo, body, lineLimit, modelNames } from "./content.ts";
+import {
+  absolutePaths,
+  argumentsTypo,
+  body,
+  lineLimit,
+  modelNames,
+  portableSyntax,
+} from "./content.ts";
 import {
   description,
   descriptionFrontLoaded,
@@ -13,6 +20,14 @@ import {
   requireModel,
   skillFileName,
 } from "./frontmatter.ts";
+import {
+  blockAllowedTools,
+  blockForm,
+  bodyShape,
+  forbiddenText,
+  namespacedRefs,
+  requiredFields,
+} from "./policy.ts";
 import { layout, referencesRule, uniqueNames, unusedFiles } from "./structure.ts";
 
 /** The generic rule catalogue (spec `skill-kit`, Generic rule catalogue), in catalogue order. */
@@ -32,9 +47,16 @@ export const genericRules: Rule<object>[] = [
   absolutePaths,
   modelNames,
   argumentsTypo,
+  portableSyntax,
   referencesRule,
   unusedFiles,
   layout,
   uniqueNames,
   cliFront,
+  blockForm,
+  blockAllowedTools,
+  forbiddenText,
+  requiredFields,
+  bodyShape,
+  namespacedRefs,
 ];

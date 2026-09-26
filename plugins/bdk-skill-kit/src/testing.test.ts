@@ -151,6 +151,25 @@ describe("checkRule", () => {
     expect(findings.map((f) => f.severity)).toEqual(["warning"]);
   });
 
+  it("rejects options the rule's validateOptions rejects", async () => {
+    const rule = defineRule<{ x?: string }>({
+      id: "needs",
+      kinds: ["skills"],
+      defaultSeverity: "off",
+      validateOptions: (o) => (o.x ? undefined : "option `x` is required"),
+      check(_doc, ctx) {
+        ctx.report({ message: ctx.options.x ?? "" });
+      },
+    });
+    const files = { "plan/SKILL.md": skill("plan") };
+    await expect(checkRule(rule, { files })).rejects.toThrow(
+      "rule `needs` in target `skills`: option `x` is required",
+    );
+    expect((await checkRule(rule, { files, options: { x: "ok" } })).map((f) => f.message)).toEqual([
+      "ok",
+    ]);
+  });
+
   it("rejects a target the config loader rejects", async () => {
     await expect(
       checkRule(everyDoc, { kind: "agents", profile: "portable", files: {} }),

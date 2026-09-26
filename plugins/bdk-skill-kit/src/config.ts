@@ -58,6 +58,7 @@ export async function loadConfig(cwd: string, explicit?: string): Promise<Loaded
   const targets = config.targets.map((target, index) =>
     loadTarget(target, index, root, rules, settings),
   );
+  validateOptions(rules, settings, targets);
 
   return {
     root,
@@ -112,6 +113,35 @@ export function loadTarget(
   const own = (target.rules ?? {}) as Settings;
   checkSettings(own, rules, `target \`${name}\``);
   return { kind, dirs, profile, name, settings: { ...settings, ...own } };
+}
+
+/**
+ * Runs each enabled rule's `validateOptions`: a per-file rule with the settings
+ * of every target of a matching kind, a project rule with the global settings.
+ */
+export function validateOptions(
+  rules: Map<string, Rule<object>>,
+  settings: Settings,
+  targets: LoadedTarget[],
+): void {
+  for (const rule of rules.values()) {
+    if (!rule.validateOptions) continue;
+    const scopes: [Settings, string][] = [];
+    if (rule.check) {
+      for (const target of targets) {
+        if (rule.kinds.includes(target.kind)) {
+          scopes.push([target.settings, ` in target \`${target.name}\``]);
+        }
+      }
+    }
+    if (rule.checkProject) scopes.push([settings, ""]);
+    for (const [scope, where] of scopes) {
+      const setting = settingOf(rule, scope);
+      if (setting.severity === "off") continue;
+      const problem = rule.validateOptions(setting.options);
+      if (problem !== undefined) throw new ConfigError(`rule \`${rule.id}\`${where}: ${problem}`);
+    }
+  }
 }
 
 function isConfig(value: unknown): value is Config {

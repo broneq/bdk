@@ -4,7 +4,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, normalize, sep } from "node:path";
-import { ConfigError, loadTarget, type Settings } from "./config.ts";
+import { ConfigError, loadTarget, type Settings, validateOptions } from "./config.ts";
 import type { Finding, Profile, Rule, TargetKind } from "./index.ts";
 import { runChecks } from "./runner.ts";
 
@@ -49,6 +49,7 @@ export async function checkRule<O extends object>(
     }
     const target = { kind, dirs: ["."], profile: test.profile, name: kind };
     const targets = [loadTarget(target, 0, root, rules, settings)];
+    validateOptions(rules, settings, targets);
     return runChecks({ root, targets, rules, settings }, { cwd: root, paths: [] }).findings;
   } finally {
     await rm(root, { recursive: true, force: true });

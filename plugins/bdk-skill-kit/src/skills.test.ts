@@ -1,9 +1,11 @@
 // The kit's own skills: `skill-authoring` must explain every generic rule, and
 // cite nothing else, so guidance and checker cannot drift apart.
-import { readdirSync, readFileSync } from "node:fs";
+import { cpSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { main } from "./main.ts";
 import { genericRules } from "./rules/index.ts";
+import { tree } from "./test-helpers.ts";
 
 const skills = join(import.meta.dirname, "..", "skills");
 const authoring = join(skills, "skill-authoring");
@@ -37,6 +39,25 @@ describe("kit skills", () => {
     expect(
       cited(["Keep it short (`line-limit`).", "Link it (`references`, `unused-files`)."]),
     ).toEqual(["line-limit", "references", "unused-files"]);
+  });
+
+  it("skill-authoring passes every generic rule in the portable profile", async () => {
+    const root = tree({
+      "skill-check.config.mjs": `export default {
+        targets: [{ kind: "skills", dirs: ["skills"], profile: "portable" }],
+        rules: { "description-front-loaded": "error", layout: ["error", { allowed: ["references"] }] },
+      };`,
+    });
+    cpSync(authoring, join(root, "skills", "skill-authoring"), { recursive: true });
+    let stdout = "";
+    const code = await main([], {
+      cwd: root,
+      env: {},
+      stdout: (s) => (stdout += s),
+      stderr: (s) => (stdout += s),
+    });
+    expect(stdout).toBe("No findings in 1 file.\n");
+    expect(code).toBe(0);
   });
 
   it("keeps skill-authoring/SKILL.md within 200 lines", () => {

@@ -34,7 +34,7 @@
     "typecheck": "tsc --noEmit",
     "knip": "knip",
     "test": "vitest run --coverage",
-    "self-check": "node dist/skill-check.mjs --portable"
+    "self-check": "node dist/skill-check.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.3",

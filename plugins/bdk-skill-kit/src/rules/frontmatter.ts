@@ -6,8 +6,7 @@ import {
   PLUGIN_IGNORED_AGENT_FIELDS,
   PORTABLE_FIELDS,
 } from "../profiles.ts";
-
-const NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+import { NAME } from "./shared.ts";
 
 /** The line of a frontmatter key, or line 1 when the key is absent. */
 const lineOf = (doc: Document, key: string) => doc.keyLines[key] ?? 1;
