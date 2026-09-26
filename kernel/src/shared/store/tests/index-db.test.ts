@@ -54,6 +54,11 @@ describe("openIndex", () => {
       bundle: true,
       platform: "node",
       format: "esm",
+      // The same banner as kernel/build.mjs: the store now carries `yaml`,
+      // whose CommonJS code calls `require`.
+      banner: {
+        js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);',
+      },
       logLevel: "silent",
     });
     const result = spawnSync(process.execPath, [outfile], { encoding: "utf8" });

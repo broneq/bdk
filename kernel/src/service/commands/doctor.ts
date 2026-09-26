@@ -3,7 +3,7 @@ import { renderDoctor } from "../render/doctor.ts";
 import { doctor } from "../use-cases/doctor.ts";
 import type { ServiceDeps } from "../use-cases/version.ts";
 
-/** `--fix` repairs the schema findings; the index and merge-hash repairs land with T14, T20 and T30. */
+/** `--fix` repairs the schema findings; the index and merge-hash repairs land with T20 and T30. */
 export function doctorCommand(deps: ServiceDeps): Handler {
   return (context) => {
     const data = doctor({

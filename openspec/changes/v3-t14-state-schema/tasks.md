@@ -14,33 +14,33 @@
 
 ## 3. Common definitions, ledger entry and change document
 
-- [ ] 3.1 Write failing unit tests under `kernel/src/shared/store/state/tests/` for `common` (id, qualified ref, `sha256:` hash, UTC timestamp with seconds, relative path, closed objects, no `null`) and for the `change` and `entry` kinds: every field of the spec tables with requiredness and enums, `summary` 1-120, `refs` >= 1, `source` pattern, `superseded` rejected as a stored status, each of the ten types with its own fields (`fingerprint` required on `learning`, `routed-to` required when `status: routed`, `to` required on `transition`, `report` required on `report`), own fields of one type rejected on another; verify they fail
-- [ ] 3.2 Implement `kernel/src/shared/store/state/common.ts`, `change.ts`, `entry.ts` (zod, kebab-case keys, `version = 1`, empty migration list); verify 3.1 passes
+- [x] 3.1 Write failing unit tests under `kernel/src/shared/store/state/tests/` for `common` (id, qualified ref, `sha256:` hash, UTC timestamp with seconds, relative path, closed objects, no `null`) and for the `change` and `entry` kinds: every field of the spec tables with requiredness and enums, `summary` 1-120, `refs` >= 1, `source` pattern, `superseded` rejected as a stored status, each of the ten types with its own fields (`fingerprint` required on `learning`, `routed-to` required when `status: routed`, `to` required on `transition`, `report` required on `report`), own fields of one type rejected on another; verify they fail
+- [x] 3.2 Implement `kernel/src/shared/store/state/common.ts`, `change.ts`, `entry.ts` (zod, kebab-case keys, `version = 1`, empty migration list); verify 3.1 passes
 
 ## 4. Attempt, evidence, dispatch and report
 
-- [ ] 4.1 Write failing unit tests for the `attempt`, `evidence`, `dispatch` and `report` kinds from the spec tables: `closed-at` present exactly with `outcome`, `findings` item shape, `files` >= 1 with `stored` enum, `template-hash` and `kernel-version` required, report `status` enum with `reason` required for `blocked` and `needs-context`; verify they fail
-- [ ] 4.2 Implement `attempt.ts`, `evidence.ts`, `dispatch.ts`, `report.ts`; verify 4.1 passes
+- [x] 4.1 Write failing unit tests for the `attempt`, `evidence`, `dispatch` and `report` kinds from the spec tables: `closed-at` present exactly with `outcome`, `findings` item shape, `files` >= 1 with `stored` enum, `template-hash` and `kernel-version` required, report `status` enum with `reason` required for `blocked` and `needs-context`; verify they fail
+- [x] 4.2 Implement `attempt.ts`, `evidence.ts`, `dispatch.ts`, `report.ts`; verify 4.1 passes
 
 ## 5. Plan, design and generated indexes
 
-- [ ] 5.1 Write failing unit tests for `plan-part`, `plan-index`, `design`, `design-part`, `design-index` and for index generation: `id` equals the file's `<nn>`, waves from `depends-on`, identical bytes on regeneration from unchanged parts (order of input files irrelevant), cycle and missing dependency fail naming the parts; verify they fail
-- [ ] 5.2 Implement the five kinds and `generatePlanIndex` / `generateDesignIndex` (deterministic YAML and rendered body table); verify 5.1 passes
+- [x] 5.1 Write failing unit tests for `plan-part`, `plan-index`, `design`, `design-part`, `design-index` and for index generation: `id` equals the file's `<nn>`, waves from `depends-on`, identical bytes on regeneration from unchanged parts (order of input files irrelevant), cycle and missing dependency fail naming the parts; verify they fail
+- [x] 5.2 Implement the five kinds and `generatePlanIndex` / `generateDesignIndex` (deterministic YAML and rendered body table); verify 5.1 passes
 
 ## 6. Rule files
 
-- [ ] 6.1 Write failing unit tests for the `rule` kind: id pattern (`CQ-4`, `BDK-SEC-2`, not `cq-4` or `CQ-0`), `id` equals the file name, `source` and `verified` required exactly for `kind: knowledge`, `origin` values including `<changeId>/<L-id>`, `removed` tombstone accepted; verify they fail
-- [ ] 6.2 Implement `rule.ts`; verify 6.1 passes
+- [x] 6.1 Write failing unit tests for the `rule` kind: id pattern (`CQ-4`, `BDK-SEC-2`, not `cq-4` or `CQ-0`), `id` equals the file name, `source` and `verified` required exactly for `kind: knowledge`, `origin` values including `<changeId>/<L-id>`, `removed` tombstone accepted; verify they fail
+- [x] 6.2 Implement `rule.ts`; verify 6.1 passes
 
 ## 7. Fingerprints
 
-- [ ] 7.1 Write failing unit tests for `normalise` and `fingerprint` (`kernel-state` Fingerprints, design D-5): NFKC folding, case, punctuation and whitespace runs, digit runs to `#`, non-Latin letters kept, U+001F joining so `("a b", "c")` and `("a", "b c")` differ, `sha256:` plus 64 hex, the spec's "cosmetic variants" scenario; verify they fail
-- [ ] 7.2 Implement `kernel/src/shared/store/state/fingerprint.ts`; verify 7.1 passes
+- [x] 7.1 Write failing unit tests for `normalise` and `fingerprint` (`kernel-state` Fingerprints, design D-5): NFKC folding, case, punctuation and whitespace runs, digit runs to `#`, non-Latin letters kept, U+001F joining so `("a b", "c")` and `("a", "b c")` differ, `sha256:` plus 64 hex, the spec's "cosmetic variants" scenario; verify they fail
+- [x] 7.2 Implement `kernel/src/shared/store/state/fingerprint.ts`; verify 7.1 passes
 
 ## 8. Document registry, validation in the store and versions
 
-- [ ] 8.1 Write failing unit tests on `memoryStore` for the document registry and `readDocument` / `writeDocument` / `migrateDocument` (design D-3, D-7): each layout pattern maps to its kind, an unmapped path in a Change is refused, `spec-delta/` is mapped but not schema-checked, an invalid write leaves the store unchanged, a read failure is `state/ledger-invalid` naming file and field, a lower `schema` names `bdk rebuild`, a higher one names the upgrade, an injected version-2 kind with a migration rewrites a version-1 file and validates it; verify they fail
-- [ ] 8.2 Implement `kernel/src/shared/store/state/registry.ts` and the three functions, export them from `kernel/src/shared/store/index.ts`, and correct the T14 mentions in `index-db.ts`, `frontmatter.ts`, `kernel/src/service/use-cases/doctor.ts` and `kernel/src/service/commands/doctor.ts` to the tasks that own the remaining work (T20, T22, T30); verify 8.1 passes, the `node:` boundary test stays green, and `pnpm lint && pnpm typecheck && pnpm knip` are clean
+- [x] 8.1 Write failing unit tests on `memoryStore` for the document registry and `readDocument` / `writeDocument` / `migrateDocument` (design D-3, D-7): each layout pattern maps to its kind, an unmapped path in a Change is refused, `spec-delta/` is mapped but not schema-checked, an invalid write leaves the store unchanged, a read failure is `state/ledger-invalid` naming file and field, a lower `schema` names `bdk rebuild`, a higher one names the upgrade, an injected version-2 kind with a migration rewrites a version-1 file and validates it; verify they fail
+- [x] 8.2 Implement `kernel/src/shared/store/state/registry.ts` and the three functions, export them from `kernel/src/shared/store/index.ts`, and correct the T14 mentions in `index-db.ts`, `frontmatter.ts`, `kernel/src/service/use-cases/doctor.ts` and `kernel/src/service/commands/doctor.ts` to the tasks that own the remaining work (T20, T22, T30); verify 8.1 passes, the `node:` boundary test stays green, and `pnpm lint && pnpm typecheck && pnpm knip` are clean. Amendment found here: the gate example commits a capture next to its manifest (`evidence/02-3-E-5hq0m2vd.junit.xml`), which no layout row named; `kernel-state` gains the row `evidence/<target>-<evidenceId>.<ext>` (evidence capture, not schema-checked)
 
 ## 9. JSON Schema export
 

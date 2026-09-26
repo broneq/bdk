@@ -25,6 +25,7 @@ The Change id is `<yyyy-mm-dd>-<slug>`: the kernel clock's UTC date at `change n
 | `spec-delta/<capability>.md`           | spec delta        | yes       | OpenSpec delta format (T30); carries no `schema` field and has no file in `schema/state/`. |
 | `attempts/<loop>-<target>-<ticket>.md` | attempt           | yes       | One file per ticket (replaces the design's append-only `<loop>-<target>.md`).              |
 | `evidence/<target>-<evidenceId>.md`    | evidence manifest | yes       | Binary captures live in `.bdk/.machine/evidence/`.                                         |
+| `evidence/<target>-<evidenceId>.<ext>` | evidence capture  | yes       | A capture its manifest lists with `stored: committed`; not schema-checked.                 |
 | `dispatch/<target>-<role>-<ticket>.md` | dispatch package  | yes       | The design's attempt number `<n>` becomes the ticket.                                      |
 | `reports/<target>-<role>-<ticket>.md`  | report            | yes       |                                                                                            |
 
@@ -42,7 +43,7 @@ The Change id is `<yyyy-mm-dd>-<slug>`: the kernel clock's UTC date at `change n
 
 ### Requirement: Document schemas and validation
 
-Every document in the layout table except `spec-delta/` SHALL be YAML frontmatter plus a Markdown body, SHALL carry `schema: <n>` in its frontmatter, and SHALL be validated against its zod schema on every write and every read by the kernel.
+Every document in the layout table except `spec-delta/` and evidence captures SHALL be YAML frontmatter plus a Markdown body, SHALL carry `schema: <n>` in its frontmatter, and SHALL be validated against its zod schema on every write and every read by the kernel.
 
 Frontmatter keys are kebab-case (like settings keys, `kernel-settings`); the CLI JSON outputs render the same fields in camelCase. Optional fields are absent when unknown, never `null`. Timestamps are ISO 8601 UTC with seconds, hashes `sha256:<64 hex>`, paths relative to the project root with `/` (`kernel-cli`, Conventions). Every object is closed: an unknown key is a validation error. A write of an invalid document is refused before any file changes; a committed file that fails on read is `state/ledger-invalid` naming the file and the field.
 

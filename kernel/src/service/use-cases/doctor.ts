@@ -1,6 +1,6 @@
 // The Node floor, the v2 layout (T11) and the settings schema checks (T12).
 // The merge-hash and index freshness checks join with their owner tasks (T30,
-// T14, T20); each adds one finding with exactly one repair (R-14).
+// T20); each adds one finding with exactly one repair (R-14).
 import { join } from "node:path";
 
 import { meetsNodeMinimum, NODE_INSTALL, NODE_MINIMUM } from "../../shared/registry/index.ts";
