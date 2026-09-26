@@ -1,0 +1,53 @@
+name: docs
+
+# The documentation site (capability `docs-site`): a strict build on every
+# pull request and push, a deploy only from main. main carries no mkdocs.yml
+# before the 3.0 release, so the first deploy is the 3.0 release.
+on:
+  push:
+    branches:
+      - main
+      - staging/v3
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+
+      - name: Build the site strictly
+        run: uv run --group docs mkdocs build --strict
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: docs-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+
+      # mkdocs gh-deploy commits the built site to the gh-pages branch, which
+      # needs an identity the runner does not ship with.
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy the site
+        run: uv run --group docs mkdocs gh-deploy --force

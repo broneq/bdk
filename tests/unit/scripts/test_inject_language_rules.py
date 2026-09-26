@@ -54,11 +54,12 @@ def _default(lang: str) -> str:
 
 def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(SCRIPT)] + args,
+        [sys.executable, str(SCRIPT), *args],
         capture_output=True,
         text=True,
         cwd=str(cwd),
         env={**os.environ},
+        check=False,
     )
 
 
@@ -94,7 +95,9 @@ def test_an_override_without_a_default(project):
 
 def test_a_mapped_language_file(project):
     _write(project, "rules/go.md", "- errors are values\n")
-    _write(project, ".bdk/settings.yaml", "prompts:\n  files:\n    rules/languages/go: rules/go.md\n")
+    _write(
+        project, ".bdk/settings.yaml", "prompts:\n  files:\n    rules/languages/go: rules/go.md\n"
+    )
     assert resolve_language_rule("go", cwd=project) == "- errors are values\n"
 
 

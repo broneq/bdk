@@ -3,6 +3,8 @@ __pycache__/
 *.pyo
 tmp_*.py
 .idea/
+# mkdocs build output (`mkdocs build`, `mkdocs gh-deploy`)
+/site/
 /.bdk/
 /.lavish/
 node_modules/

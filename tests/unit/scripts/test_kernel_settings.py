@@ -62,7 +62,9 @@ def test_load_settings_from_a_subdirectory(project: Path, monkeypatch: pytest.Mo
 
 def test_prompt_files_after_replace_are_the_local_file_alone(project: Path):
     _write(project, ".bdk/prompts/rules/security.md", "---\nmode: extends\n---\n- project\n")
-    local = _write(project, ".bdk/prompts.local/rules/security.md", "---\nmode: replace\n---\n- local\n")
+    local = _write(
+        project, ".bdk/prompts.local/rules/security.md", "---\nmode: replace\n---\n- local\n"
+    )
     assert kernel_settings.prompt_files("rules/security") == [local.resolve()]
 
 

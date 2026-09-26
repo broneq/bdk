@@ -11,6 +11,7 @@
   "scripts": {
     "build": "node kernel/build.mjs",
     "lint": "eslint --max-warnings 0 kernel",
+    "lint:py": "uv run --group lint ruff check && uv run --group lint ruff format --check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
@@ -19,6 +20,7 @@
     "test:e2e": "vitest run --project e2e",
     "test:contract": "vitest run --project contract",
     "skill-check": "skill-check",
+    "docs:build": "uv run --group docs mkdocs build --strict",
     "prepare": "husky"
   },
   "dependencies": {

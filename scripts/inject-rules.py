@@ -26,7 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from kernel_settings import ERR_PREFIX, KernelSettingsError, error_line, prompt_text  # noqa: E402
+from kernel_settings import ERR_PREFIX, KernelSettingsError, error_line, prompt_text
 
 __all__ = ["KernelSettingsError", "resolve_rule"]
 

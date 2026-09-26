@@ -45,14 +45,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from kernel_settings import KernelSettingsError, error_line, load_settings  # noqa: E402
+from kernel_settings import KernelSettingsError, error_line, load_settings
 
 __all__ = ["KernelSettingsError", "evaluate_condition", "inject", "load_settings"]
 
 # Matches: features.some-key  OR  tool.some-binary  OR  languages[value]
-_FEATURE_RE = re.compile(r'^features\.([\w-]+)$')
-_TOOL_RE = re.compile(r'^tool\.([\w.-]+)$')
-_ARRAY_RE = re.compile(r'^([\w-]+)\[([\w-]+)\]$')
+_FEATURE_RE = re.compile(r"^features\.([\w-]+)$")
+_TOOL_RE = re.compile(r"^tool\.([\w.-]+)$")
+_ARRAY_RE = re.compile(r"^([\w-]+)\[([\w-]+)\]$")
 
 ERR_PREFIX = "[bdk-inject-error]"
 
@@ -112,7 +112,7 @@ def inject(
         if not evaluate_condition(condition, settings):
             return ""
 
-    for prefer in (prefer_conditions or []):
+    for prefer in prefer_conditions or []:
         if evaluate_condition(prefer, settings):
             return ""
 
@@ -163,8 +163,15 @@ def main() -> None:
         help="Suppress block if any of these conditions are true (repeatable, OR logic)",
     )
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument("--then", dest="then_path", metavar="FILE", help="File to print if conditions true")
-    group.add_argument("--then-text", dest="then_text", metavar="TEXT", help="Inline text to print if conditions true")
+    group.add_argument(
+        "--then", dest="then_path", metavar="FILE", help="File to print if conditions true"
+    )
+    group.add_argument(
+        "--then-text",
+        dest="then_text",
+        metavar="TEXT",
+        help="Inline text to print if conditions true",
+    )
     args = parser.parse_args()
 
     if not args.conditions and not args.prefer_conditions:

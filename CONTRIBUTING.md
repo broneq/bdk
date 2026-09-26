@@ -91,6 +91,21 @@ Both `test_*.py` and `*.test.py` are collected (see `[tool.pytest.ini_options] p
 
 Tests mirror the layout of what they cover: `tests/unit/scripts/`, `tests/unit/hooks/<hook-name>/`, `tests/unit/skills/<skill-name>/`, `tests/unit/agents/`, `tests/unit/fragments/`. Hook tests therefore live at `tests/unit/hooks/is-skill-exist/test_check.py`, not under a top-level `tests/hooks/`.
 
+The Python scripts are linted and formatted by ruff until T32 removes them. `pnpm lint:py` runs `ruff check` and `ruff format --check` from the `lint` dependency group, and CI runs the same two steps before the tests. `.git-blame-ignore-revs` lists the formatting commits; GitHub's blame reads it, and local `git blame` does after a one-time `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+
+---
+
+## Documentation Site
+
+The user documentation is an MkDocs Material site. `mkdocs.yml` sits at the root and the pages live in `docs/guide/`; everything else under `docs/` stays off the site. Until T50 rewrites them for v3, the pages describe v2 and open with a banner that says so.
+
+```bash
+pnpm docs:build     # mkdocs build --strict, from the docs dependency group
+pnpm test:contract  # includes the site guards in kernel/tests/docs/
+```
+
+The guards check that every user-invocable skill has a section in `reference/skills.md` and an entry in `README.md`, that every agent is named in `reference/agents.md`, that the nav lists exactly the pages in `docs/guide/`, that every page carries the v2 banner, and that every `hooks/...` path named in prose exists. The `docs.yml` workflow builds the site on every pull request and deploys it only from `main`. The dev skill `docs-sync` (`.claude/skills/docs-sync/`) audits the pages against the code.
+
 ---
 
 ## Kernel (Node / TypeScript)

@@ -1,0 +1,75 @@
+site_name: BDK
+site_url: https://broneq.github.io/bdk/
+repo_url: https://github.com/broneq/bdk
+edit_uri: edit/main/docs/guide/
+docs_dir: docs/guide
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Setup: getting-started/setup.md
+      - Your first feature: getting-started/first-feature.md
+  - Workflows:
+      - Full pipeline: workflows/full-pipeline.md
+      - Standard: workflows/standard.md
+      - Trivial: workflows/trivial.md
+      - Debugging: workflows/debugging.md
+      - Code review: workflows/code-review.md
+      - Docs and decisions: workflows/docs-and-decisions.md
+      - Rules hygiene: workflows/rules-hygiene.md
+  - Concepts:
+      - Shared foundation: concepts/shared-foundation.md
+      - Verification scoping: concepts/verification-scoping.md
+      - Plan pipeline: concepts/plan-pipeline.md
+      - Agents: concepts/agents.md
+      - Quality and language rules: concepts/quality-and-language-rules.md
+  - Reference:
+      - Skills: reference/skills.md
+      - Agents: reference/agents.md
+      - Hooks: reference/hooks.md
+      - Artifacts: reference/artifacts.md
+  - Troubleshooting: troubleshooting.md
+  - Contributing:
+      - Overview: contributing/index.md
+  - Changelog: changelog.md

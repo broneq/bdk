@@ -38,14 +38,14 @@ def _parse_tools_field(frontmatter: str) -> set[str] | str | None:
     for i, line in enumerate(lines):
         if not line.startswith("tools:"):
             continue
-        rest = line[len("tools:"):].strip()
+        rest = line[len("tools:") :].strip()
         if rest:
             tokens = [t.strip() for t in re.split(r"[\s,]+", rest) if t.strip()]
             if len(tokens) == 1:
                 return tokens[0]
             return set(tokens)
         items: set[str] = set()
-        for next_line in lines[i + 1:]:
+        for next_line in lines[i + 1 :]:
             stripped = next_line.lstrip()
             if not stripped:
                 continue
@@ -110,22 +110,16 @@ def test_narrow_agent_spec_covers_only_existing_agents() -> None:
     assert not missing, f"NARROW_AGENT_TOOLS names agents that no longer exist: {missing}"
 
 
-@pytest.mark.parametrize("name,expected", sorted(NARROW_AGENT_TOOLS.items()))
+@pytest.mark.parametrize(("name", "expected"), sorted(NARROW_AGENT_TOOLS.items()))
 def test_narrow_agent_tools_unchanged(name: str, expected) -> None:
     actual = _tools(AGENTS_DIR / f"{name}.md")
     if expected == "ALL":
-        assert actual is None, (
-            f"{name}: expected no tools field (all tools), got {actual!r}"
-        )
+        assert actual is None, f"{name}: expected no tools field (all tools), got {actual!r}"
         return
     if isinstance(expected, str):
-        assert actual == expected, (
-            f"{name}: expected scalar tools={expected!r}, got {actual!r}"
-        )
+        assert actual == expected, f"{name}: expected scalar tools={expected!r}, got {actual!r}"
         return
-    assert isinstance(actual, set), (
-        f"{name}: expected list-form tools, got {type(actual).__name__}"
-    )
+    assert isinstance(actual, set), f"{name}: expected list-form tools, got {type(actual).__name__}"
     assert actual == expected, (
         f"{name}: tools changed from spec — update NARROW_AGENT_TOOLS "
         f"intentionally if needed.\n  added: {actual - expected}\n  "

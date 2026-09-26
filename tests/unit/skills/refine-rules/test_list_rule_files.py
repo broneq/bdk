@@ -13,7 +13,8 @@ SCRIPT = Path(__file__).parents[4] / "skills" / "refine-rules" / "scripts" / "li
 
 def _load_module():
     spec = importlib.util.spec_from_file_location("list_rule_files", SCRIPT)
-    assert spec and spec.loader
+    assert spec
+    assert spec.loader
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
     return mod
@@ -26,7 +27,7 @@ def _load_module():
 
 def test_extract_frontmatter_paths_present() -> None:
     mod = _load_module()
-    text = "---\npaths:\n  - src/**\n  - \"*.py\"\n---\n\n# Title\n"
+    text = '---\npaths:\n  - src/**\n  - "*.py"\n---\n\n# Title\n'
     assert mod.extract_frontmatter_paths(text) == ["src/**", "*.py"]
 
 
