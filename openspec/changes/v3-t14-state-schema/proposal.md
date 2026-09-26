@@ -21,6 +21,7 @@ The CLI contract (T10) fixes what every command reads and prints, and the settin
   - `bdk done` regenerates `plan/index.md` / `design/index.md` from their parts and writes a `transition` entry; `writes[]` gains both index files.
   - `bdk rebuild` runs schema migrations and regenerates the indexes; `writes[]` gains the Change directory files it migrates.
   - `bdk log ingest` stores a report passed on stdin under `reports/`, because a read-only role has no file tool and `execute` disallows `Write`; `writes[]` gains `reports/`.
+  - `bdk log resolve` rewrites the entry in place (the mutation `kernel-state` allows) instead of writing a follow-up record; `superseded` stays derived.
 - `kernel-architecture`: the `shared/store` row names the state schemas and validation; the `shared/ids` row names the fixed format and the fingerprint helper's home.
 
 Resolutions of the plan's "To resolve in the spec" (details and rejected alternatives in design.md):
@@ -51,6 +52,7 @@ Out of scope:
 - `kernel-cli/graph`: `bdk done` regenerates the plan and design indexes and writes a `transition` entry.
 - `kernel-cli/service`: `bdk rebuild` runs schema migrations and regenerates the indexes.
 - `kernel-cli/log`: `bdk log ingest` stores a report passed on stdin under `reports/`.
+- `kernel-cli/log`: `bdk log resolve` rewrites the entry's status in place and records `superseded` as `supersedes` on the `--by` entry, closing the question its requirement left to T14.
 - `kernel-architecture`: the `shared/` admission table (`shared/store` holds the state schemas; `shared/ids` the fixed id format and the fingerprint).
 
 ## Impact

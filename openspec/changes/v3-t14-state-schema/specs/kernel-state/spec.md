@@ -339,7 +339,7 @@ The kernel SHALL derive a Change's state from its entries and never store it in 
 
 Derived: the stage is the `to` of the latest `transition` entry by `at` (ties broken by id); a Change is parked while its latest park `question` has no later resume `decision` referencing it; an entry is `superseded` when another entry names it in `supersedes`; a loop's attempt count, `not-run` counter and remaining budget come from its attempt records; the effective profile is `change.md`'s `profile` raised by later profile `decision` entries.
 
-In-place mutations, each by one writer: an entry's `status` and `routed-to` (`log resolve`, `log route`); an attempt record from open to close (`attempt close`, `change takeover`); the generated `plan/index.md` and `design/index.md`; a migration by `bdk rebuild`. Every other committed file in a Change is written once.
+In-place mutations, each by one writer: an entry's `status` and `routed-to`, with the reason appended to its body (`log resolve`, `log route`); `supersedes` of the `--by` entry when an entry is resolved as superseded (`log resolve`); an attempt record from open to close (`attempt close`, `change takeover`); the generated `plan/index.md` and `design/index.md`; a migration by `bdk rebuild`. Every other committed file in a Change is written once.
 
 #### Scenario: stage from transitions
 
@@ -352,29 +352,29 @@ Every path of the Change directory, every ledger entry type and every rule file 
 
 Files:
 
-| Path                           | Writers                                                                                                                   | Channel                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `change.md`                    | `change new`                                                                                                              | kernel                  |
-| `log/`                         | the commands of the entry-type table                                                                                      | kernel                  |
-| `design.md`, `architecture.md` | `design` skill                                                                                                            | host file tools         |
-| `design/parts/`                | `design` skill                                                                                                            | host file tools         |
-| `design/index.md`              | `done`, `rebuild`                                                                                                         | kernel                  |
-| `plan/parts/`                  | `plan` skill; `part split`                                                                                                | host file tools; kernel |
-| `plan/index.md`                | `done`, `part split`, `rebuild`                                                                                           | kernel                  |
-| `spec-delta/`                  | `design` and `plan` skills                                                                                                | host file tools         |
-| `attempts/`                    | `attempt open`, `attempt close`, `change park`, `change takeover`                                                         | kernel                  |
-| `evidence/`                    | `evidence record`                                                                                                         | kernel                  |
-| `dispatch/`                    | `dispatch build`                                                                                                          | kernel                  |
-| `reports/`                     | worker and runner roles at the package's `report` path; `log ingest` (a read-only role's report on stdin); `dispatch run` | host file tools; kernel |
-| any file (migration)           | `rebuild`                                                                                                                 | kernel                  |
-| the Change directory (archive) | `change close`                                                                                                            | kernel                  |
-| `.bdk/rules/<ruleId>.md`       | `rules add --accept`, `rules import`, `import`                                                                            | kernel                  |
+| Path                           | Writers                                                                                                                       | Channel                 |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `change.md`                    | `change new`; `import` (each v2 design becomes a Change with `source: inferred`, through the code of `change new --inferred`) | kernel                  |
+| `log/`                         | the commands of the entry-type table                                                                                          | kernel                  |
+| `design.md`, `architecture.md` | `design` skill                                                                                                                | host file tools         |
+| `design/parts/`                | `design` skill                                                                                                                | host file tools         |
+| `design/index.md`              | `done`, `rebuild`                                                                                                             | kernel                  |
+| `plan/parts/`                  | `plan` skill; `part split`                                                                                                    | host file tools; kernel |
+| `plan/index.md`                | `done`, `part split`, `rebuild`                                                                                               | kernel                  |
+| `spec-delta/`                  | `design` and `plan` skills                                                                                                    | host file tools         |
+| `attempts/`                    | `attempt open`, `attempt close`, `change park`, `change takeover`                                                             | kernel                  |
+| `evidence/`                    | `evidence record`                                                                                                             | kernel                  |
+| `dispatch/`                    | `dispatch build`                                                                                                              | kernel                  |
+| `reports/`                     | worker and runner roles at the package's `report` path; `log ingest` (a read-only role's report on stdin); `dispatch run`     | host file tools; kernel |
+| any file (migration)           | `rebuild`                                                                                                                     | kernel                  |
+| the Change directory (archive) | `change close`                                                                                                                | kernel                  |
+| `.bdk/rules/<ruleId>.md`       | `rules add --accept`, `rules import`, `import`                                                                                | kernel                  |
 
 Entry types (`source` values each writer stamps):
 
 | Type          | Writers and `source`                                                                                                                                                                                         |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `decision`    | `log add`, `log ingest` (`agent:<role>`, or `kernel` on the main thread without a ticket); `change resume` (`kernel`)                                                                                        |
+| `decision`    | `log add`, `log ingest` (`agent:<role>`, or `kernel` on the main thread without a ticket); `change resume`, `part split` (`kernel`)                                                                          |
 | `finding`     | `log add`, `log ingest`; `attempt close` and `commit` for undeclared files and dropped findings (`kernel`)                                                                                                   |
 | `observation` | `log add`, `log ingest` (including a downgraded uncategorised blocker, P8)                                                                                                                                   |
 | `blocker`     | `log add`, `log ingest`                                                                                                                                                                                      |
@@ -385,7 +385,7 @@ Entry types (`source` values each writer stamps):
 | `report`      | `log add`, `log ingest`                                                                                                                                                                                      |
 | `transition`  | `hooks prompt-expansion` (`user` for a typed stage command, `policy` for an auto gate, `kernel` for a stage without a gate); `done`, `part start`, `part done`, `change takeover`, `change close` (`kernel`) |
 
-Rules without exception: `intent` lives only in `change.md`, written only by `change new`; a stage skill started without an active Change calls `change new --inferred`; `plan` and `close` never create a Change (R-12). `log add` and `log ingest` never write `transition` and never stamp `user`, `policy` or `inferred`. `source: user` is stamped only by `hooks prompt-expansion` (T1, P1).
+Rules without exception: `intent` lives only in `change.md`, written only by `change new` (which `import` reuses); a stage skill started without an active Change calls `change new --inferred`; `plan` and `close` never create a Change (R-12). `log add` and `log ingest` never write `transition` and never stamp `user`, `policy` or `inferred`. `source: user` is stamped only by `hooks prompt-expansion` (T1, P1).
 
 #### Scenario: every file has a writer
 

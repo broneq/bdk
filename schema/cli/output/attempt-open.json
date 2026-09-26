@@ -9,7 +9,7 @@
   "properties": {
     "ticket": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "loop": {
       "type": "string",
@@ -59,7 +59,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "Opaque merge-safe id (T14)."
+            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           },
           "summary": {
             "type": "string"

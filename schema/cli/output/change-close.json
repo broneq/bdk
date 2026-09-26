@@ -9,7 +9,7 @@
   "properties": {
     "change": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "archivedTo": {
       "type": "string",
@@ -38,7 +38,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "description": "Opaque merge-safe id (T14)."
+            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           },
           "description": "learning entries above the T31 thresholds; nothing under .bdk/rules/ changes before the user accepts."
         },
@@ -46,14 +46,14 @@
           "type": "array",
           "items": {
             "type": "string",
-            "description": "Opaque merge-safe id (T14)."
+            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           }
         },
         "nothing": {
           "type": "array",
           "items": {
             "type": "string",
-            "description": "Opaque merge-safe id (T14)."
+            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           }
         }
       }

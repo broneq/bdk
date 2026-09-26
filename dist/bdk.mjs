@@ -7724,7 +7724,12 @@ var commands_default = {
         "policy/gate-not-ready",
         "policy/missing-citation"
       ],
-      writes: [".bdk/changes/<id>/log/", ".bdk/.machine/"]
+      writes: [
+        ".bdk/changes/<id>/log/",
+        ".bdk/changes/<id>/plan/index.md",
+        ".bdk/changes/<id>/design/index.md",
+        ".bdk/.machine/"
+      ]
     },
     {
       id: "part-list",
@@ -8029,7 +8034,7 @@ var commands_default = {
         "policy/no-open-ticket",
         "policy/observation-cap"
       ],
-      writes: [".bdk/changes/<id>/log/"]
+      writes: [".bdk/changes/<id>/log/", ".bdk/changes/<id>/reports/"]
     },
     {
       id: "log-list",
@@ -8978,7 +8983,7 @@ var commands_default = {
       output: "output/rebuild.json",
       exits: [0, 2, 3, 4, 5],
       refusals: ["state/trailer-mismatch", "runtime/git-missing"],
-      writes: [".bdk/.machine/"]
+      writes: [".bdk/.machine/", ".bdk/changes/<id>/", ".bdk/rules/"]
     },
     {
       id: "import",

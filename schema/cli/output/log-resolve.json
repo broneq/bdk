@@ -9,18 +9,18 @@
   "properties": {
     "entry": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "status": {
       "enum": ["proposed", "accepted", "superseded", "resolved", "routed"]
     },
     "by": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "record": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "reason": {
       "type": "string"
@@ -30,7 +30,7 @@
     {
       "entry": "L-e8k2s",
       "status": "resolved",
-      "record": "L-o7p3x",
+      "record": "L-e8k2s",
       "reason": "fixed in A-7f3k retry"
     }
   ]

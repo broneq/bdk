@@ -15,7 +15,7 @@
           "properties": {
             "id": {
               "type": "string",
-              "description": "Opaque merge-safe id (T14)."
+              "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
             },
             "type": {
               "enum": [
@@ -62,7 +62,7 @@
             },
             "supersedes": {
               "type": "string",
-              "description": "Opaque merge-safe id (T14)."
+              "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
             }
           }
         },
@@ -84,7 +84,7 @@
     },
     "supersededBy": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     }
   },
   "examples": [

@@ -15,7 +15,7 @@
         "properties": {
           "entry": {
             "type": "string",
-            "description": "Opaque merge-safe id (T14)."
+            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           },
           "fingerprint": {
             "type": "string"
@@ -33,14 +33,14 @@
       "type": "array",
       "items": {
         "type": "string",
-        "description": "Opaque merge-safe id (T14)."
+        "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
       }
     },
     "nothing": {
       "type": "array",
       "items": {
         "type": "string",
-        "description": "Opaque merge-safe id (T14)."
+        "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
       }
     }
   },

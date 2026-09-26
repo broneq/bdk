@@ -71,3 +71,52 @@ Ingest a `bdk-entries` block from a read-only role's report under its ticket. Th
 
 - **WHEN** the per-dispatch cap on `observation` entries is reached (K2)
 - **THEN** the exit code is 2 and the error object carries `rule: policy/observation-cap`
+
+### Requirement: bdk log resolve
+
+Set an entry's status (resolved, accepted, superseded) with a reason. The kernel SHALL implement the command as this requirement and its output schema specify.
+
+- **Synopsis:** `bdk log resolve <id> accepted|resolved|superseded [--by <id>] [--reason <text>]`
+- **Availability:** `orchestrator`
+- **Mode:** `command`; Change-scoped
+- **Arguments:**
+  - `<id>` (required).
+  - `accepted|resolved|superseded` (required).
+  - `--by <id>`. Superseding entry; required with superseded.
+  - `--reason <text>`.
+- **Behaviour:** The status change rewrites the entry's frontmatter in place and appends the reason to its body, one of the mutations `kernel-state` allows (Derived state and mutation) and that its two-branch merge test covers. `superseded` is never stored: the kernel writes `supersedes: <id>` into the `--by` entry, and the status is derived from it. `record` names the rewritten entry: `<id>`, or the `--by` entry for `superseded`. `source: user` cannot be produced here.
+- **Writes:** `.bdk/changes/<id>/log/`
+- **Output:** `schema/cli/output/log-resolve.json`
+- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/invalid-transition`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
+- **Example:**
+
+  ```bash
+  bdk log resolve L-e8k2s resolved --reason "fixed in A-7f3k retry" --json
+  ```
+
+  ```json
+  {
+    "entry": "L-e8k2s",
+    "status": "resolved",
+    "record": "L-e8k2s",
+    "reason": "fixed in A-7f3k retry"
+  }
+  ```
+
+- **Owner:** T20
+- **Slice:** `log`
+
+#### Scenario: example run
+
+- **WHEN** `bdk log resolve L-e8k2s resolved --reason "fixed in A-7f3k retry" --json` runs as in the example
+- **THEN** the exit code is 0 and stdout validates against `schema/cli/output/log-resolve.json`
+
+#### Scenario: input/not-found
+
+- **WHEN** the referenced object does not exist in the active Change, the configuration or the bundle
+- **THEN** the exit code is 3 and the error object carries `rule: input/not-found`
+
+#### Scenario: policy/invalid-transition
+
+- **WHEN** the Change or part is not in a state from which the verb applies
+- **THEN** the exit code is 2 and the error object carries `rule: policy/invalid-transition`

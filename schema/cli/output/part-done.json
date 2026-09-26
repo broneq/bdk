@@ -32,12 +32,12 @@
       "type": "array",
       "items": {
         "type": "string",
-        "description": "Opaque merge-safe id (T14)."
+        "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
       }
     },
     "entry": {
       "type": "string",
-      "description": "Opaque merge-safe id (T14)."
+      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "next": {
       "type": "string"
