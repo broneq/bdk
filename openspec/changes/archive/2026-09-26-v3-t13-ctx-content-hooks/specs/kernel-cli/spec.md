@@ -244,7 +244,7 @@ Each command carries exactly one class in the index (`availability`). The `hooks
 
 `hooks prompt-expansion` is the only writer of `source: user` transition entries; there is no `approve`, no `gate pass`, and `log add` cannot produce `source: user` (T1, P1, S8). A model that wants a gate passed has exactly one option: render the gate status and stop, so that the user types the next stage command.
 
-**Cross-check with the state contract (T14).** Every command that writes lists the Change directory paths it may touch in `writes[]` (index field); `read` commands have an empty list. T14's write map names a writer for every file in the Change directory and checks that each writer is an `orchestrator`, `agent` or `hook` command here, never a `read` one.
+**Cross-check with the state contract (T14).** Every command that writes lists the Change directory paths it may touch in `writes[]` (index field); `read` commands have an empty list. `kernel-state`'s write map names a writer for every file in the Change directory and checks that each kernel writer is an `orchestrator`, `agent` or `hook` command here, never a `read` one, whose `writes[]` covers the path. The other writers are stage skills and roles that write artifact files (design and plan artifacts, `spec-delta/`, worker reports) through the host's file tools; the kernel validates those files at `done` and at `attempt close`.
 
 #### Scenario: subagent calls an orchestrator verb
 
