@@ -1,318 +1,278 @@
 [
   {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/architecture-reviewer.md",
-    "fingerprint": "1bc26f5bba93b724"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/code-reviewer.md",
-    "fingerprint": "03837ee556e6c042"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/dead-code-detector.md",
-    "fingerprint": "fe9c87d4e8e29195"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/design-verifier.md",
-    "fingerprint": "656f233e8c8a96e3"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/duplicate-detector.md",
-    "fingerprint": "0fb09607ba7d64fb"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/explorer.md",
-    "fingerprint": "543d16520e672ca0"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/fixer.md",
-    "fingerprint": "541384e834ff44ee"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/implementer.md",
-    "fingerprint": "72b711f102dcd1bf"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/log-analyzer.md",
-    "fingerprint": "28b2ba2d3d1dcee2"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/plan-verifier.md",
-    "fingerprint": "d0ec27dc876205e3"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/static-analyse.md",
-    "fingerprint": "632eefdf4fddf8a4"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/test-runner.md",
-    "fingerprint": "b1648b02d292774a"
-  },
-  {
-    "rule": "bdk/adapter-shape",
-    "file": "agents/web-researcher.md",
-    "fingerprint": "326693e4c367eb6e"
-  },
-  {
-    "rule": "bdk/namespaced-refs",
-    "file": "skills/commit/SKILL.md",
-    "fingerprint": "62dccc51d7cb6d98"
-  },
-  {
-    "rule": "bdk/no-language-commands",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "62ea653726a62da6"
-  },
-  {
-    "rule": "bdk/no-language-commands",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "77a68a20f2abdf9c"
-  },
-  {
-    "rule": "bdk/no-language-commands",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "dbe6e52ffd21b701"
-  },
-  {
-    "rule": "bdk/no-language-commands",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "260c8ef7c285ce01"
-  },
-  {
-    "rule": "bdk/no-language-commands",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "d060dccbf85ec9d7"
-  },
-  {
-    "rule": "bdk/no-language-commands",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "edb5795d934999b4"
-  },
-  {
-    "rule": "bdk/no-language-commands",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "f11730af604405fb"
-  },
-  {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/bdk-implementer-return-contract/SKILL.md",
-    "fingerprint": "4c64f5ca93240cf8"
+    "fingerprint": "94ae6256840655d2"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/bdk-rules-architecture/SKILL.md",
-    "fingerprint": "3422a292dead0dff"
+    "fingerprint": "b881ef3443f94ff4"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/bdk-rules-code-quality/SKILL.md",
-    "fingerprint": "9bb46d6089a4de96"
+    "fingerprint": "2c3fd7918583a5e5"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/bdk-rules-design-patterns/SKILL.md",
-    "fingerprint": "01ec434a27a11c05"
+    "fingerprint": "77b1fa0887d70d7e"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/bdk-rules-languages/SKILL.md",
-    "fingerprint": "05723245807eb4c4"
+    "fingerprint": "de8925c21141dfe4"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/bdk-rules-security/SKILL.md",
-    "fingerprint": "69a989194dbab8bf"
+    "fingerprint": "77e5537d43aba896"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/cr/SKILL.md",
-    "fingerprint": "9b2b4921e3546c5a"
+    "fingerprint": "07c30f106f0c484a"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/create-adr/SKILL.md",
-    "fingerprint": "f00f3100e5a86231"
+    "fingerprint": "b94eec659971d3b5"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/design/SKILL.md",
-    "fingerprint": "8cec91572a2ba8f0"
+    "fingerprint": "11e3791f23343d95"
   },
   {
-    "rule": "bdk/wrapper-allowed-tools",
+    "rule": "block-allowed-tools",
     "file": "skills/pr-review/SKILL.md",
-    "fingerprint": "eff163a54a7417ee"
+    "fingerprint": "c1861bd01961472b"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/bdk-implementer-return-contract/SKILL.md",
-    "fingerprint": "ac6c72e2fc0f9f15"
+    "fingerprint": "af7c0c1c2324de38"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/bdk-lint-tools/SKILL.md",
-    "fingerprint": "1f718121f1e75893"
+    "fingerprint": "9351d5cf806b9dfc"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/bdk-rules-architecture/SKILL.md",
-    "fingerprint": "3101664324f218e1"
+    "fingerprint": "2e8b2fd1101617bf"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/bdk-rules-code-quality/SKILL.md",
-    "fingerprint": "b12cce1824089d94"
+    "fingerprint": "57a670ad0fc983d4"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/bdk-rules-design-patterns/SKILL.md",
-    "fingerprint": "b778acb0859846c4"
+    "fingerprint": "4a33282b472c123c"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/bdk-rules-languages/SKILL.md",
-    "fingerprint": "28a1dd16a629ecbd"
+    "fingerprint": "7477665adabfb002"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/bdk-rules-security/SKILL.md",
-    "fingerprint": "ec2f7f31ce6e0265"
+    "fingerprint": "4f6d4296af061b96"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/bdk-test-tools/SKILL.md",
-    "fingerprint": "9535ce762757ef87"
+    "fingerprint": "ba23dfe99b39ca59"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/cr/SKILL.md",
-    "fingerprint": "2af856630028c00f"
+    "fingerprint": "58ab06d93c7371fe"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/cr/SKILL.md",
-    "fingerprint": "6965be4aa51d3eec"
+    "fingerprint": "875a9ef4b4fae2d0"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-adr/SKILL.md",
-    "fingerprint": "9590c7318708aa6d"
+    "fingerprint": "a07325efd8e41486"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "01f233431731ced2"
+    "fingerprint": "19a64db5ce27f745"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "0b935b0497b6f837"
+    "fingerprint": "21612a92e20520fc"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "18d8c686abfa43de"
+    "fingerprint": "396760c0b7e2ae52"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "82109520b21b2939"
+    "fingerprint": "47600bc706e739c6"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "82109520b21b2939"
+    "fingerprint": "55609e2f29c4e819"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "90239f43629d0a9d"
+    "fingerprint": "593e4e16ec49d97a"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "a09f8b5752bbf8c9"
+    "fingerprint": "593e4e16ec49d97a"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "a193da908c42a39c"
+    "fingerprint": "5fd772a87c180767"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "cd8f09d7e29be4a2"
+    "fingerprint": "8c764c61078cde09"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "e1dbfe48c28b2139"
+    "fingerprint": "aef9f967528e9c9e"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "f3a719b7442dd3f4"
+    "fingerprint": "d0451cdefa70b8c5"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "f56bbe6c44dc73d4"
+    "fingerprint": "e30bdedd1b646f34"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/debug/SKILL.md",
-    "fingerprint": "2465971179561b14"
+    "fingerprint": "4bb818bab70d95b9"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/debug/SKILL.md",
-    "fingerprint": "a25e03c65046a29f"
+    "fingerprint": "d048200d2bd404ac"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/debug/SKILL.md",
-    "fingerprint": "a6d88ceb2233c67a"
+    "fingerprint": "f05e75c73948a484"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/design/SKILL.md",
-    "fingerprint": "4d76bf7cf69b76a8"
+    "fingerprint": "3a2d37448014d738"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/design/SKILL.md",
-    "fingerprint": "53ef45604d029ea5"
+    "fingerprint": "4c61bd1b8f22ff40"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/design/SKILL.md",
-    "fingerprint": "c3e8b51e6386566f"
+    "fingerprint": "ced27d9680073a97"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/pr-review/SKILL.md",
-    "fingerprint": "b1b99ea858b29673"
+    "fingerprint": "40f448759204b9e9"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/test-driven-development/SKILL.md",
-    "fingerprint": "b7338d931b87518e"
+    "fingerprint": "e11b39bbddc4bc98"
   },
   {
-    "rule": "bdk/wrapper-form",
+    "rule": "block-form",
     "file": "skills/test-driven-development/SKILL.md",
-    "fingerprint": "bcf43a43ada474a0"
+    "fingerprint": "f1fc4463feead7e9"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/architecture-reviewer.md",
+    "fingerprint": "be84fd676e05e90f"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/code-reviewer.md",
+    "fingerprint": "c648a7c1ae0d5de7"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/dead-code-detector.md",
+    "fingerprint": "adf951b505919d69"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/design-verifier.md",
+    "fingerprint": "733376f43ce82276"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/duplicate-detector.md",
+    "fingerprint": "bf850d89477ff395"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/explorer.md",
+    "fingerprint": "0a760dfef5b66b7e"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/fixer.md",
+    "fingerprint": "dc377042e88d8e52"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/implementer.md",
+    "fingerprint": "ff8595ef7aa53a58"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/log-analyzer.md",
+    "fingerprint": "8d5adb0511122d0a"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/plan-verifier.md",
+    "fingerprint": "3275797fe4e56d04"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/static-analyse.md",
+    "fingerprint": "c8cbefd3387d8e58"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/test-runner.md",
+    "fingerprint": "20238e0f76b087b2"
+  },
+  {
+    "rule": "body-shape",
+    "file": "agents/web-researcher.md",
+    "fingerprint": "86e56790ce7cfb9f"
   },
   {
     "rule": "description-front-loaded",
@@ -423,6 +383,41 @@
     "rule": "field-values",
     "file": "skills/design/SKILL.md",
     "fingerprint": "d3f2605911d84d43"
+  },
+  {
+    "rule": "forbidden-text",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "05683aee79837ce1"
+  },
+  {
+    "rule": "forbidden-text",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "057ed234c32b0b74"
+  },
+  {
+    "rule": "forbidden-text",
+    "file": "skills/create-plan/SKILL.md",
+    "fingerprint": "fa1eb11aac95258f"
+  },
+  {
+    "rule": "forbidden-text",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "1e0b023cbf01e5a5"
+  },
+  {
+    "rule": "forbidden-text",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "7aec6a794f1d7599"
+  },
+  {
+    "rule": "forbidden-text",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "a6f480e41d81eeeb"
+  },
+  {
+    "rule": "forbidden-text",
+    "file": "skills/subagent-execute-plan/SKILL.md",
+    "fingerprint": "b5f4785518246c75"
   },
   {
     "rule": "line-limit",
@@ -583,6 +578,11 @@
     "rule": "model-names",
     "file": "skills/verify-plan/SKILL.md",
     "fingerprint": "ae137171d83fefd2"
+  },
+  {
+    "rule": "namespaced-refs",
+    "file": "skills/commit/SKILL.md",
+    "fingerprint": "c49bbb40e44b20d3"
   },
   {
     "rule": "references",

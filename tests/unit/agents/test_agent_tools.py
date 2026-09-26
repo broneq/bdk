@@ -3,7 +3,7 @@
 Narrow agents stay narrow: agents with tightly scoped tool sets
 (test-runner, static-analyse, web-researcher, log-analyzer, fixer,
 implementer) keep their declared sets. Adding a tool to one of these
-requires updating the spec inline. `pnpm skill-check` (`bdk/no-mcp-tools`)
+requires updating the spec inline. `pnpm skill-check` (`forbidden-text`)
 fails on any BDK MCP tool name in a plugin agent.
 """
 

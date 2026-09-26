@@ -145,7 +145,7 @@ content = inject(["features.react"], then_path="react.md", settings=settings)  #
 - **Fragments ≠ references**: Fragments are conditional; references are static. See decision tree above for placement.
 - **Syntax**: Use `--then <file>` for content >2 lines; `--then-text` for snippets.
 - **Placement**: Inject calls go immediately before the section they augment.
-- **v2 only**: `pnpm skill-check` (`bdk/wrapper-form`) rejects these `!`...`` calls; the existing ones sit in its baseline until `inject.py` goes. New skills call the kernel instead - see `.claude/rules/skills.md`.
+- **v2 only**: `pnpm skill-check` (`block-form`) rejects these `!`...`` calls; the existing ones sit in its baseline until `inject.py` goes. New skills call the kernel instead - see `.claude/rules/skills.md`.
 
 ## Related: rule injection (not fragments)
 

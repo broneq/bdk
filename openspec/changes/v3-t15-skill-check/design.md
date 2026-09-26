@@ -72,7 +72,7 @@ Alternative: `node --test` and Biome, as `git-identity` uses. One toolchain acro
   - body lines with 1-based file line numbers;
   - a mask of fenced code blocks, for rules that check prose only;
   - for skills, the list of files in the skill directory.
-- **Rule.** `{ id, kinds, defaultSeverity, check(doc, ctx) => Finding[] }`, or a project rule `checkProject(docs, ctx)` (used by `unique-names`). The IDs of generic rules are bare, like `name-format`. A plugin's rule IDs are `<plugin>/<rule>`, like `bdk/wrapper-form`.
+- **Rule.** `{ id, kinds, defaultSeverity, check(doc, ctx) => Finding[] }`, or a project rule `checkProject(docs, ctx)` (used by `unique-names`). The IDs of generic rules are bare, like `name-format`. A plugin's rule IDs are `<plugin>/<rule>`, like `acme/house-style`.
 - **Finding.** `{ rule, severity: "error" | "warning", file, line, message, fingerprint }`.
 - **Plugin.** A module whose default export is `definePlugin({ name, rules })`.
 - **Config.** `skill-check.config.{ts,mjs,js}` at the working directory, or `--config <path>`, whose default export is `defineConfig({ targets, plugins, rules, baseline })`. `rules` maps an ID to `"off" | "warning" | "error"` or `[severity, options]`. Any of these is a config error (exit 2): a config that names an unknown rule ID, a target dir that does not exist, or a plugin that fails to load.

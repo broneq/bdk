@@ -383,8 +383,9 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **Resolution** (2026-09-25, OpenSpec Change `v3-t15-skill-check`; the kit's living spec is `openspec/specs/skill-kit/spec.md` in its own repository):
 
 - Package `bdk-skill-kit` in the public repository [broneq/bdk-skill-kit](https://github.com/broneq/bdk-skill-kit), released through release-please; BDK pins a release tag as a devDependency and runs `pnpm skill-check`. Beyond the CLI and library, the kit ships two Agent Skills: `skill-authoring` (the conventions its rules enforce, each citing the rule ID) and `skill-check` (fronting the CLI).
-- The BDK rules are a plugin in `tools/skill-check/bdk-rules.ts` (`bdk/*`), configured in `skill-check.config.ts`; seeded-violation fixtures and a wrapper-regex parity test against the kernel-cli spec run in the contract project. Agent adapters are checked by the same tool (an `agents` target), not by a kernel content test.
-- `--portable` became a per-target `profile: "portable"`. v2 content sits in `tools/skill-check/baseline.json`, which only shrinks. `.claude/skills/skill-lint` and `agent-lint` keep only the checks that need judgment.
+- BDK holds no rule code: its conventions are options of generic kit rules (from `v0.2.0`), set in `skill-check.config.ts`, which reads the wrapper regex and its `allowed-tools` pair from the kernel-cli spec. Agent adapters are checked by the same tool (an `agents` target), not by a kernel content test.
+- Departure from the acceptance signal (user decision): the seeded violation of each rule runs in the kit's CI at the pinned tag, not in BDK's CI; BDK's CI runs that tag over BDK's tree.
+- `--portable` became a per-target `profile: "portable"`. v2 content sits in `skill-check.baseline.json`, which only shrinks. `.claude/skills/skill-lint` and `agent-lint` are removed; their judgment checks are guidance in the kit's `skill-authoring`, and `.claude/rules/skills.md` keeps only BDK conventions.
 
 ---
 

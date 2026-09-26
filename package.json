@@ -10,7 +10,7 @@
   "packageManager": "pnpm@10.22.0",
   "scripts": {
     "build": "node kernel/build.mjs",
-    "lint": "eslint --max-warnings 0 kernel tools",
+    "lint": "eslint --max-warnings 0 kernel",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
