@@ -47,5 +47,5 @@
 
 - [x] 7.1 Run locally: `pnpm build && git diff --exit-code dist/ schema/`, `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm lint:py`, `pnpm docs:build` and `pytest tests/unit/`. Verify that all pass
 - [x] 7.2 Verify `git merge-base --is-ancestor <main tip> HEAD` and `git merge-base --is-ancestor <improvements-pack tip> HEAD` on the task branch
-- [ ] 7.3 Run `openspec validate v3-t05-branch-reconciliation --strict`, then open the PR into `staging/v3`. The PR body opens with "Land with a merge commit, not squash or rebase". Verify that the full CI is green, including the docs workflow and the ruff steps
+- [x] 7.3 Run `openspec validate v3-t05-branch-reconciliation --strict`, then open the PR into `staging/v3`. The PR body opens with "Land with a merge commit, not squash or rebase". Verify that the full CI is green, including the docs workflow and the ruff steps
 - [ ] 7.4 After the PR lands with a merge commit, verify both ancestry checks against `origin/staging/v3`. Then delete `origin/improvements-pack`, run `gh issue close 83 -c "Done in #<PR>"` and move the board card to Done
