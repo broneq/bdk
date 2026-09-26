@@ -4,26 +4,26 @@
 
     This page describes BDK v2. The v3 documentation replaces it (T50).
 
-Every BDK skill starts with the same line: _relies on BDK foundation (`STARTUP_INSTRUCTIONS.md`)_. That file is the contract each skill inherits instead of restating. It is what makes a plain session, with no BDK skill invoked at all, still behave like a BDK session.
+Every BDK skill carries the same line: _relies on BDK foundation (`STARTUP_INSTRUCTIONS.md`)_. That file is the contract each skill inherits instead of restating. It is what makes a plain session, with no BDK skill invoked at all, still behave like a BDK session.
 
 ## What gets injected, and when
 
-`STARTUP_INSTRUCTIONS.md` is delivered by a `SessionStart` hook that prints the file as is. The text reaches the model before your first prompt, so it is in context for the whole session.
+`STARTUP_INSTRUCTIONS.md` is delivered by the `SessionStart` hook `bdk hooks session-start`, which prints the file as is and, in a BDK project, appends one line per settings problem. The text reaches the model before your first prompt, so it is in context for the whole session.
 
 It carries four things:
 
-| Section                      | What it settles                                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Agents                       | The subagent fleet, each one's model, and when to continue one rather than spawn a new one. See [Agents](agents.md).                  |
-| Verification Proportionality | How much checking a change of a given size deserves. See [Verification scoping](verification-scoping.md).                             |
-| Quality Rules                | That BDK ships language-agnostic rule sets and how to override them. See [Quality and language rules](quality-and-language-rules.md). |
-| Capture Conventions          | Where a lesson or convention belongs, including the case where the answer is "nowhere".                                               |
+| Section                      | What it settles                                                                                                                                                                                                                                             |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agents                       | The subagent fleet, each one's model, and when to continue one rather than spawn a new one. The agents table is generated from the agent files by `bdk ctx startup`, and a test keeps the committed file identical to that output. See [Agents](agents.md). |
+| Verification Proportionality | How much checking a change of a given size deserves. See [Verification scoping](verification-scoping.md).                                                                                                                                                   |
+| Quality Rules                | That BDK ships language-agnostic rule sets and how to override them. See [Quality and language rules](quality-and-language-rules.md).                                                                                                                       |
+| Capture Conventions          | Where a lesson or convention belongs, including the case where the answer is "nowhere".                                                                                                                                                                     |
 
-Everything else that could vary per project, including the test runner, the lint command, and the build tool, is deliberately absent. Skills never name a runner. The commands live in `.bdk/settings.json` and reach the agents that need them through preloaded meta-skills, which is what keeps a single skill body correct in a Python repo and a TypeScript repo at once.
+Everything else that could vary per project, including the test runner, the lint command, and the build tool, is deliberately absent. Skills never name a runner. The commands live in `.bdk/settings.yaml` and reach skills and agents through `bdk ctx skill` (see below), which is what keeps a single skill body correct in a Python repo and a TypeScript repo at once.
 
 ## Why it is static
 
-The hook prints the file without rendering it. Claude Code evaluates dynamic `` !`...` `` blocks in skill bodies only, never in hook output, so a dynamic block in `STARTUP_INSTRUCTIONS.md` would reach the model as literal text. Everything in the file is therefore plain prose that holds for every project, and it reaches the model even in an unconfigured project.
+The hook prints the file without evaluating it. Claude Code evaluates dynamic `` !`...` `` blocks in skill bodies only, never in hook output, so a dynamic block in `STARTUP_INSTRUCTIONS.md` would reach the model as literal text. Everything in the file is therefore plain prose that holds for every project, and it reaches the model even in an unconfigured project.
 
 ## Subagents do not inherit it
 
@@ -31,13 +31,15 @@ This is the part that surprises people. Skills are not inherited from the parent
 
 Plugin subagents cannot fix this with their own hook: the `hooks`, `mcpServers`, and `permissionMode` frontmatter fields are ignored when an agent ships inside a plugin. The supported field is `skills:`, which preloads full skill content into the subagent's context at startup.
 
-So BDK ships a set of internal meta-skills whose only job is to be preloaded. Each is a frontmatter block plus a single dynamic line, for example:
+So BDK ships a set of internal meta-skills whose only job is to be preloaded. Each is a frontmatter block plus the two context lines every skill with settings-derived content carries, for example:
 
 ```markdown
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-rules.py code-quality`
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill bdk-rules-code-quality 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+
+If no "BDK context: bdk-rules-code-quality" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill bdk-rules-code-quality` first and apply its output; on a `BDK STOP` line, stop and report it.
 ```
 
-Because that line lives in a skill body, it does resolve at preload time, and the subagent receives the same rules the orchestrator works by.
+The first line resolves at preload time, so the subagent receives the same rules the orchestrator works by, under a `## BDK context: <name>` heading with one `###` section per rule set, fragment or command group. The second line is the fallback: when the host did not run the first line, the model runs the same command itself.
 
 ```mermaid
 flowchart TB

@@ -57,7 +57,7 @@
       "name": "enumerated-fact-propagation",
       "discriminating": true,
       "prompt": "Dodaj nowy zestaw reguł rules/observability.md - logowanie, metryki, tracing, language-agnostic jak reszta - i podłącz go tak, żeby /bdk:create-plan go wstrzykiwał.",
-      "expected_output": "Writes rules/observability.md in the house format, declares the prompt key rules/observability in kernel/src/ctx/config.ts, wires it into skills/create-plan/SKILL.md (INJECT marker plus the inject-rules.py call), and then propagates the change to every place that ENUMERATES the shipped rule sets in prose: STARTUP_INSTRUCTIONS.md, docs/guide/concepts/quality-and-language-rules.md, and the Settings section of README.md. The point of this eval is that the new name is absent from those sentences, so grep for 'observability' finds nothing there - the enumeration has to be recognised as a claim that must stay exhaustive. Ideally also notices the pre-existing gap: that sentence already omits engineering-judgment and test-quality.",
+      "expected_output": "Writes rules/observability.md in the house format, declares the prompt key rules/observability in kernel/src/ctx/config.ts, wires it into create-plan (a rules part in the create-plan entry of kernel/src/ctx/use-cases/manifest.ts plus an INJECT marker in the plan template), and then propagates the change to every place that ENUMERATES the shipped rule sets in prose: STARTUP_INSTRUCTIONS.md, docs/guide/concepts/quality-and-language-rules.md, and the Settings section of README.md. The point of this eval is that the new name is absent from those sentences, so grep for 'observability' finds nothing there - the enumeration has to be recognised as a claim that must stay exhaustive. Ideally also notices the pre-existing gap: that sentence already omits engineering-judgment and test-quality.",
       "assertions": [
         {
           "name": "rule_file_created_in_house_format",
@@ -65,7 +65,7 @@
         },
         {
           "name": "wired_into_create_plan",
-          "description": "kernel/src/ctx/config.ts declares rules/observability, and skills/create-plan/SKILL.md gains both an INJECT marker and an inject-rules.py invocation for observability, matching the pattern of the existing ones"
+          "description": "kernel/src/ctx/config.ts declares rules/observability, the create-plan entry of kernel/src/ctx/use-cases/manifest.ts gains a rules part for observability, and the plan template gains an INJECT marker for it, matching the pattern of the existing ones"
         },
         {
           "name": "startup_enumeration_updated",
@@ -133,11 +133,11 @@
       "name": "settings-flag-rename-reverse-map",
       "discriminating": false,
       "prompt": "Zmieniamy nazwę feature flagi z features.lavish na features.lavish-review. Przeprowadź tę zmianę w repo.",
-      "expected_output": "Renames the flag in kernel/src/ctx/config.ts (regenerating schema/settings.json with pnpm build rather than editing it), every inject.py --if condition, the scripts and tests that read it, and the docs pages that name it, while leaving the lavish-axi binary name and the tool.lavish-axi probe alone. Iteration 1 ran on the retired features.serena flag, where with_skill and without_skill produced byte-identical diffs - the task is grep-complete. Retained as a regression guard only.",
+      "expected_output": "Renames the flag in kernel/src/ctx/config.ts (regenerating schema/settings.json with pnpm build rather than editing it), the ctx code and tests that read it (kernel/src/ctx/use-cases/parts.ts), and the docs pages that name it, while leaving the lavish-axi binary name and its PATH probe alone. Iteration 1 ran on the retired features.serena flag, where with_skill and without_skill produced byte-identical diffs - the task is grep-complete. Retained as a regression guard only.",
       "assertions": [
         {
           "name": "config_and_conditions_renamed",
-          "description": "kernel/src/ctx/config.ts, the regenerated schema/settings.json and every inject.py --if features.* condition referencing the flag use the new name"
+          "description": "kernel/src/ctx/config.ts, the regenerated schema/settings.json and every kernel read of the flag (kernel/src/ctx/use-cases/parts.ts and its tests) use the new name"
         },
         {
           "name": "docs_pages_renamed",
@@ -145,7 +145,7 @@
         },
         {
           "name": "binary_not_renamed",
-          "description": "The lavish-axi binary name and every tool.lavish-axi condition are left untouched - a homonym, not the flag"
+          "description": "The lavish-axi binary name and its PATH probe (which(\"lavish-axi\") in kernel/src/ctx/use-cases/parts.ts) are left untouched - a homonym, not the flag"
         },
         {
           "name": "no_stale_flag_references_left",

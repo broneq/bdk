@@ -3,7 +3,7 @@ description: Conventions for language-specific rule files injected per the `lang
 paths:
   - "rules/languages/**"
   - "skills/bdk-rules-languages/**"
-  - "scripts/inject-language-rules.py"
+  - "kernel/src/ctx/**"
 ---
 
 # Language Rules — Authoring Convention
@@ -40,8 +40,8 @@ Where quality rules describe principles that apply to every codebase, language r
 
 1. Write `rules/languages/<lang>.md` following the format above.
 2. No registration needed: `languages` is a free-form list, and the prompt key pattern `rules/languages/*` covers every name.
-3. Test: in a consumer project, set `languages: [<lang>]` in `.bdk/settings.yaml` and run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject-language-rules.py <lang>` — confirm content prints.
-4. No skill code changes required — `bdk-rules-languages` meta-skill, `<!-- INJECT-LANGUAGES -->` markers, and the script all iterate dynamically.
+3. Test: in a consumer project, set `languages: [<lang>]` in `.bdk/settings.yaml` and run `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs ctx skill bdk-rules-languages` — confirm a `Language rules: <lang>` section prints.
+4. No skill code changes required — `bdk-rules-languages` meta-skill, `<!-- INJECT-LANGUAGES -->` markers, and `bdk ctx skill` all iterate dynamically.
 
 ## Settings schema reminder
 

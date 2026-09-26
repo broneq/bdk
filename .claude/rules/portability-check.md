@@ -48,7 +48,7 @@ Meta-skill body resolves at agent spawn. Edits to the settings take effect on th
 
 ## Required: Standard Skill Header
 
-Every **user-invocable workflow skill** must start with:
+Every **user-invocable workflow skill** must start with (after its two context lines, if it has them):
 
 ```
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).

@@ -27,7 +27,7 @@ openspec/specs/          — living specs of BDK v3 (kernel-cli, kernel-architec
 - Environment discovery (test runner, build tool, lint command) delegated to `STARTUP_INSTRUCTIONS.md`
 - New skills auto-inherit all conventions — edit shared foundation, not individual skills
 - Skills reference each other with full namespace: `/bdk:create-plan`, `/bdk:debug`
-- Every skill starts with: `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`
+- Every skill starts with: `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`, placed after the two context lines when the skill has them (`.claude/rules/skill-context.md`)
 
 ## Language
 

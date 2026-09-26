@@ -86,13 +86,13 @@ Override or extend a sheet with the same `extends` and `replace` semantics, unde
 
 The `languages` array is free-form. An entry only needs a matching sheet, shipped or supplied by you, to inject anything, and a language listed with no matching sheet and no override is silently skipped rather than erroring. That is deliberate: declaring `languages: ["python", "typescript"]` in a mixed repo should describe the repo honestly, not fail because one sheet does not exist yet.
 
-Language rules reach code-writing and code-reviewing agents through the `bdk-rules-languages` meta-skill, and reach plan and execution templates through an injection marker in those templates.
+Language rules reach code-writing and code-reviewing agents through the `bdk-rules-languages` meta-skill, and reach skills such as `/bdk:create-plan` as `Language rules: <language>` sections of their `bdk ctx skill` context.
 
 ## When an override is misconfigured
 
 Rule resolution runs inside a dynamic block in a skill body, which captures standard output only and ignores exit status. A resolver that failed quietly would render as silence, and a missing rule file would look exactly like a rule set that is legitimately empty.
 
-So resolution failures are printed into the injected content itself, prefixed `[bdk-inject-error]`, where the consuming skill can see them and stop. A typo in a `quality` path shows up as a visible error line in the skill's context, not as a review that silently ran with no standards.
+So `bdk ctx skill` prints a problem into the skill's context itself, as a `BDK STOP:` line with what to do instead, and the skill stops there. An unknown settings key or an invalid value shows up as a visible stop, not as a review that silently ran with no standards.
 
 ## Related
 

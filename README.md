@@ -38,7 +38,9 @@ The kernel reads the settings; skills and scripts ask it. Skills need Node >= 22
 | `node "$BDK/dist/bdk.mjs" config set <key> <value>` | Edits `.bdk/settings.yaml` (`--global`, `--local` for the other files), comments kept. |
 | `node "$BDK/dist/bdk.mjs" config schema [<module>]` | Prints the JSON Schema; `--url` prints the modeline URL.                               |
 
-`$BDK` is the plugin directory. `features.lavish` (default `true`) turns on decision points in the browser through `lavish-axi`. A key BDK does not declare is refused, with a "did you mean" hint or, for a key earlier versions wrote (`test-tools`, `quality`, `features.caveman`, the MCP flags), the key that replaces it or why it is gone. The session start shows that refusal and never blocks. `.bdk/settings.json` from BDK 2 is not read; `bdk import` (planned) converts it.
+`$BDK` is the plugin directory. `features.lavish` (default `true`) turns on decision points in the browser through `lavish-axi` when it is installed. A key BDK does not declare is refused, with a "did you mean" hint or, for a key earlier versions wrote (`test-tools`, `quality`, `features.caveman`, the MCP flags), the key that replaces it or why it is gone. The one `SessionStart` hook (`bdk hooks session-start`) prints the shared foundation and, in a BDK project, one line per settings problem; it never blocks.
+
+A skill gets everything that depends on the settings (rule sets, language rules, the decision fragment, the configured tool commands, shared reference files) from `node "$BDK/dist/bdk.mjs" ctx skill <name>`, called by two context lines at the top of its body: a `!` line Claude Code runs at load time, and a fallback sentence that makes the model run the same command when the host did not. Fragments are prompt values like rule sets (`fragments/decision/lavish`, `fragments/decision/ask-user`), so a project extends or replaces them the same way. `.bdk/settings.json` from BDK 2 is not read; `bdk import` (planned) converts it.
 
 ---
 
@@ -226,7 +228,7 @@ See `.claude/rules/quality-rules.md` (BDK-dev convention).
 
 ## Language Rules
 
-Companion to Quality Rules, but keyed by the project's `languages` array rather than a flat rule name. BDK ships per-language principle sheets in `rules/languages/<lang>.md` (React, TypeScript, and JavaScript today; Vue, Python, Go, … follow the same pattern). Each agent that writes or reviews code (`code-reviewer`, `implementer`, `fixer`, `plan-verifier`) preloads them via the `bdk-rules-languages` meta-skill; plan and execution templates pull them through a `<!-- INJECT-LANGUAGES -->` marker.
+Companion to Quality Rules, but keyed by the project's `languages` array rather than a flat rule name. BDK ships per-language principle sheets in `rules/languages/<lang>.md` (React, TypeScript, and JavaScript today; Vue, Python, Go, … follow the same pattern). Each agent that writes or reviews code (`code-reviewer`, `implementer`, `fixer`, `plan-verifier`) preloads them via the `bdk-rules-languages` meta-skill; `/bdk:create-plan` receives them as `Language rules: <lang>` sections of its context and copies them into the plan's `<!-- INJECT-LANGUAGES -->` marker.
 
 Declare the project's stack in `.bdk/settings.yaml`:
 

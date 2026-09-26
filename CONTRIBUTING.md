@@ -89,7 +89,7 @@ Dev dependencies (`pytest`) are declared in `pyproject.toml` under `[dependency-
 
 Both `test_*.py` and `*.test.py` are collected (see `[tool.pytest.ini_options] python_files` in `pyproject.toml`); new tests should use `test_*.py`.
 
-Tests mirror the layout of what they cover: `tests/unit/scripts/`, `tests/unit/hooks/<hook-name>/`, `tests/unit/skills/<skill-name>/`, `tests/unit/agents/`, `tests/unit/fragments/`. Hook tests therefore live at `tests/unit/hooks/is-skill-exist/test_check.py`, not under a top-level `tests/hooks/`.
+Tests mirror the layout of what they cover: `tests/unit/scripts/`, `tests/unit/hooks/<hook-name>/`, `tests/unit/skills/<skill-name>/`, `tests/unit/agents/`, `tests/unit/fragments/`. Hook tests therefore live at `tests/unit/hooks/is-command-exists/test_check.py`, not under a top-level `tests/hooks/`.
 
 The Python scripts are linted and formatted by ruff until T32 removes them. `pnpm lint:py` runs `ruff check` and `ruff format --check` from the `lint` dependency group, and CI runs the same two steps before the tests. `.git-blame-ignore-revs` lists the formatting commits; GitHub's blame reads it, and local `git blame` does after a one-time `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
@@ -152,17 +152,14 @@ These stay in the project-level `.claude/` of each repo:
 
 ## Writing Fragments
 
-Fragments are conditional Markdown files injected into skills at load time.
+A fragment is a Markdown file under `fragments/<capability>/` that a skill receives only when its condition holds. It is a prompt value, so a project can extend or replace it like a rule set.
 
 ### Creating a Fragment
 
-1. Decide scope: shared (`fragments/<capability>/`) or skill-local (`skills/<name>/fragments/`)
-2. Name the file after the feature it serves (e.g. `lavish.md`, `react.md`)
-3. Keep content under 10 lines; longer content should be split into multiple fragments
-4. Inject it with one `inject.py --if` call placed right before the section it augments:
+1. Write `fragments/<capability>/<name>.md`; keep it self-contained and short.
+2. Declare its prompt key `fragments/<capability>/<name>` in `kernel/src/ctx/config.ts`.
+3. Add or extend the `fragment` part of the consuming skills in `kernel/src/ctx/use-cases/manifest.ts`, with the condition that picks it, and point the skill body to the section title.
 
-```markdown
-!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject.py --if features.react --then ${CLAUDE_SKILL_DIR}/fragments/react.md`
-```
+No skill gets a new `!` line: every skill reads its context through its two context lines (`.claude/rules/skill-context.md`).
 
 Agents are static markdown with no shell execution at load time: they get dynamic content by preloading a `bdk-rules-*` (or other meta-) skill via `skills:` frontmatter.

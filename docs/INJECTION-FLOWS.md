@@ -13,6 +13,8 @@ Audit of every dynamic-content injection mechanism in BDK, mapped against the Cl
 
 > **Update 2026-09-25 (ADR-0001):** BDK no longer ships MCP servers. The tool-tier layer went with them: `fragments/tool-tiers/`, the `bdk-tier-*` meta-skills, `inject.py --chain` and `scripts/render_startup.py` are removed, and the SessionStart hook prints `STARTUP_INSTRUCTIONS.md` as a static file. Flows 2, 3 and the tier parts of the preload flow below describe the removed layer; the `skills:` preload of `bdk-rules-*` and the tool meta-skills is unchanged.
 
+> **Update 2026-09-26 (T13):** The Python injection scripts are gone. `inject.py`, `inject-rules.py`, `inject-language-rules.py`, `kernel_settings.py`, the `is-skill-exist` hook and the `check-rules-drift` hooks (SessionStart and Stop) are removed. Every skill with settings-derived content now carries two context lines at the top of its body: a `!` line running `bdk ctx skill <name>` and a fallback sentence that makes the model run the same command when the host did not. What each skill receives is its entry in the typed manifest `kernel/src/ctx/use-cases/manifest.ts`; fragments are prompt values (`fragments/decision/lavish`, `fragments/decision/ask-user`). `hooks/hooks.json` has one SessionStart command, `bdk hooks session-start`, which prints the output of `bdk ctx startup` (the agents table is generated from the agent files) and, in a BDK project, the settings problems as content lines. Skill frontmatter hooks run `bdk hooks skill-exists`. `.claude/rules/skill-context.md` states the convention; `kernel/tests/contract/skill-context.test.ts` enforces it. The flows below that name the Python scripts are historical.
+
 ---
 
 ## TL;DR — Status of every flow
