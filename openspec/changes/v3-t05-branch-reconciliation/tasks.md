@@ -27,8 +27,8 @@
 
 ## 4. Hook-path guard (design D-5)
 
-- [ ] 4.1 Write `kernel/tests/docs/hook-references.test.ts`, ported from the branch's pytest file (same scanned globs, with `docs/guide/**/*.md` in place of `docs/**/*.md`, and the same path regex). Seed a temporary skill line naming `hooks/nope/x.py`, verify that the test fails and names file, line and path, then remove the seed
-- [ ] 4.2 Verify that the test passes on the tree. If a real dangling path exists, fix the prose that names it
+- [x] 4.1 Write `kernel/tests/docs/hook-references.test.ts`, ported from the branch's pytest file (same scanned globs, with `docs/guide/**/*.md` in place of `docs/**/*.md`, and the same path regex). Seed a temporary skill line naming `hooks/nope/x.py`, verify that the test fails and names file, line and path, then remove the seed
+- [x] 4.2 Verify that the test passes on the tree. If a real dangling path exists, fix the prose that names it
 
 ## 5. ruff (design D-8)
 
