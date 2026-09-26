@@ -1,7 +1,7 @@
 {
   "name": "bdk-skill-kit",
   "description": "Write and check Agent Skills: the rules for writing a skill and a deterministic validator that enforces them",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "broneq"
   },
