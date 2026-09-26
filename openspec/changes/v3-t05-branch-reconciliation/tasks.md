@@ -2,8 +2,8 @@
 
 ## 1. Merge `main` (design D-1, D-2)
 
-- [ ] 1.1 Record the tips of `origin/main` and `origin/improvements-pack` in this change's `design.md` Context (they are the SHAs the acceptance check uses), and verify both with `git rev-parse`
-- [ ] 1.2 For each D-2 file group, read `git diff $(git merge-base HEAD origin/main) origin/main -- <group>` and note any fix outside T04 in the merge commit body. Verify that every one of the 10 main-only commits is accounted for
+- [x] 1.1 Record the tips of `origin/main` and `origin/improvements-pack` in this change's `design.md` Context (they are the SHAs the acceptance check uses), and verify both with `git rev-parse`
+- [x] 1.2 For each D-2 file group, read `git diff $(git merge-base HEAD origin/main) origin/main -- <group>` and note any fix outside T04 in the merge commit body. Verify that every one of the 10 main-only commits is accounted for
 - [ ] 1.3 `git merge --no-ff origin/main` and resolve by D-2: v3 side for rewritten or removed files, `main` side for `CHANGELOG.md`, `.github/.release-please-manifest.json` and the `plugin.json` version (2.7.0). Verify `git diff --check`, `grep -c 2.7.0 .github/.release-please-manifest.json .claude-plugin/plugin.json`, and that `hooks/hooks.json` has no graph entry
 - [ ] 1.4 Commit the merge. Verify `pytest tests/unit/`, `pnpm test:contract` and `pnpm skill-check` pass, and that `skill-check.baseline.json` has not changed from `b47aeaa`
 
