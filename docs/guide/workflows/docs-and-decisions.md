@@ -1,5 +1,9 @@
 # Docs and decisions
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 Four skills for the writing side of the work: recording a decision, explaining code that
 is hard to read, keeping an existing doc true, and drawing the diagram in all of them.
 
@@ -42,10 +46,9 @@ one decision out of it.
 /bdk:explain-complex-code <path>
 ```
 
-Analyses the code structure, maps dependencies through the session's exploration tier,
+Analyses the code structure, maps dependencies with the built-in search tools,
 then partitions the module and launches subagents - never more than three or four - all in
-one message. Where the code graph is available, community boundaries decide the
-partitioning; otherwise file count does:
+one message. File count decides the partitioning:
 
 | Files | Subagents |
 |---|---|

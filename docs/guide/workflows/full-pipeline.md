@@ -1,5 +1,9 @@
 # Full pipeline
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 The full tier is five stages, each consuming the previous stage's output:
 
 ```
@@ -7,7 +11,7 @@ The full tier is five stages, each consuming the previous stage's output:
 ```
 
 Use it for a new feature, an architecture or schema change, or any scope you cannot state
-in one testable sentence. See [Choosing a tier](choosing-a-tier.md).
+in one testable sentence. See the [tier table](../index.md#how-you-work-with-it).
 
 ## Stage 1 - Design
 

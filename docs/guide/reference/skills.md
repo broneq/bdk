@@ -1,8 +1,12 @@
 # Skills
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 Every skill is invoked as `/bdk:<name>`. This page lists one section per user-invocable skill - purpose, arguments, the artifact it writes, when to reach for it, and the skills it works with. Skills whose frontmatter carries `user-invocable: false` are meta-skills: they are preloaded into agents via `skills:` frontmatter and are never typed as a slash command, so they get one collective paragraph near the end instead of individual sections.
 
-For the deeper "why" behind the pipeline these skills form, see [Choosing a tier](../workflows/choosing-a-tier.md), [The full pipeline](../workflows/full-pipeline.md), and [Plan pipeline](../concepts/plan-pipeline.md).
+For the deeper "why" behind the pipeline these skills form, see the [tier table](../index.md#how-you-work-with-it), [The full pipeline](../workflows/full-pipeline.md), and [Plan pipeline](../concepts/plan-pipeline.md).
 
 ## Pipeline skills
 
@@ -222,7 +226,7 @@ Two skills keep `.claude/rules/` accurate instead of letting it accrete into a c
 
 ## Meta-skills
 
-Thirteen skills carry `user-invocable: false` and are never typed as `/bdk:<name>` - they exist to be preloaded into agents via `skills:` frontmatter, resolving at preload time through `!`...`` blocks so a fresh subagent gets the same tier and rule guidance the orchestrator gets. `bdk-implementer-return-contract` injects the shared YAML return-contract schema used by the `bdk:implementer` and `bdk:fixer` agents. `bdk-lint-tools` and `bdk-test-tools` surface this project's configured lint/format/typecheck and test commands from `.bdk/settings.json`, falling back to on-the-fly detection with a warning when settings are missing. `bdk-rules-architecture`, `bdk-rules-code-quality`, `bdk-rules-design-patterns`, and `bdk-rules-security` each inject one language-agnostic quality-rule category via `scripts/inject-rules.py`; `bdk-rules-languages` injects the project's language-specific rule sheets via `scripts/inject-language-rules.py`. `bdk-tier-edit`, `bdk-tier-explore`, `bdk-tier-impact`, `bdk-tier-review`, and `bdk-tier-search` each inject one tool-tier chain (structural edits, codebase exploration, impact analysis, code review, and symbol search respectively) via `scripts/inject.py --chain` over the matching `fragments/tool-tiers/*.chain.json`. See [Shared foundation](../concepts/shared-foundation.md) and [Tool tiers](../concepts/tool-tiers.md) for how this injection fits into a session.
+Eight skills carry `user-invocable: false` and are never typed as `/bdk:<name>` - they exist to be preloaded into agents via `skills:` frontmatter, resolving at preload time through `!`...`` blocks so a fresh subagent gets the same rule guidance the orchestrator gets. `bdk-implementer-return-contract` injects the shared YAML return-contract schema used by the `bdk:implementer` and `bdk:fixer` agents. `bdk-lint-tools` and `bdk-test-tools` surface this project's configured lint/format/typecheck and test commands from `.bdk/settings.json`, falling back to on-the-fly detection with a warning when settings are missing. `bdk-rules-architecture`, `bdk-rules-code-quality`, `bdk-rules-design-patterns`, and `bdk-rules-security` each inject one language-agnostic quality-rule category via `scripts/inject-rules.py`; `bdk-rules-languages` injects the project's language-specific rule sheets via `scripts/inject-language-rules.py`. See [Shared foundation](../concepts/shared-foundation.md) for how this injection fits into a session.
 
 ## Removed skills
 

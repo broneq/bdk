@@ -1,5 +1,9 @@
 # Trivial changes
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 One or two files, and the correct edit is obvious before you start. No plan, no executor,
 no design doc:
 
@@ -12,24 +16,20 @@ very last step. That is deliberate, and the next section explains why it is stil
 
 ## Why it is safe without a skill
 
-BDK's SessionStart hook runs `scripts/render_startup.py`, which renders
-`STARTUP_INSTRUCTIONS.md` - chain markers expanded against your project's feature flags -
-and returns it into the session. A plain session, one where you type a request and nothing
+BDK's SessionStart hook prints `STARTUP_INSTRUCTIONS.md` into the session. A plain session, one where you type a request and nothing
 else, therefore already carries:
 
 | Section | What it gives the session |
 |---|---|
-| **Tool Tier System** | The best available tooling for exploration and architecture, symbol search and tracing, and impact analysis - resolved per your enabled features, so the session reaches for `code-review-graph`, then Serena, then grep. |
 | **Agents** | The BDK subagent fleet with models and selection criteria, plus the `SendMessage` rules for continuing a spawned agent instead of respawning it. |
 | **Verification Proportionality** | The rule that verification matches what changed: content-only edits get no tests and no typecheck, source files get scoped tests and lint plus an incremental typecheck, build-feeding config counts as source, and the full suite runs only on request or at a pipeline's end-of-plan gate. |
 | **Quality Rules** | The six language-agnostic rule sets - `code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`, `test-quality` - and how your project overrides them. |
 | **Capture Conventions** | Where a lesson goes before you write it down anywhere - and that "nothing" is the frequent, correct answer. |
 
-So the same tool preferences, the same proportionality rule, and the same quality bar that
+So the same proportionality rule, and the same quality bar that
 a skill would carry are already in context. The skills add *workflow* - a plan, a
 coordinator, a review fan-out - not the standards. See
-[The shared foundation](../concepts/shared-foundation.md) and
-[Tool tiers](../concepts/tool-tiers.md).
+[The shared foundation](../concepts/shared-foundation.md).
 
 !!! note
     If the session did not start with BDK's foundation, you are not in this tier - you are

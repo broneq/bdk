@@ -1,5 +1,9 @@
 # Verification scoping
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 Running the whole test suite after every edit feels safe and is the main reason agent-driven development is slow. BDK's position is that verification should be proportional to what changed, and that the decision must be mechanical rather than a judgement call made fresh each time.
 
 ## Proportionality
@@ -45,7 +49,7 @@ Scoped verification only works if BDK knows which of your commands is the cheap 
 | `failed` | Re-runs only what failed, so a fix attempt does not pay for a suite. |
 | `incremental` | Cache-reusing form of a check that cannot take a path list, typecheckers above all. |
 
-Omit any form your tool does not have; BDK falls back cleanly from a missing one. `tier` is technically optional and should always be set anyway: BDK infers a missing tier from the tool name, and an inferred `fast` on an end-to-end runner means a slow suite runs at every group boundary. The exact schema is in [Settings](../reference/settings.md).
+Omit any form your tool does not have; BDK falls back cleanly from a missing one. `tier` is technically optional and should always be set anyway: BDK infers a missing tier from the tool name, and an inferred `fast` on an end-to-end runner means a slow suite runs at every group boundary. The v3 settings are described in the [README](https://github.com/broneq/bdk/blob/main/README.md#settings).
 
 `related` deserves a note of its own. It replaces asking an exploration subagent which tests cover a change, which is a round trip on the critical path of every group to answer a question the runner answers in a second.
 

@@ -1,5 +1,9 @@
 # Code review
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 Every tier ends here. `/bdk:cr` determines what changed, dispatches specialized reviewers
 in parallel, and merges their findings into one report. `/bdk:pr-review` takes the result
 to GitHub.

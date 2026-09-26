@@ -1,5 +1,9 @@
 # The plan pipeline
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 Four skills form one chain, each stage consuming the previous stage's output:
 
 ```mermaid

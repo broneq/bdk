@@ -1,7 +1,8 @@
 site_name: BDK
 site_url: https://broneq.github.io/bdk/
 repo_url: https://github.com/broneq/bdk
-edit_uri: edit/main/docs/
+edit_uri: edit/main/docs/guide/
+docs_dir: docs/guide
 
 theme:
   name: material
@@ -50,7 +51,6 @@ nav:
     - Setup: getting-started/setup.md
     - Your first feature: getting-started/first-feature.md
   - Workflows:
-    - Choosing a tier: workflows/choosing-a-tier.md
     - Full pipeline: workflows/full-pipeline.md
     - Standard: workflows/standard.md
     - Trivial: workflows/trivial.md
@@ -60,7 +60,6 @@ nav:
     - Rules hygiene: workflows/rules-hygiene.md
   - Concepts:
     - Shared foundation: concepts/shared-foundation.md
-    - Tool tiers: concepts/tool-tiers.md
     - Verification scoping: concepts/verification-scoping.md
     - Plan pipeline: concepts/plan-pipeline.md
     - Agents: concepts/agents.md
@@ -68,11 +67,9 @@ nav:
   - Reference:
     - Skills: reference/skills.md
     - Agents: reference/agents.md
-    - Settings: reference/settings.md
     - Hooks: reference/hooks.md
     - Artifacts: reference/artifacts.md
   - Troubleshooting: troubleshooting.md
   - Contributing:
     - Overview: contributing/index.md
-    - Injection flows: contributing/injection-flows.md
   - Changelog: changelog.md

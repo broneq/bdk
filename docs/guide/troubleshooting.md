@@ -1,58 +1,10 @@
 # Troubleshooting
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 Symptom, cause, and fix for the messages BDK can actually show you, grouped by the hook or script that prints them. Message text is quoted verbatim from source.
-
-## `.bdk/settings.json` missing - session start blocked
-
-**Symptom:**
-
-```
-BDK project settings not found (.bdk/settings.json missing).
-
-Run /bdk:setup to configure this project before proceeding.
-Setup probes your project files and records test/lint/build commands.
-Until setup is complete, skills that rely on project settings will not work correctly.
-```
-
-**Cause:** `hooks/check-bdk-config/check.py` (a `SessionStart` hook, see [Hooks reference](reference/hooks.md)) checked for `.bdk/settings.json` in the project root and it does not exist - or the file exists but could not even be parsed as JSON, which is treated identically (`BLOCK_REASON`).
-
-**Fix:** Run `/bdk:setup`. See [Setup](getting-started/setup.md).
-
-## `.bdk/settings.json` malformed or fails validation
-
-**Symptom:**
-
-```
-.bdk/settings.json is malformed or failed validation.
-
-Run /bdk:setup --force to regenerate it.
-
-Errors:
-  - <one line per validation error>
-```
-
-**Cause:** `hooks/check-bdk-config/check.py` parsed the file as JSON successfully but `validate_settings()` found problems - for example a `test-tools[i].command` that is empty, a `tier` outside `fast | e2e | lint | format | typecheck`, a `scoped`/`related` template missing the `{files}` placeholder, or a `features.<key>` value that is not a boolean. Each error line matches one of these patterns, e.g.:
-
-```
-'test-tools[0].command' must be a non-empty string
-'lint-tools[1].tier' must be one of fast, e2e, lint, format, typecheck (got 'unit')
-'test-tools[0].scoped' must contain the '{files}' placeholder - without it the command ignores the file list and runs everything
-'features.serena' must be a boolean
-```
-
-**Fix:** Fix the offending key in `.bdk/settings.json` directly, or run `/bdk:setup --force` to regenerate the whole file. See [Settings reference](reference/settings.md) for the full schema.
-
-## `uvx` not found
-
-**Symptom:**
-
-```
-[BDK] WARNING: uvx not found. MCP tools (serena, code-review-graph) require uvx. Install: https://docs.astral.sh/uv/getting-started/installation/
-```
-
-**Cause:** The `SessionStart` inline-shell hook in `hooks/hooks.json` ran `command -v uvx`, and it was not on `PATH`. Both bundled MCP servers (`serena`, `code-review-graph`) are launched via `uvx` per `.mcp.json`, so neither can start.
-
-**Fix:** Install `uv`/`uvx` per the printed URL (https://docs.astral.sh/uv/getting-started/installation/), then start a new session. See [Installation](getting-started/installation.md).
 
 ## Run held by another session
 
@@ -105,18 +57,6 @@ plan file changed since this run started - the plan is meant to be immutable. Gr
 **Cause:** `scripts/bdk_run_state.py cmd_init` re-hashes the plan on every `init`/resume call and compares it to the hash stored in the run manifest. They differ because the plan file was edited mid-run.
 
 **Fix:** Re-verify the plan (`/bdk:verify-plan`) before continuing execution; groups already committed are not undone.
-
-## Code-review-graph registration failed
-
-**Symptom:**
-
-```
-[BDK] code-review-graph register failed: <first line of stderr/stdout, or the exception>
-```
-
-**Cause:** `hooks/register-graph-repo/register.py` (`SessionStart`) tried to run `uvx code-review-graph register <path> --alias <dirname>` and the subprocess either failed (non-zero exit) or could not be started/timed out. This hook is skipped silently (no message at all) when `.bdk/settings.json` is missing, when `features.code-review-graph` is explicitly `false`, or when `uvx` is not on `PATH`.
-
-**Fix:** Investigate the printed first line - commonly the `code-review-graph` CLI itself failing. Re-registration is idempotent and safe to retry on the next session start.
 
 ## Skill or command dependency missing
 

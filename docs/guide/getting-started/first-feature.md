@@ -1,5 +1,9 @@
 # Your first feature
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 One toy change, carried through the full tier end to end:
 **add a `--dry-run` flag to the export command**. Five commands, five artifacts,
 each one a file you can read before you continue.
@@ -176,7 +180,7 @@ where the scope is still ambiguous. Most work is smaller:
   `/bdk:cr --inline`. It is safe without skills because the shared foundation is
   injected into every session.
 
-[Choosing a tier](../workflows/choosing-a-tier.md) has the decision table.
+The [tier table](../index.md#how-you-work-with-it) sums up when each fits.
 
 ## What you get
 
@@ -186,4 +190,4 @@ where the scope is still ambiguous. Most work is smaller:
 
 ## Next step
 
-[Choosing a tier](../workflows/choosing-a-tier.md).
+[The standard tier](../workflows/standard.md).

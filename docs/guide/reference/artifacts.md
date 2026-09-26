@@ -1,5 +1,9 @@
 # Artifacts reference
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 Everything BDK skills write to disk lives under `.bdk/` in the project root, per `.claude/rules/artifacts.md`:
 
 ```
@@ -12,7 +16,7 @@ This page lists every directory under `.bdk/` that appears in BDK's own sources,
 
 | Path | Written by | Contents |
 |---|---|---|
-| `.bdk/settings.json` | `/bdk:setup` | Project configuration - see [Settings reference](settings.md) |
+| `.bdk/settings.json` | `/bdk:setup` | Project configuration - see the [README](https://github.com/broneq/bdk/blob/main/README.md#settings) |
 | `.bdk/plans/` | `/bdk:create-plan` | Implementation plans (`mkdir -p .bdk/plans` runs from the skill's `UserPromptSubmit` hook) |
 | `.bdk/design/` | `/bdk:design` | Design docs, `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md` |
 | `.bdk/verify-plan/` | `/bdk:verify-plan` | Verification reports, `.bdk/verify-plan/<plan-slug>-verification.md` |

@@ -1,5 +1,9 @@
 # Project setup
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 `/bdk:setup` runs once per project. It probes your project files, confirms what
 it found with you, and writes `.bdk/settings.json` - the file every BDK skill
 and agent reads to learn how to test, lint, and build this codebase.
@@ -22,8 +26,7 @@ Pass `--force` to re-run it over existing settings.
 | 2b. Fill in tier and scoping forms | Derives the narrow command forms from the detected runner (table below). |
 | 3. Confirm via AskUserQuestion | Up to four questions in one call: test commands, lint commands, features to **disable**, and a build command when one was detected. Only the full commands are confirmed; tiers and scoped forms are mechanical consequences of the runner and are shown in the completion summary instead. |
 | 4. Write `.bdk/settings.json` | Writes the confirmed values plus the derived forms, and creates the directory tree. |
-| 5. Initialize MCP tools | Builds the code-review-graph index when the feature is on and the server is declared. On success it prints `[setup] code-review-graph: index built.`; on failure it prints a warning and setup continues. |
-| 6. Git guidance | Confirms that `.bdk/` stays out of git and offers to write the rule. |
+| 5. Git guidance | Confirms that `.bdk/` stays out of git and offers to write the rule. |
 
 ### Why tiers matter
 
@@ -63,21 +66,16 @@ cleanly from a missing form and silently runs the wrong thing with a broken one.
     settings where they do not, because such a command ignores the file list and
     quietly runs everything.
 
-## The four feature flags
+## The two feature flags
 
 | Flag | What it toggles |
 |---|---|
-| `code-review-graph` | The code-review-graph MCP knowledge graph. Top tier for search, exploration, impact analysis, and review; also gates the `register-graph-repo` session hook. |
-| `serena` | Serena MCP semantic code tools. Second tier for search, exploration, and structural edits. |
 | `caveman` | Caveman communication mode. |
 | `lavish` | Routes bundled multi-question decision points through the `lavish-axi` binary instead of the terminal `AskUserQuestion`. Also requires the binary on `PATH`; skills check both and fall back silently when either is absent. |
 
-Phase 3 asks which of the first three to **disable** - an empty selection leaves
-them all enabled. `lavish` is not offered there; add it to `features` by hand if
+Phase 3 asks whether to **disable** `caveman` - an empty selection leaves it
+enabled. `lavish` is not offered there; add it to `features` by hand if
 you want it.
-
-Which fragment a skill receives is decided by these flags at load time. See
-[Tool tiers](../concepts/tool-tiers.md).
 
 ## What gets written
 
@@ -138,10 +136,8 @@ so the session you ran setup in does not have it yet.
 
 ## What you get
 
-- `.bdk/settings.json`, validated by the `check-bdk-config` hook on every
-  session start.
+- The project settings, checked by `bdk config check` on every session start.
 - `.bdk/plans/` and `.bdk/design/`, ready for the first artifacts.
-- A code-review-graph index, when that feature is on and the server is reachable.
 - Sessions that no longer block, and that start with your project's languages,
   commands, and feature flags in context.
 

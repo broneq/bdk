@@ -64,6 +64,8 @@ The merge commit holds only the resolution. The site relocation and all new cont
 - _A top-level `site-docs/`:_ lost. `CLAUDE.md` already puts user documentation under `docs/`, and the issue keeps the site under `docs/`.
 - _`docs/site/`:_ lost. It reads as the output directory `site/` that `mkdocs build` writes at the root.
 
+`reference/settings.md` goes, together with the troubleshooting sections about `.bdk/settings.json`, `uvx` and graph registration, and the "first session is blocked" passage. They describe the v2 settings file and the `check-bdk-config` hook, which T12 removed, and the hook-path guard (D-5) would fail on them. Links to the settings point at the settings section of `README.md`, which T12 already wrote for v3 (user decision; rewriting the page now was rejected because the settings still change in T13 and T14).
+
 `docs/INJECTION-FLOWS.md` stays where it is and is not a site page. It is contributor material that still describes tiers and graph hooks, and T13 rewrites it. `.claude/rules/fragment-system.md` keeps pointing at it, and `contributing/injection-flows.md` leaves the nav. `contributing/index.md` (a snippet of `CONTRIBUTING.md`) and `changelog.md` (a snippet of `CHANGELOG.md`) stay.
 
 ### D-5 Drift guards as Vitest in the `contract` project

@@ -1,5 +1,9 @@
 # Rules hygiene
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 `.claude/rules/` costs context every single session. Left alone it turns into a changelog:
 post-incident "rules" written as incident narratives, appended to whichever file was
 nearest, duplicating rules that already exist, in files already over budget.
@@ -162,6 +166,6 @@ See [Hooks](../reference/hooks.md) for the full hook list.
 
 ## Next step
 
-Back to [Choosing a tier](choosing-a-tier.md) for the next change - or
+Back to the [tier table](../index.md#how-you-work-with-it) for the next change - or
 [Quality and language rules](../concepts/quality-and-language-rules.md) for the rule sets
 BDK ships versus the ones your project owns.

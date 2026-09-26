@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 // Three projects (design D-2 of v3-t11-kernel-skeleton): `unit` runs the
 // slices' tests from source with coverage thresholds, `e2e` runs the committed
 // bundle in child processes, `contract` runs the contract, structure and
-// dependency tests over the whole repository.
+// dependency tests and the docs site guards over the whole repository.
 export default defineConfig({
   test: {
     projects: [
@@ -19,7 +19,11 @@ export default defineConfig({
       {
         test: {
           name: "contract",
-          include: ["kernel/tests/contract/**/*.test.ts", "kernel/tests/*.test.ts"],
+          include: [
+            "kernel/tests/contract/**/*.test.ts",
+            "kernel/tests/docs/**/*.test.ts",
+            "kernel/tests/*.test.ts",
+          ],
           testTimeout: 30_000,
         },
       },

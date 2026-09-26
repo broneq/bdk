@@ -1,5 +1,9 @@
 # Agents
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 BDK ships thirteen subagents. The reason there are that many, rather than one capable generalist, is context: a subagent gets its own window, does one job, returns a structured answer, and throws the rest away. The orchestrator pays for the answer, not for the search that produced it.
 
 ## The fleet
@@ -33,7 +37,7 @@ Full descriptions, tool lists, and preloaded skills are in [Agents reference](..
 
 The model is fixed per agent, not chosen per call:
 
-- **haiku** for mechanical work with a narrow, checkable output: running a command, reading logs, walking a graph. These agents are dispatched constantly during a plan run, so their cost compounds.
+- **haiku** for mechanical work with a narrow, checkable output: running a command, reading logs, searching the tree. These agents are dispatched constantly during a plan run, so their cost compounds.
 - **sonnet** for writing and reviewing code, where judgement about the change itself is the deliverable.
 - **opus** for the three roles that exist to disagree with a draft: plan verification, design verification, and architectural review.
 
@@ -47,9 +51,9 @@ The same technique is used at skill level. `/bdk:cr` declares `disallowed-tools:
 
 ## Each agent arrives pre-briefed
 
-Subagents do not inherit the session's shared foundation. Each agent's frontmatter therefore lists the meta-skills it needs, and those resolve at spawn time: tool tiers (`bdk-tier-search`, `bdk-tier-explore`, `bdk-tier-impact`, `bdk-tier-review`, `bdk-tier-edit`), quality and language rules (`bdk-rules-*`), the project's commands (`bdk-lint-tools`, `bdk-test-tools`), and the shared return contract for implementers and fixers. The mechanism is described in [The shared foundation](shared-foundation.md).
+Subagents do not inherit the session's shared foundation. Each agent's frontmatter therefore lists the meta-skills it needs, and those resolve at spawn time: quality and language rules (`bdk-rules-*`), the project's commands (`bdk-lint-tools`, `bdk-test-tools`), and the shared return contract for implementers and fixers. The mechanism is described in [The shared foundation](shared-foundation.md).
 
-The lists are deliberately uneven. `bdk:architecture-reviewer` gets architecture and design-pattern rules but not code-quality rules, because it reviews layering rather than function-level hygiene. `bdk:explorer` gets tiers but no rules, because it returns context and enforces nothing. `bdk:static-analyse` and `bdk:test-runner` get no tiers and no rules, because they read no code, but each preloads its tool meta-skill: that skill carries the tier and scoping policy, so callers pass paths and intent and the agent resolves which form of which command to run.
+The lists are deliberately uneven. `bdk:architecture-reviewer` gets architecture and design-pattern rules but not code-quality rules, because it reviews layering rather than function-level hygiene. `bdk:explorer` gets no rules, because it returns context and enforces nothing. `bdk:static-analyse` and `bdk:test-runner` get no rules, because they read no code, but each preloads its tool meta-skill: that skill carries the scoping policy, so callers pass paths and intent and the agent resolves which form of which command to run.
 
 ## Continuing an agent instead of spawning one
 

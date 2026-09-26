@@ -1,5 +1,9 @@
 # Agents
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 BDK ships 13 subagents. Every agent is invoked via the `Agent` tool with the `subagent_type` shown below, always in the namespaced form `bdk:<name>`. This page mirrors the split `STARTUP_INSTRUCTIONS.md` injects into every session: agents an orchestrator picks directly, and agents a skill spawns as an internal implementation detail. For what each agent's own `tools:`/`skills:` frontmatter grants it, see the source files under `agents/*.md`; for how agents get resumed instead of respawned, see [Agents](../concepts/agents.md).
 
 ## Directly invokable by the orchestrator
@@ -8,7 +12,7 @@ General-purpose helpers any session can call with the `Agent` tool.
 
 | `subagent_type` | Model | When to pick |
 |---|---|---|
-| `bdk:explorer` | haiku | Broad codebase search spanning more than 3 queries - code-review-graph MCP first, then Serena, then Read/Grep/Glob/Bash. |
+| `bdk:explorer` | haiku | Broad codebase search spanning more than 3 queries, with Read, Grep, Glob and Bash. |
 | `bdk:log-analyzer` | haiku | Stderr/traceback/error-log triage. |
 | `bdk:web-researcher` | haiku | External docs, GitHub issues, Stack Overflow lookups. |
 | `bdk:static-analyse` | haiku | Detect and run project-appropriate lint/format/typecheck across Python, JS, Go, Rust, and other stacks. |

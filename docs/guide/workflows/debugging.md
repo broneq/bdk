@@ -1,5 +1,9 @@
 # Debugging
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 ```
 /bdk:debug <error message, traceback, or steps to reproduce>
 ```
@@ -28,7 +32,7 @@ error type, failing component, steps to reproduce, and expected versus actual, t
 
 ### Phase 2 - Investigate
 
-Using the session's injected search and impact tiers, it finds the entry point, traces
+With the built-in search tools, it finds the entry point, traces
 callers up and callees down, identifies the impacted execution paths, flags cascading
 risk at choke points, identifies the root cause, quantifies the blast radius, and scans
 for the same class of problem in nearby code only:

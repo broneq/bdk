@@ -52,11 +52,11 @@ The guards SHALL run in `pnpm test:contract`. The pytest suite SHALL hold no doc
 
 ### Requirement: No pages about removed mechanisms
 
-The site SHALL NOT describe the tool tiers, the workflow tier choice page, a BDK-bundled MCP server or the code-review-graph hooks that ADR-0001 removed. A page MAY name an MCP server only as a tool that the user installs themselves.
+The site SHALL NOT describe the tool tiers, the workflow tier choice page, a BDK-bundled MCP server or the code-review-graph hooks that ADR-0001 removed, nor the v2 settings file `.bdk/settings.json` with its `check-bdk-config` hook and `render_startup.py`, which T12 and T04 removed. A page that needs the settings links to the settings section of `README.md` until T50 writes the v3 page. A page MAY name an MCP server only as a tool that the user installs themselves.
 
 #### Scenario: site search after T05
 
-- **WHEN** the pages under `docs/guide/` and `mkdocs.yml` are searched for `tool-tiers`, `tool tier`, `choosing-a-tier`, `register-graph-repo`, `.mcp.json`, and for Serena or code-review-graph named as bundled with BDK
+- **WHEN** the pages under `docs/guide/` and `mkdocs.yml` are searched for `tool-tiers`, `tool tier`, `choosing-a-tier`, `register-graph-repo`, `.mcp.json`, `check-bdk-config`, `render_startup`, `reference/settings.md`, and for Serena or code-review-graph named as bundled with BDK
 - **THEN** there is no match
 
 ### Requirement: v2 banner

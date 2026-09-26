@@ -1,5 +1,9 @@
 # Standard workflow
 
+!!! warning "Describes BDK v2"
+
+    This page describes BDK v2. The v3 documentation replaces it (T50).
+
 The standard tier drops the design stage and keeps everything else:
 
 ```
@@ -8,7 +12,7 @@ The standard tier drops the design stage and keeps everything else:
 
 Use it when scope is clear and design questions are already settled, but the work still
 spans several files and deserves a plan, parallel execution, and a review pass. See
-[Choosing a tier](choosing-a-tier.md).
+the [tier table](../index.md#how-you-work-with-it).
 
 ## 1 - Plan
 
