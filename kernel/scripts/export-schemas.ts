@@ -15,6 +15,13 @@ import {
   changeResumeOutput,
   changeStatusOutput,
 } from "../src/change/schema/outputs.ts";
+import {
+  doneOutput,
+  explainOutput,
+  nextOutput,
+  validateOutput,
+} from "../src/graph/schema/outputs.ts";
+import { pipelineSchema } from "../src/graph/schema/pipeline.ts";
 import { queryOutput } from "../src/query/schema/query.ts";
 import { configCheckOutput } from "../src/config/schema/check.ts";
 import { configSchemaOutput } from "../src/config/schema/schema.ts";
@@ -65,6 +72,10 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/change-resume.json", changeResumeOutput],
   ["output/change-park.json", changeParkOutput],
   ["output/query.json", queryOutput],
+  ["output/next.json", nextOutput],
+  ["output/explain.json", explainOutput],
+  ["output/validate.json", validateOutput],
+  ["output/done.json", doneOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {
@@ -135,6 +146,18 @@ function relativeRefs(
   return JSON.parse(text) as Record<string, unknown>;
 }
 
+/** `schema/pipeline.json`, from the schema the kernel loads `pipeline/pipeline.yaml` with (design D-1 of T21). */
+function pipelineJsonSchema(): Record<string, unknown> {
+  return {
+    ...z.toJSONSchema(pipelineSchema, {
+      target: "draft-2020-12",
+      io: "input",
+      unrepresentable: "throw",
+    }),
+    $id: "https://raw.githubusercontent.com/broneq/bdk/v3/schema/pipeline.json",
+  };
+}
+
 /** The keys a reader looks for first lead the file; zod appends `.meta()` fields last. */
 const LEADING = ["$schema", "$id", "title", "description"];
 
@@ -156,6 +179,7 @@ async function write(path: string, schema: Record<string, unknown>): Promise<voi
 
 const root = process.cwd();
 await write(join(root, "schema/settings.json"), settingsJsonSchema(settingsRegistry()));
+await write(join(root, "schema/pipeline.json"), pipelineJsonSchema());
 for (const [path, schema] of Object.entries(cliSchemas())) {
   await write(join(root, "schema/cli", path), schema);
 }

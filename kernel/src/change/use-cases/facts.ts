@@ -22,14 +22,21 @@ export interface ChangeFacts {
   readonly parked: EntryRow | undefined;
 }
 
-/** Facts of a refreshed Change; `kind` and `source` come from its `change.md` row. */
-export function changeFacts(index: IndexDb, changeId: string): ChangeFacts {
+/**
+ * Facts of a refreshed Change; `kind` and `source` come from its `change.md`
+ * row, the stage from the latest transition through `stageOfTarget` (design D-12).
+ */
+export function changeFacts(
+  index: IndexDb,
+  changeId: string,
+  stageOfTarget: (to: string) => string,
+): ChangeFacts {
   const change = findChangeRow(index, changeId);
   const entries = listEntries(index, changeId);
   const base = change !== undefined && isProfile(change.profile) ? change.profile : "small";
   return {
     entries,
-    stage: stageOf(entries),
+    stage: stageOf(entries, stageOfTarget),
     profile: effectiveProfile(base, entries),
     kind: change?.kind ?? "feature",
     source: change?.source ?? "user",

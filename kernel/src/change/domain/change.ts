@@ -1,6 +1,7 @@
 // Change ids, profile ranks and the shapes the change commands answer
 // (`kernel-cli/change`; `kernel-state`, Identifiers, Derived state and
 // mutation). Pure: the use cases read the files and the index.
+import type { GATE_PASSERS, NodeState } from "../../shared/vocabulary/index.ts";
 
 const SLUG_MAX = 40;
 
@@ -67,6 +68,8 @@ export interface NewReport {
   };
   readonly source: string;
   readonly overriddenKeys: readonly string[];
+  /** The stage command the Change continues with (`graph`, `changeGraph`). */
+  readonly next?: string | undefined;
 }
 
 interface ParkedView {
@@ -86,18 +89,16 @@ interface OpenTicketView {
 }
 
 /** The closed lists of the change outputs; `schema/` builds its enums from them. */
-export const NODE_STATES = ["blocked", "ready", "done", "stale", "skipped"] as const;
-export const GATE_PASSERS = ["user", "policy"] as const;
 export const PART_STATES = ["blocked", "ready", "started", "done"] as const;
 export const SPEC_IMPACTS = ["none", "delta"] as const;
 export const CHANGE_STATES = ["active", "parked", "archived"] as const;
 export const RESUMED_FROM = ["parked", "other-branch", "other-machine"] as const;
 
-/** An artifact graph node; the graph lands with T21, until then `nodes` is empty. */
+/** An artifact graph node as the graph slice reports it. */
 interface NodeView {
   readonly id: string;
   readonly kind: string;
-  readonly state: (typeof NODE_STATES)[number];
+  readonly state: NodeState;
   readonly requires?: readonly string[] | undefined;
   readonly inputHash?: string | undefined;
   readonly why?: string | undefined;
@@ -117,7 +118,7 @@ interface PendingEntryView {
   readonly supersedes?: string | undefined;
 }
 
-/** A gate node's status; lands with T21. */
+/** A gate node's status as the graph slice reports it. */
 interface GateView {
   readonly gate: string;
   readonly ready: boolean;
@@ -172,6 +173,8 @@ export interface ResumeReport {
   readonly stage: string;
   readonly resumedFrom?: (typeof RESUMED_FROM)[number] | undefined;
   readonly decision?: string | undefined;
+  /** The stage command the Change continues with (`graph`, `changeGraph`). */
+  readonly next?: string | undefined;
 }
 
 export interface ParkReport {

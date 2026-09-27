@@ -2,6 +2,7 @@
 // spawning `git`: `base.all` has no `runtime/git-missing`, so a command that
 // never shells out must not fail because git is absent (design D-6).
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
@@ -97,6 +98,26 @@ export async function authorIdent(git: Git, workTree: string): Promise<string> {
   if (result.code !== 0) return "unknown";
   const ident = result.stdout.trim().replace(/\s+\d+\s+[+-]\d{4}$/, "");
   return ident === "" ? "unknown" : ident;
+}
+
+/**
+ * sha256 of the committed tree of `HEAD` without `.bdk/`: `git ls-tree -r`
+ * lines sorted by path, so ledger commits and uncommitted edits never change
+ * it (the `review` kind's input, design D-4 of T21). Undefined before the
+ * first commit; a missing git is `runtime/git-missing`.
+ */
+export async function codeTreeHash(git: Git, workTree: string): Promise<string | undefined> {
+  const result = await git.run(["ls-tree", "-r", "-z", "HEAD"], workTree);
+  if (result.code !== 0) return undefined;
+  const lines = result.stdout
+    .split("\0")
+    .filter((line) => line !== "" && !line.split("\t")[1]?.startsWith(".bdk/"))
+    .sort((a, b) => {
+      const pa = a.split("\t")[1] ?? "";
+      const pb = b.split("\t")[1] ?? "";
+      return pa < pb ? -1 : pa > pb ? 1 : 0;
+    });
+  return `sha256:${createHash("sha256").update(lines.join("\n")).digest("hex")}`;
 }
 
 const IN_PROGRESS = [

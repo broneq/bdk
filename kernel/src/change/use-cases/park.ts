@@ -4,7 +4,7 @@ import { appendEntry, withChangeIndex } from "../../log/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { openAttempts } from "../../shared/store/index.ts";
+import { listEntries, openAttempts, parkedQuestion } from "../../shared/store/index.ts";
 import {
   CHECKPOINT_SKIPPED,
   DEFAULT_PARK_OPTIONS,
@@ -13,7 +13,6 @@ import {
 } from "../domain/change.ts";
 import type { ParkReport } from "../domain/change.ts";
 import type { ChangeDeps } from "./deps.ts";
-import { changeFacts } from "./facts.ts";
 
 const TEXT_MAX = 120;
 
@@ -45,13 +44,12 @@ export function parkChange(
         "bdk attempt close <ticket> not-run",
       ]);
     }
-    const facts = changeFacts(index, change.id);
-    if (facts.parked !== undefined) {
-      return refuse(
-        "policy/invalid-transition",
-        `${change.id} is already parked on ${facts.parked.id}`,
-        [resumeCommand(change.id), "bdk change status"],
-      );
+    const parked = parkedQuestion(listEntries(index, change.id));
+    if (parked !== undefined) {
+      return refuse("policy/invalid-transition", `${change.id} is already parked on ${parked.id}`, [
+        resumeCommand(change.id),
+        "bdk change status",
+      ]);
     }
     const entry = await appendEntry(
       deps,

@@ -30,10 +30,12 @@ export interface EntryDraft {
   readonly ticket?: string;
   readonly review?: boolean;
   readonly supersedes?: string;
-  /** Kernel-only own fields (`change park`, `change new`, `change resume`). */
+  /** Kernel-only own fields (`change park`, `change new`, `change resume`, `done`). */
   readonly options?: readonly string[];
   readonly park?: boolean;
   readonly profile?: string;
+  readonly to?: string;
+  readonly inputHash?: string;
 }
 
 export async function appendEntry(
@@ -100,6 +102,8 @@ export async function appendEntry(
       ...(draft.options === undefined ? {} : { options: [...draft.options] }),
       ...(draft.park === true ? { park: true } : {}),
       ...(draft.profile === undefined ? {} : { profile: draft.profile }),
+      ...(draft.to === undefined ? {} : { to: draft.to }),
+      ...(draft.inputHash === undefined ? {} : { "input-hash": draft.inputHash }),
     }),
     draft.body,
     deps.random,

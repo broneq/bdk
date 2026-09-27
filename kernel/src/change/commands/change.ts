@@ -1,4 +1,5 @@
 // The five T20 change handlers: arguments in, use case, `--json` object or text out.
+import { globalDir } from "../../shared/config/index.ts";
 import { capLines, listPage } from "../../shared/output/index.ts";
 import { isRefusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange, FlagValue, Handler } from "../../shared/registry/index.ts";
@@ -45,8 +46,8 @@ export function newCommand(deps: ChangeDeps): Handler {
 
 export function statusCommand(deps: ChangeDeps): Handler {
   return async (context) => {
-    const report = await changeStatus(deps, active(context.change));
-    return { data: report, text: capLines(renderStatus(report)) };
+    const report = await changeStatus(deps, active(context.change), globalDir(context.runtime));
+    return isRefusal(report) ? report : { data: report, text: capLines(renderStatus(report)) };
   };
 }
 
@@ -63,7 +64,11 @@ export function resumeCommand(deps: ChangeDeps): Handler {
   return async (context) => {
     const report = await resumeChange(
       deps,
-      { cwd: context.cwd, workTree: context.workTree ?? context.cwd },
+      {
+        cwd: context.cwd,
+        workTree: context.workTree ?? context.cwd,
+        globalDir: globalDir(context.runtime),
+      },
       {
         id: context.positionals["<id>"] ?? "",
         option: text(context.flags["--option"]),

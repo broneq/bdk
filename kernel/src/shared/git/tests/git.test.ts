@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { KernelRefusal } from "../../refusal/index.ts";
 import {
   authorIdent,
+  codeTreeHash,
   currentBranch,
   findWorkTree,
   gitInProgress,
@@ -154,6 +155,51 @@ describe("authorIdent", () => {
       currentBranch: () => undefined,
     };
     await expect(authorIdent(git, root)).rejects.toMatchObject({
+      refusal: { rule: "runtime/git-missing" },
+    });
+  });
+});
+
+describe("codeTreeHash", () => {
+  function commit(files: Record<string, string>, message: string): void {
+    for (const [path, text] of Object.entries(files)) {
+      mkdirSync(join(root, path, ".."), { recursive: true });
+      writeFileSync(join(root, path), text);
+    }
+    execFileSync("git", ["add", "-A"], { cwd: root });
+    execFileSync(
+      "git",
+      ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "--quiet", "-m", message],
+      { cwd: root },
+    );
+  }
+
+  it("is a sha256 of the committed tree without .bdk/, stable for equal trees", async () => {
+    init(root);
+    commit({ "src/a.ts": "a\n", ".bdk/changes/x/change.md": "one\n" }, "first");
+    const first = await codeTreeHash(systemGit, root);
+    expect(first).toMatch(/^sha256:[0-9a-f]{64}$/);
+
+    commit({ ".bdk/changes/x/log.md": "entry\n" }, "ledger only");
+    writeFileSync(join(root, "src/a.ts"), "uncommitted\n");
+    expect(await codeTreeHash(systemGit, root)).toBe(first);
+
+    execFileSync("git", ["checkout", "--quiet", "--", "src/a.ts"], { cwd: root });
+    commit({ "src/a.ts": "b\n" }, "code");
+    expect(await codeTreeHash(systemGit, root)).not.toBe(first);
+  });
+
+  it("is undefined before the first commit", async () => {
+    init(root);
+    expect(await codeTreeHash(systemGit, root)).toBeUndefined();
+  });
+
+  it("refuses runtime/git-missing without git", async () => {
+    const git: Git = {
+      run: (args, cwd) => runGit(args, cwd, { executable: "git-that-does-not-exist" }),
+      currentBranch: () => undefined,
+    };
+    await expect(codeTreeHash(git, root)).rejects.toMatchObject({
       refusal: { rule: "runtime/git-missing" },
     });
   });

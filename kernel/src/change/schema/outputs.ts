@@ -9,19 +9,14 @@ import type {
   ResumeReport,
   StatusReport,
 } from "../domain/change.ts";
-import {
-  CHANGE_STATES,
-  GATE_PASSERS,
-  NODE_STATES,
-  PART_STATES,
-  RESUMED_FROM,
-  SPEC_IMPACTS,
-} from "../domain/change.ts";
+import { CHANGE_STATES, PART_STATES, RESUMED_FROM, SPEC_IMPACTS } from "../domain/change.ts";
 import {
   CHANGE_KINDS,
   CHANGE_SOURCES,
   ENTRY_STATUSES,
   ENTRY_TYPES,
+  GATE_PASSERS,
+  NODE_STATES,
   PROFILES,
   SOURCE_PATTERN,
   TICKET_SCOPES,

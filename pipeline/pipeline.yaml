@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=../schema/pipeline.json
+# The artifact graph of a Change (kernel-pipeline, Pipeline file). Nodes are in
+# pipeline order, the order `bdk next` walks. The only condition is
+# `if: features.<name>`; which files a node reads or writes is its kind's code.
+schema: 1
+
+stages:
+  - { id: intent, command: /bdk:change }
+  - { id: design, command: /bdk:design }
+  - { id: plan, command: /bdk:plan }
+  - { id: execute, command: /bdk:execute }
+  - { id: review, command: /bdk:cr }
+  - { id: close, command: /bdk:close }
+
+nodes:
+  - id: intent
+    kind: intent
+    stage: intent
+
+  - id: design
+    kind: design
+    stage: design
+    requires: [intent]
+    profiles: [small]
+    kinds: [feature]
+
+  - id: design-parts
+    kind: design-part
+    stage: design
+    requires: [intent]
+    profiles: [large]
+    kinds: [feature]
+
+  - id: design-index
+    kind: design-index
+    stage: design
+    requires: [design-parts]
+    profiles: [large]
+    kinds: [feature]
+
+  - id: architecture
+    kind: architecture
+    stage: design
+    requires: [design, design-index]
+    profiles: [small, large]
+    kinds: [feature]
+
+  - id: gate:design
+    kind: gate
+    stage: design
+    requires: [design, design-index, architecture]
+    profiles: [small, large]
+    kinds: [feature]
+    policy: design
+    opens: plan
+
+  - id: plan
+    kind: plan-part
+    stage: plan
+    requires: [gate:design]
+    rules: [code-quality, architecture, test-quality]
+
+  - id: plan-verify
+    kind: plan-verify
+    stage: plan
+    requires: [plan]
+    profiles: [small, large]
+    budget: verifier
+
+  - id: execute
+    kind: execute-part
+    stage: execute
+    requires: [plan, plan-verify]
+    budget: task-redispatch
+
+  - id: spec-delta
+    kind: spec-delta
+    stage: execute
+    requires: [execute]
+
+  - id: review
+    kind: review
+    stage: review
+    requires: [execute, spec-delta]
+    budget: review-fix
+
+  - id: gate:review
+    kind: gate
+    stage: review
+    requires: [review]
+    policy: review
+    opens: close
+
+  - id: close
+    kind: close
+    stage: close
+    requires: [gate:review]

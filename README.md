@@ -48,6 +48,19 @@ The kernel keeps each Change in `.bdk/changes/<id>/`, which is committed: `chang
 
 What each machine derives stays out of git under `.bdk/.machine/`: the SQLite index `index.sqlite`, a cache rebuilt from the committed files whenever it is missing or stale, and the branch markers that bind a local branch to its Change. `change new` and `config set` add exactly `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore` when no rule covers them; `.bdk/` as a whole is never ignored.
 
+### Artifact graph
+
+Which artifact a Change needs next is decided by the kernel, not by a skill. `pipeline/pipeline.yaml` in the plugin declares the stages (`intent`, `design`, `plan`, `execute`, `review`, `close`, each with the command that enters it) and the nodes: `intent`, `design` or `design-parts` plus `design-index`, `architecture`, `gate:design`, `plan` (one node per plan part), `plan-verify`, `execute`, `spec-delta`, `review`, `gate:review` and `close`. Its modeline points at `schema/pipeline.json`. The profile and the Change kind choose the variant: `tiny` and `bug` go from `intent` to `plan`, `large` splits the design into parts. A node is `blocked`, `ready`, `done`, `stale` (its files changed after it was marked done) or `skipped`.
+
+| Command                                          | What it does                                                                                                                                                 |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `node "$BDK/dist/bdk.mjs" next`                  | Prints the instruction for the next artifact: template, paths to write, rule sets, relevant ledger entries. Or says the Change waits for a gate or the user. |
+| `node "$BDK/dist/bdk.mjs" explain <artifact>`    | Explains a node's state through its chain of requirements, with both hashes of a stale node.                                                                 |
+| `node "$BDK/dist/bdk.mjs" validate [<artifact>]` | Runs the node's checks and prints the current input hash; writes nothing.                                                                                    |
+| `node "$BDK/dist/bdk.mjs" done <artifact>`       | Marks a node done after its checks pass and records the hash in a `transition` entry; the only way an artifact becomes done.                                 |
+
+A gate is never marked done by a command: it opens only on a `transition` entry with `source: user` (or `source: policy` when `policy.gates.design` or `policy.gates.review` is `auto`; both default to `manual`), written after its requirements were done. `change status` lists every node and gate, and which gates the user or the policy passed. Each artifact kind has a template, the prompt value `pipeline/<kind>`, so a project extends or replaces it in `.bdk/prompts/pipeline/<kind>.md` like any other prompt.
+
 ---
 
 ## Skills

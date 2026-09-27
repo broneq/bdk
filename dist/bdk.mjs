@@ -50,24 +50,24 @@ var require_identity = __commonJS({
     var SCALAR = /* @__PURE__ */ Symbol.for("yaml.scalar");
     var SEQ = /* @__PURE__ */ Symbol.for("yaml.seq");
     var NODE_TYPE = /* @__PURE__ */ Symbol.for("yaml.node.type");
-    var isAlias = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === ALIAS;
-    var isDocument = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === DOC;
-    var isMap2 = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === MAP;
-    var isPair = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === PAIR;
-    var isScalar2 = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === SCALAR;
-    var isSeq2 = (node2) => !!node2 && typeof node2 === "object" && node2[NODE_TYPE] === SEQ;
-    function isCollection2(node2) {
-      if (node2 && typeof node2 === "object")
-        switch (node2[NODE_TYPE]) {
+    var isAlias = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === ALIAS;
+    var isDocument = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === DOC;
+    var isMap2 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === MAP;
+    var isPair = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === PAIR;
+    var isScalar2 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === SCALAR;
+    var isSeq2 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === SEQ;
+    function isCollection2(node3) {
+      if (node3 && typeof node3 === "object")
+        switch (node3[NODE_TYPE]) {
           case MAP:
           case SEQ:
             return true;
         }
       return false;
     }
-    function isNode2(node2) {
-      if (node2 && typeof node2 === "object")
-        switch (node2[NODE_TYPE]) {
+    function isNode2(node3) {
+      if (node3 && typeof node3 === "object")
+        switch (node3[NODE_TYPE]) {
           case ALIAS:
           case MAP:
           case SCALAR:
@@ -76,7 +76,7 @@ var require_identity = __commonJS({
         }
       return false;
     }
-    var hasAnchor = (node2) => (isScalar2(node2) || isCollection2(node2)) && !!node2.anchor;
+    var hasAnchor = (node3) => (isScalar2(node3) || isCollection2(node3)) && !!node3.anchor;
     exports.ALIAS = ALIAS;
     exports.DOC = DOC;
     exports.MAP = MAP;
@@ -104,98 +104,98 @@ var require_visit = __commonJS({
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
     var REMOVE = /* @__PURE__ */ Symbol("remove node");
-    function visit(node2, visitor) {
+    function visit(node3, visitor) {
       const visitor_ = initVisitor(visitor);
-      if (identity.isDocument(node2)) {
-        const cd = visit_(null, node2.contents, visitor_, Object.freeze([node2]));
+      if (identity.isDocument(node3)) {
+        const cd = visit_(null, node3.contents, visitor_, Object.freeze([node3]));
         if (cd === REMOVE)
-          node2.contents = null;
+          node3.contents = null;
       } else
-        visit_(null, node2, visitor_, Object.freeze([]));
+        visit_(null, node3, visitor_, Object.freeze([]));
     }
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node2, visitor, path) {
-      const ctrl = callVisitor(key, node2, visitor, path);
+    function visit_(key, node3, visitor, path) {
+      const ctrl = callVisitor(key, node3, visitor, path);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
         replaceNode(key, path, ctrl);
         return visit_(key, ctrl, visitor, path);
       }
       if (typeof ctrl !== "symbol") {
-        if (identity.isCollection(node2)) {
-          path = Object.freeze(path.concat(node2));
-          for (let i = 0; i < node2.items.length; ++i) {
-            const ci = visit_(i, node2.items[i], visitor, path);
+        if (identity.isCollection(node3)) {
+          path = Object.freeze(path.concat(node3));
+          for (let i = 0; i < node3.items.length; ++i) {
+            const ci = visit_(i, node3.items[i], visitor, path);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
               return BREAK;
             else if (ci === REMOVE) {
-              node2.items.splice(i, 1);
+              node3.items.splice(i, 1);
               i -= 1;
             }
           }
-        } else if (identity.isPair(node2)) {
-          path = Object.freeze(path.concat(node2));
-          const ck = visit_("key", node2.key, visitor, path);
+        } else if (identity.isPair(node3)) {
+          path = Object.freeze(path.concat(node3));
+          const ck = visit_("key", node3.key, visitor, path);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
-            node2.key = null;
-          const cv = visit_("value", node2.value, visitor, path);
+            node3.key = null;
+          const cv = visit_("value", node3.value, visitor, path);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
-            node2.value = null;
+            node3.value = null;
         }
       }
       return ctrl;
     }
-    async function visitAsync(node2, visitor) {
+    async function visitAsync(node3, visitor) {
       const visitor_ = initVisitor(visitor);
-      if (identity.isDocument(node2)) {
-        const cd = await visitAsync_(null, node2.contents, visitor_, Object.freeze([node2]));
+      if (identity.isDocument(node3)) {
+        const cd = await visitAsync_(null, node3.contents, visitor_, Object.freeze([node3]));
         if (cd === REMOVE)
-          node2.contents = null;
+          node3.contents = null;
       } else
-        await visitAsync_(null, node2, visitor_, Object.freeze([]));
+        await visitAsync_(null, node3, visitor_, Object.freeze([]));
     }
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node2, visitor, path) {
-      const ctrl = await callVisitor(key, node2, visitor, path);
+    async function visitAsync_(key, node3, visitor, path) {
+      const ctrl = await callVisitor(key, node3, visitor, path);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
         replaceNode(key, path, ctrl);
         return visitAsync_(key, ctrl, visitor, path);
       }
       if (typeof ctrl !== "symbol") {
-        if (identity.isCollection(node2)) {
-          path = Object.freeze(path.concat(node2));
-          for (let i = 0; i < node2.items.length; ++i) {
-            const ci = await visitAsync_(i, node2.items[i], visitor, path);
+        if (identity.isCollection(node3)) {
+          path = Object.freeze(path.concat(node3));
+          for (let i = 0; i < node3.items.length; ++i) {
+            const ci = await visitAsync_(i, node3.items[i], visitor, path);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
               return BREAK;
             else if (ci === REMOVE) {
-              node2.items.splice(i, 1);
+              node3.items.splice(i, 1);
               i -= 1;
             }
           }
-        } else if (identity.isPair(node2)) {
-          path = Object.freeze(path.concat(node2));
-          const ck = await visitAsync_("key", node2.key, visitor, path);
+        } else if (identity.isPair(node3)) {
+          path = Object.freeze(path.concat(node3));
+          const ck = await visitAsync_("key", node3.key, visitor, path);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
-            node2.key = null;
-          const cv = await visitAsync_("value", node2.value, visitor, path);
+            node3.key = null;
+          const cv = await visitAsync_("value", node3.value, visitor, path);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
-            node2.value = null;
+            node3.value = null;
         }
       }
       return ctrl;
@@ -218,32 +218,32 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node2, visitor, path) {
+    function callVisitor(key, node3, visitor, path) {
       if (typeof visitor === "function")
-        return visitor(key, node2, path);
-      if (identity.isMap(node2))
-        return visitor.Map?.(key, node2, path);
-      if (identity.isSeq(node2))
-        return visitor.Seq?.(key, node2, path);
-      if (identity.isPair(node2))
-        return visitor.Pair?.(key, node2, path);
-      if (identity.isScalar(node2))
-        return visitor.Scalar?.(key, node2, path);
-      if (identity.isAlias(node2))
-        return visitor.Alias?.(key, node2, path);
+        return visitor(key, node3, path);
+      if (identity.isMap(node3))
+        return visitor.Map?.(key, node3, path);
+      if (identity.isSeq(node3))
+        return visitor.Seq?.(key, node3, path);
+      if (identity.isPair(node3))
+        return visitor.Pair?.(key, node3, path);
+      if (identity.isScalar(node3))
+        return visitor.Scalar?.(key, node3, path);
+      if (identity.isAlias(node3))
+        return visitor.Alias?.(key, node3, path);
       return void 0;
     }
-    function replaceNode(key, path, node2) {
+    function replaceNode(key, path, node3) {
       const parent = path[path.length - 1];
       if (identity.isCollection(parent)) {
-        parent.items[key] = node2;
+        parent.items[key] = node3;
       } else if (identity.isPair(parent)) {
         if (key === "key")
-          parent.key = node2;
+          parent.key = node3;
         else
-          parent.value = node2;
+          parent.value = node3;
       } else if (identity.isDocument(parent)) {
-        parent.contents = node2;
+        parent.contents = node3;
       } else {
         const pt = identity.isAlias(parent) ? "alias" : "scalar";
         throw new Error(`Cannot replace node with ${pt} parent`);
@@ -403,9 +403,9 @@ var require_directives = __commonJS({
         let tagNames;
         if (doc && tagEntries.length > 0 && identity.isNode(doc.contents)) {
           const tags = {};
-          visit.visit(doc.contents, (_key, node2) => {
-            if (identity.isNode(node2) && node2.tag)
-              tags[node2.tag] = true;
+          visit.visit(doc.contents, (_key, node3) => {
+            if (identity.isNode(node3) && node3.tag)
+              tags[node3.tag] = true;
           });
           tagNames = Object.keys(tags);
         } else
@@ -442,9 +442,9 @@ var require_anchors = __commonJS({
     function anchorNames(root) {
       const anchors = /* @__PURE__ */ new Set();
       visit.visit(root, {
-        Value(_key, node2) {
-          if (node2.anchor)
-            anchors.add(node2.anchor);
+        Value(_key, node3) {
+          if (node3.anchor)
+            anchors.add(node3.anchor);
         }
       });
       return anchors;
@@ -648,20 +648,20 @@ var require_Alias = __commonJS({
         } else {
           nodes = [];
           visit.visit(doc, {
-            Node: (_key, node2) => {
-              if (identity.isAlias(node2) || identity.hasAnchor(node2))
-                nodes.push(node2);
+            Node: (_key, node3) => {
+              if (identity.isAlias(node3) || identity.hasAnchor(node3))
+                nodes.push(node3);
             }
           });
           if (ctx)
             ctx.aliasResolveCache = nodes;
         }
         let found = void 0;
-        for (const node2 of nodes) {
-          if (node2 === this)
+        for (const node3 of nodes) {
+          if (node3 === this)
             break;
-          if (node2.anchor === this.source)
-            found = node2;
+          if (node3.anchor === this.source)
+            found = node3;
         }
         if (found && ctx) {
           const { anchors: anchors2, doc: doc2, maxAliasCount } = ctx;
@@ -710,22 +710,22 @@ var require_Alias = __commonJS({
         return src;
       }
     };
-    function getAliasCount(doc, node2, anchors2) {
-      if (identity.isAlias(node2)) {
-        const source = node2.resolve(doc);
+    function getAliasCount(doc, node3, anchors2) {
+      if (identity.isAlias(node3)) {
+        const source = node3.resolve(doc);
         const anchor2 = anchors2 && source && anchors2.get(source);
         return anchor2 ? anchor2.count * anchor2.aliasCount : 0;
-      } else if (identity.isCollection(node2)) {
+      } else if (identity.isCollection(node3)) {
         let count = 0;
-        for (const item of node2.items) {
+        for (const item of node3.items) {
           const c = getAliasCount(doc, item, anchors2);
           if (c > count)
             count = c;
         }
         return count;
-      } else if (identity.isPair(node2)) {
-        const kc = getAliasCount(doc, node2.key, anchors2);
-        const vc = getAliasCount(doc, node2.value, anchors2);
+      } else if (identity.isPair(node3)) {
+        const kc = getAliasCount(doc, node3.key, anchors2);
+        const vc = getAliasCount(doc, node3.value, anchors2);
         return Math.max(kc, vc);
       }
       return 1;
@@ -815,10 +815,10 @@ var require_createNode = __commonJS({
           value = value.toJSON();
         }
         if (!value || typeof value !== "object") {
-          const node3 = new Scalar.Scalar(value);
+          const node4 = new Scalar.Scalar(value);
           if (ref)
-            ref.node = node3;
-          return node3;
+            ref.node = node4;
+          return node4;
         }
         tagObj = value instanceof Map ? schema[identity.MAP] : Symbol.iterator in Object(value) ? schema[identity.SEQ] : schema[identity.MAP];
       }
@@ -826,14 +826,14 @@ var require_createNode = __commonJS({
         onTagObj(tagObj);
         delete ctx.onTagObj;
       }
-      const node2 = tagObj?.createNode ? tagObj.createNode(ctx.schema, value, ctx) : typeof tagObj?.nodeClass?.from === "function" ? tagObj.nodeClass.from(ctx.schema, value, ctx) : new Scalar.Scalar(value);
+      const node3 = tagObj?.createNode ? tagObj.createNode(ctx.schema, value, ctx) : typeof tagObj?.nodeClass?.from === "function" ? tagObj.nodeClass.from(ctx.schema, value, ctx) : new Scalar.Scalar(value);
       if (tagName)
-        node2.tag = tagName;
+        node3.tag = tagName;
       else if (!tagObj.default)
-        node2.tag = tagObj.tag;
+        node3.tag = tagObj.tag;
       if (ref)
-        ref.node = node2;
-      return node2;
+        ref.node = node3;
+      return node3;
     }
     exports.createNode = createNode;
   }
@@ -903,10 +903,10 @@ var require_Collection = __commonJS({
           this.add(value);
         else {
           const [key, ...rest] = path;
-          const node2 = this.get(key, true);
-          if (identity.isCollection(node2))
-            node2.addIn(rest, value);
-          else if (node2 === void 0 && this.schema)
+          const node3 = this.get(key, true);
+          if (identity.isCollection(node3))
+            node3.addIn(rest, value);
+          else if (node3 === void 0 && this.schema)
             this.set(key, collectionFromPath(this.schema, rest, value));
           else
             throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
@@ -920,9 +920,9 @@ var require_Collection = __commonJS({
         const [key, ...rest] = path;
         if (rest.length === 0)
           return this.delete(key);
-        const node2 = this.get(key, true);
-        if (identity.isCollection(node2))
-          return node2.deleteIn(rest);
+        const node3 = this.get(key, true);
+        if (identity.isCollection(node3))
+          return node3.deleteIn(rest);
         else
           throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
       }
@@ -933,17 +933,17 @@ var require_Collection = __commonJS({
        */
       getIn(path, keepScalar) {
         const [key, ...rest] = path;
-        const node2 = this.get(key, true);
+        const node3 = this.get(key, true);
         if (rest.length === 0)
-          return !keepScalar && identity.isScalar(node2) ? node2.value : node2;
+          return !keepScalar && identity.isScalar(node3) ? node3.value : node3;
         else
-          return identity.isCollection(node2) ? node2.getIn(rest, keepScalar) : void 0;
+          return identity.isCollection(node3) ? node3.getIn(rest, keepScalar) : void 0;
       }
       hasAllNullValues(allowScalar) {
-        return this.items.every((node2) => {
-          if (!identity.isPair(node2))
+        return this.items.every((node3) => {
+          if (!identity.isPair(node3))
             return false;
-          const n = node2.value;
+          const n = node3.value;
           return n == null || allowScalar && identity.isScalar(n) && n.value == null && !n.commentBefore && !n.comment && !n.tag;
         });
       }
@@ -954,8 +954,8 @@ var require_Collection = __commonJS({
         const [key, ...rest] = path;
         if (rest.length === 0)
           return this.has(key);
-        const node2 = this.get(key, true);
-        return identity.isCollection(node2) ? node2.hasIn(rest) : false;
+        const node3 = this.get(key, true);
+        return identity.isCollection(node3) ? node3.hasIn(rest) : false;
       }
       /**
        * Sets a value in this collection. For `!!set`, `value` needs to be a
@@ -966,10 +966,10 @@ var require_Collection = __commonJS({
         if (rest.length === 0) {
           this.set(key, value);
         } else {
-          const node2 = this.get(key, true);
-          if (identity.isCollection(node2))
-            node2.setIn(rest, value);
-          else if (node2 === void 0 && this.schema)
+          const node3 = this.get(key, true);
+          if (identity.isCollection(node3))
+            node3.setIn(rest, value);
+          else if (node3 === void 0 && this.schema)
             this.set(key, collectionFromPath(this.schema, rest, value));
           else
             throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
@@ -1495,16 +1495,16 @@ var require_stringify = __commonJS({
       }
       return tagObj;
     }
-    function stringifyProps(node2, tagObj, { anchors: anchors$1, doc }) {
+    function stringifyProps(node3, tagObj, { anchors: anchors$1, doc }) {
       if (!doc.directives)
         return "";
       const props = [];
-      const anchor2 = (identity.isScalar(node2) || identity.isCollection(node2)) && node2.anchor;
+      const anchor2 = (identity.isScalar(node3) || identity.isCollection(node3)) && node3.anchor;
       if (anchor2 && anchors.anchorIsValid(anchor2)) {
         anchors$1.add(anchor2);
         props.push(`&${anchor2}`);
       }
-      const tag = node2.tag ?? (tagObj.default ? null : tagObj.tag);
+      const tag = node3.tag ?? (tagObj.default ? null : tagObj.tag);
       if (tag)
         props.push(doc.directives.tagString(tag));
       return props.join(" ");
@@ -1526,15 +1526,15 @@ var require_stringify = __commonJS({
         }
       }
       let tagObj = void 0;
-      const node2 = identity.isNode(item) ? item : ctx.doc.createNode(item, { onTagObj: (o) => tagObj = o });
-      tagObj ?? (tagObj = getTagObject(ctx.doc.schema.tags, node2));
-      const props = stringifyProps(node2, tagObj, ctx);
+      const node3 = identity.isNode(item) ? item : ctx.doc.createNode(item, { onTagObj: (o) => tagObj = o });
+      tagObj ?? (tagObj = getTagObject(ctx.doc.schema.tags, node3));
+      const props = stringifyProps(node3, tagObj, ctx);
       if (props.length > 0)
         ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
-      const str = typeof tagObj.stringify === "function" ? tagObj.stringify(node2, ctx, onComment, onChompKeep) : identity.isScalar(node2) ? stringifyString.stringifyString(node2, ctx, onComment, onChompKeep) : node2.toString(ctx, onComment, onChompKeep);
+      const str = typeof tagObj.stringify === "function" ? tagObj.stringify(node3, ctx, onComment, onChompKeep) : identity.isScalar(node3) ? stringifyString.stringifyString(node3, ctx, onComment, onChompKeep) : node3.toString(ctx, onComment, onChompKeep);
       if (!props)
         return str;
-      return identity.isScalar(node2) || str[0] === "{" || str[0] === "[" ? `${props} ${str}` : `${props}
+      return identity.isScalar(node3) || str[0] === "{" || str[0] === "[" ? `${props} ${str}` : `${props}
 ${ctx.indent}${str}`;
     }
     exports.createStringifyContext = createStringifyContext;
@@ -1801,8 +1801,8 @@ var require_addPairToJSMap = __commonJS({
       if (identity.isNode(key) && ctx?.doc) {
         const strCtx = stringify5.createStringifyContext(ctx.doc, {});
         strCtx.anchors = /* @__PURE__ */ new Set();
-        for (const node2 of ctx.anchors.keys())
-          strCtx.anchors.add(node2.anchor);
+        for (const node3 of ctx.anchors.keys())
+          strCtx.anchors.add(node3.anchor);
         strCtx.inFlow = true;
         strCtx.inStringifyKey = true;
         const strKey = key.toString(strCtx);
@@ -2111,8 +2111,8 @@ var require_YAMLMap = __commonJS({
       }
       get(key, keepScalar) {
         const it = findPair(this.items, key);
-        const node2 = it?.value;
-        return (!keepScalar && identity.isScalar(node2) ? node2.value : node2) ?? void 0;
+        const node3 = it?.value;
+        return (!keepScalar && identity.isScalar(node3) ? node3.value : node3) ?? void 0;
       }
       has(key) {
         return !!findPair(this.items, key);
@@ -2425,9 +2425,9 @@ var require_float = __commonJS({
       format: "EXP",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
       resolve: (str) => parseFloat(str),
-      stringify(node2) {
-        const num = Number(node2.value);
-        return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node2);
+      stringify(node3) {
+        const num = Number(node3.value);
+        return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node3);
       }
     };
     var float = {
@@ -2436,11 +2436,11 @@ var require_float = __commonJS({
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
       resolve(str) {
-        const node2 = new Scalar.Scalar(parseFloat(str));
+        const node3 = new Scalar.Scalar(parseFloat(str));
         const dot = str.indexOf(".");
         if (dot !== -1 && str[str.length - 1] === "0")
-          node2.minFractionDigits = str.length - dot - 1;
-        return node2;
+          node3.minFractionDigits = str.length - dot - 1;
+        return node3;
       },
       stringify: stringifyNumber.stringifyNumber
     };
@@ -2457,11 +2457,11 @@ var require_int = __commonJS({
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
     var intResolve = (str, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str.substring(offset), radix);
-    function intStringify(node2, radix, prefix) {
-      const { value } = node2;
+    function intStringify(node3, radix, prefix) {
+      const { value } = node3;
       if (intIdentify(value) && value >= 0)
         return prefix + value.toString(radix);
-      return stringifyNumber.stringifyNumber(node2);
+      return stringifyNumber.stringifyNumber(node3);
     }
     var intOct = {
       identify: (value) => intIdentify(value) && value >= 0,
@@ -2470,7 +2470,7 @@ var require_int = __commonJS({
       format: "OCT",
       test: /^0o[0-7]+$/,
       resolve: (str, _onError, opt) => intResolve(str, 2, 8, opt),
-      stringify: (node2) => intStringify(node2, 8, "0o")
+      stringify: (node3) => intStringify(node3, 8, "0o")
     };
     var int2 = {
       identify: intIdentify,
@@ -2487,7 +2487,7 @@ var require_int = __commonJS({
       format: "HEX",
       test: /^0x[0-9a-fA-F]+$/,
       resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
-      stringify: (node2) => intStringify(node2, 16, "0x")
+      stringify: (node3) => intStringify(node3, 16, "0x")
     };
     exports.int = int2;
     exports.intHex = intHex;
@@ -2865,9 +2865,9 @@ var require_float2 = __commonJS({
       format: "EXP",
       test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
       resolve: (str) => parseFloat(str.replace(/_/g, "")),
-      stringify(node2) {
-        const num = Number(node2.value);
-        return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node2);
+      stringify(node3) {
+        const num = Number(node3.value);
+        return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node3);
       }
     };
     var float = {
@@ -2876,14 +2876,14 @@ var require_float2 = __commonJS({
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
       resolve(str) {
-        const node2 = new Scalar.Scalar(parseFloat(str.replace(/_/g, "")));
+        const node3 = new Scalar.Scalar(parseFloat(str.replace(/_/g, "")));
         const dot = str.indexOf(".");
         if (dot !== -1) {
           const f = str.substring(dot + 1).replace(/_/g, "");
           if (f[f.length - 1] === "0")
-            node2.minFractionDigits = f.length;
+            node3.minFractionDigits = f.length;
         }
-        return node2;
+        return node3;
       },
       stringify: stringifyNumber.stringifyNumber
     };
@@ -2922,13 +2922,13 @@ var require_int2 = __commonJS({
       const n = parseInt(str, radix);
       return sign === "-" ? -1 * n : n;
     }
-    function intStringify(node2, radix, prefix) {
-      const { value } = node2;
+    function intStringify(node3, radix, prefix) {
+      const { value } = node3;
       if (intIdentify(value)) {
         const str = value.toString(radix);
         return value < 0 ? "-" + prefix + str.substr(1) : prefix + str;
       }
-      return stringifyNumber.stringifyNumber(node2);
+      return stringifyNumber.stringifyNumber(node3);
     }
     var intBin = {
       identify: intIdentify,
@@ -2937,7 +2937,7 @@ var require_int2 = __commonJS({
       format: "BIN",
       test: /^[-+]?0b[0-1_]+$/,
       resolve: (str, _onError, opt) => intResolve(str, 2, 2, opt),
-      stringify: (node2) => intStringify(node2, 2, "0b")
+      stringify: (node3) => intStringify(node3, 2, "0b")
     };
     var intOct = {
       identify: intIdentify,
@@ -2946,7 +2946,7 @@ var require_int2 = __commonJS({
       format: "OCT",
       test: /^[-+]?0[0-7_]+$/,
       resolve: (str, _onError, opt) => intResolve(str, 1, 8, opt),
-      stringify: (node2) => intStringify(node2, 8, "0")
+      stringify: (node3) => intStringify(node3, 8, "0")
     };
     var int2 = {
       identify: intIdentify,
@@ -2963,7 +2963,7 @@ var require_int2 = __commonJS({
       format: "HEX",
       test: /^[-+]?0x[0-9a-fA-F_]+$/,
       resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
-      stringify: (node2) => intStringify(node2, 16, "0x")
+      stringify: (node3) => intStringify(node3, 16, "0x")
     };
     exports.int = int2;
     exports.intBin = intBin;
@@ -3073,13 +3073,13 @@ var require_timestamp = __commonJS({
       const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num(60) + num(p), num(0));
       return sign === "-" ? num(-1) * res : res;
     }
-    function stringifySexagesimal(node2) {
-      let { value } = node2;
+    function stringifySexagesimal(node3) {
+      let { value } = node3;
       let num = (n) => n;
       if (typeof value === "bigint")
         num = (n) => BigInt(n);
       else if (isNaN(value) || !isFinite(value))
-        return stringifyNumber.stringifyNumber(node2);
+        return stringifyNumber.stringifyNumber(node3);
       let sign = "";
       if (value < 0) {
         sign = "-";
@@ -3490,13 +3490,13 @@ var require_Document = __commonJS({
        * `name` will be used as a prefix for a new unique anchor.
        * If `name` is undefined, the generated anchor will use 'a' as a prefix.
        */
-      createAlias(node2, name) {
-        if (!node2.anchor) {
+      createAlias(node3, name) {
+        if (!node3.anchor) {
           const prev = anchors.anchorNames(this);
-          node2.anchor = // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+          node3.anchor = // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
           !name || prev.has(name) ? anchors.findNewAnchor(name || "a", prev) : name;
         }
-        return new Alias.Alias(node2.anchor);
+        return new Alias.Alias(node3.anchor);
       }
       createNode(value, replacer, options) {
         let _replacer = void 0;
@@ -3528,11 +3528,11 @@ var require_Document = __commonJS({
           schema: this.schema,
           sourceObjects
         };
-        const node2 = createNode.createNode(value, tag, ctx);
-        if (flow && identity.isCollection(node2))
-          node2.flow = true;
+        const node3 = createNode.createNode(value, tag, ctx);
+        if (flow && identity.isCollection(node3))
+          node3.flow = true;
         setAnchors();
-        return node2;
+        return node3;
       }
       /**
        * Convert a key and a value into a `Pair` using the current schema,
@@ -4002,10 +4002,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep3, value } = collItem;
+        const { start, key, sep: sep4, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep3?.[0],
+          next: key ?? sep4?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4019,7 +4019,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep3) {
+          if (!keyProps.anchor && !keyProps.tag && !sep4) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4043,7 +4043,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep3 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep4 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4059,7 +4059,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep3, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep4, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4129,11 +4129,11 @@ var require_resolve_block_seq = __commonJS({
             continue;
           }
         }
-        const node2 = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, start, null, props, onError);
+        const node3 = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, start, null, props, onError);
         if (ctx.schema.compat)
           utilFlowIndentCheck.flowIndentCheck(bs.indent, value, onError);
-        offset = node2.range[2];
-        seq.items.push(node2);
+        offset = node3.range[2];
+        seq.items.push(node3);
       }
       seq.range = [bs.offset, offset, commentEnd ?? offset];
       return seq;
@@ -4150,7 +4150,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep3 = "";
+        let sep4 = "";
         for (const token of end) {
           const { source, type } = token;
           switch (type) {
@@ -4164,13 +4164,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep3 + cb;
-              sep3 = "";
+                comment += sep4 + cb;
+              sep4 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep3 += source;
+                sep4 += source;
               hasSpace = true;
               break;
             default:
@@ -4213,18 +4213,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep3, value } = collItem;
+        const { start, key, sep: sep4, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep3?.[0],
+          next: key ?? sep4?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep3 && !value) {
+          if (!props.anchor && !props.tag && !sep4 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4278,8 +4278,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap2 && !sep3 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep3, null, props, onError);
+        if (!isMap2 && !sep4 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep4, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4291,7 +4291,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep3 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep4 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4302,8 +4302,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap2 && !props.found && ctx.options.strict) {
-              if (sep3)
-                for (const st of sep3) {
+              if (sep4)
+                for (const st of sep4) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4320,7 +4320,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep3, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep4, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4433,12 +4433,12 @@ var require_compose_collection = __commonJS({
       }
       const coll = resolveCollection(CN, ctx, token, onError, tagName, tag);
       const res = tag.resolve?.(coll, (msg) => onError(tagToken, "TAG_RESOLVE_FAILED", msg), ctx.options) ?? coll;
-      const node2 = identity.isNode(res) ? res : new Scalar.Scalar(res);
-      node2.range = coll.range;
-      node2.tag = tagName;
+      const node3 = identity.isNode(res) ? res : new Scalar.Scalar(res);
+      node3.range = coll.range;
+      node3.tag = tagName;
       if (tag?.format)
-        node2.format = tag.format;
-      return node2;
+        node3.format = tag.format;
+      return node3;
     }
     exports.composeCollection = composeCollection;
   }
@@ -4500,7 +4500,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep3 = "";
+      let sep4 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4517,24 +4517,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep3 + indent.slice(trimIndent) + content;
-          sep3 = "\n";
+          value += sep4 + indent.slice(trimIndent) + content;
+          sep4 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep3 === " ")
-            sep3 = "\n";
-          else if (!prevMoreIndented && sep3 === "\n")
-            sep3 = "\n\n";
-          value += sep3 + indent.slice(trimIndent) + content;
-          sep3 = "\n";
+          if (sep4 === " ")
+            sep4 = "\n";
+          else if (!prevMoreIndented && sep4 === "\n")
+            sep4 = "\n\n";
+          value += sep4 + indent.slice(trimIndent) + content;
+          sep4 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep3 === "\n")
+          if (sep4 === "\n")
             value += "\n";
           else
-            sep3 = "\n";
+            sep4 = "\n";
         } else {
-          value += sep3 + content;
-          sep3 = " ";
+          value += sep4 + content;
+          sep4 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4717,25 +4717,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd, "");
-      let sep3 = " ";
+      let sep4 = " ";
       let pos = line.lastIndex;
       while (match = line.exec(source)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep3 === "\n")
-            res += sep3;
+          if (sep4 === "\n")
+            res += sep4;
           else
-            sep3 = "\n";
+            sep4 = "\n";
         } else {
-          res += sep3 + lm;
-          sep3 = " ";
+          res += sep4 + lm;
+          sep4 = " ";
         }
         pos = line.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source);
-      return res + sep3 + (match?.[1] ?? "");
+      return res + sep4 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source, onError) {
       let res = "";
@@ -4973,11 +4973,11 @@ var require_compose_node = __commonJS({
     function composeNode(ctx, token, props, onError) {
       const atKey = ctx.atKey;
       const { spaceBefore, comment, anchor: anchor2, tag } = props;
-      let node2;
+      let node3;
       let isSrcToken = true;
       switch (token.type) {
         case "alias":
-          node2 = composeAlias(ctx, token, onError);
+          node3 = composeAlias(ctx, token, onError);
           if (anchor2 || tag)
             onError(token, "ALIAS_PROPS", "An alias node must not specify any properties");
           break;
@@ -4985,17 +4985,17 @@ var require_compose_node = __commonJS({
         case "single-quoted-scalar":
         case "double-quoted-scalar":
         case "block-scalar":
-          node2 = composeScalar.composeScalar(ctx, token, tag, onError);
+          node3 = composeScalar.composeScalar(ctx, token, tag, onError);
           if (anchor2)
-            node2.anchor = anchor2.source.substring(1);
+            node3.anchor = anchor2.source.substring(1);
           break;
         case "block-map":
         case "block-seq":
         case "flow-collection":
           try {
-            node2 = composeCollection.composeCollection(CN, ctx, token, props, onError);
+            node3 = composeCollection.composeCollection(CN, ctx, token, props, onError);
             if (anchor2)
-              node2.anchor = anchor2.source.substring(1);
+              node3.anchor = anchor2.source.substring(1);
           } catch (error2) {
             const message = error2 instanceof Error ? error2.message : String(error2);
             onError(token, "RESOURCE_EXHAUSTION", message);
@@ -5007,24 +5007,24 @@ var require_compose_node = __commonJS({
           isSrcToken = false;
         }
       }
-      node2 ?? (node2 = composeEmptyNode(ctx, token.offset, void 0, null, props, onError));
-      if (anchor2 && node2.anchor === "")
+      node3 ?? (node3 = composeEmptyNode(ctx, token.offset, void 0, null, props, onError));
+      if (anchor2 && node3.anchor === "")
         onError(anchor2, "BAD_ALIAS", "Anchor cannot be an empty string");
-      if (atKey && ctx.options.stringKeys && (!identity.isScalar(node2) || typeof node2.value !== "string" || node2.tag && node2.tag !== "tag:yaml.org,2002:str")) {
+      if (atKey && ctx.options.stringKeys && (!identity.isScalar(node3) || typeof node3.value !== "string" || node3.tag && node3.tag !== "tag:yaml.org,2002:str")) {
         const msg = "With stringKeys, all keys must be strings";
         onError(tag ?? token, "NON_STRING_KEY", msg);
       }
       if (spaceBefore)
-        node2.spaceBefore = true;
+        node3.spaceBefore = true;
       if (comment) {
         if (token.type === "scalar" && token.source === "")
-          node2.comment = comment;
+          node3.comment = comment;
         else
-          node2.commentBefore = comment;
+          node3.commentBefore = comment;
       }
       if (ctx.options.keepSourceTokens && isSrcToken)
-        node2.srcToken = token;
-      return node2;
+        node3.srcToken = token;
+      return node3;
     }
     function composeEmptyNode(ctx, offset, before, pos, { spaceBefore, comment, anchor: anchor2, tag, end }, onError) {
       const token = {
@@ -5033,19 +5033,19 @@ var require_compose_node = __commonJS({
         indent: -1,
         source: ""
       };
-      const node2 = composeScalar.composeScalar(ctx, token, tag, onError);
+      const node3 = composeScalar.composeScalar(ctx, token, tag, onError);
       if (anchor2) {
-        node2.anchor = anchor2.source.substring(1);
-        if (node2.anchor === "")
+        node3.anchor = anchor2.source.substring(1);
+        if (node3.anchor === "")
           onError(anchor2, "BAD_ALIAS", "Anchor cannot be an empty string");
       }
       if (spaceBefore)
-        node2.spaceBefore = true;
+        node3.spaceBefore = true;
       if (comment) {
-        node2.comment = comment;
-        node2.range[2] = end;
+        node3.comment = comment;
+        node3.range[2] = end;
       }
-      return node2;
+      return node3;
     }
     function composeAlias({ options }, { offset, source, end }, onError) {
       const alias = new Alias.Alias(source.substring(1));
@@ -5545,14 +5545,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep3, value }) {
+    function stringifyItem({ start, key, sep: sep4, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep3)
-        for (const st of sep3)
+      if (sep4)
+        for (const st of sep4)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6719,18 +6719,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep3;
+          let sep4;
           if (scalar.end) {
-            sep3 = scalar.end;
-            sep3.push(this.sourceToken);
+            sep4 = scalar.end;
+            sep4.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep3 = [this.sourceToken];
+            sep4 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep3 }]
+            items: [{ start, key: scalar, sep: sep4 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6883,15 +6883,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep3 = it.sep;
-                  sep3.push(this.sourceToken);
+                  const sep4 = it.sep;
+                  sep4.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep3 }]
+                    items: [{ start: start2, key, sep: sep4 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7085,13 +7085,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep3 = fc.end.splice(1, fc.end.length);
-            sep3.push(this.sourceToken);
+            const sep4 = fc.end.splice(1, fc.end.length);
+            sep4.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep3 }]
+              items: [{ start, key: fc, sep: sep4 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -7269,7 +7269,7 @@ var require_public_api = __commonJS({
       }
       return doc;
     }
-    function parse8(src, reviver, options) {
+    function parse9(src, reviver, options) {
       let _reviver = void 0;
       if (typeof reviver === "function") {
         _reviver = reviver;
@@ -7310,7 +7310,7 @@ var require_public_api = __commonJS({
         return value.toString(options);
       return new Document.Document(value, _replacer, options).toString(options);
     }
-    exports.parse = parse8;
+    exports.parse = parse9;
     exports.parseAllDocuments = parseAllDocuments;
     exports.parseDocument = parseDocument2;
     exports.stringify = stringify5;
@@ -7729,7 +7729,8 @@ var commands_default = {
         "policy/not-ready",
         "policy/validation-failed",
         "policy/gate-not-ready",
-        "policy/missing-citation"
+        "policy/missing-citation",
+        "policy/invalid-transition"
       ],
       writes: [
         ".bdk/changes/<id>/log/",
@@ -9028,6 +9029,51 @@ var commands_default = {
 // kernel/src/main.ts
 import { homedir } from "node:os";
 
+// kernel/src/shared/config/manifest.ts
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// kernel/src/shared/config/values.ts
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isIdArray(value) {
+  return Array.isArray(value) && value.length > 0 && value.every((item) => isRecord(item) && typeof item.id === "string");
+}
+function joinKey(prefix, segment) {
+  return prefix === "" ? segment : `${prefix}.${segment}`;
+}
+function valueAt(root, steps) {
+  let value = root;
+  for (const { segment, id } of steps) {
+    if (id) value = isIdArray(value) ? value.find((item) => item.id === segment) : void 0;
+    else value = isRecord(value) ? value[segment] : void 0;
+    if (value === void 0) return void 0;
+  }
+  return value;
+}
+
+// kernel/src/shared/config/manifest.ts
+var UNKNOWN_VERSION = "0.0.0-unknown";
+function pluginRootOf(bundleUrl) {
+  return dirname(dirname(fileURLToPath(bundleUrl)));
+}
+function readKernelVersion(store2, pluginRoot) {
+  const text4 = store2.read(join(pluginRoot, ".claude-plugin", "plugin.json"));
+  if (text4 === void 0) return UNKNOWN_VERSION;
+  try {
+    const manifest = JSON.parse(text4);
+    const version3 = isRecord(manifest) ? manifest.version : void 0;
+    return typeof version3 === "string" ? version3 : UNKNOWN_VERSION;
+  } catch {
+    return UNKNOWN_VERSION;
+  }
+}
+
+// kernel/src/shared/config/layers.ts
+var import_yaml = __toESM(require_dist(), 1);
+import { posix, win32 } from "node:path";
+
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/core/util.js
 var util_exports = {};
 __export(util_exports, {
@@ -10089,11 +10135,11 @@ function formatError(error2, mapper = (issue2) => issue2.message) {
                 configurable: true
               });
             }
-            const node2 = curr[el];
+            const node3 = curr[el];
             if (terminal) {
-              node2._errors.push(mapper(issue2));
+              node3._errors.push(mapper(issue2));
             }
-            curr = node2;
+            curr = node3;
             i++;
           }
         }
@@ -10208,17 +10254,17 @@ var validateAsync = async (schema, value, _ctx) => {
   return result2.issues.length === 0;
 };
 var _encode = (_Err) => {
-  const parse8 = _parse(_Err);
+  const parse9 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
     const ctx = _ctx ? { ..._ctx, direction: "backward" } : { direction: "backward" };
-    return parse8(schema, value, ctx, finalizeParams(fn, _params));
+    return parse9(schema, value, ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
 var _decode = (_Err) => {
-  const parse8 = _parse(_Err);
+  const parse9 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
-    return parse8(schema, value, _ctx, finalizeParams(fn, _params));
+    return parse9(schema, value, _ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
@@ -14298,8 +14344,8 @@ function rewriteKeyNames(ctx) {
       bySchema.set(entry.schema, entry);
   }
   const rewrites = /* @__PURE__ */ new Map();
-  for (const record3 of pendingRecords.get(ctx) ?? []) {
-    const seen = ctx.seen.get(record3);
+  for (const record4 of pendingRecords.get(ctx) ?? []) {
+    const seen = ctx.seen.get(record4);
     const names = (seen?.def ?? seen?.schema)?.propertyNames;
     if (!names || names === true || rewrites.has(names))
       continue;
@@ -15540,42 +15586,6 @@ function duration2(params) {
   return _isoDuration(ZodISODuration, params);
 }
 
-// kernel/src/shared/output/index.ts
-var TEXT_LINE_CAP = 100;
-function json(value) {
-  return `${JSON.stringify(value, null, 2)}
-`;
-}
-function refusalText(refusal) {
-  const lines = [`refused: ${refusal.rule}`, `why: ${refusal.why}`];
-  for (const action of refusal.instead) lines.push(`instead: ${action}`);
-  return `${lines.join("\n")}
-`;
-}
-function stopBlock(refusal) {
-  return `BDK STOP: ${refusal.why}
-Instead: ${refusal.instead.join("; ")}
-`;
-}
-function capLines(text4, options = {}) {
-  const lines = text4.replace(/\n+$/, "").split("\n");
-  if (options.all === true || lines.length <= TEXT_LINE_CAP) return `${lines.join("\n")}
-`;
-  const kept = lines.slice(0, TEXT_LINE_CAP - 1);
-  const cut = lines.length - kept.length;
-  return `${[...kept, `... ${cut} more lines (--all prints everything)`].join("\n")}
-`;
-}
-function listPage(items, options = {}) {
-  const truncated = options.all !== true && items.length > TEXT_LINE_CAP;
-  const page = {
-    items: truncated ? items.slice(0, TEXT_LINE_CAP) : items,
-    total: items.length,
-    truncated
-  };
-  return options.for === void 0 ? page : { ...page, for: options.for };
-}
-
 // kernel/src/shared/refusal/index.ts
 var RULES = [
   "input/unknown-command",
@@ -15655,10 +15665,10 @@ function isRefusal(value) {
 }
 var KernelRefusal = class extends Error {
   refusal;
-  constructor(refusal) {
-    super(`${refusal.rule}: ${refusal.why}`);
+  constructor(refusal2) {
+    super(`${refusal2.rule}: ${refusal2.why}`);
     this.name = "KernelRefusal";
-    this.refusal = refusal;
+    this.refusal = refusal2;
   }
 };
 var refusalSchema = strictObject({
@@ -15683,6 +15693,486 @@ var refusalSchema = strictObject({
   ]
 });
 
+// kernel/src/shared/config/layers.ts
+function globalDir({ env, platform, home }) {
+  const path = platform === "win32" ? win32 : posix;
+  const xdg = env.XDG_CONFIG_HOME;
+  if (xdg !== void 0 && xdg !== "" && path.isAbsolute(xdg)) return path.join(xdg, "bdk");
+  const appData = env.APPDATA;
+  if (platform === "win32" && appData !== void 0 && appData !== "") {
+    return path.join(appData, "bdk");
+  }
+  return path.join(home, ".config", "bdk");
+}
+function layerFiles(global, projectRoot) {
+  const path = global.includes("\\") ? win32 : posix;
+  return [
+    { name: "global", path: path.join(global, "settings.yaml") },
+    { name: "project", path: posix.join(projectRoot, ".bdk", "settings.yaml") },
+    { name: "local", path: posix.join(projectRoot, ".bdk", "settings.local.yaml") }
+  ];
+}
+function readLayers(store2, paths) {
+  const layers = [];
+  for (const { name, path } of layerFiles(paths.globalDir, paths.projectRoot)) {
+    const text4 = store2.read(path);
+    if (text4 !== void 0) layers.push({ name, path, text: text4, values: parseLayer(path, text4) });
+  }
+  return layers;
+}
+function parseLayer(path, text4) {
+  let values2;
+  try {
+    values2 = (0, import_yaml.parse)(text4);
+  } catch (error2) {
+    if (!(error2 instanceof import_yaml.YAMLParseError)) throw error2;
+    const line = error2.linePos?.[0].line;
+    throw invalid(path, `is not valid YAML${line === void 0 ? "" : ` at line ${line}`}`);
+  }
+  if (values2 === null || values2 === void 0) return {};
+  if (!isRecord(values2)) throw invalid(path, "must hold a mapping of keys at the top level");
+  return values2;
+}
+function invalid(path, problem) {
+  return new KernelRefusal(
+    refuse("policy/config-invalid", `${path} ${problem}`, [`fix ${path}`, "bdk config check"])
+  );
+}
+
+// kernel/src/shared/config/hint.ts
+var MAX_DISTANCE = 2;
+function closest(key, candidates) {
+  let best;
+  let bestDistance = MAX_DISTANCE + 1;
+  for (const candidate of candidates) {
+    const distance = editDistance(key, candidate);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+function editDistance(a, b) {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const d = Array.from(
+    { length: rows },
+    (_, i) => Array.from({ length: cols }, (_2, j) => i === 0 ? j : j === 0 ? i : 0)
+  );
+  const at = (i, j) => d[i]?.[j] ?? 0;
+  for (let i = 1; i < rows; i++) {
+    for (let j = 1; j < cols; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(at(i - 1, j) + 1, at(i, j - 1) + 1, at(i - 1, j - 1) + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        value = Math.min(value, at(i - 2, j - 2) + 1);
+      }
+      const row = d[i];
+      if (row !== void 0) row[j] = value;
+    }
+  }
+  return at(a.length, b.length);
+}
+
+// kernel/src/shared/config/merge.ts
+function mergeLayers(layers) {
+  const origins = {};
+  const problems = [];
+  let value = {};
+  for (const layer of layers) {
+    const context = { layer, origins, problems };
+    value = mergeMapping(value, layer.values, "", context);
+  }
+  return { value, origins, problems };
+}
+function mergeMapping(lower, higher, prefix, context) {
+  const out = { ...lower };
+  for (const [key, next] of Object.entries(higher)) {
+    const path = joinKey(prefix, key);
+    out[key] = mergeValue(lower[key], next, path, context);
+  }
+  return out;
+}
+function mergeValue(lower, next, path, context) {
+  if (isRecord(next) && Object.keys(next).length > 0) {
+    if (!isRecord(lower)) forget(context.origins, path);
+    return mergeMapping(isRecord(lower) ? lower : {}, next, path, context);
+  }
+  if (isIdArray(next)) {
+    reportDuplicates(next, path, context);
+    if (!isIdArray(lower)) forget(context.origins, path);
+    return mergeById(isIdArray(lower) ? lower : [], next, path, context);
+  }
+  forget(context.origins, path);
+  context.origins[path] = context.layer.name;
+  return next;
+}
+function mergeById(lower, higher, path, context) {
+  const out = [...lower];
+  for (const item of higher) {
+    const itemPath = joinKey(path, item.id);
+    const at = out.findIndex((existing) => existing.id === item.id);
+    const merged = mergeMapping(at === -1 ? {} : out[at] ?? {}, item, itemPath, context);
+    if (at === -1) out.push(merged);
+    else out[at] = merged;
+  }
+  return out;
+}
+function reportDuplicates(items, path, context) {
+  const seen = /* @__PURE__ */ new Set();
+  for (const { id } of items) {
+    if (seen.has(id)) {
+      context.problems.push({
+        rule: "policy/config-invalid",
+        key: path,
+        layer: context.layer.name,
+        path: context.layer.path,
+        message: `the id ${id} appears twice in one layer`
+      });
+    }
+    seen.add(id);
+  }
+}
+function forget(origins, path) {
+  for (const key of Object.keys(origins)) {
+    if (key === path || key.startsWith(`${path}.`)) Reflect.deleteProperty(origins, key);
+  }
+}
+
+// kernel/src/shared/config/keys.ts
+var LEAF = { kind: "leaf" };
+function keyTree(schema) {
+  const inner = unwrap(schema);
+  if (inner instanceof ZodObject) {
+    const children = /* @__PURE__ */ new Map();
+    const shape = inner.shape;
+    for (const [key, child] of Object.entries(shape)) {
+      children.set(key, keyTree(child));
+    }
+    return { kind: "object", children };
+  }
+  if (inner instanceof ZodArray) {
+    const item = unwrap(inner.element);
+    if (item instanceof ZodObject && "id" in item.shape) {
+      return { kind: "idArray", item: keyTree(item) };
+    }
+    return LEAF;
+  }
+  if (inner instanceof ZodRecord)
+    return { kind: "record", value: keyTree(inner.valueType) };
+  return LEAF;
+}
+function unwrap(schema) {
+  let current = schema;
+  for (; ; ) {
+    if (current instanceof ZodDefault || current instanceof ZodPrefault || current instanceof ZodOptional || current instanceof ZodNullable || current instanceof ZodReadonly) {
+      current = current.unwrap();
+    } else if (current instanceof ZodPipe) {
+      current = current.in;
+    } else {
+      return current;
+    }
+  }
+}
+function keyPaths(node3, prefix = "") {
+  if (node3.kind !== "object") return prefix === "" ? [] : [prefix];
+  const paths = prefix === "" ? [] : [prefix];
+  for (const [key, child] of node3.children) paths.push(...keyPaths(child, joinKey(prefix, key)));
+  return paths;
+}
+function keySteps(node3, key) {
+  if (key === "") return void 0;
+  const steps = [];
+  let current = node3;
+  for (const segment of key.split(".")) {
+    if (current.kind === "object") {
+      current = current.children.get(segment);
+      if (current === void 0) return void 0;
+      steps.push({ segment, id: false });
+    } else if (current.kind === "idArray") {
+      steps.push({ segment, id: true });
+      current = current.item;
+    } else if (current.kind === "record") {
+      steps.push({ segment, id: false });
+      current = current.value;
+    } else {
+      return void 0;
+    }
+  }
+  return steps;
+}
+
+// kernel/src/shared/config/registry.ts
+function defineConfigModule(module) {
+  return module;
+}
+function definePromptKey(prompt2) {
+  return prompt2;
+}
+var PROMPT_SEGMENT = /^[a-z0-9][a-z0-9-]*$/;
+var RESERVED = /* @__PURE__ */ new Set(["dir", "files"]);
+function createConfigRegistry(parts) {
+  const shape = {};
+  for (const module of parts.modules) {
+    if (module.key in shape) throw new Error(`config module ${module.key} is declared twice`);
+    shape[module.key] = module.schema.meta({ description: module.description });
+  }
+  const seen = /* @__PURE__ */ new Set();
+  for (const prompt2 of parts.prompts) checkPromptKey(prompt2.key, seen);
+  const schema = strictObject(shape);
+  const tree = keyTree(schema);
+  const prompts2 = parts.prompts;
+  return {
+    modules: parts.modules,
+    prompts: prompts2,
+    schema,
+    tree,
+    keys: keyPaths(tree),
+    promptKey: (key) => prompts2.find((prompt2) => matches(prompt2.key, key))
+  };
+}
+function checkPromptKey(key, seen) {
+  const segments = key.split("/");
+  const last = segments.at(-1);
+  const literal2 = last === "*" ? segments.slice(0, -1) : segments;
+  const valid = literal2.length > 0 && literal2.every((segment) => PROMPT_SEGMENT.test(segment)) && !RESERVED.has(segments[0] ?? "");
+  if (!valid) throw new Error(`prompt key ${key} is not a valid prompt key`);
+  if (seen.has(key)) throw new Error(`prompt key ${key} is declared twice`);
+  seen.add(key);
+}
+function matches(pattern, key) {
+  if (!pattern.endsWith("/*")) return pattern === key;
+  const base = pattern.slice(0, -1);
+  const rest = key.slice(base.length);
+  return key.startsWith(base) && PROMPT_SEGMENT.test(rest);
+}
+
+// kernel/src/shared/config/known.ts
+var PLANNED_KEYS = [
+  { key: "policy.budgets.task-redispatch", owner: "T22" },
+  { key: "policy.budgets.verify-fix", owner: "T22" },
+  { key: "policy.budgets.review-fix", owner: "T22" },
+  { key: "policy.budgets.verifier", owner: "T22" },
+  { key: "policy.budgets.not-run", owner: "T22" },
+  { key: "policy.oscillation.threshold", owner: "T22" },
+  { key: "policy.escalation.enabled", owner: "T22" },
+  { key: "policy.escalation.model", owner: "T22" },
+  { key: "policy.checkpoint.enabled", owner: "T22" },
+  { key: "policy.checkpoint.squash-at-close", owner: "T22" },
+  { key: "policy.verifier.blocking-categories", owner: "T23" },
+  { key: "policy.log.max-observations", owner: "T23" },
+  { key: "execution.runner", owner: "T23" },
+  { key: "execution.concurrency", owner: "T23" },
+  { key: "execution.host", owner: "T23" },
+  { key: "archive.keep-evidence", owner: "T23" },
+  { key: "rules.propose-when.changes", owner: "T31" },
+  { key: "rules.propose-when.authors", owner: "T31" },
+  { key: "rules.propose-when.failed-attempts", owner: "T31" },
+  { key: "rules.max-per-package", owner: "T31" },
+  { key: "rules.max-learnings-per-change", owner: "T31" },
+  { key: "rules.disabled", owner: "T31" },
+  { key: "spec.normative-word", owner: "T30" }
+];
+var MCP = "removed with the bundled MCP servers (ADR-0001)";
+var REMOVED_KEYS = [
+  { key: "test-tools", reason: "use tools.test" },
+  { key: "lint-tools", reason: "use tools.lint" },
+  { key: "build-tools", reason: "use tools.build" },
+  {
+    key: "quality",
+    reason: "use prompts.files.rules/<category> or .bdk/prompts/rules/<category>.md"
+  },
+  { key: "language-rules", reason: "use prompts.files.rules/languages/<language>" },
+  { key: "features.caveman", reason: "no consumer in v3 (#39)" },
+  { key: "features.serena", reason: MCP },
+  { key: "features.code-review-graph", reason: MCP },
+  { key: "$schema", reason: "use the yaml-language-server modeline" }
+];
+function withoutRemovedKeys(layer) {
+  let values2 = layer.values;
+  for (const { key } of REMOVED_KEYS) values2 = without(values2, key.split("."));
+  return values2 === layer.values ? layer : { ...layer, values: values2 };
+}
+function without(values2, steps) {
+  const [first, ...rest] = steps;
+  if (first === void 0 || !(first in values2)) return values2;
+  if (rest.length === 0) {
+    return Object.fromEntries(Object.entries(values2).filter(([key]) => key !== first));
+  }
+  const child = values2[first];
+  if (!isRecord(child)) return values2;
+  const next = without(child, rest);
+  return next === child ? values2 : { ...values2, [first]: next };
+}
+function within(key, base) {
+  return key === base || key.startsWith(`${base}.`);
+}
+function knownReason(key) {
+  const removed = REMOVED_KEYS.find((entry) => within(key, entry.key));
+  if (removed !== void 0) return `removed v2 key: ${removed.reason}`;
+  const owners = PLANNED_KEYS.filter(
+    (entry) => within(key, entry.key) || within(entry.key, key)
+  ).map((entry) => entry.owner);
+  if (owners.length === 0) return void 0;
+  return `lands with ${[...new Set(owners)].sort().join(", ")}`;
+}
+
+// kernel/src/shared/config/validate.ts
+function validateLayers(registry3, layers, merged) {
+  const candidates = candidatesOf(registry3);
+  const problems = [...merged.problems];
+  for (const layer of layers) {
+    walk(registry3, registry3.tree, layer.values, "", (key) => {
+      problems.push(unknown2(key, layer, candidates));
+    });
+  }
+  const parsed = registry3.schema.safeParse(merged.value);
+  if (!parsed.success) {
+    const reported = problems.map((problem) => problem.key);
+    for (const issue2 of parsed.error.issues) {
+      for (const problem of fromIssue(issue2, merged, layers, candidates)) {
+        if (reported.some((key) => within(key, problem.key))) continue;
+        problems.push(problem);
+        reported.push(problem.key);
+      }
+    }
+  }
+  return problems.length === 0 && parsed.success ? { value: parsed.data, problems } : { problems };
+}
+function walk(registry3, node3, value, prefix, report2) {
+  if (node3.kind === "object" && isRecord(value)) {
+    for (const [key, child] of Object.entries(value)) {
+      const path = joinKey(prefix, key);
+      const childNode = node3.children.get(key);
+      if (childNode === void 0) leaves(child, path).forEach(report2);
+      else walk(registry3, childNode, child, path, report2);
+    }
+  } else if (node3.kind === "idArray" && Array.isArray(value)) {
+    value.forEach((item, index2) => {
+      const id = isRecord(item) && typeof item.id === "string" ? item.id : String(index2);
+      walk(registry3, node3.item, item, joinKey(prefix, id), report2);
+    });
+  } else if (node3.kind === "record" && isRecord(value) && prefix === "prompts.files") {
+    for (const key of Object.keys(value)) {
+      if (registry3.promptKey(key) === void 0) report2(joinKey(prefix, key));
+    }
+  }
+}
+function leaves(value, prefix) {
+  if (isRecord(value) && Object.keys(value).length > 0) {
+    return Object.entries(value).flatMap(([key, child]) => leaves(child, joinKey(prefix, key)));
+  }
+  return [prefix];
+}
+function declaredSteps(registry3, key) {
+  const steps = keySteps(registry3.tree, key);
+  const file = within(key, "prompts.files") ? key.split(".")[2] : void 0;
+  if (file !== void 0 && registry3.promptKey(file) === void 0) return void 0;
+  return steps;
+}
+function unknownKeyMessage(registry3, key) {
+  return unknownMessage(key, candidatesOf(registry3));
+}
+function candidatesOf(registry3) {
+  return [...registry3.keys, ...PLANNED_KEYS.map((entry) => entry.key)];
+}
+function unknownMessage(key, candidates) {
+  const known = knownReason(key);
+  const hint = known === void 0 ? closest(key, candidates) : void 0;
+  return known ?? (hint === void 0 ? "unknown key" : `unknown key; did you mean ${hint}?`);
+}
+function unknown2(key, layer, candidates) {
+  const message = unknownMessage(key, candidates);
+  return {
+    rule: "policy/unknown-config-key",
+    key,
+    layer: layer.name,
+    ...layer.path === void 0 ? {} : { path: layer.path },
+    message
+  };
+}
+function fromIssue(issue2, merged, layers, candidates) {
+  const key = dotted(issue2.path, merged.value);
+  if (issue2.code === "unrecognized_keys") {
+    return issue2.keys.map((name) => {
+      const path = joinKey(key, name);
+      return unknown2(path, layerOf(path, merged, layers), candidates);
+    });
+  }
+  const layer = layerOf(key, merged, layers);
+  return [
+    {
+      rule: "policy/config-invalid",
+      key,
+      layer: layer.name,
+      ...layer.path === void 0 ? {} : { path: layer.path },
+      message: issue2.message
+    }
+  ];
+}
+function dotted(path, root) {
+  let key = "";
+  let value = root;
+  for (const segment of path) {
+    if (Array.isArray(value) && typeof segment === "number") {
+      const item = value[segment];
+      key = joinKey(key, isRecord(item) && typeof item.id === "string" ? item.id : String(segment));
+      value = item;
+    } else {
+      key = joinKey(key, String(segment));
+      value = isRecord(value) ? value[String(segment)] : void 0;
+    }
+  }
+  return key;
+}
+var ORDER = ["default", "global", "project", "local"];
+function layerOf(key, merged, layers) {
+  let name = merged.origins[key];
+  if (name === void 0) {
+    const below = Object.entries(merged.origins).filter(([origin]) => within(origin, key)).map(([, layer2]) => layer2);
+    name = below.sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a))[0];
+  }
+  for (let parent = key; name === void 0 && parent.includes("."); ) {
+    parent = parent.slice(0, parent.lastIndexOf("."));
+    name = merged.origins[parent] ?? highestBelow(parent, merged);
+  }
+  const layer = layers.find((candidate) => candidate.name === name);
+  return layer === void 0 ? { name: "default" } : { name: layer.name, path: layer.path };
+}
+function highestBelow(key, merged) {
+  return Object.entries(merged.origins).filter(([origin]) => within(origin, key)).map(([, layer]) => layer).sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a))[0];
+}
+
+// kernel/src/shared/config/modules.ts
+var glob = string2().min(1).refine((value) => !/^(\/|[A-Za-z]:[\\/])/.test(value), "must be relative, not absolute").refine((value) => !value.split("/").includes(""), "must not hold an empty path segment");
+var promptFile = union([
+  string2().min(1),
+  strictObject({
+    path: string2().min(1),
+    mode: _enum(["extends", "replace"]).optional(),
+    applies: array(glob).optional()
+  })
+]);
+var promptsModule = defineConfigModule({
+  key: "prompts",
+  consumer: "shared/config",
+  owner: "T12",
+  description: "Where prompt values come from: a directory per layer and single mapped files.",
+  schema: strictObject({
+    dir: string2().min(1).optional().meta({
+      description: "This layer's prompts directory; read from each layer's own file, never inherited."
+    }),
+    files: record(string2(), promptFile).optional().meta({
+      description: "Prompt key -> a file path, or {path, mode, applies}; wins over the directory in the same layer."
+    })
+  }).prefault({})
+});
+
+// kernel/src/shared/config/prompts.ts
+var import_yaml4 = __toESM(require_dist(), 1);
+import { isAbsolute, join as join10, posix as posix2 } from "node:path";
+
 // kernel/src/shared/store/store.ts
 import { randomBytes } from "node:crypto";
 import {
@@ -15696,7 +16186,7 @@ import {
   statSync,
   writeFileSync
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname as dirname2, join as join2, resolve } from "node:path";
 function fileStore() {
   return {
     read(path) {
@@ -15708,7 +16198,7 @@ function fileStore() {
       }
     },
     write(path, content) {
-      mkdirSync(dirname(path), { recursive: true });
+      mkdirSync(dirname2(path), { recursive: true });
       const temp = `${path}.${randomBytes(4).toString("hex")}.tmp`;
       writeFileSync(temp, content);
       try {
@@ -15742,7 +16232,7 @@ function fileStore() {
       rmSync(path, { force: true });
     },
     append(path, content) {
-      mkdirSync(dirname(path), { recursive: true });
+      mkdirSync(dirname2(path), { recursive: true });
       appendFileSync(path, content);
     }
   };
@@ -15752,9 +16242,9 @@ function readStdin() {
 }
 function findProjectRoot(store2, cwd, workTreeRoot) {
   const top = resolve(workTreeRoot);
-  for (let dir = resolve(cwd); ; dir = dirname(dir)) {
-    if (store2.isDirectory(join(dir, ".bdk"))) return dir;
-    if (dir === top || dirname(dir) === dir) return top;
+  for (let dir = resolve(cwd); ; dir = dirname2(dir)) {
+    if (store2.isDirectory(join2(dir, ".bdk"))) return dir;
+    if (dir === top || dirname2(dir) === dir) return top;
   }
 }
 function isCode(error2, code) {
@@ -15772,7 +16262,7 @@ function splitFrontmatter(text4) {
 
 // kernel/src/shared/store/which.ts
 import { accessSync, constants, statSync as statSync2 } from "node:fs";
-import { join as join2 } from "node:path";
+import { join as join3 } from "node:path";
 function findExecutable(name, lookup) {
   const windows = lookup.platform === "win32";
   const path = envValue(lookup.env, "PATH", windows) ?? "";
@@ -15780,7 +16270,7 @@ function findExecutable(name, lookup) {
   const names = windows ? (envValue(lookup.env, "PATHEXT", windows) ?? ".COM;.EXE;.BAT;.CMD").split(";").filter((ext) => ext !== "").map((ext) => `${name}${ext}`) : [name];
   for (const dir of dirs) {
     for (const candidate of names) {
-      const file = join2(dir, candidate);
+      const file = join3(dir, candidate);
       if (isExecutableFile(file, windows)) return file;
     }
   }
@@ -15802,7 +16292,7 @@ function isExecutableFile(file, windows) {
 }
 
 // kernel/src/shared/store/index/schema.ts
-var INDEX_SCHEMA_VERSION = 2;
+var INDEX_SCHEMA_VERSION = 3;
 var TABLES = `
 CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE _dirs (
@@ -15823,7 +16313,7 @@ CREATE TABLE _entries (
   change_id TEXT NOT NULL, id TEXT NOT NULL, type TEXT NOT NULL, summary TEXT NOT NULL,
   status TEXT NOT NULL, source TEXT NOT NULL, author TEXT NOT NULL, at TEXT NOT NULL,
   ticket TEXT, supersedes TEXT, review INTEGER NOT NULL, severity TEXT, category TEXT,
-  fingerprint TEXT, routed_to TEXT, to_stage TEXT, gate TEXT, profile TEXT,
+  fingerprint TEXT, routed_to TEXT, to_stage TEXT, gate TEXT, input_hash TEXT, profile TEXT,
   park INTEGER NOT NULL, options TEXT, path TEXT NOT NULL,
   PRIMARY KEY (change_id, id)
 );
@@ -15850,7 +16340,7 @@ SELECT e.change_id, e.id, e.type, e.summary,
   CASE WHEN s.id IS NULL THEN NULL
        WHEN s.change_id = e.change_id THEN s.id
        ELSE s.change_id || '/' || s.id END AS superseded_by,
-  e.review, e.severity, e.category, e.fingerprint, e.routed_to, e.to_stage, e.gate,
+  e.review, e.severity, e.category, e.fingerprint, e.routed_to, e.to_stage, e.gate, e.input_hash,
   e.profile, e.park, e.options, e.path
 FROM _entries e
 LEFT JOIN _entries s ON s.rowid = (
@@ -15889,16 +16379,16 @@ function currentVersion(database) {
 
 // kernel/src/shared/store/index/open.ts
 import { mkdirSync as mkdirSync2, rmSync as rmSync2 } from "node:fs";
-import { dirname as dirname2, join as join3 } from "node:path";
+import { dirname as dirname3, join as join4 } from "node:path";
 var BUSY_TIMEOUT_MS = 5e3;
 function indexPath(projectRoot) {
-  return join3(projectRoot, ".bdk", ".machine", "index.sqlite");
+  return join4(projectRoot, ".bdk", ".machine", "index.sqlite");
 }
 async function openIndex(store2, projectRoot, options = {}) {
   const { DatabaseSync } = await loadSqlite();
   const path = options.memory === true ? ":memory:" : indexPath(projectRoot);
   const connect = () => {
-    if (path !== ":memory:") mkdirSync2(dirname2(path), { recursive: true });
+    if (path !== ":memory:") mkdirSync2(dirname3(path), { recursive: true });
     const database2 = new DatabaseSync(path);
     try {
       database2.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
@@ -15967,10 +16457,10 @@ async function withIndex(opener, store2, projectRoot, work) {
 }
 
 // kernel/src/shared/store/index/refresh.ts
-import { join as join5, relative, sep } from "node:path";
+import { join as join6, relative, sep } from "node:path";
 
 // kernel/src/shared/store/changes.ts
-import { join as join4 } from "node:path";
+import { join as join5 } from "node:path";
 
 // kernel/src/shared/ids/index.ts
 import { randomInt } from "node:crypto";
@@ -16000,25 +16490,25 @@ function parseReference(text4) {
 
 // kernel/src/shared/store/changes.ts
 function changesDir(projectRoot) {
-  return join4(projectRoot, ".bdk", "changes");
+  return join5(projectRoot, ".bdk", "changes");
 }
 function archiveDir(projectRoot) {
-  return join4(changesDir(projectRoot), "archive");
+  return join5(changesDir(projectRoot), "archive");
 }
 function liveChangeDir(projectRoot, id) {
-  return join4(changesDir(projectRoot), id);
+  return join5(changesDir(projectRoot), id);
 }
 function listChangeDirs(store2, projectRoot) {
-  const found = (parent, archived) => store2.list(parent).filter((name) => name.endsWith("/")).map((name) => name.slice(0, -1)).filter((id) => isChangeId(id) && store2.exists(join4(parent, id, "change.md"))).map((id) => ({ id, dir: join4(parent, id), archived }));
+  const found = (parent, archived) => store2.list(parent).filter((name) => name.endsWith("/")).map((name) => name.slice(0, -1)).filter((id) => isChangeId(id) && store2.exists(join5(parent, id, "change.md"))).map((id) => ({ id, dir: join5(parent, id), archived }));
   return [...found(changesDir(projectRoot), false), ...found(archiveDir(projectRoot), true)];
 }
 function findChange(store2, projectRoot, id) {
   if (!isChangeId(id)) return void 0;
   for (const [dir, archived] of [
     [liveChangeDir(projectRoot, id), false],
-    [join4(archiveDir(projectRoot), id), true]
+    [join5(archiveDir(projectRoot), id), true]
   ]) {
-    if (store2.exists(join4(dir, "change.md"))) return { id, dir, archived };
+    if (store2.exists(join5(dir, "change.md"))) return { id, dir, archived };
   }
   return void 0;
 }
@@ -16037,10 +16527,10 @@ function decodeBranch(encoded) {
   return decodeURIComponent(encoded);
 }
 function markersDir(projectRoot) {
-  return join4(projectRoot, ".bdk", ".machine", "branches");
+  return join5(projectRoot, ".bdk", ".machine", "branches");
 }
 function markerPath(projectRoot, branch) {
-  return join4(markersDir(projectRoot), encodeBranch(branch));
+  return join5(markersDir(projectRoot), encodeBranch(branch));
 }
 function readMarker(store2, projectRoot, branch) {
   const text4 = store2.read(markerPath(projectRoot, branch))?.trim();
@@ -16056,7 +16546,7 @@ function removeMarker(store2, projectRoot, branch) {
 function listMarkers(store2, projectRoot) {
   return store2.list(markersDir(projectRoot)).filter((name) => !name.endsWith("/")).map((name) => ({
     branch: decodeBranch(name),
-    change: store2.read(join4(markersDir(projectRoot), name))?.trim() ?? ""
+    change: store2.read(join5(markersDir(projectRoot), name))?.trim() ?? ""
   })).filter((marker) => marker.change !== "").sort((a, b) => a.branch < b.branch ? -1 : a.branch > b.branch ? 1 : 0);
 }
 function resolveActiveChange(store2, git, where) {
@@ -16087,12 +16577,12 @@ function resolveActiveChange(store2, git, where) {
   return { id: location.id, dir: location.dir, projectRoot, branch };
 }
 function resumeLines(store2, projectRoot) {
-  const live = listChangeDirs(store2, projectRoot).filter((change) => !change.archived);
-  return live.length === 0 ? ["bdk change resume <id>"] : live.map((change) => `bdk change resume ${change.id}`);
+  const live2 = listChangeDirs(store2, projectRoot).filter((change) => !change.archived);
+  return live2.length === 0 ? ["bdk change resume <id>"] : live2.map((change) => `bdk change resume ${change.id}`);
 }
 
 // kernel/src/shared/store/state/documents.ts
-var import_yaml2 = __toESM(require_dist(), 1);
+var import_yaml3 = __toESM(require_dist(), 1);
 
 // kernel/src/shared/vocabulary/index.ts
 var ENTRY_TYPES = [
@@ -16134,7 +16624,7 @@ var provenance = union([_enum(FIXED_SOURCES), agentSource]).meta({ description: 
 var author = string2().min(1).meta({ description: "Git `user.name <user.email>`." });
 var severity = _enum(["critical", "high", "medium", "low"]);
 var scope = _enum(TICKET_SCOPES);
-var glob = string2().min(1);
+var glob2 = string2().min(1);
 
 // kernel/src/shared/store/state/attempt.ts
 var VERSION = 1;
@@ -16209,7 +16699,7 @@ var planPartKind = {
     title: string2().min(1),
     goal: string2().min(1),
     "success-measure": string2().min(1).meta({ description: "What a reviewer can observe." }),
-    "do-not-touch": array(glob),
+    "do-not-touch": array(glob2),
     "depends-on": array(partId),
     "spec-impact": union([literal("none"), array(capability)])
   }).meta({ title: "Plan part" }),
@@ -16238,7 +16728,13 @@ var VERSION4 = 1;
 var designKind = {
   name: "design",
   version: VERSION4,
-  schema: strictObject({ schema: literal(VERSION4), title: string2().min(1) }).meta({ title: "Design artifact", description: "`design.md` and `architecture.md`." }),
+  schema: strictObject({
+    schema: literal(VERSION4),
+    title: string2().min(1),
+    architecture: boolean2().optional().meta({
+      description: "`design.md` only: false for a product-only Change, which skips the architecture node (R-5)."
+    })
+  }).meta({ title: "Design artifact", description: "`design.md` and `architecture.md`." }),
   migrations: []
 };
 var designPartKind = {
@@ -16311,7 +16807,7 @@ function variant(type, own2) {
 var learning = variant("learning", {
   fingerprint: hash.meta({ description: "Kernel-stamped (`kernel-state`, Fingerprints)." }),
   evidence: array(idReference).optional(),
-  applies: array(glob).optional(),
+  applies: array(glob2).optional(),
   "routed-to": _enum(["rule", "spec", "nothing"]).optional()
 }).superRefine((data, context) => {
   if (data.status === "routed" && data["routed-to"] === void 0) {
@@ -16349,7 +16845,10 @@ var entryKind = {
       gate: string2().min(1).optional(),
       session: string2().min(1).optional(),
       command: string2().min(1).optional(),
-      "skip-verify": boolean2().optional()
+      "skip-verify": boolean2().optional(),
+      "input-hash": hash.optional().meta({
+        description: "sha256 of the node's inputs; written only by `done` (P2)."
+      })
     })
   ]).meta({ title: "Ledger entry", description: "One file per entry; the body is free Markdown." }),
   migrations: []
@@ -16425,7 +16924,7 @@ var ruleKind = {
     schema: literal(VERSION9),
     id: string2().regex(RULE_ID).meta({ description: "Equals the file name without `.md` (`CQ-4`, `BDK-SEC-2`)." }),
     kind: _enum(["house", "knowledge"]),
-    applies: array(glob).optional().meta({ description: "Absent: every file." }),
+    applies: array(glob2).optional().meta({ description: "Absent: every file." }),
     roles: array(role).optional().meta({ description: "Absent: every role." }),
     severity,
     origin: union([
@@ -16556,10 +17055,10 @@ function locate(path) {
 }
 
 // kernel/src/shared/store/state/render.ts
-var import_yaml = __toESM(require_dist(), 1);
+var import_yaml2 = __toESM(require_dist(), 1);
 function renderDocument(data, body) {
   return `---
-${(0, import_yaml.stringify)(data, { lineWidth: 0 })}---
+${(0, import_yaml2.stringify)(data, { lineWidth: 0 })}---
 ${body}`;
 }
 
@@ -16575,13 +17074,13 @@ function readDocument(store2, path, kinds = {}) {
   if (version3 !== kind.version && Number.isInteger(version3)) {
     const found = Number(version3);
     if (found < kind.version) {
-      throw invalid(
+      throw invalid2(
         "state/ledger-invalid",
         `${located.display} carries ${located.kind} schema ${found}, this kernel reads ${kind.version}`,
         ["bdk rebuild"]
       );
     }
-    throw invalid(
+    throw invalid2(
       "state/ledger-invalid",
       `${located.display} carries ${located.kind} schema ${found}, written by a newer BDK than this kernel (${kind.version})`,
       ["upgrade the BDK plugin, then retry"]
@@ -16597,7 +17096,7 @@ function writeDocument(store2, path, document, kinds = {}) {
   const located = locateOr(path, "policy/validation-failed");
   if (isOpaque(located.kind)) {
     if (document.data !== void 0) {
-      throw invalid("policy/validation-failed", `${located.display} takes no frontmatter`, [
+      throw invalid2("policy/validation-failed", `${located.display} takes no frontmatter`, [
         "write the body only"
       ]);
     }
@@ -16605,7 +17104,7 @@ function writeDocument(store2, path, document, kinds = {}) {
     return;
   }
   if (document.data === void 0) {
-    throw invalid("policy/validation-failed", `${located.display} needs frontmatter`, [
+    throw invalid2("policy/validation-failed", `${located.display} needs frontmatter`, [
       `write a ${located.kind} document`
     ]);
   }
@@ -16616,7 +17115,7 @@ function writeDocument(store2, path, document, kinds = {}) {
 function locateOr(path, rule2) {
   const located = locate(path);
   if (located !== void 0) return located;
-  throw invalid(rule2, `${path} matches no row of the layout table`, [
+  throw invalid2(rule2, `${path} matches no row of the layout table`, [
     "move or remove the file; kernel-state lists the paths of a Change"
   ]);
 }
@@ -16629,23 +17128,23 @@ function kindOf(name, kinds) {
 function parseText(located, text4) {
   const { frontmatter, body } = splitFrontmatter(text4);
   const fail = (why) => {
-    throw invalid("state/ledger-invalid", `${located.display}: ${why}`, [
+    throw invalid2("state/ledger-invalid", `${located.display}: ${why}`, [
       `fix ${located.display} or restore it from git`
     ]);
   };
   if (frontmatter === void 0) return fail("no YAML frontmatter");
   let data;
   try {
-    data = (0, import_yaml2.parse)(frontmatter);
+    data = (0, import_yaml3.parse)(frontmatter);
   } catch (error2) {
     return fail(`invalid YAML (${error2 instanceof Error ? error2.message.split("\n")[0] : "?"})`);
   }
   if (typeof data !== "object" || data === null || Array.isArray(data)) {
     return fail("the frontmatter is not a mapping");
   }
-  const record3 = data;
-  if (!Number.isInteger(record3.schema)) return fail("schema: expected an integer version");
-  return { data: record3, body };
+  const record4 = data;
+  if (!Number.isInteger(record4.schema)) return fail("schema: expected an integer version");
+  return { data: record4, body };
 }
 function validate2(located, schema, data, rule2) {
   const result2 = schema.safeParse(data);
@@ -16656,17 +17155,17 @@ function validate2(located, schema, data, rule2) {
       const name = [path, keys].filter((part) => part !== "").join(".");
       return name === "" ? issue2.message : `${name}: ${issue2.message}`;
     });
-    throw invalid(rule2, `${located.display}: ${problems.join("; ")}`, [`fix ${located.display}`]);
+    throw invalid2(rule2, `${located.display}: ${problems.join("; ")}`, [`fix ${located.display}`]);
   }
   const mismatch = located.check(result2.data);
   if (mismatch !== void 0) {
-    throw invalid(rule2, `${located.display}: ${mismatch} does not match the file name`, [
+    throw invalid2(rule2, `${located.display}: ${mismatch} does not match the file name`, [
       `rename ${located.display} or fix ${mismatch}`
     ]);
   }
   return result2.data;
 }
-function invalid(rule2, why, instead) {
+function invalid2(rule2, why, instead) {
   return new KernelRefusal(refuse(rule2, why, instead));
 }
 
@@ -16711,7 +17210,7 @@ function refreshAll(index2) {
 }
 function dirStates(index2, location) {
   return WATCHED.map((name) => {
-    const path = name === "" ? location.dir : join5(location.dir, name);
+    const path = name === "" ? location.dir : join6(location.dir, name);
     const stat = index2.store.stat(path);
     return {
       path: rel(index2, path),
@@ -16724,9 +17223,9 @@ function isFresh(index2, location, states) {
   const change = index2.database.prepare("SELECT dir FROM changes WHERE id = ?").get(location.id);
   if (change?.dir !== rel(index2, location.dir)) return false;
   const rows = index2.database.prepare("SELECT path, mtime, count, trusted FROM _dirs WHERE change_id = ?").all(location.id);
-  const recorded = new Map(rows.map((row) => [row.path, row]));
+  const recorded2 = new Map(rows.map((row) => [row.path, row]));
   return states.every((state) => {
-    const row = recorded.get(state.path);
+    const row = recorded2.get(state.path);
     return row?.trusted === 1 && row.mtime === state.mtime && row.count === state.count;
   });
 }
@@ -16772,12 +17271,12 @@ function slowPath(index2, location, states) {
   }
 }
 function filesOf(index2, location) {
-  const files = [join5(location.dir, "change.md")];
+  const files = [join6(location.dir, "change.md")];
   for (const name of WATCHED) {
     if (name === "") continue;
-    const dir = join5(location.dir, name);
+    const dir = join6(location.dir, name);
     for (const child of index2.store.list(dir)) {
-      if (!child.endsWith("/")) files.push(join5(dir, child));
+      if (!child.endsWith("/")) files.push(join6(dir, child));
     }
   }
   return files;
@@ -16807,8 +17306,9 @@ function insertRows(index2, location, path, kind, data) {
       refuseDuplicate(index2, "_entries", "id", location.id, id, path);
       database.prepare(
         `INSERT INTO _entries (change_id, id, type, summary, status, source, author, at, ticket,
-            supersedes, review, severity, category, fingerprint, routed_to, to_stage, gate, profile,
-            park, options, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            supersedes, review, severity, category, fingerprint, routed_to, to_stage, gate, input_hash,
+            profile, park, options, path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         location.id,
         id,
@@ -16827,6 +17327,7 @@ function insertRows(index2, location, path, kind, data) {
         text4(data["routed-to"]),
         text4(data.to),
         text4(data.gate),
+        text4(data["input-hash"]),
         text4(data.profile),
         flag2(data.park),
         Array.isArray(data.options) ? JSON.stringify(data.options) : null,
@@ -17038,6 +17539,7 @@ function toEntry(row, refs) {
     routedTo: optional3(row.routed_to),
     to: optional3(row.to_stage),
     gate: optional3(row.gate),
+    inputHash: optional3(row.input_hash),
     profile: optional3(row.profile),
     park: row.park === 1 ? true : void 0,
     options: options === void 0 ? void 0 : JSON.parse(options),
@@ -17064,11 +17566,85 @@ function learningFingerprint(summary) {
   return fingerprint(["learning", normalise(summary)]);
 }
 
+// kernel/src/shared/store/state/indexes.ts
+function generatePlanIndex(parts) {
+  const waves = wavesOf("plan", parts);
+  const rows = sorted(parts).map((part) => ({
+    id: part.id,
+    title: part.title,
+    "depends-on": [...part["depends-on"]],
+    wave: waves.get(part.id) ?? 1
+  }));
+  const data = { schema: planIndexKind.version, generated: true, parts: rows };
+  const table = rows.map((row) => [row.id, cell(row.title), dependencies(row), String(row.wave)]);
+  return renderDocument(data, render(["Part", "Title", "Depends on", "Wave"], table));
+}
+function generateDesignIndex(parts) {
+  wavesOf("design", parts);
+  const rows = sorted(parts).map((part) => ({
+    id: part.id,
+    title: part.title,
+    "depends-on": [...part["depends-on"]]
+  }));
+  const data = { schema: designIndexKind.version, generated: true, parts: rows };
+  const table = rows.map((row) => [row.id, cell(row.title), dependencies(row)]);
+  return renderDocument(data, render(["Part", "Title", "Depends on"], table));
+}
+function sorted(parts) {
+  return [...parts].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+}
+function wavesOf(what, parts) {
+  const byId = /* @__PURE__ */ new Map();
+  for (const part of sorted(parts)) {
+    if (byId.has(part.id)) invalid3(`${what} part id ${part.id} appears twice`);
+    byId.set(part.id, part);
+  }
+  for (const part of byId.values()) {
+    for (const dependency of part["depends-on"]) {
+      if (!byId.has(dependency)) {
+        invalid3(`${what} part ${part.id} depends on ${dependency}, which does not exist`);
+      }
+    }
+  }
+  const waves = /* @__PURE__ */ new Map();
+  const path = [];
+  const visit = (id) => {
+    const known = waves.get(id);
+    if (known !== void 0) return known;
+    const start = path.indexOf(id);
+    if (start >= 0) {
+      const cycle = [...new Set(path.slice(start))].sort();
+      invalid3(`${what} parts ${cycle.join(", ")} form a dependency cycle`);
+    }
+    path.push(id);
+    const wave = 1 + Math.max(0, ...(byId.get(id)?.["depends-on"] ?? []).map(visit));
+    path.pop();
+    waves.set(id, wave);
+    return wave;
+  };
+  for (const id of byId.keys()) visit(id);
+  return waves;
+}
+function invalid3(why) {
+  throw new KernelRefusal(refuse("policy/validation-failed", why, ["fix depends-on in the parts"]));
+}
+function dependencies(part) {
+  return part["depends-on"].length === 0 ? "-" : part["depends-on"].join(", ");
+}
+function cell(text4) {
+  return text4.replaceAll("|", "\\|");
+}
+function render(header, rows) {
+  const line = (cells) => `| ${cells.join(" | ")} |`;
+  const rule2 = line(header.map((name) => "-".repeat(name.length)));
+  return [line(header), rule2, ...rows.map(line), ""].join("\n");
+}
+
 // kernel/src/shared/store/ignore.ts
-import { join as join6 } from "node:path";
+import { join as join7 } from "node:path";
 var IGNORED_PATHS = ["/.bdk/.machine/", "/.bdk/settings.local.yaml"];
 async function ensureIgnored(store2, git, projectRoot) {
-  const path = join6(projectRoot, ".gitignore");
+  const path = join7(projectRoot, ".gitignore");
   const text4 = store2.read(path) ?? "";
   const present = new Set(text4.split(/\r?\n/).map((line) => line.trim()));
   const missing = [];
@@ -17096,17 +17672,17 @@ async function coveredByGit(git, projectRoot, path) {
 }
 
 // kernel/src/shared/store/state/ledger.ts
-import { join as join7 } from "node:path";
+import { join as join8 } from "node:path";
 var ATTEMPTS = 16;
 function entryFileName(data) {
   const stamp2 = String(data.at).replaceAll("-", "").replaceAll(":", "");
   return `${stamp2}-${String(data.type)}-${String(data.id)}.md`;
 }
 function entryPath(changeDir, data) {
-  return join7(changeDir, "log", entryFileName(data));
+  return join8(changeDir, "log", entryFileName(data));
 }
 function writeEntry(store2, changeDir, build, body, random) {
-  const taken = store2.list(join7(changeDir, "log"));
+  const taken = store2.list(join8(changeDir, "log"));
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const id = newId("L-", random);
     if (taken.some((name) => name.endsWith(`-${id}.md`))) continue;
@@ -17128,8 +17704,9 @@ function latest(entries) {
   }
   return best;
 }
-function stageOf(entries) {
-  return latest(entries.filter((entry) => entry.type === "transition"))?.to ?? "intent";
+function stageOf(entries, stageOfTarget2) {
+  const to = latest(entries.filter((entry) => entry.type === "transition"))?.to;
+  return to === void 0 ? "intent" : stageOfTarget2(to);
 }
 function parkedQuestion(entries) {
   const question = latest(
@@ -17163,20 +17740,332 @@ function isConfirmed(changeSource, entries) {
 }
 
 // kernel/src/shared/store/telemetry.ts
-import { join as join8 } from "node:path";
+import { join as join9 } from "node:path";
 var TELEMETRY_LIMIT_BYTES = 256 * 1024;
 function telemetryPath(projectRoot, name) {
-  return join8(projectRoot, ".bdk", ".machine", "telemetry", `${name}.jsonl`);
+  return join9(projectRoot, ".bdk", ".machine", "telemetry", `${name}.jsonl`);
 }
-function appendTelemetry(store2, projectRoot, name, record3, limit = TELEMETRY_LIMIT_BYTES) {
+function appendTelemetry(store2, projectRoot, name, record4, limit = TELEMETRY_LIMIT_BYTES) {
   const path = telemetryPath(projectRoot, name);
-  store2.append(path, `${JSON.stringify(record3)}
+  store2.append(path, `${JSON.stringify(record4)}
 `);
   const size = store2.stat(path)?.size ?? 0;
   if (size < limit) return;
   const lines = (store2.read(path) ?? "").split("\n").filter((line) => line !== "");
   store2.write(path, `${lines.slice(Math.ceil(lines.length / 2)).join("\n")}
 `);
+}
+
+// kernel/src/shared/config/prompts.ts
+var FILE_LAYERS = ["global", "project", "local"];
+var DEFAULT_DIRS = {
+  global: "prompts",
+  project: ".bdk/prompts",
+  local: ".bdk/prompts.local"
+};
+function resolvePrompts(input) {
+  const problems = [];
+  const byKey = /* @__PURE__ */ new Map();
+  const add = (key, contribution2) => {
+    byKey.set(key, [...byKey.get(key) ?? [], contribution2]);
+  };
+  for (const [key, path] of pluginDefaults(input))
+    add(key, { layer: "default", path, mode: "extends" });
+  for (const name of FILE_LAYERS) {
+    const layer = input.layers.find((candidate) => candidate.name === name);
+    for (const [key, contribution2] of layerContributions(input, name, layer, problems)) {
+      add(key, contribution2);
+    }
+  }
+  const values2 = /* @__PURE__ */ new Map();
+  const keys = /* @__PURE__ */ new Set([
+    ...input.registry.prompts.filter((prompt2) => !prompt2.key.endsWith("/*")).map((p) => p.key),
+    ...byKey.keys()
+  ]);
+  for (const key of [...keys].sort()) values2.set(key, chain(byKey.get(key) ?? []));
+  return { values: values2, problems };
+}
+function promptContent(store2, value) {
+  return value.files.map((file) => splitFrontmatter(store2.read(file.path) ?? "").body.trim()).filter((body) => body !== "").map((body) => `${body}
+`).join("\n");
+}
+function chain(contributions) {
+  const last = contributions.findLastIndex((item) => item.mode === "replace");
+  const kept = last === -1 ? contributions : contributions.slice(last);
+  return {
+    mode: last === -1 ? "extends" : "replace",
+    files: kept.map(
+      ({ layer, path, applies }) => applies === void 0 ? { layer, path } : { layer, path, applies }
+    )
+  };
+}
+function pluginDefaults(input) {
+  const found = [];
+  for (const prompt2 of input.registry.prompts) {
+    if (prompt2.defaultFile === void 0) continue;
+    if (!prompt2.key.endsWith("/*")) {
+      const path = join10(input.pluginRoot, prompt2.defaultFile);
+      if (input.store.exists(path)) found.push([prompt2.key, path]);
+      continue;
+    }
+    const [before = "", after = ""] = prompt2.defaultFile.split("{name}");
+    const dir = join10(input.pluginRoot, posix2.dirname(before + "x"));
+    for (const entry of input.store.list(dir)) {
+      if (entry.endsWith("/") || !entry.endsWith(after)) continue;
+      const name = entry.slice(0, entry.length - after.length);
+      found.push([`${prompt2.key.slice(0, -1)}${name}`, join10(dir, entry)]);
+    }
+  }
+  return found;
+}
+function layerContributions(input, name, layer, problems) {
+  const base = name === "global" ? input.globalDir : input.projectRoot;
+  const settings = isRecord(layer?.values.prompts) ? layer.values.prompts : {};
+  const dirSetting = typeof settings.dir === "string" ? settings.dir : DEFAULT_DIRS[name];
+  const dir = isAbsolute(dirSetting) ? dirSetting : join10(base, dirSetting);
+  const where = { layer: name, settingsPath: layer?.path };
+  const out = /* @__PURE__ */ new Map();
+  for (const [key, path] of listPrompts(input.store, dir)) {
+    const prompt2 = input.registry.promptKey(key);
+    if (prompt2 === void 0) {
+      problems.push(unknownPrompt(input.registry, key, name, path));
+      continue;
+    }
+    const contribution2 = readContribution(input.store, key, path, {}, where, problems);
+    if (contribution2 !== void 0) out.set(key, contribution2);
+  }
+  const files = isRecord(settings.files) ? settings.files : {};
+  for (const [key, entry] of Object.entries(files)) {
+    if (input.registry.promptKey(key) === void 0) continue;
+    const declared2 = isRecord(entry) ? entry : { path: entry };
+    if (typeof declared2.path !== "string") continue;
+    const path = isAbsolute(declared2.path) ? declared2.path : join10(base, declared2.path);
+    if (!input.store.exists(path)) {
+      problems.push({
+        rule: "policy/config-invalid",
+        key: `prompts.files.${key}`,
+        layer: name,
+        ...layer === void 0 ? {} : { path: layer.path },
+        message: `${path} does not exist`
+      });
+      continue;
+    }
+    const contribution2 = readContribution(input.store, key, path, declared2, where, problems);
+    if (contribution2 !== void 0) out.set(key, contribution2);
+  }
+  return out;
+}
+function listPrompts(store2, dir, prefix = "") {
+  return store2.list(dir).flatMap((entry) => {
+    if (entry.endsWith("/")) {
+      return listPrompts(store2, join10(dir, entry), `${prefix}${entry}`);
+    }
+    if (!entry.endsWith(".md")) return [];
+    return [[`${prefix}${entry.slice(0, -3)}`, join10(dir, entry)]];
+  });
+}
+function unknownPrompt(registry3, key, layer, path) {
+  const literal2 = registry3.prompts.map((prompt2) => prompt2.key).filter((k) => !k.endsWith("/*"));
+  const hint = closest(key, literal2);
+  return {
+    rule: "policy/unknown-config-key",
+    key: `prompts.${key}`,
+    layer,
+    path,
+    message: `no prompt key ${key} is registered${hint === void 0 ? "" : `; did you mean ${hint}?`}`
+  };
+}
+var FRONTMATTER_FIELDS = /* @__PURE__ */ new Set(["mode", "applies"]);
+function readContribution(store2, key, path, declared2, where, problems) {
+  const outcome = contribution(store2.read(path) ?? "", declared2, where);
+  if (typeof outcome !== "string") return { layer: where.layer, path, ...outcome };
+  problems.push({
+    rule: "policy/config-invalid",
+    key: `prompts.${key}`,
+    layer: where.layer,
+    path,
+    message: outcome
+  });
+  return void 0;
+}
+function contribution(text4, declared2, where) {
+  const { frontmatter } = splitFrontmatter(text4);
+  let front;
+  try {
+    front = frontmatter === void 0 ? {} : (0, import_yaml4.parse)(frontmatter) ?? {};
+  } catch {
+    return "the frontmatter is not valid YAML";
+  }
+  if (!isRecord(front)) return "the frontmatter must be a mapping";
+  const extra = Object.keys(front).filter((field2) => !FRONTMATTER_FIELDS.has(field2));
+  if (extra.length > 0) return `unknown frontmatter field ${extra.join(", ")}`;
+  const settings = where.settingsPath ?? "the settings";
+  const mode = front.mode ?? declared2.mode ?? "extends";
+  if (mode !== "extends" && mode !== "replace") return "mode must be extends or replace";
+  if (declared2.mode !== void 0 && front.mode !== void 0 && declared2.mode !== front.mode) {
+    return `the frontmatter mode ${mode} contradicts the mode in ${settings}`;
+  }
+  const applies = front.applies ?? declared2.applies;
+  if (applies !== void 0 && !isGlobList(applies)) {
+    return "applies must be a list of relative globs without empty segments";
+  }
+  if (declared2.applies !== void 0 && front.applies !== void 0 && JSON.stringify(declared2.applies) !== JSON.stringify(front.applies)) {
+    return `the frontmatter applies contradicts ${settings}`;
+  }
+  return applies === void 0 ? { mode } : { mode, applies };
+}
+function isGlobList(value) {
+  return Array.isArray(value) && value.every(
+    (item) => typeof item === "string" && item !== "" && !/^(\/|[A-Za-z]:[\\/])/.test(item) && !item.split("/").includes("")
+  );
+}
+
+// kernel/src/shared/config/resolve.ts
+function resolveConfig(context) {
+  const read2 = readLayers(context.store, context);
+  const layers = context.removed === "ignore" ? read2.map(withoutRemovedKeys) : read2;
+  const merged = mergeLayers(layers);
+  const validated = validateLayers(context.registry, layers, merged);
+  const prompts2 = resolvePrompts({ ...context, layers });
+  const problems = [...validated.problems, ...prompts2.problems];
+  const base = { layers, merged, prompts: prompts2, problems };
+  return validated.value === void 0 || problems.length > 0 ? base : { ...base, value: validated.value };
+}
+
+// kernel/src/shared/config/refusal.ts
+function resolveOrRefuse(scope2, options = {}) {
+  const resolution = resolveConfig({
+    store: options.store ?? scope2.store,
+    registry: scope2.settings,
+    globalDir: scope2.globalDir,
+    projectRoot: scope2.projectRoot,
+    pluginRoot: scope2.pluginRoot,
+    ...options.removed === void 0 ? {} : { removed: options.removed }
+  });
+  const [first, ...rest] = resolution.problems;
+  if (first !== void 0) return problemRefusal(scope2, first, rest.length);
+  if (resolution.value === void 0) throw new Error("a resolution without problems has a value");
+  return { ...resolution, value: resolution.value };
+}
+function problemRefusal(scope2, problem, more) {
+  const file = problem.path === void 0 ? void 0 : displayPath(scope2, problem.path);
+  const where = `the ${problem.layer} layer${file === void 0 ? "" : ` (${file})`}`;
+  const count = more === 0 ? "" : ` (${more} more error${more === 1 ? "" : "s"})`;
+  return refuse(problem.rule, `${problem.key} in ${where}: ${problem.message}${count}`, [
+    schemaCommand(scope2, problem.key),
+    ...file === void 0 ? [] : [`fix ${file}`]
+  ]);
+}
+function schemaCommand(scope2, key) {
+  const module = key.split(".")[0] ?? "";
+  return scope2.settings.modules.some((candidate) => candidate.key === module) ? `bdk config schema ${module}` : "bdk config schema";
+}
+function displayPath(scope2, path) {
+  const root = `${scope2.projectRoot}/`;
+  return path.startsWith(root) ? path.slice(root.length) : path;
+}
+
+// kernel/src/shared/config/snapshot.ts
+var import_yaml5 = __toESM(require_dist(), 1);
+import { join as join11 } from "node:path";
+var SNAPSHOT_PATH = ".bdk/.machine/config/resolved.yaml";
+var PERSONAL = /* @__PURE__ */ new Set(["global", "local"]);
+function overriddenKeys(resolution) {
+  const leaves2 = Object.entries(resolution.merged.origins).filter(([, layer]) => PERSONAL.has(layer)).map(([key]) => key);
+  const prompts2 = [...resolution.prompts.values].filter(([, value]) => value.files.some((file) => PERSONAL.has(file.layer))).map(([key]) => `prompts.${key}`);
+  return [...leaves2, ...prompts2].sort();
+}
+function writeSnapshot(store2, projectRoot, resolution) {
+  if (resolution.value === void 0 || !store2.isDirectory(join11(projectRoot, ".bdk"))) {
+    return void 0;
+  }
+  const snapshot = {
+    resolved: resolution.value,
+    prompts: Object.fromEntries(resolution.prompts.values),
+    overriddenKeys: overriddenKeys(resolution)
+  };
+  store2.write(join11(projectRoot, SNAPSHOT_PATH), (0, import_yaml5.stringify)(snapshot));
+  return SNAPSHOT_PATH;
+}
+
+// kernel/src/shared/config/json-schema.ts
+var SETTINGS_SCHEMA_ID = "https://raw.githubusercontent.com/broneq/bdk/v3/schema/settings.json";
+function settingsJsonSchema(registry3) {
+  const { $schema, ...rest } = toJSONSchema(registry3.schema, {
+    target: "draft-2020-12",
+    io: "input",
+    unrepresentable: "throw"
+  });
+  return {
+    $schema,
+    $id: SETTINGS_SCHEMA_ID,
+    title: "BDK settings",
+    description: "One layer of the BDK settings: ~/.config/bdk/settings.yaml, .bdk/settings.yaml or .bdk/settings.local.yaml.",
+    ...rest
+  };
+}
+
+// kernel/src/shared/config/modeline.ts
+var MODELINE_PREFIX = "# yaml-language-server: $schema=";
+var OFFLINE_SCHEMA_PATH = ".bdk/.machine/schema/settings.json";
+function settingsSchemaUrl(version3) {
+  return `https://raw.githubusercontent.com/broneq/bdk/v${version3}/schema/settings.json`;
+}
+function modeline(version3) {
+  return `${MODELINE_PREFIX}${settingsSchemaUrl(version3)}`;
+}
+function modelineUrl(text4) {
+  const first = text4.split("\n", 1)[0] ?? "";
+  return first.startsWith(MODELINE_PREFIX) ? first.slice(MODELINE_PREFIX.length).trim() : void 0;
+}
+function withModeline(text4, version3) {
+  const line = modeline(version3);
+  if (modelineUrl(text4) === void 0) return text4 === "" ? `${line}
+` : `${line}
+${text4}`;
+  const newline = text4.indexOf("\n");
+  return newline === -1 ? `${line}
+` : `${line}${text4.slice(newline)}`;
+}
+function offlineSchemaText(registry3) {
+  return `${JSON.stringify(settingsJsonSchema(registry3), null, 2)}
+`;
+}
+
+// kernel/src/shared/output/index.ts
+var TEXT_LINE_CAP = 100;
+function json(value) {
+  return `${JSON.stringify(value, null, 2)}
+`;
+}
+function refusalText(refusal2) {
+  const lines = [`refused: ${refusal2.rule}`, `why: ${refusal2.why}`];
+  for (const action of refusal2.instead) lines.push(`instead: ${action}`);
+  return `${lines.join("\n")}
+`;
+}
+function stopBlock(refusal2) {
+  return `BDK STOP: ${refusal2.why}
+Instead: ${refusal2.instead.join("; ")}
+`;
+}
+function capLines(text4, options = {}) {
+  const lines = text4.replace(/\n+$/, "").split("\n");
+  if (options.all === true || lines.length <= TEXT_LINE_CAP) return `${lines.join("\n")}
+`;
+  const kept = lines.slice(0, TEXT_LINE_CAP - 1);
+  const cut = lines.length - kept.length;
+  return `${[...kept, `... ${cut} more lines (--all prints everything)`].join("\n")}
+`;
+}
+function listPage(items, options = {}) {
+  const truncated = options.all !== true && items.length > TEXT_LINE_CAP;
+  const page = {
+    items: truncated ? items.slice(0, TEXT_LINE_CAP) : items,
+    total: items.length,
+    truncated
+  };
+  return options.for === void 0 ? page : { ...page, for: options.for };
 }
 
 // kernel/src/change/render/change.ts
@@ -17199,6 +18088,7 @@ function renderStatus(report2) {
     `stage: ${report2.stage}`,
     `profile: ${report2.profile}`
   ];
+  lines.push(...renderNodes(report2.nodes), ...renderGates(report2.gates));
   if (report2.parked !== void 0) {
     lines.push(`parked on ${report2.parked.entry}; options:`);
     report2.parked.options.forEach((option, i) => lines.push(`  ${String(i + 1)}. ${option}`));
@@ -17214,6 +18104,46 @@ function renderStatus(report2) {
   }
   return `${lines.join("\n")}
 `;
+}
+var PENDING_SHOWN = 5;
+function renderNodes(nodes) {
+  if (nodes.length === 0) return [];
+  const lines = ["nodes:"];
+  for (let i = 0; i < nodes.length; ) {
+    const node3 = nodes[i];
+    if (node3 === void 0) break;
+    let end = i + 1;
+    if (isDoneInstance(node3)) {
+      while (end < nodes.length && isDoneInstance(nodes[end]) && nodes[end]?.kind === node3.kind)
+        end += 1;
+    }
+    const last = nodes[end - 1];
+    if (end - i > 1 && last !== void 0) {
+      lines.push(`  ${node3.id}..${last.id.split(":")[1] ?? ""} done (${String(end - i)})`);
+    } else {
+      const why = node3.state === "done" || node3.why === void 0 ? "" : `: ${node3.why}`;
+      lines.push(`  ${node3.id} ${node3.state}${why}`);
+    }
+    i = end;
+  }
+  return lines;
+}
+function isDoneInstance(node3) {
+  return node3?.state === "done" && node3.kind !== "gate" && node3.id.includes(":");
+}
+function renderGates(gates) {
+  const lines = [];
+  for (const gate2 of gates) {
+    const state = gate2.done ? `passed by ${gate2.passedBy ?? "user"}` : gate2.ready ? `ready, the user passes it with ${gate2.command ?? "its stage command"}` : "not ready";
+    lines.push(`${gate2.gate}: ${state}`);
+    if (gate2.done) continue;
+    for (const entry of gate2.pending.slice(0, PENDING_SHOWN)) {
+      lines.push(`  pending ${entry.id} ${entry.type}: ${entry.summary}`);
+    }
+    const more = gate2.pending.length - PENDING_SHOWN;
+    if (more > 0) lines.push(`  ${String(more)} more pending: bdk log list`);
+  }
+  return lines;
 }
 function renderList(items) {
   if (items.length === 0) return "no Changes\n";
@@ -17241,49 +18171,365 @@ function renderPark(report2) {
 `;
 }
 
-// kernel/src/change/use-cases/facts.ts
-function changeFacts(index2, changeId2) {
-  const change = findChangeRow(index2, changeId2);
-  const entries = listEntries(index2, changeId2);
-  const base = change !== void 0 && isProfile(change.profile) ? change.profile : "small";
-  return {
-    entries,
-    stage: stageOf(entries),
-    profile: effectiveProfile(base, entries),
-    kind: change?.kind ?? "feature",
-    source: change?.source ?? "user",
-    confirmed: isConfirmed(change?.source ?? "user", entries),
-    parked: parkedQuestion(entries)
-  };
+// kernel/src/graph/render/graph.ts
+function renderNext(outcome) {
+  const { report: report2 } = outcome;
+  if (report2.instruction !== void 0) return report2.instruction;
+  if (outcome.parked !== void 0) {
+    const lines = [
+      `# ${report2.change} is parked`,
+      "",
+      `${outcome.parked.entry}: ${outcome.parked.summary}`,
+      "",
+      ...outcome.parked.options.map((option, i) => `${String(i + 1)}. ${option}`),
+      "",
+      `Ask the user for an option, then run \`bdk change resume ${report2.change} --option <n>\`.`
+    ];
+    return `${lines.join("\n")}
+`;
+  }
+  const gate2 = report2.gates.find((candidate) => candidate.ready && !candidate.done);
+  if (report2.waiting === "gate" && gate2 !== void 0) return gateText(gate2, outcome.gateText);
+  return `# ${report2.change}: every node is done
+
+Nothing waits; the Change is complete.
+`;
+}
+function gateText(gate2, template) {
+  const lines = [`# Waiting for ${gate2.gate}`, ""];
+  if (template !== void 0) lines.push(template.trimEnd(), "");
+  lines.push(`The user passes the gate by typing \`${gate2.command ?? "the next stage command"}\`.`);
+  lines.push("", "## Pending review entries", "");
+  if (gate2.pending.length === 0) lines.push("none");
+  for (const entry of gate2.pending) lines.push(`- ${entry.id} ${entry.type}: ${entry.summary}`);
+  return `${lines.join("\n")}
+`;
+}
+function nodeLine(node3) {
+  const requires = node3.requires === void 0 ? "" : ` <- ${node3.requires.join(", ")}`;
+  const why = node3.why === void 0 ? "" : ` (${node3.why})`;
+  return `${node3.id} [${node3.kind}] ${node3.state}${requires}${why}`;
+}
+function renderExplain(report2) {
+  const lines = [`${report2.artifact}: ${report2.state} (profile ${report2.profile})`];
+  for (const node3 of report2.chain) {
+    lines.push(`  ${nodeLine(node3)}`);
+    if (node3.inputHash !== void 0) lines.push(`    hash ${node3.inputHash}`);
+  }
+  if (report2.conditions !== void 0) lines.push(`conditions: ${report2.conditions.join(", ")}`);
+  return `${lines.join("\n")}
+`;
+}
+function renderValidate(report2) {
+  const lines = [`${report2.artifact}: ${report2.valid ? "valid" : "invalid"}`];
+  for (const check of report2.checks) {
+    lines.push(
+      `  ${check.ok ? "ok  " : "FAIL"} ${check.id}${check.why === void 0 ? "" : `: ${check.why}`}`
+    );
+  }
+  if (report2.inputHash !== void 0) lines.push(`hash ${report2.inputHash}`);
+  return `${lines.join("\n")}
+`;
+}
+function renderDone(report2) {
+  const entry = report2.entry === void 0 ? "" : ` in ${report2.entry}`;
+  return `${report2.artifact} done${entry} (${report2.inputHash})
+next: ${report2.next}
+`;
 }
 
-// kernel/src/change/use-cases/list.ts
-function listAllChanges(deps, projectRoot, options) {
-  return withIndex(deps.openIndex, deps.store, projectRoot, (index2) => {
-    refreshAll(index2);
-    const branches = /* @__PURE__ */ new Map();
-    for (const marker of listMarkers(deps.store, projectRoot)) {
-      if (!branches.has(marker.change)) branches.set(marker.change, marker.branch);
+// kernel/src/graph/use-cases/done.ts
+import { join as join19 } from "node:path";
+
+// kernel/src/graph/domain/kinds/kind.ts
+var BaseKind = class {
+  doneBy = { through: "done" };
+};
+function fileChecks(view, path) {
+  const file = view.file(path);
+  if (file === void 0) return [{ id: "exists", ok: false, why: `${path} is missing` }];
+  return [
+    { id: "exists", ok: true },
+    file.blank ? { id: "non-empty", ok: false, why: `${path} has no content` } : { id: "non-empty", ok: true },
+    file.invalid === void 0 ? { id: "schema", ok: true } : { id: "schema", ok: false, why: file.invalid }
+  ];
+}
+var PART_FILE = /^(\d{2})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
+function partFiles(view, dir) {
+  const parts = /* @__PURE__ */ new Map();
+  for (const name of view.list(dir)) {
+    const nn = PART_FILE.exec(name)?.[1];
+    if (nn !== void 0 && !parts.has(nn)) parts.set(nn, `${dir}/${name}`);
+  }
+  return parts;
+}
+function live(entry) {
+  return entry.status === "proposed" || entry.status === "accepted";
+}
+
+// kernel/src/graph/domain/kinds/documents.ts
+var DESIGN_LIMIT_BYTES = 12 * 1024;
+var IntentKind = class extends BaseKind {
+  name = "intent";
+  doneBy = { through: "construction" };
+  writes() {
+    return ["change.md"];
+  }
+  inputs() {
+    return { files: ["change.md"] };
+  }
+  validate(view) {
+    return fileChecks(view, "change.md");
+  }
+};
+var DesignKind = class extends BaseKind {
+  name = "design";
+  writes() {
+    return ["design.md"];
+  }
+  inputs() {
+    return { files: ["design.md"] };
+  }
+  validate(view) {
+    const checks = fileChecks(view, "design.md");
+    const file = view.file("design.md");
+    if (file === void 0) return checks;
+    return [
+      ...checks,
+      file.bytes > DESIGN_LIMIT_BYTES ? {
+        id: "size",
+        ok: false,
+        why: `design.md is ${file.bytes} bytes, over ${DESIGN_LIMIT_BYTES}`,
+        instead: "split the design into design/parts/<nn>-<slug>.md and remove design.md"
+      } : { id: "size", ok: true }
+    ];
+  }
+};
+var ArchitectureKind = class extends BaseKind {
+  name = "architecture";
+  skip(view) {
+    if (view.profile === "tiny") return "profile tiny has no architecture";
+    if (view.file("design.md")?.data?.architecture === false) {
+      return "design.md declares architecture: false (product-only Change)";
     }
-    return listChanges(index2).filter((change) => options.archived || !change.archived).map((change) => {
-      const facts = changeFacts(index2, change.id);
-      const branch = branches.get(change.id);
-      const state = change.archived ? "archived" : facts.parked === void 0 ? "active" : "parked";
-      return {
-        change: change.id,
-        ...branch === void 0 ? {} : { branch },
-        stage: facts.stage,
-        state,
-        kind: change.kind,
-        profile: facts.profile,
-        updatedAt: change.updatedAt
-      };
-    });
-  });
-}
+    return void 0;
+  }
+  writes() {
+    return ["architecture.md"];
+  }
+  inputs() {
+    return { files: ["architecture.md"] };
+  }
+  validate(view) {
+    return fileChecks(view, "architecture.md");
+  }
+};
+var SpecDeltaKind = class extends BaseKind {
+  name = "spec-delta";
+  skip(view) {
+    const impact = [...partFiles(view, "plan/parts").values()].some(
+      (path) => Array.isArray(view.file(path)?.data?.["spec-impact"])
+    );
+    return impact ? void 0 : "no plan part declares spec-impact";
+  }
+  writes(view) {
+    const files = this.files(view);
+    return files.length === 0 ? ["spec-delta/<capability>.md"] : files;
+  }
+  inputs(view) {
+    return { files: this.files(view) };
+  }
+  validate(view) {
+    const files = this.files(view);
+    if (files.length === 0) {
+      return [{ id: "exists", ok: false, why: "spec-delta/ holds no delta" }];
+    }
+    return files.flatMap(
+      (path) => fileChecks(view, path).map((check) => ({ ...check, id: `${check.id}:${path}` }))
+    );
+  }
+  files(view) {
+    return view.list("spec-delta").filter((name) => name.endsWith(".md")).map((name) => `spec-delta/${name}`);
+  }
+};
 
-// kernel/src/change/use-cases/new.ts
-import { join as join16 } from "node:path";
+// kernel/src/graph/domain/kinds/parts.ts
+var PartKind = class extends BaseKind {
+  instances(view) {
+    return [...partFiles(view, this.dir).keys()].map((nn) => ({ nn, requires: [] }));
+  }
+  writes(view, nn) {
+    const path = nn === void 0 ? void 0 : partFiles(view, this.dir).get(nn);
+    return [path ?? `${this.dir}/${nn ?? "<nn>"}-<slug>.md`];
+  }
+  inputs(view, nn) {
+    const path = nn === void 0 ? void 0 : partFiles(view, this.dir).get(nn);
+    return { files: path === void 0 ? [] : [path] };
+  }
+  validate(view, target) {
+    const path = target.nn === void 0 ? void 0 : partFiles(view, this.dir).get(target.nn);
+    if (path === void 0) {
+      return [{ id: "exists", ok: false, why: `${this.dir}/ holds no part ${target.nn ?? ""}` }];
+    }
+    return fileChecks(view, path);
+  }
+};
+var DesignPartKind = class extends PartKind {
+  name = "design-part";
+  dir = "design/parts";
+};
+var PlanPartKind = class extends PartKind {
+  name = "plan-part";
+  dir = "plan/parts";
+};
+var DesignIndexKind = class extends BaseKind {
+  name = "design-index";
+  writes() {
+    return ["design/index.md"];
+  }
+  inputs(view) {
+    return { files: [...partFiles(view, "design/parts").values()] };
+  }
+  validate(view) {
+    const parts = [...partFiles(view, "design/parts").values()];
+    if (parts.length === 0) {
+      return [{ id: "parts", ok: false, why: "design/parts/ holds no design part" }];
+    }
+    return [
+      { id: "parts", ok: true },
+      ...parts.flatMap(
+        (path) => fileChecks(view, path).map((check) => ({ ...check, id: `${check.id}:${path}` }))
+      )
+    ];
+  }
+};
+var ExecutePartKind = class extends BaseKind {
+  name = "execute-part";
+  doneBy = { through: "command", command: "bdk part done {nn}" };
+  instances(view) {
+    return [...partFiles(view, "plan/parts")].map(([nn, path]) => {
+      const dependsOn = view.file(path)?.data?.["depends-on"];
+      const requires = Array.isArray(dependsOn) ? dependsOn.map((dependency) => `execute-part:${String(dependency)}`) : [];
+      return { nn, requires };
+    });
+  }
+  writes() {
+    return [];
+  }
+  /** Defined by T22. */
+  inputs() {
+    return { none: true };
+  }
+  /** T22 adds the trailer and ticket checks. */
+  validate() {
+    return [];
+  }
+};
+
+// kernel/src/graph/domain/kinds/steps.ts
+var FilelessKind = class extends BaseKind {
+  writes() {
+    return [];
+  }
+  inputs() {
+    return { none: true };
+  }
+  validate() {
+    return [];
+  }
+};
+var GateKind = class extends FilelessKind {
+  name = "gate";
+  doneBy = { through: "gate" };
+};
+var PostTaskStepKind = class extends FilelessKind {
+  name = "post-task-step";
+  doneBy = {
+    through: "command",
+    command: "the post-task step runner (T23)"
+  };
+};
+var CloseKind = class extends FilelessKind {
+  name = "close";
+  doneBy = { through: "command", command: "bdk change close" };
+};
+
+// kernel/src/graph/domain/kinds/verdicts.ts
+var PASSING = ["done", "done-with-concerns"];
+function verdictChecks(view, id) {
+  const reports = view.entries.filter(
+    (entry) => entry.type === "report" && entry.refs.includes(id)
+  );
+  const latest2 = reports.at(-1);
+  const status = latest2 === void 0 ? void 0 : view.reportStatus(latest2);
+  const verdict = latest2 === void 0 ? {
+    id: "verdict",
+    ok: false,
+    why: `no report entry names ${id}`,
+    instead: `record the report naming ${id}: bdk log ingest --ticket <ticket>`
+  } : status !== void 0 && PASSING.includes(status) ? { id: "verdict", ok: true } : {
+    id: "verdict",
+    ok: false,
+    why: `the latest report ${latest2.id} has status ${status ?? "unreadable"}, not done or done-with-concerns`
+  };
+  const blockers = view.entries.filter(
+    (entry) => entry.type === "blocker" && live(entry) && entry.refs.includes(id)
+  );
+  const blocker = blockers.length === 0 ? { id: "blockers", ok: true } : {
+    id: "blockers",
+    ok: false,
+    why: `live blocker ${blockers.map((entry) => entry.id).join(", ")} names ${id}`,
+    instead: "resolve the blocker: bdk log resolve <id>"
+  };
+  return [verdict, blocker];
+}
+var PlanVerifyKind = class extends BaseKind {
+  name = "plan-verify";
+  writes() {
+    return [];
+  }
+  /** P2: a verdict given for other plan parts is stale. */
+  inputs(view) {
+    return { files: [...partFiles(view, "plan/parts").values()] };
+  }
+  validate(view, target) {
+    return verdictChecks(view, target.id);
+  }
+};
+var ReviewKind = class extends BaseKind {
+  name = "review";
+  writes() {
+    return [];
+  }
+  /** The committed code tree, so ledger writes and uncommitted edits do not stale it. */
+  inputs() {
+    return { codeTree: true };
+  }
+  validate(view, target) {
+    return verdictChecks(view, target.id);
+  }
+};
+
+// kernel/src/graph/domain/kinds/index.ts
+function kindRegistry(extra = []) {
+  const kinds = [
+    new IntentKind(),
+    new DesignKind(),
+    new ArchitectureKind(),
+    new DesignPartKind(),
+    new DesignIndexKind(),
+    new PlanPartKind(),
+    new PlanVerifyKind(),
+    new GateKind(),
+    new ExecutePartKind(),
+    new PostTaskStepKind(),
+    new ReviewKind(),
+    new SpecDeltaKind(),
+    new CloseKind(),
+    ...extra
+  ];
+  return new Map(kinds.map((kind) => [kind.name, kind]));
+}
 
 // kernel/src/log/render/log.ts
 function renderAdd(result2) {
@@ -17331,16 +18577,17 @@ function renderResolve(result2) {
 }
 
 // kernel/src/log/use-cases/append.ts
-import { join as join10, relative as relative2, sep as sep2 } from "node:path";
+import { join as join13, relative as relative2, sep as sep2 } from "node:path";
 
 // kernel/src/shared/git/index.ts
 import { execFile } from "node:child_process";
+import { createHash as createHash2 } from "node:crypto";
 import { existsSync as existsSync2, readFileSync as readFileSync2, statSync as statSync3 } from "node:fs";
-import { dirname as dirname3, join as join9, resolve as resolve2 } from "node:path";
+import { dirname as dirname4, join as join12, resolve as resolve2 } from "node:path";
 function findWorkTree(cwd) {
-  for (let dir = resolve2(cwd); ; dir = dirname3(dir)) {
-    if (existsSync2(join9(dir, ".git"))) return dir;
-    if (dirname3(dir) === dir) return void 0;
+  for (let dir = resolve2(cwd); ; dir = dirname4(dir)) {
+    if (existsSync2(join12(dir, ".git"))) return dir;
+    if (dirname4(dir) === dir) return void 0;
   }
 }
 function runGit(args, cwd, options = {}) {
@@ -17374,7 +18621,7 @@ function runGit(args, cwd, options = {}) {
 function currentBranch(workTree) {
   let head;
   try {
-    head = readFileSync2(join9(resolveGitDir(workTree), "HEAD"), "utf8");
+    head = readFileSync2(join12(resolveGitDir(workTree), "HEAD"), "utf8");
   } catch {
     return void 0;
   }
@@ -17387,8 +18634,18 @@ async function authorIdent(git, workTree) {
   const ident = result2.stdout.trim().replace(/\s+\d+\s+[+-]\d{4}$/, "");
   return ident === "" ? "unknown" : ident;
 }
+async function codeTreeHash(git, workTree) {
+  const result2 = await git.run(["ls-tree", "-r", "-z", "HEAD"], workTree);
+  if (result2.code !== 0) return void 0;
+  const lines = result2.stdout.split("\0").filter((line) => line !== "" && !line.split("	")[1]?.startsWith(".bdk/")).sort((a, b) => {
+    const pa = a.split("	")[1] ?? "";
+    const pb = b.split("	")[1] ?? "";
+    return pa < pb ? -1 : pa > pb ? 1 : 0;
+  });
+  return `sha256:${createHash2("sha256").update(lines.join("\n")).digest("hex")}`;
+}
 function resolveGitDir(workTree) {
-  const dotGit = join9(workTree, ".git");
+  const dotGit = join12(workTree, ".git");
   if (statSync3(dotGit, { throwIfNoEntry: false })?.isFile() !== true) return dotGit;
   const pointer = /^gitdir:\s*(.+?)\s*$/m.exec(readFileSync2(dotGit, "utf8"))?.[1];
   return pointer === void 0 ? dotGit : resolve2(workTree, pointer);
@@ -17503,7 +18760,7 @@ async function appendEntry(deps, change, index2, draft, options) {
       normalise
     );
     if (existing !== void 0) {
-      const document = readDocument(deps.store, join10(change.projectRoot, existing.path));
+      const document = readDocument(deps.store, join13(change.projectRoot, existing.path));
       if (document !== void 0 && "data" in document) {
         return {
           entry: entryView(document.data, existing.status),
@@ -17534,7 +18791,9 @@ async function appendEntry(deps, change, index2, draft, options) {
       ...fingerprint2 === void 0 ? {} : { fingerprint: fingerprint2 },
       ...draft.options === void 0 ? {} : { options: [...draft.options] },
       ...draft.park === true ? { park: true } : {},
-      ...draft.profile === void 0 ? {} : { profile: draft.profile }
+      ...draft.profile === void 0 ? {} : { profile: draft.profile },
+      ...draft.to === void 0 ? {} : { to: draft.to },
+      ...draft.inputHash === void 0 ? {} : { "input-hash": draft.inputHash }
     }),
     draft.body,
     deps.random
@@ -17557,8 +18816,8 @@ function withChangeIndex(deps, change, work) {
 // kernel/src/log/use-cases/add.ts
 var SUMMARY_MAX = 120;
 function addEntry(deps, change, input) {
-  const invalid3 = validate3(input);
-  if (invalid3 !== void 0) return Promise.resolve(invalid3);
+  const invalid4 = validate3(input);
+  if (invalid4 !== void 0) return Promise.resolve(invalid4);
   return withChangeIndex(deps, change, async (index2) => {
     if (input.supersedes !== void 0) {
       const missing = checkSupersedes(deps, change, index2, input.supersedes);
@@ -17600,7 +18859,7 @@ function validate3(input) {
 }
 function checkSupersedes(deps, change, index2, value) {
   const reference = parseReference(value);
-  const notFound4 = (why) => refuse("input/not-found", why, ["bdk log list", "bdk log show <id>"]);
+  const notFound5 = (why) => refuse("input/not-found", why, ["bdk log list", "bdk log show <id>"]);
   if (!reference?.id.startsWith("L-")) {
     return refuse("input/invalid-argument", `--supersedes ${value} is not an entry id`, [
       "--supersedes L-xxxxxxxx",
@@ -17610,10 +18869,10 @@ function checkSupersedes(deps, change, index2, value) {
   const changeId2 = reference.changeId ?? change.id;
   if (changeId2 !== change.id) {
     const location = findChange(deps.store, change.projectRoot, changeId2);
-    if (location === void 0) return notFound4(`no Change ${changeId2} for --supersedes ${value}`);
+    if (location === void 0) return notFound5(`no Change ${changeId2} for --supersedes ${value}`);
     refreshChange(index2, location);
   }
-  return findEntry(index2, changeId2, reference.id) === void 0 ? notFound4(`--supersedes ${value} names no entry of ${changeId2}`) : void 0;
+  return findEntry(index2, changeId2, reference.id) === void 0 ? notFound5(`--supersedes ${value} names no entry of ${changeId2}`) : void 0;
 }
 
 // kernel/src/log/use-cases/list.ts
@@ -17636,7 +18895,7 @@ function performanceClock() {
 }
 
 // kernel/src/log/use-cases/resolve.ts
-import { join as join11 } from "node:path";
+import { join as join14 } from "node:path";
 function resolveEntry(deps, change, input) {
   if (input.status === "superseded" && input.by === void 0) {
     return Promise.resolve(
@@ -17696,7 +18955,7 @@ function notFound(change, id) {
   return refuse("input/not-found", `${id} names no entry of ${change.id}`, ["bdk log list"]);
 }
 function rewrite(deps, change, entry, update, at, input) {
-  const path = join11(change.projectRoot, entry.path);
+  const path = join14(change.projectRoot, entry.path);
   const document = readDocument(deps.store, path);
   if (document === void 0 || !("data" in document)) return false;
   writeDocument(deps.store, path, {
@@ -17705,18 +18964,18 @@ function rewrite(deps, change, entry, update, at, input) {
   });
   return true;
 }
-function result(input, record3) {
+function result(input, record4) {
   return {
     entry: input.id,
     status: input.status,
     ...input.by === void 0 ? {} : { by: input.by },
-    record: record3,
+    record: record4,
     ...input.reason === void 0 ? {} : { reason: input.reason }
   };
 }
 
 // kernel/src/log/use-cases/show.ts
-import { join as join12 } from "node:path";
+import { join as join15 } from "node:path";
 function showEntry(deps, change, id) {
   const reference = parseReference(id);
   if (!reference?.id.startsWith("L-")) {
@@ -17728,18 +18987,18 @@ function showEntry(deps, change, id) {
     );
   }
   const changeId2 = reference.changeId ?? change.id;
-  const notFound4 = (why) => refuse("input/not-found", why, ["bdk log list", "bdk change list --all"]);
+  const notFound5 = (why) => refuse("input/not-found", why, ["bdk log list", "bdk change list --all"]);
   return withChangeIndex(deps, change, (index2) => {
     if (changeId2 !== change.id) {
       const location = findChange(deps.store, change.projectRoot, changeId2);
-      if (location === void 0) return notFound4(`no Change ${changeId2}`);
+      if (location === void 0) return notFound5(`no Change ${changeId2}`);
       refreshChange(index2, location);
     }
     const row = findEntry(index2, changeId2, reference.id);
-    if (row === void 0) return notFound4(`${id} names no entry of ${changeId2}`);
-    const document = readDocument(deps.store, join12(change.projectRoot, row.path));
+    if (row === void 0) return notFound5(`${id} names no entry of ${changeId2}`);
+    const document = readDocument(deps.store, join15(change.projectRoot, row.path));
     if (document === void 0 || !("data" in document)) {
-      return notFound4(`${row.path} disappeared while it was read`);
+      return notFound5(`${row.path} disappeared while it was read`);
     }
     return {
       entry: { ...entryView(document.data, row.status), body: document.body, path: row.path },
@@ -17823,1686 +19082,977 @@ function logRegistrations(deps) {
   ];
 }
 
-// kernel/src/shared/config/manifest.ts
-import { dirname as dirname4, join as join13 } from "node:path";
-import { fileURLToPath } from "node:url";
-
-// kernel/src/shared/config/values.ts
-function isRecord(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function isIdArray(value) {
-  return Array.isArray(value) && value.length > 0 && value.every((item) => isRecord(item) && typeof item.id === "string");
-}
-function joinKey(prefix, segment) {
-  return prefix === "" ? segment : `${prefix}.${segment}`;
-}
-function valueAt(root, steps) {
-  let value = root;
-  for (const { segment, id } of steps) {
-    if (id) value = isIdArray(value) ? value.find((item) => item.id === segment) : void 0;
-    else value = isRecord(value) ? value[segment] : void 0;
-    if (value === void 0) return void 0;
-  }
-  return value;
-}
-
-// kernel/src/shared/config/manifest.ts
-var UNKNOWN_VERSION = "0.0.0-unknown";
-function pluginRootOf(bundleUrl) {
-  return dirname4(dirname4(fileURLToPath(bundleUrl)));
-}
-function readKernelVersion(store2, pluginRoot) {
-  const text4 = store2.read(join13(pluginRoot, ".claude-plugin", "plugin.json"));
-  if (text4 === void 0) return UNKNOWN_VERSION;
-  try {
-    const manifest = JSON.parse(text4);
-    const version3 = isRecord(manifest) ? manifest.version : void 0;
-    return typeof version3 === "string" ? version3 : UNKNOWN_VERSION;
-  } catch {
-    return UNKNOWN_VERSION;
-  }
-}
-
-// kernel/src/shared/config/layers.ts
-var import_yaml3 = __toESM(require_dist(), 1);
-import { posix, win32 } from "node:path";
-function globalDir({ env, platform, home }) {
-  const path = platform === "win32" ? win32 : posix;
-  const xdg = env.XDG_CONFIG_HOME;
-  if (xdg !== void 0 && xdg !== "" && path.isAbsolute(xdg)) return path.join(xdg, "bdk");
-  const appData = env.APPDATA;
-  if (platform === "win32" && appData !== void 0 && appData !== "") {
-    return path.join(appData, "bdk");
-  }
-  return path.join(home, ".config", "bdk");
-}
-function layerFiles(global, projectRoot) {
-  const path = global.includes("\\") ? win32 : posix;
-  return [
-    { name: "global", path: path.join(global, "settings.yaml") },
-    { name: "project", path: posix.join(projectRoot, ".bdk", "settings.yaml") },
-    { name: "local", path: posix.join(projectRoot, ".bdk", "settings.local.yaml") }
-  ];
-}
-function readLayers(store2, paths) {
-  const layers = [];
-  for (const { name, path } of layerFiles(paths.globalDir, paths.projectRoot)) {
-    const text4 = store2.read(path);
-    if (text4 !== void 0) layers.push({ name, path, text: text4, values: parseLayer(path, text4) });
-  }
-  return layers;
-}
-function parseLayer(path, text4) {
-  let values2;
-  try {
-    values2 = (0, import_yaml3.parse)(text4);
-  } catch (error2) {
-    if (!(error2 instanceof import_yaml3.YAMLParseError)) throw error2;
-    const line = error2.linePos?.[0].line;
-    throw invalid2(path, `is not valid YAML${line === void 0 ? "" : ` at line ${line}`}`);
-  }
-  if (values2 === null || values2 === void 0) return {};
-  if (!isRecord(values2)) throw invalid2(path, "must hold a mapping of keys at the top level");
-  return values2;
-}
-function invalid2(path, problem) {
-  return new KernelRefusal(
-    refuse("policy/config-invalid", `${path} ${problem}`, [`fix ${path}`, "bdk config check"])
-  );
-}
-
-// kernel/src/shared/config/hint.ts
-var MAX_DISTANCE = 2;
-function closest(key, candidates) {
-  let best;
-  let bestDistance = MAX_DISTANCE + 1;
-  for (const candidate of candidates) {
-    const distance = editDistance(key, candidate);
-    if (distance < bestDistance) {
-      best = candidate;
-      bestDistance = distance;
-    }
-  }
-  return best;
-}
-function editDistance(a, b) {
-  const rows = a.length + 1;
-  const cols = b.length + 1;
-  const d = Array.from(
-    { length: rows },
-    (_, i) => Array.from({ length: cols }, (_2, j) => i === 0 ? j : j === 0 ? i : 0)
-  );
-  const at = (i, j) => d[i]?.[j] ?? 0;
-  for (let i = 1; i < rows; i++) {
-    for (let j = 1; j < cols; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      let value = Math.min(at(i - 1, j) + 1, at(i, j - 1) + 1, at(i - 1, j - 1) + cost);
-      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
-        value = Math.min(value, at(i - 2, j - 2) + 1);
-      }
-      const row = d[i];
-      if (row !== void 0) row[j] = value;
-    }
-  }
-  return at(a.length, b.length);
-}
-
-// kernel/src/shared/config/merge.ts
-function mergeLayers(layers) {
-  const origins = {};
-  const problems = [];
-  let value = {};
-  for (const layer of layers) {
-    const context = { layer, origins, problems };
-    value = mergeMapping(value, layer.values, "", context);
-  }
-  return { value, origins, problems };
-}
-function mergeMapping(lower, higher, prefix, context) {
-  const out = { ...lower };
-  for (const [key, next] of Object.entries(higher)) {
-    const path = joinKey(prefix, key);
-    out[key] = mergeValue(lower[key], next, path, context);
-  }
-  return out;
-}
-function mergeValue(lower, next, path, context) {
-  if (isRecord(next) && Object.keys(next).length > 0) {
-    if (!isRecord(lower)) forget(context.origins, path);
-    return mergeMapping(isRecord(lower) ? lower : {}, next, path, context);
-  }
-  if (isIdArray(next)) {
-    reportDuplicates(next, path, context);
-    if (!isIdArray(lower)) forget(context.origins, path);
-    return mergeById(isIdArray(lower) ? lower : [], next, path, context);
-  }
-  forget(context.origins, path);
-  context.origins[path] = context.layer.name;
-  return next;
-}
-function mergeById(lower, higher, path, context) {
-  const out = [...lower];
-  for (const item of higher) {
-    const itemPath = joinKey(path, item.id);
-    const at = out.findIndex((existing) => existing.id === item.id);
-    const merged = mergeMapping(at === -1 ? {} : out[at] ?? {}, item, itemPath, context);
-    if (at === -1) out.push(merged);
-    else out[at] = merged;
-  }
-  return out;
-}
-function reportDuplicates(items, path, context) {
-  const seen = /* @__PURE__ */ new Set();
-  for (const { id } of items) {
-    if (seen.has(id)) {
-      context.problems.push({
-        rule: "policy/config-invalid",
-        key: path,
-        layer: context.layer.name,
-        path: context.layer.path,
-        message: `the id ${id} appears twice in one layer`
-      });
-    }
-    seen.add(id);
-  }
-}
-function forget(origins, path) {
-  for (const key of Object.keys(origins)) {
-    if (key === path || key.startsWith(`${path}.`)) Reflect.deleteProperty(origins, key);
-  }
-}
-
-// kernel/src/shared/config/keys.ts
-var LEAF = { kind: "leaf" };
-function keyTree(schema) {
-  const inner = unwrap(schema);
-  if (inner instanceof ZodObject) {
-    const children = /* @__PURE__ */ new Map();
-    const shape = inner.shape;
-    for (const [key, child] of Object.entries(shape)) {
-      children.set(key, keyTree(child));
-    }
-    return { kind: "object", children };
-  }
-  if (inner instanceof ZodArray) {
-    const item = unwrap(inner.element);
-    if (item instanceof ZodObject && "id" in item.shape) {
-      return { kind: "idArray", item: keyTree(item) };
-    }
-    return LEAF;
-  }
-  if (inner instanceof ZodRecord)
-    return { kind: "record", value: keyTree(inner.valueType) };
-  return LEAF;
-}
-function unwrap(schema) {
-  let current = schema;
-  for (; ; ) {
-    if (current instanceof ZodDefault || current instanceof ZodPrefault || current instanceof ZodOptional || current instanceof ZodNullable || current instanceof ZodReadonly) {
-      current = current.unwrap();
-    } else if (current instanceof ZodPipe) {
-      current = current.in;
-    } else {
-      return current;
-    }
-  }
-}
-function keyPaths(node2, prefix = "") {
-  if (node2.kind !== "object") return prefix === "" ? [] : [prefix];
-  const paths = prefix === "" ? [] : [prefix];
-  for (const [key, child] of node2.children) paths.push(...keyPaths(child, joinKey(prefix, key)));
-  return paths;
-}
-function keySteps(node2, key) {
-  if (key === "") return void 0;
-  const steps = [];
-  let current = node2;
-  for (const segment of key.split(".")) {
-    if (current.kind === "object") {
-      current = current.children.get(segment);
-      if (current === void 0) return void 0;
-      steps.push({ segment, id: false });
-    } else if (current.kind === "idArray") {
-      steps.push({ segment, id: true });
-      current = current.item;
-    } else if (current.kind === "record") {
-      steps.push({ segment, id: false });
-      current = current.value;
-    } else {
-      return void 0;
-    }
-  }
-  return steps;
-}
-
-// kernel/src/shared/config/registry.ts
-function defineConfigModule(module) {
-  return module;
-}
-function definePromptKey(prompt2) {
-  return prompt2;
-}
-var PROMPT_SEGMENT = /^[a-z0-9][a-z0-9-]*$/;
-var RESERVED = /* @__PURE__ */ new Set(["dir", "files"]);
-function createConfigRegistry(parts) {
-  const shape = {};
-  for (const module of parts.modules) {
-    if (module.key in shape) throw new Error(`config module ${module.key} is declared twice`);
-    shape[module.key] = module.schema.meta({ description: module.description });
-  }
-  const seen = /* @__PURE__ */ new Set();
-  for (const prompt2 of parts.prompts) checkPromptKey(prompt2.key, seen);
-  const schema = strictObject(shape);
-  const tree = keyTree(schema);
-  const prompts2 = parts.prompts;
+// kernel/src/graph/domain/reports.ts
+function nodeView(node3) {
   return {
-    modules: parts.modules,
-    prompts: prompts2,
-    schema,
-    tree,
-    keys: keyPaths(tree),
-    promptKey: (key) => prompts2.find((prompt2) => matches(prompt2.key, key))
+    id: node3.id,
+    kind: node3.kind,
+    state: node3.state,
+    ...node3.requires.length === 0 ? {} : { requires: node3.requires },
+    ...node3.inputHash === void 0 ? {} : { inputHash: node3.inputHash },
+    ...node3.why === void 0 ? {} : { why: node3.why }
   };
 }
-function checkPromptKey(key, seen) {
-  const segments = key.split("/");
-  const last = segments.at(-1);
-  const literal2 = last === "*" ? segments.slice(0, -1) : segments;
-  const valid = literal2.length > 0 && literal2.every((segment) => PROMPT_SEGMENT.test(segment)) && !RESERVED.has(segments[0] ?? "");
-  if (!valid) throw new Error(`prompt key ${key} is not a valid prompt key`);
-  if (seen.has(key)) throw new Error(`prompt key ${key} is declared twice`);
-  seen.add(key);
+function gateView(gate2, pending) {
+  return {
+    gate: gate2.gate,
+    ready: gate2.ready,
+    done: gate2.done,
+    ...gate2.passedBy === void 0 ? {} : { passedBy: gate2.passedBy },
+    ...gate2.command === void 0 ? {} : { command: gate2.command },
+    pending: gate2.pending.map((entry) => pending(entry.id))
+  };
 }
-function matches(pattern, key) {
-  if (!pattern.endsWith("/*")) return pattern === key;
-  const base = pattern.slice(0, -1);
-  const rest = key.slice(base.length);
-  return key.startsWith(base) && PROMPT_SEGMENT.test(rest);
-}
-
-// kernel/src/shared/config/known.ts
-var PLANNED_KEYS = [
-  { key: "policy.gates.design", owner: "T21" },
-  { key: "policy.gates.review", owner: "T21" },
-  { key: "policy.budgets.task-redispatch", owner: "T22" },
-  { key: "policy.budgets.verify-fix", owner: "T22" },
-  { key: "policy.budgets.review-fix", owner: "T22" },
-  { key: "policy.budgets.verifier", owner: "T22" },
-  { key: "policy.budgets.not-run", owner: "T22" },
-  { key: "policy.oscillation.threshold", owner: "T22" },
-  { key: "policy.escalation.enabled", owner: "T22" },
-  { key: "policy.escalation.model", owner: "T22" },
-  { key: "policy.checkpoint.enabled", owner: "T22" },
-  { key: "policy.checkpoint.squash-at-close", owner: "T22" },
-  { key: "policy.verifier.blocking-categories", owner: "T23" },
-  { key: "policy.log.max-observations", owner: "T23" },
-  { key: "execution.runner", owner: "T23" },
-  { key: "execution.concurrency", owner: "T23" },
-  { key: "execution.host", owner: "T23" },
-  { key: "archive.keep-evidence", owner: "T23" },
-  { key: "rules.propose-when.changes", owner: "T31" },
-  { key: "rules.propose-when.authors", owner: "T31" },
-  { key: "rules.propose-when.failed-attempts", owner: "T31" },
-  { key: "rules.max-per-package", owner: "T31" },
-  { key: "rules.max-learnings-per-change", owner: "T31" },
-  { key: "rules.disabled", owner: "T31" },
-  { key: "spec.normative-word", owner: "T30" }
-];
-var MCP = "removed with the bundled MCP servers (ADR-0001)";
-var REMOVED_KEYS = [
-  { key: "test-tools", reason: "use tools.test" },
-  { key: "lint-tools", reason: "use tools.lint" },
-  { key: "build-tools", reason: "use tools.build" },
-  {
-    key: "quality",
-    reason: "use prompts.files.rules/<category> or .bdk/prompts/rules/<category>.md"
-  },
-  { key: "language-rules", reason: "use prompts.files.rules/languages/<language>" },
-  { key: "features.caveman", reason: "no consumer in v3 (#39)" },
-  { key: "features.serena", reason: MCP },
-  { key: "features.code-review-graph", reason: MCP },
-  { key: "$schema", reason: "use the yaml-language-server modeline" }
-];
-function withoutRemovedKeys(layer) {
-  let values2 = layer.values;
-  for (const { key } of REMOVED_KEYS) values2 = without(values2, key.split("."));
-  return values2 === layer.values ? layer : { ...layer, values: values2 };
-}
-function without(values2, steps) {
-  const [first, ...rest] = steps;
-  if (first === void 0 || !(first in values2)) return values2;
-  if (rest.length === 0) {
-    return Object.fromEntries(Object.entries(values2).filter(([key]) => key !== first));
-  }
-  const child = values2[first];
-  if (!isRecord(child)) return values2;
-  const next = without(child, rest);
-  return next === child ? values2 : { ...values2, [first]: next };
-}
-function within(key, base) {
-  return key === base || key.startsWith(`${base}.`);
-}
-function knownReason(key) {
-  const removed = REMOVED_KEYS.find((entry) => within(key, entry.key));
-  if (removed !== void 0) return `removed v2 key: ${removed.reason}`;
-  const owners = PLANNED_KEYS.filter(
-    (entry) => within(key, entry.key) || within(entry.key, key)
-  ).map((entry) => entry.owner);
-  if (owners.length === 0) return void 0;
-  return `lands with ${[...new Set(owners)].sort().join(", ")}`;
+function chainOf(start, find) {
+  const seen = /* @__PURE__ */ new Map();
+  const visit = (node3) => {
+    for (const id of [...node3.instances ?? [], ...node3.requires]) {
+      const required2 = find(id);
+      if (required2 === void 0 || seen.has(id) || id === start.id) continue;
+      seen.set(id, required2);
+      visit(required2);
+    }
+  };
+  visit(start);
+  const rest = [...seen.values()].sort(
+    (a, b) => b.position - a.position || (a.nn === void 0 ? -1 : 1) - (b.nn === void 0 ? -1 : 1) || (a.nn ?? "").localeCompare(b.nn ?? "")
+  );
+  return [start, ...rest];
 }
 
-// kernel/src/shared/config/validate.ts
-function validateLayers(registry3, layers, merged) {
-  const candidates = candidatesOf(registry3);
-  const problems = [...merged.problems];
-  for (const layer of layers) {
-    walk(registry3, registry3.tree, layer.values, "", (key) => {
-      problems.push(unknown2(key, layer, candidates));
-    });
+// kernel/src/graph/domain/gate.ts
+function gateStatus(input) {
+  const naming = input.entries.filter(
+    (entry) => entry.type === "transition" && entry.gate === input.id
+  );
+  const accepted = (entry) => entry.source === "user" || entry.source === "policy" && input.policy === "auto";
+  const timely = (entry) => input.readyAt === void 0 || entry.at >= input.readyAt;
+  const passing = input.incomplete ? void 0 : naming.filter((entry) => accepted(entry) && timely(entry)).at(-1);
+  const done2 = passing !== void 0;
+  const pending = input.entries.filter((entry) => entry.review && live(entry)).reverse();
+  return {
+    gate: input.id,
+    ready: done2 || input.satisfied,
+    done: done2,
+    ...passing === void 0 ? {} : { passedBy: passing.source === "user" ? "user" : "policy" },
+    ...input.command === void 0 ? {} : { command: input.command },
+    pending,
+    ...input.readyAt === void 0 ? {} : { readyAt: input.readyAt },
+    ...passing === void 0 ? {} : { passedIn: passing },
+    why: explain(input, naming, passing, accepted, timely)
+  };
+}
+function explain(input, naming, passing, accepted, timely) {
+  const since = input.readyAt === void 0 ? "" : `ready since ${input.readyAt}; `;
+  if (passing !== void 0) {
+    return `${since}passed by ${passing.source} in ${passing.id} at ${passing.at}`;
   }
-  const parsed = registry3.schema.safeParse(merged.value);
-  if (!parsed.success) {
-    const reported = problems.map((problem) => problem.key);
-    for (const issue2 of parsed.error.issues) {
-      for (const problem of fromIssue(issue2, merged, layers, candidates)) {
-        if (reported.some((key) => within(key, problem.key))) continue;
-        problems.push(problem);
-        reported.push(problem.key);
+  if (input.incomplete || !input.satisfied) return "a requirement is not done";
+  if (naming.length === 0) {
+    return `${since}no transition names ${input.id}; the user passes it with ${input.command ?? "the next stage command"}`;
+  }
+  const reasons = naming.map(
+    (entry) => !accepted(entry) ? `${entry.id} has source ${entry.source}${entry.source === "policy" ? ` and policy.gates is ${input.policy}` : ""}` : !timely(entry) ? `${entry.id} is older than the ready time` : `${entry.id} does not count`
+  );
+  return `${since}${reasons.join("; ")}`;
+}
+
+// kernel/src/graph/domain/pipeline.ts
+var LOOPS = [
+  "task-redispatch",
+  "verify-fix",
+  "review-fix",
+  "verifier",
+  "not-run"
+];
+var GATE_KIND = "gate";
+function pipelineProblems(pipeline, declared2) {
+  const problems = [];
+  const stages = /* @__PURE__ */ new Set();
+  for (const stage2 of pipeline.stages) {
+    if (stages.has(stage2.id)) problems.push(`stages: ${stage2.id} appears twice`);
+    stages.add(stage2.id);
+  }
+  const ids = /* @__PURE__ */ new Set();
+  pipeline.nodes.forEach((node3, n) => {
+    const at = `nodes[${n}] (${node3.id})`;
+    if (ids.has(node3.id)) problems.push(`${at}.id: ${node3.id} appears twice`);
+    ids.add(node3.id);
+    if (!declared2.kinds.has(node3.kind)) problems.push(`${at}.kind: ${node3.kind} is not a kind`);
+    if (!stages.has(node3.stage)) problems.push(`${at}.stage: ${node3.stage} is not a stage`);
+    const feature = node3.if?.slice("features.".length);
+    if (feature !== void 0 && !declared2.features.has(feature)) {
+      problems.push(`${at}.if: features.${feature} is not a declared features key`);
+    }
+    for (const rule2 of node3.rules ?? []) {
+      if (!declared2.rules.has(rule2)) problems.push(`${at}.rules: rules/${rule2} is not declared`);
+    }
+    problems.push(...gateProblems(node3, at, stages, declared2));
+  });
+  pipeline.nodes.forEach((node3, n) => {
+    for (const required2 of node3.requires ?? []) {
+      if (!ids.has(required2)) {
+        problems.push(`nodes[${n}] (${node3.id}).requires: ${required2} is not a node`);
       }
     }
+  });
+  const cycle = cycleOf(pipeline.nodes, ids);
+  if (cycle !== void 0) problems.push(`requires: ${cycle.join(" -> ")} form a cycle`);
+  return problems;
+}
+function gateProblems(node3, at, stages, declared2) {
+  if (node3.kind !== GATE_KIND) {
+    return node3.policy === void 0 && node3.opens === void 0 ? [] : [`${at}: policy and opens belong to gate nodes only`];
   }
-  return problems.length === 0 && parsed.success ? { value: parsed.data, problems } : { problems };
-}
-function walk(registry3, node2, value, prefix, report2) {
-  if (node2.kind === "object" && isRecord(value)) {
-    for (const [key, child] of Object.entries(value)) {
-      const path = joinKey(prefix, key);
-      const childNode = node2.children.get(key);
-      if (childNode === void 0) leaves(child, path).forEach(report2);
-      else walk(registry3, childNode, child, path, report2);
-    }
-  } else if (node2.kind === "idArray" && Array.isArray(value)) {
-    value.forEach((item, index2) => {
-      const id = isRecord(item) && typeof item.id === "string" ? item.id : String(index2);
-      walk(registry3, node2.item, item, joinKey(prefix, id), report2);
-    });
-  } else if (node2.kind === "record" && isRecord(value) && prefix === "prompts.files") {
-    for (const key of Object.keys(value)) {
-      if (registry3.promptKey(key) === void 0) report2(joinKey(prefix, key));
-    }
-  }
-}
-function leaves(value, prefix) {
-  if (isRecord(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leaves(child, joinKey(prefix, key)));
-  }
-  return [prefix];
-}
-function declaredSteps(registry3, key) {
-  const steps = keySteps(registry3.tree, key);
-  const file = within(key, "prompts.files") ? key.split(".")[2] : void 0;
-  if (file !== void 0 && registry3.promptKey(file) === void 0) return void 0;
-  return steps;
-}
-function unknownKeyMessage(registry3, key) {
-  return unknownMessage(key, candidatesOf(registry3));
-}
-function candidatesOf(registry3) {
-  return [...registry3.keys, ...PLANNED_KEYS.map((entry) => entry.key)];
-}
-function unknownMessage(key, candidates) {
-  const known = knownReason(key);
-  const hint = known === void 0 ? closest(key, candidates) : void 0;
-  return known ?? (hint === void 0 ? "unknown key" : `unknown key; did you mean ${hint}?`);
-}
-function unknown2(key, layer, candidates) {
-  const message = unknownMessage(key, candidates);
-  return {
-    rule: "policy/unknown-config-key",
-    key,
-    layer: layer.name,
-    ...layer.path === void 0 ? {} : { path: layer.path },
-    message
-  };
-}
-function fromIssue(issue2, merged, layers, candidates) {
-  const key = dotted(issue2.path, merged.value);
-  if (issue2.code === "unrecognized_keys") {
-    return issue2.keys.map((name) => {
-      const path = joinKey(key, name);
-      return unknown2(path, layerOf(path, merged, layers), candidates);
-    });
-  }
-  const layer = layerOf(key, merged, layers);
-  return [
-    {
-      rule: "policy/config-invalid",
-      key,
-      layer: layer.name,
-      ...layer.path === void 0 ? {} : { path: layer.path },
-      message: issue2.message
-    }
-  ];
-}
-function dotted(path, root) {
-  let key = "";
-  let value = root;
-  for (const segment of path) {
-    if (Array.isArray(value) && typeof segment === "number") {
-      const item = value[segment];
-      key = joinKey(key, isRecord(item) && typeof item.id === "string" ? item.id : String(segment));
-      value = item;
-    } else {
-      key = joinKey(key, String(segment));
-      value = isRecord(value) ? value[String(segment)] : void 0;
-    }
-  }
-  return key;
-}
-var ORDER = ["default", "global", "project", "local"];
-function layerOf(key, merged, layers) {
-  let name = merged.origins[key];
-  if (name === void 0) {
-    const below = Object.entries(merged.origins).filter(([origin]) => within(origin, key)).map(([, layer2]) => layer2);
-    name = below.sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a))[0];
-  }
-  for (let parent = key; name === void 0 && parent.includes("."); ) {
-    parent = parent.slice(0, parent.lastIndexOf("."));
-    name = merged.origins[parent] ?? highestBelow(parent, merged);
-  }
-  const layer = layers.find((candidate) => candidate.name === name);
-  return layer === void 0 ? { name: "default" } : { name: layer.name, path: layer.path };
-}
-function highestBelow(key, merged) {
-  return Object.entries(merged.origins).filter(([origin]) => within(origin, key)).map(([, layer]) => layer).sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a))[0];
-}
-
-// kernel/src/shared/config/modules.ts
-var glob2 = string2().min(1).refine((value) => !/^(\/|[A-Za-z]:[\\/])/.test(value), "must be relative, not absolute").refine((value) => !value.split("/").includes(""), "must not hold an empty path segment");
-var promptFile = union([
-  string2().min(1),
-  strictObject({
-    path: string2().min(1),
-    mode: _enum(["extends", "replace"]).optional(),
-    applies: array(glob2).optional()
-  })
-]);
-var promptsModule = defineConfigModule({
-  key: "prompts",
-  consumer: "shared/config",
-  owner: "T12",
-  description: "Where prompt values come from: a directory per layer and single mapped files.",
-  schema: strictObject({
-    dir: string2().min(1).optional().meta({
-      description: "This layer's prompts directory; read from each layer's own file, never inherited."
-    }),
-    files: record(string2(), promptFile).optional().meta({
-      description: "Prompt key -> a file path, or {path, mode, applies}; wins over the directory in the same layer."
-    })
-  }).prefault({})
-});
-
-// kernel/src/shared/config/prompts.ts
-var import_yaml4 = __toESM(require_dist(), 1);
-import { isAbsolute, join as join14, posix as posix2 } from "node:path";
-var FILE_LAYERS = ["global", "project", "local"];
-var DEFAULT_DIRS = {
-  global: "prompts",
-  project: ".bdk/prompts",
-  local: ".bdk/prompts.local"
-};
-function resolvePrompts(input) {
   const problems = [];
-  const byKey = /* @__PURE__ */ new Map();
-  const add = (key, contribution2) => {
-    byKey.set(key, [...byKey.get(key) ?? [], contribution2]);
+  if (node3.policy === void 0) problems.push(`${at}.policy: a gate needs policy`);
+  else if (!declared2.gates.has(node3.policy)) {
+    problems.push(`${at}.policy: policy.gates.${node3.policy} is not declared`);
+  }
+  if (node3.opens === void 0) problems.push(`${at}.opens: a gate needs opens`);
+  else if (!stages.has(node3.opens)) problems.push(`${at}.opens: ${node3.opens} is not a stage`);
+  return problems;
+}
+function cycleOf(nodes, ids) {
+  const byId = new Map(nodes.map((node3) => [node3.id, node3]));
+  const finished = /* @__PURE__ */ new Set();
+  const path = [];
+  const visit = (id) => {
+    if (finished.has(id) || !ids.has(id)) return void 0;
+    const start = path.indexOf(id);
+    if (start >= 0) return [...path.slice(start), id];
+    path.push(id);
+    for (const required2 of byId.get(id)?.requires ?? []) {
+      const found = visit(required2);
+      if (found !== void 0) return found;
+    }
+    path.pop();
+    finished.add(id);
+    return void 0;
   };
-  for (const [key, path] of pluginDefaults(input))
-    add(key, { layer: "default", path, mode: "extends" });
-  for (const name of FILE_LAYERS) {
-    const layer = input.layers.find((candidate) => candidate.name === name);
-    for (const [key, contribution2] of layerContributions(input, name, layer, problems)) {
-      add(key, contribution2);
-    }
+  for (const node3 of nodes) {
+    const found = visit(node3.id);
+    if (found !== void 0) return found;
   }
-  const values2 = /* @__PURE__ */ new Map();
-  const keys = /* @__PURE__ */ new Set([
-    ...input.registry.prompts.filter((prompt2) => !prompt2.key.endsWith("/*")).map((p) => p.key),
-    ...byKey.keys()
-  ]);
-  for (const key of [...keys].sort()) values2.set(key, chain(byKey.get(key) ?? []));
-  return { values: values2, problems };
-}
-function promptContent(store2, value) {
-  return value.files.map((file) => splitFrontmatter(store2.read(file.path) ?? "").body.trim()).filter((body) => body !== "").map((body) => `${body}
-`).join("\n");
-}
-function chain(contributions) {
-  const last = contributions.findLastIndex((item) => item.mode === "replace");
-  const kept = last === -1 ? contributions : contributions.slice(last);
-  return {
-    mode: last === -1 ? "extends" : "replace",
-    files: kept.map(
-      ({ layer, path, applies }) => applies === void 0 ? { layer, path } : { layer, path, applies }
-    )
-  };
-}
-function pluginDefaults(input) {
-  const found = [];
-  for (const prompt2 of input.registry.prompts) {
-    if (prompt2.defaultFile === void 0) continue;
-    if (!prompt2.key.endsWith("/*")) {
-      const path = join14(input.pluginRoot, prompt2.defaultFile);
-      if (input.store.exists(path)) found.push([prompt2.key, path]);
-      continue;
-    }
-    const [before = "", after = ""] = prompt2.defaultFile.split("{name}");
-    const dir = join14(input.pluginRoot, posix2.dirname(before + "x"));
-    for (const entry of input.store.list(dir)) {
-      if (entry.endsWith("/") || !entry.endsWith(after)) continue;
-      const name = entry.slice(0, entry.length - after.length);
-      found.push([`${prompt2.key.slice(0, -1)}${name}`, join14(dir, entry)]);
-    }
-  }
-  return found;
-}
-function layerContributions(input, name, layer, problems) {
-  const base = name === "global" ? input.globalDir : input.projectRoot;
-  const settings = isRecord(layer?.values.prompts) ? layer.values.prompts : {};
-  const dirSetting = typeof settings.dir === "string" ? settings.dir : DEFAULT_DIRS[name];
-  const dir = isAbsolute(dirSetting) ? dirSetting : join14(base, dirSetting);
-  const where = { layer: name, settingsPath: layer?.path };
-  const out = /* @__PURE__ */ new Map();
-  for (const [key, path] of listPrompts(input.store, dir)) {
-    const prompt2 = input.registry.promptKey(key);
-    if (prompt2 === void 0) {
-      problems.push(unknownPrompt(input.registry, key, name, path));
-      continue;
-    }
-    const contribution2 = readContribution(input.store, key, path, {}, where, problems);
-    if (contribution2 !== void 0) out.set(key, contribution2);
-  }
-  const files = isRecord(settings.files) ? settings.files : {};
-  for (const [key, entry] of Object.entries(files)) {
-    if (input.registry.promptKey(key) === void 0) continue;
-    const declared2 = isRecord(entry) ? entry : { path: entry };
-    if (typeof declared2.path !== "string") continue;
-    const path = isAbsolute(declared2.path) ? declared2.path : join14(base, declared2.path);
-    if (!input.store.exists(path)) {
-      problems.push({
-        rule: "policy/config-invalid",
-        key: `prompts.files.${key}`,
-        layer: name,
-        ...layer === void 0 ? {} : { path: layer.path },
-        message: `${path} does not exist`
-      });
-      continue;
-    }
-    const contribution2 = readContribution(input.store, key, path, declared2, where, problems);
-    if (contribution2 !== void 0) out.set(key, contribution2);
-  }
-  return out;
-}
-function listPrompts(store2, dir, prefix = "") {
-  return store2.list(dir).flatMap((entry) => {
-    if (entry.endsWith("/")) {
-      return listPrompts(store2, join14(dir, entry), `${prefix}${entry}`);
-    }
-    if (!entry.endsWith(".md")) return [];
-    return [[`${prefix}${entry.slice(0, -3)}`, join14(dir, entry)]];
-  });
-}
-function unknownPrompt(registry3, key, layer, path) {
-  const literal2 = registry3.prompts.map((prompt2) => prompt2.key).filter((k) => !k.endsWith("/*"));
-  const hint = closest(key, literal2);
-  return {
-    rule: "policy/unknown-config-key",
-    key: `prompts.${key}`,
-    layer,
-    path,
-    message: `no prompt key ${key} is registered${hint === void 0 ? "" : `; did you mean ${hint}?`}`
-  };
-}
-var FRONTMATTER_FIELDS = /* @__PURE__ */ new Set(["mode", "applies"]);
-function readContribution(store2, key, path, declared2, where, problems) {
-  const outcome = contribution(store2.read(path) ?? "", declared2, where);
-  if (typeof outcome !== "string") return { layer: where.layer, path, ...outcome };
-  problems.push({
-    rule: "policy/config-invalid",
-    key: `prompts.${key}`,
-    layer: where.layer,
-    path,
-    message: outcome
-  });
   return void 0;
 }
-function contribution(text4, declared2, where) {
-  const { frontmatter } = splitFrontmatter(text4);
-  let front;
-  try {
-    front = frontmatter === void 0 ? {} : (0, import_yaml4.parse)(frontmatter) ?? {};
-  } catch {
-    return "the frontmatter is not valid YAML";
-  }
-  if (!isRecord(front)) return "the frontmatter must be a mapping";
-  const extra = Object.keys(front).filter((field2) => !FRONTMATTER_FIELDS.has(field2));
-  if (extra.length > 0) return `unknown frontmatter field ${extra.join(", ")}`;
-  const settings = where.settingsPath ?? "the settings";
-  const mode = front.mode ?? declared2.mode ?? "extends";
-  if (mode !== "extends" && mode !== "replace") return "mode must be extends or replace";
-  if (declared2.mode !== void 0 && front.mode !== void 0 && declared2.mode !== front.mode) {
-    return `the frontmatter mode ${mode} contradicts the mode in ${settings}`;
-  }
-  const applies = front.applies ?? declared2.applies;
-  if (applies !== void 0 && !isGlobList(applies)) {
-    return "applies must be a list of relative globs without empty segments";
-  }
-  if (declared2.applies !== void 0 && front.applies !== void 0 && JSON.stringify(declared2.applies) !== JSON.stringify(front.applies)) {
-    return `the frontmatter applies contradicts ${settings}`;
-  }
-  return applies === void 0 ? { mode } : { mode, applies };
+function stageOfTarget(pipeline, to) {
+  if (pipeline.stages.some((stage2) => stage2.id === to)) return to;
+  const node3 = pipeline.nodes.find((candidate) => candidate.id === to);
+  if (node3 !== void 0) return node3.stage;
+  const kind = to.split(":")[0] ?? "";
+  return pipeline.nodes.find((candidate) => candidate.kind === kind)?.stage ?? to;
 }
-function isGlobList(value) {
-  return Array.isArray(value) && value.every(
-    (item) => typeof item === "string" && item !== "" && !/^(\/|[A-Za-z]:[\\/])/.test(item) && !item.split("/").includes("")
-  );
+function stageCommand(pipeline, stage2) {
+  return pipeline.stages.find((candidate) => candidate.id === stage2)?.command;
 }
 
-// kernel/src/shared/config/resolve.ts
-function resolveConfig(context) {
-  const read2 = readLayers(context.store, context);
-  const layers = context.removed === "ignore" ? read2.map(withoutRemovedKeys) : read2;
-  const merged = mergeLayers(layers);
-  const validated = validateLayers(context.registry, layers, merged);
-  const prompts2 = resolvePrompts({ ...context, layers });
-  const problems = [...validated.problems, ...prompts2.problems];
-  const base = { layers, merged, prompts: prompts2, problems };
-  return validated.value === void 0 || problems.length > 0 ? base : { ...base, value: validated.value };
-}
-
-// kernel/src/shared/config/refusal.ts
-function resolveOrRefuse(scope2, options = {}) {
-  const resolution = resolveConfig({
-    store: options.store ?? scope2.store,
-    registry: scope2.settings,
-    globalDir: scope2.globalDir,
-    projectRoot: scope2.projectRoot,
-    pluginRoot: scope2.pluginRoot,
-    ...options.removed === void 0 ? {} : { removed: options.removed }
+// kernel/src/graph/domain/engine.ts
+function evaluate(input) {
+  const { pipeline, kinds, view } = input;
+  const drafts = /* @__PURE__ */ new Map();
+  const order = [];
+  pipeline.nodes.forEach((node3, position) => {
+    const kind = kinds.get(node3.kind);
+    if (kind === void 0)
+      throw new Error(`pipeline node ${node3.id} has the unknown kind ${node3.kind}`);
+    const skipped = skipReason(node3, kind, input);
+    const draft = {
+      id: node3.id,
+      kind,
+      node: node3,
+      position,
+      extra: [],
+      ...skipped === void 0 ? {} : { skipped }
+    };
+    drafts.set(node3.id, draft);
+    order.push(node3.id);
+    if (skipped !== void 0 || kind.instances === void 0) return;
+    draft.instances = [];
+    for (const instance of kind.instances(view)) {
+      const id = `${kind.name}:${instance.nn}`;
+      draft.instances.push(id);
+      drafts.set(id, { id, kind, node: node3, position, nn: instance.nn, extra: instance.requires });
+      order.push(id);
+    }
   });
-  const [first, ...rest] = resolution.problems;
-  if (first !== void 0) return problemRefusal(scope2, first, rest.length);
-  if (resolution.value === void 0) throw new Error("a resolution without problems has a value");
-  return { ...resolution, value: resolution.value };
-}
-function problemRefusal(scope2, problem, more) {
-  const file = problem.path === void 0 ? void 0 : displayPath(scope2, problem.path);
-  const where = `the ${problem.layer} layer${file === void 0 ? "" : ` (${file})`}`;
-  const count = more === 0 ? "" : ` (${more} more error${more === 1 ? "" : "s"})`;
-  return refuse(problem.rule, `${problem.key} in ${where}: ${problem.message}${count}`, [
-    schemaCommand(scope2, problem.key),
-    ...file === void 0 ? [] : [`fix ${file}`]
-  ]);
-}
-function schemaCommand(scope2, key) {
-  const module = key.split(".")[0] ?? "";
-  return scope2.settings.modules.some((candidate) => candidate.key === module) ? `bdk config schema ${module}` : "bdk config schema";
-}
-function displayPath(scope2, path) {
-  const root = `${scope2.projectRoot}/`;
-  return path.startsWith(root) ? path.slice(root.length) : path;
-}
-
-// kernel/src/shared/config/snapshot.ts
-var import_yaml5 = __toESM(require_dist(), 1);
-import { join as join15 } from "node:path";
-var SNAPSHOT_PATH = ".bdk/.machine/config/resolved.yaml";
-var PERSONAL = /* @__PURE__ */ new Set(["global", "local"]);
-function overriddenKeys(resolution) {
-  const leaves2 = Object.entries(resolution.merged.origins).filter(([, layer]) => PERSONAL.has(layer)).map(([key]) => key);
-  const prompts2 = [...resolution.prompts.values].filter(([, value]) => value.files.some((file) => PERSONAL.has(file.layer))).map(([key]) => `prompts.${key}`);
-  return [...leaves2, ...prompts2].sort();
-}
-function writeSnapshot(store2, projectRoot, resolution) {
-  if (resolution.value === void 0 || !store2.isDirectory(join15(projectRoot, ".bdk"))) {
+  const done2 = latestDone(view.entries);
+  const results = /* @__PURE__ */ new Map();
+  const expand = (ids) => ids.flatMap((id) => {
+    const draft = drafts.get(id);
+    if (draft?.skipped !== void 0) return [];
+    return draft?.instances !== void 0 && draft.instances.length > 0 ? draft.instances : [id];
+  });
+  const resolve4 = (id) => {
+    const known = results.get(id);
+    if (known !== void 0) return known;
+    const draft = drafts.get(id);
+    if (draft === void 0) return void 0;
+    const result2 = compute(draft);
+    results.set(id, result2);
+    return result2;
+  };
+  const firstOpen = (requires) => {
+    for (const id of requires) {
+      const required2 = resolve4(id);
+      if (required2 === void 0) return `${id} does not exist`;
+      if (required2.state !== "done") return `${id} is ${required2.state}, not done`;
+    }
     return void 0;
-  }
-  const snapshot = {
-    resolved: resolution.value,
-    prompts: Object.fromEntries(resolution.prompts.values),
-    overriddenKeys: overriddenKeys(resolution)
   };
-  store2.write(join15(projectRoot, SNAPSHOT_PATH), (0, import_yaml5.stringify)(snapshot));
-  return SNAPSHOT_PATH;
-}
-
-// kernel/src/shared/config/json-schema.ts
-var SETTINGS_SCHEMA_ID = "https://raw.githubusercontent.com/broneq/bdk/v3/schema/settings.json";
-function settingsJsonSchema(registry3) {
-  const { $schema, ...rest } = toJSONSchema(registry3.schema, {
-    target: "draft-2020-12",
-    io: "input",
-    unrepresentable: "throw"
-  });
-  return {
-    $schema,
-    $id: SETTINGS_SCHEMA_ID,
-    title: "BDK settings",
-    description: "One layer of the BDK settings: ~/.config/bdk/settings.yaml, .bdk/settings.yaml or .bdk/settings.local.yaml.",
-    ...rest
-  };
-}
-
-// kernel/src/shared/config/modeline.ts
-var MODELINE_PREFIX = "# yaml-language-server: $schema=";
-var OFFLINE_SCHEMA_PATH = ".bdk/.machine/schema/settings.json";
-function settingsSchemaUrl(version3) {
-  return `https://raw.githubusercontent.com/broneq/bdk/v${version3}/schema/settings.json`;
-}
-function modeline(version3) {
-  return `${MODELINE_PREFIX}${settingsSchemaUrl(version3)}`;
-}
-function modelineUrl(text4) {
-  const first = text4.split("\n", 1)[0] ?? "";
-  return first.startsWith(MODELINE_PREFIX) ? first.slice(MODELINE_PREFIX.length).trim() : void 0;
-}
-function withModeline(text4, version3) {
-  const line = modeline(version3);
-  if (modelineUrl(text4) === void 0) return text4 === "" ? `${line}
-` : `${line}
-${text4}`;
-  const newline = text4.indexOf("\n");
-  return newline === -1 ? `${line}
-` : `${line}${text4.slice(newline)}`;
-}
-function offlineSchemaText(registry3) {
-  return `${JSON.stringify(settingsJsonSchema(registry3), null, 2)}
-`;
-}
-
-// kernel/src/change/domain/change.ts
-var SLUG_MAX = 40;
-var DEFAULT_PARK_OPTIONS = ["accept as debt", "change decision X", "split part"];
-var DEFAULT_PARK_REASON = "Change parked: choose how to continue";
-var CHECKPOINT_SKIPPED = "change checkpoint lands with T22";
-var UNDECOMPOSED = {
-  \u0142: "l",
-  \u0111: "d",
-  \u00F8: "o",
-  \u00DF: "ss",
-  \u00E6: "ae",
-  \u0153: "oe",
-  \u00FE: "th",
-  \u0131: "i"
-};
-function slugOf(intent) {
-  const words = intent.toLowerCase().normalize("NFKD").replace(new RegExp("\\p{M}+", "gu"), "").replace(/[łđøßæœþı]/g, (letter) => UNDECOMPOSED[letter] ?? letter).split(/[^a-z0-9]+/).filter((word) => word !== "");
-  let slug = "";
-  for (const word of words) {
-    const next = slug === "" ? word : `${slug}-${word}`;
-    if (next.length > SLUG_MAX) {
-      if (slug === "") slug = word.slice(0, SLUG_MAX);
-      break;
+  const compute = (draft) => {
+    const base = {
+      id: draft.id,
+      kind: draft.kind.name,
+      stage: draft.node.stage,
+      node: draft.node,
+      position: draft.position,
+      sealed: false,
+      ...draft.nn === void 0 ? {} : { nn: draft.nn },
+      ...draft.instances === void 0 ? {} : { instances: draft.instances }
+    };
+    if (draft.skipped !== void 0) {
+      return { ...base, state: "skipped", requires: [], why: draft.skipped };
     }
-    slug = next;
-  }
-  return slug === "" ? "change" : slug;
-}
-function changeIdOf(at, intent) {
-  return `${at.slice(0, 10)}-${slugOf(intent)}`;
-}
-function resumeCommand(changeId2) {
-  return `bdk change resume ${changeId2} --option <n>`;
-}
-
-// kernel/src/change/use-cases/new.ts
-var DEFAULTED_SUMMARY = "Profile small by default: no size decision taken at change new";
-var DEFAULTED_BODY = "Recorded by change new: the caller passed no --profile.\n";
-async function newChange(deps, where, input) {
-  if (input.profile === "tiny" && (input.reason ?? "").trim() === "") {
-    return refuse(
-      "input/missing-argument",
-      "--profile tiny needs --reason: every skipped design carries its justification",
-      [
-        `bdk change new "${input.intent}" --profile tiny --reason "<why the change is trivial>"`,
-        `bdk change new "${input.intent}"`
-      ]
-    );
-  }
-  if (input.intent.trim() === "") {
-    return refuse("input/invalid-argument", "<intent> is empty", [
-      'bdk change new "<one sentence>"'
-    ]);
-  }
-  const branch = deps.git.currentBranch(where.workTree);
-  if (branch === void 0) {
-    return refuse(
-      "policy/detached-head",
-      `HEAD is detached in ${where.workTree}; a Change binds to a branch`,
-      ["git switch -c <branch>"]
-    );
-  }
-  const projectRoot = findProjectRoot(deps.store, where.cwd, where.workTree);
-  const bound = readMarker(deps.store, projectRoot, branch);
-  const active3 = bound === void 0 ? void 0 : findChange(deps.store, projectRoot, bound);
-  if (active3 !== void 0 && !active3.archived) {
-    return refuse(
-      "policy/change-exists",
-      `branch ${branch} already has the active Change ${active3.id}`,
-      ["bdk change status", "switch to a new branch and run change new there"]
-    );
-  }
-  const at = deps.clock.now();
-  const id = changeIdOf(at, input.intent);
-  const existing = findChange(deps.store, projectRoot, id);
-  if (existing !== void 0 || deps.store.exists(liveChangeDir(projectRoot, id))) {
-    return refuse(
-      "policy/change-exists",
-      `the Change directory .bdk/changes/${existing?.archived === true ? "archive/" : ""}${id}/ exists`,
-      ["bdk change new with a more specific intent", `bdk change resume ${id}`]
-    );
-  }
-  const author2 = await authorIdent(deps.git, projectRoot);
-  const resolution = resolveConfig({
-    store: deps.store,
-    registry: deps.settings,
-    globalDir: globalDir(where.environment),
-    projectRoot,
-    pluginRoot: deps.pluginRoot
-  });
-  const overridden = overriddenKeys(resolution);
-  await ensureIgnored(deps.store, deps.git, projectRoot);
-  const dir = liveChangeDir(projectRoot, id);
-  const profile = input.profile ?? "small";
-  writeDocument(deps.store, join16(dir, "change.md"), {
-    data: {
-      schema: 1,
-      id,
-      kind: input.kind,
-      profile,
-      intent: input.intent,
-      source: input.inferred ? "inferred" : "user",
-      at,
-      author: author2,
-      overridden
-    },
-    body: ""
-  });
-  const change = { id, dir, projectRoot, branch };
-  const entry = await withIndex(deps.openIndex, deps.store, projectRoot, (index2) => {
-    refreshChange(index2, { id, dir, archived: false });
-    return appendEntry(
-      deps,
-      change,
-      index2,
-      {
-        type: "assumption",
-        summary: input.profile === void 0 ? DEFAULTED_SUMMARY : `Profile ${profile} set at change new`,
-        refs: ["change.md"],
-        body: input.profile === void 0 ? DEFAULTED_BODY : reasonBody(input.reason)
-      },
-      { dedupe: false }
-    );
-  });
-  if ("refused" in entry) return entry;
-  writeMarker(deps.store, projectRoot, branch, id);
-  return {
-    change: id,
-    branch,
-    kind: input.kind,
-    profile: { value: profile, defaulted: input.profile === void 0, entry: entry.entry.id },
-    source: input.inferred ? "inferred" : "user",
-    overriddenKeys: overridden
+    const requires = [...expand(draft.node.requires ?? []), ...draft.extra];
+    const open2 = firstOpen(requires);
+    if (draft.kind.doneBy.through === "gate") {
+      const gate2 = gateOf(draft, requires, open2 === void 0);
+      return {
+        ...base,
+        requires,
+        state: gate2.done ? "done" : gate2.ready ? "ready" : "blocked",
+        why: gate2.done || gate2.ready ? gate2.why : open2 ?? gate2.why,
+        gate: gate2
+      };
+    }
+    if (draft.instances !== void 0 && draft.instances.length > 0) {
+      const pending = firstOpen(draft.instances);
+      if (pending === void 0) return { ...base, requires, state: "done" };
+      return open2 === void 0 ? { ...base, requires, state: "ready", why: pending } : { ...base, requires, state: "blocked", why: open2 };
+    }
+    if (draft.kind.doneBy.through === "construction") return { ...base, requires, state: "done" };
+    const recorded2 = draft.instances === void 0 ? done2.get(draft.id) : void 0;
+    if (recorded2 !== void 0) {
+      const inputs = draft.kind.inputs(view, draft.nn);
+      if ("none" in inputs) return { ...base, requires, recorded: recorded2, state: "done" };
+      const inputHash = input.hash(inputs);
+      return recorded2.inputHash === inputHash ? { ...base, requires, recorded: recorded2, inputHash, state: "done" } : {
+        ...base,
+        requires,
+        recorded: recorded2,
+        inputHash,
+        state: "stale",
+        why: `inputs changed: recorded ${recorded2.inputHash ?? "none"}, current ${inputHash}`
+      };
+    }
+    return open2 === void 0 ? { ...base, requires, state: "ready" } : { ...base, requires, state: "blocked", why: open2 };
   };
-}
-function reasonBody(reason) {
-  const text4 = (reason ?? "").trim();
-  return text4 === "" ? "Set by the caller of change new; no reason given.\n" : `${text4}
-`;
-}
-
-// kernel/src/change/use-cases/park.ts
-var TEXT_MAX = 120;
-function parkChange(deps, change, input) {
-  const summary = input.reason ?? DEFAULT_PARK_REASON;
-  const options = input.options.length === 0 ? [...DEFAULT_PARK_OPTIONS] : [...input.options];
-  const tooLong = [summary, ...options].find(
-    (text4) => text4.trim() === "" || text4.length > TEXT_MAX
+  const gateOf = (draft, requires, satisfied) => {
+    let readyAt;
+    let incomplete = false;
+    for (const id of requires) {
+      const required2 = resolve4(id);
+      const at = required2?.gate?.passedIn?.at ?? required2?.recorded?.at ?? (required2?.kind !== void 0 && kinds.get(required2.kind)?.doneBy.through === "construction" ? "" : void 0);
+      if (at === void 0) incomplete = true;
+      else if (at !== "" && (readyAt === void 0 || at > readyAt)) readyAt = at;
+    }
+    const policy = draft.node.policy === void 0 ? void 0 : input.gates[draft.node.policy];
+    const command = draft.node.opens === void 0 ? void 0 : stageCommand(pipeline, draft.node.opens);
+    return gateStatus({
+      id: draft.id,
+      readyAt,
+      incomplete,
+      satisfied,
+      policy: policy ?? "manual",
+      command,
+      entries: view.entries
+    });
+  };
+  for (const id of order) resolve4(id);
+  const sealed = sealedIds(order, results);
+  const nodes = order.flatMap((id) => {
+    const result2 = results.get(id);
+    if (result2 === void 0) return [];
+    return [sealed.has(id) ? { ...result2, sealed: true } : result2];
+  });
+  const byId = new Map(nodes.map((node3) => [node3.id, node3]));
+  const gates = nodes.flatMap(
+    (node3) => node3.gate === void 0 || node3.state === "skipped" ? [] : [node3.gate]
   );
-  if (tooLong !== void 0) {
-    return Promise.resolve(
-      refuse(
-        "input/invalid-argument",
-        `"${tooLong}" must have 1 to ${TEXT_MAX} characters: it becomes an entry summary`,
-        ["shorten --reason or --option"]
-      )
-    );
-  }
-  return withChangeIndex(deps, change, async (index2) => {
-    const tickets = openAttempts(index2, change.id);
-    if (tickets.length > 0) {
-      const list2 = tickets.map((ticket) => ticket.ticket).join(", ");
-      return refuse("policy/ticket-open", `${list2} still open in ${change.id}`, [
-        "bdk attempt close <ticket> <outcome>",
-        "bdk attempt close <ticket> not-run"
-      ]);
-    }
-    const facts = changeFacts(index2, change.id);
-    if (facts.parked !== void 0) {
-      return refuse(
-        "policy/invalid-transition",
-        `${change.id} is already parked on ${facts.parked.id}`,
-        [resumeCommand(change.id), "bdk change status"]
-      );
-    }
-    const entry = await appendEntry(
-      deps,
-      change,
-      index2,
-      { type: "question", summary, refs: ["change.md"], body: "", options, park: true },
-      { dedupe: false }
-    );
-    if ("refused" in entry) return entry;
-    return {
-      change: change.id,
-      entry: entry.entry.id,
-      options,
-      resume: resumeCommand(change.id),
-      checkpoint: { done: false, skipped: CHECKPOINT_SKIPPED }
-    };
-  });
-}
-
-// kernel/src/change/use-cases/resume.ts
-function resumeChange(deps, where, input) {
-  const branch = deps.git.currentBranch(where.workTree);
-  if (branch === void 0) {
-    return done(
-      refuse(
-        "policy/detached-head",
-        `HEAD is detached in ${where.workTree}; a Change binds to a branch`,
-        ["git switch <branch>"]
-      )
-    );
-  }
-  const projectRoot = findProjectRoot(deps.store, where.cwd, where.workTree);
-  const location = findChange(deps.store, projectRoot, input.id);
-  if (location === void 0) {
-    return done(
-      refuse("input/not-found", `no Change ${input.id} in ${projectRoot}`, [
-        "bdk change list --all"
-      ])
-    );
-  }
-  if (location.archived) {
-    return done(
-      refuse(
-        "policy/invalid-transition",
-        `${input.id} is archived; an archived Change is never resumed`,
-        ["bdk change new <intent>"]
-      )
-    );
-  }
-  const bound = readMarker(deps.store, projectRoot, branch);
-  const other = bound === void 0 || bound === input.id ? void 0 : findChange(deps.store, projectRoot, bound);
-  if (other !== void 0 && !other.archived) {
-    return done(
-      refuse("policy/change-exists", `branch ${branch} is bound to the active Change ${other.id}`, [
-        "switch to another branch, then resume there",
-        "bdk change park"
-      ])
-    );
-  }
-  const change = { id: input.id, dir: location.dir, projectRoot, branch };
-  return withChangeIndex(deps, change, async (index2) => {
-    const facts = changeFacts(index2, change.id);
-    const options = facts.parked?.options ?? [];
-    let chosen;
-    if (facts.parked !== void 0) {
-      if (input.option === void 0) {
-        return refuse(
-          "policy/invalid-transition",
-          `${change.id} is parked on ${facts.parked.id}; choose an option`,
-          [resumeCommand(change.id), "bdk change status"]
-        );
-      }
-      const n = Number(input.option);
-      if (!Number.isInteger(n) || n < 1 || n > options.length) {
-        return refuse(
-          "input/invalid-argument",
-          `--option ${input.option} is outside 1..${options.length}`,
-          [resumeCommand(change.id)]
-        );
-      }
-      chosen = options[n - 1];
-    } else if (input.option !== void 0) {
-      return refuse(
-        "policy/invalid-transition",
-        `${change.id} is not parked; --option has nothing to choose`,
-        [`bdk change resume ${change.id}`]
-      );
-    }
-    let raise;
-    if (input.profile !== void 0 && isProfile(input.profile)) {
-      const requested = profileRank(input.profile);
-      const current = profileRank(facts.profile);
-      if (requested < current) {
-        return refuse(
-          "policy/profile-downgrade",
-          `${change.id} runs at profile ${facts.profile}; a profile never goes down`,
-          [`bdk change resume ${change.id}`]
-        );
-      }
-      if (requested > current) raise = input.profile;
-    }
-    const others = listMarkers(deps.store, projectRoot).filter(
-      (marker) => marker.change === change.id && marker.branch !== branch
-    );
-    const rebind = bound !== change.id;
-    if (!rebind && chosen === void 0 && input.profile === void 0) {
-      return refuse(
-        "policy/invalid-transition",
-        `${change.id} is already bound to ${branch} and not parked`,
-        ["bdk change status"]
-      );
-    }
-    let decision2;
-    if (chosen !== void 0 && facts.parked !== void 0) {
-      const written = await appendEntry(
-        deps,
-        change,
-        index2,
-        {
-          type: "decision",
-          summary: chosen,
-          status: "accepted",
-          refs: [facts.parked.id],
-          body: ""
-        },
-        { dedupe: false }
-      );
-      if ("refused" in written) return written;
-      decision2 = written.entry.id;
-    }
-    if (raise !== void 0) {
-      const written = await appendEntry(
-        deps,
-        change,
-        index2,
-        {
-          type: "decision",
-          summary: `Profile raised to ${raise} at change resume`,
-          status: "accepted",
-          refs: ["change.md"],
-          body: "",
-          profile: raise
-        },
-        { dedupe: false }
-      );
-      if ("refused" in written) return written;
-      decision2 ??= written.entry.id;
-    }
-    if (rebind) {
-      for (const marker of others) removeMarker(deps.store, projectRoot, marker.branch);
-      writeMarker(deps.store, projectRoot, branch, change.id);
-    }
-    const resumedFrom = chosen !== void 0 ? "parked" : !rebind ? void 0 : others.length > 0 ? "other-branch" : "other-machine";
-    return {
-      change: change.id,
-      branch,
-      stage: stageOf(facts.entries),
-      ...resumedFrom === void 0 ? {} : { resumedFrom },
-      ...decision2 === void 0 ? {} : { decision: decision2 }
-    };
-  });
-}
-function done(value) {
-  return Promise.resolve(value);
-}
-
-// kernel/src/change/use-cases/status.ts
-import { join as join17 } from "node:path";
-function changeStatus(deps, change) {
-  return withIndex(deps.openIndex, deps.store, change.projectRoot, (index2) => {
-    refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
-    const document = readDocument(deps.store, join17(change.dir, "change.md"));
-    const data = document !== void 0 && "data" in document ? document.data : {};
-    const facts = changeFacts(index2, change.id);
-    return {
-      change: change.id,
-      kind: facts.kind,
-      profile: facts.profile,
-      source: facts.source,
-      confirmed: facts.confirmed,
-      stage: facts.stage,
-      ...facts.parked === void 0 ? {} : {
-        parked: {
-          entry: facts.parked.id,
-          options: facts.parked.options ?? [],
-          resume: resumeCommand(change.id)
-        }
-      },
-      nodes: [],
-      gates: [],
-      parts: [],
-      openTickets: openAttempts(index2, change.id),
-      overriddenKeys: Array.isArray(data.overridden) ? data.overridden.map(String) : []
-    };
-  });
-}
-
-// kernel/src/change/commands/change.ts
-function text2(value) {
-  return typeof value === "string" ? value : void 0;
-}
-function values(value) {
-  if (value === void 0 || value === true) return [];
-  return typeof value === "string" ? [value] : [...value];
-}
-function active2(change) {
-  if (change === void 0) throw new Error("this change command is Change-scoped");
-  return change;
-}
-function newCommand(deps) {
-  return async (context) => {
-    const report2 = await newChange(
-      deps,
-      { cwd: context.cwd, workTree: context.workTree ?? context.cwd, environment: context.runtime },
-      {
-        intent: context.positionals["<intent>"] ?? "",
-        kind: context.flags["--kind"] === "bug" ? "bug" : "feature",
-        profile: text2(context.flags["--profile"]),
-        reason: text2(context.flags["--reason"]),
-        inferred: context.flags["--inferred"] === true
-      }
-    );
-    return isRefusal(report2) ? report2 : { data: report2, text: renderNew(report2) };
-  };
-}
-function statusCommand(deps) {
-  return async (context) => {
-    const report2 = await changeStatus(deps, active2(context.change));
-    return { data: report2, text: capLines(renderStatus(report2)) };
-  };
-}
-function listCommand2(deps) {
-  return async (context) => {
-    const all = context.flags["--all"] === true;
-    const projectRoot = findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd);
-    const items = await listAllChanges(deps, projectRoot, { archived: all });
-    return { data: listPage(items, { all }), text: capLines(renderList(items), { all }) };
-  };
-}
-function resumeCommand2(deps) {
-  return async (context) => {
-    const report2 = await resumeChange(
-      deps,
-      { cwd: context.cwd, workTree: context.workTree ?? context.cwd },
-      {
-        id: context.positionals["<id>"] ?? "",
-        option: text2(context.flags["--option"]),
-        profile: text2(context.flags["--profile"])
-      }
-    );
-    return isRefusal(report2) ? report2 : { data: report2, text: renderResume(report2) };
-  };
-}
-function parkCommand(deps) {
-  return async (context) => {
-    const report2 = await parkChange(deps, active2(context.change), {
-      reason: text2(context.flags["--reason"]),
-      options: values(context.flags["--option"])
-    });
-    return isRefusal(report2) ? report2 : { data: report2, text: renderPark(report2) };
-  };
-}
-
-// kernel/src/change/index.ts
-function changeRegistrations(deps) {
-  return [
-    { id: "change-new", handler: newCommand(deps) },
-    { id: "change-status", handler: statusCommand(deps) },
-    { id: "change-list", handler: listCommand2(deps) },
-    { id: "change-resume", handler: resumeCommand2(deps) },
-    { id: "change-park", handler: parkCommand(deps) }
-  ];
-}
-
-// kernel/src/config/render/check.ts
-function renderCheck(report2) {
-  const lines = report2.problems.map(
-    (problem) => `warn ${problem.code} ${problem.path}: ${problem.message}`
+  const next = nodes.find(
+    (node3) => (node3.state === "ready" || node3.state === "stale") && !node3.sealed && node3.kind !== GATE_KIND && !(node3.instances !== void 0 && node3.instances.length > 0)
   );
-  if (lines.length === 0) lines.push("settings valid");
-  if (report2.snapshot !== void 0) lines.push(`snapshot: ${report2.snapshot}`);
-  if (report2.overriddenKeys.length > 0) {
-    lines.push(`overridden by global or local: ${report2.overriddenKeys.join(", ")}`);
+  const waitingGate = next === void 0 ? nodes.find((node3) => node3.gate?.ready === true && !node3.gate.done && !node3.sealed)?.gate : void 0;
+  return {
+    nodes,
+    gates,
+    ...next === void 0 ? {} : { next },
+    ...waitingGate === void 0 ? {} : { waitingGate },
+    find: (id) => byId.get(id)
+  };
+}
+function skipReason(node3, kind, input) {
+  const { profile, kind: changeKind2 } = input.view;
+  if (node3.profiles !== void 0 && !node3.profiles.includes(profile)) {
+    return `profile ${profile} is not in profiles [${node3.profiles.join(", ")}]`;
   }
-  return `${lines.join("\n")}
-`;
-}
-
-// kernel/src/config/use-cases/check.ts
-import { join as join18 } from "node:path";
-var LEGACY_SETTINGS = ".bdk/settings.json";
-function checkConfig(input) {
-  const resolved = resolveOrRefuse(input);
-  return isRefusal(resolved) ? resolved : report(input, resolved);
-}
-function inspectConfig(input) {
-  const resolution = resolveConfig({ ...input, registry: input.settings });
-  if (resolution.problems.length > 0 || resolution.value === void 0) {
-    return { errors: resolution.problems.map((problem) => problemRefusal(input, problem, 0)) };
+  if (node3.kinds !== void 0 && !node3.kinds.includes(changeKind2)) {
+    return `Change kind ${changeKind2} is not in kinds [${node3.kinds.join(", ")}]`;
   }
-  return { errors: [], report: report(input, { ...resolution, value: resolution.value }) };
+  if (node3.if !== void 0) {
+    const name = node3.if.slice("features.".length);
+    if (input.features[name] !== true) return `${node3.if} is false`;
+  }
+  return kind.skip?.(input.view);
 }
-function report(input, resolved) {
-  const url = settingsSchemaUrl(readKernelVersion(input.store, input.pluginRoot));
-  const problems = [];
-  for (const layer of resolved.layers) {
-    const current = modelineUrl(layer.text);
-    const path = displayPath(input, layer.path);
-    if (current === void 0) {
-      problems.push({
-        layer: layer.name,
-        path,
-        code: "missing-modeline",
-        message: "no yaml-language-server modeline; bdk doctor --fix adds it"
-      });
-    } else if (current !== url) {
-      problems.push({
-        layer: layer.name,
-        path,
-        code: "schema-outdated",
-        message: `the modeline points at ${current}, not ${url}; bdk doctor --fix updates it`
-      });
+function latestDone(entries) {
+  const latest2 = /* @__PURE__ */ new Map();
+  for (const entry of entries) {
+    if (entry.type !== "transition" || entry.source !== "kernel" || entry.to === void 0)
+      continue;
+    const known = latest2.get(entry.to);
+    if (known === void 0 || entry.at > known.at || entry.at === known.at && entry.id > known.id) {
+      latest2.set(entry.to, entry);
     }
   }
-  if (input.store.exists(join18(input.projectRoot, LEGACY_SETTINGS))) {
-    problems.push({
-      layer: "project",
-      path: LEGACY_SETTINGS,
-      code: "legacy-settings",
-      message: "the v2 settings file is not read; bdk import converts it to .bdk/settings.yaml"
-    });
+  return latest2;
+}
+function sealedIds(order, results) {
+  const sealed = /* @__PURE__ */ new Set();
+  const visit = (id) => {
+    const node3 = results.get(id);
+    if (node3 === void 0) return;
+    for (const required2 of [...node3.requires, ...node3.instances ?? []]) {
+      if (sealed.has(required2)) continue;
+      sealed.add(required2);
+      visit(required2);
+    }
+  };
+  for (const id of order) {
+    if (results.get(id)?.gate?.done === true) visit(id);
   }
-  const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
-  if (snapshot !== void 0) {
-    input.store.write(
-      join18(input.projectRoot, OFFLINE_SCHEMA_PATH),
-      offlineSchemaText(input.settings)
-    );
-  }
-  return {
-    problems,
-    ...snapshot === void 0 ? {} : { snapshot },
-    overriddenKeys: overriddenKeys(resolved)
+  return sealed;
+}
+
+// kernel/src/graph/config.ts
+var gate = _enum(["manual", "auto"]).default("manual");
+var policyModule = defineConfigModule({
+  key: "policy",
+  consumer: "graph",
+  owner: "T21",
+  description: "How the pipeline proceeds: whether each human gate waits for the user.",
+  schema: strictObject({
+    gates: strictObject({
+      design: gate.meta({ description: "auto lets a policy transition pass gate:design." }),
+      review: gate.meta({ description: "auto lets a policy transition pass gate:review." })
+    }).prefault({})
+  }).prefault({})
+});
+var KIND_NAMES = [
+  "intent",
+  "design",
+  "architecture",
+  "design-part",
+  "design-index",
+  "plan-part",
+  "plan-verify",
+  "gate",
+  "execute-part",
+  "post-task-step",
+  "review",
+  "spec-delta",
+  "close"
+];
+function pipelinePrompt(kind) {
+  return definePromptKey({
+    key: `pipeline/${kind}`,
+    consumer: "graph",
+    owner: "T21",
+    defaultFile: `pipeline/${kind}.md`
+  });
+}
+var pipelinePrompts = KIND_NAMES.map(pipelinePrompt);
+
+// kernel/src/graph/use-cases/hash.ts
+import { createHash as createHash3 } from "node:crypto";
+import { join as join16 } from "node:path";
+function inputHasher(store2, changeDir, codeTree) {
+  return (inputs) => {
+    if ("codeTree" in inputs) return codeTree ?? filesHash(store2, changeDir, []);
+    return filesHash(store2, changeDir, "files" in inputs ? inputs.files : []);
   };
 }
-
-// kernel/src/config/commands/input.ts
-function configInput(deps, context) {
-  const workTree = context.workTree ?? context.cwd;
-  return {
-    ...deps,
-    globalDir: globalDir(context.runtime),
-    projectRoot: findProjectRoot(deps.store, context.cwd, workTree)
-  };
-}
-
-// kernel/src/config/commands/check.ts
-function checkCommand(deps) {
-  return (context) => {
-    const outcome = checkConfig(configInput(deps, context));
-    return isRefusal(outcome) ? outcome : { data: outcome, text: renderCheck(outcome) };
-  };
-}
-
-// kernel/src/config/render/schema.ts
-function renderSchema(report2) {
-  if (report2.schema === void 0) {
-    return `${report2.url}
-${report2.offlineCopy === void 0 ? "" : `offline copy: ${report2.offlineCopy}
-`}`;
+function filesHash(store2, changeDir, files) {
+  const hash2 = createHash3("sha256");
+  for (const path of [...files].sort()) {
+    hash2.update(path);
+    hash2.update("\0");
+    hash2.update(store2.read(join16(changeDir, path)) ?? "");
+    hash2.update("\0");
   }
-  return `${JSON.stringify(report2.schema, null, 2)}
-`;
+  return `sha256:${hash2.digest("hex")}`;
 }
 
-// kernel/src/config/use-cases/schema.ts
-function configSchema(input, request) {
-  const url = settingsSchemaUrl(readKernelVersion(input.store, input.pluginRoot));
-  const location = { url, offlineCopy: OFFLINE_SCHEMA_PATH };
-  const { module } = request;
-  const known = input.settings.modules.map((candidate) => candidate.key);
-  if (module !== void 0 && !known.includes(module)) {
-    return refuse(
-      "input/not-found",
-      `${module} is not a registered settings module; registered: ${known.join(", ")}`,
-      ["bdk config schema"]
-    );
-  }
-  if (request.url) return location;
-  const schema = settingsJsonSchema(input.settings);
-  if (module === void 0) return { schema, ...location };
-  const properties = schema.properties;
-  return { module, schema: properties[module] ?? {}, ...location };
-}
-
-// kernel/src/config/commands/schema.ts
-function schemaCommand2(deps) {
-  return (context) => {
-    const module = context.positionals["<module>"];
-    const outcome = configSchema(configInput(deps, context), {
-      ...module === void 0 ? {} : { module },
-      url: context.flags["--url"] === true
-    });
-    return isRefusal(outcome) ? outcome : { data: outcome, text: renderSchema(outcome) };
-  };
-}
-
-// kernel/src/config/render/set.ts
-function renderSet(report2) {
-  const previous = report2.previous === void 0 ? "" : ` (was ${JSON.stringify(report2.previous)})`;
-  return `${report2.key} = ${JSON.stringify(report2.value)}${previous} in the ${report2.layer} layer (${report2.path})
-`;
-}
-
-// kernel/src/config/use-cases/set.ts
+// kernel/src/graph/use-cases/pipeline.ts
 var import_yaml6 = __toESM(require_dist(), 1);
+import { join as join17 } from "node:path";
 
-// kernel/src/config/domain/origins.ts
-function leafOrigins(value, key, set) {
-  const out = {};
-  for (const leaf of leafKeys(value, key)) out[leaf] = originOf(leaf, set);
-  return out;
-}
-function originOf(leaf, set) {
-  for (let key = leaf; key !== ""; key = key.includes(".") ? key.slice(0, key.lastIndexOf(".")) : "") {
-    const origin = set[key];
-    if (origin !== void 0) return origin;
-  }
-  return "default";
-}
-function leafKeys(value, prefix) {
-  if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join19(prefix, key)));
-  }
-  if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item) => leafKeys(item, join19(prefix, item.id)));
-  }
-  return [prefix];
-}
-function isMapping(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function hasId(value) {
-  return isMapping(value) && typeof value.id === "string";
-}
-function join19(prefix, key) {
-  return prefix === "" ? key : `${prefix}.${key}`;
-}
+// kernel/src/graph/schema/pipeline.ts
+var KEBAB = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
+var kebab = string2().regex(new RegExp(`^${KEBAB}$`), "must be kebab-case");
+var stage = strictObject({
+  id: kebab.meta({ description: "Stage id, in pipeline order." }),
+  command: string2().regex(/^\/bdk:[a-z][a-z0-9-]*$/, "must be a /bdk:<skill> command").meta({ description: "The stage command a user types, e.g. /bdk:plan." })
+});
+var node2 = strictObject({
+  id: string2().regex(new RegExp(`^(?:${KEBAB}|gate:${KEBAB})$`), "must be kebab-case or gate:<stage>").meta({ description: "Unique; a collection names its instances <kind>:<nn>." }),
+  kind: kebab.meta({ description: "A registered artifact kind." }),
+  stage: kebab.meta({ description: "A stage id of this file." }),
+  requires: array(string2().min(1)).optional().meta({ description: "Node ids of this file; the graph is acyclic. Default empty." }),
+  profiles: array(_enum(PROFILES)).min(1).optional().meta({ description: "The node exists only for these effective profiles. Default all." }),
+  kinds: array(_enum(CHANGE_KINDS)).min(1).optional().meta({ description: "The node exists only for these Change kinds. Default all." }),
+  if: string2().regex(new RegExp(`^features\\.${KEBAB}$`), "only features.<name> is accepted").optional().meta({ description: "features.<name>: the node exists only while the switch is true." }),
+  budget: _enum(LOOPS).optional().meta({ description: "The loop whose policy.budgets value bounds this node (T22)." }),
+  rules: array(kebab).optional().meta({ description: "Rule categories the instruction carries (rules/<category>)." }),
+  policy: kebab.optional().meta({ description: "Gate only: the policy.gates key that makes it manual or auto." }),
+  opens: kebab.optional().meta({ description: "Gate only: the stage whose command passes the gate." })
+}).meta({ title: "pipeline node" });
+var pipelineSchema = strictObject({
+  schema: literal(1).meta({ description: "Version of this file's format." }),
+  stages: array(stage).min(1),
+  nodes: array(node2).min(1).meta({ description: "In pipeline order, the order next walks." })
+}).meta({
+  title: "BDK pipeline",
+  description: "The artifact graph of a Change: stages and nodes. No expression but if: features.<name>, no loop, no path."
+});
 
-// kernel/src/config/use-cases/show.ts
-var PROMPT_PREFIX = "prompts.";
-var PROMPT_SETTINGS = /* @__PURE__ */ new Set(["dir", "files"]);
-function showConfig(input, request) {
-  const resolved = resolveOrRefuse(input);
-  if (isRefusal(resolved)) return resolved;
-  const layers = fileLayers(input);
-  const { key } = request;
-  if (key === void 0) {
-    const value2 = {
-      ...resolved.value,
-      prompts: { ...promptSettings(resolved), ...prompts(input, resolved) }
-    };
-    return withOrigins(
-      { value: value2, layers },
-      request,
-      () => leafOrigins(resolved.value, "", resolved.merged.origins)
-    );
+// kernel/src/graph/use-cases/pipeline.ts
+var PIPELINE_FILE = "pipeline/pipeline.yaml";
+var cache = /* @__PURE__ */ new WeakMap();
+function loadPipeline(store2, pluginRoot, settings, kinds) {
+  const path = join17(pluginRoot, PIPELINE_FILE);
+  const text4 = store2.read(path);
+  if (text4 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
+  const known = cache.get(kinds)?.get(text4);
+  if (known !== void 0) return known;
+  const problems = pipelineErrors(text4, declaredBy(settings, kinds));
+  if (problems.pipeline === void 0) {
+    throw new Error(`${PIPELINE_FILE} is invalid: ${problems.errors.join("; ")}`);
   }
-  const promptKey = promptKeyOf(key);
-  if (promptKey !== void 0) {
-    if (input.settings.promptKey(promptKey) === void 0) return unknownKey(input, key);
-    const value2 = resolved.prompts.values.get(promptKey);
-    if (value2 === void 0) return notFound2(key);
-    return { key, value: displayPrompt(input, value2), layers };
+  const byText = cache.get(kinds) ?? /* @__PURE__ */ new Map();
+  byText.set(text4, problems.pipeline);
+  cache.set(kinds, byText);
+  return problems.pipeline;
+}
+function pipelineErrors(text4, declared2) {
+  let data;
+  try {
+    data = (0, import_yaml6.parse)(text4);
+  } catch (error2) {
+    return { errors: [error2 instanceof Error ? error2.message : String(error2)] };
   }
-  const steps = declaredSteps(input.settings, key);
-  if (steps === void 0) return unknownKey(input, key);
-  const value = valueAt(resolved.value, steps);
-  if (value === void 0) return notFound2(key);
-  return withOrigins(
-    { key, value, layers },
-    request,
-    () => leafOrigins(value, key, resolved.merged.origins)
+  const parsed = pipelineSchema.safeParse(data);
+  if (!parsed.success) return { errors: parsed.error.issues.flatMap(issueText) };
+  const errors = pipelineProblems(parsed.data, declared2);
+  return errors.length === 0 ? { pipeline: parsed.data, errors } : { errors };
+}
+function declaredBy(settings, kinds) {
+  const below = (prefix) => new Set(
+    settings.keys.filter((key) => key.startsWith(prefix) && !key.slice(prefix.length).includes(".")).map((key) => key.slice(prefix.length))
   );
-}
-function withOrigins(report2, request, origins) {
-  return request.origins ? { ...report2, origins: origins() } : report2;
-}
-function promptKeyOf(key) {
-  if (!key.startsWith(PROMPT_PREFIX)) return void 0;
-  const rest = key.slice(PROMPT_PREFIX.length);
-  return PROMPT_SETTINGS.has(rest.split(".")[0] ?? "") ? void 0 : rest;
-}
-function promptSettings(resolved) {
-  const settings = resolved.value.prompts;
-  return typeof settings === "object" && settings !== null ? { ...settings } : {};
-}
-function prompts(input, resolved) {
-  return Object.fromEntries(
-    [...resolved.prompts.values].map(([key, value]) => [key, displayPrompt(input, value)])
+  const rules2 = new Set(
+    settings.prompts.map((prompt2) => /^rules\/([a-z0-9-]+)$/.exec(prompt2.key)?.[1]).filter((name) => name !== void 0)
   );
-}
-function displayPrompt(input, value) {
   return {
-    mode: value.mode,
-    files: value.files.map((file) => ({ ...file, path: displayPath(input, file.path) }))
+    kinds: new Set(kinds.keys()),
+    features: below("features."),
+    gates: below("policy.gates."),
+    rules: rules2
   };
 }
-function fileLayers(input) {
-  return layerFiles(input.globalDir, input.projectRoot).map(({ name, path }) => ({
-    layer: name,
-    path: displayPath(input, path),
-    present: input.store.exists(path)
-  }));
+function issueText(issue2) {
+  const at = keyOf(issue2.path);
+  if (issue2.code === "unrecognized_keys") {
+    return issue2.keys.map((key) => `${at === "" ? key : `${at}.${key}`}: unknown key`);
+  }
+  return [`${at === "" ? "(root)" : at}: ${issue2.message}`];
 }
-function unknownKey(input, key) {
-  return refuse("policy/unknown-config-key", `${key}: ${unknownKeyMessage(input.settings, key)}`, [
-    schemaCommand(input, key),
-    "bdk config show"
+function keyOf(path) {
+  return path.map(
+    (segment, n) => typeof segment === "number" ? `[${segment}]` : `${n === 0 ? "" : "."}${String(segment)}`
+  ).join("");
+}
+
+// kernel/src/graph/use-cases/view.ts
+import { join as join18 } from "node:path";
+function changeView(input) {
+  const { store: store2, dir } = input;
+  const files = /* @__PURE__ */ new Map();
+  const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
+  const file = (path) => {
+    if (files.has(path)) return files.get(path);
+    const facts = readFacts(store2, join18(dir, path));
+    files.set(path, facts);
+    return facts;
+  };
+  return {
+    id: input.id,
+    kind: input.kind,
+    profile: input.profile,
+    entries: input.entries,
+    file,
+    list: (sub) => store2.list(join18(dir, sub)).filter((name) => !name.endsWith("/")),
+    reportStatus: (entry) => {
+      const row = byId.get(entry.id);
+      if (row === void 0) return void 0;
+      const data = documentData(store2, join18(input.projectRoot, row.path));
+      const report2 = data?.report;
+      if (typeof report2 !== "string") return void 0;
+      const status = documentData(store2, join18(dir, report2))?.status;
+      return typeof status === "string" ? status : void 0;
+    }
+  };
+}
+function readFacts(store2, path) {
+  const text4 = store2.read(path);
+  if (text4 === void 0) return void 0;
+  const bytes = Buffer.byteLength(text4);
+  try {
+    const document = readDocument(store2, path);
+    if (document === void 0) return void 0;
+    const blank = document.body.trim() === "";
+    return "data" in document ? { bytes, blank, data: document.data } : { bytes, blank };
+  } catch (error2) {
+    if (!(error2 instanceof KernelRefusal)) throw error2;
+    return { bytes, blank: text4.trim() === "", invalid: error2.refusal.why };
+  }
+}
+function documentData(store2, path) {
+  try {
+    const document = readDocument(store2, path);
+    return document !== void 0 && "data" in document ? document.data : void 0;
+  } catch (error2) {
+    if (error2 instanceof KernelRefusal) return void 0;
+    throw error2;
+  }
+}
+
+// kernel/src/graph/use-cases/graph.ts
+var shipped = kindRegistry();
+function kindsOf(deps) {
+  return deps.kinds ?? shipped;
+}
+async function readGraph(deps, change, index2, globalDir2) {
+  const resolved = resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir: globalDir2,
+      projectRoot: change.projectRoot,
+      pluginRoot: deps.pluginRoot
+    },
+    { removed: "ignore" }
+  );
+  if ("refused" in resolved) return resolved;
+  const kinds = kindsOf(deps);
+  const pipeline = loadPipeline(deps.store, deps.pluginRoot, deps.settings, kinds);
+  const row = findChangeRow(index2, change.id);
+  const entries = listEntries(index2, change.id);
+  const base = row !== void 0 && isProfile(row.profile) ? row.profile : "small";
+  const view = changeView({
+    store: deps.store,
+    id: change.id,
+    dir: change.dir,
+    projectRoot: change.projectRoot,
+    kind: row?.kind ?? "feature",
+    profile: effectiveProfile(base, entries),
+    entries
+  });
+  const reviewed = pipeline.nodes.some((node3) => {
+    const kind = kinds.get(node3.kind);
+    return kind !== void 0 && "codeTree" in kind.inputs(view) && entries.some(
+      (entry) => entry.type === "transition" && entry.source === "kernel" && entry.to === node3.id
+    );
+  });
+  const codeTree = reviewed ? await codeTreeHash(deps.git, change.projectRoot) : void 0;
+  const hash2 = inputHasher(deps.store, change.dir, codeTree);
+  const graph = evaluate({
+    pipeline,
+    kinds,
+    view,
+    features: record2(resolved.value.features),
+    gates: gatesOf(resolved),
+    hash: hash2
+  });
+  const currentHash = async (node3) => {
+    const kind = kinds.get(node3.kind);
+    if (kind === void 0) return void 0;
+    const instances = (node3.instances ?? []).map((id) => graph.find(id)?.nn);
+    const inputs = instances.length === 0 ? kind.inputs(view, node3.nn) : {
+      files: instances.flatMap((nn) => {
+        const own2 = kind.inputs(view, nn);
+        return "files" in own2 ? own2.files : [];
+      })
+    };
+    if ("none" in inputs) return void 0;
+    if ("codeTree" in inputs && codeTree === void 0) {
+      return inputHasher(
+        deps.store,
+        change.dir,
+        await codeTreeHash(deps.git, change.projectRoot)
+      )(inputs);
+    }
+    return hash2(inputs);
+  };
+  return {
+    graph,
+    view,
+    pipeline,
+    kinds,
+    resolved,
+    entries,
+    parked: parkedQuestion(entries),
+    currentHash
+  };
+}
+function gatesOf(resolved) {
+  const policy = policyModule.schema.parse(resolved.value[policyModule.key]);
+  return policy.gates;
+}
+function record2(value) {
+  return typeof value === "object" && value !== null ? value : {};
+}
+function pendingOf(read2) {
+  const rows = new Map(read2.entries.map((entry) => [entry.id, entry]));
+  return (id) => {
+    const row = rows.get(id);
+    if (row === void 0) throw new Error(`pending entry ${id} is not indexed`);
+    return {
+      id: row.id,
+      type: row.type,
+      summary: row.summary,
+      status: row.status,
+      source: row.source,
+      author: row.author,
+      at: row.at,
+      refs: row.refs,
+      ...row.review ? { review: true } : {},
+      ...row.supersedes === void 0 ? {} : { supersedes: row.supersedes }
+    };
+  };
+}
+function stageOfChange(read2) {
+  return stageOf(read2.entries, (to) => stageOfTarget(read2.pipeline, to));
+}
+function gateViews(read2) {
+  const pending = pendingOf(read2);
+  return read2.graph.gates.map((gate2) => gateView(gate2, pending));
+}
+
+// kernel/src/graph/use-cases/explain.ts
+function explainNode(deps, change, globalDir2, id) {
+  return withChangeIndex(deps, change, async (index2) => {
+    const read2 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read2) return read2;
+    const node3 = read2.graph.find(id);
+    if (node3 === void 0) return notFound2(read2, change, id);
+    const chain2 = chainOf(node3, read2.graph.find);
+    const conditions = [
+      ...new Set(
+        chain2.flatMap(
+          (item) => item.state !== "skipped" && item.node.if !== void 0 ? [item.node.if] : []
+        )
+      )
+    ];
+    return {
+      artifact: node3.id,
+      state: node3.state,
+      chain: chain2.map(nodeView),
+      profile: read2.view.profile,
+      ...conditions.length === 0 ? {} : { conditions }
+    };
+  });
+}
+function notFound2(read2, change, id) {
+  const hint = closest(
+    id,
+    read2.graph.nodes.map((node3) => node3.id)
+  );
+  return refuse("input/not-found", `${id} is not a node of ${change.id}'s graph`, [
+    hint === void 0 ? "bdk change status" : `bdk explain ${hint}`,
+    "bdk change status"
   ]);
 }
-function notFound2(key) {
-  return refuse(
-    "input/not-found",
-    `${key} is declared, but no layer sets it and it has no default`,
-    [`bdk config set ${key} <value>`, "bdk config show"]
-  );
-}
 
-// kernel/src/config/use-cases/set.ts
-async function setConfig(input, request) {
-  const { key } = request;
-  const usage = `bdk config set ${key} <value>`;
-  if (request.global === true && request.local === true) {
-    return refuse("input/invalid-argument", "--global and --local name two layers; give one", [
-      `${usage} --local`,
-      `${usage} --global`
-    ]);
-  }
-  const layer = request.global === true ? "global" : request.local === true ? "local" : "project";
-  const file = layerFiles(input.globalDir, input.projectRoot).find((entry) => entry.name === layer);
-  if (file === void 0) throw new Error(`no file for the ${layer} layer`);
-  const value = parseValue(request.value, usage);
-  if (isRefusal(value)) return value;
-  const steps = declaredSteps(input.settings, key);
-  if (steps === void 0) return unknownKey(input, key);
-  const text4 = input.store.read(file.path);
-  const document = (0, import_yaml6.parseDocument)(text4 ?? "");
-  if (document.errors.length > 0) {
-    return refuse("policy/config-invalid", `${displayPath(input, file.path)} is not valid YAML`, [
-      `fix ${displayPath(input, file.path)}`
-    ]);
-  }
-  const edit = editDocument(document, steps, value, request.value);
-  if (isRefusal(edit)) return edit;
-  const next = text4 === void 0 ? withModeline(document.toString(FORMAT), readKernelVersion(input.store, input.pluginRoot)) : edit.splice === void 0 ? document.toString(FORMAT) : `${text4.slice(0, edit.splice.start)}${edit.splice.text}${text4.slice(edit.splice.end)}`;
-  const resolved = resolveOrRefuse(input, { store: overlay(input.store, file.path, next) });
-  if (isRefusal(resolved)) return resolved;
-  await ensureIgnored(input.store, input.git, input.projectRoot);
-  input.store.write(file.path, next);
-  writeSnapshot(input.store, input.projectRoot, resolved);
-  return {
-    key,
-    value: value.toJSON(),
-    ...edit.previous === void 0 ? {} : { previous: edit.previous },
-    layer,
-    path: displayPath(input, file.path)
-  };
-}
-function parseValue(raw, usage) {
-  const parsed = (0, import_yaml6.parseDocument)(raw);
-  const [error2] = parsed.errors;
-  if (error2 !== void 0 || !(0, import_yaml6.isNode)(parsed.contents)) {
-    const reason = error2 instanceof import_yaml6.YAMLParseError ? `: ${error2.message.split("\n")[0] ?? ""}` : "";
-    return refuse("input/invalid-argument", `${raw} is not a YAML value${reason}`, [usage]);
-  }
-  return parsed.contents;
-}
-var FORMAT = { flowCollectionPadding: false };
-function editDocument(document, steps, value, raw) {
-  const path = [];
-  for (const [index2, step] of steps.entries()) {
-    const last = index2 === steps.length - 1;
-    if (!step.id) {
-      path.push(step.segment);
-      continue;
+// kernel/src/graph/use-cases/validate.ts
+function validateNode(deps, change, globalDir2, id) {
+  return withChangeIndex(deps, change, async (index2) => {
+    const read2 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read2) return read2;
+    const node3 = id === void 0 ? read2.graph.next : read2.graph.find(id);
+    if (node3 === void 0) {
+      return id === void 0 ? nothingActionable(read2, change) : notFound2(read2, change, id);
     }
-    const sequence = document.getIn(path, true);
-    const items = (0, import_yaml6.isSeq)(sequence) ? sequence.items : [];
-    const found = items.findIndex((item2) => (0, import_yaml6.isMap)(item2) && item2.get("id") === step.segment);
-    if (found !== -1) {
-      path.push(found);
-      continue;
-    }
-    const item = last ? withId(document, value, step.segment) : document.createNode({ id: step.segment });
-    if (isRefusal(item)) return item;
-    if ((0, import_yaml6.isSeq)(sequence)) sequence.add(item);
-    else document.setIn(path, document.createNode([item]));
-    if (last) return {};
-    path.push((0, import_yaml6.isSeq)(sequence) ? sequence.items.length - 1 : 0);
-  }
-  const current = document.getIn(path, true);
-  const previous = (0, import_yaml6.isNode)(current) ? current.toJSON() : void 0;
-  const kept = previous === void 0 ? {} : { previous };
-  if ((0, import_yaml6.isNode)(current) && inline(current) && inline(value) && !raw.includes("\n")) {
-    const [start, end] = current.range ?? [0, 0];
-    const [from, to] = value.range ?? [0, raw.length];
-    return { ...kept, splice: { start, end, text: raw.slice(from, to) } };
-  }
-  document.setIn(path, value);
-  return kept;
-}
-function inline(node2) {
-  return (0, import_yaml6.isScalar)(node2) || (0, import_yaml6.isCollection)(node2) && node2.flow === true;
-}
-function withId(document, value, id) {
-  if (!(0, import_yaml6.isMap)(value)) {
-    return refuse(
-      "input/invalid-argument",
-      `a new item ${id} needs a mapping value, e.g. {command: ...}`,
-      ["bdk config schema"]
-    );
-  }
-  const given = value.get("id");
-  if (given === void 0) value.items.unshift(document.createPair("id", id));
-  else if (given !== id) {
-    return refuse(
-      "input/invalid-argument",
-      `the value's id ${JSON.stringify(given)} differs from the key's ${id}`,
-      ["bdk config schema"]
-    );
-  }
-  return value;
-}
-function overlay(store2, path, text4) {
-  const readOnly = () => {
-    throw new Error("the validation overlay is read-only");
-  };
-  return {
-    read: (candidate) => candidate === path ? text4 : store2.read(candidate),
-    write: readOnly,
-    remove: readOnly,
-    append: readOnly,
-    list: (dir) => store2.list(dir),
-    exists: (candidate) => candidate === path || store2.exists(candidate),
-    isDirectory: (candidate) => store2.isDirectory(candidate),
-    stat: (candidate) => store2.stat(candidate)
-  };
-}
-
-// kernel/src/config/commands/set.ts
-function setCommand(deps) {
-  return async (context) => {
-    const outcome = await setConfig(configInput(deps, context), {
-      key: context.positionals["<key>"] ?? "",
-      value: context.positionals["<value>"] ?? "",
-      global: context.flags["--global"] === true,
-      local: context.flags["--local"] === true
-    });
-    return isRefusal(outcome) ? outcome : { data: outcome, text: renderSet(outcome) };
-  };
-}
-
-// kernel/src/config/commands/show.ts
-var import_yaml7 = __toESM(require_dist(), 1);
-function showCommand2(deps) {
-  return (context) => {
-    const key = context.positionals["<key>"];
-    const outcome = showConfig(configInput(deps, context), {
-      ...key === void 0 ? {} : { key },
-      origins: context.flags["--origins"] === true
-    });
-    if (isRefusal(outcome)) return outcome;
-    const origins = outcome.origins === void 0 ? "" : `# origins
-${(0, import_yaml7.stringify)(outcome.origins)}`;
-    return { data: outcome, text: `${(0, import_yaml7.stringify)(outcome.value)}${origins}` };
-  };
-}
-
-// kernel/src/config/use-cases/layout.ts
-import { join as join20 } from "node:path";
-
-// kernel/src/config/domain/layout.ts
-var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
-function classifyLayout(state) {
-  if (!state.bdk) return { layout: "none", present: [] };
-  if (state.present.length === 0) return { layout: "v3", present: [] };
-  return { layout: "v2", present: state.present };
-}
-
-// kernel/src/config/use-cases/layout.ts
-function detectLayout(store2, root) {
-  return classifyLayout({
-    bdk: store2.isDirectory(join20(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => store2.exists(join20(root, marker)))
+    const checks = checksOf(read2, node3);
+    const inputHash = await read2.currentHash(node3);
+    return {
+      artifact: node3.id,
+      valid: checks.every((check) => check.ok),
+      ...inputHash === void 0 ? {} : { inputHash },
+      checks
+    };
   });
 }
-
-// kernel/src/config/index.ts
-function configRegistrations(deps) {
-  return [
-    { id: "config-show", handler: showCommand2(deps) },
-    { id: "config-check", handler: checkCommand(deps) },
-    { id: "config-schema", handler: schemaCommand2(deps) },
-    { id: "config-set", handler: setCommand(deps) }
-  ];
+function checksOf(read2, node3) {
+  const kind = read2.kinds.get(node3.kind);
+  if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
+  const instances = node3.instances ?? [];
+  if (instances.length === 0) {
+    return kind.validate(read2.view, {
+      id: node3.id,
+      ...node3.nn === void 0 ? {} : { nn: node3.nn }
+    });
+  }
+  return instances.flatMap((instance) => {
+    const nn = read2.graph.find(instance)?.nn;
+    return kind.validate(read2.view, { id: instance, ...nn === void 0 ? {} : { nn } }).map((check) => ({ ...check, id: `${instance}:${check.id}` }));
+  });
 }
+function nothingActionable(read2, change) {
+  const gate2 = read2.graph.waitingGate;
+  const why = read2.parked !== void 0 ? `${change.id} is parked; no artifact is actionable` : gate2 !== void 0 ? `${change.id} waits for ${gate2.gate}; no artifact is actionable` : `every node of ${change.id} is done; no artifact is actionable`;
+  return refuse("input/not-found", why, ["bdk validate <artifact>", "bdk next"]);
+}
+
+// kernel/src/graph/use-cases/done.ts
+function markDone(deps, change, globalDir2, id) {
+  return withChangeIndex(deps, change, async (index2) => {
+    const read2 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read2) return read2;
+    const node3 = read2.graph.find(id);
+    if (node3 === void 0) return notFound2(read2, change, id);
+    const kind = read2.kinds.get(node3.kind);
+    if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
+    const refused = refusal(read2, node3, kind);
+    if (refused !== void 0) return refused;
+    if (isSplitDesign(read2, kind)) return raiseToLarge(deps, change, index2, globalDir2, read2, node3);
+    const targets = node3.instances === void 0 || node3.instances.length === 0 ? [node3] : node3.instances.map((instance) => read2.graph.find(instance)).filter((instance) => instance?.state === "ready" || instance?.state === "stale").filter((instance) => instance !== void 0);
+    const hash2 = await read2.currentHash(node3) ?? emptyHash(deps, change);
+    if (targets.length === 0 || targets.length === 1 && targets[0]?.state === "done") {
+      if (node3.state !== "done") {
+        return refuse("policy/not-ready", `${node3.id} has no ready part to mark`, [
+          `bdk explain ${node3.id}`
+        ]);
+      }
+      return {
+        artifact: node3.id,
+        state: "done",
+        inputHash: hash2,
+        next: nextOf(read2),
+        ...recorded(node3)
+      };
+    }
+    for (const target of targets) {
+      const failed = checksOf(read2, target).find((check) => !check.ok);
+      if (failed !== void 0) {
+        return refuse(
+          failed.rule ?? "policy/validation-failed",
+          `${target.id} fails check ${failed.id}: ${failed.why ?? "failed"}`,
+          [...failed.instead === void 0 ? [] : [failed.instead], `bdk validate ${target.id}`]
+        );
+      }
+    }
+    const generated = indexOf(read2, kind, node3, targets);
+    let entry;
+    for (const target of targets) {
+      const inputHash = await read2.currentHash(target) ?? emptyHash(deps, change);
+      const files = kind.writes(read2.view, target.nn).filter((path) => !path.includes("<"));
+      const written = await appendEntry(
+        deps,
+        change,
+        index2,
+        {
+          type: "transition",
+          summary: `${target.id} done`,
+          status: "accepted",
+          refs: [target.id, ...files],
+          body: "",
+          to: target.id,
+          inputHash
+        },
+        { dedupe: false }
+      );
+      if ("refused" in written) return written;
+      entry = written.entry.id;
+    }
+    if (generated !== void 0) deps.store.write(join19(change.dir, generated.path), generated.text);
+    const after = await reread(deps, change, index2, globalDir2);
+    if ("refused" in after) return after;
+    return {
+      artifact: node3.id,
+      state: "done",
+      inputHash: hash2,
+      next: nextOf(after),
+      ...entry === void 0 ? {} : { entry }
+    };
+  });
+}
+function refusal(read2, node3, kind) {
+  const { doneBy } = kind;
+  if (node3.state === "skipped" && !isSplitDesign(read2, kind)) {
+    return refuse(
+      "policy/invalid-transition",
+      `${node3.id} is not part of this Change's graph: ${node3.why ?? "skipped"}`,
+      ["bdk next", `bdk explain ${node3.id}`]
+    );
+  }
+  if (doneBy.through === "gate") {
+    return refuse(
+      "policy/gate-not-ready",
+      `${node3.id} is passed only by a user (or policy) transition, never by bdk done`,
+      [node3.gate?.command ?? "type the next stage command", `bdk explain ${node3.id}`]
+    );
+  }
+  if (doneBy.through === "construction") {
+    return refuse("policy/invalid-transition", `${node3.id} is done by construction at change new`, [
+      "bdk next"
+    ]);
+  }
+  if (doneBy.through === "command") {
+    const command = doneBy.command.replaceAll("{nn}", node3.nn ?? "<nn>");
+    return refuse(
+      "policy/invalid-transition",
+      `${node3.id} is completed by ${command}, not bdk done`,
+      [command]
+    );
+  }
+  if (node3.state === "blocked") {
+    const open2 = node3.requires.find((id) => read2.graph.find(id)?.state !== "done");
+    return refuse("policy/not-ready", `${node3.id}: ${node3.why ?? "a requirement is not done"}`, [
+      `bdk explain ${node3.id}`,
+      ...open2 === void 0 ? [] : [`bdk done ${open2}`]
+    ]);
+  }
+  return void 0;
+}
+function isSplitDesign(read2, kind) {
+  return kind.name === "design" && read2.view.profile === "small" && read2.view.file("design.md") === void 0 && partFiles(read2.view, "design/parts").size > 0;
+}
+async function raiseToLarge(deps, change, index2, globalDir2, read2, node3) {
+  const parts = [...partFiles(read2.view, "design/parts").values()];
+  const written = await appendEntry(
+    deps,
+    change,
+    index2,
+    {
+      type: "decision",
+      summary: "Profile raised to large: the design is split into design/parts/",
+      status: "accepted",
+      refs: ["design/parts/"],
+      body: "",
+      profile: "large"
+    },
+    { dedupe: false }
+  );
+  if ("refused" in written) return written;
+  const after = await reread(deps, change, index2, globalDir2);
+  if ("refused" in after) return after;
+  return {
+    artifact: node3.id,
+    state: "done",
+    inputHash: inputHasher(deps.store, change.dir, void 0)({ files: parts }),
+    next: nextOf(after),
+    entry: written.entry.id
+  };
+}
+function indexOf(read2, kind, node3, targets) {
+  if (kind.name === "design-index") {
+    return { path: "design/index.md", text: generateDesignIndex(partsOf(read2, "design/parts")) };
+  }
+  if (kind.name !== "plan-part") return void 0;
+  const collection = node3.instances === void 0 ? read2.graph.find(node3.node.id) : node3;
+  const marked = new Set(targets.map((target) => target.id));
+  const complete = (collection?.instances ?? []).every(
+    (id) => marked.has(id) || read2.graph.find(id)?.state === "done"
+  );
+  return complete ? { path: "plan/index.md", text: generatePlanIndex(partsOf(read2, "plan/parts")) } : void 0;
+}
+function partsOf(read2, dir) {
+  return [...partFiles(read2.view, dir).values()].map((path) => {
+    const data = read2.view.file(path)?.data ?? {};
+    const dependsOn = data["depends-on"];
+    return {
+      id: String(data.id),
+      title: String(data.title),
+      "depends-on": Array.isArray(dependsOn) ? dependsOn.map(String) : []
+    };
+  });
+}
+async function reread(deps, change, index2, globalDir2) {
+  refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
+  return readGraph(deps, change, index2, globalDir2);
+}
+function nextOf(read2) {
+  if (read2.parked !== void 0) return "user";
+  return read2.graph.next?.id ?? read2.graph.waitingGate?.gate ?? "nothing";
+}
+function recorded(node3) {
+  return node3.recorded === void 0 ? {} : { entry: node3.recorded.id };
+}
+function emptyHash(deps, change) {
+  return inputHasher(deps.store, change.dir, void 0)({ files: [] });
+}
+
+// kernel/src/graph/domain/instruction.ts
+var LEDGER_CAP = 20;
+function composeInstruction(parts) {
+  const { node: node3 } = parts;
+  const template = fillTemplate(parts.template, {
+    change: parts.change,
+    node: node3.id,
+    profile: parts.profile,
+    paths: parts.paths
+  });
+  const shown = parts.ledger.slice(0, LEDGER_CAP);
+  const omitted = parts.ledger.length - shown.length;
+  const sections = [
+    `# ${node3.id} (${node3.kind})`,
+    template.trimEnd(),
+    "## Write to",
+    parts.paths.length === 0 ? "- nothing: the result is a ledger entry" : parts.paths.map((path) => `- ${path}`).join("\n"),
+    "## Rules",
+    parts.rules.length === 0 ? "none" : parts.rules.map((rule2) => `### ${rule2.category}
+
+${rule2.text.trimEnd()}`).join("\n\n"),
+    "## Ledger",
+    shown.length === 0 ? "none" : [
+      ...shown.map((entry) => `- ${entry.id} ${entry.type}: ${entry.summary}`),
+      ...omitted > 0 ? [`- ${omitted} more: bdk log list`] : []
+    ].join("\n"),
+    "## When finished",
+    finish(node3, parts.kind)
+  ];
+  return `${sections.join("\n\n")}
+`;
+}
+function fillTemplate(template, values2) {
+  return template.replaceAll("{change}", values2.change).replaceAll("{node}", values2.node).replaceAll("{profile}", values2.profile).replaceAll("{paths}", values2.paths.join(", "));
+}
+function finish(node3, kind) {
+  const { doneBy } = kind;
+  if (doneBy.through === "command") {
+    const command = doneBy.command.replaceAll("{nn}", node3.nn ?? "<nn>");
+    return command.startsWith("bdk ") ? `Run \`${command}\`.` : `Completed by ${command}; do not run bdk done.`;
+  }
+  if (node3.instances !== void 0) {
+    return `Run \`bdk done ${node3.id}\` to mark every part, or \`bdk done ${kind.name}:<nn>\` for one part.`;
+  }
+  return `Run \`bdk done ${node3.id}\`.`;
+}
+
+// kernel/src/graph/use-cases/instruction.ts
+import { posix as posix3, relative as relative3, sep as sep3 } from "node:path";
 
 // kernel/src/ctx/render/sections.ts
 function renderContext({ heading, sections }) {
@@ -19567,23 +20117,23 @@ var SKILL_CONTEXT = {
 };
 
 // kernel/src/ctx/use-cases/parts.ts
-var import_yaml8 = __toESM(require_dist(), 1);
-import { join as join21 } from "node:path/posix";
+var import_yaml7 = __toESM(require_dist(), 1);
+import { join as join20 } from "node:path/posix";
 
 // kernel/src/ctx/config.ts
 var ID3 = /^[a-z0-9][a-z0-9-]*$/;
-var text3 = string2().min(1);
-var withFiles = text3.regex(/\{files\}/, "must contain the {files} placeholder");
+var text2 = string2().min(1);
+var withFiles = text2.regex(/\{files\}/, "must contain the {files} placeholder");
 var entryFields = {
   id: string2().regex(ID3, "must be kebab-case: lowercase letters, digits and -").meta({
     description: "Unique within the array; the merge key and the path segment."
   }),
-  command: text3.meta({ description: "The full, unscoped command." }),
+  command: text2.meta({ description: "The full, unscoped command." }),
   scoped: withFiles.optional().meta({ description: "The command for given paths ({files})." }),
   related: withFiles.optional().meta({ description: "The command for the tests covering given source paths ({files})." }),
-  failed: text3.optional().meta({ description: "Re-run of the previous failures." }),
-  incremental: text3.optional().meta({ description: "The incremental form." }),
-  when: text3.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
+  failed: text2.optional().meta({ description: "Re-run of the previous failures." }),
+  incremental: text2.optional().meta({ description: "The incremental form." }),
+  when: text2.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
 };
 function tools2(tier, description) {
   const entry = (tier === void 0 ? strictObject(entryFields) : strictObject({ ...entryFields, tier })).meta({ title: "tool entry" });
@@ -19594,7 +20144,7 @@ var languagesModule = defineConfigModule({
   consumer: "ctx",
   owner: "T12",
   description: "Languages and frameworks of the project; a name gets content from the rules/languages/<name> prompt value.",
-  schema: array(text3).refine((names) => new Set(names).size === names.length, "names must be unique").meta({ uniqueItems: true }).default([])
+  schema: array(text2).refine((names) => new Set(names).size === names.length, "names must be unique").meta({ uniqueItems: true }).default([])
 });
 var toolsModule = defineConfigModule({
   key: "tools",
@@ -19690,17 +20240,21 @@ function sectionsOf(input, resolved, part) {
       return [
         {
           title: `Project commands: ${part.group}`,
-          body: entries.length === 0 ? "none configured\n" : (0, import_yaml8.stringify)(entries),
+          body: entries.length === 0 ? "none configured\n" : (0, import_yaml7.stringify)(entries),
           part: { kind: "tools", source: `tools.${part.group}` }
         }
       ];
     }
     case "file": {
-      const text4 = input.store.read(join21(input.pluginRoot, part.path));
+      const text4 = input.store.read(join20(input.pluginRoot, part.path));
       if (text4 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
       return [{ title: part.title, body: text4, part: { kind: "file", source: part.path } }];
     }
   }
+}
+function ruleSet(store2, resolved, category2) {
+  const value = resolved.prompts.values.get(declared(rulePrompts, `rules/${category2}`));
+  return value === void 0 ? void 0 : promptContent(store2, value);
 }
 function prompt(input, resolved, key) {
   const value = resolved.prompts.values.get(key);
@@ -19782,7 +20336,7 @@ function agentsTable(rows) {
   const widths = HEADER.map(
     (_, column) => Math.max(3, ...cells.map((row) => width(row[column] ?? "")))
   );
-  const line = (row) => `| ${row.map((cell2, column) => cell2 + " ".repeat((widths[column] ?? 0) - width(cell2))).join(" | ")} |`;
+  const line = (row) => `| ${row.map((cell3, column) => cell3 + " ".repeat((widths[column] ?? 0) - width(cell3))).join(" | ")} |`;
   const [header, ...body] = cells;
   return [line(header ?? []), line(widths.map((size) => "-".repeat(size))), ...body.map(line)].join(
     "\n"
@@ -19794,14 +20348,14 @@ function width(text4) {
 }
 
 // kernel/src/ctx/use-cases/startup.ts
-var import_yaml9 = __toESM(require_dist(), 1);
-import { join as join22 } from "node:path/posix";
+var import_yaml8 = __toESM(require_dist(), 1);
+import { join as join21 } from "node:path/posix";
 var STARTUP_FILE = "STARTUP_INSTRUCTIONS.md";
 var AGENTS_DIR = "agents";
 var OPEN = "<!-- bdk:agents-table -->";
 var CLOSE = "<!-- /bdk:agents-table -->";
 function readStartup(deps) {
-  const text4 = deps.store.read(join22(deps.pluginRoot, STARTUP_FILE));
+  const text4 = deps.store.read(join21(deps.pluginRoot, STARTUP_FILE));
   if (text4 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
   const lines = text4.split("\n");
   const open2 = lines.indexOf(OPEN);
@@ -19812,12 +20366,12 @@ function readStartup(deps) {
   return { before: lines.slice(0, open2 + 1), rows: agents(deps), after: lines.slice(close) };
 }
 function agents(deps) {
-  const dir = join22(deps.pluginRoot, AGENTS_DIR);
-  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join22(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
+  const dir = join21(deps.pluginRoot, AGENTS_DIR);
+  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join21(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
 }
 function agentRow(path, text4) {
   const { frontmatter } = splitFrontmatter(text4);
-  const data = frontmatter === void 0 ? void 0 : (0, import_yaml9.parse)(frontmatter);
+  const data = frontmatter === void 0 ? void 0 : (0, import_yaml8.parse)(frontmatter);
   const field2 = (name) => {
     const value = typeof data === "object" && data !== null ? data[name] : void 0;
     if (typeof value !== "string" || value.trim() === "") {
@@ -19851,6 +20405,1115 @@ function ctxRegistrations(deps) {
   ];
 }
 
+// kernel/src/graph/use-cases/instruction.ts
+function instructionOf(deps, change, read2, node3) {
+  const kind = read2.kinds.get(node3.kind);
+  if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
+  const key = templateKey(deps, node3.kind);
+  const value = read2.resolved.prompts.values.get(key);
+  if (value === void 0) throw new Error(`the prompt value ${key} has no file in any layer`);
+  const dir = relative3(change.projectRoot, change.dir).split(sep3).join("/");
+  const writes = kind.writes(read2.view, node3.nn);
+  return composeInstruction({
+    node: node3,
+    kind,
+    change: change.id,
+    profile: read2.view.profile,
+    template: promptContent(deps.store, value),
+    paths: writes.map((path) => posix3.join(dir, path)),
+    rules: (node3.node.rules ?? []).map((category2) => ({
+      category: category2,
+      text: ruleSet(deps.store, read2.resolved, category2) ?? ""
+    })),
+    ledger: ledgerOf(read2.view.entries, [node3.id, ...writes])
+  });
+}
+function ledgerOf(entries, names) {
+  return entries.filter(
+    (entry) => entry.type === "decision" && entry.status === "accepted" || (entry.type === "question" || entry.type === "blocker") && live(entry) || entry.review && live(entry) && entry.refs.some((ref) => names.includes(ref))
+  ).reverse();
+}
+function templateKey(deps, kind) {
+  const key = `pipeline/${kind}`;
+  const declared2 = pipelinePrompts.some((prompt2) => prompt2.key === key) || deps.settings.promptKey(key) !== void 0;
+  if (!declared2) throw new Error(`${key} is not a declared prompt key`);
+  return key;
+}
+
+// kernel/src/graph/use-cases/next.ts
+function nextStep(deps, change, globalDir2) {
+  return withChangeIndex(deps, change, async (index2) => {
+    const read2 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read2) return read2;
+    const base = { change: change.id, stage: stageOfChange(read2), gates: gateViews(read2) };
+    if (read2.parked !== void 0) {
+      return {
+        report: { ...base, waiting: "user" },
+        parked: {
+          entry: read2.parked.id,
+          summary: read2.parked.summary,
+          options: read2.parked.options ?? []
+        }
+      };
+    }
+    const { next, waitingGate } = read2.graph;
+    if (next !== void 0) {
+      return {
+        report: {
+          ...base,
+          artifact: nodeView(next),
+          instruction: instructionOf(deps, change, read2, next)
+        }
+      };
+    }
+    if (waitingGate !== void 0) {
+      const value = read2.resolved.prompts.values.get("pipeline/gate");
+      return {
+        report: { ...base, waiting: "gate" },
+        ...value === void 0 ? {} : {
+          gateText: fillTemplate(promptContent(deps.store, value), {
+            change: change.id,
+            node: waitingGate.gate,
+            profile: read2.view.profile,
+            paths: []
+          })
+        }
+      };
+    }
+    return { report: { ...base, waiting: "nothing" } };
+  });
+}
+
+// kernel/src/graph/commands/graph.ts
+function active2(change) {
+  if (change === void 0) throw new Error("this graph command is Change-scoped");
+  return change;
+}
+function nextCommand(deps) {
+  return async (context) => {
+    const outcome = await nextStep(deps, active2(context.change), globalDir(context.runtime));
+    return isRefusal(outcome) ? outcome : { data: outcome.report, text: renderNext(outcome) };
+  };
+}
+function explainCommand(deps) {
+  return async (context) => {
+    const report2 = await explainNode(
+      deps,
+      active2(context.change),
+      globalDir(context.runtime),
+      context.positionals["<artifact>"] ?? ""
+    );
+    return isRefusal(report2) ? report2 : { data: report2, text: renderExplain(report2) };
+  };
+}
+function validateCommand(deps) {
+  return async (context) => {
+    const report2 = await validateNode(
+      deps,
+      active2(context.change),
+      globalDir(context.runtime),
+      context.positionals["<artifact>"]
+    );
+    if (isRefusal(report2)) return report2;
+    const failed = report2.checks.find((check) => !check.ok);
+    if (!context.json && failed !== void 0) {
+      return refuse(
+        failed.rule ?? "policy/validation-failed",
+        `${renderValidate(report2)}${report2.artifact} fails check ${failed.id}: ${failed.why ?? "failed"}`,
+        [
+          ...failed.instead === void 0 ? [] : [failed.instead],
+          `bdk validate ${report2.artifact} --json`
+        ]
+      );
+    }
+    return { data: report2, text: renderValidate(report2) };
+  };
+}
+function doneCommand(deps) {
+  return async (context) => {
+    const report2 = await markDone(
+      deps,
+      active2(context.change),
+      globalDir(context.runtime),
+      context.positionals["<artifact>"] ?? ""
+    );
+    return isRefusal(report2) ? report2 : { data: report2, text: renderDone(report2) };
+  };
+}
+
+// kernel/src/graph/use-cases/status.ts
+async function changeGraph(deps, change, index2, globalDir2) {
+  const read2 = await readGraph(deps, change, index2, globalDir2);
+  if ("refused" in read2) return read2;
+  const { graph, pipeline } = read2;
+  const next = read2.parked !== void 0 ? void 0 : graph.next !== void 0 ? stageCommand(pipeline, stageOfTarget(pipeline, graph.next.id)) : graph.waitingGate?.command;
+  return {
+    stage: stageOfChange(read2),
+    nodes: graph.nodes.map(nodeView),
+    gates: gateViews(read2),
+    ...next === void 0 ? {} : { next }
+  };
+}
+function stageResolver(deps) {
+  const pipeline = loadPipeline(deps.store, deps.pluginRoot, deps.settings, kindsOf(deps));
+  return (to) => stageOfTarget(pipeline, to);
+}
+
+// kernel/src/graph/index.ts
+var graphConfig = {
+  modules: [policyModule],
+  prompts: [...pipelinePrompts]
+};
+function graphRegistrations(deps) {
+  return [
+    { id: "next", handler: nextCommand(deps) },
+    { id: "explain", handler: explainCommand(deps) },
+    { id: "validate", handler: validateCommand(deps) },
+    { id: "done", handler: doneCommand(deps) }
+  ];
+}
+
+// kernel/src/change/use-cases/facts.ts
+function changeFacts(index2, changeId2, stageOfTarget2) {
+  const change = findChangeRow(index2, changeId2);
+  const entries = listEntries(index2, changeId2);
+  const base = change !== void 0 && isProfile(change.profile) ? change.profile : "small";
+  return {
+    entries,
+    stage: stageOf(entries, stageOfTarget2),
+    profile: effectiveProfile(base, entries),
+    kind: change?.kind ?? "feature",
+    source: change?.source ?? "user",
+    confirmed: isConfirmed(change?.source ?? "user", entries),
+    parked: parkedQuestion(entries)
+  };
+}
+
+// kernel/src/change/use-cases/list.ts
+function listAllChanges(deps, projectRoot, options) {
+  return withIndex(deps.openIndex, deps.store, projectRoot, (index2) => {
+    refreshAll(index2);
+    const stageOfTarget2 = stageResolver(deps);
+    const branches = /* @__PURE__ */ new Map();
+    for (const marker of listMarkers(deps.store, projectRoot)) {
+      if (!branches.has(marker.change)) branches.set(marker.change, marker.branch);
+    }
+    return listChanges(index2).filter((change) => options.archived || !change.archived).map((change) => {
+      const facts = changeFacts(index2, change.id, stageOfTarget2);
+      const branch = branches.get(change.id);
+      const state = change.archived ? "archived" : facts.parked === void 0 ? "active" : "parked";
+      return {
+        change: change.id,
+        ...branch === void 0 ? {} : { branch },
+        stage: facts.stage,
+        state,
+        kind: change.kind,
+        profile: facts.profile,
+        updatedAt: change.updatedAt
+      };
+    });
+  });
+}
+
+// kernel/src/change/use-cases/new.ts
+import { join as join22 } from "node:path";
+
+// kernel/src/change/domain/change.ts
+var SLUG_MAX = 40;
+var DEFAULT_PARK_OPTIONS = ["accept as debt", "change decision X", "split part"];
+var DEFAULT_PARK_REASON = "Change parked: choose how to continue";
+var CHECKPOINT_SKIPPED = "change checkpoint lands with T22";
+var UNDECOMPOSED = {
+  \u0142: "l",
+  \u0111: "d",
+  \u00F8: "o",
+  \u00DF: "ss",
+  \u00E6: "ae",
+  \u0153: "oe",
+  \u00FE: "th",
+  \u0131: "i"
+};
+function slugOf(intent) {
+  const words = intent.toLowerCase().normalize("NFKD").replace(new RegExp("\\p{M}+", "gu"), "").replace(/[łđøßæœþı]/g, (letter) => UNDECOMPOSED[letter] ?? letter).split(/[^a-z0-9]+/).filter((word) => word !== "");
+  let slug = "";
+  for (const word of words) {
+    const next = slug === "" ? word : `${slug}-${word}`;
+    if (next.length > SLUG_MAX) {
+      if (slug === "") slug = word.slice(0, SLUG_MAX);
+      break;
+    }
+    slug = next;
+  }
+  return slug === "" ? "change" : slug;
+}
+function changeIdOf(at, intent) {
+  return `${at.slice(0, 10)}-${slugOf(intent)}`;
+}
+function resumeCommand(changeId2) {
+  return `bdk change resume ${changeId2} --option <n>`;
+}
+
+// kernel/src/change/use-cases/new.ts
+var DEFAULTED_SUMMARY = "Profile small by default: no size decision taken at change new";
+var DEFAULTED_BODY = "Recorded by change new: the caller passed no --profile.\n";
+async function newChange(deps, where, input) {
+  if (input.profile === "tiny" && (input.reason ?? "").trim() === "") {
+    return refuse(
+      "input/missing-argument",
+      "--profile tiny needs --reason: every skipped design carries its justification",
+      [
+        `bdk change new "${input.intent}" --profile tiny --reason "<why the change is trivial>"`,
+        `bdk change new "${input.intent}"`
+      ]
+    );
+  }
+  if (input.intent.trim() === "") {
+    return refuse("input/invalid-argument", "<intent> is empty", [
+      'bdk change new "<one sentence>"'
+    ]);
+  }
+  const branch = deps.git.currentBranch(where.workTree);
+  if (branch === void 0) {
+    return refuse(
+      "policy/detached-head",
+      `HEAD is detached in ${where.workTree}; a Change binds to a branch`,
+      ["git switch -c <branch>"]
+    );
+  }
+  const projectRoot = findProjectRoot(deps.store, where.cwd, where.workTree);
+  const bound = readMarker(deps.store, projectRoot, branch);
+  const active4 = bound === void 0 ? void 0 : findChange(deps.store, projectRoot, bound);
+  if (active4 !== void 0 && !active4.archived) {
+    return refuse(
+      "policy/change-exists",
+      `branch ${branch} already has the active Change ${active4.id}`,
+      ["bdk change status", "switch to a new branch and run change new there"]
+    );
+  }
+  const at = deps.clock.now();
+  const id = changeIdOf(at, input.intent);
+  const existing = findChange(deps.store, projectRoot, id);
+  if (existing !== void 0 || deps.store.exists(liveChangeDir(projectRoot, id))) {
+    return refuse(
+      "policy/change-exists",
+      `the Change directory .bdk/changes/${existing?.archived === true ? "archive/" : ""}${id}/ exists`,
+      ["bdk change new with a more specific intent", `bdk change resume ${id}`]
+    );
+  }
+  const author2 = await authorIdent(deps.git, projectRoot);
+  const global = globalDir(where.environment);
+  const resolution = resolveConfig({
+    store: deps.store,
+    registry: deps.settings,
+    globalDir: global,
+    projectRoot,
+    pluginRoot: deps.pluginRoot
+  });
+  const overridden = overriddenKeys(resolution);
+  await ensureIgnored(deps.store, deps.git, projectRoot);
+  const dir = liveChangeDir(projectRoot, id);
+  const profile = input.profile ?? "small";
+  writeDocument(deps.store, join22(dir, "change.md"), {
+    data: {
+      schema: 1,
+      id,
+      kind: input.kind,
+      profile,
+      intent: input.intent,
+      source: input.inferred ? "inferred" : "user",
+      at,
+      author: author2,
+      overridden
+    },
+    body: ""
+  });
+  const change = { id, dir, projectRoot, branch };
+  const written = await withIndex(deps.openIndex, deps.store, projectRoot, async (index2) => {
+    refreshChange(index2, { id, dir, archived: false });
+    const entry = await appendEntry(
+      deps,
+      change,
+      index2,
+      {
+        type: "assumption",
+        summary: input.profile === void 0 ? DEFAULTED_SUMMARY : `Profile ${profile} set at change new`,
+        refs: ["change.md"],
+        body: input.profile === void 0 ? DEFAULTED_BODY : reasonBody(input.reason)
+      },
+      { dedupe: false }
+    );
+    if ("refused" in entry) return entry;
+    const graph = await changeGraph(deps, change, index2, global);
+    return { entry: entry.entry, next: "refused" in graph ? void 0 : graph.next };
+  });
+  if ("refused" in written) return written;
+  writeMarker(deps.store, projectRoot, branch, id);
+  return {
+    change: id,
+    branch,
+    kind: input.kind,
+    profile: { value: profile, defaulted: input.profile === void 0, entry: written.entry.id },
+    source: input.inferred ? "inferred" : "user",
+    overriddenKeys: overridden,
+    ...written.next === void 0 ? {} : { next: written.next }
+  };
+}
+function reasonBody(reason) {
+  const text4 = (reason ?? "").trim();
+  return text4 === "" ? "Set by the caller of change new; no reason given.\n" : `${text4}
+`;
+}
+
+// kernel/src/change/use-cases/park.ts
+var TEXT_MAX = 120;
+function parkChange(deps, change, input) {
+  const summary = input.reason ?? DEFAULT_PARK_REASON;
+  const options = input.options.length === 0 ? [...DEFAULT_PARK_OPTIONS] : [...input.options];
+  const tooLong = [summary, ...options].find(
+    (text4) => text4.trim() === "" || text4.length > TEXT_MAX
+  );
+  if (tooLong !== void 0) {
+    return Promise.resolve(
+      refuse(
+        "input/invalid-argument",
+        `"${tooLong}" must have 1 to ${TEXT_MAX} characters: it becomes an entry summary`,
+        ["shorten --reason or --option"]
+      )
+    );
+  }
+  return withChangeIndex(deps, change, async (index2) => {
+    const tickets = openAttempts(index2, change.id);
+    if (tickets.length > 0) {
+      const list2 = tickets.map((ticket) => ticket.ticket).join(", ");
+      return refuse("policy/ticket-open", `${list2} still open in ${change.id}`, [
+        "bdk attempt close <ticket> <outcome>",
+        "bdk attempt close <ticket> not-run"
+      ]);
+    }
+    const parked = parkedQuestion(listEntries(index2, change.id));
+    if (parked !== void 0) {
+      return refuse("policy/invalid-transition", `${change.id} is already parked on ${parked.id}`, [
+        resumeCommand(change.id),
+        "bdk change status"
+      ]);
+    }
+    const entry = await appendEntry(
+      deps,
+      change,
+      index2,
+      { type: "question", summary, refs: ["change.md"], body: "", options, park: true },
+      { dedupe: false }
+    );
+    if ("refused" in entry) return entry;
+    return {
+      change: change.id,
+      entry: entry.entry.id,
+      options,
+      resume: resumeCommand(change.id),
+      checkpoint: { done: false, skipped: CHECKPOINT_SKIPPED }
+    };
+  });
+}
+
+// kernel/src/change/use-cases/resume.ts
+function resumeChange(deps, where, input) {
+  const branch = deps.git.currentBranch(where.workTree);
+  if (branch === void 0) {
+    return done(
+      refuse(
+        "policy/detached-head",
+        `HEAD is detached in ${where.workTree}; a Change binds to a branch`,
+        ["git switch <branch>"]
+      )
+    );
+  }
+  const projectRoot = findProjectRoot(deps.store, where.cwd, where.workTree);
+  const location = findChange(deps.store, projectRoot, input.id);
+  if (location === void 0) {
+    return done(
+      refuse("input/not-found", `no Change ${input.id} in ${projectRoot}`, [
+        "bdk change list --all"
+      ])
+    );
+  }
+  if (location.archived) {
+    return done(
+      refuse(
+        "policy/invalid-transition",
+        `${input.id} is archived; an archived Change is never resumed`,
+        ["bdk change new <intent>"]
+      )
+    );
+  }
+  const bound = readMarker(deps.store, projectRoot, branch);
+  const other = bound === void 0 || bound === input.id ? void 0 : findChange(deps.store, projectRoot, bound);
+  if (other !== void 0 && !other.archived) {
+    return done(
+      refuse("policy/change-exists", `branch ${branch} is bound to the active Change ${other.id}`, [
+        "switch to another branch, then resume there",
+        "bdk change park"
+      ])
+    );
+  }
+  const change = { id: input.id, dir: location.dir, projectRoot, branch };
+  return withChangeIndex(deps, change, async (index2) => {
+    const facts = changeFacts(index2, change.id, stageResolver(deps));
+    const options = facts.parked?.options ?? [];
+    let chosen;
+    if (facts.parked !== void 0) {
+      if (input.option === void 0) {
+        return refuse(
+          "policy/invalid-transition",
+          `${change.id} is parked on ${facts.parked.id}; choose an option`,
+          [resumeCommand(change.id), "bdk change status"]
+        );
+      }
+      const n = Number(input.option);
+      if (!Number.isInteger(n) || n < 1 || n > options.length) {
+        return refuse(
+          "input/invalid-argument",
+          `--option ${input.option} is outside 1..${options.length}`,
+          [resumeCommand(change.id)]
+        );
+      }
+      chosen = options[n - 1];
+    } else if (input.option !== void 0) {
+      return refuse(
+        "policy/invalid-transition",
+        `${change.id} is not parked; --option has nothing to choose`,
+        [`bdk change resume ${change.id}`]
+      );
+    }
+    let raise;
+    if (input.profile !== void 0 && isProfile(input.profile)) {
+      const requested = profileRank(input.profile);
+      const current = profileRank(facts.profile);
+      if (requested < current) {
+        return refuse(
+          "policy/profile-downgrade",
+          `${change.id} runs at profile ${facts.profile}; a profile never goes down`,
+          [`bdk change resume ${change.id}`]
+        );
+      }
+      if (requested > current) raise = input.profile;
+    }
+    const others = listMarkers(deps.store, projectRoot).filter(
+      (marker) => marker.change === change.id && marker.branch !== branch
+    );
+    const rebind = bound !== change.id;
+    if (!rebind && chosen === void 0 && input.profile === void 0) {
+      return refuse(
+        "policy/invalid-transition",
+        `${change.id} is already bound to ${branch} and not parked`,
+        ["bdk change status"]
+      );
+    }
+    let decision2;
+    if (chosen !== void 0 && facts.parked !== void 0) {
+      const written = await appendEntry(
+        deps,
+        change,
+        index2,
+        {
+          type: "decision",
+          summary: chosen,
+          status: "accepted",
+          refs: [facts.parked.id],
+          body: ""
+        },
+        { dedupe: false }
+      );
+      if ("refused" in written) return written;
+      decision2 = written.entry.id;
+    }
+    if (raise !== void 0) {
+      const written = await appendEntry(
+        deps,
+        change,
+        index2,
+        {
+          type: "decision",
+          summary: `Profile raised to ${raise} at change resume`,
+          status: "accepted",
+          refs: ["change.md"],
+          body: "",
+          profile: raise
+        },
+        { dedupe: false }
+      );
+      if ("refused" in written) return written;
+      decision2 ??= written.entry.id;
+    }
+    if (rebind) {
+      for (const marker of others) removeMarker(deps.store, projectRoot, marker.branch);
+      writeMarker(deps.store, projectRoot, branch, change.id);
+    }
+    const resumedFrom = chosen !== void 0 ? "parked" : !rebind ? void 0 : others.length > 0 ? "other-branch" : "other-machine";
+    refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
+    const graph = await changeGraph(deps, change, index2, where.globalDir);
+    const next = "refused" in graph ? void 0 : graph.next;
+    return {
+      change: change.id,
+      branch,
+      stage: facts.stage,
+      ...next === void 0 ? {} : { next },
+      ...resumedFrom === void 0 ? {} : { resumedFrom },
+      ...decision2 === void 0 ? {} : { decision: decision2 }
+    };
+  });
+}
+function done(value) {
+  return Promise.resolve(value);
+}
+
+// kernel/src/change/use-cases/status.ts
+import { join as join23 } from "node:path";
+function changeStatus(deps, change, globalDir2) {
+  return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index2) => {
+    refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
+    const graph = await changeGraph(deps, change, index2, globalDir2);
+    if ("refused" in graph) return graph;
+    const document = readDocument(deps.store, join23(change.dir, "change.md"));
+    const data = document !== void 0 && "data" in document ? document.data : {};
+    const facts = changeFacts(index2, change.id, stageResolver(deps));
+    return {
+      change: change.id,
+      kind: facts.kind,
+      profile: facts.profile,
+      source: facts.source,
+      confirmed: facts.confirmed,
+      stage: facts.stage,
+      ...facts.parked === void 0 ? {} : {
+        parked: {
+          entry: facts.parked.id,
+          options: facts.parked.options ?? [],
+          resume: resumeCommand(change.id)
+        }
+      },
+      nodes: graph.nodes,
+      gates: graph.gates,
+      parts: [],
+      openTickets: openAttempts(index2, change.id),
+      overriddenKeys: Array.isArray(data.overridden) ? data.overridden.map(String) : []
+    };
+  });
+}
+
+// kernel/src/change/commands/change.ts
+function text3(value) {
+  return typeof value === "string" ? value : void 0;
+}
+function values(value) {
+  if (value === void 0 || value === true) return [];
+  return typeof value === "string" ? [value] : [...value];
+}
+function active3(change) {
+  if (change === void 0) throw new Error("this change command is Change-scoped");
+  return change;
+}
+function newCommand(deps) {
+  return async (context) => {
+    const report2 = await newChange(
+      deps,
+      { cwd: context.cwd, workTree: context.workTree ?? context.cwd, environment: context.runtime },
+      {
+        intent: context.positionals["<intent>"] ?? "",
+        kind: context.flags["--kind"] === "bug" ? "bug" : "feature",
+        profile: text3(context.flags["--profile"]),
+        reason: text3(context.flags["--reason"]),
+        inferred: context.flags["--inferred"] === true
+      }
+    );
+    return isRefusal(report2) ? report2 : { data: report2, text: renderNew(report2) };
+  };
+}
+function statusCommand(deps) {
+  return async (context) => {
+    const report2 = await changeStatus(deps, active3(context.change), globalDir(context.runtime));
+    return isRefusal(report2) ? report2 : { data: report2, text: capLines(renderStatus(report2)) };
+  };
+}
+function listCommand2(deps) {
+  return async (context) => {
+    const all = context.flags["--all"] === true;
+    const projectRoot = findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd);
+    const items = await listAllChanges(deps, projectRoot, { archived: all });
+    return { data: listPage(items, { all }), text: capLines(renderList(items), { all }) };
+  };
+}
+function resumeCommand2(deps) {
+  return async (context) => {
+    const report2 = await resumeChange(
+      deps,
+      {
+        cwd: context.cwd,
+        workTree: context.workTree ?? context.cwd,
+        globalDir: globalDir(context.runtime)
+      },
+      {
+        id: context.positionals["<id>"] ?? "",
+        option: text3(context.flags["--option"]),
+        profile: text3(context.flags["--profile"])
+      }
+    );
+    return isRefusal(report2) ? report2 : { data: report2, text: renderResume(report2) };
+  };
+}
+function parkCommand(deps) {
+  return async (context) => {
+    const report2 = await parkChange(deps, active3(context.change), {
+      reason: text3(context.flags["--reason"]),
+      options: values(context.flags["--option"])
+    });
+    return isRefusal(report2) ? report2 : { data: report2, text: renderPark(report2) };
+  };
+}
+
+// kernel/src/change/index.ts
+function changeRegistrations(deps) {
+  return [
+    { id: "change-new", handler: newCommand(deps) },
+    { id: "change-status", handler: statusCommand(deps) },
+    { id: "change-list", handler: listCommand2(deps) },
+    { id: "change-resume", handler: resumeCommand2(deps) },
+    { id: "change-park", handler: parkCommand(deps) }
+  ];
+}
+
+// kernel/src/config/render/check.ts
+function renderCheck(report2) {
+  const lines = report2.problems.map(
+    (problem) => `warn ${problem.code} ${problem.path}: ${problem.message}`
+  );
+  if (lines.length === 0) lines.push("settings valid");
+  if (report2.snapshot !== void 0) lines.push(`snapshot: ${report2.snapshot}`);
+  if (report2.overriddenKeys.length > 0) {
+    lines.push(`overridden by global or local: ${report2.overriddenKeys.join(", ")}`);
+  }
+  return `${lines.join("\n")}
+`;
+}
+
+// kernel/src/config/use-cases/check.ts
+import { join as join24 } from "node:path";
+var LEGACY_SETTINGS = ".bdk/settings.json";
+function checkConfig(input) {
+  const resolved = resolveOrRefuse(input);
+  return isRefusal(resolved) ? resolved : report(input, resolved);
+}
+function inspectConfig(input) {
+  const resolution = resolveConfig({ ...input, registry: input.settings });
+  if (resolution.problems.length > 0 || resolution.value === void 0) {
+    return { errors: resolution.problems.map((problem) => problemRefusal(input, problem, 0)) };
+  }
+  return { errors: [], report: report(input, { ...resolution, value: resolution.value }) };
+}
+function report(input, resolved) {
+  const url = settingsSchemaUrl(readKernelVersion(input.store, input.pluginRoot));
+  const problems = [];
+  for (const layer of resolved.layers) {
+    const current = modelineUrl(layer.text);
+    const path = displayPath(input, layer.path);
+    if (current === void 0) {
+      problems.push({
+        layer: layer.name,
+        path,
+        code: "missing-modeline",
+        message: "no yaml-language-server modeline; bdk doctor --fix adds it"
+      });
+    } else if (current !== url) {
+      problems.push({
+        layer: layer.name,
+        path,
+        code: "schema-outdated",
+        message: `the modeline points at ${current}, not ${url}; bdk doctor --fix updates it`
+      });
+    }
+  }
+  if (input.store.exists(join24(input.projectRoot, LEGACY_SETTINGS))) {
+    problems.push({
+      layer: "project",
+      path: LEGACY_SETTINGS,
+      code: "legacy-settings",
+      message: "the v2 settings file is not read; bdk import converts it to .bdk/settings.yaml"
+    });
+  }
+  const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
+  if (snapshot !== void 0) {
+    input.store.write(
+      join24(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      offlineSchemaText(input.settings)
+    );
+  }
+  return {
+    problems,
+    ...snapshot === void 0 ? {} : { snapshot },
+    overriddenKeys: overriddenKeys(resolved)
+  };
+}
+
+// kernel/src/config/commands/input.ts
+function configInput(deps, context) {
+  const workTree = context.workTree ?? context.cwd;
+  return {
+    ...deps,
+    globalDir: globalDir(context.runtime),
+    projectRoot: findProjectRoot(deps.store, context.cwd, workTree)
+  };
+}
+
+// kernel/src/config/commands/check.ts
+function checkCommand(deps) {
+  return (context) => {
+    const outcome = checkConfig(configInput(deps, context));
+    return isRefusal(outcome) ? outcome : { data: outcome, text: renderCheck(outcome) };
+  };
+}
+
+// kernel/src/config/render/schema.ts
+function renderSchema(report2) {
+  if (report2.schema === void 0) {
+    return `${report2.url}
+${report2.offlineCopy === void 0 ? "" : `offline copy: ${report2.offlineCopy}
+`}`;
+  }
+  return `${JSON.stringify(report2.schema, null, 2)}
+`;
+}
+
+// kernel/src/config/use-cases/schema.ts
+function configSchema(input, request) {
+  const url = settingsSchemaUrl(readKernelVersion(input.store, input.pluginRoot));
+  const location = { url, offlineCopy: OFFLINE_SCHEMA_PATH };
+  const { module } = request;
+  const known = input.settings.modules.map((candidate) => candidate.key);
+  if (module !== void 0 && !known.includes(module)) {
+    return refuse(
+      "input/not-found",
+      `${module} is not a registered settings module; registered: ${known.join(", ")}`,
+      ["bdk config schema"]
+    );
+  }
+  if (request.url) return location;
+  const schema = settingsJsonSchema(input.settings);
+  if (module === void 0) return { schema, ...location };
+  const properties = schema.properties;
+  return { module, schema: properties[module] ?? {}, ...location };
+}
+
+// kernel/src/config/commands/schema.ts
+function schemaCommand2(deps) {
+  return (context) => {
+    const module = context.positionals["<module>"];
+    const outcome = configSchema(configInput(deps, context), {
+      ...module === void 0 ? {} : { module },
+      url: context.flags["--url"] === true
+    });
+    return isRefusal(outcome) ? outcome : { data: outcome, text: renderSchema(outcome) };
+  };
+}
+
+// kernel/src/config/render/set.ts
+function renderSet(report2) {
+  const previous = report2.previous === void 0 ? "" : ` (was ${JSON.stringify(report2.previous)})`;
+  return `${report2.key} = ${JSON.stringify(report2.value)}${previous} in the ${report2.layer} layer (${report2.path})
+`;
+}
+
+// kernel/src/config/use-cases/set.ts
+var import_yaml9 = __toESM(require_dist(), 1);
+
+// kernel/src/config/domain/origins.ts
+function leafOrigins(value, key, set) {
+  const out = {};
+  for (const leaf of leafKeys(value, key)) out[leaf] = originOf(leaf, set);
+  return out;
+}
+function originOf(leaf, set) {
+  for (let key = leaf; key !== ""; key = key.includes(".") ? key.slice(0, key.lastIndexOf(".")) : "") {
+    const origin = set[key];
+    if (origin !== void 0) return origin;
+  }
+  return "default";
+}
+function leafKeys(value, prefix) {
+  if (isMapping(value) && Object.keys(value).length > 0) {
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join25(prefix, key)));
+  }
+  if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
+    return value.flatMap((item) => leafKeys(item, join25(prefix, item.id)));
+  }
+  return [prefix];
+}
+function isMapping(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function hasId(value) {
+  return isMapping(value) && typeof value.id === "string";
+}
+function join25(prefix, key) {
+  return prefix === "" ? key : `${prefix}.${key}`;
+}
+
+// kernel/src/config/use-cases/show.ts
+var PROMPT_PREFIX = "prompts.";
+var PROMPT_SETTINGS = /* @__PURE__ */ new Set(["dir", "files"]);
+function showConfig(input, request) {
+  const resolved = resolveOrRefuse(input);
+  if (isRefusal(resolved)) return resolved;
+  const layers = fileLayers(input);
+  const { key } = request;
+  if (key === void 0) {
+    const value2 = {
+      ...resolved.value,
+      prompts: { ...promptSettings(resolved), ...prompts(input, resolved) }
+    };
+    return withOrigins(
+      { value: value2, layers },
+      request,
+      () => leafOrigins(resolved.value, "", resolved.merged.origins)
+    );
+  }
+  const promptKey = promptKeyOf(key);
+  if (promptKey !== void 0) {
+    if (input.settings.promptKey(promptKey) === void 0) return unknownKey(input, key);
+    const value2 = resolved.prompts.values.get(promptKey);
+    if (value2 === void 0) return notFound4(key);
+    return { key, value: displayPrompt(input, value2), layers };
+  }
+  const steps = declaredSteps(input.settings, key);
+  if (steps === void 0) return unknownKey(input, key);
+  const value = valueAt(resolved.value, steps);
+  if (value === void 0) return notFound4(key);
+  return withOrigins(
+    { key, value, layers },
+    request,
+    () => leafOrigins(value, key, resolved.merged.origins)
+  );
+}
+function withOrigins(report2, request, origins) {
+  return request.origins ? { ...report2, origins: origins() } : report2;
+}
+function promptKeyOf(key) {
+  if (!key.startsWith(PROMPT_PREFIX)) return void 0;
+  const rest = key.slice(PROMPT_PREFIX.length);
+  return PROMPT_SETTINGS.has(rest.split(".")[0] ?? "") ? void 0 : rest;
+}
+function promptSettings(resolved) {
+  const settings = resolved.value.prompts;
+  return typeof settings === "object" && settings !== null ? { ...settings } : {};
+}
+function prompts(input, resolved) {
+  return Object.fromEntries(
+    [...resolved.prompts.values].map(([key, value]) => [key, displayPrompt(input, value)])
+  );
+}
+function displayPrompt(input, value) {
+  return {
+    mode: value.mode,
+    files: value.files.map((file) => ({ ...file, path: displayPath(input, file.path) }))
+  };
+}
+function fileLayers(input) {
+  return layerFiles(input.globalDir, input.projectRoot).map(({ name, path }) => ({
+    layer: name,
+    path: displayPath(input, path),
+    present: input.store.exists(path)
+  }));
+}
+function unknownKey(input, key) {
+  return refuse("policy/unknown-config-key", `${key}: ${unknownKeyMessage(input.settings, key)}`, [
+    schemaCommand(input, key),
+    "bdk config show"
+  ]);
+}
+function notFound4(key) {
+  return refuse(
+    "input/not-found",
+    `${key} is declared, but no layer sets it and it has no default`,
+    [`bdk config set ${key} <value>`, "bdk config show"]
+  );
+}
+
+// kernel/src/config/use-cases/set.ts
+async function setConfig(input, request) {
+  const { key } = request;
+  const usage = `bdk config set ${key} <value>`;
+  if (request.global === true && request.local === true) {
+    return refuse("input/invalid-argument", "--global and --local name two layers; give one", [
+      `${usage} --local`,
+      `${usage} --global`
+    ]);
+  }
+  const layer = request.global === true ? "global" : request.local === true ? "local" : "project";
+  const file = layerFiles(input.globalDir, input.projectRoot).find((entry) => entry.name === layer);
+  if (file === void 0) throw new Error(`no file for the ${layer} layer`);
+  const value = parseValue(request.value, usage);
+  if (isRefusal(value)) return value;
+  const steps = declaredSteps(input.settings, key);
+  if (steps === void 0) return unknownKey(input, key);
+  const text4 = input.store.read(file.path);
+  const document = (0, import_yaml9.parseDocument)(text4 ?? "");
+  if (document.errors.length > 0) {
+    return refuse("policy/config-invalid", `${displayPath(input, file.path)} is not valid YAML`, [
+      `fix ${displayPath(input, file.path)}`
+    ]);
+  }
+  const edit = editDocument(document, steps, value, request.value);
+  if (isRefusal(edit)) return edit;
+  const next = text4 === void 0 ? withModeline(document.toString(FORMAT), readKernelVersion(input.store, input.pluginRoot)) : edit.splice === void 0 ? document.toString(FORMAT) : `${text4.slice(0, edit.splice.start)}${edit.splice.text}${text4.slice(edit.splice.end)}`;
+  const resolved = resolveOrRefuse(input, { store: overlay(input.store, file.path, next) });
+  if (isRefusal(resolved)) return resolved;
+  await ensureIgnored(input.store, input.git, input.projectRoot);
+  input.store.write(file.path, next);
+  writeSnapshot(input.store, input.projectRoot, resolved);
+  return {
+    key,
+    value: value.toJSON(),
+    ...edit.previous === void 0 ? {} : { previous: edit.previous },
+    layer,
+    path: displayPath(input, file.path)
+  };
+}
+function parseValue(raw, usage) {
+  const parsed = (0, import_yaml9.parseDocument)(raw);
+  const [error2] = parsed.errors;
+  if (error2 !== void 0 || !(0, import_yaml9.isNode)(parsed.contents)) {
+    const reason = error2 instanceof import_yaml9.YAMLParseError ? `: ${error2.message.split("\n")[0] ?? ""}` : "";
+    return refuse("input/invalid-argument", `${raw} is not a YAML value${reason}`, [usage]);
+  }
+  return parsed.contents;
+}
+var FORMAT = { flowCollectionPadding: false };
+function editDocument(document, steps, value, raw) {
+  const path = [];
+  for (const [index2, step] of steps.entries()) {
+    const last = index2 === steps.length - 1;
+    if (!step.id) {
+      path.push(step.segment);
+      continue;
+    }
+    const sequence = document.getIn(path, true);
+    const items = (0, import_yaml9.isSeq)(sequence) ? sequence.items : [];
+    const found = items.findIndex((item2) => (0, import_yaml9.isMap)(item2) && item2.get("id") === step.segment);
+    if (found !== -1) {
+      path.push(found);
+      continue;
+    }
+    const item = last ? withId(document, value, step.segment) : document.createNode({ id: step.segment });
+    if (isRefusal(item)) return item;
+    if ((0, import_yaml9.isSeq)(sequence)) sequence.add(item);
+    else document.setIn(path, document.createNode([item]));
+    if (last) return {};
+    path.push((0, import_yaml9.isSeq)(sequence) ? sequence.items.length - 1 : 0);
+  }
+  const current = document.getIn(path, true);
+  const previous = (0, import_yaml9.isNode)(current) ? current.toJSON() : void 0;
+  const kept = previous === void 0 ? {} : { previous };
+  if ((0, import_yaml9.isNode)(current) && inline(current) && inline(value) && !raw.includes("\n")) {
+    const [start, end] = current.range ?? [0, 0];
+    const [from, to] = value.range ?? [0, raw.length];
+    return { ...kept, splice: { start, end, text: raw.slice(from, to) } };
+  }
+  document.setIn(path, value);
+  return kept;
+}
+function inline(node3) {
+  return (0, import_yaml9.isScalar)(node3) || (0, import_yaml9.isCollection)(node3) && node3.flow === true;
+}
+function withId(document, value, id) {
+  if (!(0, import_yaml9.isMap)(value)) {
+    return refuse(
+      "input/invalid-argument",
+      `a new item ${id} needs a mapping value, e.g. {command: ...}`,
+      ["bdk config schema"]
+    );
+  }
+  const given = value.get("id");
+  if (given === void 0) value.items.unshift(document.createPair("id", id));
+  else if (given !== id) {
+    return refuse(
+      "input/invalid-argument",
+      `the value's id ${JSON.stringify(given)} differs from the key's ${id}`,
+      ["bdk config schema"]
+    );
+  }
+  return value;
+}
+function overlay(store2, path, text4) {
+  const readOnly = () => {
+    throw new Error("the validation overlay is read-only");
+  };
+  return {
+    read: (candidate) => candidate === path ? text4 : store2.read(candidate),
+    write: readOnly,
+    remove: readOnly,
+    append: readOnly,
+    list: (dir) => store2.list(dir),
+    exists: (candidate) => candidate === path || store2.exists(candidate),
+    isDirectory: (candidate) => store2.isDirectory(candidate),
+    stat: (candidate) => store2.stat(candidate)
+  };
+}
+
+// kernel/src/config/commands/set.ts
+function setCommand(deps) {
+  return async (context) => {
+    const outcome = await setConfig(configInput(deps, context), {
+      key: context.positionals["<key>"] ?? "",
+      value: context.positionals["<value>"] ?? "",
+      global: context.flags["--global"] === true,
+      local: context.flags["--local"] === true
+    });
+    return isRefusal(outcome) ? outcome : { data: outcome, text: renderSet(outcome) };
+  };
+}
+
+// kernel/src/config/commands/show.ts
+var import_yaml10 = __toESM(require_dist(), 1);
+function showCommand2(deps) {
+  return (context) => {
+    const key = context.positionals["<key>"];
+    const outcome = showConfig(configInput(deps, context), {
+      ...key === void 0 ? {} : { key },
+      origins: context.flags["--origins"] === true
+    });
+    if (isRefusal(outcome)) return outcome;
+    const origins = outcome.origins === void 0 ? "" : `# origins
+${(0, import_yaml10.stringify)(outcome.origins)}`;
+    return { data: outcome, text: `${(0, import_yaml10.stringify)(outcome.value)}${origins}` };
+  };
+}
+
+// kernel/src/config/use-cases/layout.ts
+import { join as join26 } from "node:path";
+
+// kernel/src/config/domain/layout.ts
+var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
+function classifyLayout(state) {
+  if (!state.bdk) return { layout: "none", present: [] };
+  if (state.present.length === 0) return { layout: "v3", present: [] };
+  return { layout: "v2", present: state.present };
+}
+
+// kernel/src/config/use-cases/layout.ts
+function detectLayout(store2, root) {
+  return classifyLayout({
+    bdk: store2.isDirectory(join26(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store2.exists(join26(root, marker)))
+  });
+}
+
+// kernel/src/config/index.ts
+function configRegistrations(deps) {
+  return [
+    { id: "config-show", handler: showCommand2(deps) },
+    { id: "config-check", handler: checkCommand(deps) },
+    { id: "config-schema", handler: schemaCommand2(deps) },
+    { id: "config-set", handler: setCommand(deps) }
+  ];
+}
+
 // kernel/src/hooks/render/session-start.ts
 function renderSessionStart({ startup, project }) {
   if (project === void 0) return { content: startup };
@@ -19872,12 +21535,12 @@ ${lines.join("\n")}
 }
 
 // kernel/src/hooks/use-cases/session-start.ts
-import { join as join23 } from "node:path";
+import { join as join27 } from "node:path";
 function sessionStart(input) {
   const startup = startupContext(input).content;
   if (input.workTree === void 0) return { startup };
   const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
-  if (!input.store.isDirectory(join23(projectRoot, ".bdk"))) return { startup };
+  if (!input.store.isDirectory(join27(projectRoot, ".bdk"))) return { startup };
   const { errors, report: report2 } = inspectConfig({ ...input, projectRoot });
   const { layout, present } = detectLayout(input.store, projectRoot);
   const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
@@ -19918,12 +21581,12 @@ function renderSkillExists(name, foundIn) {
 }
 
 // kernel/src/hooks/use-cases/skill-exists.ts
-var import_yaml10 = __toESM(require_dist(), 1);
-import { join as join24 } from "node:path";
+var import_yaml11 = __toESM(require_dist(), 1);
+import { join as join28 } from "node:path";
 function findSkill(input, name) {
   for (const skills of skillDirs(input)) {
     for (const entry of subdirs(input.store, skills)) {
-      const file = join24(skills, entry, "SKILL.md");
+      const file = join28(skills, entry, "SKILL.md");
       const text4 = input.store.read(file);
       if (text4 !== void 0 && frontmatterName(text4) === name) return file;
     }
@@ -19931,21 +21594,21 @@ function findSkill(input, name) {
   return void 0;
 }
 function skillDirs({ store: store2, home, projectRoot }) {
-  const plugins = join24(home, ".claude", "plugins");
-  const marketplaces = join24(plugins, "marketplaces");
-  const cache = join24(plugins, "cache");
-  const versions = subdirs(store2, cache).flatMap(
-    (marketplace) => subdirs(store2, join24(cache, marketplace)).flatMap(
-      (plugin) => subdirs(store2, join24(cache, marketplace, plugin)).map(
-        (version3) => join24(cache, marketplace, plugin, version3)
+  const plugins = join28(home, ".claude", "plugins");
+  const marketplaces = join28(plugins, "marketplaces");
+  const cache2 = join28(plugins, "cache");
+  const versions = subdirs(store2, cache2).flatMap(
+    (marketplace) => subdirs(store2, join28(cache2, marketplace)).flatMap(
+      (plugin) => subdirs(store2, join28(cache2, marketplace, plugin)).map(
+        (version3) => join28(cache2, marketplace, plugin, version3)
       )
     )
   );
   return [
-    join24(home, ".claude", "skills"),
-    join24(projectRoot, ".claude", "skills"),
-    ...subdirs(store2, marketplaces).map((marketplace) => join24(marketplaces, marketplace, "skills")),
-    ...versions.map((version3) => join24(version3, "skills"))
+    join28(home, ".claude", "skills"),
+    join28(projectRoot, ".claude", "skills"),
+    ...subdirs(store2, marketplaces).map((marketplace) => join28(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join28(version3, "skills"))
   ];
 }
 function subdirs(store2, dir) {
@@ -19955,7 +21618,7 @@ function frontmatterName(text4) {
   const { frontmatter } = splitFrontmatter(text4);
   if (frontmatter === void 0) return void 0;
   try {
-    const data = (0, import_yaml10.parse)(frontmatter);
+    const data = (0, import_yaml11.parse)(frontmatter);
     const name = typeof data === "object" && data !== null ? data.name : void 0;
     return typeof name === "string" ? name : void 0;
   } catch {
@@ -20187,13 +21850,13 @@ function queryIndex(deps, projectRoot, sql, options) {
       ]);
     }
     const page = listPage(
-      result2.rows.map((row) => row.map(cell)),
+      result2.rows.map((row) => row.map(cell2)),
       { all: options.all }
     );
     return { columns: result2.columns, ...page };
   });
 }
-function cell(value) {
+function cell2(value) {
   if (value === null || typeof value === "string" || typeof value === "number") return value;
   if (typeof value === "bigint") return value.toString();
   if (value instanceof Uint8Array) return Buffer.from(value).toString("hex");
@@ -20247,7 +21910,7 @@ var flag = object({
   repeatable: literal(true).optional(),
   description: string2().optional()
 });
-var record2 = object({
+var record3 = object({
   id: string2(),
   argv: array(string2()).min(1).max(3),
   summary: string2(),
@@ -20268,31 +21931,31 @@ var record2 = object({
 var commandIndexSchema = object({
   contract: literal(3),
   base: object({ all: array(rule), changeScoped: array(rule) }),
-  commands: array(record2)
+  commands: array(record3)
 });
 function loadIndex(raw) {
   return commandIndexSchema.parse(raw);
 }
-function commandLine(record3) {
-  return `bdk ${record3.argv.join(" ")}`;
+function commandLine(record4) {
+  return `bdk ${record4.argv.join(" ")}`;
 }
 
 // kernel/src/shared/registry/parse.ts
 var IMPLICIT_FLAGS = ["--json", "--help"];
 var STAMPED = ["--id", "--at", "--author", "--source", "--fingerprint"];
-function parse7(record3, tokens) {
-  const help = [`${commandLine(record3)} --help`];
+function parse8(record4, tokens) {
+  const help = [`${commandLine(record4)} --help`];
   const positionals = {};
   const flags = {};
   let position = 0;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i] ?? "";
     if (!token.startsWith("--")) {
-      const arg2 = record3.args[position++];
+      const arg2 = record4.args[position++];
       if (arg2 === void 0) {
         return refuse(
           "input/invalid-argument",
-          `${commandLine(record3)} takes ${record3.args.length} arguments; ${token} is one too many`,
+          `${commandLine(record4)} takes ${record4.args.length} arguments; ${token} is one too many`,
           help
         );
       }
@@ -20310,16 +21973,16 @@ function parse7(record3, tokens) {
     const name = equals === -1 ? token : token.slice(0, equals);
     const inline2 = equals === -1 ? void 0 : token.slice(equals + 1);
     if (IMPLICIT_FLAGS.includes(name) && inline2 === void 0) continue;
-    const spec = record3.flags.find((candidate) => candidate.name === name);
+    const spec = record4.flags.find((candidate) => candidate.name === name);
     if (spec === void 0) {
-      if (STAMPED.includes(name) && record3.refusals.includes("input/forbidden-field")) {
+      if (STAMPED.includes(name) && record4.refusals.includes("input/forbidden-field")) {
         return refuse(
           "input/forbidden-field",
           `${name.slice(2)} is stamped by the kernel and is never input (P1)`,
-          [`${commandLine(record3)} without ${name}`, ...help]
+          [`${commandLine(record4)} without ${name}`, ...help]
         );
       }
-      return refuse("input/unknown-flag", `${commandLine(record3)} has no flag ${name}`, help);
+      return refuse("input/unknown-flag", `${commandLine(record4)} has no flag ${name}`, help);
     }
     if (name in flags && spec.repeatable !== true) {
       return refuse("input/invalid-argument", `${name} is given twice`, help);
@@ -20362,11 +22025,11 @@ function parse7(record3, tokens) {
       flags[name] = [...Array.isArray(previous) ? previous : [], value];
     } else flags[name] = value;
   }
-  const missing = record3.args.find((arg2) => arg2.required && !(arg2.name in positionals));
+  const missing = record4.args.find((arg2) => arg2.required && !(arg2.name in positionals));
   if (missing !== void 0) {
     return refuse(
       "input/missing-argument",
-      `${commandLine(record3)} needs the argument ${missing.name}`,
+      `${commandLine(record4)} needs the argument ${missing.name}`,
       help
     );
   }
@@ -20377,37 +22040,37 @@ function takesValue(flag2) {
 }
 
 // kernel/src/shared/registry/help.ts
-function synopsis(record3) {
-  const args = record3.args.map((arg2) => {
+function synopsis(record4) {
+  const args = record4.args.map((arg2) => {
     const name = arg2.name.startsWith("<") ? arg2.name : `<${arg2.name}>`;
     return arg2.required ? name : `[${name}]`;
   });
-  const flags = record3.flags.map(
+  const flags = record4.flags.map(
     (flag2) => `[${flag2.name}${takesValue(flag2) ? ` ${flagValue(flag2)}` : ""}]`
   );
-  return [commandLine(record3), ...args, ...flags, "[--json]"].join(" ");
+  return [commandLine(record4), ...args, ...flags, "[--json]"].join(" ");
 }
-function commandHelp(index2, record3) {
+function commandHelp(index2, record4) {
   const lines = [
-    `usage: ${synopsis(record3)}`,
+    `usage: ${synopsis(record4)}`,
     "",
-    record3.summary,
+    record4.summary,
     "",
-    `availability: ${record3.availability}`,
-    `mode: ${record3.mode}`,
-    `owner: ${record3.owner}`
+    `availability: ${record4.availability}`,
+    `mode: ${record4.mode}`,
+    `owner: ${record4.owner}`
   ];
-  if (record3.args.length > 0) {
+  if (record4.args.length > 0) {
     lines.push("", "arguments:");
-    for (const arg2 of record3.args) {
+    for (const arg2 of record4.args) {
       const values2 = arg2.values === void 0 ? "" : ` (${arg2.values.join("|")})`;
       const detail = [arg2.required ? "required" : "optional", arg2.description].filter(Boolean).join("; ");
       lines.push(`  ${arg2.name}${values2}  ${detail}`);
     }
   }
-  if (record3.flags.length > 0) {
+  if (record4.flags.length > 0) {
     lines.push("", "flags:");
-    for (const flag2 of record3.flags) {
+    for (const flag2 of record4.flags) {
       const value = takesValue(flag2) ? ` ${flagValue(flag2)}` : "";
       const repeatable = flag2.repeatable === true ? " (repeatable)" : "";
       lines.push(
@@ -20415,22 +22078,22 @@ function commandHelp(index2, record3) {
       );
     }
   }
-  if (record3.stdin !== void 0) lines.push("", `stdin: ${record3.stdin}`);
+  if (record4.stdin !== void 0) lines.push("", `stdin: ${record4.stdin}`);
   const rules2 = [
     ...index2.base.all,
-    ...record3.changeScoped ? index2.base.changeScoped : [],
-    ...record3.refusals
+    ...record4.changeScoped ? index2.base.changeScoped : [],
+    ...record4.refusals
   ];
   lines.push(
     "",
-    `exit codes: ${record3.exits.join(", ")}`,
+    `exit codes: ${record4.exits.join(", ")}`,
     `rules: ${[...new Set(rules2)].join(", ")}`
   );
   return `${lines.join("\n")}
 `;
 }
 function groupHelp(index2, group) {
-  const records = index2.commands.filter((record3) => record3.argv[0] === group);
+  const records = index2.commands.filter((record4) => record4.argv[0] === group);
   if (records.length === 0) return void 0;
   return overview(
     records,
@@ -20444,9 +22107,9 @@ function globalHelp(index2) {
   );
 }
 function overview(records, header) {
-  const width2 = Math.max(...records.map((record3) => record3.argv.join(" ").length));
+  const width2 = Math.max(...records.map((record4) => record4.argv.join(" ").length));
   const lines = records.map(
-    (record3) => `  ${record3.argv.join(" ").padEnd(width2)}  ${record3.summary}`
+    (record4) => `  ${record4.argv.join(" ").padEnd(width2)}  ${record4.summary}`
   );
   return `${[header, "", ...lines].join("\n")}
 `;
@@ -20481,8 +22144,8 @@ function resolve3(index2, argv) {
   for (let length = 3; length >= 1; length--) {
     const words = argv.slice(0, length);
     if (words.length < length) continue;
-    const record3 = index2.commands.find((candidate) => sameWords(candidate.argv, words));
-    if (record3 !== void 0) return { record: record3, rest: argv.slice(length) };
+    const record4 = index2.commands.find((candidate) => sameWords(candidate.argv, words));
+    if (record4 !== void 0) return { record: record4, rest: argv.slice(length) };
   }
   return void 0;
 }
@@ -20501,14 +22164,14 @@ function unknownCommand(index2, argv) {
 function closestCommand(index2, words) {
   let best;
   let bestScore = [Infinity, Infinity];
-  for (const record3 of index2.commands) {
-    const [group = "", ...verbs] = record3.argv;
+  for (const record4 of index2.commands) {
+    const [group = "", ...verbs] = record4.argv;
     const score = [
       levenshtein(words[0] ?? "", group),
-      levenshtein(words.slice(1, record3.argv.length).join(" "), verbs.join(" "))
+      levenshtein(words.slice(1, record4.argv.length).join(" "), verbs.join(" "))
     ];
     if (score[0] < bestScore[0] || score[0] === bestScore[0] && score[1] < bestScore[1]) {
-      [best, bestScore] = [record3, score];
+      [best, bestScore] = [record4, score];
     }
   }
   if (best === void 0) throw new Error("the command index is empty");
@@ -20534,7 +22197,7 @@ function levenshtein(a, b) {
 function createRegistry(index2, registrations2, options = {}) {
   const byId = /* @__PURE__ */ new Map();
   for (const registration of registrations2) {
-    if (!index2.commands.some((record3) => record3.id === registration.id)) {
+    if (!index2.commands.some((record4) => record4.id === registration.id)) {
       throw new Error(`registration for ${registration.id}, which the command index does not know`);
     }
     if (byId.has(registration.id)) throw new Error(`${registration.id} is registered twice`);
@@ -20559,37 +22222,37 @@ async function run(index2, byId, options, invocation) {
     }
     return writeCommand(streams, unknownCommand(index2, argv), asJson);
   }
-  const { record: record3, rest } = resolved;
+  const { record: record4, rest } = resolved;
   if (help) {
-    streams.stdout(commandHelp(index2, record3));
+    streams.stdout(commandHelp(index2, record4));
     return 0;
   }
   let outcome;
   try {
-    outcome = await dispatch(record3, byId.get(record3.id), options, rest, asJson, invocation);
+    outcome = await dispatch(record4, byId.get(record4.id), options, rest, asJson, invocation);
   } catch (error2) {
     if (error2 instanceof KernelRefusal) outcome = error2.refusal;
-    else if (record3.mode === "command") throw error2;
-    else return writeCrash(streams, record3, error2);
+    else if (record4.mode === "command") throw error2;
+    else return writeCrash(streams, record4, error2);
   }
   if (isRefusal(outcome)) {
-    if (record3.mode === "inject") return writeInject(streams, outcome, asJson);
-    if (record3.mode === "guard") return writeBlock(streams, outcome, asJson);
+    if (record4.mode === "inject") return writeInject(streams, outcome, asJson);
+    if (record4.mode === "guard") return writeBlock(streams, outcome, asJson);
     return writeCommand(streams, outcome, asJson);
   }
   if (asJson) streams.stdout(json(outcome.data));
   else if (outcome.text !== "") {
     streams.stdout(
-      record3.mode === "command" ? capLines(outcome.text, { all: rest.includes("--all") }) : ensureNewline(outcome.text)
+      record4.mode === "command" ? capLines(outcome.text, { all: rest.includes("--all") }) : ensureNewline(outcome.text)
     );
   }
   return 0;
 }
-async function dispatch(record3, registration, options, rest, asJson, { cwd, runtime }) {
-  const parsed = parse7(record3, rest);
+async function dispatch(record4, registration, options, rest, asJson, { cwd, runtime }) {
+  const parsed = parse8(record4, rest);
   if (isRefusal(parsed)) return parsed;
   let workTree;
-  if (record3.standalone !== true) {
+  if (record4.standalone !== true) {
     if (registration?.nodeGate !== false && !meetsNodeMinimum(runtime.nodeVersion)) {
       return nodeVersionRefusal(runtime.nodeVersion);
     }
@@ -20601,12 +22264,12 @@ async function dispatch(record3, registration, options, rest, asJson, { cwd, run
       ]);
     }
   }
-  if (registration === void 0) return stub(record3);
+  if (registration === void 0) return stub(record4);
   let change;
-  if (record3.changeScoped) {
+  if (record4.changeScoped) {
     if (options.activeChange === void 0 || workTree === void 0) {
       throw new Error(
-        `${record3.id} is Change-scoped but the registry has no active-Change resolver`
+        `${record4.id} is Change-scoped but the registry has no active-Change resolver`
       );
     }
     const resolved = options.activeChange({ cwd, workTree });
@@ -20614,7 +22277,7 @@ async function dispatch(record3, registration, options, rest, asJson, { cwd, run
     change = resolved;
   }
   const context = {
-    record: record3,
+    record: record4,
     positionals: parsed.positionals,
     flags: parsed.flags,
     json: asJson,
@@ -20625,31 +22288,31 @@ async function dispatch(record3, registration, options, rest, asJson, { cwd, run
   };
   return registration.handler(context);
 }
-function stub(record3) {
+function stub(record4) {
   return refuse(
     "kernel/not-implemented",
-    `${commandLine(record3)} is not implemented yet; it lands with task ${record3.owner}`,
-    [`use a BDK release that includes task ${record3.owner}`, `bdk ${record3.argv[0] ?? ""} --help`]
+    `${commandLine(record4)} is not implemented yet; it lands with task ${record4.owner}`,
+    [`use a BDK release that includes task ${record4.owner}`, `bdk ${record4.argv[0] ?? ""} --help`]
   );
 }
-function writeCommand(streams, refusal, asJson) {
-  streams.stdout(asJson ? json(refusal) : refusalText(refusal));
-  return exitCodeFor(refusal.rule);
+function writeCommand(streams, refusal2, asJson) {
+  streams.stdout(asJson ? json(refusal2) : refusalText(refusal2));
+  return exitCodeFor(refusal2.rule);
 }
-function writeInject(streams, refusal, asJson) {
-  streams.stdout(asJson ? json(refusal) : stopBlock(refusal));
+function writeInject(streams, refusal2, asJson) {
+  streams.stdout(asJson ? json(refusal2) : stopBlock(refusal2));
   return 0;
 }
-function writeBlock(streams, refusal, asJson) {
-  if (asJson) streams.stdout(json(refusal));
-  streams.stderr(`${refusal.why}
+function writeBlock(streams, refusal2, asJson) {
+  if (asJson) streams.stdout(json(refusal2));
+  streams.stderr(`${refusal2.why}
 `);
   return 2;
 }
-function writeCrash(streams, record3, error2) {
+function writeCrash(streams, record4, error2) {
   const message = error2 instanceof Error ? error2.message : String(error2);
-  const why = `${commandLine(record3)} failed: ${message}`;
-  if (record3.mode === "guard") {
+  const why = `${commandLine(record4)} failed: ${message}`;
+  if (record4.mode === "guard") {
     streams.stderr(`${why}
 `);
     return 2;
@@ -20683,18 +22346,18 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join25 } from "node:path";
+import { join as join29 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store: store2, root } = input;
-  if (!store2.exists(join25(root, SETTINGS_FILES[0]))) return [];
+  if (!store2.exists(join29(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store2, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join25(root, file);
+    const path = join29(root, file);
     const text4 = store2.read(path);
     if (text4 === void 0 || modelineUrl(text4) === url) continue;
     if (input.fix) store2.write(path, withModeline(text4, version3));
@@ -20708,7 +22371,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join25(root, OFFLINE_SCHEMA_PATH);
+  const copy = join29(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store2.read(copy);
   if (current !== expected) {
@@ -20799,13 +22462,14 @@ function registrations(deps) {
     ...measureRegistrations(deps),
     ...logRegistrations(deps),
     ...changeRegistrations(deps),
+    ...graphRegistrations(deps),
     ...queryRegistrations(deps)
   ];
 }
 function settingsRegistry() {
   return createConfigRegistry({
-    modules: [...ctxConfig.modules, promptsModule],
-    prompts: [...ctxConfig.prompts]
+    modules: [...ctxConfig.modules, ...graphConfig.modules, promptsModule],
+    prompts: [...ctxConfig.prompts, ...graphConfig.prompts]
   });
 }
 

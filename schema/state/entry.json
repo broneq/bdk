@@ -290,7 +290,11 @@
         "gate": { "type": "string", "minLength": 1 },
         "session": { "type": "string", "minLength": 1 },
         "command": { "type": "string", "minLength": 1 },
-        "skip-verify": { "type": "boolean" }
+        "skip-verify": { "type": "boolean" },
+        "input-hash": {
+          "description": "sha256 of the node's inputs; written only by `done` (P2).",
+          "$ref": "common.json#/$defs/hash"
+        }
       },
       "required": [
         "schema",

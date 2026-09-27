@@ -463,6 +463,13 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: exact schema of `pipeline.yaml` and `policy`; which fields are per node (budgets, `if`, profile); format of the instruction returned by `next`; what exactly counts as hash "inputs" per kind.
 
+**Resolution** (2026-09-27, Change `v3-t21-artifact-graph-engine`, #53):
+
+- `pipeline.yaml` and `policy`: `pipeline/pipeline.yaml` in the plugin with `schema`, `stages` (`id`, `command`) and `nodes`, a strict zod schema, the generated `schema/pipeline.json` and a relative `yaml-language-server` modeline; the file has no path field at all, so it cannot reference anything outside the Change directory. `policy` holds only `gates.design` and `gates.review` (`manual | auto`) in T21. Project-defined nodes are an open question of the Change (a `pipeline.nodes` key when a project asks).
+- Per-node fields: `id`, `kind`, `stage`, `requires`, `profiles`, `kinds`, `if: features.<name>`, `budget` (a T22 loop name), `rules` (rule categories for the instruction), and for gates `policy` and `opens`. Skip logic that needs content (`architecture: false` in `design.md`, `spec-impact`) lives in kind code.
+- Instruction: Markdown with a fixed skeleton (heading, the `pipeline/<kind>` template, "Write to", "Rules" through `ctx`, "Ledger" capped at 20 summaries, "When finished").
+- Hash inputs: what each validator judged, never the upstream chain (design D-4 of the Change); the hash is recorded as `input-hash` on the `transition` that `done` writes. A node behind a passed gate is sealed: its staleness is shown but does not reopen the gate; a new `done` upstream (a loop-back) does.
+
 **Dependencies**: T20.
 
 ### T22 Attempts, budgets, escalation ladder, plan parts, `commit`, `rebuild`, checkpoint
@@ -491,6 +498,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: escalation model and cost limit per Change (open in the design); exact normalisation of "problem" in the fingerprint; default budget values; squashing checkpoints at `close` (open); plan part file format (today's `create-plan` template as a starting point); whether `takeover` stays a separate command.
 
+**Fixed by T21**: pipeline nodes name their loop in `budget` (`task-redispatch`, `verify-fix`, `review-fix`, `verifier`, `not-run`); `execute-part:<nn>` is done only through `part done`, which writes its `transition` (`bdk done` refuses it with `policy/invalid-transition`); the part validators plug into the `plan-part` kind that `validate` and `done` already run. T22 decides how `policy.budgets.*` joins the `policy` module the `graph` slice registered (open question of T21).
+
 **Dependencies**: T21.
 
 ### T23 Dispatch packages, role contracts, envelope, evidence primitives
@@ -516,6 +525,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: exact package template per role; `template-hash` normalisation; citation format per evidence kind; whether the `observation` limit per dispatch is in policy; form of the `bdk-entries` block (keys, escaping); the per-host tool and permission map; how the `headless` runner passes the package (file path argument versus stdin) per host.
 
+**Fixed by T21**: the `post-task-step` kind exists without nodes (T23 adds them and their order); the fake-kind extensibility test is the base for the evidence primitives E2E; verdict kinds (`plan-verify`, `review`) hash what they judge, and their verdict is the latest `report` entry naming the node.
+
 **Dependencies**: T22.
 
 ### T24 Guard hooks and gates (`PreToolUse`, `UserPromptExpansion`, `SessionEnd`)
@@ -529,16 +540,18 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - `UserPromptExpansion` with the matcher `plan|execute|close|run`: `hooks prompt-expansion` resolves the Change from the branch, calls `next`; gate ready -> a `transition source: user` entry (kernel clock, `session_id`, command text, `refs` = the gate node and artifacts, `--skip-verify` flag for `execute`, P2); gate not ready -> block "gate not ready: <what is missing>"; gate already passed -> pass without an entry (S5); no gate in the profile -> pass with a plain stage entry; no active Change -> block with a hint; no kernel -> block "kernel unavailable". Stdout as context for the model (gate status). Under `policy.gates.<gate>: auto` (T02 decision R-9) the same path writes `source: policy` instead of blocking, and `run` walks every stage this way; `manual` stays the default.
 - If T01 showed no `UserPromptExpansion` for plugin skills: `stage enter` fallback from the skill's `!` block + deny `bdk.mjs stage` from tools; an exception in the content test.
 - `SessionEnd`: `hooks session-end` -> `change checkpoint`.
-- p95 targets (NFR "Latency"): prefilter < 5 ms, `pre-tool` with the kernel < 150 ms, `prompt-expansion` < 150 ms - measured in E2E.
+- p95 targets (NFR "Latency"): prefilter < 5 ms, `pre-tool` with the kernel < 150 ms, `prompt-expansion` < 150 ms - measured through the bundle in the `perf` test project (`*.perf.ts`, `pnpm test:perf`), which CI does not run.
 - E2E on the **recorded payloads** from T01; an unknown payload shape = "no transition" (fail-closed).
 - Frontmatter of the stage skills (`disable-model-invocation: true`, `disallowed-tools`) described here as a requirement, introduced in T41.
 - No Stop hook: `check-rules-drift` is not ported (T02 decision Q-6).
 
 **Input**: "Hooks (V1-1, V1-2)" table, "Key boundaries" (human gate provenance, working tree guard, prefilter and failure mode), T1, T3, P2, P9, S8, NFR "Latency" and "Security", risks "Host hook semantics", "Guard latency and false positives", "Gate binds to time, not content".
 
-**Acceptance signal**: E2E (TSH scenarios from "Testing Strategy"): the payload of a typed command creates a `source: user` entry and the gate is `done`; a payload without the user marker creates no entry; `/bdk:plan` with a design that is not ready is blocked with a reason, no entry; subagent `git stash` deny, main thread with the same text pass; subagent `bdk.mjs commit` deny; kernel removed: subagent `git commit` -> exit 2, main thread `bdk.mjs hooks` -> exit 2, main thread `git status` -> pass without starting Node; `Edit` under `.bdk/specs/` deny; p95 measurement below the thresholds on a fixture of 750 calls.
+**Acceptance signal**: E2E (TSH scenarios from "Testing Strategy"): the payload of a typed command creates a `source: user` entry and the gate is `done`; a payload without the user marker creates no entry; `/bdk:plan` with a design that is not ready is blocked with a reason, no entry; subagent `git stash` deny, main thread with the same text pass; subagent `bdk.mjs commit` deny; kernel removed: subagent `git commit` -> exit 2, main thread `bdk.mjs hooks` -> exit 2, main thread `git status` -> pass without starting Node; `Edit` under `.bdk/specs/` deny; p95 measurement below the thresholds on a fixture of 750 calls (`perf` project, local only).
 
 **To resolve in the spec**: exact git guard regex (false positives: `git reset` inside a commit message string); whether `ask` in the main thread stays a "ready extension" (yes, per the design); text of the block / deny messages; how the hook recognises `--skip-verify` in `command_args`.
+
+**Fixed by T21**: a gate counts a `transition` whose `gate` is the node id, whose `source` is `user` (or `policy` while `policy.gates.<gate>` is `auto`) and whose `at` is not earlier than the gate's ready time (the latest `done` among its requirements); `next` returns `waiting: gate` with `command` and the pending entries, which is what `prompt-expansion` checks before writing.
 
 **Dependencies**: T22, T01.
 
@@ -663,6 +676,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: details of the wave strategy and the place of Workflow (the design leaves it open); how `design` drives Lavish in the thin version and what the AskUserQuestion fallback loses; content of the instructions returned by `next` per artifact (shared with T21 - who owns the templates); whether `run` re-renders after each gate or only at the stop.
 
+**Fixed by T21**: stage skills read `next` (artifact, instruction, gates) and finish with `bdk done <id>`; `design` writes `architecture: false` in `design.md` for a product-only Change, splits into `design/parts/` when needed (then `done design` raises the profile to `large` itself) and keeps a single `design.md` under 12 KB.
+
 **Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
 
 ### T42 Remaining skills, role skills, adapters, `bdk-craft`, package input for `cr` / `pr-review`
@@ -699,7 +714,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Scope**:
 
-- E2E consolidation: the full list of acceptance and TSH scenarios from the design as one suite named after the scenarios; NFR measurements (`log list` at 1 000 entries, hook p95, ~200 kernel calls per Change) reported in CI.
+- E2E consolidation: the full list of acceptance and TSH scenarios from the design as one suite named after the scenarios; NFR measurements (`log list` at 1 000 entries, hook p95, ~200 kernel calls per Change) in the `perf` test project, run locally with `pnpm test:perf`; CI does not run timing assertions because its runners are too noisy.
 - User edge cases: no kernel (fail-closed with an instruction), corrupted state (`rebuild` mandatory), two Changes on two branches in parallel (the T14 merge contract on a real fixture), a local override disabling escalation visible in D4b, a removed rule as a tombstone, a stage command with no kernel, a `bdk-entries` block rejected -> re-dispatch once -> `blocker`, `bdk-craft` installed without `bdk`.
 - Multi-host acceptance (T02 decision Q-3): one Change executed with the `headless` runner on at least one non-Claude host CLI (from the T23 list), with adapters from `bdk export agents --host`; the ledger from that run passes `doctor`.
 - User documentation: README v3 (installation with Node, two plugins, Change pipeline, gates and `run`, profiles, layered configuration, rules and the learning funnel, migration from v2), the `kernel-cli` and `kernel-state` specs under `openspec/specs/` synchronised with the code (contract tests); the kernel architecture stays the `kernel-architecture` spec (written in T10, with Mermaid per the standard) and is checked against the code by T11's import scan, so no separate architecture document is written. `docs/` keeps only temporary material, task artifacts, user documentation and ADRs; every living spec lives under `openspec/specs/`.

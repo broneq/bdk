@@ -176,10 +176,10 @@ function seeded(): Store {
 }
 
 describe("schema", () => {
-  it("creates schema version 2 with the public tables and the entries view", async () => {
+  it("creates schema version 3 with the public tables and the entries view", async () => {
     const index = await open(memoryStore());
-    expect(INDEX_SCHEMA_VERSION).toBe(2);
-    expect(index.schemaVersion()).toBe(2);
+    expect(INDEX_SCHEMA_VERSION).toBe(3);
+    expect(index.schemaVersion()).toBe(3);
     const names = selectReadOnly(
       index,
       "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE '\\_%' ESCAPE '\\' ORDER BY name",
@@ -232,6 +232,27 @@ describe("refresh", () => {
       },
     ]);
     expect(ticketRole(index, CHANGE, "A-bbbbbbb1")).toBe("implementer");
+  });
+
+  it("indexes the input hash of a transition", async () => {
+    const store = seeded();
+    const hash = `sha256:${"b".repeat(64)}`;
+    writeEntryFile(store, {
+      id: "L-aaaaaaa4",
+      type: "transition",
+      at: "2026-09-25T09:04:00Z",
+      refs: ["design", "design.md"],
+      to: "design",
+      "input-hash": hash,
+    });
+    const index = await open(store);
+    refreshChange(index, LIVE);
+    expect(listEntries(index, CHANGE, { type: "transition" })).toEqual([
+      expect.objectContaining({ id: "L-aaaaaaa4", to: "design", inputHash: hash }),
+    ]);
+    expect(
+      selectReadOnly(index, "SELECT input_hash FROM entries WHERE id = 'L-aaaaaaa4'").rows,
+    ).toEqual([[hash]]);
   });
 
   it("indexes the state fixture on disk", async () => {
@@ -479,7 +500,7 @@ describe("on disk", () => {
     old.close();
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(2);
+    expect(index.schemaVersion()).toBe(3);
     expect(
       selectReadOnly(index, "SELECT count(*) FROM sqlite_master WHERE name = 'meta'").rows,
     ).toEqual([[0]]);
@@ -490,7 +511,7 @@ describe("on disk", () => {
     writeFileSync(path(), "not a database, just bytes ".repeat(100));
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(2);
+    expect(index.schemaVersion()).toBe(3);
   });
 
   it("refuses state/corrupted-index when the index path is a directory", async () => {

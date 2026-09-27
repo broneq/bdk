@@ -63,6 +63,7 @@ pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip
 pnpm test:unit        # coverage thresholds apply
 pnpm test:e2e         # runs dist/bdk.mjs, so build first
 pnpm test:contract
+pnpm test:perf        # wall-clock budgets through dist/bdk.mjs; local only, CI does not run it
 
 # Python lint and format (ruff) until T32 removes the scripts
 pnpm lint:py

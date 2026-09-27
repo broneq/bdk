@@ -186,14 +186,14 @@ describe("bdk config check", () => {
   });
 
   it("acceptance: key of a later task", () => {
-    const root = fixture({ ".bdk/settings.yaml": "policy:\n  gates:\n    design: true\n" }).root;
+    const root = fixture({ ".bdk/settings.yaml": "policy:\n  budgets:\n    verifier: 3\n" }).root;
     const refusal = refused(
       bdk(["config", "check", "--json"], root),
       2,
       "policy/unknown-config-key",
     );
-    expect(refusal.why).toContain("policy.gates.design");
-    expect(refusal.why).toContain("T21");
+    expect(refusal.why).toContain("policy.budgets.verifier");
+    expect(refusal.why).toContain("T22");
   });
 
   it("acceptance: local override visible in the snapshot", () => {
@@ -266,7 +266,7 @@ describe("bdk config schema", () => {
   });
 
   it("exit 3: input/not-found", () => {
-    refused(bdk(["config", "schema", "policy", "--json"], fixture().root), 3, "input/not-found");
+    refused(bdk(["config", "schema", "execution", "--json"], fixture().root), 3, "input/not-found");
   });
 
   it("exit 5: runtime/not-a-repo", () => {

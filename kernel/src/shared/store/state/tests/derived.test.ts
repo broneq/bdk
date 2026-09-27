@@ -21,26 +21,42 @@ function entry(partial: Partial<EntryFacts> & Pick<EntryFacts, "type">): EntryFa
   };
 }
 
+const same = (to: string): string => to;
+
 describe("stageOf", () => {
+  it("maps the target of the latest transition through the resolver", () => {
+    const stages: Record<string, string> = { "plan-part:02": "plan", design: "design" };
+    const resolve = (to: string): string => stages[to] ?? to;
+    expect(stageOf([entry({ type: "transition", to: "plan-part:02" })], resolve)).toBe("plan");
+    expect(stageOf([entry({ type: "transition", to: "review" })], resolve)).toBe("review");
+    expect(stageOf([], resolve)).toBe("intent");
+  });
+
   it("is intent without transitions", () => {
-    expect(stageOf([entry({ type: "decision" })])).toBe("intent");
+    expect(stageOf([entry({ type: "decision" })], same)).toBe("intent");
   });
 
   it("is the to of the latest transition", () => {
     expect(
-      stageOf([
-        entry({ type: "transition", to: "plan", at: "2026-09-25T11:00:00Z" }),
-        entry({ type: "transition", to: "design", at: "2026-09-25T10:00:00Z" }),
-      ]),
+      stageOf(
+        [
+          entry({ type: "transition", to: "plan", at: "2026-09-25T11:00:00Z" }),
+          entry({ type: "transition", to: "design", at: "2026-09-25T10:00:00Z" }),
+        ],
+        same,
+      ),
     ).toBe("plan");
   });
 
   it("breaks a tie by the greater id", () => {
     expect(
-      stageOf([
-        entry({ type: "transition", to: "b", id: "L-zzzzzzzz" }),
-        entry({ type: "transition", to: "a", id: "L-aaaaaaaa" }),
-      ]),
+      stageOf(
+        [
+          entry({ type: "transition", to: "b", id: "L-zzzzzzzz" }),
+          entry({ type: "transition", to: "a", id: "L-aaaaaaaa" }),
+        ],
+        same,
+      ),
     ).toBe("b");
   });
 });

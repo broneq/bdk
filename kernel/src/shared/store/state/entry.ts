@@ -88,6 +88,9 @@ export const entryKind = {
         session: z.string().min(1).optional(),
         command: z.string().min(1).optional(),
         "skip-verify": z.boolean().optional(),
+        "input-hash": hash.optional().meta({
+          description: "sha256 of the node's inputs; written only by `done` (P2).",
+        }),
       }),
     ])
     .meta({ title: "Ledger entry", description: "One file per entry; the body is free Markdown." }),

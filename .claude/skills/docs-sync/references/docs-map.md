@@ -22,7 +22,9 @@ Until T50 rewrites the site for v3, every page carries the v2 banner and
 describes v2 on purpose. The v3 settings live in the Settings section of
 `README.md` and the v3 Change state (`.bdk/changes/`, the ledger, the index,
 the `change`, `log`, `measure` and `query` commands) in its Change state
-section; the site has pages for neither until T50.
+section, and the artifact graph (`pipeline/pipeline.yaml`, `policy.gates`, the
+`next`, `explain`, `validate` and `done` commands) in its Artifact graph
+section; the site has pages for none of them until T50.
 
 ---
 
@@ -45,6 +47,7 @@ section; the site has pages for neither until T50.
 | `scripts/bdk_run_state.py` (trailers, manifest, session guard, waves, worktrees)                                              | `concepts/plan-pipeline.md`, `reference/artifacts.md`, `troubleshooting.md`                                                                                                                          |
 | `kernel/src/ctx/config.ts`, `schema/settings.json` (settings keys)                                                            | `README.md` Settings section, `getting-started/setup.md` (the feature flags), `concepts/verification-scoping.md`, `concepts/quality-and-language-rules.md`                                           |
 | `kernel/src/change/`, `log/`, `measure/`, `query/`, `kernel/src/shared/store/` (Change layout, index, markers, ignored paths) | `README.md` Change state section and the `config set` row of its Settings table; `reference/artifacts.md` and `getting-started/setup.md` still describe the v2 `/.bdk/` ignore rule under the banner |
+| `kernel/src/graph/`, `pipeline/` (nodes, kinds, templates, `policy.gates`, the four graph commands)                           | `README.md` Artifact graph section and its command table; `concepts/plan-pipeline.md` still describes the v2 pipeline under the banner                                                               |
 | `hooks/hooks.json`, `kernel/src/hooks/`                                                                                       | `reference/hooks.md`, `concepts/shared-foundation.md`, `workflows/trivial.md`, `troubleshooting.md`                                                                                                  |
 | `hooks/is-command-exists/`                                                                                                    | `reference/hooks.md` (the "not wired into hooks.json" section), `troubleshooting.md`                                                                                                                 |
 | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`                                                               | `getting-started/installation.md`                                                                                                                                                                    |

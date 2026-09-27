@@ -6,7 +6,11 @@
   "type": "object",
   "properties": {
     "schema": { "type": "number", "const": 1 },
-    "title": { "type": "string", "minLength": 1 }
+    "title": { "type": "string", "minLength": 1 },
+    "architecture": {
+      "description": "`design.md` only: false for a product-only Change, which skips the architecture node (R-5).",
+      "type": "boolean"
+    }
   },
   "required": ["schema", "title"],
   "additionalProperties": false

@@ -1,9 +1,11 @@
 import { defineConfig } from "vitest/config";
 
-// Three projects (design D-2 of v3-t11-kernel-skeleton): `unit` runs the
+// Four projects (design D-2 of v3-t11-kernel-skeleton): `unit` runs the
 // slices' tests from source with coverage thresholds, `e2e` runs the committed
 // bundle in child processes, `contract` runs the contract, structure and
-// dependency tests and the docs site guards over the whole repository.
+// dependency tests and the docs site guards over the whole repository, and
+// `perf` runs the wall-clock budgets through the bundle. CI does not run
+// `perf`: its runners are too noisy for timing assertions.
 export default defineConfig({
   test: {
     projects: [
@@ -15,6 +17,9 @@ export default defineConfig({
       },
       {
         test: { name: "e2e", include: ["kernel/**/*.e2e.ts"], testTimeout: 30_000 },
+      },
+      {
+        test: { name: "perf", include: ["kernel/**/*.perf.ts"], testTimeout: 60_000 },
       },
       {
         test: {

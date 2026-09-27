@@ -69,7 +69,7 @@ describe("bdk change new", () => {
       profile: { value: "small", defaulted: true },
       source: "user",
     });
-    expect(result).not.toHaveProperty("next");
+    expect(result.next).toBe("/bdk:design");
     const id = String(result.change);
     expect(id).toMatch(/^\d{4}-\d{2}-\d{2}-users-log-in-with-a-one-time-link$/);
     expect(read(root, `.bdk/changes/${id}/change.md`)).toContain("profile: small");
@@ -135,7 +135,7 @@ describe("bdk change new", () => {
 });
 
 describe("bdk change status", () => {
-  it("exit 0: the derived state with empty graph arrays", () => {
+  it("exit 0: the derived state with the graph's nodes and gates", () => {
     const { root, id } = opened();
     const result = answered(bdk(["change", "status", "--json"], root), "output/change-status.json");
     expect(result).toMatchObject({
@@ -143,11 +143,23 @@ describe("bdk change status", () => {
       profile: "small",
       stage: "intent",
       confirmed: true,
-      nodes: [],
-      gates: [],
       parts: [],
       openTickets: [],
     });
+    expect(result.nodes).toContainEqual({
+      id: "design",
+      kind: "design",
+      state: "ready",
+      requires: ["intent"],
+    });
+    expect(result.gates).toContainEqual(
+      expect.objectContaining({
+        gate: "gate:design",
+        ready: false,
+        done: false,
+        command: "/bdk:plan",
+      }),
+    );
   });
 
   it("acceptance: at most 100 lines, an --inferred Change shown unconfirmed", () => {

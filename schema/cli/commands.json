@@ -357,7 +357,8 @@
         "policy/not-ready",
         "policy/validation-failed",
         "policy/gate-not-ready",
-        "policy/missing-citation"
+        "policy/missing-citation",
+        "policy/invalid-transition"
       ],
       "writes": [
         ".bdk/changes/<id>/log/",

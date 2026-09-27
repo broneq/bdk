@@ -7,6 +7,7 @@ import { configRegistrations } from "./config/index.ts";
 import type { ConfigDeps } from "./config/index.ts";
 import { ctxConfig, ctxRegistrations } from "./ctx/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
+import { graphConfig, graphRegistrations } from "./graph/index.ts";
 import { hooksRegistrations } from "./hooks/index.ts";
 import type { HooksDeps } from "./hooks/index.ts";
 import { logRegistrations } from "./log/index.ts";
@@ -39,6 +40,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...measureRegistrations(deps),
     ...logRegistrations(deps),
     ...changeRegistrations(deps),
+    ...graphRegistrations(deps),
     ...queryRegistrations(deps),
   ];
 }
@@ -46,7 +48,7 @@ export function registrations(deps: KernelDeps): Registration[] {
 /** The settings registry: every slice's modules plus the ones `shared/config` consumes. */
 export function settingsRegistry(): ConfigRegistry {
   return createConfigRegistry({
-    modules: [...ctxConfig.modules, promptsModule],
-    prompts: [...ctxConfig.prompts],
+    modules: [...ctxConfig.modules, ...graphConfig.modules, promptsModule],
+    prompts: [...ctxConfig.prompts, ...graphConfig.prompts],
   });
 }

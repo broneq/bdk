@@ -3,6 +3,7 @@
 // passed it (design D-11 of T20), `small` by default.
 import { join } from "node:path";
 
+import { changeGraph } from "../../graph/index.ts";
 import { appendEntry } from "../../log/index.ts";
 import { globalDir, overriddenKeys, resolveConfig } from "../../shared/config/index.ts";
 import type { Environment } from "../../shared/config/index.ts";
@@ -91,10 +92,11 @@ export async function newChange(
   }
 
   const author = await authorIdent(deps.git, projectRoot);
+  const global = globalDir(where.environment);
   const resolution = resolveConfig({
     store: deps.store,
     registry: deps.settings,
-    globalDir: globalDir(where.environment),
+    globalDir: global,
     projectRoot,
     pluginRoot: deps.pluginRoot,
   });
@@ -118,9 +120,9 @@ export async function newChange(
     body: "",
   });
   const change = { id, dir, projectRoot, branch };
-  const entry = await withIndex(deps.openIndex, deps.store, projectRoot, (index) => {
+  const written = await withIndex(deps.openIndex, deps.store, projectRoot, async (index) => {
     refreshChange(index, { id, dir, archived: false });
-    return appendEntry(
+    const entry = await appendEntry(
       deps,
       change,
       index,
@@ -133,16 +135,22 @@ export async function newChange(
       },
       { dedupe: false },
     );
+    if ("refused" in entry) return entry;
+    // The Change is open once its entry is written: settings the graph refuses
+    // leave `next` out here and answer on `bdk next`.
+    const graph = await changeGraph(deps, change, index, global);
+    return { entry: entry.entry, next: "refused" in graph ? undefined : graph.next };
   });
-  if ("refused" in entry) return entry;
+  if ("refused" in written) return written;
   writeMarker(deps.store, projectRoot, branch, id);
   return {
     change: id,
     branch,
     kind: input.kind,
-    profile: { value: profile, defaulted: input.profile === undefined, entry: entry.entry.id },
+    profile: { value: profile, defaulted: input.profile === undefined, entry: written.entry.id },
     source: input.inferred ? "inferred" : "user",
     overriddenKeys: overridden,
+    ...(written.next === undefined ? {} : { next: written.next }),
   };
 }
 
