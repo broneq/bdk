@@ -6,7 +6,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ENTRY_TYPES } from "../../src/shared/store/index.ts";
+import { ENTRY_TYPES } from "../../src/shared/vocabulary/index.ts";
 import { REPO_ROOT } from "../support/run.ts";
 import { backticked, column, requirement, tableRows } from "../support/specs.ts";
 

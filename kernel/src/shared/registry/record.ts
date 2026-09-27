@@ -18,6 +18,7 @@ const flag = z.object({
   name: z.string().startsWith("--"),
   value: z.string().optional(),
   values: z.array(z.string()).optional(),
+  repeatable: z.literal(true).optional(),
   description: z.string().optional(),
 });
 

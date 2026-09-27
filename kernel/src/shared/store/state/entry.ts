@@ -16,23 +16,10 @@ import {
   timestamp,
 } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
+import { STORED_STATUSES } from "../../vocabulary/index.ts";
+import type { EntryType } from "../../vocabulary/index.ts";
 
 const VERSION = 1;
-
-export const ENTRY_TYPES = [
-  "decision",
-  "finding",
-  "observation",
-  "blocker",
-  "question",
-  "assumption",
-  "risk",
-  "learning",
-  "report",
-  "transition",
-] as const;
-
-export type EntryType = (typeof ENTRY_TYPES)[number];
 
 const category = z.string().min(1).meta({ description: "One of the P8 blocking categories." });
 
@@ -42,7 +29,7 @@ function variant<T extends EntryType, S extends z.ZodRawShape>(type: T, own: S) 
     id: ledgerId,
     type: z.literal(type),
     summary: z.string().min(1).max(120),
-    status: z.enum(["proposed", "accepted", "resolved", "routed"]).meta({
+    status: z.enum(STORED_STATUSES).meta({
       description: "`superseded` is derived from `supersedes`, never stored.",
     }),
     source: provenance,
@@ -76,11 +63,21 @@ export const entryKind = {
   version: VERSION,
   schema: z
     .discriminatedUnion("type", [
-      variant("decision", {}),
+      variant("decision", {
+        profile: z.enum(["small", "large"]).optional().meta({
+          description:
+            "Written only by kernel commands that raise the profile; raises the effective profile.",
+        }),
+      }),
       variant("finding", { severity: severity.optional(), category: category.optional() }),
       variant("observation", { severity: severity.optional() }),
       variant("blocker", { category: category.optional() }),
-      variant("question", { options: z.array(z.string().min(1)).optional() }),
+      variant("question", {
+        options: z.array(z.string().min(1)).optional(),
+        park: z.boolean().optional().meta({
+          description: "Written only by `change park`; marks the question that parks the Change.",
+        }),
+      }),
       variant("assumption", {}),
       variant("risk", {}),
       learning,

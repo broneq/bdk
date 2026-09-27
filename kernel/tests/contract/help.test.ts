@@ -22,6 +22,7 @@ async function help(record: CommandRecord): Promise<{ code: number; text: string
       home: "/home/dev",
       workTree: () => undefined,
       which: () => undefined,
+      readStdin: () => "",
     },
     streams: { stdout: (chunk) => (text += chunk), stderr: () => undefined },
   });

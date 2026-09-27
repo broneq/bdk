@@ -22,7 +22,12 @@
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
-        "review": { "type": "boolean" }
+        "review": { "type": "boolean" },
+        "profile": {
+          "description": "Written only by kernel commands that raise the profile; raises the effective profile.",
+          "type": "string",
+          "enum": ["small", "large"]
+        }
       },
       "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
       "additionalProperties": false
@@ -127,7 +132,11 @@
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },
-        "options": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        "options": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "park": {
+          "description": "Written only by `change park`; marks the question that parks the Change.",
+          "type": "boolean"
+        }
       },
       "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
       "additionalProperties": false

@@ -2,6 +2,7 @@
 // the four records declare, the acceptance scenarios of T12 and the JSON
 // Schemas. The global layer lives in the fixture (XDG_CONFIG_HOME), so the
 // machine's own settings never leak into a case.
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
@@ -38,10 +39,14 @@ afterEach(() => {
 });
 
 function bdk(args: readonly string[], root: string) {
-  const env = { ...process.env, XDG_CONFIG_HOME: join(root, "xdg"), HOME: root } as Record<
-    string,
-    string
-  >;
+  // No user or system git config: a global excludes file must not decide what is ignored.
+  const env = {
+    ...process.env,
+    XDG_CONFIG_HOME: join(root, "xdg"),
+    HOME: root,
+    GIT_CONFIG_GLOBAL: "/dev/null",
+    GIT_CONFIG_NOSYSTEM: "1",
+  } as Record<string, string>;
   return runBdk(args, root, { env });
 }
 
@@ -287,6 +292,21 @@ describe("bdk config set", () => {
     expect(readFileSync(join(root, ".bdk/.machine/config/resolved.yaml"), "utf8")).toContain(
       "- features.lavish",
     );
+  });
+
+  it("local layer is ignored: .gitignore gains exactly the two paths, once", () => {
+    const root = fixture({ ".gitignore": "node_modules/\n" }).root;
+    expect(bdk(["config", "set", "features.lavish", "false", "--local"], root).code).toBe(0);
+    const expected = "node_modules/\n/.bdk/.machine/\n/.bdk/settings.local.yaml\n";
+    expect(readFileSync(join(root, ".gitignore"), "utf8")).toBe(expected);
+    const checkIgnore = spawnSync("git", ["check-ignore", "-q", ".bdk/settings.local.yaml"], {
+      cwd: root,
+      env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
+    });
+    expect(checkIgnore.status).toBe(0);
+
+    expect(bdk(["config", "set", "features.lavish", "true", "--local"], root).code).toBe(0);
+    expect(readFileSync(join(root, ".gitignore"), "utf8")).toBe(expected);
   });
 
   it("comments survive", () => {

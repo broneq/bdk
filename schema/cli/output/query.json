@@ -4,30 +4,25 @@
   "title": "bdk query --json",
   "description": "Read-only SQL over the rebuildable index.",
   "type": "object",
-  "allOf": [
-    {
-      "$ref": "../common/list-page.json"
+  "properties": {
+    "columns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Column names in select order."
     },
-    {
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "description": "One row as an array of scalars in column order."
-          }
-        },
-        "columns": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": ["string", "number", "null"] },
+        "description": "One row as an array of scalars in column order."
       }
-    }
-  ],
-  "unevaluatedProperties": false,
+    },
+    "total": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "truncated": { "type": "boolean" }
+  },
+  "required": ["columns", "items", "total", "truncated"],
+  "additionalProperties": false,
   "examples": [
     {
       "columns": ["type", "count(*)"],

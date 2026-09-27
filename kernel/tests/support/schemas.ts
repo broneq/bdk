@@ -22,7 +22,9 @@ export function readSchema(file: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(SCHEMA_DIR, file), "utf8")) as Record<string, unknown>;
 }
 
-const ajv = new Ajv2020({ strict: true, allErrors: true });
+// A type list (`"type": ["string", "number", "null"]`) is plain 2020-12; strict
+// mode only asks for it to be allowed explicitly.
+const ajv = new Ajv2020({ strict: true, allowUnionTypes: true, allErrors: true });
 formats.default(ajv);
 for (const file of SCHEMA_FILES) ajv.addSchema(readSchema(file));
 for (const name of readdirSync(STATE_DIR).filter((file) => file.endsWith(".json"))) {

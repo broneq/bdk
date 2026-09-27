@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { changeKind } from "../change.ts";
-import { ENTRY_TYPES, entryKind } from "../entry.ts";
+import { ENTRY_TYPES } from "../../../vocabulary/index.ts";
+import { entryKind } from "../entry.ts";
 import * as example from "./examples.ts";
 import { issues, without } from "./issues.ts";
 

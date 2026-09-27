@@ -40,8 +40,9 @@ export function commandHelp(index: CommandIndex, record: CommandRecord): string 
     lines.push("", "flags:");
     for (const flag of record.flags) {
       const value = takesValue(flag) ? ` ${flagValue(flag)}` : "";
+      const repeatable = flag.repeatable === true ? " (repeatable)" : "";
       lines.push(
-        `  ${flag.name}${value}${flag.description === undefined ? "" : `  ${flag.description}`}`,
+        `  ${flag.name}${value}${repeatable}${flag.description === undefined ? "" : `  ${flag.description}`}`,
       );
     }
   }

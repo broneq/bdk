@@ -21,7 +21,7 @@
     {
       "id": "change-new",
       "argv": ["change", "new"],
-      "summary": "Open a Change on the current branch from an intent; measure and propose the profile.",
+      "summary": "Open a Change on the current branch from an intent and record its starting profile.",
       "availability": "orchestrator",
       "mode": "command",
       "slice": "change",
@@ -43,7 +43,12 @@
         {
           "name": "--profile",
           "values": ["tiny", "small", "large"],
-          "description": "Override the measured profile (R-profil)."
+          "description": "Starting profile, judged by the calling skill; default small (R-profil)."
+        },
+        {
+          "name": "--reason",
+          "value": "<text>",
+          "description": "Why this profile; written into the body of the profile assumption entry. Required with --profile tiny."
         },
         {
           "name": "--inferred",
@@ -52,8 +57,13 @@
       ],
       "output": "output/change-new.json",
       "exits": [0, 2, 3, 5],
-      "refusals": ["policy/change-exists", "policy/profile-downgrade", "runtime/git-missing"],
-      "writes": [".bdk/changes/<id>/change.md", ".bdk/changes/<id>/log/", ".bdk/.machine/"]
+      "refusals": ["policy/change-exists", "policy/detached-head", "runtime/git-missing"],
+      "writes": [
+        ".bdk/changes/<id>/change.md",
+        ".bdk/changes/<id>/log/",
+        ".bdk/.machine/",
+        ".gitignore"
+      ]
     },
     {
       "id": "change-status",
@@ -125,7 +135,9 @@
         "input/not-found",
         "policy/invalid-transition",
         "policy/change-exists",
-        "policy/profile-downgrade"
+        "policy/profile-downgrade",
+        "policy/detached-head",
+        "runtime/git-missing"
       ],
       "writes": [".bdk/changes/<id>/log/", ".bdk/.machine/"]
     },
@@ -148,12 +160,13 @@
         {
           "name": "--option",
           "value": "<text>",
-          "description": "Repeatable; at least one. Defaults are accept as debt, change decision X, split part."
+          "description": "Repeatable; at least one. Defaults are accept as debt, change decision X, split part.",
+          "repeatable": true
         }
       ],
       "output": "output/change-park.json",
       "exits": [0, 2, 3, 4, 5],
-      "refusals": ["policy/invalid-transition", "policy/ticket-open"],
+      "refusals": ["policy/invalid-transition", "policy/ticket-open", "runtime/git-missing"],
       "writes": [".bdk/changes/<id>/log/", ".bdk/changes/<id>/attempts/"]
     },
     {
@@ -234,7 +247,7 @@
     {
       "id": "measure",
       "argv": ["measure"],
-      "summary": "Measure the size of an intent or a diff: files, impacted modules, proposed profile.",
+      "summary": "Measure a git diff: changed files, lines and modules, as raw signals for the caller's own classification.",
       "availability": "read",
       "mode": "command",
       "slice": "measure",
@@ -242,18 +255,12 @@
       "changeScoped": false,
       "args": [
         {
-          "name": "<intent>",
+          "name": "<range>",
           "required": false,
-          "description": "Text to measure; omit with --diff."
+          "description": "`<base>` measures the working tree (staged and unstaged tracked changes) against base; `<base>..<head>` measures committed history only. Default HEAD."
         }
       ],
-      "flags": [
-        {
-          "name": "--diff",
-          "value": "<ref>",
-          "description": "Measure a git diff (base ref) instead of an intent; what cr uses for agent scaling."
-        }
-      ],
+      "flags": [],
       "output": "output/measure.json",
       "exits": [0, 3, 5],
       "refusals": ["runtime/git-missing"],
@@ -600,7 +607,8 @@
         {
           "name": "--ref",
           "value": "<ref>",
-          "description": "Repeatable; at least one (file, symbol, part, task, rule or entry id)."
+          "description": "Repeatable; at least one (file, symbol, part, task, rule or entry id).",
+          "repeatable": true
         },
         {
           "name": "--body",
@@ -628,7 +636,13 @@
       "stdin": "Body text when --body - is given.",
       "output": "output/log-add.json",
       "exits": [0, 2, 3, 4, 5],
-      "refusals": ["input/forbidden-field", "policy/no-open-ticket", "policy/observation-cap"],
+      "refusals": [
+        "input/forbidden-field",
+        "input/not-found",
+        "policy/no-open-ticket",
+        "policy/observation-cap",
+        "runtime/git-missing"
+      ],
       "writes": [".bdk/changes/<id>/log/"]
     },
     {
@@ -1116,7 +1130,8 @@
         ".bdk/settings.yaml",
         ".bdk/settings.local.yaml",
         "the global layer file",
-        ".bdk/.machine/config/"
+        ".bdk/.machine/config/",
+        ".gitignore"
       ]
     },
     {
@@ -1171,7 +1186,7 @@
         {
           "name": "<sql>",
           "required": true,
-          "description": "A single SELECT; T20 decides the table allowlist."
+          "description": "A single SELECT over the public tables of the index."
         }
       ],
       "flags": [

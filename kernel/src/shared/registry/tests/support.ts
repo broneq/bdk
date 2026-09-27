@@ -53,6 +53,19 @@ export const INDEX: CommandIndex = {
       ],
     }),
     record({ id: "attempt-list", argv: ["attempt", "list"], owner: "T22" }),
+    record({
+      id: "log-add",
+      argv: ["log", "add"],
+      owner: "T20",
+      changeScoped: true,
+      exits: [0, 2, 3, 4, 5],
+      refusals: ["input/forbidden-field"],
+      flags: [
+        { name: "--ref", value: "<ref>", repeatable: true, description: "Repeatable." },
+        { name: "--ticket", value: "<ticket>" },
+        { name: "--body", value: "<text>" },
+      ],
+    }),
     record({ id: "spec-delta-check", argv: ["spec", "delta", "check"], owner: "T30" }),
     record({ id: "ctx-skill", argv: ["ctx", "skill"], mode: "inject", owner: "T13", exits: [0] }),
     record({
@@ -96,6 +109,7 @@ export function runtime(overrides: Partial<Runtime> = {}): Runtime {
     home: "/home/dev",
     workTree: () => "/repo",
     which: () => undefined,
+    readStdin: () => "",
     ...overrides,
   };
 }

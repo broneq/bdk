@@ -32,6 +32,7 @@ async function run(argv: string[], nodeVersion: string, workTree: string | undef
       home: "/home/dev",
       workTree: () => workTree,
       which: () => undefined,
+      readStdin: () => "",
     },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });

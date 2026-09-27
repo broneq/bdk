@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { settingsRegistry } from "../../registrations.ts";
 import { OFFLINE_SCHEMA_PATH, settingsJsonSchema } from "../../shared/config/index.ts";
+import type { Git } from "../../shared/git/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import { memoryStore } from "../../shared/store/index.ts";
 import { checkConfig } from "../use-cases/check.ts";
@@ -26,11 +27,18 @@ const PLUGIN_FILES = {
 };
 const settings = settingsRegistry();
 
+/** A git with no ignore rule: `check-ignore` answers "not ignored" for every path. */
+const git: Git = {
+  currentBranch: () => "main",
+  run: (args) =>
+    Promise.resolve({ code: args[0] === "check-ignore" ? 1 : 0, stdout: "", stderr: "" }),
+};
+
 function setup(files: Record<string, string>) {
   const store = memoryStore({ ...PLUGIN_FILES, ...files });
   return {
     store,
-    input: { store, settings, pluginRoot: PLUGIN, globalDir: GLOBAL, projectRoot: ROOT },
+    input: { store, git, settings, pluginRoot: PLUGIN, globalDir: GLOBAL, projectRoot: ROOT },
   };
 }
 
@@ -276,9 +284,9 @@ describe("configSchema", () => {
 });
 
 describe("setConfig", () => {
-  it("writes the project layer by default, starting a new file with the modeline", () => {
+  it("writes the project layer by default, starting a new file with the modeline", async () => {
     const { input, store } = setup({ [`${ROOT}/.bdk/`]: "" });
-    expect(setConfig(input, { key: "languages", value: "[go, ts]" })).toStrictEqual({
+    expect(await setConfig(input, { key: "languages", value: "[go, ts]" })).toStrictEqual({
       key: "languages",
       value: ["go", "ts"],
       layer: "project",
@@ -287,26 +295,26 @@ describe("setConfig", () => {
     expect(store.read(PROJECT)).toBe(`${MODELINE}\nlanguages: [go, ts]\n`);
   });
 
-  it("writes the local layer with --local and reports the previous value", () => {
+  it("writes the local layer with --local and reports the previous value", async () => {
     const { input, store } = setup({ [LOCAL]: `${MODELINE}\nfeatures:\n  lavish: true\n` });
-    expect(setConfig(input, { key: "features.lavish", value: "false", local: true })).toStrictEqual(
-      {
-        key: "features.lavish",
-        value: false,
-        previous: true,
-        layer: "local",
-        path: ".bdk/settings.local.yaml",
-      },
-    );
+    expect(
+      await setConfig(input, { key: "features.lavish", value: "false", local: true }),
+    ).toStrictEqual({
+      key: "features.lavish",
+      value: false,
+      previous: true,
+      layer: "local",
+      path: ".bdk/settings.local.yaml",
+    });
     expect(store.read(LOCAL)).toBe(`${MODELINE}\nfeatures:\n  lavish: false\n`);
     const snapshot = store.read(`${ROOT}/.bdk/.machine/config/resolved.yaml`) ?? "";
     expect(snapshot).toContain("- features.lavish");
   });
 
-  it("writes the global layer with --global", () => {
+  it("writes the global layer with --global", async () => {
     const { input, store } = setup({});
     expect(
-      setConfig(input, { key: "features.lavish", value: "false", global: true }),
+      await setConfig(input, { key: "features.lavish", value: "false", global: true }),
     ).toMatchObject({
       layer: "global",
       path: GLOBAL_FILE,
@@ -314,10 +322,13 @@ describe("setConfig", () => {
     expect(store.read(GLOBAL_FILE)).toBe(`${MODELINE}\nfeatures:\n  lavish: false\n`);
   });
 
-  it("edits the item an id segment names and appends a new one", () => {
+  it("edits the item an id segment names and appends a new one", async () => {
     const { input, store } = setup({ [PROJECT]: TOOLS });
-    setConfig(input, { key: "tools.test.unit.scoped", value: "vitest run {files}" });
-    setConfig(input, { key: "tools.test.e2e", value: "{id: e2e, tier: e2e, command: pnpm e2e}" });
+    await setConfig(input, { key: "tools.test.unit.scoped", value: "vitest run {files}" });
+    await setConfig(input, {
+      key: "tools.test.e2e",
+      value: "{id: e2e, tier: e2e, command: pnpm e2e}",
+    });
     const tools = parse(store.read(PROJECT) ?? "") as { tools: { test: unknown[] } };
     expect(tools.tools.test).toStrictEqual([
       {
@@ -331,41 +342,58 @@ describe("setConfig", () => {
     ]);
   });
 
-  it("keeps comments, flow sequences and key order", () => {
+  it("keeps comments, flow sequences and key order", async () => {
     const text = `${MODELINE}\n# the stack\nlanguages: [go]  # main one\nfeatures:\n  # review UI\n  lavish: true\n`;
     const { input, store } = setup({ [PROJECT]: text });
-    setConfig(input, { key: "features.lavish", value: "false" });
+    await setConfig(input, { key: "features.lavish", value: "false" });
     expect(store.read(PROJECT)).toBe(text.replace("lavish: true", "lavish: false"));
   });
 
-  it("refuses both layer flags", () => {
+  it("refuses both layer flags", async () => {
     const { input } = setup({});
     expect(
-      refusal(setConfig(input, { key: "languages", value: "[]", global: true, local: true })).rule,
+      refusal(await setConfig(input, { key: "languages", value: "[]", global: true, local: true }))
+        .rule,
     ).toBe("input/invalid-argument");
   });
 
-  it("refuses a value that is not YAML", () => {
+  it("refuses a value that is not YAML", async () => {
     const { input } = setup({});
-    expect(refusal(setConfig(input, { key: "languages", value: "[go" })).rule).toBe(
+    expect(refusal(await setConfig(input, { key: "languages", value: "[go" })).rule).toBe(
       "input/invalid-argument",
     );
   });
 
-  it("refuses an unknown key and changes no file", () => {
+  it("refuses an unknown key and changes no file", async () => {
     const { input, store } = setup({ [PROJECT]: TOOLS });
-    const outcome = refusal(setConfig(input, { key: "tools.tests", value: "[]" }));
+    const outcome = refusal(await setConfig(input, { key: "tools.tests", value: "[]" }));
     expect(outcome.rule).toBe("policy/unknown-config-key");
     expect(outcome.why).toContain("did you mean tools.test?");
     expect(store.read(PROJECT)).toBe(TOOLS);
   });
 
-  it("refuses an invalid value and changes no file", () => {
+  it("refuses an invalid value and changes no file", async () => {
     const { input, store } = setup({ [PROJECT]: TOOLS });
-    const outcome = refusal(setConfig(input, { key: "tools.test.unit.scoped", value: "vitest" }));
+    const outcome = refusal(
+      await setConfig(input, { key: "tools.test.unit.scoped", value: "vitest" }),
+    );
     expect(outcome.rule).toBe("policy/config-invalid");
     expect(outcome.why).toContain("tools.test.unit.scoped");
     expect(store.read(PROJECT)).toBe(TOOLS);
     expect(store.exists(`${ROOT}/.bdk/.machine`)).toBe(false);
+  });
+
+  it("appends both ignored paths to .gitignore before writing", async () => {
+    const { input, store } = setup({ [`${ROOT}/.gitignore`]: "dist/\n" });
+    await setConfig(input, { key: "features.lavish", value: "false", local: true });
+    expect(store.read(`${ROOT}/.gitignore`)).toBe(
+      "dist/\n/.bdk/.machine/\n/.bdk/settings.local.yaml\n",
+    );
+  });
+
+  it("leaves .gitignore alone on a refused set", async () => {
+    const { input, store } = setup({});
+    refusal(await setConfig(input, { key: "tools.tests", value: "[]" }));
+    expect(store.exists(`${ROOT}/.gitignore`)).toBe(false);
   });
 });

@@ -128,6 +128,10 @@
                 "description": "Placeholder for the flag's value; absent for boolean flags."
               },
               "values": { "type": "array", "items": { "type": "string" } },
+              "repeatable": {
+                "const": true,
+                "description": "The flag may be given more than once and collects its values in order; every other flag is given at most once."
+              },
               "description": { "type": "string" }
             }
           },

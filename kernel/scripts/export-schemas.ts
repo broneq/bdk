@@ -8,6 +8,14 @@ import { dirname, join, posix } from "node:path";
 import { format, resolveConfig } from "prettier";
 import * as z from "zod";
 
+import {
+  changeListOutput,
+  changeNewOutput,
+  changeParkOutput,
+  changeResumeOutput,
+  changeStatusOutput,
+} from "../src/change/schema/outputs.ts";
+import { queryOutput } from "../src/query/schema/query.ts";
 import { configCheckOutput } from "../src/config/schema/check.ts";
 import { configSchemaOutput } from "../src/config/schema/schema.ts";
 import { configSetOutput } from "../src/config/schema/set.ts";
@@ -15,6 +23,13 @@ import { configShowOutput } from "../src/config/schema/show.ts";
 import { ctxOutput } from "../src/ctx/schema/ctx.ts";
 import { sessionStartOutput } from "../src/hooks/schema/session-start.ts";
 import { skillExistsOutput } from "../src/hooks/schema/skill-exists.ts";
+import {
+  logAddOutput,
+  logListOutput,
+  logResolveOutput,
+  logShowOutput,
+} from "../src/log/schema/outputs.ts";
+import { measureOutput } from "../src/measure/schema/measure.ts";
 import { settingsRegistry } from "../src/registrations.ts";
 import { doctorOutput } from "../src/service/schema/doctor.ts";
 import { versionOutput } from "../src/service/schema/version.ts";
@@ -39,6 +54,17 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/ctx.json", ctxOutput],
   ["output/hooks-session-start.json", sessionStartOutput],
   ["output/hooks-skill-exists.json", skillExistsOutput],
+  ["output/measure.json", measureOutput],
+  ["output/log-add.json", logAddOutput],
+  ["output/log-list.json", logListOutput],
+  ["output/log-show.json", logShowOutput],
+  ["output/log-resolve.json", logResolveOutput],
+  ["output/change-new.json", changeNewOutput],
+  ["output/change-status.json", changeStatusOutput],
+  ["output/change-list.json", changeListOutput],
+  ["output/change-resume.json", changeResumeOutput],
+  ["output/change-park.json", changeParkOutput],
+  ["output/query.json", queryOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {

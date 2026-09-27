@@ -7,15 +7,21 @@ import { commandLine } from "./record.ts";
 
 const IMPLICIT_FLAGS = ["--json", "--help"] as const;
 
+/** Kernel-stamped fields (P1): as a flag they are `input/forbidden-field` where declared. */
+const STAMPED = ["--id", "--at", "--author", "--source", "--fingerprint"] as const;
+
+/** A switch is `true`, a valued flag its string, a repeatable flag its values in order. */
+export type FlagValue = string | true | readonly string[];
+
 export interface Parsed {
   readonly positionals: Readonly<Record<string, string>>;
-  readonly flags: Readonly<Record<string, string | true>>;
+  readonly flags: Readonly<Record<string, FlagValue>>;
 }
 
 export function parse(record: CommandRecord, tokens: readonly string[]): Parsed | Refusal {
   const help = [`${commandLine(record)} --help`];
   const positionals: Record<string, string> = {};
-  const flags: Record<string, string | true> = {};
+  const flags: Record<string, FlagValue> = {};
   let position = 0;
 
   for (let i = 0; i < tokens.length; i++) {
@@ -46,9 +52,21 @@ export function parse(record: CommandRecord, tokens: readonly string[]): Parsed 
     if ((IMPLICIT_FLAGS as readonly string[]).includes(name) && inline === undefined) continue;
     const spec = record.flags.find((candidate) => candidate.name === name);
     if (spec === undefined) {
+      if (
+        (STAMPED as readonly string[]).includes(name) &&
+        record.refusals.includes("input/forbidden-field")
+      ) {
+        return refuse(
+          "input/forbidden-field",
+          `${name.slice(2)} is stamped by the kernel and is never input (P1)`,
+          [`${commandLine(record)} without ${name}`, ...help],
+        );
+      }
       return refuse("input/unknown-flag", `${commandLine(record)} has no flag ${name}`, help);
     }
-    if (name in flags) return refuse("input/invalid-argument", `${name} is given twice`, help);
+    if (name in flags && spec.repeatable !== true) {
+      return refuse("input/invalid-argument", `${name} is given twice`, help);
+    }
 
     if (!takesValue(spec)) {
       if (inline !== undefined) {
@@ -83,7 +101,10 @@ export function parse(record: CommandRecord, tokens: readonly string[]): Parsed 
         help,
       );
     }
-    flags[name] = value;
+    if (spec.repeatable === true) {
+      const previous = flags[name];
+      flags[name] = [...(Array.isArray(previous) ? (previous as readonly string[]) : []), value];
+    } else flags[name] = value;
   }
 
   const missing = record.args.find((arg) => arg.required && !(arg.name in positionals));
