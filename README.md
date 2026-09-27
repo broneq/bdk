@@ -31,16 +31,22 @@ A project keeps its settings in `.bdk/settings.yaml`, which `/bdk:setup` writes.
 
 The kernel reads the settings; skills and scripts ask it. Skills need Node >= 22.13.
 
-| Command                                             | What it does                                                                           |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `node "$BDK/dist/bdk.mjs" config show [<key>]`      | Prints the merged value as YAML (`--json` for JSON, `--origins` for the layers).       |
-| `node "$BDK/dist/bdk.mjs" config check`             | Validates every layer and refreshes `.bdk/.machine/config/resolved.yaml`.              |
-| `node "$BDK/dist/bdk.mjs" config set <key> <value>` | Edits `.bdk/settings.yaml` (`--global`, `--local` for the other files), comments kept. |
-| `node "$BDK/dist/bdk.mjs" config schema [<module>]` | Prints the JSON Schema; `--url` prints the modeline URL.                               |
+| Command                                             | What it does                                                                                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node "$BDK/dist/bdk.mjs" config show [<key>]`      | Prints the merged value as YAML (`--json` for JSON, `--origins` for the layers).                                                                        |
+| `node "$BDK/dist/bdk.mjs" config check`             | Validates every layer and refreshes `.bdk/.machine/config/resolved.yaml`.                                                                               |
+| `node "$BDK/dist/bdk.mjs" config set <key> <value>` | Edits `.bdk/settings.yaml` (`--global`, `--local` for the other files), comments kept. Adds the two BDK lines to `.gitignore` when no rule covers them. |
+| `node "$BDK/dist/bdk.mjs" config schema [<module>]` | Prints the JSON Schema; `--url` prints the modeline URL.                                                                                                |
 
 `$BDK` is the plugin directory. `features.lavish` (default `true`) turns on decision points in the browser through `lavish-axi` when it is installed. A key BDK does not declare is refused, with a "did you mean" hint or, for a key earlier versions wrote (`test-tools`, `quality`, `features.caveman`, the MCP flags), the key that replaces it or why it is gone. The one `SessionStart` hook (`bdk hooks session-start`) prints the shared foundation and, in a BDK project, one line per settings problem; it never blocks.
 
 A skill gets everything that depends on the settings (rule sets, language rules, the decision fragment, the configured tool commands, shared reference files) from `node "$BDK/dist/bdk.mjs" ctx skill <name>`, called by two context lines at the top of its body: a `!` line Claude Code runs at load time, and a fallback sentence that makes the model run the same command when the host did not. Fragments are prompt values like rule sets (`fragments/decision/lavish`, `fragments/decision/ask-user`), so a project extends or replaces them the same way. `.bdk/settings.json` from BDK 2 is not read; `bdk import` (planned) converts it.
+
+### Change state
+
+The kernel keeps each Change in `.bdk/changes/<id>/`, which is committed: `change.md` holds the intent and the starting profile, `log/` holds one file per ledger entry, so two branches of one Change merge without conflicts. `bdk change new | status | list | resume | park` open, inspect, park and rebind a Change; `bdk log add | list | show | resolve` write and read the ledger; `bdk measure [<range>]` reports diff signals (files, lines, modules); `bdk query "<select>"` runs read-only SQL over the index. Every command takes `--json`.
+
+What each machine derives stays out of git under `.bdk/.machine/`: the SQLite index `index.sqlite`, a cache rebuilt from the committed files whenever it is missing or stale, and the branch markers that bind a local branch to its Change. `change new` and `config set` add exactly `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore` when no rule covers them; `.bdk/` as a whole is never ignored.
 
 ---
 
