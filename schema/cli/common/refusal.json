@@ -44,6 +44,7 @@
         "policy/unknown-config-key",
         "policy/config-invalid",
         "policy/profile-downgrade",
+        "policy/detached-head",
         "policy/rule-format",
         "policy/duplicate-rule-id",
         "guard/subagent-git",

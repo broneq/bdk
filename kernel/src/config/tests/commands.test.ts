@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import commands from "../../../../schema/cli/commands.json" with { type: "json" };
 import { settingsRegistry } from "../../registrations.ts";
+import type { Git } from "../../shared/git/index.ts";
 import { createRegistry, loadIndex } from "../../shared/registry/index.ts";
 import { memoryStore } from "../../shared/store/index.ts";
 import { configRegistrations } from "../index.ts";
@@ -13,6 +14,13 @@ const HOME = "/home/dev";
 const MODELINE =
   "# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json";
 
+/** A git with no ignore rule: `check-ignore` answers "not ignored" for every path. */
+const git: Git = {
+  currentBranch: () => "main",
+  run: (args) =>
+    Promise.resolve({ code: args[0] === "check-ignore" ? 1 : 0, stdout: "", stderr: "" }),
+};
+
 async function run(argv: string[], files: Record<string, string> = {}) {
   const store = memoryStore({
     "/plugins/bdk/.claude-plugin/plugin.json": '{"version":"3.0.0"}',
@@ -20,7 +28,7 @@ async function run(argv: string[], files: Record<string, string> = {}) {
   });
   const registry = createRegistry(
     loadIndex(commands),
-    configRegistrations({ store, pluginRoot: "/plugins/bdk", settings: settingsRegistry() }),
+    configRegistrations({ store, git, pluginRoot: "/plugins/bdk", settings: settingsRegistry() }),
   );
   let stdout = "";
   const code = await registry.run({
@@ -33,6 +41,7 @@ async function run(argv: string[], files: Record<string, string> = {}) {
       home: HOME,
       workTree: () => ROOT,
       which: () => undefined,
+      readStdin: () => "",
     },
     streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
   });

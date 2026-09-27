@@ -3,6 +3,7 @@ import * as z from "zod";
 
 import { author, changeId, timestamp } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
+import { CHANGE_KINDS, CHANGE_SOURCES, PROFILES } from "../../vocabulary/index.ts";
 
 const VERSION = 1;
 
@@ -13,10 +14,10 @@ export const changeKind = {
     .strictObject({
       schema: z.literal(VERSION),
       id: changeId,
-      kind: z.enum(["feature", "bug"]),
-      profile: z.enum(["tiny", "small", "large"]),
+      kind: z.enum(CHANGE_KINDS),
+      profile: z.enum(PROFILES),
       intent: z.string().min(1),
-      source: z.enum(["user", "inferred"]),
+      source: z.enum(CHANGE_SOURCES),
       at: timestamp,
       author,
       overridden: z.array(z.string().min(1)),

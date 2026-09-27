@@ -41,6 +41,9 @@ const LAYER_MAY_IMPORT: Readonly<Record<Layer, readonly Layer[]>> = {
 /** Layers that import no package and no `node:` module. */
 const PURE_LAYERS: readonly Layer[] = ["domain", "render"];
 
+/** The shared module of plain state constants every layer may read; it imports nothing. */
+const VOCABULARY = "vocabulary";
+
 const NODE_BOUNDARY: Readonly<Record<string, readonly string[]>> = {
   fs: ["shared/store/", "shared/config/", "shared/git/"],
   child_process: ["shared/git/", "dispatch/use-cases/run.ts"],
@@ -159,6 +162,8 @@ export function importViolations(files: readonly SourceFile[], matrix: Matrix): 
 }
 
 function packageProblem(from: Place, specifier: string): string | undefined {
+  if (from.kind === "shared" && from.unit === VOCABULARY)
+    return "shared/vocabulary imports nothing";
   if (from.kind === "slice" && from.layer === CONFIG && specifier !== "zod") {
     return "config.ts imports only shared/config and zod";
   }
@@ -174,6 +179,8 @@ function packageProblem(from: Place, specifier: string): string | undefined {
 }
 
 function internalProblem(from: Place, to: Place, edge: Import, matrix: Matrix): string | undefined {
+  if (from.kind === "shared" && from.unit === VOCABULARY)
+    return "shared/vocabulary imports nothing";
   if (to.kind === "outside")
     return from.kind === "root"
       ? undefined
@@ -188,12 +195,15 @@ function internalProblem(from: Place, to: Place, edge: Import, matrix: Matrix): 
     if (from.kind !== "slice" || from.layer === undefined || from.layer === "index")
       return undefined;
     if (from.layer === "domain") {
-      return edge.typeOnly && (to.unit === "ids" || to.unit === "clock")
+      return to.unit === VOCABULARY || (edge.typeOnly && (to.unit === "ids" || to.unit === "clock"))
         ? undefined
-        : "domain/ imports nothing but types from shared/ids and shared/clock";
+        : "domain/ imports nothing but shared/vocabulary and types from shared/ids and shared/clock";
     }
-    if (from.layer === "render" || from.layer === "schema")
-      return `${from.layer}/ imports domain/ only`;
+    if (from.layer === "render" || from.layer === "schema") {
+      return to.unit === VOCABULARY
+        ? undefined
+        : `${from.layer}/ imports domain/ and shared/vocabulary only`;
+    }
     if (from.layer === CONFIG && to.unit !== "config") {
       return "config.ts imports only shared/config and zod";
     }

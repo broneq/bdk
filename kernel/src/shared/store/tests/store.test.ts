@@ -89,6 +89,36 @@ describe.each(implementations)("%s store", (_, make) => {
     expect(store.exists(join(root, "nope"))).toBe(false);
   });
 
+  it("stats files and directories and answers undefined for an absent path", () => {
+    const { root, store } = open({ "a.md": "abc", "d/": "" });
+    expect(store.stat(join(root, "a.md"))).toMatchObject({ size: 3, directory: false });
+    expect(store.stat(join(root, "d"))).toMatchObject({ directory: true });
+    expect(store.stat(join(root, "none"))).toBeUndefined();
+  });
+
+  it("gives a rewritten file a new inode, as a rename does", () => {
+    const { root, store } = open({ "a.md": "abc" });
+    const path = join(root, "a.md");
+    const before = store.stat(path);
+    store.write(path, "abd");
+    expect(store.stat(path)?.ino).not.toBe(before?.ino);
+  });
+
+  it("removes a file and ignores an absent one", () => {
+    const { root, store } = open({ "a.md": "abc" });
+    store.remove(join(root, "a.md"));
+    store.remove(join(root, "none"));
+    expect(store.exists(join(root, "a.md"))).toBe(false);
+  });
+
+  it("appends to a file, creating it and its parents", () => {
+    const { root, store } = open();
+    const path = join(root, "t/log.jsonl");
+    store.append(path, "a\n");
+    store.append(path, "b\n");
+    expect(store.read(path)).toBe("a\nb\n");
+  });
+
   describe("project root", () => {
     it("is the nearest directory with .bdk/ below the work tree root", () => {
       const { root, store } = open({ ".bdk/": "", "pkg/.bdk/": "", "pkg/src/x.ts": "" });

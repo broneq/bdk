@@ -52,6 +52,7 @@ describe("usage", () => {
         home: "/home/dev",
         workTree: () => "/",
         which: () => undefined,
+        readStdin: () => "",
       },
       streams: { stdout: (text) => (out += text), stderr: () => undefined },
     });

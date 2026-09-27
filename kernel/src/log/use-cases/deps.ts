@@ -1,0 +1,28 @@
+// What the log use cases work on: the store, git for the author, the index
+// opener and the clock, all injected so unit tests need no disk or git.
+import type { Clock } from "../../shared/clock/index.ts";
+import type { Git } from "../../shared/git/index.ts";
+import type { ActiveChange } from "../../shared/registry/index.ts";
+import type { IndexDb, IndexOpener, Store } from "../../shared/store/index.ts";
+import { refreshChange, withIndex } from "../../shared/store/index.ts";
+
+export interface LogDeps {
+  readonly store: Store;
+  readonly git: Git;
+  readonly openIndex: IndexOpener;
+  readonly clock: Clock;
+  /** Replaces `node:crypto` for ids in tests. */
+  readonly random?: () => number;
+}
+
+/** Opens the index with the active Change refreshed; true in `refreshed` when the slow path ran. */
+export function withChangeIndex<T>(
+  deps: LogDeps,
+  change: ActiveChange,
+  work: (index: IndexDb, refreshed: boolean) => T | Promise<T>,
+): Promise<T> {
+  return withIndex(deps.openIndex, deps.store, change.projectRoot, (index) => {
+    const refreshed = refreshChange(index, { id: change.id, dir: change.dir, archived: false });
+    return work(index, refreshed);
+  });
+}

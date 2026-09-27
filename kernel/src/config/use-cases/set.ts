@@ -1,6 +1,7 @@
 // `bdk config set` (design D-11): edits the layer file as a YAML document, so
 // its comments, key order and modeline survive, and writes it only after the
-// whole configuration with the edit validates.
+// whole configuration with the edit validates. Before that write the project
+// `.gitignore` gains the BDK paths no rule covers (`kernel-state`, Ignored paths).
 import { isCollection, isMap, isNode, isScalar, isSeq, parseDocument, YAMLParseError } from "yaml";
 import type { Document, Node } from "yaml";
 
@@ -12,8 +13,10 @@ import {
   writeSnapshot,
 } from "../../shared/config/index.ts";
 import type { KeyStep } from "../../shared/config/index.ts";
+import type { Git } from "../../shared/git/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
+import { ensureIgnored } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import type { FileLayerName, SetReport } from "../domain/report.ts";
 import { displayPath, isRefusal, resolve } from "./input.ts";
@@ -28,7 +31,10 @@ export interface SetRequest {
   readonly local?: boolean;
 }
 
-export function setConfig(input: ConfigInput, request: SetRequest): SetReport | Refusal {
+export async function setConfig(
+  input: ConfigInput & { readonly git: Git },
+  request: SetRequest,
+): Promise<SetReport | Refusal> {
   const { key } = request;
   const usage = `bdk config set ${key} <value>`;
   if (request.global === true && request.local === true) {
@@ -65,6 +71,7 @@ export function setConfig(input: ConfigInput, request: SetRequest): SetReport | 
 
   const resolved = resolve(input, { store: overlay(input.store, file.path, next) });
   if (isRefusal(resolved)) return resolved;
+  await ensureIgnored(input.store, input.git, input.projectRoot);
   input.store.write(file.path, next);
   writeSnapshot(input.store, input.projectRoot, resolved);
   return {
@@ -169,13 +176,17 @@ function withId(document: Document, value: Node, id: string): Node | Refusal {
 
 /** `store` with `path` holding `text`, for validating an edit before writing it. */
 function overlay(store: Store, path: string, text: string): Store {
+  const readOnly = (): never => {
+    throw new Error("the validation overlay is read-only");
+  };
   return {
     read: (candidate) => (candidate === path ? text : store.read(candidate)),
-    write: () => {
-      throw new Error("the validation overlay is read-only");
-    },
+    write: readOnly,
+    remove: readOnly,
+    append: readOnly,
     list: (dir) => store.list(dir),
     exists: (candidate) => candidate === path || store.exists(candidate),
     isDirectory: (candidate) => store.isDirectory(candidate),
+    stat: (candidate) => store.stat(candidate),
   };
 }

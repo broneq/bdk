@@ -4,7 +4,7 @@ import * as z from "zod";
 
 import { author, hash, ledgerId, relativePath, scope, ticketId, timestamp } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
-import { ENTRY_TYPES } from "./entry.ts";
+import { ENTRY_TYPES } from "../../vocabulary/index.ts";
 
 const VERSION = 1;
 

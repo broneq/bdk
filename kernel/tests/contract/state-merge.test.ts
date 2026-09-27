@@ -1,18 +1,27 @@
 // `kernel-state`, Two-branch merge (design D-11 of v3-t14-state-schema): two
-// branches of one Change write through `writeDocument` in a real repository
-// and merge with `git merge --no-ff`. T20 reruns the scenario on the output of
-// the real commands.
-import { execFileSync, spawnSync } from "node:child_process";
+// branches of one Change write in a real repository and merge with
+// `git merge --no-ff`. The first scenario runs the real commands (T20) in
+// process against the files; the next ones write through `writeDocument` the
+// documents no command writes yet (attempts, evidence, dispatch, rules).
+import { execFile, execFileSync, spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
+import commands from "../../../schema/cli/commands.json" with { type: "json" };
+import { registrations, settingsRegistry } from "../../src/registrations.ts";
+import { systemClock } from "../../src/shared/clock/index.ts";
+import { currentBranch, findWorkTree } from "../../src/shared/git/index.ts";
+import type { Git } from "../../src/shared/git/index.ts";
 import { newId } from "../../src/shared/ids/index.ts";
+import { createRegistry, loadIndex } from "../../src/shared/registry/index.ts";
 import {
+  fileIndex,
   fileStore,
   readChange,
   learningFingerprint,
   readDocument,
+  resolveActiveChange,
   writeDocument,
 } from "../../src/shared/store/index.ts";
 import { createFixture } from "../support/fixture.ts";
@@ -37,6 +46,59 @@ const GIT_ENV = {
 
 function git(root: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd: root, env: GIT_ENV, encoding: "utf8" });
+}
+
+/** The kernel's git port on GIT_ENV, so the author and config come from the test. */
+const testGit: Git = {
+  currentBranch,
+  run: (args, cwd) =>
+    new Promise((done) => {
+      execFile("git", args, { cwd, env: GIT_ENV, encoding: "utf8" }, (error, stdout, stderr) => {
+        const code = typeof error?.code === "number" ? error.code : error === null ? 0 : 1;
+        done({ code, stdout, stderr });
+      });
+    }),
+};
+
+/** `bdk <argv> --json` in process, on the real files; the parsed output, or a throw on a refusal. */
+async function kernel(root: string, ...argv: string[]): Promise<Record<string, unknown>> {
+  const store = fileStore();
+  const index = loadIndex(commands);
+  const registry = createRegistry(
+    index,
+    registrations({
+      store,
+      pluginRoot: REPO_ROOT,
+      contract: index.contract,
+      settings: settingsRegistry(),
+      git: testGit,
+      openIndex: fileIndex,
+      clock: systemClock,
+    }),
+    { activeChange: (where) => resolveActiveChange(store, testGit, where) },
+  );
+  let stdout = "";
+  const code = await registry.run({
+    argv: [...argv, "--json"],
+    cwd: root,
+    runtime: {
+      nodeVersion: process.versions.node,
+      env: { XDG_CONFIG_HOME: join(root, ".xdg") },
+      platform: process.platform,
+      home: root,
+      workTree: findWorkTree,
+      which: () => undefined,
+      readStdin: () => "",
+    },
+    streams: { stdout: (text) => (stdout += text), stderr: () => undefined },
+  });
+  if (code !== 0) throw new Error(`bdk ${argv.join(" ")} exited ${String(code)}: ${stdout}`);
+  return JSON.parse(stdout) as Record<string, unknown>;
+}
+
+function commit(root: string, message: string): void {
+  git(root, "add", "--all");
+  git(root, "commit", "--quiet", "-m", message);
 }
 
 function fixtureFiles(): Record<string, string> {
@@ -217,7 +279,54 @@ function validateTree(root: string): number {
 }
 
 describe("two-branch merge", () => {
-  it("merges parallel work on one Change without conflict", () => {
+  it("merges the output of the real commands on two branches without conflict", async () => {
+    repo = createFixture({ files: { "README.md": "# app\n" } });
+    const { root } = repo;
+    git(root, "checkout", "--quiet", "-b", "main");
+    const opened = await kernel(root, "change", "new", "Passwordless login");
+    const id = String(opened.change);
+    commit(root, "open the Change");
+    git(root, "branch", "a");
+    git(root, "branch", "b");
+    const entryId = (result: Record<string, unknown>) => (result.entry as { id: string }).id;
+
+    git(root, "checkout", "--quiet", "a");
+    await kernel(root, "change", "resume", id);
+    const finding = entryId(
+      await kernel(root, "log", "add", "finding", "expired link accepted", "--ref", "src/a.ts"),
+    );
+    await kernel(root, "log", "add", "learning", "Check expiry on redeem", "--ref", "src/a.ts");
+    await kernel(root, "log", "resolve", finding, "resolved", "--reason", "fixed on a");
+    await kernel(root, "change", "park", "--option", "ship", "--option", "wait");
+    await kernel(root, "change", "resume", id, "--option", "1");
+    commit(root, "work on a");
+
+    git(root, "checkout", "--quiet", "b");
+    await kernel(root, "change", "resume", id);
+    const assumption = (await kernel(root, "log", "list", "--type", "assumption")).items as {
+      id: string;
+    }[];
+    await kernel(root, "log", "resolve", assumption[0]?.id ?? "", "accepted");
+    await kernel(root, "log", "add", "decision", "Links expire after 15 min", "--ref", "design.md");
+    await kernel(root, "log", "add", "observation", "Mail provider rate limits", "--ref", "a.ts");
+    await kernel(root, "change", "resume", id, "--profile", "large");
+    commit(root, "work on b");
+
+    expect(merge(root)).toStrictEqual([]);
+    const files = readChange(fileStore(), join(root, ".bdk/changes", id));
+    await kernel(root, "change", "resume", id);
+    const listed = (await kernel(root, "log", "list", "--all")).items as { id: string }[];
+    const ids = listed.map((entry) => entry.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toHaveLength(8);
+    expect(ids).toHaveLength([...files.keys()].filter((path) => path.includes("/log/")).length);
+    expect(await kernel(root, "change", "status")).toMatchObject({
+      profile: "large",
+      source: "user",
+    });
+  });
+
+  it("merges parallel work on documents no command writes yet without conflict", () => {
     const root = forked();
     on(root, "a", () => {
       work(root, "a", "2026-09-26T08:00:00Z", "TQ-8", "auth-session");

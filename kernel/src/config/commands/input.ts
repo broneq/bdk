@@ -7,7 +7,7 @@ import type { ConfigDeps, ConfigInput } from "../use-cases/input.ts";
 
 type Context = Parameters<Handler>[0];
 
-export function configInput(deps: ConfigDeps, context: Context): ConfigInput {
+export function configInput(deps: ConfigDeps, context: Context): ConfigInput & ConfigDeps {
   const workTree = context.workTree ?? context.cwd;
   return {
     ...deps,

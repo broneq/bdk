@@ -1,0 +1,83 @@
+// Derived state (`kernel-state`, Derived state and mutation; design D-10 of
+// T20): pure functions over entry facts, so the index rows and the documents
+// of a unit test give the same answer. Nothing here is ever stored.
+import { PROFILES } from "../../vocabulary/index.ts";
+import type { Profile } from "../../vocabulary/index.ts";
+
+/** The fields of an entry the derivations read. */
+export interface EntryFacts {
+  readonly id: string;
+  readonly type: string;
+  readonly at: string;
+  readonly source: string;
+  readonly refs: readonly string[];
+  readonly supersedes?: string;
+  /** `to` of a transition. */
+  readonly to?: string;
+  readonly park?: boolean;
+  readonly profile?: string;
+  readonly options?: readonly string[];
+}
+
+/** Latest first: by `at`, ties broken by the greater id. */
+function latest<T extends EntryFacts>(entries: readonly T[]): T | undefined {
+  let best: T | undefined;
+  for (const entry of entries) {
+    if (best === undefined || entry.at > best.at || (entry.at === best.at && entry.id > best.id)) {
+      best = entry;
+    }
+  }
+  return best;
+}
+
+export function stageOf(entries: readonly EntryFacts[]): string {
+  return latest(entries.filter((entry) => entry.type === "transition"))?.to ?? "intent";
+}
+
+/** The park question that holds the Change, or undefined when it is not parked. */
+export function parkedQuestion<T extends EntryFacts>(entries: readonly T[]): T | undefined {
+  const question = latest(
+    entries.filter((entry) => entry.type === "question" && entry.park === true),
+  );
+  if (question === undefined) return undefined;
+  const resumed = entries.some(
+    (entry) => entry.type === "decision" && entry.refs.includes(question.id),
+  );
+  return resumed ? undefined : question;
+}
+
+/** Superseded id -> the id of the entry naming it in `supersedes`. */
+export function supersededBy(entries: readonly EntryFacts[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const entry of entries) {
+    if (entry.supersedes !== undefined && !map.has(entry.supersedes)) {
+      map.set(entry.supersedes, entry.id);
+    }
+  }
+  return map;
+}
+
+export function isProfile(value: string): value is Profile {
+  return (PROFILES as readonly string[]).includes(value);
+}
+
+export function profileRank(profile: Profile): number {
+  return PROFILES.indexOf(profile);
+}
+
+export function effectiveProfile(changeProfile: Profile, entries: readonly EntryFacts[]): Profile {
+  let result = changeProfile;
+  for (const entry of entries) {
+    const raised = entry.type === "decision" ? entry.profile : undefined;
+    if (raised !== undefined && isProfile(raised) && profileRank(raised) > profileRank(result)) {
+      result = raised;
+    }
+  }
+  return result;
+}
+
+/** A user Change is confirmed; an inferred one once a user transition exists. */
+export function isConfirmed(changeSource: string, entries: readonly EntryFacts[]): boolean {
+  if (changeSource !== "inferred") return true;
+  return entries.some((entry) => entry.type === "transition" && entry.source === "user");
+}

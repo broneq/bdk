@@ -3,11 +3,12 @@
 // contract shape of the record's `mode` (`kernel-cli`, Output modes).
 import { capLines, json, refusalText, stopBlock } from "../output/index.ts";
 import type { Streams } from "../output/index.ts";
-import { exitCodeFor, KernelRefusal, refuse } from "../refusal/index.ts";
+import { exitCodeFor, isRefusal, KernelRefusal, refuse } from "../refusal/index.ts";
 import type { Refusal } from "../refusal/index.ts";
 import { commandHelp, globalHelp, groupHelp } from "./help.ts";
 import { meetsNodeMinimum, nodeVersionRefusal } from "./node-version.ts";
 import { parse } from "./parse.ts";
+import type { FlagValue } from "./parse.ts";
 import type { CommandIndex, CommandRecord } from "./record.ts";
 import { commandLine } from "./record.ts";
 import { resolve, unknownCommand } from "./resolve.ts";
@@ -23,6 +24,27 @@ export interface Runtime {
   workTree(cwd: string): string | undefined;
   /** The executable `name` resolves to on `PATH`, or undefined when not installed. */
   which(name: string): string | undefined;
+  /** All of stdin; only a handler that reads a body calls it, so no other command blocks. */
+  readStdin(): string;
+}
+
+/** The Change bound to the current branch (`kernel-state`, Branch binding). */
+export interface ActiveChange {
+  readonly id: string;
+  /** Absolute path of the Change directory. */
+  readonly dir: string;
+  readonly projectRoot: string;
+  readonly branch: string;
+}
+
+/** Resolves the active Change for a Change-scoped record; `main.ts` binds `shared/store`'s. */
+export type ActiveChangeResolver = (where: {
+  readonly cwd: string;
+  readonly workTree: string;
+}) => ActiveChange | Refusal;
+
+export interface RegistryOptions {
+  readonly activeChange?: ActiveChangeResolver;
 }
 
 interface Invocation {
@@ -35,11 +57,13 @@ interface Invocation {
 interface CommandContext {
   readonly record: CommandRecord;
   readonly positionals: Readonly<Record<string, string>>;
-  readonly flags: Readonly<Record<string, string | true>>;
+  readonly flags: Readonly<Record<string, FlagValue>>;
   readonly json: boolean;
   readonly cwd: string;
   /** Absent only for the standalone `version`. */
   readonly workTree?: string;
+  /** Present exactly for a Change-scoped record. */
+  readonly change?: ActiveChange;
   readonly runtime: Runtime;
 }
 
@@ -66,6 +90,7 @@ interface Registry {
 export function createRegistry(
   index: CommandIndex,
   registrations: readonly Registration[],
+  options: RegistryOptions = {},
 ): Registry {
   const byId = new Map<string, Registration>();
   for (const registration of registrations) {
@@ -78,13 +103,14 @@ export function createRegistry(
 
   return {
     implementation: (id) => (byId.has(id) ? "handler" : "stub"),
-    run: (invocation) => run(index, byId, invocation),
+    run: (invocation) => run(index, byId, options, invocation),
   };
 }
 
 async function run(
   index: CommandIndex,
   byId: ReadonlyMap<string, Registration>,
+  options: RegistryOptions,
   invocation: Invocation,
 ): Promise<number> {
   const { argv, streams } = invocation;
@@ -115,7 +141,7 @@ async function run(
 
   let outcome: Answer | Refusal;
   try {
-    outcome = await dispatch(record, byId.get(record.id), rest, asJson, invocation);
+    outcome = await dispatch(record, byId.get(record.id), options, rest, asJson, invocation);
   } catch (error) {
     if (error instanceof KernelRefusal) outcome = error.refusal;
     else if (record.mode === "command") throw error;
@@ -141,6 +167,7 @@ async function run(
 async function dispatch(
   record: CommandRecord,
   registration: Registration | undefined,
+  options: RegistryOptions,
   rest: readonly string[],
   asJson: boolean,
   { cwd, runtime }: Invocation,
@@ -163,6 +190,17 @@ async function dispatch(
   }
 
   if (registration === undefined) return stub(record);
+  let change: ActiveChange | undefined;
+  if (record.changeScoped) {
+    if (options.activeChange === undefined || workTree === undefined) {
+      throw new Error(
+        `${record.id} is Change-scoped but the registry has no active-Change resolver`,
+      );
+    }
+    const resolved = options.activeChange({ cwd, workTree });
+    if (isRefusal(resolved)) return resolved;
+    change = resolved;
+  }
   const context: CommandContext = {
     record,
     positionals: parsed.positionals,
@@ -171,6 +209,7 @@ async function dispatch(
     cwd,
     runtime,
     ...(workTree === undefined ? {} : { workTree }),
+    ...(change === undefined ? {} : { change }),
   };
   return registration.handler(context);
 }
@@ -213,10 +252,6 @@ function writeCrash(streams: Streams, record: CommandRecord, error: unknown): nu
     }),
   );
   return 0;
-}
-
-function isRefusal(value: object): value is Refusal {
-  return "refused" in value;
 }
 
 function ensureNewline(text: string): string {

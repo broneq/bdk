@@ -3,6 +3,7 @@
 // exactly as the file system one does, so use-case tests need no disk.
 import { randomBytes } from "node:crypto";
 import {
+  appendFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -14,6 +15,14 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+/** What freshness checks compare (`kernel-state`, Rebuildable index). */
+export interface FileStat {
+  readonly mtimeMs: number;
+  readonly ino: number;
+  readonly size: number;
+  readonly directory: boolean;
+}
+
 export interface Store {
   /** The file's text, or undefined when there is no file at `path`. */
   read(path: string): string | undefined;
@@ -24,6 +33,12 @@ export interface Store {
   /** True for a file or a directory. */
   exists(path: string): boolean;
   isDirectory(path: string): boolean;
+  /** Undefined when there is nothing at `path`. */
+  stat(path: string): FileStat | undefined;
+  /** Removes a file; an absent file is not an error, a directory is. */
+  remove(path: string): void;
+  /** Appends to a file, creating it and its parents. */
+  append(path: string, content: string): void;
 }
 
 export function fileStore(): Store {
@@ -59,6 +74,23 @@ export function fileStore(): Store {
     },
     exists: (path) => existsSync(path),
     isDirectory: (path) => statSync(path, { throwIfNoEntry: false })?.isDirectory() === true,
+    stat(path) {
+      const stats = statSync(path, { throwIfNoEntry: false });
+      if (stats === undefined) return undefined;
+      return {
+        mtimeMs: stats.mtimeMs,
+        ino: stats.ino,
+        size: stats.size,
+        directory: stats.isDirectory(),
+      };
+    },
+    remove(path) {
+      rmSync(path, { force: true });
+    },
+    append(path, content) {
+      mkdirSync(dirname(path), { recursive: true });
+      appendFileSync(path, content);
+    },
   };
 }
 
@@ -66,9 +98,19 @@ export function fileStore(): Store {
 export function memoryStore(initial: Readonly<Record<string, string>> = {}): Store {
   const files = new Map<string, string>();
   const dirs = new Set<string>();
+  // A logical clock stands in for mtimes and inodes: every write is a new
+  // inode and touches its directory, as a rename on disk does.
+  let tick = 0;
+  const times = new Map<string, { mtimeMs: number; ino: number }>();
+  const touch = (path: string): void => {
+    tick++;
+    times.set(path, { mtimeMs: tick, ino: tick });
+  };
   const addParents = (path: string): void => {
+    touch(dirname(path));
     for (let dir = dirname(path); !dirs.has(dir); dir = dirname(dir)) {
       dirs.add(dir);
+      touch(dirname(dir));
       if (dirname(dir) === dir) break;
     }
   };
@@ -76,9 +118,11 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
     const path = resolve(key);
     if (key.endsWith("/")) {
       dirs.add(path);
+      touch(path);
       addParents(path);
     } else {
       files.set(path, content);
+      touch(path);
       addParents(path);
     }
   }
@@ -89,6 +133,7 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
       const target = resolve(path);
       if (dirs.has(target)) throw new Error(`EISDIR: ${target} is a directory`);
       files.set(target, content);
+      touch(target);
       addParents(target);
     },
     list(dir) {
@@ -105,7 +150,38 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
     },
     exists: (path) => files.has(resolve(path)) || dirs.has(resolve(path)),
     isDirectory: (path) => dirs.has(resolve(path)),
+    stat(path) {
+      const target = resolve(path);
+      const time = times.get(target);
+      if (time === undefined || (!files.has(target) && !dirs.has(target))) return undefined;
+      return {
+        ...time,
+        size: Buffer.byteLength(files.get(target) ?? ""),
+        directory: dirs.has(target),
+      };
+    },
+    remove(path) {
+      const target = resolve(path);
+      if (dirs.has(target)) throw new Error(`EISDIR: ${target} is a directory`);
+      if (files.delete(target)) touch(dirname(target));
+    },
+    append(path, content) {
+      const target = resolve(path);
+      if (dirs.has(target)) throw new Error(`EISDIR: ${target} is a directory`);
+      const existed = files.has(target);
+      files.set(target, (files.get(target) ?? "") + content);
+      if (existed) times.set(target, { mtimeMs: ++tick, ino: times.get(target)?.ino ?? tick });
+      else {
+        touch(target);
+        addParents(target);
+      }
+    },
   };
+}
+
+/** All of the process's stdin (`log add --body -`). */
+export function readStdin(): string {
+  return readFileSync(0, "utf8");
 }
 
 /** The nearest directory holding `.bdk/` from `cwd` up to the work tree root, else that root. */

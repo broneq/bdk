@@ -8,13 +8,13 @@ import { describe, expect, it } from "vitest";
 
 import { KernelRefusal } from "../../src/shared/refusal/index.ts";
 import {
-  ENTRY_TYPES,
   generateDesignIndex,
   generatePlanIndex,
   memoryStore,
   readDocument,
   STATE_KINDS,
 } from "../../src/shared/store/index.ts";
+import { ENTRY_TYPES } from "../../src/shared/vocabulary/index.ts";
 import { REPO_ROOT } from "../support/run.ts";
 import { stateValidatorFor } from "../support/schemas.ts";
 

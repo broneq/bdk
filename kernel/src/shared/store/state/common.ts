@@ -4,6 +4,7 @@
 import * as z from "zod";
 
 import { CHANGE_ID_PATTERN } from "../../ids/index.ts";
+import { AGENT_SOURCE_PATTERN, FIXED_SOURCES, TICKET_SCOPES } from "../../vocabulary/index.ts";
 
 /** One document kind: its current version and the steps that reach it. */
 export interface DocumentKind {
@@ -61,16 +62,16 @@ export const role = z
   .regex(/^[a-z][a-z0-9-]*$/)
   .meta({ description: "Role skill name (`implementer`, `plan-verifier`, ...)." });
 
-export const agentSource = z.string().regex(/^agent:[a-z][a-z0-9-]*$/);
+export const agentSource = z.string().regex(AGENT_SOURCE_PATTERN);
 
 export const provenance = z
-  .union([z.enum(["user", "policy", "inferred", "kernel"]), agentSource])
+  .union([z.enum(FIXED_SOURCES), agentSource])
   .meta({ description: "Who produced the content (P1): a fixed value or `agent:<role>`." });
 
 export const author = z.string().min(1).meta({ description: "Git `user.name <user.email>`." });
 
 export const severity = z.enum(["critical", "high", "medium", "low"]);
 
-export const scope = z.enum(["full", "high+", "blockers"]);
+export const scope = z.enum(TICKET_SCOPES);
 
 export const glob = z.string().min(1);

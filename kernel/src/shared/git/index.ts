@@ -19,6 +19,15 @@ export interface GitOptions {
   readonly executable?: string;
 }
 
+/**
+ * The git operations the kernel needs, as a port: `main.ts` binds `systemGit`,
+ * use-case tests a fake, so they run without a repository or a git binary.
+ */
+export interface Git {
+  run(args: readonly string[], cwd: string): Promise<GitResult>;
+  currentBranch(workTree: string): string | undefined;
+}
+
 /** The nearest directory from `cwd` up holding a `.git` directory or file. */
 export function findWorkTree(cwd: string): string | undefined {
   for (let dir = resolve(cwd); ; dir = dirname(dir)) {
@@ -37,7 +46,8 @@ export function runGit(
     execFile(
       options.executable ?? "git",
       args,
-      { cwd, encoding: "utf8" },
+      // A numstat of a large history exceeds the 1 MiB default.
+      { cwd, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 },
       (error, stdout, stderr) => {
         if (error !== null && "code" in error && error.code === "ENOENT") {
           fail(
@@ -58,6 +68,35 @@ export function runGit(
       },
     );
   });
+}
+
+/**
+ * The branch `HEAD` points at, read from the git directory (no process; a
+ * linked worktree's `.git` file is followed). Undefined for a detached `HEAD`
+ * or when there is no `HEAD` file.
+ */
+export function currentBranch(workTree: string): string | undefined {
+  let head: string;
+  try {
+    head = readFileSync(join(resolveGitDir(workTree), "HEAD"), "utf8");
+  } catch {
+    return undefined;
+  }
+  return /^ref: refs\/heads\/(.+?)\s*$/.exec(head)?.[1];
+}
+
+export const systemGit: Git = { run: (args, cwd) => runGit(args, cwd), currentBranch };
+
+/**
+ * `user.name <user.email>` as a commit would record it (`git var
+ * GIT_AUTHOR_IDENT` without its timestamp and zone), or `unknown` when git has
+ * no identity; a missing git is `runtime/git-missing` (design D-7 of T20).
+ */
+export async function authorIdent(git: Git, workTree: string): Promise<string> {
+  const result = await git.run(["var", "GIT_AUTHOR_IDENT"], workTree);
+  if (result.code !== 0) return "unknown";
+  const ident = result.stdout.trim().replace(/\s+\d+\s+[+-]\d{4}$/, "");
+  return ident === "" ? "unknown" : ident;
 }
 
 const IN_PROGRESS = [

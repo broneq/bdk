@@ -2,17 +2,23 @@ import { describe, expect, it } from "vitest";
 
 import { refuse } from "../../refusal/index.ts";
 import { createRegistry } from "../index.ts";
-import type { Handler, Registration, Runtime } from "../index.ts";
+import type { ActiveChangeResolver, Handler, Registration, Runtime } from "../index.ts";
 import { capture, INDEX, runtime } from "./support.ts";
 
 const ok: Handler = (ctx) => ({ data: { id: ctx.record.id, ...ctx.positionals }, text: "done" });
 
 async function run(
   argv: string[],
-  options: { registrations?: Registration[]; runtime?: Runtime } = {},
+  options: {
+    registrations?: Registration[];
+    runtime?: Runtime;
+    activeChange?: ActiveChangeResolver;
+  } = {},
 ) {
   const out = capture();
-  const registry = createRegistry(INDEX, options.registrations ?? []);
+  const registry = createRegistry(INDEX, options.registrations ?? [], {
+    ...(options.activeChange === undefined ? {} : { activeChange: options.activeChange }),
+  });
   const code = await registry.run({
     argv,
     cwd: "/repo/sub",
@@ -328,5 +334,140 @@ describe("registration", () => {
     const registry = createRegistry(INDEX, [{ id: "doctor", handler: ok }]);
     expect(registry.implementation("doctor")).toBe("handler");
     expect(registry.implementation("attempt-list")).toBe("stub");
+  });
+});
+
+const CHANGE = {
+  id: "2026-09-25-add-login",
+  dir: "/repo/.bdk/changes/2026-09-25-add-login",
+  projectRoot: "/repo",
+  branch: "feat/login",
+};
+const bound: ActiveChangeResolver = () => CHANGE;
+const echo: Handler = (ctx) => ({ data: { flags: ctx.flags, change: ctx.change }, text: "ok" });
+
+describe("repeatable flags", () => {
+  it("collects the values of a repeatable flag in order", async () => {
+    const result = await run(["log", "add", "--ref", "a.ts", "--ref=02-3", "--json"], {
+      registrations: [{ id: "log-add", handler: echo }],
+      activeChange: bound,
+    });
+    expect(result.code).toBe(0);
+    expect(result.json).toMatchObject({ flags: { "--ref": ["a.ts", "02-3"] } });
+  });
+
+  it("refuses a flag that is not repeatable given twice", async () => {
+    const result = await run(["log", "add", "--ticket", "A-1", "--ticket", "A-2", "--json"], {
+      registrations: [{ id: "log-add", handler: echo }],
+      activeChange: bound,
+    });
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+  });
+
+  it("marks a repeatable flag in --help", async () => {
+    const result = await run(["log", "add", "--help"]);
+    expect(result.stdout).toMatch(/--ref <ref> \(repeatable\)/);
+  });
+});
+
+describe("forbidden fields", () => {
+  it.each([
+    [["--source", "user"]],
+    [["--source=user"]],
+    [["--author", "x"]],
+    [["--id", "L-00000000"]],
+    [["--at"]],
+    [["--fingerprint", "sha256:0"]],
+  ])("refuses %j as input/forbidden-field where the record declares it", async (flag) => {
+    const result = await run(["log", "add", ...flag, "--json"], {
+      registrations: [{ id: "log-add", handler: echo }],
+      activeChange: bound,
+    });
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/forbidden-field" });
+  });
+
+  it("answers input/unknown-flag on a record without the rule", async () => {
+    const result = await run(["attempt", "list", "--source", "user", "--json"]);
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/unknown-flag" });
+  });
+});
+
+describe("active Change", () => {
+  it("passes the resolved Change to a Change-scoped handler", async () => {
+    const result = await run(["log", "add", "--json"], {
+      registrations: [{ id: "log-add", handler: echo }],
+      activeChange: bound,
+    });
+    expect(result.json).toMatchObject({ change: CHANGE });
+  });
+
+  it.each([
+    [
+      refuse("policy/no-active-change", "no active Change on feat/x", ["bdk change resume <id>"]),
+      2,
+    ],
+    [refuse("state/change-dir-missing", "the marker names a gone Change", ["bdk rebuild"]), 4],
+  ])("returns the resolver's refusal unchanged", async (refusal, code) => {
+    const result = await run(["log", "add", "--json"], {
+      registrations: [{ id: "log-add", handler: echo }],
+      activeChange: () => refusal,
+    });
+    expect(result.code).toBe(code);
+    expect(result.json).toStrictEqual(refusal);
+  });
+
+  it("passes no Change to a command that is not Change-scoped", async () => {
+    let seen: unknown = "unset";
+    await run(["doctor", "--json"], {
+      registrations: [
+        {
+          id: "doctor",
+          handler: (ctx) => {
+            seen = ctx.change;
+            return { data: {}, text: "" };
+          },
+        },
+      ],
+      activeChange: bound,
+    });
+    expect(seen).toBeUndefined();
+  });
+
+  it("fails loudly when a Change-scoped handler has no resolver", async () => {
+    await expect(
+      run(["log", "add", "--json"], { registrations: [{ id: "log-add", handler: echo }] }),
+    ).rejects.toThrow(/resolver/);
+  });
+});
+
+describe("stdin", () => {
+  it("is read only by a handler that asks for it", async () => {
+    let reads = 0;
+    const stdin = runtime({
+      readStdin: () => {
+        reads++;
+        return "body";
+      },
+    });
+    await run(["doctor", "--json"], {
+      registrations: [{ id: "doctor", handler: () => ({ data: {}, text: "" }) }],
+      runtime: stdin,
+    });
+    expect(reads).toBe(0);
+    const result = await run(["log", "add", "--json"], {
+      registrations: [
+        {
+          id: "log-add",
+          handler: (ctx) => ({ data: { body: ctx.runtime.readStdin() }, text: "" }),
+        },
+      ],
+      runtime: stdin,
+      activeChange: bound,
+    });
+    expect(reads).toBe(1);
+    expect(result.json).toStrictEqual({ body: "body" });
   });
 });

@@ -7,7 +7,9 @@ import { describe, expect, it } from "vitest";
 import commands from "../../schema/cli/commands.json" with { type: "json" };
 import { registrations, settingsRegistry } from "../src/registrations.ts";
 import { createRegistry, loadIndex } from "../src/shared/registry/index.ts";
-import { memoryStore } from "../src/shared/store/index.ts";
+import { systemClock } from "../src/shared/clock/index.ts";
+import { systemGit } from "../src/shared/git/index.ts";
+import { memoryIndex, memoryStore } from "../src/shared/store/index.ts";
 import { consumerViolations } from "./support/consumers.ts";
 import type { ConsumerWorld, Declared } from "./support/consumers.ts";
 import { importViolations, nodeViolations, readMatrix, readSources } from "./support/imports.ts";
@@ -79,6 +81,26 @@ describe("import scan", () => {
     ],
     ["domain/ importing a package", "graph/domain/node.ts", 'import * as z from "zod";'],
     [
+      "schema/ importing a shared module other than vocabulary",
+      "log/schema/extra.ts",
+      'import { x } from "../../shared/ids/index.ts";',
+    ],
+    [
+      "shared/vocabulary importing another shared module",
+      "shared/vocabulary/extra.ts",
+      'import { x } from "../ids/index.ts";',
+    ],
+    [
+      "shared/vocabulary importing its own files",
+      "shared/vocabulary/extra.ts",
+      'import { x } from "./index.ts";',
+    ],
+    [
+      "shared/vocabulary importing a package",
+      "shared/vocabulary/extra.ts",
+      'import * as z from "zod";',
+    ],
+    [
       "shared/ importing a slice",
       "shared/output/extra.ts",
       'import { x } from "../../service/index.ts";',
@@ -111,6 +133,13 @@ describe("import scan", () => {
   it("allows use-cases/ to read its own config.ts", () => {
     const text = 'import { toolsModule } from "../config.ts";';
     expect(importViolations(seeded("ctx/use-cases/skill.ts", text), matrix)).toStrictEqual([]);
+  });
+
+  it("allows shared/vocabulary in domain/, render/ and schema/", () => {
+    const text = 'import { ENTRY_TYPES } from "../../shared/vocabulary/index.ts";';
+    for (const path of ["graph/domain/node.ts", "log/render/extra.ts", "log/schema/extra.ts"]) {
+      expect(importViolations(seeded(path, text), matrix)).toStrictEqual([]);
+    }
   });
 
   it("allows type imports from shared/ids and shared/clock in domain/", () => {
@@ -192,7 +221,15 @@ describe("config consumers (S6)", async () => {
   const index = loadIndex(commands);
   const registry = createRegistry(
     index,
-    registrations({ store: memoryStore(), pluginRoot: "/", contract: index.contract, settings }),
+    registrations({
+      store: memoryStore(),
+      pluginRoot: "/",
+      contract: index.contract,
+      settings,
+      git: systemGit,
+      openIndex: memoryIndex,
+      clock: systemClock,
+    }),
   );
   const handlerSlices = new Set(
     index.commands

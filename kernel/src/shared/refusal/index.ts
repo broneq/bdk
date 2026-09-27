@@ -40,6 +40,7 @@ export const RULES = [
   "policy/unknown-config-key",
   "policy/config-invalid",
   "policy/profile-downgrade",
+  "policy/detached-head",
   "policy/rule-format",
   "policy/duplicate-rule-id",
   "guard/subagent-git",
@@ -93,6 +94,11 @@ export function refuse(rule: Rule, why: string, instead: readonly string[]): Ref
   if (why.length === 0) throw new Error(`refusal ${rule} needs a why`);
   if (first === undefined) throw new Error(`refusal ${rule} needs at least one instead`);
   return { refused: true, rule, why, instead: [first, ...rest] };
+}
+
+/** A use case answers a result or a refusal; the `refused` marker tells them apart. */
+export function isRefusal(value: object): value is Refusal {
+  return "refused" in value;
 }
 
 /** Carries a refusal out of code that cannot return one, e.g. a shared OS boundary. */
