@@ -182,12 +182,12 @@ describe("checkConfig", () => {
   });
 
   it("names the owner task of a planned key", () => {
-    const { input } = setup({ [PROJECT]: "policy:\n  gates:\n    design: true\n" });
+    const { input } = setup({ [PROJECT]: "policy:\n  budgets:\n    verifier: 3\n" });
     const outcome = refusal(checkConfig(input));
     expect(outcome.why).toBe(
-      "policy.gates.design in the project layer (.bdk/settings.yaml): lands with T21",
+      "policy.budgets.verifier in the project layer (.bdk/settings.yaml): lands with T22",
     );
-    expect(outcome.instead).toStrictEqual(["bdk config schema", "fix .bdk/settings.yaml"]);
+    expect(outcome.instead).toStrictEqual(["bdk config schema policy", "fix .bdk/settings.yaml"]);
   });
 
   it("names the replacement of a removed v2 key", () => {
@@ -277,9 +277,9 @@ describe("configSchema", () => {
 
   it("answers input/not-found for an unregistered module", () => {
     const { input } = setup({});
-    const outcome = refusal(configSchema(input, { module: "policy", url: false }));
+    const outcome = refusal(configSchema(input, { module: "execution", url: false }));
     expect(outcome.rule).toBe("input/not-found");
-    expect(outcome.why).toContain("policy");
+    expect(outcome.why).toContain("execution");
   });
 });
 

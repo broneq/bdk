@@ -4,7 +4,7 @@
 // `superseded_by` are never stale after a partial refresh.
 import type { DatabaseSync } from "node:sqlite";
 
-export const INDEX_SCHEMA_VERSION = 2;
+export const INDEX_SCHEMA_VERSION = 3;
 
 const TABLES = `
 CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -26,7 +26,7 @@ CREATE TABLE _entries (
   change_id TEXT NOT NULL, id TEXT NOT NULL, type TEXT NOT NULL, summary TEXT NOT NULL,
   status TEXT NOT NULL, source TEXT NOT NULL, author TEXT NOT NULL, at TEXT NOT NULL,
   ticket TEXT, supersedes TEXT, review INTEGER NOT NULL, severity TEXT, category TEXT,
-  fingerprint TEXT, routed_to TEXT, to_stage TEXT, gate TEXT, profile TEXT,
+  fingerprint TEXT, routed_to TEXT, to_stage TEXT, gate TEXT, input_hash TEXT, profile TEXT,
   park INTEGER NOT NULL, options TEXT, path TEXT NOT NULL,
   PRIMARY KEY (change_id, id)
 );
@@ -53,7 +53,7 @@ SELECT e.change_id, e.id, e.type, e.summary,
   CASE WHEN s.id IS NULL THEN NULL
        WHEN s.change_id = e.change_id THEN s.id
        ELSE s.change_id || '/' || s.id END AS superseded_by,
-  e.review, e.severity, e.category, e.fingerprint, e.routed_to, e.to_stage, e.gate,
+  e.review, e.severity, e.category, e.fingerprint, e.routed_to, e.to_stage, e.gate, e.input_hash,
   e.profile, e.park, e.options, e.path
 FROM _entries e
 LEFT JOIN _entries s ON s.rowid = (

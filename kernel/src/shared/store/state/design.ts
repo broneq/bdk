@@ -11,7 +11,14 @@ export const designKind = {
   name: "design",
   version: VERSION,
   schema: z
-    .strictObject({ schema: z.literal(VERSION), title: z.string().min(1) })
+    .strictObject({
+      schema: z.literal(VERSION),
+      title: z.string().min(1),
+      architecture: z.boolean().optional().meta({
+        description:
+          "`design.md` only: false for a product-only Change, which skips the architecture node (R-5).",
+      }),
+    })
     .meta({ title: "Design artifact", description: "`design.md` and `architecture.md`." }),
   migrations: [],
 } as const satisfies DocumentKind;

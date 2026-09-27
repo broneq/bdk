@@ -1,9 +1,6 @@
-// What the change use cases work on: the log slice's dependencies plus the
-// configuration registry, for the overridden keys `change new` records.
-import type { ConfigRegistry } from "../../shared/config/index.ts";
-import type { LogDeps } from "../../log/index.ts";
+// What the change use cases work on: the graph slice's dependencies (the log
+// slice's, the plugin root and the configuration registry), so status, new,
+// resume and list read the Change through its graph.
+import type { GraphDeps } from "../../graph/index.ts";
 
-export interface ChangeDeps extends LogDeps {
-  readonly pluginRoot: string;
-  readonly settings: ConfigRegistry;
-}
+export type ChangeDeps = GraphDeps;

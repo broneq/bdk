@@ -6,6 +6,8 @@ import { entryKind } from "../entry.ts";
 import * as example from "./examples.ts";
 import { issues, without } from "./issues.ts";
 
+const HASH = `sha256:${"a".repeat(64)}`;
+
 const change = changeKind.schema;
 const entry = entryKind.schema;
 
@@ -152,5 +154,12 @@ describe("entry", () => {
     expect(issues(entry, { ...example.transition, "skip-verify": "yes" })).toStrictEqual([
       "skip-verify",
     ]);
+  });
+
+  it("accepts a sha256 input-hash on a transition and rejects a malformed one", () => {
+    const done = { ...example.transition, source: "kernel", to: "design", "input-hash": HASH };
+    expect(issues(entry, done)).toStrictEqual([]);
+    expect(issues(entry, { ...done, "input-hash": "sha256:abc" })).toStrictEqual(["input-hash"]);
+    expect(issues(entry, { ...done, "input-hash": HASH.slice(7) })).toStrictEqual(["input-hash"]);
   });
 });

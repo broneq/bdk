@@ -72,6 +72,19 @@ export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Sec
   }
 }
 
+/**
+ * The resolved text of the rule set `rules/<category>`, as `ctx skill` puts
+ * it in a skill's context; the graph's instructions carry the same text.
+ */
+export function ruleSet(
+  store: CtxInput["store"],
+  resolved: Resolved,
+  category: string,
+): string | undefined {
+  const value = resolved.prompts.values.get(declared(rulePrompts, `rules/${category}`));
+  return value === undefined ? undefined : promptContent(store, value);
+}
+
 function prompt(input: CtxInput, resolved: Resolved, key: string): string {
   const value = resolved.prompts.values.get(key);
   if (value === undefined) throw new Error(`the prompt value ${key} has no file in any layer`);

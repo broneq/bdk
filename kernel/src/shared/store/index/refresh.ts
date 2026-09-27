@@ -188,8 +188,9 @@ function insertRows(
       database
         .prepare(
           `INSERT INTO _entries (change_id, id, type, summary, status, source, author, at, ticket,
-            supersedes, review, severity, category, fingerprint, routed_to, to_stage, gate, profile,
-            park, options, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            supersedes, review, severity, category, fingerprint, routed_to, to_stage, gate, input_hash,
+            profile, park, options, path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           location.id,
@@ -209,6 +210,7 @@ function insertRows(
           text(data["routed-to"]),
           text(data.to),
           text(data.gate),
+          text(data["input-hash"]),
           text(data.profile),
           flag(data.park),
           Array.isArray(data.options) ? JSON.stringify(data.options) : null,

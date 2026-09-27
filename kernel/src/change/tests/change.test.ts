@@ -2,6 +2,15 @@
 // (`kernel-cli/change`; `kernel-state`, Branch binding, Derived state).
 import { describe, expect, it } from "vitest";
 
+import {
+  harness as graphHarness,
+  passGate,
+  PLUGIN,
+  withPluginFiles,
+  writeDesign,
+  writeEntry as writeGraphEntry,
+  writePlanPart,
+} from "../../graph/tests/support.ts";
 import { logRegistrations } from "../../log/index.ts";
 import {
   AUTHOR,
@@ -48,6 +57,7 @@ interface Harness {
 }
 
 function harness(store: Store = memoryStore()): Harness {
+  withPluginFiles(store);
   const git = fakeGit();
   return {
     store,
@@ -59,7 +69,7 @@ function harness(store: Store = memoryStore()): Harness {
         openIndex: memoryIndex,
         clock: fixedClock(NOW),
         random: sequentialRandom(),
-        pluginRoot: "/plugins/bdk",
+        pluginRoot: PLUGIN,
         settings: settingsRegistry(),
       };
       return runBdk([...changeRegistrations(deps), ...logRegistrations(deps)], store, git, argv);
@@ -150,6 +160,7 @@ describe("change new", () => {
       profile: { value: "small", defaulted: true, entry: "L-00000001" },
       source: "user",
       overriddenKeys: [],
+      next: "/bdk:design",
     });
     const dir = `${ROOT}/.bdk/changes/${NEW_ID}`;
     const change = readDocument(h.store, `${dir}/change.md`);
@@ -259,6 +270,18 @@ describe("change new", () => {
     ).toMatchObject({ data: { overridden: ["policy.escalation.enabled"] } });
   });
 
+  it("opens the Change without next when the graph refuses the settings", async () => {
+    const h = harness();
+    h.store.write(`${ROOT}/.bdk/settings.local.yaml`, "policy:\n  budgets:\n    verifier: 3\n");
+
+    const result = await h.run(["change", "new", "Add dark mode", "--json"]);
+
+    expect(result.code).toBe(0);
+    expect(result.json).not.toHaveProperty("next");
+    const status = await h.run(["change", "status", "--json"]);
+    expect(status.json).toMatchObject({ rule: "policy/unknown-config-key" });
+  });
+
   it("refuses a branch that already has an active Change", async () => {
     const h = harness(repository());
     const result = await h.run(["change", "new", "Add dark mode", "--json"]);
@@ -306,20 +329,18 @@ describe("change status", () => {
   it("derives the stage, profile and confirmation from the ledger", async () => {
     const h = harness(repository());
     writeTransition(h.store, "L-t0000001", "2026-09-25T09:10:00Z", "design");
-    writeTransition(h.store, "L-t0000002", "2026-09-25T09:20:00Z", "plan");
+    writeTransition(h.store, "L-t0000002", "2026-09-25T09:20:00Z", "plan-part:02");
 
     const result = await h.run(["change", "status", "--json"]);
 
     expect(result.code).toBe(0);
-    expect(changeStatusOutput.parse(result.json)).toEqual({
+    expect(changeStatusOutput.parse(result.json)).toMatchObject({
       change: CHANGE,
       kind: "feature",
       profile: "small",
       source: "user",
       confirmed: true,
       stage: "plan",
-      nodes: [],
-      gates: [],
       parts: [],
       openTickets: [],
       overriddenKeys: [],
@@ -527,6 +548,7 @@ describe("change resume", () => {
       stage: "intent",
       resumedFrom: "parked",
       decision: "L-00000002",
+      next: "/bdk:design",
     });
     expect(entries(h.store, DIR)).toContainEqual(
       expect.objectContaining({
@@ -657,5 +679,99 @@ describe("change resume", () => {
     h.git.branch = undefined;
     const detached = await h.run(["change", "resume", CHANGE, "--json"]);
     expect(detached.json).toMatchObject({ rule: "policy/detached-head" });
+  });
+});
+
+describe("change on the artifact graph", () => {
+  const T0 = "2026-09-25T10:00:00Z";
+  const T1 = "2026-09-25T10:05:00Z";
+
+  it.each([
+    [[], "/bdk:design"],
+    [["--profile", "large", "--reason", "spans auth and mail"], "/bdk:design"],
+    [["--profile", "tiny", "--reason", "a typo"], "/bdk:plan"],
+    [["--kind", "bug"], "/bdk:plan"],
+  ])("change new %j answers next %s", async (flags, next) => {
+    const h = harness();
+    const result = await h.run(["change", "new", "Users log in with a link", ...flags, "--json"]);
+    expect(changeNewOutput.parse(result.json).next).toBe(next);
+  });
+
+  it("change resume answers the command of the gate the Change waits for", async () => {
+    const h = graphHarness();
+    writeDesign(h.store, "design");
+    writeDesign(h.store, "architecture");
+    await h.run(["done", "design"], T0);
+    await h.run(["done", "architecture"], T0);
+    await h.run(["change", "park"], T0);
+    const result = await h.run(["change", "resume", CHANGE, "--option", "1", "--json"], T1);
+    expect(changeResumeOutput.parse(result.json)).toMatchObject({
+      stage: "design",
+      next: "/bdk:plan",
+    });
+  });
+
+  it("change status fills the nodes and gates and derives the stage through the pipeline", async () => {
+    const h = graphHarness();
+    writeDesign(h.store, "design");
+    await h.run(["done", "design"], T0);
+    writeGraphEntry(h.store, {
+      type: "question",
+      at: T0,
+      review: true,
+      status: "proposed",
+      summary: "WebAuthn?",
+    });
+    const status = changeStatusOutput.parse((await h.run(["change", "status", "--json"], T1)).json);
+    expect(status.stage).toBe("design");
+    expect(status.nodes.map((node) => [node.id, node.state])).toStrictEqual([
+      ["intent", "done"],
+      ["design", "done"],
+      ["design-parts", "skipped"],
+      ["design-index", "skipped"],
+      ["architecture", "ready"],
+      ["gate:design", "blocked"],
+      ["plan", "blocked"],
+      ["plan-verify", "blocked"],
+      ["execute", "blocked"],
+      ["spec-delta", "skipped"],
+      ["review", "blocked"],
+      ["gate:review", "blocked"],
+      ["close", "blocked"],
+    ]);
+    expect(status.nodes[1]?.inputHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(status.nodes[2]?.why).toBe("profile small is not in profiles [large]");
+    expect(status.gates[0]).toMatchObject({
+      gate: "gate:design",
+      ready: false,
+      done: false,
+      command: "/bdk:plan",
+      pending: [expect.objectContaining({ summary: "WebAuthn?" })],
+    });
+  });
+
+  it("change status text stays within 100 lines on 8 parts and 1 000 entries", async () => {
+    const h = graphHarness();
+    h.store.write(`${ROOT}/.bdk/settings.yaml`, "policy:\n  gates:\n    design: auto\n");
+    writeDesign(h.store, "design");
+    writeDesign(h.store, "architecture");
+    await h.run(["done", "design"], T0);
+    await h.run(["done", "architecture"], T0);
+    passGate(h.store, "gate:design", "plan", T1, "policy");
+    for (let nn = 1; nn <= 8; nn++) writePlanPart(h.store, `0${String(nn)}`);
+    await h.run(["done", "plan"], T1);
+    for (let i = 0; i < 1000; i++) {
+      writeGraphEntry(h.store, {
+        type: "finding",
+        at: T1,
+        review: true,
+        summary: `Finding ${String(i)}`,
+      });
+    }
+    const result = await h.run(["change", "status"], T1);
+    const lines = result.stdout.trimEnd().split("\n");
+    expect(lines.length).toBeLessThanOrEqual(100);
+    expect(lines).toContain("  plan-part:01..08 done (8)");
+    expect(lines).toContain("gate:design: passed by policy");
   });
 });

@@ -18,8 +18,6 @@ export interface RemovedKey {
 }
 
 export const PLANNED_KEYS: readonly PlannedKey[] = [
-  { key: "policy.gates.design", owner: "T21" },
-  { key: "policy.gates.review", owner: "T21" },
   { key: "policy.budgets.task-redispatch", owner: "T22" },
   { key: "policy.budgets.verify-fix", owner: "T22" },
   { key: "policy.budgets.review-fix", owner: "T22" },

@@ -185,6 +185,33 @@
       },
       "additionalProperties": false
     },
+    "policy": {
+      "description": "How the pipeline proceeds: whether each human gate waits for the user.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "gates": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "design": {
+              "default": "manual",
+              "description": "auto lets a policy transition pass gate:design.",
+              "type": "string",
+              "enum": ["manual", "auto"]
+            },
+            "review": {
+              "default": "manual",
+              "description": "auto lets a policy transition pass gate:review.",
+              "type": "string",
+              "enum": ["manual", "auto"]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "prompts": {
       "description": "Where prompt values come from: a directory per layer and single mapped files.",
       "default": {},

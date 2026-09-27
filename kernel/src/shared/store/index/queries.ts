@@ -19,6 +19,8 @@ export interface EntryRow extends EntryFacts {
   readonly fingerprint?: string;
   readonly routedTo?: string;
   readonly gate?: string;
+  /** `input-hash` of a transition written by `done`. */
+  readonly inputHash?: string;
   /** Relative to the project root. */
   readonly path: string;
 }
@@ -234,6 +236,7 @@ function toEntry(row: Row, refs: readonly string[]): EntryRow {
     routedTo: optional(row.routed_to),
     to: optional(row.to_stage),
     gate: optional(row.gate),
+    inputHash: optional(row.input_hash),
     profile: optional(row.profile),
     park: row.park === 1 ? true : undefined,
     options: options === undefined ? undefined : (JSON.parse(options) as string[]),

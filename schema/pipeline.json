@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/pipeline.json",
+  "title": "BDK pipeline",
+  "description": "The artifact graph of a Change: stages and nodes. No expression but if: features.<name>, no loop, no path.",
+  "type": "object",
+  "properties": {
+    "schema": { "type": "number", "const": 1, "description": "Version of this file's format." },
+    "stages": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+            "description": "Stage id, in pipeline order."
+          },
+          "command": {
+            "type": "string",
+            "pattern": "^\\/bdk:[a-z][a-z0-9-]*$",
+            "description": "The stage command a user types, e.g. /bdk:plan."
+          }
+        },
+        "required": ["id", "command"],
+        "additionalProperties": false
+      }
+    },
+    "nodes": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|gate:[a-z][a-z0-9]*(?:-[a-z0-9]+)*)$",
+            "description": "Unique; a collection names its instances <kind>:<nn>."
+          },
+          "kind": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+            "description": "A registered artifact kind."
+          },
+          "stage": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+            "description": "A stage id of this file."
+          },
+          "requires": {
+            "description": "Node ids of this file; the graph is acyclic. Default empty.",
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "profiles": {
+            "description": "The node exists only for these effective profiles. Default all.",
+            "minItems": 1,
+            "type": "array",
+            "items": { "type": "string", "enum": ["tiny", "small", "large"] }
+          },
+          "kinds": {
+            "description": "The node exists only for these Change kinds. Default all.",
+            "minItems": 1,
+            "type": "array",
+            "items": { "type": "string", "enum": ["feature", "bug"] }
+          },
+          "if": {
+            "description": "features.<name>: the node exists only while the switch is true.",
+            "type": "string",
+            "pattern": "^features\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          },
+          "budget": {
+            "description": "The loop whose policy.budgets value bounds this node (T22).",
+            "type": "string",
+            "enum": ["task-redispatch", "verify-fix", "review-fix", "verifier", "not-run"]
+          },
+          "rules": {
+            "description": "Rule categories the instruction carries (rules/<category>).",
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" }
+          },
+          "policy": {
+            "description": "Gate only: the policy.gates key that makes it manual or auto.",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          },
+          "opens": {
+            "description": "Gate only: the stage whose command passes the gate.",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          }
+        },
+        "required": ["id", "kind", "stage"],
+        "additionalProperties": false,
+        "title": "pipeline node"
+      },
+      "description": "In pipeline order, the order next walks."
+    }
+  },
+  "required": ["schema", "stages", "nodes"],
+  "additionalProperties": false
+}

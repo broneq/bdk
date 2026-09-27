@@ -31,6 +31,8 @@ export type Profile = (typeof PROFILES)[number];
 
 export const CHANGE_KINDS = ["feature", "bug"] as const;
 
+export type ChangeKind = (typeof CHANGE_KINDS)[number];
+
 /** Who may open a Change: the user, or a skill on the user's behalf. */
 export const CHANGE_SOURCES = ["user", "inferred"] as const;
 
@@ -46,3 +48,11 @@ export const SOURCE_PATTERN = new RegExp(`^(${FIXED_SOURCES.join("|")}|${AGENT})
 
 /** How much of a review a retry reruns. */
 export const TICKET_SCOPES = ["full", "high+", "blockers"] as const;
+
+/** The states of an artifact graph node (`kernel-pipeline`, Node states). */
+export const NODE_STATES = ["blocked", "ready", "done", "stale", "skipped"] as const;
+
+export type NodeState = (typeof NODE_STATES)[number];
+
+/** The sources of a transition that passes a gate (`kernel-pipeline`, Gate). */
+export const GATE_PASSERS = ["user", "policy"] as const;

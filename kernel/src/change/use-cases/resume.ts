@@ -1,6 +1,7 @@
 // `bdk change resume <id>`: binds a Change to the current branch, leaves the
 // parked state with a chosen option, or raises the profile (S5, R-profil).
 // Every check runs before the first write.
+import { changeGraph, stageResolver } from "../../graph/index.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -11,8 +12,8 @@ import {
   listMarkers,
   profileRank,
   readMarker,
+  refreshChange,
   removeMarker,
-  stageOf,
   writeMarker,
 } from "../../shared/store/index.ts";
 import { resumeCommand } from "../domain/change.ts";
@@ -29,7 +30,7 @@ export interface ResumeInput {
 
 export function resumeChange(
   deps: ChangeDeps,
-  where: { readonly cwd: string; readonly workTree: string },
+  where: { readonly cwd: string; readonly workTree: string; readonly globalDir: string },
   input: ResumeInput,
 ): Promise<ResumeReport | Refusal> {
   const branch = deps.git.currentBranch(where.workTree);
@@ -76,7 +77,7 @@ export function resumeChange(
   const change = { id: input.id, dir: location.dir, projectRoot, branch };
 
   return withChangeIndex(deps, change, async (index) => {
-    const facts = changeFacts(index, change.id);
+    const facts = changeFacts(index, change.id, stageResolver(deps));
     const options = facts.parked?.options ?? [];
 
     let chosen: string | undefined;
@@ -179,10 +180,15 @@ export function resumeChange(
           : others.length > 0
             ? "other-branch"
             : "other-machine";
+    refreshChange(index, { id: change.id, dir: change.dir, archived: false });
+    // Settings the graph refuses leave `next` out here and answer on `bdk next`.
+    const graph = await changeGraph(deps, change, index, where.globalDir);
+    const next = "refused" in graph ? undefined : graph.next;
     return {
       change: change.id,
       branch,
-      stage: stageOf(facts.entries),
+      stage: facts.stage,
+      ...(next === undefined ? {} : { next }),
       ...(resumedFrom === undefined ? {} : { resumedFrom }),
       ...(decision === undefined ? {} : { decision }),
     };

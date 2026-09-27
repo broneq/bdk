@@ -57,6 +57,13 @@ describe("design documents", () => {
     expect(issues(designKind.schema, without(example.design, "title"))).toStrictEqual(["title"]);
   });
 
+  it("accepts an architecture flag on design.md and rejects a non-boolean", () => {
+    expect(issues(designKind.schema, { ...example.design, architecture: false })).toStrictEqual([]);
+    expect(issues(designKind.schema, { ...example.design, architecture: "no" })).toStrictEqual([
+      "architecture",
+    ]);
+  });
+
   it.each(Object.keys(example.designPart))("requires %s on a design part", (key) => {
     expect(issues(designPartKind.schema, without(example.designPart, key))).toStrictEqual([key]);
   });

@@ -30,8 +30,16 @@ function latest<T extends EntryFacts>(entries: readonly T[]): T | undefined {
   return best;
 }
 
-export function stageOf(entries: readonly EntryFacts[]): string {
-  return latest(entries.filter((entry) => entry.type === "transition"))?.to ?? "intent";
+/**
+ * The stage of the latest transition's target; `stageOfTarget` maps a node or
+ * instance id to its pipeline stage and a stage id to itself (T21).
+ */
+export function stageOf(
+  entries: readonly EntryFacts[],
+  stageOfTarget: (to: string) => string,
+): string {
+  const to = latest(entries.filter((entry) => entry.type === "transition"))?.to;
+  return to === undefined ? "intent" : stageOfTarget(to);
 }
 
 /** The park question that holds the Change, or undefined when it is not parked. */

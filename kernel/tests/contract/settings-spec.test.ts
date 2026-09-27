@@ -65,12 +65,23 @@ describe("removed v2 keys", () => {
 
 describe("prompt keys", () => {
   it("equal the table with default file, owner and consumer", () => {
-    const table = tableRows(spec, "Prompt key").map((row) => ({
-      key: backticked(column(row, "Prompt key"))[0],
-      defaultFile: backticked(column(row, "Default file (plugin)"))[0],
-      owner: column(row, "Owner"),
-      consumer: backticked(column(row, "Consumer")).join(", "),
-    }));
+    // A `<kind>` row stands for one literal key per registered artifact kind.
+    const table = tableRows(spec, "Prompt key").flatMap((row) => {
+      const key = backticked(column(row, "Prompt key"))[0] ?? "";
+      const defaultFile = backticked(column(row, "Default file (plugin)"))[0];
+      const fields = {
+        owner: column(row, "Owner"),
+        consumer: backticked(column(row, "Consumer")).join(", "),
+      };
+      if (!key.includes("<kind>")) return [{ key, defaultFile, ...fields }];
+      const prefix = key.slice(0, key.indexOf("<kind>"));
+      return settings.prompts
+        .filter((prompt) => prompt.key.startsWith(prefix))
+        .map((prompt) => {
+          const kind = prompt.key.slice(prefix.length);
+          return { key: prompt.key, defaultFile: defaultFile?.replace("<kind>", kind), ...fields };
+        });
+    });
     expect(table).toStrictEqual(
       settings.prompts.map((prompt) => ({
         key: prompt.key,
