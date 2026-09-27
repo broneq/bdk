@@ -124,6 +124,7 @@ pnpm knip             # unused files, exports and dependencies
 pnpm test:unit        # unit tests from source, with coverage thresholds
 pnpm test:e2e         # E2E tests through dist/bdk.mjs (run pnpm build first)
 pnpm test:contract    # contract, structure, bundle and dependency tests
+pnpm test:perf        # wall-clock budgets (*.perf.ts) through dist/bdk.mjs; CI does not run them
 ```
 
 - `dist/bdk.mjs` is committed and generated. Never edit it: change `kernel/src/`, run `pnpm build` and commit the result with the source. CI rebuilds it and fails when `git diff --exit-code dist/` shows a difference.

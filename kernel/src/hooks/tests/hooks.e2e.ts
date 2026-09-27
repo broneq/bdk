@@ -109,13 +109,6 @@ describe("bdk hooks session-start", () => {
     const root = fixture({ ".bdk/settings.yaml": MODELINE }).root;
     expect(bdk(["hooks", "session-start"], root).stdout).not.toMatch(/uvx|MCP server/);
   });
-
-  it("finishes within a second on a BDK project", () => {
-    const root = fixture({ ".bdk/settings.yaml": `${MODELINE}languages: [go]\n` }).root;
-    const start = performance.now();
-    bdk(["hooks", "session-start"], root);
-    expect(performance.now() - start).toBeLessThan(1000);
-  });
 });
 
 describe("bdk hooks skill-exists", () => {
