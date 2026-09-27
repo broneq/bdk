@@ -1,26 +1,6 @@
-# kernel-cli/query Specification
+# Spec Delta
 
-## Purpose
-
-Index queries (`query`). Read-only SQL over the rebuildable index (R-store).
-
-Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
-
-Representative refusal:
-
-```json refusal
-{
-  "refused": true,
-  "rule": "input/invalid-argument",
-  "why": "only a single SELECT is accepted; the statement starts with DELETE",
-  "instead": [
-    "bdk query \"select ...\"",
-    "bdk log resolve <id> <status> to change an entry"
-  ]
-}
-```
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: bdk query
 
