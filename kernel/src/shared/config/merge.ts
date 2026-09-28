@@ -24,6 +24,36 @@ export function mergeLayers(layers: readonly Layer[]): Merged {
   return { value, origins, problems };
 }
 
+/**
+ * `value` with the registry's default items under every array of mappings
+ * with an `id` that a layer set: a layer's items merge into the defaults by
+ * id (`kernel-settings`, Merge), as if the defaults were the lowest layer.
+ * Scalars, mappings and other arrays are left to the schema defaults.
+ */
+export function withDefaultItems(defaults: unknown, value: Mapping): Mapping {
+  const out: Mapping = { ...value };
+  if (!isRecord(defaults)) return out;
+  for (const [key, next] of Object.entries(value)) {
+    const lower = defaults[key];
+    if (isRecord(next)) out[key] = withDefaultItems(lower, next);
+    else if (isIdArray(next) && isIdArray(lower)) out[key] = itemsById(lower, next);
+  }
+  return out;
+}
+
+function itemsById(
+  lower: readonly (Mapping & { id: string })[],
+  higher: readonly (Mapping & { id: string })[],
+): Mapping[] {
+  const out: Mapping[] = [...lower];
+  for (const item of higher) {
+    const at = out.findIndex((existing) => existing.id === item.id);
+    if (at === -1) out.push(item);
+    else out[at] = { ...out[at], ...item };
+  }
+  return out;
+}
+
 interface Context {
   readonly layer: Layer;
   readonly origins: Record<string, FileLayerName>;

@@ -94,6 +94,10 @@ export const attemptCloseOutput = z
     fingerprints: z.array(z.string()).optional().meta({
       description: "Fingerprints stored on a fail record (`kernel-loops`, oscillation).",
     }),
+    rulesFinding: entryId.optional().meta({
+      description:
+        "The reviewed kernel finding written when an implementer ticket closes without `rules-read` (T23-D28).",
+    }),
     notRunCount: count.meta({ description: "The round's consecutive not-run closes." }),
     next: z.strictObject({
       action: z.enum(["post-task-steps", "retry", "narrow", "escalate", "parked"]),

@@ -52,7 +52,12 @@ function renderDefault(schema: z.ZodType): string {
   for (let current = schema; ;) {
     if (current instanceof z.ZodDefault) {
       const value: unknown = current.def.defaultValue;
-      return typeof value === "string" ? value : JSON.stringify(value);
+      if (typeof value === "string") return value;
+      // A default array merged by id reads as its ids; the descriptions live in the code.
+      if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
+        return value.map((item) => `\`${item.id}\``).join(", ");
+      }
+      return JSON.stringify(value);
     }
     if (current instanceof z.ZodOptional || current instanceof z.ZodPrefault) {
       current = current.unwrap() as z.ZodType;
@@ -60,6 +65,12 @@ function renderDefault(schema: z.ZodType): string {
       return "none";
     }
   }
+}
+
+function hasId(item: unknown): item is { readonly id: string } {
+  return (
+    typeof item === "object" && item !== null && typeof (item as { id?: unknown }).id === "string"
+  );
 }
 
 function renderType(schema: z.ZodType): string {

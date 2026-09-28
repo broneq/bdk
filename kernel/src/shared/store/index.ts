@@ -26,6 +26,7 @@ export type {
   TicketDispatch,
 } from "./index/queries.ts";
 export { migrateDocument, readChange, readDocument, writeDocument } from "./state/documents.ts";
+export { renderDocument } from "./state/render.ts";
 export type { KindOverrides, MigrationResult, StateDocument } from "./state/documents.ts";
 export { findingFingerprint, learningFingerprint, normalise } from "./state/fingerprint.ts";
 export { generateDesignIndex, generatePlanIndex, planWaves } from "./state/indexes.ts";
@@ -66,5 +67,6 @@ export type { TaskProgress } from "./progress.ts";
 export { rebuildChanges } from "./rebuild.ts";
 export type { RebuildResult } from "./rebuild.ts";
 export { readAttempts, readPlanParts, taskHolders } from "./work.ts";
+export { stampRulesRead } from "./rules-read.ts";
 export type { AttemptFile, PlanPartFile, PlanPartFrontmatter } from "./work.ts";
 export type { AttemptRecord } from "./state/attempt.ts";

@@ -1,24 +1,27 @@
 // Text renderings of the log commands (`kernel-cli`, Output modes).
 import type {
-  AppendResult,
+  AddResult,
   EntrySummary,
   IngestReport,
   ResolveResult,
   ShownEntry,
 } from "../domain/entry.ts";
 
-export function renderAdd(result: AppendResult): string {
+export function renderAdd(result: AddResult): string {
   const { entry } = result;
   const verb = result.deduplicated ? "already recorded as" : "added";
-  return `${verb} ${entry.id} (${entry.type}, ${entry.status}): ${entry.summary}\n${result.path}\n`;
+  const downgrade =
+    result.downgraded === undefined
+      ? ""
+      : `downgraded from blocker: category ${result.downgraded.category ?? "none"} is not a blocking category (P8)\n`;
+  return `${verb} ${entry.id} (${entry.type}, ${entry.status}): ${entry.summary}\n${downgrade}${result.path}\n`;
 }
 
 export function renderIngest(report: IngestReport): string {
-  const count = report.entries.length;
-  const lines = report.entries.map(
-    (entry) => `${entry.id} ${entry.type} ${entry.status}: ${entry.summary}`,
-  );
-  return `${String(count)} ${count === 1 ? "entry" : "entries"} ingested under ${report.ticket}\n${lines.map((line) => `${line}\n`).join("")}`;
+  const verb = report.replaced ? "replaced" : "stored";
+  return `report ${verb} for ${report.ticket} (${report.role}, ${report.status})
+${report.path}
+`;
 }
 
 /** Every matching entry, one per line; the command caps the lines unless `--all`. */

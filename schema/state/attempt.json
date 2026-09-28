@@ -61,7 +61,11 @@
         "additionalProperties": false
       }
     },
-    "dropped": { "type": "array", "items": { "$ref": "common.json#/$defs/ledgerId" } }
+    "dropped": { "type": "array", "items": { "$ref": "common.json#/$defs/ledgerId" } },
+    "rules-read": {
+      "description": "First `rules show --ticket` call for the ticket (risk R2); read by `attempt close`.",
+      "$ref": "common.json#/$defs/timestamp"
+    }
   },
   "required": [
     "schema",

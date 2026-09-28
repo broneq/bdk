@@ -81,6 +81,16 @@
     "deduplicated": {
       "type": "boolean",
       "description": "True when an equal entry existed: `entry` is that entry and nothing was written."
+    },
+    "downgraded": {
+      "description": "Present when a verifier blocker outside the blocking categories was written as an observation (P8).",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "blocker" },
+        "category": { "type": ["string", "null"] }
+      },
+      "required": ["type", "category"],
+      "additionalProperties": false
     }
   },
   "required": ["entry", "path", "deduplicated"],

@@ -8,17 +8,20 @@ import type { ChangeDeps } from "./change/index.ts";
 import { configRegistrations } from "./config/index.ts";
 import type { ConfigDeps } from "./config/index.ts";
 import { ctxConfig, ctxRegistrations } from "./ctx/index.ts";
+import { dispatchRegistrations } from "./dispatch/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
 import { graphConfig, graphRegistrations } from "./graph/index.ts";
 import { hooksRegistrations } from "./hooks/index.ts";
 import type { HooksDeps } from "./hooks/index.ts";
-import { logRegistrations } from "./log/index.ts";
+import { logConfig, logRegistrations } from "./log/index.ts";
 import type { LogDeps } from "./log/index.ts";
 import { measureRegistrations } from "./measure/index.ts";
 import { partRegistrations } from "./part/index.ts";
 import type { MeasureDeps } from "./measure/index.ts";
 import { queryRegistrations } from "./query/index.ts";
+import { rulesConfig, rulesRegistrations } from "./rules/index.ts";
+import type { RulesDeps } from "./rules/index.ts";
 import type { QueryDeps } from "./query/index.ts";
 import { serviceRegistrations } from "./service/index.ts";
 import type { ServiceDeps } from "./service/index.ts";
@@ -34,7 +37,8 @@ export type KernelDeps = ServiceDeps &
   MeasureDeps &
   LogDeps &
   ChangeDeps &
-  QueryDeps;
+  QueryDeps &
+  RulesDeps;
 
 export function registrations(deps: KernelDeps): Registration[] {
   return [
@@ -51,6 +55,8 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...commitRegistrations(deps),
     ...queryRegistrations(deps),
     ...exportRegistrations(deps),
+    ...rulesRegistrations(deps),
+    ...dispatchRegistrations(deps),
   ];
 }
 
@@ -58,12 +64,14 @@ export function registrations(deps: KernelDeps): Registration[] {
 export function settingsRegistry(): ConfigRegistry {
   return createConfigRegistry({
     modules: [
+      ...rulesConfig.modules,
       ...ctxConfig.modules,
       ...graphConfig.modules,
       ...attemptConfig.modules,
+      ...logConfig.modules,
       checkpointModule,
       promptsModule,
     ],
-    prompts: [...ctxConfig.prompts, ...graphConfig.prompts],
+    prompts: [...rulesConfig.prompts, ...ctxConfig.prompts, ...graphConfig.prompts],
   });
 }

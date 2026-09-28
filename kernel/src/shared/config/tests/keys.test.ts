@@ -34,7 +34,7 @@ describe("declaredSteps", () => {
 describe("unknownKeyMessage", () => {
   it.each([
     ["tools.tests", "unknown key; did you mean tools.test?"],
-    ["policy.log.max-observations", "lands with T23"],
+    ["policy.checkpoint.squash-at-close", "lands with T30"],
     ["features.serena", expect.stringMatching(/^removed v2 key: /) as unknown],
     ["zzz", "unknown key"],
   ])("explains %s", (key, message) => {

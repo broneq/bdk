@@ -34,6 +34,8 @@ export interface AttemptCloseReport {
   readonly diff?: DiffReport | undefined;
   readonly findings?: readonly string[] | undefined;
   readonly fingerprints?: readonly string[] | undefined;
+  /** The finding of an implementer that never read its rules (T23-D28). */
+  readonly rulesFinding?: string | undefined;
   readonly notRunCount: number;
   readonly next: {
     readonly action: NextAction;

@@ -3,6 +3,7 @@ schema: 1
 ticket: A-9c2dq6ra
 target: plan
 role: plan-verifier
+adapter: reader
 attempt: 1
 of: 2
 scope: full

@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { writeEntry } from "../../graph/tests/support.ts";
-import { readAttempts, readDocument } from "../../shared/store/index.ts";
+import { readAttempts, readDocument, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { attemptCloseOutput, attemptListOutput, attemptOpenOutput } from "../schema/outputs.ts";
 import { close, cycle, DIR, envelope, harness, open, started, underTicket } from "./support.ts";
@@ -512,5 +512,71 @@ describe("attempt list", () => {
     const h = harness();
     const text = await h.step(["attempt", "list"]);
     expect(text.stdout).toBe("No attempts.\n");
+  });
+});
+
+describe("attempt close: rules read (T23-D28)", () => {
+  /** The ticket's package with `role`, as `dispatch build` writes it. */
+  function packaged(h: Awaited<ReturnType<typeof started>>, ticket: string, role: string): void {
+    writeDocument(h.store, `${DIR}/dispatch/01-1-${role}-${ticket}.md`, {
+      data: {
+        schema: 1,
+        ticket,
+        target: "01-1",
+        role,
+        adapter: role === "implementer" ? "worker" : "reader",
+        attempt: 1,
+        of: 3,
+        scope: "full",
+        at: "2026-09-25T11:00:30Z",
+        "kernel-version": "3.0.0",
+        "template-hash": `sha256:${"0".repeat(64)}`,
+        report: `.bdk/changes/2026-09-25-login/reports/01-1-${role}-${ticket}.md`,
+      },
+      body: "",
+    });
+  }
+
+  it("writes one reviewed finding when an implementer closes without rules-read; the close goes on", async () => {
+    const h = await started();
+    const { ticket } = await open(h, "task-redispatch", "01-1");
+    packaged(h, ticket, "implementer");
+    const result = await close(h, ticket, "ok");
+    expect(result.code, result.stdout).toBe(0);
+    const report = attemptCloseOutput.parse(result.json);
+    expect(report.rulesFinding).toMatch(/^L-/);
+    expect(records(h.store)[0]).toMatchObject({ ticket, outcome: "ok" });
+    expect(entries(h.store, "finding")).toContainEqual(
+      expect.objectContaining({
+        id: report.rulesFinding,
+        source: "kernel",
+        review: true,
+        summary: `implementer closed ${ticket} without reading its rules`,
+        refs: ["01-1", ticket],
+      }),
+    );
+  });
+
+  it("writes none when the implementer read its rules", async () => {
+    const h = await started();
+    const { ticket } = await open(h, "task-redispatch", "01-1");
+    packaged(h, ticket, "implementer");
+    const [record] = readAttempts(h.store, DIR);
+    if (record === undefined) throw new Error("no attempt record");
+    writeDocument(h.store, record.path, {
+      data: { ...record.data, "rules-read": "2026-09-25T11:01:30Z" },
+      body: record.body,
+    });
+    const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
+    expect(report.rulesFinding).toBeUndefined();
+    expect(entries(h.store, "finding")).toStrictEqual([]);
+  });
+
+  it("writes none for another role", async () => {
+    const h = await started();
+    const { ticket } = await open(h, "task-redispatch", "01-1");
+    packaged(h, ticket, "runner");
+    const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
+    expect(report.rulesFinding).toBeUndefined();
   });
 });

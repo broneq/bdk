@@ -30,6 +30,7 @@ import {
   readDocument,
   readPlanParts,
   taskHolders,
+  ticketDispatch,
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { AttemptRecord, EntryRow, IndexDb } from "../../shared/store/index.ts";
@@ -121,6 +122,8 @@ export function closeAttempt(
       if ("refused" in written) return written;
       kernelFindings.push(written.id);
     }
+    const rulesFinding = await unreadRules(deps, change, index, record);
+    if (rulesFinding !== undefined && "refused" in rulesFinding) return rulesFinding;
     writeDocument(deps.store, record.file.path, {
       data: {
         ...record.file.data,
@@ -151,6 +154,7 @@ export function closeAttempt(
       ...(isChecked(record) ? { diff: diffReport(diff) } : {}),
       ...(kernelFindings.length === 0 ? {} : { findings: kernelFindings }),
       ...(prints.length === 0 ? {} : { fingerprints: prints }),
+      ...(rulesFinding === undefined ? {} : { rulesFinding: rulesFinding.id }),
       notRunCount: state.notRun,
       next,
     };
@@ -242,6 +246,36 @@ async function recordUndeclared(
       status: "proposed",
       refs: [target, ...paths],
       body: `${paths.map((path) => `- ${path}`).join("\n")}\n`,
+    },
+    { dedupe: true },
+  );
+  return "refused" in written ? written : { id: written.entry.id };
+}
+
+/**
+ * An `implementer` ticket closed without `rules show --ticket` (T23-D28, risk
+ * R2): one reviewed kernel finding; the close goes on. Undefined when the
+ * rules were read or the role is another.
+ */
+async function unreadRules(
+  deps: AttemptDeps,
+  change: ActiveChange,
+  index: IndexDb,
+  record: KeyedRecord,
+): Promise<{ readonly id: string } | Refusal | undefined> {
+  if (ticketDispatch(index, change.id, record.ticket)?.role !== "implementer") return undefined;
+  if (record.file.data["rules-read"] !== undefined) return undefined;
+  const written = await appendEntry(
+    deps,
+    change,
+    index,
+    {
+      type: "finding",
+      summary: `implementer closed ${record.ticket} without reading its rules`,
+      status: "proposed",
+      review: true,
+      refs: [record.target, record.ticket],
+      body: `The attempt record has no rules-read: \`bdk rules show --ticket ${record.ticket}\` never ran.\n`,
     },
     { dedupe: true },
   );

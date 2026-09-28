@@ -81,6 +81,41 @@ describe("bdk config show", () => {
     });
   });
 
+  it("exit 0: policy.verifier defaults to the six P8 categories and the not-a-fail list", () => {
+    const result = bdk(["config", "show", "policy.verifier", "--json"], fixture({}).root);
+    expect(result.code).toBe(0);
+    const value = (result.json as { value: Record<string, { id: string }[]> }).value;
+    const ids = (key: string) => (value[key] ?? []).map((item) => item.id);
+    expect(ids("blocking-categories")).toStrictEqual([
+      "architecture",
+      "security",
+      "irreversible-step",
+      "integration-failure",
+      "unresolved-decision",
+      "false-code-claim",
+    ]);
+    expect(ids("not-a-fail")).toStrictEqual([
+      "style",
+      "template-conformance",
+      "files-bookkeeping",
+      "wording",
+      "report-length",
+      "verification-defect",
+    ]);
+  });
+
+  it("exit 0: a project item extends the blocking categories by id", () => {
+    const root = fixture({
+      ".bdk/settings.yaml":
+        "policy:\n  verifier:\n    blocking-categories:\n      - id: accessibility\n        description: WCAG AA failure.\n",
+    }).root;
+    const result = bdk(["config", "show", "policy.verifier.blocking-categories", "--json"], root);
+    expect(result.code).toBe(0);
+    const ids = (result.json as { value: { id: string }[] }).value.map((item) => item.id);
+    expect(ids).toHaveLength(7);
+    expect(ids.at(-1)).toBe("accessibility");
+  });
+
   it("exit 0: text mode prints the tool list as YAML with its when text", () => {
     const result = bdk(
       ["config", "show", "tools.test"],
@@ -185,16 +220,26 @@ describe("bdk config check", () => {
     expect(refusal.why).toContain("did you mean tools.test?");
   });
 
+  it("exit 2: a prompt file for a role body is no prompt key (role-contracts)", () => {
+    const root = fixture({ ".bdk/prompts/roles/verifier.md": "Ours.\n" }).root;
+    const refusal = refused(
+      bdk(["config", "check", "--json"], root),
+      2,
+      "policy/unknown-config-key",
+    );
+    expect(refusal.why).toContain("roles/verifier");
+  });
+
   it("acceptance: key of a later task", () => {
     const root = fixture({
-      ".bdk/settings.yaml": "policy:\n  log:\n    max-observations: 3\n",
+      ".bdk/settings.yaml": "archive:\n  keep-evidence: true\n",
     }).root;
     const refusal = refused(
       bdk(["config", "check", "--json"], root),
       2,
       "policy/unknown-config-key",
     );
-    expect(refusal.why).toContain("policy.log.max-observations");
+    expect(refusal.why).toContain("archive.keep-evidence");
     expect(refusal.why).toContain("lands with T23");
   });
 
@@ -315,6 +360,15 @@ describe("bdk config schema", () => {
   it("exit 0: the whole schema equals the committed schema/settings.json", () => {
     const result = bdk(["config", "schema", "--json"], fixture().root);
     expect((result.json as { schema: unknown }).schema).toStrictEqual(
+      JSON.parse(readFileSync(join(REPO_ROOT, "schema/settings.json"), "utf8")),
+    );
+  });
+
+  it("exit 0: text mode prints the whole schema, past 100 lines", () => {
+    const result = bdk(["config", "schema"], fixture().root);
+    expect(result.code).toBe(0);
+    expect(result.stdout.split("\n").length).toBeGreaterThan(100);
+    expect(JSON.parse(result.stdout)).toStrictEqual(
       JSON.parse(readFileSync(join(REPO_ROOT, "schema/settings.json"), "utf8")),
     );
   });

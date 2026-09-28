@@ -50,8 +50,18 @@ describe("the layout maps each path to its kind", () => {
   ])("%s at %s", (kind, path, data) => {
     const store = memoryStore();
     writeDocument(store, path, { data, body: "Body.\n" });
-    expect(store.read(path)).toBe(renderDocument(data, "Body.\n"));
+    const style = kind === "report" ? "flow" : "block";
+    expect(store.read(path)).toBe(renderDocument(data, "Body.\n", style));
     expect(readDocument(store, path)).toStrictEqual({ kind, data, body: "Body.\n" });
+  });
+
+  it("writes the report envelope's lists in flow style", () => {
+    const store = memoryStore();
+    const path = at("reports/02-3-implementer-A-7f3kx2p9.md");
+    writeDocument(store, path, { data: example.report, body: "" });
+    expect(store.read(path)).toContain(
+      "files: [ src/auth/magic-link.ts, src/auth/magic-link.test.ts ]\n",
+    );
   });
 
   it("maps spec deltas and evidence captures without a schema", () => {

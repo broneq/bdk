@@ -9,6 +9,7 @@ import type { GraphDeps } from "./use-cases/deps.ts";
 export type { GraphDeps } from "./use-cases/deps.ts";
 export { changeGraph, graphSummary, stageResolver } from "./use-cases/status.ts";
 export { readGraph } from "./use-cases/graph.ts";
+export { artifactPaths } from "./use-cases/paths.ts";
 export type { ChangeGraph } from "./use-cases/graph.ts";
 export { checksOf } from "./use-cases/validate.ts";
 export { writeDoneMarker } from "./use-cases/done.ts";

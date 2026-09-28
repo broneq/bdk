@@ -55,7 +55,7 @@ var require_identity = __commonJS({
     var isMap3 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === MAP;
     var isPair = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === PAIR;
     var isScalar3 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === SCALAR;
-    var isSeq3 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === SEQ;
+    var isSeq2 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === SEQ;
     function isCollection2(node3) {
       if (node3 && typeof node3 === "object")
         switch (node3[NODE_TYPE]) {
@@ -92,7 +92,7 @@ var require_identity = __commonJS({
     exports.isNode = isNode2;
     exports.isPair = isPair;
     exports.isScalar = isScalar3;
-    exports.isSeq = isSeq3;
+    exports.isSeq = isSeq2;
   }
 });
 
@@ -104,7 +104,7 @@ var require_visit = __commonJS({
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
     var REMOVE = /* @__PURE__ */ Symbol("remove node");
-    function visit(node3, visitor) {
+    function visit2(node3, visitor) {
       const visitor_ = initVisitor(visitor);
       if (identity.isDocument(node3)) {
         const cd = visit_(null, node3.contents, visitor_, Object.freeze([node3]));
@@ -113,9 +113,9 @@ var require_visit = __commonJS({
       } else
         visit_(null, node3, visitor_, Object.freeze([]));
     }
-    visit.BREAK = BREAK;
-    visit.SKIP = SKIP;
-    visit.REMOVE = REMOVE;
+    visit2.BREAK = BREAK;
+    visit2.SKIP = SKIP;
+    visit2.REMOVE = REMOVE;
     function visit_(key, node3, visitor, path) {
       const ctrl = callVisitor(key, node3, visitor, path);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
@@ -249,7 +249,7 @@ var require_visit = __commonJS({
         throw new Error(`Cannot replace node with ${pt} parent`);
       }
     }
-    exports.visit = visit;
+    exports.visit = visit2;
     exports.visitAsync = visitAsync;
   }
 });
@@ -259,7 +259,7 @@ var require_directives = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/doc/directives.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var visit = require_visit();
+    var visit2 = require_visit();
     var escapeChars = {
       "!": "%21",
       ",": "%2C",
@@ -403,7 +403,7 @@ var require_directives = __commonJS({
         let tagNames;
         if (doc && tagEntries.length > 0 && identity.isNode(doc.contents)) {
           const tags = {};
-          visit.visit(doc.contents, (_key, node3) => {
+          visit2.visit(doc.contents, (_key, node3) => {
             if (identity.isNode(node3) && node3.tag)
               tags[node3.tag] = true;
           });
@@ -430,7 +430,7 @@ var require_anchors = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/doc/anchors.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var visit = require_visit();
+    var visit2 = require_visit();
     function anchorIsValid(anchor2) {
       if (/[\x00-\x19\s,[\]{}]/.test(anchor2)) {
         const sa = JSON.stringify(anchor2);
@@ -441,7 +441,7 @@ var require_anchors = __commonJS({
     }
     function anchorNames(root) {
       const anchors = /* @__PURE__ */ new Set();
-      visit.visit(root, {
+      visit2.visit(root, {
         Value(_key, node3) {
           if (node3.anchor)
             anchors.add(node3.anchor);
@@ -621,7 +621,7 @@ var require_Alias = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/nodes/Alias.js"(exports) {
     "use strict";
     var anchors = require_anchors();
-    var visit = require_visit();
+    var visit2 = require_visit();
     var identity = require_identity();
     var Node = require_Node();
     var toJS = require_toJS();
@@ -647,7 +647,7 @@ var require_Alias = __commonJS({
           nodes = ctx.aliasResolveCache;
         } else {
           nodes = [];
-          visit.visit(doc, {
+          visit2.visit(doc, {
             Node: (_key, node3) => {
               if (identity.isAlias(node3) || identity.hasAnchor(node3))
                 nodes.push(node3);
@@ -717,8 +717,8 @@ var require_Alias = __commonJS({
         return anchor2 ? anchor2.count * anchor2.aliasCount : 0;
       } else if (identity.isCollection(node3)) {
         let count2 = 0;
-        for (const item2 of node3.items) {
-          const c = getAliasCount(doc, item2, anchors2);
+        for (const item3 of node3.items) {
+          const c = getAliasCount(doc, item3, anchors2);
           if (c > count2)
             count2 = c;
         }
@@ -1006,14 +1006,14 @@ var require_foldFlowLines = __commonJS({
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
-    function foldFlowLines(text6, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+    function foldFlowLines(text7, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
       if (!lineWidth || lineWidth < 0)
-        return text6;
+        return text7;
       if (lineWidth < minContentWidth)
         minContentWidth = 0;
       const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
-      if (text6.length <= endStep)
-        return text6;
+      if (text7.length <= endStep)
+        return text7;
       const folds = [];
       const escapedFolds = {};
       let end = lineWidth - indent.length;
@@ -1030,14 +1030,14 @@ var require_foldFlowLines = __commonJS({
       let escStart = -1;
       let escEnd = -1;
       if (mode === FOLD_BLOCK) {
-        i = consumeMoreIndentedLines(text6, i, indent.length);
+        i = consumeMoreIndentedLines(text7, i, indent.length);
         if (i !== -1)
           end = i + endStep;
       }
-      for (let ch; ch = text6[i += 1]; ) {
+      for (let ch; ch = text7[i += 1]; ) {
         if (mode === FOLD_QUOTED && ch === "\\") {
           escStart = i;
-          switch (text6[i + 1]) {
+          switch (text7[i + 1]) {
             case "x":
               i += 3;
               break;
@@ -1054,12 +1054,12 @@ var require_foldFlowLines = __commonJS({
         }
         if (ch === "\n") {
           if (mode === FOLD_BLOCK)
-            i = consumeMoreIndentedLines(text6, i, indent.length);
+            i = consumeMoreIndentedLines(text7, i, indent.length);
           end = i + indent.length + endStep;
           split = void 0;
         } else {
           if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
-            const next = text6[i + 1];
+            const next = text7[i + 1];
             if (next && next !== " " && next !== "\n" && next !== "	")
               split = i;
           }
@@ -1071,12 +1071,12 @@ var require_foldFlowLines = __commonJS({
             } else if (mode === FOLD_QUOTED) {
               while (prev === " " || prev === "	") {
                 prev = ch;
-                ch = text6[i += 1];
+                ch = text7[i += 1];
                 overflow = true;
               }
               const j = i > escEnd + 1 ? i - 2 : escStart - 1;
               if (escapedFolds[j])
-                return text6;
+                return text7;
               folds.push(j);
               escapedFolds[j] = true;
               end = j + endStep;
@@ -1091,39 +1091,39 @@ var require_foldFlowLines = __commonJS({
       if (overflow && onOverflow)
         onOverflow();
       if (folds.length === 0)
-        return text6;
+        return text7;
       if (onFold)
         onFold();
-      let res = text6.slice(0, folds[0]);
+      let res = text7.slice(0, folds[0]);
       for (let i2 = 0; i2 < folds.length; ++i2) {
         const fold = folds[i2];
-        const end2 = folds[i2 + 1] || text6.length;
+        const end2 = folds[i2 + 1] || text7.length;
         if (fold === 0)
           res = `
-${indent}${text6.slice(0, end2)}`;
+${indent}${text7.slice(0, end2)}`;
         else {
           if (mode === FOLD_QUOTED && escapedFolds[fold])
-            res += `${text6[fold]}\\`;
+            res += `${text7[fold]}\\`;
           res += `
-${indent}${text6.slice(fold + 1, end2)}`;
+${indent}${text7.slice(fold + 1, end2)}`;
         }
       }
       return res;
     }
-    function consumeMoreIndentedLines(text6, i, indent) {
+    function consumeMoreIndentedLines(text7, i, indent) {
       let end = i;
       let start = i + 1;
-      let ch = text6[start];
+      let ch = text7[start];
       while (ch === " " || ch === "	") {
         if (i < start + indent) {
-          ch = text6[++i];
+          ch = text7[++i];
         } else {
           do {
-            ch = text6[++i];
+            ch = text7[++i];
           } while (ch && ch !== "\n");
           end = i;
           start = i + 1;
-          ch = text6[start];
+          ch = text7[start];
         }
       }
       return end;
@@ -1351,22 +1351,22 @@ ${indent}${body}`;
       return `|${header}
 ${indent}${start}${value}${end}`;
     }
-    function plainString(item2, ctx, onComment, onChompKeep) {
-      const { type, value } = item2;
+    function plainString(item3, ctx, onComment, onChompKeep) {
+      const { type, value } = item3;
       const { actualString, implicitKey, indent, indentStep, inFlow } = ctx;
       if (implicitKey && value.includes("\n") || inFlow && /[[\]{},]/.test(value)) {
         return quotedString(value, ctx);
       }
       if (/^[\n\t ,[\]{}#&*!|>'"%@`]|^[?-]$|^[?-][ \t]|[\n:][ \t]|[ \t]\n|[\n\t ]#|[\n\t :]$/.test(value)) {
-        return implicitKey || inFlow || !value.includes("\n") ? quotedString(value, ctx) : blockString(item2, ctx, onComment, onChompKeep);
+        return implicitKey || inFlow || !value.includes("\n") ? quotedString(value, ctx) : blockString(item3, ctx, onComment, onChompKeep);
       }
       if (!implicitKey && !inFlow && type !== Scalar.Scalar.PLAIN && value.includes("\n")) {
-        return blockString(item2, ctx, onComment, onChompKeep);
+        return blockString(item3, ctx, onComment, onChompKeep);
       }
       if (containsDocumentMarker(value)) {
         if (indent === "") {
           ctx.forceBlockIndent = true;
-          return blockString(item2, ctx, onComment, onChompKeep);
+          return blockString(item3, ctx, onComment, onChompKeep);
         } else if (implicitKey && indent === indentStep) {
           return quotedString(value, ctx);
         }
@@ -1381,10 +1381,10 @@ ${indent}`);
       }
       return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
     }
-    function stringifyString(item2, ctx, onComment, onChompKeep) {
+    function stringifyString(item3, ctx, onComment, onChompKeep) {
       const { implicitKey, inFlow } = ctx;
-      const ss = typeof item2.value === "string" ? item2 : Object.assign({}, item2, { value: String(item2.value) });
-      let { type } = item2;
+      const ss = typeof item3.value === "string" ? item3 : Object.assign({}, item3, { value: String(item3.value) });
+      let { type } = item3;
       if (type !== Scalar.Scalar.QUOTE_DOUBLE) {
         if (/[\x00-\x08\x0b-\x1f\x7f-\x9f\u{D800}-\u{DFFF}]/u.test(ss.value))
           type = Scalar.Scalar.QUOTE_DOUBLE;
@@ -1468,25 +1468,25 @@ var require_stringify = __commonJS({
         options: opt
       };
     }
-    function getTagObject(tags, item2) {
-      if (item2.tag) {
-        const match = tags.filter((t) => t.tag === item2.tag);
+    function getTagObject(tags, item3) {
+      if (item3.tag) {
+        const match = tags.filter((t) => t.tag === item3.tag);
         if (match.length > 0)
-          return match.find((t) => t.format === item2.format) ?? match[0];
+          return match.find((t) => t.format === item3.format) ?? match[0];
       }
       let tagObj = void 0;
       let obj;
-      if (identity.isScalar(item2)) {
-        obj = item2.value;
+      if (identity.isScalar(item3)) {
+        obj = item3.value;
         let match = tags.filter((t) => t.identify?.(obj));
         if (match.length > 1) {
           const testMatch = match.filter((t) => t.test);
           if (testMatch.length > 0)
             match = testMatch;
         }
-        tagObj = match.find((t) => t.format === item2.format) ?? match.find((t) => !t.format);
+        tagObj = match.find((t) => t.format === item3.format) ?? match.find((t) => !t.format);
       } else {
-        obj = item2;
+        obj = item3;
         tagObj = tags.find((t) => t.nodeClass && obj instanceof t.nodeClass);
       }
       if (!tagObj) {
@@ -1509,24 +1509,24 @@ var require_stringify = __commonJS({
         props.push(doc.directives.tagString(tag));
       return props.join(" ");
     }
-    function stringify5(item2, ctx, onComment, onChompKeep) {
-      if (identity.isPair(item2))
-        return item2.toString(ctx, onComment, onChompKeep);
-      if (identity.isAlias(item2)) {
+    function stringify5(item3, ctx, onComment, onChompKeep) {
+      if (identity.isPair(item3))
+        return item3.toString(ctx, onComment, onChompKeep);
+      if (identity.isAlias(item3)) {
         if (ctx.doc.directives)
-          return item2.toString(ctx);
-        if (ctx.resolvedAliases?.has(item2)) {
+          return item3.toString(ctx);
+        if (ctx.resolvedAliases?.has(item3)) {
           throw new TypeError(`Cannot stringify circular structure without alias nodes`);
         } else {
           if (ctx.resolvedAliases)
-            ctx.resolvedAliases.add(item2);
+            ctx.resolvedAliases.add(item3);
           else
-            ctx.resolvedAliases = /* @__PURE__ */ new Set([item2]);
-          item2 = item2.resolve(ctx.doc);
+            ctx.resolvedAliases = /* @__PURE__ */ new Set([item3]);
+          item3 = item3.resolve(ctx.doc);
         }
       }
       let tagObj = void 0;
-      const node3 = identity.isNode(item2) ? item2 : ctx.doc.createNode(item2, { onTagObj: (o) => tagObj = o });
+      const node3 = identity.isNode(item3) ? item3 : ctx.doc.createNode(item3, { onTagObj: (o) => tagObj = o });
       tagObj ?? (tagObj = getTagObject(ctx.doc.schema.tags, node3));
       const props = stringifyProps(node3, tagObj, ctx);
       if (props.length > 0)
@@ -1879,16 +1879,16 @@ var require_stringifyCollection = __commonJS({
       let chompKeep = false;
       const lines = [];
       for (let i = 0; i < items.length; ++i) {
-        const item2 = items[i];
+        const item3 = items[i];
         let comment2 = null;
-        if (identity.isNode(item2)) {
-          if (!chompKeep && item2.spaceBefore)
+        if (identity.isNode(item3)) {
+          if (!chompKeep && item3.spaceBefore)
             lines.push("");
-          addCommentBefore(ctx, lines, item2.commentBefore, chompKeep);
-          if (item2.comment)
-            comment2 = item2.comment;
-        } else if (identity.isPair(item2)) {
-          const ik = identity.isNode(item2.key) ? item2.key : null;
+          addCommentBefore(ctx, lines, item3.commentBefore, chompKeep);
+          if (item3.comment)
+            comment2 = item3.comment;
+        } else if (identity.isPair(item3)) {
+          const ik = identity.isNode(item3.key) ? item3.key : null;
           if (ik) {
             if (!chompKeep && ik.spaceBefore)
               lines.push("");
@@ -1896,7 +1896,7 @@ var require_stringifyCollection = __commonJS({
           }
         }
         chompKeep = false;
-        let str2 = stringify5.stringify(item2, itemCtx, () => comment2 = null, () => chompKeep = true);
+        let str2 = stringify5.stringify(item3, itemCtx, () => comment2 = null, () => chompKeep = true);
         if (comment2)
           str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment2));
         if (chompKeep && comment2)
@@ -1934,16 +1934,16 @@ ${indent}${line2}` : "\n";
       let linesAtValue = 0;
       const lines = [];
       for (let i = 0; i < items.length; ++i) {
-        const item2 = items[i];
+        const item3 = items[i];
         let comment = null;
-        if (identity.isNode(item2)) {
-          if (item2.spaceBefore)
+        if (identity.isNode(item3)) {
+          if (item3.spaceBefore)
             lines.push("");
-          addCommentBefore(ctx, lines, item2.commentBefore, false);
-          if (item2.comment)
-            comment = item2.comment;
-        } else if (identity.isPair(item2)) {
-          const ik = identity.isNode(item2.key) ? item2.key : null;
+          addCommentBefore(ctx, lines, item3.commentBefore, false);
+          if (item3.comment)
+            comment = item3.comment;
+        } else if (identity.isPair(item3)) {
+          const ik = identity.isNode(item3.key) ? item3.key : null;
           if (ik) {
             if (ik.spaceBefore)
               lines.push("");
@@ -1951,19 +1951,19 @@ ${indent}${line2}` : "\n";
             if (ik.comment)
               reqNewline = true;
           }
-          const iv = identity.isNode(item2.value) ? item2.value : null;
+          const iv = identity.isNode(item3.value) ? item3.value : null;
           if (iv) {
             if (iv.comment)
               comment = iv.comment;
             if (iv.commentBefore)
               reqNewline = true;
-          } else if (item2.value == null && ik?.comment) {
+          } else if (item3.value == null && ik?.comment) {
             comment = ik.comment;
           }
         }
         if (comment)
           reqNewline = true;
-        let str = stringify5.stringify(item2, itemCtx, () => comment = null);
+        let str = stringify5.stringify(item3, itemCtx, () => comment = null);
         reqNewline || (reqNewline = lines.length > linesAtValue || str.includes("\n"));
         if (i < items.length - 1) {
           str += ",";
@@ -2093,7 +2093,7 @@ var require_YAMLMap = __commonJS({
           else
             prev.value = _pair.value;
         } else if (sortEntries) {
-          const i = this.items.findIndex((item2) => sortEntries(_pair, item2) < 0);
+          const i = this.items.findIndex((item3) => sortEntries(_pair, item3) < 0);
           if (i === -1)
             this.items.push(_pair);
           else
@@ -2129,16 +2129,16 @@ var require_YAMLMap = __commonJS({
         const map = Type ? new Type() : ctx?.mapAsMap ? /* @__PURE__ */ new Map() : {};
         if (ctx?.onCreate)
           ctx.onCreate(map);
-        for (const item2 of this.items)
-          addPairToJSMap.addPairToJSMap(ctx, map, item2);
+        for (const item3 of this.items)
+          addPairToJSMap.addPairToJSMap(ctx, map, item3);
         return map;
       }
       toString(ctx, onComment, onChompKeep) {
         if (!ctx)
           return JSON.stringify(this);
-        for (const item2 of this.items) {
-          if (!identity.isPair(item2))
-            throw new Error(`Map items must all be pairs; found ${JSON.stringify(item2)} instead`);
+        for (const item3 of this.items) {
+          if (!identity.isPair(item3))
+            throw new Error(`Map items must all be pairs; found ${JSON.stringify(item3)} instead`);
         }
         if (!ctx.allNullValues && this.hasAllNullValues(false))
           ctx = Object.assign({}, ctx, { allNullValues: true });
@@ -2253,8 +2253,8 @@ var require_YAMLSeq = __commonJS({
         if (ctx?.onCreate)
           ctx.onCreate(seq);
         let i = 0;
-        for (const item2 of this.items)
-          seq.push(toJS.toJS(item2, String(i++), ctx));
+        for (const item3 of this.items)
+          seq.push(toJS.toJS(item3, String(i++), ctx));
         return seq;
       }
       toString(ctx, onComment, onChompKeep) {
@@ -2326,9 +2326,9 @@ var require_string = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:str",
       resolve: (str) => str,
-      stringify(item2, ctx, onComment, onChompKeep) {
+      stringify(item3, ctx, onComment, onChompKeep) {
         ctx = Object.assign({ actualString: true }, ctx);
-        return stringifyString.stringifyString(item2, ctx, onComment, onChompKeep);
+        return stringifyString.stringifyString(item3, ctx, onComment, onChompKeep);
       }
     };
     exports.string = string3;
@@ -2667,24 +2667,24 @@ var require_pairs = __commonJS({
     function resolvePairs(seq, onError) {
       if (identity.isSeq(seq)) {
         for (let i = 0; i < seq.items.length; ++i) {
-          let item2 = seq.items[i];
-          if (identity.isPair(item2))
+          let item3 = seq.items[i];
+          if (identity.isPair(item3))
             continue;
-          else if (identity.isMap(item2)) {
-            if (item2.items.length > 1)
+          else if (identity.isMap(item3)) {
+            if (item3.items.length > 1)
               onError("Each pair must have its own sequence indicator");
-            const pair = item2.items[0] || new Pair.Pair(new Scalar.Scalar(null));
-            if (item2.commentBefore)
-              pair.key.commentBefore = pair.key.commentBefore ? `${item2.commentBefore}
-${pair.key.commentBefore}` : item2.commentBefore;
-            if (item2.comment) {
+            const pair = item3.items[0] || new Pair.Pair(new Scalar.Scalar(null));
+            if (item3.commentBefore)
+              pair.key.commentBefore = pair.key.commentBefore ? `${item3.commentBefore}
+${pair.key.commentBefore}` : item3.commentBefore;
+            if (item3.comment) {
               const cn = pair.value ?? pair.key;
-              cn.comment = cn.comment ? `${item2.comment}
-${cn.comment}` : item2.comment;
+              cn.comment = cn.comment ? `${item3.comment}
+${cn.comment}` : item3.comment;
             }
-            item2 = pair;
+            item3 = pair;
           }
-          seq.items[i] = identity.isPair(item2) ? item2 : new Pair.Pair(item2);
+          seq.items[i] = identity.isPair(item3) ? item3 : new Pair.Pair(item3);
         }
       } else
         onError("Expected a sequence for this tag");
@@ -3414,7 +3414,7 @@ var require_Document = __commonJS({
     var applyReviver = require_applyReviver();
     var createNode = require_createNode();
     var directives = require_directives();
-    var Document = class _Document {
+    var Document2 = class _Document {
       constructor(value, replacer, options) {
         this.commentBefore = null;
         this.comment = null;
@@ -3704,7 +3704,7 @@ var require_Document = __commonJS({
         return true;
       throw new Error("Expected a YAML collection as document contents");
     }
-    exports.Document = Document;
+    exports.Document = Document2;
   }
 });
 
@@ -4002,10 +4002,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep7, value } = collItem;
+        const { start, key, sep: sep8, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep7?.[0],
+          next: key ?? sep8?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4019,7 +4019,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep7) {
+          if (!keyProps.anchor && !keyProps.tag && !sep8) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4043,7 +4043,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep7 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep8 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4059,7 +4059,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep7, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep8, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4150,7 +4150,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep7 = "";
+        let sep8 = "";
         for (const token of end) {
           const { source: source2, type } = token;
           switch (type) {
@@ -4164,13 +4164,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep7 + cb;
-              sep7 = "";
+                comment += sep8 + cb;
+              sep8 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep7 += source2;
+                sep8 += source2;
               hasSpace = true;
               break;
             default:
@@ -4213,18 +4213,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep7, value } = collItem;
+        const { start, key, sep: sep8, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep7?.[0],
+          next: key ?? sep8?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep7 && !value) {
+          if (!props.anchor && !props.tag && !sep8 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4278,8 +4278,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap3 && !sep7 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep7, null, props, onError);
+        if (!isMap3 && !sep8 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep8, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4291,7 +4291,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep7 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep8 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4302,8 +4302,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap3 && !props.found && ctx.options.strict) {
-              if (sep7)
-                for (const st of sep7) {
+              if (sep8)
+                for (const st of sep8) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4320,7 +4320,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep7, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep8, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4500,7 +4500,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep7 = "";
+      let sep8 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4517,24 +4517,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep7 + indent.slice(trimIndent) + content;
-          sep7 = "\n";
+          value += sep8 + indent.slice(trimIndent) + content;
+          sep8 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep7 === " ")
-            sep7 = "\n";
-          else if (!prevMoreIndented && sep7 === "\n")
-            sep7 = "\n\n";
-          value += sep7 + indent.slice(trimIndent) + content;
-          sep7 = "\n";
+          if (sep8 === " ")
+            sep8 = "\n";
+          else if (!prevMoreIndented && sep8 === "\n")
+            sep8 = "\n\n";
+          value += sep8 + indent.slice(trimIndent) + content;
+          sep8 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep7 === "\n")
+          if (sep8 === "\n")
             value += "\n";
           else
-            sep7 = "\n";
+            sep8 = "\n";
         } else {
-          value += sep7 + content;
-          sep7 = " ";
+          value += sep8 + content;
+          sep8 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4717,25 +4717,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd, "");
-      let sep7 = " ";
+      let sep8 = " ";
       let pos = line2.lastIndex;
       while (match = line2.exec(source2)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep7 === "\n")
-            res += sep7;
+          if (sep8 === "\n")
+            res += sep8;
           else
-            sep7 = "\n";
+            sep8 = "\n";
         } else {
-          res += sep7 + lm;
-          sep7 = " ";
+          res += sep8 + lm;
+          sep8 = " ";
         }
         pos = line2.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source2);
-      return res + sep7 + (match?.[1] ?? "");
+      return res + sep8 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source2, onError) {
       let res = "";
@@ -5069,13 +5069,13 @@ var require_compose_node = __commonJS({
 var require_compose_doc = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
-    var Document = require_Document();
+    var Document2 = require_Document();
     var composeNode = require_compose_node();
     var resolveEnd = require_resolve_end();
     var resolveProps = require_resolve_props();
     function composeDoc(options, directives, { offset, start, value, end }, onError) {
       const opts = Object.assign({ _directives: directives }, options);
-      const doc = new Document.Document(void 0, opts);
+      const doc = new Document2.Document(void 0, opts);
       const ctx = {
         atKey: false,
         atRoot: true,
@@ -5114,7 +5114,7 @@ var require_composer = __commonJS({
     "use strict";
     var node_process = __require("process");
     var directives = require_directives();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var errors = require_errors();
     var identity = require_identity();
     var composeDoc = require_compose_doc();
@@ -5303,7 +5303,7 @@ ${end.comment}` : end.comment;
           this.doc = null;
         } else if (forceDoc) {
           const opts = Object.assign({ _directives: this.directives }, this.options);
-          const doc = new Document.Document(void 0, opts);
+          const doc = new Document2.Document(void 0, opts);
           if (this.atDirectives)
             this.onError(endOffset, "MISSING_CHAR", "Missing directives-end indicator line");
           doc.range = [0, endOffset, endOffset];
@@ -5517,14 +5517,14 @@ var require_cst_stringify = __commonJS({
         case "block-map":
         case "block-seq": {
           let res = "";
-          for (const item2 of token.items)
-            res += stringifyItem(item2);
+          for (const item3 of token.items)
+            res += stringifyItem(item3);
           return res;
         }
         case "flow-collection": {
           let res = token.start.source;
-          for (const item2 of token.items)
-            res += stringifyItem(item2);
+          for (const item3 of token.items)
+            res += stringifyItem(item3);
           for (const st of token.end)
             res += st.source;
           return res;
@@ -5545,14 +5545,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep7, value }) {
+    function stringifyItem({ start, key, sep: sep8, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep7)
-        for (const st of sep7)
+      if (sep8)
+        for (const st of sep8)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -5569,39 +5569,39 @@ var require_cst_visit = __commonJS({
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
     var REMOVE = /* @__PURE__ */ Symbol("remove item");
-    function visit(cst, visitor) {
+    function visit2(cst, visitor) {
       if ("type" in cst && cst.type === "document")
         cst = { start: cst.start, value: cst.value };
       _visit(Object.freeze([]), cst, visitor);
     }
-    visit.BREAK = BREAK;
-    visit.SKIP = SKIP;
-    visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path) => {
-      let item2 = cst;
+    visit2.BREAK = BREAK;
+    visit2.SKIP = SKIP;
+    visit2.REMOVE = REMOVE;
+    visit2.itemAtPath = (cst, path) => {
+      let item3 = cst;
       for (const [field2, index2] of path) {
-        const tok = item2?.[field2];
+        const tok = item3?.[field2];
         if (tok && "items" in tok) {
-          item2 = tok.items[index2];
+          item3 = tok.items[index2];
         } else
           return void 0;
       }
-      return item2;
+      return item3;
     };
-    visit.parentCollection = (cst, path) => {
-      const parent = visit.itemAtPath(cst, path.slice(0, -1));
+    visit2.parentCollection = (cst, path) => {
+      const parent = visit2.itemAtPath(cst, path.slice(0, -1));
       const field2 = path[path.length - 1][0];
       const coll = parent?.[field2];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path, item2, visitor) {
-      let ctrl = visitor(item2, path);
+    function _visit(path, item3, visitor) {
+      let ctrl = visitor(item3, path);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field2 of ["key", "value"]) {
-        const token = item2[field2];
+        const token = item3[field2];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
             const ci = _visit(Object.freeze(path.concat([[field2, i]])), token.items[i], visitor);
@@ -5615,12 +5615,12 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field2 === "key")
-            ctrl = ctrl(item2, path);
+            ctrl = ctrl(item3, path);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item2, path) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item3, path) : ctrl;
     }
-    exports.visit = visit;
+    exports.visit = visit2;
   }
 });
 
@@ -6719,18 +6719,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep7;
+          let sep8;
           if (scalar.end) {
-            sep7 = scalar.end;
-            sep7.push(this.sourceToken);
+            sep8 = scalar.end;
+            sep8.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep7 = [this.sourceToken];
+            sep8 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep7 }]
+            items: [{ start, key: scalar, sep: sep8 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6883,15 +6883,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep7 = it.sep;
-                  sep7.push(this.sourceToken);
+                  const sep8 = it.sep;
+                  sep8.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep7 }]
+                    items: [{ start: start2, key, sep: sep8 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7085,13 +7085,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep7 = fc.end.splice(1, fc.end.length);
-            sep7.push(this.sourceToken);
+            const sep8 = fc.end.splice(1, fc.end.length);
+            sep8.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep7 }]
+              items: [{ start, key: fc, sep: sep8 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -7225,7 +7225,7 @@ var require_public_api = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
     var composer = require_composer();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var errors = require_errors();
     var log = require_log();
     var identity = require_identity();
@@ -7308,7 +7308,7 @@ var require_public_api = __commonJS({
       }
       if (identity.isDocument(value) && !_replacer)
         return value.toString(options);
-      return new Document.Document(value, _replacer, options).toString(options);
+      return new Document2.Document(value, _replacer, options).toString(options);
     }
     exports.parse = parse9;
     exports.parseAllDocuments = parseAllDocuments;
@@ -7322,7 +7322,7 @@ var require_dist = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/index.js"(exports) {
     "use strict";
     var composer = require_composer();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var Schema = require_Schema();
     var errors = require_errors();
     var Alias = require_Alias();
@@ -7336,9 +7336,9 @@ var require_dist = __commonJS({
     var lineCounter = require_line_counter();
     var parser = require_parser();
     var publicApi = require_public_api();
-    var visit = require_visit();
+    var visit2 = require_visit();
     exports.Composer = composer.Composer;
-    exports.Document = Document.Document;
+    exports.Document = Document2.Document;
     exports.Schema = Schema.Schema;
     exports.YAMLError = errors.YAMLError;
     exports.YAMLParseError = errors.YAMLParseError;
@@ -7364,8 +7364,8 @@ var require_dist = __commonJS({
     exports.parseAllDocuments = publicApi.parseAllDocuments;
     exports.parseDocument = publicApi.parseDocument;
     exports.stringify = publicApi.stringify;
-    exports.visit = visit.visit;
-    exports.visitAsync = visit.visitAsync;
+    exports.visit = visit2.visit;
+    exports.visitAsync = visit2.visitAsync;
   }
 });
 
@@ -8017,6 +8017,11 @@ var commands_default = {
           description: "The ticket the caller works under; required inside a dispatch, sets source: agent:<role>."
         },
         {
+          name: "--category",
+          value: "<id>",
+          description: "The entry's category; a verifier blocker needs one from policy.verifier.blocking-categories (P8)."
+        },
+        {
           name: "--review",
           description: "Mark the entry to be shown at the next gate."
         },
@@ -8036,7 +8041,6 @@ var commands_default = {
         "input/forbidden-field",
         "input/not-found",
         "policy/no-open-ticket",
-        "policy/observation-cap",
         "runtime/git-missing"
       ],
       writes: [".bdk/changes/<id>/log/"]
@@ -8044,35 +8048,30 @@ var commands_default = {
     {
       id: "log-ingest",
       argv: ["log", "ingest"],
-      summary: "Ingest a `bdk-entries` block from a read-only role's report under its ticket.",
-      availability: "orchestrator",
+      summary: "Store a role's report under its ticket.",
+      availability: "agent",
       mode: "command",
       slice: "log",
-      owner: "T22",
+      owner: "T23",
       changeScoped: true,
       args: [],
       flags: [
         {
           name: "--ticket",
           value: "<ticket>",
-          description: "Required; provenance comes from the ticket's role."
-        },
-        {
-          name: "--file",
-          value: "<path>",
-          description: "Read the block from a file instead of stdin (typically the report)."
+          description: "Required; the role and the report path come from the ticket's dispatch package."
         }
       ],
-      stdin: "The fenced bdk-entries YAML block, or a whole report containing exactly one such block.",
+      stdin: "The report: a YAML frontmatter holding the envelope, then the Markdown body.",
       output: "output/log-ingest.json",
       exits: [0, 2, 3, 4, 5],
       refusals: [
-        "input/invalid-block",
+        "input/invalid-envelope",
         "input/forbidden-field",
         "policy/no-open-ticket",
-        "policy/observation-cap"
+        "policy/entries-missing"
       ],
-      writes: [".bdk/changes/<id>/log/", ".bdk/changes/<id>/reports/"]
+      writes: [".bdk/changes/<id>/reports/"]
     },
     {
       id: "log-list",
@@ -8202,7 +8201,7 @@ var commands_default = {
     {
       id: "dispatch-build",
       argv: ["dispatch", "build"],
-      summary: "Build the dispatch package file for a task, role and ticket.",
+      summary: "Build the dispatch package file for a target, role and ticket.",
       availability: "orchestrator",
       mode: "command",
       slice: "dispatch",
@@ -8210,8 +8209,9 @@ var commands_default = {
       changeScoped: true,
       args: [
         {
-          name: "<task>",
-          required: true
+          name: "<target>",
+          required: true,
+          description: "The ticket's target: a task id, a part id, the Change id or an artifact id (`kernel-state`, Attempt record)."
         },
         {
           name: "<role>",
@@ -8246,7 +8246,8 @@ var commands_default = {
       args: [
         {
           name: "<ticket|path>",
-          required: true
+          required: true,
+          description: "A ticket id, or a package path relative to the working directory or absolute."
         }
       ],
       flags: [],
@@ -8624,24 +8625,30 @@ var commands_default = {
     {
       id: "rules-show",
       argv: ["rules", "show"],
-      summary: "Print one rule by id.",
-      availability: "read",
+      summary: "Print one rule by id, or the rules of a ticket.",
+      availability: "agent",
       mode: "command",
       slice: "rules",
-      owner: "T31",
-      changeScoped: false,
+      owner: "T23",
+      changeScoped: true,
       args: [
         {
           name: "<id>",
-          required: true,
-          description: "PREFIX-n, e.g. CQ-4."
+          required: false,
+          description: "PREFIX-n, e.g. CQ-4. Exactly one of <id> and --ticket."
         }
       ],
-      flags: [],
+      flags: [
+        {
+          name: "--ticket",
+          value: "<ticket>",
+          description: "Print the rules for the ticket's role and target."
+        }
+      ],
       output: "output/rules-show.json",
-      exits: [0, 3, 5],
-      refusals: ["input/not-found"],
-      writes: []
+      exits: [0, 2, 3, 4, 5],
+      refusals: ["input/not-found", "policy/no-open-ticket"],
+      writes: [".bdk/changes/<id>/attempts/"]
     },
     {
       id: "rules-add",
@@ -9030,7 +9037,7 @@ function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function isIdArray(value) {
-  return Array.isArray(value) && value.length > 0 && value.every((item2) => isRecord(item2) && typeof item2.id === "string");
+  return Array.isArray(value) && value.length > 0 && value.every((item3) => isRecord(item3) && typeof item3.id === "string");
 }
 function joinKey(prefix, segment) {
   return prefix === "" ? segment : `${prefix}.${segment}`;
@@ -9038,7 +9045,7 @@ function joinKey(prefix, segment) {
 function valueAt(root, steps) {
   let value = root;
   for (const { segment, id } of steps) {
-    if (id) value = isIdArray(value) ? value.find((item2) => item2.id === segment) : void 0;
+    if (id) value = isIdArray(value) ? value.find((item3) => item3.id === segment) : void 0;
     else value = isRecord(value) ? value[segment] : void 0;
     if (value === void 0) return void 0;
   }
@@ -9051,10 +9058,10 @@ function pluginRootOf(bundleUrl) {
   return dirname(dirname(fileURLToPath(bundleUrl)));
 }
 function readKernelVersion(store2, pluginRoot) {
-  const text6 = store2.read(join(pluginRoot, ".claude-plugin", "plugin.json"));
-  if (text6 === void 0) return UNKNOWN_VERSION;
+  const text7 = store2.read(join(pluginRoot, ".claude-plugin", "plugin.json"));
+  if (text7 === void 0) return UNKNOWN_VERSION;
   try {
-    const manifest = JSON.parse(text6);
+    const manifest = JSON.parse(text7);
     const version3 = isRecord(manifest) ? manifest.version : void 0;
     return typeof version3 === "string" ? version3 : UNKNOWN_VERSION;
   } catch {
@@ -9756,16 +9763,16 @@ function cleanEnum(obj) {
 }
 function base64ToUint8Array(base642) {
   const binaryString = atob(base642);
-  const bytes = new Uint8Array(binaryString.length);
+  const bytes2 = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+    bytes2[i] = binaryString.charCodeAt(i);
   }
-  return bytes;
+  return bytes2;
 }
-function uint8ArrayToBase64(bytes) {
+function uint8ArrayToBase64(bytes2) {
   let binaryString = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binaryString += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes2.length; i++) {
+    binaryString += String.fromCharCode(bytes2[i]);
   }
   return btoa(binaryString);
 }
@@ -9774,22 +9781,22 @@ function base64urlToUint8Array(base64url2) {
   const padding = "=".repeat((4 - base642.length % 4) % 4);
   return base64ToUint8Array(base642 + padding);
 }
-function uint8ArrayToBase64url(bytes) {
-  return uint8ArrayToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+function uint8ArrayToBase64url(bytes2) {
+  return uint8ArrayToBase64(bytes2).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 function hexToUint8Array(hex) {
   const cleanHex = hex.replace(/^0x/, "");
   if (cleanHex.length % 2 !== 0) {
     throw new Error("Invalid hex string length");
   }
-  const bytes = new Uint8Array(cleanHex.length / 2);
+  const bytes2 = new Uint8Array(cleanHex.length / 2);
   for (let i = 0; i < cleanHex.length; i += 2) {
-    bytes[i / 2] = Number.parseInt(cleanHex.slice(i, i + 2), 16);
+    bytes2[i / 2] = Number.parseInt(cleanHex.slice(i, i + 2), 16);
   }
-  return bytes;
+  return bytes2;
 }
-function uint8ArrayToHex(bytes) {
-  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+function uint8ArrayToHex(bytes2) {
+  return Array.from(bytes2).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 var Class = class {
   constructor(..._args) {
@@ -11295,9 +11302,9 @@ var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
     const proms = [];
     const abortEarly = ctx?.abortEarly;
     for (let i = 0; i < input.length; i++) {
-      const item2 = input[i];
+      const item3 = input[i];
       const result2 = def.element._zod.run({
-        value: item2,
+        value: item3,
         issues: []
       }, ctx);
       if (result2 instanceof Promise) {
@@ -13800,8 +13807,8 @@ function isTransforming(_schema, _ctx) {
     return false;
   }
   if (def.type === "tuple") {
-    for (const item2 of def.items) {
-      if (isTransforming(item2, ctx))
+    for (const item3 of def.items) {
+      if (isTransforming(item3, ctx))
         return true;
     }
     if (def.rest && isTransforming(def.rest, ctx))
@@ -14244,8 +14251,8 @@ var tupleProcessor = (schema, ctx, _json, params) => {
   }) : null;
   let minItems = def.items.length;
   while (minItems > 0) {
-    const item2 = def.items[minItems - 1];
-    const optional3 = ctx.io === "input" ? inputOptin(item2) !== void 0 : item2._zod.optout === "optional";
+    const item3 = def.items[minItems - 1];
+    const optional3 = ctx.io === "input" ? inputOptin(item3) !== void 0 : item3._zod.optout === "optional";
     if (!optional3)
       break;
     minItems--;
@@ -15585,7 +15592,7 @@ var RULES = [
   "input/missing-argument",
   "input/invalid-argument",
   "input/forbidden-field",
-  "input/invalid-block",
+  "input/invalid-envelope",
   "input/not-found",
   "policy/no-active-change",
   "policy/change-exists",
@@ -15605,7 +15612,6 @@ var RULES = [
   "policy/entries-missing",
   "policy/stale-evidence",
   "policy/missing-citation",
-  "policy/observation-cap",
   "policy/invalid-transition",
   "policy/git-in-progress",
   "policy/git-hook-failed",
@@ -15709,15 +15715,15 @@ function layerFiles(global, projectRoot) {
 function readLayers(store2, paths) {
   const layers = [];
   for (const { name, path } of layerFiles(paths.globalDir, paths.projectRoot)) {
-    const text6 = store2.read(path);
-    if (text6 !== void 0) layers.push({ name, path, text: text6, values: parseLayer(path, text6) });
+    const text7 = store2.read(path);
+    if (text7 !== void 0) layers.push({ name, path, text: text7, values: parseLayer(path, text7) });
   }
   return layers;
 }
-function parseLayer(path, text6) {
+function parseLayer(path, text7) {
   let values2;
   try {
-    values2 = (0, import_yaml.parse)(text6);
+    values2 = (0, import_yaml.parse)(text7);
   } catch (error2) {
     if (!(error2 instanceof import_yaml.YAMLParseError)) throw error2;
     const line2 = error2.linePos?.[0].line;
@@ -15780,6 +15786,25 @@ function mergeLayers(layers) {
   }
   return { value, origins, problems };
 }
+function withDefaultItems(defaults, value) {
+  const out = { ...value };
+  if (!isRecord(defaults)) return out;
+  for (const [key, next] of Object.entries(value)) {
+    const lower = defaults[key];
+    if (isRecord(next)) out[key] = withDefaultItems(lower, next);
+    else if (isIdArray(next) && isIdArray(lower)) out[key] = itemsById(lower, next);
+  }
+  return out;
+}
+function itemsById(lower, higher) {
+  const out = [...lower];
+  for (const item3 of higher) {
+    const at = out.findIndex((existing) => existing.id === item3.id);
+    if (at === -1) out.push(item3);
+    else out[at] = { ...out[at], ...item3 };
+  }
+  return out;
+}
 function mergeMapping(lower, higher, prefix, context) {
   const out = { ...lower };
   for (const [key, next] of Object.entries(higher)) {
@@ -15804,10 +15829,10 @@ function mergeValue(lower, next, path, context) {
 }
 function mergeById(lower, higher, path, context) {
   const out = [...lower];
-  for (const item2 of higher) {
-    const itemPath = joinKey(path, item2.id);
-    const at = out.findIndex((existing) => existing.id === item2.id);
-    const merged = mergeMapping(at === -1 ? {} : out[at] ?? {}, item2, itemPath, context);
+  for (const item3 of higher) {
+    const itemPath = joinKey(path, item3.id);
+    const at = out.findIndex((existing) => existing.id === item3.id);
+    const merged = mergeMapping(at === -1 ? {} : out[at] ?? {}, item3, itemPath, context);
     if (at === -1) out.push(merged);
     else out[at] = merged;
   }
@@ -15847,9 +15872,9 @@ function keyTree(schema) {
     return { kind: "object", children };
   }
   if (inner instanceof ZodArray) {
-    const item2 = unwrap(inner.element);
-    if (item2 instanceof ZodObject && "id" in item2.shape) {
-      return { kind: "idArray", item: keyTree(item2) };
+    const item3 = unwrap(inner.element);
+    if (item3 instanceof ZodObject && "id" in item3.shape) {
+      return { kind: "idArray", item: keyTree(item3) };
     }
     return LEAF;
   }
@@ -15900,8 +15925,6 @@ function keySteps(node3, key) {
 // kernel/src/shared/config/known.ts
 var PLANNED_KEYS = [
   { key: "policy.checkpoint.squash-at-close", owner: "T30" },
-  { key: "policy.verifier.blocking-categories", owner: "T23" },
-  { key: "policy.log.max-observations", owner: "T23" },
   { key: "execution.concurrency", owner: "T23" },
   { key: "archive.keep-evidence", owner: "T23" },
   { key: "rules.propose-when.changes", owner: "T31" },
@@ -16037,11 +16060,13 @@ function validateLayers(registry3, layers, merged) {
       problems.push(unknown2(key, layer, candidates));
     });
   }
-  const parsed = registry3.schema.safeParse(merged.value);
+  const defaults = registry3.schema.safeParse({});
+  const seeded = defaults.success ? { ...merged, value: withDefaultItems(defaults.data, merged.value) } : merged;
+  const parsed = registry3.schema.safeParse(seeded.value);
   if (!parsed.success) {
     const reported = problems.map((problem) => problem.key);
     for (const issue2 of parsed.error.issues) {
-      for (const problem of fromIssue(issue2, merged, layers, candidates)) {
+      for (const problem of fromIssue(issue2, seeded, layers, candidates)) {
         if (reported.some((key) => within(key, problem.key))) continue;
         problems.push(problem);
         reported.push(problem.key);
@@ -16059,9 +16084,9 @@ function walk(registry3, node3, value, prefix, report2) {
       else walk(registry3, childNode, child, path, report2);
     }
   } else if (node3.kind === "idArray" && Array.isArray(value)) {
-    value.forEach((item2, index2) => {
-      const id = isRecord(item2) && typeof item2.id === "string" ? item2.id : String(index2);
-      walk(registry3, node3.item, item2, joinKey(prefix, id), report2);
+    value.forEach((item3, index2) => {
+      const id = isRecord(item3) && typeof item3.id === "string" ? item3.id : String(index2);
+      walk(registry3, node3.item, item3, joinKey(prefix, id), report2);
     });
   } else if (node3.kind === "record" && isRecord(value) && prefix === "prompts.files") {
     for (const key of Object.keys(value)) {
@@ -16126,9 +16151,9 @@ function dotted(path, root) {
   let value = root;
   for (const segment of path) {
     if (Array.isArray(value) && typeof segment === "number") {
-      const item2 = value[segment];
-      key = joinKey(key, isRecord(item2) && typeof item2.id === "string" ? item2.id : String(segment));
-      value = item2;
+      const item3 = value[segment];
+      key = joinKey(key, isRecord(item3) && typeof item3.id === "string" ? item3.id : String(segment));
+      value = item3;
     } else {
       key = joinKey(key, String(segment));
       value = isRecord(value) ? value[String(segment)] : void 0;
@@ -16276,11 +16301,11 @@ function isCode(error2, code) {
 
 // kernel/src/shared/store/frontmatter.ts
 var BLOCK = /^---\r?\n(?<yaml>(?:.*\r?\n)*?)---(?:\r?\n|$)/;
-function splitFrontmatter(text6) {
-  const match = BLOCK.exec(text6);
+function splitFrontmatter(text7) {
+  const match = BLOCK.exec(text7);
   const yaml = match?.groups?.yaml;
-  if (match === null || yaml === void 0) return { body: text6 };
-  return { frontmatter: yaml, body: text6.slice(match[0].length) };
+  if (match === null || yaml === void 0) return { body: text7 };
+  return { frontmatter: yaml, body: text7.slice(match[0].length) };
 }
 
 // kernel/src/shared/store/which.ts
@@ -16500,12 +16525,12 @@ function newId(prefix, random) {
   }
   return `${prefix}${body}`;
 }
-function isChangeId(text6) {
-  return CHANGE_ID.test(text6);
+function isChangeId(text7) {
+  return CHANGE_ID.test(text7);
 }
-function parseReference(text6) {
-  const parts = text6.split("/");
-  if (parts.length === 1 && ID.test(text6)) return { id: text6 };
+function parseReference(text7) {
+  const parts = text7.split("/");
+  if (parts.length === 1 && ID.test(text7)) return { id: text7 };
   const [changeId2 = "", id = ""] = parts;
   if (parts.length === 2 && isChangeId(changeId2) && ID.test(id)) return { changeId: changeId2, id };
   return void 0;
@@ -16556,8 +16581,8 @@ function markerPath(projectRoot, branch) {
   return join5(markersDir(projectRoot), encodeBranch(branch));
 }
 function readMarker(store2, projectRoot, branch) {
-  const text6 = store2.read(markerPath(projectRoot, branch))?.trim();
-  return text6 === void 0 || text6 === "" ? void 0 : text6;
+  const text7 = store2.read(markerPath(projectRoot, branch))?.trim();
+  return text7 === void 0 || text7 === "" ? void 0 : text7;
 }
 function writeMarker(store2, projectRoot, branch, id) {
   store2.write(markerPath(projectRoot, branch), `${id}
@@ -16630,6 +16655,15 @@ var AGENT_SOURCE_PATTERN = new RegExp(`^${AGENT}$`);
 var SOURCE_PATTERN = new RegExp(`^(${FIXED_SOURCES.join("|")}|${AGENT})$`);
 var LOOPS = ["task-redispatch", "verify-fix", "review-fix", "verifier"];
 var TICKET_SCOPES = ["full", "high+", "blockers"];
+var ROLES = [
+  "implementer",
+  "verifier",
+  "design-verifier",
+  "reviewer",
+  "pr-reviewer",
+  "runner",
+  "scout"
+];
 
 // kernel/src/shared/store/state/common.ts
 var ID_BODY = "[0-9a-z]{8}";
@@ -16684,7 +16718,10 @@ var attemptKind = {
         symbol: string2().min(1).optional()
       })
     ).optional().meta({ description: "Finding fingerprints of a `fail` (oscillation check)." }),
-    dropped: array(ledgerId).optional()
+    dropped: array(ledgerId).optional(),
+    "rules-read": timestamp.optional().meta({
+      description: "First `rules show --ticket` call for the ticket (risk R2); read by `attempt close`."
+    })
   }).superRefine((data, context) => {
     const closed = data["closed-at"] !== void 0;
     if (closed === (data.outcome !== void 0)) return;
@@ -16784,8 +16821,8 @@ function parsePlanTasks(body) {
       current.labels.set(name, { value, items });
       continue;
     }
-    const item2 = ITEM.exec(line2);
-    if (items !== void 0 && item2 !== null) items.push(item2[1] ?? "");
+    const item3 = ITEM.exec(line2);
+    if (items !== void 0 && item3 !== null) items.push(item3[1] ?? "");
     else if (items !== void 0 && /^\s{2,}\S/.test(line2) && items.length > 0) {
       items[items.length - 1] = `${items.at(-1) ?? ""} ${line2.trim()}`;
     } else if (line2.trim() !== "") items = void 0;
@@ -16813,10 +16850,10 @@ function taskOf(draft, problems) {
   if (listed === void 0 || listed.items.length === 0) {
     problems.push(`task ${id} has no **Files:** list`);
   }
-  for (const item2 of listed?.items ?? []) {
-    const match = FILE_ITEM.exec(item2);
+  for (const item3 of listed?.items ?? []) {
+    const match = FILE_ITEM.exec(item3);
     if (match === null) {
-      problems.push(`task ${id}: **Files:** item '${item2}' holds no backticked path`);
+      problems.push(`task ${id}: **Files:** item '${item3}' holds no backticked path`);
       continue;
     }
     const action = match[1];
@@ -16842,8 +16879,8 @@ function taskOf(draft, problems) {
     ...stopRule === void 0 || stopRule === "" ? {} : { stopRule }
   };
 }
-function hasPlaceholder(text6) {
-  const trimmed = text6.trim();
+function hasPlaceholder(text7) {
+  const trimmed = text7.trim();
   return /\b(?:TODO|TBD|FIXME)\b/.test(trimmed) || trimmed.includes("<fill in>") || trimmed.includes("[...]") || trimmed === "..." || trimmed === "\u2026" || /^\[[^\]]*\]$/.test(trimmed);
 }
 function planPlaceholders(frontmatter, tasks) {
@@ -16916,6 +16953,9 @@ var dispatchKind = {
     ticket: ticketId,
     target: string2().min(1),
     role,
+    adapter: string2().min(1).meta({
+      description: "The role's adapter (`role-contracts`, Role-to-adapter map)."
+    }),
     attempt: int().min(1),
     of: int().min(1),
     scope,
@@ -17201,20 +17241,29 @@ function locate(path) {
 
 // kernel/src/shared/store/state/render.ts
 var import_yaml2 = __toESM(require_dist(), 1);
-function renderDocument(data, body) {
-  return `---
+function renderDocument(data, body, style = "block") {
+  if (style === "block") return `---
 ${(0, import_yaml2.stringify)(data, { lineWidth: 0 })}---
+${body}`;
+  const document = new import_yaml2.Document(data);
+  (0, import_yaml2.visit)(document, {
+    Seq(_, node3) {
+      node3.flow = true;
+    }
+  });
+  return `---
+${document.toString({ lineWidth: 0 })}---
 ${body}`;
 }
 
 // kernel/src/shared/store/state/documents.ts
 function readDocument(store2, path, kinds = {}) {
-  const text6 = store2.read(path);
-  if (text6 === void 0) return void 0;
+  const text7 = store2.read(path);
+  if (text7 === void 0) return void 0;
   const located = locateOr(path, "state/ledger-invalid");
-  if (isOpaque(located.kind)) return { kind: located.kind, body: text6 };
+  if (isOpaque(located.kind)) return { kind: located.kind, body: text7 };
   const kind = kindOf(located.kind, kinds);
-  const { data, body } = parseText(located, text6);
+  const { data, body } = parseText(located, text7);
   const version3 = data.schema;
   if (version3 !== kind.version && Number.isInteger(version3)) {
     const found = Number(version3);
@@ -17255,17 +17304,17 @@ function writeDocument(store2, path, document, kinds = {}) {
   }
   const kind = kindOf(located.kind, kinds);
   const data = validate2(located, kind.schema, document.data, "policy/validation-failed");
-  store2.write(path, renderDocument(data, document.body));
+  store2.write(path, renderDocument(data, document.body, styleOf(located.kind)));
 }
 function migrateDocument(store2, path, kinds = {}) {
-  const text6 = store2.read(path);
+  const text7 = store2.read(path);
   const located = locate(path);
-  if (text6 === void 0) return { status: "skipped", why: `${path} does not exist` };
+  if (text7 === void 0) return { status: "skipped", why: `${path} does not exist` };
   if (located === void 0) return { status: "skipped", why: `${path} is not a state document` };
   if (isOpaque(located.kind)) return { status: "current" };
   const kind = kindOf(located.kind, kinds);
   try {
-    const { data, body } = parseText(located, text6);
+    const { data, body } = parseText(located, text7);
     const from = Number(data.schema);
     if (from === kind.version) return { status: "current" };
     if (from > kind.version) {
@@ -17283,7 +17332,7 @@ function migrateDocument(store2, path, kinds = {}) {
       migrated = step(migrated);
     }
     const valid = validate2(located, kind.schema, migrated, "state/ledger-invalid");
-    store2.write(path, renderDocument(valid, body));
+    store2.write(path, renderDocument(valid, body, styleOf(located.kind)));
     return { status: "migrated", from, to: kind.version };
   } catch (error2) {
     if (error2 instanceof KernelRefusal) return { status: "skipped", why: error2.refusal.why };
@@ -17300,11 +17349,14 @@ function locateOr(path, rule2) {
 function isOpaque(kind) {
   return kind === "spec-delta" || kind === "evidence-capture";
 }
+function styleOf(kind) {
+  return kind === "report" ? "flow" : "block";
+}
 function kindOf(name, kinds) {
   return kinds[name] ?? STATE_KINDS[name];
 }
-function parseText(located, text6) {
-  const { frontmatter, body } = splitFrontmatter(text6);
+function parseText(located, text7) {
+  const { frontmatter, body } = splitFrontmatter(text7);
   const fail = (why) => {
     throw invalid2("state/ledger-invalid", `${located.display}: ${why}`, [
       `fix ${located.display} or restore it from git`
@@ -17469,7 +17521,7 @@ function filesOf(index2, location) {
 }
 function insertRows(index2, location, path, kind, data) {
   const { database } = index2;
-  const text6 = (value) => typeof value === "string" || typeof value === "number" ? String(value) : null;
+  const text7 = (value) => typeof value === "string" || typeof value === "number" ? String(value) : null;
   const flag2 = (value) => value === true ? 1 : 0;
   switch (kind) {
     case "change":
@@ -17477,12 +17529,12 @@ function insertRows(index2, location, path, kind, data) {
         "INSERT OR REPLACE INTO changes (id, kind, profile, source, intent, at, author, archived, dir) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
       ).run(
         location.id,
-        text6(data.kind),
-        text6(data.profile),
-        text6(data.source),
-        text6(data.intent),
-        text6(data.at),
-        text6(data.author),
+        text7(data.kind),
+        text7(data.profile),
+        text7(data.source),
+        text7(data.intent),
+        text7(data.at),
+        text7(data.author),
         location.archived ? 1 : 0,
         rel(index2, location.dir)
       );
@@ -17498,23 +17550,23 @@ function insertRows(index2, location, path, kind, data) {
       ).run(
         location.id,
         id,
-        text6(data.type),
-        text6(data.summary),
-        text6(data.status),
-        text6(data.source),
-        text6(data.author),
-        text6(data.at),
-        text6(data.ticket),
-        text6(data.supersedes),
+        text7(data.type),
+        text7(data.summary),
+        text7(data.status),
+        text7(data.source),
+        text7(data.author),
+        text7(data.at),
+        text7(data.ticket),
+        text7(data.supersedes),
         flag2(data.review),
-        text6(data.severity),
-        text6(data.category),
-        text6(data.fingerprint),
-        text6(data["routed-to"]),
-        text6(data.to),
-        text6(data.gate),
-        text6(data["input-hash"]),
-        text6(data.profile),
+        text7(data.severity),
+        text7(data.category),
+        text7(data.fingerprint),
+        text7(data["routed-to"]),
+        text7(data.to),
+        text7(data.gate),
+        text7(data["input-hash"]),
+        text7(data.profile),
         flag2(data.park),
         Array.isArray(data.options) ? JSON.stringify(data.options) : null,
         path
@@ -17533,22 +17585,22 @@ function insertRows(index2, location, path, kind, data) {
             closed_at, outcome, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         location.id,
-        text6(data.ticket),
-        text6(data.loop),
-        text6(data.target),
+        text7(data.ticket),
+        text7(data.loop),
+        text7(data.target),
         Number(data.attempt),
         Number(data.of),
         JSON.stringify(data.scope),
-        text6(data["opened-at"]),
-        text6(data["closed-at"]),
-        text6(data.outcome),
+        text7(data["opened-at"]),
+        text7(data["closed-at"]),
+        text7(data.outcome),
         path
       );
       return;
     case "dispatch":
       database.prepare(
         "INSERT OR REPLACE INTO dispatches (change_id, ticket, target, role, path) VALUES (?, ?, ?, ?, ?)"
-      ).run(location.id, text6(data.ticket), text6(data.target), text6(data.role), path);
+      ).run(location.id, text7(data.ticket), text7(data.target), text7(data.role), path);
       return;
     default:
       return;
@@ -17742,8 +17794,8 @@ import { createHash } from "node:crypto";
 var DIGITS = new RegExp("\\p{Nd}+", "gu");
 var OTHER = /[^\p{L}\p{M}\p{Nd}#]+/gu;
 var SEPARATOR = "";
-function normalise(text6) {
-  return text6.normalize("NFKC").toLowerCase().replace(DIGITS, "#").replace(OTHER, " ").trim();
+function normalise(text7) {
+  return text7.normalize("NFKC").toLowerCase().replace(DIGITS, "#").replace(OTHER, " ").trim();
 }
 function fingerprint(parts) {
   return `sha256:${createHash("sha256").update(parts.join(SEPARATOR)).digest("hex")}`;
@@ -17800,7 +17852,7 @@ function wavesOf(what, parts) {
   }
   const waves = /* @__PURE__ */ new Map();
   const path = [];
-  const visit = (id) => {
+  const visit2 = (id) => {
     const known = waves.get(id);
     if (known !== void 0) return known;
     const start = path.indexOf(id);
@@ -17809,12 +17861,12 @@ function wavesOf(what, parts) {
       invalid3(`${what} parts ${cycle.join(", ")} form a dependency cycle`);
     }
     path.push(id);
-    const wave = 1 + Math.max(0, ...(byId.get(id)?.["depends-on"] ?? []).map(visit));
+    const wave = 1 + Math.max(0, ...(byId.get(id)?.["depends-on"] ?? []).map(visit2));
     path.pop();
     waves.set(id, wave);
     return wave;
   };
-  for (const id of byId.keys()) visit(id);
+  for (const id of byId.keys()) visit2(id);
   return waves;
 }
 function invalid3(why) {
@@ -17823,8 +17875,8 @@ function invalid3(why) {
 function dependencies(part) {
   return part["depends-on"].length === 0 ? "-" : part["depends-on"].join(", ");
 }
-function cell(text6) {
-  return text6.replaceAll("|", "\\|");
+function cell(text7) {
+  return text7.replaceAll("|", "\\|");
 }
 function render(header, rows) {
   const line2 = (cells) => `| ${cells.join(" | ")} |`;
@@ -17837,8 +17889,8 @@ import { join as join7 } from "node:path";
 var IGNORED_PATHS = ["/.bdk/.machine/", "/.bdk/settings.local.yaml"];
 async function ensureIgnored(store2, git, projectRoot) {
   const path = join7(projectRoot, ".gitignore");
-  const text6 = store2.read(path) ?? "";
-  const present = new Set(text6.split(/\r?\n/).map((line2) => line2.trim()));
+  const text7 = store2.read(path) ?? "";
+  const present = new Set(text7.split(/\r?\n/).map((line2) => line2.trim()));
   const missing = [];
   for (const line2 of IGNORED_PATHS) {
     if (present.has(line2)) continue;
@@ -17846,13 +17898,13 @@ async function ensureIgnored(store2, git, projectRoot) {
     missing.push(line2);
   }
   if (missing.length === 0) return [];
-  const separator = text6 === "" || text6.endsWith("\n") ? "" : "\n";
-  store2.write(path, `${text6}${separator}${missing.map((line2) => `${line2}
+  const separator = text7 === "" || text7.endsWith("\n") ? "" : "\n";
+  store2.write(path, `${text7}${separator}${missing.map((line2) => `${line2}
 `).join("")}`);
   return missing;
 }
 async function onlyKernelIgnores(store2, git, projectRoot) {
-  const lines = (text6) => text6.split(/\r?\n/).map((line2) => line2.trim());
+  const lines = (text7) => text7.split(/\r?\n/).map((line2) => line2.trim());
   const current = lines(store2.read(join7(projectRoot, ".gitignore")) ?? "");
   const shown = await git.run(["show", "HEAD:.gitignore"], projectRoot);
   const head = shown.code === 0 ? lines(shown.stdout) : [];
@@ -18382,12 +18434,25 @@ function regenerate(store2, changeDir, what, warnings, rel2) {
         "depends-on": data["depends-on"] ?? []
       };
     });
-    const text6 = what === "plan" ? generatePlanIndex(parts) : generateDesignIndex(parts);
-    if (store2.read(target) !== text6) store2.write(target, text6);
+    const text7 = what === "plan" ? generatePlanIndex(parts) : generateDesignIndex(parts);
+    if (store2.read(target) !== text7) store2.write(target, text7);
   } catch (error2) {
     if (!(error2 instanceof KernelRefusal)) throw error2;
     warnings.push(`${rel2(target)} not regenerated: ${error2.refusal.why}`);
   }
+}
+
+// kernel/src/shared/store/rules-read.ts
+function stampRulesRead(store2, changeDir, ticket, now) {
+  const record4 = readAttempts(store2, changeDir).find((file) => file.data.ticket === ticket);
+  if (record4 === void 0) return void 0;
+  const stamped = record4.data["rules-read"];
+  if (stamped !== void 0) return stamped;
+  writeDocument(store2, record4.path, {
+    data: { ...record4.data, "rules-read": now },
+    body: record4.body
+  });
+  return now;
 }
 
 // kernel/src/shared/config/prompts.ts
@@ -18424,7 +18489,7 @@ function promptContent(store2, value) {
 `).join("\n");
 }
 function chain(contributions) {
-  const last = contributions.findLastIndex((item2) => item2.mode === "replace");
+  const last = contributions.findLastIndex((item3) => item3.mode === "replace");
   const kept = last === -1 ? contributions : contributions.slice(last);
   return {
     mode: last === -1 ? "extends" : "replace",
@@ -18471,9 +18536,9 @@ function layerContributions(input, name, layer, problems) {
   const files = isRecord(settings.files) ? settings.files : {};
   for (const [key, entry] of Object.entries(files)) {
     if (input.registry.promptKey(key) === void 0) continue;
-    const declared2 = isRecord(entry) ? entry : { path: entry };
-    if (typeof declared2.path !== "string") continue;
-    const path = isAbsolute(declared2.path) ? declared2.path : join13(base, declared2.path);
+    const declared3 = isRecord(entry) ? entry : { path: entry };
+    if (typeof declared3.path !== "string") continue;
+    const path = isAbsolute(declared3.path) ? declared3.path : join13(base, declared3.path);
     if (!input.store.exists(path)) {
       problems.push({
         rule: "policy/config-invalid",
@@ -18484,7 +18549,7 @@ function layerContributions(input, name, layer, problems) {
       });
       continue;
     }
-    const contribution2 = readContribution(input.store, key, path, declared2, where, problems);
+    const contribution2 = readContribution(input.store, key, path, declared3, where, problems);
     if (contribution2 !== void 0) out.set(key, contribution2);
   }
   return out;
@@ -18510,8 +18575,8 @@ function unknownPrompt(registry3, key, layer, path) {
   };
 }
 var FRONTMATTER_FIELDS = /* @__PURE__ */ new Set(["mode", "applies"]);
-function readContribution(store2, key, path, declared2, where, problems) {
-  const outcome = contribution(store2.read(path) ?? "", declared2, where);
+function readContribution(store2, key, path, declared3, where, problems) {
+  const outcome = contribution(store2.read(path) ?? "", declared3, where);
   if (typeof outcome !== "string") return { layer: where.layer, path, ...outcome };
   problems.push({
     rule: "policy/config-invalid",
@@ -18522,8 +18587,8 @@ function readContribution(store2, key, path, declared2, where, problems) {
   });
   return void 0;
 }
-function contribution(text6, declared2, where) {
-  const { frontmatter } = splitFrontmatter(text6);
+function contribution(text7, declared3, where) {
+  const { frontmatter } = splitFrontmatter(text7);
   let front;
   try {
     front = frontmatter === void 0 ? {} : (0, import_yaml4.parse)(frontmatter) ?? {};
@@ -18534,30 +18599,30 @@ function contribution(text6, declared2, where) {
   const extra = Object.keys(front).filter((field2) => !FRONTMATTER_FIELDS.has(field2));
   if (extra.length > 0) return `unknown frontmatter field ${extra.join(", ")}`;
   const settings = where.settingsPath ?? "the settings";
-  const mode = front.mode ?? declared2.mode ?? "extends";
+  const mode = front.mode ?? declared3.mode ?? "extends";
   if (mode !== "extends" && mode !== "replace") return "mode must be extends or replace";
-  if (declared2.mode !== void 0 && front.mode !== void 0 && declared2.mode !== front.mode) {
+  if (declared3.mode !== void 0 && front.mode !== void 0 && declared3.mode !== front.mode) {
     return `the frontmatter mode ${mode} contradicts the mode in ${settings}`;
   }
-  const applies = front.applies ?? declared2.applies;
+  const applies = front.applies ?? declared3.applies;
   if (applies !== void 0 && !isGlobList(applies)) {
     return "applies must be a list of relative globs without empty segments";
   }
-  if (declared2.applies !== void 0 && front.applies !== void 0 && JSON.stringify(declared2.applies) !== JSON.stringify(front.applies)) {
+  if (declared3.applies !== void 0 && front.applies !== void 0 && JSON.stringify(declared3.applies) !== JSON.stringify(front.applies)) {
     return `the frontmatter applies contradicts ${settings}`;
   }
   return applies === void 0 ? { mode } : { mode, applies };
 }
 function isGlobList(value) {
   return Array.isArray(value) && value.every(
-    (item2) => typeof item2 === "string" && item2 !== "" && !/^(\/|[A-Za-z]:[\\/])/.test(item2) && !item2.split("/").includes("")
+    (item3) => typeof item3 === "string" && item3 !== "" && !/^(\/|[A-Za-z]:[\\/])/.test(item3) && !item3.split("/").includes("")
   );
 }
 
 // kernel/src/shared/config/resolve.ts
 function resolveConfig(context) {
-  const read2 = readLayers(context.store, context);
-  const layers = context.removed === "ignore" ? read2.map(withoutRemovedKeys) : read2;
+  const read3 = readLayers(context.store, context);
+  const layers = context.removed === "ignore" ? read3.map(withoutRemovedKeys) : read3;
   const merged = mergeLayers(layers);
   const validated = validateLayers(context.registry, layers, merged);
   const prompts2 = resolvePrompts({ ...context, layers });
@@ -18653,18 +18718,18 @@ function settingsSchemaUrl(version3) {
 function modeline(version3) {
   return `${MODELINE_PREFIX}${settingsSchemaUrl(version3)}`;
 }
-function modelineUrl(text6) {
-  const first = text6.split("\n", 1)[0] ?? "";
+function modelineUrl(text7) {
+  const first = text7.split("\n", 1)[0] ?? "";
   return first.startsWith(MODELINE_PREFIX) ? first.slice(MODELINE_PREFIX.length).trim() : void 0;
 }
-function withModeline(text6, version3) {
+function withModeline(text7, version3) {
   const line2 = modeline(version3);
-  if (modelineUrl(text6) === void 0) return text6 === "" ? `${line2}
+  if (modelineUrl(text7) === void 0) return text7 === "" ? `${line2}
 ` : `${line2}
-${text6}`;
-  const newline = text6.indexOf("\n");
+${text7}`;
+  const newline = text7.indexOf("\n");
   return newline === -1 ? `${line2}
-` : `${line2}${text6.slice(newline)}`;
+` : `${line2}${text7.slice(newline)}`;
 }
 function offlineSchemaText(registry3) {
   return `${JSON.stringify(settingsJsonSchema(registry3), null, 2)}
@@ -18688,8 +18753,8 @@ function stopBlock(refusal2) {
 Instead: ${refusal2.instead.join("; ")}
 `;
 }
-function capLines(text6, options = {}) {
-  const lines = text6.replace(/\n+$/, "").split("\n");
+function capLines(text7, options = {}) {
+  const lines = text7.replace(/\n+$/, "").split("\n");
   if (options.all === true || lines.length <= TEXT_LINE_CAP) return `${lines.join("\n")}
 `;
   const kept = lines.slice(0, TEXT_LINE_CAP - 1);
@@ -18743,15 +18808,15 @@ function renderList(report2) {
     ""
   ].join("\n");
 }
-function line(item2) {
-  const state = item2.outcome ?? "open";
-  const escalation = item2.escalation === true ? ", escalation" : "";
-  const entries = item2.entries === void 0 ? "" : `, ${String(item2.entries)} entries`;
-  return `${item2.ticket} ${state}: ${item2.loop} ${item2.target}, attempt ${String(item2.attempt)}/${String(item2.of)}, ${item2.scope}${escalation}${entries}`;
+function line(item3) {
+  const state = item3.outcome ?? "open";
+  const escalation = item3.escalation === true ? ", escalation" : "";
+  const entries = item3.entries === void 0 ? "" : `, ${String(item3.entries)} entries`;
+  return `${item3.ticket} ${state}: ${item3.loop} ${item3.target}, attempt ${String(item3.attempt)}/${String(item3.of)}, ${item3.scope}${escalation}${entries}`;
 }
 
 // kernel/src/attempt/use-cases/close.ts
-import { isAbsolute as isAbsolute3, join as join27 } from "node:path";
+import { isAbsolute as isAbsolute2, join as join26 } from "node:path";
 
 // kernel/src/attempt/domain/ladder.ts
 function currentRound(records, entries) {
@@ -18884,25 +18949,21 @@ function compare2(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-// kernel/src/log/commands/log.ts
-import { isAbsolute as isAbsolute2, join as join19 } from "node:path";
-
 // kernel/src/log/render/log.ts
 function renderAdd(result2) {
   const { entry } = result2;
   const verb = result2.deduplicated ? "already recorded as" : "added";
+  const downgrade = result2.downgraded === void 0 ? "" : `downgraded from blocker: category ${result2.downgraded.category ?? "none"} is not a blocking category (P8)
+`;
   return `${verb} ${entry.id} (${entry.type}, ${entry.status}): ${entry.summary}
-${result2.path}
+${downgrade}${result2.path}
 `;
 }
 function renderIngest(report2) {
-  const count2 = report2.entries.length;
-  const lines = report2.entries.map(
-    (entry) => `${entry.id} ${entry.type} ${entry.status}: ${entry.summary}`
-  );
-  return `${String(count2)} ${count2 === 1 ? "entry" : "entries"} ingested under ${report2.ticket}
-${lines.map((line2) => `${line2}
-`).join("")}`;
+  const verb = report2.replaced ? "replaced" : "stored";
+  return `report ${verb} for ${report2.ticket} (${report2.role}, ${report2.status})
+${report2.path}
+`;
 }
 function renderList2(items) {
   if (items.length === 0) return "no entries\n";
@@ -18996,7 +19057,7 @@ function entrySummary(row) {
     ...row.supersededBy === void 0 ? {} : { supersededBy: row.supersededBy }
   };
 }
-function findDuplicate(draft, entries, normalise2) {
+function findDuplicate(draft, entries, normalise3) {
   if (draft.type === "learning") {
     return entries.find(
       (entry) => entry.type === "learning" && entry.fingerprint === draft.fingerprint
@@ -19004,7 +19065,7 @@ function findDuplicate(draft, entries, normalise2) {
   }
   const key = (entry) => JSON.stringify([
     entry.type,
-    normalise2(entry.summary),
+    normalise3(entry.summary),
     [...new Set(entry.refs)].sort(),
     entry.supersedes ?? "",
     entry.ticket ?? ""
@@ -19101,6 +19162,29 @@ async function appendEntry(deps, change, index2, draft, options) {
   };
 }
 
+// kernel/src/log/domain/p8.ts
+var DOWNGRADING_ROLES = ["verifier", "design-verifier"];
+function mayDowngrade(type, role2) {
+  return type === "blocker" && role2 !== void 0 && DOWNGRADING_ROLES.includes(role2);
+}
+function classify(draft, role2, blocking) {
+  const kept = { type: draft.type, body: draft.body, review: draft.review };
+  if (!mayDowngrade(draft.type, role2)) return kept;
+  if (draft.category !== void 0 && blocking.includes(draft.category)) return kept;
+  const category2 = draft.category ?? null;
+  const sentence2 = `Downgraded from blocker: category ${category2 ?? "none"} is not a blocking category (P8).
+`;
+  const given = draft.body.trim();
+  return {
+    type: "observation",
+    body: given === "" ? sentence2 : `${sentence2}
+${given}
+`,
+    review: true,
+    downgraded: { type: "blocker", category: category2 }
+  };
+}
+
 // kernel/src/log/use-cases/deps.ts
 function withChangeIndex(deps, change, work) {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, (index2) => {
@@ -19109,9 +19193,81 @@ function withChangeIndex(deps, change, work) {
   });
 }
 
+// kernel/src/log/config.ts
+var ID3 = /^[a-z0-9][a-z0-9-]*$/;
+var item = (description) => strictObject({
+  id: string2().regex(ID3, "must be kebab-case: lowercase letters, digits and -").meta({
+    description: "Unique within the array; the merge key."
+  }),
+  description: string2().min(1)
+}).meta({ title: "category entry", description });
+var BLOCKING = [
+  {
+    id: "architecture",
+    description: "Materially invalid architecture, or a contradiction with an accepted decision."
+  },
+  { id: "security", description: "A security, privacy or authentication risk." },
+  {
+    id: "irreversible-step",
+    description: "An irreversible or high-cost step without justification, such as a migration or data loss."
+  },
+  {
+    id: "integration-failure",
+    description: "A critical integration, data, rollout or rollback failure."
+  },
+  {
+    id: "unresolved-decision",
+    description: "An execution-critical unresolved decision or omitted requirement."
+  },
+  { id: "false-code-claim", description: "A claim about the real code that is false." }
+];
+var NOT_A_FAIL = [
+  { id: "style", description: "Style." },
+  { id: "template-conformance", description: "Template conformance." },
+  { id: "files-bookkeeping", description: "`Files:` bookkeeping." },
+  { id: "wording", description: "Wording." },
+  { id: "report-length", description: "Report length." },
+  {
+    id: "verification-defect",
+    description: "A verification defect, unless it removes the only real evidence of the change's safety."
+  }
+];
+var verifierModule = defineConfigModule({
+  key: "policy.verifier",
+  consumer: "log",
+  owner: "T23",
+  description: "What a verifier may block on (P8): a blocker outside blocking-categories is downgraded to a reviewed observation.",
+  schema: strictObject({
+    "blocking-categories": array(item("A category a verifier or design-verifier blocker may name.")).default(BLOCKING).meta({ description: "Merged by id; the default items always stay." }),
+    "not-a-fail": array(item("Something a verifier never blocks on.")).default(NOT_A_FAIL).meta({
+      description: "Merged by id; shown in a verifier's package next to the categories."
+    })
+  }).prefault({})
+});
+
+// kernel/src/log/use-cases/verifier.ts
+function verifierPolicy(deps, change, globalDir2) {
+  const resolved = resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir: globalDir2,
+      projectRoot: change.projectRoot,
+      pluginRoot: deps.pluginRoot
+    },
+    { removed: "ignore" }
+  );
+  if ("refused" in resolved) return resolved;
+  const policy = verifierModule.schema.parse(
+    resolved.value.policy?.verifier
+  );
+  return { blocking: policy["blocking-categories"], notAFail: policy["not-a-fail"] };
+}
+
 // kernel/src/log/use-cases/add.ts
 var SUMMARY_MAX = 120;
-function addEntry(deps, change, input) {
+var CATEGORY_TYPES = ["finding", "blocker"];
+function addEntry(deps, change, globalDir2, input) {
   const invalid4 = validate3(input);
   if (invalid4 !== void 0) return Promise.resolve(invalid4);
   return withChangeIndex(deps, change, async (index2) => {
@@ -19119,7 +19275,24 @@ function addEntry(deps, change, input) {
       const missing = checkSupersedes(deps, change, index2, input.supersedes);
       if (missing !== void 0) return missing;
     }
-    return appendEntry(deps, change, index2, input, { dedupe: true });
+    const role2 = input.ticket === void 0 ? void 0 : ticketDispatch(index2, change.id, input.ticket)?.role;
+    let blocking = [];
+    if (mayDowngrade(input.type, role2)) {
+      const policy = verifierPolicy(deps, change, globalDir2);
+      if (isRefusal(policy)) return policy;
+      blocking = policy.blocking.map((category3) => category3.id);
+    }
+    const { downgraded, ...classified } = classify(input, role2, blocking);
+    const { category: category2, ...rest } = input;
+    const base = downgraded === void 0 && category2 !== void 0 ? { ...rest, category: category2 } : rest;
+    const appended = await appendEntry(
+      deps,
+      change,
+      index2,
+      { ...base, ...classified },
+      { dedupe: true }
+    );
+    return "refused" in appended || downgraded === void 0 ? appended : { ...appended, downgraded };
   });
 }
 function validate3(input) {
@@ -19135,6 +19308,16 @@ function validate3(input) {
     return refuse("input/missing-argument", "log add needs at least one non-empty --ref", [
       `bdk log add ${input.type} "${input.summary}" --ref <file|symbol|part|task|rule|entry>`
     ]);
+  }
+  if (input.category !== void 0 && !CATEGORY_TYPES.includes(input.type)) {
+    return refuse(
+      "input/invalid-argument",
+      `--category applies to finding and blocker, the types that carry it, not ${input.type}`,
+      [
+        `bdk log add ${input.type} "${input.summary}" --ref <ref>`,
+        "bdk log add blocker ... --category <id>"
+      ]
+    );
   }
   if (input.status === "superseded") {
     return refuse(
@@ -19182,215 +19365,143 @@ function checkSupersedes(deps, change, index2, value) {
 // kernel/src/log/use-cases/ingest.ts
 import { join as join16 } from "node:path";
 
-// kernel/src/log/use-cases/block.ts
+// kernel/src/log/use-cases/envelope.ts
 var import_yaml6 = __toESM(require_dist(), 1);
-var INFO = "bdk-entries";
-function readBlock(input) {
-  const lines = input.split("\n");
-  const found = fences(lines);
-  if (typeof found === "string") return { invalid: found };
-  if (found.length !== 1) {
+function readEnvelope(input) {
+  const split = splitFrontmatter(input);
+  if (split.frontmatter === void 0) {
     return {
-      invalid: `the input holds ${String(found.length)} fenced ${INFO} blocks; it needs exactly one`
+      invalid: "the report has no frontmatter; it opens with a --- line, the envelope fields and a closing --- line"
     };
   }
-  const [fence] = found;
-  const outside = [...lines.slice(0, fence.open), ...lines.slice(fence.close + 1)];
-  const offset = fence.open + 1;
   const counter2 = new import_yaml6.LineCounter();
-  const document = (0, import_yaml6.parseDocument)(lines.slice(fence.open + 1, fence.close).join("\n"), {
+  const document = (0, import_yaml6.parseDocument)(split.frontmatter, {
     lineCounter: counter2,
     uniqueKeys: true,
     prettyErrors: false
   });
-  const lineOf = (node3) => counter2.linePos(node3?.range?.[0] ?? 0).line + offset;
+  const lineAt = (offset) => counter2.linePos(offset).line + 1;
+  const end = split.frontmatter.split("\n").length + 1;
   const [error2] = document.errors;
   if (error2 !== void 0) {
-    const line2 = counter2.linePos(error2.pos[0]).line + offset;
-    return { invalid: `line ${String(line2)}: ${error2.message.split("\n")[0] ?? ""}` };
-  }
-  const root = document.contents;
-  if (!(0, import_yaml6.isSeq)(root)) {
     return {
-      invalid: `line ${String(lineOf(root))}: the ${INFO} block is not a YAML sequence of entries`
+      invalid: `line ${String(lineAt(error2.pos[0]))}: ${error2.message.split("\n")[0] ?? ""}`
     };
   }
-  const items = [];
-  for (const [at, node3] of root.items.entries()) {
-    const position = at + 1;
-    if (!(0, import_yaml6.isMap)(node3)) {
-      return {
-        invalid: `item ${String(position)}, line ${String(lineOf(node3))}: an entry is a mapping of fields`
-      };
-    }
-    const fields = {};
-    const keyLines = {};
-    for (const pair of node3.items) {
-      const key = (0, import_yaml6.isScalar)(pair.key) ? String(pair.key.value) : String(pair.key);
-      fields[key] = (0, import_yaml6.isScalar)(pair.value) ? pair.value.value : pair.value?.toJSON();
-      keyLines[key] = lineOf(pair.key);
-    }
-    items.push({ position, line: lineOf(node3), fields, lines: keyLines });
+  const root = document.contents;
+  if (root === null) return { fields: {}, lines: {}, end, body: split.body };
+  if (!(0, import_yaml6.isMap)(root)) {
+    return { invalid: "line 2: the frontmatter is not a mapping of envelope fields" };
   }
-  return { items, report: outside.some((line2) => line2.trim() !== "") };
-}
-function fences(lines) {
-  const found = [];
-  let at = 0;
-  while (at < lines.length) {
-    const opening = /^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)/.exec(lines[at] ?? "");
-    if (opening === null) {
-      at++;
-      continue;
-    }
-    const marker = opening[1] ?? "";
-    const closing = new RegExp(
-      `^ {0,3}${marker.startsWith("`") ? "`" : "~"}{${String(marker.length)},}\\s*$`
-    );
-    let close = at + 1;
-    while (close < lines.length && !closing.test(lines[close] ?? "")) close++;
-    if (opening[2] === INFO) {
-      if (close === lines.length)
-        return `line ${String(at + 1)}: the ${INFO} fence is never closed`;
-      found.push({ open: at, close });
-    }
-    at = close + 1;
+  const lines = {};
+  for (const pair of root.items) {
+    const key = (0, import_yaml6.isScalar)(pair.key) ? String(pair.key.value) : String(pair.key);
+    lines[key] = lineAt(pair.key.range?.[0] ?? 0);
   }
-  return found;
+  const fields = document.toJS();
+  return { fields, lines, end, body: split.body };
 }
 
 // kernel/src/log/use-cases/ingest.ts
-var STAMPED = ["id", "at", "author", "source", "ticket", "fingerprint"];
-var FIELDS = [
-  "type",
-  "summary",
-  "refs",
-  "body",
-  "review",
-  "supersedes",
-  "status",
-  "severity",
-  "category",
-  "options"
-];
-var TYPES = ENTRY_TYPES.filter((type) => type !== "transition");
-var STAND_INS = {
-  schema: 1,
-  id: "L-00000000",
-  source: "kernel",
-  author: "bdk",
-  at: "2026-01-01T00:00:00Z"
-};
-var FINGERPRINT = `sha256:${"0".repeat(64)}`;
-function ingestBlock(deps, change, input) {
+var STAMPED = ["schema", "ticket", "role"];
+var FIELDS = ["status", "files", "entries", "evidence", "reason"];
+function ingestReport(deps, change, input) {
   return withChangeIndex(deps, change, async (index2) => {
     const dispatch2 = ticketDispatch(index2, change.id, input.ticket);
-    if (dispatch2 === void 0) {
+    const report2 = dispatch2 === void 0 ? void 0 : reportPath(deps, change, dispatch2.path);
+    if (dispatch2 === void 0 || report2 === void 0) {
       return refuse(
         "policy/no-open-ticket",
         `${input.ticket} has no open attempt record with a dispatch package in ${change.id}`,
-        ["bdk attempt list", "bdk attempt open <loop> <target>"]
+        ["bdk attempt list", "bdk dispatch build <target>"]
       );
     }
-    const block = readBlock(input.text);
-    if ("invalid" in block) return invalidBlock(block.invalid);
-    const drafts = [];
-    for (const item2 of block.items) {
-      const draft = checkItem(deps, change, index2, item2, input.ticket);
-      if (isRefusal(draft)) return draft;
-      drafts.push(draft);
-    }
-    if (input.stdin && block.report) storeReport(deps, change, dispatch2.path, input.text);
-    const entries = [];
-    for (const draft of drafts) {
-      const appended = await appendEntry(deps, change, index2, draft, { dedupe: true });
-      if (isRefusal(appended)) return appended;
-      entries.push(appended.entry);
-      refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
-    }
-    return { ticket: input.ticket, entries, downgraded: [] };
+    const envelope = readEnvelope(input.text);
+    if ("invalid" in envelope) return invalidEnvelope(envelope.invalid);
+    const data = checkEnvelope(envelope, input.ticket, dispatch2.role);
+    if ("refused" in data) return data;
+    const missing = missingIds(deps, change, index2, input.ticket, data);
+    if (missing !== void 0) return missing;
+    const path = join16(change.projectRoot, report2);
+    const replaced = deps.store.read(path) !== void 0;
+    writeDocument(deps.store, path, { data, body: envelope.body });
+    return {
+      ticket: input.ticket,
+      role: dispatch2.role,
+      path: report2,
+      status: data.status,
+      entries: data.entries,
+      replaced
+    };
   });
 }
-function invalidBlock(why) {
-  return refuse("input/invalid-block", why, [
-    "end the report with one ```bdk-entries fence holding a YAML list of entries",
-    "bdk log add <type> <summary> --ref <ref> for a single entry"
+function reportPath(deps, change, dispatchPath) {
+  const dispatch2 = readDocument(deps.store, join16(change.projectRoot, dispatchPath));
+  if (dispatch2 === void 0 || !("data" in dispatch2)) return void 0;
+  const report2 = dispatch2.data.report;
+  return typeof report2 === "string" ? report2 : void 0;
+}
+function invalidEnvelope(why) {
+  return refuse("input/invalid-envelope", why, [
+    "fix the named field and pipe the whole report again",
+    `the frontmatter holds ${FIELDS.join(", ")}; reason only for blocked and needs-context`
   ]);
 }
-function checkItem(deps, change, index2, item2, ticket) {
-  const { fields } = item2;
-  const at = (field2) => `item ${String(item2.position)}, line ${String(item2.lines[field2] ?? item2.line)}: ${field2}`;
-  const stamped = Object.keys(fields).find(
-    (field2) => STAMPED.includes(field2)
-  );
+function checkEnvelope(envelope, ticket, role2) {
+  const at = (field3) => `line ${String(envelope.lines[field3] ?? envelope.end)}: ${field3}`;
+  const names = Object.keys(envelope.fields);
+  const stamped = names.find((field3) => STAMPED.includes(field3));
   if (stamped !== void 0) {
     return refuse("input/forbidden-field", `${at(stamped)} is stamped by the kernel`, [
-      "drop the field; the kernel stamps it from the ticket"
+      "drop the field; the kernel stamps schema, ticket and role from the ticket"
     ]);
   }
-  const unknown3 = Object.keys(fields).find(
-    (field2) => !FIELDS.includes(field2)
-  );
+  const unknown3 = names.find((field3) => !FIELDS.includes(field3));
   if (unknown3 !== void 0) {
-    return invalidBlock(`${at(unknown3)} is not an entry field; allowed: ${FIELDS.join(", ")}`);
-  }
-  const type = fields.type;
-  if (typeof type !== "string" || !TYPES.includes(type)) {
-    return invalidBlock(
-      `${at("type")} ${type === void 0 ? "is missing" : `${JSON.stringify(type)} is not a type a role writes`}; one of: ${TYPES.join(", ")}`
+    return invalidEnvelope(
+      `${at(unknown3)} is not an envelope field; allowed: ${FIELDS.join(", ")}`
     );
   }
-  if (fields.body !== void 0 && typeof fields.body !== "string") {
-    return invalidBlock(`${at("body")} is not a string`);
-  }
-  if (typeof fields.summary === "string" && fields.summary.trim() === "") {
-    return invalidBlock(`${at("summary")} is empty`);
-  }
-  if (fields.status === "superseded" || fields.status === "routed") {
-    return invalidBlock(
-      `${at("status")} ${fields.status} is ${fields.status === "superseded" ? "derived from supersedes" : "set only by log route"}, never written`
-    );
-  }
-  const { body, ...rest } = fields;
-  const parsed = STATE_KINDS.entry.schema.safeParse({
-    ...STAND_INS,
+  const parsed = STATE_KINDS.report.schema.safeParse({
+    schema: STATE_KINDS.report.version,
     ticket,
-    status: "proposed",
-    ...rest,
-    ...type === "learning" ? { fingerprint: FINGERPRINT } : {}
+    role: role2,
+    ...envelope.fields
   });
-  if (!parsed.success) {
-    const [issue2] = parsed.error.issues;
-    const field2 = issue2?.code === "unrecognized_keys" ? issue2.keys[0] ?? "type" : String(issue2?.path[0] ?? "type");
-    const why = issue2?.code === "unrecognized_keys" ? `is not a field of a ${type}` : `is invalid: ${issue2?.message ?? ""}`;
-    return invalidBlock(`${at(field2)} ${why}`);
-  }
-  const data = parsed.data;
-  const supersedes = data.supersedes;
-  if (supersedes !== void 0) {
-    const problem = supersedesProblem(deps, change, index2, supersedes);
-    if (problem !== void 0)
-      return invalidBlock(`${at("supersedes")} ${supersedes} ${problem.why}`);
-  }
-  return {
-    type,
-    summary: data.summary,
-    refs: data.refs,
-    body: body ?? "",
-    ticket,
-    ...rest.status === void 0 ? {} : { status: data.status },
-    ...data.review === true ? { review: true } : {},
-    ...supersedes === void 0 ? {} : { supersedes },
-    ...data.severity === void 0 ? {} : { severity: data.severity },
-    ...data.category === void 0 ? {} : { category: data.category },
-    ...data.options === void 0 ? {} : { options: data.options }
-  };
+  if (parsed.success) return parsed.data;
+  const [issue2] = parsed.error.issues;
+  const field2 = String(issue2?.path[0] ?? "status");
+  const message = issue2?.message ?? "";
+  return invalidEnvelope(
+    field2 in envelope.fields ? `${at(field2)} is invalid: ${message}` : `${field2} is missing from the frontmatter, which ends at line ${String(envelope.end)}: ${message}`
+  );
 }
-function storeReport(deps, change, dispatchPath, text6) {
-  const dispatch2 = readDocument(deps.store, join16(change.projectRoot, dispatchPath));
-  if (dispatch2 === void 0 || !("data" in dispatch2)) return;
-  const report2 = dispatch2.data.report;
-  if (typeof report2 === "string") deps.store.write(join16(change.projectRoot, report2), text6);
+function missingIds(deps, change, index2, ticket, data) {
+  const written = new Set(
+    listEntries(index2, change.id).filter((entry) => entry.ticket === ticket).map((entry) => entry.id)
+  );
+  const recorded2 = ticketEvidence(deps, change, ticket);
+  const missing = [
+    ...data.entries.filter((id) => !written.has(id)),
+    ...data.evidence.filter((id) => !recorded2.has(id))
+  ];
+  if (missing.length === 0) return void 0;
+  return refuse(
+    "policy/entries-missing",
+    `the envelope lists ${missing.join(", ")}, which ${missing.length === 1 ? "is" : "are"} not recorded under ${ticket}`,
+    [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`]
+  );
+}
+function ticketEvidence(deps, change, ticket) {
+  const dir = join16(change.dir, "evidence");
+  const ids = /* @__PURE__ */ new Set();
+  for (const name of deps.store.list(dir)) {
+    if (!name.endsWith(".md")) continue;
+    const document = readDocument(deps.store, join16(dir, name));
+    if (document === void 0 || !("data" in document) || document.kind !== "evidence") continue;
+    if (document.data.ticket === ticket) ids.add(String(document.data.id));
+  }
+  return ids;
 }
 
 // kernel/src/log/use-cases/list.ts
@@ -19505,18 +19616,18 @@ function showEntry(deps, change, id) {
     );
   }
   const changeId2 = reference.changeId ?? change.id;
-  const notFound5 = (why) => refuse("input/not-found", why, ["bdk log list", "bdk change list --all"]);
+  const notFound6 = (why) => refuse("input/not-found", why, ["bdk log list", "bdk change list --all"]);
   return withChangeIndex(deps, change, (index2) => {
     if (changeId2 !== change.id) {
       const location = findChange(deps.store, change.projectRoot, changeId2);
-      if (location === void 0) return notFound5(`no Change ${changeId2}`);
+      if (location === void 0) return notFound6(`no Change ${changeId2}`);
       refreshChange(index2, location);
     }
     const row = findEntry(index2, changeId2, reference.id);
-    if (row === void 0) return notFound5(`${id} names no entry of ${changeId2}`);
+    if (row === void 0) return notFound6(`${id} names no entry of ${changeId2}`);
     const document = readDocument(deps.store, join18(change.projectRoot, row.path));
     if (document === void 0 || !("data" in document)) {
-      return notFound5(`${row.path} disappeared while it was read`);
+      return notFound6(`${row.path} disappeared while it was read`);
     }
     return {
       entry: { ...entryView(document.data, row.status), body: document.body, path: row.path },
@@ -19540,7 +19651,7 @@ function active(change) {
 function addCommand(deps) {
   return async (context) => {
     const body = text(context.flags["--body"]);
-    const result2 = await addEntry(deps, active(context.change), {
+    const result2 = await addEntry(deps, active(context.change), globalDir(context.runtime), {
       type: context.positionals.type ?? "",
       summary: context.positionals["<summary>"] ?? "",
       refs: list(context.flags["--ref"]),
@@ -19548,7 +19659,8 @@ function addCommand(deps) {
       review: context.flags["--review"] === true,
       ...optional2("status", text(context.flags["--status"])),
       ...optional2("ticket", text(context.flags["--ticket"])),
-      ...optional2("supersedes", text(context.flags["--supersedes"]))
+      ...optional2("supersedes", text(context.flags["--supersedes"])),
+      ...optional2("category", text(context.flags["--category"]))
     });
     return isRefusal(result2) ? result2 : { data: result2, text: renderAdd(result2) };
   };
@@ -19558,31 +19670,18 @@ function ingestCommand(deps) {
     const ticket = text(context.flags["--ticket"]);
     if (ticket === void 0) {
       return refuse("input/missing-argument", "log ingest needs --ticket, the role's open ticket", [
-        "bdk log ingest --ticket <ticket> --file <report>"
+        "bdk log ingest --ticket <ticket> < report.md"
       ]);
     }
-    const file = text(context.flags["--file"]);
-    let input = file === void 0 ? context.runtime.readStdin() : void 0;
-    if (file !== void 0) {
-      input = deps.store.read(isAbsolute2(file) ? file : join19(context.cwd, file));
-      if (input === void 0) {
-        return refuse("input/invalid-argument", `--file ${file} does not exist`, [
-          `bdk log ingest --ticket ${ticket} --file .bdk/changes/<id>/reports/<report>.md`
-        ]);
-      }
-    }
-    if (input === void 0 || input.trim() === "") {
+    const input = context.runtime.readStdin();
+    if (input.trim() === "") {
       return refuse(
         "input/missing-argument",
-        "stdin is empty; log ingest reads a bdk-entries block",
-        [`bdk log ingest --ticket ${ticket} --file <report>`]
+        "stdin is empty; log ingest reads the report, its envelope as frontmatter",
+        [`bdk log ingest --ticket ${ticket} < report.md`]
       );
     }
-    const report2 = await ingestBlock(deps, active(context.change), {
-      ticket,
-      text: input,
-      stdin: file === void 0
-    });
+    const report2 = await ingestReport(deps, active(context.change), { ticket, text: input });
     return isRefusal(report2) ? report2 : { data: report2, text: renderIngest(report2) };
   };
 }
@@ -19624,6 +19723,7 @@ function optional2(key, value) {
 }
 
 // kernel/src/log/index.ts
+var logConfig = { modules: [verifierModule] };
 function logRegistrations(deps) {
   return [
     { id: "log-add", handler: addCommand(deps) },
@@ -19637,10 +19737,10 @@ function logRegistrations(deps) {
 // kernel/src/part/render/part.ts
 function renderList3(report2) {
   if (report2.items.length === 0) return "No plan parts.\n";
-  return `${report2.items.map((item2) => {
-    const wave = item2.wave === void 0 ? "" : `, wave ${String(item2.wave)}`;
-    const after = item2.dependsOn === void 0 ? "" : `, after ${item2.dependsOn.join(", ")}`;
-    return `${item2.part} ${item2.state}: ${item2.title} (${String(item2.done)}/${String(item2.tasks)} tasks, ${String(item2.bytes)} bytes${wave}${after}, spec ${item2.specImpact})`;
+  return `${report2.items.map((item3) => {
+    const wave = item3.wave === void 0 ? "" : `, wave ${String(item3.wave)}`;
+    const after = item3.dependsOn === void 0 ? "" : `, after ${item3.dependsOn.join(", ")}`;
+    return `${item3.part} ${item3.state}: ${item3.title} (${String(item3.done)}/${String(item3.tasks)} tasks, ${String(item3.bytes)} bytes${wave}${after}, spec ${item3.specImpact})`;
   }).join("\n")}
 `;
 }
@@ -19649,7 +19749,7 @@ function renderStart(report2) {
     const extra = [
       task.verification === void 0 ? "" : "verification: none",
       task.stopRule === void 0 ? "" : `stop rule: ${task.stopRule}`
-    ].filter((text6) => text6 !== "");
+    ].filter((text7) => text7 !== "");
     const suffix = extra.length === 0 ? "" : ` (${extra.join("; ")})`;
     return `  ${task.task}: ${task.files.join(", ")}${suffix}`;
   });
@@ -19744,7 +19844,7 @@ next: ${report2.next}
 }
 
 // kernel/src/graph/use-cases/done.ts
-import { join as join23 } from "node:path";
+import { join as join22 } from "node:path";
 
 // kernel/src/graph/domain/kinds/kind.ts
 var BaseKind = class {
@@ -20160,15 +20260,15 @@ function gateView(gate2, pending) {
 }
 function chainOf(start, find) {
   const seen = /* @__PURE__ */ new Map();
-  const visit = (node3) => {
+  const visit2 = (node3) => {
     for (const id of [...node3.instances ?? [], ...node3.requires]) {
       const required2 = find(id);
       if (required2 === void 0 || seen.has(id) || id === start.id) continue;
       seen.set(id, required2);
-      visit(required2);
+      visit2(required2);
     }
   };
-  visit(start);
+  visit2(start);
   const rest = [...seen.values()].sort(
     (a, b) => b.position - a.position || (a.nn === void 0 ? -1 : 1) - (b.nn === void 0 ? -1 : 1) || (a.nn ?? "").localeCompare(b.nn ?? "")
   );
@@ -20221,7 +20321,7 @@ var LOOPS2 = [
   "not-run"
 ];
 var GATE_KIND = "gate";
-function pipelineProblems(pipeline, declared2) {
+function pipelineProblems(pipeline, declared3) {
   const problems = [];
   const stages = /* @__PURE__ */ new Set();
   for (const stage2 of pipeline.stages) {
@@ -20233,16 +20333,16 @@ function pipelineProblems(pipeline, declared2) {
     const at = `nodes[${n}] (${node3.id})`;
     if (ids.has(node3.id)) problems.push(`${at}.id: ${node3.id} appears twice`);
     ids.add(node3.id);
-    if (!declared2.kinds.has(node3.kind)) problems.push(`${at}.kind: ${node3.kind} is not a kind`);
+    if (!declared3.kinds.has(node3.kind)) problems.push(`${at}.kind: ${node3.kind} is not a kind`);
     if (!stages.has(node3.stage)) problems.push(`${at}.stage: ${node3.stage} is not a stage`);
     const feature = node3.if?.slice("features.".length);
-    if (feature !== void 0 && !declared2.features.has(feature)) {
+    if (feature !== void 0 && !declared3.features.has(feature)) {
       problems.push(`${at}.if: features.${feature} is not a declared features key`);
     }
     for (const rule2 of node3.rules ?? []) {
-      if (!declared2.rules.has(rule2)) problems.push(`${at}.rules: rules/${rule2} is not declared`);
+      if (!declared3.rules.has(rule2)) problems.push(`${at}.rules: rules/${rule2} is not declared`);
     }
-    problems.push(...gateProblems(node3, at, stages, declared2));
+    problems.push(...gateProblems(node3, at, stages, declared3));
   });
   pipeline.nodes.forEach((node3, n) => {
     for (const required2 of node3.requires ?? []) {
@@ -20255,13 +20355,13 @@ function pipelineProblems(pipeline, declared2) {
   if (cycle !== void 0) problems.push(`requires: ${cycle.join(" -> ")} form a cycle`);
   return problems;
 }
-function gateProblems(node3, at, stages, declared2) {
+function gateProblems(node3, at, stages, declared3) {
   if (node3.kind !== GATE_KIND) {
     return node3.policy === void 0 && node3.opens === void 0 ? [] : [`${at}: policy and opens belong to gate nodes only`];
   }
   const problems = [];
   if (node3.policy === void 0) problems.push(`${at}.policy: a gate needs policy`);
-  else if (!declared2.gates.has(node3.policy)) {
+  else if (!declared3.gates.has(node3.policy)) {
     problems.push(`${at}.policy: policy.gates.${node3.policy} is not declared`);
   }
   if (node3.opens === void 0) problems.push(`${at}.opens: a gate needs opens`);
@@ -20272,13 +20372,13 @@ function cycleOf(nodes, ids) {
   const byId = new Map(nodes.map((node3) => [node3.id, node3]));
   const finished = /* @__PURE__ */ new Set();
   const path = [];
-  const visit = (id) => {
+  const visit2 = (id) => {
     if (finished.has(id) || !ids.has(id)) return void 0;
     const start = path.indexOf(id);
     if (start >= 0) return [...path.slice(start), id];
     path.push(id);
     for (const required2 of byId.get(id)?.requires ?? []) {
-      const found = visit(required2);
+      const found = visit2(required2);
       if (found !== void 0) return found;
     }
     path.pop();
@@ -20286,7 +20386,7 @@ function cycleOf(nodes, ids) {
     return void 0;
   };
   for (const node3 of nodes) {
-    const found = visit(node3.id);
+    const found = visit2(node3.id);
     if (found !== void 0) return found;
   }
   return void 0;
@@ -20481,17 +20581,17 @@ function latestDone(entries) {
 }
 function sealedIds(order2, results) {
   const sealed = /* @__PURE__ */ new Set();
-  const visit = (id) => {
+  const visit2 = (id) => {
     const node3 = results.get(id);
     if (node3 === void 0) return;
     for (const required2 of [...node3.requires, ...node3.instances ?? []]) {
       if (sealed.has(required2)) continue;
       sealed.add(required2);
-      visit(required2);
+      visit2(required2);
     }
   };
   for (const id of order2) {
-    if (results.get(id)?.gate?.done === true) visit(id);
+    if (results.get(id)?.gate?.done === true) visit2(id);
   }
   return sealed;
 }
@@ -20535,7 +20635,7 @@ var pipelinePrompts = KIND_NAMES.map(pipelinePrompt);
 
 // kernel/src/graph/use-cases/hash.ts
 import { createHash as createHash3 } from "node:crypto";
-import { join as join20 } from "node:path";
+import { join as join19 } from "node:path";
 function inputHasher(store2, changeDir, codeTree) {
   return (inputs) => {
     if ("codeTree" in inputs) return codeTree ?? filesHash(store2, changeDir, []);
@@ -20547,7 +20647,7 @@ function filesHash(store2, changeDir, files) {
   for (const path of [...files].sort()) {
     hash2.update(path);
     hash2.update("\0");
-    hash2.update(store2.read(join20(changeDir, path)) ?? "");
+    hash2.update(store2.read(join19(changeDir, path)) ?? "");
     hash2.update("\0");
   }
   return `sha256:${hash2.digest("hex")}`;
@@ -20555,7 +20655,7 @@ function filesHash(store2, changeDir, files) {
 
 // kernel/src/graph/use-cases/pipeline.ts
 var import_yaml7 = __toESM(require_dist(), 1);
-import { join as join21 } from "node:path";
+import { join as join20 } from "node:path";
 
 // kernel/src/graph/schema/pipeline.ts
 var KEBAB = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
@@ -20590,30 +20690,30 @@ var pipelineSchema = strictObject({
 var PIPELINE_FILE = "pipeline/pipeline.yaml";
 var cache2 = /* @__PURE__ */ new WeakMap();
 function loadPipeline(store2, pluginRoot, settings, kinds) {
-  const path = join21(pluginRoot, PIPELINE_FILE);
-  const text6 = store2.read(path);
-  if (text6 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
-  const known = cache2.get(kinds)?.get(text6);
+  const path = join20(pluginRoot, PIPELINE_FILE);
+  const text7 = store2.read(path);
+  if (text7 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
+  const known = cache2.get(kinds)?.get(text7);
   if (known !== void 0) return known;
-  const problems = pipelineErrors(text6, declaredBy(settings, kinds));
+  const problems = pipelineErrors(text7, declaredBy(settings, kinds));
   if (problems.pipeline === void 0) {
     throw new Error(`${PIPELINE_FILE} is invalid: ${problems.errors.join("; ")}`);
   }
   const byText = cache2.get(kinds) ?? /* @__PURE__ */ new Map();
-  byText.set(text6, problems.pipeline);
+  byText.set(text7, problems.pipeline);
   cache2.set(kinds, byText);
   return problems.pipeline;
 }
-function pipelineErrors(text6, declared2) {
+function pipelineErrors(text7, declared3) {
   let data;
   try {
-    data = (0, import_yaml7.parse)(text6);
+    data = (0, import_yaml7.parse)(text7);
   } catch (error2) {
     return { errors: [error2 instanceof Error ? error2.message : String(error2)] };
   }
   const parsed = pipelineSchema.safeParse(data);
   if (!parsed.success) return { errors: parsed.error.issues.flatMap(issueText) };
-  const errors = pipelineProblems(parsed.data, declared2);
+  const errors = pipelineProblems(parsed.data, declared3);
   return errors.length === 0 ? { pipeline: parsed.data, errors } : { errors };
 }
 function declaredBy(settings, kinds) {
@@ -20644,21 +20744,21 @@ function keyOf(path) {
 }
 
 // kernel/src/graph/use-cases/view.ts
-import { join as join22 } from "node:path";
+import { join as join21 } from "node:path";
 function changeView(input) {
   const { store: store2, dir } = input;
   const files = /* @__PURE__ */ new Map();
   const parts = /* @__PURE__ */ new Map();
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
-  const read2 = (path) => {
+  const read3 = (path) => {
     if (files.has(path)) return files.get(path);
-    const facts = readFacts(store2, join22(dir, path));
+    const facts = readFacts(store2, join21(dir, path));
     files.set(path, facts);
     return facts;
   };
   const planPart = (path) => {
     if (parts.has(path)) return parts.get(path);
-    const found = read2(path);
+    const found = read3(path);
     const facts = found?.facts.data === void 0 || found.body === void 0 ? void 0 : planPartFacts(found.facts.data, found.body);
     parts.set(path, facts);
     return facts;
@@ -20668,15 +20768,15 @@ function changeView(input) {
     kind: input.kind,
     profile: input.profile,
     entries: input.entries,
-    file: (path) => read2(path)?.facts,
-    list: (sub) => store2.list(join22(dir, sub)).filter((name) => !name.endsWith("/")),
+    file: (path) => read3(path)?.facts,
+    list: (sub) => store2.list(join21(dir, sub)).filter((name) => !name.endsWith("/")),
     reportStatus: (entry) => {
       const row = byId.get(entry.id);
       if (row === void 0) return void 0;
-      const data = documentData(store2, join22(input.projectRoot, row.path));
+      const data = documentData(store2, join21(input.projectRoot, row.path));
       const report2 = data?.report;
       if (typeof report2 !== "string") return void 0;
-      const status = documentData(store2, join22(dir, report2))?.status;
+      const status = documentData(store2, join21(dir, report2))?.status;
       return typeof status === "string" ? status : void 0;
     },
     planPart,
@@ -20703,21 +20803,21 @@ function planPartFacts(data, body) {
   };
 }
 function readFacts(store2, path) {
-  const text6 = store2.read(path);
-  if (text6 === void 0) return void 0;
-  const bytes = Buffer.byteLength(text6);
+  const text7 = store2.read(path);
+  if (text7 === void 0) return void 0;
+  const bytes2 = Buffer.byteLength(text7);
   try {
     const document = readDocument(store2, path);
     if (document === void 0) return void 0;
     const { body } = document;
     const blank = body.trim() === "";
     return {
-      facts: "data" in document ? { bytes, blank, data: document.data } : { bytes, blank },
+      facts: "data" in document ? { bytes: bytes2, blank, data: document.data } : { bytes: bytes2, blank },
       body
     };
   } catch (error2) {
     if (!(error2 instanceof KernelRefusal)) throw error2;
-    return { facts: { bytes, blank: text6.trim() === "", invalid: error2.refusal.why } };
+    return { facts: { bytes: bytes2, blank: text7.trim() === "", invalid: error2.refusal.why } };
   }
 }
 function documentData(store2, path) {
@@ -20827,8 +20927,8 @@ function gatesOf(resolved) {
 function record2(value) {
   return typeof value === "object" && value !== null ? value : {};
 }
-function pendingOf(read2) {
-  const rows = new Map(read2.entries.map((entry) => [entry.id, entry]));
+function pendingOf(read3) {
+  const rows = new Map(read3.entries.map((entry) => [entry.id, entry]));
   return (id) => {
     const row = rows.get(id);
     if (row === void 0) throw new Error(`pending entry ${id} is not indexed`);
@@ -20846,26 +20946,26 @@ function pendingOf(read2) {
     };
   };
 }
-function stageOfChange(read2) {
-  return stageOf(read2.entries, stageMap(read2.pipeline));
+function stageOfChange(read3) {
+  return stageOf(read3.entries, stageMap(read3.pipeline));
 }
-function gateViews(read2) {
-  const pending = pendingOf(read2);
-  return read2.graph.gates.map((gate2) => gateView(gate2, pending));
+function gateViews(read3) {
+  const pending = pendingOf(read3);
+  return read3.graph.gates.map((gate2) => gateView(gate2, pending));
 }
 
 // kernel/src/graph/use-cases/explain.ts
 function explainNode(deps, change, globalDir2, id) {
   return withChangeIndex(deps, change, async (index2) => {
-    const read2 = await readGraph(deps, change, index2, globalDir2);
-    if ("refused" in read2) return read2;
-    const node3 = read2.graph.find(id);
-    if (node3 === void 0) return notFound2(read2, change, id);
-    const chain2 = chainOf(node3, read2.graph.find);
+    const read3 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read3) return read3;
+    const node3 = read3.graph.find(id);
+    if (node3 === void 0) return notFound2(read3, change, id);
+    const chain2 = chainOf(node3, read3.graph.find);
     const conditions = [
       ...new Set(
         chain2.flatMap(
-          (item2) => item2.state !== "skipped" && item2.node.if !== void 0 ? [item2.node.if] : []
+          (item3) => item3.state !== "skipped" && item3.node.if !== void 0 ? [item3.node.if] : []
         )
       )
     ];
@@ -20873,15 +20973,15 @@ function explainNode(deps, change, globalDir2, id) {
       artifact: node3.id,
       state: node3.state,
       chain: chain2.map(nodeView),
-      profile: read2.view.profile,
+      profile: read3.view.profile,
       ...conditions.length === 0 ? {} : { conditions }
     };
   });
 }
-function notFound2(read2, change, id) {
+function notFound2(read3, change, id) {
   const hint = closest(
     id,
-    read2.graph.nodes.map((node3) => node3.id)
+    read3.graph.nodes.map((node3) => node3.id)
   );
   return refuse("input/not-found", `${id} is not a node of ${change.id}'s graph`, [
     hint === void 0 ? "bdk change status" : `bdk explain ${hint}`,
@@ -20892,14 +20992,14 @@ function notFound2(read2, change, id) {
 // kernel/src/graph/use-cases/validate.ts
 function validateNode(deps, change, globalDir2, id) {
   return withChangeIndex(deps, change, async (index2) => {
-    const read2 = await readGraph(deps, change, index2, globalDir2, { work: true });
-    if ("refused" in read2) return read2;
-    const node3 = id === void 0 ? read2.graph.next : read2.graph.find(id);
+    const read3 = await readGraph(deps, change, index2, globalDir2, { work: true });
+    if ("refused" in read3) return read3;
+    const node3 = id === void 0 ? read3.graph.next : read3.graph.find(id);
     if (node3 === void 0) {
-      return id === void 0 ? nothingActionable(read2, change) : notFound2(read2, change, id);
+      return id === void 0 ? nothingActionable(read3, change) : notFound2(read3, change, id);
     }
-    const checks = checksOf(read2, node3);
-    const inputHash = await read2.currentHash(node3);
+    const checks = checksOf(read3, node3);
+    const inputHash = await read3.currentHash(node3);
     return {
       artifact: node3.id,
       valid: checks.every((check) => check.ok),
@@ -20908,41 +21008,41 @@ function validateNode(deps, change, globalDir2, id) {
     };
   });
 }
-function checksOf(read2, node3) {
-  const kind = read2.kinds.get(node3.kind);
+function checksOf(read3, node3) {
+  const kind = read3.kinds.get(node3.kind);
   if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
   const instances = node3.instances ?? [];
   if (instances.length === 0) {
-    return kind.validate(read2.view, {
+    return kind.validate(read3.view, {
       id: node3.id,
       ...node3.nn === void 0 ? {} : { nn: node3.nn }
     });
   }
   return instances.flatMap((instance) => {
-    const nn = read2.graph.find(instance)?.nn;
-    return kind.validate(read2.view, { id: instance, ...nn === void 0 ? {} : { nn } }).map((check) => ({ ...check, id: `${instance}:${check.id}` }));
+    const nn = read3.graph.find(instance)?.nn;
+    return kind.validate(read3.view, { id: instance, ...nn === void 0 ? {} : { nn } }).map((check) => ({ ...check, id: `${instance}:${check.id}` }));
   });
 }
-function nothingActionable(read2, change) {
-  const gate2 = read2.graph.waitingGate;
-  const why = read2.parked !== void 0 ? `${change.id} is parked; no artifact is actionable` : gate2 !== void 0 ? `${change.id} waits for ${gate2.gate}; no artifact is actionable` : `every node of ${change.id} is done; no artifact is actionable`;
+function nothingActionable(read3, change) {
+  const gate2 = read3.graph.waitingGate;
+  const why = read3.parked !== void 0 ? `${change.id} is parked; no artifact is actionable` : gate2 !== void 0 ? `${change.id} waits for ${gate2.gate}; no artifact is actionable` : `every node of ${change.id} is done; no artifact is actionable`;
   return refuse("input/not-found", why, ["bdk validate <artifact>", "bdk next"]);
 }
 
 // kernel/src/graph/use-cases/done.ts
 function markDone(deps, change, globalDir2, id) {
   return withChangeIndex(deps, change, async (index2) => {
-    const read2 = await readGraph(deps, change, index2, globalDir2);
-    if ("refused" in read2) return read2;
-    const node3 = read2.graph.find(id);
-    if (node3 === void 0) return notFound2(read2, change, id);
-    const kind = read2.kinds.get(node3.kind);
+    const read3 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read3) return read3;
+    const node3 = read3.graph.find(id);
+    if (node3 === void 0) return notFound2(read3, change, id);
+    const kind = read3.kinds.get(node3.kind);
     if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
-    const refused = refusal(read2, node3, kind);
+    const refused = refusal(read3, node3, kind);
     if (refused !== void 0) return refused;
-    if (isSplitDesign(read2, kind)) return raiseToLarge(deps, change, index2, globalDir2, read2, node3);
-    const targets = node3.instances === void 0 || node3.instances.length === 0 ? [node3] : node3.instances.map((instance) => read2.graph.find(instance)).filter((instance) => instance?.state === "ready" || instance?.state === "stale").filter((instance) => instance !== void 0);
-    const hash2 = await read2.currentHash(node3) ?? emptyHash(deps, change);
+    if (isSplitDesign(read3, kind)) return raiseToLarge(deps, change, index2, globalDir2, read3, node3);
+    const targets = node3.instances === void 0 || node3.instances.length === 0 ? [node3] : node3.instances.map((instance) => read3.graph.find(instance)).filter((instance) => instance?.state === "ready" || instance?.state === "stale").filter((instance) => instance !== void 0);
+    const hash2 = await read3.currentHash(node3) ?? emptyHash(deps, change);
     if (targets.length === 0 || targets.length === 1 && targets[0]?.state === "done") {
       if (node3.state !== "done") {
         return refuse("policy/not-ready", `${node3.id} has no ready part to mark`, [
@@ -20953,12 +21053,12 @@ function markDone(deps, change, globalDir2, id) {
         artifact: node3.id,
         state: "done",
         inputHash: hash2,
-        next: nextOf(read2),
+        next: nextOf(read3),
         ...recorded(node3)
       };
     }
     for (const target of targets) {
-      const failed = checksOf(read2, target).filter((check) => !check.ok);
+      const failed = checksOf(read3, target).filter((check) => !check.ok);
       const first = failed[0];
       if (first !== void 0) {
         const named = failed.map((check) => `${check.id}: ${check.why ?? "failed"}`).join("; ");
@@ -20969,14 +21069,14 @@ function markDone(deps, change, globalDir2, id) {
         );
       }
     }
-    const generated = indexOf(read2, kind, node3, targets);
+    const generated = indexOf(read3, kind, node3, targets);
     let entry;
     for (const target of targets) {
-      const written = await writeDoneMarker(deps, change, index2, read2, target);
+      const written = await writeDoneMarker(deps, change, index2, read3, target);
       if ("refused" in written) return written;
       entry = written.entry.id;
     }
-    if (generated !== void 0) deps.store.write(join23(change.dir, generated.path), generated.text);
+    if (generated !== void 0) deps.store.write(join22(change.dir, generated.path), generated.text);
     const after = await reread(deps, change, index2, globalDir2);
     if ("refused" in after) return after;
     return {
@@ -20988,11 +21088,11 @@ function markDone(deps, change, globalDir2, id) {
     };
   });
 }
-async function writeDoneMarker(deps, change, index2, read2, target) {
-  const kind = read2.kinds.get(target.kind);
+async function writeDoneMarker(deps, change, index2, read3, target) {
+  const kind = read3.kinds.get(target.kind);
   if (kind === void 0) throw new Error(`${target.id} has the unknown kind ${target.kind}`);
-  const inputHash = await read2.currentHash(target) ?? emptyHash(deps, change);
-  const files = kind.writes(read2.view, target.nn).filter((path) => !path.includes("<"));
+  const inputHash = await read3.currentHash(target) ?? emptyHash(deps, change);
+  const files = kind.writes(read3.view, target.nn).filter((path) => !path.includes("<"));
   return appendEntry(
     deps,
     change,
@@ -21009,9 +21109,9 @@ async function writeDoneMarker(deps, change, index2, read2, target) {
     { dedupe: false }
   );
 }
-function refusal(read2, node3, kind) {
+function refusal(read3, node3, kind) {
   const { doneBy } = kind;
-  if (node3.state === "skipped" && !isSplitDesign(read2, kind)) {
+  if (node3.state === "skipped" && !isSplitDesign(read3, kind)) {
     return refuse(
       "policy/invalid-transition",
       `${node3.id} is not part of this Change's graph: ${node3.why ?? "skipped"}`,
@@ -21039,7 +21139,7 @@ function refusal(read2, node3, kind) {
     );
   }
   if (node3.state === "blocked") {
-    const open2 = node3.requires.find((id) => read2.graph.find(id)?.state !== "done");
+    const open2 = node3.requires.find((id) => read3.graph.find(id)?.state !== "done");
     return refuse("policy/not-ready", `${node3.id}: ${node3.why ?? "a requirement is not done"}`, [
       `bdk explain ${node3.id}`,
       ...open2 === void 0 ? [] : [`bdk done ${open2}`]
@@ -21047,11 +21147,11 @@ function refusal(read2, node3, kind) {
   }
   return void 0;
 }
-function isSplitDesign(read2, kind) {
-  return kind.name === "design" && read2.view.profile === "small" && read2.view.file("design.md") === void 0 && partFiles(read2.view, "design/parts").size > 0;
+function isSplitDesign(read3, kind) {
+  return kind.name === "design" && read3.view.profile === "small" && read3.view.file("design.md") === void 0 && partFiles(read3.view, "design/parts").size > 0;
 }
-async function raiseToLarge(deps, change, index2, globalDir2, read2, node3) {
-  const parts = [...partFiles(read2.view, "design/parts").values()];
+async function raiseToLarge(deps, change, index2, globalDir2, read3, node3) {
+  const parts = [...partFiles(read3.view, "design/parts").values()];
   const written = await appendEntry(
     deps,
     change,
@@ -21077,21 +21177,21 @@ async function raiseToLarge(deps, change, index2, globalDir2, read2, node3) {
     entry: written.entry.id
   };
 }
-function indexOf(read2, kind, node3, targets) {
+function indexOf(read3, kind, node3, targets) {
   if (kind.name === "design-index") {
-    return { path: "design/index.md", text: generateDesignIndex(partsOf(read2, "design/parts")) };
+    return { path: "design/index.md", text: generateDesignIndex(partsOf(read3, "design/parts")) };
   }
   if (kind.name !== "plan-part") return void 0;
-  const collection = node3.instances === void 0 ? read2.graph.find(node3.node.id) : node3;
+  const collection = node3.instances === void 0 ? read3.graph.find(node3.node.id) : node3;
   const marked = new Set(targets.map((target) => target.id));
   const complete = (collection?.instances ?? []).every(
-    (id) => marked.has(id) || read2.graph.find(id)?.state === "done"
+    (id) => marked.has(id) || read3.graph.find(id)?.state === "done"
   );
-  return complete ? { path: "plan/index.md", text: generatePlanIndex(partsOf(read2, "plan/parts")) } : void 0;
+  return complete ? { path: "plan/index.md", text: generatePlanIndex(partsOf(read3, "plan/parts")) } : void 0;
 }
-function partsOf(read2, dir) {
-  return [...partFiles(read2.view, dir).values()].map((path) => {
-    const data = read2.view.file(path)?.data ?? {};
+function partsOf(read3, dir) {
+  return [...partFiles(read3.view, dir).values()].map((path) => {
+    const data = read3.view.file(path)?.data ?? {};
     const dependsOn = data["depends-on"];
     return {
       id: String(data.id),
@@ -21104,9 +21204,9 @@ async function reread(deps, change, index2, globalDir2) {
   refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
   return readGraph(deps, change, index2, globalDir2);
 }
-function nextOf(read2) {
-  if (read2.parked !== void 0) return "user";
-  return read2.graph.next?.id ?? read2.graph.waitingGate?.gate ?? "nothing";
+function nextOf(read3) {
+  if (read3.parked !== void 0) return "user";
+  return read3.graph.next?.id ?? read3.graph.waitingGate?.gate ?? "nothing";
 }
 function recorded(node3) {
   return node3.recorded === void 0 ? {} : { entry: node3.recorded.id };
@@ -21163,7 +21263,7 @@ function finish(node3, kind) {
 }
 
 // kernel/src/graph/use-cases/instruction.ts
-import { posix as posix3, relative as relative5, sep as sep5 } from "node:path";
+import { posix as posix4, relative as relative5, sep as sep5 } from "node:path";
 
 // kernel/src/ctx/render/sections.ts
 function renderContext({ heading, sections }) {
@@ -21229,34 +21329,223 @@ var SKILL_CONTEXT = {
 
 // kernel/src/ctx/use-cases/parts.ts
 var import_yaml8 = __toESM(require_dist(), 1);
-import { join as join24 } from "node:path/posix";
+import { join as join23 } from "node:path/posix";
+
+// kernel/src/rules/render/show.ts
+function renderTicketRules(rules2) {
+  const heading = `## BDK rules: ${rules2.ticket} (${rules2.role}, ${rules2.target})
+`;
+  if (rules2.sections.length === 0) return `${heading}
+No rules for the role ${rules2.role}.
+`;
+  return [
+    heading,
+    ...rules2.sections.map((section) => `### ${section.key}
+
+${section.text}`)
+  ].join("\n");
+}
+
+// kernel/src/rules/use-cases/sections.ts
+import { posix as posix3 } from "node:path";
+
+// kernel/src/rules/config.ts
+var text3 = string2().min(1);
+var languagesModule = defineConfigModule({
+  key: "languages",
+  consumer: "rules",
+  owner: "T12",
+  description: "Languages and frameworks of the project; a name gets content from the rules/languages/<name> prompt value.",
+  schema: array(text3).refine((names) => new Set(names).size === names.length, "names must be unique").meta({ uniqueItems: true }).default([])
+});
+var RULE_CATEGORIES = [
+  "code-quality",
+  "architecture",
+  "design-patterns",
+  "security",
+  "engineering-judgment",
+  "test-quality"
+];
+var rulePrompts = [
+  ...RULE_CATEGORIES.map(
+    (name) => definePromptKey({
+      key: `rules/${name}`,
+      consumer: "rules",
+      owner: "T12",
+      defaultFile: `rules/${name}.md`
+    })
+  ),
+  definePromptKey({
+    key: "rules/languages/*",
+    consumer: "rules",
+    owner: "T12",
+    defaultFile: "rules/languages/{name}.md"
+  })
+];
+
+// kernel/src/rules/use-cases/selection.ts
+var WRITERS = {
+  categories: ["code-quality", "architecture", "design-patterns", "security", "test-quality"],
+  languages: true
+};
+var NONE2 = { categories: [], languages: false };
+var ROLE_RULES = {
+  implementer: WRITERS,
+  reviewer: WRITERS,
+  "pr-reviewer": WRITERS,
+  verifier: {
+    categories: ["architecture", "test-quality", "engineering-judgment"],
+    languages: false
+  },
+  "design-verifier": {
+    categories: ["architecture", "engineering-judgment", "security"],
+    languages: false
+  },
+  runner: NONE2,
+  scout: NONE2
+};
+
+// kernel/src/rules/use-cases/sections.ts
+function ruleSection(input, resolved, category2) {
+  const section = sectionOf(input, resolved, `rules/${category2}`);
+  if (section === void 0) {
+    throw new Error(`the prompt value rules/${category2} has no file in any layer`);
+  }
+  return section;
+}
+function languageSections(input, resolved) {
+  return read(languagesModule, resolved).flatMap((name) => {
+    const section = sectionOf(input, resolved, `rules/languages/${name}`);
+    return section === void 0 ? [] : [section];
+  });
+}
+function roleSections(input, resolved, role2) {
+  const rules2 = ROLE_RULES[role2];
+  return [
+    ...rules2.categories.map((category2) => ruleSection(input, resolved, category2)),
+    ...rules2.languages ? languageSections(input, resolved) : []
+  ];
+}
+function ruleSet(store2, resolved, category2) {
+  const value = resolved.prompts.values.get(declared(`rules/${category2}`));
+  return value === void 0 ? void 0 : promptContent(store2, value);
+}
+function sectionOf(input, resolved, key) {
+  const value = resolved.prompts.values.get(declared(key));
+  const lowest = value?.files[0];
+  if (value === void 0 || lowest === void 0) return void 0;
+  return {
+    key,
+    file: lowest.layer === "default" ? posix3.relative(input.pluginRoot, lowest.path) : lowest.path,
+    layers: [...new Set(value.files.map((file) => file.layer))],
+    text: promptContent(input.store, value)
+  };
+}
+function declared(key) {
+  const found = rulePrompts.some(
+    (prompt2) => prompt2.key.endsWith("/*") ? key.startsWith(prompt2.key.slice(0, -1)) : prompt2.key === key
+  );
+  if (!found) throw new Error(`${key} is not a prompt key rules declares`);
+  return key;
+}
+function read(module, resolved) {
+  return module.schema.parse(resolved.value[module.key]);
+}
+
+// kernel/src/rules/use-cases/show.ts
+function showTicketRules(deps, change, globalDir2, ticket) {
+  return withChangeIndex(deps, change, (index2) => {
+    const record4 = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
+    if (record4 === void 0) {
+      return refuse("input/not-found", `${change.id} has no ticket ${ticket}`, [
+        "bdk attempt list --all"
+      ]);
+    }
+    const dispatch2 = ticketDispatch(index2, change.id, ticket);
+    if (dispatch2 === void 0) {
+      const why = record4.data.outcome === void 0 ? `ticket ${ticket} has no dispatch package` : `ticket ${ticket} is closed ${record4.data.outcome}`;
+      return refuse("policy/no-open-ticket", why, [
+        `bdk dispatch build ${record4.data.target} <role> ${ticket}`,
+        "bdk attempt list"
+      ]);
+    }
+    const resolved = resolveOrRefuse(
+      {
+        store: deps.store,
+        settings: deps.settings,
+        globalDir: globalDir2,
+        projectRoot: change.projectRoot,
+        pluginRoot: deps.pluginRoot
+      },
+      { removed: "ignore" }
+    );
+    if ("refused" in resolved) return resolved;
+    const sections = isRole(dispatch2.role) ? roleSections(deps, resolved, dispatch2.role) : [];
+    const rulesRead = stampRulesRead(deps.store, change.dir, ticket, deps.clock.now());
+    if (rulesRead === void 0) throw new Error(`the attempt record of ${ticket} disappeared`);
+    return { ticket, role: dispatch2.role, target: record4.data.target, sections, rulesRead };
+  });
+}
+function isRole(role2) {
+  return ROLES.includes(role2);
+}
+
+// kernel/src/rules/commands/show.ts
+function showCommand2(deps) {
+  return async (context) => {
+    const id = context.positionals["<id>"];
+    const ticket = context.flags["--ticket"];
+    if (id !== void 0 && ticket !== void 0) {
+      return refuse("input/invalid-argument", "rules show takes <id> or --ticket, not both", [
+        "bdk rules show --ticket <ticket>"
+      ]);
+    }
+    if (id !== void 0) {
+      return refuse(
+        "kernel/not-implemented",
+        "bdk rules show <id> is not implemented yet; it lands with task T31",
+        ["bdk rules show --ticket <ticket>", "bdk rules --help"]
+      );
+    }
+    if (typeof ticket !== "string") {
+      return refuse("input/missing-argument", "rules show needs <id> or --ticket <ticket>", [
+        "bdk rules show --ticket <ticket>"
+      ]);
+    }
+    if (context.change === void 0) throw new Error("rules show is Change-scoped");
+    const rules2 = await showTicketRules(deps, context.change, globalDir(context.runtime), ticket);
+    return isRefusal(rules2) ? rules2 : { data: rules2, text: renderTicketRules(rules2) };
+  };
+}
+
+// kernel/src/rules/index.ts
+var rulesConfig = {
+  modules: [languagesModule],
+  prompts: rulePrompts
+};
+function rulesRegistrations(deps) {
+  return [{ id: "rules-show", handler: showCommand2(deps) }];
+}
 
 // kernel/src/ctx/config.ts
-var ID3 = /^[a-z0-9][a-z0-9-]*$/;
-var text3 = string2().min(1);
-var withFiles = text3.regex(/\{files\}/, "must contain the {files} placeholder");
+var ID4 = /^[a-z0-9][a-z0-9-]*$/;
+var text4 = string2().min(1);
+var withFiles = text4.regex(/\{files\}/, "must contain the {files} placeholder");
 var entryFields = {
-  id: string2().regex(ID3, "must be kebab-case: lowercase letters, digits and -").meta({
+  id: string2().regex(ID4, "must be kebab-case: lowercase letters, digits and -").meta({
     description: "Unique within the array; the merge key and the path segment."
   }),
-  command: text3.meta({ description: "The full, unscoped command." }),
+  command: text4.meta({ description: "The full, unscoped command." }),
   scoped: withFiles.optional().meta({ description: "The command for given paths ({files})." }),
   related: withFiles.optional().meta({ description: "The command for the tests covering given source paths ({files})." }),
-  failed: text3.optional().meta({ description: "Re-run of the previous failures." }),
-  incremental: text3.optional().meta({ description: "The incremental form." }),
-  when: text3.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
+  failed: text4.optional().meta({ description: "Re-run of the previous failures." }),
+  incremental: text4.optional().meta({ description: "The incremental form." }),
+  when: text4.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
 };
 function tools2(tier, description) {
   const entry = (tier === void 0 ? strictObject(entryFields) : strictObject({ ...entryFields, tier })).meta({ title: "tool entry" });
   return array(entry).default([]).meta({ description });
 }
-var languagesModule = defineConfigModule({
-  key: "languages",
-  consumer: "ctx",
-  owner: "T12",
-  description: "Languages and frameworks of the project; a name gets content from the rules/languages/<name> prompt value.",
-  schema: array(text3).refine((names) => new Set(names).size === names.length, "names must be unique").meta({ uniqueItems: true }).default([])
-});
 var toolsModule = defineConfigModule({
   key: "tools",
   consumer: "ctx",
@@ -21277,30 +21566,6 @@ var featuresModule = defineConfigModule({
     lavish: boolean2().default(true).meta({ description: "Review in Lavish; false falls back to AskUserQuestion (R-11)." })
   }).prefault({})
 });
-var RULE_CATEGORIES = [
-  "code-quality",
-  "architecture",
-  "design-patterns",
-  "security",
-  "engineering-judgment",
-  "test-quality"
-];
-var rulePrompts = [
-  ...RULE_CATEGORIES.map(
-    (name) => definePromptKey({
-      key: `rules/${name}`,
-      consumer: "ctx",
-      owner: "T12",
-      defaultFile: `rules/${name}.md`
-    })
-  ),
-  definePromptKey({
-    key: "rules/languages/*",
-    consumer: "ctx",
-    owner: "T12",
-    defaultFile: "rules/languages/{name}.md"
-  })
-];
 var fragmentPrompts = ["lavish", "ask-user"].map(
   (name) => definePromptKey({
     key: `fragments/decision/${name}`,
@@ -21314,30 +21579,24 @@ var fragmentPrompts = ["lavish", "ask-user"].map(
 function sectionsOf(input, resolved, part) {
   switch (part.kind) {
     case "rules": {
-      const key = declared(rulePrompts, `rules/${part.category}`);
+      const section = ruleSection(input, resolved, part.category);
       return [
         {
           title: `Rules: ${part.category}`,
-          body: prompt(input, resolved, key),
-          part: { kind: "rules", source: key }
+          body: section.text,
+          part: { kind: "rules", source: section.key }
         }
       ];
     }
     case "language-rules":
-      return read(languagesModule, resolved).flatMap((language) => {
-        const key = declared(rulePrompts, `rules/languages/${language}`);
-        if (!resolved.prompts.values.has(key)) return [];
-        return [
-          {
-            title: `Language rules: ${language}`,
-            body: prompt(input, resolved, key),
-            part: { kind: "language-rules", source: key }
-          }
-        ];
-      });
+      return languageSections(input, resolved).map((section) => ({
+        title: `Language rules: ${section.key.slice("rules/languages/".length)}`,
+        body: section.text,
+        part: { kind: "language-rules", source: section.key }
+      }));
     case "fragment": {
       const choice = lavish(input, resolved) ? "lavish" : "ask-user";
-      const key = declared(fragmentPrompts, `fragments/decision/${choice}`);
+      const key = declared2(fragmentPrompts, `fragments/decision/${choice}`);
       return [
         {
           title: "Asking the user",
@@ -21347,7 +21606,7 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "tools": {
-      const entries = read(toolsModule, resolved)[part.group];
+      const entries = read2(toolsModule, resolved)[part.group];
       return [
         {
           title: `Project commands: ${part.group}`,
@@ -21357,33 +21616,32 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "file": {
-      const text6 = input.store.read(join24(input.pluginRoot, part.path));
-      if (text6 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
-      return [{ title: part.title, body: text6, part: { kind: "file", source: part.path } }];
+      const text7 = input.store.read(join23(input.pluginRoot, part.path));
+      if (text7 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
+      return [{ title: part.title, body: text7, part: { kind: "file", source: part.path } }];
     }
   }
 }
-function ruleSet(store2, resolved, category2) {
-  const value = resolved.prompts.values.get(declared(rulePrompts, `rules/${category2}`));
-  return value === void 0 ? void 0 : promptContent(store2, value);
+function ruleSet2(store2, resolved, category2) {
+  return ruleSet(store2, resolved, category2);
 }
 function prompt(input, resolved, key) {
   const value = resolved.prompts.values.get(key);
   if (value === void 0) throw new Error(`the prompt value ${key} has no file in any layer`);
   return promptContent(input.store, value);
 }
-function declared(prompts2, key) {
+function declared2(prompts2, key) {
   const found = prompts2.some(
     (prompt2) => prompt2.key.endsWith("/*") ? key.startsWith(prompt2.key.slice(0, -1)) : prompt2.key === key
   );
   if (!found) throw new Error(`${key} is not a prompt key ctx declares`);
   return key;
 }
-function read(module, resolved) {
+function read2(module, resolved) {
   return module.schema.parse(resolved.value[module.key]);
 }
 function lavish(input, resolved) {
-  return read(featuresModule, resolved).lavish && input.which("lavish-axi") !== void 0;
+  return read2(featuresModule, resolved).lavish && input.which("lavish-axi") !== void 0;
 }
 
 // kernel/src/ctx/use-cases/skill.ts
@@ -21454,21 +21712,21 @@ function agentsTable(rows) {
   ) + "\n";
 }
 var graphemes = new Intl.Segmenter();
-function width(text6) {
-  return [...graphemes.segment(text6)].length;
+function width(text7) {
+  return [...graphemes.segment(text7)].length;
 }
 
 // kernel/src/ctx/use-cases/startup.ts
 var import_yaml9 = __toESM(require_dist(), 1);
-import { join as join25 } from "node:path/posix";
+import { join as join24 } from "node:path/posix";
 var STARTUP_FILE = "STARTUP_INSTRUCTIONS.md";
 var AGENTS_DIR = "agents";
 var OPEN = "<!-- bdk:agents-table -->";
 var CLOSE = "<!-- /bdk:agents-table -->";
 function readStartup(deps) {
-  const text6 = deps.store.read(join25(deps.pluginRoot, STARTUP_FILE));
-  if (text6 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
-  const lines = text6.split("\n");
+  const text7 = deps.store.read(join24(deps.pluginRoot, STARTUP_FILE));
+  if (text7 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
+  const lines = text7.split("\n");
   const open2 = lines.indexOf(OPEN);
   const close = lines.indexOf(CLOSE);
   if (open2 === -1 || close < open2) {
@@ -21477,11 +21735,11 @@ function readStartup(deps) {
   return { before: lines.slice(0, open2 + 1), rows: agents(deps), after: lines.slice(close) };
 }
 function agents(deps) {
-  const dir = join25(deps.pluginRoot, AGENTS_DIR);
-  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join25(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
+  const dir = join24(deps.pluginRoot, AGENTS_DIR);
+  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join24(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
 }
-function agentRow(path, text6) {
-  const { frontmatter } = splitFrontmatter(text6);
+function agentRow(path, text7) {
+  const { frontmatter } = splitFrontmatter(text7);
   const data = frontmatter === void 0 ? void 0 : (0, import_yaml9.parse)(frontmatter);
   const field2 = (name) => {
     const value = typeof data === "object" && data !== null ? data[name] : void 0;
@@ -21506,8 +21764,8 @@ function startupContext(deps) {
   return renderStartup(readStartup(deps));
 }
 var ctxConfig = {
-  modules: [languagesModule, toolsModule, featuresModule],
-  prompts: [...rulePrompts, ...fragmentPrompts]
+  modules: [toolsModule, featuresModule],
+  prompts: fragmentPrompts
 };
 function ctxRegistrations(deps) {
   return [
@@ -21517,26 +21775,26 @@ function ctxRegistrations(deps) {
 }
 
 // kernel/src/graph/use-cases/instruction.ts
-function instructionOf(deps, change, read2, node3) {
-  const kind = read2.kinds.get(node3.kind);
+function instructionOf(deps, change, read3, node3) {
+  const kind = read3.kinds.get(node3.kind);
   if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
   const key = templateKey(deps, node3.kind);
-  const value = read2.resolved.prompts.values.get(key);
+  const value = read3.resolved.prompts.values.get(key);
   if (value === void 0) throw new Error(`the prompt value ${key} has no file in any layer`);
   const dir = relative5(change.projectRoot, change.dir).split(sep5).join("/");
-  const writes = kind.writes(read2.view, node3.nn);
+  const writes = kind.writes(read3.view, node3.nn);
   return composeInstruction({
     node: node3,
     kind,
     change: change.id,
-    profile: read2.view.profile,
+    profile: read3.view.profile,
     template: promptContent(deps.store, value),
-    paths: writes.map((path) => posix3.join(dir, path)),
+    paths: writes.map((path) => posix4.join(dir, path)),
     rules: (node3.node.rules ?? []).map((category2) => ({
       category: category2,
-      text: ruleSet(deps.store, read2.resolved, category2) ?? ""
+      text: ruleSet2(deps.store, read3.resolved, category2) ?? ""
     })),
-    ledger: ledgerOf(read2.view.entries, [node3.id, ...writes])
+    ledger: ledgerOf(read3.view.entries, [node3.id, ...writes])
   });
 }
 function ledgerOf(entries, names) {
@@ -21546,46 +21804,46 @@ function ledgerOf(entries, names) {
 }
 function templateKey(deps, kind) {
   const key = `pipeline/${kind}`;
-  const declared2 = pipelinePrompts.some((prompt2) => prompt2.key === key) || deps.settings.promptKey(key) !== void 0;
-  if (!declared2) throw new Error(`${key} is not a declared prompt key`);
+  const declared3 = pipelinePrompts.some((prompt2) => prompt2.key === key) || deps.settings.promptKey(key) !== void 0;
+  if (!declared3) throw new Error(`${key} is not a declared prompt key`);
   return key;
 }
 
 // kernel/src/graph/use-cases/next.ts
 function nextStep(deps, change, globalDir2) {
   return withChangeIndex(deps, change, async (index2) => {
-    const read2 = await readGraph(deps, change, index2, globalDir2);
-    if ("refused" in read2) return read2;
-    const base = { change: change.id, stage: stageOfChange(read2), gates: gateViews(read2) };
-    if (read2.parked !== void 0) {
+    const read3 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read3) return read3;
+    const base = { change: change.id, stage: stageOfChange(read3), gates: gateViews(read3) };
+    if (read3.parked !== void 0) {
       return {
         report: { ...base, waiting: "user" },
         parked: {
-          entry: read2.parked.id,
-          summary: read2.parked.summary,
-          options: read2.parked.options ?? []
+          entry: read3.parked.id,
+          summary: read3.parked.summary,
+          options: read3.parked.options ?? []
         }
       };
     }
-    const { next, waitingGate } = read2.graph;
+    const { next, waitingGate } = read3.graph;
     if (next !== void 0) {
       return {
         report: {
           ...base,
           artifact: nodeView(next),
-          instruction: instructionOf(deps, change, read2, next)
+          instruction: instructionOf(deps, change, read3, next)
         }
       };
     }
     if (waitingGate !== void 0) {
-      const value = read2.resolved.prompts.values.get("pipeline/gate");
+      const value = read3.resolved.prompts.values.get("pipeline/gate");
       return {
         report: { ...base, waiting: "gate" },
         ...value === void 0 ? {} : {
           gateText: fillTemplate(promptContent(deps.store, value), {
             change: change.id,
             node: waitingGate.gate,
-            profile: read2.view.profile,
+            profile: read3.view.profile,
             paths: []
           })
         }
@@ -21654,21 +21912,39 @@ function doneCommand(deps) {
 
 // kernel/src/graph/use-cases/status.ts
 async function changeGraph(deps, change, index2, globalDir2) {
-  const read2 = await readGraph(deps, change, index2, globalDir2);
-  return "refused" in read2 ? read2 : graphSummary(read2);
+  const read3 = await readGraph(deps, change, index2, globalDir2);
+  return "refused" in read3 ? read3 : graphSummary(read3);
 }
-function graphSummary(read2) {
-  const { graph, pipeline } = read2;
-  const next = read2.parked !== void 0 ? void 0 : graph.next !== void 0 ? stageCommand(pipeline, stageOfTarget(pipeline, graph.next.id)) : graph.waitingGate?.command;
+function graphSummary(read3) {
+  const { graph, pipeline } = read3;
+  const next = read3.parked !== void 0 ? void 0 : graph.next !== void 0 ? stageCommand(pipeline, stageOfTarget(pipeline, graph.next.id)) : graph.waitingGate?.command;
   return {
-    stage: stageOfChange(read2),
+    stage: stageOfChange(read3),
     nodes: graph.nodes.map(nodeView),
-    gates: gateViews(read2),
+    gates: gateViews(read3),
     ...next === void 0 ? {} : { next }
   };
 }
 function stageResolver(deps) {
   return stageMap(loadPipeline(deps.store, deps.pluginRoot, deps.settings, kindsOf(deps)));
+}
+
+// kernel/src/graph/use-cases/paths.ts
+async function artifactPaths(deps, change, index2, globalDir2, target) {
+  const read3 = await readGraph(deps, change, index2, globalDir2);
+  if ("refused" in read3) return read3;
+  const node3 = read3.graph.nodes.find((found) => found.id === target);
+  if (node3 === void 0) return void 0;
+  const paths = /* @__PURE__ */ new Set();
+  for (const id of [node3.id, ...node3.requires]) {
+    const found = read3.graph.nodes.find((candidate) => candidate.id === id);
+    const kind = found === void 0 ? void 0 : read3.kinds.get(found.kind);
+    if (found === void 0 || kind === void 0) continue;
+    const inputs = kind.inputs(read3.view, found.nn);
+    const files = [...kind.writes(read3.view, found.nn), ..."files" in inputs ? inputs.files : []];
+    for (const path of files) if (!path.includes("<")) paths.add(path);
+  }
+  return [...paths];
 }
 
 // kernel/src/graph/index.ts
@@ -21866,9 +22142,9 @@ function donePart(deps, change, globalDir2, id) {
     const found = partsWith(deps.store, change.dir, id);
     if ("refused" in found) return found;
     const { parts, part } = found;
-    const read2 = await readGraph(deps, change, index2, globalDir2, { work: true });
-    if ("refused" in read2) return read2;
-    const node3 = read2.graph.find(`execute-part:${id}`);
+    const read3 = await readGraph(deps, change, index2, globalDir2, { work: true });
+    if ("refused" in read3) return read3;
+    const node3 = read3.graph.find(`execute-part:${id}`);
     if (node3 === void 0) {
       return refuse(
         "policy/invalid-transition",
@@ -21881,7 +22157,7 @@ function donePart(deps, change, globalDir2, id) {
         "bdk next"
       ]);
     }
-    const checks = checksOf(read2, node3);
+    const checks = checksOf(read3, node3);
     const started = checks.find((check) => check.id === "started");
     if (started?.ok === false) {
       return refuse("policy/invalid-transition", `part ${id} is not started`, [
@@ -21918,9 +22194,9 @@ function donePart(deps, change, globalDir2, id) {
         ]
       );
     }
-    const written = await writeDoneMarker(deps, change, index2, read2, node3);
+    const written = await writeDoneMarker(deps, change, index2, read3, node3);
     if ("refused" in written) return written;
-    if (read2.view.profile === "tiny") await tinyGuard(deps, change, index2);
+    if (read3.view.profile === "tiny") await tinyGuard(deps, change, index2);
     refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
     const after = await readGraph(deps, change, index2, globalDir2);
     if ("refused" in after) return after;
@@ -21953,13 +22229,13 @@ function openFindings(entries, part) {
 // kernel/src/part/use-cases/list.ts
 function listParts(deps, change, globalDir2) {
   return withChangeIndex(deps, change, async (index2) => {
-    const read2 = await readGraph(deps, change, index2, globalDir2);
-    if ("refused" in read2) return read2;
-    const items = await partItems(deps, change, read2);
+    const read3 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read3) return read3;
+    const items = await partItems(deps, change, read3);
     return { items, total: items.length, truncated: false };
   });
 }
-async function partItems(deps, change, read2) {
+async function partItems(deps, change, read3) {
   const parts = readPlanParts(deps.store, change.dir);
   const { committed } = await taskProgress(deps.git, change.projectRoot, change.id, parts, []);
   const waves = wavesOf2(parts);
@@ -21969,7 +22245,7 @@ async function partItems(deps, change, read2) {
     return {
       part: part.id,
       title: part.data.title,
-      state: partState(read2, part.id),
+      state: partState(read3, part.id),
       tasks: part.tasks.length,
       done: part.tasks.filter((task) => committed.has(task.id)).length,
       bytes: part.bytes,
@@ -21979,11 +22255,11 @@ async function partItems(deps, change, read2) {
     };
   });
 }
-function partState(read2, id) {
-  const node3 = read2.graph.find(`execute-part:${id}`);
+function partState(read3, id) {
+  const node3 = read3.graph.find(`execute-part:${id}`);
   const state = node3?.state ?? "blocked";
   if (state === "skipped") return "blocked";
-  if (state === "ready" && startedParts(read2.entries).has(id)) return "started";
+  if (state === "ready" && startedParts(read3.entries).has(id)) return "started";
   return state;
 }
 function wavesOf2(parts) {
@@ -22002,7 +22278,7 @@ function wavesOf2(parts) {
 }
 
 // kernel/src/part/use-cases/split.ts
-import { join as join26 } from "node:path";
+import { join as join25 } from "node:path";
 
 // kernel/src/part/domain/split.ts
 var TASK_HEADING = /^## (\d{2}-[1-9]\d*)(?:\s|$)/;
@@ -22024,8 +22300,8 @@ function slugOf(title) {
   return slug === "" ? "split" : slug;
 }
 function tidy(lines) {
-  const text6 = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-  return text6 === "" ? "" : `${text6}
+  const text7 = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return text7 === "" ? "" : `${text7}
 `;
 }
 
@@ -22054,9 +22330,9 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
         [`bdk part split ${id} ${[...held].slice(1).join(",")}`]
       );
     }
-    const read2 = await readGraph(deps, change, index2, globalDir2);
-    if ("refused" in read2) return read2;
-    if (read2.graph.find(`execute-part:${id}`)?.state === "done") {
+    const read3 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read3) return read3;
+    if (read3.graph.find(`execute-part:${id}`)?.state === "done") {
       return refuse("policy/invalid-transition", `part ${id} is done; a done part is not split`, [
         "bdk part list"
       ]);
@@ -22082,7 +22358,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
     const first = part.tasks.find((task) => task.id === moved[0]);
     const file = `plan/parts/${newPart}-${slugOf(first?.title ?? part.data.title)}.md`;
     const original = frontmatterOf(deps, part);
-    writeDocument(deps.store, join26(change.dir, file), {
+    writeDocument(deps.store, join25(change.dir, file), {
       data: { ...original, id: newPart, title: `${part.data.title} (split from ${id})` },
       body: body.moved
     });
@@ -22108,7 +22384,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
       title: `${part.data.title} (split from ${id})`,
       "depends-on": [...part.data["depends-on"]]
     });
-    deps.store.write(join26(change.dir, "plan/index.md"), generatePlanIndex(rows));
+    deps.store.write(join25(change.dir, "plan/index.md"), generatePlanIndex(rows));
     const written = await appendEntry(
       deps,
       change,
@@ -22141,10 +22417,10 @@ function startPart(deps, change, globalDir2, id) {
     const found = partsWith(deps.store, change.dir, id);
     if ("refused" in found) return found;
     const { part } = found;
-    const read2 = await readGraph(deps, change, index2, globalDir2);
-    if ("refused" in read2) return read2;
-    const planned = read2.graph.find(`plan-part:${id}`);
-    const failed = planned === void 0 ? void 0 : checksOf(read2, planned).find((check) => !check.ok);
+    const read3 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read3) return read3;
+    const planned = read3.graph.find(`plan-part:${id}`);
+    const failed = planned === void 0 ? void 0 : checksOf(read3, planned).find((check) => !check.ok);
     if (failed !== void 0) {
       return refuse(
         failed.rule ?? "policy/validation-failed",
@@ -22152,8 +22428,8 @@ function startPart(deps, change, globalDir2, id) {
         [...failed.instead === void 0 ? [] : [failed.instead], `bdk validate plan-part:${id}`]
       );
     }
-    const node3 = read2.graph.find(`execute-part:${id}`);
-    const state = partState(read2, id);
+    const node3 = read3.graph.find(`execute-part:${id}`);
+    const state = partState(read3, id);
     if (node3 === void 0 || state === "blocked") {
       return refuse(
         "policy/not-ready",
@@ -22265,7 +22541,7 @@ function classifyDiff(target, facts) {
   if ("verifier" in target) return { touched: [], declared: [], undeclared: [] };
   const own2 = ownSets(target, facts);
   const others = facts.parts.filter((part) => facts.started.has(part.id)).flatMap((part) => part.tasks).filter((task) => !own2.tasks.has(task.id) && !facts.committed.has(task.id)).flatMap((task) => task.files.map((file) => file.path));
-  const declared2 = [];
+  const declared3 = [];
   const undeclared = [];
   for (const path of facts.touched) {
     const forbidding = own2.forbidden.find((rule2) => matchesGlob(rule2.glob, path));
@@ -22276,10 +22552,10 @@ function classifyDiff(target, facts) {
         [`git restore --staged --worktree -- ${path}`, `bdk part list`]
       );
     }
-    if (firstMatch(own2.declared, path) !== void 0) declared2.push(path);
+    if (firstMatch(own2.declared, path) !== void 0) declared3.push(path);
     else if (firstMatch(others, path) === void 0) undeclared.push(path);
   }
-  return { touched: facts.touched, declared: declared2, undeclared };
+  return { touched: facts.touched, declared: declared3, undeclared };
 }
 function ownSets(target, facts) {
   const forbiddenOf = (part) => part.data["do-not-touch"].map((glob3) => ({ part: part.id, glob: glob3 }));
@@ -22309,15 +22585,15 @@ function ownSets(target, facts) {
 
 // kernel/src/part/use-cases/targets.ts
 async function workTargets(deps, change, index2, globalDir2) {
-  const read2 = await readGraph(deps, change, index2, globalDir2);
-  if ("refused" in read2) return read2;
+  const read3 = await readGraph(deps, change, index2, globalDir2);
+  if ("refused" in read3) return read3;
   return {
-    settings: read2.resolved.value,
-    entries: read2.entries,
-    parked: read2.parked,
-    started: startedParts(read2.entries),
+    settings: read3.resolved.value,
+    entries: read3.entries,
+    parked: read3.parked,
+    started: startedParts(read3.entries),
     node: (id) => {
-      const found = read2.graph.find(id);
+      const found = read3.graph.find(id);
       if (found === void 0) return void 0;
       return found.why === void 0 ? { state: found.state } : { state: found.state, why: found.why };
     }
@@ -22480,6 +22756,8 @@ function closeAttempt(deps, change, where, input) {
       if ("refused" in written) return written;
       kernelFindings.push(written.id);
     }
+    const rulesFinding = await unreadRules(deps, change, index2, record4);
+    if (rulesFinding !== void 0 && "refused" in rulesFinding) return rulesFinding;
     writeDocument(deps.store, record4.file.path, {
       data: {
         ...record4.file.data,
@@ -22506,6 +22784,7 @@ function closeAttempt(deps, change, where, input) {
       ...isChecked(record4) ? { diff: diffReport(diff) } : {},
       ...kernelFindings.length === 0 ? {} : { findings: kernelFindings },
       ...prints.length === 0 ? {} : { fingerprints: prints },
+      ...rulesFinding === void 0 ? {} : { rulesFinding: rulesFinding.id },
       notRunCount: state.notRun,
       next
     };
@@ -22530,7 +22809,7 @@ function diffReport(diff) {
   return { declared: diff.declared, touched: diff.touched, undeclared: diff.undeclared };
 }
 function missingEntries(deps, cwd, envelope, underTicket) {
-  const path = isAbsolute3(envelope) ? envelope : join27(cwd, envelope);
+  const path = isAbsolute2(envelope) ? envelope : join26(cwd, envelope);
   const document = deps.store.read(path) === void 0 ? void 0 : readDocument(deps.store, path);
   if (document === void 0 || !("data" in document) || document.kind !== "report") {
     return refuse("input/not-found", `no report envelope at ${envelope}`, [
@@ -22538,8 +22817,8 @@ function missingEntries(deps, cwd, envelope, underTicket) {
     ]);
   }
   const written = new Set(underTicket.map((entry) => entry.id));
-  const declared2 = document.data.entries ?? [];
-  const missing = declared2.filter((id) => !written.has(id));
+  const declared3 = document.data.entries ?? [];
+  const missing = declared3.filter((id) => !written.has(id));
   if (missing.length === 0) return void 0;
   return refuse(
     "policy/entries-missing",
@@ -22583,6 +22862,26 @@ async function recordUndeclared(deps, change, index2, target, paths) {
   );
   return "refused" in written ? written : { id: written.entry.id };
 }
+async function unreadRules(deps, change, index2, record4) {
+  if (ticketDispatch(index2, change.id, record4.ticket)?.role !== "implementer") return void 0;
+  if (record4.file.data["rules-read"] !== void 0) return void 0;
+  const written = await appendEntry(
+    deps,
+    change,
+    index2,
+    {
+      type: "finding",
+      summary: `implementer closed ${record4.ticket} without reading its rules`,
+      status: "proposed",
+      review: true,
+      refs: [record4.target, record4.ticket],
+      body: `The attempt record has no rules-read: \`bdk rules show --ticket ${record4.ticket}\` never ran.
+`
+    },
+    { dedupe: true }
+  );
+  return "refused" in written ? written : { id: written.entry.id };
+}
 async function park(deps, change, index2, settings, record4, round, rung) {
   const part = record4.loop === "verify-fix" ? record4.target : record4.loop === "task-redispatch" ? taskHolders(readPlanParts(deps.store, change.dir)).get(record4.target)?.id : void 0;
   const written = await appendEntry(
@@ -22599,7 +22898,7 @@ async function park(deps, change, index2, settings, record4, round, rung) {
       review: true,
       park: true,
       options: ladderOptions(record4.target, part),
-      refs: [record4.target, ...round.map((item2) => item2.ticket)],
+      refs: [record4.target, ...round.map((item3) => item3.ticket)],
       body: `${rung.why ?? "the ladder ended"}.
 `
     },
@@ -22661,7 +22960,7 @@ function listAttempts(deps, change, globalDir2, input) {
     }
     if (notRun !== void 0) budgets["not-run"] = notRun;
     const counted = input.for !== void 0 && TASK_ID.test(input.for);
-    const items = shown.sort(order).map((record4) => item(record4, counted ? entries : void 0));
+    const items = shown.sort(order).map((record4) => item2(record4, counted ? entries : void 0));
     return {
       items,
       ...Object.keys(budgets).length === 0 ? {} : { budgets }
@@ -22678,7 +22977,7 @@ function order(a, b) {
   if (a.openedAt !== b.openedAt) return a.openedAt < b.openedAt ? 1 : -1;
   return a.ticket < b.ticket ? -1 : 1;
 }
-function item(record4, entries) {
+function item2(record4, entries) {
   const data = record4.file.data;
   return {
     ticket: record4.ticket,
@@ -22696,7 +22995,7 @@ function item(record4, entries) {
 }
 
 // kernel/src/attempt/use-cases/open.ts
-import { join as join28 } from "node:path";
+import { join as join27 } from "node:path";
 var PART_ID = /^\d{2}$/;
 var SUMMARY_MAX3 = 120;
 function openAttempt(deps, change, globalDir2, input) {
@@ -22742,7 +23041,7 @@ function openAttempt(deps, change, globalDir2, input) {
     }
     const ticket = newId("A-", deps.random);
     const openedAt = deps.clock.now();
-    const path = join28(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
+    const path = join27(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
     writeDocument(deps.store, path, {
       data: {
         schema: 1,
@@ -22892,7 +23191,7 @@ async function recordDropped(deps, change, index2, target, scope2, dropped) {
 }
 
 // kernel/src/attempt/commands/attempt.ts
-function text4(value) {
+function text5(value) {
   return typeof value === "string" ? value : void 0;
 }
 function active4(change) {
@@ -22918,8 +23217,8 @@ function closeCommand(deps) {
       {
         ticket: context.positionals["<ticket>"] ?? "",
         outcome: context.positionals.outcome ?? "",
-        envelope: text4(context.flags["--envelope"]),
-        reason: text4(context.flags["--reason"])
+        envelope: text5(context.flags["--envelope"]),
+        reason: text5(context.flags["--reason"])
       }
     );
     return isRefusal(report2) ? report2 : { data: report2, text: renderClose(report2) };
@@ -22928,7 +23227,7 @@ function closeCommand(deps) {
 function listCommand3(deps) {
   return async (context) => {
     const all = context.flags["--all"] === true;
-    const target = text4(context.flags["--for"]);
+    const target = text5(context.flags["--for"]);
     const report2 = await listAttempts(deps, active4(context.change), globalDir(context.runtime), {
       for: target,
       all
@@ -22956,6 +23255,7 @@ function attemptRegistrations(deps) {
 }
 
 // kernel/src/change/render/change.ts
+var TICKETS_SHOWN = 20;
 function renderNew(report2) {
   const how = report2.profile.defaulted ? "default" : "set by the caller";
   const lines = [
@@ -22989,11 +23289,13 @@ function renderStatus(report2) {
     report2.parked.options.forEach((option, i) => lines.push(`  ${String(i + 1)}. ${option}`));
     lines.push(`resume: ${report2.parked.resume}`);
   }
-  for (const ticket of report2.openTickets) {
+  for (const ticket of report2.openTickets.slice(0, TICKETS_SHOWN)) {
     lines.push(
       `open ticket ${ticket.ticket}: ${ticket.loop} ${ticket.target} attempt ${String(ticket.attempt)}/${String(ticket.of)}`
     );
   }
+  const more = report2.openTickets.length - TICKETS_SHOWN;
+  if (more > 0) lines.push(`... ${String(more)} more open tickets (bdk attempt list)`);
   if (report2.overriddenKeys.length > 0) {
     lines.push(`overridden by global or local: ${report2.overriddenKeys.join(", ")}`);
   }
@@ -23042,9 +23344,9 @@ function renderGates(gates) {
 }
 function renderList4(items) {
   if (items.length === 0) return "no Changes\n";
-  const lines = items.map((item2) => {
-    const branch = item2.branch ?? "no branch";
-    return `${item2.change} ${item2.state} ${item2.stage} (${branch}, ${item2.kind}, ${item2.profile}, ${item2.updatedAt})`;
+  const lines = items.map((item3) => {
+    const branch = item3.branch ?? "no branch";
+    return `${item3.change} ${item3.state} ${item3.stage} (${branch}, ${item3.kind}, ${item3.profile}, ${item3.updatedAt})`;
   });
   return `${lines.join("\n")}
 `;
@@ -23160,7 +23462,7 @@ function listAllChanges(deps, projectRoot, options) {
 }
 
 // kernel/src/change/use-cases/new.ts
-import { join as join29 } from "node:path";
+import { join as join28 } from "node:path";
 
 // kernel/src/change/domain/change.ts
 var SLUG_MAX = 40;
@@ -23256,7 +23558,7 @@ async function newChange(deps, where, input) {
   await ensureIgnored(deps.store, deps.git, projectRoot);
   const dir = liveChangeDir(projectRoot, id);
   const profile = input.profile ?? "small";
-  writeDocument(deps.store, join29(dir, "change.md"), {
+  writeDocument(deps.store, join28(dir, "change.md"), {
     data: {
       schema: 1,
       id,
@@ -23302,8 +23604,8 @@ async function newChange(deps, where, input) {
   };
 }
 function reasonBody(reason) {
-  const text6 = (reason ?? "").trim();
-  return text6 === "" ? "Set by the caller of change new; no reason given.\n" : `${text6}
+  const text7 = (reason ?? "").trim();
+  return text7 === "" ? "Set by the caller of change new; no reason given.\n" : `${text7}
 `;
 }
 
@@ -23313,7 +23615,7 @@ function parkChange(deps, change, globalDir2, input) {
   const summary = input.reason ?? DEFAULT_PARK_REASON;
   const options = input.options.length === 0 ? [...DEFAULT_PARK_OPTIONS] : [...input.options];
   const tooLong = [summary, ...options].find(
-    (text6) => text6.trim() === "" || text6.length > TEXT_MAX
+    (text7) => text7.trim() === "" || text7.length > TEXT_MAX
   );
   if (tooLong !== void 0) {
     return Promise.resolve(
@@ -23512,14 +23814,14 @@ function done(value) {
 }
 
 // kernel/src/change/use-cases/status.ts
-import { join as join30 } from "node:path";
+import { join as join29 } from "node:path";
 function changeStatus(deps, change, globalDir2) {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index2) => {
     refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
-    const read2 = await readGraph(deps, change, index2, globalDir2);
-    if ("refused" in read2) return read2;
-    const graph = graphSummary(read2);
-    const document = readDocument(deps.store, join30(change.dir, "change.md"));
+    const read3 = await readGraph(deps, change, index2, globalDir2);
+    if ("refused" in read3) return read3;
+    const graph = graphSummary(read3);
+    const document = readDocument(deps.store, join29(change.dir, "change.md"));
     const data = document !== void 0 && "data" in document ? document.data : {};
     const facts = changeFacts(index2, change.id, stageResolver(deps));
     return {
@@ -23538,7 +23840,7 @@ function changeStatus(deps, change, globalDir2) {
       },
       nodes: graph.nodes,
       gates: graph.gates,
-      parts: await partItems(deps, change, read2),
+      parts: await partItems(deps, change, read3),
       openTickets: openAttempts(index2, change.id),
       overriddenKeys: Array.isArray(data.overridden) ? data.overridden.map(String) : []
     };
@@ -23601,7 +23903,7 @@ function takeover(deps, change, input) {
 }
 
 // kernel/src/change/commands/change.ts
-function text5(value) {
+function text6(value) {
   return typeof value === "string" ? value : void 0;
 }
 function values(value) {
@@ -23620,8 +23922,8 @@ function newCommand(deps) {
       {
         intent: context.positionals["<intent>"] ?? "",
         kind: context.flags["--kind"] === "bug" ? "bug" : "feature",
-        profile: text5(context.flags["--profile"]),
-        reason: text5(context.flags["--reason"]),
+        profile: text6(context.flags["--profile"]),
+        reason: text6(context.flags["--reason"]),
         inferred: context.flags["--inferred"] === true
       }
     );
@@ -23631,7 +23933,7 @@ function newCommand(deps) {
 function statusCommand(deps) {
   return async (context) => {
     const report2 = await changeStatus(deps, active5(context.change), globalDir(context.runtime));
-    return isRefusal(report2) ? report2 : { data: report2, text: capLines(renderStatus(report2)) };
+    return isRefusal(report2) ? report2 : { data: report2, text: renderStatus(report2) };
   };
 }
 function listCommand4(deps) {
@@ -23653,8 +23955,8 @@ function resumeCommand3(deps) {
       },
       {
         id: context.positionals["<id>"] ?? "",
-        option: text5(context.flags["--option"]),
-        profile: text5(context.flags["--profile"])
+        option: text6(context.flags["--option"]),
+        profile: text6(context.flags["--profile"])
       }
     );
     return isRefusal(report2) ? report2 : { data: report2, text: renderResume(report2) };
@@ -23663,7 +23965,7 @@ function resumeCommand3(deps) {
 function parkCommand(deps) {
   return async (context) => {
     const report2 = await parkChange(deps, active5(context.change), globalDir(context.runtime), {
-      reason: text5(context.flags["--reason"]),
+      reason: text6(context.flags["--reason"]),
       options: values(context.flags["--option"])
     });
     return isRefusal(report2) ? report2 : { data: report2, text: renderPark(report2) };
@@ -23841,7 +24143,7 @@ function renderCheck(report2) {
 }
 
 // kernel/src/config/use-cases/check.ts
-import { join as join31 } from "node:path";
+import { join as join30 } from "node:path";
 var LEGACY_SETTINGS = ".bdk/settings.json";
 function checkConfig(input) {
   const resolved = resolveOrRefuse(input);
@@ -23876,7 +24178,7 @@ function report(input, resolved) {
       });
     }
   }
-  if (input.store.exists(join31(input.projectRoot, LEGACY_SETTINGS))) {
+  if (input.store.exists(join30(input.projectRoot, LEGACY_SETTINGS))) {
     problems.push({
       layer: "project",
       path: LEGACY_SETTINGS,
@@ -23887,7 +24189,7 @@ function report(input, resolved) {
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
   if (snapshot !== void 0) {
     input.store.write(
-      join31(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      join30(input.projectRoot, OFFLINE_SCHEMA_PATH),
       offlineSchemaText(input.settings)
     );
   }
@@ -23991,10 +24293,10 @@ function originOf(leaf, set) {
 }
 function leafKeys(value, prefix) {
   if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join32(prefix, key)));
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join31(prefix, key)));
   }
   if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item2) => leafKeys(item2, join32(prefix, item2.id)));
+    return value.flatMap((item3) => leafKeys(item3, join31(prefix, item3.id)));
   }
   return [prefix];
 }
@@ -24004,7 +24306,7 @@ function isMapping(value) {
 function hasId(value) {
   return isMapping(value) && typeof value.id === "string";
 }
-function join32(prefix, key) {
+function join31(prefix, key) {
   return prefix === "" ? key : `${prefix}.${key}`;
 }
 
@@ -24105,8 +24407,8 @@ async function setConfig(input, request) {
   if (isRefusal(value)) return value;
   const steps = declaredSteps(input.settings, key);
   if (steps === void 0) return unknownKey(input, key);
-  const text6 = input.store.read(file.path);
-  const document = (0, import_yaml10.parseDocument)(text6 ?? "");
+  const text7 = input.store.read(file.path);
+  const document = (0, import_yaml10.parseDocument)(text7 ?? "");
   if (document.errors.length > 0) {
     return refuse("policy/config-invalid", `${displayPath(input, file.path)} is not valid YAML`, [
       `fix ${displayPath(input, file.path)}`
@@ -24114,7 +24416,7 @@ async function setConfig(input, request) {
   }
   const edit = editDocument(document, steps, value, request.value);
   if (isRefusal(edit)) return edit;
-  const next = text6 === void 0 ? withModeline(document.toString(FORMAT), readKernelVersion(input.store, input.pluginRoot)) : edit.splice === void 0 ? document.toString(FORMAT) : `${text6.slice(0, edit.splice.start)}${edit.splice.text}${text6.slice(edit.splice.end)}`;
+  const next = text7 === void 0 ? withModeline(document.toString(FORMAT), readKernelVersion(input.store, input.pluginRoot)) : edit.splice === void 0 ? document.toString(FORMAT) : `${text7.slice(0, edit.splice.start)}${edit.splice.text}${text7.slice(edit.splice.end)}`;
   const resolved = resolveOrRefuse(input, { store: overlay(input.store, file.path, next) });
   if (isRefusal(resolved)) return resolved;
   await ensureIgnored(input.store, input.git, input.projectRoot);
@@ -24148,15 +24450,15 @@ function editDocument(document, steps, value, raw) {
     }
     const sequence = document.getIn(path, true);
     const items = (0, import_yaml10.isSeq)(sequence) ? sequence.items : [];
-    const found = items.findIndex((item3) => (0, import_yaml10.isMap)(item3) && item3.get("id") === step.segment);
+    const found = items.findIndex((item4) => (0, import_yaml10.isMap)(item4) && item4.get("id") === step.segment);
     if (found !== -1) {
       path.push(found);
       continue;
     }
-    const item2 = last ? withId(document, value, step.segment) : document.createNode({ id: step.segment });
-    if (isRefusal(item2)) return item2;
-    if ((0, import_yaml10.isSeq)(sequence)) sequence.add(item2);
-    else document.setIn(path, document.createNode([item2]));
+    const item3 = last ? withId(document, value, step.segment) : document.createNode({ id: step.segment });
+    if (isRefusal(item3)) return item3;
+    if ((0, import_yaml10.isSeq)(sequence)) sequence.add(item3);
+    else document.setIn(path, document.createNode([item3]));
     if (last) return {};
     path.push((0, import_yaml10.isSeq)(sequence) ? sequence.items.length - 1 : 0);
   }
@@ -24193,12 +24495,12 @@ function withId(document, value, id) {
   }
   return value;
 }
-function overlay(store2, path, text6) {
+function overlay(store2, path, text7) {
   const readOnly = () => {
     throw new Error("the validation overlay is read-only");
   };
   return {
-    read: (candidate) => candidate === path ? text6 : store2.read(candidate),
+    read: (candidate) => candidate === path ? text7 : store2.read(candidate),
     write: readOnly,
     remove: readOnly,
     append: readOnly,
@@ -24224,7 +24526,7 @@ function setCommand(deps) {
 
 // kernel/src/config/commands/show.ts
 var import_yaml11 = __toESM(require_dist(), 1);
-function showCommand2(deps) {
+function showCommand3(deps) {
   return (context) => {
     const key = context.positionals["<key>"];
     const outcome = showConfig(configInput(deps, context), {
@@ -24239,7 +24541,7 @@ ${(0, import_yaml11.stringify)(outcome.origins)}`;
 }
 
 // kernel/src/config/use-cases/layout.ts
-import { join as join33 } from "node:path";
+import { join as join32 } from "node:path";
 
 // kernel/src/config/domain/layout.ts
 var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
@@ -24252,20 +24554,34 @@ function classifyLayout(state) {
 // kernel/src/config/use-cases/layout.ts
 function detectLayout(store2, root) {
   return classifyLayout({
-    bdk: store2.isDirectory(join33(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => store2.exists(join33(root, marker)))
+    bdk: store2.isDirectory(join32(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store2.exists(join32(root, marker)))
   });
 }
 
 // kernel/src/config/index.ts
 function configRegistrations(deps) {
   return [
-    { id: "config-show", handler: showCommand2(deps) },
+    { id: "config-show", handler: showCommand3(deps) },
     { id: "config-check", handler: checkCommand(deps) },
     { id: "config-schema", handler: schemaCommand2(deps) },
     { id: "config-set", handler: setCommand(deps) }
   ];
 }
+
+// kernel/src/dispatch/render/dispatch.ts
+function renderBuild(report2) {
+  return `package for ${report2.ticket} (${report2.role} on ${report2.adapter}, ${report2.target}): ${String(report2.bytes)} bytes
+${report2.path}
+`;
+}
+function renderShow2(report2) {
+  return report2.content;
+}
+
+// kernel/src/dispatch/use-cases/build.ts
+import { createHash as createHash4 } from "node:crypto";
+import { join as join34, posix as posix5 } from "node:path";
 
 // kernel/src/export/commands/agents.ts
 import { resolve as resolve3 } from "node:path";
@@ -24282,7 +24598,7 @@ function renderAgents(report2) {
 }
 
 // kernel/src/export/use-cases/agents.ts
-import { join as join34, relative as relative7 } from "node:path";
+import { join as join33, relative as relative7 } from "node:path";
 
 // kernel/src/export/domain/adapters.ts
 var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
@@ -24327,6 +24643,15 @@ var ADAPTERS = [
     tier: "fast"
   }
 ];
+var ROLE_ADAPTERS = {
+  implementer: "worker",
+  verifier: "reader",
+  "design-verifier": "reader",
+  reviewer: "reviewer",
+  "pr-reviewer": "reviewer",
+  runner: "runner",
+  scout: "scout"
+};
 
 // kernel/src/export/domain/hosts.ts
 var HOSTS = {
@@ -24362,10 +24687,10 @@ function adapterFile(adapter, host) {
 // kernel/src/export/use-cases/agents.ts
 function exportAgents(deps, request) {
   const host = HOSTS[request.host];
-  const out = request.out ?? join34(deps.pluginRoot, "agents");
+  const out = request.out ?? join33(deps.pluginRoot, "agents");
   const drift = [];
   const files = ADAPTERS.map((adapter) => {
-    const target = join34(out, `${adapter.name}.md`);
+    const target = join33(out, `${adapter.name}.md`);
     const path = relative7(request.root, target);
     const content = adapterFile(adapter, host);
     const current = deps.store.read(target);
@@ -24412,6 +24737,386 @@ function exportRegistrations(deps) {
   return [{ id: "export-agents", handler: agentsCommand(deps) }];
 }
 
+// kernel/src/dispatch/domain/entries.ts
+var CLOSED_BLOCKER = ["resolved", "superseded"];
+function selectEntries(entries, names) {
+  const wanted = new Set(names);
+  const full = [];
+  const counted = {};
+  for (const entry of entries) {
+    if (entry.type === "transition") continue;
+    if (!entry.refs.some((ref) => wanted.has(ref.split("#")[0] ?? ref))) continue;
+    if (inFull(entry)) full.push(entry);
+    else counted[entry.type] = (counted[entry.type] ?? 0) + 1;
+  }
+  return { full, counted };
+}
+function inFull(entry) {
+  if (entry.type === "decision") return entry.status === "accepted";
+  return entry.type === "blocker" && !CLOSED_BLOCKER.includes(entry.status);
+}
+function taskText(body, task) {
+  const lines = body.split(/\r?\n/);
+  const start = lines.findIndex((line2) => line2 === `## ${task}` || line2.startsWith(`## ${task} `));
+  if (start === -1) return void 0;
+  const end = lines.findIndex((line2, at) => at > start && line2.startsWith("## "));
+  return lines.slice(start, end === -1 ? void 0 : end).join("\n").trim();
+}
+
+// kernel/src/dispatch/domain/template.ts
+var SECTIONS = [
+  {
+    name: "header",
+    skeleton: "# BDK dispatch package {{ticket}}\n\nYou are the `{{role}}` of ticket {{ticket}}: attempt {{attempt}} of {{of}}, scope `{{scope}}`. Work from this package; read other state only through `bdk`."
+  },
+  { name: "change", skeleton: "## Change\n\n{{intent}}" },
+  { name: "target", skeleton: "## Target {{target}}\n\n{{target-body}}" },
+  { name: "entries", skeleton: "## Ledger entries\n\n{{entries}}" },
+  { name: "role", skeleton: "{{role-body}}" },
+  {
+    name: "rules",
+    skeleton: "## Rules\n\nRun `bdk rules show --ticket {{ticket}}` before you start and follow the rules it prints."
+  },
+  {
+    name: "categories",
+    verifierOnly: true,
+    skeleton: "## Blocking categories (P8)\n\nA blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket {{ticket}} --category <id>`; any other blocker is stored as an observation for review.\n\n{{blocking}}\n\n## Not a fail\n\nNever block on these:\n\n{{not-a-fail}}"
+  },
+  {
+    name: "return",
+    skeleton: "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ticket}}`. Then pipe the full report to `bdk log ingest --ticket {{ticket}}`, the envelope (`status`, `files`, `entries`, `evidence`, and `reason` for `blocked` or `needs-context`) as its frontmatter. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`."
+  }
+];
+function renderSections(values2, verifier) {
+  return SECTIONS.filter((section) => verifier || section.verifierOnly !== true).map((section) => ({
+    name: section.name,
+    text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name) => {
+      const value = values2[name];
+      if (value === void 0) throw new Error(`the package template has no value for ${name}`);
+      return value;
+    })
+  }));
+}
+function packageBody(sections) {
+  return `${sections.map((section) => section.text.trimEnd()).join("\n\n")}
+`;
+}
+function templateSkeleton() {
+  return SECTIONS.map((section) => section.skeleton).join("\n\n");
+}
+function normalise2(text7) {
+  const lf = text7.replace(/\r\n?/g, "\n");
+  const body = /^---\n(?:.*\n)*?---(?:\n|$)/.exec(lf);
+  const rest = body === null ? lf : lf.slice(body[0].length);
+  return rest.split("\n").map((line2) => line2.trimEnd()).join("\n").trim();
+}
+function largestSection(sections) {
+  let largest = sections[0];
+  if (largest === void 0) throw new Error("a package has sections");
+  for (const section of sections) {
+    if (bytes(section.text) > bytes(largest.text)) largest = section;
+  }
+  return largest;
+}
+function bytes(text7) {
+  return new TextEncoder().encode(text7).length;
+}
+function demoteHeadings(markdown) {
+  let fence;
+  return markdown.split("\n").map((line2) => {
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line2)?.[1];
+    if (marker !== void 0) {
+      if (fence === void 0) fence = marker;
+      else if (marker.startsWith(fence)) fence = void 0;
+      return line2;
+    }
+    return fence === void 0 && /^#{1,5} /.test(line2) ? `#${line2}` : line2;
+  }).join("\n");
+}
+
+// kernel/src/dispatch/use-cases/build.ts
+var PACKAGE_LIMIT = 12288;
+var PART_ID2 = /^\d{2}$/;
+function buildPackage(deps, change, globalDir2, input) {
+  if (!isRole2(input.role)) {
+    return Promise.resolve(
+      refuse("input/invalid-argument", `${input.role} is not a role; one of: ${ROLES.join(", ")}`, [
+        `bdk dispatch build ${input.target} <role> ${input.ticket}`
+      ])
+    );
+  }
+  const role2 = input.role;
+  return withChangeIndex(deps, change, async (index2) => {
+    const target = await targetFacts(deps, change, index2, globalDir2, input.target);
+    if (isRefusal(target)) return target;
+    const record4 = readAttempts(deps.store, change.dir).find(
+      (file) => file.data.ticket === input.ticket
+    );
+    if (record4?.data["closed-at"] !== void 0 || record4?.data.target !== input.target) {
+      return refuse(
+        "policy/no-open-ticket",
+        record4 === void 0 ? `${change.id} has no ticket ${input.ticket}` : record4.data["closed-at"] !== void 0 ? `ticket ${input.ticket} is closed` : `ticket ${input.ticket} targets ${record4.data.target}, not ${input.target}`,
+        ["bdk attempt list", `bdk attempt open <loop> ${input.target}`]
+      );
+    }
+    const resolved = resolveOrRefuse(
+      {
+        store: deps.store,
+        settings: deps.settings,
+        globalDir: globalDir2,
+        projectRoot: change.projectRoot,
+        pluginRoot: deps.pluginRoot
+      },
+      { removed: "ignore" }
+    );
+    if ("refused" in resolved) return resolved;
+    const verifier = role2 === "verifier" || role2 === "design-verifier";
+    const policy = verifier ? verifierPolicy(deps, change, globalDir2) : void 0;
+    if (policy !== void 0 && isRefusal(policy)) return policy;
+    const name = `${input.target}-${role2}-${input.ticket}.md`;
+    const changeRel = posix5.relative(change.projectRoot, change.dir);
+    const report2 = `${changeRel}/reports/${name}`;
+    const roleBody = readRoleBody(deps, role2);
+    const selection = selectEntries(listEntries(index2, change.id), target.names);
+    const sections = renderSections(
+      {
+        ticket: input.ticket,
+        role: role2,
+        attempt: String(record4.data.attempt),
+        of: String(record4.data.of),
+        scope: record4.data.scope,
+        intent: intentOf(deps, change),
+        target: input.target,
+        "target-body": target.body,
+        entries: entriesText(deps, change, selection.full, selection.counted, input.target),
+        "role-body": demoteHeadings(roleBody),
+        report: report2,
+        blocking: categoryList(policy?.blocking ?? []),
+        "not-a-fail": categoryList(policy?.notAFail ?? [])
+      },
+      verifier
+    );
+    const rules2 = roleSections(deps, resolved, role2).map((section) => section.text);
+    const templateHash = hashOf([templateSkeleton(), roleBody, ...rules2]);
+    const kernelVersion = readKernelVersion(deps.store, deps.pluginRoot);
+    const data = {
+      schema: STATE_KINDS.dispatch.version,
+      ticket: input.ticket,
+      target: input.target,
+      role: role2,
+      adapter: ROLE_ADAPTERS[role2],
+      attempt: record4.data.attempt,
+      of: record4.data.of,
+      scope: record4.data.scope,
+      at: deps.clock.now(),
+      "kernel-version": kernelVersion,
+      "template-hash": templateHash,
+      report: report2
+    };
+    const text7 = renderDocument(data, packageBody(sections));
+    const size = bytes(text7);
+    if (size > PACKAGE_LIMIT) {
+      const largest = largestSection(sections);
+      return refuse(
+        "policy/package-too-large",
+        `the package is ${String(size)} bytes, above ${String(PACKAGE_LIMIT)}; the largest section is ${largest.name} with ${String(bytes(largest.text))} bytes`,
+        ["split the task or the part so its text and entries fit", "bdk part split <nn>"]
+      );
+    }
+    const dir = join34(change.dir, "dispatch");
+    const path = join34(dir, name);
+    for (const earlier of deps.store.list(dir)) {
+      if (earlier !== name && earlier.endsWith(`-${input.ticket}.md`)) {
+        deps.store.remove(join34(dir, earlier));
+      }
+    }
+    writeDocument(deps.store, path, { data, body: packageBody(sections) });
+    return {
+      path: posix5.relative(change.projectRoot, path),
+      bytes: size,
+      ticket: input.ticket,
+      target: input.target,
+      role: role2,
+      adapter: ROLE_ADAPTERS[role2],
+      scope: record4.data.scope,
+      kernelVersion,
+      templateHash,
+      report: report2,
+      entries: { full: selection.full.map((entry) => entry.id), counted: selection.counted }
+    };
+  });
+}
+function isRole2(role2) {
+  return ROLES.includes(role2);
+}
+async function targetFacts(deps, change, index2, globalDir2, target) {
+  const changeRel = posix5.relative(change.projectRoot, change.dir);
+  const parts = readPlanParts(deps.store, change.dir);
+  if (TASK_ID.test(target)) {
+    const part = taskHolders(parts).get(target);
+    const task = part?.tasks.find((found) => found.id === target);
+    const text7 = part === void 0 ? void 0 : taskText(part.body, target);
+    if (part === void 0 || task === void 0 || text7 === void 0) {
+      return notFound5(change, `no plan part holds task ${target}`);
+    }
+    const placeholders = planPlaceholders(part.data, [task]).filter(
+      (field2) => field2.startsWith("task ")
+    );
+    if (placeholders.length > 0) {
+      return refuse(
+        "policy/placeholder",
+        `${placeholders.join(", ")} of ${part.file} holds a placeholder`,
+        [`finish task ${target} in ${changeRel}/${part.file}, then build the package again`]
+      );
+    }
+    const body = `From \`${changeRel}/${part.file}\`:
+
+${demoteHeadings(text7)}
+
+${doNotTouch(part)}`;
+    return { body, names: [target, part.id, ...task.files.map((file) => file.path)] };
+  }
+  if (PART_ID2.test(target)) {
+    const part = parts.find((found) => found.id === target);
+    if (part === void 0) return notFound5(change, `no plan part ${target}`);
+    return {
+      body: `${readList([`${changeRel}/${part.file}`])}
+
+${doNotTouch(part)}`,
+      names: [target]
+    };
+  }
+  if (target === change.id) {
+    return {
+      body: readList([
+        `${changeRel}/change.md`,
+        ...parts.map((part) => `${changeRel}/${part.file}`)
+      ]),
+      names: [target]
+    };
+  }
+  const paths = await artifactPaths(deps, change, index2, globalDir2, target);
+  if (paths !== void 0 && isRefusal(paths)) return paths;
+  if (paths === void 0)
+    return notFound5(change, `the graph of ${change.id} has no artifact ${target}`);
+  return {
+    body: paths.length === 0 ? "The artifact has no file: work on the committed code tree of the Change." : readList(paths.map((path) => `${changeRel}/${path}`)),
+    names: [target]
+  };
+}
+function notFound5(change, why) {
+  return refuse("input/not-found", `${why} in ${change.id}`, ["bdk part list", "bdk status"]);
+}
+function readList(paths) {
+  return `Read:
+
+${paths.map((path) => `- \`${path}\``).join("\n")}`;
+}
+function doNotTouch(part) {
+  const globs = part.data["do-not-touch"];
+  return globs.length === 0 ? "`do-not-touch`: none." : `\`do-not-touch\`: ${globs.map((glob3) => `\`${glob3}\``).join(", ")}.`;
+}
+function intentOf(deps, change) {
+  const document = readDocument(deps.store, join34(change.dir, "change.md"));
+  const intent = document !== void 0 && "data" in document ? document.data.intent : void 0;
+  return typeof intent === "string" ? intent : `Change ${change.id}.`;
+}
+function readRoleBody(deps, role2) {
+  const path = join34(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
+  const text7 = deps.store.read(path);
+  if (text7 === void 0) throw new Error(`the plugin has no role skill at ${path}`);
+  return splitFrontmatter(text7).body.trim();
+}
+function entriesText(deps, change, full, counted, target) {
+  const embedded = full.length === 0 ? "No accepted decision or open blocker names this target." : full.map((entry) => entryText(deps, change, entry)).join("\n\n");
+  const counts = Object.entries(counted).map(([type, count2]) => `${String(count2)} ${type}`).join(", ");
+  const others = counts === "" ? `No other entry names this target; \`bdk log list --for ${target}\` shows later ones.` : `Other entries of this target: ${counts}; read them with \`bdk log list --for ${target}\`.`;
+  return `${embedded}
+
+${others}`;
+}
+function entryText(deps, change, entry) {
+  const document = readDocument(deps.store, join34(change.projectRoot, entry.path));
+  const body = document === void 0 ? "" : document.body.trim();
+  const refs = entry.refs.map((ref) => `\`${ref}\``).join(", ");
+  return `### ${entry.id} ${entry.type}, ${entry.status}
+
+${entry.summary}
+
+Refs: ${refs}${body === "" ? "" : `
+
+${body}`}`;
+}
+function categoryList(categories) {
+  return categories.map((category2) => `- \`${category2.id}\`: ${category2.description}`).join("\n");
+}
+function hashOf(texts) {
+  const hash2 = createHash4("sha256");
+  for (const text7 of texts) hash2.update(`${normalise2(text7)}
+\0`);
+  return `sha256:${hash2.digest("hex")}`;
+}
+
+// kernel/src/dispatch/use-cases/show.ts
+import { isAbsolute as isAbsolute3, join as join35, posix as posix6, relative as relative8, sep as sep7 } from "node:path";
+var TICKET = /^A-[0-9a-z]{8}$/;
+function showPackage(deps, change, cwd, value) {
+  const dir = join35(change.dir, "dispatch");
+  const path = TICKET.test(value) ? ticketPackage(deps, dir, value) : isAbsolute3(value) ? value : join35(cwd, value);
+  const inside = path === void 0 ? "" : relative8(dir, path);
+  const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep7) ? void 0 : deps.store.read(path);
+  const document = path === void 0 || content === void 0 ? void 0 : readDocument(deps.store, path);
+  if (path === void 0 || content === void 0 || document === void 0 || !("data" in document)) {
+    return refuse(
+      "input/not-found",
+      TICKET.test(value) ? `ticket ${value} has no dispatch package in ${change.id}` : `${value} is not a package under ${posix6.relative(change.projectRoot, dir)}/`,
+      ["bdk dispatch show <ticket>", "bdk attempt list"]
+    );
+  }
+  return {
+    path: posix6.relative(change.projectRoot, path),
+    content,
+    frontmatter: document.data
+  };
+}
+function ticketPackage(deps, dir, ticket) {
+  const name = deps.store.list(dir).find((file) => file.endsWith(`-${ticket}.md`));
+  return name === void 0 ? void 0 : join35(dir, name);
+}
+
+// kernel/src/dispatch/commands/dispatch.ts
+function buildCommand(deps) {
+  return async (context) => {
+    if (context.change === void 0) throw new Error("dispatch build is Change-scoped");
+    const report2 = await buildPackage(deps, context.change, globalDir(context.runtime), {
+      target: context.positionals["<target>"] ?? "",
+      role: context.positionals["<role>"] ?? "",
+      ticket: context.positionals["<ticket>"] ?? ""
+    });
+    return isRefusal(report2) ? report2 : { data: report2, text: renderBuild(report2) };
+  };
+}
+function showCommand4(deps) {
+  return (context) => {
+    if (context.change === void 0) throw new Error("dispatch show is Change-scoped");
+    const report2 = showPackage(
+      deps,
+      context.change,
+      context.cwd,
+      context.positionals["<ticket|path>"] ?? ""
+    );
+    return Promise.resolve(isRefusal(report2) ? report2 : { data: report2, text: renderShow2(report2) });
+  };
+}
+
+// kernel/src/dispatch/index.ts
+function dispatchRegistrations(deps) {
+  return [
+    { id: "dispatch-build", handler: buildCommand(deps) },
+    { id: "dispatch-show", handler: showCommand4(deps) }
+  ];
+}
+
 // kernel/src/hooks/render/session-start.ts
 function renderSessionStart({ startup, project }) {
   if (project === void 0) return { content: startup };
@@ -24433,12 +25138,12 @@ ${lines.join("\n")}
 }
 
 // kernel/src/hooks/use-cases/session-start.ts
-import { join as join35 } from "node:path";
+import { join as join36 } from "node:path";
 function sessionStart(input) {
   const startup = startupContext(input).content;
   if (input.workTree === void 0) return { startup };
   const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
-  if (!input.store.isDirectory(join35(projectRoot, ".bdk"))) return { startup };
+  if (!input.store.isDirectory(join36(projectRoot, ".bdk"))) return { startup };
   const { errors, report: report2 } = inspectConfig({ ...input, projectRoot });
   const { layout, present } = detectLayout(input.store, projectRoot);
   const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
@@ -24480,40 +25185,40 @@ function renderSkillExists(name, foundIn) {
 
 // kernel/src/hooks/use-cases/skill-exists.ts
 var import_yaml12 = __toESM(require_dist(), 1);
-import { join as join36 } from "node:path";
+import { join as join37 } from "node:path";
 function findSkill(input, name) {
   for (const skills of skillDirs(input)) {
     for (const entry of subdirs(input.store, skills)) {
-      const file = join36(skills, entry, "SKILL.md");
-      const text6 = input.store.read(file);
-      if (text6 !== void 0 && frontmatterName(text6) === name) return file;
+      const file = join37(skills, entry, "SKILL.md");
+      const text7 = input.store.read(file);
+      if (text7 !== void 0 && frontmatterName(text7) === name) return file;
     }
   }
   return void 0;
 }
 function skillDirs({ store: store2, home, projectRoot }) {
-  const plugins = join36(home, ".claude", "plugins");
-  const marketplaces = join36(plugins, "marketplaces");
-  const cache3 = join36(plugins, "cache");
+  const plugins = join37(home, ".claude", "plugins");
+  const marketplaces = join37(plugins, "marketplaces");
+  const cache3 = join37(plugins, "cache");
   const versions = subdirs(store2, cache3).flatMap(
-    (marketplace) => subdirs(store2, join36(cache3, marketplace)).flatMap(
-      (plugin) => subdirs(store2, join36(cache3, marketplace, plugin)).map(
-        (version3) => join36(cache3, marketplace, plugin, version3)
+    (marketplace) => subdirs(store2, join37(cache3, marketplace)).flatMap(
+      (plugin) => subdirs(store2, join37(cache3, marketplace, plugin)).map(
+        (version3) => join37(cache3, marketplace, plugin, version3)
       )
     )
   );
   return [
-    join36(home, ".claude", "skills"),
-    join36(projectRoot, ".claude", "skills"),
-    ...subdirs(store2, marketplaces).map((marketplace) => join36(marketplaces, marketplace, "skills")),
-    ...versions.map((version3) => join36(version3, "skills"))
+    join37(home, ".claude", "skills"),
+    join37(projectRoot, ".claude", "skills"),
+    ...subdirs(store2, marketplaces).map((marketplace) => join37(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join37(version3, "skills"))
   ];
 }
 function subdirs(store2, dir) {
   return store2.list(dir).filter((entry) => entry.endsWith("/")).map((entry) => entry.slice(0, -1));
 }
-function frontmatterName(text6) {
-  const { frontmatter } = splitFrontmatter(text6);
+function frontmatterName(text7) {
+  const { frontmatter } = splitFrontmatter(text7);
   if (frontmatter === void 0) return void 0;
   try {
     const data = (0, import_yaml12.parse)(frontmatter);
@@ -25018,11 +25723,7 @@ async function run(index2, byId, options, invocation) {
     return writeCommand(streams, outcome, asJson);
   }
   if (asJson) streams.stdout(json(outcome.data));
-  else if (outcome.text !== "") {
-    streams.stdout(
-      record4.mode === "command" ? capLines(outcome.text, { all: rest.includes("--all") }) : ensureNewline(outcome.text)
-    );
-  }
+  else if (outcome.text !== "") streams.stdout(ensureNewline(outcome.text));
   return 0;
 }
 async function dispatch(record4, registration, options, rest, asJson, { cwd, runtime }) {
@@ -25102,8 +25803,8 @@ function writeCrash(streams, record4, error2) {
   );
   return 0;
 }
-function ensureNewline(text6) {
-  return text6.endsWith("\n") ? text6 : `${text6}
+function ensureNewline(text7) {
+  return text7.endsWith("\n") ? text7 : `${text7}
 `;
 }
 
@@ -25123,21 +25824,21 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join37 } from "node:path";
+import { join as join38 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store: store2, root } = input;
-  if (!store2.exists(join37(root, SETTINGS_FILES[0]))) return [];
+  if (!store2.exists(join38(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store2, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join37(root, file);
-    const text6 = store2.read(path);
-    if (text6 === void 0 || modelineUrl(text6) === url) continue;
-    if (input.fix) store2.write(path, withModeline(text6, version3));
+    const path = join38(root, file);
+    const text7 = store2.read(path);
+    if (text7 === void 0 || modelineUrl(text7) === url) continue;
+    if (input.fix) store2.write(path, withModeline(text7, version3));
     else stale.push(file);
   }
   if (stale.length > 0) {
@@ -25148,7 +25849,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join37(root, OFFLINE_SCHEMA_PATH);
+  const copy = join38(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store2.read(copy);
   if (current !== expected) {
@@ -25191,7 +25892,7 @@ function doctor(input) {
   if (finding !== void 0) findings.push(finding);
   findings.push(...schemaFindings({ ...input, root }));
   return {
-    ok: findings.every((item2) => item2.level === "ok"),
+    ok: findings.every((item3) => item3.level === "ok"),
     version: version2(input),
     layout,
     findings
@@ -25297,19 +25998,23 @@ function registrations(deps) {
     ...attemptRegistrations(deps),
     ...commitRegistrations(deps),
     ...queryRegistrations(deps),
-    ...exportRegistrations(deps)
+    ...exportRegistrations(deps),
+    ...rulesRegistrations(deps),
+    ...dispatchRegistrations(deps)
   ];
 }
 function settingsRegistry() {
   return createConfigRegistry({
     modules: [
+      ...rulesConfig.modules,
       ...ctxConfig.modules,
       ...graphConfig.modules,
       ...attemptConfig.modules,
+      ...logConfig.modules,
       checkpointModule,
       promptsModule
     ],
-    prompts: [...ctxConfig.prompts, ...graphConfig.prompts]
+    prompts: [...rulesConfig.prompts, ...ctxConfig.prompts, ...graphConfig.prompts]
   });
 }
 
@@ -25349,8 +26054,8 @@ try {
       readStdin
     },
     streams: {
-      stdout: (text6) => process.stdout.write(text6),
-      stderr: (text6) => process.stderr.write(text6)
+      stdout: (text7) => process.stdout.write(text7),
+      stderr: (text7) => process.stderr.write(text7)
     }
   });
 } catch (error2) {

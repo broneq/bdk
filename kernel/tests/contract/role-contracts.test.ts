@@ -1,11 +1,13 @@
 // `role-contracts`: the seven role skills under skills/roles/, their adapter
-// binding, and the wording every role contract must and must not carry.
+// binding (the same table `dispatch build` stamps), and the wording every role
+// contract must and must not carry.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
-import { ADAPTERS } from "../../src/export/domain/adapters.ts";
+import { ADAPTERS, ROLE_ADAPTERS } from "../../src/export/domain/adapters.ts";
+import { settingsRegistry } from "../../src/registrations.ts";
 import { REPO_ROOT } from "../support/run.ts";
 
 const ROLES_DIR = join(REPO_ROOT, "skills", "roles");
@@ -18,15 +20,6 @@ const ROLES = [
   "scout",
   "verifier",
 ];
-const ADAPTER_OF: Readonly<Record<string, string>> = {
-  implementer: "worker",
-  verifier: "reader",
-  "design-verifier": "reader",
-  reviewer: "reviewer",
-  "pr-reviewer": "reviewer",
-  runner: "runner",
-  scout: "scout",
-};
 const REVIEWING = ["verifier", "design-verifier", "reviewer", "pr-reviewer"];
 const AUTHORISING = /\b(approve[ds]?|approval|lgtm|sign[- ]off|ready to merge|go ahead|proceed)\b/i;
 const BODY_BUDGET = 4096;
@@ -66,6 +59,12 @@ describe("role skills", () => {
     expect(dirs).toEqual(ROLES);
   });
 
+  it("have no prompt key: a project cannot override a role body", () => {
+    expect(settingsRegistry().prompts.filter((prompt) => prompt.key.startsWith("roles/"))).toEqual(
+      [],
+    );
+  });
+
   it("are discovered through the plugin manifest", () => {
     const manifest = JSON.parse(
       readFileSync(join(REPO_ROOT, ".claude-plugin", "plugin.json"), "utf8"),
@@ -82,7 +81,7 @@ describe("role skills", () => {
         name,
         "user-invocable": false,
         context: "fork",
-        agent: `bdk:${ADAPTER_OF[name] ?? ""}`,
+        agent: `bdk:${ROLE_ADAPTERS[name as keyof typeof ROLE_ADAPTERS]}`,
       });
       expect(typeof meta.description).toBe("string");
       expect(meta).not.toHaveProperty("model");
@@ -111,11 +110,14 @@ describe("role skills", () => {
       expect(body).toContain("SendMessage");
     });
 
-    it("returns the envelope and stores its report on the right channel", () => {
+    it("stores its report through ingest, calls again on a refusal, and returns the envelope", () => {
       const { body } = role();
-      expect(body).toMatch(/envelope/i);
-      if (name === "implementer") expect(body).toMatch(/`report` path/);
-      else expect(body).toContain("log ingest --ticket");
+      expect(body).toContain("bdk log ingest --ticket");
+      expect(body).toMatch(/fix the field it names and call it again/);
+      expect(body).toMatch(/never write the report file yourself/);
+      expect(body).not.toMatch(/write the (full )?report to/i);
+      expect(body).toMatch(/return only the envelope/i);
+      expect(body).toContain("report path as the package names it");
     });
 
     it(`keeps its body within ${BODY_BUDGET} bytes`, () => {

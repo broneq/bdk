@@ -1,5 +1,6 @@
 // `dispatch/<target>-<role>-<ticket>.md` (`kernel-state`, Dispatch package):
-// the frontmatter only; the body sections belong to T23.
+// the frontmatter only, stamped whole by `dispatch build`; the body sections
+// are the kernel template of `dispatch` (T23).
 import * as z from "zod";
 
 import { hash, relativePath, role, scope, ticketId, timestamp } from "./common.ts";
@@ -16,6 +17,9 @@ export const dispatchKind = {
       ticket: ticketId,
       target: z.string().min(1),
       role,
+      adapter: z.string().min(1).meta({
+        description: "The role's adapter (`role-contracts`, Role-to-adapter map).",
+      }),
       attempt: z.int().min(1),
       of: z.int().min(1),
       scope,

@@ -1,11 +1,11 @@
 // Writers for the three output forms of `kernel-cli` (Output modes,
-// Conventions): the JSON object, the text rendering capped at 100 lines, the
+// Conventions): the JSON object, a list verb's text capped at 100 lines, the
 // four-line refusal and the two-line STOP block of inject mode.
 import * as z from "zod";
 
 import type { Refusal } from "../refusal/index.ts";
 
-/** The design's "<= 100 lines" rule: text output and list pages stop here unless `--all`. */
+/** The design's "<= 100 lines" rule: a list verb's page and text stop here unless `--all`. */
 export const TEXT_LINE_CAP = 100;
 
 export interface ListPage<T> {

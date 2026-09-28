@@ -1,6 +1,7 @@
 // The attempt E2E fixtures through the committed bundle: a tiny Change in a
-// real repository with part 01 started, the attempt commands, and the dispatch
-// package and report envelope T23 will build, written by hand until then.
+// real repository with part 01 started, the attempt commands, the dispatch
+// package from `dispatch build`, and a report envelope written by hand for
+// `attempt close --envelope`.
 import { join } from "node:path";
 import { expect } from "vitest";
 
@@ -64,24 +65,15 @@ export function closed(change: Started, ticket: string, outcome: string, ...flag
   return answered(close(change, ticket, outcome, ...flags), "output/attempt-close.json");
 }
 
-/** The dispatch package T23 will build, so `log add --ticket` finds the role. */
-export function dispatched(change: Started, ticket: string, target: string): void {
-  writeDocument(fileStore(), join(change.dir, `dispatch/${target}-implementer-${ticket}.md`), {
-    data: {
-      schema: 1,
-      ticket,
-      target,
-      role: "implementer",
-      attempt: 1,
-      of: 3,
-      scope: "full",
-      at: "2026-09-25T10:00:00Z",
-      "kernel-version": "3.0.0",
-      "template-hash": `sha256:${"0".repeat(64)}`,
-      report: `.bdk/changes/${change.id}/reports/${target}-implementer-${ticket}.md`,
-    },
-    body: "",
-  });
+/** The ticket's package from `dispatch build`, so `log add --ticket` finds the role. */
+export function dispatched(
+  change: Started,
+  ticket: string,
+  target: string,
+  role = "implementer",
+): string {
+  const result = bdk(["dispatch", "build", target, role, ticket, "--json"], change.root);
+  return answered(result, "output/dispatch-build.json").path as string;
 }
 
 export function logUnder(change: Started, ticket: string, summary: string, ref: string): string {

@@ -25,7 +25,7 @@ The kernel source SHALL be organised as one slice per command group plus `shared
 | `spec`     | `spec delta check`, `merge`, `diff`                                                  | T30           | Spec deltas and the deterministic merge (D2b, V1-7).                                                                                                                             |
 | `config`   | `config show`, `check`, `schema`, `set`                                              | T12           | The commands over the layered configuration; the layering itself is `shared/config`.                                                                                             |
 | `ctx`      | `ctx skill`, `startup`                                                               | T13           | Prompt context composition: the skill manifest, rules, fragments, tool entries, the agents table.                                                                                |
-| `rules`    | `rules check`, `show`, `add`, `explain`, `prune`, `import`, `stats`, `export`        | T31           | Rule files, ids, `applies` selection and the learning funnel.                                                                                                                    |
+| `rules`    | `rules check`, `show`, `add`, `explain`, `prune`, `import`, `stats`, `export`        | T23, T31      | Rule text and its selection per ticket, then rule files, ids, `applies` selection and the learning funnel.                                                                       |
 | `query`    | `query`                                                                              | T20           | Read-only SQL over the index.                                                                                                                                                    |
 | `commit`   | `commit`                                                                             | T22           | The task commit with BDK trailers.                                                                                                                                               |
 | `hooks`    | `hooks session-start`, `session-end`, `prompt-expansion`, `pre-tool`, `skill-exists` | T13, T24      | Host payload parsing, guard decisions, the only writer of `source: user`.                                                                                                        |
@@ -76,8 +76,10 @@ flowchart TB
     commit -->|"diff check"| part
     commit -->|"finding entries"| log
     commit -->|"tiny guard"| measure
-    dispatch -->|"rule selection"| rules
-    dispatch -->|"role context"| ctx
+    dispatch -->|"rule texts for the template hash"| rules
+    dispatch -->|"P8 lists"| log
+    dispatch -->|"role-to-adapter map"| export
+    dispatch -->|"artifact paths"| graphSlice
     ctx -->|"rule selection"| rules
     rules -->|"learning entries"| log
     Slices -->|"store queries, git, config, output"| shared
@@ -99,25 +101,30 @@ flowchart TB
 - **WHEN** the kernel's registrations are listed after T22
 - **THEN** the `attempt`, `part` and `commit` slices register handlers for every record whose slice they are, and none answers `kernel/not-implemented`
 
+#### Scenario: T23 part B slices registered
+
+- **WHEN** the kernel's registrations are listed after T23 part B
+- **THEN** `dispatch build`, `dispatch show`, `log ingest` and `rules show` have handlers, and of the `rules` records only the other verbs and the `<id>` form of `rules show` answer `kernel/not-implemented`
+
 ### Requirement: Dependency matrix
 
 A slice SHALL import another slice only through that slice's `index.ts` and only along a row of the matrix; the graph SHALL stay acyclic.
 
 A slice imports another slice only through that slice's `index.ts`, and only along a row of this table. **Reads of committed state never need a slice import**: `shared/store` exposes typed queries over the index (open tickets of a Change, the `Files:` of a task, the manifests of a task, entry summaries) whose row shapes are T14's, so `evidence record` checks its ticket, `part done` checks for open tickets and `log add` checks its ticket without importing `attempt`. Behaviour several slices share without an edge between them lives in `shared/store` as well: the checkpoint (`change`, `attempt`, and `hooks` from T24) and the rebuild core (`service`, `change`). A slice import is for a use case or domain logic that another slice owns (the diff check owned by `part`, freshness owned by `evidence`, entry writing owned by `log`). This is what keeps the graph acyclic.
 
-| From                                                              | May import                                         | Why                                                                                                                                                                                                                         |
-| ----------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `change`                                                          | `measure`, `graph`, `part`, `log`, `spec`, `rules` | `new` measures and asks the graph for the first artifact; `status` lists the plan parts as `part list` does; every verb writes entries; `close` merges specs and regenerates the rule projection.                           |
-| `graph`                                                           | `log`, `ctx`                                       | `done` writes the entry; `next` composes the instruction from the kind template and the skill context.                                                                                                                      |
-| `part`                                                            | `graph`, `log`, `measure`                          | `start`, `done` and `split` run the `plan-part` and `execute-part` checks and write transition and decision entries; `done` of a `tiny` Change measures its commits (tiny guard).                                           |
-| `attempt`                                                         | `part`, `log`, `evidence`                          | `close` runs `part`'s diff check, `evidence`'s freshness check and writes findings.                                                                                                                                         |
-| `commit`                                                          | `part`, `log`, `measure`                           | The same diff check as `attempt close`, the finding for undeclared files, and the tiny guard.                                                                                                                               |
-| `dispatch`                                                        | `rules`, `ctx`                                     | Package sections come from rule selection and the skill context; the role body comes from the role skill.                                                                                                                   |
-| `ctx`                                                             | `rules`                                            | Rule text and `applies` filtering.                                                                                                                                                                                          |
-| `rules`                                                           | `log`                                              | `add` writes the `learning` entry; `stats` reads through the store.                                                                                                                                                         |
-| `hooks`                                                           | `change`, `graph`, `log`, `ctx`, `config`          | `session-start` composes status, startup context, the config check and the v2 layout detection of `config`; `prompt-expansion` asks the graph and writes the transition; `session-end` checkpoints.                         |
-| `service`                                                         | every slice (read-only)                            | `doctor` and `rebuild` inspect all state (`doctor` takes the v2 layout detection from `config`); `rebuild` writes through the `shared/store` rebuild core, not through a slice; `import` calls `rules import` and `config`. |
-| `log`, `evidence`, `spec`, `config`, `query`, `measure`, `export` | `shared` only                                      | Leaves.                                                                                                                                                                                                                     |
+| From                                                              | May import                                         | Why                                                                                                                                                                                                                                                                                                                     |
+| ----------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `change`                                                          | `measure`, `graph`, `part`, `log`, `spec`, `rules` | `new` measures and asks the graph for the first artifact; `status` lists the plan parts as `part list` does; every verb writes entries; `close` merges specs and regenerates the rule projection.                                                                                                                       |
+| `graph`                                                           | `log`, `ctx`                                       | `done` writes the entry; `next` composes the instruction from the kind template and the skill context.                                                                                                                                                                                                                  |
+| `part`                                                            | `graph`, `log`, `measure`                          | `start`, `done` and `split` run the `plan-part` and `execute-part` checks and write transition and decision entries; `done` of a `tiny` Change measures its commits (tiny guard).                                                                                                                                       |
+| `attempt`                                                         | `part`, `log`, `evidence`                          | `close` runs `part`'s diff check, `evidence`'s freshness check and writes findings.                                                                                                                                                                                                                                     |
+| `commit`                                                          | `part`, `log`, `measure`                           | The same diff check as `attempt close`, the finding for undeclared files, and the tiny guard.                                                                                                                                                                                                                           |
+| `dispatch`                                                        | `rules`, `log`, `export`, `graph`                  | The template hash covers the rule texts `rules` selects; a verifier's package lists the P8 categories `log` enforces; `adapter` comes from `export`'s role-to-adapter map; an artifact target's paths come from its `graph` node and the nodes it requires. The role body is a plugin file read through `shared/store`. |
+| `ctx`                                                             | `rules`                                            | Rule text: `rules` owns the rule prompt values and `languages` (`kernel-settings`), and `ctx` reads them for a skill's rule parts.                                                                                                                                                                                      |
+| `rules`                                                           | `log`                                              | `add` writes the `learning` entry; `stats` reads through the store; `show --ticket` stamps `rules-read` through `shared/store`, not through `attempt`.                                                                                                                                                                  |
+| `hooks`                                                           | `change`, `graph`, `log`, `ctx`, `config`          | `session-start` composes status, startup context, the config check and the v2 layout detection of `config`; `prompt-expansion` asks the graph and writes the transition; `session-end` checkpoints.                                                                                                                     |
+| `service`                                                         | every slice (read-only)                            | `doctor` and `rebuild` inspect all state (`doctor` takes the v2 layout detection from `config`); `rebuild` writes through the `shared/store` rebuild core, not through a slice; `import` calls `rules import` and `config`.                                                                                             |
+| `log`, `evidence`, `spec`, `config`, `query`, `measure`, `export` | `shared` only                                      | Leaves.                                                                                                                                                                                                                                                                                                                 |
 
 Edges not in the table are forbidden, including the reverse of every listed edge. The two structural tests below fail the build on a violation.
 
@@ -130,6 +137,11 @@ Edges not in the table are forbidden, including the reverse of every listed edge
 
 - **WHEN** the import scan reads `kernel/src/attempt/`
 - **THEN** it finds no import of `kernel/src/change/`, and the escalation checkpoint is reached through `shared/store`
+
+#### Scenario: rules read without an attempt edge
+
+- **WHEN** the import scan reads `kernel/src/rules/`
+- **THEN** it finds no import of `kernel/src/attempt/`, and the `rules-read` stamp is written through `shared/store`
 
 ### Requirement: Slice anatomy
 

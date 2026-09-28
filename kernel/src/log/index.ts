@@ -9,12 +9,17 @@ import {
   resolveCommand,
   showCommand,
 } from "./commands/log.ts";
+import { verifierModule } from "./config.ts";
 import type { LogDeps } from "./use-cases/deps.ts";
 
 export type { LogDeps } from "./use-cases/deps.ts";
 export { withChangeIndex } from "./use-cases/deps.ts";
 export { appendEntry } from "./use-cases/append.ts";
 export type { AppendResult } from "./domain/entry.ts";
+export { verifierPolicy } from "./use-cases/verifier.ts";
+export type { VerifierCategory } from "./use-cases/verifier.ts";
+
+export const logConfig = { modules: [verifierModule] };
 
 export function logRegistrations(deps: LogDeps): Registration[] {
   return [

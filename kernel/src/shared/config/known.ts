@@ -19,8 +19,6 @@ export interface RemovedKey {
 
 export const PLANNED_KEYS: readonly PlannedKey[] = [
   { key: "policy.checkpoint.squash-at-close", owner: "T30" },
-  { key: "policy.verifier.blocking-categories", owner: "T23" },
-  { key: "policy.log.max-observations", owner: "T23" },
   { key: "execution.concurrency", owner: "T23" },
   { key: "archive.keep-evidence", owner: "T23" },
   { key: "rules.propose-when.changes", owner: "T31" },
