@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
+import { ADAPTERS } from "../../src/export/domain/adapters.ts";
 import { REPO_ROOT } from "../support/run.ts";
 
 const ROLES_DIR = join(REPO_ROOT, "skills", "roles");
@@ -152,13 +153,7 @@ describe("P8: verifiers block only on the package's categories", () => {
 
 describe("adapters named by the roles", () => {
   it("are all produced by bdk export agents", () => {
-    const produced = new Set(
-      readdirSync(join(REPO_ROOT, "agents"))
-        .filter((file) =>
-          readFileSync(join(REPO_ROOT, "agents", file), "utf8").includes("bdk export agents"),
-        )
-        .map((file) => `bdk:${file.slice(0, -".md".length)}`),
-    );
+    const produced = new Set(ADAPTERS.map((adapter) => `bdk:${adapter.name}`));
     for (const name of ROLES) expect(produced).toContain(readRole(name).meta.agent);
   });
 });
