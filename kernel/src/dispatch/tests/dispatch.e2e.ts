@@ -106,6 +106,21 @@ describe("bdk dispatch build", () => {
     );
   });
 
+  it("exit 0: a runner package lists the checks with the task's files, within the size budget", () => {
+    const change = started(
+      "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n      related: vitest related {files}\n  lint:\n    - id: eslint\n      tier: lint\n      command: eslint .\n      scoped: eslint {files}\n",
+    );
+    const ticket = opened(change, "task-redispatch", "01-1");
+    const report = built(change, "01-1", "runner", ticket);
+    const text = read(change.root, report.path);
+    expect(text).toContain("## Checks");
+    expect(text).toContain("- `vitest related src/01-1.ts`");
+    expect(text).toContain("- `eslint src/01-1.ts`");
+    expect(text).toContain(`\`bdk evidence record lint <file> --ticket ${ticket} --verdict`);
+    expect(text.indexOf("### tests-scoped")).toBeLessThan(text.indexOf("### lint"));
+    expect(report.bytes).toBeLessThanOrEqual(12_288);
+  });
+
   it("exit 0: the same package built twice carries the same template hash", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");

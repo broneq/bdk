@@ -20305,15 +20305,17 @@ var GateKind = class extends FilelessKind {
 };
 var DONE_VERDICTS = ["pass", "not-run"];
 var PostTaskStepKind = class extends BaseKind {
-  /** `command` records the kind's evidence; `bdk done` refused names it. */
-  constructor(name, command) {
+  /** `command` records the kind's evidence; `bdk done` refused names it; `role` runs the step. */
+  constructor(name, command, role2) {
     super();
     this.name = name;
     this.command = command;
+    this.role = role2;
     this.doneBy = { through: "evidence", command };
   }
   name;
   command;
+  role;
   doneBy;
   instances(view) {
     return [...partFiles(view, "plan/parts").keys()].map((nn) => ({ nn, requires: [] }));
@@ -20378,12 +20380,13 @@ var PostTaskStepKind = class extends BaseKind {
 };
 function postTaskSteps() {
   return [
-    new PostTaskStepKind("simplify", "bdk attempt close <ticket> ok"),
+    new PostTaskStepKind("simplify", "bdk attempt close <ticket> ok", "simplifier"),
     new PostTaskStepKind(
       "tests-scoped",
-      "bdk evidence record tests-scoped <file> --ticket <ticket>"
+      "bdk evidence record tests-scoped <file> --ticket <ticket>",
+      "runner"
     ),
-    new PostTaskStepKind("lint", "bdk evidence record lint <file> --ticket <ticket>")
+    new PostTaskStepKind("lint", "bdk evidence record lint <file> --ticket <ticket>", "runner")
   ];
 }
 var CloseKind = class extends FilelessKind {
@@ -22616,6 +22619,9 @@ function startupCommand(deps) {
 function startupContext(deps) {
   return renderStartup(readStartup(deps));
 }
+function toolEntries(resolved) {
+  return toolsModule.schema.parse(resolved.value[toolsModule.key]);
+}
 var ctxConfig = {
   modules: [toolsModule, featuresModule, executionModule],
   prompts: fragmentPrompts
@@ -22798,6 +22804,26 @@ async function artifactPaths(deps, change, index2, globalDir2, target) {
     for (const path of files) if (!path.includes("<")) paths.add(path);
   }
   return [...paths];
+}
+
+// kernel/src/graph/use-cases/steps.ts
+async function targetSteps(deps, change, index2, globalDir2, target) {
+  const read3 = await readGraph(deps, change, index2, globalDir2);
+  if ("refused" in read3) return read3;
+  const steps = /* @__PURE__ */ new Map();
+  for (const node3 of read3.graph.nodes) {
+    const kind = read3.kinds.get(node3.kind);
+    if (!(kind instanceof PostTaskStepKind) || node3.state === "skipped") continue;
+    steps.set(kind.name, { kind: kind.name, role: kind.role });
+  }
+  const policy = filePolicy(read3.resolved.value);
+  const files = [...new Set(targetFiles(readPlanParts(deps.store, change.dir), target))].filter((path) => fileClass(policy, path) === "executable").sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+  return { steps: [...steps.values()], files };
+}
+function targetFiles(parts, target) {
+  const holder = taskHolders(parts).get(target);
+  const tasks = holder !== void 0 ? holder.tasks.filter((task) => task.id === target) : (parts.find((part) => part.id === target) ?? { tasks: parts.flatMap((part) => part.tasks) }).tasks;
+  return tasks.flatMap((task) => task.files.map((file) => file.path));
 }
 
 // kernel/src/graph/index.ts
@@ -25593,6 +25619,53 @@ function exportRegistrations(deps) {
   return [{ id: "export-agents", handler: agentsCommand(deps) }];
 }
 
+// kernel/src/dispatch/domain/checks.ts
+function commandsOf(kind, tools3, files) {
+  const filled = (form) => form.replaceAll("{files}", files);
+  if (kind === "tests-scoped") {
+    return tools3.test.filter((entry) => entry.tier === "fast").map((entry) => withWhen(filled(entry.related ?? entry.scoped ?? entry.command), entry));
+  }
+  if (kind === "lint") {
+    return tools3.lint.map((entry) => withWhen(filled(entry.scoped ?? entry.command), entry));
+  }
+  return [];
+}
+function withWhen(command, entry) {
+  return `- \`${command}\`${entry.when === void 0 ? "" : `: ${entry.when}`}`;
+}
+function checksText(kinds, tools3, files, ticket) {
+  const intro = "Run the checks in this order. Save each check's output to a file and record it; for `pass`, cite the output line or JSON value that shows the result.";
+  if (kinds.length === 0) return `${intro}
+
+This Change runs no check after a task.`;
+  const sections = kinds.map((kind) => {
+    const record4 = `\`bdk evidence record ${kind} <file> --ticket ${ticket} --verdict pass|fail|not-run --cite <citation>\``;
+    if (files.length === 0) {
+      return `### ${kind}
+
+The target has no executable file: record \`${kind}\` with \`--verdict not-run\` and that reason in the file.
+
+${record4}`;
+    }
+    const commands = commandsOf(kind, tools3, files.join(" "));
+    if (commands.length === 0) {
+      return `### ${kind}
+
+No command is configured for \`${kind}\`: record it with \`--verdict not-run\` and that reason in the file.
+
+${record4}`;
+    }
+    return `### ${kind}
+
+${commands.join("\n")}
+
+Record: ${record4}`;
+  });
+  return `${intro}
+
+${sections.join("\n\n")}`;
+}
+
 // kernel/src/dispatch/domain/entries.ts
 var CLOSED_BLOCKER = ["resolved", "superseded"];
 function selectEntries(entries, names) {
@@ -25635,23 +25708,26 @@ var SECTIONS = [
   },
   {
     name: "categories",
-    verifierOnly: true,
+    only: "verifier",
     skeleton: "## Blocking categories (P8)\n\nA blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket {{ticket}} --category <id>`; any other blocker is stored as an observation for review.\n\n{{blocking}}\n\n## Not a fail\n\nNever block on these:\n\n{{not-a-fail}}"
   },
+  { name: "checks", only: "runner", skeleton: "## Checks\n\n{{checks}}" },
   {
     name: "return",
     skeleton: "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ticket}}`. Then pipe the full report to `bdk log ingest --ticket {{ticket}}`, the envelope (`status`, `files`, `entries`, `evidence`, and `reason` for `blocked` or `needs-context`) as its frontmatter. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`."
   }
 ];
-function renderSections(values2, verifier) {
-  return SECTIONS.filter((section) => verifier || section.verifierOnly !== true).map((section) => ({
-    name: section.name,
-    text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name) => {
-      const value = values2[name];
-      if (value === void 0) throw new Error(`the package template has no value for ${name}`);
-      return value;
+function renderSections(values2, kind) {
+  return SECTIONS.filter((section) => section.only === void 0 || section.only === kind).map(
+    (section) => ({
+      name: section.name,
+      text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name) => {
+        const value = values2[name];
+        if (value === void 0) throw new Error(`the package template has no value for ${name}`);
+        return value;
+      })
     })
-  }));
+  );
 }
 function packageBody(sections) {
   return `${sections.map((section) => section.text.trimEnd()).join("\n\n")}
@@ -25729,6 +25805,8 @@ function buildPackage(deps, change, globalDir2, input) {
     const verifier = role2 === "verifier" || role2 === "design-verifier";
     const policy = verifier ? verifierPolicy(deps, change, globalDir2) : void 0;
     if (policy !== void 0 && isRefusal(policy)) return policy;
+    const checks = role2 === "runner" ? await runnerChecks(deps, change, index2, globalDir2, input, resolved) : "";
+    if (typeof checks !== "string") return checks;
     const name = `${input.target}-${role2}-${input.ticket}.md`;
     const changeRel = posix5.relative(change.projectRoot, change.dir);
     const report2 = `${changeRel}/reports/${name}`;
@@ -25748,9 +25826,10 @@ function buildPackage(deps, change, globalDir2, input) {
         "role-body": demoteHeadings(roleBody),
         report: report2,
         blocking: categoryList(policy?.blocking ?? []),
-        "not-a-fail": categoryList(policy?.notAFail ?? [])
+        "not-a-fail": categoryList(policy?.notAFail ?? []),
+        checks
       },
-      verifier
+      verifier ? "verifier" : role2 === "runner" ? "runner" : void 0
     );
     const rules2 = roleSections(deps, resolved, role2).map((section) => section.text);
     const templateHash = hashOf([templateSkeleton(), roleBody, ...rules2]);
@@ -25797,6 +25876,12 @@ function buildPackage(deps, change, globalDir2, input) {
       entries: { full: selection.full.map((entry) => entry.id), counted: selection.counted }
     };
   });
+}
+async function runnerChecks(deps, change, index2, globalDir2, input, resolved) {
+  const steps = await targetSteps(deps, change, index2, globalDir2, input.target);
+  if (isRefusal(steps)) return steps;
+  const kinds = steps.steps.filter((step2) => step2.role === "runner").map((step2) => step2.kind);
+  return checksText(kinds, toolEntries(resolved), steps.files, input.ticket);
 }
 function isRole2(role2) {
   return ROLES.includes(role2);

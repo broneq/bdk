@@ -1,6 +1,9 @@
 // The ctx slice (`kernel-cli/ctx`): the prompt context of a skill and the
 // STARTUP instructions, composed from the manifest, the configuration and
 // the plugin files.
+import type * as z from "zod";
+
+import type { Resolved } from "../shared/config/index.ts";
 import type { Registration } from "../shared/registry/index.ts";
 import { skillCommand } from "./commands/skill.ts";
 import { startupCommand } from "./commands/startup.ts";
@@ -16,6 +19,11 @@ export { ruleSet } from "./use-cases/parts.ts";
 /** The rendered STARTUP instructions, as `bdk ctx startup` prints them. */
 export function startupContext(deps: Pick<CtxDeps, "store" | "pluginRoot">): ContextReport {
   return renderStartup(readStartup(deps));
+}
+
+/** The resolved `tools` entries (`kernel-settings`, Tool entries). */
+export function toolEntries(resolved: Resolved): z.output<typeof toolsModule.schema> {
+  return toolsModule.schema.parse(resolved.value[toolsModule.key]);
 }
 
 export const ctxConfig = {

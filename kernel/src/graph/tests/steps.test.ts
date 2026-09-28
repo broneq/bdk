@@ -259,6 +259,7 @@ describe("post-task step nodes", () => {
     const snapshot = new PostTaskStepKind(
       "contract-snapshot",
       "bdk evidence record contract-snapshot <file> --ticket <ticket>",
+      "runner",
     );
     const at = (fields: object) =>
       graph({ evidence: [manifest("E-00000001", "contract-snapshot", "01-1", fields)] }, pipeline, [

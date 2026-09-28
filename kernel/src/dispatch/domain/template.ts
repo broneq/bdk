@@ -7,8 +7,8 @@
 interface Section {
   readonly name: string;
   readonly skeleton: string;
-  /** Only verifier packages carry it (P8). */
-  readonly verifierOnly?: true;
+  /** Only the packages of these roles carry it: the verifiers' P8 lists, the runner's checks. */
+  readonly only?: "verifier" | "runner";
 }
 
 const SECTIONS: readonly Section[] = [
@@ -28,10 +28,11 @@ const SECTIONS: readonly Section[] = [
   },
   {
     name: "categories",
-    verifierOnly: true,
+    only: "verifier",
     skeleton:
       "## Blocking categories (P8)\n\nA blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket {{ticket}} --category <id>`; any other blocker is stored as an observation for review.\n\n{{blocking}}\n\n## Not a fail\n\nNever block on these:\n\n{{not-a-fail}}",
   },
+  { name: "checks", only: "runner", skeleton: "## Checks\n\n{{checks}}" },
   {
     name: "return",
     skeleton:
@@ -47,23 +48,25 @@ export interface RenderedSection {
 /** The sections a role's package carries, placeholders filled; a missing value throws. */
 export function renderSections(
   values: Readonly<Record<string, string>>,
-  verifier: boolean,
+  kind: "verifier" | "runner" | undefined,
 ): RenderedSection[] {
-  return SECTIONS.filter((section) => verifier || section.verifierOnly !== true).map((section) => ({
-    name: section.name,
-    text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name: string) => {
-      const value = values[name];
-      if (value === undefined) throw new Error(`the package template has no value for ${name}`);
-      return value;
+  return SECTIONS.filter((section) => section.only === undefined || section.only === kind).map(
+    (section) => ({
+      name: section.name,
+      text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name: string) => {
+        const value = values[name];
+        if (value === undefined) throw new Error(`the package template has no value for ${name}`);
+        return value;
+      }),
     }),
-  }));
+  );
 }
 
 export function packageBody(sections: readonly RenderedSection[]): string {
   return `${sections.map((section) => section.text.trimEnd()).join("\n\n")}\n`;
 }
 
-/** The skeleton `template-hash` covers: every section, the verifier ones included. */
+/** The skeleton `template-hash` covers: every section, the role-only ones included. */
 export function templateSkeleton(): string {
   return SECTIONS.map((section) => section.skeleton).join("\n\n");
 }

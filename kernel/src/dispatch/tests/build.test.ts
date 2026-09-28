@@ -4,11 +4,20 @@
 // and the refusals.
 import { describe, expect, it } from "vitest";
 
+import { kindRegistry, PostTaskStepKind } from "../../graph/domain/kinds/index.ts";
 import { writeEntry } from "../../graph/tests/support.ts";
-import { ROOT } from "../../log/tests/support.ts";
+import { repository, ROOT } from "../../log/tests/support.ts";
 import { activePackage, readDocument } from "../../shared/store/index.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
-import { build, dispatchHarness, DIR, PLUGIN, ticket, TICKET } from "./support.ts";
+import {
+  build,
+  dispatchHarness,
+  DIR,
+  PLUGIN,
+  ticket,
+  TICKET,
+  withDispatchPlugin,
+} from "./support.ts";
 import type { DispatchHarness } from "./support.ts";
 
 function refusal(result: { json: unknown }) {
@@ -311,6 +320,118 @@ describe("dispatch build", () => {
     const result = await build(dispatchHarness(), "02-3", "planner", TICKET);
     expect(result.code).toBe(3);
     expect(refusal(result)).toMatchObject({ rule: "input/invalid-argument" });
+  });
+});
+
+const TOOLS =
+  "tools:\n" +
+  "  test:\n" +
+  "    - id: unit\n      tier: fast\n      command: vitest run\n      related: vitest related {files}\n      when: after every source change\n" +
+  "    - id: slow\n      tier: e2e\n      command: vitest run --project e2e\n" +
+  "  lint:\n" +
+  "    - id: eslint\n      tier: lint\n      command: eslint .\n      scoped: eslint {files}\n" +
+  "    - id: tsc\n      tier: typecheck\n      command: tsc --noEmit\n";
+
+/** The `## Checks` section of a runner package, up to the next section. */
+function checks(body: string): string {
+  const start = body.indexOf("## Checks");
+  expect(start).toBeGreaterThan(-1);
+  return body.slice(start, body.indexOf("\n## ", start + 1));
+}
+
+/** Task 02-3 with a Markdown file next to its sources. */
+function withDocs(h: ReturnType<typeof dispatchHarness>): void {
+  const path = `${DIR}/plan/parts/02-part.md`;
+  h.store.write(
+    path,
+    (h.store.read(path) ?? "").replace(
+      "- Test: `src/auth/verify.test.ts`",
+      "- Test: `src/auth/verify.test.ts`\n- Modify: `docs/login.md`",
+    ),
+  );
+}
+
+describe("the runner's Checks section (T23-D44)", () => {
+  it("names each step's commands with the target's executable files and its record line", async () => {
+    const h = dispatchHarness();
+    h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOLS);
+    withDocs(h);
+    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
+    const files = "src/auth/verify.test.ts src/auth/verify.ts";
+    expect(section).toContain(`### tests-scoped`);
+    expect(section).toContain(`\`vitest related ${files}\``);
+    expect(section).toContain("after every source change");
+    expect(section).not.toContain("vitest run --project e2e");
+    expect(section).toContain(`\`eslint ${files}\``);
+    expect(section).toContain("`tsc --noEmit`");
+    expect(section).not.toContain("docs/login.md");
+    expect(section).not.toContain("### simplify");
+    for (const kind of ["tests-scoped", "lint"]) {
+      expect(section).toContain(
+        `\`bdk evidence record ${kind} <file> --ticket ${TICKET} --verdict pass|fail|not-run --cite <citation>\``,
+      );
+    }
+    expect(section.indexOf("### tests-scoped")).toBeLessThan(section.indexOf("### lint"));
+  });
+
+  it("uses the scoped form, else the command, of a fast test entry", async () => {
+    const h = dispatchHarness();
+    h.store.write(
+      `${ROOT}/.bdk/settings.yaml`,
+      "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: pytest\n      scoped: pytest {files}\n    - id: doc\n      tier: fast\n      command: pytest --doctest-modules\n",
+    );
+    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
+    expect(section).toContain("`pytest src/auth/verify.test.ts src/auth/verify.ts`");
+    expect(section).toContain("`pytest --doctest-modules`");
+  });
+
+  it("tells the runner to record a kind without a command as not-run with the reason", async () => {
+    const section = checks((await built(dispatchHarness(), "02-3", "runner", TICKET)).body);
+    expect(section).toMatch(/### lint\n\nNo command is configured[^\n]*`--verdict not-run`/);
+  });
+
+  it("tells the runner to record every check not-run when the target has no executable file", async () => {
+    const h = dispatchHarness();
+    h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOLS);
+    const path = `${DIR}/plan/parts/02-part.md`;
+    h.store.write(
+      path,
+      (h.store.read(path) ?? "")
+        .replace("`src/auth/verify.ts`", "`docs/verify.md`")
+        .replace("`src/auth/verify.test.ts`", "`docs/verify-notes.md`"),
+    );
+    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
+    expect(section).not.toContain("vitest");
+    expect(section.match(/The target has no executable file/g)).toHaveLength(2);
+  });
+
+  it("follows the order of the step nodes in the pipeline, a project kind included", async () => {
+    const store = withDispatchPlugin(repository());
+    const path = `${PLUGIN}/pipeline/pipeline.yaml`;
+    const pipeline = (store.read(path) ?? "")
+      .replace(/\n {2}- id: tests-scoped\n( {4}.*\n)+/, "\n")
+      .replace(
+        /(\n {2}- id: lint\n( {4}.*\n)+)/,
+        "$1  - id: contract-snapshot\n    kind: contract-snapshot\n    stage: execute\n    requires: [simplify]\n  - id: tests-scoped\n    kind: tests-scoped\n    stage: execute\n    requires: [simplify]\n",
+      );
+    store.write(path, pipeline);
+    const snapshot = new PostTaskStepKind(
+      "contract-snapshot",
+      "bdk evidence record contract-snapshot <file> --ticket <ticket>",
+      "runner",
+    );
+    const h = dispatchHarness(store, kindRegistry([snapshot]));
+    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
+    const at = (kind: string) => section.indexOf(`### ${kind}\n`);
+    expect(at("lint")).toBeGreaterThan(-1);
+    expect(at("lint")).toBeLessThan(at("contract-snapshot"));
+    expect(at("contract-snapshot")).toBeLessThan(at("tests-scoped"));
+    expect(section).toMatch(/### contract-snapshot\n\nNo command is configured/);
+  });
+
+  it("is absent from every other role's package", async () => {
+    const { body } = await built(dispatchHarness(), "02-3", "implementer", TICKET);
+    expect(body).not.toContain("## Checks");
   });
 });
 

@@ -3,6 +3,7 @@
 // and `close` (T30). A step is done through evidence: the latest manifest of
 // its kind covering the part, fresh against its own target and saying `pass`
 // or `not-run`.
+import type { Role } from "../../../shared/vocabulary/index.ts";
 import { BaseKind, partFiles } from "./kind.ts";
 import type { ChangeView, Check, DoneBy, EvidenceFacts, Inputs, Instance } from "./kind.ts";
 
@@ -34,10 +35,11 @@ const DONE_VERDICTS: readonly (string | undefined)[] = ["pass", "not-run"];
 export class PostTaskStepKind extends BaseKind {
   override readonly doneBy: DoneBy;
 
-  /** `command` records the kind's evidence; `bdk done` refused names it. */
+  /** `command` records the kind's evidence; `bdk done` refused names it; `role` runs the step. */
   constructor(
     readonly name: string,
     readonly command: string,
+    readonly role: Role,
   ) {
     super();
     this.doneBy = { through: "evidence", command };
@@ -117,12 +119,13 @@ export class PostTaskStepKind extends BaseKind {
 /** The shipped steps, in pipeline order; `simplify`'s manifest is recorded by `attempt close ok` (T23-D43). */
 export function postTaskSteps(): PostTaskStepKind[] {
   return [
-    new PostTaskStepKind("simplify", "bdk attempt close <ticket> ok"),
+    new PostTaskStepKind("simplify", "bdk attempt close <ticket> ok", "simplifier"),
     new PostTaskStepKind(
       "tests-scoped",
       "bdk evidence record tests-scoped <file> --ticket <ticket>",
+      "runner",
     ),
-    new PostTaskStepKind("lint", "bdk evidence record lint <file> --ticket <ticket>"),
+    new PostTaskStepKind("lint", "bdk evidence record lint <file> --ticket <ticket>", "runner"),
   ];
 }
 
