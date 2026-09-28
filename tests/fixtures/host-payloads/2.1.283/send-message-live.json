@@ -1,0 +1,194 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.283",
+    "check_id": "send-message-live",
+    "recordings": 6
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-6>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-6>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-5>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Probe alpha: background sleep and message monitor",
+        "prompt": "Run with the Bash tool: sleep 25. Then reply with every message you received from other agents, verbatim, or NONE.",
+        "subagent_type": "bdk-probe:probe-spawner",
+        "run_in_background": true
+      },
+      "tool_use_id": "<TOOL-USE-10>"
+    },
+    {
+      "session_id": "<SESSION-6>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-6>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-5>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Probe beta: send message to alpha",
+        "prompt": "Use the SendMessage tool to send the message PING-FROM-BETA to the agent named alpha, then report verbatim what the tool returned.",
+        "subagent_type": "bdk-probe:probe-spawner",
+        "run_in_background": false
+      },
+      "tool_use_id": "<TOOL-USE-11>"
+    },
+    {
+      "session_id": "<SESSION-6>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-6>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-5>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-6>",
+      "agent_type": "bdk-probe:probe-spawner",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "SendMessage",
+      "tool_input": {
+        "to": "alpha",
+        "summary": "PING-FROM-BETA",
+        "message": "PING-FROM-BETA",
+        "type": "message",
+        "recipient": "alpha",
+        "content": "PING-FROM-BETA"
+      },
+      "tool_use_id": "<TOOL-USE-12>"
+    },
+    {
+      "session_id": "<SESSION-6>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-6>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-5>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-6>",
+      "agent_type": "bdk-probe:probe-spawner",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "SendMessage",
+      "tool_input": {
+        "to": "alpha",
+        "summary": "PING-FROM-BETA",
+        "message": "PING-FROM-BETA"
+      },
+      "tool_response": {
+        "success": false,
+        "message": "No agent named 'alpha' is reachable.\nCheck the spelling, or use the agent ID from a background agent's spawn result.",
+        "display": "Not sent — no agent named 'alpha' is reachable."
+      },
+      "tool_use_id": "<TOOL-USE-12>",
+      "duration_ms": 11
+    },
+    {
+      "session_id": "<SESSION-6>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-6>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-6>",
+      "hook_event_name": "SessionEnd",
+      "reason": "other"
+    },
+    {
+      "duration_api_ms": 19692,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-6>",
+      "total_cost_usd": 0.061151849999999994,
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 759,
+        "cache_read_input_tokens": 25135,
+        "output_tokens": 202,
+        "output_tokens_details": {
+          "thinking_tokens": 105
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 759,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 10,
+            "output_tokens": 202,
+            "cache_read_input_tokens": 25135,
+            "cache_creation_input_tokens": 759,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 759
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 64,
+          "outputTokens": 1861,
+          "cacheReadInputTokens": 101436,
+          "cacheCreationInputTokens": 25773,
+          "webSearchRequests": 0,
+          "costUSD": 0.061151849999999994,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 1109,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "origin": {
+        "kind": "task-notification"
+      },
+      "subagent_stats": {
+        "spawned": 2,
+        "requested": {
+          "background": 1,
+          "foreground": 1,
+          "unset": 0
+        },
+        "started_in_background": 1,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 2,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "bdk-probe:probe-spawner": 2
+        }
+      },
+      "is_error": false,
+      "num_turns": 1,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "**Beta's answer (verbatim):**\n```json\n{\"success\":false,\"message\":\"No agent named 'alpha' is reachable.\\nCheck the spelling, or use the agent ID from a background agent's spawn result.\"}\n```\n\n**Alpha's answer (verbatim):**\nsleep 25 blocked by system restrictions. Bash doesn't permit standalone sleep commands. Messages from other agents: NONE",
+      "ttft_ms": 1552,
+      "type": "result",
+      "duration_ms": 2120,
+      "uuid": "<UUID-6>",
+      "ttft_stream_ms": 563,
+      "time_to_request_ms": 42,
+      "first_content_frame_ms": 563,
+      "queued_turn_count": 0,
+      "result_index": 1
+    }
+  ]
+}

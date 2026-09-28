@@ -126,4 +126,24 @@ selected allowed-control && { run_check allowed-control '.' "-" "/bdk-probe:unal
 selected wrapper-old-rule && { run_check wrapper-old-rule '.' "-" "/bdk-probe:wrapper-old-rule" || status=1; }
 selected wrapper && { run_check wrapper '.' "-" "/bdk-probe:wrapper" || status=1; }
 
+selected fork-agent && { run_check fork-agent 'role-fork-ran|ROLE-FORK' "Skill Bash(echo *) Bash(sleep *)" \
+  "Call the Skill tool with skill bdk-probe:role-fork. Do not use any other tool. Reply with exactly what it returned." || status=1; }
+selected fork-concurrency && { run_check fork-concurrency '.' "Skill Bash(echo *) Bash(sleep *)" \
+  "In ONE message, make two Skill tool calls at once: skill bdk-probe:role-fork and skill bdk-probe:role-fork-b. Do not use any other tool. Reply with both results." || status=1; }
+selected sub-bang && { run_check sub-bang 'ROLE-BANG|SUB-BANG' "Task Agent Skill Bash(echo *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner in the foreground and this prompt: Call the Skill tool with skill bdk-probe:role-bang and report verbatim what it returned. Reply with the subagent's answer verbatim." || status=1; }
+selected nested && { run_check nested '"agent_type":"bdk-probe:probe-worker"' "Task Agent Bash(echo *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner in the foreground and this prompt: Use the Agent tool with subagent_type bdk-probe:probe-worker and prompt go, in the foreground, and report its answer. Reply with the subagent's answer verbatim." || status=1; }
+selected send-message-name && { run_check send-message-name '"tool_name":"SendMessage"' "Task Agent SendMessage Bash(echo *)" \
+  "Step 1: use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-worker, name alpha, prompt go, in the foreground, and wait for it. Step 2: use the subagent tool with subagent_type bdk-probe:probe-spawner, name beta, in the foreground, with this prompt: Use the SendMessage tool to send the message PING-FROM-BETA to the agent named alpha, then report verbatim what the tool returned, and also list the agent names in your sibling roster if you have one. Reply with beta's answer verbatim." || status=1; }
+
+selected send-message-live && { run_check send-message-live '.' "Task Agent SendMessage Bash(echo *) Bash(sleep *)" \
+  "Step 1: use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner, name alpha, run_in_background true, and this prompt: Run with the Bash tool: sleep 25. Then reply with every message you received from other agents, verbatim, or NONE. Step 2: immediately after, use the subagent tool with subagent_type bdk-probe:probe-spawner, name beta, in the foreground, with this prompt: Use the SendMessage tool to send the message PING-FROM-BETA to the agent named alpha, then report verbatim what the tool returned. Step 3: wait for alpha to finish. Reply with beta's answer and alpha's answer, verbatim." || status=1; }
+
+selected send-message-id && { run_check send-message-id '.' "Task Agent SendMessage Bash(echo *)" \
+  "Step 1: use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-worker, prompt go, in the foreground. Its result contains an agentId. Step 2: use the subagent tool with subagent_type bdk-probe:probe-spawner in the foreground, with this prompt (put the real agentId from step 1 in place of ID): Use the SendMessage tool with to set to ID and the message PING-FROM-BETA, then report verbatim what the tool returned. Reply with the step 1 agentId and beta's answer verbatim." || status=1; }
+
+selected send-message-main && { run_check send-message-main '.' "Task Agent SendMessage Bash(echo *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner, run_in_background true, and this prompt: Use the SendMessage tool with to set to main and the message CRITICAL-FROM-SUB, report verbatim what the tool returned, then reply DONE. Wait until it finishes. Reply with every message you received from it, verbatim, and its final answer." || status=1; }
+
 exit $status
