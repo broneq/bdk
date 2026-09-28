@@ -17809,13 +17809,6 @@ function openAttempts(index2, changeId2) {
     openedAt: String(row.opened_at)
   }));
 }
-function ticketDispatch(index2, changeId2, ticket) {
-  const row = index2.database.prepare(
-    `SELECT d.role, d.path FROM attempts a JOIN dispatches d ON d.change_id = a.change_id AND d.ticket = a.ticket
-       WHERE a.change_id = ? AND a.ticket = ? AND a.closed_at IS NULL ORDER BY d.path LIMIT 1`
-  ).get(changeId2, ticket);
-  return row === void 0 ? void 0 : { role: String(row.role), path: String(row.path) };
-}
 function listChanges(index2) {
   return selectChanges(index2, "", []);
 }
@@ -18591,6 +18584,22 @@ function activePackage(store2, projectRoot, changeDir, ticket) {
   const data = document.data;
   return { role: data.role, path, data };
 }
+function openPackage(store2, projectRoot, changeDir, ticket) {
+  const record4 = readAttempts(store2, changeDir).find((file) => file.data.ticket === ticket);
+  if (record4 === void 0 || record4.data["closed-at"] !== void 0) return void 0;
+  return activePackage(store2, projectRoot, changeDir, ticket);
+}
+function packageRoles(store2, changeDir, ticket) {
+  const dir = join13(changeDir, "dispatch");
+  const roles = [];
+  for (const name of store2.list(dir)) {
+    if (!name.endsWith(`-${ticket}.md`)) continue;
+    const document = readDocument(store2, join13(dir, name));
+    if (document?.kind !== "dispatch" || !("data" in document)) continue;
+    roles.push(document.data.role);
+  }
+  return roles;
+}
 function readManifests(store2, changeDir) {
   const dir = join13(changeDir, "evidence");
   const manifests = [];
@@ -19249,7 +19258,7 @@ ${line2}`;
 async function appendEntry(deps, change, index2, draft, options) {
   let source2 = "kernel";
   if (draft.ticket !== void 0) {
-    const role2 = ticketDispatch(index2, change.id, draft.ticket)?.role;
+    const role2 = openPackage(deps.store, change.projectRoot, change.dir, draft.ticket)?.role;
     if (role2 === void 0) {
       return refuse(
         "policy/no-open-ticket",
@@ -19430,7 +19439,7 @@ function addEntry(deps, change, globalDir2, input) {
       const missing = checkSupersedes(deps, change, index2, input.supersedes);
       if (missing !== void 0) return missing;
     }
-    const role2 = input.ticket === void 0 ? void 0 : ticketDispatch(index2, change.id, input.ticket)?.role;
+    const role2 = input.ticket === void 0 ? void 0 : openPackage(deps.store, change.projectRoot, change.dir, input.ticket)?.role;
     let blocking = [];
     if (mayDowngrade(input.type, role2)) {
       const policy = verifierPolicy(deps, change, globalDir2);
@@ -19562,8 +19571,8 @@ var STAMPED = ["schema", "ticket", "role"];
 var FIELDS = ["status", "files", "entries", "evidence", "reason"];
 function ingestReport(deps, change, input) {
   return withChangeIndex(deps, change, async (index2) => {
-    const dispatch2 = ticketDispatch(index2, change.id, input.ticket);
-    const report2 = dispatch2 === void 0 ? void 0 : reportPath(deps, change, dispatch2.path);
+    const dispatch2 = openPackage(deps.store, change.projectRoot, change.dir, input.ticket);
+    const report2 = dispatch2?.data.report;
     if (dispatch2 === void 0 || report2 === void 0) {
       return refuse(
         "policy/no-open-ticket",
@@ -19589,12 +19598,6 @@ function ingestReport(deps, change, input) {
       replaced
     };
   });
-}
-function reportPath(deps, change, dispatchPath) {
-  const dispatch2 = readDocument(deps.store, join17(change.projectRoot, dispatchPath));
-  if (dispatch2 === void 0 || !("data" in dispatch2)) return void 0;
-  const report2 = dispatch2.data.report;
-  return typeof report2 === "string" ? report2 : void 0;
 }
 function invalidEnvelope(why) {
   return refuse("input/invalid-envelope", why, [
@@ -22288,14 +22291,14 @@ function read(module, resolved) {
 
 // kernel/src/rules/use-cases/show.ts
 function showTicketRules(deps, change, globalDir2, ticket) {
-  return withChangeIndex(deps, change, (index2) => {
+  return withChangeIndex(deps, change, () => {
     const record4 = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
     if (record4 === void 0) {
       return refuse("input/not-found", `${change.id} has no ticket ${ticket}`, [
         "bdk attempt list --all"
       ]);
     }
-    const dispatch2 = ticketDispatch(index2, change.id, ticket);
+    const dispatch2 = openPackage(deps.store, change.projectRoot, change.dir, ticket);
     if (dispatch2 === void 0) {
       const why = record4.data.outcome === void 0 ? `ticket ${ticket} has no dispatch package` : `ticket ${ticket} is closed ${record4.data.outcome}`;
       return refuse("policy/no-open-ticket", why, [
@@ -22315,9 +22318,14 @@ function showTicketRules(deps, change, globalDir2, ticket) {
     );
     if ("refused" in resolved) return resolved;
     const sections = isRole(dispatch2.role) ? roleSections(deps, resolved, dispatch2.role) : [];
-    const rulesRead = stampRulesRead(deps.store, change.dir, ticket, deps.clock.now());
-    if (rulesRead === void 0) throw new Error(`the attempt record of ${ticket} disappeared`);
-    return { ticket, role: dispatch2.role, target: record4.data.target, sections, rulesRead };
+    const rulesRead = dispatch2.role === "implementer" ? stampRulesRead(deps.store, change.dir, ticket, deps.clock.now()) : record4.data["rules-read"];
+    return {
+      ticket,
+      role: dispatch2.role,
+      target: record4.data.target,
+      sections,
+      ...rulesRead === void 0 ? {} : { rulesRead }
+    };
   });
 }
 function isRole(role2) {
@@ -23742,7 +23750,9 @@ async function recordUndeclared(deps, change, index2, target, paths) {
   return "refused" in written ? written : { id: written.entry.id };
 }
 async function unreadRules(deps, change, index2, record4) {
-  if (ticketDispatch(index2, change.id, record4.ticket)?.role !== "implementer") return void 0;
+  if (!packageRoles(deps.store, change.dir, record4.ticket).includes("implementer")) {
+    return void 0;
+  }
   if (record4.file.data["rules-read"] !== void 0) return void 0;
   const written = await appendEntry(
     deps,

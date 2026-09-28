@@ -30,7 +30,7 @@ import {
   readDocument,
   readPlanParts,
   taskHolders,
-  ticketDispatch,
+  packageRoles,
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { AttemptRecord, EntryRow, IndexDb } from "../../shared/store/index.ts";
@@ -253,9 +253,9 @@ async function recordUndeclared(
 }
 
 /**
- * An `implementer` ticket closed without `rules show --ticket` (T23-D28, risk
- * R2): one reviewed kernel finding; the close goes on. Undefined when the
- * rules were read or the role is another.
+ * A ticket with an `implementer` package closed without the implementer's
+ * `rules show --ticket` (T23-D28, D42, risk R2): one reviewed kernel finding;
+ * the close goes on. Undefined when the rules were read or no implementer ran.
  */
 async function unreadRules(
   deps: AttemptDeps,
@@ -263,7 +263,9 @@ async function unreadRules(
   index: IndexDb,
   record: KeyedRecord,
 ): Promise<{ readonly id: string } | Refusal | undefined> {
-  if (ticketDispatch(index, change.id, record.ticket)?.role !== "implementer") return undefined;
+  if (!packageRoles(deps.store, change.dir, record.ticket).includes("implementer")) {
+    return undefined;
+  }
   if (record.file.data["rules-read"] !== undefined) return undefined;
   const written = await appendEntry(
     deps,

@@ -13,5 +13,6 @@ export interface TicketRules {
   readonly role: string;
   readonly target: string;
   readonly sections: readonly ShownSection[];
-  readonly rulesRead: string;
+  /** Absent until an implementer of the ticket read its rules. */
+  readonly rulesRead?: string | undefined;
 }

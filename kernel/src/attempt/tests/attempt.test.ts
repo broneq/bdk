@@ -3,7 +3,12 @@
 import { describe, expect, it } from "vitest";
 
 import { writeEntry } from "../../graph/tests/support.ts";
-import { readAttempts, readDocument, writeDocument } from "../../shared/store/index.ts";
+import {
+  readAttempts,
+  readDocument,
+  stampPackage,
+  writeDocument,
+} from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { attemptCloseOutput, attemptListOutput, attemptOpenOutput } from "../schema/outputs.ts";
 import { close, cycle, DIR, envelope, harness, open, started, underTicket } from "./support.ts";
@@ -535,6 +540,12 @@ describe("attempt close: rules read (T23-D28)", () => {
       },
       body: "",
     });
+    stampPackage(
+      h.store,
+      DIR,
+      ticket,
+      `.bdk/changes/2026-09-25-login/dispatch/01-1-${role}-${ticket}.md`,
+    );
   }
 
   it("writes one reviewed finding when an implementer closes without rules-read; the close goes on", async () => {
@@ -570,6 +581,15 @@ describe("attempt close: rules read (T23-D28)", () => {
     const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
     expect(report.rulesFinding).toBeUndefined();
     expect(entries(h.store, "finding")).toStrictEqual([]);
+  });
+
+  it("writes one when a later role's package is active", async () => {
+    const h = await started();
+    const { ticket } = await open(h, "task-redispatch", "01-1");
+    packaged(h, ticket, "implementer");
+    packaged(h, ticket, "runner");
+    const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
+    expect(report.rulesFinding).toMatch(/^L-/);
   });
 
   it("writes none for another role", async () => {

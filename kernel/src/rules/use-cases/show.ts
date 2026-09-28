@@ -1,13 +1,14 @@
 // `bdk rules show --ticket <ticket>` (`kernel-cli/rules`; T23-D27, D28): the
 // rules the ticket's role reads, resolved as prompt values, and the first
-// call stamped as `rules-read` in the attempt record. The ticket must be
-// open with a dispatch package; the role comes from the package.
+// call under the implementer's package stamped as `rules-read` in the attempt
+// record (T23-D42, risk R2). The ticket must be open with a dispatch package;
+// the role comes from its active package.
 import { withChangeIndex } from "../../log/index.ts";
 import { resolveOrRefuse } from "../../shared/config/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { readAttempts, stampRulesRead, ticketDispatch } from "../../shared/store/index.ts";
+import { openPackage, readAttempts, stampRulesRead } from "../../shared/store/index.ts";
 import { ROLES } from "../../shared/vocabulary/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import type { TicketRules } from "../domain/report.ts";
@@ -20,14 +21,14 @@ export function showTicketRules(
   globalDir: string,
   ticket: string,
 ): Promise<TicketRules | Refusal> {
-  return withChangeIndex(deps, change, (index) => {
+  return withChangeIndex(deps, change, () => {
     const record = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
     if (record === undefined) {
       return refuse("input/not-found", `${change.id} has no ticket ${ticket}`, [
         "bdk attempt list --all",
       ]);
     }
-    const dispatch = ticketDispatch(index, change.id, ticket);
+    const dispatch = openPackage(deps.store, change.projectRoot, change.dir, ticket);
     if (dispatch === undefined) {
       const why =
         record.data.outcome === undefined
@@ -50,9 +51,17 @@ export function showTicketRules(
     );
     if ("refused" in resolved) return resolved;
     const sections = isRole(dispatch.role) ? roleSections(deps, resolved, dispatch.role) : [];
-    const rulesRead = stampRulesRead(deps.store, change.dir, ticket, deps.clock.now());
-    if (rulesRead === undefined) throw new Error(`the attempt record of ${ticket} disappeared`);
-    return { ticket, role: dispatch.role, target: record.data.target, sections, rulesRead };
+    const rulesRead =
+      dispatch.role === "implementer"
+        ? stampRulesRead(deps.store, change.dir, ticket, deps.clock.now())
+        : record.data["rules-read"];
+    return {
+      ticket,
+      role: dispatch.role,
+      target: record.data.target,
+      sections,
+      ...(rulesRead === undefined ? {} : { rulesRead }),
+    };
   });
 }
 

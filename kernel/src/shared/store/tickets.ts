@@ -55,6 +55,31 @@ export function activePackage(
   return { role: data.role, path, data };
 }
 
+/** The active package of a ticket whose record is open; undefined otherwise. */
+export function openPackage(
+  store: Store,
+  projectRoot: string,
+  changeDir: string,
+  ticket: string,
+): ActivePackage | undefined {
+  const record = readAttempts(store, changeDir).find((file) => file.data.ticket === ticket);
+  if (record === undefined || record.data["closed-at"] !== undefined) return undefined;
+  return activePackage(store, projectRoot, changeDir, ticket);
+}
+
+/** The roles of the ticket's packages under `dispatch/`, in file order. */
+export function packageRoles(store: Store, changeDir: string, ticket: string): string[] {
+  const dir = join(changeDir, "dispatch");
+  const roles: string[] = [];
+  for (const name of store.list(dir)) {
+    if (!name.endsWith(`-${ticket}.md`)) continue;
+    const document = readDocument(store, join(dir, name));
+    if (document?.kind !== "dispatch" || !("data" in document)) continue;
+    roles.push((document.data as unknown as DispatchPackage).role);
+  }
+  return roles;
+}
+
 export interface ManifestFile {
   readonly path: string;
   readonly data: EvidenceManifest;

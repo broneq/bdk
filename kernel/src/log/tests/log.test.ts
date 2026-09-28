@@ -18,6 +18,7 @@ import {
   ROOT,
   runBdk,
   writeChangeDoc,
+  writePackage,
 } from "./support.ts";
 import type { FakeGit } from "./support.ts";
 
@@ -57,24 +58,7 @@ function addAttempt(store: Store, ticket: string, role: string | undefined, clos
     },
     body: "",
   });
-  if (role === undefined) return;
-  writeDocument(store, `${DIR}/dispatch/02-3-${role}-${ticket}.md`, {
-    data: {
-      schema: 1,
-      ticket,
-      target: "02-3",
-      role,
-      adapter: "worker",
-      attempt: 1,
-      of: 3,
-      scope: "full",
-      at: "2026-09-25T10:00:01.000Z",
-      "kernel-version": "3.0.0-dev",
-      "template-hash": `sha256:${"a".repeat(64)}`,
-      report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${ticket}.md`,
-    },
-    body: "",
-  });
+  if (role !== undefined) writePackage(store, ticket, role);
 }
 
 describe("log add --category (P8)", () => {
@@ -124,6 +108,21 @@ describe("log add --category (P8)", () => {
     const output = logAddOutput.parse(result.json);
     expect(output.entry).toMatchObject({ type: "blocker", category: "false-code-claim" });
     expect(output.downgraded).toBeUndefined();
+  });
+
+  it("classifies by the ticket's active package, not the first package file", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-7f3k9m2q", "implementer");
+    writePackage(store, "A-7f3k9m2q", "verifier");
+    expect(logAddOutput.parse((await run(blocker("A-7f3k9m2q"))).json).entry).toMatchObject({
+      type: "observation",
+      source: "agent:verifier",
+    });
+    writePackage(store, "A-7f3k9m2q", "implementer");
+    expect(logAddOutput.parse((await run(blocker("A-7f3k9m2q"))).json).entry).toMatchObject({
+      type: "blocker",
+      source: "agent:implementer",
+    });
   });
 
   it("never downgrades an implementer blocker", async () => {

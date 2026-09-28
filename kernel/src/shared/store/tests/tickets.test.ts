@@ -8,6 +8,8 @@ import {
   memoryStore,
   openAttempts,
   openIndex,
+  openPackage,
+  packageRoles,
   partManifests,
   readAttempts,
   readManifests,
@@ -88,6 +90,28 @@ describe("stampPackage and activePackage", () => {
     stampPackage(store, DIR, TICKET, pkg("runner"));
     store.remove(`${ROOT}/${pkg("runner")}`);
     expect(activePackage(store, ROOT, DIR, TICKET)).toBeUndefined();
+  });
+
+  it("answers the active package of an open ticket only", () => {
+    const store = seeded();
+    expect(openPackage(store, ROOT, DIR, TICKET)).toBeUndefined();
+    stampPackage(store, DIR, TICKET, pkg("runner"));
+    expect(openPackage(store, ROOT, DIR, TICKET)).toMatchObject({ role: "runner" });
+    const [record] = readAttempts(store, DIR);
+    if (record === undefined) throw new Error("no record");
+    writeDocument(store, record.path, {
+      data: { ...record.data, "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" },
+      body: "",
+    });
+    expect(openPackage(store, ROOT, DIR, TICKET)).toBeUndefined();
+    expect(activePackage(store, ROOT, DIR, TICKET)).toMatchObject({ role: "runner" });
+  });
+
+  it("lists the roles of every package of a ticket, whichever is active", () => {
+    const store = seeded();
+    stampPackage(store, DIR, TICKET, pkg("runner"));
+    expect(packageRoles(store, DIR, TICKET)).toStrictEqual(["implementer", "runner"]);
+    expect(packageRoles(store, DIR, OTHER)).toStrictEqual([]);
   });
 
   it("leaves a stamped record valid for a rebuild of the index", async () => {

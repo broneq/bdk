@@ -15,7 +15,6 @@ export {
   listEntries,
   openAttempts,
   selectReadOnly,
-  ticketDispatch,
 } from "./index/queries.ts";
 export type {
   ChangeRow,
@@ -23,7 +22,6 @@ export type {
   EntryRow,
   OpenAttempt,
   SelectResult,
-  TicketDispatch,
 } from "./index/queries.ts";
 export { migrateDocument, readChange, readDocument, writeDocument } from "./state/documents.ts";
 export { renderDocument } from "./state/render.ts";
@@ -71,6 +69,8 @@ export { readAttempts, readPlanParts, taskHolders } from "./work.ts";
 export { stampRulesRead } from "./rules-read.ts";
 export {
   activePackage,
+  openPackage,
+  packageRoles,
   partManifests,
   readManifests,
   stampPackage,

@@ -10,6 +10,7 @@ import {
   memoryIndex,
   memoryStore,
   resolveActiveChange,
+  stampPackage,
   writeDocument,
   writeMarker,
 } from "../../shared/store/index.ts";
@@ -137,4 +138,31 @@ export async function runBdk(
   let json: unknown;
   if (argv.includes("--json")) json = JSON.parse(stdout);
   return { code, stdout, json };
+}
+
+/**
+ * What `dispatch build` leaves for `role` on an open ticket of `target`: the
+ * package at `dispatch/<target>-<role>-<ticket>.md`, stamped as the ticket's
+ * active one (T23-D42).
+ */
+export function writePackage(store: Store, ticket: string, role: string, target = "02-3"): void {
+  const path = `.bdk/changes/${CHANGE}/dispatch/${target}-${role}-${ticket}.md`;
+  writeDocument(store, `${ROOT}/${path}`, {
+    data: {
+      schema: 1,
+      ticket,
+      target,
+      role,
+      adapter: role === "implementer" || role === "simplifier" ? "worker" : "reader",
+      attempt: 1,
+      of: 3,
+      scope: "full",
+      at: "2026-09-25T10:00:01Z",
+      "kernel-version": "3.0.0-dev",
+      "template-hash": `sha256:${"a".repeat(64)}`,
+      report: `.bdk/changes/${CHANGE}/reports/${target}-${role}-${ticket}.md`,
+    },
+    body: "",
+  });
+  stampPackage(store, `${ROOT}/.bdk/changes/${CHANGE}`, ticket, path);
 }

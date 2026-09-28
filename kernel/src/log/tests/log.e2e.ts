@@ -16,7 +16,7 @@ import {
   refused,
   repository,
 } from "../../../tests/support/repo.ts";
-import { fileStore, writeDocument } from "../../shared/store/index.ts";
+import { fileStore, stampPackage, writeDocument } from "../../shared/store/index.ts";
 
 /** A repository with an open Change; answers the root and the Change directory. */
 function opened(): { root: string; dir: string } {
@@ -424,6 +424,7 @@ function ticketed(dir: string, closed = false, role = "verifier"): string {
     },
     body: "",
   });
+  stampPackage(fileStore(), dir, TICKET, `.bdk/changes/${id}/dispatch/02-${role}-${TICKET}.md`);
   return report;
 }
 

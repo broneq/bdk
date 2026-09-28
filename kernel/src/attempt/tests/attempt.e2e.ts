@@ -263,6 +263,20 @@ describe("bdk attempt close", () => {
     });
   });
 
+  it("exit 0: a simplifier reading its rules stamps nothing; the close still finds the implementer's (T23-D42)", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    dispatched(change, ticket, "01-1", "simplifier");
+    const rules = answered(
+      bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
+      "output/rules-show.json",
+    );
+    expect(rules).toMatchObject({ role: "simplifier" });
+    expect(rules).not.toHaveProperty("rulesRead");
+    expect(closed(change, ticket, "ok").rulesFinding).toMatch(/^L-/);
+  });
+
   it("exit 0: no rules finding after rules show --ticket", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");

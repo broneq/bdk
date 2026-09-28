@@ -27,9 +27,9 @@ export const rulesShowOutput = z
         }),
       )
       .meta({ description: "The role's rule categories, then the language rules, in order." }),
-    rulesRead: z.iso.datetime({ precision: 3 }).meta({
+    rulesRead: z.iso.datetime({ precision: 3 }).optional().meta({
       description:
-        "The `rules-read` stamp of the attempt record: the time of the first call for the ticket.",
+        "The `rules-read` stamp of the attempt record: the time of the implementer's first call for the ticket; absent until then.",
     }),
   })
   .meta({
