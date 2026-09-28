@@ -27,6 +27,7 @@ const registry = createRegistry(
     store: memoryStore(),
     pluginRoot: "/",
     contract: index.contract,
+    commands: index,
     settings: settingsRegistry(),
     git: systemGit,
     openIndex: memoryIndex,

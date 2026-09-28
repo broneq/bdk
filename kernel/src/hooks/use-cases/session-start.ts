@@ -9,7 +9,7 @@ import { findProjectRoot } from "../../shared/store/index.ts";
 import type { SessionFindings } from "../domain/report.ts";
 import type { HooksDeps } from "./input.ts";
 
-export interface SessionStartInput extends HooksDeps {
+export interface SessionStartInput extends Pick<HooksDeps, "store" | "pluginRoot" | "settings"> {
   readonly cwd: string;
   /** Absent outside a git work tree: the command is standalone. */
   readonly workTree: string | undefined;
