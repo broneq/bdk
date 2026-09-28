@@ -22756,6 +22756,8 @@ function closeAttempt(deps, change, where, input) {
       if ("refused" in written) return written;
       kernelFindings.push(written.id);
     }
+    const rulesFinding = await unreadRules(deps, change, index2, record4);
+    if (rulesFinding !== void 0 && "refused" in rulesFinding) return rulesFinding;
     writeDocument(deps.store, record4.file.path, {
       data: {
         ...record4.file.data,
@@ -22782,6 +22784,7 @@ function closeAttempt(deps, change, where, input) {
       ...isChecked(record4) ? { diff: diffReport(diff) } : {},
       ...kernelFindings.length === 0 ? {} : { findings: kernelFindings },
       ...prints.length === 0 ? {} : { fingerprints: prints },
+      ...rulesFinding === void 0 ? {} : { rulesFinding: rulesFinding.id },
       notRunCount: state.notRun,
       next
     };
@@ -22853,6 +22856,26 @@ async function recordUndeclared(deps, change, index2, target, paths) {
       status: "proposed",
       refs: [target, ...paths],
       body: `${paths.map((path) => `- ${path}`).join("\n")}
+`
+    },
+    { dedupe: true }
+  );
+  return "refused" in written ? written : { id: written.entry.id };
+}
+async function unreadRules(deps, change, index2, record4) {
+  if (ticketDispatch(index2, change.id, record4.ticket)?.role !== "implementer") return void 0;
+  if (record4.file.data["rules-read"] !== void 0) return void 0;
+  const written = await appendEntry(
+    deps,
+    change,
+    index2,
+    {
+      type: "finding",
+      summary: `implementer closed ${record4.ticket} without reading its rules`,
+      status: "proposed",
+      review: true,
+      refs: [record4.target, record4.ticket],
+      body: `The attempt record has no rules-read: \`bdk rules show --ticket ${record4.ticket}\` never ran.
 `
     },
     { dedupe: true }

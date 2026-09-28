@@ -245,6 +245,34 @@ describe("bdk attempt close", () => {
       "runtime/git-missing",
     );
   });
+
+  it("exit 0: an implementer closing without rules-read gets one reviewed finding (T23-D28)", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    const report = closed(change, ticket, "ok");
+    expect(report.rulesFinding).toMatch(/^L-/);
+    const shown = answered(
+      bdk(["log", "show", report.rulesFinding as string, "--json"], change.root),
+      "output/log-show.json",
+    ) as { entry: { review: boolean; summary: string; refs: string[] } };
+    expect(shown.entry).toMatchObject({
+      review: true,
+      summary: `implementer closed ${ticket} without reading its rules`,
+      refs: ["01-1", ticket],
+    });
+  });
+
+  it("exit 0: no rules finding after rules show --ticket", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    answered(
+      bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
+      "output/rules-show.json",
+    );
+    expect(closed(change, ticket, "ok").rulesFinding).toBeUndefined();
+  });
 });
 
 describe("bdk attempt list", () => {
