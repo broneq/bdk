@@ -11,7 +11,7 @@ The plugin SHALL ship exactly seven role skills, one per directory `skills/roles
 #### Scenario: seven roles discovered
 
 - **WHEN** the plugin loads with the `skills` key in `plugin.json`
-- **THEN** the host lists `bdk:implementer`, `bdk:verifier`, `bdk:design-verifier`, `bdk:reviewer`, `bdk:pr-reviewer`, `bdk:runner` and `bdk:scout`, and the skills under `skills/` keep their names
+- **THEN** the Skill tool resolves `bdk:implementer`, `bdk:verifier`, `bdk:design-verifier`, `bdk:reviewer`, `bdk:pr-reviewer`, `bdk:runner` and `bdk:scout`, the skills under `skills/` keep their names, and the roles stay out of the user's skill and slash-command listings because of `user-invocable: false`
 
 #### Scenario: role frontmatter
 

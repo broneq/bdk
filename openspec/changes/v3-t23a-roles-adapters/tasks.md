@@ -18,15 +18,15 @@
 
 ## 3. Role skills
 
-- [ ] 3.1 Write a failing content test for the role skills covering every scenario of the `role-contracts` delta: seven directories, frontmatter fields, no `!` block, adapter names produced by the generator, file-only input wording, P3 terms absent, one git sentence in `implementer`, no `bdk-entries`, `bdk log add` named, body at most 4 096 bytes; verify it fails with `skills/roles/` missing
-- [ ] 3.2 Add `"skills": ["./skills/roles/"]` to `.claude-plugin/plugin.json` and verify with `claude --plugin-dir . -p` (as in `tests/host-probe/run-headless.sh`) that the existing `skills/` names and the new `bdk:<role>` names are both listed
+- [x] 3.1 Write a failing content test for the role skills covering every scenario of the `role-contracts` delta: seven directories, frontmatter fields, no `!` block, adapter names produced by the generator, file-only input wording, P3 terms absent, one git sentence in `implementer`, no `bdk-entries`, `bdk log add` named, body at most 4 096 bytes; verify it fails with `skills/roles/` missing
+- [x] 3.2 Add `"skills": ["./skills/roles/"]` to `.claude-plugin/plugin.json` and verify with `claude --plugin-dir . -p` (as in `tests/host-probe/run-headless.sh`) that the existing `skills/` names and the new `bdk:<role>` names are both listed
 - [ ] 3.3 Write the seven role skills under `skills/roles/` per `role-contracts` and design.md T23-D14, D15, D17, D18, D24, reusing the P3 / P8 knowledge of `agents/plan-verifier.md`, `agents/design-verifier.md`, `agents/code-reviewer.md` and the return contract of `skills/subagent-execute-plan/references/return-contract.md`; review with `/bdk-skill-kit:skill-authoring`; verify the content test from 3.1 and `pnpm skill-check` pass
-- [ ] 3.4 Live check on Claude Code: invoke `bdk:verifier` as a forked skill with a dummy package path and confirm from the `PreToolUse` payload that it runs as `bdk:reader` and that its first tool call is `dispatch show` (which answers `kernel/not-implemented` until part B); record the result in the PR description
+- [x] 3.4 Live check on Claude Code: invoke `bdk:verifier` as a forked skill with a dummy package path and confirm from the `PreToolUse` payload that it runs as `bdk:reader` and that its first tool call is `dispatch show` (which answers `kernel/not-implemented` until part B); record the result in the PR description
 
 ## 4. Documentation
 
 - [x] 4.1 Update `docs/guide/reference/agents.md`, the `README.md` Agents table and any drift-guarded listing to show the five adapters and the seven roles next to the v2 agents (v2 rows stay until T42); verify `pnpm docs:build` and the drift guards in `pnpm test:contract` pass
-- [ ] 4.2 Check `docs/guide/` for mentions of a headless runner, `execution.runner` or `execution.host` and remove them; verify with a repository grep limited to shipped docs
+- [x] 4.2 Check `docs/guide/` for mentions of a headless runner, `execution.runner` or `execution.host` and remove them; verify with a repository grep limited to shipped docs
 
 ## 5. Acceptance
 

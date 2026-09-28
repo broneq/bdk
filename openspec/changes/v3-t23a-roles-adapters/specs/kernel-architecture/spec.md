@@ -115,3 +115,63 @@ A content test allows `node:fs` only in `shared/store`, `shared/config` and `sha
 
 - **WHEN** `node:fs` appears outside `shared/store`, `shared/config` and `shared/git`, `node:child_process` outside `shared/git`, or `node:sqlite` outside `shared/store`
 - **THEN** the `node:` boundary test fails the build
+
+### Requirement: Slice anatomy
+
+Every slice SHALL have the same directory layout, one directory per layer and one file per command inside each layer, with the layers pointing one way.
+
+One directory per layer, one file per command inside each layer, so `close` sits at the same relative path in every layer of every slice: `commands/close.ts`, `use-cases/close.ts`, `render/close.ts`, `schema/close.ts`, `tests/close.test.ts`.
+
+```
+kernel/src/attempt/
+  index.ts              public surface: the three command registrations, the slice's config modules and the use cases other slices may call; the only file another slice may import
+  config.ts             config modules this slice consumes (root key, zod schema with defaults, consumer = this slice); optional
+  commands/             argv -> typed input, one file per command; --help text from the index record
+    parse.ts            the slice's positional grammar (`kernel-cli`, Invocation) and flag parsing, shared by the three commands
+    open.ts
+    close.ts
+    list.ts
+  use-cases/            one file per command; domain logic, no argv, no stdout
+    open.ts             budgets, ladder, oscillation, ticket file
+    close.ts            outcome, diff check (part), evidence freshness (evidence), entries check, findings (log), next action
+    list.ts             read model over store queries
+  domain/               slice-owned types and pure rules, no IO
+    ticket.ts           ticket record, outcome, fingerprint
+    budget.ts           not-run and retry budgets
+    ladder.ts           escalation ladder and the oscillation detector (A-drabina)
+  store/                this slice's persistence on .bdk/changes/<id>/attempts/ and its index tables, built on shared/store primitives
+    attempts.ts         writes: ticket record, outcome, fingerprints, next action
+    queries.ts          typed reads this slice owns (open tickets of a task, budgets)
+  render/               text rendering, one file per command; JSON is the schema's object
+    open.ts
+    close.ts
+    list.ts
+  schema/               zod schemas of the outputs, one file per command; `pnpm build` generates schema/cli/output/attempt-*.json from them
+    open.ts
+    close.ts
+    list.ts
+  tests/
+    open.test.ts        unit tests of the use case on an in-memory store
+    close.test.ts
+    list.test.ts
+    attempt.e2e.ts      E2E through bdk.mjs on a repository fixture, one case per exit code the index declares
+```
+
+Inside a slice the layers point one way: `commands/` imports `use-cases/`, `render/` and `schema/`; `use-cases/` imports `domain/`, `store/`, `schema/` and the `index.ts` of the slices in its matrix row; `store/` imports `domain/` and `shared/store`; `render/` and `schema/` import `domain/` and `shared/vocabulary` only; `domain/` imports nothing but `shared/vocabulary` and types from `shared/ids` and `shared/clock`. The import scan below enforces the direction.
+
+`config.ts` imports only `shared/config` and zod; `use-cases/` reads settings only through the modules of its own `config.ts`, which the composition root registers (`kernel-settings`, Registry and consumers). Every slice has the same directories with the same responsibilities, so a reader who knows one slice knows all of them. A slice with one command (`commit`, `query`, `measure`) keeps the directories with one file in each; a slice without pure rules omits `domain/`. `graph/domain/kinds/` holds one class per artifact kind and `hooks/domain/` the payload parsers per host event.
+
+#### Scenario: layer direction inside a slice
+
+- **WHEN** `commands/` imports `store/`, `render/` imports `use-cases/`, `schema/` imports a shared module other than `shared/vocabulary`, or `domain/` imports anything but `shared/vocabulary` and types from `shared/ids` and `shared/clock`
+- **THEN** the import scan fails the build
+
+#### Scenario: shared/vocabulary imports something
+
+- **WHEN** a file of `shared/vocabulary` imports a module or a package
+- **THEN** the import scan fails the build
+
+#### Scenario: config module outside its consumer
+
+- **WHEN** a config module is declared anywhere but the `config.ts` of the slice it names as consumer, or in `shared/config` for the modules `shared/config` consumes
+- **THEN** the S6 structural test fails the build

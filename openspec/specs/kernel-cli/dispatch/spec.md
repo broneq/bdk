@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Dispatch packages and the headless runner (`dispatch`). The subagent interface (K3, K4): `build` writes a package file, `show` reads one back, `run` is the headless runner that spawns one host CLI process per package.
+Dispatch packages (`dispatch`). The subagent interface (K3, K4): `build` writes a package file and `show` reads one back; the host's own agent mechanism starts the agent that reads it.
 
 Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
 

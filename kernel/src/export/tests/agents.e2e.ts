@@ -59,7 +59,9 @@ describe("bdk export agents", () => {
       2,
       "policy/generated-drift",
     );
-    expect(refusal.why).toContain("gen/scout.md (missing)");
+    expect(refusal.why).toMatch(
+      /^1 generated adapter file differs from .*: gen\/scout\.md \(missing\)$/,
+    );
   });
 
   it("leaves the v2 agents next to the adapters alone", () => {

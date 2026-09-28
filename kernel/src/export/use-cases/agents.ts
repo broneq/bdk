@@ -46,7 +46,7 @@ export function exportAgents(deps: ExportDeps, request: AgentsRequest): AgentsRe
   if (drift.length > 0) {
     return refuse(
       "policy/generated-drift",
-      `${drift.length} generated adapter files differ from bdk export agents --host ${host.id}: ${drift.join(", ")}`,
+      `${drift.length === 1 ? "1 generated adapter file differs" : `${drift.length} generated adapter files differ`} from bdk export agents --host ${host.id}: ${drift.join(", ")}`,
       [`bdk export agents --host ${host.id}`],
     );
   }
