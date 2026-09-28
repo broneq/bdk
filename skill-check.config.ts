@@ -25,7 +25,8 @@ export default defineConfig({
   targets: [
     {
       kind: "skills",
-      dirs: ["skills"],
+      // Role skills sit one level deeper (plugin.json `skills` key).
+      dirs: ["skills", "skills/roles"],
       rules: {
         "block-form": ["error", { patterns: [wrapper] }],
         // Without the pair the host drops the whole skill in default permission mode.
