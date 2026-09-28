@@ -4,50 +4,51 @@
   "title": "bdk evidence check --json",
   "description": "Is the evidence for a target still fresh against the working tree?",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["fresh", "treeHash", "evidence"],
   "properties": {
     "fresh": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "True when at least one manifest is checked and every checked one is fresh."
     },
     "treeHash": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "The current tree hash of the target."
     },
     "evidence": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["evidence", "kind", "treeHash", "fresh"],
         "properties": {
           "evidence": {
             "type": "string",
+            "pattern": "^E-[0-9a-z]{8}$",
             "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           },
-          "kind": {
-            "type": "string"
-          },
+          "kind": { "type": "string", "minLength": 1 },
           "treeHash": {
             "type": "string",
-            "pattern": "^sha256:[0-9a-f]{64}$"
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "description": "The tree hash the manifest recorded."
           },
-          "fresh": {
-            "type": "boolean"
-          },
-          "verdict": {
-            "type": "string"
-          },
+          "fresh": { "type": "boolean" },
+          "verdict": { "type": "string", "enum": ["pass", "fail", "not-run"] },
           "changedSince": {
             "type": "array",
             "items": {
               "type": "string",
+              "minLength": 1,
               "description": "Path relative to the project root."
-            }
+            },
+            "description": "The covered paths whose hash differs from the manifest's `tree`."
           }
-        }
+        },
+        "required": ["evidence", "kind", "treeHash", "fresh", "changedSince"],
+        "additionalProperties": false
       }
     }
   },
+  "required": ["fresh", "treeHash", "evidence"],
+  "additionalProperties": false,
   "examples": [
     {
       "fresh": false,
