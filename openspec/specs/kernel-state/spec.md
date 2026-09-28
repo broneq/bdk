@@ -22,7 +22,7 @@ The Change id is `<yyyy-mm-dd>-<slug>`: the kernel clock's UTC date at `change n
 | `design/index.md`                         | design index      | yes       | Generated from the design parts.                                                                    |
 | `plan/parts/<nn>-<slug>.md`               | plan part         | yes       |                                                                                                     |
 | `plan/index.md`                           | plan index        | yes       | Generated from the plan parts.                                                                      |
-| `spec-delta/<capability>.md`              | spec delta        | yes       | OpenSpec delta format (T30); carries no `schema` field and has no file in `schema/state/`.          |
+| `spec-delta/<capability>.md`              | spec delta        | yes       | Spec delta grammar (T30); nested by capability path; no `schema` field, no file in `schema/state/`. |
 | `attempts/<loop>-<target>-<ticket>.md`    | attempt           | yes       | One file per ticket (replaces the design's append-only `<loop>-<target>.md`).                       |
 | `evidence/<target>-<evidenceId>.md`       | evidence manifest | yes       | Captures above `policy.evidence.max-committed-bytes` or not text live in `.bdk/.machine/evidence/`. |
 | `evidence/<target>-<evidenceId>-<name>`   | evidence capture  | yes       | A file its manifest lists with `stored: committed`, under its own file name; not schema-checked.    |
@@ -30,7 +30,7 @@ The Change id is `<yyyy-mm-dd>-<slug>`: the kernel clock's UTC date at `change n
 | `reports/<target>-<role>-<ticket>.md`     | report            | yes       |                                                                                                     |
 | `dispatch/pruned.md`, `reports/pruned.md` | pruned index      | yes       | Archived Change only: replaces the directory's other files (Pruned index).                          |
 
-`<target>` is a task id (`02-3`), a part id (`02`), an artifact id or the Change id, the same value as the attempt's `target`. Rule files live outside the Change as `.bdk/rules/<ruleId>.md` (T02 decision Q-5). Nothing else is created in a Change directory; `change close` moves it to `.bdk/changes/archive/` (T30).
+`<target>` is a task id (`02-3`), a part id (`02`), an artifact id or the Change id, the same value as the attempt's `target`. Rule files live outside the Change as `.bdk/rules/<ruleId>.md` (T02 decision Q-5). `<capability>` is a capability path, one or more kebab-case segments joined by `/` (`auth/login`), so the delta of `auth/login` is `spec-delta/auth/login.md`, mirroring `.bdk/specs/auth/login/spec.md` (`Living spec file`). Nothing else is created in a Change directory; `change close` moves it to `.bdk/changes/archive/<changeId>/` (T30), where it keeps the same layout.
 
 #### Scenario: parallel creation never shares a path
 
@@ -346,16 +346,16 @@ A plan part's frontmatter SHALL carry the part fields of P6 and P7, and `plan/in
 
 Plan part (`plan/parts/<nn>-<slug>.md`; the task grammar of the body follows the table):
 
-| Field             | Type                                | Req. | Meaning                         |
-| ----------------- | ----------------------------------- | ---- | ------------------------------- |
-| `schema`          | integer                             | yes  |                                 |
-| `id`              | two digits                          | yes  | Equals `<nn>` of the file name. |
-| `title`           | string                              | yes  |                                 |
-| `goal`            | string                              | yes  |                                 |
-| `success-measure` | string                              | yes  | What a reviewer can observe.    |
-| `do-not-touch`    | array of globs                      | yes  | Empty allowed.                  |
-| `depends-on`      | array of part ids                   | yes  | Empty allowed.                  |
-| `spec-impact`     | `none` or array of capability names | yes  | D2.                             |
+| Field             | Type                                | Req. | Meaning                                                                                                                       |
+| ----------------- | ----------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `schema`          | integer                             | yes  |                                                                                                                               |
+| `id`              | two digits                          | yes  | Equals `<nn>` of the file name.                                                                                               |
+| `title`           | string                              | yes  |                                                                                                                               |
+| `goal`            | string                              | yes  |                                                                                                                               |
+| `success-measure` | string                              | yes  | What a reviewer can observe.                                                                                                  |
+| `do-not-touch`    | array of globs                      | yes  | Empty allowed.                                                                                                                |
+| `depends-on`      | array of part ids                   | yes  | Empty allowed.                                                                                                                |
+| `spec-impact`     | `none` or array of capability names | no   | D2; absent means `none` for `tiny` and `small`, and fails the plan part check for `large` (`kernel-loops`, Plan part checks). |
 
 The body holds the part's tasks. A task starts at a level-2 heading `## <task-id> <title>`, where `<task-id>` is two digits, a dash and a positive integer (`02-3`) and ends at the next level-2 heading. Task ids are unique across the plan; `plan` writes them with the part's prefix and `part split` keeps a moved task's id. Under a task heading the kernel reads these bold field labels; other text is free:
 
@@ -476,23 +476,24 @@ Every path of the Change directory, every ledger entry type and every rule file 
 
 Files:
 
-| Path                           | Writers                                                                                                                                    | Channel                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
-| `change.md`                    | `change new`; `import` (each v2 design becomes a Change with `source: inferred`, through the code of `change new --inferred`)              | kernel                  |
-| `log/`                         | the commands of the entry-type table                                                                                                       | kernel                  |
-| `design.md`, `architecture.md` | `design` skill                                                                                                                             | host file tools         |
-| `design/parts/`                | `design` skill                                                                                                                             | host file tools         |
-| `design/index.md`              | `done`, `rebuild`, `change takeover`                                                                                                       | kernel                  |
-| `plan/parts/`                  | `plan` skill; `part split`                                                                                                                 | host file tools; kernel |
-| `plan/index.md`                | `done`, `part split`, `rebuild`, `change takeover`                                                                                         | kernel                  |
-| `spec-delta/`                  | `design` and `plan` skills                                                                                                                 | host file tools         |
-| `attempts/`                    | `attempt open`, `attempt close`, `change takeover`; `rules show --ticket` (the `rules-read` stamp); `dispatch build` (the `package` stamp) | kernel                  |
-| `evidence/`                    | `evidence record`; `attempt close` (the `simplify` manifest)                                                                               | kernel                  |
-| `dispatch/`                    | `dispatch build`                                                                                                                           | kernel                  |
-| `reports/`                     | `log ingest` (the report of every role, on stdin, at the active package's `report` path)                                                   | kernel                  |
-| any file (migration)           | `rebuild`, `change takeover`                                                                                                               | kernel                  |
-| the Change directory (archive) | `change close`, which writes `dispatch/pruned.md` and `reports/pruned.md` through the prune function unless `archive.keep-evidence` (T30)  | kernel                  |
-| `.bdk/rules/<ruleId>.md`       | `rules add --accept`, `rules import`, `import`                                                                                             | kernel                  |
+| Path                              | Writers                                                                                                                                                                                                   | Channel                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `change.md`                       | `change new`; `import` (each v2 design becomes a Change with `source: inferred`, through the code of `change new --inferred`)                                                                             | kernel                  |
+| `log/`                            | the commands of the entry-type table                                                                                                                                                                      | kernel                  |
+| `design.md`, `architecture.md`    | `design` skill                                                                                                                                                                                            | host file tools         |
+| `design/parts/`                   | `design` skill                                                                                                                                                                                            | host file tools         |
+| `design/index.md`                 | `done`, `rebuild`, `change takeover`                                                                                                                                                                      | kernel                  |
+| `plan/parts/`                     | `plan` skill; `part split`                                                                                                                                                                                | host file tools; kernel |
+| `plan/index.md`                   | `done`, `part split`, `rebuild`, `change takeover`                                                                                                                                                        | kernel                  |
+| `spec-delta/`                     | `design` and `plan` skills                                                                                                                                                                                | host file tools         |
+| `attempts/`                       | `attempt open`, `attempt close`, `change takeover`; `rules show --ticket` (the `rules-read` stamp); `dispatch build` (the `package` stamp)                                                                | kernel                  |
+| `evidence/`                       | `evidence record`; `attempt close` (the `simplify` manifest)                                                                                                                                              | kernel                  |
+| `dispatch/`                       | `dispatch build`                                                                                                                                                                                          | kernel                  |
+| `reports/`                        | `log ingest` (the report of every role, on stdin, at the active package's `report` path)                                                                                                                  | kernel                  |
+| any file (migration)              | `rebuild`, `change takeover`                                                                                                                                                                              | kernel                  |
+| the Change directory (archive)    | `change close`, which writes `dispatch/pruned.md` and `reports/pruned.md` through the prune function unless `archive.keep-evidence`, then moves the directory to `.bdk/changes/archive/<changeId>/` (T30) | kernel                  |
+| `.bdk/specs/<capability>/spec.md` | `spec merge`, `change close` (through the merge); never a host file tool (V1-7; T24 guards it)                                                                                                            | kernel                  |
+| `.bdk/rules/<ruleId>.md`          | `rules add --accept`, `rules import`, `import`                                                                                                                                                            | kernel                  |
 
 Entry types (`source` values each writer stamps):
 
@@ -525,6 +526,16 @@ Rules without exception: `intent` lives only in `change.md`, written only by `ch
 
 - **WHEN** the write map contract test reads the records of `attempt open`, `attempt close`, `part done` and `change takeover`
 - **THEN** every Change path in their `writes[]` appears in the file table naming them
+
+#### Scenario: nested delta path
+
+- **WHEN** a Change directory holds `spec-delta/auth/login.md`
+- **THEN** reading the Change accepts it as the spec delta of capability `auth/login`, and `spec-delta/Auth_Login.md` is `state/ledger-invalid`
+
+#### Scenario: spec-impact omitted
+
+- **WHEN** a plan part's frontmatter has no `spec-impact` field
+- **THEN** it validates against the plan part schema
 
 ### Requirement: Write map enforcement
 
@@ -702,3 +713,51 @@ The prune function lives in `shared/store`, so `change close` (T30) calls it wit
 
 - **WHEN** the prune runs twice on the same Change
 - **THEN** the second run writes nothing and the indexes are unchanged
+
+### Requirement: Spec delta
+
+A spec delta SHALL be a Markdown file in the OpenSpec delta format with at most the four level-2 sections below, and the kernel SHALL read it with this grammar only (D2, D2b, C1-C3).
+
+The file may start with a level-1 title line, which the kernel ignores. Then, in any order, each at most once:
+
+| Section                    | Holds                                                                                                                                                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `## Purpose`               | Free text of at least 50 characters; replaces the capability's purpose. Required when the capability has no spec file yet.                                                                                  |
+| `## ADDED Requirements`    | Requirement blocks to append.                                                                                                                                                                               |
+| `## MODIFIED Requirements` | Requirement blocks that replace the block of the same name as a whole.                                                                                                                                      |
+| `## REMOVED Requirements`  | Requirement headings. A heading followed by `#### Scenario: <name>` lines removes only those scenarios; a heading without them removes the requirement. Other text (`**Reason**`, `**Migration**`) is free. |
+
+A requirement block starts at `### Requirement: <name>` and ends before the next level-3 or level-2 heading. Its statement is the text before its first scenario and holds the normative word (`spec.normative-word`, default `SHALL`). A scenario starts at exactly `#### Scenario: <name>` and holds a `- **WHEN** ...` bullet and a `- **THEN** ...` bullet; `- **GIVEN**` and `- **AND**` bullets are free. Names are compared whitespace-trimmed and case-sensitive. The checks and their problem codes are `kernel-cli/spec`, `bdk spec delta check`.
+
+#### Scenario: partial removal parsed
+
+- **WHEN** `## REMOVED Requirements` holds `### Requirement: Magic link expires` followed by `#### Scenario: reused link`
+- **THEN** the delta removes only scenario `reused link` of that requirement
+
+#### Scenario: removal of a whole requirement
+
+- **WHEN** `## REMOVED Requirements` holds `### Requirement: Legacy login` followed only by a `**Reason**` line
+- **THEN** the delta removes the requirement `Legacy login`
+
+### Requirement: Living spec file
+
+Each capability of the living spec SHALL be one file `.bdk/specs/<capability>/spec.md`, written only by the kernel's merge in a canonical form with a merge hash in its frontmatter, so that a manual edit is detectable (D2b, V1-7).
+
+Frontmatter (exactly these two keys, in this order):
+
+| Key              | Value                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| `bdk-merge-hash` | `sha256:` and the lowercase hex SHA-256 of the body's UTF-8 bytes: everything after the closing `---` line. |
+| `bdk-change`     | The id of the Change whose merge last wrote the file.                                                       |
+
+The body is rendered canonically: `# <capability> Specification`, a blank line, `## Purpose`, the purpose, `## Requirements`, then each requirement block in order, one blank line between blocks and sections, LF line endings, one final newline, trailing whitespace trimmed. The format is OpenSpec's main spec format, so `openspec validate --specs --strict` accepts the directory (T02 decision Q-1: compatibility proven by a CI contract test, no runtime dependency). A file whose body does not hash to its `bdk-merge-hash`, or without the key, was edited outside the merge: `spec merge` and `change close` refuse with `policy/merge-hash-mismatch`, and `doctor` reports the `merge-hash` finding.
+
+#### Scenario: hash covers the body
+
+- **WHEN** the merge writes a file and one character of its body is then changed
+- **THEN** the hash of the body no longer equals `bdk-merge-hash` and `doctor` reports `merge-hash` for the file
+
+#### Scenario: OpenSpec accepts the merged specs
+
+- **WHEN** CI copies the `.bdk/specs/` produced by the E2E merge into `openspec/specs/` of an empty repository and runs `openspec validate --specs --strict`
+- **THEN** every capability is valid

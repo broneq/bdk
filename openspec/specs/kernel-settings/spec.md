@@ -80,7 +80,7 @@ Every key the kernel accepts SHALL be declared by exactly one registered config 
 
 A module declares its key, its zod schema with defaults, a description and its consumer slice, and lives in the consumer slice's `config.ts` (`kernel-architecture`, Slice anatomy); `shared/config` and `shared/store` declare the modules they consume themselves, in `shared/config/modules.ts` and `shared/<module>/config.ts`. The consumer column of the tables below names that slice; another slice that needs the value reads it through the consumer's `index.ts`, within the dependency matrix. A module is registered by the task that lands its consumer, so the registry holds a subset of the keys this spec declares. Validation is strict and reports every error with the full dotted key, the layer and the file:
 
-- a key this spec declares whose owner task has not registered it answers `policy/unknown-config-key` with `why` naming the owner task (`lands with T30`);
+- a key this spec declares whose owner task has not registered it answers `policy/unknown-config-key` with `why` naming the owner task (`lands with T31`);
 - a removed v2 key (requirement "Removed v2 keys") answers `policy/unknown-config-key` with `why` naming its replacement or the reason it is gone;
 - any other key answers `policy/unknown-config-key`, with a "did you mean" hint when a declared key is within edit distance 2;
 - a value failing its module answers `policy/config-invalid`.
@@ -94,8 +94,8 @@ A module's key is a root key (`tools`) or a dotted subtree of a root (`policy.bu
 
 #### Scenario: key of a later task
 
-- **WHEN** `.bdk/settings.yaml` sets `archive.keep-evidence` before T30 registers its module
-- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` and `why` naming the key, the layer and `lands with T30`
+- **WHEN** `.bdk/settings.yaml` sets `rules.max-per-package` before T31 registers its module
+- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` and `why` naming the key, the layer and `lands with T31`
 
 #### Scenario: key without a consumer
 
@@ -114,8 +114,8 @@ A module's key is a root key (`tools`) or a dotted subtree of a root (`policy.bu
 
 #### Scenario: planned key inside a registered subtree
 
-- **WHEN** `policy.checkpoint` is registered and `.bdk/settings.yaml` sets `policy.checkpoint.squash-at-close: true`
-- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` and `why` naming `lands with T30`
+- **WHEN** a test registry registers `policy.checkpoint` and plans `policy.checkpoint.later` for a later task, and a layer sets `policy.checkpoint.later: true`
+- **THEN** the check answers `policy/unknown-config-key` with `why` naming that task
 
 ### Requirement: Tool entries
 
@@ -202,11 +202,10 @@ The settings SHALL declare the workflow policy keys below. Each is registered by
 | `policy.escalation.model`             | non-empty string          | `opus`                                                                                                            | T22   | `attempt`      | none      |
 | `policy.escalation.per-change`        | integer >= 0              | `3`                                                                                                               | T22   | `attempt`      | none      |
 | `policy.checkpoint.enabled`           | boolean                   | `true`                                                                                                            | T22   | `shared/store` | none      |
-| `policy.checkpoint.squash-at-close`   | boolean                   | `false`                                                                                                           | T30   | `shared/store` | none      |
 | `policy.verifier.blocking-categories` | array of category entries | `architecture`, `security`, `irreversible-step`, `integration-failure`, `unresolved-decision`, `false-code-claim` | T23   | `log`          | none      |
 | `policy.verifier.not-a-fail`          | array of category entries | `style`, `template-conformance`, `files-bookkeeping`, `wording`, `report-length`, `verification-defect`           | T23   | `log`          | none      |
 
-`policy.gates.<gate>` holds one key per human gate the graph defines; T21 may add a gate through a delta. A project extends the blocking categories by adding items and rewords one by setting an item with the same `id`; the default items always stay, so a default category cannot be removed in 3.0. `policy.escalation.model` names a model class, not a model id; the dispatch adapter maps it (P11). `policy.escalation.per-change` caps the escalation tickets of one Change, because the kernel sees no token cost (`kernel-loops`, Escalation ladder). `policy.checkpoint.squash-at-close` is read only by `change close --squash` (T30) and defaults to keeping checkpoints as history. Each subtree is one config module: `policy.gates` (`graph`), `policy.budgets`, `policy.oscillation` and `policy.escalation` (`attempt`), `policy.checkpoint` (`shared/store`, the checkpoint core every caller shares), `policy.verifier` (`log`, which downgrades an uncategorised verifier blocker; `dispatch` reads both lists through `log` to put them in a verifier's package). The default descriptions restate the design's Verifier contracts (P8): `verification-defect` reads "a verification defect, unless it removes the only real evidence of the change's safety". `policy.log.max-observations` is gone with the per-dispatch observation cap (T23-D13).
+`policy.gates.<gate>` holds one key per human gate the graph defines; T21 may add a gate through a delta. A project extends the blocking categories by adding items and rewords one by setting an item with the same `id`; the default items always stay, so a default category cannot be removed in 3.0. `policy.escalation.model` names a model class, not a model id; the dispatch adapter maps it (P11). `policy.escalation.per-change` caps the escalation tickets of one Change, because the kernel sees no token cost (`kernel-loops`, Escalation ladder). Checkpoint commits stay as history: contract version 3 has no squash at close (T30, user decision 2026-09-28), a squash merge of the PR folds them. Each subtree is one config module: `policy.gates` (`graph`), `policy.budgets`, `policy.oscillation` and `policy.escalation` (`attempt`), `policy.checkpoint` (`shared/store`, the checkpoint core every caller shares), `policy.verifier` (`log`, which downgrades an uncategorised verifier blocker; `dispatch` reads both lists through `log` to put them in a verifier's package). The default descriptions restate the design's Verifier contracts (P8): `verification-defect` reads "a verification defect, unless it removes the only real evidence of the change's safety". `policy.log.max-observations` is gone with the per-dispatch observation cap (T23-D13).
 
 #### Scenario: extend the blocking categories
 
@@ -232,7 +231,7 @@ The settings SHALL declare the execution and archive keys below.
 | `execution.concurrency` | integer 1 to 15 | `5`     | T23   | `ctx`    | none      |
 | `archive.keep-evidence` | boolean         | `false` | T30   | `change` | none      |
 
-`execution.concurrency` caps how many dispatches of one wave the orchestrator runs at once through the host's own subagents; the kernel runs no dispatch process itself, so there is no runner or host key. `ctx` consumes it: the swarm skill's context (`bdk ctx skill swarm`) carries a `Concurrency` section stating the resolved value (T23-D52). `archive.keep-evidence: true` keeps the full `dispatch/` and `reports/` bodies in the archived Change; by default `change close` replaces them with their hash index (`kernel-state`, Pruned index; T23-D53). Its module lands with its consumer, `change close` (T30).
+`execution.concurrency` caps how many dispatches of one wave the orchestrator runs at once through the host's own subagents; the kernel runs no dispatch process itself, so there is no runner or host key. `ctx` consumes it: the swarm skill's context (`bdk ctx skill swarm`) carries a `Concurrency` section stating the resolved value (T23-D52). `archive.keep-evidence: true` keeps the full `dispatch/` and `reports/` bodies in the archived Change; by default `change close` replaces them with their hash index (`kernel-state`, Pruned index; T23-D53). T30 registers its module with its consumer, `change close`.
 
 #### Scenario: concurrency default
 
@@ -258,6 +257,11 @@ The settings SHALL declare the execution and archive keys below.
 
 - **WHEN** `.bdk/settings.yaml` sets `execution.concurrency: 16`
 - **THEN** `bdk config check` exits 2 with `rule: policy/config-invalid` naming `execution.concurrency`
+
+#### Scenario: keep evidence registered
+
+- **WHEN** no layer sets `archive.keep-evidence` and `bdk config show archive.keep-evidence --json` runs
+- **THEN** the exit code is 0 and the value is `false`
 
 ### Requirement: Keys of rules and specs
 
