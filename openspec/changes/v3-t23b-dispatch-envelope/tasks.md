@@ -32,7 +32,7 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 Update `docs/guide/` pages for `dispatch`, `log` (`add --category`, `ingest`), `rules show --ticket` and `policy.verifier`, and any page that names `bdk-entries` or the observation cap; verify `pnpm docs:build` and the drift guards in `pnpm test:contract` pass
+- [x] 6.1 Update `docs/guide/` pages for `dispatch`, `log` (`add --category`, `ingest`), `rules show --ticket` and `policy.verifier`, and any page that names `bdk-entries` or the observation cap; verify `pnpm docs:build` and the drift guards in `pnpm test:contract` pass (no `docs/guide/` page names a kernel command, `bdk-entries` or the cap: the site still describes v2 under its banner until T50, so the commands and `policy.verifier` went into `README.md`, where the v3 kernel is documented)
 
 ## 7. Acceptance
 
