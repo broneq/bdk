@@ -25,6 +25,11 @@ export function generatePlanIndex(parts: readonly Part[]): string {
   return renderDocument(data, render(["Part", "Title", "Depends on", "Wave"], table));
 }
 
+/** The wave of every plan part; refuses what `generatePlanIndex` refuses. */
+export function planWaves(parts: readonly Part[]): ReadonlyMap<string, number> {
+  return wavesOf("plan", parts);
+}
+
 export function generateDesignIndex(parts: readonly Part[]): string {
   wavesOf("design", parts);
   const rows = sorted(parts).map((part) => ({

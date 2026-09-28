@@ -1,11 +1,14 @@
-// The four T20 log handlers: flags in, use case, `--json` object or text out.
+// The log handlers (T20, T22 `ingest`): flags in, use case, `--json` object or text out.
+import { isAbsolute, join } from "node:path";
+
 import type { FlagValue, Handler } from "../../shared/registry/index.ts";
-import { isRefusal } from "../../shared/refusal/index.ts";
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import { capLines, listPage } from "../../shared/output/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { renderAdd, renderList, renderResolve, renderShow } from "../render/log.ts";
+import { renderAdd, renderIngest, renderList, renderResolve, renderShow } from "../render/log.ts";
 import { addEntry } from "../use-cases/add.ts";
 import type { LogDeps } from "../use-cases/deps.ts";
+import { ingestBlock } from "../use-cases/ingest.ts";
 import { listLog } from "../use-cases/list.ts";
 import { resolveEntry } from "../use-cases/resolve.ts";
 import { showEntry } from "../use-cases/show.ts";
@@ -39,6 +42,40 @@ export function addCommand(deps: LogDeps): Handler {
       ...optional("supersedes", text(context.flags["--supersedes"])),
     });
     return isRefusal(result) ? result : { data: result, text: renderAdd(result) };
+  };
+}
+
+export function ingestCommand(deps: LogDeps): Handler {
+  return async (context) => {
+    const ticket = text(context.flags["--ticket"]);
+    if (ticket === undefined) {
+      return refuse("input/missing-argument", "log ingest needs --ticket, the role's open ticket", [
+        "bdk log ingest --ticket <ticket> --file <report>",
+      ]);
+    }
+    const file = text(context.flags["--file"]);
+    let input = file === undefined ? context.runtime.readStdin() : undefined;
+    if (file !== undefined) {
+      input = deps.store.read(isAbsolute(file) ? file : join(context.cwd, file));
+      if (input === undefined) {
+        return refuse("input/invalid-argument", `--file ${file} does not exist`, [
+          `bdk log ingest --ticket ${ticket} --file .bdk/changes/<id>/reports/<report>.md`,
+        ]);
+      }
+    }
+    if (input === undefined || input.trim() === "") {
+      return refuse(
+        "input/missing-argument",
+        "stdin is empty; log ingest reads a bdk-entries block",
+        [`bdk log ingest --ticket ${ticket} --file <report>`],
+      );
+    }
+    const report = await ingestBlock(deps, active(context.change), {
+      ticket,
+      text: input,
+      stdin: file === undefined,
+    });
+    return isRefusal(report) ? report : { data: report, text: renderIngest(report) };
   };
 }
 

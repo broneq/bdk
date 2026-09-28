@@ -30,6 +30,39 @@ export interface GraphEntry {
   readonly inputHash?: string | undefined;
 }
 
+/** A plan part's body as the use case parsed it with the task grammar (`kernel-loops`). */
+export interface PlanPartFacts {
+  readonly tasks: readonly { readonly id: string; readonly files: readonly string[] }[];
+  /** Grammar problems, one sentence each. */
+  readonly problems: readonly string[];
+  /** The executable fields holding a placeholder, named for a refusal. */
+  readonly placeholders: readonly string[];
+  /** Each `Files:` path of a task matching a `do-not-touch` glob of the part. */
+  readonly overlaps: readonly {
+    readonly task: string;
+    readonly path: string;
+    readonly glob: string;
+  }[];
+}
+
+/** A commit carrying the BDK trailers of a task (`kernel-loops`, Progress from git). */
+interface TaskCommit {
+  readonly commit: string;
+  readonly part: string;
+  readonly task: string;
+}
+
+/**
+ * The committed work the `execute-part` checks read: the Change's trailer
+ * commits from git and its open tickets from the index. Only the commands
+ * that run a validator load them, so `next` never spawns `git log`.
+ */
+export interface WorkFacts {
+  readonly commits: readonly TaskCommit[];
+  /** Open tickets with their target: a task id, a part id or the Change id. */
+  readonly openTickets: readonly { readonly ticket: string; readonly target: string }[];
+}
+
 /** One Change as the kinds and the engine see it. */
 export interface ChangeView {
   readonly id: string;
@@ -45,6 +78,10 @@ export interface ChangeView {
   list(dir: string): readonly string[];
   /** The `status` of the report file a `report` entry names, or undefined. */
   reportStatus(entry: GraphEntry): string | undefined;
+  /** The parsed body of a plan part whose frontmatter validated, by its Change-relative path. */
+  planPart(path: string): PlanPartFacts | undefined;
+  /** Loaded by the commands that validate; undefined elsewhere. */
+  readonly work?: WorkFacts | undefined;
 }
 
 export interface Check {

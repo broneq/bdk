@@ -3,14 +3,18 @@
 // node states and gates through `changeGraph`.
 import type { Registration } from "../shared/registry/index.ts";
 import { doneCommand, explainCommand, nextCommand, validateCommand } from "./commands/graph.ts";
-import { pipelinePrompts, policyModule } from "./config.ts";
+import { pipelinePrompts, gatesModule } from "./config.ts";
 import type { GraphDeps } from "./use-cases/deps.ts";
 
 export type { GraphDeps } from "./use-cases/deps.ts";
-export { changeGraph, stageResolver } from "./use-cases/status.ts";
+export { changeGraph, graphSummary, stageResolver } from "./use-cases/status.ts";
+export { readGraph } from "./use-cases/graph.ts";
+export type { ChangeGraph } from "./use-cases/graph.ts";
+export { checksOf } from "./use-cases/validate.ts";
+export { writeDoneMarker } from "./use-cases/done.ts";
 
 export const graphConfig = {
-  modules: [policyModule],
+  modules: [gatesModule],
   prompts: [...pipelinePrompts],
 };
 

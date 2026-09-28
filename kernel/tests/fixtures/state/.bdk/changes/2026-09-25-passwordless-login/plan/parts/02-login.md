@@ -11,6 +11,16 @@ depends-on:
 spec-impact:
   - auth-login
 ---
-### Task 02-3 Verify the link
-Files: src/auth/magic-link.ts, src/auth/magic-link.test.ts
-Stop rule: the token store has no expiry field
+## 02-3 Verify the link
+
+**Files:**
+
+- Modify: `src/auth/magic-link.ts`
+- Test: `src/auth/magic-link.test.ts`
+
+**Test cases:**
+
+- a fresh link logs the user in
+- an expired link is refused
+
+**Stop rule:** the token store has no expiry field

@@ -34,6 +34,23 @@ export function refreshChange(index: IndexDb, location: ChangeLocation): boolean
   return true;
 }
 
+/**
+ * Drops the rows of one Change and re-reads every file (`bdk rebuild`),
+ * leaving out the files in `skip`: documents a migration could not bring to
+ * this kernel's version, which `rebuild` reports as warnings.
+ */
+export function rebuildChange(
+  index: IndexDb,
+  location: ChangeLocation,
+  skip: ReadonlySet<string> = new Set(),
+): void {
+  const states = dirStates(index, location);
+  transaction(index, () => {
+    removeChange(index, location.id);
+    slowPath(index, location, states, skip);
+  });
+}
+
 /** Every Change of the project, archived ones included; drops the rows of removed Changes. */
 export function refreshAll(index: IndexDb): boolean {
   const locations = listChangeDirs(index.store, index.projectRoot);
@@ -91,7 +108,12 @@ function isFresh(index: IndexDb, location: ChangeLocation, states: readonly DirS
   });
 }
 
-function slowPath(index: IndexDb, location: ChangeLocation, states: readonly DirState[]): void {
+function slowPath(
+  index: IndexDb,
+  location: ChangeLocation,
+  states: readonly DirState[],
+  skip: ReadonlySet<string> = new Set(),
+): void {
   const { database, store } = index;
   const dir = rel(index, location.dir);
   const change = database.prepare("SELECT dir FROM changes WHERE id = ?").get(location.id);
@@ -115,6 +137,7 @@ function slowPath(index: IndexDb, location: ChangeLocation, states: readonly Dir
     "INSERT OR REPLACE INTO _files (path, change_id, ino, mtime, size) VALUES (?, ?, ?, ?, ?)",
   );
   for (const path of present) {
+    if (skip.has(path)) continue;
     const stat = store.stat(path);
     if (stat === undefined) continue;
     const relPath = rel(index, path);

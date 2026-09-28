@@ -18,16 +18,7 @@ export interface RemovedKey {
 }
 
 export const PLANNED_KEYS: readonly PlannedKey[] = [
-  { key: "policy.budgets.task-redispatch", owner: "T22" },
-  { key: "policy.budgets.verify-fix", owner: "T22" },
-  { key: "policy.budgets.review-fix", owner: "T22" },
-  { key: "policy.budgets.verifier", owner: "T22" },
-  { key: "policy.budgets.not-run", owner: "T22" },
-  { key: "policy.oscillation.threshold", owner: "T22" },
-  { key: "policy.escalation.enabled", owner: "T22" },
-  { key: "policy.escalation.model", owner: "T22" },
-  { key: "policy.checkpoint.enabled", owner: "T22" },
-  { key: "policy.checkpoint.squash-at-close", owner: "T22" },
+  { key: "policy.checkpoint.squash-at-close", owner: "T30" },
   { key: "policy.verifier.blocking-categories", owner: "T23" },
   { key: "policy.log.max-observations", owner: "T23" },
   { key: "execution.runner", owner: "T23" },

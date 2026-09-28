@@ -272,7 +272,7 @@ describe("change new", () => {
 
   it("opens the Change without next when the graph refuses the settings", async () => {
     const h = harness();
-    h.store.write(`${ROOT}/.bdk/settings.local.yaml`, "policy:\n  budgets:\n    verifier: 3\n");
+    h.store.write(`${ROOT}/.bdk/settings.local.yaml`, "policy:\n  log:\n    max-observations: 3\n");
 
     const result = await h.run(["change", "new", "Add dark mode", "--json"]);
 
@@ -477,7 +477,10 @@ describe("change park", () => {
       entry: "L-00000001",
       options: ["accept as debt", "change decision X", "split part"],
       resume: `bdk change resume ${CHANGE} --option <n>`,
-      checkpoint: { done: false, skipped: "change checkpoint lands with T22" },
+      checkpoint: {
+        done: false,
+        skipped: `nothing under .bdk/changes/${CHANGE}/ changed since the last commit`,
+      },
     });
     expect(entries(h.store, DIR)).toEqual([
       expect.objectContaining({

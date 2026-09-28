@@ -13,7 +13,7 @@ import {
   listEntries,
   normalise,
   readDocument,
-  ticketRole,
+  ticketDispatch,
   writeEntry,
 } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
@@ -30,8 +30,10 @@ export interface EntryDraft {
   readonly ticket?: string;
   readonly review?: boolean;
   readonly supersedes?: string;
-  /** Kernel-only own fields (`change park`, `change new`, `change resume`, `done`). */
+  readonly severity?: string;
+  readonly category?: string;
   readonly options?: readonly string[];
+  /** Kernel-only own fields (`change park`, `change new`, `change resume`, `done`). */
   readonly park?: boolean;
   readonly profile?: string;
   readonly to?: string;
@@ -47,7 +49,7 @@ export async function appendEntry(
 ): Promise<AppendResult | Refusal> {
   let source = "kernel";
   if (draft.ticket !== undefined) {
-    const role = ticketRole(index, change.id, draft.ticket);
+    const role = ticketDispatch(index, change.id, draft.ticket)?.role;
     if (role === undefined) {
       return refuse(
         "policy/no-open-ticket",
@@ -98,6 +100,8 @@ export async function appendEntry(
       refs: [...draft.refs],
       ...(draft.supersedes === undefined ? {} : { supersedes: draft.supersedes }),
       ...(draft.review === true ? { review: true } : {}),
+      ...(draft.severity === undefined ? {} : { severity: draft.severity }),
+      ...(draft.category === undefined ? {} : { category: draft.category }),
       ...(fingerprint === undefined ? {} : { fingerprint }),
       ...(draft.options === undefined ? {} : { options: [...draft.options] }),
       ...(draft.park === true ? { park: true } : {}),

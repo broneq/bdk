@@ -30,6 +30,29 @@ export async function ensureIgnored(
   return missing;
 }
 
+/**
+ * Whether `<projectRoot>/.gitignore` differs from its `HEAD` version only by
+ * lines `ensureIgnored` adds, so the diff check does not count the kernel's
+ * own edit as the user's work.
+ */
+export async function onlyKernelIgnores(
+  store: Store,
+  git: Git,
+  projectRoot: string,
+): Promise<boolean> {
+  const lines = (text: string) => text.split(/\r?\n/).map((line) => line.trim());
+  const current = lines(store.read(join(projectRoot, ".gitignore")) ?? "");
+  const shown = await git.run(["show", "HEAD:.gitignore"], projectRoot);
+  const head = shown.code === 0 ? lines(shown.stdout) : [];
+  const kept = new Set(current);
+  const known = new Set(head);
+  const kernel: readonly string[] = IGNORED_PATHS;
+  return (
+    head.every((line) => kept.has(line)) &&
+    current.every((line) => known.has(line) || line === "" || kernel.includes(line))
+  );
+}
+
 /** true or false from git; undefined when git is missing or cannot answer. */
 async function coveredByGit(
   git: Git,

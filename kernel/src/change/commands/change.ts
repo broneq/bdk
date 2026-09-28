@@ -1,16 +1,27 @@
-// The five T20 change handlers: arguments in, use case, `--json` object or text out.
+// The change handlers (T20, T22 `checkpoint` and `takeover`): arguments in,
+// use case, `--json` object or text out.
 import { globalDir } from "../../shared/config/index.ts";
 import { capLines, listPage } from "../../shared/output/index.ts";
 import { isRefusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange, FlagValue, Handler } from "../../shared/registry/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
-import { renderList, renderNew, renderPark, renderResume, renderStatus } from "../render/change.ts";
+import {
+  renderCheckpoint,
+  renderList,
+  renderNew,
+  renderPark,
+  renderResume,
+  renderStatus,
+  renderTakeover,
+} from "../render/change.ts";
+import { checkpoint } from "../use-cases/checkpoint.ts";
 import type { ChangeDeps } from "../use-cases/deps.ts";
 import { listAllChanges } from "../use-cases/list.ts";
 import { newChange } from "../use-cases/new.ts";
 import { parkChange } from "../use-cases/park.ts";
 import { resumeChange } from "../use-cases/resume.ts";
 import { changeStatus } from "../use-cases/status.ts";
+import { takeover } from "../use-cases/takeover.ts";
 
 function text(value: FlagValue | undefined): string | undefined {
   return typeof value === "string" ? value : undefined;
@@ -81,10 +92,26 @@ export function resumeCommand(deps: ChangeDeps): Handler {
 
 export function parkCommand(deps: ChangeDeps): Handler {
   return async (context) => {
-    const report = await parkChange(deps, active(context.change), {
+    const report = await parkChange(deps, active(context.change), globalDir(context.runtime), {
       reason: text(context.flags["--reason"]),
       options: values(context.flags["--option"]),
     });
     return isRefusal(report) ? report : { data: report, text: renderPark(report) };
+  };
+}
+
+export function checkpointCommand(deps: ChangeDeps): Handler {
+  return async (context) => {
+    const report = await checkpoint(deps, active(context.change), globalDir(context.runtime));
+    return isRefusal(report) ? report : { data: report, text: renderCheckpoint(report) };
+  };
+}
+
+export function takeoverCommand(deps: ChangeDeps): Handler {
+  return async (context) => {
+    const report = await takeover(deps, active(context.change), {
+      closeTickets: context.flags["--close-tickets"] === true,
+    });
+    return isRefusal(report) ? report : { data: report, text: renderTakeover(report) };
   };
 }

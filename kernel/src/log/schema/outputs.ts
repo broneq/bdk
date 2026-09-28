@@ -1,8 +1,14 @@
-// Generates `schema/cli/output/log-{add,list,show,resolve}.json`
+// Generates `schema/cli/output/log-{add,ingest,list,show,resolve}.json`
 // (kernel/scripts/export-schemas.ts).
 import * as z from "zod";
 
-import type { AppendResult, EntrySummary, ResolveResult, ShownEntry } from "../domain/entry.ts";
+import type {
+  AppendResult,
+  EntrySummary,
+  IngestReport,
+  ResolveResult,
+  ShownEntry,
+} from "../domain/entry.ts";
 import { entryId, entrySummarySchema, entryViewSchema, relativePath } from "./entry.ts";
 
 const CHANGE_DIR = ".bdk/changes/2026-09-25-passwordless-login";
@@ -39,6 +45,43 @@ export const logAddOutput = z
       },
     ],
   }) satisfies z.ZodType<AppendResult>;
+
+export const logIngestOutput = z
+  .strictObject({
+    ticket: z.string().regex(/^A-[0-9a-z]{8}$/),
+    entries: z.array(entryViewSchema).meta({
+      description:
+        "The block's entries in order; an entry equal to a live one of the ticket is that entry, not written again.",
+    }),
+    downgraded: z.array(z.strictObject({ entry: entryId, originalCategory: z.string() })).meta({
+      description:
+        "Blockers without a category from the closed list, stored as observation with review: true (P8; from T23).",
+    }),
+  })
+  .meta({
+    title: "bdk log ingest --json",
+    description: "Ingest a `bdk-entries` block from a read-only role's report under its ticket.",
+    examples: [
+      {
+        ticket: "A-9c2d4f6h",
+        entries: [
+          {
+            id: "L-w4m1q7ra",
+            type: "blocker",
+            summary: "plan claims verifyToken exists; it does not",
+            status: "proposed",
+            source: "agent:plan-verifier",
+            author: AUTHOR,
+            at: "2026-09-25T10:31:44Z",
+            refs: ["plan/parts/02-login.md", "src/auth/token.ts"],
+            review: false,
+            ticket: "A-9c2d4f6h",
+          },
+        ],
+        downgraded: [],
+      },
+    ],
+  }) satisfies z.ZodType<IngestReport>;
 
 /** `schema/cli/common/list-page.json` narrowed to entry summaries. */
 export const logListOutput = z

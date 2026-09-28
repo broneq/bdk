@@ -75,7 +75,8 @@ export const entryKind = {
       variant("question", {
         options: z.array(z.string().min(1)).optional(),
         park: z.boolean().optional().meta({
-          description: "Written only by `change park`; marks the question that parks the Change.",
+          description:
+            "Written only by `change park` and by `attempt close` at the end of the ladder; marks the question that parks the Change.",
         }),
       }),
       variant("assumption", {}),
@@ -89,7 +90,8 @@ export const entryKind = {
         command: z.string().min(1).optional(),
         "skip-verify": z.boolean().optional(),
         "input-hash": hash.optional().meta({
-          description: "sha256 of the node's inputs; written only by `done` (P2).",
+          description:
+            "sha256 of the node's inputs; written only by `done` and `part done` (P2). A transition carrying it is the node's done marker.",
         }),
       }),
     ])

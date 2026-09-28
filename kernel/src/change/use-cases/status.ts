@@ -1,8 +1,9 @@
 // `bdk change status`: the active Change at a glance, derived from the
-// ledger and its artifact graph. `parts` stays empty until T22 (design D-14).
+// ledger and its artifact graph; `parts` as `part list` reports them.
 import { join } from "node:path";
 
-import { changeGraph, stageResolver } from "../../graph/index.ts";
+import { graphSummary, readGraph, stageResolver } from "../../graph/index.ts";
+import { partItems } from "../../part/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import { openAttempts, readDocument, withIndex, refreshChange } from "../../shared/store/index.ts";
@@ -18,8 +19,9 @@ export function changeStatus(
 ): Promise<StatusReport | Refusal> {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index) => {
     refreshChange(index, { id: change.id, dir: change.dir, archived: false });
-    const graph = await changeGraph(deps, change, index, globalDir);
-    if ("refused" in graph) return graph;
+    const read = await readGraph(deps, change, index, globalDir);
+    if ("refused" in read) return read;
+    const graph = graphSummary(read);
     const document = readDocument(deps.store, join(change.dir, "change.md"));
     const data = document !== undefined && "data" in document ? document.data : {};
     const facts = changeFacts(index, change.id, stageResolver(deps));
@@ -41,7 +43,7 @@ export function changeStatus(
           }),
       nodes: graph.nodes,
       gates: graph.gates,
-      parts: [],
+      parts: await partItems(deps, change, read),
       openTickets: openAttempts(index, change.id),
       overriddenKeys: Array.isArray(data.overridden) ? data.overridden.map(String) : [],
     };

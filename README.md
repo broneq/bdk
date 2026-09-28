@@ -40,13 +40,15 @@ The kernel reads the settings; skills and scripts ask it. Skills need Node >= 22
 
 `$BDK` is the plugin directory. `features.lavish` (default `true`) turns on decision points in the browser through `lavish-axi` when it is installed. A key BDK does not declare is refused, with a "did you mean" hint or, for a key earlier versions wrote (`test-tools`, `quality`, `features.caveman`, the MCP flags), the key that replaces it or why it is gone. The one `SessionStart` hook (`bdk hooks session-start`) prints the shared foundation and, in a BDK project, one line per settings problem; it never blocks.
 
+The `policy` keys bound the workflow, each subtree read by its own part of the kernel: `policy.gates.design` and `policy.gates.review` (`manual` or `auto`), `policy.budgets` (tickets per loop and round: `task-redispatch` 3, `verify-fix` 2, `review-fix` 2, `verifier` 2, and 3 consecutive `not-run` closes), `policy.oscillation.threshold` (2 failed attempts with the same finding end the retries early), `policy.escalation` (`enabled` true, `model` `opus`, at most `per-change` 3 escalation tickets per Change) and `policy.checkpoint.enabled` (true: the kernel commits the Change directory when it parks or escalates). `bdk config show policy` prints them all with their defaults.
+
 A skill gets everything that depends on the settings (rule sets, language rules, the decision fragment, the configured tool commands, shared reference files) from `node "$BDK/dist/bdk.mjs" ctx skill <name>`, called by two context lines at the top of its body: a `!` line Claude Code runs at load time, and a fallback sentence that makes the model run the same command when the host did not. Fragments are prompt values like rule sets (`fragments/decision/lavish`, `fragments/decision/ask-user`), so a project extends or replaces them the same way. `.bdk/settings.json` from BDK 2 is not read; `bdk import` (planned) converts it.
 
 ### Change state
 
-The kernel keeps each Change in `.bdk/changes/<id>/`, which is committed: `change.md` holds the intent and the starting profile, `log/` holds one file per ledger entry, so two branches of one Change merge without conflicts. `bdk change new | status | list | resume | park` open, inspect, park and rebind a Change; `bdk log add | list | show | resolve` write and read the ledger; `bdk measure [<range>]` reports diff signals (files, lines, modules); `bdk query "<select>"` runs read-only SQL over the index. Every command takes `--json`.
+The kernel keeps each Change in `.bdk/changes/<id>/`, which is committed: `change.md` holds the intent and the starting profile, `log/` holds one file per ledger entry, so two branches of one Change merge without conflicts. `bdk change new | status | list | resume | park` open, inspect, park and rebind a Change (`status` also lists the plan parts as `part list` does); `bdk change checkpoint` commits the Change directory alone as `chore(bdk): checkpoint <id>`, leaving anything the user staged out, and `park` and the escalation ladder run the same checkpoint (`policy.checkpoint.enabled`), reporting a skip instead of failing; `bdk change takeover --close-tickets` takes over a Change whose previous session died with tickets open, closing them as `not-run` (budgets stay) and rebuilding the index; `bdk log add | ingest | list | show | resolve` write and read the ledger; `bdk measure [<range>]` reports diff signals (files, lines, modules); `bdk query "<select>"` runs read-only SQL over the index. Every command takes `--json`.
 
-What each machine derives stays out of git under `.bdk/.machine/`: the SQLite index `index.sqlite`, a cache rebuilt from the committed files whenever it is missing or stale, and the branch markers that bind a local branch to its Change. `change new` and `config set` add exactly `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore` when no rule covers them; `.bdk/` as a whole is never ignored.
+What each machine derives stays out of git under `.bdk/.machine/`: the SQLite index `index.sqlite`, a cache rebuilt from the committed files whenever it is missing or stale, and the branch markers that bind a local branch to its Change. `bdk rebuild` is the repair path behind every exit 4: it migrates older documents, rebuilds the index from the committed files, regenerates `plan/index.md` and `design/index.md`, and checks the `BDK-*` commit trailers against the plan and the attempt records, reporting a disagreement as `state/trailer-mismatch` instead of hiding it. On a fresh clone, `bdk change resume <id>` binds the branch and `bdk rebuild` follows; `--all` widens the rebuild to every Change. `change new` and `config set` add exactly `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore` when no rule covers them; `.bdk/` as a whole is never ignored.
 
 ### Artifact graph
 
@@ -60,6 +62,56 @@ Which artifact a Change needs next is decided by the kernel, not by a skill. `pi
 | `node "$BDK/dist/bdk.mjs" done <artifact>`       | Marks a node done after its checks pass and records the hash in a `transition` entry; the only way an artifact becomes done.                                 |
 
 A gate is never marked done by a command: it opens only on a `transition` entry with `source: user` (or `source: policy` when `policy.gates.design` or `policy.gates.review` is `auto`; both default to `manual`), written after its requirements were done. `change status` lists every node and gate, and which gates the user or the policy passed. Each artifact kind has a template, the prompt value `pipeline/<kind>`, so a project extends or replaces it in `.bdk/prompts/pipeline/<kind>.md` like any other prompt.
+
+### Plan parts
+
+A plan is split into parts, `plan/parts/<nn>-<slug>.md`, each small enough for one dispatch. The frontmatter holds the goal, the success measure, `do-not-touch` globs, `depends-on` and `spec-impact`; the body holds the tasks, each a level-2 heading `## <nn>-<k> <title>` followed by bold labels:
+
+```markdown
+## 02-3 Reject an expired link
+
+**Files:**
+
+- Modify: `src/auth/login.ts`
+- Test: `src/auth/login.test.ts`
+
+**Test cases:**
+
+- an expired link answers 401
+
+**Depends on:** 02-2
+```
+
+`**Files:**` is required; a task needs `**Test cases:**` or `**Verification:** none`; `**Depends on:**` and `**Stop rule:**` are optional. `validate`, `done plan` and `part start` check every part: at most 8 192 bytes, 1 to 8 tasks, no `Files:` path under a `do-not-touch` glob, no placeholder (`TODO`, `TBD`, `FIXME`, `<fill in>`, `...`) in an executable field, the task grammar, and a `spec-delta/<capability>.md` for each capability `spec-impact` names.
+
+| Command                                                     | What it does                                                                                                                                                                                                  |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node "$BDK/dist/bdk.mjs" part list`                        | Lists the parts with their state (`blocked`, `ready`, `started`, `done`, `stale`), tasks committed, size and wave.                                                                                            |
+| `node "$BDK/dist/bdk.mjs" part start <part>`                | Checks the part and records its start, which moves the Change to `execute`; prints the tasks, `do-not-touch` and the success measure.                                                                         |
+| `node "$BDK/dist/bdk.mjs" part done <part>`                 | Closes the part once every task has a commit carrying its trailers and no ticket is open; lists open findings. Editing the part afterwards makes it `stale`.                                                  |
+| `node "$BDK/dist/bdk.mjs" part split <part> <task-ids>`     | Moves tasks to a new part with the same dependencies, keeping their ids and attempt history; the plan must be verified again.                                                                                 |
+| `node "$BDK/dist/bdk.mjs" commit <task> [--message <text>]` | Commits the task's files and the Change directory with the three trailers, after the same diff check as `attempt close`; files you staged yourself stay staged and out of the commit, and your git hooks run. |
+
+Progress lives in git, not in the plan: a task is committed when a commit reachable from `HEAD` carries `BDK-Change: <id>`, `BDK-Part: <part>` and `BDK-Task: <task>`, which `bdk commit` writes. A trailer naming a task no part holds, or the wrong part, is reported as `state/trailer-mismatch` naming the commit and the plan. For a `tiny` Change, `commit` and `part done` measure the Change's commits and record a finding for the review gate when they exceed 2 files, 1 module or 50 lines.
+
+### Loops and attempts
+
+Every retry loop runs under a ticket, and the kernel counts it: `task-redispatch` (a task), `verify-fix` (a part), `review-fix` (the Change) and `verifier` (an artifact such as `plan`). A ticket is a committed record in `attempts/`, so the counts are the same on any clone. The ladder of one loop and target always ends in a named state:
+
+1. Attempts in a narrowing scope: the first runs `full`, the second `high+` (blockers and `critical` or `high` findings), the rest `blockers`. Findings a narrower scope drops are listed and recorded in one finding for the review gate.
+2. When the round's budget (`policy.budgets`) is used up, or the same finding comes back in `policy.oscillation.threshold` failed attempts, one escalation ticket with `policy.escalation.model`, at most `policy.escalation.per-change` per Change. The kernel checkpoints the Change directory first.
+3. Then the kernel writes a question with the options (retry with a fresh budget, accept as debt, split the part) and parks the Change. Answering it with `bdk change resume <id> --option <n>` starts a new round; nothing else resets a budget.
+
+A `not-run` close (the check could not run, `--reason` required) never uses the budget; `policy.budgets.not-run` consecutive ones end the ladder at once. `attempt close` compares the real working tree with the plan: a path under `do-not-touch` is refused and the ticket stays open, a file no task declares is recorded as a finding. A `fail` stores the fingerprints of the findings written under the ticket that name a file (`log add --ticket`, `log ingest --ticket`), which is how the kernel sees a finding come back.
+
+A read-only role (verifier, reviewer, reader) has no file tool, so its report ends with one fenced `bdk-entries` block: a YAML list of entries with the fields of `log add` (`type`, `summary`, `refs`, optionally `body`, `review`, `supersedes`, `status`, `severity`, `category`, `options`). `bdk log ingest --ticket <ticket>` validates the whole block before writing any entry, refuses it naming the item, the field and the line, and stamps each entry with the ticket and the role of its dispatch package. A whole report given on stdin is also stored at the package's `report` path.
+
+| Command                                                                 | What it does                                                                                                                                                         |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node "$BDK/dist/bdk.mjs" attempt open <loop> <target> [--escalate]`    | Opens a ticket with its attempt number, budget and scope, or refuses with the next rung (`policy/budget-exhausted`, `policy/oscillation`, `policy/not-ready`).       |
+| `node "$BDK/dist/bdk.mjs" attempt close <ticket> ok\|fail\|not-run`     | Checks the diff and the envelope's entries (`--envelope`), closes the ticket and prints the next rung: `post-task-steps`, `retry`, `narrow`, `escalate` or `parked`. |
+| `node "$BDK/dist/bdk.mjs" attempt list [--for <task\|part>] [--all]`    | Lists tickets, open first, with the budgets used in the current round of the `--for` target; `--all` includes earlier rounds.                                        |
+| `node "$BDK/dist/bdk.mjs" log ingest --ticket <ticket> [--file <path>]` | Writes the entries of a read-only role's `bdk-entries` block under its ticket, all or none.                                                                          |
 
 ---
 

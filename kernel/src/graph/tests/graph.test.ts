@@ -4,11 +4,16 @@
 import { describe, expect, it } from "vitest";
 
 import { settingsRegistry } from "../../registrations.ts";
-import { mergeLayers, resolveConfig, validateLayers } from "../../shared/config/index.ts";
+import {
+  mergeLayers,
+  moduleValue,
+  resolveConfig,
+  validateLayers,
+} from "../../shared/config/index.ts";
 import type { Layer } from "../../shared/config/index.ts";
-import { readDocument } from "../../shared/store/index.ts";
+import { readDocument, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
-import { KIND_NAMES, pipelinePrompts, policyModule } from "../config.ts";
+import { KIND_NAMES, pipelinePrompts, gatesModule } from "../config.ts";
 import { graphConfig } from "../index.ts";
 import { doneOutput, explainOutput, nextOutput, validateOutput } from "../schema/outputs.ts";
 import {
@@ -18,6 +23,7 @@ import {
   PLUGIN,
   ROOT,
   setChange,
+  taskBody,
   writeDesign,
   writeDesignPart,
   writeEntry,
@@ -58,32 +64,31 @@ describe("settings", () => {
   };
 
   it("policy.gates resolve to manual by default and accept auto", () => {
-    expect(check({}).value?.policy).toStrictEqual({
-      gates: { design: "manual", review: "manual" },
+    expect(moduleValue(gatesModule, check({}).value ?? {})).toStrictEqual({
+      design: "manual",
+      review: "manual",
     });
-    expect(check({ policy: { gates: { design: "auto" } } }).value?.policy).toStrictEqual({
-      gates: { design: "auto", review: "manual" },
-    });
+    const auto = check({ policy: { gates: { design: "auto" } } }).value ?? {};
+    expect(moduleValue(gatesModule, auto)).toStrictEqual({ design: "auto", review: "manual" });
     expect(check({ policy: { gates: { design: "maybe" } } }).problems[0]?.rule).toBe(
       "policy/config-invalid",
     );
   });
 
-  it("policy.budgets still lands with T22", () => {
-    expect(check({ policy: { budgets: { verifier: 3 } } }).problems).toStrictEqual([
-      expect.objectContaining({
-        rule: "policy/unknown-config-key",
-        key: "policy.budgets.verifier",
-        message: "lands with T22",
-      }),
-    ]);
+  it("policy.gates shares its root with the modules of other slices", () => {
+    const result = check({ policy: { gates: { review: "auto" }, budgets: { verifier: 3 } } });
+    expect(result.problems).toStrictEqual([]);
+    expect(result.value?.policy).toMatchObject({
+      gates: { design: "manual", review: "auto" },
+      budgets: { verifier: 3 },
+    });
   });
 
   it("declares one literal pipeline/<kind> key per kind with its plugin default", () => {
     expect(pipelinePrompts.map((prompt) => [prompt.key, prompt.defaultFile])).toStrictEqual(
       KIND_NAMES.map((kind) => [`pipeline/${kind}`, `pipeline/${kind}.md`]),
     );
-    expect(graphConfig).toStrictEqual({ modules: [policyModule], prompts: pipelinePrompts });
+    expect(graphConfig).toStrictEqual({ modules: [gatesModule], prompts: pipelinePrompts });
   });
 
   it("a prompt file for a name that is no kind is an unknown key", () => {
@@ -244,7 +249,16 @@ describe("bdk next", () => {
     setChange(h.store, { profile: "tiny" });
     writePlanPart(h.store, "01");
     await h.run(["done", "plan"], T0);
-    writeEntry(h.store, { type: "transition", source: "kernel", to: "execute-part:01", at: T0 });
+    const part = (await h.run(["validate", "execute-part:01", "--json"], T0)).json as {
+      inputHash: string;
+    };
+    writeEntry(h.store, {
+      type: "transition",
+      source: "kernel",
+      to: "execute-part:01",
+      at: T0,
+      "input-hash": part.inputHash,
+    });
     writeEntry(h.store, {
       type: "transition",
       source: "kernel",
@@ -385,6 +399,154 @@ describe("bdk validate", () => {
     expect((await h.run(["validate", "nope", "--json"])).code).toBe(3);
     await h.run(["change", "park"]);
     expect((await h.run(["validate", "--json"])).json).toMatchObject({ why: containing("parked") });
+  });
+});
+
+describe("plan part and execute-part checks", () => {
+  /** `count` tasks `02-1`..`02-<count>` in the task grammar. */
+  function tasks(count: number): string {
+    return Array.from(
+      { length: count },
+      (_, at) =>
+        `## 02-${String(at + 1)} Task ${String(at + 1)}\n\n**Files:**\n\n- \`src/t${String(at + 1)}.ts\`\n\n**Test cases:**\n\n- works\n`,
+    ).join("\n");
+  }
+
+  it.each([
+    ["size", { body: `${taskBody("02")}\n${"x".repeat(8192)}\n` }, "policy/part-too-large"],
+    ["tasks", { body: "No tasks yet.\n" }, "policy/part-too-many-tasks"],
+    ["tasks", { body: tasks(9) }, "policy/part-too-many-tasks"],
+    ["do-not-touch", { doNotTouch: ["src/**"] }, "policy/do-not-touch-overlap"],
+    [
+      "placeholder",
+      { body: taskBody("02").replace("stores a token", "TODO") },
+      "policy/placeholder",
+    ],
+    [
+      "grammar",
+      { body: "## 02-1 Task\n\n**Test cases:**\n\n- works\n" },
+      "policy/validation-failed",
+    ],
+    ["spec-impact", { specImpact: "[auth]" }, "policy/validation-failed"],
+  ])("validate plan-part:02 fails %s in text mode with its rule", async (check, fields, rule) => {
+    const h = harness();
+    writePlanPart(h.store, "02", fields);
+    const json = validateOutput.parse((await h.run(["validate", "plan-part:02", "--json"])).json);
+    expect(json.valid).toBe(false);
+    expect(json.checks.filter((found) => !found.ok).map((found) => found.id)).toStrictEqual([
+      check,
+    ]);
+    const text = await h.run(["validate", "plan-part:02"]);
+    expect(text.code).toBe(2);
+    expect(text.stdout).toContain(rule);
+    expect(text.stdout).toContain(`fails check ${check}`);
+  });
+
+  it("the size check passes at 8 192 bytes", async () => {
+    const h = harness();
+    writePlanPart(h.store, "02");
+    const path = `${DIR}/plan/parts/02-part.md`;
+    const text = h.store.read(path) ?? "";
+    h.store.write(path, `${text}${"x".repeat(8192 - Buffer.byteLength(text) - 1)}\n`);
+    expect(Buffer.byteLength(h.store.read(path) ?? "")).toBe(8192);
+    const report = validateOutput.parse((await h.run(["validate", "plan-part:02", "--json"])).json);
+    expect(report.valid).toBe(true);
+  });
+
+  it("done plan answers policy/validation-failed naming the failing checks", async () => {
+    const h = harness();
+    setChange(h.store, { profile: "tiny" });
+    writePlanPart(h.store, "01", {
+      doNotTouch: ["src/**"],
+      body: taskBody("01").replace("stores a token", "TBD"),
+    });
+    const result = await h.run(["done", "plan", "--json"], T0);
+    expect(result.code).toBe(2);
+    expect(result.json).toMatchObject({ rule: "policy/validation-failed" });
+    const { why } = result.json as { why: string };
+    expect(why).toContain("plan-part:01 fails checks do-not-touch:");
+    expect(why).toContain("placeholder: a placeholder holds task 01-1 **Test cases:** item 1");
+  });
+
+  function withCommits(h: Harness, commits: readonly (readonly [string, string, string])[]): void {
+    const run = h.git.run.bind(h.git);
+    h.git.run = (args, cwd) =>
+      args[0] === "log"
+        ? Promise.resolve({
+            code: 0,
+            stdout: commits
+              .map(
+                ([hash, part, task]) =>
+                  `${hash}\x1fTask ${task}\x1f2026-09-25-login\x1f${part}\x1f${task}\x1e`,
+              )
+              .join(""),
+            stderr: "",
+          })
+        : run(args, cwd);
+  }
+
+  async function started(): Promise<Harness> {
+    const h = harness();
+    setChange(h.store, { profile: "tiny" });
+    writePlanPart(h.store, "01", {
+      body: `${taskBody("01")}\n${taskBody("01").replaceAll("01-1", "01-2")}`,
+    });
+    await h.run(["done", "plan"], T0);
+    writeEntry(h.store, { type: "transition", source: "kernel", to: "execute-part:01", at: T1 });
+    return h;
+  }
+
+  it("execute-part hashes its plan part and names an uncommitted task and an open ticket", async () => {
+    const h = await started();
+    withCommits(h, [["a".repeat(40), "01", "01-1"]]);
+    writeDocument(h.store, `${DIR}/attempts/task-redispatch-01-2-A-7h3k9m2p.md`, {
+      data: {
+        schema: 1,
+        ticket: "A-7h3k9m2p",
+        loop: "task-redispatch",
+        target: "01-2",
+        attempt: 1,
+        of: 3,
+        scope: "full",
+        "opened-at": T1,
+        author: "Ada Lovelace <ada@example.com>",
+      },
+      body: "",
+    });
+    const report = validateOutput.parse(
+      (await h.run(["validate", "execute-part:01", "--json"], T2)).json,
+    );
+    expect(report.inputHash).toBe(
+      validateOutput.parse((await h.run(["validate", "plan-part:01", "--json"], T2)).json)
+        .inputHash,
+    );
+    expect(report.checks).toStrictEqual([
+      { id: "started", ok: true },
+      {
+        id: "commits",
+        ok: false,
+        why: "task 01-2 has no commit carrying BDK-Part: 01 and BDK-Task: 01-2",
+        instead: "bdk commit 01-2",
+      },
+      {
+        id: "tickets",
+        ok: false,
+        why: "ticket A-7h3k9m2p is open on 01-2",
+        instead: "bdk attempt close A-7h3k9m2p <outcome>",
+      },
+    ]);
+  });
+
+  it("execute-part passes when every task is committed", async () => {
+    const h = await started();
+    withCommits(h, [
+      ["b".repeat(40), "01", "01-2"],
+      ["a".repeat(40), "01", "01-1"],
+    ]);
+    const report = validateOutput.parse(
+      (await h.run(["validate", "execute-part:01", "--json"], T2)).json,
+    );
+    expect(report.valid).toBe(true);
   });
 });
 

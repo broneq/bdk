@@ -1,10 +1,24 @@
 // Text renderings of the log commands (`kernel-cli`, Output modes).
-import type { AppendResult, EntrySummary, ResolveResult, ShownEntry } from "../domain/entry.ts";
+import type {
+  AppendResult,
+  EntrySummary,
+  IngestReport,
+  ResolveResult,
+  ShownEntry,
+} from "../domain/entry.ts";
 
 export function renderAdd(result: AppendResult): string {
   const { entry } = result;
   const verb = result.deduplicated ? "already recorded as" : "added";
   return `${verb} ${entry.id} (${entry.type}, ${entry.status}): ${entry.summary}\n${result.path}\n`;
+}
+
+export function renderIngest(report: IngestReport): string {
+  const count = report.entries.length;
+  const lines = report.entries.map(
+    (entry) => `${entry.id} ${entry.type} ${entry.status}: ${entry.summary}`,
+  );
+  return `${String(count)} ${count === 1 ? "entry" : "entries"} ingested under ${report.ticket}\n${lines.map((line) => `${line}\n`).join("")}`;
 }
 
 /** Every matching entry, one per line; the command caps the lines unless `--all`. */

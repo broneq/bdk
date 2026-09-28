@@ -4,71 +4,47 @@
   "title": "bdk part start --json",
   "description": "Validate a part and record the start transition; required before its first ticket.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["part", "state", "tasks", "entry"],
   "properties": {
-    "part": {
-      "type": "string"
-    },
-    "state": {
-      "const": "started"
-    },
+    "part": { "type": "string", "pattern": "^\\d{2}$" },
+    "state": { "type": "string", "const": "started" },
     "tasks": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["task", "files"],
         "properties": {
-          "task": {
-            "type": "string"
-          },
+          "task": { "type": "string", "pattern": "^\\d{2}-[1-9]\\d*$" },
           "files": {
             "type": "array",
-            "items": {
-              "type": "string",
-              "description": "Path relative to the project root."
-            }
+            "items": { "type": "string", "description": "Path relative to the project root." }
           },
-          "stopRule": {
-            "type": "string"
-          },
-          "verification": {
-            "type": "string"
-          }
-        }
+          "stopRule": { "type": "string" },
+          "verification": { "type": "string", "const": "none" }
+        },
+        "required": ["task", "files"],
+        "additionalProperties": false
       }
     },
-    "doNotTouch": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "successMeasure": {
-      "type": "string"
-    },
+    "doNotTouch": { "type": "array", "items": { "type": "string" } },
+    "successMeasure": { "type": "string" },
     "entry": {
       "type": "string",
+      "pattern": "^L-[0-9a-z]{8}$",
       "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     }
   },
+  "required": ["part", "state", "tasks", "doNotTouch", "successMeasure", "entry"],
+  "additionalProperties": false,
   "examples": [
     {
       "part": "02",
       "state": "started",
       "tasks": [
-        {
-          "task": "02-1",
-          "files": ["src/auth/login.ts"]
-        },
-        {
-          "task": "02-2",
-          "files": ["src/auth/login.test.ts"]
-        }
+        { "task": "02-1", "files": ["src/auth/login.ts"] },
+        { "task": "02-2", "files": ["src/auth/login.test.ts"] }
       ],
       "doNotTouch": ["src/billing/**"],
       "successMeasure": "POST /login returns a session for a valid magic link",
-      "entry": "L-r2v8k"
+      "entry": "L-r2v8k4mn"
     }
   ]
 }

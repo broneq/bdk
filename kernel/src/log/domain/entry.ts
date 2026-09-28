@@ -127,12 +127,15 @@ export interface DedupeCandidate {
   readonly refs: readonly string[];
   readonly supersedes?: string | undefined;
   readonly fingerprint?: string | undefined;
+  readonly ticket?: string | undefined;
 }
 
 /**
  * The existing entry equal to `draft` by its dedupe key: the fingerprint
  * against every `learning`; otherwise type, normalised summary, refs as a
- * sorted set and `supersedes`, against live entries only.
+ * sorted set, `supersedes` and the ticket, against live entries only. The
+ * same finding under another ticket is a recurrence the oscillation check
+ * counts, so it is never merged into the earlier ticket's entry.
  */
 export function findDuplicate<T extends EntryRecord>(
   draft: DedupeCandidate,
@@ -150,6 +153,7 @@ export function findDuplicate<T extends EntryRecord>(
       normalise(entry.summary),
       [...new Set(entry.refs)].sort(),
       entry.supersedes ?? "",
+      entry.ticket ?? "",
     ]);
   const wanted = key(draft);
   return entries.find(
@@ -185,6 +189,14 @@ export interface AppendResult {
   /** Relative to the project root. */
   readonly path: string;
   readonly deduplicated: boolean;
+}
+
+/** `log ingest`: the entries written or matched, in block order. */
+export interface IngestReport {
+  readonly ticket: string;
+  readonly entries: readonly EntryView[];
+  /** P8 downgrades of blockers without a closed-list category; empty until T23. */
+  readonly downgraded: readonly { readonly entry: string; readonly originalCategory: string }[];
 }
 
 export interface ShownEntry {

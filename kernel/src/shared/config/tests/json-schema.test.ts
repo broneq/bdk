@@ -76,6 +76,20 @@ describe("settingsJsonSchema", () => {
     expect(properties.languages?.default).toStrictEqual([]);
   });
 
+  it("holds the composed policy object of several modules", () => {
+    const policy = (schema.properties as Record<string, Node>).policy;
+    const children = policy?.properties as Record<string, Node>;
+    expect(Object.keys(children)).toStrictEqual(
+      expect.arrayContaining(["gates", "budgets", "oscillation", "escalation", "checkpoint"]),
+    );
+    expect(children.budgets?.description).toEqual(expect.any(String));
+    expect(policy?.additionalProperties).toBe(false);
+    expect(validate({ policy: { budgets: { verifier: 3 }, gates: { design: "auto" } } })).toBe(
+      true,
+    );
+    expect(validate({ policy: { budgets: { verfier: 3 } } })).toBe(false);
+  });
+
   it("expresses the {files} rule as a pattern", () => {
     expect(
       validate({ tools: { lint: [{ id: "x", command: "c", scoped: "c", tier: "lint" }] } }),

@@ -20,3 +20,13 @@ export interface DoctorReport {
   readonly layout?: "v3" | "v2" | "none" | undefined;
   readonly findings: readonly Finding[];
 }
+
+export interface RebuildReport {
+  readonly changes: number;
+  readonly entries: number;
+  readonly attempts: number;
+  readonly commits: number;
+  readonly migrated: readonly string[];
+  readonly durationMs: number;
+  readonly warnings: readonly string[];
+}

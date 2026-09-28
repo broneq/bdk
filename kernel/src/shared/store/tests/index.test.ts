@@ -25,7 +25,7 @@ import {
   refreshAll,
   refreshChange,
   selectReadOnly,
-  ticketRole,
+  ticketDispatch,
   writeDocument,
 } from "../index.ts";
 import type { ChangeLocation, IndexDb, Store } from "../index.ts";
@@ -231,7 +231,10 @@ describe("refresh", () => {
         openedAt: "2026-09-25T10:00:00Z",
       },
     ]);
-    expect(ticketRole(index, CHANGE, "A-bbbbbbb1")).toBe("implementer");
+    expect(ticketDispatch(index, CHANGE, "A-bbbbbbb1")).toStrictEqual({
+      role: "implementer",
+      path: `.bdk/changes/${CHANGE}/dispatch/02-3-implementer-A-bbbbbbb1.md`,
+    });
   });
 
   it("indexes the input hash of a transition", async () => {
@@ -265,7 +268,7 @@ describe("refresh", () => {
       const id = "2026-09-25-passwordless-login";
       const count = (sql: string): unknown => selectReadOnly(index, sql).rows[0]?.[0];
       expect(count("SELECT count(*) FROM changes")).toBe(1);
-      expect(count("SELECT count(*) FROM attempts")).toBe(3);
+      expect(count("SELECT count(*) FROM attempts")).toBe(4);
       expect(count("SELECT count(*) FROM dispatches")).toBe(3);
       expect(listEntries(index, id).length).toBeGreaterThan(3);
     } finally {
@@ -428,8 +431,8 @@ describe("typed queries", () => {
     const index = await open(store);
     refreshChange(index, LIVE);
     expect(openAttempts(index, CHANGE).map((attempt) => attempt.ticket)).toEqual(["A-bbbbbbb2"]);
-    expect(ticketRole(index, CHANGE, "A-bbbbbbb1")).toBeUndefined();
-    expect(ticketRole(index, CHANGE, "A-bbbbbbb2")).toBeUndefined();
+    expect(ticketDispatch(index, CHANGE, "A-bbbbbbb1")).toBeUndefined();
+    expect(ticketDispatch(index, CHANGE, "A-bbbbbbb2")).toBeUndefined();
   });
 
   it("lists Changes by their latest entry, newest first", async () => {

@@ -177,7 +177,7 @@ Run an artifact's kind validator without marking it done. The kernel SHALL imple
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
   - `<artifact>` (optional). Defaults to the artifact next returns.
-- **Behaviour:** Runs the kind's validator (`kernel-pipeline`, Artifact kinds) on the node's current files and returns every check with its result and the current input hash; never writes. Without an argument and with no actionable node it answers `input/not-found` naming what the Change waits for. Exits 0 with `valid: false` and the failing checks under `--json`; in text mode it prints the checks and exits 2 with the first failing rule. Part validators (S1, P6; T22) and the spec delta validator (T30) plug into the same kinds and are reached through this command as well as through `done`; until their tasks land, the kinds run the baseline checks (files present, non-empty, schema valid, size).
+- **Behaviour:** Runs the kind's validator (`kernel-pipeline`, Artifact kinds) on the node's current files and returns every check with its result and the current input hash; never writes. Without an argument and with no actionable node it answers `input/not-found` naming what the Change waits for. Exits 0 with `valid: false` and the failing checks under `--json`; in text mode it prints the checks and exits 2 with the first failing rule. The plan part checks (`kernel-loops`, Plan part checks: `size`, `tasks`, `do-not-touch`, `placeholder`, `grammar`, `spec-impact`) run in the `plan-part` kind and the trailer and ticket checks in the `execute-part` kind; the spec delta validator (T30) plugs into its kind the same way, and until it lands `spec-delta` runs the baseline checks (files present, non-empty, schema valid, size). In text mode the exit code 2 carries the rule of the first failing check: `policy/part-too-large` for `size`, `policy/part-too-many-tasks` for `tasks`, `policy/do-not-touch-overlap` for `do-not-touch`, `policy/placeholder` for `placeholder`, `policy/validation-failed` for any other.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/validate.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/validation-failed`, `policy/part-too-large`, `policy/part-too-many-tasks`, `policy/do-not-touch-overlap`, `policy/placeholder`, `policy/spec-invalid`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -264,6 +264,11 @@ Run an artifact's kind validator without marking it done. The kernel SHALL imple
 
 - **WHEN** `bdk validate design --json` runs on a valid `design.md`
 - **THEN** the output has `valid: true` and the ledger and the index hold no new entry
+
+#### Scenario: part checks through validate
+
+- **WHEN** `plan/parts/02-login.md` holds nine tasks and `bdk validate plan-part:02 --json` runs
+- **THEN** the exit code is 0, `valid` is false and the check `tasks` fails naming 9 and the limit 8; in text mode the exit code is 2 with `rule: policy/part-too-many-tasks`
 
 ### Requirement: bdk done
 

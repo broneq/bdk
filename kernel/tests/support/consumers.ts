@@ -13,7 +13,7 @@ export interface Declared {
 export interface ConsumerWorld {
   /** Slice names of `kernel-architecture`, Vertical slices. */
   readonly slices: ReadonlySet<string>;
-  /** The exports of a consumer's `config.ts` (`shared/config/modules.ts` for shared/config). */
+  /** The exports of a consumer's `config.ts` (`shared/config/modules.ts` for shared/config, `shared/<module>/config.ts` for another shared module). */
   exportsOf(consumer: string): Readonly<Record<string, unknown>> | undefined;
   /** Slices with at least one registered command handler. */
   readonly handlerSlices: ReadonlySet<string>;
@@ -24,7 +24,7 @@ export interface ConsumerWorld {
 export function consumerViolations(declared: readonly Declared[], world: ConsumerWorld): string[] {
   const violations: string[] = [];
   for (const { key, consumer, value } of declared) {
-    if (consumer !== "shared/config" && !world.slices.has(consumer)) {
+    if (!consumer.startsWith("shared/") && !world.slices.has(consumer)) {
       violations.push(`${key}: consumer ${consumer} is not a slice`);
       continue;
     }

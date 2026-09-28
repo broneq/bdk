@@ -73,29 +73,51 @@ function validate(input: AddInput): Refusal | undefined {
   return undefined;
 }
 
-/** `--supersedes` names an existing entry: bare in this Change, or qualified in any Change. */
+/** Why `value` cannot be superseded, or undefined when it names an existing entry. */
+export interface SupersedesProblem {
+  readonly rule: "input/invalid-argument" | "input/not-found";
+  /** Completes a sentence whose subject is the entry id: "is not an entry id". */
+  readonly why: string;
+}
+
+/** `supersedes` names an existing entry: bare in this Change, or qualified in any Change. */
+export function supersedesProblem(
+  deps: LogDeps,
+  change: ActiveChange,
+  index: IndexDb,
+  value: string,
+): SupersedesProblem | undefined {
+  const reference = parseReference(value);
+  if (!reference?.id.startsWith("L-")) {
+    return { rule: "input/invalid-argument", why: "is not an entry id" };
+  }
+  const changeId = reference.changeId ?? change.id;
+  if (changeId !== change.id) {
+    const location = findChange(deps.store, change.projectRoot, changeId);
+    if (location === undefined)
+      return { rule: "input/not-found", why: `names no Change ${changeId}` };
+    refreshChange(index, location);
+  }
+  return findEntry(index, changeId, reference.id) === undefined
+    ? { rule: "input/not-found", why: `names no entry of ${changeId}` }
+    : undefined;
+}
+
 function checkSupersedes(
   deps: LogDeps,
   change: ActiveChange,
   index: IndexDb,
   value: string,
 ): Refusal | undefined {
-  const reference = parseReference(value);
-  const notFound = (why: string): Refusal =>
-    refuse("input/not-found", why, ["bdk log list", "bdk log show <id>"]);
-  if (!reference?.id.startsWith("L-")) {
-    return refuse("input/invalid-argument", `--supersedes ${value} is not an entry id`, [
-      "--supersedes L-xxxxxxxx",
-      "--supersedes <changeId>/L-xxxxxxxx",
-    ]);
-  }
-  const changeId = reference.changeId ?? change.id;
-  if (changeId !== change.id) {
-    const location = findChange(deps.store, change.projectRoot, changeId);
-    if (location === undefined) return notFound(`no Change ${changeId} for --supersedes ${value}`);
-    refreshChange(index, location);
-  }
-  return findEntry(index, changeId, reference.id) === undefined
-    ? notFound(`--supersedes ${value} names no entry of ${changeId}`)
-    : undefined;
+  const problem = supersedesProblem(deps, change, index, value);
+  if (problem === undefined) return undefined;
+  return problem.rule === "input/invalid-argument"
+    ? refuse(problem.rule, `--supersedes ${value} ${problem.why}`, [
+        "--supersedes L-xxxxxxxx",
+        "--supersedes <changeId>/L-xxxxxxxx",
+      ])
+    : refuse(problem.rule, `--supersedes ${value} ${problem.why}`, [
+        "bdk log list",
+        "bdk log show <id>",
+      ]);
 }

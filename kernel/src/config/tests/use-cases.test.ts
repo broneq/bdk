@@ -182,10 +182,10 @@ describe("checkConfig", () => {
   });
 
   it("names the owner task of a planned key", () => {
-    const { input } = setup({ [PROJECT]: "policy:\n  budgets:\n    verifier: 3\n" });
+    const { input } = setup({ [PROJECT]: "policy:\n  log:\n    max-observations: 3\n" });
     const outcome = refusal(checkConfig(input));
     expect(outcome.why).toBe(
-      "policy.budgets.verifier in the project layer (.bdk/settings.yaml): lands with T22",
+      "policy.log.max-observations in the project layer (.bdk/settings.yaml): lands with T23",
     );
     expect(outcome.instead).toStrictEqual(["bdk config schema policy", "fix .bdk/settings.yaml"]);
   });

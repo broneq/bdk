@@ -4,32 +4,21 @@
   "title": "bdk part split --json",
   "description": "Split an oversized or parked part into two parts with the same dependencies.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["part", "newPart", "moved", "entry"],
   "properties": {
-    "part": {
-      "type": "string"
-    },
-    "newPart": {
-      "type": "string"
-    },
+    "part": { "type": "string", "pattern": "^\\d{2}$" },
+    "newPart": { "type": "string", "pattern": "^\\d{2}$" },
     "moved": {
+      "minItems": 1,
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": { "type": "string", "pattern": "^\\d{2}-[1-9]\\d*$" }
     },
     "entry": {
       "type": "string",
+      "pattern": "^L-[0-9a-z]{8}$",
       "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     }
   },
-  "examples": [
-    {
-      "part": "02",
-      "newPart": "05",
-      "moved": ["02-3", "02-4"],
-      "entry": "L-n1b7c"
-    }
-  ]
+  "required": ["part", "newPart", "moved", "entry"],
+  "additionalProperties": false,
+  "examples": [{ "part": "02", "newPart": "05", "moved": ["02-3", "02-4"], "entry": "L-n1b7c5xz" }]
 }

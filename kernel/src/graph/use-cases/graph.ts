@@ -5,15 +5,15 @@ import type { Graph, GraphNode } from "../domain/engine.ts";
 import { evaluate } from "../domain/engine.ts";
 import type { GatePolicy } from "../domain/gate.ts";
 import { kindRegistry } from "../domain/kinds/index.ts";
-import type { ChangeView, KindRegistry } from "../domain/kinds/index.ts";
-import { stageOfTarget } from "../domain/pipeline.ts";
+import type { ChangeView, KindRegistry, WorkFacts } from "../domain/kinds/index.ts";
+import { stageMap } from "../domain/pipeline.ts";
 import type { Pipeline } from "../domain/pipeline.ts";
 import { gateView } from "../domain/reports.ts";
 import type { GateView, PendingView } from "../domain/reports.ts";
-import { policyModule } from "../config.ts";
-import { resolveOrRefuse } from "../../shared/config/index.ts";
+import { gatesModule } from "../config.ts";
+import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
 import type { Resolved } from "../../shared/config/index.ts";
-import { codeTreeHash } from "../../shared/git/index.ts";
+import { codeTreeHash, trailerCommits } from "../../shared/git/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
@@ -21,6 +21,7 @@ import {
   findChangeRow,
   isProfile,
   listEntries,
+  openAttempts,
   parkedQuestion,
   stageOf,
 } from "../../shared/store/index.ts";
@@ -48,12 +49,18 @@ export function kindsOf(deps: GraphDeps): KindRegistry {
   return deps.kinds ?? shipped;
 }
 
+export interface ReadOptions {
+  /** Load the trailer commits and open tickets the `execute-part` checks read. */
+  readonly work?: boolean;
+}
+
 /** The graph of a refreshed Change; `globalDir` locates the global settings layer. */
 export async function readGraph(
   deps: GraphDeps,
   change: ActiveChange,
   index: IndexDb,
   globalDir: string,
+  options: ReadOptions = {},
 ): Promise<ChangeGraph | Refusal> {
   const resolved = resolveOrRefuse(
     {
@@ -79,6 +86,7 @@ export async function readGraph(
     kind: row?.kind ?? "feature",
     profile: effectiveProfile(base, entries),
     entries,
+    ...(options.work === true ? { work: await workFacts(deps, change, index) } : {}),
   });
   const reviewed = pipeline.nodes.some((node) => {
     const kind = kinds.get(node.kind);
@@ -135,9 +143,22 @@ export async function readGraph(
   };
 }
 
+async function workFacts(
+  deps: GraphDeps,
+  change: ActiveChange,
+  index: IndexDb,
+): Promise<WorkFacts> {
+  const commits = await trailerCommits(deps.git, change.projectRoot, change.id);
+  return {
+    commits: commits.flatMap(({ commit, part, task }) =>
+      part === undefined || task === undefined ? [] : [{ commit, part, task }],
+    ),
+    openTickets: openAttempts(index, change.id).map(({ ticket, target }) => ({ ticket, target })),
+  };
+}
+
 function gatesOf(resolved: Resolved): Readonly<Record<string, GatePolicy>> {
-  const policy = policyModule.schema.parse(resolved.value[policyModule.key]);
-  return policy.gates;
+  return moduleValue(gatesModule, resolved.value);
 }
 
 function record(value: unknown): Readonly<Record<string, unknown>> {
@@ -167,7 +188,7 @@ function pendingOf(read: ChangeGraph): (id: string) => PendingView {
 
 /** The stage of the latest transition, through the pipeline (design D-12). */
 export function stageOfChange(read: ChangeGraph): string {
-  return stageOf(read.entries, (to) => stageOfTarget(read.pipeline, to));
+  return stageOf(read.entries, stageMap(read.pipeline));
 }
 
 /** Every gate of the Change's graph as the outputs carry it. */

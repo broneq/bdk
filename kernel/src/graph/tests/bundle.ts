@@ -37,10 +37,14 @@ export function writePart(dir: string, where: "plan" | "design", nn: string): vo
     where === "plan"
       ? "goal: g\nsuccess-measure: m\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n"
       : "depends-on: []\n";
+  const body =
+    where === "plan"
+      ? `## ${nn}-1 Store the token\n\n**Files:**\n\n- \`src/part-${nn}.ts\`\n\n**Test cases:**\n\n- stores a token\n`
+      : "Text.\n";
   write(
     dir,
     `${where}/parts/${nn}-part.md`,
-    `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\n${fields}---\nText.\n`,
+    `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\n${fields}---\n${body}`,
   );
 }
 

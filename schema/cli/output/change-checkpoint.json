@@ -4,32 +4,25 @@
   "title": "bdk change checkpoint --json",
   "description": "Pathspec commit of the Change directory: `chore(bdk): checkpoint <change>`.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["change", "done"],
   "properties": {
     "change": {
       "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$",
       "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
-    "done": {
-      "type": "boolean"
-    },
+    "done": { "type": "boolean" },
     "commit": {
-      "type": "string"
+      "description": "The checkpoint commit, abbreviated; present when done.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{7}$"
     },
     "skipped": {
-      "enum": ["nothing-to-commit", "policy-disabled"],
-      "description": "Why no commit was made although the command exited 0."
-    },
-    "deduplicated": {
-      "type": "boolean"
+      "description": "Why no checkpoint commit was made; present when not done.",
+      "type": "string",
+      "minLength": 1
     }
   },
-  "examples": [
-    {
-      "change": "2026-09-25-passwordless-login",
-      "done": true,
-      "commit": "a1b2c3d"
-    }
-  ]
+  "required": ["change", "done"],
+  "additionalProperties": false,
+  "examples": [{ "change": "2026-09-25-passwordless-login", "done": true, "commit": "a1b2c3d" }]
 }

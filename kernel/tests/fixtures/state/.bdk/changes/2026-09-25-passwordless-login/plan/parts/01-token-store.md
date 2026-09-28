@@ -8,5 +8,13 @@ do-not-touch: []
 depends-on: []
 spec-impact: none
 ---
-### Task 01-1 Token table
-Files: src/auth/token-store.ts, src/auth/token-store.test.ts
+## 01-1 Token table
+
+**Files:**
+
+- Create: `src/auth/token-store.ts`
+- Test: `src/auth/token-store.test.ts`
+
+**Test cases:**
+
+- a consumed token cannot be consumed again

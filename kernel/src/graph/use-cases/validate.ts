@@ -19,7 +19,7 @@ export function validateNode(
   id: string | undefined,
 ): Promise<ValidateReport | Refusal> {
   return withChangeIndex(deps, change, async (index) => {
-    const read = await readGraph(deps, change, index, globalDir);
+    const read = await readGraph(deps, change, index, globalDir, { work: true });
     if ("refused" in read) return read;
     const node = id === undefined ? read.graph.next : read.graph.find(id);
     if (node === undefined) {

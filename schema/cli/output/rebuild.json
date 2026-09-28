@@ -4,38 +4,52 @@
   "title": "bdk rebuild --json",
   "description": "Rebuild the index and the derived progress from committed files and git trailers.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["changes", "entries", "attempts", "commits"],
   "properties": {
     "changes": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Changes rebuilt."
     },
     "entries": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Ledger entries read."
     },
     "attempts": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Attempt records read."
     },
     "commits": {
       "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
       "description": "Commits with BDK trailers read."
     },
-    "durationMs": {
-      "type": "integer"
+    "migrated": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Documents rewritten at the current schema version."
     },
+    "durationMs": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
     "warnings": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Documents left unchanged (newer than the kernel, or without a migration path) and indexes not regenerated, with the reason."
     }
   },
+  "required": ["changes", "entries", "attempts", "commits", "migrated", "durationMs", "warnings"],
+  "additionalProperties": false,
   "examples": [
     {
       "changes": 1,
       "entries": 38,
       "attempts": 6,
       "commits": 9,
+      "migrated": [],
       "durationMs": 412,
       "warnings": []
     }

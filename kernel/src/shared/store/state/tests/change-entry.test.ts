@@ -122,6 +122,20 @@ describe("entry", () => {
     expect(issues(entry, { ...example.decision, type, ...own })).toStrictEqual([]);
   });
 
+  it("accepts a ladder question from the kernel", () => {
+    const ladder = {
+      ...example.decision,
+      type: "question",
+      status: "proposed",
+      source: "kernel",
+      review: true,
+      refs: ["02-3", "A-4m8rt2wx"],
+      options: ["retry 02-3 with a fresh budget", "accept as debt", "split part 02"],
+      park: true,
+    };
+    expect(issues(entry, ladder)).toStrictEqual([]);
+  });
+
   it.each([
     ["decision", "severity", "high"],
     ["observation", "category", "security"],

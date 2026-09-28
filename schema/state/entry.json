@@ -134,7 +134,7 @@
         "review": { "type": "boolean" },
         "options": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "park": {
-          "description": "Written only by `change park`; marks the question that parks the Change.",
+          "description": "Written only by `change park` and by `attempt close` at the end of the ladder; marks the question that parks the Change.",
           "type": "boolean"
         }
       },
@@ -292,7 +292,7 @@
         "command": { "type": "string", "minLength": 1 },
         "skip-verify": { "type": "boolean" },
         "input-hash": {
-          "description": "sha256 of the node's inputs; written only by `done` (P2).",
+          "description": "sha256 of the node's inputs; written only by `done` and `part done` (P2). A transition carrying it is the node's done marker.",
           "$ref": "common.json#/$defs/hash"
         }
       },

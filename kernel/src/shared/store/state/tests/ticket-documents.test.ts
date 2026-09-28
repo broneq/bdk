@@ -27,6 +27,22 @@ describe("attempt", () => {
     },
   );
 
+  it.each(["task-redispatch", "verify-fix", "review-fix", "verifier"])(
+    "accepts loop %s",
+    (loop) => {
+      expect(issues(attempt, { ...open, loop })).toStrictEqual([]);
+    },
+  );
+
+  it("rejects a loop outside the four loops", () => {
+    expect(issues(attempt, { ...open, loop: "task-escalation" })).toStrictEqual(["loop"]);
+    expect(issues(attempt, { ...open, loop: "not-run" })).toStrictEqual(["loop"]);
+  });
+
+  it("accepts an escalation ticket", () => {
+    expect(issues(attempt, { ...open, escalation: true })).toStrictEqual([]);
+  });
+
   it("keeps closed-at and outcome together", () => {
     expect(issues(attempt, without(example.attempt, "closed-at"))).toStrictEqual(["closed-at"]);
     expect(issues(attempt, without(example.attempt, "outcome"))).toStrictEqual(["outcome"]);

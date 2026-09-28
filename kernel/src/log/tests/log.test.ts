@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Store } from "../../shared/store/index.ts";
 import { writeDocument } from "../../shared/store/index.ts";
-import { allowedMoves, withResolution } from "../domain/entry.ts";
+import { allowedMoves, findDuplicate, withResolution } from "../domain/entry.ts";
 import { logRegistrations } from "../index.ts";
 import { logAddOutput, logListOutput, logResolveOutput, logShowOutput } from "../schema/outputs.ts";
 import {
@@ -703,6 +703,36 @@ describe("domain", () => {
     for (const status of ["resolved", "routed", "superseded"])
       expect(allowedMoves("finding", status)).toEqual([]);
     expect(allowedMoves("transition", "proposed")).toEqual([]);
+  });
+
+  it("a finding repeated under another ticket is not a duplicate: it is a recurrence", () => {
+    const entry = {
+      id: "L-00000001",
+      type: "finding",
+      summary: "expired token accepted",
+      refs: ["src/a.ts#verify"],
+      status: "proposed",
+      source: "agent:implementer",
+      at: AT,
+      review: false,
+    };
+    const identity = (text: string) => text;
+    expect(
+      findDuplicate(
+        { ...entry, ticket: "A-00000002" },
+        [{ ...entry, ticket: "A-00000001" }],
+        identity,
+      ),
+    ).toBeUndefined();
+    expect(
+      findDuplicate(
+        { ...entry, ticket: "A-00000001" },
+        [{ ...entry, ticket: "A-00000001" }],
+        identity,
+      ),
+    ).toBeDefined();
+    expect(findDuplicate(entry, [{ ...entry, ticket: "A-00000001" }], identity)).toBeUndefined();
+    expect(findDuplicate(entry, [entry], identity)).toBeDefined();
   });
 
   it("appends the resolution line to an empty or a filled body", () => {

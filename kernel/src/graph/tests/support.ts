@@ -110,15 +110,25 @@ export function writeDesign(
   store.write(`${DIR}/${name}.md`, `---\nschema: 1\ntitle: ${name}\n${extra}---\n${body}`);
 }
 
+/** One task in the plan task grammar, `<nn>-1`, unless `body` replaces it. */
+export function taskBody(nn: string): string {
+  return `## ${nn}-1 Store the token\n\n**Files:**\n\n- Create: \`src/part-${nn}.ts\`\n\n**Test cases:**\n\n- stores a token\n`;
+}
+
 export function writePlanPart(
   store: Store,
   nn: string,
-  fields: { dependsOn?: readonly string[]; specImpact?: string } = {},
+  fields: {
+    dependsOn?: readonly string[];
+    specImpact?: string;
+    doNotTouch?: readonly string[];
+    body?: string;
+  } = {},
 ): void {
-  const dependsOn = `[${(fields.dependsOn ?? []).map((id) => `"${id}"`).join(", ")}]`;
+  const list = (items: readonly string[] = []) => `[${items.map((id) => `"${id}"`).join(", ")}]`;
   store.write(
     `${DIR}/plan/parts/${nn}-part.md`,
-    `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\ngoal: g\nsuccess-measure: m\ndo-not-touch: []\ndepends-on: ${dependsOn}\nspec-impact: ${fields.specImpact ?? "none"}\n---\nTasks.\n`,
+    `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\ngoal: g\nsuccess-measure: m\ndo-not-touch: ${list(fields.doNotTouch)}\ndepends-on: ${list(fields.dependsOn)}\nspec-impact: ${fields.specImpact ?? "none"}\n---\n${fields.body ?? taskBody(nn)}`,
   );
 }
 

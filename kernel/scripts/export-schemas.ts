@@ -9,9 +9,16 @@ import { format, resolveConfig } from "prettier";
 import * as z from "zod";
 
 import {
+  attemptCloseOutput,
+  attemptListOutput,
+  attemptOpenOutput,
+} from "../src/attempt/schema/outputs.ts";
+import {
   changeListOutput,
   changeNewOutput,
+  changeCheckpointOutput,
   changeParkOutput,
+  changeTakeoverOutput,
   changeResumeOutput,
   changeStatusOutput,
 } from "../src/change/schema/outputs.ts";
@@ -23,6 +30,7 @@ import {
 } from "../src/graph/schema/outputs.ts";
 import { pipelineSchema } from "../src/graph/schema/pipeline.ts";
 import { queryOutput } from "../src/query/schema/query.ts";
+import { commitOutput } from "../src/commit/schema/output.ts";
 import { configCheckOutput } from "../src/config/schema/check.ts";
 import { configSchemaOutput } from "../src/config/schema/schema.ts";
 import { configSetOutput } from "../src/config/schema/set.ts";
@@ -32,13 +40,21 @@ import { sessionStartOutput } from "../src/hooks/schema/session-start.ts";
 import { skillExistsOutput } from "../src/hooks/schema/skill-exists.ts";
 import {
   logAddOutput,
+  logIngestOutput,
   logListOutput,
   logResolveOutput,
   logShowOutput,
 } from "../src/log/schema/outputs.ts";
 import { measureOutput } from "../src/measure/schema/measure.ts";
+import {
+  partDoneOutput,
+  partListOutput,
+  partSplitOutput,
+  partStartOutput,
+} from "../src/part/schema/outputs.ts";
 import { settingsRegistry } from "../src/registrations.ts";
 import { doctorOutput } from "../src/service/schema/doctor.ts";
+import { rebuildOutput } from "../src/service/schema/rebuild.ts";
 import { versionOutput } from "../src/service/schema/version.ts";
 import { settingsJsonSchema } from "../src/shared/config/index.ts";
 import { refusalSchema } from "../src/shared/refusal/index.ts";
@@ -54,6 +70,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["common/version.json", versionOutput],
   ["common/refusal.json", refusalSchema],
   ["output/doctor.json", doctorOutput],
+  ["output/rebuild.json", rebuildOutput],
   ["output/config-show.json", configShowOutput],
   ["output/config-check.json", configCheckOutput],
   ["output/config-schema.json", configSchemaOutput],
@@ -63,6 +80,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/hooks-skill-exists.json", skillExistsOutput],
   ["output/measure.json", measureOutput],
   ["output/log-add.json", logAddOutput],
+  ["output/log-ingest.json", logIngestOutput],
   ["output/log-list.json", logListOutput],
   ["output/log-show.json", logShowOutput],
   ["output/log-resolve.json", logResolveOutput],
@@ -71,11 +89,21 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/change-list.json", changeListOutput],
   ["output/change-resume.json", changeResumeOutput],
   ["output/change-park.json", changeParkOutput],
+  ["output/change-takeover.json", changeTakeoverOutput],
+  ["output/change-checkpoint.json", changeCheckpointOutput],
   ["output/query.json", queryOutput],
   ["output/next.json", nextOutput],
   ["output/explain.json", explainOutput],
   ["output/validate.json", validateOutput],
   ["output/done.json", doneOutput],
+  ["output/part-list.json", partListOutput],
+  ["output/part-start.json", partStartOutput],
+  ["output/part-done.json", partDoneOutput],
+  ["output/part-split.json", partSplitOutput],
+  ["output/attempt-open.json", attemptOpenOutput],
+  ["output/attempt-close.json", attemptCloseOutput],
+  ["output/attempt-list.json", attemptListOutput],
+  ["output/commit.json", commitOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {

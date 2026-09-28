@@ -1,13 +1,15 @@
-// Generates `schema/cli/output/change-{new,status,list,resume,park}.json`
+// Generates `schema/cli/output/change-{new,status,list,resume,park,takeover,checkpoint}.json`
 // (kernel/scripts/export-schemas.ts; design D-14, D-15 of T20).
 import * as z from "zod";
 
 import type {
+  CheckpointReport,
   ListItem,
   NewReport,
   ParkReport,
   ResumeReport,
   StatusReport,
+  TakeoverReport,
 } from "../domain/change.ts";
 import { CHANGE_STATES, PART_STATES, RESUMED_FROM, SPEC_IMPACTS } from "../domain/change.ts";
 import {
@@ -270,17 +272,31 @@ export const changeResumeOutput = z
     ],
   }) satisfies z.ZodType<ResumeReport>;
 
+const checkpointFields = {
+  done: z.boolean(),
+  commit: z
+    .string()
+    .regex(/^[0-9a-f]{7}$/)
+    .optional()
+    .meta({ description: "The checkpoint commit, abbreviated; present when done." }),
+  skipped: z
+    .string()
+    .min(1)
+    .optional()
+    .meta({ description: "Why no checkpoint commit was made; present when not done." }),
+};
+
+const checkpointView = z.strictObject(checkpointFields).meta({
+  description: "The checkpoint of the Change directory (`kernel-loops`, Checkpoint).",
+});
+
 export const changeParkOutput = z
   .strictObject({
     change: changeId,
     entry: entryId.meta({ description: "The park question." }),
     options: z.array(z.string().min(1)).min(1),
     resume: z.string(),
-    checkpoint: z.strictObject({
-      done: z.boolean(),
-      commit: z.string().optional(),
-      skipped: z.string().optional().meta({ description: "Why no checkpoint ran." }),
-    }),
+    checkpoint: checkpointView,
   })
   .meta({
     title: "bdk change park --json",
@@ -292,7 +308,34 @@ export const changeParkOutput = z
         entry: "L-t4w7n3kd",
         options: ["accept as debt", "split part 02"],
         resume: `bdk change resume ${CHANGE} --option <n>`,
-        checkpoint: { done: false, skipped: "change checkpoint lands with T22" },
+        checkpoint: { done: true, commit: "a1b2c3d" },
       },
     ],
   }) satisfies z.ZodType<ParkReport>;
+
+export const changeTakeoverOutput = z
+  .strictObject({
+    change: changeId,
+    previousSession: z
+      .string()
+      .optional()
+      .meta({ description: "The session that held the tickets; stamped from T24." }),
+    closedTickets: z
+      .array(z.string().regex(/^A-[0-9a-z]{8}$/))
+      .min(1)
+      .meta({ description: "The tickets closed as not-run with the body `taken over`." }),
+    rebuilt: z.boolean().meta({ description: "The rebuild of `bdk rebuild` ran for the Change." }),
+  })
+  .meta({
+    title: "bdk change takeover --json",
+    description: "Take over a Change whose previous session died with open tickets.",
+    examples: [{ change: CHANGE, closedTickets: ["A-7f3k9m2q"], rebuilt: true }],
+  }) satisfies z.ZodType<TakeoverReport>;
+
+export const changeCheckpointOutput = z
+  .strictObject({ change: changeId, ...checkpointFields })
+  .meta({
+    title: "bdk change checkpoint --json",
+    description: "Pathspec commit of the Change directory: `chore(bdk): checkpoint <change>`.",
+    examples: [{ change: CHANGE, done: true, commit: "a1b2c3d" }],
+  }) satisfies z.ZodType<CheckpointReport>;

@@ -1,13 +1,16 @@
 // `kernel-cli/service` through the committed bundle: every exit code and rule
-// the two records declare, the scenarios of the spec, the JSON Schemas.
-import { readFileSync } from "node:fs";
+// the three records declare, the scenarios of the spec, the JSON Schemas.
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createFixture } from "../../../tests/support/fixture.ts";
 import type { Fixture } from "../../../tests/support/fixture.ts";
 import { runBdk } from "../../../tests/support/run.ts";
+import { answered, bdk, git, refused, repository } from "../../../tests/support/repo.ts";
 import { validatorFor } from "../../../tests/support/schemas.ts";
+import { fileStore } from "../../shared/store/index.ts";
 
 const validVersion = validatorFor("common/version.json");
 const validDoctor = validatorFor("output/doctor.json");
@@ -135,4 +138,121 @@ describe("bdk doctor", () => {
   });
 
   it.todo("exit 2: policy/merge-hash-mismatch arrives with the merge-hash check of T30");
+});
+
+/** A tiny Change with part 01 (tasks 01-1, 01-2) started; answers the root, the Change dir and id. */
+function started(): { root: string; dir: string; id: string } {
+  const root = repository();
+  const result = bdk(
+    ["change", "new", "Reject expired links", "--profile", "tiny", "--reason", "r", "--json"],
+    root,
+  );
+  expect(result.code, result.stdout).toBe(0);
+  const id = (result.json as { change: string }).change;
+  const dir = join(root, ".bdk/changes", id);
+  const tasks = ["01-1", "01-2"]
+    .map(
+      (task) =>
+        `## ${task} Task ${task}\n\n**Files:**\n\n- \`src/${task}.ts\`\n\n**Verification:** none\n`,
+    )
+    .join("\n");
+  fileStore().write(
+    join(dir, "plan/parts/01-part.md"),
+    `---\nschema: 1\nid: "01"\ntitle: Part 01\ngoal: g\nsuccess-measure: m\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n---\n${tasks}`,
+  );
+  answered(bdk(["done", "plan", "--json"], root), "output/done.json");
+  answered(bdk(["part", "start", "01", "--json"], root), "output/part-start.json");
+  return { root, dir, id };
+}
+
+function rebuild(root: string, ...flags: string[]) {
+  return bdk(["rebuild", ...flags, "--json"], root);
+}
+
+describe("bdk rebuild", () => {
+  it("exit 0: repairs a deleted index and a stale plan index; the lists answer as before", () => {
+    const { root, dir } = started();
+    answered(
+      bdk(["attempt", "open", "task-redispatch", "01-1", "--json"], root),
+      "output/attempt-open.json",
+    );
+    const lists = () =>
+      [
+        ["log", "list"],
+        ["part", "list"],
+        ["attempt", "list", "--for", "01"],
+      ].map((argv) => bdk([...argv, "--json"], root).json);
+    const before = lists();
+    const index = readFileSync(join(dir, "plan/index.md"), "utf8");
+    fileStore().write(join(dir, "plan/index.md"), "stale\n");
+    rmSync(join(root, ".bdk/.machine/index.sqlite"));
+    const report = answered(rebuild(root), "output/rebuild.json");
+    expect(report).toMatchObject({
+      changes: 1,
+      attempts: 1,
+      commits: 0,
+      migrated: [],
+      warnings: [],
+    });
+    expect(readFileSync(join(dir, "plan/index.md"), "utf8")).toBe(index);
+    expect(lists()).toStrictEqual(before);
+  });
+
+  it("exit 0: a fresh clone rebuilds after change resume", () => {
+    const { root, id } = started();
+    git(root, "add", "--all");
+    git(root, "commit", "--quiet", "-m", "work");
+    const clone = realpathSync(mkdtempSync(join(tmpdir(), "bdk-clone-")));
+    try {
+      git(clone, "clone", "--quiet", root, ".");
+      refused(rebuild(clone, "--all"), 2, "policy/no-active-change");
+      answered(bdk(["change", "resume", id, "--json"], clone), "output/change-resume.json");
+      expect(answered(rebuild(clone, "--all"), "output/rebuild.json")).toMatchObject({
+        changes: 1,
+      });
+    } finally {
+      rmSync(clone, { recursive: true, force: true });
+    }
+  });
+
+  it("exit 4 state/trailer-mismatch: a BDK-Change commit without BDK-Part and BDK-Task", () => {
+    const { root, dir, id } = started();
+    git(root, "commit", "--quiet", "--allow-empty", "-m", "stray", "-m", `BDK-Change: ${id}`);
+    const index = readFileSync(join(dir, "plan/index.md"), "utf8");
+    fileStore().write(join(dir, "plan/index.md"), "stale\n");
+    refused(rebuild(root), 4, "state/trailer-mismatch");
+    expect(readFileSync(join(dir, "plan/index.md"), "utf8")).toBe(index);
+  });
+
+  it("exit 4 state/change-dir-missing", () => {
+    const { root, dir } = started();
+    rmSync(dir, { recursive: true });
+    refused(rebuild(root), 4, "state/change-dir-missing");
+  });
+
+  it("exit 4 state/corrupted-index: the index path is a directory", () => {
+    const { root } = started();
+    const index = join(root, ".bdk/.machine/index.sqlite");
+    rmSync(index, { force: true });
+    mkdirSync(index);
+    refused(rebuild(root), 4, "state/corrupted-index");
+  });
+
+  it("exit 4 state/ledger-invalid: a log file fails its schema", () => {
+    const { root, dir } = started();
+    fileStore().write(
+      join(dir, "log/20260101T000000Z-finding-L-broken00.md"),
+      "---\nschema: 1\n---\n",
+    );
+    refused(rebuild(root), 4, "state/ledger-invalid");
+  });
+
+  it("exit 2 policy/no-active-change", () => {
+    refused(rebuild(repository()), 2, "policy/no-active-change");
+  });
+
+  it("exit 5 runtime/git-missing", () => {
+    const { root } = started();
+    refused(bdk(["rebuild", "--json"], root, { git: false }), 5, "runtime/git-missing");
+  });
 });

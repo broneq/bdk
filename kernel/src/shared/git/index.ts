@@ -120,6 +120,150 @@ export async function codeTreeHash(git: Git, workTree: string): Promise<string |
   return `sha256:${createHash("sha256").update(lines.join("\n")).digest("hex")}`;
 }
 
+/**
+ * The paths that differ from `HEAD` in the index or the working tree,
+ * untracked files included and both sides of a rename, sorted; `pathspecs`
+ * limits the listing. A missing git is `runtime/git-missing`.
+ */
+export async function changedPaths(
+  git: Git,
+  workTree: string,
+  pathspecs: readonly string[] = [],
+): Promise<string[]> {
+  return (await statusEntries(git, workTree, pathspecs)).map((entry) => entry.path).sort();
+}
+
+/**
+ * The paths the working tree changes, untracked files included: a path whose
+ * whole change is staged is left out, because staging is the user's act on
+ * the main thread (T3) and the kernel never sweeps it into its own work.
+ */
+export async function workTreePaths(git: Git, workTree: string): Promise<string[]> {
+  return (await statusEntries(git, workTree, []))
+    .filter((entry) => entry.worktree !== " ")
+    .map((entry) => entry.path)
+    .sort();
+}
+
+interface StatusEntry {
+  readonly path: string;
+  /** The `Y` column of `git status --porcelain=v1`: ` ` when the working tree matches the index. */
+  readonly worktree: string;
+}
+
+async function statusEntries(
+  git: Git,
+  workTree: string,
+  pathspecs: readonly string[],
+): Promise<StatusEntry[]> {
+  const result = await git.run(
+    ["status", "--porcelain=v1", "-z", "--untracked-files=all", "--", ...pathspecs],
+    workTree,
+  );
+  if (result.code !== 0) throw new Error(`git status failed: ${result.stderr.trim()}`);
+  const fields = result.stdout.split("\0");
+  const entries = new Map<string, StatusEntry>();
+  for (let at = 0; at < fields.length; at += 1) {
+    const field = fields[at] ?? "";
+    if (field.length < 4) continue;
+    const worktree = field[1] ?? " ";
+    entries.set(field.slice(3), { path: field.slice(3), worktree });
+    // A rename or copy is followed by its source path as a field of its own.
+    if (/^[RC]|^.[RC]/.test(field)) {
+      const source = fields[(at += 1)] ?? "";
+      if (source !== "") entries.set(source, { path: source, worktree });
+    }
+  }
+  return [...entries.values()];
+}
+
+export type PathspecCommit =
+  | { readonly committed: true; readonly commit: string }
+  | { readonly committed: false; readonly output: string };
+
+/**
+ * Stages `paths` and commits exactly them (`git commit --only`), so what the
+ * user staged elsewhere stays staged and out of the commit. The user's hooks
+ * run: a rejected commit answers `committed: false` with the first line the
+ * hook printed, and `HEAD` is unchanged. A missing git is `runtime/git-missing`.
+ */
+export async function pathspecCommit(
+  git: Git,
+  workTree: string,
+  paths: readonly string[],
+  message: string,
+): Promise<PathspecCommit> {
+  const added = await git.run(["add", "-A", "--", ...paths], workTree);
+  if (added.code !== 0) throw new Error(`git add failed: ${added.stderr.trim()}`);
+  const paragraphs = message.split(/\n{2,}/).flatMap((paragraph) => ["-m", paragraph]);
+  const committed = await git.run(
+    ["commit", "--quiet", "--only", ...paragraphs, "--", ...paths],
+    workTree,
+  );
+  if (committed.code !== 0) {
+    const output = `${committed.stderr}\n${committed.stdout}`
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line !== "");
+    return { committed: false, output: output ?? `git commit exited ${String(committed.code)}` };
+  }
+  const head = await git.run(["rev-parse", "HEAD"], workTree);
+  return { committed: true, commit: head.stdout.trim() };
+}
+
+/** A commit reachable from `HEAD` that carries `BDK-Change` of one Change. */
+export interface TrailerCommit {
+  readonly commit: string;
+  readonly subject: string;
+  readonly part?: string;
+  readonly task?: string;
+}
+
+const TRAILER_FORMAT = [
+  "%H",
+  "%s",
+  "%(trailers:key=BDK-Change,valueonly,separator=%x2c)",
+  "%(trailers:key=BDK-Part,valueonly,separator=%x2c)",
+  "%(trailers:key=BDK-Task,valueonly,separator=%x2c)",
+].join("%x1f");
+
+/**
+ * The commits whose `BDK-Change` trailer names `change`, newest first, with
+ * their `BDK-Part` and `BDK-Task` trailers (progress from git, V1-4). No
+ * commits before the first one; a missing git is `runtime/git-missing`.
+ */
+export async function trailerCommits(
+  git: Git,
+  workTree: string,
+  change: string,
+): Promise<TrailerCommit[]> {
+  const result = await git.run(
+    [
+      "log",
+      "HEAD",
+      "--fixed-strings",
+      `--grep=BDK-Change: ${change}`,
+      `--format=${TRAILER_FORMAT}%x1e`,
+    ],
+    workTree,
+  );
+  if (result.code !== 0) return [];
+  const commits: TrailerCommit[] = [];
+  for (const record of result.stdout.split("\x1e")) {
+    const [commit = "", subject = "", changes = "", part = "", task = ""] = record
+      .trim()
+      .split("\x1f");
+    if (commit === "" || !changes.split(",").some((value) => value.trim() === change)) continue;
+    commits.push({
+      commit,
+      subject,
+      ...(part.trim() === "" ? {} : { part: part.trim() }),
+      ...(task.trim() === "" ? {} : { task: task.trim() }),
+    });
+  }
+  return commits;
+}
+
 const IN_PROGRESS = [
   ["rebase-merge", "rebase"],
   ["rebase-apply", "rebase"],

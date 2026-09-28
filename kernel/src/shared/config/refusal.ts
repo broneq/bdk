@@ -5,6 +5,7 @@
 import { refuse } from "../refusal/index.ts";
 import type { Refusal } from "../refusal/index.ts";
 import type { Store } from "../store/index.ts";
+import { within } from "./known.ts";
 import type { ConfigProblem } from "./problems.ts";
 import type { ConfigRegistry } from "./registry.ts";
 import { resolveConfig } from "./resolve.ts";
@@ -55,12 +56,19 @@ export function problemRefusal(
   ]);
 }
 
-/** `bdk config schema <module>` for a key of a registered module, else the whole schema. */
+/** `bdk config schema <module>` for a key inside a registered module or root, else the whole schema. */
 export function schemaCommand(scope: Pick<ResolveScope, "settings">, key: string): string {
-  const module = key.split(".")[0] ?? "";
-  return scope.settings.modules.some((candidate) => candidate.key === module)
-    ? `bdk config schema ${module}`
-    : "bdk config schema";
+  const module = schemaModules(scope.settings)
+    .filter((candidate) => within(key, candidate))
+    .sort((a, b) => b.length - a.length)[0];
+  return module === undefined ? "bdk config schema" : `bdk config schema ${module}`;
+}
+
+/** The names `bdk config schema <module>` takes: each module key and each root that holds one. */
+export function schemaModules(settings: Pick<ConfigRegistry, "modules">): string[] {
+  const keys = settings.modules.map((module) => module.key);
+  const roots = keys.map((key) => key.split(".")[0] ?? key);
+  return [...new Set([...keys, ...roots])];
 }
 
 /** A path below the project root relative to it; any other path as is. */

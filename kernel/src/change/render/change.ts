@@ -1,10 +1,12 @@
 // Text renderings of the change commands (`kernel-cli`, Output modes).
 import type {
+  CheckpointReport,
   ListItem,
   NewReport,
   ParkReport,
   ResumeReport,
   StatusReport,
+  TakeoverReport,
 } from "../domain/change.ts";
 
 export function renderNew(report: NewReport): string {
@@ -27,6 +29,14 @@ export function renderStatus(report: StatusReport): string {
     `profile: ${report.profile}`,
   ];
   lines.push(...renderNodes(report.nodes), ...renderGates(report.gates));
+  if (report.parts.length > 0) {
+    lines.push("parts:");
+    for (const part of report.parts) {
+      lines.push(
+        `  ${part.part} ${part.title}: ${part.state}, ${String(part.done ?? 0)}/${String(part.tasks)} tasks`,
+      );
+    }
+  }
   if (report.parked !== undefined) {
     lines.push(`parked on ${report.parked.entry}; options:`);
     report.parked.options.forEach((option, i) => lines.push(`  ${String(i + 1)}. ${option}`));
@@ -120,4 +130,14 @@ export function renderPark(report: ParkReport): string {
       : `checkpoint skipped: ${report.checkpoint.skipped ?? "not run"}`,
   );
   return `${lines.join("\n")}\n`;
+}
+
+export function renderCheckpoint(report: CheckpointReport): string {
+  return report.done
+    ? `checkpoint of ${report.change}: ${report.commit ?? ""}\n`
+    : `checkpoint of ${report.change} skipped: ${report.skipped ?? ""}\n`;
+}
+
+export function renderTakeover(report: TakeoverReport): string {
+  return `took over ${report.change}: closed ${report.closedTickets.join(", ")} as not-run, state rebuilt\n`;
 }

@@ -1,8 +1,9 @@
-// `kernel-cli/change` (T20 records) through the committed bundle in real
-// repositories: one case per exit code and per declared rule of `change new`,
-// `status`, `list`, `resume` and `park`, every output validated against its
-// schema, and the T20 acceptance cases that concern Changes.
-import { mkdirSync, readdirSync, rmSync } from "node:fs";
+// `kernel-cli/change` (T20 and T22 records) through the committed bundle in
+// real repositories: one case per exit code and per declared rule of `change
+// new`, `status`, `list`, `resume`, `park`, `checkpoint` and `takeover`, every
+// output validated against its schema, and the acceptance cases that concern
+// Changes.
+import { chmodSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -34,16 +35,17 @@ function logFiles(root: string, id: string): string[] {
   return readdirSync(join(root, ".bdk/changes", id, "log"));
 }
 
-function openAttempt(root: string, id: string): void {
+/** An open ticket of `loop` and `target`; task `02-3` is in no plan part of a fresh Change. */
+function openAttempt(root: string, id: string, loop = "task-redispatch", target = "02-3"): void {
   writeDocument(
     fileStore(),
-    join(root, ".bdk/changes", id, "attempts/task-redispatch-02-3-A-open0001.md"),
+    join(root, ".bdk/changes", id, `attempts/${loop}-${target}-A-open0001.md`),
     {
       data: {
         schema: 1,
         ticket: "A-open0001",
-        loop: "task-redispatch",
-        target: "02-3",
+        loop,
+        target,
         attempt: 1,
         of: 3,
         scope: "full",
@@ -258,8 +260,12 @@ describe("bdk change park and resume", () => {
     expect(park).toMatchObject({
       options: ["accept as debt", "split part 02"],
       resume: `bdk change resume ${id} --option <n>`,
-      checkpoint: { done: false, skipped: "change checkpoint lands with T22" },
+      checkpoint: { done: true, commit: git(root, "rev-parse", "--short=7", "HEAD").trim() },
     });
+    expect(git(root, "log", "-1", "--format=%s").trim()).toBe(`chore(bdk): checkpoint ${id}`);
+    expect(git(root, "show", "--name-only", "--format=", "HEAD")).toContain(
+      `.bdk/changes/${id}/log/`,
+    );
     expect(bdk(["change", "status", "--json"], root).json).toMatchObject({
       parked: { entry: park.entry },
     });
@@ -369,6 +375,148 @@ describe("bdk change park and resume", () => {
     bdk(["change", "park"], root);
     refused(
       bdk(["change", "resume", id, "--option", "1", "--json"], root, { git: false }),
+      5,
+      "runtime/git-missing",
+    );
+  });
+});
+
+function rejectCommits(root: string, hook: string, line: string): void {
+  const path = join(root, ".git/hooks", hook);
+  writeFileSync(path, `#!/bin/sh\necho '${line}'\nexit 1\n`);
+  chmodSync(path, 0o755);
+}
+
+describe("bdk change checkpoint", () => {
+  it("exit 0: commits the Change directory alone; a user-staged file stays staged", () => {
+    const { root, id } = opened();
+    fileStore().write(join(root, "src/app.ts"), "export {};\n");
+    git(root, "add", "src/app.ts");
+    const report = answered(
+      bdk(["change", "checkpoint", "--json"], root),
+      "output/change-checkpoint.json",
+    );
+    expect(report).toStrictEqual({
+      change: id,
+      done: true,
+      commit: git(root, "rev-parse", "--short=7", "HEAD").trim(),
+    });
+    const files = git(root, "show", "--name-only", "--format=", "HEAD").trim().split("\n");
+    expect(files.every((file) => file.startsWith(`.bdk/changes/${id}/`))).toBe(true);
+    expect(git(root, "diff", "--cached", "--name-only").trim()).toBe("src/app.ts");
+  });
+
+  it("exit 0: nothing to checkpoint leaves HEAD unchanged", () => {
+    const { root, id } = opened();
+    bdk(["change", "checkpoint"], root);
+    const head = git(root, "rev-parse", "HEAD");
+    const report = answered(
+      bdk(["change", "checkpoint", "--json"], root),
+      "output/change-checkpoint.json",
+    );
+    expect(report).toStrictEqual({
+      change: id,
+      done: false,
+      skipped: `nothing under .bdk/changes/${id}/ changed since the last commit`,
+    });
+    expect(git(root, "rev-parse", "HEAD")).toBe(head);
+  });
+
+  it("exit 2 policy/git-in-progress", () => {
+    const { root } = opened();
+    mkdirSync(join(root, ".git/rebase-merge"));
+    refused(bdk(["change", "checkpoint", "--json"], root), 2, "policy/git-in-progress");
+  });
+
+  it("exit 2 policy/git-hook-failed: a commit-msg hook rejects it, HEAD unchanged", () => {
+    const { root } = opened();
+    rejectCommits(root, "commit-msg", "subject must name a ticket");
+    const head = git(root, "rev-parse", "HEAD");
+    const result = refused(
+      bdk(["change", "checkpoint", "--json"], root),
+      2,
+      "policy/git-hook-failed",
+    );
+    expect(result.why).toContain("subject must name a ticket");
+    expect(git(root, "rev-parse", "HEAD")).toBe(head);
+  });
+
+  it("exit 2 policy/ticket-open", () => {
+    const { root, id } = opened();
+    openAttempt(root, id);
+    refused(bdk(["change", "checkpoint", "--json"], root), 2, "policy/ticket-open");
+  });
+
+  it("exit 2 policy/no-active-change", () => {
+    refused(bdk(["change", "checkpoint", "--json"], repository()), 2, "policy/no-active-change");
+  });
+
+  it("exit 5 runtime/git-missing", () => {
+    const { root } = opened();
+    refused(
+      bdk(["change", "checkpoint", "--json"], root, { git: false }),
+      5,
+      "runtime/git-missing",
+    );
+  });
+});
+
+describe("bdk change takeover", () => {
+  it("exit 0: closes the open ticket as not-run and rebuilds", () => {
+    const { root, id } = opened();
+    openAttempt(root, id, "verifier", "design");
+    const report = answered(
+      bdk(["change", "takeover", "--close-tickets", "--json"], root),
+      "output/change-takeover.json",
+    );
+    expect(report).toStrictEqual({ change: id, closedTickets: ["A-open0001"], rebuilt: true });
+    expect(read(root, `.bdk/changes/${id}/attempts/verifier-design-A-open0001.md`)).toMatch(
+      /outcome: not-run[\s\S]*---\ntaken over\n$/,
+    );
+    expect(bdk(["change", "status", "--json"], root).json).toMatchObject({ openTickets: [] });
+  });
+
+  it("exit 2 policy/invalid-transition: no open ticket, instead names bdk rebuild", () => {
+    const { root } = opened();
+    const result = refused(
+      bdk(["change", "takeover", "--close-tickets", "--json"], root),
+      2,
+      "policy/invalid-transition",
+    );
+    expect(result.instead).toContain("bdk rebuild");
+  });
+
+  it("exit 2 policy/ticket-open: without --close-tickets", () => {
+    const { root, id } = opened();
+    openAttempt(root, id, "verifier", "design");
+    const result = refused(bdk(["change", "takeover", "--json"], root), 2, "policy/ticket-open");
+    expect(result.why).toContain("A-open0001");
+  });
+
+  it("exit 4 state/trailer-mismatch: the ticket's task is in no plan part", () => {
+    const { root, id } = opened();
+    openAttempt(root, id);
+    const result = refused(
+      bdk(["change", "takeover", "--close-tickets", "--json"], root),
+      4,
+      "state/trailer-mismatch",
+    );
+    expect(result.why).toContain("02-3");
+  });
+
+  it("exit 2 policy/no-active-change", () => {
+    refused(
+      bdk(["change", "takeover", "--close-tickets", "--json"], repository()),
+      2,
+      "policy/no-active-change",
+    );
+  });
+
+  it("exit 5 runtime/git-missing", () => {
+    const { root, id } = opened();
+    openAttempt(root, id, "verifier", "design");
+    refused(
+      bdk(["change", "takeover", "--close-tickets", "--json"], root, { git: false }),
       5,
       "runtime/git-missing",
     );

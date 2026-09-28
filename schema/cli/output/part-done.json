@@ -4,61 +4,56 @@
   "title": "bdk part done --json",
   "description": "Close a part: every task has a trailer commit and no ticket is open.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["part", "state", "commits", "entry"],
   "properties": {
-    "part": {
-      "type": "string"
-    },
-    "state": {
-      "const": "done"
-    },
+    "part": { "type": "string", "pattern": "^\\d{2}$" },
+    "state": { "type": "string", "const": "done" },
     "commits": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["task", "commit"],
         "properties": {
-          "task": {
-            "type": "string"
-          },
+          "task": { "type": "string", "pattern": "^\\d{2}-[1-9]\\d*$" },
           "commit": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[0-9a-f]{7}$",
+            "description": "Abbreviated commit."
           }
-        }
+        },
+        "required": ["task", "commit"],
+        "additionalProperties": false
       }
     },
     "openFindings": {
       "type": "array",
       "items": {
         "type": "string",
+        "pattern": "^L-[0-9a-z]{8}$",
         "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
-      }
+      },
+      "description": "Live findings naming the part or its tasks; they do not block."
     },
     "entry": {
       "type": "string",
+      "pattern": "^L-[0-9a-z]{8}$",
       "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "next": {
+      "description": "The node `bdk next` returns afterwards; absent when none.",
       "type": "string"
     }
   },
+  "required": ["part", "state", "commits", "openFindings", "entry"],
+  "additionalProperties": false,
   "examples": [
     {
       "part": "02",
       "state": "done",
       "commits": [
-        {
-          "task": "02-1",
-          "commit": "b4d2e1f"
-        },
-        {
-          "task": "02-2",
-          "commit": "c7a9d30"
-        }
+        { "task": "02-1", "commit": "b4d2e1f" },
+        { "task": "02-2", "commit": "c7a9d30" }
       ],
       "openFindings": [],
-      "entry": "L-y5u3e",
+      "entry": "L-y5u3e7wq",
       "next": "execute-part:03"
     }
   ]

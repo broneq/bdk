@@ -2,9 +2,20 @@
 // files on demand through `shared/store`, each read and schema-checked once.
 import { join } from "node:path";
 
-import type { ChangeView, FileFacts, GraphEntry } from "../domain/kinds/index.ts";
+import type {
+  ChangeView,
+  FileFacts,
+  GraphEntry,
+  PlanPartFacts,
+  WorkFacts,
+} from "../domain/kinds/index.ts";
 import { KernelRefusal } from "../../shared/refusal/index.ts";
-import { readDocument } from "../../shared/store/index.ts";
+import {
+  firstMatch,
+  parsePlanTasks,
+  planPlaceholders,
+  readDocument,
+} from "../../shared/store/index.ts";
 import type { EntryRow, Store } from "../../shared/store/index.ts";
 import type { Profile } from "../../shared/vocabulary/index.ts";
 
@@ -16,16 +27,33 @@ export interface ViewInput {
   readonly kind: string;
   readonly profile: Profile;
   readonly entries: readonly EntryRow[];
+  readonly work?: WorkFacts | undefined;
+}
+
+interface Read {
+  readonly facts: FileFacts;
+  readonly body?: string;
 }
 
 export function changeView(input: ViewInput): ChangeView {
   const { store, dir } = input;
-  const files = new Map<string, FileFacts | undefined>();
+  const files = new Map<string, Read | undefined>();
+  const parts = new Map<string, PlanPartFacts | undefined>();
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
-  const file = (path: string): FileFacts | undefined => {
+  const read = (path: string): Read | undefined => {
     if (files.has(path)) return files.get(path);
     const facts = readFacts(store, join(dir, path));
     files.set(path, facts);
+    return facts;
+  };
+  const planPart = (path: string): PlanPartFacts | undefined => {
+    if (parts.has(path)) return parts.get(path);
+    const found = read(path);
+    const facts =
+      found?.facts.data === undefined || found.body === undefined
+        ? undefined
+        : planPartFacts(found.facts.data, found.body);
+    parts.set(path, facts);
     return facts;
   };
   return {
@@ -33,7 +61,7 @@ export function changeView(input: ViewInput): ChangeView {
     kind: input.kind,
     profile: input.profile,
     entries: input.entries,
-    file,
+    file: (path) => read(path)?.facts,
     list: (sub) => store.list(join(dir, sub)).filter((name) => !name.endsWith("/")),
     reportStatus: (entry: GraphEntry) => {
       const row = byId.get(entry.id);
@@ -44,21 +72,48 @@ export function changeView(input: ViewInput): ChangeView {
       const status = documentData(store, join(dir, report))?.status;
       return typeof status === "string" ? status : undefined;
     },
+    planPart,
+    ...(input.work === undefined ? {} : { work: input.work }),
   };
 }
 
-function readFacts(store: Store, path: string): FileFacts | undefined {
+/** The task grammar, the placeholders and the `do-not-touch` overlaps of a plan part. */
+function planPartFacts(data: Readonly<Record<string, unknown>>, body: string): PlanPartFacts {
+  const { tasks, problems } = parsePlanTasks(body);
+  const globs = Array.isArray(data["do-not-touch"]) ? data["do-not-touch"].map(String) : [];
+  const overlaps = tasks.flatMap((task) =>
+    task.files.flatMap(({ path }) => {
+      const glob = firstMatch(globs, path);
+      return glob === undefined ? [] : [{ task: task.id, path, glob }];
+    }),
+  );
+  return {
+    tasks: tasks.map((task) => ({ id: task.id, files: task.files.map((file) => file.path) })),
+    problems,
+    placeholders: planPlaceholders(
+      { goal: text(data.goal), "success-measure": text(data["success-measure"]) },
+      tasks,
+    ),
+    overlaps,
+  };
+}
+
+function readFacts(store: Store, path: string): Read | undefined {
   const text = store.read(path);
   if (text === undefined) return undefined;
   const bytes = Buffer.byteLength(text);
   try {
     const document = readDocument(store, path);
     if (document === undefined) return undefined;
-    const blank = document.body.trim() === "";
-    return "data" in document ? { bytes, blank, data: document.data } : { bytes, blank };
+    const { body } = document;
+    const blank = body.trim() === "";
+    return {
+      facts: "data" in document ? { bytes, blank, data: document.data } : { bytes, blank },
+      body,
+    };
   } catch (error) {
     if (!(error instanceof KernelRefusal)) throw error;
-    return { bytes, blank: text.trim() === "", invalid: error.refusal.why };
+    return { facts: { bytes, blank: text.trim() === "", invalid: error.refusal.why } };
   }
 }
 
@@ -70,4 +125,8 @@ function documentData(store: Store, path: string): Readonly<Record<string, unkno
     if (error instanceof KernelRefusal) return undefined;
     throw error;
   }
+}
+
+function text(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }

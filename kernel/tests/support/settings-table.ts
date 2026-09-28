@@ -73,7 +73,9 @@ function renderType(schema: z.ZodType): string {
     const { minValue, maxValue } = inner;
     const bounded = (value: number | null): value is number =>
       value !== null && Number.isSafeInteger(value);
-    if (bounded(minValue) && bounded(maxValue)) return `integer ${minValue} to ${maxValue}`;
+    // `z.int()` caps at the largest safe integer, which the tables leave unsaid.
+    const capped = bounded(maxValue) && maxValue < Number.MAX_SAFE_INTEGER;
+    if (bounded(minValue) && capped) return `integer ${minValue} to ${maxValue}`;
     if (bounded(minValue)) return `integer >= ${minValue}`;
     return "integer";
   }
