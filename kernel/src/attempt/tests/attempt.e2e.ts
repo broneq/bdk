@@ -305,7 +305,7 @@ describe("bdk attempt close ok: post-task step evidence (T23-D41)", () => {
     const ticket = opened(change, "task-redispatch", "01-1");
     dispatched(change, ticket, "01-1");
     stepsDone(change, ticket);
-    closed(change, ticket, "ok");
+    expect(closed(change, ticket, "ok").next).toStrictEqual({ action: "commit" });
     const simplify = answered(
       bdk(["evidence", "check", "01-1", "--json"], change.root),
       "output/evidence-check.json",
@@ -334,6 +334,17 @@ describe("bdk attempt close ok: post-task step evidence (T23-D41)", () => {
     fileStore().write(join(change.root, "src/01-2.ts"), "export const two = 2;\n");
     const result = refused(close(change, ticket, "ok"), 2, "policy/stale-evidence");
     expect(result.why).toMatch(/tests-scoped .*changed: src\/01-2\.ts; lint /);
+  });
+
+  it("exit 0: failing tests walk the ladder to a new implementer package", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    dispatched(change, ticket, "01-1", "runner");
+    recorded(change, ticket, "tests-scoped", "fail");
+    expect(closed(change, ticket, "fail").next).toMatchObject({ action: "narrow" });
+    const next = opened(change, "task-redispatch", "01-1");
+    expect(read(change.root, dispatched(change, next, "01-1"))).toContain("## Role: implementer");
   });
 
   it("exit 0: lint not-run within policy.budgets.not-run", () => {

@@ -19067,7 +19067,7 @@ function escalationBlocked(state, policy, changeEscalations) {
   return void 0;
 }
 function nextRung(outcome, escalation, after, policy, blocked) {
-  if (outcome === "ok") return { action: "post-task-steps" };
+  if (outcome === "ok") return { action: "commit" };
   if (outcome === "not-run") {
     if (after.notRun >= policy.notRunBudget) {
       return {

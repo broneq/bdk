@@ -215,9 +215,9 @@ describe("nextRung", () => {
   const state = (...outcomes: (Outcome | [Outcome, string[]])[]) =>
     roundState(run(...outcomes), POLICY);
 
-  it("ok: post-task-steps", () => {
+  it("ok: commit, the step evidence having passed at the close", () => {
     expect(nextRung("ok", false, state("ok"), POLICY, undefined)).toStrictEqual({
-      action: "post-task-steps",
+      action: "commit",
     });
   });
 

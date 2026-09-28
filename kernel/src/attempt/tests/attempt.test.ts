@@ -313,7 +313,7 @@ describe("attempt close", () => {
         touched: ["src/01-1.ts", "src/util.ts"],
         undeclared: ["src/util.ts"],
       },
-      next: { action: "post-task-steps" },
+      next: { action: "commit" },
     });
     const finding = entries(h.store, "finding").find((entry) => entry.id === report.findings?.[0]);
     expect(finding).toMatchObject({ source: "kernel", refs: ["01-1", "src/util.ts"] });

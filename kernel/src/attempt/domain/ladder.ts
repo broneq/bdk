@@ -177,7 +177,7 @@ export function escalationBlocked(
   return undefined;
 }
 
-export type NextAction = "post-task-steps" | "retry" | "narrow" | "escalate" | "parked";
+export type NextAction = "commit" | "retry" | "narrow" | "escalate" | "parked";
 
 export interface Next {
   readonly action: NextAction;
@@ -197,7 +197,8 @@ export function nextRung(
   policy: LadderPolicy,
   blocked: string | undefined,
 ): Next {
-  if (outcome === "ok") return { action: "post-task-steps" };
+  // The step evidence was checked before the close (T23-D41): what remains is the commit.
+  if (outcome === "ok") return { action: "commit" };
   if (outcome === "not-run") {
     if (after.notRun >= policy.notRunBudget) {
       return {
