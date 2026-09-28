@@ -515,7 +515,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Goal**: orchestrator <-> subagent communication through files only: the package goes in, the envelope comes out; verification evidence has freshness and citations. The orchestrator hands an agent the package path and at most one sentence; all context lives in files (T23-D0).
 
-**Delivery**: three OpenSpec Changes merged in order into `staging/v3`; the issue closes after C. The decisions of the T23 discussion (T23-D0 to D24) and the role mechanism spike (`docs/HOST-FACTS.md`, rows `roles-nested-default` to `send-to-main`) are recorded in `openspec/changes/v3-t23a-roles-adapters/design.md` (after archive: `openspec/changes/archive/`), which B and C cite.
+**Delivery**: three OpenSpec Changes merged in order into `staging/v3`; the issue closes after C. The decisions of the T23 discussion (T23-D0 to D24) and the role mechanism spike (`docs/HOST-FACTS.md`, rows `roles-nested-default` to `send-to-main`) are recorded in `openspec/changes/archive/2026-09-28-v3-t23a-roles-adapters/design.md` (after archive: `openspec/changes/archive/`), which B and C cite.
 
 **Scope A (`v3-t23a-roles-adapters`)**:
 
