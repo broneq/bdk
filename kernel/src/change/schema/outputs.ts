@@ -37,7 +37,9 @@ const entryId = z
 const kind = z.enum(CHANGE_KINDS);
 const profile = z.enum(PROFILES);
 const source = z.enum(CHANGE_SOURCES);
-const timestamp = z.iso.datetime().meta({ description: "ISO 8601 UTC with seconds." });
+const timestamp = z.iso
+  .datetime({ precision: 3 })
+  .meta({ description: "ISO 8601 UTC with milliseconds." });
 const next = z
   .string()
   .optional()
@@ -192,7 +194,7 @@ export const changeStatusOutput = z
                 summary: "Keep magic links or add WebAuthn?",
                 status: "proposed",
                 source: "agent:design-verifier",
-                at: "2026-09-25T09:41:07Z",
+                at: "2026-09-25T09:41:07.123Z",
                 refs: ["design.md"],
                 review: true,
               },
@@ -237,7 +239,7 @@ export const changeListOutput = z
             state: "active",
             kind: "feature",
             profile: "small",
-            updatedAt: "2026-09-25T09:41:07Z",
+            updatedAt: "2026-09-25T09:41:07.123Z",
           },
         ],
         total: 1,

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { expect } from "vitest";
 
 import { answered, bdk, repository } from "../../../tests/support/repo.ts";
-import { fileStore, writeDocument } from "../../shared/store/index.ts";
+import { secondStamp, fileStore, writeDocument } from "../../shared/store/index.ts";
 
 export interface Opened {
   readonly root: string;
@@ -55,24 +55,20 @@ export function entry(dir: string, at: string, fields: Record<string, unknown>):
   serial += 1;
   const id = `L-a${String(serial).padStart(7, "0")}`;
   const type = String(fields.type);
-  writeDocument(
-    fileStore(),
-    join(dir, `log/${at.replaceAll("-", "").replaceAll(":", "")}-${type}-${id}.md`),
-    {
-      data: {
-        schema: 1,
-        id,
-        summary: `${type} fixture`,
-        status: "accepted",
-        source: "user",
-        author: "BDK Test <test@example.com>",
-        at,
-        refs: ["change.md"],
-        ...fields,
-      },
-      body: "",
+  writeDocument(fileStore(), join(dir, `log/${secondStamp(at)}-${type}-${id}.md`), {
+    data: {
+      schema: 1,
+      id,
+      summary: `${type} fixture`,
+      status: "accepted",
+      source: "user",
+      author: "BDK Test <test@example.com>",
+      at,
+      refs: ["change.md"],
+      ...fields,
     },
-  );
+    body: "",
+  });
 }
 
 /** One second ahead, so the entry is never older than a `done` of this second. */

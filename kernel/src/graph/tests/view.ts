@@ -32,7 +32,7 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
     kind: fixture.kind ?? "feature",
     profile: fixture.profile ?? "small",
     entries: (fixture.entries ?? []).map((entry) => ({
-      at: "2026-09-25T10:00:00Z",
+      at: "2026-09-25T10:00:00.000Z",
       source: "kernel",
       refs: ["change.md"],
       summary: "fixture",

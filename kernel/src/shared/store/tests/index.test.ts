@@ -50,7 +50,7 @@ async function open(store: Store, options: { now?: () => number } = {}): Promise
   return index;
 }
 
-function writeChange(store: Store, dir = DIR, id = CHANGE, at = "2026-09-25T09:00:00Z"): void {
+function writeChange(store: Store, dir = DIR, id = CHANGE, at = "2026-09-25T09:00:00.000Z"): void {
   writeDocument(store, `${dir}/change.md`, {
     data: {
       schema: 1,
@@ -97,9 +97,9 @@ function writeAttempt(store: Store, ticket: string, closed: boolean): void {
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
-      ...(closed ? { "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" } : {}),
+      ...(closed ? { "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" } : {}),
     },
     body: "",
   });
@@ -116,7 +116,7 @@ function writeDispatch(store: Store, ticket: string, role: string): void {
       attempt: 1,
       of: 3,
       scope: "full",
-      at: "2026-09-25T10:00:01Z",
+      at: "2026-09-25T10:00:01.000Z",
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${ticket}.md`,
@@ -155,13 +155,13 @@ function seeded(): Store {
   writeChange(store);
   writeEntryFile(store, {
     id: "L-aaaaaaa1",
-    at: "2026-09-25T09:01:00Z",
+    at: "2026-09-25T09:01:00.000Z",
     refs: ["02-3", "src/a.ts#login"],
   });
   writeEntryFile(store, {
     id: "L-aaaaaaa2",
     type: "finding",
-    at: "2026-09-25T09:02:00Z",
+    at: "2026-09-25T09:02:00.000Z",
     review: true,
     severity: "high",
     refs: ["src/a.ts"],
@@ -169,7 +169,7 @@ function seeded(): Store {
   writeEntryFile(store, {
     id: "L-aaaaaaa3",
     type: "question",
-    at: "2026-09-25T09:03:00Z",
+    at: "2026-09-25T09:03:00.000Z",
     options: ["yes", "no"],
     park: true,
   });
@@ -177,10 +177,10 @@ function seeded(): Store {
 }
 
 describe("schema", () => {
-  it("creates schema version 3 with the public tables and the entries view", async () => {
+  it("creates schema version 4 with the public tables and the entries view", async () => {
     const index = await open(memoryStore());
-    expect(INDEX_SCHEMA_VERSION).toBe(3);
-    expect(index.schemaVersion()).toBe(3);
+    expect(INDEX_SCHEMA_VERSION).toBe(4);
+    expect(index.schemaVersion()).toBe(4);
     const names = selectReadOnly(
       index,
       "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE '\\_%' ESCAPE '\\' ORDER BY name",
@@ -215,7 +215,7 @@ describe("refresh", () => {
       status: "proposed",
       source: "kernel",
       author: AUTHOR,
-      at: "2026-09-25T09:01:00Z",
+      at: "2026-09-25T09:01:00.000Z",
       review: false,
       path: `.bdk/changes/${CHANGE}/log/20260925T090100Z-decision-L-aaaaaaa1.md`,
       refs: ["02-3", "src/a.ts#login"],
@@ -229,7 +229,7 @@ describe("refresh", () => {
         attempt: 1,
         of: 3,
         scope: "full",
-        openedAt: "2026-09-25T10:00:00Z",
+        openedAt: "2026-09-25T10:00:00.000Z",
       },
     ]);
     expect(ticketDispatch(index, CHANGE, "A-bbbbbbb1")).toStrictEqual({
@@ -244,7 +244,7 @@ describe("refresh", () => {
     writeEntryFile(store, {
       id: "L-aaaaaaa4",
       type: "transition",
-      at: "2026-09-25T09:04:00Z",
+      at: "2026-09-25T09:04:00.000Z",
       refs: ["design", "design.md"],
       to: "design",
       "input-hash": hash,
@@ -281,12 +281,12 @@ describe("refresh", () => {
     const store = seeded();
     writeEntryFile(store, {
       id: "L-ccccccc1",
-      at: "2026-09-25T09:05:00Z",
+      at: "2026-09-25T09:05:00.000Z",
       supersedes: "L-aaaaaaa1",
     });
     writeEntryFile(store, {
       id: "L-ccccccc2",
-      at: "2026-09-25T09:06:00Z",
+      at: "2026-09-25T09:06:00.000Z",
       supersedes: `${CHANGE}/L-aaaaaaa2`,
     });
     const index = await open(store);
@@ -316,7 +316,7 @@ describe("refresh", () => {
     const index = await open(store);
     refreshChange(index, LIVE);
     const before = reads();
-    writeEntryFile(store, { id: "L-ddddddd1", at: "2026-09-25T09:07:00Z" });
+    writeEntryFile(store, { id: "L-ddddddd1", at: "2026-09-25T09:07:00.000Z" });
     expect(refreshChange(index, LIVE)).toBe(true);
     expect(reads() - before).toBe(1);
   });
@@ -325,7 +325,7 @@ describe("refresh", () => {
     const store = seeded();
     const index = await open(store);
     refreshChange(index, LIVE);
-    writeEntryFile(store, { id: "L-aaaaaaa1", at: "2026-09-25T09:01:00Z", status: "accepted" });
+    writeEntryFile(store, { id: "L-aaaaaaa1", at: "2026-09-25T09:01:00.000Z", status: "accepted" });
     const removed = listEntries(index, CHANGE)[1]?.path ?? "";
     store.remove(`${ROOT}/${removed}`);
     refreshChange(index, LIVE);
@@ -351,7 +351,7 @@ describe("refresh", () => {
     const index = await open(store);
     refreshChange(index, LIVE);
     store.write(`${DIR}/log/20260925T091000Z-decision-L-eeeeeee1.md`, "---\nschema: 1\n---\n");
-    writeEntryFile(store, { id: "L-eeeeeee2", at: "2026-09-25T09:11:00Z" });
+    writeEntryFile(store, { id: "L-eeeeeee2", at: "2026-09-25T09:11:00.000Z" });
     const refusal = refusalOf(() => refreshChange(index, LIVE));
     expect(refusal.rule).toBe("state/ledger-invalid");
     expect(refusal.why).toContain("20260925T091000Z-decision-L-eeeeeee1.md");
@@ -362,7 +362,7 @@ describe("refresh", () => {
     const store = seeded();
     const index = await open(store);
     refreshChange(index, LIVE);
-    writeEntryFile(store, { id: "L-aaaaaaa1", at: "2026-09-25T09:30:00Z", type: "risk" });
+    writeEntryFile(store, { id: "L-aaaaaaa1", at: "2026-09-25T09:30:00.000Z", type: "risk" });
     const refusal = refusalOf(() => refreshChange(index, LIVE));
     expect(refusal.rule).toBe("state/ledger-invalid");
     expect(refusal.why).toContain("20260925T090100Z-decision-L-aaaaaaa1.md");
@@ -373,7 +373,7 @@ describe("refresh", () => {
   it("follows an archived Change and drops a removed one", async () => {
     const store = seeded();
     const other = `${ROOT}/.bdk/changes/archive/2026-09-20-old`;
-    writeChange(store, other, "2026-09-20-old", "2026-09-20T09:00:00Z");
+    writeChange(store, other, "2026-09-20-old", "2026-09-20T09:00:00.000Z");
     const index = await open(store);
     refreshAll(index);
     expect(listChanges(index).map((change) => [change.id, change.archived])).toEqual([
@@ -439,12 +439,12 @@ describe("typed queries", () => {
   it("lists Changes by their latest entry, newest first", async () => {
     const store = seeded();
     const other = `${ROOT}/.bdk/changes/2026-09-26-other`;
-    writeChange(store, other, "2026-09-26-other", "2026-09-26T08:00:00Z");
+    writeChange(store, other, "2026-09-26-other", "2026-09-26T08:00:00.000Z");
     const index = await open(store);
     refreshAll(index);
     expect(listChanges(index).map((change) => [change.id, change.updatedAt])).toEqual([
-      ["2026-09-26-other", "2026-09-26T08:00:00Z"],
-      [CHANGE, "2026-09-25T09:03:00Z"],
+      ["2026-09-26-other", "2026-09-26T08:00:00.000Z"],
+      [CHANGE, "2026-09-25T09:03:00.000Z"],
     ]);
   });
 });
@@ -473,7 +473,7 @@ describe("selectReadOnly", () => {
     expect(() => selectReadOnly(index, "DELETE FROM _entries")).toThrow();
     expect(() => selectReadOnly(index, "WITH x AS (SELECT 1) DELETE FROM _entries")).toThrow();
     expect(listEntries(index, CHANGE)).toHaveLength(3);
-    writeEntryFile(store, { id: "L-fffffff1", at: "2026-09-25T09:40:00Z" });
+    writeEntryFile(store, { id: "L-fffffff1", at: "2026-09-25T09:40:00.000Z" });
     refreshChange(index, LIVE);
     expect(listEntries(index, CHANGE)).toHaveLength(4);
   });
@@ -504,10 +504,31 @@ describe("on disk", () => {
     old.close();
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(3);
+    expect(index.schemaVersion()).toBe(4);
     expect(
       selectReadOnly(index, "SELECT count(*) FROM sqlite_master WHERE name = 'meta'").rows,
     ).toEqual([[0]]);
+  });
+
+  it("drops an index of version 3, which holds times to the second, and rebuilds it with milliseconds", async () => {
+    const store = fileStore();
+    const dir = join(root, ".bdk/changes", CHANGE);
+    const location: ChangeLocation = { id: CHANGE, dir, archived: false };
+    writeChange(store, dir);
+    writeEntryFile(store, { id: "L-aaaaaaa1", at: "2026-09-25T09:01:00.000Z" }, dir);
+    const first = await openIndex(store, root);
+    refreshChange(first, location);
+    first.database.exec("UPDATE _entries SET at = '2026-09-25T09:01:00Z'");
+    first.database.exec("UPDATE _meta SET value = '3' WHERE key = 'schema_version'");
+    first.close();
+
+    const index = await openIndex(store, root);
+    opened.push(index);
+    expect(index.schemaVersion()).toBe(4);
+    expect(refreshChange(index, location)).toBe(true);
+    expect(listEntries(index, CHANGE).map((entry) => entry.at)).toEqual([
+      "2026-09-25T09:01:00.000Z",
+    ]);
   });
 
   it("rebuilds a file that is not a SQLite database", async () => {
@@ -515,7 +536,7 @@ describe("on disk", () => {
     writeFileSync(path(), "not a database, just bytes ".repeat(100));
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(3);
+    expect(index.schemaVersion()).toBe(4);
   });
 
   it("refuses state/corrupted-index when the index path is a directory", async () => {

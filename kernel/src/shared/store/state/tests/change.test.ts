@@ -48,7 +48,7 @@ describe("readChange", () => {
     const store = memoryStore({
       [at(LOG)]: renderDocument(example.decision, ""),
       [at(OTHER_LOG)]: renderDocument(
-        { ...example.finding, id: "L-m2x9v7qa", at: "2026-09-25T11:35:02Z" },
+        { ...example.finding, id: "L-m2x9v7qa", at: "2026-09-25T11:35:02.000Z" },
         "",
       ),
     });

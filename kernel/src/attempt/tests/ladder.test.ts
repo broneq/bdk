@@ -29,7 +29,7 @@ function record(outcome: Outcome | undefined, fields: Partial<LadderRecord> = {}
     ticket: `A-${String(serial).padStart(8, "0")}`,
     attempt: 1,
     scope: "full",
-    openedAt: "2026-09-25T10:00:00Z",
+    openedAt: "2026-09-25T10:00:00.000Z",
     outcome,
     fingerprints: [],
     ...fields,

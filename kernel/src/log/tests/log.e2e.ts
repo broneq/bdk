@@ -3,7 +3,7 @@
 // `list`, `show` and `resolve`, every output validated against its schema,
 // and the T20 acceptance cases on the ledger; `log add --category` (P8) and
 // `log ingest` (T23) with a hand-written attempt record and dispatch package.
-import { readdirSync, rmSync, utimesSync } from "node:fs";
+import { readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -187,6 +187,55 @@ describe("bdk log add", () => {
 });
 
 describe("bdk log list", () => {
+  it("exit 0: entries written within one second list in write order with distinct times", () => {
+    const { root } = opened();
+    // Several kernel calls fit in one second; with second-precision times
+    // their order fell to the random ids.
+    const written = Array.from({ length: 8 }, (_, n) =>
+      add(root, "finding", word(n), "--ref", "src/a.ts"),
+    ).map((report) => report.entry.id);
+    const page = answered(
+      bdk(["log", "list", "--type", "finding", "--json"], root),
+      "output/log-list.json",
+    ) as { items: { id: string; at: string }[] };
+    expect(page.items.map((item) => item.id)).toStrictEqual(written);
+    expect(new Set(page.items.map((item) => item.at)).size).toBe(written.length);
+  });
+
+  it("exit 0: a hand-written entry with a second-form at reads as .000 and lists before a later one of its second", () => {
+    const { root, dir } = opened();
+    const later = add(root, "finding", "aaa", "--ref", "src/a.ts") as {
+      entry: { id: string; at: string };
+    };
+    const second = later.entry.at.slice(0, 19);
+    writeFileSync(
+      join(dir, "log", `${second.replaceAll("-", "").replaceAll(":", "")}Z-finding-L-00000000.md`),
+      [
+        "---",
+        "schema: 1",
+        "id: L-00000000",
+        "type: finding",
+        "summary: written by hand",
+        "status: proposed",
+        "source: kernel",
+        "author: BDK Test <test@example.com>",
+        `at: ${second}Z`,
+        "refs:",
+        "  - src/a.ts",
+        "---",
+        "",
+      ].join("\n"),
+    );
+    const page = answered(
+      bdk(["log", "list", "--type", "finding", "--json"], root),
+      "output/log-list.json",
+    ) as { items: { id: string; at: string }[] };
+    expect(page.items).toStrictEqual([
+      expect.objectContaining({ id: "L-00000000", at: `${second}.000Z` }),
+      expect.objectContaining({ id: later.entry.id, at: later.entry.at }),
+    ]);
+  });
+
   it("exit 0: entries with derived status, filtered by type", () => {
     const { root } = opened();
     add(root, "finding", "one", "--ref", "src/a.ts");
@@ -211,7 +260,7 @@ describe("bdk log list", () => {
           status: "proposed",
           source: "kernel",
           author: "BDK Test <test@example.com>",
-          at: "2026-09-25T10:00:00Z",
+          at: "2026-09-25T10:00:00.000Z",
           refs: ["src/a.ts"],
         },
         body: "",
@@ -352,9 +401,9 @@ function ticketed(dir: string, closed = false, role = "verifier"): string {
       attempt: 1,
       of: 2,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: "BDK Test <test@example.com>",
-      ...(closed ? { "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" } : {}),
+      ...(closed ? { "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" } : {}),
     },
     body: "",
   });
@@ -368,7 +417,7 @@ function ticketed(dir: string, closed = false, role = "verifier"): string {
       attempt: 1,
       of: 2,
       scope: "full",
-      at: "2026-09-25T10:00:01Z",
+      at: "2026-09-25T10:00:01.000Z",
       "kernel-version": "3.0.0",
       "template-hash": `sha256:${"0".repeat(64)}`,
       report,

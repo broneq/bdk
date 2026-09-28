@@ -46,9 +46,24 @@ export const idReference = z
 
 export const hash = z.string().regex(/^sha256:[0-9a-f]{64}$/);
 
-export const timestamp = z.iso
-  .datetime({ precision: 0 })
-  .meta({ description: "ISO 8601 UTC with seconds." });
+const SECOND_FORM = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+
+/**
+ * The kernel writes milliseconds at a fixed width, so string order is time
+ * order; a read also takes the second form and normalises it to `.000`, which
+ * keeps hand-written and older files in order among new ones.
+ */
+export const timestamp = z
+  .preprocess(
+    (value) =>
+      typeof value === "string" && SECOND_FORM.test(value) ? `${value.slice(0, -1)}.000Z` : value,
+    z.iso.datetime({ precision: 3 }),
+  )
+  .meta({
+    description: "ISO 8601 UTC with milliseconds; a read also takes seconds.",
+    // The published schema describes committed files, so it takes both forms.
+    pattern: String.raw`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$`,
+  });
 
 export const date = z.iso.date();
 
@@ -75,3 +90,8 @@ export const severity = z.enum(["critical", "high", "medium", "low"]);
 export const scope = z.enum(TICKET_SCOPES);
 
 export const glob = z.string().min(1);
+
+/** `2026-09-25T09:41:07.123Z` (or the second form) as `20260925T094107Z`: the `<ts>` of an entry file name. */
+export function secondStamp(at: string): string {
+  return `${at.slice(0, 19).replaceAll("-", "").replaceAll(":", "")}Z`;
+}

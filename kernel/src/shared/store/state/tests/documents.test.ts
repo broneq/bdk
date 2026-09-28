@@ -162,6 +162,16 @@ describe("validation", () => {
     expect(why).toContain(`${field} does not match the file name`);
   });
 
+  it("accepts an entry at with milliseconds in its file name's second", () => {
+    const store = memoryStore();
+    const path = at("log/20260925T094107Z-decision-L-m2x9v7qa.md");
+    writeDocument(store, path, {
+      data: { ...example.decision, at: "2026-09-25T09:41:07.999Z" },
+      body: "",
+    });
+    expect(readDocument(store, path)).toMatchObject({ data: { at: "2026-09-25T09:41:07.999Z" } });
+  });
+
   it.each([
     ["change.md", example.change, "id", "2026-09-24-other"],
     ["plan/parts/03-login.md", example.planPart, "id", undefined],

@@ -286,7 +286,7 @@ describe("attempt close", () => {
     const h = await started();
     const { ticket } = await open(h, "task-redispatch", "01-1");
     const mine = underTicket(h, ticket, { summary: "a finding", refs: ["src/01-1.ts"] });
-    const stranger = writeEntry(h.store, { type: "finding", at: "2026-09-25T11:30:00Z" });
+    const stranger = writeEntry(h.store, { type: "finding", at: "2026-09-25T11:30:00.000Z" });
     const path = envelope(h, ticket, [mine, stranger]);
     const result = await close(h, ticket, "fail", "--envelope", path);
     expect(refusal(result)).toMatchObject({ rule: "policy/entries-missing" });
@@ -528,7 +528,7 @@ describe("attempt close: rules read (T23-D28)", () => {
         attempt: 1,
         of: 3,
         scope: "full",
-        at: "2026-09-25T11:00:30Z",
+        at: "2026-09-25T11:00:30.000Z",
         "kernel-version": "3.0.0",
         "template-hash": `sha256:${"0".repeat(64)}`,
         report: `.bdk/changes/2026-09-25-login/reports/01-1-${role}-${ticket}.md`,
@@ -564,7 +564,7 @@ describe("attempt close: rules read (T23-D28)", () => {
     const [record] = readAttempts(h.store, DIR);
     if (record === undefined) throw new Error("no attempt record");
     writeDocument(h.store, record.path, {
-      data: { ...record.data, "rules-read": "2026-09-25T11:01:30Z" },
+      data: { ...record.data, "rules-read": "2026-09-25T11:01:30.000Z" },
       body: record.body,
     });
     const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);

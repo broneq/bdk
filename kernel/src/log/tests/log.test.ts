@@ -51,9 +51,9 @@ function addAttempt(store: Store, ticket: string, role: string | undefined, clos
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
-      ...(closed ? { "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" } : {}),
+      ...(closed ? { "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" } : {}),
     },
     body: "",
   });
@@ -68,7 +68,7 @@ function addAttempt(store: Store, ticket: string, role: string | undefined, clos
       attempt: 1,
       of: 3,
       scope: "full",
-      at: "2026-09-25T10:00:01Z",
+      at: "2026-09-25T10:00:01.000Z",
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${ticket}.md`,
@@ -568,7 +568,7 @@ describe("log list", () => {
           status: "proposed",
           source: "kernel",
           author: AUTHOR,
-          at: "2026-09-25T10:00:00Z",
+          at: "2026-09-25T10:00:00.000Z",
           refs: ["a"],
         },
         body: "",
@@ -666,7 +666,7 @@ describe("log show", () => {
         status: "accepted",
         source: "kernel",
         author: AUTHOR,
-        at: "2026-09-01T10:00:00Z",
+        at: "2026-09-01T10:00:00.000Z",
         refs: ["a"],
         fingerprint: `sha256:${"b".repeat(64)}`,
       },
@@ -730,7 +730,7 @@ describe("log resolve", () => {
     const text = store.read(`${DIR}/log/20260925T101502Z-finding-L-00000001.md`) ?? "";
     expect(text).toContain("status: resolved\n");
     expect(text).toMatch(
-      /Seen in tests\.\n\nResolved as resolved at 2026-09-25T10:15:02Z: fixed in retry\n$/,
+      /Seen in tests\.\n\nResolved as resolved at 2026-09-25T10:15:02.000Z: fixed in retry\n$/,
     );
   });
 
@@ -810,7 +810,7 @@ describe("log resolve", () => {
         status: "accepted",
         source: "kernel",
         author: AUTHOR,
-        at: "2026-09-25T09:00:00Z",
+        at: "2026-09-25T09:00:00.000Z",
         refs: ["change.md"],
         to: "design",
       },

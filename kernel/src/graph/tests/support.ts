@@ -20,7 +20,7 @@ import type { FakeGit, RunResult } from "../../log/tests/support.ts";
 import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import type { ConfigRegistry } from "../../shared/config/index.ts";
-import { memoryIndex, writeDocument } from "../../shared/store/index.ts";
+import { secondStamp, memoryIndex, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import type { KindRegistry } from "../domain/kinds/index.ts";
 import { graphRegistrations } from "../index.ts";
@@ -62,7 +62,7 @@ export function harness(options: HarnessOptions = {}): Harness {
   return {
     store,
     git,
-    run: (argv, at = "2026-09-25T10:00:00Z") => {
+    run: (argv, at = "2026-09-25T10:00:00.000Z") => {
       const deps: GraphDeps = {
         store,
         git,
@@ -93,7 +93,7 @@ export function setChange(store: Store, fields: { profile?: string; kind?: strin
       profile: fields.profile ?? "small",
       intent: "Users log in with a one-time link.",
       source: "user",
-      at: "2026-09-25T09:00:00Z",
+      at: "2026-09-25T09:00:00.000Z",
       author: "Ada Lovelace <ada@example.com>",
       overridden: [],
     },
@@ -148,7 +148,7 @@ export function writeEntry(
 ): string {
   counter += 1;
   const id = `L-f${String(counter).padStart(7, "0")}`;
-  const stamp = fields.at.replaceAll("-", "").replaceAll(":", "");
+  const stamp = secondStamp(fields.at);
   writeDocument(store, `${DIR}/log/${stamp}-${fields.type}-${id}.md`, {
     data: {
       schema: 1,

@@ -41,9 +41,9 @@ export async function started(settings?: string): Promise<Harness> {
   setChange(h.store, { profile: "tiny" });
   writePlanPart(h.store, "01", { body: tasks("01", 2), doNotTouch: ["src/billing/**"] });
   writePlanPart(h.store, "02", { body: tasks("02", 1), dependsOn: ["01"] });
-  const done = await h.run(["done", "plan", "--json"], "2026-09-25T10:00:00Z");
+  const done = await h.run(["done", "plan", "--json"], "2026-09-25T10:00:00.000Z");
   expect(done.code, done.stdout).toBe(0);
-  const start = await h.run(["part", "start", "01", "--json"], "2026-09-25T10:01:00Z");
+  const start = await h.run(["part", "start", "01", "--json"], "2026-09-25T10:01:00.000Z");
   expect(start.code, start.stdout).toBe(0);
   return h;
 }
@@ -83,7 +83,7 @@ export function underTicket(
 ): string {
   return writeEntry(h.store, {
     type: fields.type ?? "finding",
-    at: "2026-09-25T11:30:00Z",
+    at: "2026-09-25T11:30:00.000Z",
     summary: fields.summary,
     refs: fields.refs,
     status: "proposed",

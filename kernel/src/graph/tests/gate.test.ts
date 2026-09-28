@@ -5,7 +5,7 @@ import { gateStatus } from "../domain/gate.ts";
 import type { GateInput } from "../domain/gate.ts";
 import type { GraphEntry } from "../domain/kinds/index.ts";
 
-const READY = "2026-09-25T10:00:00Z";
+const READY = "2026-09-25T10:00:00.000Z";
 
 function entry(fields: Partial<GraphEntry> & { id: string }): GraphEntry {
   return {
@@ -45,8 +45,15 @@ describe("the gate rule", () => {
     });
   });
 
+  it("a transition of the ready second passes, compared at one-second resolution", () => {
+    const status = gate([entry({ id: "L-00000001", at: "2026-09-25T10:00:00.000Z" })], {
+      readyAt: "2026-09-25T10:00:00.800Z",
+    });
+    expect(status).toMatchObject({ ready: true, done: true, passedBy: "user" });
+  });
+
   it("an older entry does not count", () => {
-    const status = gate([entry({ id: "L-00000001", at: "2026-09-25T09:59:59Z" })]);
+    const status = gate([entry({ id: "L-00000001", at: "2026-09-25T09:59:59.000Z" })]);
     expect(status).toMatchObject({ ready: true, done: false });
     expect(status.why).toContain("L-00000001 is older than the ready time");
   });
@@ -85,8 +92,8 @@ describe("the gate rule", () => {
 
   it("lists live review entries newest first as pending", () => {
     const status = gate([
-      entry({ id: "L-00000001", type: "question", review: true, at: "2026-09-25T09:00:00Z" }),
-      entry({ id: "L-00000002", type: "finding", review: true, at: "2026-09-25T09:30:00Z" }),
+      entry({ id: "L-00000001", type: "question", review: true, at: "2026-09-25T09:00:00.000Z" }),
+      entry({ id: "L-00000002", type: "finding", review: true, at: "2026-09-25T09:30:00.000Z" }),
       entry({ id: "L-00000003", type: "finding", review: true, status: "resolved" }),
     ]);
     expect(status.pending.map((item) => item.id)).toStrictEqual(["L-00000002", "L-00000001"]);

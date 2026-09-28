@@ -27,7 +27,7 @@ export const rulesShowOutput = z
         }),
       )
       .meta({ description: "The role's rule categories, then the language rules, in order." }),
-    rulesRead: z.iso.datetime().meta({
+    rulesRead: z.iso.datetime({ precision: 3 }).meta({
       description:
         "The `rules-read` stamp of the attempt record: the time of the first call for the ticket.",
     }),
@@ -54,7 +54,7 @@ export const rulesShowOutput = z
             text: "# TypeScript\n...",
           },
         ],
-        rulesRead: "2026-09-25T10:00:41Z",
+        rulesRead: "2026-09-25T10:00:41.305Z",
       },
     ],
   }) satisfies z.ZodType<TicketRules>;

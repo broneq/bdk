@@ -34,10 +34,10 @@ import type { Harness } from "./support.ts";
 /** `expect.stringContaining` typed for a `toMatchObject` literal. */
 const containing = (text: string): unknown => expect.stringContaining(text);
 
-const T0 = "2026-09-25T10:00:00Z";
-const T1 = "2026-09-25T10:05:00Z";
-const T2 = "2026-09-25T10:10:00Z";
-const T3 = "2026-09-25T10:15:00Z";
+const T0 = "2026-09-25T10:00:00.000Z";
+const T1 = "2026-09-25T10:05:00.000Z";
+const T2 = "2026-09-25T10:10:00.000Z";
+const T3 = "2026-09-25T10:15:00.000Z";
 
 function ledger(store: Store): Record<string, unknown>[] {
   return store.list(`${DIR}/log`).map((name) => {

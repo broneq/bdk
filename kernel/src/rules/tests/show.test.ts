@@ -12,8 +12,8 @@ import { rulesRegistrations } from "../index.ts";
 import { rulesShowOutput } from "../schema/show.ts";
 
 const PLUGIN = "/plugin";
-const FIRST = "2026-09-25T10:00:41Z";
-const LATER = "2026-09-25T10:09:00Z";
+const FIRST = "2026-09-25T10:00:41.000Z";
+const LATER = "2026-09-25T10:09:00.000Z";
 
 const RULE_FILES = [
   "code-quality",
@@ -44,9 +44,9 @@ function ticket(store: Store, id: string, role: string | undefined, closed = fal
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
-      ...(closed ? { "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" } : {}),
+      ...(closed ? { "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" } : {}),
     },
     body: "",
   });
@@ -61,7 +61,7 @@ function ticket(store: Store, id: string, role: string | undefined, closed = fal
       attempt: 1,
       of: 3,
       scope: "full",
-      at: "2026-09-25T10:00:01Z",
+      at: "2026-09-25T10:00:01.000Z",
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${id}.md`,

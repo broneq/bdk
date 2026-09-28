@@ -95,7 +95,7 @@ function openTicket(dir: string, ticket: string, target: string): void {
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: "BDK Test <test@example.com>",
     },
     body: "",

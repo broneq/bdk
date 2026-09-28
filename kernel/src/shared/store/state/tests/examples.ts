@@ -10,7 +10,7 @@ export const change = {
   profile: "small",
   intent: "Users log in with a one-time link sent by email instead of a password.",
   source: "user",
-  at: "2026-09-25T09:12:03Z",
+  at: "2026-09-25T09:12:03.000Z",
   author: AUTHOR,
   overridden: ["policy.escalation.enabled"],
 };
@@ -23,7 +23,7 @@ export const decision = {
   status: "accepted",
   source: "kernel",
   author: AUTHOR,
-  at: "2026-09-25T09:41:07Z",
+  at: "2026-09-25T09:41:07.000Z",
   refs: ["design.md", "src/auth/magic-link.ts#issueLink"],
 };
 
@@ -72,9 +72,9 @@ export const attempt = {
   attempt: 1,
   of: 3,
   scope: "full",
-  "opened-at": "2026-09-25T11:02:40Z",
+  "opened-at": "2026-09-25T11:02:40.000Z",
   author: AUTHOR,
-  "closed-at": "2026-09-25T11:51:09Z",
+  "closed-at": "2026-09-25T11:51:09.000Z",
   outcome: "fail",
   findings: [
     { fingerprint: HASH, type: "finding", file: "src/auth/magic-link.ts", symbol: "verifyLink" },
@@ -87,7 +87,7 @@ export const evidence = {
   kind: "tests-scoped",
   ticket: "A-7f3kx2p9",
   target: "02-3",
-  at: "2026-09-25T11:30:44Z",
+  at: "2026-09-25T11:30:44.000Z",
   author: AUTHOR,
   source: "agent:implementer",
   "tree-hash": HASH,
@@ -111,7 +111,7 @@ export const dispatch = {
   attempt: 1,
   of: 3,
   scope: "full",
-  at: "2026-09-25T11:02:41Z",
+  at: "2026-09-25T11:02:41.000Z",
   "kernel-version": "3.0.0-dev",
   "template-hash": HASH,
   report: ".bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-A-7f3kx2p9.md",

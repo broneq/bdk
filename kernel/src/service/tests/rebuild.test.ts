@@ -75,7 +75,7 @@ describe("rebuild", () => {
     const h = await started();
     const path = `${DIR}/log/20260925T120000Z-finding-L-future00.md`;
     const text =
-      "---\nschema: 2\nid: L-future00\ntype: finding\nsummary: s\nstatus: proposed\nsource: kernel\nauthor: A <a@b.c>\nat: 2026-09-25T12:00:00Z\nrefs: [a.ts]\n---\n";
+      "---\nschema: 2\nid: L-future00\ntype: finding\nsummary: s\nstatus: proposed\nsource: kernel\nauthor: A <a@b.c>\nat: 2026-09-25T12:00:00.000Z\nrefs: [a.ts]\n---\n";
     h.store.write(path, text);
     const report = rebuildOutput.parse((await h.run(["rebuild", "--json"])).json);
     expect(report.warnings).toStrictEqual([expect.stringContaining("L-future00") as string]);

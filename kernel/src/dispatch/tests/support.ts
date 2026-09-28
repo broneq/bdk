@@ -18,7 +18,7 @@ import type { DispatchDeps } from "../index.ts";
 export { DIR };
 export const PLUGIN = "/plugins/bdk";
 export const TICKET = "A-7f3k9m2q";
-const AT = "2026-09-25T10:05:00Z";
+const AT = "2026-09-25T10:05:00.000Z";
 const REPO = join(import.meta.dirname, "../../../..");
 
 const TASKS =
@@ -52,9 +52,9 @@ export function ticket(
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
-      ...(fields.closed === true ? { "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" } : {}),
+      ...(fields.closed === true ? { "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" } : {}),
     },
     body: "",
   });

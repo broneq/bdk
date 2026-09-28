@@ -26,7 +26,9 @@ const target = z.string().min(1).meta({
 });
 const scope = z.enum(TICKET_SCOPES);
 const outcome = z.enum(["ok", "fail", "not-run"]);
-const timestamp = z.iso.datetime().meta({ description: "ISO 8601 UTC with seconds." });
+const timestamp = z.iso
+  .datetime({ precision: 3 })
+  .meta({ description: "ISO 8601 UTC with milliseconds." });
 const count = z.int().min(0);
 const path = z.string().meta({ description: "Path relative to the project root." });
 
@@ -66,7 +68,7 @@ export const attemptOpenOutput = z
         attempt: 2,
         of: 3,
         scope: "high+",
-        openedAt: "2026-09-25T10:02:11Z",
+        openedAt: "2026-09-25T10:02:11.482Z",
         narrowedFrom: "full",
         dropped: [{ id: "L-d3f6g8h2", summary: "rename helper for clarity" }],
         entry: "L-k4n8p2rt",
@@ -170,8 +172,8 @@ export const attemptListOutput = z
             attempt: 2,
             of: 3,
             scope: "high+",
-            openedAt: "2026-09-25T10:02:11Z",
-            closedAt: "2026-09-25T10:19:40Z",
+            openedAt: "2026-09-25T10:02:11.482Z",
+            closedAt: "2026-09-25T10:19:40.917Z",
             outcome: "fail",
             entries: 2,
           },

@@ -29,9 +29,11 @@ function harness(options: { role?: string; dispatch?: boolean; closed?: boolean 
       attempt: 1,
       of: 2,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
-      ...(options.closed === true ? { "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" } : {}),
+      ...(options.closed === true
+        ? { "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" }
+        : {}),
     },
     body: "",
   });
@@ -46,7 +48,7 @@ function harness(options: { role?: string; dispatch?: boolean; closed?: boolean 
         attempt: 1,
         of: 2,
         scope: "full",
-        at: "2026-09-25T10:00:01Z",
+        at: "2026-09-25T10:00:01.000Z",
         "kernel-version": "3.0.0-dev",
         "template-hash": HASH,
         report: reportPath(role),
@@ -81,7 +83,7 @@ function manifest(store: Store, id: string, ticket: string): void {
       kind: "tests-scoped",
       ticket,
       target: "02",
-      at: "2026-09-25T10:20:00Z",
+      at: "2026-09-25T10:20:00.000Z",
       author: AUTHOR,
       source: "kernel",
       "tree-hash": HASH,

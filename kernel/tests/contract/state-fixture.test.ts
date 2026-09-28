@@ -115,6 +115,14 @@ describe("state fixture", () => {
     expect(ajvCheck("entry", risk)).not.toStrictEqual([]);
     expect(ajvCheck("entry", fixtureRisk())).toStrictEqual([]);
   });
+
+  it("accepts with Ajv a timestamp with or without milliseconds, as zod does", () => {
+    const at = (value: string) => ajvCheck("entry", { ...fixtureRisk(), at: value });
+    expect(at("2026-09-25T09:48:30.123Z")).toStrictEqual([]);
+    expect(at("2026-09-25T09:48:30Z")).toStrictEqual([]);
+    expect(at("2026-09-25T09:48:30.12Z")).not.toStrictEqual([]);
+    expect(at("2026-09-25T09:48:30.123+02:00")).not.toStrictEqual([]);
+  });
 });
 
 function fixtureRisk(): Record<string, unknown> {

@@ -164,7 +164,7 @@ The active Change at a glance: stage, graph state, gate status with pending revi
             "summary": "Keep magic links or add WebAuthn?",
             "status": "proposed",
             "source": "agent:design-verifier",
-            "at": "2026-09-25T09:41:07Z",
+            "at": "2026-09-25T09:41:07.123Z",
             "refs": [
               "design.md"
             ],
@@ -250,7 +250,7 @@ List Changes in this repository: active per branch, parked, archived. The kernel
         "state": "active",
         "kind": "feature",
         "profile": "small",
-        "updatedAt": "2026-09-25T09:41:07Z"
+        "updatedAt": "2026-09-25T09:41:07.123Z"
       }
     ],
     "total": 1,

@@ -5,6 +5,7 @@
 import { CHANGE_ID_PATTERN } from "../../ids/index.ts";
 import { attemptKind } from "./attempt.ts";
 import { changeKind } from "./change.ts";
+import { secondStamp } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
 import { designIndexKind, designKind, designPartKind } from "./design.ts";
 import { dispatchKind } from "./dispatch.ts";
@@ -67,8 +68,7 @@ const field =
   (data: Data): unknown =>
     data[name];
 
-/** `2026-09-25T09:41:07Z` as `20260925T094107Z`. */
-const stamp = (data: Data): string => String(data.at).replaceAll("-", "").replaceAll(":", "");
+const stamp = (data: Data): string => secondStamp(String(data.at));
 
 const CHANGE_ROWS: readonly Row[] = [
   {

@@ -59,7 +59,7 @@ Append one ledger entry; the kernel stamps id, time, author and source. The kern
       "status": "proposed",
       "source": "agent:implementer",
       "author": "Przemysław Broniszewski <przemek@example.com>",
-      "at": "2026-09-25T10:15:02Z",
+      "at": "2026-09-25T10:15:02.640Z",
       "refs": [
         "src/auth/login.ts",
         "02-3"
@@ -252,7 +252,7 @@ Ledger entries as summaries, filtered by type, status, review flag or reference.
         "summary": "magic links, no passwords, WebAuthn later",
         "status": "accepted",
         "source": "kernel",
-        "at": "2026-09-25T09:12:30Z",
+        "at": "2026-09-25T09:12:30.256Z",
         "refs": [
           "design.md"
         ]
@@ -304,7 +304,7 @@ One entry in full, by bare or qualified id. The kernel SHALL implement the comma
       "status": "accepted",
       "source": "kernel",
       "author": "Przemysław Broniszewski <przemek@example.com>",
-      "at": "2026-09-25T09:12:30Z",
+      "at": "2026-09-25T09:12:30.256Z",
       "refs": [
         "design.md"
       ],
