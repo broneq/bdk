@@ -1,7 +1,7 @@
 // The pipeline of design D-5 and the mode wrapper: every call is resolved,
 // helped, parsed, checked and dispatched in one order, then turned into the
 // contract shape of the record's `mode` (`kernel-cli`, Output modes).
-import { capLines, json, refusalText, stopBlock } from "../output/index.ts";
+import { json, refusalText, stopBlock } from "../output/index.ts";
 import type { Streams } from "../output/index.ts";
 import { exitCodeFor, isRefusal, KernelRefusal, refuse } from "../refusal/index.ts";
 import type { Refusal } from "../refusal/index.ts";
@@ -154,13 +154,9 @@ async function run(
     return writeCommand(streams, outcome, asJson);
   }
   if (asJson) streams.stdout(json(outcome.data));
-  else if (outcome.text !== "") {
-    streams.stdout(
-      record.mode === "command"
-        ? capLines(outcome.text, { all: rest.includes("--all") })
-        : ensureNewline(outcome.text),
-    );
-  }
+  // Only list verbs cap their text at 100 lines, in their handlers, behind their
+  // own `--all`; any other text, a `show` body included, is printed whole.
+  else if (outcome.text !== "") streams.stdout(ensureNewline(outcome.text));
   return 0;
 }
 

@@ -364,6 +364,15 @@ describe("bdk config schema", () => {
     );
   });
 
+  it("exit 0: text mode prints the whole schema, past 100 lines", () => {
+    const result = bdk(["config", "schema"], fixture().root);
+    expect(result.code).toBe(0);
+    expect(result.stdout.split("\n").length).toBeGreaterThan(100);
+    expect(JSON.parse(result.stdout)).toStrictEqual(
+      JSON.parse(readFileSync(join(REPO_ROOT, "schema/settings.json"), "utf8")),
+    );
+  });
+
   it("exit 3: input/not-found", () => {
     refused(bdk(["config", "schema", "execution", "--json"], fixture().root), 3, "input/not-found");
   });

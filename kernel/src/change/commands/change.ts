@@ -58,7 +58,7 @@ export function newCommand(deps: ChangeDeps): Handler {
 export function statusCommand(deps: ChangeDeps): Handler {
   return async (context) => {
     const report = await changeStatus(deps, active(context.change), globalDir(context.runtime));
-    return isRefusal(report) ? report : { data: report, text: capLines(renderStatus(report)) };
+    return isRefusal(report) ? report : { data: report, text: renderStatus(report) };
   };
 }
 

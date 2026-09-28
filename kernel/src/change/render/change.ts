@@ -9,6 +9,9 @@ import type {
   TakeoverReport,
 } from "../domain/change.ts";
 
+/** Open tickets the status text lists; `attempt list` pages the rest. */
+const TICKETS_SHOWN = 20;
+
 export function renderNew(report: NewReport): string {
   const how = report.profile.defaulted ? "default" : "set by the caller";
   const lines = [
@@ -42,11 +45,13 @@ export function renderStatus(report: StatusReport): string {
     report.parked.options.forEach((option, i) => lines.push(`  ${String(i + 1)}. ${option}`));
     lines.push(`resume: ${report.parked.resume}`);
   }
-  for (const ticket of report.openTickets) {
+  for (const ticket of report.openTickets.slice(0, TICKETS_SHOWN)) {
     lines.push(
       `open ticket ${ticket.ticket}: ${ticket.loop} ${ticket.target} attempt ${String(ticket.attempt)}/${String(ticket.of)}`,
     );
   }
+  const more = report.openTickets.length - TICKETS_SHOWN;
+  if (more > 0) lines.push(`... ${String(more)} more open tickets (bdk attempt list)`);
   if (report.overriddenKeys.length > 0) {
     lines.push(`overridden by global or local: ${report.overriddenKeys.join(", ")}`);
   }

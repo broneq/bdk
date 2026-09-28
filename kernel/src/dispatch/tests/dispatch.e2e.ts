@@ -211,6 +211,16 @@ describe("bdk dispatch show", () => {
     expect(byPath.stdout).toBe(text);
   });
 
+  it("exit 0: a package over 100 lines prints whole in text mode", () => {
+    const change = started();
+    const ticket = opened(change, "verify-fix", "01");
+    const text = read(change.root, built(change, "01", "verifier", ticket).path);
+    expect(text.split("\n").length).toBeGreaterThan(100);
+    const shown = bdk(["dispatch", "show", ticket], change.root);
+    expect(shown.code).toBe(0);
+    expect(shown.stdout).toBe(text);
+  });
+
   it("exit 3 input/not-found: a ticket without a package, a path outside dispatch/", () => {
     const change = started();
     refused(bdk(["dispatch", "show", "A-00000000", "--json"], change.root), 3, "input/not-found");

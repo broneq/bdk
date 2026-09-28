@@ -23255,6 +23255,7 @@ function attemptRegistrations(deps) {
 }
 
 // kernel/src/change/render/change.ts
+var TICKETS_SHOWN = 20;
 function renderNew(report2) {
   const how = report2.profile.defaulted ? "default" : "set by the caller";
   const lines = [
@@ -23288,11 +23289,13 @@ function renderStatus(report2) {
     report2.parked.options.forEach((option, i) => lines.push(`  ${String(i + 1)}. ${option}`));
     lines.push(`resume: ${report2.parked.resume}`);
   }
-  for (const ticket of report2.openTickets) {
+  for (const ticket of report2.openTickets.slice(0, TICKETS_SHOWN)) {
     lines.push(
       `open ticket ${ticket.ticket}: ${ticket.loop} ${ticket.target} attempt ${String(ticket.attempt)}/${String(ticket.of)}`
     );
   }
+  const more = report2.openTickets.length - TICKETS_SHOWN;
+  if (more > 0) lines.push(`... ${String(more)} more open tickets (bdk attempt list)`);
   if (report2.overriddenKeys.length > 0) {
     lines.push(`overridden by global or local: ${report2.overriddenKeys.join(", ")}`);
   }
@@ -23930,7 +23933,7 @@ function newCommand(deps) {
 function statusCommand(deps) {
   return async (context) => {
     const report2 = await changeStatus(deps, active5(context.change), globalDir(context.runtime));
-    return isRefusal(report2) ? report2 : { data: report2, text: capLines(renderStatus(report2)) };
+    return isRefusal(report2) ? report2 : { data: report2, text: renderStatus(report2) };
   };
 }
 function listCommand4(deps) {
@@ -25720,11 +25723,7 @@ async function run(index2, byId, options, invocation) {
     return writeCommand(streams, outcome, asJson);
   }
   if (asJson) streams.stdout(json(outcome.data));
-  else if (outcome.text !== "") {
-    streams.stdout(
-      record4.mode === "command" ? capLines(outcome.text, { all: rest.includes("--all") }) : ensureNewline(outcome.text)
-    );
-  }
+  else if (outcome.text !== "") streams.stdout(ensureNewline(outcome.text));
   return 0;
 }
 async function dispatch(record4, registration, options, rest, asJson, { cwd, runtime }) {

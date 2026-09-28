@@ -402,13 +402,16 @@ describe("change status", () => {
     });
   });
 
-  it("keeps the text at most 100 lines", async () => {
+  it("lists 20 open tickets in the text and points at attempt list for the rest", async () => {
     const h = harness(repository());
     for (let i = 0; i < 150; i++) addAttempt(h.store, `A-${String(i).padStart(8, "0")}`);
 
     const result = await h.run(["change", "status"]);
 
-    expect(result.stdout.trimEnd().split("\n").length).toBeLessThanOrEqual(100);
+    const lines = result.stdout.trimEnd().split("\n");
+    expect(lines.filter((line) => line.startsWith("open ticket "))).toHaveLength(20);
+    expect(lines).toContain("... 130 more open tickets (bdk attempt list)");
+    expect(lines.length).toBeLessThanOrEqual(100);
   });
 
   it("refuses without an active Change", async () => {
