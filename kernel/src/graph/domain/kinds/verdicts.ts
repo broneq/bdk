@@ -2,7 +2,7 @@
 // kinds; design D-4): the latest `report` naming the node must pass and no
 // live blocker may name it. The report is read, never hashed.
 import { BaseKind, live, partFiles } from "./kind.ts";
-import type { ChangeView, Check, Inputs } from "./kind.ts";
+import type { ChangeView, Check, GraphEntry, Inputs } from "./kind.ts";
 
 const PASSING = ["done", "done-with-concerns"];
 
@@ -39,7 +39,33 @@ function verdictChecks(view: ChangeView, id: string): Check[] {
           why: `live blocker ${blockers.map((entry) => entry.id).join(", ")} names ${id}`,
           instead: "resolve the blocker: bdk log resolve <id>",
         };
-  return [verdict, blocker];
+  return [verdict, blocker, ...(latest === undefined ? [] : [evidenceCheck(view, latest)])];
+}
+
+/** The `evidence` ids the verdict report lists name manifests, and each `pass` is cited (T4). */
+function evidenceCheck(view: ChangeView, report: GraphEntry): Check {
+  const manifests = new Map(view.evidence.map((manifest) => [manifest.id, manifest]));
+  for (const id of view.reportEvidence(report)) {
+    const manifest = manifests.get(id);
+    if (manifest === undefined) {
+      return {
+        id: "evidence",
+        ok: false,
+        why: `the report lists ${id}, which names no evidence manifest of the Change`,
+      };
+    }
+    if (manifest.verdict === "pass" && !manifest.cited) {
+      return {
+        id: "evidence",
+        ok: false,
+        why: `the report lists ${id}, a pass without a citation`,
+        rule: "policy/missing-citation",
+        instead:
+          "bdk evidence record <kind> <file> --ticket <ticket> --verdict pass --cite <pointer>",
+      };
+    }
+  }
+  return { id: "evidence", ok: true };
 }
 
 export class PlanVerifyKind extends BaseKind {

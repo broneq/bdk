@@ -55,6 +55,18 @@ export const attemptOpenOutput = z
       })
       .optional()
       .meta({ description: "Present on the round's escalation ticket (--escalate)." }),
+    steps: z
+      .array(
+        z.strictObject({
+          kind: z.string().min(1).meta({ description: "The step's evidence kind." }),
+          role: z.string().min(1).meta({ description: "The role that runs the step." }),
+        }),
+      )
+      .optional()
+      .meta({
+        description:
+          "The post-task steps the orchestrator dispatches under the ticket after the implementer, in pipeline order; only for task-redispatch, verify-fix and review-fix.",
+      }),
   })
   .meta({
     title: "bdk attempt open --json",
@@ -72,6 +84,11 @@ export const attemptOpenOutput = z
         narrowedFrom: "full",
         dropped: [{ id: "L-d3f6g8h2", summary: "rename helper for clarity" }],
         entry: "L-k4n8p2rt",
+        steps: [
+          { kind: "simplify", role: "simplifier" },
+          { kind: "tests-scoped", role: "runner" },
+          { kind: "lint", role: "runner" },
+        ],
       },
     ],
   }) satisfies z.ZodType<AttemptOpenReport>;
@@ -102,7 +119,10 @@ export const attemptCloseOutput = z
     }),
     notRunCount: count.meta({ description: "The round's consecutive not-run closes." }),
     next: z.strictObject({
-      action: z.enum(["post-task-steps", "retry", "narrow", "escalate", "parked"]),
+      action: z.enum(["commit", "retry", "narrow", "escalate", "parked"]).meta({
+        description:
+          "commit after ok, the step evidence having passed; the ladder's rung after fail or not-run.",
+      }),
       scope: scope.optional(),
       entry: entryId.optional().meta({ description: "The ladder question that parks the Change." }),
       why: z.string().optional(),

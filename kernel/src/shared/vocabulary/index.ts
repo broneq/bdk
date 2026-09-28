@@ -66,6 +66,7 @@ export const GATE_PASSERS = ["user", "policy"] as const;
 /** The role skills under `skills/roles/` (`role-contracts`, Role skills). */
 export const ROLES = [
   "implementer",
+  "simplifier",
   "verifier",
   "design-verifier",
   "reviewer",

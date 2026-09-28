@@ -31,10 +31,10 @@ Build the dispatch package file for a target, role and ticket. The kernel SHALL 
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
   - `<target>` (required). The ticket's target: a task id, a part id, the Change id or an artifact id (`kernel-state`, Attempt record).
-  - `<role>` (required). Role skill under skills/roles/: implementer, verifier, design-verifier, reviewer, pr-reviewer, runner, scout.
+  - `<role>` (required). Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, pr-reviewer, runner, scout.
   - `<ticket>` (required).
-- **Behaviour:** The ticket must be open and its `target` must equal `<target>` (`policy/no-open-ticket` otherwise); a role outside the seven is `input/invalid-argument`, a target the Change does not hold is `input/not-found`. The kernel writes `dispatch/<target>-<role>-<ticket>.md` and replaces an earlier package of the same ticket. The frontmatter is `kernel-state`, Dispatch package, stamped whole by the kernel, with `adapter` from the role-to-adapter map of `role-contracts` and `report` set to `reports/<target>-<role>-<ticket>.md`. The body comes from one template held in the kernel and not overridable (T23-D11), in this order: the Change intent summary; the target (a task target embeds the task's full text from its plan part, `Files:`, `do-not-touch` and `stop-rule` included, its heading one level down; any other target names the artifact paths to read); the ledger entries of the target (every `decision` with `status: accepted` and every `blocker` not `resolved` whose refs name the target, its part or one of its `Files:`, in full; for every other entry type only a count and the command `bdk log list --for <target>`, T23-D13); the role skill body from the plugin, without frontmatter and with its headings one level down so its `# Role: <role>` sits beside the package sections; the command `bdk rules show --ticket <ticket>` (T23-D5); for `verifier` and `design-verifier` the resolved `policy.verifier.blocking-categories` and `policy.verifier.not-a-fail` lists (P8); the return contract (store the report with `bdk log ingest --ticket <ticket>`, return only the envelope). `template-hash` is the sha256 of the template skeleton, the role body and the texts `rules show --ticket` would print for the ticket, each normalised to LF, without trailing whitespace and without frontmatter (T23-D10, P10). A task target whose executable fields contain a placeholder is `policy/placeholder` (the task grammar check of `validate`). A package above 12 288 bytes is `policy/package-too-large`, whose `why` names the size and the largest section, and nothing is written. The orchestrator hands the agent the package path only (`role-contracts`, Dispatch prompt).
-- **Writes:** `.bdk/changes/<id>/dispatch/`
+- **Behaviour:** The ticket must be open and its `target` must equal `<target>` (`policy/no-open-ticket` otherwise); a role outside the eight is `input/invalid-argument`, a target the Change does not hold is `input/not-found`. The kernel writes `dispatch/<target>-<role>-<ticket>.md`, replacing an earlier package of the same ticket and role; the packages of the ticket's other roles stay (T23-D42). It then stamps the package path as `package` in the ticket's attempt record: the ticket's active package, through which `dispatch show <ticket>`, `rules show --ticket`, `log add --ticket`, `log ingest --ticket` and `evidence record --ticket` find the role. The orchestrator builds a ticket's next package only after the agent of the active one has returned (`role-contracts`, Dispatch prompt). The frontmatter is `kernel-state`, Dispatch package, stamped whole by the kernel, with `adapter` from the role-to-adapter map of `role-contracts` and `report` set to `reports/<target>-<role>-<ticket>.md`. The body comes from one template held in the kernel and not overridable (T23-D11), in this order: the Change intent summary; the target (a task target embeds the task's full text from its plan part, `Files:`, `do-not-touch` and `stop-rule` included, its heading one level down; any other target names the artifact paths to read); the ledger entries of the target (every `decision` with `status: accepted` and every `blocker` not `resolved` whose refs name the target, its part or one of its `Files:`, in full; for every other entry type only a count and the command `bdk log list --for <target>`, T23-D13); the role skill body from the plugin, without frontmatter and with its headings one level down so its `# Role: <role>` sits beside the package sections; the command `bdk rules show --ticket <ticket>` (T23-D5); for `verifier` and `design-verifier` the resolved `policy.verifier.blocking-categories` and `policy.verifier.not-a-fail` lists (P8); for `runner` a `Checks` section (T23-D44) holding, for each post-task step kind the runner runs (`kernel-pipeline`, Artifact kinds), the configured commands with `{files}` replaced by the target's executable files (for `tests-scoped` every `tools.test` entry of tier `fast`, its `related` form, else its `scoped` form, else its `command`; for `lint` every `tools.lint` entry, its `scoped` form, else its `command`), the kind's `when` texts, and the exact line `bdk evidence record <kind> <file> --ticket <ticket> --verdict pass|fail|not-run --cite <citation>`, with the sentence that a kind without a configured command is recorded `not-run` with the reason; the return contract (store the report with `bdk log ingest --ticket <ticket>`, return only the envelope). `template-hash` is the sha256 of the template skeleton, the role body and the texts `rules show --ticket` would print for the ticket, each normalised to LF, without trailing whitespace and without frontmatter (T23-D10, P10). A task target whose executable fields contain a placeholder is `policy/placeholder` (the task grammar check of `validate`). A package above 12 288 bytes is `policy/package-too-large`, whose `why` names the size and the largest section, and nothing is written. The orchestrator hands the agent the package path only (`role-contracts`, Dispatch prompt).
+- **Writes:** `.bdk/changes/<id>/dispatch/`, `.bdk/changes/<id>/attempts/`
 - **Output:** `schema/cli/output/dispatch-build.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/no-open-ticket`, `policy/package-too-large`, `policy/placeholder`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
 - **Example:**
@@ -110,6 +110,26 @@ Build the dispatch package file for a target, role and ticket. The kernel SHALL 
 - **WHEN** the same package is built twice with no change to the plugin, the rules or the settings
 - **THEN** both builds carry the same `template-hash`, and a change to the role body changes it
 
+#### Scenario: one package per role in a ticket
+
+- **WHEN** `dispatch build 02-3 implementer A-7f3k9m2q`, then `dispatch build 02-3 simplifier A-7f3k9m2q`, then `dispatch build 02-3 runner A-7f3k9m2q` run
+- **THEN** `dispatch/` holds the three packages, the attempt record's `package` names the runner package, and `bdk dispatch show A-7f3k9m2q` prints the runner package
+
+#### Scenario: rebuilt role package replaces its earlier one
+
+- **WHEN** `dispatch build 02-3 runner A-7f3k9m2q` runs twice
+- **THEN** `dispatch/` holds one runner package for the ticket
+
+#### Scenario: runner checks section
+
+- **WHEN** `tools.test` holds a `fast` entry with `related: "vitest related {files}"`, `tools.lint` holds an entry with `scoped: "eslint {files}"`, task `02-3` has `Files: src/auth/login.ts, docs/login.md`, and `dispatch build 02-3 runner <ticket>` runs
+- **THEN** the `Checks` section names the `vitest related` command under `tests-scoped` and the `eslint` command under `lint`, each with `src/auth/login.ts` in place of `{files}` and without `docs/login.md`, each followed by its `bdk evidence record` line with the ticket
+
+#### Scenario: kind without a configured command
+
+- **WHEN** `tools.lint` is empty and a runner package is built
+- **THEN** the `lint` entry of the `Checks` section tells the runner to record `lint` as `not-run` with the reason
+
 ### Requirement: bdk dispatch show
 
 Print a dispatch package by path or ticket. The kernel SHALL implement the command as this requirement and its output schema specify.
@@ -119,7 +139,7 @@ Print a dispatch package by path or ticket. The kernel SHALL implement the comma
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
   - `<ticket|path>` (required). A ticket id, or a package path relative to the working directory or absolute.
-- **Behaviour:** Available to subagents, so an agent reads its package without touching `.bdk/` directly (Key boundaries). A path must name a file under the active Change's `dispatch/`; a ticket resolves to its package. Text mode prints the file verbatim; `--json` adds the parsed frontmatter. A path outside `dispatch/`, a missing file or a ticket without a package is `input/not-found`.
+- **Behaviour:** Available to subagents, so an agent reads its package without touching `.bdk/` directly (Key boundaries). A path must name a file under the active Change's `dispatch/`; a ticket resolves to its active package (`kernel-state`, Attempt record, `package`). Text mode prints the file verbatim; `--json` adds the parsed frontmatter. A path outside `dispatch/`, a missing file or a ticket without a package is `input/not-found`.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/dispatch-show.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).

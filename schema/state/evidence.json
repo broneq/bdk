@@ -22,6 +22,24 @@
       ]
     },
     "tree-hash": { "$ref": "common.json#/$defs/hash" },
+    "tree": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": { "$ref": "common.json#/$defs/relativePath" },
+          "hash": {
+            "anyOf": [
+              { "$ref": "common.json#/$defs/hash" },
+              { "type": "string", "const": "absent" }
+            ]
+          }
+        },
+        "required": ["path", "hash"],
+        "additionalProperties": false
+      },
+      "description": "The covered files the tree hash was computed over, in path order; `absent` for a deleted file."
+    },
     "files": {
       "minItems": 1,
       "type": "array",
@@ -53,6 +71,7 @@
     "author",
     "source",
     "tree-hash",
+    "tree",
     "files"
   ],
   "additionalProperties": false

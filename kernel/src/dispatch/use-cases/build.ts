@@ -1,16 +1,19 @@
 // `bdk dispatch build <target> <role> <ticket>` (`kernel-cli/dispatch`;
-// T23-D31 to D33, D37): the package of an open ticket from the one template,
-// stamped whole, at most 12 288 bytes. Nothing is written before every check
-// has passed.
+// T23-D31 to D33, D37, D42): the package of an open ticket from the one
+// template, stamped whole, at most 12 288 bytes. A ticket keeps one package per
+// role, and the last one built is its active package. Nothing is written
+// before every check has passed.
 import { createHash } from "node:crypto";
 import { join, posix } from "node:path";
 
 import { ROLE_ADAPTERS } from "../../export/index.ts";
-import { artifactPaths } from "../../graph/index.ts";
+import { toolEntries } from "../../ctx/index.ts";
+import { artifactPaths, targetSteps } from "../../graph/index.ts";
 import { verifierPolicy, withChangeIndex } from "../../log/index.ts";
 import type { VerifierCategory } from "../../log/index.ts";
 import { roleSections } from "../../rules/index.ts";
 import { readKernelVersion, resolveOrRefuse } from "../../shared/config/index.ts";
+import type { Resolved } from "../../shared/config/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -22,6 +25,7 @@ import {
   readPlanParts,
   renderDocument,
   splitFrontmatter,
+  stampPackage,
   STATE_KINDS,
   TASK_ID,
   taskHolders,
@@ -30,6 +34,7 @@ import {
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import { ROLES } from "../../shared/vocabulary/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
+import { checksText } from "../domain/checks.ts";
 import { selectEntries, taskText } from "../domain/entries.ts";
 import type { BuildReport } from "../domain/report.ts";
 import {
@@ -105,6 +110,9 @@ export function buildPackage(
     const verifier = role === "verifier" || role === "design-verifier";
     const policy = verifier ? verifierPolicy(deps, change, globalDir) : undefined;
     if (policy !== undefined && isRefusal(policy)) return policy;
+    const checks =
+      role === "runner" ? await runnerChecks(deps, change, index, globalDir, input, resolved) : "";
+    if (typeof checks !== "string") return checks;
 
     const name = `${input.target}-${role}-${input.ticket}.md`;
     const changeRel = posix.relative(change.projectRoot, change.dir);
@@ -126,8 +134,9 @@ export function buildPackage(
         report,
         blocking: categoryList(policy?.blocking ?? []),
         "not-a-fail": categoryList(policy?.notAFail ?? []),
+        checks,
       },
-      verifier,
+      verifier ? "verifier" : role === "runner" ? "runner" : undefined,
     );
     const rules = roleSections(deps, resolved, role).map((section) => section.text);
     const templateHash = hashOf([templateSkeleton(), roleBody, ...rules]);
@@ -158,12 +167,8 @@ export function buildPackage(
     }
     const dir = join(change.dir, "dispatch");
     const path = join(dir, name);
-    for (const earlier of deps.store.list(dir)) {
-      if (earlier !== name && earlier.endsWith(`-${input.ticket}.md`)) {
-        deps.store.remove(join(dir, earlier));
-      }
-    }
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
+    stampPackage(deps.store, change.dir, input.ticket, posix.relative(change.projectRoot, path));
     return {
       path: posix.relative(change.projectRoot, path),
       bytes: size,
@@ -178,6 +183,21 @@ export function buildPackage(
       entries: { full: selection.full.map((entry) => entry.id), counted: selection.counted },
     };
   });
+}
+
+/** The runner's `Checks` text: the runner's steps in pipeline order with the project's commands. */
+async function runnerChecks(
+  deps: DispatchDeps,
+  change: ActiveChange,
+  index: IndexDb,
+  globalDir: string,
+  input: BuildInput,
+  resolved: Resolved,
+): Promise<string | Refusal> {
+  const steps = await targetSteps(deps, change, index, globalDir, input.target);
+  if (isRefusal(steps)) return steps;
+  const kinds = steps.steps.filter((step) => step.role === "runner").map((step) => step.kind);
+  return checksText(kinds, toolEntries(resolved), steps.files, input.ticket);
 }
 
 function isRole(role: string): role is Role {

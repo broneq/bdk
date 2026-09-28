@@ -41,6 +41,8 @@ describe("the layout maps each path to its kind", () => {
     ["evidence", at("evidence/02-3-E-5hq0m2vd.md"), example.evidence],
     ["dispatch", at("dispatch/02-3-implementer-A-7f3kx2p9.md"), example.dispatch],
     ["report", at("reports/02-3-implementer-A-7f3kx2p9.md"), example.report],
+    ["pruned", at("dispatch/pruned.md"), example.pruned],
+    ["pruned", at("reports/pruned.md"), { ...example.pruned, dir: "reports" }],
     ["rule", "/repo/.bdk/rules/TQ-7.md", example.rule],
     [
       "change",
@@ -67,7 +69,7 @@ describe("the layout maps each path to its kind", () => {
   it("maps spec deltas and evidence captures without a schema", () => {
     const store = memoryStore();
     const delta = at("spec-delta/auth-login.md");
-    const capture = at("evidence/02-3-E-5hq0m2vd.junit.xml");
+    const capture = at("evidence/02-3-E-5hq0m2vd-junit.xml");
     writeDocument(store, delta, { body: "## ADDED Requirements\n" });
     writeDocument(store, capture, { body: "<testsuites/>\n" });
     expect(readDocument(store, delta)).toStrictEqual({
@@ -91,6 +93,8 @@ describe("paths outside the layout", () => {
     at("log/decision-L-m2x9v7qa.md"),
     at("plan/parts/2-login.md"),
     at("attempts/A-7f3kx2p9.md"),
+    at("evidence/02-3-E-5hq0m2vd.junit.xml"),
+    at("evidence/pruned.md"),
     "/repo/.bdk/changes/login/change.md",
     "/repo/.bdk/rules/nested/CQ-1.md",
     "/repo/.bdk/settings.yaml",
@@ -181,6 +185,7 @@ describe("validation", () => {
     ["evidence/02-4-E-5hq0m2vd.md", example.evidence, "target", undefined],
     ["dispatch/02-3-reviewer-A-7f3kx2p9.md", example.dispatch, "role", undefined],
     ["reports/02-3-reviewer-A-7f3kx2p9.md", example.report, "role", undefined],
+    ["reports/pruned.md", example.pruned, "dir", undefined],
   ])("checks %s against the document, naming %s", (path, data, field, value) => {
     const document = value === undefined ? data : { ...data, [field]: value };
     const { why } = refusal(() => {

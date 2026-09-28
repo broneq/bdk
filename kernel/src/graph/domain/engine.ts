@@ -9,6 +9,9 @@ import { GATE_KIND, stageCommand } from "./pipeline.ts";
 import type { Pipeline, PipelineNode } from "./pipeline.ts";
 import type { NodeState } from "../../shared/vocabulary/index.ts";
 
+/** The verdicts that complete a post-task step node (`kernel-pipeline`, Node states). */
+const DONE_VERDICTS: readonly (string | undefined)[] = ["pass", "not-run"];
+
 export interface GraphInput {
   readonly pipeline: Pipeline;
   readonly kinds: KindRegistry;
@@ -101,11 +104,21 @@ export function evaluate(input: GraphInput): Graph {
   const done = latestDone(view.entries);
   const results = new Map<string, GraphNode>();
 
-  const expand = (ids: readonly string[]): string[] =>
+  /**
+   * Requirement ids with skipped nodes dropped and collections replaced by
+   * their instances; an evidence instance (`nn`) requires only the instance
+   * with its own number when the collection has one (T23-D40).
+   */
+  const expand = (ids: readonly string[], nn?: string): string[] =>
     ids.flatMap((id) => {
       const draft = drafts.get(id);
       if (draft?.skipped !== undefined) return [];
-      return draft?.instances !== undefined && draft.instances.length > 0 ? draft.instances : [id];
+      if (draft?.instances === undefined || draft.instances.length === 0) return [id];
+      const paired =
+        nn === undefined
+          ? undefined
+          : draft.instances.find((instance) => drafts.get(instance)?.nn === nn);
+      return paired === undefined ? draft.instances : [paired];
     });
 
   const resolve = (id: string): GraphNode | undefined => {
@@ -142,7 +155,8 @@ export function evaluate(input: GraphInput): Graph {
     if (draft.skipped !== undefined) {
       return { ...base, state: "skipped", requires: [], why: draft.skipped };
     }
-    const requires = [...expand(draft.node.requires ?? []), ...draft.extra];
+    const evidenced = draft.kind.doneBy.through === "evidence" ? draft.nn : undefined;
+    const requires = [...expand(draft.node.requires ?? [], evidenced), ...draft.extra];
     const open = firstOpen(requires);
 
     if (draft.kind.doneBy.through === "gate") {
@@ -163,6 +177,22 @@ export function evaluate(input: GraphInput): Graph {
         : { ...base, requires, state: "blocked", why: open };
     }
     if (draft.kind.doneBy.through === "construction") return { ...base, requires, state: "done" };
+    if (evidenced !== undefined) {
+      const latest = draft.kind.evidence?.(view, evidenced);
+      if (latest !== undefined && !latest.fresh) {
+        const why = `evidence ${latest.id} of ${latest.target} was recorded on another tree`;
+        return { ...base, requires, state: "stale", why };
+      }
+      if (latest !== undefined && DONE_VERDICTS.includes(latest.verdict)) {
+        return { ...base, requires, state: "done" };
+      }
+      const why =
+        latest === undefined
+          ? undefined
+          : `evidence ${latest.id} of ${latest.target} says ${latest.verdict ?? "no verdict"}`;
+      if (open !== undefined) return { ...base, requires, state: "blocked", why: open };
+      return { ...base, requires, state: "ready", ...(why === undefined ? {} : { why }) };
+    }
 
     const recorded = draft.instances === undefined ? done.get(draft.id) : undefined;
     if (recorded !== undefined) {
@@ -224,9 +254,13 @@ export function evaluate(input: GraphInput): Graph {
   const gates = nodes.flatMap((node) =>
     node.gate === undefined || node.state === "skipped" ? [] : [node.gate],
   );
+  // A stale step waits for its requirements; any other stale node is redone at once.
+  const waiting = (node: GraphNode): boolean =>
+    kinds.get(node.kind)?.doneBy.through === "evidence" &&
+    node.requires.some((id) => byId.get(id)?.state !== "done");
   const next = nodes.find(
     (node) =>
-      (node.state === "ready" || node.state === "stale") &&
+      (node.state === "ready" || (node.state === "stale" && !waiting(node))) &&
       !node.sealed &&
       node.kind !== GATE_KIND &&
       !(node.instances !== undefined && node.instances.length > 0),

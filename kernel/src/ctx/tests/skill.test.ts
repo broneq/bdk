@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { settingsRegistry } from "../../registrations.ts";
+import { resolveOrRefuse } from "../../shared/config/index.ts";
 import { memoryStore } from "../../shared/store/index.ts";
 import { renderContext } from "../render/sections.ts";
+import { sectionsOf } from "../use-cases/parts.ts";
 import { composeSkill } from "../use-cases/skill.ts";
 import type { CtxInput } from "../use-cases/input.ts";
 
@@ -210,5 +212,29 @@ describe("ctx skill", () => {
       kind: "file",
       source: "skills/cr/references/review-engine.md",
     });
+  });
+});
+
+describe("concurrency part", () => {
+  function concurrency(project: Record<string, string> = {}) {
+    const given = input(project);
+    const resolved = resolveOrRefuse(given, { removed: "ignore" });
+    if ("refused" in resolved) throw new Error(`refused: ${resolved.why}`);
+    return sectionsOf(given, resolved, { kind: "concurrency" });
+  }
+
+  it("states the default of execution.concurrency", () => {
+    expect(concurrency()).toStrictEqual([
+      {
+        title: "Concurrency",
+        body: "Run at most 5 agents at once.\n",
+        part: { kind: "concurrency", source: "execution.concurrency" },
+      },
+    ]);
+  });
+
+  it("states the value a project sets", () => {
+    const [section] = concurrency({ ".bdk/settings.yaml": "execution:\n  concurrency: 3\n" });
+    expect(section?.body).toBe("Run at most 3 agents at once.\n");
   });
 });

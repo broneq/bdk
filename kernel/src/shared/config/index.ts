@@ -19,7 +19,7 @@ export { declaredSteps, unknownKeyMessage, validateLayers } from "./validate.ts"
 export type { Validated } from "./validate.ts";
 export { PLANNED_KEYS, REMOVED_KEYS } from "./known.ts";
 export type { PlannedKey, RemovedKey } from "./known.ts";
-export { keyPaths, keySteps, leafPaths, unwrap } from "./keys.ts";
+export { appendOnly, isAppendOnly, keyPaths, keySteps, leafPaths, unwrap } from "./keys.ts";
 export type { KeyNode, KeyStep } from "./keys.ts";
 export { promptsModule } from "./modules.ts";
 export { promptContent, resolvePrompts } from "./prompts.ts";

@@ -27,6 +27,7 @@ import {
   writeDesign,
   writeDesignPart,
   writeEntry,
+  writeManifest,
   writePlanPart,
 } from "./support.ts";
 import type { Harness } from "./support.ts";
@@ -60,7 +61,7 @@ describe("settings", () => {
   const registry = settingsRegistry();
   const check = (values: Record<string, unknown>) => {
     const layers: Layer[] = [{ name: "project", path: "/p.yaml", text: "", values }];
-    return validateLayers(registry, layers, mergeLayers(layers));
+    return validateLayers(registry, layers, mergeLayers(layers, registry.appendOnly));
   };
 
   it("policy.gates resolve to manual by default and accept auto", () => {
@@ -266,6 +267,8 @@ describe("bdk next", () => {
       at: T0,
       "input-hash": `sha256:${"a".repeat(64)}`,
     });
+    for (const kind of ["simplify", "tests-scoped", "lint"])
+      await writeManifest(h.store, kind, "01");
     const text = (await h.run(["next"], T1)).stdout;
     // review is stale against the fake git's empty tree, so it is next
     expect(text).toContain("# review (review)");
@@ -726,5 +729,39 @@ describe("bdk done", () => {
     });
     const report = doneOutput.parse((await h.run(["done", "plan-verify", "--json"], T3)).json);
     expect(report.next).toBe("execute-part:01");
+  });
+
+  it("checks the evidence ids the verdict report lists", async () => {
+    const h = harness();
+    await pastDesignGate(h);
+    writePlanPart(h.store, "01");
+    await h.run(["done", "plan"], T2);
+    const verdict = (evidence: string[]) => {
+      h.store.write(
+        `${DIR}/reports/plan-verify-plan-verifier-A-00000001.md`,
+        `---\nschema: 1\nticket: A-00000001\nrole: plan-verifier\nstatus: done\nfiles: []\nentries: []\nevidence: [${evidence.join(", ")}]\n---\nPASS\n`,
+      );
+    };
+    writeEntry(h.store, {
+      type: "report",
+      at: T2,
+      source: "agent:plan-verifier",
+      refs: ["plan-verify"],
+      report: "reports/plan-verify-plan-verifier-A-00000001.md",
+    });
+    verdict(["E-zzzzzzzz"]);
+    expect((await h.run(["done", "plan-verify", "--json"], T3)).json).toMatchObject({
+      rule: "policy/validation-failed",
+      why: containing("E-zzzzzzzz, which names no evidence manifest"),
+    });
+    const uncited = await writeManifest(h.store, "tests-scoped", "01", { citations: [] });
+    verdict([uncited]);
+    expect((await h.run(["done", "plan-verify", "--json"], T3)).json).toMatchObject({
+      rule: "policy/missing-citation",
+      why: containing(`${uncited}, a pass without a citation`),
+    });
+    const cited = await writeManifest(h.store, "tests-scoped", "01");
+    verdict([cited]);
+    expect((await h.run(["done", "plan-verify", "--json"], T3)).code).toBe(0);
   });
 });

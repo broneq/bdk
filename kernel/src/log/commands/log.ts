@@ -75,7 +75,9 @@ export function listCommand(deps: LogDeps): Handler {
       ...optional("status", text(context.flags["--status"])),
       ...(context.flags["--review"] === true ? { review: true } : {}),
       ...optional("for", target),
+      ...optional("sinceTicket", text(context.flags["--since-ticket-start"])),
     });
+    if (isRefusal(items)) return items;
     return {
       data: listPage(items, { all, ...optional("for", target) }),
       text: capLines(renderList(items), { all }),

@@ -12,6 +12,7 @@ import { dispatchKind } from "./dispatch.ts";
 import { entryKind } from "./entry.ts";
 import { evidenceKind } from "./evidence.ts";
 import { planIndexKind, planPartKind } from "./plan.ts";
+import { prunedKind } from "./pruned.ts";
 import { reportKind } from "./report.ts";
 import { ruleKind } from "./rule.ts";
 
@@ -22,6 +23,7 @@ export const STATE_KINDS = {
   evidence: evidenceKind,
   dispatch: dispatchKind,
   report: reportKind,
+  pruned: prunedKind,
   "plan-part": planPartKind,
   "plan-index": planIndexKind,
   design: designKind,
@@ -103,7 +105,12 @@ const CHANGE_ROWS: readonly Row[] = [
     kind: "evidence",
     check: same({ id: field("id"), target: field("target") }),
   },
-  { pattern: new RegExp(`^evidence/.+-E-${ID}\\.(?!md$)[a-z0-9.]+$`), kind: "evidence-capture" },
+  { pattern: new RegExp(`^evidence/.+-E-${ID}-[^/]+$`), kind: "evidence-capture" },
+  {
+    pattern: /^(?<dir>dispatch|reports)\/pruned\.md$/,
+    kind: "pruned",
+    check: same({ dir: field("dir") }),
+  },
   {
     pattern: new RegExp(`^dispatch/(?<role>.+)-(?<ticket>A-${ID})\\.md$`),
     kind: "dispatch",

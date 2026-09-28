@@ -7,7 +7,17 @@ import { readDocument, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { logRegistrations } from "../index.ts";
 import { logIngestOutput } from "../schema/outputs.ts";
-import { AUTHOR, CHANGE, DIR, fakeGit, logDeps, repository, ROOT, runBdk } from "./support.ts";
+import {
+  AUTHOR,
+  CHANGE,
+  DIR,
+  fakeGit,
+  logDeps,
+  repository,
+  ROOT,
+  runBdk,
+  writePackage,
+} from "./support.ts";
 
 const TICKET = "A-9c2d4f6h";
 const OTHER = "A-7f3k9m2q";
@@ -37,25 +47,7 @@ function harness(options: { role?: string; dispatch?: boolean; closed?: boolean 
     },
     body: "",
   });
-  if (options.dispatch !== false) {
-    writeDocument(store, `${DIR}/dispatch/02-${role}-${TICKET}.md`, {
-      data: {
-        schema: 1,
-        ticket: TICKET,
-        target: "02",
-        role,
-        adapter: role === "implementer" ? "worker" : "reader",
-        attempt: 1,
-        of: 2,
-        scope: "full",
-        at: "2026-09-25T10:00:01.000Z",
-        "kernel-version": "3.0.0-dev",
-        "template-hash": HASH,
-        report: reportPath(role),
-      },
-      body: "",
-    });
-  }
+  if (options.dispatch !== false) writePackage(store, TICKET, role, "02");
   const run = (argv: readonly string[], stdin?: string) =>
     runBdk(logRegistrations(deps), store, git, argv, stdin);
   return {
@@ -87,9 +79,10 @@ function manifest(store: Store, id: string, ticket: string): void {
       author: AUTHOR,
       source: "kernel",
       "tree-hash": HASH,
+      tree: [],
       files: [
         {
-          path: `.bdk/changes/${CHANGE}/evidence/02-${id}.junit.xml`,
+          path: `.bdk/changes/${CHANGE}/evidence/02-${id}-junit.xml`,
           hash: HASH,
           stored: "committed",
         },
@@ -179,6 +172,23 @@ describe("log ingest", () => {
       data: { ticket: TICKET, role: "implementer", files: [] },
       body: "# Second\n",
     });
+  });
+
+  it("keeps each role's report of a ticket: a runner after the implementer", async () => {
+    const h = harness({ role: "implementer" });
+    await h.ingest(report(["status: done", "files: [src/a.ts]", "entries: []", "evidence: []"]));
+    const implementer = h.store.read(`${ROOT}/${reportPath("implementer")}`);
+    writePackage(h.store, TICKET, "runner", "02");
+    const runner = await h.ingest(report(ENVELOPE, "# Checks\n"));
+    expect(logIngestOutput.parse(runner.json)).toMatchObject({
+      role: "runner",
+      path: reportPath("runner"),
+      replaced: false,
+    });
+    expect(readDocument(h.store, `${ROOT}/${reportPath("runner")}`)).toMatchObject({
+      data: { role: "runner" },
+    });
+    expect(h.store.read(`${ROOT}/${reportPath("implementer")}`)).toBe(implementer);
   });
 
   it("accepts a blocked report with its reason", async () => {

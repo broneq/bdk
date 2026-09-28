@@ -19,8 +19,7 @@ export interface RemovedKey {
 
 export const PLANNED_KEYS: readonly PlannedKey[] = [
   { key: "policy.checkpoint.squash-at-close", owner: "T30" },
-  { key: "execution.concurrency", owner: "T23" },
-  { key: "archive.keep-evidence", owner: "T23" },
+  { key: "archive.keep-evidence", owner: "T30" },
   { key: "rules.propose-when.changes", owner: "T31" },
   { key: "rules.propose-when.authors", owner: "T31" },
   { key: "rules.propose-when.failed-attempts", owner: "T31" },

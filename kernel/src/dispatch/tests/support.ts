@@ -4,6 +4,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import type { KindRegistry } from "../../graph/domain/kinds/index.ts";
 import { withPluginFiles, writePlanPart } from "../../graph/tests/support.ts";
 import { logRegistrations } from "../../log/index.ts";
 import { AUTHOR, DIR, fakeGit, repository, runBdk } from "../../log/tests/support.ts";
@@ -26,7 +27,7 @@ const TASKS =
   "## 02-3 Verify the link\n\n**Files:**\n\n- Create: `src/auth/verify.ts`\n- Test: `src/auth/verify.test.ts`\n\n**Test cases:**\n\n- rejects an expired link\n\n**Stop rule:** stop when the token format is unclear\n";
 
 /** The plugin files the dispatch commands read, the role skills and the manifest included. */
-function withDispatchPlugin(store: Store): Store {
+export function withDispatchPlugin(store: Store): Store {
   withPluginFiles(store);
   for (const role of readdirSync(join(REPO, "skills/roles"))) {
     const path = join("skills/roles", role, "SKILL.md");
@@ -66,7 +67,10 @@ export interface DispatchHarness {
 }
 
 /** Part 02 with TASKS, `do-not-touch: src/billing/**`, and an open ticket on 02-3. */
-export function dispatchHarness(store = withDispatchPlugin(repository())): DispatchHarness {
+export function dispatchHarness(
+  store = withDispatchPlugin(repository()),
+  kinds?: KindRegistry,
+): DispatchHarness {
   writePlanPart(store, "02", { body: TASKS, doNotTouch: ["src/billing/**"] });
   ticket(store);
   const git = fakeGit();
@@ -80,6 +84,7 @@ export function dispatchHarness(store = withDispatchPlugin(repository())): Dispa
         clock: fixedClock(at),
         pluginRoot: PLUGIN,
         settings: settingsRegistry(),
+        ...(kinds === undefined ? {} : { kinds }),
       };
       return runBdk([...dispatchRegistrations(deps), ...logRegistrations(deps)], store, git, argv);
     },

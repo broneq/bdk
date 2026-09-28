@@ -25,7 +25,6 @@ import {
   refreshAll,
   refreshChange,
   selectReadOnly,
-  ticketDispatch,
   writeDocument,
 } from "../index.ts";
 import type { ChangeLocation, IndexDb, Store } from "../index.ts";
@@ -232,10 +231,11 @@ describe("refresh", () => {
         openedAt: "2026-09-25T10:00:00.000Z",
       },
     ]);
-    expect(ticketDispatch(index, CHANGE, "A-bbbbbbb1")).toStrictEqual({
-      role: "implementer",
-      path: `.bdk/changes/${CHANGE}/dispatch/02-3-implementer-A-bbbbbbb1.md`,
-    });
+    expect(
+      selectReadOnly(index, "SELECT role, path FROM dispatches WHERE ticket = 'A-bbbbbbb1'").rows,
+    ).toStrictEqual([
+      ["implementer", `.bdk/changes/${CHANGE}/dispatch/02-3-implementer-A-bbbbbbb1.md`],
+    ]);
   });
 
   it("indexes the input hash of a transition", async () => {
@@ -268,7 +268,7 @@ describe("refresh", () => {
       expect(refreshAll(index)).toBe(true);
       const id = "2026-09-25-passwordless-login";
       const count = (sql: string): unknown => selectReadOnly(index, sql).rows[0]?.[0];
-      expect(count("SELECT count(*) FROM changes")).toBe(1);
+      expect(count("SELECT count(*) FROM changes")).toBe(2);
       expect(count("SELECT count(*) FROM attempts")).toBe(4);
       expect(count("SELECT count(*) FROM dispatches")).toBe(3);
       expect(listEntries(index, id).length).toBeGreaterThan(3);
@@ -424,7 +424,7 @@ describe("typed queries", () => {
     expect(findEntry(index, CHANGE, "L-zzzzzzzz")).toBeUndefined();
   });
 
-  it("answers a ticket's role only while its attempt is open and it has a package", async () => {
+  it("lists only the open attempts", async () => {
     const store = seeded();
     writeAttempt(store, "A-bbbbbbb1", true);
     writeDispatch(store, "A-bbbbbbb1", "implementer");
@@ -432,8 +432,6 @@ describe("typed queries", () => {
     const index = await open(store);
     refreshChange(index, LIVE);
     expect(openAttempts(index, CHANGE).map((attempt) => attempt.ticket)).toEqual(["A-bbbbbbb2"]);
-    expect(ticketDispatch(index, CHANGE, "A-bbbbbbb1")).toBeUndefined();
-    expect(ticketDispatch(index, CHANGE, "A-bbbbbbb2")).toBeUndefined();
   });
 
   it("lists Changes by their latest entry, newest first", async () => {

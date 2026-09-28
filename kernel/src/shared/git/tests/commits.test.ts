@@ -19,6 +19,7 @@ import {
   runGit,
   systemGit,
   trailerCommits,
+  workTreeFiles,
   workTreePaths,
 } from "../index.ts";
 import type { Git } from "../index.ts";
@@ -52,6 +53,20 @@ const missing: Git = {
   run: (args, cwd) => runGit(args, cwd, { executable: "git-that-does-not-exist" }),
   currentBranch: () => undefined,
 };
+
+describe("workTreeFiles", () => {
+  it("lists tracked and untracked files that are not ignored, deleted tracked ones included", async () => {
+    write({ ".gitignore": "dist/\n", "dist/out.js": "x\n", "src/new.ts": "n\n" });
+    unlinkSync(join(root, "src/b.ts"));
+    expect(await workTreeFiles(systemGit, root)).toStrictEqual([
+      ".gitignore",
+      "README.md",
+      "src/a.ts",
+      "src/b.ts",
+      "src/new.ts",
+    ]);
+  });
+});
 
 describe("changedPaths", () => {
   it("lists modified, deleted, renamed and untracked paths against HEAD, sorted", async () => {

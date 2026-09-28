@@ -3,10 +3,29 @@
 import { describe, expect, it } from "vitest";
 
 import { writeEntry } from "../../graph/tests/support.ts";
-import { readAttempts, readDocument, writeDocument } from "../../shared/store/index.ts";
+import { ROOT } from "../../log/tests/support.ts";
+import {
+  readAttempts,
+  readDocument,
+  readManifests,
+  writeDocument,
+} from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { attemptCloseOutput, attemptListOutput, attemptOpenOutput } from "../schema/outputs.ts";
-import { close, cycle, DIR, envelope, harness, open, started, underTicket } from "./support.ts";
+import {
+  close,
+  cycle,
+  DIR,
+  envelope,
+  harness,
+  open,
+  packaged,
+  recorded,
+  simplified,
+  started,
+  stepsDone,
+  underTicket,
+} from "./support.ts";
 
 const NO_ESCALATION = "policy:\n  escalation:\n    enabled: false\n";
 
@@ -43,6 +62,24 @@ describe("attempt open", () => {
     expect(text.stdout).toMatch(
       /^A-\w{8} opened: task-redispatch 01-2, attempt 1 of 3, scope full/,
     );
+  });
+
+  it("lists the post-task steps in pipeline order with their roles for the code loops (T23-D41)", async () => {
+    const h = await started();
+    const steps = [
+      { kind: "simplify", role: "simplifier" },
+      { kind: "tests-scoped", role: "runner" },
+      { kind: "lint", role: "runner" },
+    ];
+    expect(
+      attemptOpenOutput.parse((await open(h, "task-redispatch", "01-1")).json).steps,
+    ).toStrictEqual(steps);
+    expect(attemptOpenOutput.parse((await open(h, "verify-fix", "01")).json).steps).toStrictEqual(
+      steps,
+    );
+    const verifier = await open(h, "verifier", "plan");
+    expect(verifier.code, verifier.stdout).toBe(0);
+    expect(attemptOpenOutput.parse(verifier.json)).not.toHaveProperty("steps");
   });
 
   it.each([
@@ -276,7 +313,7 @@ describe("attempt close", () => {
         touched: ["src/01-1.ts", "src/util.ts"],
         undeclared: ["src/util.ts"],
       },
-      next: { action: "post-task-steps" },
+      next: { action: "commit" },
     });
     const finding = entries(h.store, "finding").find((entry) => entry.id === report.findings?.[0]);
     expect(finding).toMatchObject({ source: "kernel", refs: ["01-1", "src/util.ts"] });
@@ -516,31 +553,10 @@ describe("attempt list", () => {
 });
 
 describe("attempt close: rules read (T23-D28)", () => {
-  /** The ticket's package with `role`, as `dispatch build` writes it. */
-  function packaged(h: Awaited<ReturnType<typeof started>>, ticket: string, role: string): void {
-    writeDocument(h.store, `${DIR}/dispatch/01-1-${role}-${ticket}.md`, {
-      data: {
-        schema: 1,
-        ticket,
-        target: "01-1",
-        role,
-        adapter: role === "implementer" ? "worker" : "reader",
-        attempt: 1,
-        of: 3,
-        scope: "full",
-        at: "2026-09-25T11:00:30.000Z",
-        "kernel-version": "3.0.0",
-        "template-hash": `sha256:${"0".repeat(64)}`,
-        report: `.bdk/changes/2026-09-25-login/reports/01-1-${role}-${ticket}.md`,
-      },
-      body: "",
-    });
-  }
-
   it("writes one reviewed finding when an implementer closes without rules-read; the close goes on", async () => {
     const h = await started();
     const { ticket } = await open(h, "task-redispatch", "01-1");
-    packaged(h, ticket, "implementer");
+    await stepsDone(h, ticket);
     const result = await close(h, ticket, "ok");
     expect(result.code, result.stdout).toBe(0);
     const report = attemptCloseOutput.parse(result.json);
@@ -560,7 +576,7 @@ describe("attempt close: rules read (T23-D28)", () => {
   it("writes none when the implementer read its rules", async () => {
     const h = await started();
     const { ticket } = await open(h, "task-redispatch", "01-1");
-    packaged(h, ticket, "implementer");
+    await stepsDone(h, ticket);
     const [record] = readAttempts(h.store, DIR);
     if (record === undefined) throw new Error("no attempt record");
     writeDocument(h.store, record.path, {
@@ -572,11 +588,156 @@ describe("attempt close: rules read (T23-D28)", () => {
     expect(entries(h.store, "finding")).toStrictEqual([]);
   });
 
+  it("writes one when a later role's package is active", async () => {
+    const h = await started();
+    const { ticket } = await open(h, "task-redispatch", "01-1");
+    await stepsDone(h, ticket);
+    const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
+    expect(report.rulesFinding).toMatch(/^L-/);
+  });
+
   it("writes none for another role", async () => {
     const h = await started();
     const { ticket } = await open(h, "task-redispatch", "01-1");
     packaged(h, ticket, "runner");
     const report = attemptCloseOutput.parse((await close(h, ticket, "ok")).json);
     expect(report.rulesFinding).toBeUndefined();
+  });
+});
+
+describe("attempt close ok: the post-task step evidence (T23-D41, D43)", () => {
+  async function coded(settings?: string) {
+    const h = await started(settings);
+    const { ticket } = await open(h, "task-redispatch", "01-1");
+    packaged(h, ticket, "implementer");
+    return { h, ticket };
+  }
+
+  it("records simplify from the simplifier report and closes with fresh cited evidence", async () => {
+    const { h, ticket } = await coded();
+    await stepsDone(h, ticket);
+    const result = await close(h, ticket, "ok");
+    expect(result.code, result.stdout).toBe(0);
+    const simplify = readManifests(h.store, DIR).filter((m) => m.data.kind === "simplify");
+    expect(simplify.map((m) => m.data)).toMatchObject([
+      { ticket, target: "01-1", source: "kernel", verdict: "pass" },
+    ]);
+    expect(simplify[0]?.data.files[0]?.stored).toBe("committed");
+    expect(records(h.store)[0]).toMatchObject({ outcome: "ok" });
+  });
+
+  it("records simplify as not-run from a blocked simplifier report", async () => {
+    const { h, ticket } = await coded();
+    simplified(h, ticket, "blocked");
+    packaged(h, ticket, "runner");
+    await recorded(h, ticket, "tests-scoped");
+    await recorded(h, ticket, "lint");
+    expect((await close(h, ticket, "ok")).code).toBe(0);
+    expect(readManifests(h.store, DIR).find((m) => m.data.kind === "simplify")?.data.verdict).toBe(
+      "not-run",
+    );
+  });
+
+  it("refuses a missing step with policy/missing-evidence naming its role; the ticket stays open", async () => {
+    const { h, ticket } = await coded();
+    simplified(h, ticket);
+    await recorded(h, ticket, "tests-scoped");
+    const result = await close(h, ticket, "ok");
+    expect(result.code).toBe(2);
+    expect(refusal(result)).toMatchObject({
+      rule: "policy/missing-evidence",
+      instead: [`bdk dispatch build 01-1 runner ${ticket}`],
+    });
+    expect(refusal(result).why).toContain("lint");
+    expect(records(h.store)[0]?.outcome).toBeUndefined();
+  });
+
+  it("refuses a missing simplifier report as missing simplify evidence", async () => {
+    const { h, ticket } = await coded();
+    await recorded(h, ticket, "tests-scoped");
+    await recorded(h, ticket, "lint");
+    const result = await close(h, ticket, "ok");
+    expect(refusal(result)).toMatchObject({
+      rule: "policy/missing-evidence",
+      instead: [`bdk dispatch build 01-1 simplifier ${ticket}`],
+    });
+  });
+
+  it("refuses a failing step with policy/missing-evidence and attempt close fail as instead", async () => {
+    const { h, ticket } = await coded();
+    simplified(h, ticket);
+    await recorded(h, ticket, "tests-scoped");
+    await recorded(h, ticket, "lint", "fail");
+    const result = await close(h, ticket, "ok");
+    expect(refusal(result)).toMatchObject({
+      rule: "policy/missing-evidence",
+      instead: [`bdk attempt close ${ticket} fail`],
+    });
+    expect(refusal(result).why).toMatch(/^lint E-\w{8} says fail$/);
+  });
+
+  it("refuses stale steps with policy/stale-evidence naming the kinds and the changed file", async () => {
+    const { h, ticket } = await coded();
+    simplified(h, ticket);
+    await recorded(h, ticket, "tests-scoped");
+    await recorded(h, ticket, "lint");
+    h.store.write(`${ROOT}/src/01-2.ts`, "export const two = 2;\n");
+    const result = await close(h, ticket, "ok");
+    expect(refusal(result).rule).toBe("policy/stale-evidence");
+    expect(refusal(result).why).toMatch(/^tests-scoped E-\w{8} .*changed: src\/01-2\.ts; lint E-/);
+    expect(records(h.store)[0]?.outcome).toBeUndefined();
+  });
+
+  it("refuses a pass without a citation and a changed committed file with policy/missing-citation", async () => {
+    const { h, ticket } = await coded();
+    simplified(h, ticket);
+    await recorded(h, ticket, "tests-scoped");
+    await recorded(h, ticket, "lint", "not-run", false);
+    const manifest = readManifests(h.store, DIR).find((m) => m.data.kind === "tests-scoped");
+    if (manifest === undefined) throw new Error("no manifest");
+    writeDocument(h.store, manifest.path, {
+      data: { ...manifest.data, citations: undefined },
+      body: "",
+    });
+    const uncited = await close(h, ticket, "ok");
+    expect(refusal(uncited)).toMatchObject({ rule: "policy/missing-citation" });
+    expect(refusal(uncited).why).toContain("passes without a citation");
+
+    writeDocument(h.store, manifest.path, { data: manifest.data, body: "" });
+    const committed = manifest.data.files[0]?.path ?? "";
+    h.store.write(`${ROOT}/${committed}`, '{"failed":3}\n');
+    const changed = await close(h, ticket, "ok");
+    expect(refusal(changed).why).toContain(`has a changed committed file ${committed}`);
+  });
+
+  it("accepts not-run within policy.budgets.not-run and refuses it past the budget", async () => {
+    const within = await coded();
+    simplified(within.h, within.ticket);
+    await recorded(within.h, within.ticket, "tests-scoped");
+    await recorded(within.h, within.ticket, "lint", "not-run", false);
+    expect((await close(within.h, within.ticket, "ok")).code).toBe(0);
+
+    const past = await coded("policy:\n  budgets:\n    not-run: 0\n");
+    simplified(past.h, past.ticket);
+    await recorded(past.h, past.ticket, "tests-scoped");
+    await recorded(past.h, past.ticket, "lint", "not-run", false);
+    const result = await close(past.h, past.ticket, "ok");
+    expect(refusal(result)).toMatchObject({
+      rule: "policy/missing-evidence",
+      instead: [`bdk attempt close ${past.ticket} not-run --reason "<what was missing>"`],
+    });
+  });
+
+  it("checks nothing for a verifier ticket, a fail or a not-run close", async () => {
+    const h = await started();
+    const verifier = await open(h, "verifier", "plan");
+    packaged(h, verifier.ticket, "verifier", "plan");
+    expect((await close(h, verifier.ticket, "ok")).code).toBe(0);
+    const failed = await open(h, "task-redispatch", "01-1");
+    packaged(h, failed.ticket, "implementer");
+    expect((await close(h, failed.ticket, "fail")).code).toBe(0);
+    const skipped = await open(h, "task-redispatch", "01-1");
+    packaged(h, skipped.ticket, "implementer");
+    expect((await close(h, skipped.ticket, "not-run", "--reason", "no runner")).code).toBe(0);
   });
 });

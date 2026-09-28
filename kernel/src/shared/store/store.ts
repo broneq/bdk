@@ -26,8 +26,12 @@ export interface FileStat {
 export interface Store {
   /** The file's text, or undefined when there is no file at `path`. */
   read(path: string): string | undefined;
+  /** The file's bytes, or undefined when there is no file at `path`. */
+  readBytes(path: string): Uint8Array | undefined;
   /** Replaces the file in one step (temp file, then rename), creating parents. */
   write(path: string, content: string): void;
+  /** `write` for bytes: evidence files that need not be text. */
+  writeBytes(path: string, content: Uint8Array): void;
   /** Direct children, sorted, directories with a trailing `/`; [] when absent. */
   list(dir: string): string[];
   /** True for a file or a directory. */
@@ -51,16 +55,19 @@ export function fileStore(): Store {
         throw error;
       }
     },
-    write(path, content) {
-      mkdirSync(dirname(path), { recursive: true });
-      const temp = `${path}.${randomBytes(4).toString("hex")}.tmp`;
-      writeFileSync(temp, content);
+    readBytes(path) {
       try {
-        renameSync(temp, path);
+        return new Uint8Array(readFileSync(path));
       } catch (error) {
-        rmSync(temp, { force: true });
+        if (isCode(error, "ENOENT")) return undefined;
         throw error;
       }
+    },
+    write(path, content) {
+      replaceFile(path, content);
+    },
+    writeBytes(path, content) {
+      replaceFile(path, content);
     },
     list(dir) {
       try {
@@ -94,9 +101,23 @@ export function fileStore(): Store {
   };
 }
 
+/** Replaces the file in one step (temp file, then rename), creating parents. */
+function replaceFile(path: string, content: string | Uint8Array): void {
+  mkdirSync(dirname(path), { recursive: true });
+  const temp = `${path}.${randomBytes(4).toString("hex")}.tmp`;
+  writeFileSync(temp, content);
+  try {
+    renameSync(temp, path);
+  } catch (error) {
+    rmSync(temp, { force: true });
+    throw error;
+  }
+}
+
 /** Absolute path -> content; a key ending in `/` is an (empty) directory. */
 export function memoryStore(initial: Readonly<Record<string, string>> = {}): Store {
-  const files = new Map<string, string>();
+  // Bytes, so a binary file reads back as written; text reads decode UTF-8 as the disk does.
+  const files = new Map<string, Buffer>();
   const dirs = new Set<string>();
   // A logical clock stands in for mtimes and inodes: every write is a new
   // inode and touches its directory, as a rename on disk does.
@@ -121,20 +142,31 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
       touch(path);
       addParents(path);
     } else {
-      files.set(path, content);
+      files.set(path, Buffer.from(content));
       touch(path);
       addParents(path);
     }
   }
 
+  const put = (path: string, content: Buffer): void => {
+    const target = resolve(path);
+    if (dirs.has(target)) throw new Error(`EISDIR: ${target} is a directory`);
+    files.set(target, content);
+    touch(target);
+    addParents(target);
+  };
+
   return {
-    read: (path) => files.get(resolve(path)),
+    read: (path) => files.get(resolve(path))?.toString("utf8"),
+    readBytes(path) {
+      const bytes = files.get(resolve(path));
+      return bytes === undefined ? undefined : Uint8Array.from(bytes);
+    },
     write(path, content) {
-      const target = resolve(path);
-      if (dirs.has(target)) throw new Error(`EISDIR: ${target} is a directory`);
-      files.set(target, content);
-      touch(target);
-      addParents(target);
+      put(path, Buffer.from(content));
+    },
+    writeBytes(path, content) {
+      put(path, Buffer.from(content));
     },
     list(dir) {
       const parent = resolve(dir);
@@ -156,7 +188,7 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
       if (time === undefined || (!files.has(target) && !dirs.has(target))) return undefined;
       return {
         ...time,
-        size: Buffer.byteLength(files.get(target) ?? ""),
+        size: files.get(target)?.length ?? 0,
         directory: dirs.has(target),
       };
     },
@@ -169,7 +201,10 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
       const target = resolve(path);
       if (dirs.has(target)) throw new Error(`EISDIR: ${target} is a directory`);
       const existed = files.has(target);
-      files.set(target, (files.get(target) ?? "") + content);
+      files.set(
+        target,
+        Buffer.concat([files.get(target) ?? Buffer.alloc(0), Buffer.from(content)]),
+      );
       if (existed) times.set(target, { mtimeMs: ++tick, ino: times.get(target)?.ino ?? tick });
       else {
         touch(target);

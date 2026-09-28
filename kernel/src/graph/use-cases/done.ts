@@ -68,8 +68,9 @@ export function markDone(
       const first = failed[0];
       if (first !== undefined) {
         const named = failed.map((check) => `${check.id}: ${check.why ?? "failed"}`).join("; ");
+        // Of the checks' own rules, only the citation rule is one `done` answers (T4).
         return refuse(
-          "policy/validation-failed",
+          first.rule === "policy/missing-citation" ? first.rule : "policy/validation-failed",
           `${target.id} fails ${failed.length === 1 ? "check" : "checks"} ${named}`,
           [...(first.instead === undefined ? [] : [first.instead]), `bdk validate ${target.id}`],
         );
@@ -152,7 +153,7 @@ function refusal(read: ChangeGraph, node: GraphNode, kind: Kind): Refusal | unde
       "bdk next",
     ]);
   }
-  if (doneBy.through === "command") {
+  if (doneBy.through === "command" || doneBy.through === "evidence") {
     const command = doneBy.command.replaceAll("{nn}", node.nn ?? "<nn>");
     return refuse(
       "policy/invalid-transition",

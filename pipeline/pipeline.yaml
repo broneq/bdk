@@ -73,6 +73,23 @@ nodes:
     requires: [plan, plan-verify]
     budget: task-redispatch
 
+  # The post-task steps run inside each task's ticket, in this order
+  # (T23-D40, D41); each instance is done from the evidence covering its part.
+  - id: simplify
+    kind: simplify
+    stage: execute
+    requires: [execute]
+
+  - id: tests-scoped
+    kind: tests-scoped
+    stage: execute
+    requires: [simplify]
+
+  - id: lint
+    kind: lint
+    stage: execute
+    requires: [simplify]
+
   - id: spec-delta
     kind: spec-delta
     stage: execute
@@ -81,7 +98,7 @@ nodes:
   - id: review
     kind: review
     stage: review
-    requires: [execute, spec-delta]
+    requires: [execute, simplify, tests-scoped, lint, spec-delta]
     budget: review-fix
 
   - id: gate:review

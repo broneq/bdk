@@ -30,6 +30,7 @@ export const RULES = [
   "policy/entries-missing",
   "policy/stale-evidence",
   "policy/missing-citation",
+  "policy/missing-evidence",
   "policy/invalid-transition",
   "policy/git-in-progress",
   "policy/git-hook-failed",

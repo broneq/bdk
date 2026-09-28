@@ -11,7 +11,7 @@ import {
   listEntries,
   readDocument,
   STATE_KINDS,
-  ticketDispatch,
+  openPackage,
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
@@ -37,8 +37,8 @@ export function ingestReport(
 ): Promise<IngestReport | Refusal> {
   // eslint-disable-next-line @typescript-eslint/require-await -- withChangeIndex takes an async body
   return withChangeIndex(deps, change, async (index): Promise<IngestReport | Refusal> => {
-    const dispatch = ticketDispatch(index, change.id, input.ticket);
-    const report = dispatch === undefined ? undefined : reportPath(deps, change, dispatch.path);
+    const dispatch = openPackage(deps.store, change.projectRoot, change.dir, input.ticket);
+    const report = dispatch?.data.report;
     if (dispatch === undefined || report === undefined) {
       return refuse(
         "policy/no-open-ticket",
@@ -67,14 +67,6 @@ export function ingestReport(
 }
 
 type ReportData = ReturnType<typeof STATE_KINDS.report.schema.parse>;
-
-/** The package's `report` path from the project root. */
-function reportPath(deps: LogDeps, change: ActiveChange, dispatchPath: string): string | undefined {
-  const dispatch = readDocument(deps.store, join(change.projectRoot, dispatchPath));
-  if (dispatch === undefined || !("data" in dispatch)) return undefined;
-  const report = dispatch.data.report;
-  return typeof report === "string" ? report : undefined;
-}
 
 function invalidEnvelope(why: string): Refusal {
   return refuse("input/invalid-envelope", why, [

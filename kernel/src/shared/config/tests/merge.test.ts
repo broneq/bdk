@@ -3,13 +3,15 @@ import { describe, expect, it } from "vitest";
 import { mergeLayers } from "../index.ts";
 import type { Layer } from "../index.ts";
 
+const plain = (layers: readonly Layer[]) => mergeLayers(layers, new Set());
+
 function layer(name: Layer["name"], values: Record<string, unknown>): Layer {
   return { name, path: `/${name}.yaml`, text: "", values };
 }
 
 describe("mergeLayers", () => {
   it("deep-merges mappings, the higher layer winning per leaf, with origins", () => {
-    const merged = mergeLayers([
+    const merged = plain([
       layer("global", { features: { lavish: true }, a: { b: 1, c: 2 } }),
       layer("project", { a: { c: 3 } }),
       layer("local", { features: { lavish: false } }),
@@ -23,7 +25,7 @@ describe("mergeLayers", () => {
   });
 
   it("merges arrays of mappings by id: a matching item deep-merges, a new one appends", () => {
-    const merged = mergeLayers([
+    const merged = plain([
       layer("project", {
         tools: {
           test: [
@@ -56,7 +58,7 @@ describe("mergeLayers", () => {
   });
 
   it("replaces a scalar array whole", () => {
-    const merged = mergeLayers([
+    const merged = plain([
       layer("project", { languages: ["typescript", "react"] }),
       layer("local", { languages: ["typescript"] }),
     ]);
@@ -65,7 +67,7 @@ describe("mergeLayers", () => {
   });
 
   it("replaces an array whose items are not all mappings with an id", () => {
-    const merged = mergeLayers([
+    const merged = plain([
       layer("project", { x: [{ id: "a" }] }),
       layer("local", { x: [{ name: "b" }] }),
     ]);
@@ -73,9 +75,7 @@ describe("mergeLayers", () => {
   });
 
   it("reports a duplicate id within one layer", () => {
-    const merged = mergeLayers([
-      layer("project", { tools: { lint: [{ id: "es" }, { id: "es" }] } }),
-    ]);
+    const merged = plain([layer("project", { tools: { lint: [{ id: "es" }, { id: "es" }] } })]);
     expect(merged.problems).toStrictEqual([
       {
         rule: "policy/config-invalid",
@@ -88,7 +88,7 @@ describe("mergeLayers", () => {
   });
 
   it("keeps null as a value and never deletes a lower key with it", () => {
-    const merged = mergeLayers([
+    const merged = plain([
       layer("project", { features: { lavish: true } }),
       layer("local", { features: { lavish: null } }),
     ]);
@@ -97,7 +97,7 @@ describe("mergeLayers", () => {
   });
 
   it("lets a mapping replace a scalar and a scalar replace a mapping", () => {
-    const merged = mergeLayers([
+    const merged = plain([
       layer("project", { a: 1, b: { c: 1 } }),
       layer("local", { a: { d: 2 }, b: 3 }),
     ]);
@@ -106,8 +106,33 @@ describe("mergeLayers", () => {
   });
 
   it("keeps an empty mapping or array as a leaf with its origin", () => {
-    const merged = mergeLayers([layer("project", { a: {}, b: [] })]);
+    const merged = plain([layer("project", { a: {}, b: [] })]);
     expect(merged.value).toStrictEqual({ a: {}, b: [] });
     expect(merged.origins).toStrictEqual({ a: "project", b: "project" });
+  });
+
+  it("appends to an append-only array, dropping items a lower layer holds", () => {
+    const appendOnly = new Set(["policy.globs"]);
+    const merged = mergeLayers(
+      [
+        layer("global", { policy: { globs: ["a/**", "b/**"] } }),
+        layer("project", { policy: { globs: ["c/**", "a/**", "c/**"] } }),
+        layer("local", { policy: { globs: ["b/**"] } }),
+      ],
+      appendOnly,
+    );
+    expect(merged.value).toStrictEqual({ policy: { globs: ["a/**", "b/**", "c/**"] } });
+    expect(merged.origins).toStrictEqual({ "policy.globs": "local" });
+  });
+
+  it("replaces an array the module does not declare append-only", () => {
+    const merged = mergeLayers(
+      [
+        layer("project", { policy: { globs: ["a/**"] } }),
+        layer("local", { policy: { globs: [] } }),
+      ],
+      new Set(["policy.other"]),
+    );
+    expect(merged.value).toStrictEqual({ policy: { globs: [] } });
   });
 });

@@ -37,7 +37,7 @@ export function validateLayers(
 
   const defaults = registry.schema.safeParse({});
   const seeded: Merged = defaults.success
-    ? { ...merged, value: withDefaultItems(defaults.data, merged.value) }
+    ? { ...merged, value: withDefaultItems(defaults.data, merged.value, registry.appendOnly) }
     : merged;
   const parsed = registry.schema.safeParse(seeded.value);
   if (!parsed.success) {

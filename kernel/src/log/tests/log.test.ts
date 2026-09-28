@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Store } from "../../shared/store/index.ts";
-import { writeDocument } from "../../shared/store/index.ts";
+import { secondStamp, writeDocument } from "../../shared/store/index.ts";
 import { allowedMoves, findDuplicate, withResolution } from "../domain/entry.ts";
 import { logRegistrations } from "../index.ts";
 import { logAddOutput, logListOutput, logResolveOutput, logShowOutput } from "../schema/outputs.ts";
@@ -18,6 +18,7 @@ import {
   ROOT,
   runBdk,
   writeChangeDoc,
+  writePackage,
 } from "./support.ts";
 import type { FakeGit } from "./support.ts";
 
@@ -57,24 +58,7 @@ function addAttempt(store: Store, ticket: string, role: string | undefined, clos
     },
     body: "",
   });
-  if (role === undefined) return;
-  writeDocument(store, `${DIR}/dispatch/02-3-${role}-${ticket}.md`, {
-    data: {
-      schema: 1,
-      ticket,
-      target: "02-3",
-      role,
-      adapter: "worker",
-      attempt: 1,
-      of: 3,
-      scope: "full",
-      at: "2026-09-25T10:00:01.000Z",
-      "kernel-version": "3.0.0-dev",
-      "template-hash": `sha256:${"a".repeat(64)}`,
-      report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${ticket}.md`,
-    },
-    body: "",
-  });
+  if (role !== undefined) writePackage(store, ticket, role);
 }
 
 describe("log add --category (P8)", () => {
@@ -124,6 +108,21 @@ describe("log add --category (P8)", () => {
     const output = logAddOutput.parse(result.json);
     expect(output.entry).toMatchObject({ type: "blocker", category: "false-code-claim" });
     expect(output.downgraded).toBeUndefined();
+  });
+
+  it("classifies by the ticket's active package, not the first package file", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-7f3k9m2q", "implementer");
+    writePackage(store, "A-7f3k9m2q", "verifier");
+    expect(logAddOutput.parse((await run(blocker("A-7f3k9m2q"))).json).entry).toMatchObject({
+      type: "observation",
+      source: "agent:verifier",
+    });
+    writePackage(store, "A-7f3k9m2q", "implementer");
+    expect(logAddOutput.parse((await run(blocker("A-7f3k9m2q"))).json).entry).toMatchObject({
+      type: "blocker",
+      source: "agent:implementer",
+    });
   });
 
   it("never downgrades an implementer blocker", async () => {
@@ -584,6 +583,43 @@ describe("log list", () => {
     const text = (await run(["log", "list"])).stdout.trimEnd().split("\n");
     expect(text).toHaveLength(100);
     expect(text.at(-1)).toMatch(/more lines \(--all prints everything\)$/);
+  });
+
+  it("keeps the entries at or after a ticket's opened-at with --since-ticket-start (T23-D49)", async () => {
+    const store = repository();
+    const risk = (id: string, at: string) => {
+      writeDocument(store, `${DIR}/log/${secondStamp(at)}-risk-${id}.md`, {
+        data: {
+          schema: 1,
+          id,
+          type: "risk",
+          summary: `risk ${id}`,
+          status: "proposed",
+          source: "kernel",
+          author: AUTHOR,
+          at,
+          refs: ["a"],
+        },
+        body: "",
+      });
+    };
+    risk("L-00000001", "2026-09-25T09:59:59.000Z");
+    risk("L-00000002", "2026-09-25T10:00:00.000Z");
+    risk("L-00000003", "2026-09-25T10:20:00.000Z");
+    addAttempt(store, "A-7f3k9m2q", undefined, true);
+    const { run } = harness(store);
+    const ids = async (...flags: string[]) =>
+      logListOutput
+        .parse(
+          (await run(["log", "list", "--since-ticket-start", "A-7f3k9m2q", ...flags, "--json"]))
+            .json,
+        )
+        .items.map((item) => item.id);
+    expect(await ids()).toEqual(["L-00000002", "L-00000003"]);
+    expect(await ids("--type", "decision")).toEqual([]);
+    const missing = await run(["log", "list", "--since-ticket-start", "A-00000000", "--json"]);
+    expect(missing.code).toBe(3);
+    expect(missing.json).toMatchObject({ rule: "input/not-found" });
   });
 
   it("prints one line per entry and says so when there are none", async () => {

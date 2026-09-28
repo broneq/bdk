@@ -62,8 +62,12 @@
       }
     },
     "dropped": { "type": "array", "items": { "$ref": "common.json#/$defs/ledgerId" } },
+    "package": {
+      "description": "The ticket's active package: the latest `dispatch build` of the ticket (T23-D42).",
+      "$ref": "common.json#/$defs/relativePath"
+    },
     "rules-read": {
-      "description": "First `rules show --ticket` call for the ticket (risk R2); read by `attempt close`.",
+      "description": "First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`.",
       "$ref": "common.json#/$defs/timestamp"
     }
   },

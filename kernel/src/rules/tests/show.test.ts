@@ -5,7 +5,12 @@ import { describe, expect, it } from "vitest";
 
 import { fixedClock } from "../../shared/clock/index.ts";
 import { settingsRegistry } from "../../registrations.ts";
-import { memoryIndex, readAttempts, writeDocument } from "../../shared/store/index.ts";
+import {
+  memoryIndex,
+  readAttempts,
+  stampPackage,
+  writeDocument,
+} from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { AUTHOR, CHANGE, DIR, fakeGit, repository, ROOT, runBdk } from "../../log/tests/support.ts";
 import { rulesRegistrations } from "../index.ts";
@@ -50,8 +55,13 @@ function ticket(store: Store, id: string, role: string | undefined, closed = fal
     },
     body: "",
   });
-  if (role === undefined) return;
-  writeDocument(store, `${DIR}/dispatch/02-3-${role}-${id}.md`, {
+  if (role !== undefined) built(store, id, role);
+}
+
+/** What `dispatch build` leaves: the role's package, stamped as the ticket's active one. */
+function built(store: Store, id: string, role: string): void {
+  const path = `.bdk/changes/${CHANGE}/dispatch/02-3-${role}-${id}.md`;
+  writeDocument(store, `${ROOT}/${path}`, {
     data: {
       schema: 1,
       ticket: id,
@@ -68,6 +78,7 @@ function ticket(store: Store, id: string, role: string | undefined, closed = fal
     },
     body: "",
   });
+  stampPackage(store, DIR, id, path);
 }
 
 function run(store: Store, argv: readonly string[], at = FIRST) {
@@ -124,6 +135,39 @@ describe("rules show --ticket", () => {
       "rules/test-quality",
       "rules/engineering-judgment",
     ]);
+  });
+
+  it("prints the implementer's categories to a simplifier and stamps nothing (R2)", async () => {
+    const store = withPlugin(repository());
+    ticket(store, "A-7f3k9m2q", "implementer");
+    const implementer = await run(store, ["rules", "show", "--ticket", "A-7f3k9m2q", "--json"]);
+    ticket(store, "A-s1m2p3l4", "implementer");
+    built(store, "A-s1m2p3l4", "simplifier");
+    const result = await run(store, ["rules", "show", "--ticket", "A-s1m2p3l4", "--json"]);
+    expect(result.code).toBe(0);
+    const output = rulesShowOutput.parse(result.json);
+    expect(output.role).toBe("simplifier");
+    expect(keysOf(result.json)).toStrictEqual(keysOf(implementer.json));
+    expect(output.rulesRead).toBeUndefined();
+    const record = readAttempts(store, DIR).find((file) => file.data.ticket === "A-s1m2p3l4");
+    expect(record?.data["rules-read"]).toBeUndefined();
+  });
+
+  it("resolves the role through the active package, not the first package file", async () => {
+    const store = withPlugin(repository());
+    ticket(store, "A-7f3k9m2q", "runner");
+    built(store, "A-7f3k9m2q", "verifier");
+    const result = await run(store, ["rules", "show", "--ticket", "A-7f3k9m2q", "--json"]);
+    expect(rulesShowOutput.parse(result.json).role).toBe("verifier");
+  });
+
+  it("prints a stamp an implementer made to a later role", async () => {
+    const store = withPlugin(repository());
+    ticket(store, "A-7f3k9m2q", "implementer");
+    await run(store, ["rules", "show", "--ticket", "A-7f3k9m2q"], FIRST);
+    built(store, "A-7f3k9m2q", "runner");
+    const later = await run(store, ["rules", "show", "--ticket", "A-7f3k9m2q", "--json"], LATER);
+    expect(rulesShowOutput.parse(later.json)).toMatchObject({ role: "runner", rulesRead: FIRST });
   });
 
   it("prints no section for a runner", async () => {

@@ -305,7 +305,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **To resolve in the spec**: full list of v3 keys (migration from today's `settings.json`: `features.*`, `tools.*`, `quality.*`, `languages`), XDG path on Windows, format of the versioned schema URL, what a "key without a consumer" looks like technically (consumer registration).
 
-Keys added by the T02 decisions (each with a consumer in the named task): `features.lavish` (T41, default true, `AskUserQuestion` fallback), `policy.gates.<gate>: manual | auto` (T21, T24), `execution.runner: host-agent | headless` and `execution.concurrency` (T23), `rules.propose-when.*` thresholds and `rules.max-per-package` (T31), `archive.keep-evidence` (T23).
+Keys added by the T02 decisions (each with a consumer in the named task): `features.lavish` (T41, default true, `AskUserQuestion` fallback), `policy.gates.<gate>: manual | auto` (T21, T24), `execution.runner: host-agent | headless` and `execution.concurrency` (T23), `rules.propose-when.*` thresholds and `rules.max-per-package` (T31), `archive.keep-evidence` (T30, which lands its consumer `change close`; T23-D53).
 
 **Resolution** (2026-09-25, Change `v3-t12-layered-config`, #50):
 
@@ -515,7 +515,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Goal**: orchestrator <-> subagent communication through files only: the package goes in, the envelope comes out; verification evidence has freshness and citations. The orchestrator hands an agent the package path and at most one sentence; all context lives in files (T23-D0).
 
-**Delivery**: three OpenSpec Changes merged in order into `staging/v3`; the issue closes after C. The decisions of the T23 discussion (T23-D0 to D24) and the role mechanism spike (`docs/HOST-FACTS.md`, rows `roles-nested-default` to `send-to-main`) are recorded in `openspec/changes/archive/2026-09-28-v3-t23a-roles-adapters/design.md` (after archive: `openspec/changes/archive/`), which B and C cite. Part B adds T23-D25 to D36 in `openspec/changes/v3-t23b-dispatch-envelope/design.md` (after archive: `openspec/changes/archive/`).
+**Delivery**: three OpenSpec Changes merged in order into `staging/v3`; the issue closes after C. The decisions of the T23 discussion (T23-D0 to D24) and the role mechanism spike (`docs/HOST-FACTS.md`, rows `roles-nested-default` to `send-to-main`) are recorded in `openspec/changes/archive/2026-09-28-v3-t23a-roles-adapters/design.md` (after archive: `openspec/changes/archive/`), which B and C cite. Part B adds T23-D25 to D38 in `openspec/changes/v3-t23b-dispatch-envelope/design.md` (after archive: `openspec/changes/archive/`). Part C adds T23-D39 to D55 in `openspec/changes/v3-t23c-evidence-post-task-swarm/design.md` (after archive: `openspec/changes/archive/`).
 
 **Scope A (`v3-t23a-roles-adapters`)**:
 
@@ -532,12 +532,12 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - P8 in `log add --category` (T23-D34): `policy.verifier` (consumer `log`) holds `blocking-categories` (six defaults) and `not-a-fail` (six defaults); a `blocker` under a `verifier` or `design-verifier` ticket without a blocking category is written as `observation` + `review: true` with the original text in the body and `downgraded` in the output.
 - Role bodies are not overridable in 3.0 and no `roles/<role>` prompt key exists (T23-D29, corrects T23-D11).
 
-**Scope C (`v3-t23c-...`)**:
+**Scope C (`v3-t23c-evidence-post-task-swarm`)**:
 
 - Evidence primitives (T4, P5): `evidence record` (manifest: kind, tree hash, list of files with hashes, citations; binaries in `.machine/evidence/`), `evidence check` (evidence older than the last code change = rejected); freshness hashes the `Files:` of the whole part plus build-feeding config (T23-D7) and skips non-executable files through a file-class filter overridable in `policy.evidence` (T23-D16); citation validator with `file#/json/pointer`, `file:line`, `file:line=text` (T23-D8); a fake artifact kind in E2E exercising the manifest, `not-run` and citations together. Nothing UI-specific (`ui-verify` = a separate Change after v3).
-- Post-task steps as graph nodes: `simplify` (worker package kind `simplify`), then `tests-scoped` and `lint` (runner); order in YAML, not in the skill; a node is done on fresh evidence with `pass`, or `not-run` within budget (T23-D9).
-- Swarm skill (T23-D6, D15), called by `execute` and `cr`: principles only (disjoint `Files:` for isolation, a tree of agents when warranted, prompt = package path, ledger as the channel, `SendMessage` to `main` for critical findings), host notes in `references/hosts/` (Claude Code only); `log list --since-ticket-start`. `execution.concurrency` caps the swarm.
-- Archive prune (V1-9): the prune function and the hash-index format for `dispatch/` and `reports/`, unless `archive.keep-evidence`; T30's `change close` calls it (T23-D12).
+- Post-task steps as graph nodes: three kinds `simplify` (new role `simplifier` on `worker`, T23-D43), then `tests-scoped` and `lint` (one `runner` package with a `Checks` section, T23-D44), one instance per plan part after `execute`; order in YAML, not in the skill; a node is done from the latest fresh covering evidence with `pass` or `not-run`, not from a transition (T23-D9, D40). The steps run after every task inside the task's ticket: `dispatch build` keeps one package per role, the attempt record's `package` names the active one (T23-D42), `attempt close ok` records the `simplify` evidence and refuses missing, failing, stale or uncited step evidence (`policy/missing-evidence`, `policy/stale-evidence`, `policy/missing-citation`), and `next.action` after `ok` becomes `commit` (T23-D41).
+- Swarm skill (T23-D6, D15), called by `execute` and `cr`: principles only (disjoint `Files:` for isolation, a tree of agents when warranted, prompt = package path, ledger as the channel, `SendMessage` to `main` for critical findings), host notes in `references/hosts/` (Claude Code only); `log list --since-ticket-start`. `execution.concurrency` caps the swarm; its consumer is `ctx`, which puts it in the swarm skill's context (T23-D52).
+- Archive prune (V1-9): the prune function (in `shared/store`) and the hash-index format (`pruned.md`) for `dispatch/` and `reports/`; T30's `change close` calls it unless `archive.keep-evidence`, whose module T30 registers with that consumer (T23-D12, D53).
 
 **Input**: "Dispatch package (K3, K4)", "Verifier contracts (P8)", "Verification evidence primitives (T4, P4, P5)", T2, P3, P10, K2, `skills/subagent-execute-plan/references/return-contract.md`, risks "Reader entries relayed" and "Primitives without a consumer"; T02 decisions Q-3 and R-7 (`docs/V3-SKILL-INVENTORY.md` section 13.2), Claude Code skills reference (`context: fork`, `agent:`), `docs/HOST-FACTS.md` T23 rows.
 
@@ -595,7 +595,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - `spec merge` at `close`: deterministic, through `node:fs` (structurally outside the hook); conflict = refusal showing both deltas, the model consulted only then, `close` blocked until resolved; `bdk-merge-hash` in the frontmatter of every spec file; `doctor` and `close` refuse on a hash mismatch (detects manual edits, best effort for bypass through Bash).
 - `spec diff`.
 - The `spec-delta` kind in the graph (T21) gets its validator from this task.
-- `change close` calls the archive prune function of T23 part C for `dispatch/` and `reports/` (T23-D12), unless `archive.keep-evidence`.
+- `change close` calls the archive prune function of T23 part C for `dispatch/` and `reports/` (T23-D12), unless `archive.keep-evidence`, whose module T30 registers (T23-D53).
 - No OpenSpec runtime dependency (T02 decision Q-1): the format stays compatible, proven by a contract test that runs `openspec validate` (installed only in CI) over BDK's generated spec files; a spec delta is optional for the `tiny` and `small` profiles (`spec-impact: none` is the default there).
 
 **Input**: "Spec handling (D2, D2a, D2b, C1-C3)", D2, D2a, report C1-C3, V1-7, risk "Spec merge conflicts", risk "Behaviour-only spec leaves patterns to rules".

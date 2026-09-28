@@ -4,14 +4,16 @@
 import { ArchitectureKind, DesignKind, IntentKind, SpecDeltaKind } from "./documents.ts";
 import type { Kind, KindRegistry } from "./kind.ts";
 import { DesignIndexKind, DesignPartKind, ExecutePartKind, PlanPartKind } from "./parts.ts";
-import { CloseKind, GateKind, PostTaskStepKind } from "./steps.ts";
+import { CloseKind, GateKind, postTaskSteps } from "./steps.ts";
 import { PlanVerifyKind, ReviewKind } from "./verdicts.ts";
 
 export { DESIGN_LIMIT_BYTES } from "./documents.ts";
+export { PostTaskStepKind } from "./steps.ts";
 export { BaseKind, fileChecks, live, partFiles } from "./kind.ts";
 export type {
   ChangeView,
   Check,
+  EvidenceFacts,
   FileFacts,
   GraphEntry,
   Inputs,
@@ -32,7 +34,7 @@ export function kindRegistry(extra: readonly Kind[] = []): KindRegistry {
     new PlanVerifyKind(),
     new GateKind(),
     new ExecutePartKind(),
-    new PostTaskStepKind(),
+    ...postTaskSteps(),
     new ReviewKind(),
     new SpecDeltaKind(),
     new CloseKind(),

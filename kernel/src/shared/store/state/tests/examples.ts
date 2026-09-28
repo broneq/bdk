@@ -91,15 +91,26 @@ export const evidence = {
   author: AUTHOR,
   source: "agent:implementer",
   "tree-hash": HASH,
+  tree: [
+    { path: "src/auth/magic-link.ts", hash: HASH },
+    { path: "src/auth/removed.ts", hash: "absent" },
+  ],
   files: [
     {
-      path: ".bdk/changes/2026-09-25-passwordless-login/evidence/02-3-E-5hq0m2vd.junit.xml",
+      path: ".bdk/changes/2026-09-25-passwordless-login/evidence/02-3-E-5hq0m2vd-junit.xml",
       hash: HASH,
       stored: "committed",
     },
   ],
   verdict: "pass",
   citations: ["/testsuites/@tests"],
+};
+
+export const pruned = {
+  schema: 1,
+  dir: "dispatch",
+  at: "2026-09-26T08:00:00.000Z",
+  files: [{ path: "02-3-implementer-A-7f3kx2p9.md", hash: HASH, bytes: 3771 }],
 };
 
 export const dispatch = {

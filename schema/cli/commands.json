@@ -568,9 +568,15 @@
         "policy/entries-missing",
         "policy/stale-evidence",
         "policy/missing-citation",
+        "policy/missing-evidence",
         "runtime/git-missing"
       ],
-      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit"]
+      "writes": [
+        ".bdk/changes/<id>/attempts/",
+        ".bdk/changes/<id>/log/",
+        ".bdk/changes/<id>/evidence/",
+        "git:commit"
+      ]
     },
     {
       "id": "attempt-list",
@@ -740,12 +746,17 @@
           "value": "<task|part|file>"
         },
         {
+          "name": "--since-ticket-start",
+          "value": "<ticket>",
+          "description": "Only entries written at or after the ticket's `opened-at`."
+        },
+        {
           "name": "--all"
         }
       ],
       "output": "output/log-list.json",
       "exits": [0, 2, 3, 4, 5],
-      "refusals": [],
+      "refusals": ["input/not-found"],
       "writes": []
     },
     {
@@ -844,7 +855,7 @@
         {
           "name": "<role>",
           "required": true,
-          "description": "Role skill under skills/roles/: implementer, verifier, design-verifier, reviewer, pr-reviewer, runner, scout."
+          "description": "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, pr-reviewer, runner, scout."
         },
         {
           "name": "<ticket>",
@@ -860,7 +871,7 @@
         "policy/package-too-large",
         "policy/placeholder"
       ],
-      "writes": [".bdk/changes/<id>/dispatch/"]
+      "writes": [".bdk/changes/<id>/dispatch/", ".bdk/changes/<id>/attempts/"]
     },
     {
       "id": "dispatch-show",
@@ -902,7 +913,8 @@
         {
           "name": "<file>",
           "required": true,
-          "description": "Repeatable; the evidence files (reports, snapshots, captures)."
+          "description": "Repeatable; the evidence files (reports, snapshots, captures).",
+          "repeatable": true
         }
       ],
       "flags": [
@@ -918,7 +930,8 @@
         {
           "name": "--cite",
           "value": "<pointer>",
-          "description": "Repeatable; JSON pointer into a measured file or file:line in a snapshot, required for pass."
+          "description": "Repeatable; JSON pointer into a measured file or file:line in a snapshot, required for pass.",
+          "repeatable": true
         }
       ],
       "output": "output/evidence-record.json",
@@ -929,7 +942,7 @@
     {
       "id": "evidence-check",
       "argv": ["evidence", "check"],
-      "summary": "Is the evidence for a task still fresh against the working tree?",
+      "summary": "Is the evidence for a target still fresh against the working tree?",
       "availability": "read",
       "mode": "command",
       "slice": "evidence",
@@ -937,8 +950,9 @@
       "changeScoped": true,
       "args": [
         {
-          "name": "<task|evidence-id>",
-          "required": true
+          "name": "<target|evidence-id>",
+          "required": true,
+          "description": "A task, part or Change id, or an `E-` id."
         }
       ],
       "flags": [],
@@ -1297,7 +1311,8 @@
         {
           "name": "--applies",
           "value": "<glob>",
-          "description": "Repeatable; default derived from the current task's files."
+          "description": "Repeatable; default derived from the current task's files.",
+          "repeatable": true
         },
         {
           "name": "--kind",

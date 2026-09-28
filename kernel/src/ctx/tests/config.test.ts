@@ -19,7 +19,7 @@ const registry = createConfigRegistry({
 
 function check(values: Record<string, unknown>) {
   const layers: Layer[] = [{ name: "project", path: "/p.yaml", text: "", values }];
-  return validateLayers(registry, layers, mergeLayers(layers));
+  return validateLayers(registry, layers, mergeLayers(layers, registry.appendOnly));
 }
 
 function keysOf(values: Record<string, unknown>): [string, string][] {
@@ -34,6 +34,7 @@ describe("defaults", () => {
       languages: [],
       tools: { test: [], lint: [], build: [] },
       features: { lavish: true },
+      execution: { concurrency: 5 },
       prompts: {},
     });
   });

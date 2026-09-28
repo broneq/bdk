@@ -36,6 +36,7 @@ Compose the prompt context a skill's context line injects: rule sets, language r
   - `language-rules`: for each entry of `languages` in order, the prompt value `rules/languages/<language>` under `### Language rules: <language>`; a language without a value is skipped, and without any the part is omitted.
   - `fragment`: a choice between prompt values under a fixed title. The only fragment in T13 is `decision`, titled `### Asking the user`: `fragments/decision/lavish` when `features.lavish` is true and an executable `lavish-axi` is on `PATH`, otherwise `fragments/decision/ask-user` (R-11).
   - `tools`: the entries of `tools.<group>` (`test`, `lint` or `build`) under `### Project commands: <group>`, rendered as `bdk config show tools.<group>` renders them in text mode, including `when`; an empty group renders the line `none configured`.
+  - `concurrency`: the resolved `execution.concurrency` under `### Concurrency`, as the sentence `Run at most <n> agents at once.` (T23-D52); the swarm skill's only part.
   - `file`: a file of the plugin, verbatim, under the title the manifest gives it (the former `cat` blocks of `cr`, `pr-review` and `bdk-implementer-return-contract`).
   - Configuration: resolved as `config show` resolves it. An unknown key and an invalid value are STOP blocks (`policy/unknown-config-key`, `policy/config-invalid`), because context composed from a configuration the user did not mean is worse than none. A removed v2 key (`kernel-settings`, Removed v2 keys) has no effect on the output; `config check` and `hooks session-start` report it. Inject mode: exits 0 always; every error becomes a STOP block.
 - **Writes:** nothing
@@ -119,6 +120,11 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 
 - **WHEN** `.bdk/settings.yaml` declares a `tools.test` entry with `when` text and `bdk ctx skill debug` runs
 - **THEN** the `Project commands: test` section holds that entry as `bdk config show tools.test` prints it, including the `when` text
+
+#### Scenario: swarm context carries the concurrency
+
+- **WHEN** no layer sets `execution.concurrency` and `bdk ctx skill swarm` runs
+- **THEN** the output holds `### Concurrency` with `Run at most 5 agents at once.`
 
 ### Requirement: bdk ctx startup
 

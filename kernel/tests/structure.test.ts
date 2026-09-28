@@ -28,7 +28,7 @@ function seeded(path: string, text: string): readonly SourceFile[] {
 
 describe("import scan", () => {
   it("reads the matrix from the spec", () => {
-    expect(matrix.get("attempt")).toStrictEqual(new Set(["part", "log", "evidence"]));
+    expect(matrix.get("attempt")).toStrictEqual(new Set(["part", "log", "evidence", "graph"]));
     expect(matrix.get("service")).toBe("all");
     expect(matrix.get("log")).toStrictEqual(new Set());
   });

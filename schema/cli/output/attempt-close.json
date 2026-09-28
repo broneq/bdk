@@ -62,7 +62,8 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["post-task-steps", "retry", "narrow", "escalate", "parked"]
+          "enum": ["commit", "retry", "narrow", "escalate", "parked"],
+          "description": "commit after ok, the step evidence having passed; the ladder's rung after fail or not-run."
         },
         "scope": { "type": "string", "enum": ["full", "high+", "blockers"] },
         "entry": {

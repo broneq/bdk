@@ -9,6 +9,7 @@ import { configRegistrations } from "./config/index.ts";
 import type { ConfigDeps } from "./config/index.ts";
 import { ctxConfig, ctxRegistrations } from "./ctx/index.ts";
 import { dispatchRegistrations } from "./dispatch/index.ts";
+import { evidenceConfig, evidenceRegistrations } from "./evidence/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
 import { graphConfig, graphRegistrations } from "./graph/index.ts";
@@ -52,6 +53,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...graphRegistrations(deps),
     ...partRegistrations(deps),
     ...attemptRegistrations(deps),
+    ...evidenceRegistrations(deps),
     ...commitRegistrations(deps),
     ...queryRegistrations(deps),
     ...exportRegistrations(deps),
@@ -69,6 +71,7 @@ export function settingsRegistry(): ConfigRegistry {
       ...graphConfig.modules,
       ...attemptConfig.modules,
       ...logConfig.modules,
+      ...evidenceConfig.modules,
       checkpointModule,
       promptsModule,
     ],

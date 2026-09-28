@@ -280,9 +280,9 @@ describe("configSchema", () => {
 
   it("answers input/not-found for an unregistered module", () => {
     const { input } = setup({});
-    const outcome = refusal(configSchema(input, { module: "execution", url: false }));
+    const outcome = refusal(configSchema(input, { module: "archive", url: false }));
     expect(outcome.rule).toBe("input/not-found");
-    expect(outcome.why).toContain("execution");
+    expect(outcome.why).toContain("archive");
   });
 });
 

@@ -69,6 +69,23 @@
       },
       "required": ["model"],
       "additionalProperties": false
+    },
+    "steps": {
+      "description": "The post-task steps the orchestrator dispatches under the ticket after the implementer, in pipeline order; only for task-redispatch, verify-fix and review-fix.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "minLength": 1, "description": "The step's evidence kind." },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The role that runs the step."
+          }
+        },
+        "required": ["kind", "role"],
+        "additionalProperties": false
+      }
     }
   },
   "required": ["ticket", "loop", "target", "attempt", "of", "scope", "openedAt"],
@@ -84,7 +101,12 @@
       "openedAt": "2026-09-25T10:02:11.482Z",
       "narrowedFrom": "full",
       "dropped": [{ "id": "L-d3f6g8h2", "summary": "rename helper for clarity" }],
-      "entry": "L-k4n8p2rt"
+      "entry": "L-k4n8p2rt",
+      "steps": [
+        { "kind": "simplify", "role": "simplifier" },
+        { "kind": "tests-scoped", "role": "runner" },
+        { "kind": "lint", "role": "runner" }
+      ]
     }
   ]
 }

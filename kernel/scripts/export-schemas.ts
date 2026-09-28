@@ -36,6 +36,7 @@ import { configSchemaOutput } from "../src/config/schema/schema.ts";
 import { configSetOutput } from "../src/config/schema/set.ts";
 import { configShowOutput } from "../src/config/schema/show.ts";
 import { ctxOutput } from "../src/ctx/schema/ctx.ts";
+import { evidenceCheckOutput, evidenceRecordOutput } from "../src/evidence/schema/outputs.ts";
 import { sessionStartOutput } from "../src/hooks/schema/session-start.ts";
 import { skillExistsOutput } from "../src/hooks/schema/skill-exists.ts";
 import {
@@ -111,6 +112,8 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/rules-show.json", rulesShowOutput],
   ["output/dispatch-build.json", dispatchBuildOutput],
   ["output/dispatch-show.json", dispatchShowOutput],
+  ["output/evidence-record.json", evidenceRecordOutput],
+  ["output/evidence-check.json", evidenceCheckOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {

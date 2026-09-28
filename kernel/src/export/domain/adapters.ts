@@ -74,6 +74,7 @@ export const ADAPTERS: readonly AdapterDefinition[] = [
 /** The adapter each role runs on (`role-contracts`, Role-to-adapter map). */
 export const ROLE_ADAPTERS: Readonly<Record<Role, string>> = {
   implementer: "worker",
+  simplifier: "worker",
   verifier: "reader",
   "design-verifier": "reader",
   reviewer: "reviewer",

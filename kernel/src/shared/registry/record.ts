@@ -11,6 +11,8 @@ const arg = z.object({
   name: z.string(),
   required: z.boolean(),
   values: z.array(z.string()).optional(),
+  /** The last argument only: it takes every remaining positional. */
+  repeatable: z.literal(true).optional(),
   description: z.string().optional(),
 });
 

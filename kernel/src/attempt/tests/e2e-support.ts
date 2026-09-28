@@ -101,3 +101,33 @@ export function envelope(change: Started, ticket: string, entries: string[]): st
   });
   return `.bdk/changes/${change.id}/${file}`;
 }
+
+/** `evidence record <kind>` under `ticket`, citing the result unless `verdict` is not-run. */
+export function recorded(change: Started, ticket: string, kind: string, verdict = "pass"): string {
+  const file = `.bdk/.machine/${kind}-${ticket}.json`;
+  fileStore().write(join(change.root, file), `{"failed":${verdict === "fail" ? "1" : "0"}}\n`);
+  const cite = verdict === "not-run" ? [] : ["--cite", "/failed"];
+  const result = bdk(
+    ["evidence", "record", kind, file, "--ticket", ticket, "--verdict", verdict, ...cite, "--json"],
+    change.root,
+  );
+  return answered(result, "output/evidence-record.json").evidence as string;
+}
+
+/**
+ * The post-task steps of a code ticket through the kernel (T23-D41): the
+ * simplifier's stored report, then the runner's cited `tests-scoped` and
+ * `lint` evidence.
+ */
+export function stepsDone(change: Started, ticket: string, target = "01-1"): void {
+  dispatched(change, ticket, target, "simplifier");
+  answered(
+    bdk(["log", "ingest", "--ticket", ticket, "--json"], change.root, {
+      stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Simplify\n",
+    }),
+    "output/log-ingest.json",
+  );
+  dispatched(change, ticket, target, "runner");
+  recorded(change, ticket, "tests-scoped");
+  recorded(change, ticket, "lint");
+}

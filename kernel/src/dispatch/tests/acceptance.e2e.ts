@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answered, bdk, read } from "../../../tests/support/repo.ts";
-import { closed, opened, started } from "../../attempt/tests/e2e-support.ts";
+import { closed, opened, started, stepsDone } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 
 function run(change: Started, schema: string, argv: string[], stdin?: string) {
@@ -55,6 +55,7 @@ describe("T23 part B acceptance", () => {
     const findingId = (finding.entry as { id: string }).id;
     const report = ingested(change, task, [findingId]);
     expect(report).toMatchObject({ ticket: task, role: "implementer", replaced: false });
+    stepsDone(change, task);
     const closedTask = closed(change, task, "ok", "--envelope", report.path as string);
     expect(closedTask).not.toHaveProperty("rulesFinding");
 

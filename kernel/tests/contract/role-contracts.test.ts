@@ -1,4 +1,4 @@
-// `role-contracts`: the seven role skills under skills/roles/, their adapter
+// `role-contracts`: the eight role skills under skills/roles/, their adapter
 // binding (the same table `dispatch build` stamps), and the wording every role
 // contract must and must not carry.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -18,6 +18,7 @@ const ROLES = [
   "reviewer",
   "runner",
   "scout",
+  "simplifier",
   "verifier",
 ];
 const REVIEWING = ["verifier", "design-verifier", "reviewer", "pr-reviewer"];
@@ -49,7 +50,7 @@ function sentences(body: string): string[] {
 }
 
 describe("role skills", () => {
-  it("are exactly the seven roles", () => {
+  it("are exactly the eight roles", () => {
     const dirs = existsSync(ROLES_DIR)
       ? readdirSync(ROLES_DIR, { withFileTypes: true })
           .filter((entry) => entry.isDirectory())
@@ -132,13 +133,36 @@ describe("P3: reviewing roles authorise nothing", () => {
   });
 });
 
-describe("T3: the implementer's git sentence", () => {
-  it("forbids discarding or history-writing git once and says to return blocked", () => {
-    const matches = sentences(readRole("implementer").body).filter((sentence) =>
-      /\bgit\b/.test(sentence),
-    );
-    expect(matches).toHaveLength(1);
-    expect(matches[0]).toMatch(/blocked/);
+describe("T3: the working-tree git sentence of the worker roles", () => {
+  it.each(["implementer", "simplifier"])(
+    "%s forbids discarding or history-writing git once and says to return blocked",
+    (name) => {
+      const matches = sentences(readRole(name).body).filter((sentence) => /\bgit\b/.test(sentence));
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toMatch(/blocked/);
+    },
+  );
+});
+
+describe("T23-D43: the simplifier keeps behaviour", () => {
+  it("keeps behaviour unchanged within the task's Files:", () => {
+    const { body } = readRole("simplifier");
+    expect(body).toMatch(/keep behaviour unchanged/i);
+    expect(body).toMatch(/only the task's `Files:`/);
+    expect(body).toMatch(/uncommitted/);
+  });
+});
+
+describe("T4: the runner records its checks as evidence", () => {
+  it("records each check, cites the output for pass and gives the reason for not-run", () => {
+    const { body } = readRole("runner");
+    expect(body).toMatch(/`Checks` section/);
+    expect(body).toContain("bdk evidence record <kind> <file> --ticket <ticket>");
+    const pass = sentences(body).filter((sentence) => sentence.includes("`pass`"));
+    expect(pass.some((sentence) => sentence.includes("cit"))).toBe(true);
+    const notRun = sentences(body).filter((sentence) => sentence.includes("`not-run`"));
+    expect(notRun.some((sentence) => sentence.includes("reason"))).toBe(true);
+    expect(body).toContain("never write or edit that output yourself");
   });
 });
 

@@ -13,7 +13,7 @@ import {
   listEntries,
   normalise,
   readDocument,
-  ticketDispatch,
+  openPackage,
   writeEntry,
 } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
@@ -49,7 +49,7 @@ export async function appendEntry(
 ): Promise<AppendResult | Refusal> {
   let source = "kernel";
   if (draft.ticket !== undefined) {
-    const role = ticketDispatch(index, change.id, draft.ticket)?.role;
+    const role = openPackage(deps.store, change.projectRoot, change.dir, draft.ticket)?.role;
     if (role === undefined) {
       return refuse(
         "policy/no-open-ticket",

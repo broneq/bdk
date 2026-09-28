@@ -4,7 +4,7 @@ import { parseReference } from "../../shared/ids/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { findChange, findEntry, refreshChange, ticketDispatch } from "../../shared/store/index.ts";
+import { findChange, findEntry, openPackage, refreshChange } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
 import { appendEntry } from "./append.ts";
 import type { AddResult } from "../domain/entry.ts";
@@ -44,7 +44,9 @@ export function addEntry(
       if (missing !== undefined) return missing;
     }
     const role =
-      input.ticket === undefined ? undefined : ticketDispatch(index, change.id, input.ticket)?.role;
+      input.ticket === undefined
+        ? undefined
+        : openPackage(deps.store, change.projectRoot, change.dir, input.ticket)?.role;
     let blocking: readonly string[] = [];
     if (mayDowngrade(input.type, role)) {
       const policy = verifierPolicy(deps, change, globalDir);

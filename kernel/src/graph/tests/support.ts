@@ -20,7 +20,13 @@ import type { FakeGit, RunResult } from "../../log/tests/support.ts";
 import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import type { ConfigRegistry } from "../../shared/config/index.ts";
-import { secondStamp, memoryIndex, writeDocument } from "../../shared/store/index.ts";
+import { currentTrees, filePolicy } from "../../evidence/index.ts";
+import {
+  memoryIndex,
+  readPlanParts,
+  secondStamp,
+  writeDocument,
+} from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import type { KindRegistry } from "../domain/kinds/index.ts";
 import { graphRegistrations } from "../index.ts";
@@ -174,4 +180,47 @@ export function passGate(
   source = "user",
 ): string {
   return writeEntry(store, { type: "transition", at, gate, to, source, refs: [gate] });
+}
+
+let manifests = 0;
+
+/**
+ * An evidence manifest of `kind` for `target`, stamped with the current tree
+ * of `target` as `evidence record` would; `stale` stamps another tree.
+ */
+export async function writeManifest(
+  store: Store,
+  kind: string,
+  target: string,
+  fields: { verdict?: string; citations?: string[]; stale?: boolean; at?: string } = {},
+): Promise<string> {
+  manifests += 1;
+  const id = `E-m${String(manifests).padStart(7, "0")}`;
+  const trees = await currentTrees(
+    { store, git: fakeGit() },
+    { id: CHANGE, projectRoot: ROOT },
+    filePolicy({}),
+    readPlanParts(store, DIR),
+    [target],
+  );
+  const tree = trees.get(target);
+  writeDocument(store, `${DIR}/evidence/${target}-${id}.md`, {
+    data: {
+      schema: 1,
+      id,
+      kind,
+      ticket: "A-7f3kx2p9",
+      target,
+      at: fields.at ?? "2026-09-25T10:30:00.000Z",
+      author: "Ada Lovelace <ada@example.com>",
+      source: "agent:runner",
+      "tree-hash": fields.stale === true ? `sha256:${"0".repeat(64)}` : tree?.treeHash,
+      tree: tree?.tree ?? [],
+      files: [{ path: "lint.txt", hash: `sha256:${"1".repeat(64)}`, stored: "machine" }],
+      verdict: fields.verdict ?? "pass",
+      citations: fields.citations ?? ["lint.txt:1"],
+    },
+    body: "",
+  });
+  return id;
 }

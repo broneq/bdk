@@ -2,11 +2,18 @@
 // parts it was built from, in output order.
 
 type PartKind =
-  "rules" | "language-rules" | "fragment" | "tools" | "file" | "startup" | "agents-table";
+  | "rules"
+  | "language-rules"
+  | "fragment"
+  | "tools"
+  | "concurrency"
+  | "file"
+  | "startup"
+  | "agents-table";
 
 interface ContextPart {
   readonly kind: PartKind;
-  /** The prompt key, `tools.<group>` or plugin path that produced the part. */
+  /** The prompt key, `tools.<group>`, settings key or plugin path that produced the part. */
   readonly source: string;
 }
 

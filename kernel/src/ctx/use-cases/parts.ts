@@ -9,7 +9,7 @@ import type * as z from "zod";
 import { promptContent } from "../../shared/config/index.ts";
 import type { ConfigModule, PromptKey, Resolved } from "../../shared/config/index.ts";
 import { languageSections, ruleSection, ruleSet as rulesRuleSet } from "../../rules/index.ts";
-import { featuresModule, fragmentPrompts, toolsModule } from "../config.ts";
+import { executionModule, featuresModule, fragmentPrompts, toolsModule } from "../config.ts";
 import type { Section } from "../domain/report.ts";
 import type { CtxInput } from "./input.ts";
 import type { Part } from "./manifest.ts";
@@ -50,6 +50,16 @@ export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Sec
           title: `Project commands: ${part.group}`,
           body: entries.length === 0 ? "none configured\n" : stringify(entries),
           part: { kind: "tools", source: `tools.${part.group}` },
+        },
+      ];
+    }
+    case "concurrency": {
+      const { concurrency } = read(executionModule, resolved);
+      return [
+        {
+          title: "Concurrency",
+          body: `Run at most ${String(concurrency)} agents at once.\n`,
+          part: { kind: "concurrency", source: "execution.concurrency" },
         },
       ];
     }

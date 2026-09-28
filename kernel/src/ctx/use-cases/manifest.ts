@@ -12,6 +12,8 @@ export type Part =
   /** `lavish` or `ask-user` of `fragments/decision/*`, chosen by R-11. */
   | { readonly kind: "fragment"; readonly id: "decision" }
   | { readonly kind: "tools"; readonly group: ToolGroup }
+  /** `execution.concurrency` as one sentence (T23-D52). */
+  | { readonly kind: "concurrency" }
   /** A plugin file, verbatim; `path` is relative to the plugin root. */
   | { readonly kind: "file"; readonly path: string; readonly title: string };
 
@@ -61,5 +63,6 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
       title: "Reviewer prompt",
     },
   ],
+  swarm: [{ kind: "concurrency" }],
   "test-driven-development": [rules("test-quality"), tools("test")],
 };

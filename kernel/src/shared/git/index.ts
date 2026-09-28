@@ -145,6 +145,17 @@ export async function workTreePaths(git: Git, workTree: string): Promise<string[
     .sort();
 }
 
+/**
+ * Every file of the working tree git knows or would add: tracked files, a
+ * deleted one included, and untracked files that are not ignored, sorted.
+ * The tree hash finds build config here (`kernel-state`, Tree hash).
+ */
+export async function workTreeFiles(git: Git, workTree: string): Promise<string[]> {
+  const result = await git.run(["ls-files", "-z", "-c", "-o", "--exclude-standard"], workTree);
+  if (result.code !== 0) throw new Error(`git ls-files failed: ${result.stderr.trim()}`);
+  return [...new Set(result.stdout.split("\0").filter((path) => path !== ""))].sort();
+}
+
 interface StatusEntry {
   readonly path: string;
   /** The `Y` column of `git status --porcelain=v1`: ` ` when the working tree matches the index. */

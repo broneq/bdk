@@ -31,3 +31,5 @@ export const dispatchKind = {
     .meta({ title: "Dispatch package" }),
   migrations: [],
 } as const satisfies DocumentKind;
+
+export type DispatchPackage = z.output<typeof dispatchKind.schema>;

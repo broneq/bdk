@@ -25,7 +25,9 @@ import {
   logUnder,
   open,
   opened,
+  recorded,
   started,
+  stepsDone,
 } from "./e2e-support.ts";
 
 describe("bdk attempt open", () => {
@@ -33,6 +35,11 @@ describe("bdk attempt open", () => {
     const change = started();
     const report = answered(open(change, "task-redispatch", "01-1"), "output/attempt-open.json");
     expect(report).toMatchObject({ attempt: 1, of: 3, scope: "full" });
+    expect(report.steps).toStrictEqual([
+      { kind: "simplify", role: "simplifier" },
+      { kind: "tests-scoped", role: "runner" },
+      { kind: "lint", role: "runner" },
+    ]);
     expect(
       read(
         change.root,
@@ -250,6 +257,7 @@ describe("bdk attempt close", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
     dispatched(change, ticket, "01-1");
+    stepsDone(change, ticket);
     const report = closed(change, ticket, "ok");
     expect(report.rulesFinding).toMatch(/^L-/);
     const shown = answered(
@@ -263,6 +271,21 @@ describe("bdk attempt close", () => {
     });
   });
 
+  it("exit 0: a simplifier reading its rules stamps nothing; the close still finds the implementer's (T23-D42)", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    dispatched(change, ticket, "01-1", "simplifier");
+    const rules = answered(
+      bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
+      "output/rules-show.json",
+    );
+    expect(rules).toMatchObject({ role: "simplifier" });
+    expect(rules).not.toHaveProperty("rulesRead");
+    stepsDone(change, ticket);
+    expect(closed(change, ticket, "ok").rulesFinding).toMatch(/^L-/);
+  });
+
   it("exit 0: no rules finding after rules show --ticket", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
@@ -271,7 +294,74 @@ describe("bdk attempt close", () => {
       bdk(["rules", "show", "--ticket", ticket, "--json"], change.root),
       "output/rules-show.json",
     );
+    stepsDone(change, ticket);
     expect(closed(change, ticket, "ok").rulesFinding).toBeUndefined();
+  });
+});
+
+describe("bdk attempt close ok: post-task step evidence (T23-D41)", () => {
+  it("exit 0: fresh cited evidence closes; the kernel records simplify from the simplifier report", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    stepsDone(change, ticket);
+    expect(closed(change, ticket, "ok").next).toStrictEqual({ action: "commit" });
+    const simplify = answered(
+      bdk(["evidence", "check", "01-1", "--json"], change.root),
+      "output/evidence-check.json",
+    ) as { evidence: { kind: string; verdict?: string }[] };
+    expect(simplify.evidence).toContainEqual(
+      expect.objectContaining({ kind: "simplify", verdict: "pass" }),
+    );
+  });
+
+  it("exit 2 policy/missing-evidence: a code ticket without lint evidence stays open", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    dispatched(change, ticket, "01-1", "runner");
+    recorded(change, ticket, "tests-scoped");
+    const result = refused(close(change, ticket, "ok"), 2, "policy/missing-evidence");
+    expect(result.why).toContain("simplify");
+    expect(close(change, ticket, "fail").code).toBe(0);
+  });
+
+  it("exit 2 policy/stale-evidence: a file of the part changed after the runner recorded", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    stepsDone(change, ticket);
+    fileStore().write(join(change.root, "src/01-2.ts"), "export const two = 2;\n");
+    const result = refused(close(change, ticket, "ok"), 2, "policy/stale-evidence");
+    expect(result.why).toMatch(/tests-scoped .*changed: src\/01-2\.ts; lint /);
+  });
+
+  it("exit 0: failing tests walk the ladder to a new implementer package", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    dispatched(change, ticket, "01-1", "runner");
+    recorded(change, ticket, "tests-scoped", "fail");
+    expect(closed(change, ticket, "fail").next).toMatchObject({ action: "narrow" });
+    const next = opened(change, "task-redispatch", "01-1");
+    expect(read(change.root, dispatched(change, next, "01-1"))).toContain("## Role: implementer");
+  });
+
+  it("exit 0: lint not-run within policy.budgets.not-run", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    dispatched(change, ticket, "01-1");
+    dispatched(change, ticket, "01-1", "simplifier");
+    answered(
+      bdk(["log", "ingest", "--ticket", ticket, "--json"], change.root, {
+        stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n",
+      }),
+      "output/log-ingest.json",
+    );
+    dispatched(change, ticket, "01-1", "runner");
+    recorded(change, ticket, "tests-scoped");
+    recorded(change, ticket, "lint", "not-run");
+    closed(change, ticket, "ok");
   });
 });
 

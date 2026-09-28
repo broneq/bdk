@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import type {
   ChangeView,
+  EvidenceFacts,
   FileFacts,
   GraphEntry,
   PlanPartFacts,
@@ -28,6 +29,10 @@ export interface ViewInput {
   readonly profile: Profile;
   readonly entries: readonly EntryRow[];
   readonly work?: WorkFacts | undefined;
+  /** The Change's manifests with their freshness, ordered by `at`, then id. */
+  readonly evidence?: readonly EvidenceFacts[];
+  /** Plan part number -> its current tree hash, when computed. */
+  readonly partTrees?: ReadonlyMap<string, string>;
 }
 
 interface Read {
@@ -56,6 +61,13 @@ export function changeView(input: ViewInput): ChangeView {
     parts.set(path, facts);
     return facts;
   };
+  /** The frontmatter of the report file a `report` entry names. */
+  const reportData = (entry: GraphEntry): Readonly<Record<string, unknown>> | undefined => {
+    const row = byId.get(entry.id);
+    if (row === undefined) return undefined;
+    const report = documentData(store, join(input.projectRoot, row.path))?.report;
+    return typeof report === "string" ? documentData(store, join(dir, report)) : undefined;
+  };
   return {
     id: input.id,
     kind: input.kind,
@@ -64,15 +76,16 @@ export function changeView(input: ViewInput): ChangeView {
     file: (path) => read(path)?.facts,
     list: (sub) => store.list(join(dir, sub)).filter((name) => !name.endsWith("/")),
     reportStatus: (entry: GraphEntry) => {
-      const row = byId.get(entry.id);
-      if (row === undefined) return undefined;
-      const data = documentData(store, join(input.projectRoot, row.path));
-      const report = data?.report;
-      if (typeof report !== "string") return undefined;
-      const status = documentData(store, join(dir, report))?.status;
+      const status = reportData(entry)?.status;
       return typeof status === "string" ? status : undefined;
     },
+    reportEvidence: (entry: GraphEntry) => {
+      const evidence = reportData(entry)?.evidence;
+      return Array.isArray(evidence) ? evidence.map(String) : [];
+    },
     planPart,
+    evidence: input.evidence ?? [],
+    partTree: (nn) => input.partTrees?.get(nn),
     ...(input.work === undefined ? {} : { work: input.work }),
   };
 }
