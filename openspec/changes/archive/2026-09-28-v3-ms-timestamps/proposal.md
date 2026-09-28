@@ -1,6 +1,6 @@
 ## Why
 
-Plan: docs/V3-IMPLEMENTATION-PLAN.md, outside the task list (a defect of the T14 state conventions, found in T23 part C, #55). Tracking issue: none yet.
+Plan: docs/V3-IMPLEMENTATION-PLAN.md, outside the task list (a defect of the T14 state conventions, found in T23 part C, #55). Tracking issue: #94.
 
 Every kernel timestamp is ISO 8601 UTC to the second (`kernel-state`, Document schemas and validation; `kernel-cli`, Conventions). Whenever the kernel picks "the latest" of several records by `at`, two records of one second compare equal and the tie falls to the random id. The T23 part C acceptance test showed it: a `not-run` and a `pass` evidence manifest of one kind recorded in one second make `evidence check`, and with it `attempt close ok`, pick either one at random. The same tie already forced special cases into the specs: the stage derivation breaks ties by pipeline order (`kernel-state`, Derived state and mutation), the gate lets "the same second" count (`kernel-pipeline`, Gate), and the ladder names tickets instead of comparing times (`kernel-loops`). Each new "latest by `at`" query needs its own rule or stays nondeterministic.
 
