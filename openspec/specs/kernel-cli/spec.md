@@ -271,7 +271,7 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 Success output, list pages, identifiers, timestamps, idempotence and the refusal-versus-finding split SHALL follow these conventions in every command.
 
 - **Success output is a plain object.** No envelope: the `--json` output of a command is the object its schema under `schema/cli/output/` describes. Optional fields are absent when unknown, never `null`. Enumerations are lowercase words. Text mode renders the same data; only JSON is the contract.
-- **List pages.** Every `list` verb and every command that returns a collection uses `schema/cli/common/list-page.json`: `items[]`, `total` (the count before truncation), `truncated` (boolean), and `for` (the `--for` filter as given, absent when none). The default page is the first 100 items, which is the design's "<= 100 lines" rule; `--all` lifts it. Text mode prints at most 100 lines for the same reason. `--for <ref>` narrows a list to what references a task (`02-3`), a part (`02`) or a file path; the list verbs that accept it say so in their entry.
+- **List pages.** Every `list` verb and every command that returns a collection uses `schema/cli/common/list-page.json`: `items[]`, `total` (the count before truncation), `truncated` (boolean), and `for` (the `--for` filter as given, absent when none). The default page is the first 100 items, which is the design's "<= 100 lines" rule; `--all` lifts it. A list verb's text mode prints at most 100 lines for the same reason, ending in a line that names `--all`; every other command prints its whole text, so a `show` body is never cut. `--for <ref>` narrows a list to what references a task (`02-3`), a part (`02`) or a file path; the list verbs that accept it say so in their entry.
 - **Full bodies only via `show`.** `list` returns summaries (id, type, summary, status, refs). `show <id>` returns the whole entry, package or attempt record. Dumping the whole state needs `query` with `--all`.
 - **Kernel-stamped fields.** `id`, `at`, `author` and `source` on ledger entries, tickets, attempts and manifests are stamped by the kernel from its clock, git config and the ticket's role (P1), and so is every other field `kernel-state` marks as stamped (for example a `learning` entry's `fingerprint`). They appear in outputs and never in inputs; passing one is `input/forbidden-field`. `source: user` exists only on the stage-transition path (`hooks prompt-expansion`); `source: policy` only when `policy.gates.<gate>: auto` passes a gate (T02 decision R-9); `source: inferred` only from `change new --inferred`.
 - **Identifiers.** Change ids, ledger ids (`L-`), ticket ids (`A-`), evidence ids (`E-`) and rule ids (`[PREFIX-n]`) are opaque strings to callers. Their format is fixed by `kernel-state` (Identifiers): the prefix followed by eight random characters of `[0-9a-z]`, non-sequential, with no allocator or lock; Change ids are `<yyyy-mm-dd>-<slug>`. Within the active Change an id is bare (`L-m2x9v7qa`); across Changes it is qualified (`<changeId>/L-m2x9v7qa`). Task ids are `<part>-<n>` (`02-3`), part ids two digits (`02`), artifact ids the node names of `pipeline.yaml` (`design`, `plan-verify`, `gate:design`). Ids in the examples of these specs are illustrative.
@@ -284,6 +284,11 @@ Success output, list pages, identifiers, timestamps, idempotence and the refusal
 
 - **WHEN** a `list` verb runs without `--all` over more than 100 matching items
 - **THEN** `items` holds the first 100, `total` the full count and `truncated` is `true`
+
+#### Scenario: show body past 100 lines
+
+- **WHEN** `dispatch show` prints a package of more than 100 lines in text mode
+- **THEN** stdout is the whole file, byte for byte, with no truncation line
 
 #### Scenario: kernel-stamped field in input
 
@@ -310,7 +315,7 @@ Each command carries exactly one class in the index (`availability`). The `hooks
 
 `hooks prompt-expansion` is the only writer of `source: user` transition entries; there is no `approve`, no `gate pass`, and `log add` cannot produce `source: user` (T1, P1, S8). A model that wants a gate passed has exactly one option: render the gate status and stop, so that the user types the next stage command.
 
-**Cross-check with the state contract (T14).** Every command that writes lists the Change directory paths it may touch in `writes[]` (index field); `read` commands have an empty list. `kernel-state`'s write map names a writer for every file in the Change directory and checks that each kernel writer is an `orchestrator`, `agent` or `hook` command here, never a `read` one, whose `writes[]` covers the path. The other writers are stage skills and roles that write artifact files (design and plan artifacts, `spec-delta/`, worker reports) through the host's file tools; the kernel validates those files at `done` and at `attempt close`.
+**Cross-check with the state contract (T14).** Every command that writes lists the Change directory paths it may touch in `writes[]` (index field); `read` commands have an empty list. `kernel-state`'s write map names a writer for every file in the Change directory and checks that each kernel writer is an `orchestrator`, `agent` or `hook` command here, never a `read` one, whose `writes[]` covers the path. The other writers are stage skills and roles that write artifact files (design and plan artifacts, `spec-delta/`) through the host's file tools; the kernel validates those files at `done` and at `attempt close`.
 
 #### Scenario: subagent calls an orchestrator verb
 

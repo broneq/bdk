@@ -144,3 +144,19 @@ Rules without exception: `intent` lives only in `change.md`, written only by `ch
 
 - **WHEN** the write map contract test reads the records of `attempt open`, `attempt close`, `part done` and `change takeover`
 - **THEN** every Change path in their `writes[]` appears in the file table naming them
+
+### Requirement: Write map enforcement
+
+The kernel SHALL enforce the write map for every file a kernel command writes, and contract tests SHALL enforce the map against the CLI contract; files written through host file tools SHALL be validated at `done`.
+
+Kernel-enforced: only `shared/store` builds Change paths and writes them; schema validation on write and read; kernel-stamped fields are never taken from input (`input/forbidden-field`); availability classes keep subagents off orchestrator commands (`hooks pre-tool`, T24). Contract-enforced: every kernel writer in the tables is a command of `schema/cli/commands.json` whose availability is `orchestrator`, `agent` or `hook` (never `read`) and whose `writes[]` covers the path; every Change path in any command's `writes[]` appears in the file table. Documented and validated at `done`: files written through host file tools (design and plan artifacts, `spec-delta/`); the kernel cannot see their writer, and whether `hooks pre-tool` denies host-tool writes into kernel-channel paths is T24's decision.
+
+#### Scenario: writer is a read command
+
+- **WHEN** the file table names a command whose availability is `read`
+- **THEN** the write map contract test fails naming the command
+
+#### Scenario: undeclared write
+
+- **WHEN** a command's `writes[]` lists a Change path that the file table does not name it for
+- **THEN** the write map contract test fails naming the command and the path
