@@ -113,9 +113,9 @@ describe("validateLayers", () => {
   });
 
   it("names the owner task of a key declared for a later task", () => {
-    const result = validate(layer("project", { policy: { log: { "max-observations": 5 } } }));
+    const result = validate(layer("project", { policy: { checkpoint: { "squash-at-close": 5 } } }));
     expect(result.problems).toMatchObject([
-      { key: "policy.log.max-observations", message: "lands with T23" },
+      { key: "policy.checkpoint.squash-at-close", message: "lands with T30" },
     ]);
   });
 
@@ -125,11 +125,11 @@ describe("validateLayers", () => {
   });
 
   it("hints the kebab-case form of a camelCase planned key", () => {
-    const result = validate(layer("project", { policy: { log: { maxObservations: 5 } } }));
+    const result = validate(layer("project", { archive: { keepEvidence: 5 } }));
     expect(result.problems).toMatchObject([
       {
-        key: "policy.log.maxObservations",
-        message: "unknown key; did you mean policy.log.max-observations?",
+        key: "archive.keepEvidence",
+        message: "unknown key; did you mean archive.keep-evidence?",
       },
     ]);
   });
@@ -310,9 +310,9 @@ describe("dotted module keys", () => {
   });
 
   it("names the owner of a planned subtree next to registered ones", () => {
-    const result = check(layer("project", { policy: { log: { "max-observations": 1 } } }));
+    const result = check(layer("project", { policy: { verifier: { "not-a-fail": [] } } }));
     expect(result.problems).toMatchObject([
-      { key: "policy.log.max-observations", message: "lands with T23" },
+      { key: "policy.verifier.not-a-fail", message: "lands with T23" },
     ]);
   });
 

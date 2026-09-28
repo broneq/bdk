@@ -182,12 +182,15 @@ describe("checkConfig", () => {
   });
 
   it("names the owner task of a planned key", () => {
-    const { input } = setup({ [PROJECT]: "policy:\n  log:\n    max-observations: 3\n" });
+    const { input } = setup({ [PROJECT]: "policy:\n  checkpoint:\n    squash-at-close: 3\n" });
     const outcome = refusal(checkConfig(input));
     expect(outcome.why).toBe(
-      "policy.log.max-observations in the project layer (.bdk/settings.yaml): lands with T23",
+      "policy.checkpoint.squash-at-close in the project layer (.bdk/settings.yaml): lands with T30",
     );
-    expect(outcome.instead).toStrictEqual(["bdk config schema policy", "fix .bdk/settings.yaml"]);
+    expect(outcome.instead).toStrictEqual([
+      "bdk config schema policy.checkpoint",
+      "fix .bdk/settings.yaml",
+    ]);
   });
 
   it("names the replacement of a removed v2 key", () => {

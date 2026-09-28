@@ -153,6 +153,16 @@ Store a role's report under its ticket. The kernel SHALL implement the command a
 - **WHEN** `bdk log ingest --ticket A-9c2d4f6h --json` runs as in the example
 - **THEN** the exit code is 0 and stdout validates against `schema/cli/output/log-ingest.json`
 
+#### Scenario: input/invalid-envelope
+
+- **WHEN** the report piped to `bdk log ingest --ticket A-9c2d4f6h` has no frontmatter, or its frontmatter carries the unknown field `verdict`
+- **THEN** the exit code is 3, the error object carries `rule: input/invalid-envelope` naming the missing frontmatter or the field, and nothing is written under `reports/`
+
+#### Scenario: policy/entries-missing
+
+- **WHEN** the envelope's `entries` lists an id written under another ticket, or its `evidence` lists a manifest id not recorded under this ticket
+- **THEN** the exit code is 2, the error object carries `rule: policy/entries-missing` naming the ids, and nothing is written under `reports/`
+
 #### Scenario: input/invalid-block
 
 - **WHEN** the report's frontmatter has `status: blocked` and no `reason`

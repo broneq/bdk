@@ -12,20 +12,23 @@
       "description": "Path relative to the project root."
     },
     "content": {
-      "type": "string"
+      "type": "string",
+      "description": "The package file, byte for byte."
     },
     "frontmatter": {
-      "type": "object"
+      "type": "object",
+      "description": "The parsed frontmatter (`kernel-state`, Dispatch package)."
     }
   },
   "examples": [
     {
-      "path": ".bdk/changes/2026-09-25-passwordless-login/dispatch/02-3-implementer-2.md",
-      "content": "---\nticket: A-7f3k\n...",
+      "path": ".bdk/changes/2026-09-25-passwordless-login/dispatch/02-3-implementer-A-7f3k9m2q.md",
+      "content": "---\nschema: 1\nticket: A-7f3k9m2q\n...",
       "frontmatter": {
-        "ticket": "A-7f3k",
-        "task": "02-3",
-        "role": "implementer"
+        "ticket": "A-7f3k9m2q",
+        "target": "02-3",
+        "role": "implementer",
+        "adapter": "worker"
       }
     }
   ]

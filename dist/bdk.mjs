@@ -8017,6 +8017,11 @@ var commands_default = {
           description: "The ticket the caller works under; required inside a dispatch, sets source: agent:<role>."
         },
         {
+          name: "--category",
+          value: "<id>",
+          description: "The entry's category; a verifier blocker needs one from policy.verifier.blocking-categories (P8)."
+        },
+        {
           name: "--review",
           description: "Mark the entry to be shown at the next gate."
         },
@@ -8036,7 +8041,6 @@ var commands_default = {
         "input/forbidden-field",
         "input/not-found",
         "policy/no-open-ticket",
-        "policy/observation-cap",
         "runtime/git-missing"
       ],
       writes: [".bdk/changes/<id>/log/"]
@@ -8044,35 +8048,30 @@ var commands_default = {
     {
       id: "log-ingest",
       argv: ["log", "ingest"],
-      summary: "Ingest a `bdk-entries` block from a read-only role's report under its ticket.",
-      availability: "orchestrator",
+      summary: "Store a role's report under its ticket.",
+      availability: "agent",
       mode: "command",
       slice: "log",
-      owner: "T22",
+      owner: "T23",
       changeScoped: true,
       args: [],
       flags: [
         {
           name: "--ticket",
           value: "<ticket>",
-          description: "Required; provenance comes from the ticket's role."
-        },
-        {
-          name: "--file",
-          value: "<path>",
-          description: "Read the block from a file instead of stdin (typically the report)."
+          description: "Required; the role and the report path come from the ticket's dispatch package."
         }
       ],
-      stdin: "The fenced bdk-entries YAML block, or a whole report containing exactly one such block.",
+      stdin: "The report: a YAML frontmatter holding the envelope, then the Markdown body.",
       output: "output/log-ingest.json",
       exits: [0, 2, 3, 4, 5],
       refusals: [
-        "input/invalid-block",
+        "input/invalid-envelope",
         "input/forbidden-field",
         "policy/no-open-ticket",
-        "policy/observation-cap"
+        "policy/entries-missing"
       ],
-      writes: [".bdk/changes/<id>/log/", ".bdk/changes/<id>/reports/"]
+      writes: [".bdk/changes/<id>/reports/"]
     },
     {
       id: "log-list",
@@ -8202,7 +8201,7 @@ var commands_default = {
     {
       id: "dispatch-build",
       argv: ["dispatch", "build"],
-      summary: "Build the dispatch package file for a task, role and ticket.",
+      summary: "Build the dispatch package file for a target, role and ticket.",
       availability: "orchestrator",
       mode: "command",
       slice: "dispatch",
@@ -8210,8 +8209,9 @@ var commands_default = {
       changeScoped: true,
       args: [
         {
-          name: "<task>",
-          required: true
+          name: "<target>",
+          required: true,
+          description: "The ticket's target: a task id, a part id, the Change id or an artifact id (`kernel-state`, Attempt record)."
         },
         {
           name: "<role>",
@@ -8246,7 +8246,8 @@ var commands_default = {
       args: [
         {
           name: "<ticket|path>",
-          required: true
+          required: true,
+          description: "A ticket id, or a package path relative to the working directory or absolute."
         }
       ],
       flags: [],
@@ -8624,24 +8625,30 @@ var commands_default = {
     {
       id: "rules-show",
       argv: ["rules", "show"],
-      summary: "Print one rule by id.",
-      availability: "read",
+      summary: "Print one rule by id, or the rules of a ticket.",
+      availability: "agent",
       mode: "command",
       slice: "rules",
-      owner: "T31",
-      changeScoped: false,
+      owner: "T23",
+      changeScoped: true,
       args: [
         {
           name: "<id>",
-          required: true,
-          description: "PREFIX-n, e.g. CQ-4."
+          required: false,
+          description: "PREFIX-n, e.g. CQ-4. Exactly one of <id> and --ticket."
         }
       ],
-      flags: [],
+      flags: [
+        {
+          name: "--ticket",
+          value: "<ticket>",
+          description: "Print the rules for the ticket's role and target."
+        }
+      ],
       output: "output/rules-show.json",
-      exits: [0, 3, 5],
-      refusals: ["input/not-found"],
-      writes: []
+      exits: [0, 2, 3, 4, 5],
+      refusals: ["input/not-found", "policy/no-open-ticket"],
+      writes: [".bdk/changes/<id>/attempts/"]
     },
     {
       id: "rules-add",
@@ -15585,7 +15592,7 @@ var RULES = [
   "input/missing-argument",
   "input/invalid-argument",
   "input/forbidden-field",
-  "input/invalid-block",
+  "input/invalid-envelope",
   "input/not-found",
   "policy/no-active-change",
   "policy/change-exists",
@@ -15605,7 +15612,6 @@ var RULES = [
   "policy/entries-missing",
   "policy/stale-evidence",
   "policy/missing-citation",
-  "policy/observation-cap",
   "policy/invalid-transition",
   "policy/git-in-progress",
   "policy/git-hook-failed",
@@ -15901,7 +15907,7 @@ function keySteps(node3, key) {
 var PLANNED_KEYS = [
   { key: "policy.checkpoint.squash-at-close", owner: "T30" },
   { key: "policy.verifier.blocking-categories", owner: "T23" },
-  { key: "policy.log.max-observations", owner: "T23" },
+  { key: "policy.verifier.not-a-fail", owner: "T23" },
   { key: "execution.concurrency", owner: "T23" },
   { key: "archive.keep-evidence", owner: "T23" },
   { key: "rules.propose-when.changes", owner: "T31" },
@@ -19312,7 +19318,7 @@ function ingestBlock(deps, change, input) {
   });
 }
 function invalidBlock(why) {
-  return refuse("input/invalid-block", why, [
+  return refuse("input/invalid-envelope", why, [
     "end the report with one ```bdk-entries fence holding a YAML list of entries",
     "bdk log add <type> <summary> --ref <ref> for a single entry"
   ]);

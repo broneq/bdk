@@ -89,7 +89,7 @@ A module's key is a root key (`tools`) or a dotted subtree of a root (`policy.bu
 
 #### Scenario: key of a later task
 
-- **WHEN** `.bdk/settings.yaml` sets `policy.log.max-observations` before T23 registers its module
+- **WHEN** `.bdk/settings.yaml` sets `archive.keep-evidence` before T23 part C registers its module
 - **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` and `why` naming the key, the layer and `lands with T23`
 
 #### Scenario: key without a consumer
@@ -150,13 +150,13 @@ The settings SHALL declare the project toolchain keys below, owned by T12.
 
 | Key               | Type                              | Default | Owner | Consumer | v2 origin                           |
 | ----------------- | --------------------------------- | ------- | ----- | -------- | ----------------------------------- |
-| `languages`       | array of unique non-empty strings | `[]`    | T12   | `ctx`    | `languages`                         |
+| `languages`       | array of unique non-empty strings | `[]`    | T12   | `rules`  | `languages`                         |
 | `tools.test`      | array of tool entries             | `[]`    | T12   | `ctx`    | `test-tools` (`type` becomes `id`)  |
 | `tools.lint`      | array of tool entries             | `[]`    | T12   | `ctx`    | `lint-tools` (`type` becomes `id`)  |
 | `tools.build`     | array of tool entries             | `[]`    | T12   | `ctx`    | `build-tools` (`type` becomes `id`) |
 | `features.lavish` | boolean                           | `true`  | T12   | `ctx`    | `features.lavish`                   |
 
-`languages` is free-form: a name gets content only when a `rules/languages/<name>` prompt value exists. `features.lavish: false` makes skills fall back to `AskUserQuestion` (R-11).
+`languages` is free-form: a name gets content only when a `rules/languages/<name>` prompt value exists. The `rules` slice owns the rule text (`kernel-architecture`, Dependency matrix), and `ctx` reads it through `rules`. `features.lavish: false` makes skills fall back to `AskUserQuestion` (R-11).
 
 #### Scenario: empty project
 
@@ -198,10 +198,10 @@ The settings SHALL declare the workflow policy keys below. Each is registered by
 | `policy.escalation.per-change`        | integer >= 0                                | `3`                                                                                                                                      | T22   | `attempt`      | none      |
 | `policy.checkpoint.enabled`           | boolean                                     | `true`                                                                                                                                   | T22   | `shared/store` | none      |
 | `policy.checkpoint.squash-at-close`   | boolean                                     | `false`                                                                                                                                  | T30   | `shared/store` | none      |
-| `policy.verifier.blocking-categories` | array of `{id, description}` merged by `id` | the six P8 categories: `architecture`, `security`, `irreversible-step`, `integration-failure`, `unresolved-decision`, `false-code-claim` | T23   | `dispatch`     | none      |
-| `policy.log.max-observations`         | integer >= 0                                | `5`                                                                                                                                      | T23   | `log`          | none      |
+| `policy.verifier.blocking-categories` | array of `{id, description}` merged by `id` | the six P8 categories: `architecture`, `security`, `irreversible-step`, `integration-failure`, `unresolved-decision`, `false-code-claim` | T23   | `log`          | none      |
+| `policy.verifier.not-a-fail`          | array of `{id, description}` merged by `id` | the P8 list: `style`, `template-conformance`, `files-bookkeeping`, `wording`, `report-length`, `verification-defect`                     | T23   | `log`          | none      |
 
-`policy.gates.<gate>` holds one key per human gate the graph defines; T21 may add a gate through a delta. A project extends the blocking categories by adding items and disables one by replacing the array in a higher layer. `policy.escalation.model` names a model class, not a model id; the dispatch adapter maps it (P11). `policy.escalation.per-change` caps the escalation tickets of one Change, because the kernel sees no token cost (`kernel-loops`, Escalation ladder). `policy.checkpoint.squash-at-close` is read only by `change close --squash` (T30) and defaults to keeping checkpoints as history. Each subtree is one config module: `policy.gates` (`graph`), `policy.budgets`, `policy.oscillation` and `policy.escalation` (`attempt`), `policy.checkpoint` (`shared/store`, the checkpoint core every caller shares), `policy.verifier` (`dispatch`) and `policy.log` (`log`).
+`policy.gates.<gate>` holds one key per human gate the graph defines; T21 may add a gate through a delta. A project extends the blocking categories by adding items and disables one by replacing the array in a higher layer. `policy.escalation.model` names a model class, not a model id; the dispatch adapter maps it (P11). `policy.escalation.per-change` caps the escalation tickets of one Change, because the kernel sees no token cost (`kernel-loops`, Escalation ladder). `policy.checkpoint.squash-at-close` is read only by `change close --squash` (T30) and defaults to keeping checkpoints as history. Each subtree is one config module: `policy.gates` (`graph`), `policy.budgets`, `policy.oscillation` and `policy.escalation` (`attempt`), `policy.checkpoint` (`shared/store`, the checkpoint core every caller shares), `policy.verifier` (`log`, which downgrades an uncategorised verifier blocker; `dispatch` reads both lists through `log` to put them in a verifier's package). The default descriptions restate the design's Verifier contracts (P8): `verification-defect` reads "a verification defect, unless it removes the only real evidence of the change's safety". `policy.log.max-observations` is gone with the per-dispatch observation cap (T23-D13).
 
 #### Scenario: extend the blocking categories
 
@@ -212,6 +212,11 @@ The settings SHALL declare the workflow policy keys below. Each is registered by
 
 - **WHEN** no layer sets a `policy` key and `bdk config show policy --json` runs
 - **THEN** the budgets are `task-redispatch: 3`, `verify-fix: 2`, `review-fix: 2`, `verifier: 2`, `not-run: 3`, `oscillation.threshold` is 2, `escalation` is `{enabled: true, model: opus, per-change: 3}` and `checkpoint.enabled` is true
+
+#### Scenario: not-a-fail defaults
+
+- **WHEN** no layer sets `policy.verifier` and `bdk config show policy.verifier --json` runs
+- **THEN** `blocking-categories` holds the six P8 categories and `not-a-fail` holds `style`, `template-conformance`, `files-bookkeeping`, `wording`, `report-length` and `verification-defect`
 
 ### Requirement: Keys of execution and archive
 
@@ -283,17 +288,17 @@ The kernel SHALL refuse a key that v2 had and v3 dropped or renamed with `policy
 
 Markdown configuration values SHALL be files, one per prompt key, resolved across the same four layers, each layer contributing by `mode: extends` (appended to the value below) or `mode: replace` (discarding it).
 
-A prompt key is the file path relative to a prompts directory without `.md` (`rules/security`), so it never contains a dot; its first segment is never `dir` or `files`. Each layer has one prompts directory, set only by `prompts.dir` in that layer's own file and never inherited; a relative `prompts.dir` resolves against the project root for the project and local layers and against the global layer's directory for the global layer. In the same layer, `prompts.files.<key>` wins over `<dir>/<key>.md`; its string form is a path with `mode: extends`, its object form carries `path`, `mode` and `applies`. A file's optional frontmatter carries `mode` and `applies` (a list of globs); for a file mapped by `prompts.files`, a frontmatter `mode` or `applies` that differs from the YAML entry answers `policy/config-invalid`. The default layer is the plugin file the prompt key declares, when it has one. Prompt keys are registered like YAML keys, as literal keys or as one-segment patterns: a prompts directory file or a `prompts.files` entry whose key is not registered answers `policy/unknown-config-key`. `applies` is validated as a list of globs and passed to the consumer, which interprets it; `ctx` selects rule sets by file and ignores `applies` until T31.
+A prompt key is the file path relative to a prompts directory without `.md` (`rules/security`), so it never contains a dot; its first segment is never `dir` or `files`. Each layer has one prompts directory, set only by `prompts.dir` in that layer's own file and never inherited; a relative `prompts.dir` resolves against the project root for the project and local layers and against the global layer's directory for the global layer. In the same layer, `prompts.files.<key>` wins over `<dir>/<key>.md`; its string form is a path with `mode: extends`, its object form carries `path`, `mode` and `applies`. A file's optional frontmatter carries `mode` and `applies` (a list of globs); for a file mapped by `prompts.files`, a frontmatter `mode` or `applies` that differs from the YAML entry answers `policy/config-invalid`. The default layer is the plugin file the prompt key declares, when it has one. Prompt keys are registered like YAML keys, as literal keys or as one-segment patterns: a prompts directory file or a `prompts.files` entry whose key is not registered answers `policy/unknown-config-key`. `applies` is validated as a list of globs and passed to the consumer, which interprets it; `rules` resolves the rule sets for `ctx` and for `rules show --ticket` and ignores `applies` until T31.
 
 | Prompt key                                              | Default file (plugin)                    | Owner | Consumer | v2 origin                 |
 | ------------------------------------------------------- | ---------------------------------------- | ----- | -------- | ------------------------- |
-| `rules/code-quality`                                    | `rules/code-quality.md`                  | T12   | `ctx`    | `quality.code-quality`    |
-| `rules/architecture`                                    | `rules/architecture.md`                  | T12   | `ctx`    | `quality.architecture`    |
-| `rules/design-patterns`                                 | `rules/design-patterns.md`               | T12   | `ctx`    | `quality.design-patterns` |
-| `rules/security`                                        | `rules/security.md`                      | T12   | `ctx`    | `quality.security`        |
-| `rules/engineering-judgment`                            | `rules/engineering-judgment.md`          | T12   | `ctx`    | none                      |
-| `rules/test-quality`                                    | `rules/test-quality.md`                  | T12   | `ctx`    | none                      |
-| `rules/languages/*`                                     | `rules/languages/<name>.md` when shipped | T12   | `ctx`    | `language-rules.<name>`   |
+| `rules/code-quality`                                    | `rules/code-quality.md`                  | T12   | `rules`  | `quality.code-quality`    |
+| `rules/architecture`                                    | `rules/architecture.md`                  | T12   | `rules`  | `quality.architecture`    |
+| `rules/design-patterns`                                 | `rules/design-patterns.md`               | T12   | `rules`  | `quality.design-patterns` |
+| `rules/security`                                        | `rules/security.md`                      | T12   | `rules`  | `quality.security`        |
+| `rules/engineering-judgment`                            | `rules/engineering-judgment.md`          | T12   | `rules`  | none                      |
+| `rules/test-quality`                                    | `rules/test-quality.md`                  | T12   | `rules`  | none                      |
+| `rules/languages/*`                                     | `rules/languages/<name>.md` when shipped | T12   | `rules`  | `language-rules.<name>`   |
 | `fragments/decision/lavish`                             | `fragments/decision/lavish.md`           | T13   | `ctx`    | none                      |
 | `fragments/decision/ask-user`                           | `fragments/decision/ask-user.md`         | T13   | `ctx`    | none                      |
 | `pipeline/<kind>` (one literal key per registered kind) | `pipeline/<kind>.md`                     | T21   | `graph`  | none                      |

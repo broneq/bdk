@@ -92,7 +92,7 @@ export function ingestBlock(
 }
 
 function invalidBlock(why: string): Refusal {
-  return refuse("input/invalid-block", why, [
+  return refuse("input/invalid-envelope", why, [
     "end the report with one ```bdk-entries fence holding a YAML list of entries",
     "bdk log add <type> <summary> --ref <ref> for a single entry",
   ]);

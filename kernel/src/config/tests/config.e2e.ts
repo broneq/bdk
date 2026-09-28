@@ -187,14 +187,14 @@ describe("bdk config check", () => {
 
   it("acceptance: key of a later task", () => {
     const root = fixture({
-      ".bdk/settings.yaml": "policy:\n  log:\n    max-observations: 3\n",
+      ".bdk/settings.yaml": "archive:\n  keep-evidence: true\n",
     }).root;
     const refusal = refused(
       bdk(["config", "check", "--json"], root),
       2,
       "policy/unknown-config-key",
     );
-    expect(refusal.why).toContain("policy.log.max-observations");
+    expect(refusal.why).toContain("archive.keep-evidence");
     expect(refusal.why).toContain("lands with T23");
   });
 
