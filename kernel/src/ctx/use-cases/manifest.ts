@@ -12,6 +12,8 @@ export type Part =
   /** `lavish` or `ask-user` of `fragments/decision/*`, chosen by R-11. */
   | { readonly kind: "fragment"; readonly id: "decision" }
   | { readonly kind: "tools"; readonly group: ToolGroup }
+  /** `execution.concurrency` as one sentence (T23-D52). */
+  | { readonly kind: "concurrency" }
   /** A plugin file, verbatim; `path` is relative to the plugin root. */
   | { readonly kind: "file"; readonly path: string; readonly title: string };
 

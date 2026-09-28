@@ -16,13 +16,14 @@ export const ctxOutput = z
             "language-rules",
             "fragment",
             "tools",
+            "concurrency",
             "file",
             "startup",
             "agents-table",
           ]),
           source: z.string().meta({
             description:
-              "The prompt key (rules/security), tools group (tools.test) or plugin path that produced the part.",
+              "The prompt key (rules/security), tools group (tools.test), settings key (execution.concurrency) or plugin path that produced the part.",
           }),
         }),
       )

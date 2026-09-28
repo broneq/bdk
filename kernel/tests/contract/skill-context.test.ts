@@ -56,6 +56,7 @@ function partFiles(part: Part): (string | undefined)[] {
     case "file":
       return [part.path];
     case "tools":
+    case "concurrency":
       return [];
   }
 }

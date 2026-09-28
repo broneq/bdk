@@ -3,6 +3,7 @@
 // each registered leaf with its row: type, default, owner and consumer.
 import * as z from "zod";
 
+import { isAppendOnly } from "../../src/shared/config/index.ts";
 import type { ConfigRegistry } from "../../src/shared/config/index.ts";
 
 export interface RegisteredLeaf {
@@ -57,6 +58,14 @@ function renderDefault(schema: z.ZodType): string {
       if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
         return value.map((item) => `\`${item.id}\``).join(", ");
       }
+      // A default list of strings reads as its items, each a code span.
+      if (
+        Array.isArray(value) &&
+        value.length > 0 &&
+        value.every((item) => typeof item === "string")
+      ) {
+        return value.map((item) => `\`${item}\``).join(", ");
+      }
       return JSON.stringify(value);
     }
     if (current instanceof z.ZodOptional || current instanceof z.ZodPrefault) {
@@ -94,7 +103,8 @@ function renderType(schema: z.ZodType): string {
     return either(inner.options.map((option) => `\`${String(option)}\``));
   if (inner instanceof z.ZodArray) {
     const unique = z.globalRegistry.get(inner)?.uniqueItems === true ? "unique " : "";
-    return `array of ${unique}${plural(renderType(inner.element as z.ZodType))}`;
+    const append = isAppendOnly(inner) ? "append-only " : "";
+    return `${append}array of ${unique}${plural(renderType(inner.element as z.ZodType))}`;
   }
   if (inner instanceof z.ZodUnion) {
     return (inner.options as z.ZodType[]).map((option) => renderType(option)).join(" or ");

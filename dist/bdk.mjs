@@ -15901,6 +15901,10 @@ function forget(origins, path) {
 // kernel/src/shared/config/keys.ts
 var LEAF = { kind: "leaf" };
 var APPEND_ONLY = /* @__PURE__ */ new WeakSet();
+function appendOnly(schema) {
+  APPEND_ONLY.add(schema);
+  return schema;
+}
 function keyTree(schema) {
   const inner = unwrap(schema);
   if (inner instanceof ZodObject) {
@@ -15971,7 +15975,6 @@ function keySteps(node3, key) {
 // kernel/src/shared/config/known.ts
 var PLANNED_KEYS = [
   { key: "policy.checkpoint.squash-at-close", owner: "T30" },
-  { key: "execution.concurrency", owner: "T23" },
   { key: "archive.keep-evidence", owner: "T30" },
   { key: "rules.propose-when.changes", owner: "T31" },
   { key: "rules.propose-when.authors", owner: "T31" },
@@ -15979,10 +15982,7 @@ var PLANNED_KEYS = [
   { key: "rules.max-per-package", owner: "T31" },
   { key: "rules.max-learnings-per-change", owner: "T31" },
   { key: "rules.disabled", owner: "T31" },
-  { key: "spec.normative-word", owner: "T30" },
-  { key: "policy.evidence.non-executable", owner: "T23" },
-  { key: "policy.evidence.build-config", owner: "T23" },
-  { key: "policy.evidence.max-committed-bytes", owner: "T23" }
+  { key: "spec.normative-word", owner: "T30" }
 ];
 var MCP = "removed with the bundled MCP servers (ADR-0001)";
 var REMOVED_KEYS = [
@@ -18021,25 +18021,25 @@ async function coveredByGit(git, projectRoot, path) {
 
 // kernel/src/shared/store/glob.ts
 var cache = /* @__PURE__ */ new Map();
-function matchesGlob(glob3, path) {
-  return patternOf(glob3).test(normalize(path));
+function matchesGlob(glob4, path) {
+  return patternOf(glob4).test(normalize(path));
 }
-function firstMatch(globs, path) {
-  return globs.find((glob3) => matchesGlob(glob3, path));
+function firstMatch(globs2, path) {
+  return globs2.find((glob4) => matchesGlob(glob4, path));
 }
-function patternOf(glob3) {
-  const known = cache.get(glob3);
+function patternOf(glob4) {
+  const known = cache.get(glob4);
   if (known !== void 0) return known;
-  const pattern = new RegExp(`^${source(normalize(glob3))}$`);
-  cache.set(glob3, pattern);
+  const pattern = new RegExp(`^${source(normalize(glob4))}$`);
+  cache.set(glob4, pattern);
   return pattern;
 }
 function normalize(path) {
   return path.replace(/^(?:\.\/)+/, "").replace(/^\/+/, "");
 }
-function source(glob3) {
-  const directory = glob3.endsWith("/") || !/[*?]/.test(glob3);
-  const body = glob3.replace(/\/+$/, "");
+function source(glob4) {
+  const directory = glob4.endsWith("/") || !/[*?]/.test(glob4);
+  const body = glob4.replace(/\/+$/, "");
   let out = "";
   for (let at = 0; at < body.length; at += 1) {
     const char = body.charAt(at);
@@ -20881,11 +20881,11 @@ function changeView(input) {
 }
 function planPartFacts(data, body) {
   const { tasks, problems } = parsePlanTasks(body);
-  const globs = Array.isArray(data["do-not-touch"]) ? data["do-not-touch"].map(String) : [];
+  const globs2 = Array.isArray(data["do-not-touch"]) ? data["do-not-touch"].map(String) : [];
   const overlaps = tasks.flatMap(
     (task) => task.files.flatMap(({ path }) => {
-      const glob3 = firstMatch(globs, path);
-      return glob3 === void 0 ? [] : [{ task: task.id, path, glob: glob3 }];
+      const glob4 = firstMatch(globs2, path);
+      return glob4 === void 0 ? [] : [{ task: task.id, path, glob: glob4 }];
     })
   );
   return {
@@ -21662,6 +21662,17 @@ var featuresModule = defineConfigModule({
     lavish: boolean2().default(true).meta({ description: "Review in Lavish; false falls back to AskUserQuestion (R-11)." })
   }).prefault({})
 });
+var executionModule = defineConfigModule({
+  key: "execution",
+  consumer: "ctx",
+  owner: "T23",
+  description: "How the orchestrator runs the dispatches of one wave.",
+  schema: strictObject({
+    concurrency: int().min(1).max(15).default(5).meta({
+      description: "The most dispatches of one wave run at once; the swarm skill's context states it (T23-D52)."
+    })
+  }).prefault({})
+});
 var fragmentPrompts = ["lavish", "ask-user"].map(
   (name) => definePromptKey({
     key: `fragments/decision/${name}`,
@@ -21708,6 +21719,17 @@ function sectionsOf(input, resolved, part) {
           title: `Project commands: ${part.group}`,
           body: entries.length === 0 ? "none configured\n" : (0, import_yaml8.stringify)(entries),
           part: { kind: "tools", source: `tools.${part.group}` }
+        }
+      ];
+    }
+    case "concurrency": {
+      const { concurrency } = read2(executionModule, resolved);
+      return [
+        {
+          title: "Concurrency",
+          body: `Run at most ${String(concurrency)} agents at once.
+`,
+          part: { kind: "concurrency", source: "execution.concurrency" }
         }
       ];
     }
@@ -21860,7 +21882,7 @@ function startupContext(deps) {
   return renderStartup(readStartup(deps));
 }
 var ctxConfig = {
-  modules: [toolsModule, featuresModule],
+  modules: [toolsModule, featuresModule, executionModule],
   prompts: fragmentPrompts
 };
 function ctxRegistrations(deps) {
@@ -22654,7 +22676,7 @@ function classifyDiff(target, facts) {
   return { touched: facts.touched, declared: declared3, undeclared };
 }
 function ownSets(target, facts) {
-  const forbiddenOf = (part) => part.data["do-not-touch"].map((glob3) => ({ part: part.id, glob: glob3 }));
+  const forbiddenOf = (part) => part.data["do-not-touch"].map((glob4) => ({ part: part.id, glob: glob4 }));
   if ("task" in target) {
     const part = taskHolders(facts.parts).get(target.task);
     const task = part?.tasks.find((found) => found.id === target.task);
@@ -25109,8 +25131,8 @@ function readList(paths) {
 ${paths.map((path) => `- \`${path}\``).join("\n")}`;
 }
 function doNotTouch(part) {
-  const globs = part.data["do-not-touch"];
-  return globs.length === 0 ? "`do-not-touch`: none." : `\`do-not-touch\`: ${globs.map((glob3) => `\`${glob3}\``).join(", ")}.`;
+  const globs2 = part.data["do-not-touch"];
+  return globs2.length === 0 ? "`do-not-touch`: none." : `\`do-not-touch\`: ${globs2.map((glob4) => `\`${glob4}\``).join(", ")}.`;
 }
 function intentOf(deps, change) {
   const document = readDocument(deps.store, join34(change.dir, "change.md"));
@@ -25212,6 +25234,75 @@ function dispatchRegistrations(deps) {
     { id: "dispatch-show", handler: showCommand4(deps) }
   ];
 }
+
+// kernel/src/evidence/config.ts
+var glob3 = string2().min(1).meta({ title: "non-empty glob" });
+function globs(defaults, description) {
+  return appendOnly(
+    array(glob3).refine((items) => new Set(items).size === items.length, "globs must be unique").meta({ uniqueItems: true, description })
+  ).default([...defaults]);
+}
+var NON_EXECUTABLE = [
+  "**/*.md",
+  "**/*.mdx",
+  "**/*.txt",
+  "**/*.rst",
+  "**/*.png",
+  "**/*.jpg",
+  "**/*.jpeg",
+  "**/*.gif",
+  "**/*.svg",
+  "**/*.webp",
+  "docs/**",
+  "LICENSE*",
+  "CHANGELOG*",
+  ".bdk/**"
+];
+var BUILD_CONFIG = [
+  "package.json",
+  "pnpm-lock.yaml",
+  "package-lock.json",
+  "yarn.lock",
+  "tsconfig*.json",
+  "pyproject.toml",
+  "uv.lock",
+  "poetry.lock",
+  "requirements*.txt",
+  "go.mod",
+  "go.sum",
+  "Cargo.toml",
+  "Cargo.lock",
+  "Gemfile",
+  "Gemfile.lock",
+  "pom.xml",
+  "build.gradle*",
+  "Makefile",
+  "CMakeLists.txt"
+];
+var evidenceModule = defineConfigModule({
+  key: "policy.evidence",
+  consumer: "evidence",
+  owner: "T23",
+  description: "Which files the tree hash covers and which evidence files are committed.",
+  schema: strictObject({
+    "non-executable": globs(
+      NON_EXECUTABLE,
+      "Files that never change the tree hash; layers append to the defaults."
+    ),
+    "build-config": globs(
+      BUILD_CONFIG,
+      "Files that always change the tree hash, wherever they are; wins over non-executable."
+    ),
+    "max-committed-bytes": int().min(0).default(65536).meta({
+      description: "The largest UTF-8 text evidence file copied into the Change; 0 commits none."
+    })
+  }).prefault({})
+});
+
+// kernel/src/evidence/index.ts
+var evidenceConfig = {
+  modules: [evidenceModule]
+};
 
 // kernel/src/hooks/render/session-start.ts
 function renderSessionStart({ startup, project }) {
@@ -26107,6 +26198,7 @@ function settingsRegistry() {
       ...graphConfig.modules,
       ...attemptConfig.modules,
       ...logConfig.modules,
+      ...evidenceConfig.modules,
       checkpointModule,
       promptsModule
     ],

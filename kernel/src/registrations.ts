@@ -9,6 +9,7 @@ import { configRegistrations } from "./config/index.ts";
 import type { ConfigDeps } from "./config/index.ts";
 import { ctxConfig, ctxRegistrations } from "./ctx/index.ts";
 import { dispatchRegistrations } from "./dispatch/index.ts";
+import { evidenceConfig } from "./evidence/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
 import { graphConfig, graphRegistrations } from "./graph/index.ts";
@@ -69,6 +70,7 @@ export function settingsRegistry(): ConfigRegistry {
       ...graphConfig.modules,
       ...attemptConfig.modules,
       ...logConfig.modules,
+      ...evidenceConfig.modules,
       checkpointModule,
       promptsModule,
     ],

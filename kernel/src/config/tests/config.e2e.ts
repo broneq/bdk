@@ -295,6 +295,65 @@ describe("bdk config check", () => {
     });
   });
 
+  it("acceptance: evidence defaults", () => {
+    const shown = bdk(["config", "show", "policy.evidence", "--json"], fixture({}).root);
+    expect(shown.code).toBe(0);
+    const value = (shown.json as { value: Record<string, unknown> }).value;
+    expect(value["max-committed-bytes"]).toBe(65536);
+    expect(value["non-executable"]).toContain("**/*.md");
+    expect(value["non-executable"]).toContain(".bdk/**");
+    expect(value["build-config"]).toContain("package.json");
+    expect(value["build-config"]).toContain("CMakeLists.txt");
+  });
+
+  it("acceptance: project appends a glob", () => {
+    const defaults = bdk(
+      ["config", "show", "policy.evidence.build-config", "--json"],
+      fixture({}).root,
+    );
+    const root = fixture({
+      ".bdk/settings.yaml": 'policy:\n  evidence:\n    build-config: ["mkdocs.yml", "docs/**"]\n',
+    }).root;
+    const shown = bdk(["config", "show", "policy.evidence.build-config", "--json"], root);
+    expect(shown.code).toBe(0);
+    const before = (defaults.json as { value: string[] }).value;
+    expect((shown.json as { value: string[] }).value).toStrictEqual([
+      ...before,
+      "mkdocs.yml",
+      "docs/**",
+    ]);
+  });
+
+  it("acceptance: concurrency default", () => {
+    const shown = bdk(["config", "show", "execution.concurrency", "--json"], fixture({}).root);
+    expect(shown.code).toBe(0);
+    expect(shown.json).toMatchObject({ key: "execution.concurrency", value: 5 });
+  });
+
+  it("acceptance: detected key unset", () => {
+    refused(
+      bdk(["config", "show", "execution.runner", "--json"], fixture({}).root),
+      2,
+      "policy/unknown-config-key",
+    );
+  });
+
+  it("acceptance: removed runner key in a layer", () => {
+    const root = fixture({ ".bdk/settings.yaml": "execution:\n  runner: headless\n" }).root;
+    const refusal = refused(
+      bdk(["config", "check", "--json"], root),
+      2,
+      "policy/unknown-config-key",
+    );
+    expect(JSON.stringify(refusal)).toContain("execution.runner");
+  });
+
+  it("acceptance: concurrency out of range", () => {
+    const root = fixture({ ".bdk/settings.yaml": "execution:\n  concurrency: 16\n" }).root;
+    const refusal = refused(bdk(["config", "check", "--json"], root), 2, "policy/config-invalid");
+    expect(JSON.stringify(refusal)).toContain("execution.concurrency");
+  });
+
   it("acceptance: local override visible in the snapshot", () => {
     const root = fixture({
       ".bdk/settings.yaml": `${MODELINE}\nlanguages: [go]\n`,
@@ -374,7 +433,7 @@ describe("bdk config schema", () => {
   });
 
   it("exit 3: input/not-found", () => {
-    refused(bdk(["config", "schema", "execution", "--json"], fixture().root), 3, "input/not-found");
+    refused(bdk(["config", "schema", "archive", "--json"], fixture().root), 3, "input/not-found");
   });
 
   it("exit 5: runtime/not-a-repo", () => {

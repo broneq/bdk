@@ -34,6 +34,7 @@ describe("defaults", () => {
       languages: [],
       tools: { test: [], lint: [], build: [] },
       features: { lavish: true },
+      execution: { concurrency: 5 },
       prompts: {},
     });
   });

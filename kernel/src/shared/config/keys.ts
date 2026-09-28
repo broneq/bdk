@@ -20,7 +20,8 @@ const APPEND_ONLY = new WeakSet<z.ZodType>();
 /**
  * Marks an array schema append-only (`kernel-settings`, Merge): each layer
  * appends the items the default and the lower layers do not hold, so no layer
- * removes an item. Wrap the array itself, before `.default()`.
+ * removes an item. Wrap the finished array, after `.refine()` and `.meta()`
+ * (each returns a new schema) and before `.default()`.
  */
 export function appendOnly<S extends z.ZodArray>(schema: S): S {
   APPEND_ONLY.add(schema);
@@ -76,6 +77,10 @@ export function keyPaths(node: KeyNode, prefix = ""): string[] {
   const paths: string[] = prefix === "" ? [] : [prefix];
   for (const [key, child] of node.children) paths.push(...keyPaths(child, joinKey(prefix, key)));
   return paths;
+}
+
+export function isAppendOnly(schema: z.ZodType): boolean {
+  return APPEND_ONLY.has(schema);
 }
 
 /** The dotted paths of the append-only arrays below `node`. */
