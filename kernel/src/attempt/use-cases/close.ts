@@ -1,7 +1,7 @@
 // `bdk attempt close <ticket> ok|fail|not-run` (`kernel-cli/attempt`; T22
-// design D-3, D-4, D-9): the diff check, the envelope's entries, the
-// fingerprints of a `fail`, then the record is closed in place and the next
-// rung returned. At the end of the ladder the kernel writes the ladder
+// design D-3, D-4, D-9; T23-D41): the diff check, the envelope's entries,
+// the post-task step evidence of an `ok` code ticket, the fingerprints of a
+// `fail`, then the record is closed in place and the next rung returned. At the end of the ladder the kernel writes the ladder
 // question, which parks the Change, and runs the checkpoint.
 import { isAbsolute, join } from "node:path";
 
@@ -15,11 +15,13 @@ import {
 } from "../domain/ladder.ts";
 import type { Next, Outcome } from "../domain/ladder.ts";
 import type { AttemptCloseReport, DiffReport } from "../domain/reports.ts";
+import { closeEvidence } from "../../evidence/index.ts";
+import { targetSteps } from "../../graph/index.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
 import { diffCheck } from "../../part/index.ts";
 import type { DiffTarget } from "../../part/index.ts";
 import { resolveOrRefuse } from "../../shared/config/index.ts";
-import type { Mapping } from "../../shared/config/index.ts";
+import type { Mapping, Resolved } from "../../shared/config/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -115,6 +117,11 @@ export function closeAttempt(
       if (missing !== undefined) return missing;
     }
 
+    if (outcome === "ok") {
+      const unproven = await stepEvidence(deps, change, index, where.globalDir, record, resolved);
+      if (unproven !== undefined) return unproven;
+    }
+
     const findings = outcome === "fail" ? fingerprints(underTicket) : [];
     const kernelFindings: string[] = [];
     if (diff.undeclared.length > 0) {
@@ -158,6 +165,32 @@ export function closeAttempt(
       notRunCount: state.notRun,
       next,
     };
+  });
+}
+
+/**
+ * The post-task step evidence of an `ok` close of a code ticket, one that
+ * holds an `implementer` package (T23-D41); undefined when it holds or the
+ * ticket is no code ticket.
+ */
+async function stepEvidence(
+  deps: AttemptDeps,
+  change: ActiveChange,
+  index: IndexDb,
+  globalDir: string,
+  record: KeyedRecord,
+  resolved: Resolved,
+): Promise<Refusal | undefined> {
+  if (!packageRoles(deps.store, change.dir, record.ticket).includes("implementer")) {
+    return undefined;
+  }
+  const steps = await targetSteps(deps, change, index, globalDir, record.target);
+  if ("refused" in steps) return steps;
+  return closeEvidence(deps, change, globalDir, {
+    ticket: record.ticket,
+    target: record.target,
+    steps: steps.steps,
+    notRunBudget: ladderPolicy(resolved.value, record.loop).notRunBudget,
   });
 }
 

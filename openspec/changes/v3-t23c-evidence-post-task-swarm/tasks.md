@@ -37,7 +37,7 @@
 ## 6. `attempt` open and close
 
 - [x] 6.1 Write failing tests for `attempt open` `steps` (pipeline order and roles for code loops, none for `verifier`); implement with `attempt -> graph`; verify unit and E2E pass
-- [ ] 6.2 Write failing tests for the `attempt close ok` evidence checks: simplify manifest recorded from the simplifier report (done and blocked), missing and failing step (`policy/missing-evidence`), stale step (`policy/stale-evidence`), pass without citation or with a changed committed file (`policy/missing-citation`), `not-run` within and past `policy.budgets.not-run`, verifier ticket unchecked, refusal leaves the ticket open; implement; verify unit and E2E pass
+- [x] 6.2 Write failing tests for the `attempt close ok` evidence checks: simplify manifest recorded from the simplifier report (done and blocked), missing and failing step (`policy/missing-evidence`), stale step (`policy/stale-evidence`), pass without citation or with a changed committed file (`policy/missing-citation`), `not-run` within and past `policy.budgets.not-run`, verifier ticket unchecked, refusal leaves the ticket open; implement; verify unit and E2E pass
 - [ ] 6.3 Change `nextRung` so `ok` gives `commit` and update the `attempt-close` output schema; write the `ok gives commit` and `failing tests walk the ladder` tests first; verify unit and E2E pass and no code or schema names `post-task-steps`
 
 ## 7. Prune

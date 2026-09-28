@@ -42,6 +42,8 @@ export interface RecordInput {
   readonly ticket: string | undefined;
   readonly verdict: string | undefined;
   readonly citations: readonly string[];
+  /** Kernel evidence (`attempt close` records `simplify`, T23-D43): `source: kernel`, no citation needed. */
+  readonly kernel?: boolean;
 }
 
 export interface RecordWhere {
@@ -94,7 +96,7 @@ export async function recordEvidence(
 
   const sources = readSources(deps, change.projectRoot, where.cwd, input.files);
   if ("refused" in sources) return sources;
-  const citations = checkCitations(sources, verdict, input.citations);
+  const citations = checkCitations(sources, verdict, input.citations, input.kernel === true);
   if (citations !== undefined) return citations;
 
   const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
@@ -150,7 +152,7 @@ export async function recordEvidence(
     target,
     at: deps.clock.now(),
     author: await authorIdent(deps.git, change.projectRoot),
-    source: active === undefined ? "kernel" : `agent:${active.role}`,
+    source: active === undefined || input.kernel === true ? "kernel" : `agent:${active.role}`,
     "tree-hash": treeHash,
     tree: [...tree],
     files,
@@ -196,17 +198,18 @@ function readSources(
   return sources;
 }
 
-/** A `pass` needs a citation; every citation must resolve (T4). */
+/** A `pass` needs a citation unless the kernel records it; every citation must resolve (T4). */
 function checkCitations(
   sources: readonly Source[],
   verdict: Verdict | undefined,
   citations: readonly string[],
+  kernel: boolean,
 ): Refusal | undefined {
   const files = sources.map((source): CitedFile => ({
     given: source.given,
     text: source.text ? new TextDecoder().decode(source.bytes) : undefined,
   }));
-  if (verdict === "pass" && citations.length === 0) {
+  if (verdict === "pass" && citations.length === 0 && !kernel) {
     return refuse(
       "policy/missing-citation",
       `a pass verdict needs --cite naming a value in ${sources.map((source) => source.given).join(", ")}`,

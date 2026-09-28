@@ -8,7 +8,8 @@ import { ROOT } from "../../log/tests/support.ts";
 import { harness as partHarness, tasks } from "../../part/tests/support.ts";
 import type { Harness as PartHarness } from "../../part/tests/support.ts";
 import type { RunResult } from "../../log/tests/support.ts";
-import { writeDocument } from "../../shared/store/index.ts";
+import { evidenceRegistrations } from "../../evidence/index.ts";
+import { stampPackage, writeDocument } from "../../shared/store/index.ts";
 import { attemptRegistrations } from "../index.ts";
 import { DIR } from "../../part/tests/support.ts";
 
@@ -20,7 +21,7 @@ export interface Harness extends PartHarness {
 }
 
 export function harness(): Harness {
-  const h = partHarness(attemptRegistrations);
+  const h = partHarness((deps) => [...attemptRegistrations(deps), ...evidenceRegistrations(deps)]);
   let minute = 0;
   return {
     ...h,
@@ -109,4 +110,82 @@ export function envelope(h: Harness, ticket: string, entries: string[]): string 
     body: "",
   });
   return `.bdk/changes/2026-09-25-login/${file}`;
+}
+
+const REL = ".bdk/changes/2026-09-25-login";
+
+/** The package `dispatch build` writes for `role`, stamped as the ticket's active one. */
+export function packaged(h: Harness, ticket: string, role: string, target = "01-1"): void {
+  const path = `${REL}/dispatch/${target}-${role}-${ticket}.md`;
+  writeDocument(h.store, `${ROOT}/${path}`, {
+    data: {
+      schema: 1,
+      ticket,
+      target,
+      role,
+      adapter: role === "implementer" || role === "simplifier" ? "worker" : "reader",
+      attempt: 1,
+      of: 3,
+      scope: "full",
+      at: "2026-09-25T11:00:30Z",
+      "kernel-version": "3.0.0",
+      "template-hash": `sha256:${"0".repeat(64)}`,
+      report: `${REL}/reports/${target}-${role}-${ticket}.md`,
+    },
+    body: "",
+  });
+  stampPackage(h.store, DIR, ticket, path);
+}
+
+/** The simplifier's package and its stored report with `status`. */
+export function simplified(h: Harness, ticket: string, status = "done", target = "01-1"): void {
+  packaged(h, ticket, "simplifier", target);
+  writeDocument(h.store, `${DIR}/reports/${target}-simplifier-${ticket}.md`, {
+    data: {
+      schema: 1,
+      ticket,
+      role: "simplifier",
+      status,
+      files: [],
+      entries: [],
+      evidence: [],
+      ...(status === "blocked" || status === "needs-context" ? { reason: "no diff to read" } : {}),
+    },
+    body: "# Simplify\n",
+  });
+}
+
+/** `evidence record <kind>` under `ticket` with `verdict`, citing the result unless `cite` is false. */
+export async function recorded(
+  h: Harness,
+  ticket: string,
+  kind: string,
+  verdict = "pass",
+  cite = true,
+): Promise<string> {
+  const file = `.bdk/.machine/${kind}-${ticket}.json`;
+  h.store.write(`${ROOT}/${file}`, `{"failed":${verdict === "fail" ? "1" : "0"}}\n`);
+  const result = await h.step([
+    "evidence",
+    "record",
+    kind,
+    file,
+    "--ticket",
+    ticket,
+    "--verdict",
+    verdict,
+    ...(cite ? ["--cite", "/failed"] : []),
+    "--json",
+  ]);
+  expect(result.code, result.stdout).toBe(0);
+  return (result.json as { evidence: string }).evidence;
+}
+
+/** An implementer ticket whose simplifier, runner and evidence all passed. */
+export async function stepsDone(h: Harness, ticket: string, target = "01-1"): Promise<void> {
+  packaged(h, ticket, "implementer", target);
+  simplified(h, ticket, "done", target);
+  packaged(h, ticket, "runner", target);
+  await recorded(h, ticket, "tests-scoped");
+  await recorded(h, ticket, "lint");
 }

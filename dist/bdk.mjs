@@ -18615,6 +18615,11 @@ function readManifests(store2, changeDir) {
 function ticketManifests(manifests, ticket) {
   return manifests.filter((manifest) => manifest.data.ticket === ticket);
 }
+function partManifests(manifests, part) {
+  return manifests.filter(
+    ({ data: { target } }) => target === part || TASK_ID.test(target) && target.startsWith(`${part}-`)
+  );
+}
 function compare2(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -18980,7 +18985,7 @@ function line(item3) {
 }
 
 // kernel/src/attempt/use-cases/close.ts
-import { isAbsolute as isAbsolute3, join as join29 } from "node:path";
+import { isAbsolute as isAbsolute3, join as join30 } from "node:path";
 
 // kernel/src/attempt/domain/ladder.ts
 function currentRound(records, entries) {
@@ -19113,701 +19118,471 @@ function compare3(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-// kernel/src/log/render/log.ts
-function renderAdd(result2) {
-  const { entry } = result2;
-  const verb = result2.deduplicated ? "already recorded as" : "added";
-  const downgrade = result2.downgraded === void 0 ? "" : `downgraded from blocker: category ${result2.downgraded.category ?? "none"} is not a blocking category (P8)
-`;
-  return `${verb} ${entry.id} (${entry.type}, ${entry.status}): ${entry.summary}
-${downgrade}${result2.path}
-`;
+// kernel/src/evidence/render/evidence.ts
+function renderRecord(report2) {
+  const head = report2.deduplicated ? `${report2.evidence} already records this evidence: ${report2.path}` : `recorded ${report2.evidence}: ${report2.path}`;
+  const verdict = report2.verdict === void 0 ? [] : [`verdict: ${report2.verdict}`];
+  const files = report2.files.map((file) => `  ${file.stored}: ${file.path}`);
+  return [head, `tree: ${report2.treeHash}`, ...verdict, "files:", ...files, ""].join("\n");
 }
-function renderIngest(report2) {
-  const verb = report2.replaced ? "replaced" : "stored";
-  return `report ${verb} for ${report2.ticket} (${report2.role}, ${report2.status})
-${report2.path}
-`;
-}
-function renderList2(items) {
-  if (items.length === 0) return "no entries\n";
-  const lines = items.map((entry) => {
-    const flags = [
-      entry.review === true ? "review" : "",
-      entry.supersededBy === void 0 ? "" : `by ${entry.supersededBy}`
-    ].filter((flag2) => flag2 !== "").join(", ");
-    const suffix = flags === "" ? "" : ` (${flags})`;
-    return `${entry.id} ${entry.type} ${entry.status}: ${entry.summary} [${entry.refs.join(", ")}]${suffix}`;
-  });
-  return `${lines.join("\n")}
-`;
-}
-function renderShow(shown) {
-  const { entry } = shown;
-  const lines = [
-    `${entry.id} ${entry.type} ${entry.status}: ${entry.summary}`,
-    `source: ${entry.source}, author: ${entry.author}, at: ${entry.at}`,
-    `refs: ${entry.refs.join(", ")}`
-  ];
-  if (entry.ticket !== void 0) lines.push(`ticket: ${entry.ticket}`);
-  if (entry.supersedes !== void 0) lines.push(`supersedes: ${entry.supersedes}`);
-  if (shown.supersededBy !== void 0) lines.push(`superseded by: ${shown.supersededBy}`);
-  lines.push(entry.path);
-  const body = entry.body.trim();
-  return `${lines.join("\n")}
-${body === "" ? "" : `
-${body}
-`}`;
-}
-function renderResolve(result2) {
-  const by = result2.by === void 0 ? "" : ` by ${result2.by}`;
-  const reason = result2.reason === void 0 ? "" : `: ${result2.reason}`;
-  return `${result2.entry} ${result2.status}${by}${reason} (rewrote ${result2.record})
-`;
-}
-
-// kernel/src/log/use-cases/append.ts
-import { join as join16, relative as relative4, sep as sep4 } from "node:path";
-
-// kernel/src/log/domain/entry.ts
-var OPTIONAL = [
-  ["ticket", "ticket"],
-  ["supersedes", "supersedes"],
-  ["fingerprint", "fingerprint"],
-  ["severity", "severity"],
-  ["category", "category"],
-  ["options", "options"],
-  ["park", "park"],
-  ["profile", "profile"],
-  ["evidence", "evidence"],
-  ["applies", "applies"],
-  ["routed-to", "routedTo"],
-  ["report", "report"],
-  ["to", "to"],
-  ["gate", "gate"],
-  ["session", "session"],
-  ["command", "command"],
-  ["skip-verify", "skipVerify"]
-];
-function entryView(data, status) {
-  const view = {
-    id: data.id,
-    type: data.type,
-    summary: data.summary,
-    status,
-    source: data.source,
-    author: data.author,
-    at: data.at,
-    refs: data.refs,
-    review: data.review === true
-  };
-  for (const [key, name] of OPTIONAL) {
-    if (data[key] !== void 0) view[name] = data[key];
-  }
-  return view;
-}
-function entrySummary(row) {
-  return {
-    id: row.id,
-    type: row.type,
-    summary: row.summary,
-    status: row.status,
-    source: row.source,
-    at: row.at,
-    refs: row.refs,
-    ...row.review ? { review: true } : {},
-    ...row.ticket === void 0 ? {} : { ticket: row.ticket },
-    ...row.supersedes === void 0 ? {} : { supersedes: row.supersedes },
-    ...row.supersededBy === void 0 ? {} : { supersededBy: row.supersededBy }
-  };
-}
-function findDuplicate(draft, entries, normalise3) {
-  if (draft.type === "learning") {
-    return entries.find(
-      (entry) => entry.type === "learning" && entry.fingerprint === draft.fingerprint
-    );
-  }
-  const key = (entry) => JSON.stringify([
-    entry.type,
-    normalise3(entry.summary),
-    [...new Set(entry.refs)].sort(),
-    entry.supersedes ?? "",
-    entry.ticket ?? ""
-  ]);
-  const wanted = key(draft);
-  return entries.find(
-    (entry) => entry.type === draft.type && (entry.status === "proposed" || entry.status === "accepted") && key(entry) === wanted
+function renderCheck(subject, report2) {
+  const lines = report2.evidence.map(
+    (entry) => `  ${entry.evidence} ${entry.kind}${entry.verdict === void 0 ? "" : ` ${entry.verdict}`}: fresh`
   );
+  return [`evidence of ${subject} is fresh (tree ${report2.treeHash})`, ...lines, ""].join("\n");
 }
-function allowedMoves(type, status) {
-  if (type === "transition") return [];
-  if (status === "proposed") return ["accepted", "resolved", "superseded"];
-  if (status === "accepted") return ["resolved", "superseded"];
-  return [];
-}
-function withResolution(body, status, at, reason) {
-  const line2 = `Resolved as ${status} at ${at}${reason === void 0 ? "" : `: ${reason}`}
-`;
-  const kept = body.replace(/\s+$/, "");
-  return kept === "" ? line2 : `${kept}
-
-${line2}`;
+function staleWhy(subject, report2) {
+  if (report2.evidence.length === 0) return `${subject} has no evidence`;
+  const stale = report2.evidence.filter((entry) => !entry.fresh).map((entry) => `${entry.evidence} ${entry.kind} (changed: ${entry.changedSince.join(", ")})`);
+  return `evidence of ${subject} is stale: ${stale.join("; ")}`;
 }
 
-// kernel/src/log/use-cases/append.ts
-async function appendEntry(deps, change, index2, draft, options) {
-  let source2 = "kernel";
-  if (draft.ticket !== void 0) {
-    const role2 = openPackage(deps.store, change.projectRoot, change.dir, draft.ticket)?.role;
-    if (role2 === void 0) {
-      return refuse(
-        "policy/no-open-ticket",
-        `${draft.ticket} has no open attempt record with a dispatch package in ${change.id}`,
-        [
-          "bdk log add ... without --ticket from the main thread",
-          "bdk attempt open <loop> <target>"
-        ]
-      );
-    }
-    source2 = `agent:${role2}`;
-  }
-  const fingerprint2 = draft.type === "learning" ? learningFingerprint(draft.summary) : void 0;
-  if (options.dedupe) {
-    const existing = findDuplicate(
-      { ...draft, ...fingerprint2 === void 0 ? {} : { fingerprint: fingerprint2 } },
-      listEntries(index2, change.id, { type: draft.type }),
-      normalise
-    );
-    if (existing !== void 0) {
-      const document = readDocument(deps.store, join16(change.projectRoot, existing.path));
-      if (document !== void 0 && "data" in document) {
-        return {
-          entry: entryView(document.data, existing.status),
-          path: existing.path,
-          deduplicated: true
-        };
-      }
-    }
-  }
-  const author2 = await authorIdent(deps.git, change.projectRoot);
-  const at = deps.clock.now();
-  const written = writeEntry(
-    deps.store,
-    change.dir,
-    (id) => ({
-      schema: 1,
-      id,
-      type: draft.type,
-      summary: draft.summary,
-      status: draft.status ?? "proposed",
-      source: source2,
-      author: author2,
-      at,
-      ...draft.ticket === void 0 ? {} : { ticket: draft.ticket },
-      refs: [...draft.refs],
-      ...draft.supersedes === void 0 ? {} : { supersedes: draft.supersedes },
-      ...draft.review === true ? { review: true } : {},
-      ...draft.severity === void 0 ? {} : { severity: draft.severity },
-      ...draft.category === void 0 ? {} : { category: draft.category },
-      ...fingerprint2 === void 0 ? {} : { fingerprint: fingerprint2 },
-      ...draft.options === void 0 ? {} : { options: [...draft.options] },
-      ...draft.park === true ? { park: true } : {},
-      ...draft.profile === void 0 ? {} : { profile: draft.profile },
-      ...draft.to === void 0 ? {} : { to: draft.to },
-      ...draft.inputHash === void 0 ? {} : { "input-hash": draft.inputHash }
-    }),
-    draft.body,
-    deps.random
-  );
-  return {
-    entry: entryView(written.data, String(written.data.status)),
-    path: relative4(change.projectRoot, written.path).split(sep4).join("/"),
-    deduplicated: false
-  };
-}
+// kernel/src/evidence/use-cases/scope.ts
+import { join as join16 } from "node:path";
 
-// kernel/src/log/domain/p8.ts
-var DOWNGRADING_ROLES = ["verifier", "design-verifier"];
-function mayDowngrade(type, role2) {
-  return type === "blocker" && role2 !== void 0 && DOWNGRADING_ROLES.includes(role2);
+// kernel/src/evidence/config.ts
+var glob3 = string2().min(1).meta({ title: "non-empty glob" });
+function globs(defaults, description) {
+  return appendOnly(
+    array(glob3).refine((items) => new Set(items).size === items.length, "globs must be unique").meta({ uniqueItems: true, description })
+  ).default([...defaults]);
 }
-function classify(draft, role2, blocking) {
-  const kept = { type: draft.type, body: draft.body, review: draft.review };
-  if (!mayDowngrade(draft.type, role2)) return kept;
-  if (draft.category !== void 0 && blocking.includes(draft.category)) return kept;
-  const category2 = draft.category ?? null;
-  const sentence2 = `Downgraded from blocker: category ${category2 ?? "none"} is not a blocking category (P8).
-`;
-  const given = draft.body.trim();
-  return {
-    type: "observation",
-    body: given === "" ? sentence2 : `${sentence2}
-${given}
-`,
-    review: true,
-    downgraded: { type: "blocker", category: category2 }
-  };
-}
-
-// kernel/src/log/use-cases/deps.ts
-function withChangeIndex(deps, change, work) {
-  return withIndex(deps.openIndex, deps.store, change.projectRoot, (index2) => {
-    const refreshed = refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
-    return work(index2, refreshed);
-  });
-}
-
-// kernel/src/log/config.ts
-var ID3 = /^[a-z0-9][a-z0-9-]*$/;
-var item = (description) => strictObject({
-  id: string2().regex(ID3, "must be kebab-case: lowercase letters, digits and -").meta({
-    description: "Unique within the array; the merge key."
-  }),
-  description: string2().min(1)
-}).meta({ title: "category entry", description });
-var BLOCKING = [
-  {
-    id: "architecture",
-    description: "Materially invalid architecture, or a contradiction with an accepted decision."
-  },
-  { id: "security", description: "A security, privacy or authentication risk." },
-  {
-    id: "irreversible-step",
-    description: "An irreversible or high-cost step without justification, such as a migration or data loss."
-  },
-  {
-    id: "integration-failure",
-    description: "A critical integration, data, rollout or rollback failure."
-  },
-  {
-    id: "unresolved-decision",
-    description: "An execution-critical unresolved decision or omitted requirement."
-  },
-  { id: "false-code-claim", description: "A claim about the real code that is false." }
+var NON_EXECUTABLE = [
+  "**/*.md",
+  "**/*.mdx",
+  "**/*.txt",
+  "**/*.rst",
+  "**/*.png",
+  "**/*.jpg",
+  "**/*.jpeg",
+  "**/*.gif",
+  "**/*.svg",
+  "**/*.webp",
+  "docs/**",
+  "LICENSE*",
+  "CHANGELOG*",
+  ".bdk/**"
 ];
-var NOT_A_FAIL = [
-  { id: "style", description: "Style." },
-  { id: "template-conformance", description: "Template conformance." },
-  { id: "files-bookkeeping", description: "`Files:` bookkeeping." },
-  { id: "wording", description: "Wording." },
-  { id: "report-length", description: "Report length." },
-  {
-    id: "verification-defect",
-    description: "A verification defect, unless it removes the only real evidence of the change's safety."
-  }
+var BUILD_CONFIG = [
+  "package.json",
+  "pnpm-lock.yaml",
+  "package-lock.json",
+  "yarn.lock",
+  "tsconfig*.json",
+  "pyproject.toml",
+  "uv.lock",
+  "poetry.lock",
+  "requirements*.txt",
+  "go.mod",
+  "go.sum",
+  "Cargo.toml",
+  "Cargo.lock",
+  "Gemfile",
+  "Gemfile.lock",
+  "pom.xml",
+  "build.gradle*",
+  "Makefile",
+  "CMakeLists.txt"
 ];
-var verifierModule = defineConfigModule({
-  key: "policy.verifier",
-  consumer: "log",
+var evidenceModule = defineConfigModule({
+  key: "policy.evidence",
+  consumer: "evidence",
   owner: "T23",
-  description: "What a verifier may block on (P8): a blocker outside blocking-categories is downgraded to a reviewed observation.",
+  description: "Which files the tree hash covers and which evidence files are committed.",
   schema: strictObject({
-    "blocking-categories": array(item("A category a verifier or design-verifier blocker may name.")).default(BLOCKING).meta({ description: "Merged by id; the default items always stay." }),
-    "not-a-fail": array(item("Something a verifier never blocks on.")).default(NOT_A_FAIL).meta({
-      description: "Merged by id; shown in a verifier's package next to the categories."
+    "non-executable": globs(
+      NON_EXECUTABLE,
+      "Files that never change the tree hash; layers append to the defaults."
+    ),
+    "build-config": globs(
+      BUILD_CONFIG,
+      "Files that always change the tree hash, wherever they are; wins over non-executable."
+    ),
+    "max-committed-bytes": int().min(0).default(65536).meta({
+      description: "The largest UTF-8 text evidence file copied into the Change; 0 commits none."
     })
   }).prefault({})
 });
 
-// kernel/src/log/use-cases/verifier.ts
-function verifierPolicy(deps, change, globalDir2) {
-  const resolved = resolveOrRefuse(
+// kernel/src/evidence/use-cases/tree.ts
+import { createHash as createHash3 } from "node:crypto";
+function fileClass(policy, path) {
+  if (firstMatch(policy.buildConfig, path) !== void 0) return "build-config";
+  if (firstMatch(policy.nonExecutable, path) !== void 0) return "non-executable";
+  return "executable";
+}
+function coveredPaths(policy, scopeFiles, workTreeFiles2) {
+  const covered = /* @__PURE__ */ new Set();
+  for (const path of scopeFiles)
+    if (fileClass(policy, path) !== "non-executable") covered.add(path);
+  for (const path of workTreeFiles2)
+    if (fileClass(policy, path) === "build-config") covered.add(path);
+  return [...covered].sort(byteOrder);
+}
+function treeOf(paths, read3) {
+  const tree = [...paths].sort(byteOrder).map((path) => {
+    const bytes2 = read3(path);
+    return { path, hash: bytes2 === void 0 ? "absent" : sha256(bytes2) };
+  });
+  const hash2 = createHash3("sha256");
+  for (const entry of tree) hash2.update(`${entry.path}\0${entry.hash}\0`);
+  return { treeHash: `sha256:${hash2.digest("hex")}`, tree };
+}
+function changedSince(recorded2, current) {
+  const before = new Map(recorded2.map((entry) => [entry.path, entry.hash]));
+  const after = new Map(current.map((entry) => [entry.path, entry.hash]));
+  const paths = /* @__PURE__ */ new Set([...before.keys(), ...after.keys()]);
+  return [...paths].filter((path) => before.get(path) !== after.get(path)).sort(byteOrder);
+}
+function sha256(bytes2) {
+  return `sha256:${createHash3("sha256").update(bytes2).digest("hex")}`;
+}
+function byteOrder(a, b) {
+  return Buffer.compare(Buffer.from(a), Buffer.from(b));
+}
+
+// kernel/src/evidence/use-cases/scope.ts
+function evidenceSettings(deps, projectRoot, globalDir2) {
+  return resolveOrRefuse(
     {
       store: deps.store,
       settings: deps.settings,
       globalDir: globalDir2,
-      projectRoot: change.projectRoot,
+      projectRoot,
       pluginRoot: deps.pluginRoot
     },
     { removed: "ignore" }
   );
-  if ("refused" in resolved) return resolved;
-  const policy = verifierModule.schema.parse(
-    resolved.value.policy?.verifier
-  );
-  return { blocking: policy["blocking-categories"], notAFail: policy["not-a-fail"] };
 }
-
-// kernel/src/log/use-cases/add.ts
-var SUMMARY_MAX = 120;
-var CATEGORY_TYPES = ["finding", "blocker"];
-function addEntry(deps, change, globalDir2, input) {
-  const invalid4 = validate3(input);
-  if (invalid4 !== void 0) return Promise.resolve(invalid4);
-  return withChangeIndex(deps, change, async (index2) => {
-    if (input.supersedes !== void 0) {
-      const missing = checkSupersedes(deps, change, index2, input.supersedes);
-      if (missing !== void 0) return missing;
+function filePolicy(settings) {
+  const policy = moduleValue(evidenceModule, settings);
+  return { nonExecutable: policy["non-executable"], buildConfig: policy["build-config"] };
+}
+function scopeOf(parts, changeId2, target) {
+  const holder = taskHolders(parts).get(target);
+  if (holder !== void 0) return [holder];
+  const part = parts.find((found) => found.id === target);
+  if (part !== void 0) return [part];
+  return target === changeId2 ? parts : void 0;
+}
+async function scopeTree(deps, projectRoot, policy, scope2) {
+  return treeIn(deps.store, projectRoot, policy, scope2, await workTreeFiles(deps.git, projectRoot));
+}
+async function currentTrees(deps, change, policy, parts, targets) {
+  const workTree = await workTreeFiles(deps.git, change.projectRoot);
+  const trees = /* @__PURE__ */ new Map();
+  const byScope = /* @__PURE__ */ new Map();
+  for (const target of targets) {
+    if (trees.has(target)) continue;
+    const scope2 = scopeOf(parts, change.id, target) ?? parts;
+    const key = scope2.map((part) => part.id).join(" ");
+    let tree = byScope.get(key);
+    if (tree === void 0) {
+      tree = treeIn(deps.store, change.projectRoot, policy, scope2, workTree);
+      byScope.set(key, tree);
     }
-    const role2 = input.ticket === void 0 ? void 0 : openPackage(deps.store, change.projectRoot, change.dir, input.ticket)?.role;
-    let blocking = [];
-    if (mayDowngrade(input.type, role2)) {
-      const policy = verifierPolicy(deps, change, globalDir2);
-      if (isRefusal(policy)) return policy;
-      blocking = policy.blocking.map((category3) => category3.id);
-    }
-    const { downgraded, ...classified } = classify(input, role2, blocking);
-    const { category: category2, ...rest } = input;
-    const base = downgraded === void 0 && category2 !== void 0 ? { ...rest, category: category2 } : rest;
-    const appended2 = await appendEntry(
-      deps,
-      change,
-      index2,
-      { ...base, ...classified },
-      { dedupe: true }
-    );
-    return "refused" in appended2 || downgraded === void 0 ? appended2 : { ...appended2, downgraded };
-  });
+    trees.set(target, tree);
+  }
+  return trees;
 }
-function validate3(input) {
-  const summary = input.summary.trim();
-  if (summary === "" || input.summary.length > SUMMARY_MAX) {
-    return refuse(
-      "input/invalid-argument",
-      `<summary> has ${input.summary.length} characters; it needs 1 to ${SUMMARY_MAX}`,
-      ["move the detail into --body"]
-    );
-  }
-  if (input.refs.length === 0 || input.refs.some((ref) => ref.trim() === "")) {
-    return refuse("input/missing-argument", "log add needs at least one non-empty --ref", [
-      `bdk log add ${input.type} "${input.summary}" --ref <file|symbol|part|task|rule|entry>`
-    ]);
-  }
-  if (input.category !== void 0 && !CATEGORY_TYPES.includes(input.type)) {
-    return refuse(
-      "input/invalid-argument",
-      `--category applies to finding and blocker, the types that carry it, not ${input.type}`,
-      [
-        `bdk log add ${input.type} "${input.summary}" --ref <ref>`,
-        "bdk log add blocker ... --category <id>"
-      ]
-    );
-  }
-  if (input.status === "superseded") {
-    return refuse(
-      "input/invalid-argument",
-      "--status superseded is derived from --supersedes, never written",
-      [
-        `bdk log add ${input.type} "..." --supersedes <id>`,
-        "bdk log resolve <id> superseded --by <id>"
-      ]
-    );
-  }
-  if (input.status === "routed") {
-    return refuse("input/invalid-argument", "--status routed is set only by log route", [
-      "bdk log route <id> rule|spec|nothing"
-    ]);
-  }
-  return void 0;
-}
-function supersedesProblem(deps, change, index2, value) {
-  const reference = parseReference(value);
-  if (!reference?.id.startsWith("L-")) {
-    return { rule: "input/invalid-argument", why: "is not an entry id" };
-  }
-  const changeId2 = reference.changeId ?? change.id;
-  if (changeId2 !== change.id) {
-    const location = findChange(deps.store, change.projectRoot, changeId2);
-    if (location === void 0)
-      return { rule: "input/not-found", why: `names no Change ${changeId2}` };
-    refreshChange(index2, location);
-  }
-  return findEntry(index2, changeId2, reference.id) === void 0 ? { rule: "input/not-found", why: `names no entry of ${changeId2}` } : void 0;
-}
-function checkSupersedes(deps, change, index2, value) {
-  const problem = supersedesProblem(deps, change, index2, value);
-  if (problem === void 0) return void 0;
-  return problem.rule === "input/invalid-argument" ? refuse(problem.rule, `--supersedes ${value} ${problem.why}`, [
-    "--supersedes L-xxxxxxxx",
-    "--supersedes <changeId>/L-xxxxxxxx"
-  ]) : refuse(problem.rule, `--supersedes ${value} ${problem.why}`, [
-    "bdk log list",
-    "bdk log show <id>"
-  ]);
-}
-
-// kernel/src/log/use-cases/ingest.ts
-import { join as join17 } from "node:path";
-
-// kernel/src/log/use-cases/envelope.ts
-var import_yaml6 = __toESM(require_dist(), 1);
-function readEnvelope(input) {
-  const split = splitFrontmatter(input);
-  if (split.frontmatter === void 0) {
-    return {
-      invalid: "the report has no frontmatter; it opens with a --- line, the envelope fields and a closing --- line"
-    };
-  }
-  const counter2 = new import_yaml6.LineCounter();
-  const document = (0, import_yaml6.parseDocument)(split.frontmatter, {
-    lineCounter: counter2,
-    uniqueKeys: true,
-    prettyErrors: false
-  });
-  const lineAt = (offset) => counter2.linePos(offset).line + 1;
-  const end = split.frontmatter.split("\n").length + 1;
-  const [error2] = document.errors;
-  if (error2 !== void 0) {
-    return {
-      invalid: `line ${String(lineAt(error2.pos[0]))}: ${error2.message.split("\n")[0] ?? ""}`
-    };
-  }
-  const root = document.contents;
-  if (root === null) return { fields: {}, lines: {}, end, body: split.body };
-  if (!(0, import_yaml6.isMap)(root)) {
-    return { invalid: "line 2: the frontmatter is not a mapping of envelope fields" };
-  }
-  const lines = {};
-  for (const pair of root.items) {
-    const key = (0, import_yaml6.isScalar)(pair.key) ? String(pair.key.value) : String(pair.key);
-    lines[key] = lineAt(pair.key.range?.[0] ?? 0);
-  }
-  const fields = document.toJS();
-  return { fields, lines, end, body: split.body };
-}
-
-// kernel/src/log/use-cases/ingest.ts
-var STAMPED = ["schema", "ticket", "role"];
-var FIELDS = ["status", "files", "entries", "evidence", "reason"];
-function ingestReport(deps, change, input) {
-  return withChangeIndex(deps, change, async (index2) => {
-    const dispatch2 = openPackage(deps.store, change.projectRoot, change.dir, input.ticket);
-    const report2 = dispatch2?.data.report;
-    if (dispatch2 === void 0 || report2 === void 0) {
-      return refuse(
-        "policy/no-open-ticket",
-        `${input.ticket} has no open attempt record with a dispatch package in ${change.id}`,
-        ["bdk attempt list", "bdk dispatch build <target>"]
-      );
-    }
-    const envelope = readEnvelope(input.text);
-    if ("invalid" in envelope) return invalidEnvelope(envelope.invalid);
-    const data = checkEnvelope(envelope, input.ticket, dispatch2.role);
-    if ("refused" in data) return data;
-    const missing = missingIds(deps, change, index2, input.ticket, data);
-    if (missing !== void 0) return missing;
-    const path = join17(change.projectRoot, report2);
-    const replaced = deps.store.read(path) !== void 0;
-    writeDocument(deps.store, path, { data, body: envelope.body });
-    return {
-      ticket: input.ticket,
-      role: dispatch2.role,
-      path: report2,
-      status: data.status,
-      entries: data.entries,
-      replaced
-    };
-  });
-}
-function invalidEnvelope(why) {
-  return refuse("input/invalid-envelope", why, [
-    "fix the named field and pipe the whole report again",
-    `the frontmatter holds ${FIELDS.join(", ")}; reason only for blocked and needs-context`
-  ]);
-}
-function checkEnvelope(envelope, ticket, role2) {
-  const at = (field3) => `line ${String(envelope.lines[field3] ?? envelope.end)}: ${field3}`;
-  const names = Object.keys(envelope.fields);
-  const stamped = names.find((field3) => STAMPED.includes(field3));
-  if (stamped !== void 0) {
-    return refuse("input/forbidden-field", `${at(stamped)} is stamped by the kernel`, [
-      "drop the field; the kernel stamps schema, ticket and role from the ticket"
-    ]);
-  }
-  const unknown3 = names.find((field3) => !FIELDS.includes(field3));
-  if (unknown3 !== void 0) {
-    return invalidEnvelope(
-      `${at(unknown3)} is not an envelope field; allowed: ${FIELDS.join(", ")}`
-    );
-  }
-  const parsed = STATE_KINDS.report.schema.safeParse({
-    schema: STATE_KINDS.report.version,
-    ticket,
-    role: role2,
-    ...envelope.fields
-  });
-  if (parsed.success) return parsed.data;
-  const [issue2] = parsed.error.issues;
-  const field2 = String(issue2?.path[0] ?? "status");
-  const message = issue2?.message ?? "";
-  return invalidEnvelope(
-    field2 in envelope.fields ? `${at(field2)} is invalid: ${message}` : `${field2} is missing from the frontmatter, which ends at line ${String(envelope.end)}: ${message}`
+function treeIn(store2, projectRoot, policy, scope2, workTree) {
+  const declared3 = scope2.flatMap(
+    (part) => part.tasks.flatMap((task) => task.files.map((file) => file.path))
   );
-}
-function missingIds(deps, change, index2, ticket, data) {
-  const written = new Set(
-    listEntries(index2, change.id).filter((entry) => entry.ticket === ticket).map((entry) => entry.id)
-  );
-  const recorded2 = ticketEvidence(deps, change, ticket);
-  const missing = [
-    ...data.entries.filter((id) => !written.has(id)),
-    ...data.evidence.filter((id) => !recorded2.has(id))
-  ];
-  if (missing.length === 0) return void 0;
-  return refuse(
-    "policy/entries-missing",
-    `the envelope lists ${missing.join(", ")}, which ${missing.length === 1 ? "is" : "are"} not recorded under ${ticket}`,
-    [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`]
-  );
-}
-function ticketEvidence(deps, change, ticket) {
-  const dir = join17(change.dir, "evidence");
-  const ids = /* @__PURE__ */ new Set();
-  for (const name of deps.store.list(dir)) {
-    if (!name.endsWith(".md")) continue;
-    const document = readDocument(deps.store, join17(dir, name));
-    if (document === void 0 || !("data" in document) || document.kind !== "evidence") continue;
-    if (document.data.ticket === ticket) ids.add(String(document.data.id));
-  }
-  return ids;
+  const paths = coveredPaths(policy, declared3, workTree);
+  return treeOf(paths, (path) => store2.readBytes(join16(projectRoot, path)));
 }
 
-// kernel/src/log/use-cases/list.ts
-async function listLog(deps, change, filter, elapsed = performanceClock()) {
-  const { sinceTicket, ...entryFilter } = filter;
-  let since;
-  if (sinceTicket !== void 0) {
-    const record4 = readAttempts(deps.store, change.dir).find(
-      (file) => file.data.ticket === sinceTicket
-    );
-    if (record4 === void 0) {
-      return refuse("input/not-found", `${change.id} has no ticket ${sinceTicket}`, [
-        "bdk attempt list --all"
+// kernel/src/evidence/use-cases/check.ts
+var EVIDENCE_ID = /^E-[0-9a-z]{8}$/;
+async function checkEvidence(deps, change, globalDir2, subject) {
+  const manifests = readManifests(deps.store, change.dir);
+  const parts = readPlanParts(deps.store, change.dir);
+  let target = subject;
+  let checked;
+  if (EVIDENCE_ID.test(subject)) {
+    const manifest = manifests.find((found) => found.data.id === subject);
+    if (manifest === void 0) {
+      return refuse("input/not-found", `${change.id} has no evidence ${subject}`, [
+        "bdk evidence check <target>"
       ]);
     }
-    since = record4.data["opened-at"];
+    target = manifest.data.target;
+    checked = [manifest];
+  } else {
+    if (scopeOf(parts, change.id, subject) === void 0) {
+      return refuse("input/not-found", `${change.id} holds no task, part or Change ${subject}`, [
+        "bdk part list"
+      ]);
+    }
+    checked = manifests.filter((manifest) => manifest.data.target === subject);
   }
-  const { items, refreshed } = await withChangeIndex(deps, change, (index2, refreshed2) => ({
-    items: listEntries(index2, change.id, entryFilter).map(entrySummary).filter((item3) => since === void 0 || item3.at >= since),
-    refreshed: refreshed2
+  const settings = evidenceSettings(deps, change.projectRoot, globalDir2);
+  if ("refused" in settings) return settings;
+  const scope2 = scopeOf(parts, change.id, target) ?? parts;
+  const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope2);
+  const fresh = (manifest) => manifest.data["tree-hash"] === current.treeHash;
+  const latest2 = /* @__PURE__ */ new Map();
+  for (const manifest of checked) {
+    const known = latest2.get(manifest.data.kind);
+    if (known === void 0 || manifest.data.at > known.data.at || fresh(manifest) || !fresh(known)) {
+      latest2.set(manifest.data.kind, manifest);
+    }
+  }
+  const evidence = [...latest2.values()].map((manifest) => ({
+    evidence: manifest.data.id,
+    kind: manifest.data.kind,
+    treeHash: manifest.data["tree-hash"],
+    fresh: fresh(manifest),
+    ...manifest.data.verdict === void 0 ? {} : { verdict: manifest.data.verdict },
+    changedSince: changedSince(manifest.data.tree, current.tree)
   }));
-  appendTelemetry(deps.store, change.projectRoot, "log-list", {
-    at: deps.clock.now(),
-    ms: Math.round(elapsed() * 10) / 10,
-    entries: items.length,
-    refreshed
-  });
-  return items;
-}
-function performanceClock() {
-  const start = performance.now();
-  return () => performance.now() - start;
-}
-
-// kernel/src/log/use-cases/resolve.ts
-import { join as join18 } from "node:path";
-function resolveEntry(deps, change, input) {
-  if (input.status === "superseded" && input.by === void 0) {
-    return Promise.resolve(
-      refuse("input/missing-argument", "superseded needs --by <id>, the superseding entry", [
-        `bdk log resolve ${input.id} superseded --by <id>`
-      ])
-    );
-  }
-  return withChangeIndex(deps, change, (index2) => {
-    const entry = findEntry(index2, change.id, bare(change, input.id));
-    if (entry === void 0) return notFound(change, input.id);
-    const moves = allowedMoves(entry.type, entry.status);
-    if (!moves.includes(input.status)) {
-      return refuse(
-        "policy/invalid-transition",
-        entry.type === "transition" ? `${entry.id} is a transition; its status never changes` : `${entry.id} is ${entry.status}; allowed from there: ${moves.length === 0 ? "nothing" : moves.join(", ")}`,
-        ["bdk log show " + entry.id, "bdk log add ... --supersedes " + entry.id]
-      );
-    }
-    const at = deps.clock.now();
-    if (input.status !== "superseded") {
-      const done3 = rewrite(
-        deps,
-        change,
-        entry,
-        (data) => ({ ...data, status: input.status }),
-        at,
-        input
-      );
-      return done3 ? result(input, entry.id) : notFound(change, input.id);
-    }
-    const by = findEntry(index2, change.id, bare(change, input.by ?? ""));
-    if (by === void 0) return notFound(change, input.by ?? "");
-    if (by.id === entry.id || by.supersedes !== void 0) {
-      return refuse(
-        "policy/invalid-transition",
-        by.id === entry.id ? `${entry.id} cannot supersede itself` : `${by.id} already supersedes ${by.supersedes ?? ""}; an entry supersedes one entry`,
-        ["bdk log add ... --supersedes " + entry.id]
-      );
-    }
-    const done2 = rewrite(
-      deps,
-      change,
-      by,
-      (data) => ({ ...data, supersedes: entry.id }),
-      at,
-      input
-    );
-    return done2 ? result(input, by.id) : notFound(change, by.id);
-  });
-}
-function bare(change, id) {
-  const prefix = `${change.id}/`;
-  return id.startsWith(prefix) ? id.slice(prefix.length) : id;
-}
-function notFound(change, id) {
-  return refuse("input/not-found", `${id} names no entry of ${change.id}`, ["bdk log list"]);
-}
-function rewrite(deps, change, entry, update, at, input) {
-  const path = join18(change.projectRoot, entry.path);
-  const document = readDocument(deps.store, path);
-  if (document === void 0 || !("data" in document)) return false;
-  writeDocument(deps.store, path, {
-    data: update(document.data),
-    body: withResolution(document.body, input.status, at, input.reason)
-  });
-  return true;
-}
-function result(input, record4) {
   return {
-    entry: input.id,
-    status: input.status,
-    ...input.by === void 0 ? {} : { by: input.by },
-    record: record4,
-    ...input.reason === void 0 ? {} : { reason: input.reason }
+    fresh: evidence.length > 0 && evidence.every((entry) => entry.fresh),
+    treeHash: current.treeHash,
+    evidence
   };
 }
 
-// kernel/src/log/use-cases/show.ts
-import { join as join19 } from "node:path";
-function showEntry(deps, change, id) {
-  const reference = parseReference(id);
-  if (!reference?.id.startsWith("L-")) {
-    return Promise.resolve(
-      refuse("input/invalid-argument", `${id} is not an entry id`, [
-        "bdk log show L-xxxxxxxx",
-        "bdk log show <changeId>/L-xxxxxxxx"
-      ])
-    );
+// kernel/src/evidence/use-cases/record.ts
+import { basename, isAbsolute as isAbsolute2, join as join17, relative as relative4 } from "node:path";
+
+// kernel/src/evidence/domain/citation.ts
+function citationProblem(citation, files) {
+  const parsed = parse5(citation);
+  if (parsed === void 0) {
+    return `${citation} is not a citation: use <file>#<json-pointer>, <file>:<line> or <file>:<line>=<text>`;
   }
-  const changeId2 = reference.changeId ?? change.id;
-  const notFound6 = (why) => refuse("input/not-found", why, ["bdk log list", "bdk change list --all"]);
-  return withChangeIndex(deps, change, (index2) => {
-    if (changeId2 !== change.id) {
-      const location = findChange(deps.store, change.projectRoot, changeId2);
-      if (location === void 0) return notFound6(`no Change ${changeId2}`);
-      refreshChange(index2, location);
-    }
-    const row = findEntry(index2, changeId2, reference.id);
-    if (row === void 0) return notFound6(`${id} names no entry of ${changeId2}`);
-    const document = readDocument(deps.store, join19(change.projectRoot, row.path));
-    if (document === void 0 || !("data" in document)) {
-      return notFound6(`${row.path} disappeared while it was read`);
-    }
-    return {
-      entry: { ...entryView(document.data, row.status), body: document.body, path: row.path },
-      ...row.supersededBy === void 0 ? {} : { supersededBy: row.supersededBy }
-    };
-  });
+  const file = parsed.file === "" ? only(files) : named(files, parsed.file);
+  if (file === void 0) {
+    return parsed.file === "" ? `${citation} names no file, and ${String(files.length)} files are recorded` : `${citation}: ${parsed.file} is not a recorded file`;
+  }
+  const where = `${citation} in ${file.given}`;
+  if (file.text === void 0) return `${where}: the file is not text, so it is not citable`;
+  return "pointer" in parsed.target ? pointerProblem(where, file.text, parsed.target.pointer) : lineProblem(where, file.text, parsed.target.line, parsed.target.contains);
+}
+function isText(bytes2) {
+  if (bytes2.includes(0)) return false;
+  try {
+    new TextDecoder("utf-8", { fatal: true }).decode(bytes2);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function parse5(citation) {
+  if (citation.startsWith("/")) return { file: "", target: { pointer: citation } };
+  const hash2 = citation.indexOf("#");
+  if (hash2 >= 0) {
+    return { file: citation.slice(0, hash2), target: { pointer: citation.slice(hash2 + 1) } };
+  }
+  const line2 = /^(?<file>[^:]*):(?<line>\d+)(?:=(?<text>.*))?$/s.exec(citation)?.groups;
+  if (line2?.line === void 0) return void 0;
+  const target = line2.text === void 0 ? { line: Number(line2.line) } : { line: Number(line2.line), contains: line2.text };
+  return { file: line2.file ?? "", target };
+}
+function only(files) {
+  return files.length === 1 ? files[0] : void 0;
+}
+function named(files, name) {
+  return files.find((file) => file.given === name) ?? files.find((file) => file.given.split("/").at(-1) === name);
+}
+function pointerProblem(where, text8, pointer) {
+  if (pointer !== "" && !pointer.startsWith("/")) {
+    return `${where}: ${pointer} is not a JSON pointer; it starts with /`;
+  }
+  let value;
+  try {
+    value = JSON.parse(text8);
+  } catch {
+    return `${where}: the file does not parse as JSON`;
+  }
+  const tokens = pointer === "" ? [] : pointer.slice(1).split("/");
+  for (const token of tokens) {
+    const key = token.replaceAll("~1", "/").replaceAll("~0", "~");
+    const next = step(value, key);
+    if (next === void 0) return `${where}: ${pointer} names no value`;
+    value = next.value;
+  }
+  return void 0;
+}
+function step(value, key) {
+  if (Array.isArray(value)) {
+    if (!/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= value.length) return void 0;
+    return { value: value[Number(key)] };
+  }
+  if (typeof value === "object" && value !== null && Object.hasOwn(value, key)) {
+    return { value: value[key] };
+  }
+  return void 0;
+}
+function lineProblem(where, text8, line2, contains) {
+  const lines = text8.endsWith("\n") ? text8.slice(0, -1).split("\n") : text8.split("\n");
+  const found = line2 >= 1 && text8 !== "" ? lines[line2 - 1] : void 0;
+  if (found === void 0) return `${where}: the file has no line ${String(line2)}`;
+  if (contains !== void 0 && !found.replace(/\r$/, "").includes(contains)) {
+    return `${where}: line ${String(line2)} does not contain ${contains}`;
+  }
+  return void 0;
 }
 
-// kernel/src/log/commands/log.ts
+// kernel/src/evidence/use-cases/record.ts
+var KIND = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+var VERDICTS = ["pass", "fail", "not-run"];
+var MACHINE_EVIDENCE = ".bdk/.machine/evidence/";
+async function recordEvidence(deps, change, where, input) {
+  const usage = `bdk evidence record ${input.kind} <file> --ticket <ticket> --verdict pass --cite <pointer>`;
+  if (!KIND.test(input.kind)) {
+    return refuse("input/invalid-argument", `kind ${input.kind} is not kebab-case`, [usage]);
+  }
+  if (input.ticket === void 0) {
+    return refuse("input/missing-argument", "evidence record needs --ticket", [usage]);
+  }
+  if (input.verdict !== void 0 && !VERDICTS.includes(input.verdict)) {
+    return refuse(
+      "input/invalid-argument",
+      `verdict ${input.verdict} is not pass, fail or not-run`,
+      [usage]
+    );
+  }
+  const verdict = input.verdict;
+  const ticket = input.ticket;
+  const record4 = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
+  if (record4 === void 0 || record4.data.outcome !== void 0) {
+    return refuse(
+      "policy/no-open-ticket",
+      record4 === void 0 ? `${change.id} has no ticket ${ticket}` : `ticket ${ticket} is already closed ${record4.data.outcome ?? ""}`,
+      ["bdk attempt list", "bdk attempt open <loop> <target>"]
+    );
+  }
+  const sources = readSources(deps, change.projectRoot, where.cwd, input.files);
+  if ("refused" in sources) return sources;
+  const citations = checkCitations(sources, verdict, input.citations, input.kernel === true);
+  if (citations !== void 0) return citations;
+  const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
+  if ("refused" in resolved) return resolved;
+  const target = record4.data.target;
+  const parts = readPlanParts(deps.store, change.dir);
+  const scope2 = scopeOf(parts, change.id, target) ?? parts;
+  const { treeHash, tree } = await scopeTree(
+    deps,
+    change.projectRoot,
+    filePolicy(resolved.value),
+    scope2
+  );
+  const hashes = sources.map((source2) => source2.hash);
+  const earlier = ticketManifests(readManifests(deps.store, change.dir), ticket).find(
+    (manifest) => manifest.data.kind === input.kind && manifest.data["tree-hash"] === treeHash && manifest.data.verdict === verdict && same2(manifest.data.citations ?? [], input.citations) && same2(
+      manifest.data.files.map((file) => file.hash),
+      hashes
+    )
+  );
+  if (earlier !== void 0) return reportOf(change.projectRoot, earlier, true);
+  const id = newId("E-", deps.random);
+  const limit = moduleValue(evidenceModule, resolved.value)["max-committed-bytes"];
+  const files = sources.map((source2) => {
+    const name = `${target}-${id}-${source2.name}`;
+    const hash2 = source2.hash;
+    if (source2.text && source2.bytes.length <= limit) {
+      const path3 = join17(relative4(change.projectRoot, change.dir), "evidence", name);
+      deps.store.writeBytes(join17(change.projectRoot, path3), source2.bytes);
+      return { path: path3, hash: hash2, stored: "committed" };
+    }
+    if (source2.path.startsWith(MACHINE_EVIDENCE))
+      return { path: source2.path, hash: hash2, stored: "machine" };
+    const path2 = `${MACHINE_EVIDENCE}${name}`;
+    deps.store.writeBytes(join17(change.projectRoot, path2), source2.bytes);
+    return { path: path2, hash: hash2, stored: "machine" };
+  });
+  const active9 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
+  const path = join17(change.dir, "evidence", `${target}-${id}.md`);
+  const data = {
+    schema: 1,
+    id,
+    kind: input.kind,
+    ticket,
+    target,
+    at: deps.clock.now(),
+    author: await authorIdent(deps.git, change.projectRoot),
+    source: active9 === void 0 || input.kernel === true ? "kernel" : `agent:${active9.role}`,
+    "tree-hash": treeHash,
+    tree: [...tree],
+    files,
+    ...verdict === void 0 ? {} : { verdict },
+    ...input.citations.length === 0 ? {} : { citations: [...input.citations] }
+  };
+  writeDocument(deps.store, path, { data, body: "" });
+  return reportOf(change.projectRoot, { path, data }, false);
+}
+function readSources(deps, projectRoot, cwd, given) {
+  const sources = [];
+  for (const file of given) {
+    const absolute = isAbsolute2(file) ? file : join17(cwd, file);
+    const bytes2 = deps.store.readBytes(absolute);
+    if (bytes2 === void 0) {
+      return refuse("input/not-found", `evidence file ${file} does not exist`, [
+        "bdk evidence record <kind> <file> --ticket <ticket>"
+      ]);
+    }
+    const name = basename(absolute);
+    if (sources.some((source2) => source2.name === name)) {
+      return refuse(
+        "input/invalid-argument",
+        `two evidence files are named ${name}; the Change stores them by file name`,
+        ["copy one of them under another name and record both"]
+      );
+    }
+    sources.push({
+      given: file,
+      path: relative4(projectRoot, absolute),
+      name,
+      bytes: bytes2,
+      hash: sha256(bytes2),
+      text: isText(bytes2)
+    });
+  }
+  return sources;
+}
+function checkCitations(sources, verdict, citations, kernel) {
+  const files = sources.map((source2) => ({
+    given: source2.given,
+    text: source2.text ? new TextDecoder().decode(source2.bytes) : void 0
+  }));
+  if (verdict === "pass" && citations.length === 0 && !kernel) {
+    return refuse(
+      "policy/missing-citation",
+      `a pass verdict needs --cite naming a value in ${sources.map((source2) => source2.given).join(", ")}`,
+      ["--cite <file>#<json-pointer>", "--cite <file>:<line>", "--cite <file>:<line>=<text>"]
+    );
+  }
+  for (const citation of citations) {
+    const problem = citationProblem(citation, files);
+    if (problem !== void 0) {
+      return refuse("policy/missing-citation", problem, [
+        "cite a value the recorded files hold",
+        "record the verdict fail when the evidence does not show a pass"
+      ]);
+    }
+  }
+  return void 0;
+}
+function same2(a, b) {
+  return a.length === b.length && a.every((value, at) => value === b[at]);
+}
+function reportOf(projectRoot, manifest, deduplicated) {
+  const data = manifest.data;
+  return {
+    evidence: data.id,
+    path: relative4(projectRoot, manifest.path),
+    treeHash: data["tree-hash"],
+    files: data.files,
+    ...data.verdict === void 0 ? {} : { verdict: data.verdict },
+    ...data.citations === void 0 ? {} : { citations: data.citations },
+    deduplicated
+  };
+}
+
+// kernel/src/evidence/commands/evidence.ts
 function text(value) {
   return typeof value === "string" ? value : void 0;
 }
@@ -19816,137 +19591,181 @@ function list(value) {
   return typeof value === "string" ? [value] : [...value];
 }
 function active(change) {
-  if (change === void 0) throw new Error("log commands are Change-scoped");
+  if (change === void 0) throw new Error("evidence commands are Change-scoped");
   return change;
 }
-function addCommand(deps) {
+function recordCommand(deps) {
   return async (context) => {
-    const body = text(context.flags["--body"]);
-    const result2 = await addEntry(deps, active(context.change), globalDir(context.runtime), {
-      type: context.positionals.type ?? "",
-      summary: context.positionals["<summary>"] ?? "",
-      refs: list(context.flags["--ref"]),
-      body: body === "-" ? context.runtime.readStdin() : body ?? "",
-      review: context.flags["--review"] === true,
-      ...optional2("status", text(context.flags["--status"])),
-      ...optional2("ticket", text(context.flags["--ticket"])),
-      ...optional2("supersedes", text(context.flags["--supersedes"])),
-      ...optional2("category", text(context.flags["--category"]))
-    });
-    return isRefusal(result2) ? result2 : { data: result2, text: renderAdd(result2) };
+    const report2 = await recordEvidence(
+      deps,
+      active(context.change),
+      { cwd: context.cwd, globalDir: globalDir(context.runtime) },
+      {
+        kind: context.positionals["<kind>"] ?? "",
+        files: context.lists["<file>"] ?? [],
+        ticket: text(context.flags["--ticket"]),
+        verdict: text(context.flags["--verdict"]),
+        citations: list(context.flags["--cite"])
+      }
+    );
+    return isRefusal(report2) ? report2 : { data: report2, text: renderRecord(report2) };
   };
 }
-function ingestCommand(deps) {
+function checkCommand(deps) {
   return async (context) => {
-    const ticket = text(context.flags["--ticket"]);
-    if (ticket === void 0) {
-      return refuse("input/missing-argument", "log ingest needs --ticket, the role's open ticket", [
-        "bdk log ingest --ticket <ticket> < report.md"
+    const subject = context.positionals["<target|evidence-id>"] ?? "";
+    const report2 = await checkEvidence(
+      deps,
+      active(context.change),
+      globalDir(context.runtime),
+      subject
+    );
+    if (isRefusal(report2)) return report2;
+    if (!context.json && !report2.fresh) {
+      return refuse("policy/stale-evidence", staleWhy(subject, report2), [
+        "re-run the checks and bdk evidence record <kind> <file> --ticket <ticket>"
       ]);
     }
-    const input = context.runtime.readStdin();
-    if (input.trim() === "") {
-      return refuse(
-        "input/missing-argument",
-        "stdin is empty; log ingest reads the report, its envelope as frontmatter",
-        [`bdk log ingest --ticket ${ticket} < report.md`]
-      );
+    return { data: report2, text: renderCheck(subject, report2) };
+  };
+}
+
+// kernel/src/evidence/use-cases/close.ts
+import { join as join18 } from "node:path";
+var REPORT_VERDICTS = {
+  done: "pass",
+  "done-with-concerns": "pass",
+  blocked: "not-run",
+  "needs-context": "not-run"
+};
+async function closeEvidence(deps, change, globalDir2, input) {
+  const { ticket, target } = input;
+  if (input.steps.some((step2) => step2.kind === "simplify")) {
+    const recorded2 = await recordSimplify(deps, change, globalDir2, ticket, target);
+    if (recorded2 !== void 0) return recorded2;
+  }
+  const settings = evidenceSettings(deps, change.projectRoot, globalDir2);
+  if ("refused" in settings) return settings;
+  const parts = readPlanParts(deps.store, change.dir);
+  const scope2 = scopeOf(parts, change.id, target) ?? parts;
+  const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope2);
+  const fresh = (manifest) => manifest.data["tree-hash"] === current.treeHash;
+  const manifests = readManifests(deps.store, change.dir);
+  const own2 = ticketManifests(manifests, ticket);
+  const part = taskHolders(parts).get(target)?.id ?? parts.find((p) => p.id === target)?.id;
+  const inPart = part === void 0 ? manifests : partManifests(manifests, part);
+  const problems = [];
+  for (const step2 of input.steps) {
+    const dispatch2 = `bdk dispatch build ${target} ${step2.role} ${ticket}`;
+    const latest2 = latestOf(own2, step2.kind, fresh);
+    if (latest2 === void 0) {
+      problems.push({
+        rule: "policy/missing-evidence",
+        why: `${step2.kind} has no manifest under ${ticket}`,
+        instead: dispatch2
+      });
+      continue;
     }
-    const report2 = await ingestReport(deps, active(context.change), { ticket, text: input });
-    return isRefusal(report2) ? report2 : { data: report2, text: renderIngest(report2) };
-  };
+    const { data } = latest2;
+    if (data.verdict !== "pass" && data.verdict !== "not-run") {
+      problems.push({
+        rule: "policy/missing-evidence",
+        why: `${step2.kind} ${data.id} says ${data.verdict ?? "no verdict"}`,
+        instead: `bdk attempt close ${ticket} fail`
+      });
+      continue;
+    }
+    if (!fresh(latest2)) {
+      const changed = changedSince(data.tree, current.tree);
+      problems.push({
+        rule: "policy/stale-evidence",
+        why: `${step2.kind} ${data.id} was recorded on another tree of ${target}${changed.length === 0 ? "" : `; changed: ${changed.join(", ")}`}`,
+        instead: dispatch2
+      });
+      continue;
+    }
+    if (data.verdict === "pass") {
+      const uncited = citationProblem2(deps, change.projectRoot, latest2);
+      if (uncited !== void 0) {
+        problems.push({
+          rule: "policy/missing-citation",
+          why: `${step2.kind} ${data.id} ${uncited}`,
+          instead: dispatch2
+        });
+      }
+      continue;
+    }
+    const notRun = inPart.filter(
+      (manifest) => manifest.data.kind === step2.kind && manifest.data.verdict === "not-run"
+    ).length;
+    if (notRun > input.notRunBudget) {
+      problems.push({
+        rule: "policy/missing-evidence",
+        why: `${step2.kind} did not run in ${String(notRun)} manifests of ${part ?? change.id}, above policy.budgets.not-run ${String(input.notRunBudget)}`,
+        instead: `bdk attempt close ${ticket} not-run --reason "<what was missing>"`
+      });
+    }
+  }
+  const first = problems[0];
+  if (first === void 0) return void 0;
+  const same3 = problems.filter((problem) => problem.rule === first.rule);
+  return refuse(first.rule, same3.map((problem) => problem.why).join("; "), [
+    ...new Set(same3.map((problem) => problem.instead))
+  ]);
 }
-function listCommand(deps) {
-  return async (context) => {
-    const all = context.flags["--all"] === true;
-    const target = text(context.flags["--for"]);
-    const items = await listLog(deps, active(context.change), {
-      ...optional2("type", text(context.flags["--type"])),
-      ...optional2("status", text(context.flags["--status"])),
-      ...context.flags["--review"] === true ? { review: true } : {},
-      ...optional2("for", target),
-      ...optional2("sinceTicket", text(context.flags["--since-ticket-start"]))
-    });
-    if (isRefusal(items)) return items;
-    return {
-      data: listPage(items, { all, ...optional2("for", target) }),
-      text: capLines(renderList2(items), { all })
-    };
-  };
+async function recordSimplify(deps, change, globalDir2, ticket, target) {
+  const pkg = readDocument(
+    deps.store,
+    join18(change.dir, "dispatch", `${target}-simplifier-${ticket}.md`)
+  );
+  const reportPath = pkg !== void 0 && "data" in pkg ? pkg.data.report : void 0;
+  if (typeof reportPath !== "string") return void 0;
+  const path = join18(change.projectRoot, reportPath);
+  const report2 = readDocument(deps.store, path);
+  const status = report2 !== void 0 && "data" in report2 ? report2.data.status : void 0;
+  const verdict = typeof status === "string" ? REPORT_VERDICTS[status] : void 0;
+  if (verdict === void 0) return void 0;
+  const recorded2 = await recordEvidence(
+    deps,
+    change,
+    { cwd: change.projectRoot, globalDir: globalDir2 },
+    { kind: "simplify", files: [path], ticket, verdict, citations: [], kernel: true }
+  );
+  return "refused" in recorded2 ? recorded2 : void 0;
 }
-function showCommand(deps) {
-  return async (context) => {
-    const shown = await showEntry(deps, active(context.change), context.positionals["<id>"] ?? "");
-    return isRefusal(shown) ? shown : { data: shown, text: renderShow(shown) };
-  };
+function latestOf(manifests, kind, fresh) {
+  let latest2;
+  for (const manifest of manifests) {
+    if (manifest.data.kind !== kind) continue;
+    if (latest2 === void 0 || manifest.data.at > latest2.data.at || fresh(manifest) || !fresh(latest2)) {
+      latest2 = manifest;
+    }
+  }
+  return latest2;
 }
-function resolveCommand(deps) {
-  return async (context) => {
-    const result2 = await resolveEntry(deps, active(context.change), {
-      id: context.positionals["<id>"] ?? "",
-      status: context.positionals.status ?? "",
-      ...optional2("by", text(context.flags["--by"])),
-      ...optional2("reason", text(context.flags["--reason"]))
-    });
-    return isRefusal(result2) ? result2 : { data: result2, text: renderResolve(result2) };
-  };
-}
-function optional2(key, value) {
-  return value === void 0 ? {} : { [key]: value };
+function citationProblem2(deps, projectRoot, manifest) {
+  const { data } = manifest;
+  if (data.source !== "kernel" && (data.citations ?? []).length === 0) {
+    return "passes without a citation";
+  }
+  for (const file of data.files) {
+    if (file.stored !== "committed") continue;
+    const bytes2 = deps.store.readBytes(join18(projectRoot, file.path));
+    if (bytes2 === void 0) return `lost its committed file ${file.path}`;
+    if (sha256(bytes2) !== file.hash) return `has a changed committed file ${file.path}`;
+  }
+  return void 0;
 }
 
-// kernel/src/log/index.ts
-var logConfig = { modules: [verifierModule] };
-function logRegistrations(deps) {
+// kernel/src/evidence/index.ts
+var evidenceConfig = {
+  modules: [evidenceModule]
+};
+function evidenceRegistrations(deps) {
   return [
-    { id: "log-add", handler: addCommand(deps) },
-    { id: "log-ingest", handler: ingestCommand(deps) },
-    { id: "log-list", handler: listCommand(deps) },
-    { id: "log-show", handler: showCommand(deps) },
-    { id: "log-resolve", handler: resolveCommand(deps) }
+    { id: "evidence-record", handler: recordCommand(deps) },
+    { id: "evidence-check", handler: checkCommand(deps) }
   ];
-}
-
-// kernel/src/part/render/part.ts
-function renderList3(report2) {
-  if (report2.items.length === 0) return "No plan parts.\n";
-  return `${report2.items.map((item3) => {
-    const wave = item3.wave === void 0 ? "" : `, wave ${String(item3.wave)}`;
-    const after = item3.dependsOn === void 0 ? "" : `, after ${item3.dependsOn.join(", ")}`;
-    return `${item3.part} ${item3.state}: ${item3.title} (${String(item3.done)}/${String(item3.tasks)} tasks, ${String(item3.bytes)} bytes${wave}${after}, spec ${item3.specImpact})`;
-  }).join("\n")}
-`;
-}
-function renderStart(report2) {
-  const tasks = report2.tasks.map((task) => {
-    const extra = [
-      task.verification === void 0 ? "" : "verification: none",
-      task.stopRule === void 0 ? "" : `stop rule: ${task.stopRule}`
-    ].filter((text8) => text8 !== "");
-    const suffix = extra.length === 0 ? "" : ` (${extra.join("; ")})`;
-    return `  ${task.task}: ${task.files.join(", ")}${suffix}`;
-  });
-  const forbidden = report2.doNotTouch.length === 0 ? "none" : report2.doNotTouch.join(", ");
-  return [
-    `part ${report2.part} started (${report2.entry})`,
-    ...tasks,
-    `do-not-touch: ${forbidden}`,
-    `success measure: ${report2.successMeasure}`,
-    ""
-  ].join("\n");
-}
-function renderDone(report2) {
-  return [
-    `part ${report2.part} done (${report2.entry})`,
-    ...report2.commits.map((commit) => `  ${commit.task}: ${commit.commit}`),
-    ...report2.openFindings.length === 0 ? [] : [`open findings: ${report2.openFindings.join(", ")}`],
-    `next: ${report2.next ?? "nothing"}`,
-    ""
-  ].join("\n");
-}
-function renderSplit(report2) {
-  return `part ${report2.part} split: ${report2.moved.join(", ")} moved to part ${report2.newPart} (${report2.entry})
-`;
 }
 
 // kernel/src/graph/render/graph.ts
@@ -20009,7 +19828,7 @@ function renderValidate(report2) {
   return `${lines.join("\n")}
 `;
 }
-function renderDone2(report2) {
+function renderDone(report2) {
   const entry = report2.entry === void 0 ? "" : ` in ${report2.entry}`;
   return `${report2.artifact} done${entry} (${report2.inputHash})
 next: ${report2.next}
@@ -20017,7 +19836,7 @@ next: ${report2.next}
 }
 
 // kernel/src/graph/use-cases/done.ts
-import { join as join25 } from "node:path";
+import { join as join26 } from "node:path";
 
 // kernel/src/graph/domain/kinds/kind.ts
 var BaseKind = class {
@@ -20512,6 +20331,800 @@ function kindRegistry(extra = []) {
   return new Map(kinds.map((kind) => [kind.name, kind]));
 }
 
+// kernel/src/log/render/log.ts
+function renderAdd(result2) {
+  const { entry } = result2;
+  const verb = result2.deduplicated ? "already recorded as" : "added";
+  const downgrade = result2.downgraded === void 0 ? "" : `downgraded from blocker: category ${result2.downgraded.category ?? "none"} is not a blocking category (P8)
+`;
+  return `${verb} ${entry.id} (${entry.type}, ${entry.status}): ${entry.summary}
+${downgrade}${result2.path}
+`;
+}
+function renderIngest(report2) {
+  const verb = report2.replaced ? "replaced" : "stored";
+  return `report ${verb} for ${report2.ticket} (${report2.role}, ${report2.status})
+${report2.path}
+`;
+}
+function renderList2(items) {
+  if (items.length === 0) return "no entries\n";
+  const lines = items.map((entry) => {
+    const flags = [
+      entry.review === true ? "review" : "",
+      entry.supersededBy === void 0 ? "" : `by ${entry.supersededBy}`
+    ].filter((flag2) => flag2 !== "").join(", ");
+    const suffix = flags === "" ? "" : ` (${flags})`;
+    return `${entry.id} ${entry.type} ${entry.status}: ${entry.summary} [${entry.refs.join(", ")}]${suffix}`;
+  });
+  return `${lines.join("\n")}
+`;
+}
+function renderShow(shown) {
+  const { entry } = shown;
+  const lines = [
+    `${entry.id} ${entry.type} ${entry.status}: ${entry.summary}`,
+    `source: ${entry.source}, author: ${entry.author}, at: ${entry.at}`,
+    `refs: ${entry.refs.join(", ")}`
+  ];
+  if (entry.ticket !== void 0) lines.push(`ticket: ${entry.ticket}`);
+  if (entry.supersedes !== void 0) lines.push(`supersedes: ${entry.supersedes}`);
+  if (shown.supersededBy !== void 0) lines.push(`superseded by: ${shown.supersededBy}`);
+  lines.push(entry.path);
+  const body = entry.body.trim();
+  return `${lines.join("\n")}
+${body === "" ? "" : `
+${body}
+`}`;
+}
+function renderResolve(result2) {
+  const by = result2.by === void 0 ? "" : ` by ${result2.by}`;
+  const reason = result2.reason === void 0 ? "" : `: ${result2.reason}`;
+  return `${result2.entry} ${result2.status}${by}${reason} (rewrote ${result2.record})
+`;
+}
+
+// kernel/src/log/use-cases/append.ts
+import { join as join19, relative as relative5, sep as sep4 } from "node:path";
+
+// kernel/src/log/domain/entry.ts
+var OPTIONAL = [
+  ["ticket", "ticket"],
+  ["supersedes", "supersedes"],
+  ["fingerprint", "fingerprint"],
+  ["severity", "severity"],
+  ["category", "category"],
+  ["options", "options"],
+  ["park", "park"],
+  ["profile", "profile"],
+  ["evidence", "evidence"],
+  ["applies", "applies"],
+  ["routed-to", "routedTo"],
+  ["report", "report"],
+  ["to", "to"],
+  ["gate", "gate"],
+  ["session", "session"],
+  ["command", "command"],
+  ["skip-verify", "skipVerify"]
+];
+function entryView(data, status) {
+  const view = {
+    id: data.id,
+    type: data.type,
+    summary: data.summary,
+    status,
+    source: data.source,
+    author: data.author,
+    at: data.at,
+    refs: data.refs,
+    review: data.review === true
+  };
+  for (const [key, name] of OPTIONAL) {
+    if (data[key] !== void 0) view[name] = data[key];
+  }
+  return view;
+}
+function entrySummary(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    summary: row.summary,
+    status: row.status,
+    source: row.source,
+    at: row.at,
+    refs: row.refs,
+    ...row.review ? { review: true } : {},
+    ...row.ticket === void 0 ? {} : { ticket: row.ticket },
+    ...row.supersedes === void 0 ? {} : { supersedes: row.supersedes },
+    ...row.supersededBy === void 0 ? {} : { supersededBy: row.supersededBy }
+  };
+}
+function findDuplicate(draft, entries, normalise3) {
+  if (draft.type === "learning") {
+    return entries.find(
+      (entry) => entry.type === "learning" && entry.fingerprint === draft.fingerprint
+    );
+  }
+  const key = (entry) => JSON.stringify([
+    entry.type,
+    normalise3(entry.summary),
+    [...new Set(entry.refs)].sort(),
+    entry.supersedes ?? "",
+    entry.ticket ?? ""
+  ]);
+  const wanted = key(draft);
+  return entries.find(
+    (entry) => entry.type === draft.type && (entry.status === "proposed" || entry.status === "accepted") && key(entry) === wanted
+  );
+}
+function allowedMoves(type, status) {
+  if (type === "transition") return [];
+  if (status === "proposed") return ["accepted", "resolved", "superseded"];
+  if (status === "accepted") return ["resolved", "superseded"];
+  return [];
+}
+function withResolution(body, status, at, reason) {
+  const line2 = `Resolved as ${status} at ${at}${reason === void 0 ? "" : `: ${reason}`}
+`;
+  const kept = body.replace(/\s+$/, "");
+  return kept === "" ? line2 : `${kept}
+
+${line2}`;
+}
+
+// kernel/src/log/use-cases/append.ts
+async function appendEntry(deps, change, index2, draft, options) {
+  let source2 = "kernel";
+  if (draft.ticket !== void 0) {
+    const role2 = openPackage(deps.store, change.projectRoot, change.dir, draft.ticket)?.role;
+    if (role2 === void 0) {
+      return refuse(
+        "policy/no-open-ticket",
+        `${draft.ticket} has no open attempt record with a dispatch package in ${change.id}`,
+        [
+          "bdk log add ... without --ticket from the main thread",
+          "bdk attempt open <loop> <target>"
+        ]
+      );
+    }
+    source2 = `agent:${role2}`;
+  }
+  const fingerprint2 = draft.type === "learning" ? learningFingerprint(draft.summary) : void 0;
+  if (options.dedupe) {
+    const existing = findDuplicate(
+      { ...draft, ...fingerprint2 === void 0 ? {} : { fingerprint: fingerprint2 } },
+      listEntries(index2, change.id, { type: draft.type }),
+      normalise
+    );
+    if (existing !== void 0) {
+      const document = readDocument(deps.store, join19(change.projectRoot, existing.path));
+      if (document !== void 0 && "data" in document) {
+        return {
+          entry: entryView(document.data, existing.status),
+          path: existing.path,
+          deduplicated: true
+        };
+      }
+    }
+  }
+  const author2 = await authorIdent(deps.git, change.projectRoot);
+  const at = deps.clock.now();
+  const written = writeEntry(
+    deps.store,
+    change.dir,
+    (id) => ({
+      schema: 1,
+      id,
+      type: draft.type,
+      summary: draft.summary,
+      status: draft.status ?? "proposed",
+      source: source2,
+      author: author2,
+      at,
+      ...draft.ticket === void 0 ? {} : { ticket: draft.ticket },
+      refs: [...draft.refs],
+      ...draft.supersedes === void 0 ? {} : { supersedes: draft.supersedes },
+      ...draft.review === true ? { review: true } : {},
+      ...draft.severity === void 0 ? {} : { severity: draft.severity },
+      ...draft.category === void 0 ? {} : { category: draft.category },
+      ...fingerprint2 === void 0 ? {} : { fingerprint: fingerprint2 },
+      ...draft.options === void 0 ? {} : { options: [...draft.options] },
+      ...draft.park === true ? { park: true } : {},
+      ...draft.profile === void 0 ? {} : { profile: draft.profile },
+      ...draft.to === void 0 ? {} : { to: draft.to },
+      ...draft.inputHash === void 0 ? {} : { "input-hash": draft.inputHash }
+    }),
+    draft.body,
+    deps.random
+  );
+  return {
+    entry: entryView(written.data, String(written.data.status)),
+    path: relative5(change.projectRoot, written.path).split(sep4).join("/"),
+    deduplicated: false
+  };
+}
+
+// kernel/src/log/domain/p8.ts
+var DOWNGRADING_ROLES = ["verifier", "design-verifier"];
+function mayDowngrade(type, role2) {
+  return type === "blocker" && role2 !== void 0 && DOWNGRADING_ROLES.includes(role2);
+}
+function classify(draft, role2, blocking) {
+  const kept = { type: draft.type, body: draft.body, review: draft.review };
+  if (!mayDowngrade(draft.type, role2)) return kept;
+  if (draft.category !== void 0 && blocking.includes(draft.category)) return kept;
+  const category2 = draft.category ?? null;
+  const sentence2 = `Downgraded from blocker: category ${category2 ?? "none"} is not a blocking category (P8).
+`;
+  const given = draft.body.trim();
+  return {
+    type: "observation",
+    body: given === "" ? sentence2 : `${sentence2}
+${given}
+`,
+    review: true,
+    downgraded: { type: "blocker", category: category2 }
+  };
+}
+
+// kernel/src/log/use-cases/deps.ts
+function withChangeIndex(deps, change, work) {
+  return withIndex(deps.openIndex, deps.store, change.projectRoot, (index2) => {
+    const refreshed = refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
+    return work(index2, refreshed);
+  });
+}
+
+// kernel/src/log/config.ts
+var ID3 = /^[a-z0-9][a-z0-9-]*$/;
+var item = (description) => strictObject({
+  id: string2().regex(ID3, "must be kebab-case: lowercase letters, digits and -").meta({
+    description: "Unique within the array; the merge key."
+  }),
+  description: string2().min(1)
+}).meta({ title: "category entry", description });
+var BLOCKING = [
+  {
+    id: "architecture",
+    description: "Materially invalid architecture, or a contradiction with an accepted decision."
+  },
+  { id: "security", description: "A security, privacy or authentication risk." },
+  {
+    id: "irreversible-step",
+    description: "An irreversible or high-cost step without justification, such as a migration or data loss."
+  },
+  {
+    id: "integration-failure",
+    description: "A critical integration, data, rollout or rollback failure."
+  },
+  {
+    id: "unresolved-decision",
+    description: "An execution-critical unresolved decision or omitted requirement."
+  },
+  { id: "false-code-claim", description: "A claim about the real code that is false." }
+];
+var NOT_A_FAIL = [
+  { id: "style", description: "Style." },
+  { id: "template-conformance", description: "Template conformance." },
+  { id: "files-bookkeeping", description: "`Files:` bookkeeping." },
+  { id: "wording", description: "Wording." },
+  { id: "report-length", description: "Report length." },
+  {
+    id: "verification-defect",
+    description: "A verification defect, unless it removes the only real evidence of the change's safety."
+  }
+];
+var verifierModule = defineConfigModule({
+  key: "policy.verifier",
+  consumer: "log",
+  owner: "T23",
+  description: "What a verifier may block on (P8): a blocker outside blocking-categories is downgraded to a reviewed observation.",
+  schema: strictObject({
+    "blocking-categories": array(item("A category a verifier or design-verifier blocker may name.")).default(BLOCKING).meta({ description: "Merged by id; the default items always stay." }),
+    "not-a-fail": array(item("Something a verifier never blocks on.")).default(NOT_A_FAIL).meta({
+      description: "Merged by id; shown in a verifier's package next to the categories."
+    })
+  }).prefault({})
+});
+
+// kernel/src/log/use-cases/verifier.ts
+function verifierPolicy(deps, change, globalDir2) {
+  const resolved = resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir: globalDir2,
+      projectRoot: change.projectRoot,
+      pluginRoot: deps.pluginRoot
+    },
+    { removed: "ignore" }
+  );
+  if ("refused" in resolved) return resolved;
+  const policy = verifierModule.schema.parse(
+    resolved.value.policy?.verifier
+  );
+  return { blocking: policy["blocking-categories"], notAFail: policy["not-a-fail"] };
+}
+
+// kernel/src/log/use-cases/add.ts
+var SUMMARY_MAX = 120;
+var CATEGORY_TYPES = ["finding", "blocker"];
+function addEntry(deps, change, globalDir2, input) {
+  const invalid4 = validate3(input);
+  if (invalid4 !== void 0) return Promise.resolve(invalid4);
+  return withChangeIndex(deps, change, async (index2) => {
+    if (input.supersedes !== void 0) {
+      const missing = checkSupersedes(deps, change, index2, input.supersedes);
+      if (missing !== void 0) return missing;
+    }
+    const role2 = input.ticket === void 0 ? void 0 : openPackage(deps.store, change.projectRoot, change.dir, input.ticket)?.role;
+    let blocking = [];
+    if (mayDowngrade(input.type, role2)) {
+      const policy = verifierPolicy(deps, change, globalDir2);
+      if (isRefusal(policy)) return policy;
+      blocking = policy.blocking.map((category3) => category3.id);
+    }
+    const { downgraded, ...classified } = classify(input, role2, blocking);
+    const { category: category2, ...rest } = input;
+    const base = downgraded === void 0 && category2 !== void 0 ? { ...rest, category: category2 } : rest;
+    const appended2 = await appendEntry(
+      deps,
+      change,
+      index2,
+      { ...base, ...classified },
+      { dedupe: true }
+    );
+    return "refused" in appended2 || downgraded === void 0 ? appended2 : { ...appended2, downgraded };
+  });
+}
+function validate3(input) {
+  const summary = input.summary.trim();
+  if (summary === "" || input.summary.length > SUMMARY_MAX) {
+    return refuse(
+      "input/invalid-argument",
+      `<summary> has ${input.summary.length} characters; it needs 1 to ${SUMMARY_MAX}`,
+      ["move the detail into --body"]
+    );
+  }
+  if (input.refs.length === 0 || input.refs.some((ref) => ref.trim() === "")) {
+    return refuse("input/missing-argument", "log add needs at least one non-empty --ref", [
+      `bdk log add ${input.type} "${input.summary}" --ref <file|symbol|part|task|rule|entry>`
+    ]);
+  }
+  if (input.category !== void 0 && !CATEGORY_TYPES.includes(input.type)) {
+    return refuse(
+      "input/invalid-argument",
+      `--category applies to finding and blocker, the types that carry it, not ${input.type}`,
+      [
+        `bdk log add ${input.type} "${input.summary}" --ref <ref>`,
+        "bdk log add blocker ... --category <id>"
+      ]
+    );
+  }
+  if (input.status === "superseded") {
+    return refuse(
+      "input/invalid-argument",
+      "--status superseded is derived from --supersedes, never written",
+      [
+        `bdk log add ${input.type} "..." --supersedes <id>`,
+        "bdk log resolve <id> superseded --by <id>"
+      ]
+    );
+  }
+  if (input.status === "routed") {
+    return refuse("input/invalid-argument", "--status routed is set only by log route", [
+      "bdk log route <id> rule|spec|nothing"
+    ]);
+  }
+  return void 0;
+}
+function supersedesProblem(deps, change, index2, value) {
+  const reference = parseReference(value);
+  if (!reference?.id.startsWith("L-")) {
+    return { rule: "input/invalid-argument", why: "is not an entry id" };
+  }
+  const changeId2 = reference.changeId ?? change.id;
+  if (changeId2 !== change.id) {
+    const location = findChange(deps.store, change.projectRoot, changeId2);
+    if (location === void 0)
+      return { rule: "input/not-found", why: `names no Change ${changeId2}` };
+    refreshChange(index2, location);
+  }
+  return findEntry(index2, changeId2, reference.id) === void 0 ? { rule: "input/not-found", why: `names no entry of ${changeId2}` } : void 0;
+}
+function checkSupersedes(deps, change, index2, value) {
+  const problem = supersedesProblem(deps, change, index2, value);
+  if (problem === void 0) return void 0;
+  return problem.rule === "input/invalid-argument" ? refuse(problem.rule, `--supersedes ${value} ${problem.why}`, [
+    "--supersedes L-xxxxxxxx",
+    "--supersedes <changeId>/L-xxxxxxxx"
+  ]) : refuse(problem.rule, `--supersedes ${value} ${problem.why}`, [
+    "bdk log list",
+    "bdk log show <id>"
+  ]);
+}
+
+// kernel/src/log/use-cases/ingest.ts
+import { join as join20 } from "node:path";
+
+// kernel/src/log/use-cases/envelope.ts
+var import_yaml6 = __toESM(require_dist(), 1);
+function readEnvelope(input) {
+  const split = splitFrontmatter(input);
+  if (split.frontmatter === void 0) {
+    return {
+      invalid: "the report has no frontmatter; it opens with a --- line, the envelope fields and a closing --- line"
+    };
+  }
+  const counter2 = new import_yaml6.LineCounter();
+  const document = (0, import_yaml6.parseDocument)(split.frontmatter, {
+    lineCounter: counter2,
+    uniqueKeys: true,
+    prettyErrors: false
+  });
+  const lineAt = (offset) => counter2.linePos(offset).line + 1;
+  const end = split.frontmatter.split("\n").length + 1;
+  const [error2] = document.errors;
+  if (error2 !== void 0) {
+    return {
+      invalid: `line ${String(lineAt(error2.pos[0]))}: ${error2.message.split("\n")[0] ?? ""}`
+    };
+  }
+  const root = document.contents;
+  if (root === null) return { fields: {}, lines: {}, end, body: split.body };
+  if (!(0, import_yaml6.isMap)(root)) {
+    return { invalid: "line 2: the frontmatter is not a mapping of envelope fields" };
+  }
+  const lines = {};
+  for (const pair of root.items) {
+    const key = (0, import_yaml6.isScalar)(pair.key) ? String(pair.key.value) : String(pair.key);
+    lines[key] = lineAt(pair.key.range?.[0] ?? 0);
+  }
+  const fields = document.toJS();
+  return { fields, lines, end, body: split.body };
+}
+
+// kernel/src/log/use-cases/ingest.ts
+var STAMPED = ["schema", "ticket", "role"];
+var FIELDS = ["status", "files", "entries", "evidence", "reason"];
+function ingestReport(deps, change, input) {
+  return withChangeIndex(deps, change, async (index2) => {
+    const dispatch2 = openPackage(deps.store, change.projectRoot, change.dir, input.ticket);
+    const report2 = dispatch2?.data.report;
+    if (dispatch2 === void 0 || report2 === void 0) {
+      return refuse(
+        "policy/no-open-ticket",
+        `${input.ticket} has no open attempt record with a dispatch package in ${change.id}`,
+        ["bdk attempt list", "bdk dispatch build <target>"]
+      );
+    }
+    const envelope = readEnvelope(input.text);
+    if ("invalid" in envelope) return invalidEnvelope(envelope.invalid);
+    const data = checkEnvelope(envelope, input.ticket, dispatch2.role);
+    if ("refused" in data) return data;
+    const missing = missingIds(deps, change, index2, input.ticket, data);
+    if (missing !== void 0) return missing;
+    const path = join20(change.projectRoot, report2);
+    const replaced = deps.store.read(path) !== void 0;
+    writeDocument(deps.store, path, { data, body: envelope.body });
+    return {
+      ticket: input.ticket,
+      role: dispatch2.role,
+      path: report2,
+      status: data.status,
+      entries: data.entries,
+      replaced
+    };
+  });
+}
+function invalidEnvelope(why) {
+  return refuse("input/invalid-envelope", why, [
+    "fix the named field and pipe the whole report again",
+    `the frontmatter holds ${FIELDS.join(", ")}; reason only for blocked and needs-context`
+  ]);
+}
+function checkEnvelope(envelope, ticket, role2) {
+  const at = (field3) => `line ${String(envelope.lines[field3] ?? envelope.end)}: ${field3}`;
+  const names = Object.keys(envelope.fields);
+  const stamped = names.find((field3) => STAMPED.includes(field3));
+  if (stamped !== void 0) {
+    return refuse("input/forbidden-field", `${at(stamped)} is stamped by the kernel`, [
+      "drop the field; the kernel stamps schema, ticket and role from the ticket"
+    ]);
+  }
+  const unknown3 = names.find((field3) => !FIELDS.includes(field3));
+  if (unknown3 !== void 0) {
+    return invalidEnvelope(
+      `${at(unknown3)} is not an envelope field; allowed: ${FIELDS.join(", ")}`
+    );
+  }
+  const parsed = STATE_KINDS.report.schema.safeParse({
+    schema: STATE_KINDS.report.version,
+    ticket,
+    role: role2,
+    ...envelope.fields
+  });
+  if (parsed.success) return parsed.data;
+  const [issue2] = parsed.error.issues;
+  const field2 = String(issue2?.path[0] ?? "status");
+  const message = issue2?.message ?? "";
+  return invalidEnvelope(
+    field2 in envelope.fields ? `${at(field2)} is invalid: ${message}` : `${field2} is missing from the frontmatter, which ends at line ${String(envelope.end)}: ${message}`
+  );
+}
+function missingIds(deps, change, index2, ticket, data) {
+  const written = new Set(
+    listEntries(index2, change.id).filter((entry) => entry.ticket === ticket).map((entry) => entry.id)
+  );
+  const recorded2 = ticketEvidence(deps, change, ticket);
+  const missing = [
+    ...data.entries.filter((id) => !written.has(id)),
+    ...data.evidence.filter((id) => !recorded2.has(id))
+  ];
+  if (missing.length === 0) return void 0;
+  return refuse(
+    "policy/entries-missing",
+    `the envelope lists ${missing.join(", ")}, which ${missing.length === 1 ? "is" : "are"} not recorded under ${ticket}`,
+    [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`]
+  );
+}
+function ticketEvidence(deps, change, ticket) {
+  const dir = join20(change.dir, "evidence");
+  const ids = /* @__PURE__ */ new Set();
+  for (const name of deps.store.list(dir)) {
+    if (!name.endsWith(".md")) continue;
+    const document = readDocument(deps.store, join20(dir, name));
+    if (document === void 0 || !("data" in document) || document.kind !== "evidence") continue;
+    if (document.data.ticket === ticket) ids.add(String(document.data.id));
+  }
+  return ids;
+}
+
+// kernel/src/log/use-cases/list.ts
+async function listLog(deps, change, filter, elapsed = performanceClock()) {
+  const { sinceTicket, ...entryFilter } = filter;
+  let since;
+  if (sinceTicket !== void 0) {
+    const record4 = readAttempts(deps.store, change.dir).find(
+      (file) => file.data.ticket === sinceTicket
+    );
+    if (record4 === void 0) {
+      return refuse("input/not-found", `${change.id} has no ticket ${sinceTicket}`, [
+        "bdk attempt list --all"
+      ]);
+    }
+    since = record4.data["opened-at"];
+  }
+  const { items, refreshed } = await withChangeIndex(deps, change, (index2, refreshed2) => ({
+    items: listEntries(index2, change.id, entryFilter).map(entrySummary).filter((item3) => since === void 0 || item3.at >= since),
+    refreshed: refreshed2
+  }));
+  appendTelemetry(deps.store, change.projectRoot, "log-list", {
+    at: deps.clock.now(),
+    ms: Math.round(elapsed() * 10) / 10,
+    entries: items.length,
+    refreshed
+  });
+  return items;
+}
+function performanceClock() {
+  const start = performance.now();
+  return () => performance.now() - start;
+}
+
+// kernel/src/log/use-cases/resolve.ts
+import { join as join21 } from "node:path";
+function resolveEntry(deps, change, input) {
+  if (input.status === "superseded" && input.by === void 0) {
+    return Promise.resolve(
+      refuse("input/missing-argument", "superseded needs --by <id>, the superseding entry", [
+        `bdk log resolve ${input.id} superseded --by <id>`
+      ])
+    );
+  }
+  return withChangeIndex(deps, change, (index2) => {
+    const entry = findEntry(index2, change.id, bare(change, input.id));
+    if (entry === void 0) return notFound(change, input.id);
+    const moves = allowedMoves(entry.type, entry.status);
+    if (!moves.includes(input.status)) {
+      return refuse(
+        "policy/invalid-transition",
+        entry.type === "transition" ? `${entry.id} is a transition; its status never changes` : `${entry.id} is ${entry.status}; allowed from there: ${moves.length === 0 ? "nothing" : moves.join(", ")}`,
+        ["bdk log show " + entry.id, "bdk log add ... --supersedes " + entry.id]
+      );
+    }
+    const at = deps.clock.now();
+    if (input.status !== "superseded") {
+      const done3 = rewrite(
+        deps,
+        change,
+        entry,
+        (data) => ({ ...data, status: input.status }),
+        at,
+        input
+      );
+      return done3 ? result(input, entry.id) : notFound(change, input.id);
+    }
+    const by = findEntry(index2, change.id, bare(change, input.by ?? ""));
+    if (by === void 0) return notFound(change, input.by ?? "");
+    if (by.id === entry.id || by.supersedes !== void 0) {
+      return refuse(
+        "policy/invalid-transition",
+        by.id === entry.id ? `${entry.id} cannot supersede itself` : `${by.id} already supersedes ${by.supersedes ?? ""}; an entry supersedes one entry`,
+        ["bdk log add ... --supersedes " + entry.id]
+      );
+    }
+    const done2 = rewrite(
+      deps,
+      change,
+      by,
+      (data) => ({ ...data, supersedes: entry.id }),
+      at,
+      input
+    );
+    return done2 ? result(input, by.id) : notFound(change, by.id);
+  });
+}
+function bare(change, id) {
+  const prefix = `${change.id}/`;
+  return id.startsWith(prefix) ? id.slice(prefix.length) : id;
+}
+function notFound(change, id) {
+  return refuse("input/not-found", `${id} names no entry of ${change.id}`, ["bdk log list"]);
+}
+function rewrite(deps, change, entry, update, at, input) {
+  const path = join21(change.projectRoot, entry.path);
+  const document = readDocument(deps.store, path);
+  if (document === void 0 || !("data" in document)) return false;
+  writeDocument(deps.store, path, {
+    data: update(document.data),
+    body: withResolution(document.body, input.status, at, input.reason)
+  });
+  return true;
+}
+function result(input, record4) {
+  return {
+    entry: input.id,
+    status: input.status,
+    ...input.by === void 0 ? {} : { by: input.by },
+    record: record4,
+    ...input.reason === void 0 ? {} : { reason: input.reason }
+  };
+}
+
+// kernel/src/log/use-cases/show.ts
+import { join as join22 } from "node:path";
+function showEntry(deps, change, id) {
+  const reference = parseReference(id);
+  if (!reference?.id.startsWith("L-")) {
+    return Promise.resolve(
+      refuse("input/invalid-argument", `${id} is not an entry id`, [
+        "bdk log show L-xxxxxxxx",
+        "bdk log show <changeId>/L-xxxxxxxx"
+      ])
+    );
+  }
+  const changeId2 = reference.changeId ?? change.id;
+  const notFound6 = (why) => refuse("input/not-found", why, ["bdk log list", "bdk change list --all"]);
+  return withChangeIndex(deps, change, (index2) => {
+    if (changeId2 !== change.id) {
+      const location = findChange(deps.store, change.projectRoot, changeId2);
+      if (location === void 0) return notFound6(`no Change ${changeId2}`);
+      refreshChange(index2, location);
+    }
+    const row = findEntry(index2, changeId2, reference.id);
+    if (row === void 0) return notFound6(`${id} names no entry of ${changeId2}`);
+    const document = readDocument(deps.store, join22(change.projectRoot, row.path));
+    if (document === void 0 || !("data" in document)) {
+      return notFound6(`${row.path} disappeared while it was read`);
+    }
+    return {
+      entry: { ...entryView(document.data, row.status), body: document.body, path: row.path },
+      ...row.supersededBy === void 0 ? {} : { supersededBy: row.supersededBy }
+    };
+  });
+}
+
+// kernel/src/log/commands/log.ts
+function text2(value) {
+  return typeof value === "string" ? value : void 0;
+}
+function list2(value) {
+  if (value === void 0 || value === true) return [];
+  return typeof value === "string" ? [value] : [...value];
+}
+function active2(change) {
+  if (change === void 0) throw new Error("log commands are Change-scoped");
+  return change;
+}
+function addCommand(deps) {
+  return async (context) => {
+    const body = text2(context.flags["--body"]);
+    const result2 = await addEntry(deps, active2(context.change), globalDir(context.runtime), {
+      type: context.positionals.type ?? "",
+      summary: context.positionals["<summary>"] ?? "",
+      refs: list2(context.flags["--ref"]),
+      body: body === "-" ? context.runtime.readStdin() : body ?? "",
+      review: context.flags["--review"] === true,
+      ...optional2("status", text2(context.flags["--status"])),
+      ...optional2("ticket", text2(context.flags["--ticket"])),
+      ...optional2("supersedes", text2(context.flags["--supersedes"])),
+      ...optional2("category", text2(context.flags["--category"]))
+    });
+    return isRefusal(result2) ? result2 : { data: result2, text: renderAdd(result2) };
+  };
+}
+function ingestCommand(deps) {
+  return async (context) => {
+    const ticket = text2(context.flags["--ticket"]);
+    if (ticket === void 0) {
+      return refuse("input/missing-argument", "log ingest needs --ticket, the role's open ticket", [
+        "bdk log ingest --ticket <ticket> < report.md"
+      ]);
+    }
+    const input = context.runtime.readStdin();
+    if (input.trim() === "") {
+      return refuse(
+        "input/missing-argument",
+        "stdin is empty; log ingest reads the report, its envelope as frontmatter",
+        [`bdk log ingest --ticket ${ticket} < report.md`]
+      );
+    }
+    const report2 = await ingestReport(deps, active2(context.change), { ticket, text: input });
+    return isRefusal(report2) ? report2 : { data: report2, text: renderIngest(report2) };
+  };
+}
+function listCommand(deps) {
+  return async (context) => {
+    const all = context.flags["--all"] === true;
+    const target = text2(context.flags["--for"]);
+    const items = await listLog(deps, active2(context.change), {
+      ...optional2("type", text2(context.flags["--type"])),
+      ...optional2("status", text2(context.flags["--status"])),
+      ...context.flags["--review"] === true ? { review: true } : {},
+      ...optional2("for", target),
+      ...optional2("sinceTicket", text2(context.flags["--since-ticket-start"]))
+    });
+    if (isRefusal(items)) return items;
+    return {
+      data: listPage(items, { all, ...optional2("for", target) }),
+      text: capLines(renderList2(items), { all })
+    };
+  };
+}
+function showCommand(deps) {
+  return async (context) => {
+    const shown = await showEntry(deps, active2(context.change), context.positionals["<id>"] ?? "");
+    return isRefusal(shown) ? shown : { data: shown, text: renderShow(shown) };
+  };
+}
+function resolveCommand(deps) {
+  return async (context) => {
+    const result2 = await resolveEntry(deps, active2(context.change), {
+      id: context.positionals["<id>"] ?? "",
+      status: context.positionals.status ?? "",
+      ...optional2("by", text2(context.flags["--by"])),
+      ...optional2("reason", text2(context.flags["--reason"]))
+    });
+    return isRefusal(result2) ? result2 : { data: result2, text: renderResolve(result2) };
+  };
+}
+function optional2(key, value) {
+  return value === void 0 ? {} : { [key]: value };
+}
+
+// kernel/src/log/index.ts
+var logConfig = { modules: [verifierModule] };
+function logRegistrations(deps) {
+  return [
+    { id: "log-add", handler: addCommand(deps) },
+    { id: "log-ingest", handler: ingestCommand(deps) },
+    { id: "log-list", handler: listCommand(deps) },
+    { id: "log-show", handler: showCommand(deps) },
+    { id: "log-resolve", handler: resolveCommand(deps) }
+  ];
+}
+
 // kernel/src/graph/domain/reports.ts
 function nodeView(node3) {
   return {
@@ -20931,532 +21544,9 @@ function pipelinePrompt(kind) {
 }
 var pipelinePrompts = KIND_NAMES.map(pipelinePrompt);
 
-// kernel/src/evidence/render/evidence.ts
-function renderRecord(report2) {
-  const head = report2.deduplicated ? `${report2.evidence} already records this evidence: ${report2.path}` : `recorded ${report2.evidence}: ${report2.path}`;
-  const verdict = report2.verdict === void 0 ? [] : [`verdict: ${report2.verdict}`];
-  const files = report2.files.map((file) => `  ${file.stored}: ${file.path}`);
-  return [head, `tree: ${report2.treeHash}`, ...verdict, "files:", ...files, ""].join("\n");
-}
-function renderCheck(subject, report2) {
-  const lines = report2.evidence.map(
-    (entry) => `  ${entry.evidence} ${entry.kind}${entry.verdict === void 0 ? "" : ` ${entry.verdict}`}: fresh`
-  );
-  return [`evidence of ${subject} is fresh (tree ${report2.treeHash})`, ...lines, ""].join("\n");
-}
-function staleWhy(subject, report2) {
-  if (report2.evidence.length === 0) return `${subject} has no evidence`;
-  const stale = report2.evidence.filter((entry) => !entry.fresh).map((entry) => `${entry.evidence} ${entry.kind} (changed: ${entry.changedSince.join(", ")})`);
-  return `evidence of ${subject} is stale: ${stale.join("; ")}`;
-}
-
-// kernel/src/evidence/use-cases/scope.ts
-import { join as join20 } from "node:path";
-
-// kernel/src/evidence/config.ts
-var glob3 = string2().min(1).meta({ title: "non-empty glob" });
-function globs(defaults, description) {
-  return appendOnly(
-    array(glob3).refine((items) => new Set(items).size === items.length, "globs must be unique").meta({ uniqueItems: true, description })
-  ).default([...defaults]);
-}
-var NON_EXECUTABLE = [
-  "**/*.md",
-  "**/*.mdx",
-  "**/*.txt",
-  "**/*.rst",
-  "**/*.png",
-  "**/*.jpg",
-  "**/*.jpeg",
-  "**/*.gif",
-  "**/*.svg",
-  "**/*.webp",
-  "docs/**",
-  "LICENSE*",
-  "CHANGELOG*",
-  ".bdk/**"
-];
-var BUILD_CONFIG = [
-  "package.json",
-  "pnpm-lock.yaml",
-  "package-lock.json",
-  "yarn.lock",
-  "tsconfig*.json",
-  "pyproject.toml",
-  "uv.lock",
-  "poetry.lock",
-  "requirements*.txt",
-  "go.mod",
-  "go.sum",
-  "Cargo.toml",
-  "Cargo.lock",
-  "Gemfile",
-  "Gemfile.lock",
-  "pom.xml",
-  "build.gradle*",
-  "Makefile",
-  "CMakeLists.txt"
-];
-var evidenceModule = defineConfigModule({
-  key: "policy.evidence",
-  consumer: "evidence",
-  owner: "T23",
-  description: "Which files the tree hash covers and which evidence files are committed.",
-  schema: strictObject({
-    "non-executable": globs(
-      NON_EXECUTABLE,
-      "Files that never change the tree hash; layers append to the defaults."
-    ),
-    "build-config": globs(
-      BUILD_CONFIG,
-      "Files that always change the tree hash, wherever they are; wins over non-executable."
-    ),
-    "max-committed-bytes": int().min(0).default(65536).meta({
-      description: "The largest UTF-8 text evidence file copied into the Change; 0 commits none."
-    })
-  }).prefault({})
-});
-
-// kernel/src/evidence/use-cases/tree.ts
-import { createHash as createHash3 } from "node:crypto";
-function fileClass(policy, path) {
-  if (firstMatch(policy.buildConfig, path) !== void 0) return "build-config";
-  if (firstMatch(policy.nonExecutable, path) !== void 0) return "non-executable";
-  return "executable";
-}
-function coveredPaths(policy, scopeFiles, workTreeFiles2) {
-  const covered = /* @__PURE__ */ new Set();
-  for (const path of scopeFiles)
-    if (fileClass(policy, path) !== "non-executable") covered.add(path);
-  for (const path of workTreeFiles2)
-    if (fileClass(policy, path) === "build-config") covered.add(path);
-  return [...covered].sort(byteOrder);
-}
-function treeOf(paths, read3) {
-  const tree = [...paths].sort(byteOrder).map((path) => {
-    const bytes2 = read3(path);
-    return { path, hash: bytes2 === void 0 ? "absent" : sha256(bytes2) };
-  });
-  const hash2 = createHash3("sha256");
-  for (const entry of tree) hash2.update(`${entry.path}\0${entry.hash}\0`);
-  return { treeHash: `sha256:${hash2.digest("hex")}`, tree };
-}
-function changedSince(recorded2, current) {
-  const before = new Map(recorded2.map((entry) => [entry.path, entry.hash]));
-  const after = new Map(current.map((entry) => [entry.path, entry.hash]));
-  const paths = /* @__PURE__ */ new Set([...before.keys(), ...after.keys()]);
-  return [...paths].filter((path) => before.get(path) !== after.get(path)).sort(byteOrder);
-}
-function sha256(bytes2) {
-  return `sha256:${createHash3("sha256").update(bytes2).digest("hex")}`;
-}
-function byteOrder(a, b) {
-  return Buffer.compare(Buffer.from(a), Buffer.from(b));
-}
-
-// kernel/src/evidence/use-cases/scope.ts
-function evidenceSettings(deps, projectRoot, globalDir2) {
-  return resolveOrRefuse(
-    {
-      store: deps.store,
-      settings: deps.settings,
-      globalDir: globalDir2,
-      projectRoot,
-      pluginRoot: deps.pluginRoot
-    },
-    { removed: "ignore" }
-  );
-}
-function filePolicy(settings) {
-  const policy = moduleValue(evidenceModule, settings);
-  return { nonExecutable: policy["non-executable"], buildConfig: policy["build-config"] };
-}
-function scopeOf(parts, changeId2, target) {
-  const holder = taskHolders(parts).get(target);
-  if (holder !== void 0) return [holder];
-  const part = parts.find((found) => found.id === target);
-  if (part !== void 0) return [part];
-  return target === changeId2 ? parts : void 0;
-}
-async function scopeTree(deps, projectRoot, policy, scope2) {
-  return treeIn(deps.store, projectRoot, policy, scope2, await workTreeFiles(deps.git, projectRoot));
-}
-async function currentTrees(deps, change, policy, parts, targets) {
-  const workTree = await workTreeFiles(deps.git, change.projectRoot);
-  const trees = /* @__PURE__ */ new Map();
-  const byScope = /* @__PURE__ */ new Map();
-  for (const target of targets) {
-    if (trees.has(target)) continue;
-    const scope2 = scopeOf(parts, change.id, target) ?? parts;
-    const key = scope2.map((part) => part.id).join(" ");
-    let tree = byScope.get(key);
-    if (tree === void 0) {
-      tree = treeIn(deps.store, change.projectRoot, policy, scope2, workTree);
-      byScope.set(key, tree);
-    }
-    trees.set(target, tree);
-  }
-  return trees;
-}
-function treeIn(store2, projectRoot, policy, scope2, workTree) {
-  const declared3 = scope2.flatMap(
-    (part) => part.tasks.flatMap((task) => task.files.map((file) => file.path))
-  );
-  const paths = coveredPaths(policy, declared3, workTree);
-  return treeOf(paths, (path) => store2.readBytes(join20(projectRoot, path)));
-}
-
-// kernel/src/evidence/use-cases/check.ts
-var EVIDENCE_ID = /^E-[0-9a-z]{8}$/;
-async function checkEvidence(deps, change, globalDir2, subject) {
-  const manifests = readManifests(deps.store, change.dir);
-  const parts = readPlanParts(deps.store, change.dir);
-  let target = subject;
-  let checked;
-  if (EVIDENCE_ID.test(subject)) {
-    const manifest = manifests.find((found) => found.data.id === subject);
-    if (manifest === void 0) {
-      return refuse("input/not-found", `${change.id} has no evidence ${subject}`, [
-        "bdk evidence check <target>"
-      ]);
-    }
-    target = manifest.data.target;
-    checked = [manifest];
-  } else {
-    if (scopeOf(parts, change.id, subject) === void 0) {
-      return refuse("input/not-found", `${change.id} holds no task, part or Change ${subject}`, [
-        "bdk part list"
-      ]);
-    }
-    checked = manifests.filter((manifest) => manifest.data.target === subject);
-  }
-  const settings = evidenceSettings(deps, change.projectRoot, globalDir2);
-  if ("refused" in settings) return settings;
-  const scope2 = scopeOf(parts, change.id, target) ?? parts;
-  const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope2);
-  const fresh = (manifest) => manifest.data["tree-hash"] === current.treeHash;
-  const latest2 = /* @__PURE__ */ new Map();
-  for (const manifest of checked) {
-    const known = latest2.get(manifest.data.kind);
-    if (known === void 0 || manifest.data.at > known.data.at || fresh(manifest) || !fresh(known)) {
-      latest2.set(manifest.data.kind, manifest);
-    }
-  }
-  const evidence = [...latest2.values()].map((manifest) => ({
-    evidence: manifest.data.id,
-    kind: manifest.data.kind,
-    treeHash: manifest.data["tree-hash"],
-    fresh: fresh(manifest),
-    ...manifest.data.verdict === void 0 ? {} : { verdict: manifest.data.verdict },
-    changedSince: changedSince(manifest.data.tree, current.tree)
-  }));
-  return {
-    fresh: evidence.length > 0 && evidence.every((entry) => entry.fresh),
-    treeHash: current.treeHash,
-    evidence
-  };
-}
-
-// kernel/src/evidence/use-cases/record.ts
-import { basename, isAbsolute as isAbsolute2, join as join21, relative as relative5 } from "node:path";
-
-// kernel/src/evidence/domain/citation.ts
-function citationProblem(citation, files) {
-  const parsed = parse5(citation);
-  if (parsed === void 0) {
-    return `${citation} is not a citation: use <file>#<json-pointer>, <file>:<line> or <file>:<line>=<text>`;
-  }
-  const file = parsed.file === "" ? only(files) : named(files, parsed.file);
-  if (file === void 0) {
-    return parsed.file === "" ? `${citation} names no file, and ${String(files.length)} files are recorded` : `${citation}: ${parsed.file} is not a recorded file`;
-  }
-  const where = `${citation} in ${file.given}`;
-  if (file.text === void 0) return `${where}: the file is not text, so it is not citable`;
-  return "pointer" in parsed.target ? pointerProblem(where, file.text, parsed.target.pointer) : lineProblem(where, file.text, parsed.target.line, parsed.target.contains);
-}
-function isText(bytes2) {
-  if (bytes2.includes(0)) return false;
-  try {
-    new TextDecoder("utf-8", { fatal: true }).decode(bytes2);
-    return true;
-  } catch {
-    return false;
-  }
-}
-function parse5(citation) {
-  if (citation.startsWith("/")) return { file: "", target: { pointer: citation } };
-  const hash2 = citation.indexOf("#");
-  if (hash2 >= 0) {
-    return { file: citation.slice(0, hash2), target: { pointer: citation.slice(hash2 + 1) } };
-  }
-  const line2 = /^(?<file>[^:]*):(?<line>\d+)(?:=(?<text>.*))?$/s.exec(citation)?.groups;
-  if (line2?.line === void 0) return void 0;
-  const target = line2.text === void 0 ? { line: Number(line2.line) } : { line: Number(line2.line), contains: line2.text };
-  return { file: line2.file ?? "", target };
-}
-function only(files) {
-  return files.length === 1 ? files[0] : void 0;
-}
-function named(files, name) {
-  return files.find((file) => file.given === name) ?? files.find((file) => file.given.split("/").at(-1) === name);
-}
-function pointerProblem(where, text8, pointer) {
-  if (pointer !== "" && !pointer.startsWith("/")) {
-    return `${where}: ${pointer} is not a JSON pointer; it starts with /`;
-  }
-  let value;
-  try {
-    value = JSON.parse(text8);
-  } catch {
-    return `${where}: the file does not parse as JSON`;
-  }
-  const tokens = pointer === "" ? [] : pointer.slice(1).split("/");
-  for (const token of tokens) {
-    const key = token.replaceAll("~1", "/").replaceAll("~0", "~");
-    const next = step(value, key);
-    if (next === void 0) return `${where}: ${pointer} names no value`;
-    value = next.value;
-  }
-  return void 0;
-}
-function step(value, key) {
-  if (Array.isArray(value)) {
-    if (!/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= value.length) return void 0;
-    return { value: value[Number(key)] };
-  }
-  if (typeof value === "object" && value !== null && Object.hasOwn(value, key)) {
-    return { value: value[key] };
-  }
-  return void 0;
-}
-function lineProblem(where, text8, line2, contains) {
-  const lines = text8.endsWith("\n") ? text8.slice(0, -1).split("\n") : text8.split("\n");
-  const found = line2 >= 1 && text8 !== "" ? lines[line2 - 1] : void 0;
-  if (found === void 0) return `${where}: the file has no line ${String(line2)}`;
-  if (contains !== void 0 && !found.replace(/\r$/, "").includes(contains)) {
-    return `${where}: line ${String(line2)} does not contain ${contains}`;
-  }
-  return void 0;
-}
-
-// kernel/src/evidence/use-cases/record.ts
-var KIND = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-var VERDICTS = ["pass", "fail", "not-run"];
-var MACHINE_EVIDENCE = ".bdk/.machine/evidence/";
-async function recordEvidence(deps, change, where, input) {
-  const usage = `bdk evidence record ${input.kind} <file> --ticket <ticket> --verdict pass --cite <pointer>`;
-  if (!KIND.test(input.kind)) {
-    return refuse("input/invalid-argument", `kind ${input.kind} is not kebab-case`, [usage]);
-  }
-  if (input.ticket === void 0) {
-    return refuse("input/missing-argument", "evidence record needs --ticket", [usage]);
-  }
-  if (input.verdict !== void 0 && !VERDICTS.includes(input.verdict)) {
-    return refuse(
-      "input/invalid-argument",
-      `verdict ${input.verdict} is not pass, fail or not-run`,
-      [usage]
-    );
-  }
-  const verdict = input.verdict;
-  const ticket = input.ticket;
-  const record4 = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
-  if (record4 === void 0 || record4.data.outcome !== void 0) {
-    return refuse(
-      "policy/no-open-ticket",
-      record4 === void 0 ? `${change.id} has no ticket ${ticket}` : `ticket ${ticket} is already closed ${record4.data.outcome ?? ""}`,
-      ["bdk attempt list", "bdk attempt open <loop> <target>"]
-    );
-  }
-  const sources = readSources(deps, change.projectRoot, where.cwd, input.files);
-  if ("refused" in sources) return sources;
-  const citations = checkCitations(sources, verdict, input.citations);
-  if (citations !== void 0) return citations;
-  const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
-  if ("refused" in resolved) return resolved;
-  const target = record4.data.target;
-  const parts = readPlanParts(deps.store, change.dir);
-  const scope2 = scopeOf(parts, change.id, target) ?? parts;
-  const { treeHash, tree } = await scopeTree(
-    deps,
-    change.projectRoot,
-    filePolicy(resolved.value),
-    scope2
-  );
-  const hashes = sources.map((source2) => source2.hash);
-  const earlier = ticketManifests(readManifests(deps.store, change.dir), ticket).find(
-    (manifest) => manifest.data.kind === input.kind && manifest.data["tree-hash"] === treeHash && manifest.data.verdict === verdict && same2(manifest.data.citations ?? [], input.citations) && same2(
-      manifest.data.files.map((file) => file.hash),
-      hashes
-    )
-  );
-  if (earlier !== void 0) return reportOf(change.projectRoot, earlier, true);
-  const id = newId("E-", deps.random);
-  const limit = moduleValue(evidenceModule, resolved.value)["max-committed-bytes"];
-  const files = sources.map((source2) => {
-    const name = `${target}-${id}-${source2.name}`;
-    const hash2 = source2.hash;
-    if (source2.text && source2.bytes.length <= limit) {
-      const path3 = join21(relative5(change.projectRoot, change.dir), "evidence", name);
-      deps.store.writeBytes(join21(change.projectRoot, path3), source2.bytes);
-      return { path: path3, hash: hash2, stored: "committed" };
-    }
-    if (source2.path.startsWith(MACHINE_EVIDENCE))
-      return { path: source2.path, hash: hash2, stored: "machine" };
-    const path2 = `${MACHINE_EVIDENCE}${name}`;
-    deps.store.writeBytes(join21(change.projectRoot, path2), source2.bytes);
-    return { path: path2, hash: hash2, stored: "machine" };
-  });
-  const active9 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
-  const path = join21(change.dir, "evidence", `${target}-${id}.md`);
-  const data = {
-    schema: 1,
-    id,
-    kind: input.kind,
-    ticket,
-    target,
-    at: deps.clock.now(),
-    author: await authorIdent(deps.git, change.projectRoot),
-    source: active9 === void 0 ? "kernel" : `agent:${active9.role}`,
-    "tree-hash": treeHash,
-    tree: [...tree],
-    files,
-    ...verdict === void 0 ? {} : { verdict },
-    ...input.citations.length === 0 ? {} : { citations: [...input.citations] }
-  };
-  writeDocument(deps.store, path, { data, body: "" });
-  return reportOf(change.projectRoot, { path, data }, false);
-}
-function readSources(deps, projectRoot, cwd, given) {
-  const sources = [];
-  for (const file of given) {
-    const absolute = isAbsolute2(file) ? file : join21(cwd, file);
-    const bytes2 = deps.store.readBytes(absolute);
-    if (bytes2 === void 0) {
-      return refuse("input/not-found", `evidence file ${file} does not exist`, [
-        "bdk evidence record <kind> <file> --ticket <ticket>"
-      ]);
-    }
-    const name = basename(absolute);
-    if (sources.some((source2) => source2.name === name)) {
-      return refuse(
-        "input/invalid-argument",
-        `two evidence files are named ${name}; the Change stores them by file name`,
-        ["copy one of them under another name and record both"]
-      );
-    }
-    sources.push({
-      given: file,
-      path: relative5(projectRoot, absolute),
-      name,
-      bytes: bytes2,
-      hash: sha256(bytes2),
-      text: isText(bytes2)
-    });
-  }
-  return sources;
-}
-function checkCitations(sources, verdict, citations) {
-  const files = sources.map((source2) => ({
-    given: source2.given,
-    text: source2.text ? new TextDecoder().decode(source2.bytes) : void 0
-  }));
-  if (verdict === "pass" && citations.length === 0) {
-    return refuse(
-      "policy/missing-citation",
-      `a pass verdict needs --cite naming a value in ${sources.map((source2) => source2.given).join(", ")}`,
-      ["--cite <file>#<json-pointer>", "--cite <file>:<line>", "--cite <file>:<line>=<text>"]
-    );
-  }
-  for (const citation of citations) {
-    const problem = citationProblem(citation, files);
-    if (problem !== void 0) {
-      return refuse("policy/missing-citation", problem, [
-        "cite a value the recorded files hold",
-        "record the verdict fail when the evidence does not show a pass"
-      ]);
-    }
-  }
-  return void 0;
-}
-function same2(a, b) {
-  return a.length === b.length && a.every((value, at) => value === b[at]);
-}
-function reportOf(projectRoot, manifest, deduplicated) {
-  const data = manifest.data;
-  return {
-    evidence: data.id,
-    path: relative5(projectRoot, manifest.path),
-    treeHash: data["tree-hash"],
-    files: data.files,
-    ...data.verdict === void 0 ? {} : { verdict: data.verdict },
-    ...data.citations === void 0 ? {} : { citations: data.citations },
-    deduplicated
-  };
-}
-
-// kernel/src/evidence/commands/evidence.ts
-function text2(value) {
-  return typeof value === "string" ? value : void 0;
-}
-function list2(value) {
-  if (value === void 0 || value === true) return [];
-  return typeof value === "string" ? [value] : [...value];
-}
-function active2(change) {
-  if (change === void 0) throw new Error("evidence commands are Change-scoped");
-  return change;
-}
-function recordCommand(deps) {
-  return async (context) => {
-    const report2 = await recordEvidence(
-      deps,
-      active2(context.change),
-      { cwd: context.cwd, globalDir: globalDir(context.runtime) },
-      {
-        kind: context.positionals["<kind>"] ?? "",
-        files: context.lists["<file>"] ?? [],
-        ticket: text2(context.flags["--ticket"]),
-        verdict: text2(context.flags["--verdict"]),
-        citations: list2(context.flags["--cite"])
-      }
-    );
-    return isRefusal(report2) ? report2 : { data: report2, text: renderRecord(report2) };
-  };
-}
-function checkCommand(deps) {
-  return async (context) => {
-    const subject = context.positionals["<target|evidence-id>"] ?? "";
-    const report2 = await checkEvidence(
-      deps,
-      active2(context.change),
-      globalDir(context.runtime),
-      subject
-    );
-    if (isRefusal(report2)) return report2;
-    if (!context.json && !report2.fresh) {
-      return refuse("policy/stale-evidence", staleWhy(subject, report2), [
-        "re-run the checks and bdk evidence record <kind> <file> --ticket <ticket>"
-      ]);
-    }
-    return { data: report2, text: renderCheck(subject, report2) };
-  };
-}
-
-// kernel/src/evidence/index.ts
-var evidenceConfig = {
-  modules: [evidenceModule]
-};
-function evidenceRegistrations(deps) {
-  return [
-    { id: "evidence-record", handler: recordCommand(deps) },
-    { id: "evidence-check", handler: checkCommand(deps) }
-  ];
-}
-
 // kernel/src/graph/use-cases/hash.ts
 import { createHash as createHash4 } from "node:crypto";
-import { join as join22 } from "node:path";
+import { join as join23 } from "node:path";
 function inputHasher(store2, changeDir, codeTree) {
   return (inputs) => {
     if ("codeTree" in inputs) return codeTree ?? filesHash(store2, changeDir, []);
@@ -21469,7 +21559,7 @@ function filesHash(store2, changeDir, files) {
   for (const path of [...files].sort()) {
     hash2.update(path);
     hash2.update("\0");
-    hash2.update(store2.read(join22(changeDir, path)) ?? "");
+    hash2.update(store2.read(join23(changeDir, path)) ?? "");
     hash2.update("\0");
   }
   return `sha256:${hash2.digest("hex")}`;
@@ -21477,7 +21567,7 @@ function filesHash(store2, changeDir, files) {
 
 // kernel/src/graph/use-cases/pipeline.ts
 var import_yaml7 = __toESM(require_dist(), 1);
-import { join as join23 } from "node:path";
+import { join as join24 } from "node:path";
 
 // kernel/src/graph/schema/pipeline.ts
 var KEBAB = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
@@ -21512,7 +21602,7 @@ var pipelineSchema = strictObject({
 var PIPELINE_FILE = "pipeline/pipeline.yaml";
 var cache2 = /* @__PURE__ */ new WeakMap();
 function loadPipeline(store2, pluginRoot, settings, kinds) {
-  const path = join23(pluginRoot, PIPELINE_FILE);
+  const path = join24(pluginRoot, PIPELINE_FILE);
   const text8 = store2.read(path);
   if (text8 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
   const known = cache2.get(kinds)?.get(text8);
@@ -21566,7 +21656,7 @@ function keyOf(path) {
 }
 
 // kernel/src/graph/use-cases/view.ts
-import { join as join24 } from "node:path";
+import { join as join25 } from "node:path";
 function changeView(input) {
   const { store: store2, dir } = input;
   const files = /* @__PURE__ */ new Map();
@@ -21574,7 +21664,7 @@ function changeView(input) {
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
   const read3 = (path) => {
     if (files.has(path)) return files.get(path);
-    const facts = readFacts(store2, join24(dir, path));
+    const facts = readFacts(store2, join25(dir, path));
     files.set(path, facts);
     return facts;
   };
@@ -21588,8 +21678,8 @@ function changeView(input) {
   const reportData = (entry) => {
     const row = byId.get(entry.id);
     if (row === void 0) return void 0;
-    const report2 = documentData(store2, join24(input.projectRoot, row.path))?.report;
-    return typeof report2 === "string" ? documentData(store2, join24(dir, report2)) : void 0;
+    const report2 = documentData(store2, join25(input.projectRoot, row.path))?.report;
+    return typeof report2 === "string" ? documentData(store2, join25(dir, report2)) : void 0;
   };
   return {
     id: input.id,
@@ -21597,7 +21687,7 @@ function changeView(input) {
     profile: input.profile,
     entries: input.entries,
     file: (path) => read3(path)?.facts,
-    list: (sub) => store2.list(join24(dir, sub)).filter((name) => !name.endsWith("/")),
+    list: (sub) => store2.list(join25(dir, sub)).filter((name) => !name.endsWith("/")),
     reportStatus: (entry) => {
       const status = reportData(entry)?.status;
       return typeof status === "string" ? status : void 0;
@@ -21927,7 +22017,7 @@ function markDone(deps, change, globalDir2, id) {
       if ("refused" in written) return written;
       entry = written.entry.id;
     }
-    if (generated !== void 0) deps.store.write(join25(change.dir, generated.path), generated.text);
+    if (generated !== void 0) deps.store.write(join26(change.dir, generated.path), generated.text);
     const after = await reread(deps, change, index2, globalDir2);
     if ("refused" in after) return after;
     return {
@@ -22180,7 +22270,7 @@ var SKILL_CONTEXT = {
 
 // kernel/src/ctx/use-cases/parts.ts
 var import_yaml8 = __toESM(require_dist(), 1);
-import { join as join26 } from "node:path/posix";
+import { join as join27 } from "node:path/posix";
 
 // kernel/src/rules/render/show.ts
 function renderTicketRules(rules2) {
@@ -22495,7 +22585,7 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "file": {
-      const text8 = input.store.read(join26(input.pluginRoot, part.path));
+      const text8 = input.store.read(join27(input.pluginRoot, part.path));
       if (text8 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
       return [{ title: part.title, body: text8, part: { kind: "file", source: part.path } }];
     }
@@ -22597,13 +22687,13 @@ function width(text8) {
 
 // kernel/src/ctx/use-cases/startup.ts
 var import_yaml9 = __toESM(require_dist(), 1);
-import { join as join27 } from "node:path/posix";
+import { join as join28 } from "node:path/posix";
 var STARTUP_FILE = "STARTUP_INSTRUCTIONS.md";
 var AGENTS_DIR = "agents";
 var OPEN = "<!-- bdk:agents-table -->";
 var CLOSE = "<!-- /bdk:agents-table -->";
 function readStartup(deps) {
-  const text8 = deps.store.read(join27(deps.pluginRoot, STARTUP_FILE));
+  const text8 = deps.store.read(join28(deps.pluginRoot, STARTUP_FILE));
   if (text8 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
   const lines = text8.split("\n");
   const open2 = lines.indexOf(OPEN);
@@ -22614,8 +22704,8 @@ function readStartup(deps) {
   return { before: lines.slice(0, open2 + 1), rows: agents(deps), after: lines.slice(close) };
 }
 function agents(deps) {
-  const dir = join27(deps.pluginRoot, AGENTS_DIR);
-  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join27(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
+  const dir = join28(deps.pluginRoot, AGENTS_DIR);
+  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join28(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
 }
 function agentRow(path, text8) {
   const { frontmatter } = splitFrontmatter(text8);
@@ -22788,7 +22878,7 @@ function doneCommand(deps) {
       globalDir(context.runtime),
       context.positionals["<artifact>"] ?? ""
     );
-    return isRefusal(report2) ? report2 : { data: report2, text: renderDone2(report2) };
+    return isRefusal(report2) ? report2 : { data: report2, text: renderDone(report2) };
   };
 }
 
@@ -22864,6 +22954,48 @@ function graphRegistrations(deps) {
     { id: "validate", handler: validateCommand(deps) },
     { id: "done", handler: doneCommand(deps) }
   ];
+}
+
+// kernel/src/part/render/part.ts
+function renderList3(report2) {
+  if (report2.items.length === 0) return "No plan parts.\n";
+  return `${report2.items.map((item3) => {
+    const wave = item3.wave === void 0 ? "" : `, wave ${String(item3.wave)}`;
+    const after = item3.dependsOn === void 0 ? "" : `, after ${item3.dependsOn.join(", ")}`;
+    return `${item3.part} ${item3.state}: ${item3.title} (${String(item3.done)}/${String(item3.tasks)} tasks, ${String(item3.bytes)} bytes${wave}${after}, spec ${item3.specImpact})`;
+  }).join("\n")}
+`;
+}
+function renderStart(report2) {
+  const tasks = report2.tasks.map((task) => {
+    const extra = [
+      task.verification === void 0 ? "" : "verification: none",
+      task.stopRule === void 0 ? "" : `stop rule: ${task.stopRule}`
+    ].filter((text8) => text8 !== "");
+    const suffix = extra.length === 0 ? "" : ` (${extra.join("; ")})`;
+    return `  ${task.task}: ${task.files.join(", ")}${suffix}`;
+  });
+  const forbidden = report2.doNotTouch.length === 0 ? "none" : report2.doNotTouch.join(", ");
+  return [
+    `part ${report2.part} started (${report2.entry})`,
+    ...tasks,
+    `do-not-touch: ${forbidden}`,
+    `success measure: ${report2.successMeasure}`,
+    ""
+  ].join("\n");
+}
+function renderDone2(report2) {
+  return [
+    `part ${report2.part} done (${report2.entry})`,
+    ...report2.commits.map((commit) => `  ${commit.task}: ${commit.commit}`),
+    ...report2.openFindings.length === 0 ? [] : [`open findings: ${report2.openFindings.join(", ")}`],
+    `next: ${report2.next ?? "nothing"}`,
+    ""
+  ].join("\n");
+}
+function renderSplit(report2) {
+  return `part ${report2.part} split: ${report2.moved.join(", ")} moved to part ${report2.newPart} (${report2.entry})
+`;
 }
 
 // kernel/src/part/use-cases/parts.ts
@@ -23183,7 +23315,7 @@ function wavesOf2(parts) {
 }
 
 // kernel/src/part/use-cases/split.ts
-import { join as join28 } from "node:path";
+import { join as join29 } from "node:path";
 
 // kernel/src/part/domain/split.ts
 var TASK_HEADING = /^## (\d{2}-[1-9]\d*)(?:\s|$)/;
@@ -23263,7 +23395,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
     const first = part.tasks.find((task) => task.id === moved[0]);
     const file = `plan/parts/${newPart}-${slugOf(first?.title ?? part.data.title)}.md`;
     const original = frontmatterOf(deps, part);
-    writeDocument(deps.store, join28(change.dir, file), {
+    writeDocument(deps.store, join29(change.dir, file), {
       data: { ...original, id: newPart, title: `${part.data.title} (split from ${id})` },
       body: body.moved
     });
@@ -23289,7 +23421,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
       title: `${part.data.title} (split from ${id})`,
       "depends-on": [...part.data["depends-on"]]
     });
-    deps.store.write(join28(change.dir, "plan/index.md"), generatePlanIndex(rows));
+    deps.store.write(join29(change.dir, "plan/index.md"), generatePlanIndex(rows));
     const written = await appendEntry(
       deps,
       change,
@@ -23410,7 +23542,7 @@ function doneCommand2(deps) {
       globalDir(context.runtime),
       context.positionals["<part>"] ?? ""
     );
-    return isRefusal(report2) ? report2 : { data: report2, text: renderDone(report2) };
+    return isRefusal(report2) ? report2 : { data: report2, text: renderDone2(report2) };
   };
 }
 function splitCommand(deps) {
@@ -23655,6 +23787,10 @@ function closeAttempt(deps, change, where, input) {
       const missing = missingEntries(deps, where.cwd, input.envelope, underTicket);
       if (missing !== void 0) return missing;
     }
+    if (outcome === "ok") {
+      const unproven = await stepEvidence(deps, change, index2, where.globalDir, record4, resolved);
+      if (unproven !== void 0) return unproven;
+    }
     const findings = outcome === "fail" ? fingerprints(underTicket) : [];
     const kernelFindings = [];
     if (diff.undeclared.length > 0) {
@@ -23696,6 +23832,19 @@ function closeAttempt(deps, change, where, input) {
     };
   });
 }
+async function stepEvidence(deps, change, index2, globalDir2, record4, resolved) {
+  if (!packageRoles(deps.store, change.dir, record4.ticket).includes("implementer")) {
+    return void 0;
+  }
+  const steps = await targetSteps(deps, change, index2, globalDir2, record4.target);
+  if ("refused" in steps) return steps;
+  return closeEvidence(deps, change, globalDir2, {
+    ticket: record4.ticket,
+    target: record4.target,
+    steps: steps.steps,
+    notRunBudget: ladderPolicy(resolved.value, record4.loop).notRunBudget
+  });
+}
 function diffTarget(record4) {
   switch (record4.loop) {
     case "task-redispatch":
@@ -23715,7 +23864,7 @@ function diffReport(diff) {
   return { declared: diff.declared, touched: diff.touched, undeclared: diff.undeclared };
 }
 function missingEntries(deps, cwd, envelope, underTicket) {
-  const path = isAbsolute3(envelope) ? envelope : join29(cwd, envelope);
+  const path = isAbsolute3(envelope) ? envelope : join30(cwd, envelope);
   const document = deps.store.read(path) === void 0 ? void 0 : readDocument(deps.store, path);
   if (document === void 0 || !("data" in document) || document.kind !== "report") {
     return refuse("input/not-found", `no report envelope at ${envelope}`, [
@@ -23903,7 +24052,7 @@ function item2(record4, entries) {
 }
 
 // kernel/src/attempt/use-cases/open.ts
-import { join as join30 } from "node:path";
+import { join as join31 } from "node:path";
 var PART_ID = /^\d{2}$/;
 var SUMMARY_MAX3 = 120;
 function openAttempt(deps, change, globalDir2, input) {
@@ -23949,7 +24098,7 @@ function openAttempt(deps, change, globalDir2, input) {
     }
     const ticket = newId("A-", deps.random);
     const openedAt = deps.clock.now();
-    const path = join30(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
+    const path = join31(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
     writeDocument(deps.store, path, {
       data: {
         schema: 1,
@@ -24371,7 +24520,7 @@ function listAllChanges(deps, projectRoot, options) {
 }
 
 // kernel/src/change/use-cases/new.ts
-import { join as join31 } from "node:path";
+import { join as join32 } from "node:path";
 
 // kernel/src/change/domain/change.ts
 var SLUG_MAX = 40;
@@ -24467,7 +24616,7 @@ async function newChange(deps, where, input) {
   await ensureIgnored(deps.store, deps.git, projectRoot);
   const dir = liveChangeDir(projectRoot, id);
   const profile = input.profile ?? "small";
-  writeDocument(deps.store, join31(dir, "change.md"), {
+  writeDocument(deps.store, join32(dir, "change.md"), {
     data: {
       schema: 1,
       id,
@@ -24723,14 +24872,14 @@ function done(value) {
 }
 
 // kernel/src/change/use-cases/status.ts
-import { join as join32 } from "node:path";
+import { join as join33 } from "node:path";
 function changeStatus(deps, change, globalDir2) {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index2) => {
     refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
     const read3 = await readGraph(deps, change, index2, globalDir2);
     if ("refused" in read3) return read3;
     const graph = graphSummary(read3);
-    const document = readDocument(deps.store, join32(change.dir, "change.md"));
+    const document = readDocument(deps.store, join33(change.dir, "change.md"));
     const data = document !== void 0 && "data" in document ? document.data : {};
     const facts = changeFacts(index2, change.id, stageResolver(deps));
     return {
@@ -25052,7 +25201,7 @@ function renderCheck2(report2) {
 }
 
 // kernel/src/config/use-cases/check.ts
-import { join as join33 } from "node:path";
+import { join as join34 } from "node:path";
 var LEGACY_SETTINGS = ".bdk/settings.json";
 function checkConfig(input) {
   const resolved = resolveOrRefuse(input);
@@ -25087,7 +25236,7 @@ function report(input, resolved) {
       });
     }
   }
-  if (input.store.exists(join33(input.projectRoot, LEGACY_SETTINGS))) {
+  if (input.store.exists(join34(input.projectRoot, LEGACY_SETTINGS))) {
     problems.push({
       layer: "project",
       path: LEGACY_SETTINGS,
@@ -25098,7 +25247,7 @@ function report(input, resolved) {
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
   if (snapshot !== void 0) {
     input.store.write(
-      join33(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      join34(input.projectRoot, OFFLINE_SCHEMA_PATH),
       offlineSchemaText(input.settings)
     );
   }
@@ -25202,10 +25351,10 @@ function originOf(leaf, set) {
 }
 function leafKeys(value, prefix) {
   if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join34(prefix, key)));
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join35(prefix, key)));
   }
   if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item3) => leafKeys(item3, join34(prefix, item3.id)));
+    return value.flatMap((item3) => leafKeys(item3, join35(prefix, item3.id)));
   }
   return [prefix];
 }
@@ -25215,7 +25364,7 @@ function isMapping(value) {
 function hasId(value) {
   return isMapping(value) && typeof value.id === "string";
 }
-function join34(prefix, key) {
+function join35(prefix, key) {
   return prefix === "" ? key : `${prefix}.${key}`;
 }
 
@@ -25452,7 +25601,7 @@ ${(0, import_yaml11.stringify)(outcome.origins)}`;
 }
 
 // kernel/src/config/use-cases/layout.ts
-import { join as join35 } from "node:path";
+import { join as join36 } from "node:path";
 
 // kernel/src/config/domain/layout.ts
 var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
@@ -25465,8 +25614,8 @@ function classifyLayout(state) {
 // kernel/src/config/use-cases/layout.ts
 function detectLayout(store2, root) {
   return classifyLayout({
-    bdk: store2.isDirectory(join35(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => store2.exists(join35(root, marker)))
+    bdk: store2.isDirectory(join36(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store2.exists(join36(root, marker)))
   });
 }
 
@@ -25492,7 +25641,7 @@ function renderShow2(report2) {
 
 // kernel/src/dispatch/use-cases/build.ts
 import { createHash as createHash5 } from "node:crypto";
-import { join as join37, posix as posix5 } from "node:path";
+import { join as join38, posix as posix5 } from "node:path";
 
 // kernel/src/export/commands/agents.ts
 import { resolve as resolve3 } from "node:path";
@@ -25509,7 +25658,7 @@ function renderAgents(report2) {
 }
 
 // kernel/src/export/use-cases/agents.ts
-import { join as join36, relative as relative8 } from "node:path";
+import { join as join37, relative as relative8 } from "node:path";
 
 // kernel/src/export/domain/adapters.ts
 var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
@@ -25599,10 +25748,10 @@ function adapterFile(adapter, host) {
 // kernel/src/export/use-cases/agents.ts
 function exportAgents(deps, request) {
   const host = HOSTS[request.host];
-  const out = request.out ?? join36(deps.pluginRoot, "agents");
+  const out = request.out ?? join37(deps.pluginRoot, "agents");
   const drift = [];
   const files = ADAPTERS.map((adapter) => {
-    const target = join36(out, `${adapter.name}.md`);
+    const target = join37(out, `${adapter.name}.md`);
     const path = relative8(request.root, target);
     const content = adapterFile(adapter, host);
     const current = deps.store.read(target);
@@ -25888,8 +26037,8 @@ function buildPackage(deps, change, globalDir2, input) {
         ["split the task or the part so its text and entries fit", "bdk part split <nn>"]
       );
     }
-    const dir = join37(change.dir, "dispatch");
-    const path = join37(dir, name);
+    const dir = join38(change.dir, "dispatch");
+    const path = join38(dir, name);
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
     stampPackage(deps.store, change.dir, input.ticket, posix5.relative(change.projectRoot, path));
     return {
@@ -25984,12 +26133,12 @@ function doNotTouch(part) {
   return globs2.length === 0 ? "`do-not-touch`: none." : `\`do-not-touch\`: ${globs2.map((glob4) => `\`${glob4}\``).join(", ")}.`;
 }
 function intentOf(deps, change) {
-  const document = readDocument(deps.store, join37(change.dir, "change.md"));
+  const document = readDocument(deps.store, join38(change.dir, "change.md"));
   const intent = document !== void 0 && "data" in document ? document.data.intent : void 0;
   return typeof intent === "string" ? intent : `Change ${change.id}.`;
 }
 function readRoleBody(deps, role2) {
-  const path = join37(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
+  const path = join38(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
   const text8 = deps.store.read(path);
   if (text8 === void 0) throw new Error(`the plugin has no role skill at ${path}`);
   return splitFrontmatter(text8).body.trim();
@@ -26003,7 +26152,7 @@ function entriesText(deps, change, full, counted, target) {
 ${others}`;
 }
 function entryText(deps, change, entry) {
-  const document = readDocument(deps.store, join37(change.projectRoot, entry.path));
+  const document = readDocument(deps.store, join38(change.projectRoot, entry.path));
   const body = document === void 0 ? "" : document.body.trim();
   const refs = entry.refs.map((ref) => `\`${ref}\``).join(", ");
   return `### ${entry.id} ${entry.type}, ${entry.status}
@@ -26025,11 +26174,11 @@ function hashOf(texts) {
 }
 
 // kernel/src/dispatch/use-cases/show.ts
-import { isAbsolute as isAbsolute4, join as join38, posix as posix6, relative as relative9, sep as sep7 } from "node:path";
+import { isAbsolute as isAbsolute4, join as join39, posix as posix6, relative as relative9, sep as sep7 } from "node:path";
 var TICKET = /^A-[0-9a-z]{8}$/;
 function showPackage(deps, change, cwd, value) {
-  const dir = join38(change.dir, "dispatch");
-  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join38(cwd, value);
+  const dir = join39(change.dir, "dispatch");
+  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join39(cwd, value);
   const inside = path === void 0 ? "" : relative9(dir, path);
   const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep7) ? void 0 : deps.store.read(path);
   const document = path === void 0 || content === void 0 ? void 0 : readDocument(deps.store, path);
@@ -26048,7 +26197,7 @@ function showPackage(deps, change, cwd, value) {
 }
 function ticketPackage(deps, change, ticket) {
   const active9 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
-  return active9 === void 0 ? void 0 : join38(change.projectRoot, active9.path);
+  return active9 === void 0 ? void 0 : join39(change.projectRoot, active9.path);
 }
 
 // kernel/src/dispatch/commands/dispatch.ts
@@ -26105,12 +26254,12 @@ ${lines.join("\n")}
 }
 
 // kernel/src/hooks/use-cases/session-start.ts
-import { join as join39 } from "node:path";
+import { join as join40 } from "node:path";
 function sessionStart(input) {
   const startup = startupContext(input).content;
   if (input.workTree === void 0) return { startup };
   const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
-  if (!input.store.isDirectory(join39(projectRoot, ".bdk"))) return { startup };
+  if (!input.store.isDirectory(join40(projectRoot, ".bdk"))) return { startup };
   const { errors, report: report2 } = inspectConfig({ ...input, projectRoot });
   const { layout, present } = detectLayout(input.store, projectRoot);
   const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
@@ -26152,11 +26301,11 @@ function renderSkillExists(name, foundIn) {
 
 // kernel/src/hooks/use-cases/skill-exists.ts
 var import_yaml12 = __toESM(require_dist(), 1);
-import { join as join40 } from "node:path";
+import { join as join41 } from "node:path";
 function findSkill(input, name) {
   for (const skills of skillDirs(input)) {
     for (const entry of subdirs(input.store, skills)) {
-      const file = join40(skills, entry, "SKILL.md");
+      const file = join41(skills, entry, "SKILL.md");
       const text8 = input.store.read(file);
       if (text8 !== void 0 && frontmatterName(text8) === name) return file;
     }
@@ -26164,21 +26313,21 @@ function findSkill(input, name) {
   return void 0;
 }
 function skillDirs({ store: store2, home, projectRoot }) {
-  const plugins = join40(home, ".claude", "plugins");
-  const marketplaces = join40(plugins, "marketplaces");
-  const cache3 = join40(plugins, "cache");
+  const plugins = join41(home, ".claude", "plugins");
+  const marketplaces = join41(plugins, "marketplaces");
+  const cache3 = join41(plugins, "cache");
   const versions = subdirs(store2, cache3).flatMap(
-    (marketplace) => subdirs(store2, join40(cache3, marketplace)).flatMap(
-      (plugin) => subdirs(store2, join40(cache3, marketplace, plugin)).map(
-        (version3) => join40(cache3, marketplace, plugin, version3)
+    (marketplace) => subdirs(store2, join41(cache3, marketplace)).flatMap(
+      (plugin) => subdirs(store2, join41(cache3, marketplace, plugin)).map(
+        (version3) => join41(cache3, marketplace, plugin, version3)
       )
     )
   );
   return [
-    join40(home, ".claude", "skills"),
-    join40(projectRoot, ".claude", "skills"),
-    ...subdirs(store2, marketplaces).map((marketplace) => join40(marketplaces, marketplace, "skills")),
-    ...versions.map((version3) => join40(version3, "skills"))
+    join41(home, ".claude", "skills"),
+    join41(projectRoot, ".claude", "skills"),
+    ...subdirs(store2, marketplaces).map((marketplace) => join41(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join41(version3, "skills"))
   ];
 }
 function subdirs(store2, dir) {
@@ -26798,18 +26947,18 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join41 } from "node:path";
+import { join as join42 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store: store2, root } = input;
-  if (!store2.exists(join41(root, SETTINGS_FILES[0]))) return [];
+  if (!store2.exists(join42(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store2, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join41(root, file);
+    const path = join42(root, file);
     const text8 = store2.read(path);
     if (text8 === void 0 || modelineUrl(text8) === url) continue;
     if (input.fix) store2.write(path, withModeline(text8, version3));
@@ -26823,7 +26972,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join41(root, OFFLINE_SCHEMA_PATH);
+  const copy = join42(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store2.read(copy);
   if (current !== expected) {
