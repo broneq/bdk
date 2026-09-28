@@ -55,3 +55,5 @@ export const evidenceKind = {
     .meta({ title: "Evidence manifest" }),
   migrations: [],
 } as const satisfies DocumentKind;
+
+export type EvidenceManifest = z.output<typeof evidenceKind.schema>;
