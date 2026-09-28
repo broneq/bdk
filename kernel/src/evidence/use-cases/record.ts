@@ -9,7 +9,7 @@ import { basename, isAbsolute, join, relative } from "node:path";
 import { citationProblem, isText } from "../domain/citation.ts";
 import type { CitedFile } from "../domain/citation.ts";
 import type { RecordReport, RecordedFile } from "../domain/reports.ts";
-import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
+import { moduleValue } from "../../shared/config/index.ts";
 import { authorIdent } from "../../shared/git/index.ts";
 import { newId } from "../../shared/ids/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
@@ -26,7 +26,7 @@ import {
 import type { EvidenceManifest, ManifestFile } from "../../shared/store/index.ts";
 import { evidenceModule } from "../config.ts";
 import type { EvidenceDeps } from "./deps.ts";
-import { filePolicy, scopeOf, scopeTree } from "./scope.ts";
+import { evidenceSettings, filePolicy, scopeOf, scopeTree } from "./scope.ts";
 import { sha256 } from "./tree.ts";
 
 const KIND = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -97,16 +97,7 @@ export async function recordEvidence(
   const citations = checkCitations(sources, verdict, input.citations);
   if (citations !== undefined) return citations;
 
-  const resolved = resolveOrRefuse(
-    {
-      store: deps.store,
-      settings: deps.settings,
-      globalDir: where.globalDir,
-      projectRoot: change.projectRoot,
-      pluginRoot: deps.pluginRoot,
-    },
-    { removed: "ignore" },
-  );
+  const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
   if ("refused" in resolved) return resolved;
   const target = record.data.target;
   const parts = readPlanParts(deps.store, change.dir);

@@ -4,15 +4,35 @@
 // `evidence check`, `attempt close` and the step nodes share it.
 import { join } from "node:path";
 
-import { moduleValue } from "../../shared/config/index.ts";
-import type { Mapping } from "../../shared/config/index.ts";
+import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
+import type { Mapping, Resolved } from "../../shared/config/index.ts";
 import { workTreeFiles } from "../../shared/git/index.ts";
 import type { Git } from "../../shared/git/index.ts";
 import { taskHolders } from "../../shared/store/index.ts";
 import type { PlanPartFile, Store } from "../../shared/store/index.ts";
+import type { Refusal } from "../../shared/refusal/index.ts";
 import { evidenceModule } from "../config.ts";
+import type { EvidenceDeps } from "./deps.ts";
 import { coveredPaths, treeOf } from "./tree.ts";
 import type { FilePolicy, Tree } from "./tree.ts";
+
+/** The resolved settings, removed keys ignored; `policy.evidence` is read from them. */
+export function evidenceSettings(
+  deps: EvidenceDeps,
+  projectRoot: string,
+  globalDir: string,
+): Resolved | Refusal {
+  return resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir,
+      projectRoot,
+      pluginRoot: deps.pluginRoot,
+    },
+    { removed: "ignore" },
+  );
+}
 
 export function filePolicy(settings: Readonly<Mapping>): FilePolicy {
   const policy = moduleValue(evidenceModule, settings);

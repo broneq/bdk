@@ -52,11 +52,14 @@ function harness(): Harness {
   };
 }
 
-/** Part 01 (tasks 01-1, 01-2) started, part 02 (task 02-1) after it; the source files exist. */
-export async function started(): Promise<Harness> {
+/**
+ * Part 01 (tasks 01-1, 01-2, or `body01`) started, part 02 (task 02-1) after
+ * it; the source files exist.
+ */
+export async function started(body01 = tasks("01", 2)): Promise<Harness> {
   const h = harness();
   setChange(h.store, { profile: "tiny" });
-  writePlanPart(h.store, "01", { body: tasks("01", 2) });
+  writePlanPart(h.store, "01", { body: body01 });
   writePlanPart(h.store, "02", { body: tasks("02", 1), dependsOn: ["01"] });
   for (const path of ["src/01-1.ts", "src/01-2.ts", "src/02-1.ts"]) h.put(path, `// ${path}\n`);
   const done = await h.run(["done", "plan", "--json"], "2026-09-25T10:00:00Z");
@@ -75,6 +78,10 @@ export async function ticketOf(h: Harness, task = "01-1"): Promise<string> {
 
 export function record(h: Harness, ...argv: string[]): Promise<RunResult> {
   return h.step(["evidence", "record", ...argv, "--json"]);
+}
+
+export function check(h: Harness, target: string, json = true): Promise<RunResult> {
+  return h.step(["evidence", "check", target, ...(json ? ["--json"] : [])]);
 }
 
 export function refusal(result: RunResult) {

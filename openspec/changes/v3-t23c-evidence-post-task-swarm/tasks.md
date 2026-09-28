@@ -19,7 +19,7 @@
 - [x] 3.2 Implement `kernel/src/evidence/` domain and config (filter, tree hash, `policy.evidence`); verify 3.1 passes
 - [x] 3.3 Write failing unit tests for the citation validator (the three forms, file part omitted with one file, bare `/pointer`, file by name, `=text` substring, binary not citable, missing line, JSON that does not parse); implement; verify they pass
 - [x] 3.4 Write failing unit and E2E tests for `evidence record` (every scenario of the delta: example, not-found, no open ticket, missing citation, pass without citations, each citation form, committed versus machine storage and `git status`, binary not citable, project kind, dedupe, `source` from the active package); implement the command and register the slice; verify `pnpm build && pnpm test:e2e` passes them
-- [ ] 3.5 Write failing unit and E2E tests for `evidence check` (every scenario of the delta: example, not-found, stale in text mode exit 2, manifest older than the tree hash with `changedSince`, non-executable change keeps fresh, build config change stale, target without evidence, part and Change targets, `E-` id); implement; verify they pass
+- [x] 3.5 Write failing unit and E2E tests for `evidence check` (every scenario of the delta: example, not-found, stale in text mode exit 2, manifest older than the tree hash with `changedSince`, non-executable change keeps fresh, build config change stale, target without evidence, part and Change targets, `E-` id); implement; verify they pass
 
 ## 4. Graph: step kinds and nodes
 

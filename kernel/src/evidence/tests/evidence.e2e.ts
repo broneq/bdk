@@ -159,3 +159,62 @@ describe("bdk evidence record", () => {
     expect(read(change.root, String(report.path))).toContain("kind: contract-snapshot");
   });
 });
+
+describe("bdk evidence check", () => {
+  function recorded(change: Started): string {
+    const ticket = opened(change, "task-redispatch", "01-1");
+    put(change, "lint.txt", "clean\n");
+    const report = answered(
+      record(change, "lint", "lint.txt", "--ticket", ticket, "--verdict", "fail"),
+      "output/evidence-record.json",
+    );
+    return String(report.evidence);
+  }
+
+  function check(change: Started, target: string, ...flags: string[]) {
+    return bdk(["evidence", "check", target, ...flags], change.root);
+  }
+
+  it("exit 0: fresh, then stale with the changed path after a sibling task's file changes", () => {
+    const change = started();
+    const id = recorded(change);
+    expect(answered(check(change, "01-1", "--json"), "output/evidence-check.json").fresh).toBe(
+      true,
+    );
+    expect(check(change, "01-1").stdout).toContain("fresh");
+    put(change, "src/01-2.ts", "export {};\n");
+    const report = answered(check(change, "01-1", "--json"), "output/evidence-check.json");
+    expect(report).toMatchObject({
+      fresh: false,
+      evidence: [{ evidence: id, kind: "lint", fresh: false, changedSince: ["src/01-2.ts"] }],
+    });
+    expect(answered(check(change, id, "--json"), "output/evidence-check.json").fresh).toBe(false);
+  });
+
+  it("exit 0: a build-config change is stale, a target without evidence is not fresh", () => {
+    const change = started();
+    recorded(change);
+    put(change, "package.json", "{}\n");
+    const report = answered(check(change, "01-1", "--json"), "output/evidence-check.json");
+    expect(report).toMatchObject({ fresh: false, evidence: [{ changedSince: ["package.json"] }] });
+    expect(answered(check(change, "02", "--json"), "output/evidence-check.json")).toMatchObject({
+      fresh: false,
+      evidence: [],
+    });
+  });
+
+  it("exit 2 policy/stale-evidence in text mode", () => {
+    const change = started();
+    recorded(change);
+    put(change, "src/01-1.ts", "export {};\n");
+    const result = check(change, "01-1");
+    expect(result.code).toBe(2);
+    expect(result.stdout).toContain("policy/stale-evidence");
+  });
+
+  it("exit 3 input/not-found", () => {
+    const change = started();
+    refused(check(change, "09", "--json"), 3, "input/not-found");
+    refused(check(change, "E-zzzzzzzz", "--json"), 3, "input/not-found");
+  });
+});

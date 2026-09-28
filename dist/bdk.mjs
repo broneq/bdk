@@ -25296,6 +25296,200 @@ function renderRecord(report2) {
   const files = report2.files.map((file) => `  ${file.stored}: ${file.path}`);
   return [head, `tree: ${report2.treeHash}`, ...verdict, "files:", ...files, ""].join("\n");
 }
+function renderCheck2(subject, report2) {
+  const lines = report2.evidence.map(
+    (entry) => `  ${entry.evidence} ${entry.kind}${entry.verdict === void 0 ? "" : ` ${entry.verdict}`}: fresh`
+  );
+  return [`evidence of ${subject} is fresh (tree ${report2.treeHash})`, ...lines, ""].join("\n");
+}
+function staleWhy(subject, report2) {
+  if (report2.evidence.length === 0) return `${subject} has no evidence`;
+  const stale = report2.evidence.filter((entry) => !entry.fresh).map((entry) => `${entry.evidence} ${entry.kind} (changed: ${entry.changedSince.join(", ")})`);
+  return `evidence of ${subject} is stale: ${stale.join("; ")}`;
+}
+
+// kernel/src/evidence/use-cases/scope.ts
+import { join as join37 } from "node:path";
+
+// kernel/src/evidence/config.ts
+var glob3 = string2().min(1).meta({ title: "non-empty glob" });
+function globs(defaults, description) {
+  return appendOnly(
+    array(glob3).refine((items) => new Set(items).size === items.length, "globs must be unique").meta({ uniqueItems: true, description })
+  ).default([...defaults]);
+}
+var NON_EXECUTABLE = [
+  "**/*.md",
+  "**/*.mdx",
+  "**/*.txt",
+  "**/*.rst",
+  "**/*.png",
+  "**/*.jpg",
+  "**/*.jpeg",
+  "**/*.gif",
+  "**/*.svg",
+  "**/*.webp",
+  "docs/**",
+  "LICENSE*",
+  "CHANGELOG*",
+  ".bdk/**"
+];
+var BUILD_CONFIG = [
+  "package.json",
+  "pnpm-lock.yaml",
+  "package-lock.json",
+  "yarn.lock",
+  "tsconfig*.json",
+  "pyproject.toml",
+  "uv.lock",
+  "poetry.lock",
+  "requirements*.txt",
+  "go.mod",
+  "go.sum",
+  "Cargo.toml",
+  "Cargo.lock",
+  "Gemfile",
+  "Gemfile.lock",
+  "pom.xml",
+  "build.gradle*",
+  "Makefile",
+  "CMakeLists.txt"
+];
+var evidenceModule = defineConfigModule({
+  key: "policy.evidence",
+  consumer: "evidence",
+  owner: "T23",
+  description: "Which files the tree hash covers and which evidence files are committed.",
+  schema: strictObject({
+    "non-executable": globs(
+      NON_EXECUTABLE,
+      "Files that never change the tree hash; layers append to the defaults."
+    ),
+    "build-config": globs(
+      BUILD_CONFIG,
+      "Files that always change the tree hash, wherever they are; wins over non-executable."
+    ),
+    "max-committed-bytes": int().min(0).default(65536).meta({
+      description: "The largest UTF-8 text evidence file copied into the Change; 0 commits none."
+    })
+  }).prefault({})
+});
+
+// kernel/src/evidence/use-cases/tree.ts
+import { createHash as createHash5 } from "node:crypto";
+function fileClass(policy, path) {
+  if (firstMatch(policy.buildConfig, path) !== void 0) return "build-config";
+  if (firstMatch(policy.nonExecutable, path) !== void 0) return "non-executable";
+  return "executable";
+}
+function coveredPaths(policy, scopeFiles, workTreeFiles2) {
+  const covered = /* @__PURE__ */ new Set();
+  for (const path of scopeFiles)
+    if (fileClass(policy, path) !== "non-executable") covered.add(path);
+  for (const path of workTreeFiles2)
+    if (fileClass(policy, path) === "build-config") covered.add(path);
+  return [...covered].sort(byteOrder);
+}
+function treeOf(paths, read3) {
+  const tree = [...paths].sort(byteOrder).map((path) => {
+    const bytes2 = read3(path);
+    return { path, hash: bytes2 === void 0 ? "absent" : sha256(bytes2) };
+  });
+  const hash2 = createHash5("sha256");
+  for (const entry of tree) hash2.update(`${entry.path}\0${entry.hash}\0`);
+  return { treeHash: `sha256:${hash2.digest("hex")}`, tree };
+}
+function changedSince(recorded2, current) {
+  const before = new Map(recorded2.map((entry) => [entry.path, entry.hash]));
+  const after = new Map(current.map((entry) => [entry.path, entry.hash]));
+  const paths = /* @__PURE__ */ new Set([...before.keys(), ...after.keys()]);
+  return [...paths].filter((path) => before.get(path) !== after.get(path)).sort(byteOrder);
+}
+function sha256(bytes2) {
+  return `sha256:${createHash5("sha256").update(bytes2).digest("hex")}`;
+}
+function byteOrder(a, b) {
+  return Buffer.compare(Buffer.from(a), Buffer.from(b));
+}
+
+// kernel/src/evidence/use-cases/scope.ts
+function evidenceSettings(deps, projectRoot, globalDir2) {
+  return resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir: globalDir2,
+      projectRoot,
+      pluginRoot: deps.pluginRoot
+    },
+    { removed: "ignore" }
+  );
+}
+function filePolicy(settings) {
+  const policy = moduleValue(evidenceModule, settings);
+  return { nonExecutable: policy["non-executable"], buildConfig: policy["build-config"] };
+}
+function scopeOf(parts, changeId2, target) {
+  const holder = taskHolders(parts).get(target);
+  if (holder !== void 0) return [holder];
+  const part = parts.find((found) => found.id === target);
+  if (part !== void 0) return [part];
+  return target === changeId2 ? parts : void 0;
+}
+async function scopeTree(deps, projectRoot, policy, scope2) {
+  const declared3 = scope2.flatMap(
+    (part) => part.tasks.flatMap((task) => task.files.map((file) => file.path))
+  );
+  const paths = coveredPaths(policy, declared3, await workTreeFiles(deps.git, projectRoot));
+  return treeOf(paths, (path) => deps.store.readBytes(join37(projectRoot, path)));
+}
+
+// kernel/src/evidence/use-cases/check.ts
+var EVIDENCE_ID = /^E-[0-9a-z]{8}$/;
+async function checkEvidence(deps, change, globalDir2, subject) {
+  const manifests = readManifests(deps.store, change.dir);
+  const parts = readPlanParts(deps.store, change.dir);
+  let target = subject;
+  let checked;
+  if (EVIDENCE_ID.test(subject)) {
+    const manifest = manifests.find((found) => found.data.id === subject);
+    if (manifest === void 0) {
+      return refuse("input/not-found", `${change.id} has no evidence ${subject}`, [
+        "bdk evidence check <target>"
+      ]);
+    }
+    target = manifest.data.target;
+    checked = [manifest];
+  } else {
+    if (scopeOf(parts, change.id, subject) === void 0) {
+      return refuse("input/not-found", `${change.id} holds no task, part or Change ${subject}`, [
+        "bdk part list"
+      ]);
+    }
+    const latest2 = /* @__PURE__ */ new Map();
+    for (const manifest of manifests) {
+      if (manifest.data.target === subject) latest2.set(manifest.data.kind, manifest);
+    }
+    checked = [...latest2.values()];
+  }
+  const settings = evidenceSettings(deps, change.projectRoot, globalDir2);
+  if ("refused" in settings) return settings;
+  const scope2 = scopeOf(parts, change.id, target) ?? parts;
+  const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope2);
+  const evidence = checked.map((manifest) => ({
+    evidence: manifest.data.id,
+    kind: manifest.data.kind,
+    treeHash: manifest.data["tree-hash"],
+    fresh: manifest.data["tree-hash"] === current.treeHash,
+    ...manifest.data.verdict === void 0 ? {} : { verdict: manifest.data.verdict },
+    changedSince: changedSince(manifest.data.tree, current.tree)
+  }));
+  return {
+    fresh: evidence.length > 0 && evidence.every((entry) => entry.fresh),
+    treeHash: current.treeHash,
+    evidence
+  };
+}
 
 // kernel/src/evidence/use-cases/record.ts
 import { basename, isAbsolute as isAbsolute4, join as join38, relative as relative9 } from "node:path";
@@ -25379,124 +25573,6 @@ function lineProblem(where, text8, line2, contains) {
   return void 0;
 }
 
-// kernel/src/evidence/config.ts
-var glob3 = string2().min(1).meta({ title: "non-empty glob" });
-function globs(defaults, description) {
-  return appendOnly(
-    array(glob3).refine((items) => new Set(items).size === items.length, "globs must be unique").meta({ uniqueItems: true, description })
-  ).default([...defaults]);
-}
-var NON_EXECUTABLE = [
-  "**/*.md",
-  "**/*.mdx",
-  "**/*.txt",
-  "**/*.rst",
-  "**/*.png",
-  "**/*.jpg",
-  "**/*.jpeg",
-  "**/*.gif",
-  "**/*.svg",
-  "**/*.webp",
-  "docs/**",
-  "LICENSE*",
-  "CHANGELOG*",
-  ".bdk/**"
-];
-var BUILD_CONFIG = [
-  "package.json",
-  "pnpm-lock.yaml",
-  "package-lock.json",
-  "yarn.lock",
-  "tsconfig*.json",
-  "pyproject.toml",
-  "uv.lock",
-  "poetry.lock",
-  "requirements*.txt",
-  "go.mod",
-  "go.sum",
-  "Cargo.toml",
-  "Cargo.lock",
-  "Gemfile",
-  "Gemfile.lock",
-  "pom.xml",
-  "build.gradle*",
-  "Makefile",
-  "CMakeLists.txt"
-];
-var evidenceModule = defineConfigModule({
-  key: "policy.evidence",
-  consumer: "evidence",
-  owner: "T23",
-  description: "Which files the tree hash covers and which evidence files are committed.",
-  schema: strictObject({
-    "non-executable": globs(
-      NON_EXECUTABLE,
-      "Files that never change the tree hash; layers append to the defaults."
-    ),
-    "build-config": globs(
-      BUILD_CONFIG,
-      "Files that always change the tree hash, wherever they are; wins over non-executable."
-    ),
-    "max-committed-bytes": int().min(0).default(65536).meta({
-      description: "The largest UTF-8 text evidence file copied into the Change; 0 commits none."
-    })
-  }).prefault({})
-});
-
-// kernel/src/evidence/use-cases/scope.ts
-import { join as join37 } from "node:path";
-
-// kernel/src/evidence/use-cases/tree.ts
-import { createHash as createHash5 } from "node:crypto";
-function fileClass(policy, path) {
-  if (firstMatch(policy.buildConfig, path) !== void 0) return "build-config";
-  if (firstMatch(policy.nonExecutable, path) !== void 0) return "non-executable";
-  return "executable";
-}
-function coveredPaths(policy, scopeFiles, workTreeFiles2) {
-  const covered = /* @__PURE__ */ new Set();
-  for (const path of scopeFiles)
-    if (fileClass(policy, path) !== "non-executable") covered.add(path);
-  for (const path of workTreeFiles2)
-    if (fileClass(policy, path) === "build-config") covered.add(path);
-  return [...covered].sort(byteOrder);
-}
-function treeOf(paths, read3) {
-  const tree = [...paths].sort(byteOrder).map((path) => {
-    const bytes2 = read3(path);
-    return { path, hash: bytes2 === void 0 ? "absent" : sha256(bytes2) };
-  });
-  const hash2 = createHash5("sha256");
-  for (const entry of tree) hash2.update(`${entry.path}\0${entry.hash}\0`);
-  return { treeHash: `sha256:${hash2.digest("hex")}`, tree };
-}
-function sha256(bytes2) {
-  return `sha256:${createHash5("sha256").update(bytes2).digest("hex")}`;
-}
-function byteOrder(a, b) {
-  return Buffer.compare(Buffer.from(a), Buffer.from(b));
-}
-
-// kernel/src/evidence/use-cases/scope.ts
-function filePolicy(settings) {
-  const policy = moduleValue(evidenceModule, settings);
-  return { nonExecutable: policy["non-executable"], buildConfig: policy["build-config"] };
-}
-function scopeOf(parts, changeId2, target) {
-  const holder = taskHolders(parts).get(target);
-  if (holder !== void 0) return [holder];
-  const part = parts.find((found) => found.id === target);
-  if (part !== void 0) return [part];
-  return target === changeId2 ? parts : void 0;
-}
-async function scopeTree(deps, projectRoot, policy, scope2) {
-  const declared3 = scope2.flatMap(
-    (part) => part.tasks.flatMap((task) => task.files.map((file) => file.path))
-  );
-  const paths = coveredPaths(policy, declared3, await workTreeFiles(deps.git, projectRoot));
-  return treeOf(paths, (path) => deps.store.readBytes(join37(projectRoot, path)));
-}
-
 // kernel/src/evidence/use-cases/record.ts
 var KIND = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 var VERDICTS = ["pass", "fail", "not-run"];
@@ -25530,16 +25606,7 @@ async function recordEvidence(deps, change, where, input) {
   if ("refused" in sources) return sources;
   const citations = checkCitations(sources, verdict, input.citations);
   if (citations !== void 0) return citations;
-  const resolved = resolveOrRefuse(
-    {
-      store: deps.store,
-      settings: deps.settings,
-      globalDir: where.globalDir,
-      projectRoot: change.projectRoot,
-      pluginRoot: deps.pluginRoot
-    },
-    { removed: "ignore" }
-  );
+  const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
   if ("refused" in resolved) return resolved;
   const target = record4.data.target;
   const parts = readPlanParts(deps.store, change.dir);
@@ -25691,13 +25758,34 @@ function recordCommand(deps) {
     return isRefusal(report2) ? report2 : { data: report2, text: renderRecord(report2) };
   };
 }
+function checkCommand2(deps) {
+  return async (context) => {
+    const subject = context.positionals["<target|evidence-id>"] ?? "";
+    const report2 = await checkEvidence(
+      deps,
+      active7(context.change),
+      globalDir(context.runtime),
+      subject
+    );
+    if (isRefusal(report2)) return report2;
+    if (!context.json && !report2.fresh) {
+      return refuse("policy/stale-evidence", staleWhy(subject, report2), [
+        "re-run the checks and bdk evidence record <kind> <file> --ticket <ticket>"
+      ]);
+    }
+    return { data: report2, text: renderCheck2(subject, report2) };
+  };
+}
 
 // kernel/src/evidence/index.ts
 var evidenceConfig = {
   modules: [evidenceModule]
 };
 function evidenceRegistrations(deps) {
-  return [{ id: "evidence-record", handler: recordCommand(deps) }];
+  return [
+    { id: "evidence-record", handler: recordCommand(deps) },
+    { id: "evidence-check", handler: checkCommand2(deps) }
+  ];
 }
 
 // kernel/src/hooks/render/session-start.ts
