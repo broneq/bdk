@@ -9,6 +9,38 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^(Bash|Edit|Write|NotebookEdit|Agent)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/guard/pre-tool.sh\"; [ -r \"$f\" ] || { echo \"guard/kernel-unavailable: $f is missing, so BDK cannot check this tool call; reinstall the BDK plugin\" >&2; exit 2; }; . \"$f\""
+          }
+        ]
+      }
+    ],
+    "UserPromptExpansion": [
+      {
+        "matcher": "^bdk:(plan|execute|close|run)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/guard/prompt-expansion.sh\"; [ -r \"$f\" ] || { echo \"guard/kernel-unavailable: $f is missing, so BDK cannot check the stage gate; reinstall the BDK plugin\" >&2; exit 2; }; . \"$f\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs\" hooks session-end 2>&1 || echo \"BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup.\""
+          }
+        ]
+      }
     ]
   }
 }
