@@ -75,7 +75,7 @@ describe("dispatch build", () => {
   it("embeds the task's full text with its Files, stop rule and do-not-touch", async () => {
     const { body } = await built(dispatchHarness());
     expect(body).toContain("From `.bdk/changes/2026-09-25-login/plan/parts/02-part.md`:");
-    expect(body).toContain("## 02-3 Verify the link");
+    expect(body).toContain("\n### 02-3 Verify the link\n");
     expect(body).toContain("- Create: `src/auth/verify.ts`");
     expect(body).toContain("**Stop rule:** stop when the token format is unclear");
     expect(body).toContain("`do-not-touch`: `src/billing/**`.");
@@ -97,7 +97,7 @@ describe("dispatch build", () => {
     ticket(h.store, { target: "02", loop: "verify-fix", id: "A-p4r7t2w9" });
     const { body } = await built(h, "02", "implementer", "A-p4r7t2w9");
     expect(body).toContain("- `.bdk/changes/2026-09-25-login/plan/parts/02-part.md`");
-    expect(body).not.toContain("## 02-3 Verify the link");
+    expect(body).not.toContain("\n### 02-3 Verify the link\n");
   });
 
   it("names the plan parts an artifact target requires, from the graph", async () => {

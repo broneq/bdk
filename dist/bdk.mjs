@@ -24945,7 +24945,7 @@ async function targetFacts(deps, change, index2, globalDir2, target) {
     }
     const body = `From \`${changeRel}/${part.file}\`:
 
-${text7}
+${demoteHeadings(text7)}
 
 ${doNotTouch(part)}`;
     return { body, names: [target, part.id, ...task.files.map((file) => file.path)] };

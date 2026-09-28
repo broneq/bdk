@@ -211,7 +211,7 @@ async function targetFacts(
         [`finish task ${target} in ${changeRel}/${part.file}, then build the package again`],
       );
     }
-    const body = `From \`${changeRel}/${part.file}\`:\n\n${text}\n\n${doNotTouch(part)}`;
+    const body = `From \`${changeRel}/${part.file}\`:\n\n${demoteHeadings(text)}\n\n${doNotTouch(part)}`;
     return { body, names: [target, part.id, ...task.files.map((file) => file.path)] };
   }
   if (PART_ID.test(target)) {
