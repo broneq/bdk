@@ -1,18 +1,17 @@
 // `bdk log add`: validates the input, then appends through `appendEntry`
 // with deduplication. Nothing is written before every check has passed.
 import { parseReference } from "../../shared/ids/index.ts";
-import { resolveOrRefuse } from "../../shared/config/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import { findChange, findEntry, refreshChange, ticketDispatch } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
 import { appendEntry } from "./append.ts";
-import { verifierModule } from "../config.ts";
 import type { AddResult } from "../domain/entry.ts";
 import { classify, mayDowngrade } from "../domain/p8.ts";
 import type { LogDeps } from "./deps.ts";
 import { withChangeIndex } from "./deps.ts";
+import { verifierPolicy } from "./verifier.ts";
 
 const SUMMARY_MAX = 120;
 
@@ -48,9 +47,9 @@ export function addEntry(
       input.ticket === undefined ? undefined : ticketDispatch(index, change.id, input.ticket)?.role;
     let blocking: readonly string[] = [];
     if (mayDowngrade(input.type, role)) {
-      const categories = blockingCategories(deps, change, globalDir);
-      if (isRefusal(categories)) return categories;
-      blocking = categories;
+      const policy = verifierPolicy(deps, change, globalDir);
+      if (isRefusal(policy)) return policy;
+      blocking = policy.blocking.map((category) => category.id);
     }
     const { downgraded, ...classified } = classify(input, role, blocking);
     // A downgraded blocker is an observation, which carries no category field.
@@ -67,29 +66,6 @@ export function addEntry(
       ? appended
       : { ...appended, downgraded };
   });
-}
-
-/** The ids of the resolved `policy.verifier.blocking-categories`, or the settings refusal. */
-function blockingCategories(
-  deps: LogDeps,
-  change: ActiveChange,
-  globalDir: string,
-): readonly string[] | Refusal {
-  const resolved = resolveOrRefuse(
-    {
-      store: deps.store,
-      settings: deps.settings,
-      globalDir,
-      projectRoot: change.projectRoot,
-      pluginRoot: deps.pluginRoot,
-    },
-    { removed: "ignore" },
-  );
-  if ("refused" in resolved) return resolved;
-  const policy = verifierModule.schema.parse(
-    (resolved.value.policy as Record<string, unknown> | undefined)?.verifier,
-  );
-  return policy["blocking-categories"].map((category) => category.id);
 }
 
 function validate(input: AddInput): Refusal | undefined {

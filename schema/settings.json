@@ -323,7 +323,7 @@
                   "description": "A claim about the real code that is false."
                 }
               ],
-              "description": "Merged by id; replace the array to disable a category.",
+              "description": "Merged by id; the default items always stay.",
               "type": "array",
               "items": {
                 "type": "object",

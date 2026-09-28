@@ -4,22 +4,22 @@
   "title": "bdk dispatch show --json",
   "description": "Print a dispatch package by path or ticket.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["path", "content", "frontmatter"],
   "properties": {
     "path": {
       "type": "string",
+      "minLength": 1,
       "description": "Path relative to the project root."
     },
-    "content": {
-      "type": "string",
-      "description": "The package file, byte for byte."
-    },
+    "content": { "type": "string", "description": "The package file, byte for byte." },
     "frontmatter": {
       "type": "object",
+      "propertyNames": { "type": "string" },
+      "additionalProperties": {},
       "description": "The parsed frontmatter (`kernel-state`, Dispatch package)."
     }
   },
+  "required": ["path", "content", "frontmatter"],
+  "additionalProperties": false,
   "examples": [
     {
       "path": ".bdk/changes/2026-09-25-passwordless-login/dispatch/02-3-implementer-A-7f3k9m2q.md",

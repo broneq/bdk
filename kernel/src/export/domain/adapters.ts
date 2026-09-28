@@ -3,6 +3,8 @@
 // tier; the role itself lives in the role skill and the dispatch package, so
 // the body is one sentence. Host names for tools and tiers are in `hosts.ts`.
 
+import type { Role } from "../../shared/vocabulary/index.ts";
+
 /** A group of host tools, mapped per host. Only `edit` writes files. */
 export type ToolClass = "read" | "search" | "edit" | "shell" | "message";
 
@@ -68,3 +70,14 @@ export const ADAPTERS: readonly AdapterDefinition[] = [
     tier: "fast",
   },
 ];
+
+/** The adapter each role runs on (`role-contracts`, Role-to-adapter map). */
+export const ROLE_ADAPTERS: Readonly<Record<Role, string>> = {
+  implementer: "worker",
+  verifier: "reader",
+  "design-verifier": "reader",
+  reviewer: "reviewer",
+  "pr-reviewer": "reviewer",
+  runner: "runner",
+  scout: "scout",
+};

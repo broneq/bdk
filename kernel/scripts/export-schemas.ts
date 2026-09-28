@@ -55,6 +55,7 @@ import {
 } from "../src/part/schema/outputs.ts";
 import { settingsRegistry } from "../src/registrations.ts";
 import { rulesShowOutput } from "../src/rules/schema/show.ts";
+import { dispatchBuildOutput, dispatchShowOutput } from "../src/dispatch/schema/outputs.ts";
 import { doctorOutput } from "../src/service/schema/doctor.ts";
 import { rebuildOutput } from "../src/service/schema/rebuild.ts";
 import { versionOutput } from "../src/service/schema/version.ts";
@@ -108,6 +109,8 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/attempt-list.json", attemptListOutput],
   ["output/commit.json", commitOutput],
   ["output/rules-show.json", rulesShowOutput],
+  ["output/dispatch-build.json", dispatchBuildOutput],
+  ["output/dispatch-show.json", dispatchShowOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {

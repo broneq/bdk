@@ -1,0 +1,112 @@
+// The one package template (`kernel-cli/dispatch`, bdk dispatch build;
+// T23-D11, not overridable): the sections in their fixed order, each a
+// skeleton with `{{name}}` placeholders. The skeletons are what
+// `template-hash` covers of the template (T23-D33), so a new wording is a
+// new hash.
+
+interface Section {
+  readonly name: string;
+  readonly skeleton: string;
+  /** Only verifier packages carry it (P8). */
+  readonly verifierOnly?: true;
+}
+
+const SECTIONS: readonly Section[] = [
+  {
+    name: "header",
+    skeleton:
+      "# BDK dispatch package {{ticket}}\n\nYou are the `{{role}}` of ticket {{ticket}}: attempt {{attempt}} of {{of}}, scope `{{scope}}`. Work from this package; read other state only through `bdk`.",
+  },
+  { name: "change", skeleton: "## Change\n\n{{intent}}" },
+  { name: "target", skeleton: "## Target {{target}}\n\n{{target-body}}" },
+  { name: "entries", skeleton: "## Ledger entries\n\n{{entries}}" },
+  { name: "role", skeleton: "{{role-body}}" },
+  {
+    name: "rules",
+    skeleton:
+      "## Rules\n\nRun `bdk rules show --ticket {{ticket}}` before you start and follow the rules it prints.",
+  },
+  {
+    name: "categories",
+    verifierOnly: true,
+    skeleton:
+      "## Blocking categories (P8)\n\nA blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket {{ticket}} --category <id>`; any other blocker is stored as an observation for review.\n\n{{blocking}}\n\n## Not a fail\n\nNever block on these:\n\n{{not-a-fail}}",
+  },
+  {
+    name: "return",
+    skeleton:
+      "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ticket}}`. Then pipe the full report to `bdk log ingest --ticket {{ticket}}`, the envelope (`status`, `files`, `entries`, `evidence`, and `reason` for `blocked` or `needs-context`) as its frontmatter. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`.",
+  },
+];
+
+export interface RenderedSection {
+  readonly name: string;
+  readonly text: string;
+}
+
+/** The sections a role's package carries, placeholders filled; a missing value throws. */
+export function renderSections(
+  values: Readonly<Record<string, string>>,
+  verifier: boolean,
+): RenderedSection[] {
+  return SECTIONS.filter((section) => verifier || section.verifierOnly !== true).map((section) => ({
+    name: section.name,
+    text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name: string) => {
+      const value = values[name];
+      if (value === undefined) throw new Error(`the package template has no value for ${name}`);
+      return value;
+    }),
+  }));
+}
+
+export function packageBody(sections: readonly RenderedSection[]): string {
+  return `${sections.map((section) => section.text.trimEnd()).join("\n\n")}\n`;
+}
+
+/** The skeleton `template-hash` covers: every section, the verifier ones included. */
+export function templateSkeleton(): string {
+  return SECTIONS.map((section) => section.skeleton).join("\n\n");
+}
+
+/** LF line ends, no trailing whitespace, no frontmatter (T23-D33). */
+export function normalise(text: string): string {
+  const lf = text.replace(/\r\n?/g, "\n");
+  const body = /^---\n(?:.*\n)*?---(?:\n|$)/.exec(lf);
+  const rest = body === null ? lf : lf.slice(body[0].length);
+  return rest
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .trim();
+}
+
+/** The largest section and its bytes, for `policy/package-too-large`. */
+export function largestSection(sections: readonly RenderedSection[]): RenderedSection {
+  let largest = sections[0];
+  if (largest === undefined) throw new Error("a package has sections");
+  for (const section of sections) {
+    if (bytes(section.text) > bytes(largest.text)) largest = section;
+  }
+  return largest;
+}
+
+export function bytes(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
+
+/** The role body one heading level down, so its `# Role: <role>` sits beside the package sections. */
+export function demoteHeadings(markdown: string): string {
+  let fence: string | undefined;
+  return markdown
+    .split("\n")
+    .map((line) => {
+      const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+      if (marker !== undefined) {
+        if (fence === undefined) fence = marker;
+        else if (marker.startsWith(fence)) fence = undefined;
+        return line;
+      }
+      return fence === undefined && /^#{1,5} /.test(line) ? `#${line}` : line;
+    })
+    .join("\n");
+}

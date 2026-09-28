@@ -8,6 +8,7 @@ import type { ChangeDeps } from "./change/index.ts";
 import { configRegistrations } from "./config/index.ts";
 import type { ConfigDeps } from "./config/index.ts";
 import { ctxConfig, ctxRegistrations } from "./ctx/index.ts";
+import { dispatchRegistrations } from "./dispatch/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
 import { graphConfig, graphRegistrations } from "./graph/index.ts";
@@ -55,6 +56,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...queryRegistrations(deps),
     ...exportRegistrations(deps),
     ...rulesRegistrations(deps),
+    ...dispatchRegistrations(deps),
   ];
 }
 

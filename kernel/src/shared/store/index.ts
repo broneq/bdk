@@ -26,6 +26,7 @@ export type {
   TicketDispatch,
 } from "./index/queries.ts";
 export { migrateDocument, readChange, readDocument, writeDocument } from "./state/documents.ts";
+export { renderDocument } from "./state/render.ts";
 export type { KindOverrides, MigrationResult, StateDocument } from "./state/documents.ts";
 export { findingFingerprint, learningFingerprint, normalise } from "./state/fingerprint.ts";
 export { generateDesignIndex, generatePlanIndex, planWaves } from "./state/indexes.ts";

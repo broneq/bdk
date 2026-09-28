@@ -64,7 +64,7 @@ export const verifierModule = defineConfigModule({
       "blocking-categories": z
         .array(item("A category a verifier or design-verifier blocker may name."))
         .default(BLOCKING)
-        .meta({ description: "Merged by id; replace the array to disable a category." }),
+        .meta({ description: "Merged by id; the default items always stay." }),
       "not-a-fail": z
         .array(item("Something a verifier never blocks on."))
         .default(NOT_A_FAIL)

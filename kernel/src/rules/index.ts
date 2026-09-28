@@ -7,7 +7,7 @@ import { languagesModule, rulePrompts } from "./config.ts";
 import type { RulesDeps } from "./use-cases/deps.ts";
 
 export type { RuleCategory } from "./config.ts";
-export { languageSections, ruleSection, ruleSet } from "./use-cases/sections.ts";
+export { languageSections, roleSections, ruleSection, ruleSet } from "./use-cases/sections.ts";
 export type { RulesDeps } from "./use-cases/deps.ts";
 
 export const rulesConfig = {

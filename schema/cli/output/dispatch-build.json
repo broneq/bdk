@@ -4,37 +4,25 @@
   "title": "bdk dispatch build --json",
   "description": "Build the dispatch package file for a target, role and ticket.",
   "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "path",
-    "bytes",
-    "ticket",
-    "target",
-    "role",
-    "adapter",
-    "kernelVersion",
-    "templateHash",
-    "report",
-    "entries"
-  ],
   "properties": {
     "path": {
       "type": "string",
+      "minLength": 1,
       "description": "Path relative to the project root."
     },
-    "bytes": {
-      "type": "integer",
-      "maximum": 12288
-    },
+    "bytes": { "type": "integer", "minimum": 1, "maximum": 12288 },
     "ticket": {
       "type": "string",
+      "pattern": "^A-[0-9a-z]{8}$",
       "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "target": {
       "type": "string",
+      "minLength": 1,
       "description": "The ticket's target: a task id, a part id, the Change id or an artifact id."
     },
     "role": {
+      "type": "string",
       "enum": [
         "implementer",
         "verifier",
@@ -45,47 +33,52 @@
         "scout"
       ]
     },
-    "adapter": {
-      "enum": ["worker", "reader", "reviewer", "runner", "scout"]
-    },
-    "scope": {
-      "enum": ["full", "high+", "blockers"]
-    },
-    "kernelVersion": {
-      "type": "string"
-    },
-    "templateHash": {
-      "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
-    },
+    "adapter": { "type": "string", "enum": ["worker", "reader", "reviewer", "runner", "scout"] },
+    "scope": { "type": "string", "enum": ["full", "high+", "blockers"] },
+    "kernelVersion": { "type": "string", "minLength": 1 },
+    "templateHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "report": {
       "type": "string",
+      "minLength": 1,
       "description": "Path relative to the project root where `bdk log ingest --ticket` stores the report."
     },
     "entries": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["full", "counted"],
       "properties": {
         "full": {
           "type": "array",
-          "description": "Accepted decisions and unresolved blockers of the target, embedded in full.",
           "items": {
             "type": "string",
+            "pattern": "^L-[0-9a-z]{8}$",
             "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
-          }
+          },
+          "description": "Accepted decisions and unresolved blockers of the target, embedded in full."
         },
         "counted": {
           "type": "object",
-          "description": "Per-type counts of the other entries of the target, listed by `bdk log list --for <target>`.",
-          "additionalProperties": {
-            "type": "integer",
-            "minimum": 1
-          }
+          "propertyNames": { "type": "string" },
+          "additionalProperties": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "description": "Per-type counts of the other entries of the target, listed by `bdk log list --for <target>`."
         }
-      }
+      },
+      "required": ["full", "counted"],
+      "additionalProperties": false
     }
   },
+  "required": [
+    "path",
+    "bytes",
+    "ticket",
+    "target",
+    "role",
+    "adapter",
+    "scope",
+    "kernelVersion",
+    "templateHash",
+    "report",
+    "entries"
+  ],
+  "additionalProperties": false,
   "examples": [
     {
       "path": ".bdk/changes/2026-09-25-passwordless-login/dispatch/02-3-implementer-A-7f3k9m2q.md",
@@ -98,13 +91,7 @@
       "kernelVersion": "3.0.0",
       "templateHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
       "report": ".bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-A-7f3k9m2q.md",
-      "entries": {
-        "full": ["L-a2s5d7k1"],
-        "counted": {
-          "finding": 2,
-          "observation": 1
-        }
-      }
+      "entries": { "full": ["L-a2s5d7k1"], "counted": { "finding": 2, "observation": 1 } }
     }
   ]
 }
