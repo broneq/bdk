@@ -19664,8 +19664,21 @@ function ticketEvidence(deps, change, ticket) {
 
 // kernel/src/log/use-cases/list.ts
 async function listLog(deps, change, filter, elapsed = performanceClock()) {
+  const { sinceTicket, ...entryFilter } = filter;
+  let since;
+  if (sinceTicket !== void 0) {
+    const record4 = readAttempts(deps.store, change.dir).find(
+      (file) => file.data.ticket === sinceTicket
+    );
+    if (record4 === void 0) {
+      return refuse("input/not-found", `${change.id} has no ticket ${sinceTicket}`, [
+        "bdk attempt list --all"
+      ]);
+    }
+    since = record4.data["opened-at"];
+  }
   const { items, refreshed } = await withChangeIndex(deps, change, (index2, refreshed2) => ({
-    items: listEntries(index2, change.id, filter).map(entrySummary),
+    items: listEntries(index2, change.id, entryFilter).map(entrySummary).filter((item3) => since === void 0 || item3.at >= since),
     refreshed: refreshed2
   }));
   appendTelemetry(deps.store, change.projectRoot, "log-list", {
@@ -19851,8 +19864,10 @@ function listCommand(deps) {
       ...optional2("type", text(context.flags["--type"])),
       ...optional2("status", text(context.flags["--status"])),
       ...context.flags["--review"] === true ? { review: true } : {},
-      ...optional2("for", target)
+      ...optional2("for", target),
+      ...optional2("sinceTicket", text(context.flags["--since-ticket-start"]))
     });
+    if (isRefusal(items)) return items;
     return {
       data: listPage(items, { all, ...optional2("for", target) }),
       text: capLines(renderList2(items), { all })

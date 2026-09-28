@@ -246,6 +246,38 @@ describe("bdk log list", () => {
     expect(page.items).toEqual([expect.objectContaining({ type: "finding", status: "proposed" })]);
   });
 
+  it("exit 0: --since-ticket-start keeps what was written after the ticket opened; exit 3 for an unknown ticket", () => {
+    const { root, dir } = opened();
+    writeDocument(fileStore(), join(dir, "log/20260925T090000Z-risk-L-00000001.md"), {
+      data: {
+        schema: 1,
+        id: "L-00000001",
+        type: "risk",
+        summary: "written before the ticket",
+        status: "proposed",
+        source: "kernel",
+        author: "BDK Test <test@example.com>",
+        at: "2026-09-25T09:00:00Z",
+        refs: ["a"],
+      },
+      body: "",
+    });
+    ticketed(dir);
+    const later = add(root, "finding", "written during the ticket", "--ref", "src/a.ts").entry.id;
+    const page = answered(
+      bdk(["log", "list", "--since-ticket-start", TICKET, "--json"], root),
+      "output/log-list.json",
+    ) as { items: { id: string }[] };
+    const ids = page.items.map((item) => item.id);
+    expect(ids).toContain(later);
+    expect(ids).not.toContain("L-00000001");
+    refused(
+      bdk(["log", "list", "--since-ticket-start", "A-00000000", "--json"], root),
+      3,
+      "input/not-found",
+    );
+  });
+
   it("acceptance: under 200 ms at 1 000 entries on the second run, with its telemetry line", () => {
     const { root, dir } = opened();
     const store = fileStore();

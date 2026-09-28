@@ -32,7 +32,7 @@
 - [x] 5.1 Write failing tests for package retention per role and ticket, the `package` stamp, `dispatch show <ticket>` printing the active package, and the `simplifier` role in the role-to-adapter map and the rules role map; implement; verify unit and E2E pass and the export check still produces five adapters
 - [x] 5.2 Write failing tests for the runner `Checks` section (tools with `related` / `scoped` / `command`, `{files}` from executable files only, `when` texts, record lines, kind without a command, step order from the graph); implement with `dispatch -> ctx`; verify unit and E2E pass, the package stays within 12 288 bytes on the fixture and the import scan accepts the edge
 - [x] 5.3 Write failing tests for role resolution through the active package in `rules show --ticket` (simplifier read does not stamp), `log add --ticket` (P8 by the active role) and `log ingest --ticket` (each role of a ticket keeps its report); implement; verify unit and E2E pass
-- [ ] 5.4 Write failing tests for `log list --since-ticket-start` (entries since a ticket started, closed ticket, unknown ticket `input/not-found`, combined with `--type`); implement; verify unit and E2E pass
+- [x] 5.4 Write failing tests for `log list --since-ticket-start` (entries since a ticket started, closed ticket, unknown ticket `input/not-found`, combined with `--type`); implement; verify unit and E2E pass
 
 ## 6. `attempt` open and close
 

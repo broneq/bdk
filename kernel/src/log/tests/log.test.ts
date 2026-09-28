@@ -585,6 +585,43 @@ describe("log list", () => {
     expect(text.at(-1)).toMatch(/more lines \(--all prints everything\)$/);
   });
 
+  it("keeps the entries at or after a ticket's opened-at with --since-ticket-start (T23-D49)", async () => {
+    const store = repository();
+    const risk = (id: string, at: string) => {
+      writeDocument(store, `${DIR}/log/${at.replace(/[-:]/g, "")}-risk-${id}.md`, {
+        data: {
+          schema: 1,
+          id,
+          type: "risk",
+          summary: `risk ${id}`,
+          status: "proposed",
+          source: "kernel",
+          author: AUTHOR,
+          at,
+          refs: ["a"],
+        },
+        body: "",
+      });
+    };
+    risk("L-00000001", "2026-09-25T09:59:59Z");
+    risk("L-00000002", "2026-09-25T10:00:00Z");
+    risk("L-00000003", "2026-09-25T10:20:00Z");
+    addAttempt(store, "A-7f3k9m2q", undefined, true);
+    const { run } = harness(store);
+    const ids = async (...flags: string[]) =>
+      logListOutput
+        .parse(
+          (await run(["log", "list", "--since-ticket-start", "A-7f3k9m2q", ...flags, "--json"]))
+            .json,
+        )
+        .items.map((item) => item.id);
+    expect(await ids()).toEqual(["L-00000002", "L-00000003"]);
+    expect(await ids("--type", "decision")).toEqual([]);
+    const missing = await run(["log", "list", "--since-ticket-start", "A-00000000", "--json"]);
+    expect(missing.code).toBe(3);
+    expect(missing.json).toMatchObject({ rule: "input/not-found" });
+  });
+
   it("prints one line per entry and says so when there are none", async () => {
     expect((await harness().run(["log", "list"])).stdout).toBe("no entries\n");
     const { run } = await seeded();
