@@ -76,6 +76,9 @@ describe("the layout maps each path to its kind", () => {
       kind: "spec-delta",
       body: "## ADDED Requirements\n",
     });
+    const nested = at("spec-delta/auth/login.md");
+    writeDocument(store, nested, { body: "## ADDED Requirements\n" });
+    expect(readDocument(store, nested)).toMatchObject({ kind: "spec-delta" });
     expect(readDocument(store, capture)).toStrictEqual({
       kind: "evidence-capture",
       body: "<testsuites/>\n",
@@ -95,6 +98,9 @@ describe("paths outside the layout", () => {
     at("attempts/A-7f3kx2p9.md"),
     at("evidence/02-3-E-5hq0m2vd.junit.xml"),
     at("evidence/pruned.md"),
+    at("spec-delta/Auth_Login.md"),
+    at("spec-delta/auth//login.md"),
+    at("spec-delta/auth/login.txt"),
     "/repo/.bdk/changes/login/change.md",
     "/repo/.bdk/rules/nested/CQ-1.md",
     "/repo/.bdk/settings.yaml",

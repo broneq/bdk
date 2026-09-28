@@ -469,6 +469,33 @@
       },
       "additionalProperties": false
     },
+    "archive": {
+      "description": "What `change close` keeps in the archived Change.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "keep-evidence": {
+          "default": false,
+          "description": "Keep the full dispatch/ and reports/ bodies; false prunes them to their hash index.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "spec": {
+      "description": "The grammar `spec delta check` holds a delta to.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "normative-word": {
+          "default": "SHALL",
+          "description": "The word every requirement statement carries, as a whole word.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
     "prompts": {
       "description": "Where prompt values come from: a directory per layer and single mapped files.",
       "default": {},

@@ -1,10 +1,11 @@
-// The Node floor, the v2 layout (T11) and the settings schema checks (T12).
-// The merge-hash and index freshness checks join with their owner tasks (T30,
-// T20); each adds one finding with exactly one repair (R-14).
+// The Node floor, the v2 layout (T11), the settings schema checks (T12) and
+// the living spec hashes (T30-D13). The index freshness check joins with its
+// owner task (T20); each adds one finding with exactly one repair (R-14).
 import { meetsNodeMinimum, NODE_INSTALL, NODE_MINIMUM } from "../../shared/registry/index.ts";
 import type { ConfigRegistry } from "../../shared/config/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
 import { detectLayout } from "../../config/index.ts";
+import { mergeHashFindings } from "../../spec/index.ts";
 import { layoutFinding } from "../domain/layout.ts";
 import type { DoctorReport, Finding } from "../domain/report.ts";
 import { schemaFindings } from "./schema-checks.ts";
@@ -35,6 +36,14 @@ export function doctor(input: DoctorInput): DoctorReport {
   const finding = layoutFinding(present);
   if (finding !== undefined) findings.push(finding);
   findings.push(...schemaFindings({ ...input, root }));
+  for (const found of mergeHashFindings(input.store, root)) {
+    findings.push({
+      id: "merge-hash",
+      level: "fail",
+      summary: found.message,
+      repair: `git restore --source=$(git log -1 --format=%H --grep='^chore(bdk): close' -- ${found.path}) -- ${found.path}`,
+    });
+  }
 
   return {
     ok: findings.every((item) => item.level === "ok"),

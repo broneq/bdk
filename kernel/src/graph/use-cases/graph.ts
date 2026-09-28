@@ -89,6 +89,7 @@ export async function readGraph(
     kind: row?.kind ?? "feature",
     profile: effectiveProfile(base, entries),
     entries,
+    settings: resolved.value,
     ...(options.work === true ? { work: await workFacts(deps, change, index) } : {}),
     ...(await evidenceFacts(deps, change, resolved, options.work === true)),
   });

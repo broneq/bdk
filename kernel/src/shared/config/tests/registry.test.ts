@@ -114,23 +114,23 @@ describe("validateLayers", () => {
   });
 
   it("names the owner task of a key declared for a later task", () => {
-    const result = validate(layer("project", { policy: { checkpoint: { "squash-at-close": 5 } } }));
+    const result = validate(layer("project", { rules: { "max-per-package": 5 } }));
     expect(result.problems).toMatchObject([
-      { key: "policy.checkpoint.squash-at-close", message: "lands with T30" },
+      { key: "rules.max-per-package", message: "lands with T31" },
     ]);
   });
 
   it("names every owner below a planned key's ancestor set as a scalar", () => {
-    const result = validate(layer("project", { archive: 3 }));
-    expect(result.problems).toMatchObject([{ key: "archive", message: "lands with T30" }]);
+    const result = validate(layer("project", { rules: 3 }));
+    expect(result.problems).toMatchObject([{ key: "rules", message: "lands with T31" }]);
   });
 
   it("hints the kebab-case form of a camelCase planned key", () => {
-    const result = validate(layer("project", { archive: { keepEvidence: 5 } }));
+    const result = validate(layer("project", { rules: { proposeWhen: { changes: 5 } } }));
     expect(result.problems).toMatchObject([
       {
-        key: "archive.keepEvidence",
-        message: "unknown key; did you mean archive.keep-evidence?",
+        key: "rules.proposeWhen.changes",
+        message: "unknown key; did you mean rules.propose-when.changes?",
       },
     ]);
   });
@@ -250,6 +250,15 @@ describe("dotted module keys", () => {
     schema: z.strictObject({ enabled: z.boolean().default(true) }).prefault({}),
   });
   const policy = createConfigRegistry({ modules: [gates, budgets, checkpoint], prompts: [] });
+  // A registered module under the root of planned keys (T31 plans `rules.max-per-package`).
+  const proposeWhen = defineConfigModule({
+    key: "rules.propose-when",
+    consumer: "rules",
+    owner: "T31",
+    description: "Rule proposal thresholds.",
+    schema: z.strictObject({ changes: z.int().min(1).default(2) }).prefault({}),
+  });
+  const rules = createConfigRegistry({ modules: [proposeWhen], prompts: [] });
 
   function check(...layers: Layer[]) {
     return validateLayers(policy, layers, mergeLayers(layers, policy.appendOnly));
@@ -304,22 +313,18 @@ describe("dotted module keys", () => {
   });
 
   it("names the owner of a planned key inside a registered subtree", () => {
-    const result = check(layer("project", { policy: { checkpoint: { "squash-at-close": true } } }));
+    const layers = [layer("project", { rules: { "max-per-package": 5 } })];
+    const result = validateLayers(rules, layers, mergeLayers(layers, rules.appendOnly));
     expect(result.problems).toMatchObject([
-      { key: "policy.checkpoint.squash-at-close", message: "lands with T30" },
+      { key: "rules.max-per-package", message: "lands with T31" },
     ]);
   });
 
   it("names the owner of a planned subtree next to registered ones", () => {
-    const withoutCheckpoint = createConfigRegistry({ modules: [gates, budgets], prompts: [] });
-    const layers = [layer("project", { policy: { checkpoint: { "squash-at-close": true } } })];
-    const result = validateLayers(
-      withoutCheckpoint,
-      layers,
-      mergeLayers(layers, withoutCheckpoint.appendOnly),
-    );
+    const layers = [layer("project", { rules: { "max-per-package": 5, "propose-when": {} } })];
+    const result = validateLayers(rules, layers, mergeLayers(layers, rules.appendOnly));
     expect(result.problems).toMatchObject([
-      { key: "policy.checkpoint.squash-at-close", message: "lands with T30" },
+      { key: "rules.max-per-package", message: "lands with T31" },
     ]);
   });
 

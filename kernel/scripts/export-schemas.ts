@@ -17,6 +17,7 @@ import {
   changeListOutput,
   changeNewOutput,
   changeCheckpointOutput,
+  changeCloseOutput,
   changeParkOutput,
   changeTakeoverOutput,
   changeResumeOutput,
@@ -37,6 +38,11 @@ import { configSetOutput } from "../src/config/schema/set.ts";
 import { configShowOutput } from "../src/config/schema/show.ts";
 import { ctxOutput } from "../src/ctx/schema/ctx.ts";
 import { evidenceCheckOutput, evidenceRecordOutput } from "../src/evidence/schema/outputs.ts";
+import {
+  specDeltaCheckOutput,
+  specDiffOutput,
+  specMergeOutput,
+} from "../src/spec/schema/outputs.ts";
 import { sessionStartOutput } from "../src/hooks/schema/session-start.ts";
 import { skillExistsOutput } from "../src/hooks/schema/skill-exists.ts";
 import {
@@ -96,6 +102,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/change-park.json", changeParkOutput],
   ["output/change-takeover.json", changeTakeoverOutput],
   ["output/change-checkpoint.json", changeCheckpointOutput],
+  ["output/change-close.json", changeCloseOutput],
   ["output/query.json", queryOutput],
   ["output/next.json", nextOutput],
   ["output/explain.json", explainOutput],
@@ -114,6 +121,9 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/dispatch-show.json", dispatchShowOutput],
   ["output/evidence-record.json", evidenceRecordOutput],
   ["output/evidence-check.json", evidenceCheckOutput],
+  ["output/spec-delta-check.json", specDeltaCheckOutput],
+  ["output/spec-merge.json", specMergeOutput],
+  ["output/spec-diff.json", specDiffOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {

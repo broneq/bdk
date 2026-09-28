@@ -201,3 +201,18 @@ export interface TakeoverReport {
   readonly closedTickets: readonly string[];
   readonly rebuilt: boolean;
 }
+
+export interface CloseReport {
+  readonly change: string;
+  /** Relative to the project root: `.bdk/changes/archive/<id>`. */
+  readonly archivedTo: string;
+  readonly spec: { readonly merged: readonly string[]; readonly unchanged: boolean };
+  /** Empty until T31 lands `log route` and the rule projection (T30-D12). */
+  readonly learning: {
+    readonly proposedRules: readonly string[];
+    readonly spec: readonly string[];
+    readonly nothing: readonly string[];
+  };
+  readonly gatesByPolicy: readonly string[];
+  readonly summary: string;
+}

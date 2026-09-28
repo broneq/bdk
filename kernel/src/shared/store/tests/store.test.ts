@@ -131,6 +131,39 @@ describe.each(implementations)("%s store", (_, make) => {
     expect(store.read(path)).toBe("a\nb\n");
   });
 
+  it("moves a directory with nested files, creating the target's parents", () => {
+    const { root, store } = open({
+      "c/x/a.md": "a",
+      "c/x/d/b.md": "b",
+      "c/x/e/": "",
+      "c/y.md": "y",
+    });
+    store.move(join(root, "c/x"), join(root, "c/archive/x"));
+    expect(store.exists(join(root, "c/x"))).toBe(false);
+    expect(store.read(join(root, "c/archive/x/a.md"))).toBe("a");
+    expect(store.read(join(root, "c/archive/x/d/b.md"))).toBe("b");
+    expect(store.isDirectory(join(root, "c/archive/x/e"))).toBe(true);
+    expect(store.list(join(root, "c"))).toStrictEqual(["archive/", "y.md"]);
+  });
+
+  it("moves a file", () => {
+    const { root, store } = open({ "a.md": "abc" });
+    store.move(join(root, "a.md"), join(root, "b/a.md"));
+    expect(store.exists(join(root, "a.md"))).toBe(false);
+    expect(store.read(join(root, "b/a.md"))).toBe("abc");
+  });
+
+  it("refuses to move onto an existing target or from an absent source", () => {
+    const { root, store } = open({ "x/a.md": "a", "y/": "" });
+    expect(() => {
+      store.move(join(root, "x"), join(root, "y"));
+    }).toThrow(/exists/);
+    expect(() => {
+      store.move(join(root, "none"), join(root, "z"));
+    }).toThrow(/ENOENT/);
+    expect(store.read(join(root, "x/a.md"))).toBe("a");
+  });
+
   describe("project root", () => {
     it("is the nearest directory with .bdk/ below the work tree root", () => {
       const { root, store } = open({ ".bdk/": "", "pkg/.bdk/": "", "pkg/src/x.ts": "" });

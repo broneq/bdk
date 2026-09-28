@@ -66,6 +66,11 @@ export class ArchitectureKind extends BaseKind {
   }
 }
 
+/** Nested by capability path (`kernel-state`, Change directory layout; T30-D4). */
+export function deltaPath(capability: string): string {
+  return `spec-delta/${capability}.md`;
+}
+
 export class SpecDeltaKind extends BaseKind {
   readonly name = "spec-delta";
   skip(view: ChangeView): string | undefined {
@@ -81,19 +86,30 @@ export class SpecDeltaKind extends BaseKind {
   inputs(view: ChangeView): Inputs {
     return { files: this.files(view) };
   }
+  /** The file checks of each delta, then its delta semantics (T30-D9). */
   validate(view: ChangeView): Check[] {
-    const files = this.files(view);
-    if (files.length === 0) {
+    const capabilities = view.specDeltas();
+    if (capabilities.length === 0) {
       return [{ id: "exists", ok: false, why: "spec-delta/ holds no delta" }];
     }
-    return files.flatMap((path) =>
-      fileChecks(view, path).map((check) => ({ ...check, id: `${check.id}:${path}` })),
-    );
+    return capabilities.flatMap((capability): Check[] => {
+      const path = deltaPath(capability);
+      const problems = view.specProblems(capability) ?? [];
+      return [
+        ...fileChecks(view, path).map((check) => ({ ...check, id: `${check.id}:${path}` })),
+        problems.length === 0
+          ? { id: `delta:${capability}`, ok: true }
+          : {
+              id: `delta:${capability}`,
+              ok: false,
+              why: problems.join("; "),
+              rule: "policy/spec-invalid",
+              instead: `bdk spec delta check ${capability}`,
+            },
+      ];
+    });
   }
   private files(view: ChangeView): string[] {
-    return view
-      .list("spec-delta")
-      .filter((name) => name.endsWith(".md"))
-      .map((name) => `spec-delta/${name}`);
+    return view.specDeltas().map(deltaPath);
   }
 }

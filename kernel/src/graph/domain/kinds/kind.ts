@@ -92,6 +92,13 @@ export interface ChangeView {
   file(path: string): FileFacts | undefined;
   /** The file names directly in a directory of the Change, sorted; [] when absent. */
   list(dir: string): readonly string[];
+  /** The capabilities with a delta under `spec-delta/`, nested by path, in path order. */
+  specDeltas(): readonly string[];
+  /**
+   * `spec delta check`'s problems of a capability's delta, each as
+   * `<path>:<line> <code>: <message>`; undefined when the Change has no delta for it.
+   */
+  specProblems(capability: string): readonly string[] | undefined;
   /** The `status` of the report file a `report` entry names, or undefined. */
   reportStatus(entry: GraphEntry): string | undefined;
   /** The parsed body of a plan part whose frontmatter validated, by its Change-relative path. */

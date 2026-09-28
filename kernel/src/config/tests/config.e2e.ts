@@ -232,15 +232,15 @@ describe("bdk config check", () => {
 
   it("acceptance: key of a later task", () => {
     const root = fixture({
-      ".bdk/settings.yaml": "archive:\n  keep-evidence: true\n",
+      ".bdk/settings.yaml": "rules:\n  max-per-package: 5\n",
     }).root;
     const refusal = refused(
       bdk(["config", "check", "--json"], root),
       2,
       "policy/unknown-config-key",
     );
-    expect(refusal.why).toContain("archive.keep-evidence");
-    expect(refusal.why).toContain("lands with T30");
+    expect(refusal.why).toContain("rules.max-per-package");
+    expect(refusal.why).toContain("lands with T31");
   });
 
   it("acceptance: one root, several consumers", () => {
@@ -261,18 +261,6 @@ describe("bdk config check", () => {
     );
     expect(refusal.why).toContain("did you mean policy.budgets.verifier?");
     expect(refusal.instead[0]).toBe("bdk config schema policy.budgets");
-  });
-
-  it("acceptance: planned key inside a registered subtree", () => {
-    const root = fixture({
-      ".bdk/settings.yaml": "policy:\n  checkpoint:\n    squash-at-close: true\n",
-    }).root;
-    const refusal = refused(
-      bdk(["config", "check", "--json"], root),
-      2,
-      "policy/unknown-config-key",
-    );
-    expect(refusal.why).toContain("lands with T30");
   });
 
   it("acceptance: T22 defaults", () => {
@@ -328,6 +316,21 @@ describe("bdk config check", () => {
     const shown = bdk(["config", "show", "execution.concurrency", "--json"], fixture({}).root);
     expect(shown.code).toBe(0);
     expect(shown.json).toMatchObject({ key: "execution.concurrency", value: 5 });
+  });
+
+  it("acceptance: keep evidence registered", () => {
+    const shown = bdk(["config", "show", "archive.keep-evidence", "--json"], fixture({}).root);
+    expect(shown.code).toBe(0);
+    expect(shown.json).toMatchObject({ key: "archive.keep-evidence", value: false });
+  });
+
+  it("shows the default normative word and refuses an empty one", () => {
+    const shown = bdk(["config", "show", "spec.normative-word", "--json"], fixture({}).root);
+    expect(shown.code).toBe(0);
+    expect(shown.json).toMatchObject({ key: "spec.normative-word", value: "SHALL" });
+    const root = fixture({ ".bdk/settings.yaml": 'spec:\n  normative-word: ""\n' }).root;
+    const refusal = refused(bdk(["config", "check", "--json"], root), 2, "policy/config-invalid");
+    expect(JSON.stringify(refusal)).toContain("spec.normative-word");
   });
 
   it("acceptance: detected key unset", () => {
@@ -433,7 +436,7 @@ describe("bdk config schema", () => {
   });
 
   it("exit 3: input/not-found", () => {
-    refused(bdk(["config", "schema", "archive", "--json"], fixture().root), 3, "input/not-found");
+    refused(bdk(["config", "schema", "rules", "--json"], fixture().root), 3, "input/not-found");
   });
 
   it("exit 5: runtime/not-a-repo", () => {

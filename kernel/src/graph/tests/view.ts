@@ -34,6 +34,8 @@ export interface ViewFixture {
   readonly reportEvidence?: Readonly<Record<string, readonly string[]>>;
   /** Plan part number -> its current tree hash. */
   readonly partTrees?: Readonly<Record<string, string>>;
+  /** Capability -> the problems of its delta; a delta file without an item has none. */
+  readonly specProblems?: Readonly<Record<string, readonly string[]>>;
 }
 
 export function fakeView(fixture: ViewFixture = {}): ChangeView {
@@ -60,6 +62,15 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
         .filter((path) => path.startsWith(`${dir}/`) && !path.slice(dir.length + 1).includes("/"))
         .map((path) => path.slice(dir.length + 1))
         .sort(),
+    specDeltas: () =>
+      Object.keys(files)
+        .filter((path) => path.startsWith("spec-delta/") && path.endsWith(".md"))
+        .map((path) => path.slice("spec-delta/".length, -".md".length))
+        .sort(),
+    specProblems: (capability) =>
+      files[`spec-delta/${capability}.md`] === undefined
+        ? undefined
+        : (fixture.specProblems?.[capability] ?? []),
     reportStatus: (entry) => fixture.reports?.[entry.id],
     reportEvidence: (entry) => fixture.reportEvidence?.[entry.id] ?? [],
     evidence: (fixture.evidence ?? []).map((manifest) => ({

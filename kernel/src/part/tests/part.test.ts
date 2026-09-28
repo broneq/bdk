@@ -94,6 +94,13 @@ describe("part list", () => {
     expect(items(await h.run(["part", "list", "--json"], T3))[0]).toMatchObject({ state: "stale" });
   });
 
+  it("lists a part without spec-impact as none", async () => {
+    const h = harness();
+    writePlanPart(h.store, "01", { specImpact: "absent" });
+    const [item] = items(await h.run(["part", "list", "--json"]));
+    expect(item).toMatchObject({ part: "01", specImpact: "none" });
+  });
+
   it("lists an oversized part with its bytes", async () => {
     const h = harness();
     writePlanPart(h.store, "03", {

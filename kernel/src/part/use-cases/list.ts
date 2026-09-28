@@ -45,7 +45,7 @@ export async function partItems(
       done: part.tasks.filter((task) => committed.has(task.id)).length,
       bytes: part.bytes,
       ...(dependsOn.length === 0 ? {} : { dependsOn }),
-      specImpact: part.data["spec-impact"] === "none" ? "none" : "delta",
+      specImpact: Array.isArray(part.data["spec-impact"]) ? "delta" : "none",
       ...(wave === undefined ? {} : { wave }),
     };
   });

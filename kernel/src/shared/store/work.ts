@@ -19,7 +19,8 @@ export interface PlanPartFrontmatter {
   readonly "success-measure": string;
   readonly "do-not-touch": readonly string[];
   readonly "depends-on": readonly string[];
-  readonly "spec-impact": "none" | readonly string[];
+  /** Absent means `none` in `tiny` and `small` (T30). */
+  readonly "spec-impact"?: "none" | readonly string[] | undefined;
 }
 
 export interface PlanPartFile {

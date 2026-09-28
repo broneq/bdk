@@ -187,6 +187,7 @@ function overlay(store: Store, path: string, text: string): Store {
     writeBytes: readOnly,
     remove: readOnly,
     append: readOnly,
+    move: readOnly,
     list: (dir) => store.list(dir),
     exists: (candidate) => candidate === path || store.exists(candidate),
     isDirectory: (candidate) => store.isDirectory(candidate),

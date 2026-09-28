@@ -4,60 +4,72 @@
   "title": "bdk spec merge --json",
   "description": "Deterministically merge the Change's deltas into `.bdk/specs/`; refuse on conflict.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["merged", "conflicts"],
   "properties": {
     "merged": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["capability", "path", "mergeHash"],
         "properties": {
           "capability": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "description": "The capability path, e.g. `auth/login`."
           },
           "path": {
             "type": "string",
+            "minLength": 1,
             "description": "Path relative to the project root."
           },
-          "mergeHash": {
-            "type": "string",
-            "pattern": "^sha256:[0-9a-f]{64}$"
-          },
+          "mergeHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
           "added": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "ADDED requirements of the delta."
           },
           "modified": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "MODIFIED requirements plus REMOVED entries listing only scenarios."
           },
           "removed": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Requirements REMOVED as a whole."
           }
-        }
+        },
+        "required": ["capability", "path", "mergeHash", "added", "modified", "removed"],
+        "additionalProperties": false
       }
     },
     "conflicts": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["capability", "requirement", "ours", "theirs"],
         "properties": {
           "capability": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "description": "The capability path, e.g. `auth/login`."
           },
-          "requirement": {
-            "type": "string"
-          },
-          "ours": {
-            "type": "string"
-          },
+          "requirement": { "type": "string", "minLength": 1 },
+          "ours": { "type": "string", "minLength": 1, "description": "This Change's block." },
           "theirs": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "description": "The archived Change's block, prefixed by its id and `: `."
           }
-        }
-      }
+        },
+        "required": ["capability", "requirement", "ours", "theirs"],
+        "additionalProperties": false
+      },
+      "description": "Listed by `--dry-run`; without it a conflict refuses."
     }
   },
+  "required": ["merged", "conflicts"],
+  "additionalProperties": false,
   "examples": [
     {
       "merged": [

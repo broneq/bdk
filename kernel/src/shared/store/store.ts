@@ -43,6 +43,11 @@ export interface Store {
   remove(path: string): void;
   /** Appends to a file, creating it and its parents. */
   append(path: string, content: string): void;
+  /**
+   * Renames a file or a directory in one step, creating the target's parents;
+   * an existing target or an absent source is an error (the Change archive).
+   */
+  move(from: string, to: string): void;
 }
 
 export function fileStore(): Store {
@@ -97,6 +102,12 @@ export function fileStore(): Store {
     append(path, content) {
       mkdirSync(dirname(path), { recursive: true });
       appendFileSync(path, content);
+    },
+    move(from, to) {
+      if (existsSync(to)) throw new Error(`EEXIST: ${to} exists`);
+      if (!existsSync(from)) throw new Error(`ENOENT: ${from} does not exist`);
+      mkdirSync(dirname(to), { recursive: true });
+      renameSync(from, to);
     },
   };
 }
@@ -210,6 +221,37 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
         touch(target);
         addParents(target);
       }
+    },
+    move(from, to) {
+      const source = resolve(from);
+      const target = resolve(to);
+      if (files.has(target) || dirs.has(target)) throw new Error(`EEXIST: ${target} exists`);
+      if (!files.has(source) && !dirs.has(source)) {
+        throw new Error(`ENOENT: ${source} does not exist`);
+      }
+      const rebase = (path: string): string | undefined =>
+        path === source
+          ? target
+          : path.startsWith(`${source}/`)
+            ? target + path.slice(source.length)
+            : undefined;
+      for (const [path, content] of [...files]) {
+        const moved = rebase(path);
+        if (moved === undefined) continue;
+        files.delete(path);
+        files.set(moved, content);
+        touch(moved);
+        addParents(moved);
+      }
+      for (const dir of [...dirs]) {
+        const moved = rebase(dir);
+        if (moved === undefined) continue;
+        dirs.delete(dir);
+        dirs.add(moved);
+        touch(moved);
+        addParents(moved);
+      }
+      touch(dirname(source));
     },
   };
 }

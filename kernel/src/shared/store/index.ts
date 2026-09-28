@@ -33,6 +33,7 @@ export type { ParsedTasks, PlanFile, PlanTask } from "./state/plan.ts";
 export { STATE_KINDS } from "./state/registry.ts";
 export type { KindName } from "./state/registry.ts";
 export {
+  archivedChangeDir,
   findChange,
   listChangeDirs,
   listMarkers,
