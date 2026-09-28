@@ -4,14 +4,10 @@
   "title": "bdk rules show --json",
   "description": "Print one rule by id, or the rules of a ticket.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["ticket", "role", "target", "sections", "rulesRead"],
   "properties": {
-    "ticket": {
-      "type": "string",
-      "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
-    },
+    "ticket": { "type": "string", "pattern": "^A-[0-9a-z]{8}$" },
     "role": {
+      "type": "string",
       "enum": [
         "implementer",
         "verifier",
@@ -22,44 +18,38 @@
         "scout"
       ]
     },
-    "target": {
-      "type": "string"
-    },
+    "target": { "type": "string", "minLength": 1 },
     "sections": {
       "type": "array",
-      "description": "The role's rule categories, then the language rules, in order.",
       "items": {
         "type": "object",
-        "additionalProperties": false,
-        "required": ["key", "file", "layers", "text"],
         "properties": {
-          "key": {
-            "type": "string",
-            "pattern": "^rules/"
-          },
+          "key": { "type": "string", "pattern": "^rules\\/", "description": "The prompt key." },
           "file": {
             "type": "string",
-            "description": "The plugin file of the default, relative to the plugin root."
+            "description": "The plugin file of the default, relative to the plugin root; else the lowest file."
           },
           "layers": {
             "type": "array",
-            "items": {
-              "enum": ["default", "global", "project", "local"]
-            }
+            "items": { "type": "string", "enum": ["default", "global", "project", "local"] },
+            "description": "The layers whose files form the value, lowest first."
           },
-          "text": {
-            "type": "string",
-            "description": "The resolved prompt value."
-          }
-        }
-      }
+          "text": { "type": "string", "description": "The resolved prompt value." }
+        },
+        "required": ["key", "file", "layers", "text"],
+        "additionalProperties": false
+      },
+      "description": "The role's rule categories, then the language rules, in order."
     },
     "rulesRead": {
       "type": "string",
       "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
       "description": "The `rules-read` stamp of the attempt record: the time of the first call for the ticket."
     }
   },
+  "required": ["ticket", "role", "target", "sections", "rulesRead"],
+  "additionalProperties": false,
   "examples": [
     {
       "ticket": "A-7f3k9m2q",

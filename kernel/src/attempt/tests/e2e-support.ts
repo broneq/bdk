@@ -72,6 +72,7 @@ export function dispatched(change: Started, ticket: string, target: string): voi
       ticket,
       target,
       role: "implementer",
+      adapter: "worker",
       attempt: 1,
       of: 3,
       scope: "full",

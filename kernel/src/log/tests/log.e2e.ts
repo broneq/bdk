@@ -366,6 +366,7 @@ function ticketed(dir: string, closed = false): string {
       ticket: TICKET,
       target: "plan-verify",
       role: "plan-verifier",
+      adapter: "reader",
       attempt: 1,
       of: 2,
       scope: "full",

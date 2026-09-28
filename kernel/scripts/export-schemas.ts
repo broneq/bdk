@@ -54,6 +54,7 @@ import {
   partStartOutput,
 } from "../src/part/schema/outputs.ts";
 import { settingsRegistry } from "../src/registrations.ts";
+import { rulesShowOutput } from "../src/rules/schema/show.ts";
 import { doctorOutput } from "../src/service/schema/doctor.ts";
 import { rebuildOutput } from "../src/service/schema/rebuild.ts";
 import { versionOutput } from "../src/service/schema/version.ts";
@@ -106,6 +107,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/attempt-close.json", attemptCloseOutput],
   ["output/attempt-list.json", attemptListOutput],
   ["output/commit.json", commitOutput],
+  ["output/rules-show.json", rulesShowOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {

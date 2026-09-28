@@ -8,10 +8,10 @@
 
 ## 2. `rules` slice and rule text ownership
 
-- [ ] 2.1 Write a contract test that captures `bdk ctx skill <name>` output for every manifest entry with a fixture `languages` and project override; verify it passes on the current `ctx` before any move
-- [ ] 2.2 Create `kernel/src/rules/` (config, domain role-to-category map, use case resolving sections, `index.ts`), move the `rules/*` prompt keys and `languages` from `ctx/config.ts` to `rules/config.ts`, make `ctx` read rule sections through `rules`; verify 2.1 stays byte-identical, `pnpm test:unit`, the S6 structural test and the import scan pass
-- [ ] 2.3 Add the `shared/store` primitive that stamps `rules-read` once in an attempt record and the `rules-read` field in `kernel/src/shared/store/state/attempt.ts`; verify unit tests for first stamp, repeated call and rebuild
-- [ ] 2.4 Write failing unit and E2E tests for `rules show --ticket` (example run, `input/not-found`, `policy/no-open-ticket`, selection by role, project override, first read stamped, `<id>` form `kernel/not-implemented`); implement the command and register the slice; verify `pnpm build && pnpm test:e2e` passes them
+- [x] 2.1 Write a contract test that captures `bdk ctx skill <name>` output for every manifest entry with a fixture `languages` and project override; verify it passes on the current `ctx` before any move
+- [x] 2.2 Create `kernel/src/rules/` (config, domain role-to-category map, use case resolving sections, `index.ts`), move the `rules/*` prompt keys and `languages` from `ctx/config.ts` to `rules/config.ts`, make `ctx` read rule sections through `rules`; verify 2.1 stays byte-identical, `pnpm test:unit`, the S6 structural test and the import scan pass
+- [x] 2.3 Add the `shared/store` primitive that stamps `rules-read` once in an attempt record and the `rules-read` field in `kernel/src/shared/store/state/attempt.ts`; verify unit tests for first stamp, repeated call and rebuild
+- [x] 2.4 Write failing unit and E2E tests for `rules show --ticket` (example run, `input/not-found`, `policy/no-open-ticket`, selection by role, project override, first read stamped, `<id>` form `kernel/not-implemented`); implement the command and register the slice; verify `pnpm build && pnpm test:e2e` passes them
 
 ## 3. `log`: P8 and report storage
 

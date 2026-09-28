@@ -8,6 +8,11 @@
     "ticket": { "$ref": "common.json#/$defs/ticketId" },
     "target": { "type": "string", "minLength": 1 },
     "role": { "$ref": "common.json#/$defs/role" },
+    "adapter": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The role's adapter (`role-contracts`, Role-to-adapter map)."
+    },
     "attempt": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
     "of": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
     "scope": { "$ref": "common.json#/$defs/scope" },
@@ -24,6 +29,7 @@
     "ticket",
     "target",
     "role",
+    "adapter",
     "attempt",
     "of",
     "scope",

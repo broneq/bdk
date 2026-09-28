@@ -19,6 +19,8 @@ import { measureRegistrations } from "./measure/index.ts";
 import { partRegistrations } from "./part/index.ts";
 import type { MeasureDeps } from "./measure/index.ts";
 import { queryRegistrations } from "./query/index.ts";
+import { rulesConfig, rulesRegistrations } from "./rules/index.ts";
+import type { RulesDeps } from "./rules/index.ts";
 import type { QueryDeps } from "./query/index.ts";
 import { serviceRegistrations } from "./service/index.ts";
 import type { ServiceDeps } from "./service/index.ts";
@@ -34,7 +36,8 @@ export type KernelDeps = ServiceDeps &
   MeasureDeps &
   LogDeps &
   ChangeDeps &
-  QueryDeps;
+  QueryDeps &
+  RulesDeps;
 
 export function registrations(deps: KernelDeps): Registration[] {
   return [
@@ -51,6 +54,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...commitRegistrations(deps),
     ...queryRegistrations(deps),
     ...exportRegistrations(deps),
+    ...rulesRegistrations(deps),
   ];
 }
 
@@ -58,12 +62,13 @@ export function registrations(deps: KernelDeps): Registration[] {
 export function settingsRegistry(): ConfigRegistry {
   return createConfigRegistry({
     modules: [
+      ...rulesConfig.modules,
       ...ctxConfig.modules,
       ...graphConfig.modules,
       ...attemptConfig.modules,
       checkpointModule,
       promptsModule,
     ],
-    prompts: [...ctxConfig.prompts, ...graphConfig.prompts],
+    prompts: [...rulesConfig.prompts, ...ctxConfig.prompts, ...graphConfig.prompts],
   });
 }

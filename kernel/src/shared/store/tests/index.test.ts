@@ -112,6 +112,7 @@ function writeDispatch(store: Store, ticket: string, role: string): void {
       ticket,
       target: "02-3",
       role,
+      adapter: "worker",
       attempt: 1,
       of: 3,
       scope: "full",

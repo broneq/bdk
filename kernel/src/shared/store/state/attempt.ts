@@ -1,5 +1,6 @@
 // `attempts/<loop>-<target>-<ticket>.md` (`kernel-state`, Attempt record): one
-// file per ticket, opened by `attempt open` and completed by `attempt close`.
+// file per ticket, opened by `attempt open`, stamped with `rules-read` by the
+// first `rules show --ticket` and completed by `attempt close`.
 import * as z from "zod";
 
 import { author, hash, ledgerId, relativePath, scope, ticketId, timestamp } from "./common.ts";
@@ -49,6 +50,10 @@ export const attemptKind = {
         .optional()
         .meta({ description: "Finding fingerprints of a `fail` (oscillation check)." }),
       dropped: z.array(ledgerId).optional(),
+      "rules-read": timestamp.optional().meta({
+        description:
+          "First `rules show --ticket` call for the ticket (risk R2); read by `attempt close`.",
+      }),
     })
     .superRefine((data, context) => {
       const closed = data["closed-at"] !== undefined;

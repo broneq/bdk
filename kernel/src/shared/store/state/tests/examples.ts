@@ -107,6 +107,7 @@ export const dispatch = {
   ticket: "A-7f3kx2p9",
   target: "02-3",
   role: "implementer",
+  adapter: "worker",
   attempt: 1,
   of: 3,
   scope: "full",

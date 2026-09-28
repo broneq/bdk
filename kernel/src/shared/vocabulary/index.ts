@@ -1,4 +1,5 @@
-// The closed value lists of `kernel-state` that the state schemas and the
+// The closed value lists of `kernel-state` (and the role names of
+// `role-contracts`) that the state schemas and the
 // slices' `domain/` and `schema/` layers all name. Plain constants with no
 // import, so the pure layers may read them (`kernel-architecture`, Slice
 // anatomy); the import scan keeps this module free of imports.
@@ -61,3 +62,16 @@ export type NodeState = (typeof NODE_STATES)[number];
 
 /** The sources of a transition that passes a gate (`kernel-pipeline`, Gate). */
 export const GATE_PASSERS = ["user", "policy"] as const;
+
+/** The role skills under `skills/roles/` (`role-contracts`, Role skills). */
+export const ROLES = [
+  "implementer",
+  "verifier",
+  "design-verifier",
+  "reviewer",
+  "pr-reviewer",
+  "runner",
+  "scout",
+] as const;
+
+export type Role = (typeof ROLES)[number];

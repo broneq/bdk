@@ -4,13 +4,7 @@
 import type { Registration } from "../shared/registry/index.ts";
 import { skillCommand } from "./commands/skill.ts";
 import { startupCommand } from "./commands/startup.ts";
-import {
-  featuresModule,
-  fragmentPrompts,
-  languagesModule,
-  rulePrompts,
-  toolsModule,
-} from "./config.ts";
+import { featuresModule, fragmentPrompts, toolsModule } from "./config.ts";
 import type { ContextReport } from "./domain/report.ts";
 import { renderStartup } from "./render/startup.ts";
 import type { CtxDeps } from "./use-cases/input.ts";
@@ -25,8 +19,8 @@ export function startupContext(deps: Pick<CtxDeps, "store" | "pluginRoot">): Con
 }
 
 export const ctxConfig = {
-  modules: [languagesModule, toolsModule, featuresModule],
-  prompts: [...rulePrompts, ...fragmentPrompts],
+  modules: [toolsModule, featuresModule],
+  prompts: fragmentPrompts,
 };
 
 export function ctxRegistrations(deps: CtxDeps): Registration[] {

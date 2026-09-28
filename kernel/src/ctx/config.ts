@@ -1,7 +1,7 @@
 // The settings `ctx` reads (`kernel-settings`, Keys of the project toolchain,
-// Tool entries, Prompt values): the project's languages and commands, the
-// Lavish switch, and the rule and fragment texts a project may extend or
-// replace.
+// Tool entries, Prompt values): the project's commands, the Lavish switch and
+// the fragment texts a project may extend or replace. The rule texts and
+// `languages` belong to `rules` (T23-D30).
 import * as z from "zod";
 
 import { defineConfigModule, definePromptKey } from "../shared/config/index.ts";
@@ -34,19 +34,6 @@ function tools(tier: z.ZodEnum | undefined, description: string) {
   return z.array(entry).default([]).meta({ description });
 }
 
-export const languagesModule = defineConfigModule({
-  key: "languages",
-  consumer: "ctx",
-  owner: "T12",
-  description:
-    "Languages and frameworks of the project; a name gets content from the rules/languages/<name> prompt value.",
-  schema: z
-    .array(text)
-    .refine((names) => new Set(names).size === names.length, "names must be unique")
-    .meta({ uniqueItems: true })
-    .default([]),
-});
-
 export const toolsModule = defineConfigModule({
   key: "tools",
   consumer: "ctx",
@@ -75,34 +62,6 @@ export const featuresModule = defineConfigModule({
     })
     .prefault({}),
 });
-
-const RULE_CATEGORIES = [
-  "code-quality",
-  "architecture",
-  "design-patterns",
-  "security",
-  "engineering-judgment",
-  "test-quality",
-] as const;
-
-export type RuleCategory = (typeof RULE_CATEGORIES)[number];
-
-export const rulePrompts = [
-  ...RULE_CATEGORIES.map((name) =>
-    definePromptKey({
-      key: `rules/${name}`,
-      consumer: "ctx",
-      owner: "T12",
-      defaultFile: `rules/${name}.md`,
-    }),
-  ),
-  definePromptKey({
-    key: "rules/languages/*",
-    consumer: "ctx",
-    owner: "T12",
-    defaultFile: "rules/languages/{name}.md",
-  }),
-];
 
 /** The two texts of the `decision` fragment; the manifest picks one (R-11). */
 export const fragmentPrompts = (["lavish", "ask-user"] as const).map((name) =>

@@ -9,11 +9,12 @@ import {
 } from "../../shared/config/index.ts";
 import type { Layer } from "../../shared/config/index.ts";
 import { memoryStore } from "../../shared/store/index.ts";
+import { rulesConfig } from "../../rules/index.ts";
 import { ctxConfig } from "../index.ts";
 
 const registry = createConfigRegistry({
-  modules: [...ctxConfig.modules, promptsModule],
-  prompts: ctxConfig.prompts,
+  modules: [...rulesConfig.modules, ...ctxConfig.modules, promptsModule],
+  prompts: [...rulesConfig.prompts, ...ctxConfig.prompts],
 });
 
 function check(values: Record<string, unknown>) {
@@ -35,20 +36,6 @@ describe("defaults", () => {
       features: { lavish: true },
       prompts: {},
     });
-  });
-});
-
-describe("languages", () => {
-  it("accepts free-form non-empty names", () => {
-    expect(keysOf({ languages: ["typescript", "some-dsl"] })).toStrictEqual([]);
-  });
-
-  it.each([
-    ["a duplicate", ["go", "go"], "languages"],
-    ["an empty name", [""], "languages.0"],
-    ["a non-list", "go", "languages"],
-  ])("refuses %s", (_, languages, key) => {
-    expect(keysOf({ languages })).toStrictEqual([[key, "policy/config-invalid"]]);
   });
 });
 
@@ -147,15 +134,8 @@ describe("prompts", () => {
 });
 
 describe("prompt keys", () => {
-  it("declares the rule categories and the language pattern with plugin defaults", () => {
+  it("declares the decision fragments with plugin defaults", () => {
     expect(ctxConfig.prompts.map((prompt) => [prompt.key, prompt.defaultFile])).toStrictEqual([
-      ["rules/code-quality", "rules/code-quality.md"],
-      ["rules/architecture", "rules/architecture.md"],
-      ["rules/design-patterns", "rules/design-patterns.md"],
-      ["rules/security", "rules/security.md"],
-      ["rules/engineering-judgment", "rules/engineering-judgment.md"],
-      ["rules/test-quality", "rules/test-quality.md"],
-      ["rules/languages/*", "rules/languages/{name}.md"],
       ["fragments/decision/lavish", "fragments/decision/lavish.md"],
       ["fragments/decision/ask-user", "fragments/decision/ask-user.md"],
     ]);

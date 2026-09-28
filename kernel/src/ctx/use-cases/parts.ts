@@ -8,13 +8,8 @@ import type * as z from "zod";
 
 import { promptContent } from "../../shared/config/index.ts";
 import type { ConfigModule, PromptKey, Resolved } from "../../shared/config/index.ts";
-import {
-  featuresModule,
-  fragmentPrompts,
-  languagesModule,
-  rulePrompts,
-  toolsModule,
-} from "../config.ts";
+import { languageSections, ruleSection, ruleSet as rulesRuleSet } from "../../rules/index.ts";
+import { featuresModule, fragmentPrompts, toolsModule } from "../config.ts";
 import type { Section } from "../domain/report.ts";
 import type { CtxInput } from "./input.ts";
 import type { Part } from "./manifest.ts";
@@ -22,27 +17,21 @@ import type { Part } from "./manifest.ts";
 export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Section[] {
   switch (part.kind) {
     case "rules": {
-      const key = declared(rulePrompts, `rules/${part.category}`);
+      const section = ruleSection(input, resolved, part.category);
       return [
         {
           title: `Rules: ${part.category}`,
-          body: prompt(input, resolved, key),
-          part: { kind: "rules", source: key },
+          body: section.text,
+          part: { kind: "rules", source: section.key },
         },
       ];
     }
     case "language-rules":
-      return read(languagesModule, resolved).flatMap((language) => {
-        const key = declared(rulePrompts, `rules/languages/${language}`);
-        if (!resolved.prompts.values.has(key)) return [];
-        return [
-          {
-            title: `Language rules: ${language}`,
-            body: prompt(input, resolved, key),
-            part: { kind: "language-rules", source: key },
-          },
-        ];
-      });
+      return languageSections(input, resolved).map((section) => ({
+        title: `Language rules: ${section.key.slice("rules/languages/".length)}`,
+        body: section.text,
+        part: { kind: "language-rules", source: section.key },
+      }));
     case "fragment": {
       const choice = lavish(input, resolved) ? "lavish" : "ask-user";
       const key = declared(fragmentPrompts, `fragments/decision/${choice}`);
@@ -81,8 +70,7 @@ export function ruleSet(
   resolved: Resolved,
   category: string,
 ): string | undefined {
-  const value = resolved.prompts.values.get(declared(rulePrompts, `rules/${category}`));
-  return value === undefined ? undefined : promptContent(store, value);
+  return rulesRuleSet(store, resolved, category);
 }
 
 function prompt(input: CtxInput, resolved: Resolved, key: string): string {
@@ -91,7 +79,7 @@ function prompt(input: CtxInput, resolved: Resolved, key: string): string {
   return promptContent(input.store, value);
 }
 
-/** `key`, checked against the prompt keys `ctx` declares. */
+/** `key`, checked against the fragment keys `ctx` declares. */
 function declared(prompts: readonly PromptKey[], key: string): string {
   const found = prompts.some((prompt) =>
     prompt.key.endsWith("/*") ? key.startsWith(prompt.key.slice(0, -1)) : prompt.key === key,

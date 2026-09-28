@@ -2,7 +2,7 @@
 // each skill's context lines inject, in output order. A skill is listed here
 // exactly when its SKILL.md carries the context lines; the skill context
 // contract test keeps both sets equal and checks that every part resolves.
-import type { RuleCategory } from "../config.ts";
+import type { RuleCategory } from "../../rules/index.ts";
 
 type ToolGroup = "test" | "lint" | "build";
 

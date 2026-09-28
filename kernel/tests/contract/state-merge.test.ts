@@ -227,6 +227,7 @@ function work(root: string, branch: string, at: string, rule: string, capability
       ticket,
       target: "02-3",
       role: "implementer",
+      adapter: "worker",
       attempt: 2,
       of: 3,
       scope: "high+",

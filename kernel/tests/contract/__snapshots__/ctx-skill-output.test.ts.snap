@@ -1,0 +1,245 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ctx skill output > bdk-implementer-return-contract is unchanged 1`] = `
+"{
+  "content": "## BDK context: bdk-implementer-return-contract\\n\\n### Return contract\\n\\n# skills/subagent-execute-plan/references/return-contract.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "file",
+      "source": "skills/subagent-execute-plan/references/return-contract.md"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > bdk-lint-tools is unchanged 1`] = `
+"{
+  "content": "## BDK context: bdk-lint-tools\\n\\n### Project commands: lint\\n\\n- id: eslint\\n  command: pnpm lint\\n  tier: lint\\n",
+  "parts": [
+    {
+      "kind": "tools",
+      "source": "tools.lint"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > bdk-rules-architecture is unchanged 1`] = `
+"{
+  "content": "## BDK context: bdk-rules-architecture\\n\\n### Rules: architecture\\n\\n# rules/architecture.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/architecture"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > bdk-rules-code-quality is unchanged 1`] = `
+"{
+  "content": "## BDK context: bdk-rules-code-quality\\n\\n### Rules: code-quality\\n\\n# rules/code-quality.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/code-quality"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > bdk-rules-design-patterns is unchanged 1`] = `
+"{
+  "content": "## BDK context: bdk-rules-design-patterns\\n\\n### Rules: design-patterns\\n\\n# rules/design-patterns.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/design-patterns"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > bdk-rules-languages is unchanged 1`] = `
+"{
+  "content": "## BDK context: bdk-rules-languages\\n\\n### Language rules: typescript\\n\\n# rules/languages/typescript.md\\n\\n- **Default.** Plugin text.\\n\\n### Language rules: react\\n\\n# rules/languages/react.md\\n\\n- **Default.** Plugin text.\\n\\n- **Project.** Extends react.\\n",
+  "parts": [
+    {
+      "kind": "language-rules",
+      "source": "rules/languages/typescript"
+    },
+    {
+      "kind": "language-rules",
+      "source": "rules/languages/react"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > bdk-rules-security is unchanged 1`] = `
+"{
+  "content": "## BDK context: bdk-rules-security\\n\\n### Rules: security\\n\\n# rules/security.md\\n\\n- **Default.** Plugin text.\\n\\n- **Project.** Extends security.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/security"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > bdk-test-tools is unchanged 1`] = `
+"{
+  "content": "## BDK context: bdk-test-tools\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n",
+  "parts": [
+    {
+      "kind": "tools",
+      "source": "tools.test"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > cr is unchanged 1`] = `
+"{
+  "content": "## BDK context: cr\\n\\n### Review engine\\n\\n# skills/cr/references/review-engine.md\\n\\n- **Default.** Plugin text.\\n\\n### Report format\\n\\n# skills/cr/references/report-format.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "file",
+      "source": "skills/cr/references/review-engine.md"
+    },
+    {
+      "kind": "file",
+      "source": "skills/cr/references/report-format.md"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > create-adr is unchanged 1`] = `
+"{
+  "content": "## BDK context: create-adr\\n\\n### Rules: architecture\\n\\n# rules/architecture.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/architecture"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > create-plan is unchanged 1`] = `
+"{
+  "content": "## BDK context: create-plan\\n\\n### Rules: engineering-judgment\\n\\n# rules/engineering-judgment.md\\n\\n- **Default.** Plugin text.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n\\n### Project commands: lint\\n\\n- id: eslint\\n  command: pnpm lint\\n  tier: lint\\n\\n### Rules: code-quality\\n\\n# rules/code-quality.md\\n\\n- **Default.** Plugin text.\\n\\n### Rules: architecture\\n\\n# rules/architecture.md\\n\\n- **Default.** Plugin text.\\n\\n### Rules: design-patterns\\n\\n# rules/design-patterns.md\\n\\n- **Default.** Plugin text.\\n\\n### Rules: security\\n\\n# rules/security.md\\n\\n- **Default.** Plugin text.\\n\\n- **Project.** Extends security.\\n\\n### Rules: test-quality\\n\\n# rules/test-quality.md\\n\\n- **Default.** Plugin text.\\n\\n### Language rules: typescript\\n\\n# rules/languages/typescript.md\\n\\n- **Default.** Plugin text.\\n\\n### Language rules: react\\n\\n# rules/languages/react.md\\n\\n- **Default.** Plugin text.\\n\\n- **Project.** Extends react.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/engineering-judgment"
+    },
+    {
+      "kind": "fragment",
+      "source": "fragments/decision/lavish"
+    },
+    {
+      "kind": "tools",
+      "source": "tools.test"
+    },
+    {
+      "kind": "tools",
+      "source": "tools.lint"
+    },
+    {
+      "kind": "rules",
+      "source": "rules/code-quality"
+    },
+    {
+      "kind": "rules",
+      "source": "rules/architecture"
+    },
+    {
+      "kind": "rules",
+      "source": "rules/design-patterns"
+    },
+    {
+      "kind": "rules",
+      "source": "rules/security"
+    },
+    {
+      "kind": "rules",
+      "source": "rules/test-quality"
+    },
+    {
+      "kind": "language-rules",
+      "source": "rules/languages/typescript"
+    },
+    {
+      "kind": "language-rules",
+      "source": "rules/languages/react"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > debug is unchanged 1`] = `
+"{
+  "content": "## BDK context: debug\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n\\n### Project commands: lint\\n\\n- id: eslint\\n  command: pnpm lint\\n  tier: lint\\n",
+  "parts": [
+    {
+      "kind": "tools",
+      "source": "tools.test"
+    },
+    {
+      "kind": "tools",
+      "source": "tools.lint"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > design is unchanged 1`] = `
+"{
+  "content": "## BDK context: design\\n\\n### Rules: architecture\\n\\n# rules/architecture.md\\n\\n- **Default.** Plugin text.\\n\\n### Rules: engineering-judgment\\n\\n# rules/engineering-judgment.md\\n\\n- **Default.** Plugin text.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/architecture"
+    },
+    {
+      "kind": "rules",
+      "source": "rules/engineering-judgment"
+    },
+    {
+      "kind": "fragment",
+      "source": "fragments/decision/lavish"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > pr-review is unchanged 1`] = `
+"{
+  "content": "## BDK context: pr-review\\n\\n### Reviewer prompt\\n\\n# skills/pr-review/references/reviewer-prompt.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "file",
+      "source": "skills/pr-review/references/reviewer-prompt.md"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > test-driven-development is unchanged 1`] = `
+"{
+  "content": "## BDK context: test-driven-development\\n\\n### Rules: test-quality\\n\\n# rules/test-quality.md\\n\\n- **Default.** Plugin text.\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/test-quality"
+    },
+    {
+      "kind": "tools",
+      "source": "tools.test"
+    }
+  ]
+}"
+`;

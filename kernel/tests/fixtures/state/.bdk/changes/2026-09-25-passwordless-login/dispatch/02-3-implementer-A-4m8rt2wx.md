@@ -3,6 +3,7 @@ schema: 1
 ticket: A-4m8rt2wx
 target: 02-3
 role: implementer
+adapter: worker
 attempt: 2
 of: 3
 scope: high+
