@@ -47,7 +47,7 @@ export interface LadderPolicy {
  * answered ladder question. A ladder question is a kernel `question` with
  * `park: true` whose `refs` name the round's tickets; a `decision` naming it
  * answers it. Naming the tickets, not comparing times, keeps the rounds apart
- * when a close, the answer and the next open fall in one second.
+ * even when a close, the answer and the next open share one `at`.
  */
 export function currentRound<T extends LadderRecord>(
   records: readonly T[],

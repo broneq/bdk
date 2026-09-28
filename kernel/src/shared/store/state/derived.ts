@@ -39,9 +39,9 @@ export interface StageMap {
 }
 
 /**
- * The stage of the latest transition's target. Entry times have second
- * precision, so the kernel's own transitions of one second (`done plan-verify`
- * then `part start`) tie: the later stage in pipeline order wins the tie.
+ * The stage of the latest transition's target. Two transitions of one
+ * millisecond (`done plan-verify` then `part start` in one process) tie: the
+ * later stage in pipeline order wins the tie.
  */
 export function stageOf(entries: readonly EntryFacts[], stages: StageMap): string {
   let best: { readonly at: string; readonly rank: number; readonly id: string } | undefined;
