@@ -37,8 +37,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1(ajv@8.20.0)
       bdk-skill-kit:
-        specifier: github:broneq/bdk-skill-kit#v0.2.1
-        version: https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/161f8cd75d5f2815f3dd58a25f8f2c7486fea00d
+        specifier: github:broneq/bdk-skill-kit#v0.2.2
+        version: https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/fbcbbb999f2729c24f488cd6cac69b31ee3278f6
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -915,9 +915,9 @@ packages:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
 
-  bdk-skill-kit@https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/161f8cd75d5f2815f3dd58a25f8f2c7486fea00d:
-    resolution: {tarball: https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/161f8cd75d5f2815f3dd58a25f8f2c7486fea00d}
-    version: 0.2.1
+  bdk-skill-kit@https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/fbcbbb999f2729c24f488cd6cac69b31ee3278f6:
+    resolution: {tarball: https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/fbcbbb999f2729c24f488cd6cac69b31ee3278f6}
+    version: 0.2.2
     engines: {node: '>=22.18.0'}
     hasBin: true
 
@@ -2334,7 +2334,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  bdk-skill-kit@https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/161f8cd75d5f2815f3dd58a25f8f2c7486fea00d: {}
+  bdk-skill-kit@https://codeload.github.com/broneq/bdk-skill-kit/tar.gz/fbcbbb999f2729c24f488cd6cac69b31ee3278f6: {}
 
   brace-expansion@5.0.12:
     dependencies:
