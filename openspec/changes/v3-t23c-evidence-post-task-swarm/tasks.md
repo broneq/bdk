@@ -42,7 +42,7 @@
 
 ## 7. Prune
 
-- [ ] 7.1 Write failing unit tests for the prune function (index written with hashes and sizes, bodies removed, idempotent, pruned Change reads clean, manifest file hashes still found in the index); implement in `shared/store`; verify they pass and `pnpm knip` accepts the export
+- [x] 7.1 Write failing unit tests for the prune function (index written with hashes and sizes, bodies removed, idempotent, pruned Change reads clean, manifest file hashes still found in the index); implement in `shared/store`; verify they pass and `pnpm knip` accepts the export
 
 ## 8. Content: roles, swarm, docs
 
