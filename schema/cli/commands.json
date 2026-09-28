@@ -1515,7 +1515,7 @@
       "stdin": "SessionEnd payload (section 8).",
       "output": "output/hooks-session-end.json",
       "exits": [0],
-      "refusals": ["policy/git-in-progress", "policy/ticket-open"],
+      "refusals": [],
       "writes": ["git:commit"]
     },
     {
@@ -1544,6 +1544,7 @@
       "slice": "hooks",
       "owner": "T24",
       "changeScoped": false,
+      "standalone": true,
       "args": [],
       "flags": [],
       "stdin": "PreToolUse payload (section 8).",
@@ -1553,7 +1554,10 @@
         "guard/spec-dir-write",
         "guard/subagent-git",
         "guard/subagent-kernel-command",
-        "guard/hooks-from-bash"
+        "guard/hooks-from-bash",
+        "guard/nested-stage-command",
+        "guard/dispatch-prompt",
+        "guard/reader-write"
       ],
       "writes": []
     },

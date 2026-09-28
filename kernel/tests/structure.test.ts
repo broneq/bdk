@@ -225,6 +225,7 @@ describe("config consumers (S6)", async () => {
       store: memoryStore(),
       pluginRoot: "/",
       contract: index.contract,
+      commands: index,
       settings,
       git: systemGit,
       openIndex: memoryIndex,

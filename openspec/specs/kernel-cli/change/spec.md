@@ -419,7 +419,7 @@ Take over a Change whose previous session died with open tickets. The kernel SHA
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
   - `--close-tickets`. Close every open ticket as not-run instead of refusing.
-- **Behaviour:** Today's `--force`. Without an open ticket there is nothing to take over: `policy/invalid-transition` with `instead` naming `bdk rebuild`. Without `--close-tickets` it refuses with `policy/ticket-open` listing the open tickets. With it, each open ticket is closed as `not-run` with the body `taken over` (its round's `not-run` counter advances, budgets stay; `kernel-loops`, Not-run outcome), a kernel `transition` entry to the Change's current stage records the takeover with the closed tickets in `refs`, and the rebuild of `bdk rebuild` runs for the Change. The kernel cannot yet tell whether the session that opened a ticket is alive, because session ids reach it only through T24's hooks; until then `previousSession` is absent and the orchestrator runs takeover only after the user confirmed the previous session is gone.
+- **Behaviour:** Today's `--force`. Without an open ticket there is nothing to take over: `policy/invalid-transition` with `instead` naming `bdk rebuild`. Without `--close-tickets` it refuses with `policy/ticket-open` listing the open tickets. With it, each open ticket is closed as `not-run` with the body `taken over` (its round's `not-run` counter advances, budgets stay; `kernel-loops`, Not-run outcome), a kernel `transition` entry to the Change's current stage records the takeover with the closed tickets in `refs`, and the rebuild of `bdk rebuild` runs for the Change. `previousSession` is the `session` of the latest `transition` entry that carries one and is not later than the oldest open ticket's `opened` time: the stage command typed in the session that started the work (`hooks prompt-expansion` stamps it); it is absent when no such entry exists. The kernel cannot tell whether that session is still alive, so the orchestrator runs takeover only after the user confirmed it is gone, and `--close-tickets` stays required.
 - **Writes:** `.bdk/changes/<id>/attempts/`, `.bdk/changes/<id>/log/`, `.bdk/changes/<id>/`, `.bdk/.machine/`, `.bdk/rules/`
 - **Output:** `schema/cli/output/change-takeover.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `policy/invalid-transition`, `policy/ticket-open`, `state/trailer-mismatch`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -435,7 +435,8 @@ Take over a Change whose previous session died with open tickets. The kernel SHA
     "closedTickets": [
       "A-7f3k9m2q"
     ],
-    "rebuilt": true
+    "rebuilt": true,
+    "previousSession": "<SESSION-1>"
   }
   ```
 
@@ -471,6 +472,11 @@ Take over a Change whose previous session died with open tickets. The kernel SHA
 
 - **WHEN** ticket `A-7f3k9m2q` of `task-redispatch 02-3` is open after one failed attempt and `bdk change takeover --close-tickets` runs
 - **THEN** the ticket's record has `outcome: not-run` and body `taken over`, `attempt list --for 02-3` shows `budgets.task-redispatch.used: 1` and `budgets.not-run.used: 1`, and a new `attempt open task-redispatch 02-3` exits 0
+
+#### Scenario: previous session named
+
+- **WHEN** `hooks prompt-expansion` wrote a transition with `session: <SESSION-1>` for a typed `/bdk:execute`, then ticket `A-7f3k9m2q` was opened and `bdk change takeover --close-tickets --json` runs
+- **THEN** `previousSession` is `<SESSION-1>`
 
 ### Requirement: bdk change checkpoint
 

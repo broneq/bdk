@@ -1,7 +1,9 @@
 // `appendEntry` (design D-6 of T20): the one path by which a ledger entry is
 // written. It stamps `id`, `at`, `author`, `source`, `ticket` and, for a
 // `learning`, `fingerprint`, deduplicates when asked, and writes the file
-// through `shared/store`. `log add` and the `change` slice both call it.
+// through `shared/store`. `log add` and the `change` slice both call it; the
+// transition fields and a `user` or `policy` source come only from `hooks`
+// (T24 design D-13).
 import { join, relative, sep } from "node:path";
 
 import { authorIdent } from "../../shared/git/index.ts";
@@ -38,6 +40,13 @@ export interface EntryDraft {
   readonly profile?: string;
   readonly to?: string;
   readonly inputHash?: string;
+  /** Kernel-only transition fields (`hooks prompt-expansion`). */
+  readonly gate?: string;
+  readonly session?: string;
+  readonly command?: string;
+  readonly skipVerify?: boolean;
+  /** Who passed the gate; without it the entry is `kernel`, or `agent:<role>` under a ticket. */
+  readonly source?: "user" | "policy";
 }
 
 export async function appendEntry(
@@ -47,7 +56,7 @@ export async function appendEntry(
   draft: EntryDraft,
   options: { readonly dedupe: boolean },
 ): Promise<AppendResult | Refusal> {
-  let source = "kernel";
+  let source: string = draft.source ?? "kernel";
   if (draft.ticket !== undefined) {
     const role = openPackage(deps.store, change.projectRoot, change.dir, draft.ticket)?.role;
     if (role === undefined) {
@@ -107,6 +116,10 @@ export async function appendEntry(
       ...(draft.park === true ? { park: true } : {}),
       ...(draft.profile === undefined ? {} : { profile: draft.profile }),
       ...(draft.to === undefined ? {} : { to: draft.to }),
+      ...(draft.gate === undefined ? {} : { gate: draft.gate }),
+      ...(draft.session === undefined ? {} : { session: draft.session }),
+      ...(draft.command === undefined ? {} : { command: draft.command }),
+      ...(draft.skipVerify === true ? { "skip-verify": true } : {}),
       ...(draft.inputHash === undefined ? {} : { "input-hash": draft.inputHash }),
     }),
     draft.body,

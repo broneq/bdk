@@ -44,6 +44,9 @@ import {
   specMergeOutput,
 } from "../src/spec/schema/outputs.ts";
 import { sessionStartOutput } from "../src/hooks/schema/session-start.ts";
+import { promptExpansionOutput } from "../src/hooks/schema/prompt-expansion.ts";
+import { sessionEndOutput } from "../src/hooks/schema/session-end.ts";
+import { preToolOutput } from "../src/hooks/schema/pre-tool.ts";
 import { skillExistsOutput } from "../src/hooks/schema/skill-exists.ts";
 import {
   logAddOutput,
@@ -88,6 +91,9 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/ctx.json", ctxOutput],
   ["output/hooks-session-start.json", sessionStartOutput],
   ["output/hooks-skill-exists.json", skillExistsOutput],
+  ["output/hooks-pre-tool.json", preToolOutput],
+  ["output/hooks-session-end.json", sessionEndOutput],
+  ["output/hooks-prompt-expansion.json", promptExpansionOutput],
   ["output/measure.json", measureOutput],
   ["output/export-agents.json", exportAgentsOutput],
   ["output/log-add.json", logAddOutput],

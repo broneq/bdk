@@ -69,6 +69,10 @@ directory exists and prints what it finds, but it never blocks the session. See
 - BDK installed as a Claude Code plugin, with its skills reachable as `/bdk:<name>`.
 - A `SessionStart` hook that injects the shared foundation and checks the
   project settings.
+- Guard hooks: `PreToolUse` stops subagents from running git or orchestrator
+  commands and anyone from editing `.bdk/specs/`, `UserPromptExpansion` passes
+  a stage gate when you type its command, and `SessionEnd` checkpoints the
+  active Change.
 - No project artifacts yet: `.bdk/` is created by `/bdk:setup`.
 
 ## Next step

@@ -25,6 +25,7 @@ const registry = createRegistry(
     store,
     pluginRoot: pluginRootOf(import.meta.url),
     contract: index.contract,
+    commands: index,
     settings: settingsRegistry(),
     git: systemGit,
     openIndex: fileIndex,

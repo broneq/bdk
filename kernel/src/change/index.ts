@@ -17,6 +17,7 @@ import { archiveModule } from "./config.ts";
 import type { ChangeDeps } from "./use-cases/deps.ts";
 
 export type { ChangeDeps } from "./use-cases/deps.ts";
+export { implicitCheckpoint, resolvedSettings } from "./use-cases/checkpoint.ts";
 
 export const changeConfig = {
   modules: [archiveModule],

@@ -2,35 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-pre-tool.json",
   "title": "bdk hooks pre-tool --json",
-  "description": "PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.mjs hooks` from Bash.",
+  "description": "PreToolUse guard: the kernel's own record of a pass, used by tests. A block is the error object under --json and the host's deny object otherwise.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["decision"],
   "properties": {
-    "decision": {
-      "enum": ["pass", "deny"]
-    },
-    "rule": {
-      "type": "string"
-    },
-    "verb": {
-      "type": "string",
-      "description": "The matched git verb or kernel command."
-    },
-    "reason": {
-      "type": "string"
-    },
-    "agentId": {
-      "type": "string"
-    }
+    "decision": { "type": "string", "const": "pass" },
+    "tool": { "type": "string", "description": "The payload's tool_name." },
+    "subagent": { "type": "boolean", "description": "Whether the payload carries agent_id." }
   },
-  "examples": [
-    {
-      "decision": "deny",
-      "rule": "guard/subagent-git",
-      "verb": "git stash",
-      "reason": "subagents may not run git stash; return blocked with the cause instead of reverting (BDK T3)",
-      "agentId": "<AGENT-1>"
-    }
-  ]
+  "required": ["decision", "tool", "subagent"],
+  "additionalProperties": false,
+  "examples": [{ "decision": "pass", "tool": "Bash", "subagent": false }]
 }

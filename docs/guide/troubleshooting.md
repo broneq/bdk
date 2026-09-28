@@ -81,3 +81,37 @@ optionally followed by `" Install: <install-hint>"` when the hook was called wit
 **Cause:** `hooks/is-command-exists/check.py <command> [install-hint]` is wired into a skill's frontmatter hook and `shutil.which(<command>)` returned nothing.
 
 **Fix:** Install the named command using the install hint if one was printed.
+
+## Guard blocked a tool call or a stage command
+
+**Symptom (the model's tool call is denied):**
+
+```
+guard/<rule>: <reason>
+```
+
+**Cause:** the `PreToolUse` hook denied the call; the rules are listed in the [Hooks reference](reference/hooks.md#pretooluse). The reason names what to do instead, for example a subagent returns blocked rather than running `git stash`.
+
+**Fix:** None for the guard itself: the model follows the reason. Run the denied command yourself if you want it.
+
+**Symptom (typing a stage command is blocked):**
+
+```
+policy/gate-not-ready: gate:design is not ready for /bdk:plan: architecture is ready
+```
+
+**Cause:** the `UserPromptExpansion` hook checks the gate before the stage it opens. Each named requirement must be done first.
+
+**Fix:** Finish the named artifacts (`bdk next` prints the instruction), then type the command again.
+
+**Symptom (every guarded call is blocked):**
+
+```
+guard/kernel-unavailable: node is not on PATH, so BDK cannot check this tool call; install Node >= 22.13 and run /bdk:setup
+```
+
+or the same rule naming a missing `dist/bdk.mjs` or guard script.
+
+**Cause:** the guard hooks fail closed. Without Node or the kernel bundle they cannot decide, so they block every call the prefilter keeps and every stage command.
+
+**Fix:** Install Node >= 22.13, or reinstall the BDK plugin when a file is missing.

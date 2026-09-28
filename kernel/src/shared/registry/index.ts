@@ -2,6 +2,7 @@ export { loadIndex } from "./record.ts";
 export type { CommandIndex, CommandRecord } from "./record.ts";
 export { commandHelp, synopsis } from "./help.ts";
 export { createRegistry } from "./run.ts";
+export { resolve } from "./resolve.ts";
 export type {
   ActiveChange,
   ActiveChangeResolver,
