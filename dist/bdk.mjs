@@ -1006,14 +1006,14 @@ var require_foldFlowLines = __commonJS({
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
-    function foldFlowLines(text8, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+    function foldFlowLines(text9, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
       if (!lineWidth || lineWidth < 0)
-        return text8;
+        return text9;
       if (lineWidth < minContentWidth)
         minContentWidth = 0;
       const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
-      if (text8.length <= endStep)
-        return text8;
+      if (text9.length <= endStep)
+        return text9;
       const folds = [];
       const escapedFolds = {};
       let end = lineWidth - indent.length;
@@ -1030,14 +1030,14 @@ var require_foldFlowLines = __commonJS({
       let escStart = -1;
       let escEnd = -1;
       if (mode === FOLD_BLOCK) {
-        i = consumeMoreIndentedLines(text8, i, indent.length);
+        i = consumeMoreIndentedLines(text9, i, indent.length);
         if (i !== -1)
           end = i + endStep;
       }
-      for (let ch; ch = text8[i += 1]; ) {
+      for (let ch; ch = text9[i += 1]; ) {
         if (mode === FOLD_QUOTED && ch === "\\") {
           escStart = i;
-          switch (text8[i + 1]) {
+          switch (text9[i + 1]) {
             case "x":
               i += 3;
               break;
@@ -1054,12 +1054,12 @@ var require_foldFlowLines = __commonJS({
         }
         if (ch === "\n") {
           if (mode === FOLD_BLOCK)
-            i = consumeMoreIndentedLines(text8, i, indent.length);
+            i = consumeMoreIndentedLines(text9, i, indent.length);
           end = i + indent.length + endStep;
           split = void 0;
         } else {
           if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
-            const next = text8[i + 1];
+            const next = text9[i + 1];
             if (next && next !== " " && next !== "\n" && next !== "	")
               split = i;
           }
@@ -1071,12 +1071,12 @@ var require_foldFlowLines = __commonJS({
             } else if (mode === FOLD_QUOTED) {
               while (prev === " " || prev === "	") {
                 prev = ch;
-                ch = text8[i += 1];
+                ch = text9[i += 1];
                 overflow = true;
               }
               const j = i > escEnd + 1 ? i - 2 : escStart - 1;
               if (escapedFolds[j])
-                return text8;
+                return text9;
               folds.push(j);
               escapedFolds[j] = true;
               end = j + endStep;
@@ -1091,39 +1091,39 @@ var require_foldFlowLines = __commonJS({
       if (overflow && onOverflow)
         onOverflow();
       if (folds.length === 0)
-        return text8;
+        return text9;
       if (onFold)
         onFold();
-      let res = text8.slice(0, folds[0]);
+      let res = text9.slice(0, folds[0]);
       for (let i2 = 0; i2 < folds.length; ++i2) {
         const fold = folds[i2];
-        const end2 = folds[i2 + 1] || text8.length;
+        const end2 = folds[i2 + 1] || text9.length;
         if (fold === 0)
           res = `
-${indent}${text8.slice(0, end2)}`;
+${indent}${text9.slice(0, end2)}`;
         else {
           if (mode === FOLD_QUOTED && escapedFolds[fold])
-            res += `${text8[fold]}\\`;
+            res += `${text9[fold]}\\`;
           res += `
-${indent}${text8.slice(fold + 1, end2)}`;
+${indent}${text9.slice(fold + 1, end2)}`;
         }
       }
       return res;
     }
-    function consumeMoreIndentedLines(text8, i, indent) {
+    function consumeMoreIndentedLines(text9, i, indent) {
       let end = i;
       let start = i + 1;
-      let ch = text8[start];
+      let ch = text9[start];
       while (ch === " " || ch === "	") {
         if (i < start + indent) {
-          ch = text8[++i];
+          ch = text9[++i];
         } else {
           do {
-            ch = text8[++i];
+            ch = text9[++i];
           } while (ch && ch !== "\n");
           end = i;
           start = i + 1;
-          ch = text8[start];
+          ch = text9[start];
         }
       }
       return end;
@@ -3777,7 +3777,7 @@ ${pointer}
 var require_resolve_props = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/compose/resolve-props.js"(exports) {
     "use strict";
-    function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
+    function resolveProps(tokens2, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
       let spaceBefore = false;
       let atNewline = startOnNewline;
       let hasSpace = startOnNewline;
@@ -3792,7 +3792,7 @@ var require_resolve_props = __commonJS({
       let comma = null;
       let found = null;
       let start = null;
-      for (const token of tokens) {
+      for (const token of tokens2) {
         if (reqSpace) {
           if (token.type !== "space" && token.type !== "newline" && token.type !== "comma")
             onError(token.offset, "MISSING_CHAR", "Tags and anchors must be separated from the next token by white space");
@@ -3883,7 +3883,7 @@ var require_resolve_props = __commonJS({
             hasSpace = false;
         }
       }
-      const last = tokens[tokens.length - 1];
+      const last = tokens2[tokens2.length - 1];
       const end = last ? last.offset + last.source.length : offset;
       if (reqSpace && next && next.type !== "space" && next.type !== "newline" && next.type !== "comma" && (next.type !== "scalar" || next.source !== "")) {
         onError(next.offset, "MISSING_CHAR", "Tags and anchors must be separated from the next token by white space");
@@ -5223,8 +5223,8 @@ ${cb}` : comment;
        * @param forceDoc - If the stream contains no document, still emit a final document including any comments and directives that would be applied to a subsequent document.
        * @param endOffset - Should be set if `forceDoc` is also set, to set the document range end and to indicate errors correctly.
        */
-      *compose(tokens, forceDoc = false, endOffset = -1) {
-        for (const token of tokens)
+      *compose(tokens2, forceDoc = false, endOffset = -1) {
+        for (const token of tokens2)
           yield* this.next(token);
         yield* this.end(forceDoc, endOffset);
       }
@@ -8888,7 +8888,7 @@ var commands_default = {
       stdin: "SessionEnd payload (section 8).",
       output: "output/hooks-session-end.json",
       exits: [0],
-      refusals: ["policy/git-in-progress", "policy/ticket-open"],
+      refusals: [],
       writes: ["git:commit"]
     },
     {
@@ -8917,6 +8917,7 @@ var commands_default = {
       slice: "hooks",
       owner: "T24",
       changeScoped: false,
+      standalone: true,
       args: [],
       flags: [],
       stdin: "PreToolUse payload (section 8).",
@@ -8926,7 +8927,10 @@ var commands_default = {
         "guard/spec-dir-write",
         "guard/subagent-git",
         "guard/subagent-kernel-command",
-        "guard/hooks-from-bash"
+        "guard/hooks-from-bash",
+        "guard/nested-stage-command",
+        "guard/dispatch-prompt",
+        "guard/reader-write"
       ],
       writes: []
     },
@@ -9073,10 +9077,10 @@ function pluginRootOf(bundleUrl) {
   return dirname(dirname(fileURLToPath(bundleUrl)));
 }
 function readKernelVersion(store2, pluginRoot) {
-  const text8 = store2.read(join(pluginRoot, ".claude-plugin", "plugin.json"));
-  if (text8 === void 0) return UNKNOWN_VERSION;
+  const text9 = store2.read(join(pluginRoot, ".claude-plugin", "plugin.json"));
+  if (text9 === void 0) return UNKNOWN_VERSION;
   try {
-    const manifest = JSON.parse(text8);
+    const manifest = JSON.parse(text9);
     const version3 = isRecord(manifest) ? manifest.version : void 0;
     return typeof version3 === "string" ? version3 : UNKNOWN_VERSION;
   } catch {
@@ -9230,9 +9234,9 @@ function floatSafeRemainder(val, step2) {
   return ratio - roundedRatio;
 }
 var EVALUATING = /* @__PURE__ */ Symbol("evaluating");
-function defineLazy(object2, key, getter) {
+function defineLazy(object3, key, getter) {
   let value = void 0;
-  Object.defineProperty(object2, key, {
+  Object.defineProperty(object3, key, {
     get() {
       if (value === EVALUATING) {
         return void 0;
@@ -9244,7 +9248,7 @@ function defineLazy(object2, key, getter) {
       return value;
     },
     set(v) {
-      Object.defineProperty(object2, key, {
+      Object.defineProperty(object3, key, {
         value: v
         // configurable: true,
       });
@@ -13560,8 +13564,8 @@ function foldObjects(members2) {
   }
   const properties = {};
   const required2 = /* @__PURE__ */ new Set();
-  for (const object2 of objects) {
-    for (const key in object2.properties) {
+  for (const object3 of objects) {
+    for (const key in object3.properties) {
       if (Object.prototype.hasOwnProperty.call(properties, key))
         continue;
       const parts = [];
@@ -13575,18 +13579,18 @@ function foldObjects(members2) {
       const merged = parts.length === 1 ? parts[0] : foldObjects(parts) ?? { allOf: parts };
       assignProp(properties, key, merged);
     }
-    for (const key of object2.required ?? [])
+    for (const key of object3.required ?? [])
       required2.add(key);
   }
   const folded = { type: "object", properties };
   if (required2.size)
     folded.required = [...required2];
-  if (objects.every((object2) => object2.additionalProperties === false)) {
+  if (objects.every((object3) => object3.additionalProperties === false)) {
     folded.additionalProperties = false;
   } else {
     const constraints = [];
-    for (const object2 of objects) {
-      const constraint = undeclaredConstraint(object2);
+    for (const object3 of objects) {
+      const constraint = undeclaredConstraint(object3);
       if (constraint && !constraints.some((seen) => JSON.stringify(seen) === JSON.stringify(constraint)))
         constraints.push(constraint);
     }
@@ -15660,6 +15664,9 @@ var RULES = [
   "guard/subagent-kernel-command",
   "guard/hooks-from-bash",
   "guard/spec-dir-write",
+  "guard/nested-stage-command",
+  "guard/dispatch-prompt",
+  "guard/reader-write",
   "guard/kernel-unavailable",
   "state/corrupted-index",
   "state/ledger-invalid",
@@ -15745,15 +15752,15 @@ function layerFiles(global, projectRoot) {
 function readLayers(store2, paths) {
   const layers = [];
   for (const { name, path } of layerFiles(paths.globalDir, paths.projectRoot)) {
-    const text8 = store2.read(path);
-    if (text8 !== void 0) layers.push({ name, path, text: text8, values: parseLayer(path, text8) });
+    const text9 = store2.read(path);
+    if (text9 !== void 0) layers.push({ name, path, text: text9, values: parseLayer(path, text9) });
   }
   return layers;
 }
-function parseLayer(path, text8) {
+function parseLayer(path, text9) {
   let values2;
   try {
-    values2 = (0, import_yaml.parse)(text8);
+    values2 = (0, import_yaml.parse)(text9);
   } catch (error2) {
     if (!(error2 instanceof import_yaml.YAMLParseError)) throw error2;
     const line2 = error2.linePos?.[0].line;
@@ -16368,11 +16375,11 @@ function isCode(error2, code) {
 
 // kernel/src/shared/store/frontmatter.ts
 var BLOCK = /^---\r?\n(?<yaml>(?:.*\r?\n)*?)---(?:\r?\n|$)/;
-function splitFrontmatter(text8) {
-  const match = BLOCK.exec(text8);
+function splitFrontmatter(text9) {
+  const match = BLOCK.exec(text9);
   const yaml = match?.groups?.yaml;
-  if (match === null || yaml === void 0) return { body: text8 };
-  return { frontmatter: yaml, body: text8.slice(match[0].length) };
+  if (match === null || yaml === void 0) return { body: text9 };
+  return { frontmatter: yaml, body: text9.slice(match[0].length) };
 }
 
 // kernel/src/shared/store/which.ts
@@ -16592,12 +16599,12 @@ function newId(prefix, random) {
   }
   return `${prefix}${body}`;
 }
-function isChangeId(text8) {
-  return CHANGE_ID.test(text8);
+function isChangeId(text9) {
+  return CHANGE_ID.test(text9);
 }
-function parseReference(text8) {
-  const parts = text8.split("/");
-  if (parts.length === 1 && ID.test(text8)) return { id: text8 };
+function parseReference(text9) {
+  const parts = text9.split("/");
+  if (parts.length === 1 && ID.test(text9)) return { id: text9 };
   const [changeId2 = "", id = ""] = parts;
   if (parts.length === 2 && isChangeId(changeId2) && ID.test(id)) return { changeId: changeId2, id };
   return void 0;
@@ -16648,8 +16655,8 @@ function markerPath(projectRoot, branch) {
   return join5(markersDir(projectRoot), encodeBranch(branch));
 }
 function readMarker(store2, projectRoot, branch) {
-  const text8 = store2.read(markerPath(projectRoot, branch))?.trim();
-  return text8 === void 0 || text8 === "" ? void 0 : text8;
+  const text9 = store2.read(markerPath(projectRoot, branch))?.trim();
+  return text9 === void 0 || text9 === "" ? void 0 : text9;
 }
 function writeMarker(store2, projectRoot, branch, id) {
   store2.write(markerPath(projectRoot, branch), `${id}
@@ -16961,8 +16968,8 @@ function taskOf(draft, problems) {
     ...stopRule === void 0 || stopRule === "" ? {} : { stopRule }
   };
 }
-function hasPlaceholder(text8) {
-  const trimmed = text8.trim();
+function hasPlaceholder(text9) {
+  const trimmed = text9.trim();
   return /\b(?:TODO|TBD|FIXME)\b/.test(trimmed) || trimmed.includes("<fill in>") || trimmed.includes("[...]") || trimmed === "..." || trimmed === "\u2026" || /^\[[^\]]*\]$/.test(trimmed);
 }
 function planPlaceholders(frontmatter, tasks) {
@@ -17370,12 +17377,12 @@ ${body}`;
 
 // kernel/src/shared/store/state/documents.ts
 function readDocument(store2, path, kinds = {}) {
-  const text8 = store2.read(path);
-  if (text8 === void 0) return void 0;
+  const text9 = store2.read(path);
+  if (text9 === void 0) return void 0;
   const located2 = locateOr(path, "state/ledger-invalid");
-  if (isOpaque(located2.kind)) return { kind: located2.kind, body: text8 };
+  if (isOpaque(located2.kind)) return { kind: located2.kind, body: text9 };
   const kind = kindOf(located2.kind, kinds);
-  const { data, body } = parseText(located2, text8);
+  const { data, body } = parseText(located2, text9);
   const version3 = data.schema;
   if (version3 !== kind.version && Number.isInteger(version3)) {
     const found = Number(version3);
@@ -17419,14 +17426,14 @@ function writeDocument(store2, path, document, kinds = {}) {
   store2.write(path, renderDocument(data, document.body, styleOf(located2.kind)));
 }
 function migrateDocument(store2, path, kinds = {}) {
-  const text8 = store2.read(path);
+  const text9 = store2.read(path);
   const located2 = locate(path);
-  if (text8 === void 0) return { status: "skipped", why: `${path} does not exist` };
+  if (text9 === void 0) return { status: "skipped", why: `${path} does not exist` };
   if (located2 === void 0) return { status: "skipped", why: `${path} is not a state document` };
   if (isOpaque(located2.kind)) return { status: "current" };
   const kind = kindOf(located2.kind, kinds);
   try {
-    const { data, body } = parseText(located2, text8);
+    const { data, body } = parseText(located2, text9);
     const from = Number(data.schema);
     if (from === kind.version) return { status: "current" };
     if (from > kind.version) {
@@ -17467,8 +17474,8 @@ function styleOf(kind) {
 function kindOf(name, kinds) {
   return kinds[name] ?? STATE_KINDS[name];
 }
-function parseText(located2, text8) {
-  const { frontmatter, body } = splitFrontmatter(text8);
+function parseText(located2, text9) {
+  const { frontmatter, body } = splitFrontmatter(text9);
   const fail = (why) => {
     throw invalid2("state/ledger-invalid", `${located2.display}: ${why}`, [
       `fix ${located2.display} or restore it from git`
@@ -17586,8 +17593,8 @@ function slowPath(index2, location, states, skip = /* @__PURE__ */ new Set()) {
   const known = new Map(
     database.prepare("SELECT path, ino, mtime, size FROM _files WHERE change_id = ?").all(location.id).map((row) => [row.path, row])
   );
-  const present = filesOf(index2, location);
-  const presentPaths = new Set(present.map((path) => rel(index2, path)));
+  const present2 = filesOf(index2, location);
+  const presentPaths = new Set(present2.map((path) => rel(index2, path)));
   for (const path of known.keys()) {
     if (!presentPaths.has(path)) removeFile(index2, location.id, path);
   }
@@ -17595,7 +17602,7 @@ function slowPath(index2, location, states, skip = /* @__PURE__ */ new Set()) {
   const recordFile = database.prepare(
     "INSERT OR REPLACE INTO _files (path, change_id, ino, mtime, size) VALUES (?, ?, ?, ?, ?)"
   );
-  for (const path of present) {
+  for (const path of present2) {
     if (skip.has(path)) continue;
     const stat = store2.stat(path);
     if (stat === void 0) continue;
@@ -17633,7 +17640,7 @@ function filesOf(index2, location) {
 }
 function insertRows(index2, location, path, kind, data) {
   const { database } = index2;
-  const text8 = (value) => typeof value === "string" || typeof value === "number" ? String(value) : null;
+  const text9 = (value) => typeof value === "string" || typeof value === "number" ? String(value) : null;
   const flag2 = (value) => value === true ? 1 : 0;
   switch (kind) {
     case "change":
@@ -17641,12 +17648,12 @@ function insertRows(index2, location, path, kind, data) {
         "INSERT OR REPLACE INTO changes (id, kind, profile, source, intent, at, author, archived, dir) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
       ).run(
         location.id,
-        text8(data.kind),
-        text8(data.profile),
-        text8(data.source),
-        text8(data.intent),
-        text8(data.at),
-        text8(data.author),
+        text9(data.kind),
+        text9(data.profile),
+        text9(data.source),
+        text9(data.intent),
+        text9(data.at),
+        text9(data.author),
         location.archived ? 1 : 0,
         rel(index2, location.dir)
       );
@@ -17662,23 +17669,23 @@ function insertRows(index2, location, path, kind, data) {
       ).run(
         location.id,
         id,
-        text8(data.type),
-        text8(data.summary),
-        text8(data.status),
-        text8(data.source),
-        text8(data.author),
-        text8(data.at),
-        text8(data.ticket),
-        text8(data.supersedes),
+        text9(data.type),
+        text9(data.summary),
+        text9(data.status),
+        text9(data.source),
+        text9(data.author),
+        text9(data.at),
+        text9(data.ticket),
+        text9(data.supersedes),
         flag2(data.review),
-        text8(data.severity),
-        text8(data.category),
-        text8(data.fingerprint),
-        text8(data["routed-to"]),
-        text8(data.to),
-        text8(data.gate),
-        text8(data["input-hash"]),
-        text8(data.profile),
+        text9(data.severity),
+        text9(data.category),
+        text9(data.fingerprint),
+        text9(data["routed-to"]),
+        text9(data.to),
+        text9(data.gate),
+        text9(data["input-hash"]),
+        text9(data.profile),
         flag2(data.park),
         Array.isArray(data.options) ? JSON.stringify(data.options) : null,
         path
@@ -17697,22 +17704,22 @@ function insertRows(index2, location, path, kind, data) {
             closed_at, outcome, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         location.id,
-        text8(data.ticket),
-        text8(data.loop),
-        text8(data.target),
+        text9(data.ticket),
+        text9(data.loop),
+        text9(data.target),
         Number(data.attempt),
         Number(data.of),
         JSON.stringify(data.scope),
-        text8(data["opened-at"]),
-        text8(data["closed-at"]),
-        text8(data.outcome),
+        text9(data["opened-at"]),
+        text9(data["closed-at"]),
+        text9(data.outcome),
         path
       );
       return;
     case "dispatch":
       database.prepare(
         "INSERT OR REPLACE INTO dispatches (change_id, ticket, target, role, path) VALUES (?, ?, ?, ?, ?)"
-      ).run(location.id, text8(data.ticket), text8(data.target), text8(data.role), path);
+      ).run(location.id, text9(data.ticket), text9(data.target), text9(data.role), path);
       return;
     default:
       return;
@@ -17899,14 +17906,14 @@ import { createHash } from "node:crypto";
 var DIGITS = new RegExp("\\p{Nd}+", "gu");
 var OTHER = /[^\p{L}\p{M}\p{Nd}#]+/gu;
 var SEPARATOR = "";
-function normalise(text8) {
-  return text8.normalize("NFKC").toLowerCase().replace(DIGITS, "#").replace(OTHER, " ").trim();
+function normalise(text9) {
+  return text9.normalize("NFKC").toLowerCase().replace(DIGITS, "#").replace(OTHER, " ").trim();
 }
 function fingerprint(parts) {
   return `sha256:${createHash("sha256").update(parts.join(SEPARATOR)).digest("hex")}`;
 }
-function learningFingerprint(summary) {
-  return fingerprint(["learning", normalise(summary)]);
+function learningFingerprint(summary2) {
+  return fingerprint(["learning", normalise(summary2)]);
 }
 function findingFingerprint(type, file, symbol, problem) {
   return fingerprint(["finding", type, file, symbol ?? "", normalise(problem)]);
@@ -17980,8 +17987,8 @@ function invalid3(why) {
 function dependencies(part) {
   return part["depends-on"].length === 0 ? "-" : part["depends-on"].join(", ");
 }
-function cell(text8) {
-  return text8.replaceAll("|", "\\|");
+function cell(text9) {
+  return text9.replaceAll("|", "\\|");
 }
 function render(header, rows) {
   const line2 = (cells) => `| ${cells.join(" | ")} |`;
@@ -17994,22 +18001,22 @@ import { join as join7 } from "node:path";
 var IGNORED_PATHS = ["/.bdk/.machine/", "/.bdk/settings.local.yaml"];
 async function ensureIgnored(store2, git, projectRoot) {
   const path = join7(projectRoot, ".gitignore");
-  const text8 = store2.read(path) ?? "";
-  const present = new Set(text8.split(/\r?\n/).map((line2) => line2.trim()));
+  const text9 = store2.read(path) ?? "";
+  const present2 = new Set(text9.split(/\r?\n/).map((line2) => line2.trim()));
   const missing = [];
   for (const line2 of IGNORED_PATHS) {
-    if (present.has(line2)) continue;
+    if (present2.has(line2)) continue;
     if (await coveredByGit(git, projectRoot, line2.slice(1)) === true) continue;
     missing.push(line2);
   }
   if (missing.length === 0) return [];
-  const separator = text8 === "" || text8.endsWith("\n") ? "" : "\n";
-  store2.write(path, `${text8}${separator}${missing.map((line2) => `${line2}
+  const separator = text9 === "" || text9.endsWith("\n") ? "" : "\n";
+  store2.write(path, `${text9}${separator}${missing.map((line2) => `${line2}
 `).join("")}`);
   return missing;
 }
 async function onlyKernelIgnores(store2, git, projectRoot) {
-  const lines = (text8) => text8.split(/\r?\n/).map((line2) => line2.trim());
+  const lines = (text9) => text9.split(/\r?\n/).map((line2) => line2.trim());
   const current = lines(store2.read(join7(projectRoot, ".gitignore")) ?? "");
   const shown = await git.run(["show", "HEAD:.gitignore"], projectRoot);
   const head = shown.code === 0 ? lines(shown.stdout) : [];
@@ -18543,8 +18550,8 @@ function regenerate(store2, changeDir, what, warnings, rel2) {
         "depends-on": data["depends-on"] ?? []
       };
     });
-    const text8 = what === "plan" ? generatePlanIndex(parts) : generateDesignIndex(parts);
-    if (store2.read(target) !== text8) store2.write(target, text8);
+    const text9 = what === "plan" ? generatePlanIndex(parts) : generateDesignIndex(parts);
+    if (store2.read(target) !== text9) store2.write(target, text9);
   } catch (error2) {
     if (!(error2 instanceof KernelRefusal)) throw error2;
     warnings.push(`${rel2(target)} not regenerated: ${error2.refusal.why}`);
@@ -18756,8 +18763,8 @@ function readContribution(store2, key, path, declared3, where, problems) {
   });
   return void 0;
 }
-function contribution(text8, declared3, where) {
-  const { frontmatter } = splitFrontmatter(text8);
+function contribution(text9, declared3, where) {
+  const { frontmatter } = splitFrontmatter(text9);
   let front;
   try {
     front = frontmatter === void 0 ? {} : (0, import_yaml4.parse)(frontmatter) ?? {};
@@ -18887,18 +18894,18 @@ function settingsSchemaUrl(version3) {
 function modeline(version3) {
   return `${MODELINE_PREFIX}${settingsSchemaUrl(version3)}`;
 }
-function modelineUrl(text8) {
-  const first = text8.split("\n", 1)[0] ?? "";
+function modelineUrl(text9) {
+  const first = text9.split("\n", 1)[0] ?? "";
   return first.startsWith(MODELINE_PREFIX) ? first.slice(MODELINE_PREFIX.length).trim() : void 0;
 }
-function withModeline(text8, version3) {
+function withModeline(text9, version3) {
   const line2 = modeline(version3);
-  if (modelineUrl(text8) === void 0) return text8 === "" ? `${line2}
+  if (modelineUrl(text9) === void 0) return text9 === "" ? `${line2}
 ` : `${line2}
-${text8}`;
-  const newline = text8.indexOf("\n");
+${text9}`;
+  const newline = text9.indexOf("\n");
   return newline === -1 ? `${line2}
-` : `${line2}${text8.slice(newline)}`;
+` : `${line2}${text9.slice(newline)}`;
 }
 function offlineSchemaText(registry3) {
   return `${JSON.stringify(settingsJsonSchema(registry3), null, 2)}
@@ -18922,8 +18929,8 @@ function stopBlock(refusal2) {
 Instead: ${refusal2.instead.join("; ")}
 `;
 }
-function capLines(text8, options = {}) {
-  const lines = text8.replace(/\n+$/, "").split("\n");
+function capLines(text9, options = {}) {
+  const lines = text9.replace(/\n+$/, "").split("\n");
   if (options.all === true || lines.length <= TEXT_LINE_CAP) return `${lines.join("\n")}
 `;
   const kept = lines.slice(0, TEXT_LINE_CAP - 1);
@@ -19395,18 +19402,18 @@ function only(files) {
 function named(files, name) {
   return files.find((file) => file.given === name) ?? files.find((file) => file.given.split("/").at(-1) === name);
 }
-function pointerProblem(where, text8, pointer) {
+function pointerProblem(where, text9, pointer) {
   if (pointer !== "" && !pointer.startsWith("/")) {
     return `${where}: ${pointer} is not a JSON pointer; it starts with /`;
   }
   let value;
   try {
-    value = JSON.parse(text8);
+    value = JSON.parse(text9);
   } catch {
     return `${where}: the file does not parse as JSON`;
   }
-  const tokens = pointer === "" ? [] : pointer.slice(1).split("/");
-  for (const token of tokens) {
+  const tokens2 = pointer === "" ? [] : pointer.slice(1).split("/");
+  for (const token of tokens2) {
     const key = token.replaceAll("~1", "/").replaceAll("~0", "~");
     const next = step(value, key);
     if (next === void 0) return `${where}: ${pointer} names no value`;
@@ -19424,9 +19431,9 @@ function step(value, key) {
   }
   return void 0;
 }
-function lineProblem(where, text8, line2, contains) {
-  const lines = text8.endsWith("\n") ? text8.slice(0, -1).split("\n") : text8.split("\n");
-  const found = line2 >= 1 && text8 !== "" ? lines[line2 - 1] : void 0;
+function lineProblem(where, text9, line2, contains) {
+  const lines = text9.endsWith("\n") ? text9.slice(0, -1).split("\n") : text9.split("\n");
+  const found = line2 >= 1 && text9 !== "" ? lines[line2 - 1] : void 0;
   if (found === void 0) return `${where}: the file has no line ${String(line2)}`;
   if (contains !== void 0 && !found.replace(/\r$/, "").includes(contains)) {
     return `${where}: line ${String(line2)} does not contain ${contains}`;
@@ -20482,7 +20489,7 @@ ${line2}`;
 
 // kernel/src/log/use-cases/append.ts
 async function appendEntry(deps, change, index2, draft, options) {
-  let source2 = "kernel";
+  let source2 = draft.source ?? "kernel";
   if (draft.ticket !== void 0) {
     const role2 = openPackage(deps.store, change.projectRoot, change.dir, draft.ticket)?.role;
     if (role2 === void 0) {
@@ -20540,6 +20547,10 @@ async function appendEntry(deps, change, index2, draft, options) {
       ...draft.park === true ? { park: true } : {},
       ...draft.profile === void 0 ? {} : { profile: draft.profile },
       ...draft.to === void 0 ? {} : { to: draft.to },
+      ...draft.gate === void 0 ? {} : { gate: draft.gate },
+      ...draft.session === void 0 ? {} : { session: draft.session },
+      ...draft.command === void 0 ? {} : { command: draft.command },
+      ...draft.skipVerify === true ? { "skip-verify": true } : {},
       ...draft.inputHash === void 0 ? {} : { "input-hash": draft.inputHash }
     }),
     draft.body,
@@ -20686,8 +20697,8 @@ function addEntry(deps, change, globalDir2, input) {
   });
 }
 function validate3(input) {
-  const summary = input.summary.trim();
-  if (summary === "" || input.summary.length > SUMMARY_MAX) {
+  const summary2 = input.summary.trim();
+  if (summary2 === "" || input.summary.length > SUMMARY_MAX) {
     return refuse(
       "input/invalid-argument",
       `<summary> has ${input.summary.length} characters; it needs 1 to ${SUMMARY_MAX}`,
@@ -21611,23 +21622,23 @@ var PIPELINE_FILE = "pipeline/pipeline.yaml";
 var cache2 = /* @__PURE__ */ new WeakMap();
 function loadPipeline(store2, pluginRoot, settings, kinds) {
   const path = join24(pluginRoot, PIPELINE_FILE);
-  const text8 = store2.read(path);
-  if (text8 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
-  const known = cache2.get(kinds)?.get(text8);
+  const text9 = store2.read(path);
+  if (text9 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
+  const known = cache2.get(kinds)?.get(text9);
   if (known !== void 0) return known;
-  const problems = pipelineErrors(text8, declaredBy(settings, kinds));
+  const problems = pipelineErrors(text9, declaredBy(settings, kinds));
   if (problems.pipeline === void 0) {
     throw new Error(`${PIPELINE_FILE} is invalid: ${problems.errors.join("; ")}`);
   }
   const byText = cache2.get(kinds) ?? /* @__PURE__ */ new Map();
-  byText.set(text8, problems.pipeline);
+  byText.set(text9, problems.pipeline);
   cache2.set(kinds, byText);
   return problems.pipeline;
 }
-function pipelineErrors(text8, declared3) {
+function pipelineErrors(text9, declared3) {
   let data;
   try {
-    data = (0, import_yaml7.parse)(text8);
+    data = (0, import_yaml7.parse)(text9);
   } catch (error2) {
     return { errors: [error2 instanceof Error ? error2.message : String(error2)] };
   }
@@ -21730,9 +21741,9 @@ function planPartFacts(data, body) {
   };
 }
 function readFacts(store2, path) {
-  const text8 = store2.read(path);
-  if (text8 === void 0) return void 0;
-  const bytes2 = Buffer.byteLength(text8);
+  const text9 = store2.read(path);
+  if (text9 === void 0) return void 0;
+  const bytes2 = Buffer.byteLength(text9);
   try {
     const document = readDocument(store2, path);
     if (document === void 0) return void 0;
@@ -21744,7 +21755,7 @@ function readFacts(store2, path) {
     };
   } catch (error2) {
     if (!(error2 instanceof KernelRefusal)) throw error2;
-    return { facts: { bytes: bytes2, blank: text8.trim() === "", invalid: error2.refusal.why } };
+    return { facts: { bytes: bytes2, blank: text9.trim() === "", invalid: error2.refusal.why } };
   }
 }
 function documentData(store2, path) {
@@ -22594,9 +22605,9 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "file": {
-      const text8 = input.store.read(join27(input.pluginRoot, part.path));
-      if (text8 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
-      return [{ title: part.title, body: text8, part: { kind: "file", source: part.path } }];
+      const text9 = input.store.read(join27(input.pluginRoot, part.path));
+      if (text9 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
+      return [{ title: part.title, body: text9, part: { kind: "file", source: part.path } }];
     }
   }
 }
@@ -22690,8 +22701,8 @@ function agentsTable(rows) {
   ) + "\n";
 }
 var graphemes = new Intl.Segmenter();
-function width(text8) {
-  return [...graphemes.segment(text8)].length;
+function width(text9) {
+  return [...graphemes.segment(text9)].length;
 }
 
 // kernel/src/ctx/use-cases/startup.ts
@@ -22702,9 +22713,9 @@ var AGENTS_DIR = "agents";
 var OPEN = "<!-- bdk:agents-table -->";
 var CLOSE = "<!-- /bdk:agents-table -->";
 function readStartup(deps) {
-  const text8 = deps.store.read(join28(deps.pluginRoot, STARTUP_FILE));
-  if (text8 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
-  const lines = text8.split("\n");
+  const text9 = deps.store.read(join28(deps.pluginRoot, STARTUP_FILE));
+  if (text9 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
+  const lines = text9.split("\n");
   const open2 = lines.indexOf(OPEN);
   const close = lines.indexOf(CLOSE);
   if (open2 === -1 || close < open2) {
@@ -22716,8 +22727,8 @@ function agents(deps) {
   const dir = join28(deps.pluginRoot, AGENTS_DIR);
   return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join28(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
 }
-function agentRow(path, text8) {
-  const { frontmatter } = splitFrontmatter(text8);
+function agentRow(path, text9) {
+  const { frontmatter } = splitFrontmatter(text9);
   const data = frontmatter === void 0 ? void 0 : (0, import_yaml9.parse)(frontmatter);
   const field2 = (name) => {
     const value = typeof data === "object" && data !== null ? data[name] : void 0;
@@ -22910,6 +22921,32 @@ function stageResolver(deps) {
   return stageMap(loadPipeline(deps.store, deps.pluginRoot, deps.settings, kindsOf(deps)));
 }
 
+// kernel/src/graph/use-cases/gates.ts
+function stageOfCommand(deps, command) {
+  const pipeline = loadPipeline(deps.store, deps.pluginRoot, deps.settings, kindsOf(deps));
+  return pipeline.stages.find((stage2) => stage2.command === command)?.id;
+}
+function stageGates(read3) {
+  const policies = gatesOf(read3.resolved);
+  const views = new Map(gateViews(read3).map((view) => [view.gate, view]));
+  return read3.graph.nodes.flatMap((node3) => {
+    const opens = node3.node.opens;
+    if (node3.kind !== GATE_KIND || opens === void 0) return [];
+    const policy = (node3.node.policy === void 0 ? void 0 : policies[node3.node.policy]) ?? "manual";
+    const view = views.get(node3.id);
+    const skipped = node3.state === "skipped" || node3.gate === void 0;
+    return [
+      {
+        node: node3,
+        opens,
+        policy,
+        ...skipped ? {} : { status: node3.gate },
+        ...skipped || view === void 0 ? {} : { view }
+      }
+    ];
+  });
+}
+
 // kernel/src/graph/use-cases/paths.ts
 async function artifactPaths(deps, change, index2, globalDir2, target) {
   const read3 = await readGraph(deps, change, index2, globalDir2);
@@ -22980,7 +23017,7 @@ function renderStart(report2) {
     const extra = [
       task.verification === void 0 ? "" : "verification: none",
       task.stopRule === void 0 ? "" : `stop rule: ${task.stopRule}`
-    ].filter((text8) => text8 !== "");
+    ].filter((text9) => text9 !== "");
     const suffix = extra.length === 0 ? "" : ` (${extra.join("; ")})`;
     return `  ${task.task}: ${task.files.join(", ")}${suffix}`;
   });
@@ -23042,14 +23079,14 @@ function renderMeasure(report2) {
 
 // kernel/src/measure/domain/measure.ts
 function parseNumstat(output) {
-  const tokens = output.split("\0");
+  const tokens2 = output.split("\0");
   const stats = [];
-  for (let i = 0; i < tokens.length; i++) {
-    const match = /^(-|\d+)\t(-|\d+)\t(.*)$/s.exec(tokens[i] ?? "");
+  for (let i = 0; i < tokens2.length; i++) {
+    const match = /^(-|\d+)\t(-|\d+)\t(.*)$/s.exec(tokens2[i] ?? "");
     if (match === null) continue;
     let path = match[3] ?? "";
     if (path === "") {
-      path = tokens[i + 2] ?? "";
+      path = tokens2[i + 2] ?? "";
       i += 2;
     }
     const count2 = (value) => value === "-" ? 0 : Number(value);
@@ -23346,8 +23383,8 @@ function slugOf(title) {
   return slug === "" ? "split" : slug;
 }
 function tidy(lines) {
-  const text8 = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-  return text8 === "" ? "" : `${text8}
+  const text9 = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return text9 === "" ? "" : `${text9}
 `;
 }
 
@@ -24238,14 +24275,14 @@ function droppedFindings(entries, lastFail, scope2) {
 }
 async function recordDropped(deps, change, index2, target, scope2, dropped) {
   const count2 = dropped.length;
-  const summary = `scope ${scope2} of ${target} drops ${String(count2)} finding${count2 === 1 ? "" : "s"} for the review gate`;
+  const summary2 = `scope ${scope2} of ${target} drops ${String(count2)} finding${count2 === 1 ? "" : "s"} for the review gate`;
   const written = await appendEntry(
     deps,
     change,
     index2,
     {
       type: "finding",
-      summary: summary.slice(0, SUMMARY_MAX3),
+      summary: summary2.slice(0, SUMMARY_MAX3),
       status: "proposed",
       review: true,
       refs: [target, ...dropped.map((entry) => entry.id)],
@@ -24671,18 +24708,18 @@ async function newChange(deps, where, input) {
   };
 }
 function reasonBody(reason) {
-  const text8 = (reason ?? "").trim();
-  return text8 === "" ? "Set by the caller of change new; no reason given.\n" : `${text8}
+  const text9 = (reason ?? "").trim();
+  return text9 === "" ? "Set by the caller of change new; no reason given.\n" : `${text9}
 `;
 }
 
 // kernel/src/change/use-cases/park.ts
 var TEXT_MAX = 120;
 function parkChange(deps, change, globalDir2, input) {
-  const summary = input.reason ?? DEFAULT_PARK_REASON;
+  const summary2 = input.reason ?? DEFAULT_PARK_REASON;
   const options = input.options.length === 0 ? [...DEFAULT_PARK_OPTIONS] : [...input.options];
-  const tooLong = [summary, ...options].find(
-    (text8) => text8.trim() === "" || text8.length > TEXT_MAX
+  const tooLong = [summary2, ...options].find(
+    (text9) => text9.trim() === "" || text9.length > TEXT_MAX
   );
   if (tooLong !== void 0) {
     return Promise.resolve(
@@ -24715,7 +24752,7 @@ function parkChange(deps, change, globalDir2, input) {
       deps,
       change,
       index2,
-      { type: "question", summary, refs: ["change.md"], body: "", options, park: true },
+      { type: "question", summary: summary2, refs: ["change.md"], body: "", options, park: true },
       { dedupe: false }
     );
     if ("refused" in entry) return entry;
@@ -24915,6 +24952,7 @@ function changeStatus(deps, change, globalDir2) {
 }
 
 // kernel/src/change/use-cases/takeover.ts
+import { join as join34 } from "node:path";
 function takeover(deps, change, input) {
   return withChangeIndex(deps, change, async (index2) => {
     const open2 = readAttempts(deps.store, change.dir).filter(
@@ -24935,6 +24973,8 @@ function takeover(deps, change, input) {
         ["bdk change takeover --close-tickets", "bdk attempt list"]
       );
     }
+    const opened = open2.map((record4) => record4.data["opened-at"]).sort()[0] ?? "";
+    const session = previousSession(deps, change, index2, opened);
     const at = deps.clock.now();
     for (const record4 of open2) {
       writeDocument(deps.store, record4.path, {
@@ -24965,8 +25005,22 @@ function takeover(deps, change, input) {
         "fix the trailer or the plan part named, then run bdk rebuild"
       ]);
     }
-    return { change: change.id, closedTickets: tickets, rebuilt: true };
+    return {
+      change: change.id,
+      closedTickets: tickets,
+      rebuilt: true,
+      ...session === void 0 ? {} : { previousSession: session }
+    };
   });
+}
+function previousSession(deps, change, index2, opened) {
+  const candidates = listEntries(index2, change.id, { type: "transition" }).filter((entry) => entry.at <= opened).reverse();
+  for (const entry of candidates) {
+    const document = readDocument(deps.store, join34(change.projectRoot, entry.path));
+    const session = document !== void 0 && "data" in document ? document.data.session : void 0;
+    if (typeof session === "string" && session !== "") return session;
+  }
+  return void 0;
 }
 
 // kernel/src/change/commands/change.ts
@@ -25156,14 +25210,14 @@ function tiny(index2, change) {
 }
 async function recordUndeclared2(deps, change, index2, task, paths) {
   const count2 = paths.length;
-  const summary = `${task} changed ${String(count2)} file${count2 === 1 ? "" : "s"} its plan does not declare`;
+  const summary2 = `${task} changed ${String(count2)} file${count2 === 1 ? "" : "s"} its plan does not declare`;
   const written = await appendEntry(
     deps,
     change,
     index2,
     {
       type: "finding",
-      summary: summary.slice(0, SUMMARY_MAX4),
+      summary: summary2.slice(0, SUMMARY_MAX4),
       status: "proposed",
       refs: [task, ...paths],
       body: `${paths.map((path) => `- ${path}`).join("\n")}
@@ -25210,7 +25264,7 @@ function renderCheck2(report2) {
 }
 
 // kernel/src/config/use-cases/check.ts
-import { join as join34 } from "node:path";
+import { join as join35 } from "node:path";
 var LEGACY_SETTINGS = ".bdk/settings.json";
 function checkConfig(input) {
   const resolved = resolveOrRefuse(input);
@@ -25245,7 +25299,7 @@ function report(input, resolved) {
       });
     }
   }
-  if (input.store.exists(join34(input.projectRoot, LEGACY_SETTINGS))) {
+  if (input.store.exists(join35(input.projectRoot, LEGACY_SETTINGS))) {
     problems.push({
       layer: "project",
       path: LEGACY_SETTINGS,
@@ -25256,7 +25310,7 @@ function report(input, resolved) {
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
   if (snapshot !== void 0) {
     input.store.write(
-      join34(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      join35(input.projectRoot, OFFLINE_SCHEMA_PATH),
       offlineSchemaText(input.settings)
     );
   }
@@ -25360,10 +25414,10 @@ function originOf(leaf, set) {
 }
 function leafKeys(value, prefix) {
   if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join35(prefix, key)));
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join36(prefix, key)));
   }
   if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item3) => leafKeys(item3, join35(prefix, item3.id)));
+    return value.flatMap((item3) => leafKeys(item3, join36(prefix, item3.id)));
   }
   return [prefix];
 }
@@ -25373,7 +25427,7 @@ function isMapping(value) {
 function hasId(value) {
   return isMapping(value) && typeof value.id === "string";
 }
-function join35(prefix, key) {
+function join36(prefix, key) {
   return prefix === "" ? key : `${prefix}.${key}`;
 }
 
@@ -25474,8 +25528,8 @@ async function setConfig(input, request) {
   if (isRefusal(value)) return value;
   const steps = declaredSteps(input.settings, key);
   if (steps === void 0) return unknownKey(input, key);
-  const text8 = input.store.read(file.path);
-  const document = (0, import_yaml10.parseDocument)(text8 ?? "");
+  const text9 = input.store.read(file.path);
+  const document = (0, import_yaml10.parseDocument)(text9 ?? "");
   if (document.errors.length > 0) {
     return refuse("policy/config-invalid", `${displayPath(input, file.path)} is not valid YAML`, [
       `fix ${displayPath(input, file.path)}`
@@ -25483,7 +25537,7 @@ async function setConfig(input, request) {
   }
   const edit = editDocument(document, steps, value, request.value);
   if (isRefusal(edit)) return edit;
-  const next = text8 === void 0 ? withModeline(document.toString(FORMAT), readKernelVersion(input.store, input.pluginRoot)) : edit.splice === void 0 ? document.toString(FORMAT) : `${text8.slice(0, edit.splice.start)}${edit.splice.text}${text8.slice(edit.splice.end)}`;
+  const next = text9 === void 0 ? withModeline(document.toString(FORMAT), readKernelVersion(input.store, input.pluginRoot)) : edit.splice === void 0 ? document.toString(FORMAT) : `${text9.slice(0, edit.splice.start)}${edit.splice.text}${text9.slice(edit.splice.end)}`;
   const resolved = resolveOrRefuse(input, { store: overlay(input.store, file.path, next) });
   if (isRefusal(resolved)) return resolved;
   await ensureIgnored(input.store, input.git, input.projectRoot);
@@ -25562,13 +25616,13 @@ function withId(document, value, id) {
   }
   return value;
 }
-function overlay(store2, path, text8) {
+function overlay(store2, path, text9) {
   const readOnly = () => {
     throw new Error("the validation overlay is read-only");
   };
   return {
-    read: (candidate) => candidate === path ? text8 : store2.read(candidate),
-    readBytes: (candidate) => candidate === path ? new TextEncoder().encode(text8) : store2.readBytes(candidate),
+    read: (candidate) => candidate === path ? text9 : store2.read(candidate),
+    readBytes: (candidate) => candidate === path ? new TextEncoder().encode(text9) : store2.readBytes(candidate),
     write: readOnly,
     writeBytes: readOnly,
     remove: readOnly,
@@ -25610,7 +25664,7 @@ ${(0, import_yaml11.stringify)(outcome.origins)}`;
 }
 
 // kernel/src/config/use-cases/layout.ts
-import { join as join36 } from "node:path";
+import { join as join37 } from "node:path";
 
 // kernel/src/config/domain/layout.ts
 var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
@@ -25623,8 +25677,8 @@ function classifyLayout(state) {
 // kernel/src/config/use-cases/layout.ts
 function detectLayout(store2, root) {
   return classifyLayout({
-    bdk: store2.isDirectory(join36(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => store2.exists(join36(root, marker)))
+    bdk: store2.isDirectory(join37(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store2.exists(join37(root, marker)))
   });
 }
 
@@ -25650,7 +25704,7 @@ function renderShow2(report2) {
 
 // kernel/src/dispatch/use-cases/build.ts
 import { createHash as createHash5 } from "node:crypto";
-import { join as join38, posix as posix5 } from "node:path";
+import { join as join39, posix as posix5 } from "node:path";
 
 // kernel/src/export/commands/agents.ts
 import { resolve as resolve3 } from "node:path";
@@ -25667,7 +25721,7 @@ function renderAgents(report2) {
 }
 
 // kernel/src/export/use-cases/agents.ts
-import { join as join37, relative as relative8 } from "node:path";
+import { join as join38, relative as relative8 } from "node:path";
 
 // kernel/src/export/domain/adapters.ts
 var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
@@ -25757,10 +25811,10 @@ function adapterFile(adapter, host) {
 // kernel/src/export/use-cases/agents.ts
 function exportAgents(deps, request) {
   const host = HOSTS[request.host];
-  const out = request.out ?? join37(deps.pluginRoot, "agents");
+  const out = request.out ?? join38(deps.pluginRoot, "agents");
   const drift = [];
   const files = ADAPTERS.map((adapter) => {
-    const target = join37(out, `${adapter.name}.md`);
+    const target = join38(out, `${adapter.name}.md`);
     const path = relative8(request.root, target);
     const content = adapterFile(adapter, host);
     const current = deps.store.read(target);
@@ -25924,8 +25978,8 @@ function packageBody(sections) {
 function templateSkeleton() {
   return SECTIONS.map((section) => section.skeleton).join("\n\n");
 }
-function normalise2(text8) {
-  const lf = text8.replace(/\r\n?/g, "\n");
+function normalise2(text9) {
+  const lf = text9.replace(/\r\n?/g, "\n");
   const body = /^---\n(?:.*\n)*?---(?:\n|$)/.exec(lf);
   const rest = body === null ? lf : lf.slice(body[0].length);
   return rest.split("\n").map((line2) => line2.trimEnd()).join("\n").trim();
@@ -25938,8 +25992,8 @@ function largestSection(sections) {
   }
   return largest;
 }
-function bytes(text8) {
-  return new TextEncoder().encode(text8).length;
+function bytes(text9) {
+  return new TextEncoder().encode(text9).length;
 }
 function demoteHeadings(markdown) {
   let fence;
@@ -26036,8 +26090,8 @@ function buildPackage(deps, change, globalDir2, input) {
       "template-hash": templateHash,
       report: report2
     };
-    const text8 = renderDocument(data, packageBody(sections));
-    const size = bytes(text8);
+    const text9 = renderDocument(data, packageBody(sections));
+    const size = bytes(text9);
     if (size > PACKAGE_LIMIT) {
       const largest = largestSection(sections);
       return refuse(
@@ -26046,8 +26100,8 @@ function buildPackage(deps, change, globalDir2, input) {
         ["split the task or the part so its text and entries fit", "bdk part split <nn>"]
       );
     }
-    const dir = join38(change.dir, "dispatch");
-    const path = join38(dir, name);
+    const dir = join39(change.dir, "dispatch");
+    const path = join39(dir, name);
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
     stampPackage(deps.store, change.dir, input.ticket, posix5.relative(change.projectRoot, path));
     return {
@@ -26080,8 +26134,8 @@ async function targetFacts(deps, change, index2, globalDir2, target) {
   if (TASK_ID.test(target)) {
     const part = taskHolders(parts).get(target);
     const task = part?.tasks.find((found) => found.id === target);
-    const text8 = part === void 0 ? void 0 : taskText(part.body, target);
-    if (part === void 0 || task === void 0 || text8 === void 0) {
+    const text9 = part === void 0 ? void 0 : taskText(part.body, target);
+    if (part === void 0 || task === void 0 || text9 === void 0) {
       return notFound5(change, `no plan part holds task ${target}`);
     }
     const placeholders = planPlaceholders(part.data, [task]).filter(
@@ -26096,7 +26150,7 @@ async function targetFacts(deps, change, index2, globalDir2, target) {
     }
     const body = `From \`${changeRel}/${part.file}\`:
 
-${demoteHeadings(text8)}
+${demoteHeadings(text9)}
 
 ${doNotTouch(part)}`;
     return { body, names: [target, part.id, ...task.files.map((file) => file.path)] };
@@ -26142,15 +26196,15 @@ function doNotTouch(part) {
   return globs2.length === 0 ? "`do-not-touch`: none." : `\`do-not-touch\`: ${globs2.map((glob4) => `\`${glob4}\``).join(", ")}.`;
 }
 function intentOf(deps, change) {
-  const document = readDocument(deps.store, join38(change.dir, "change.md"));
+  const document = readDocument(deps.store, join39(change.dir, "change.md"));
   const intent = document !== void 0 && "data" in document ? document.data.intent : void 0;
   return typeof intent === "string" ? intent : `Change ${change.id}.`;
 }
 function readRoleBody(deps, role2) {
-  const path = join38(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
-  const text8 = deps.store.read(path);
-  if (text8 === void 0) throw new Error(`the plugin has no role skill at ${path}`);
-  return splitFrontmatter(text8).body.trim();
+  const path = join39(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
+  const text9 = deps.store.read(path);
+  if (text9 === void 0) throw new Error(`the plugin has no role skill at ${path}`);
+  return splitFrontmatter(text9).body.trim();
 }
 function entriesText(deps, change, full, counted, target) {
   const embedded = full.length === 0 ? "No accepted decision or open blocker names this target." : full.map((entry) => entryText(deps, change, entry)).join("\n\n");
@@ -26161,7 +26215,7 @@ function entriesText(deps, change, full, counted, target) {
 ${others}`;
 }
 function entryText(deps, change, entry) {
-  const document = readDocument(deps.store, join38(change.projectRoot, entry.path));
+  const document = readDocument(deps.store, join39(change.projectRoot, entry.path));
   const body = document === void 0 ? "" : document.body.trim();
   const refs = entry.refs.map((ref) => `\`${ref}\``).join(", ");
   return `### ${entry.id} ${entry.type}, ${entry.status}
@@ -26177,17 +26231,17 @@ function categoryList(categories) {
 }
 function hashOf(texts) {
   const hash2 = createHash5("sha256");
-  for (const text8 of texts) hash2.update(`${normalise2(text8)}
+  for (const text9 of texts) hash2.update(`${normalise2(text9)}
 \0`);
   return `sha256:${hash2.digest("hex")}`;
 }
 
 // kernel/src/dispatch/use-cases/show.ts
-import { isAbsolute as isAbsolute4, join as join39, posix as posix6, relative as relative9, sep as sep7 } from "node:path";
+import { isAbsolute as isAbsolute4, join as join40, posix as posix6, relative as relative9, sep as sep7 } from "node:path";
 var TICKET = /^A-[0-9a-z]{8}$/;
 function showPackage(deps, change, cwd, value) {
-  const dir = join39(change.dir, "dispatch");
-  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join39(cwd, value);
+  const dir = join40(change.dir, "dispatch");
+  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join40(cwd, value);
   const inside = path === void 0 ? "" : relative9(dir, path);
   const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep7) ? void 0 : deps.store.read(path);
   const document = path === void 0 || content === void 0 ? void 0 : readDocument(deps.store, path);
@@ -26206,7 +26260,7 @@ function showPackage(deps, change, cwd, value) {
 }
 function ticketPackage(deps, change, ticket) {
   const active9 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
-  return active9 === void 0 ? void 0 : join39(change.projectRoot, active9.path);
+  return active9 === void 0 ? void 0 : join40(change.projectRoot, active9.path);
 }
 
 // kernel/src/dispatch/commands/dispatch.ts
@@ -26242,264 +26296,567 @@ function dispatchRegistrations(deps) {
   ];
 }
 
-// kernel/src/hooks/render/session-start.ts
-function renderSessionStart({ startup, project }) {
-  if (project === void 0) return { content: startup };
-  const lines = [
-    ...project.errors.map(
-      ({ why, instead }) => `[BDK] config: ${why} Instead: ${instead.join("; ")}`
-    ),
-    ...project.warnings.map((warning) => `[BDK] config warning: ${warning}`),
-    ...project.v2Markers.length === 0 ? [] : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run bdk import.`]
-  ];
-  return {
-    content: lines.length === 0 ? startup : `${startup.trimEnd()}
-
-${lines.join("\n")}
-`,
-    layout: project.layout,
-    configProblems: project.errors.length + project.warnings.length
-  };
-}
-
-// kernel/src/hooks/use-cases/session-start.ts
-import { join as join40 } from "node:path";
-function sessionStart(input) {
-  const startup = startupContext(input).content;
-  if (input.workTree === void 0) return { startup };
-  const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
-  if (!input.store.isDirectory(join40(projectRoot, ".bdk"))) return { startup };
-  const { errors, report: report2 } = inspectConfig({ ...input, projectRoot });
-  const { layout, present } = detectLayout(input.store, projectRoot);
-  const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
-  return {
-    startup,
-    project: {
-      layout,
-      v2Markers: present,
-      errors: errors.map(({ why, instead }) => ({ why, instead })),
-      warnings
-    }
-  };
-}
-
-// kernel/src/hooks/commands/session-start.ts
-function sessionStartCommand(deps) {
-  return (context) => {
-    const report2 = renderSessionStart(
-      sessionStart({
-        ...deps,
-        cwd: context.cwd,
-        workTree: context.workTree ?? context.runtime.workTree(context.cwd),
-        globalDir: globalDir(context.runtime)
-      })
-    );
-    return { data: report2, text: report2.content };
-  };
-}
-
-// kernel/src/hooks/render/skill-exists.ts
-function renderSkillExists(name, foundIn) {
-  if (foundIn !== void 0) return { name, installed: true, foundIn, content: "" };
-  return {
-    name,
-    installed: false,
-    content: `[BDK] skill ${name} is not installed; the skill that needs it falls back to its own behaviour.`
-  };
-}
-
-// kernel/src/hooks/use-cases/skill-exists.ts
-var import_yaml12 = __toESM(require_dist(), 1);
-import { join as join41 } from "node:path";
-function findSkill(input, name) {
-  for (const skills of skillDirs(input)) {
-    for (const entry of subdirs(input.store, skills)) {
-      const file = join41(skills, entry, "SKILL.md");
-      const text8 = input.store.read(file);
-      if (text8 !== void 0 && frontmatterName(text8) === name) return file;
-    }
-  }
-  return void 0;
-}
-function skillDirs({ store: store2, home, projectRoot }) {
-  const plugins = join41(home, ".claude", "plugins");
-  const marketplaces = join41(plugins, "marketplaces");
-  const cache3 = join41(plugins, "cache");
-  const versions = subdirs(store2, cache3).flatMap(
-    (marketplace) => subdirs(store2, join41(cache3, marketplace)).flatMap(
-      (plugin) => subdirs(store2, join41(cache3, marketplace, plugin)).map(
-        (version3) => join41(cache3, marketplace, plugin, version3)
-      )
-    )
-  );
-  return [
-    join41(home, ".claude", "skills"),
-    join41(projectRoot, ".claude", "skills"),
-    ...subdirs(store2, marketplaces).map((marketplace) => join41(marketplaces, marketplace, "skills")),
-    ...versions.map((version3) => join41(version3, "skills"))
-  ];
-}
-function subdirs(store2, dir) {
-  return store2.list(dir).filter((entry) => entry.endsWith("/")).map((entry) => entry.slice(0, -1));
-}
-function frontmatterName(text8) {
-  const { frontmatter } = splitFrontmatter(text8);
-  if (frontmatter === void 0) return void 0;
-  try {
-    const data = (0, import_yaml12.parse)(frontmatter);
-    const name = typeof data === "object" && data !== null ? data.name : void 0;
-    return typeof name === "string" ? name : void 0;
-  } catch {
-    return void 0;
-  }
-}
-
-// kernel/src/hooks/commands/skill-exists.ts
-function skillExistsCommand(deps) {
-  return (context) => {
-    const name = context.positionals["<name>"] ?? "";
-    const foundIn = findSkill(
-      {
-        store: deps.store,
-        home: context.runtime.home,
-        projectRoot: findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd)
-      },
-      name
-    );
-    const report2 = renderSkillExists(name, foundIn);
-    return { data: report2, text: report2.content };
-  };
-}
-
-// kernel/src/hooks/index.ts
-function hooksRegistrations(deps) {
-  return [
-    { id: "hooks-session-start", handler: sessionStartCommand(deps) },
-    { id: "hooks-skill-exists", handler: skillExistsCommand(deps) }
-  ];
-}
-
-// kernel/src/query/render/query.ts
-function renderQuery(page) {
-  if (page.columns.length === 0) return "no rows\n";
-  const line2 = (cells) => cells.map((value) => value === null ? "NULL" : String(value)).join("	");
-  return `${[page.columns.join("	"), ...page.items.map(line2)].join("\n")}
-`;
-}
-
-// kernel/src/query/domain/query.ts
-function statementProblem(sql) {
-  const statements = splitStatements(sql);
-  const [first, ...rest] = statements;
-  if (first === void 0) return "the statement is empty";
-  if (rest.length > 0) {
-    return `only a single statement is accepted; ${String(statements.length)} were given`;
-  }
-  const keyword = /^[A-Za-z]+/.exec(first)?.[0].toUpperCase() ?? first.slice(0, 20);
-  if (keyword !== "SELECT" && keyword !== "WITH") {
-    return `only a single SELECT is accepted; the statement starts with ${keyword}`;
-  }
-  return void 0;
-}
-function splitStatements(sql) {
-  const statements = [];
-  let current = "";
-  let i = 0;
-  while (i < sql.length) {
-    const char = sql.charAt(i);
-    const pair = sql.slice(i, i + 2);
-    if (pair === "--") {
-      const end = sql.indexOf("\n", i);
-      i = end === -1 ? sql.length : end + 1;
-      current += " ";
-    } else if (pair === "/*") {
-      const end = sql.indexOf("*/", i + 2);
-      i = end === -1 ? sql.length : end + 2;
-      current += " ";
-    } else if (char === "'" || char === '"' || char === "`" || char === "[") {
-      const close = char === "[" ? "]" : char;
-      let end = sql.indexOf(close, i + 1);
-      while (end !== -1 && close !== "]" && sql.charAt(end + 1) === close) {
-        end = sql.indexOf(close, end + 2);
-      }
-      const stop = end === -1 ? sql.length : end + 1;
-      current += sql.slice(i, stop);
-      i = stop;
-    } else if (char === ";") {
-      statements.push(current);
-      current = "";
-      i++;
-    } else {
-      current += char;
-      i++;
-    }
-  }
-  statements.push(current);
-  return statements.map((statement) => statement.trim()).filter((statement) => statement !== "");
-}
-
-// kernel/src/query/use-cases/query.ts
-var INSTEAD2 = ['bdk query "select ..."', "bdk log resolve <id> <status> to change an entry"];
-function queryIndex(deps, projectRoot, sql, options) {
-  const problem = statementProblem(sql);
-  if (problem !== void 0)
-    return Promise.resolve(refuse("input/invalid-argument", problem, INSTEAD2));
-  return withIndex(deps.openIndex, deps.store, projectRoot, (index2) => {
-    refreshAll(index2);
-    let result2;
-    try {
-      result2 = selectReadOnly(index2, sql);
-    } catch (error2) {
-      const reason = error2 instanceof Error ? error2.message : String(error2);
-      return refuse("input/invalid-argument", `SQLite rejected the statement: ${reason}`, [
-        `bdk query "select name from sqlite_master where type in ('table', 'view')"`,
-        ...INSTEAD2
-      ]);
-    }
-    const page = listPage(
-      result2.rows.map((row) => row.map(cell2)),
-      { all: options.all }
-    );
-    return { columns: result2.columns, ...page };
+// kernel/src/hooks/domain/shell.ts
+var LEADING = /* @__PURE__ */ new Set([
+  "{",
+  "}",
+  "!",
+  "if",
+  "then",
+  "else",
+  "elif",
+  "fi",
+  "do",
+  "done",
+  "while",
+  "until",
+  "esac"
+]);
+var SHELLS = /* @__PURE__ */ new Set(["sh", "bash", "zsh", "dash"]);
+var MAX_DEPTH = 3;
+function readCommands(text9, depth = 0) {
+  const commands = lex(text9);
+  if (depth >= MAX_DEPTH) return commands;
+  return commands.flatMap((command) => {
+    const nested = nestedScript(command);
+    return nested === void 0 ? [command] : [command, ...readCommands(nested, depth + 1)];
   });
 }
-function cell2(value) {
-  if (value === null || typeof value === "string" || typeof value === "number") return value;
-  if (typeof value === "bigint") return value.toString();
-  if (value instanceof Uint8Array) return Buffer.from(value).toString("hex");
-  throw new Error(`SQLite returned a ${typeof value} value`);
+function commandWords(command) {
+  const words = command.words;
+  let at = 0;
+  for (; ; ) {
+    while (at < words.length && isAssignment(words[at] ?? "")) at += 1;
+    const name = basename2(words[at] ?? "");
+    if (name === "env") {
+      at += 1;
+      while (at < words.length && (isAssignment(words[at] ?? "") || (words[at] ?? "").startsWith("-"))) {
+        at += words[at] === "-u" || words[at] === "-C" || words[at] === "-S" ? 2 : 1;
+      }
+    } else if (name === "command") {
+      at += 1;
+      if (words[at] === "-v" || words[at] === "-V") return [];
+      while ((words[at] ?? "").startsWith("-")) at += 1;
+    } else if (name === "exec" || name === "nohup" || name === "time") {
+      at += 1;
+      while ((words[at] ?? "").startsWith("-")) at += 1;
+    } else if (name === "nice") {
+      at += 1;
+      while ((words[at] ?? "").startsWith("-")) at += words[at] === "-n" ? 2 : 1;
+    } else if (name === "sudo") {
+      at += 1;
+      while ((words[at] ?? "").startsWith("-")) {
+        at += ["-u", "-g", "-h", "-p", "-C", "-D", "-U", "-r", "-t"].includes(words[at] ?? "") ? 2 : 1;
+      }
+    } else {
+      return words.slice(at);
+    }
+  }
+}
+function basename2(word) {
+  const slash = word.lastIndexOf("/");
+  return slash === -1 ? word : word.slice(slash + 1);
+}
+function isAssignment(word) {
+  return /^[A-Za-z_][A-Za-z0-9_]*\+?=/.test(word);
+}
+function nestedScript(command) {
+  const words = commandWords(command);
+  const name = basename2(words[0] ?? "");
+  if (name === "eval") return words.length > 1 ? words.slice(1).join(" ") : void 0;
+  if (!SHELLS.has(name)) return void 0;
+  for (let at = 1; at < words.length; at += 1) {
+    const word = words[at] ?? "";
+    if (!word.startsWith("-")) return void 0;
+    if (/^-[a-zA-Z]*c[a-zA-Z]*$/.test(word)) return words[at + 1];
+  }
+  return void 0;
+}
+function lex(text9) {
+  const commands = [];
+  let words = [];
+  let redirects = [];
+  let word = "";
+  let started = false;
+  let pendingOp;
+  let pendingHeredocs = [];
+  let heredocOp;
+  let at = 0;
+  const endWord = () => {
+    if (!started) return;
+    if (heredocOp !== void 0) {
+      pendingHeredocs.push({ delimiter: word, stripTabs: heredocOp.stripTabs });
+      heredocOp = void 0;
+    } else if (pendingOp !== void 0) {
+      redirects.push({ op: pendingOp, target: word });
+      pendingOp = void 0;
+    } else if (!(words.length === 0 && LEADING.has(word))) {
+      words.push(word);
+    }
+    word = "";
+    started = false;
+  };
+  const endCommand = () => {
+    endWord();
+    pendingOp = void 0;
+    heredocOp = void 0;
+    if (words.length > 0 || redirects.length > 0) commands.push({ words, redirects });
+    words = [];
+    redirects = [];
+  };
+  const skipHeredocs = () => {
+    for (const heredoc of pendingHeredocs) {
+      while (at < text9.length) {
+        const end = text9.indexOf("\n", at);
+        const line2 = text9.slice(at, end === -1 ? text9.length : end);
+        at = end === -1 ? text9.length : end + 1;
+        const compared = heredoc.stripTabs ? line2.replace(/^\t+/, "") : line2;
+        if (compared === heredoc.delimiter) break;
+      }
+    }
+    pendingHeredocs = [];
+  };
+  while (at < text9.length) {
+    const char = text9[at] ?? "";
+    const next = text9[at + 1] ?? "";
+    if (char === "\n") {
+      at += 1;
+      endCommand();
+      skipHeredocs();
+      continue;
+    }
+    if (char === " " || char === "	") {
+      endWord();
+      at += 1;
+      continue;
+    }
+    if (char === "#" && !started) {
+      while (at < text9.length && text9[at] !== "\n") at += 1;
+      continue;
+    }
+    if (char === "\\") {
+      if (next === "\n") at += 2;
+      else {
+        word += next;
+        started = true;
+        at += 2;
+      }
+      continue;
+    }
+    if (char === "'") {
+      const end = text9.indexOf("'", at + 1);
+      const close = end === -1 ? text9.length : end;
+      word += text9.slice(at + 1, close);
+      started = true;
+      at = close + 1;
+      continue;
+    }
+    if (char === "$" && next === "'") {
+      const close = closingAnsiQuote(text9, at + 2);
+      word += text9.slice(at + 2, close).replace(/\\(.)/g, "$1");
+      started = true;
+      at = close + 1;
+      continue;
+    }
+    if (char === '"') {
+      const [value, after] = doubleQuoted(text9, at + 1);
+      word += value;
+      started = true;
+      at = after;
+      continue;
+    }
+    if (char === "$" && next === "(") {
+      const close = balanced(text9, at + 2);
+      word += text9.slice(at, close + 1);
+      started = true;
+      at = close + 1;
+      continue;
+    }
+    if (char === "`") {
+      const close = backtick(text9, at + 1);
+      word += text9.slice(at, close + 1);
+      started = true;
+      at = close + 1;
+      continue;
+    }
+    if (char === ">" || char === "<" || char === "&" && next === ">") {
+      const fdWord = started && /^\d+$/.test(word);
+      if (fdWord) {
+        word = "";
+        started = false;
+      } else endWord();
+      const op = operator(text9, at);
+      at += op.length;
+      if (op === "<<" || op === "<<-") heredocOp = { stripTabs: op === "<<-" };
+      else pendingOp = op;
+      continue;
+    }
+    if (char === ";" || char === "&" || char === "|" || char === "(" || char === ")") {
+      endCommand();
+      at += 1;
+      continue;
+    }
+    word += char;
+    started = true;
+    at += 1;
+  }
+  endCommand();
+  return commands;
+}
+function operator(text9, at) {
+  for (const op of ["&>>", "<<<", "<<-", ">>", ">|", ">&", "&>", "<<", "<>", "<&"]) {
+    if (text9.startsWith(op, at)) return op;
+  }
+  return text9[at] ?? ">";
+}
+function doubleQuoted(text9, start) {
+  let value = "";
+  let at = start;
+  while (at < text9.length) {
+    const char = text9[at] ?? "";
+    if (char === '"') return [value, at + 1];
+    if (char === "\\") {
+      const next = text9[at + 1] ?? "";
+      if (next === "\n") {
+        at += 2;
+        continue;
+      }
+      value += '$`"\\'.includes(next) ? next : `\\${next}`;
+      at += 2;
+      continue;
+    }
+    if (char === "$" && text9[at + 1] === "(") {
+      const close = balanced(text9, at + 2);
+      value += text9.slice(at, close + 1);
+      at = close + 1;
+      continue;
+    }
+    if (char === "`") {
+      const close = backtick(text9, at + 1);
+      value += text9.slice(at, close + 1);
+      at = close + 1;
+      continue;
+    }
+    value += char;
+    at += 1;
+  }
+  return [value, text9.length];
+}
+function balanced(text9, start) {
+  let depth = 1;
+  let at = start;
+  while (at < text9.length) {
+    const char = text9[at] ?? "";
+    if (char === "\\") at += 2;
+    else if (char === "'") {
+      const end = text9.indexOf("'", at + 1);
+      at = end === -1 ? text9.length : end + 1;
+    } else if (char === '"') at = doubleQuoted(text9, at + 1)[1];
+    else {
+      if (char === "(") depth += 1;
+      if (char === ")") {
+        depth -= 1;
+        if (depth === 0) return at;
+      }
+      at += 1;
+    }
+  }
+  return text9.length - 1;
+}
+function backtick(text9, start) {
+  let at = start;
+  while (at < text9.length) {
+    if (text9[at] === "\\") at += 2;
+    else if (text9[at] === "`") return at;
+    else at += 1;
+  }
+  return text9.length - 1;
+}
+function closingAnsiQuote(text9, start) {
+  let at = start;
+  while (at < text9.length) {
+    if (text9[at] === "\\") at += 2;
+    else if (text9[at] === "'") return at;
+    else at += 1;
+  }
+  return text9.length;
 }
 
-// kernel/src/query/commands/query.ts
-function queryCommand(deps) {
-  return async (context) => {
-    const all = context.flags["--all"] === true;
-    const projectRoot = findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd);
-    const page = await queryIndex(deps, projectRoot, context.positionals["<sql>"] ?? "", { all });
-    return isRefusal(page) ? page : { data: page, text: capLines(renderQuery(page), { all }) };
+// kernel/src/hooks/domain/guards.ts
+var EDIT_TOOLS = /* @__PURE__ */ new Set(["Edit", "Write", "NotebookEdit", "MultiEdit"]);
+var READ_ONLY_ADAPTERS = /* @__PURE__ */ new Set(["bdk:reader", "bdk:reviewer", "bdk:scout"]);
+var ADAPTERS2 = /* @__PURE__ */ new Set(["bdk:worker", "bdk:reader", "bdk:reviewer", "bdk:runner", "bdk:scout"]);
+var STAGE_COMMAND = /^\/bdk:(plan|execute|close|run)(\s|$)/;
+var GIT_ALWAYS = /* @__PURE__ */ new Set([
+  "stash",
+  "reset",
+  "clean",
+  "restore",
+  "commit",
+  "add",
+  "merge",
+  "rebase",
+  "cherry-pick",
+  "push"
+]);
+var GIT_VALUE_OPTIONS = /* @__PURE__ */ new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace"]);
+var NOT_WRITTEN = /* @__PURE__ */ new Set(["/dev/null", "/dev/stdout", "/dev/stderr", "/dev/tty"]);
+var WRITE_REDIRECTS = /* @__PURE__ */ new Set([">", ">>", ">|", "&>", "&>>", "<>", ">&"]);
+var DISPATCH_PATH = /(?:^|[\s"'`(/])((?:\/|\.{1,2}\/|[^\s"'`]*\/)?\.bdk\/changes\/[^/\s]+\/dispatch\/[^/\s]+\.md)/g;
+function preToolDecision(payload, classify2) {
+  const cwd = payload.cwd ?? "/";
+  if (EDIT_TOOLS.has(payload.tool)) {
+    const path = stringField(payload.input, "file_path") ?? stringField(payload.input, "notebook_path");
+    return path !== void 0 && underSpecs(cwd, path) ? specDeny(path) : void 0;
+  }
+  if (payload.tool === "Agent") return dispatchDecision(payload.input);
+  if (payload.tool !== "Bash") return void 0;
+  const text9 = stringField(payload.input, "command");
+  if (text9 === void 0) return void 0;
+  const commands = readCommands(text9);
+  const subagent = payload.agentId !== void 0;
+  const readOnly = subagent && READ_ONLY_ADAPTERS.has(payload.agentType ?? "");
+  for (const check of [
+    (command) => specWrite(command, cwd),
+    (command) => kernelHook(command, classify2),
+    nestedStage,
+    ...subagent ? [subagentGit, (command) => subagentKernel(command, classify2)] : [],
+    ...readOnly ? [(command) => readerWrite(command, payload.agentType ?? "")] : []
+  ]) {
+    for (const command of commands) {
+      const deny = check(command);
+      if (deny !== void 0) return deny;
+    }
+  }
+  return void 0;
+}
+function stringField(input, key) {
+  const value = input[key];
+  return typeof value === "string" ? value : void 0;
+}
+function underSpecs(cwd, path) {
+  const absolute = resolvePath(cwd, path.split("\\").join("/"));
+  return absolute.endsWith("/.bdk/specs") || absolute.includes("/.bdk/specs/");
+}
+function resolvePath(cwd, path) {
+  const segments = [];
+  for (const segment of (path.startsWith("/") ? path : `${cwd}/${path}`).split("/")) {
+    if (segment === "..") segments.pop();
+    else if (segment !== "" && segment !== ".") segments.push(segment);
+  }
+  return `/${segments.join("/")}`;
+}
+function specDeny(path) {
+  return {
+    rule: "guard/spec-dir-write",
+    verb: path,
+    reason: `${path} is under .bdk/specs/, which only bdk spec merge writes at close; put the change into the Change's spec-delta/ (BDK V1-7)`
   };
 }
-
-// kernel/src/query/index.ts
-function queryRegistrations(deps) {
-  return [{ id: "query", handler: queryCommand(deps) }];
+function specWrite(command, cwd) {
+  const target = writesOf(command).find((path) => underSpecs(cwd, path));
+  return target === void 0 ? void 0 : specDeny(target);
 }
-
-// kernel/src/service/render/version.ts
-function renderVersion(output) {
-  return `bdk ${output.kernel} (contract ${output.contract}, node ${output.node})
-`;
+function kernelArgv(command) {
+  const words = commandWords(command);
+  const name = basename2(words[0] ?? "");
+  if (name === "bdk.mjs") return words.slice(1);
+  if (name !== "node") return void 0;
+  let at = 1;
+  while ((words[at] ?? "").startsWith("-")) at += 1;
+  return basename2(words[at] ?? "") === "bdk.mjs" ? words.slice(at + 1) : void 0;
 }
-
-// kernel/src/service/render/doctor.ts
-function renderDoctor(output) {
-  const lines = [renderVersion(output.version).trimEnd(), `layout: ${output.layout ?? "unknown"}`];
-  if (output.findings.length === 0) lines.push("no findings");
-  for (const finding of output.findings) {
-    lines.push(`${finding.level} ${finding.id}: ${finding.summary}`, `  repair: ${finding.repair}`);
+function kernelVerb(command, classify2) {
+  const argv = kernelArgv(command);
+  if (argv === void 0 || argv.includes("--help")) return void 0;
+  return classify2(argv);
+}
+function kernelHook(command, classify2) {
+  const verb = kernelVerb(command, classify2);
+  if (verb?.availability !== "hook") return void 0;
+  return {
+    rule: "guard/hooks-from-bash",
+    verb: verb.command,
+    reason: `${verb.command} runs only from the host's hooks; stop and let the user type the stage command (BDK T1)`
+  };
+}
+function subagentKernel(command, classify2) {
+  const verb = kernelVerb(command, classify2);
+  if (verb?.availability !== "orchestrator") return void 0;
+  return {
+    rule: "guard/subagent-kernel-command",
+    verb: verb.command,
+    reason: `subagents may not run ${verb.command}, an ${verb.availability} command; return blocked with the cause, the orchestrator runs it (BDK T3)`
+  };
+}
+function nestedStage(command) {
+  const words = commandWords(command);
+  if (basename2(words[0] ?? "") !== "claude") return void 0;
+  const stage2 = words.slice(1).find((word) => STAGE_COMMAND.test(word));
+  if (stage2 === void 0) return void 0;
+  const typed = stage2.split(/\s/)[0] ?? stage2;
+  return {
+    rule: "guard/nested-stage-command",
+    verb: typed,
+    reason: `a nested claude session would type ${typed} as the user; stop and ask the user to type it (BDK T1)`
+  };
+}
+function deniedGitVerb(words) {
+  let at = 1;
+  while (at < words.length) {
+    const word = words[at] ?? "";
+    if (GIT_VALUE_OPTIONS.has(word)) at += 2;
+    else if (word.startsWith("-")) at += 1;
+    else break;
   }
-  return `${lines.join("\n")}
-`;
+  const verb = words[at];
+  if (verb === void 0) return void 0;
+  const rest = words.slice(at + 1);
+  if (GIT_ALWAYS.has(verb)) return `git ${verb}`;
+  const force = rest.some((word) => word === "-f" || word === "--force");
+  if (verb === "checkout") {
+    if (rest.includes("--")) return "git checkout -- <path>";
+    if (rest.includes(".")) return "git checkout .";
+    if (force) return "git checkout --force";
+  }
+  if (verb === "switch") {
+    if (rest.includes("--discard-changes")) return "git switch --discard-changes";
+    if (force) return "git switch --force";
+  }
+  return void 0;
+}
+function subagentGit(command) {
+  const words = commandWords(command);
+  if (basename2(words[0] ?? "") !== "git") return void 0;
+  const verb = deniedGitVerb(words);
+  if (verb === void 0) return void 0;
+  return {
+    rule: "guard/subagent-git",
+    verb,
+    reason: `subagents may not run ${verb}; return blocked with the cause instead of changing the shared working tree or history (BDK T3)`
+  };
+}
+function readerWrite(command, adapter) {
+  if (writesOf(command).length === 0) return void 0;
+  const shown = commandWords(command).join(" ") || command.words.join(" ");
+  const clipped = shown.length > 80 ? `${shown.slice(0, 77)}...` : shown;
+  return {
+    rule: "guard/reader-write",
+    verb: clipped,
+    reason: `the ${adapter.replace(/^bdk:/, "")} adapter may not write files (${clipped}); report through bdk log add or bdk log ingest instead (BDK T23-D20)`
+  };
+}
+function writesOf(command) {
+  const targets = command.redirects.filter((redirect) => WRITE_REDIRECTS.has(redirect.op)).map((redirect) => redirect.target).filter((target) => !NOT_WRITTEN.has(target) && !/^(\d+|-)$/.test(target));
+  const words = commandWords(command);
+  const name = basename2(words[0] ?? "");
+  const args = words.slice(1);
+  const operands = args.filter((word) => !word.startsWith("-"));
+  switch (name) {
+    case "tee":
+      return [...targets, ...operands.filter((word) => !NOT_WRITTEN.has(word))];
+    case "sed":
+    case "perl":
+      return args.some((word) => word === "--in-place" || /^-[a-zA-Z]*i/.test(word)) ? [...targets, ...operands] : targets;
+    case "cp":
+    case "install":
+      return operands.length > 1 ? [...targets, operands.at(-1) ?? "?"] : targets;
+    case "mv":
+    case "rm":
+    case "rmdir":
+    case "touch":
+    case "mkdir":
+    case "ln":
+    case "truncate":
+    case "chmod":
+    case "chown":
+      return [...targets, ...operands.length > 0 ? operands : ["?"]];
+    case "dd":
+      return [
+        ...targets,
+        ...args.filter((word) => word.startsWith("of=")).map((word) => word.slice(3))
+      ];
+    case "git":
+      return args.find((word) => !word.startsWith("-")) === "apply" ? [...targets, "?"] : targets;
+    default:
+      return targets;
+  }
+}
+function dispatchDecision(input) {
+  const adapter = stringField(input, "subagent_type");
+  if (adapter === void 0 || !ADAPTERS2.has(adapter)) return void 0;
+  if (isDispatchPrompt((stringField(input, "prompt") ?? "").trim())) return void 0;
+  return {
+    rule: "guard/dispatch-prompt",
+    verb: adapter,
+    reason: "a BDK dispatch prompt is the package path plus at most one sentence; put the context into the package (BDK T23-D0)"
+  };
+}
+function isDispatchPrompt(prompt2) {
+  const paths = [...prompt2.matchAll(DISPATCH_PATH)];
+  if (paths.length !== 1) return false;
+  const rest = prompt2.replace(paths[0]?.[1] ?? "", " ").trim();
+  const ends = rest.match(/[.!?](?=\s|$)/g) ?? [];
+  return !/\n\s*\n/.test(prompt2) && rest.length <= 200 && ends.length <= 1;
+}
+
+// kernel/src/hooks/domain/payload.ts
+function object2(raw) {
+  let value;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return "is not JSON";
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return "is not a JSON object";
+  }
+  return value;
+}
+function text8(value) {
+  return typeof value === "string" && value !== "" ? value : void 0;
+}
+function preToolPayload(raw) {
+  const data = object2(raw);
+  if (typeof data === "string") return { missing: `a JSON body (it ${data})` };
+  const tool = text8(data.tool_name);
+  if (tool === void 0) return { missing: "tool_name" };
+  const input = data.tool_input;
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    return { missing: "tool_input" };
+  }
+  const agentId = text8(data.agent_id);
+  const agentType = text8(data.agent_type);
+  const cwd = text8(data.cwd);
+  return {
+    tool,
+    input,
+    ...agentId === void 0 ? {} : { agentId },
+    ...agentType === void 0 ? {} : { agentType },
+    ...cwd === void 0 ? {} : { cwd }
+  };
+}
+function expansionPayload(raw) {
+  const data = object2(raw);
+  if (typeof data === "string") return void 0;
+  const args = typeof data.command_args === "string" ? data.command_args : typeof data.command_input === "string" ? data.command_input : void 0;
+  return {
+    ...present("event", text8(data.hook_event_name)),
+    ...present("session", text8(data.session_id)),
+    ...present("commandName", text8(data.command_name)),
+    ...present("args", args),
+    ...present("expansionType", text8(data.expansion_type)),
+    ...present("prompt", text8(data.prompt))
+  };
+}
+function present(key, value) {
+  return value === void 0 ? {} : { [key]: value };
+}
+function sessionEndPayload(raw) {
+  const data = object2(raw);
+  if (typeof data === "string") return {};
+  const reason = text8(data.reason);
+  return reason === void 0 ? {} : { reason };
 }
 
 // kernel/src/shared/registry/record.ts
@@ -26552,14 +26909,14 @@ function commandLine(record4) {
 // kernel/src/shared/registry/parse.ts
 var IMPLICIT_FLAGS = ["--json", "--help"];
 var STAMPED2 = ["--id", "--at", "--author", "--source", "--fingerprint"];
-function parse9(record4, tokens) {
+function parse8(record4, tokens2) {
   const help = [`${commandLine(record4)} --help`];
   const positionals = {};
   const lists = {};
   const flags = {};
   let position = 0;
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i] ?? "";
+  for (let i = 0; i < tokens2.length; i++) {
+    const token = tokens2[i] ?? "";
     if (!token.startsWith("--")) {
       const arg2 = record4.args[position];
       if (arg2?.repeatable !== true) position++;
@@ -26612,7 +26969,7 @@ function parse9(record4, tokens) {
     }
     let value = inline2;
     if (value === void 0) {
-      const next = tokens[i + 1];
+      const next = tokens2[i + 1];
       if (next !== void 0 && !next.startsWith("--")) {
         value = next;
         i++;
@@ -26850,7 +27207,9 @@ async function run(index2, byId, options, invocation) {
   }
   if (isRefusal(outcome)) {
     if (record4.mode === "inject") return writeInject(streams, outcome, asJson);
-    if (record4.mode === "guard") return writeBlock(streams, outcome, asJson);
+    if (record4.mode === "guard") {
+      return writeBlock(streams, outcome, asJson, byId.get(record4.id)?.blockOutput);
+    }
     return writeCommand(streams, outcome, asJson);
   }
   if (asJson) streams.stdout(json(outcome.data));
@@ -26858,7 +27217,7 @@ async function run(index2, byId, options, invocation) {
   return 0;
 }
 async function dispatch(record4, registration, options, rest, asJson, { cwd, runtime }) {
-  const parsed = parse9(record4, rest);
+  const parsed = parse8(record4, rest);
   if (isRefusal(parsed)) return parsed;
   let workTree;
   if (record4.standalone !== true) {
@@ -26875,15 +27234,21 @@ async function dispatch(record4, registration, options, rest, asJson, { cwd, run
   }
   if (registration === void 0) return stub(record4);
   let change;
+  let resolveChange;
   if (record4.changeScoped) {
-    if (options.activeChange === void 0 || workTree === void 0) {
+    const resolver = options.activeChange;
+    if (resolver === void 0 || workTree === void 0) {
       throw new Error(
         `${record4.id} is Change-scoped but the registry has no active-Change resolver`
       );
     }
-    const resolved = options.activeChange({ cwd, workTree });
-    if (isRefusal(resolved)) return resolved;
-    change = resolved;
+    if (registration.resolvesChange === "handler") {
+      resolveChange = () => resolver({ cwd, workTree });
+    } else {
+      const resolved = resolver({ cwd, workTree });
+      if (isRefusal(resolved)) return resolved;
+      change = resolved;
+    }
   }
   const context = {
     record: record4,
@@ -26894,7 +27259,8 @@ async function dispatch(record4, registration, options, rest, asJson, { cwd, run
     cwd,
     runtime,
     ...workTree === void 0 ? {} : { workTree },
-    ...change === void 0 ? {} : { change }
+    ...change === void 0 ? {} : { change },
+    ...resolveChange === void 0 ? {} : { resolveChange }
   };
   return registration.handler(context);
 }
@@ -26913,9 +27279,10 @@ function writeInject(streams, refusal2, asJson) {
   streams.stdout(asJson ? json(refusal2) : stopBlock(refusal2));
   return 0;
 }
-function writeBlock(streams, refusal2, asJson) {
+function writeBlock(streams, refusal2, asJson, blockOutput) {
   if (asJson) streams.stdout(json(refusal2));
-  streams.stderr(`${refusal2.why}
+  else if (blockOutput !== void 0) streams.stdout(ensureNewline(blockOutput(refusal2)));
+  streams.stderr(`${refusal2.rule}: ${refusal2.why}
 `);
   return 2;
 }
@@ -26935,18 +27302,583 @@ function writeCrash(streams, record4, error2) {
   );
   return 0;
 }
-function ensureNewline(text8) {
-  return text8.endsWith("\n") ? text8 : `${text8}
+function ensureNewline(text9) {
+  return text9.endsWith("\n") ? text9 : `${text9}
+`;
+}
+
+// kernel/src/hooks/use-cases/pre-tool.ts
+function preTool(commands, raw) {
+  const payload = preToolPayload(raw);
+  if ("missing" in payload) {
+    return refuse("input/invalid-argument", `the PreToolUse payload lacks ${payload.missing}`, [
+      "run bdk hooks pre-tool only from the PreToolUse hook of hooks/hooks.json"
+    ]);
+  }
+  const deny = preToolDecision(payload, classifier(commands));
+  if (deny !== void 0) return denial(deny);
+  return { decision: "pass", tool: payload.tool, subagent: payload.agentId !== void 0 };
+}
+function classifier(commands) {
+  return (argv) => {
+    const record4 = resolve4(commands, argv)?.record;
+    return record4 === void 0 ? void 0 : { command: `bdk ${record4.argv.join(" ")}`, availability: record4.availability };
+  };
+}
+function denial(deny) {
+  return refuse(deny.rule, deny.reason, [INSTEAD2[deny.rule]]);
+}
+var INSTEAD2 = {
+  "guard/spec-dir-write": "write the change into the Change's spec-delta/",
+  "guard/hooks-from-bash": "let the user type the stage command",
+  "guard/nested-stage-command": "ask the user to type the stage command",
+  "guard/subagent-git": "return blocked with the cause",
+  "guard/subagent-kernel-command": "return blocked with the cause",
+  "guard/reader-write": "report through bdk log add or bdk log ingest",
+  "guard/dispatch-prompt": "pass the dispatch package path and at most one sentence"
+};
+
+// kernel/src/hooks/commands/pre-tool.ts
+function preToolCommand(deps) {
+  return (context) => {
+    const outcome = preTool(deps.commands, context.runtime.readStdin());
+    return isRefusal(outcome) ? outcome : { data: outcome, text: "" };
+  };
+}
+function preToolBlock(refusal2) {
+  return JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: `${refusal2.rule}: ${refusal2.why}`
+    }
+  });
+}
+
+// kernel/src/hooks/render/prompt-expansion.ts
+function renderPromptExpansion(report2) {
+  if (report2.passed !== void 0) return runLines(report2).join("\n");
+  if (report2.stage === void 0) return "";
+  if (report2.status === void 0) {
+    const flag2 = report2.skipVerify === true ? " with --skip-verify" : "";
+    return report2.entry === void 0 ? `[BDK] stage ${report2.stage}${flag2} is already recorded.` : `[BDK] stage ${report2.stage}${flag2} recorded in ${report2.entry}.`;
+  }
+  const head = report2.entry === void 0 ? `[BDK] ${report2.status.gate} was already passed by ${report2.status.passedBy ?? "the user"}${report2.passedAt === void 0 ? "" : ` at ${report2.passedAt}`}; nothing was written.` : `[BDK] ${report2.status.gate} passed by the user in ${report2.entry}; stage ${report2.stage} is open.`;
+  return [head, ...pendingLines(report2.status)].join("\n");
+}
+function runLines(report2) {
+  const passed = (report2.passed ?? []).map(
+    (pass) => `[BDK] ${pass.gate} passed by policy in ${pass.entry}; stage ${pass.stage} is open.`
+  );
+  const waiting = (report2.waiting ?? []).flatMap((gate2) => [
+    `[BDK] ${gate2.gate} is ready; the user types ${gate2.command ?? "its stage command"} to pass it.`,
+    ...pendingLines(gate2)
+  ]);
+  const lines = [...passed, ...waiting];
+  return lines.length > 0 ? lines : ["[BDK] no gate is ready to pass."];
+}
+function pendingLines(gate2) {
+  return gate2.pending.map(
+    (entry) => `[BDK] pending review: ${entry.id} ${entry.type}: ${entry.summary}`
+  );
+}
+
+// kernel/src/hooks/use-cases/prompt-expansion.ts
+import { join as join41 } from "node:path";
+var NAMESPACE = "bdk:";
+var SKIP_VERIFY = "--skip-verify";
+async function promptExpansion(deps, input, raw) {
+  const payload = expansionPayload(raw);
+  if (payload === void 0) return unmarked("a JSON object body");
+  if (payload.commandName === void 0) return unmarked("command_name");
+  if (!payload.commandName.startsWith(NAMESPACE)) return quiet(payload.commandName);
+  const command = payload.commandName.slice(NAMESPACE.length);
+  const stage2 = stageOfCommand(deps, `/${payload.commandName}`);
+  if (command !== "run" && stage2 === void 0) return quiet(command);
+  const missing = missingMarker(payload);
+  if (missing !== void 0) return unmarked(missing);
+  const session = payload.session ?? "";
+  const change = input.resolveChange();
+  if (isRefusal(change)) return change;
+  return withChangeIndex(deps, change, async (index2) => {
+    const read3 = await readGraph(deps, change, index2, input.globalDir);
+    if (isRefusal(read3)) return read3;
+    const typed = {
+      command,
+      session,
+      prompt: payload.prompt ?? `/${payload.commandName} ${payload.args ?? ""}`.trim()
+    };
+    const write = writer(deps, change, index2, typed);
+    if (stage2 === void 0) return runGates(read3, typed, write);
+    const gate2 = stageGates(read3).find((candidate) => candidate.opens === stage2);
+    if (gate2?.status === void 0) {
+      const skipVerify = command === "execute" && tokens(payload.args).includes(SKIP_VERIFY);
+      return plainTransition(deps, change, read3, typed, stage2, skipVerify, write);
+    }
+    return typedGate(read3, typed, stage2, gate2, write);
+  });
+}
+function writer(deps, change, index2, typed) {
+  return async (draft) => {
+    const written = await appendEntry(
+      deps,
+      change,
+      index2,
+      {
+        type: "transition",
+        status: "accepted",
+        body: "",
+        session: typed.session,
+        command: typed.prompt,
+        ...draft
+      },
+      { dedupe: false }
+    );
+    return isRefusal(written) ? written : written.entry.id;
+  };
+}
+async function typedGate(read3, typed, stage2, gate2, write) {
+  const { status, view, node: node3 } = gate2;
+  const base = { decision: "pass", command: typed.command, stage: stage2, gate: node3.id };
+  if (status === void 0 || view === void 0) throw new Error(`${node3.id} has no status`);
+  if (status.done) {
+    const passedAt = status.passedIn?.at;
+    return {
+      ...base,
+      wrote: "none",
+      skipVerify: false,
+      status: summary(view),
+      ...passedAt === void 0 ? {} : { passedAt }
+    };
+  }
+  if (!status.ready) {
+    const missing = node3.requires.map((id) => read3.graph.find(id)).filter((required2) => required2 !== void 0 && required2.state !== "done").map((required2) => `${required2?.id ?? ""} is ${required2?.state ?? ""}`);
+    return refuse(
+      "policy/gate-not-ready",
+      `${node3.id} is not ready for /${NAMESPACE}${typed.command}: ${missing.length > 0 ? missing.join(", ") : status.why}`,
+      ["bdk next", `bdk explain ${node3.id}`]
+    );
+  }
+  const entry = await write({
+    summary: `/${NAMESPACE}${typed.command} typed: ${node3.id} passed`,
+    refs: [node3.id, ...node3.requires],
+    to: stage2,
+    gate: node3.id,
+    source: "user"
+  });
+  if (typeof entry !== "string") return entry;
+  return {
+    ...base,
+    entry,
+    wrote: "transition:user",
+    skipVerify: false,
+    status: { ...summary(view), ready: true, done: true, passedBy: "user" }
+  };
+}
+async function plainTransition(deps, change, read3, typed, stage2, skipVerify, write) {
+  const base = { decision: "pass", command: typed.command, stage: stage2, skipVerify };
+  const latest2 = read3.entries.filter((entry2) => entry2.type === "transition" && entry2.to === stage2).at(-1);
+  if (latest2 !== void 0 && recordedSkipVerify(deps, change, latest2.path) === skipVerify) {
+    return { ...base, wrote: "none" };
+  }
+  const entry = await write({
+    summary: `/${NAMESPACE}${typed.command} typed${skipVerify ? ` ${SKIP_VERIFY}` : ""}`,
+    refs: [stage2],
+    to: stage2,
+    ...skipVerify ? { skipVerify } : {}
+  });
+  if (typeof entry !== "string") return entry;
+  return { ...base, entry, wrote: "transition:stage" };
+}
+async function runGates(read3, typed, write) {
+  const passed = [];
+  const waiting = [];
+  for (const { node: node3, opens, policy, status, view } of stageGates(read3)) {
+    if (status === void 0 || view === void 0 || status.done || !status.ready) continue;
+    if (policy !== "auto") {
+      waiting.push(summary(view));
+      continue;
+    }
+    const entry = await write({
+      summary: `/${NAMESPACE}${typed.command}: ${node3.id} passed by policy`,
+      refs: [node3.id, ...node3.requires],
+      to: opens,
+      gate: node3.id,
+      source: "policy"
+    });
+    if (typeof entry !== "string") return entry;
+    passed.push({ gate: node3.id, stage: opens, entry });
+  }
+  return {
+    decision: "pass",
+    command: typed.command,
+    wrote: passed.length > 0 ? "transition:policy" : "none",
+    passed,
+    waiting
+  };
+}
+function recordedSkipVerify(deps, change, path) {
+  const document = readDocument(deps.store, join41(change.projectRoot, path));
+  return document !== void 0 && "data" in document && document.data["skip-verify"] === true;
+}
+function summary(view) {
+  return {
+    gate: view.gate,
+    ready: view.ready,
+    done: view.done,
+    ...view.passedBy === void 0 ? {} : { passedBy: view.passedBy },
+    ...view.command === void 0 ? {} : { command: view.command },
+    pending: view.pending.map(({ id, type, summary: text9 }) => ({ id, type, summary: text9 }))
+  };
+}
+function tokens(args) {
+  return (args ?? "").split(/\s+/).filter((token) => token !== "");
+}
+function missingMarker(payload) {
+  if (payload.event !== "UserPromptExpansion") return "hook_event_name UserPromptExpansion";
+  if (payload.expansionType !== "slash_command") return "expansion_type slash_command";
+  if (payload.session === void 0) return "session_id";
+  return void 0;
+}
+function unmarked(field2) {
+  return refuse(
+    "input/invalid-argument",
+    `the UserPromptExpansion payload has no ${field2}; no transition was written`,
+    ["type the stage command yourself", "bdk doctor"]
+  );
+}
+function quiet(command) {
+  return { decision: "pass", command, wrote: "none" };
+}
+
+// kernel/src/hooks/commands/prompt-expansion.ts
+function promptExpansionCommand(deps) {
+  return async (context) => {
+    const { resolveChange } = context;
+    if (resolveChange === void 0) {
+      throw new Error("hooks prompt-expansion is registered without the Change resolver");
+    }
+    const outcome = await promptExpansion(
+      deps,
+      { globalDir: globalDir(context.runtime), resolveChange },
+      context.runtime.readStdin()
+    );
+    return isRefusal(outcome) ? outcome : { data: outcome, text: renderPromptExpansion(outcome) };
+  };
+}
+
+// kernel/src/hooks/use-cases/session-end.ts
+async function sessionEnd(deps, input, raw) {
+  const { reason } = sessionEndPayload(raw);
+  const echo = reason === void 0 ? {} : { reason };
+  const skipped = (why) => ({
+    content: "",
+    ...echo,
+    checkpoint: { done: false, skipped: why }
+  });
+  const change = resolveActiveChange(deps.store, deps.git, input);
+  if (isRefusal(change)) return skipped("no active Change");
+  const settings = resolvedSettings(deps, change, input.globalDir);
+  if (isRefusal(settings)) return skipped(settings.why);
+  const checkpoint2 = await implicitCheckpoint(deps, change, settings);
+  if (!checkpoint2.done) return skipped(checkpoint2.skipped ?? "the checkpoint did not run");
+  return {
+    content: `[BDK] checkpoint ${checkpoint2.commit ?? ""} of ${change.id}`,
+    ...echo,
+    checkpoint: checkpoint2
+  };
+}
+
+// kernel/src/hooks/commands/session-end.ts
+function sessionEndCommand(deps) {
+  return async (context) => {
+    const report2 = await sessionEnd(
+      deps,
+      {
+        cwd: context.cwd,
+        workTree: context.workTree ?? context.cwd,
+        globalDir: globalDir(context.runtime)
+      },
+      context.runtime.readStdin()
+    );
+    return { data: report2, text: report2.content };
+  };
+}
+
+// kernel/src/hooks/render/session-start.ts
+function renderSessionStart({ startup, project }) {
+  if (project === void 0) return { content: startup };
+  const lines = [
+    ...project.errors.map(
+      ({ why, instead }) => `[BDK] config: ${why} Instead: ${instead.join("; ")}`
+    ),
+    ...project.warnings.map((warning) => `[BDK] config warning: ${warning}`),
+    ...project.v2Markers.length === 0 ? [] : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run bdk import.`]
+  ];
+  return {
+    content: lines.length === 0 ? startup : `${startup.trimEnd()}
+
+${lines.join("\n")}
+`,
+    layout: project.layout,
+    configProblems: project.errors.length + project.warnings.length
+  };
+}
+
+// kernel/src/hooks/use-cases/session-start.ts
+import { join as join42 } from "node:path";
+function sessionStart(input) {
+  const startup = startupContext(input).content;
+  if (input.workTree === void 0) return { startup };
+  const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
+  if (!input.store.isDirectory(join42(projectRoot, ".bdk"))) return { startup };
+  const { errors, report: report2 } = inspectConfig({ ...input, projectRoot });
+  const { layout, present: present2 } = detectLayout(input.store, projectRoot);
+  const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
+  return {
+    startup,
+    project: {
+      layout,
+      v2Markers: present2,
+      errors: errors.map(({ why, instead }) => ({ why, instead })),
+      warnings
+    }
+  };
+}
+
+// kernel/src/hooks/commands/session-start.ts
+function sessionStartCommand(deps) {
+  return (context) => {
+    const report2 = renderSessionStart(
+      sessionStart({
+        ...deps,
+        cwd: context.cwd,
+        workTree: context.workTree ?? context.runtime.workTree(context.cwd),
+        globalDir: globalDir(context.runtime)
+      })
+    );
+    return { data: report2, text: report2.content };
+  };
+}
+
+// kernel/src/hooks/render/skill-exists.ts
+function renderSkillExists(name, foundIn) {
+  if (foundIn !== void 0) return { name, installed: true, foundIn, content: "" };
+  return {
+    name,
+    installed: false,
+    content: `[BDK] skill ${name} is not installed; the skill that needs it falls back to its own behaviour.`
+  };
+}
+
+// kernel/src/hooks/use-cases/skill-exists.ts
+var import_yaml12 = __toESM(require_dist(), 1);
+import { join as join43 } from "node:path";
+function findSkill(input, name) {
+  for (const skills of skillDirs(input)) {
+    for (const entry of subdirs(input.store, skills)) {
+      const file = join43(skills, entry, "SKILL.md");
+      const text9 = input.store.read(file);
+      if (text9 !== void 0 && frontmatterName(text9) === name) return file;
+    }
+  }
+  return void 0;
+}
+function skillDirs({ store: store2, home, projectRoot }) {
+  const plugins = join43(home, ".claude", "plugins");
+  const marketplaces = join43(plugins, "marketplaces");
+  const cache3 = join43(plugins, "cache");
+  const versions = subdirs(store2, cache3).flatMap(
+    (marketplace) => subdirs(store2, join43(cache3, marketplace)).flatMap(
+      (plugin) => subdirs(store2, join43(cache3, marketplace, plugin)).map(
+        (version3) => join43(cache3, marketplace, plugin, version3)
+      )
+    )
+  );
+  return [
+    join43(home, ".claude", "skills"),
+    join43(projectRoot, ".claude", "skills"),
+    ...subdirs(store2, marketplaces).map((marketplace) => join43(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join43(version3, "skills"))
+  ];
+}
+function subdirs(store2, dir) {
+  return store2.list(dir).filter((entry) => entry.endsWith("/")).map((entry) => entry.slice(0, -1));
+}
+function frontmatterName(text9) {
+  const { frontmatter } = splitFrontmatter(text9);
+  if (frontmatter === void 0) return void 0;
+  try {
+    const data = (0, import_yaml12.parse)(frontmatter);
+    const name = typeof data === "object" && data !== null ? data.name : void 0;
+    return typeof name === "string" ? name : void 0;
+  } catch {
+    return void 0;
+  }
+}
+
+// kernel/src/hooks/commands/skill-exists.ts
+function skillExistsCommand(deps) {
+  return (context) => {
+    const name = context.positionals["<name>"] ?? "";
+    const foundIn = findSkill(
+      {
+        store: deps.store,
+        home: context.runtime.home,
+        projectRoot: findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd)
+      },
+      name
+    );
+    const report2 = renderSkillExists(name, foundIn);
+    return { data: report2, text: report2.content };
+  };
+}
+
+// kernel/src/hooks/index.ts
+function hooksRegistrations(deps) {
+  return [
+    { id: "hooks-session-start", handler: sessionStartCommand(deps) },
+    { id: "hooks-skill-exists", handler: skillExistsCommand(deps) },
+    { id: "hooks-session-end", handler: sessionEndCommand(deps) },
+    { id: "hooks-pre-tool", handler: preToolCommand(deps), blockOutput: preToolBlock },
+    {
+      id: "hooks-prompt-expansion",
+      handler: promptExpansionCommand(deps),
+      resolvesChange: "handler"
+    }
+  ];
+}
+
+// kernel/src/query/render/query.ts
+function renderQuery(page) {
+  if (page.columns.length === 0) return "no rows\n";
+  const line2 = (cells) => cells.map((value) => value === null ? "NULL" : String(value)).join("	");
+  return `${[page.columns.join("	"), ...page.items.map(line2)].join("\n")}
+`;
+}
+
+// kernel/src/query/domain/query.ts
+function statementProblem(sql) {
+  const statements = splitStatements(sql);
+  const [first, ...rest] = statements;
+  if (first === void 0) return "the statement is empty";
+  if (rest.length > 0) {
+    return `only a single statement is accepted; ${String(statements.length)} were given`;
+  }
+  const keyword = /^[A-Za-z]+/.exec(first)?.[0].toUpperCase() ?? first.slice(0, 20);
+  if (keyword !== "SELECT" && keyword !== "WITH") {
+    return `only a single SELECT is accepted; the statement starts with ${keyword}`;
+  }
+  return void 0;
+}
+function splitStatements(sql) {
+  const statements = [];
+  let current = "";
+  let i = 0;
+  while (i < sql.length) {
+    const char = sql.charAt(i);
+    const pair = sql.slice(i, i + 2);
+    if (pair === "--") {
+      const end = sql.indexOf("\n", i);
+      i = end === -1 ? sql.length : end + 1;
+      current += " ";
+    } else if (pair === "/*") {
+      const end = sql.indexOf("*/", i + 2);
+      i = end === -1 ? sql.length : end + 2;
+      current += " ";
+    } else if (char === "'" || char === '"' || char === "`" || char === "[") {
+      const close = char === "[" ? "]" : char;
+      let end = sql.indexOf(close, i + 1);
+      while (end !== -1 && close !== "]" && sql.charAt(end + 1) === close) {
+        end = sql.indexOf(close, end + 2);
+      }
+      const stop = end === -1 ? sql.length : end + 1;
+      current += sql.slice(i, stop);
+      i = stop;
+    } else if (char === ";") {
+      statements.push(current);
+      current = "";
+      i++;
+    } else {
+      current += char;
+      i++;
+    }
+  }
+  statements.push(current);
+  return statements.map((statement) => statement.trim()).filter((statement) => statement !== "");
+}
+
+// kernel/src/query/use-cases/query.ts
+var INSTEAD3 = ['bdk query "select ..."', "bdk log resolve <id> <status> to change an entry"];
+function queryIndex(deps, projectRoot, sql, options) {
+  const problem = statementProblem(sql);
+  if (problem !== void 0)
+    return Promise.resolve(refuse("input/invalid-argument", problem, INSTEAD3));
+  return withIndex(deps.openIndex, deps.store, projectRoot, (index2) => {
+    refreshAll(index2);
+    let result2;
+    try {
+      result2 = selectReadOnly(index2, sql);
+    } catch (error2) {
+      const reason = error2 instanceof Error ? error2.message : String(error2);
+      return refuse("input/invalid-argument", `SQLite rejected the statement: ${reason}`, [
+        `bdk query "select name from sqlite_master where type in ('table', 'view')"`,
+        ...INSTEAD3
+      ]);
+    }
+    const page = listPage(
+      result2.rows.map((row) => row.map(cell2)),
+      { all: options.all }
+    );
+    return { columns: result2.columns, ...page };
+  });
+}
+function cell2(value) {
+  if (value === null || typeof value === "string" || typeof value === "number") return value;
+  if (typeof value === "bigint") return value.toString();
+  if (value instanceof Uint8Array) return Buffer.from(value).toString("hex");
+  throw new Error(`SQLite returned a ${typeof value} value`);
+}
+
+// kernel/src/query/commands/query.ts
+function queryCommand(deps) {
+  return async (context) => {
+    const all = context.flags["--all"] === true;
+    const projectRoot = findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd);
+    const page = await queryIndex(deps, projectRoot, context.positionals["<sql>"] ?? "", { all });
+    return isRefusal(page) ? page : { data: page, text: capLines(renderQuery(page), { all }) };
+  };
+}
+
+// kernel/src/query/index.ts
+function queryRegistrations(deps) {
+  return [{ id: "query", handler: queryCommand(deps) }];
+}
+
+// kernel/src/service/render/version.ts
+function renderVersion(output) {
+  return `bdk ${output.kernel} (contract ${output.contract}, node ${output.node})
+`;
+}
+
+// kernel/src/service/render/doctor.ts
+function renderDoctor(output) {
+  const lines = [renderVersion(output.version).trimEnd(), `layout: ${output.layout ?? "unknown"}`];
+  if (output.findings.length === 0) lines.push("no findings");
+  for (const finding of output.findings) {
+    lines.push(`${finding.level} ${finding.id}: ${finding.summary}`, `  repair: ${finding.repair}`);
+  }
+  return `${lines.join("\n")}
 `;
 }
 
 // kernel/src/service/domain/layout.ts
-function layoutFinding(present) {
-  if (present.length === 0) return void 0;
+function layoutFinding(present2) {
+  if (present2.length === 0) return void 0;
   return {
     id: "v2-layout",
     level: "warn",
-    summary: `${enumerate(present)} found`,
+    summary: `${enumerate(present2)} found`,
     repair: "bdk import"
   };
 }
@@ -26956,21 +27888,21 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join42 } from "node:path";
+import { join as join44 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store: store2, root } = input;
-  if (!store2.exists(join42(root, SETTINGS_FILES[0]))) return [];
+  if (!store2.exists(join44(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store2, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join42(root, file);
-    const text8 = store2.read(path);
-    if (text8 === void 0 || modelineUrl(text8) === url) continue;
-    if (input.fix) store2.write(path, withModeline(text8, version3));
+    const path = join44(root, file);
+    const text9 = store2.read(path);
+    if (text9 === void 0 || modelineUrl(text9) === url) continue;
+    if (input.fix) store2.write(path, withModeline(text9, version3));
     else stale.push(file);
   }
   if (stale.length > 0) {
@@ -26981,7 +27913,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join42(root, OFFLINE_SCHEMA_PATH);
+  const copy = join44(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store2.read(copy);
   if (current !== expected) {
@@ -27019,8 +27951,8 @@ function doctor(input) {
     });
   }
   const root = findProjectRoot(input.store, input.cwd, input.workTree);
-  const { layout, present } = detectLayout(input.store, root);
-  const finding = layoutFinding(present);
+  const { layout, present: present2 } = detectLayout(input.store, root);
+  const finding = layoutFinding(present2);
   if (finding !== void 0) findings.push(finding);
   findings.push(...schemaFindings({ ...input, root }));
   return {
@@ -27167,6 +28099,7 @@ var registry2 = createRegistry(
     store,
     pluginRoot: pluginRootOf(import.meta.url),
     contract: index.contract,
+    commands: index,
     settings: settingsRegistry(),
     git: systemGit,
     openIndex: fileIndex,
@@ -27188,8 +28121,8 @@ try {
       readStdin
     },
     streams: {
-      stdout: (text8) => process.stdout.write(text8),
-      stderr: (text8) => process.stderr.write(text8)
+      stdout: (text9) => process.stdout.write(text9),
+      stderr: (text9) => process.stderr.write(text9)
     }
   });
 } catch (error2) {

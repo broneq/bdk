@@ -2,42 +2,48 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-session-end.json",
   "title": "bdk hooks session-end --json",
-  "description": "SessionEnd content hook: Change checkpoint commit when enabled and safe.",
+  "description": "SessionEnd content hook: Change checkpoint commit when enabled and safe; every other outcome is reported as skipped.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["content", "checkpoint"],
   "properties": {
     "content": {
-      "type": "string"
-    },
-    "reason": {
       "type": "string",
-      "description": "The host's SessionEnd reason."
+      "description": "Empty, or the one [BDK] checkpoint line after a commit."
     },
+    "reason": { "description": "The host's SessionEnd reason.", "type": "string" },
     "checkpoint": {
       "type": "object",
-      "required": ["done"],
       "properties": {
-        "done": {
-          "type": "boolean"
-        },
+        "done": { "type": "boolean" },
         "commit": {
-          "type": "string"
+          "description": "The short checkpoint commit.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{7}$"
         },
         "skipped": {
-          "type": "string"
+          "description": "Why no commit was made: no active Change, the policy, nothing changed, a git operation in progress, open tickets or a failing git hook.",
+          "type": "string",
+          "minLength": 1
         }
-      }
+      },
+      "required": ["done"],
+      "additionalProperties": false
     }
   },
+  "required": ["content", "checkpoint"],
+  "additionalProperties": false,
   "examples": [
     {
       "content": "",
       "reason": "prompt_input_exit",
       "checkpoint": {
         "done": false,
-        "skipped": "open tickets"
+        "skipped": "ticket A-7f3k9m2q is open; a subagent may still be writing"
       }
+    },
+    {
+      "content": "[BDK] checkpoint 3f9c2e1 of 2026-09-25-login",
+      "reason": "clear",
+      "checkpoint": { "done": true, "commit": "3f9c2e1" }
     }
   ]
 }

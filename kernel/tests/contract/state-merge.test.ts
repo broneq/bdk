@@ -71,6 +71,7 @@ async function kernel(root: string, ...argv: string[]): Promise<Record<string, u
       store,
       pluginRoot: REPO_ROOT,
       contract: index.contract,
+      commands: index,
       settings: settingsRegistry(),
       git: testGit,
       openIndex: fileIndex,

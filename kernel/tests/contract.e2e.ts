@@ -21,6 +21,7 @@ const implemented = new Set(
     store: memoryStore(),
     pluginRoot: "/",
     contract: index.contract,
+    commands: index,
     settings: settingsRegistry(),
     git: systemGit,
     openIndex: memoryIndex,

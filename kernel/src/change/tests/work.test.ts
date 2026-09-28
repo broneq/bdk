@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { cycle, DIR, open, started } from "../../attempt/tests/support.ts";
-import { writePlanPart } from "../../graph/tests/support.ts";
+import { writeEntry, writePlanPart } from "../../graph/tests/support.ts";
 import { openTicket, tasks } from "../../part/tests/support.ts";
 import { readAttempts, readDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
@@ -169,6 +169,19 @@ describe("change takeover", () => {
     });
     expect((await open(h, "task-redispatch", "01-1")).code).toBe(0);
     expect((await h.run(["change", "takeover"])).stdout).toMatch(/^refused: /);
+  });
+
+  it("names the session of the latest stage command typed before the oldest open ticket", async () => {
+    const h = await started();
+    const transition = (at: string, session: string) =>
+      writeEntry(h.store, { type: "transition", at, to: "execute", session, source: "kernel" });
+    transition("2026-09-25T10:20:00.000Z", "sess-old");
+    transition("2026-09-25T10:30:00.000Z", "sess-work");
+    writeEntry(h.store, { type: "transition", at: "2026-09-25T10:40:00.000Z", to: "execute" });
+    await open(h, "task-redispatch", "01-1");
+    transition("2026-09-25T11:30:00.000Z", "sess-later");
+    const result = await h.step(["change", "takeover", "--close-tickets", "--json"]);
+    expect(changeTakeoverOutput.parse(result.json).previousSession).toBe("sess-work");
   });
 
   it("text output names the closed tickets", async () => {

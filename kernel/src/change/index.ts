@@ -15,6 +15,7 @@ import {
 import type { ChangeDeps } from "./use-cases/deps.ts";
 
 export type { ChangeDeps } from "./use-cases/deps.ts";
+export { implicitCheckpoint, resolvedSettings } from "./use-cases/checkpoint.ts";
 
 export function changeRegistrations(deps: ChangeDeps): Registration[] {
   return [

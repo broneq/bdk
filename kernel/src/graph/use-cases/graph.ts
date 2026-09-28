@@ -193,7 +193,7 @@ async function workFacts(
   };
 }
 
-function gatesOf(resolved: Resolved): Readonly<Record<string, GatePolicy>> {
+export function gatesOf(resolved: Resolved): Readonly<Record<string, GatePolicy>> {
   return moduleValue(gatesModule, resolved.value);
 }
 

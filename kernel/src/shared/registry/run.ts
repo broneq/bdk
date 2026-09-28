@@ -64,8 +64,10 @@ interface CommandContext {
   readonly cwd: string;
   /** Absent only for the standalone `version`. */
   readonly workTree?: string;
-  /** Present exactly for a Change-scoped record. */
+  /** Present for a Change-scoped record, unless its registration resolves the Change itself. */
   readonly change?: ActiveChange;
+  /** Present exactly when the registration has `resolvesChange: "handler"`. */
+  readonly resolveChange?: () => ActiveChange | Refusal;
   readonly runtime: Runtime;
 }
 
@@ -82,6 +84,13 @@ export interface Registration {
   readonly handler: Handler;
   /** false exempts the handler from the Node floor; only `doctor` uses it. */
   readonly nodeGate?: boolean;
+  /**
+   * A Change-scoped handler that decides itself whether it needs the Change
+   * (`hooks prompt-expansion`): the registry hands it the resolver instead.
+   */
+  readonly resolvesChange?: "handler";
+  /** Guard mode: what a block prints on stdout without `--json` (the host's decision object). */
+  readonly blockOutput?: (refusal: Refusal) => string;
 }
 
 interface Registry {
@@ -152,7 +161,9 @@ async function run(
 
   if (isRefusal(outcome)) {
     if (record.mode === "inject") return writeInject(streams, outcome, asJson);
-    if (record.mode === "guard") return writeBlock(streams, outcome, asJson);
+    if (record.mode === "guard") {
+      return writeBlock(streams, outcome, asJson, byId.get(record.id)?.blockOutput);
+    }
     return writeCommand(streams, outcome, asJson);
   }
   if (asJson) streams.stdout(json(outcome.data));
@@ -189,15 +200,21 @@ async function dispatch(
 
   if (registration === undefined) return stub(record);
   let change: ActiveChange | undefined;
+  let resolveChange: (() => ActiveChange | Refusal) | undefined;
   if (record.changeScoped) {
-    if (options.activeChange === undefined || workTree === undefined) {
+    const resolver = options.activeChange;
+    if (resolver === undefined || workTree === undefined) {
       throw new Error(
         `${record.id} is Change-scoped but the registry has no active-Change resolver`,
       );
     }
-    const resolved = options.activeChange({ cwd, workTree });
-    if (isRefusal(resolved)) return resolved;
-    change = resolved;
+    if (registration.resolvesChange === "handler") {
+      resolveChange = () => resolver({ cwd, workTree });
+    } else {
+      const resolved = resolver({ cwd, workTree });
+      if (isRefusal(resolved)) return resolved;
+      change = resolved;
+    }
   }
   const context: CommandContext = {
     record,
@@ -209,6 +226,7 @@ async function dispatch(
     runtime,
     ...(workTree === undefined ? {} : { workTree }),
     ...(change === undefined ? {} : { change }),
+    ...(resolveChange === undefined ? {} : { resolveChange }),
   };
   return registration.handler(context);
 }
@@ -231,9 +249,15 @@ function writeInject(streams: Streams, refusal: Refusal, asJson: boolean): numbe
   return 0;
 }
 
-function writeBlock(streams: Streams, refusal: Refusal, asJson: boolean): number {
+function writeBlock(
+  streams: Streams,
+  refusal: Refusal,
+  asJson: boolean,
+  blockOutput: ((refusal: Refusal) => string) | undefined,
+): number {
   if (asJson) streams.stdout(json(refusal));
-  streams.stderr(`${refusal.why}\n`);
+  else if (blockOutput !== undefined) streams.stdout(ensureNewline(blockOutput(refusal)));
+  streams.stderr(`${refusal.rule}: ${refusal.why}\n`);
   return 2;
 }
 

@@ -53,7 +53,7 @@ them until T50.
 | `kernel/src/graph/`, `pipeline/` (nodes, kinds, templates, `policy.gates`, the four graph commands)                                                                                     | `README.md` Artifact graph section and its command table; `concepts/plan-pipeline.md` still describes the v2 pipeline under the banner                                                               |
 | `kernel/src/part/`, `kernel/src/commit/`, the plan task grammar (`kernel/src/shared/store/state/plan.ts`), BDK trailers (`kernel/src/shared/store/progress.ts`)                         | `README.md` Plan parts section and its command table; `concepts/plan-pipeline.md` still describes the v2 plan format under the banner                                                                |
 | `kernel/src/attempt/`, `log ingest` and the `bdk-entries` block (`kernel/src/log/use-cases/ingest.ts`, `block.ts`), `policy.budgets`, `policy.oscillation`, `policy.escalation`         | `README.md` Loops and attempts section and its command table, and the `policy` paragraph of its Settings section; `concepts/plan-pipeline.md` still describes the v2 retry rules under the banner    |
-| `hooks/hooks.json`, `kernel/src/hooks/`                                                                                                                                                 | `reference/hooks.md`, `concepts/shared-foundation.md`, `workflows/trivial.md`, `troubleshooting.md`                                                                                                  |
+| `hooks/hooks.json`, `hooks/guard/`, `kernel/src/hooks/`                                                                                                                                 | `reference/hooks.md`, `concepts/shared-foundation.md`, `workflows/trivial.md`, `troubleshooting.md`                                                                                                  |
 | `hooks/is-command-exists/`                                                                                                                                                              | `reference/hooks.md` (the "not wired into hooks.json" section), `troubleshooting.md`                                                                                                                 |
 | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`                                                                                                                         | `getting-started/installation.md`                                                                                                                                                                    |
 | `.gitignore` (the `.bdk/` entries)                                                                                                                                                      | `reference/artifacts.md`, `getting-started/setup.md` - both embed the tracked/untracked block                                                                                                        |
@@ -135,15 +135,17 @@ Format: page - what it is for - the files that decide whether it is true.
 - **`reference/agents.md`** - the agent count, both tables, read-only enforcement.
   Truth: `agents/*.md` frontmatter, `skills/cr/SKILL.md` and `skills/pr-review/SKILL.md`
   `disallowed-tools`. Contains an explicit count - count the files.
-- **`reference/hooks.md`** - SessionStart and Stop entries in order, plus hook scripts not wired in.
-  Truth: `hooks/hooks.json` (order matters and the page reproduces it), `hooks/*/`.
+- **`reference/hooks.md`** - the SessionStart, PreToolUse, UserPromptExpansion and SessionEnd entries
+  in order, the guard rules and gate outcomes, plus hook scripts not wired in.
+  Truth: `hooks/hooks.json` (order matters and the page reproduces it), `hooks/*/`, the guard and
+  gate tables of `openspec/specs/kernel-cli/hooks/spec.md`.
 - **`reference/artifacts.md`** - the `.bdk/` layout, run state, the tracked/untracked block.
   Truth: `scripts/bdk_run_state.py`, `.gitignore`, every skill's artifact path.
 
 ### Standalone
 
 - **`troubleshooting.md`** - failure modes, each quoting a real error string.
-  Truth: the message strings in `hooks/*/check.py` and `scripts/bdk_run_state.py`. A reworded error
+  Truth: the message strings in `hooks/*/check.py`, `hooks/guard/*.sh`, `kernel/src/hooks/` and `scripts/bdk_run_state.py`. A reworded error
   message orphans its section here - grep the quoted string in the source to confirm it still exists
   verbatim.
 

@@ -92,7 +92,8 @@ function scriptedGit(): ScriptedGit {
 export interface Harness {
   readonly store: Store;
   readonly git: ScriptedGit;
-  run(argv: readonly string[], at?: string): Promise<RunResult>;
+  /** Runs `bdk <argv>` with the clock at `at` and `stdin` as the body. */
+  run(argv: readonly string[], at?: string, stdin?: string): Promise<RunResult>;
 }
 
 /** `extra` adds the registrations of a slice built on this one (attempt, commit). */
@@ -103,7 +104,7 @@ export function harness(extra: (deps: PartDeps) => Registration[] = () => []): H
   return {
     store,
     git,
-    run: (argv, at = "2026-09-25T10:00:00.000Z") => {
+    run: (argv, at = "2026-09-25T10:00:00.000Z", stdin = "") => {
       const deps: PartDeps = {
         store,
         git,
@@ -124,6 +125,7 @@ export function harness(extra: (deps: PartDeps) => Registration[] = () => []): H
         store,
         git,
         argv,
+        stdin,
       );
     },
   };
