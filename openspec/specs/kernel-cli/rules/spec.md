@@ -89,7 +89,7 @@ Print one rule by id, or the rules of a ticket. The kernel SHALL implement the c
 - **Arguments:**
   - `<id>`. PREFIX-n, e.g. CQ-4. Exactly one of `<id>` and `--ticket`.
   - `--ticket <ticket>`. Print the rules for the ticket's role and target.
-- **Behaviour:** With `<id>`, prints one rule; a removed rule prints its tombstone (`removed: <reason>`). With `--ticket`, the ticket must be open and have a dispatch package (`policy/no-open-ticket` otherwise); the kernel prints, in order, the rule categories the package's role maps to and then the language rules of every name in `languages` that has a `rules/languages/<name>` prompt value. The role-to-category map is held in the kernel: `implementer`, `reviewer` and `pr-reviewer` get `code-quality`, `architecture`, `design-patterns`, `security` and `test-quality` plus the language rules; `verifier` gets `architecture`, `test-quality` and `engineering-judgment`; `design-verifier` gets `architecture`, `engineering-judgment` and `security`; `runner` and `scout` get none. Each section is the resolved prompt value `rules/<category>` (`kernel-settings`, Prompt values), so a project's `extends` or `replace` applies, and names its plugin file and the layers that changed it. Selection ignores the target's files and `applies` until T31 selects by rule id. The first `--ticket` call for a ticket stamps `rules-read` in its attempt record (`kernel-state`, Attempt record); later calls print the same text and leave the stamp alone. The `<id>` form lands with T31 and answers `kernel/not-implemented` until then.
+- **Behaviour:** With `<id>`, prints one rule; a removed rule prints its tombstone (`removed: <reason>`). With `--ticket`, the ticket must be open and have a dispatch package (`policy/no-open-ticket` otherwise); the kernel prints, in order, the rule categories the role of the ticket's active package (`kernel-state`, Attempt record, `package`) maps to and then the language rules of every name in `languages` that has a `rules/languages/<name>` prompt value. The role-to-category map is held in the kernel: `implementer`, `simplifier`, `reviewer` and `pr-reviewer` get `code-quality`, `architecture`, `design-patterns`, `security` and `test-quality` plus the language rules; `verifier` gets `architecture`, `test-quality` and `engineering-judgment`; `design-verifier` gets `architecture`, `engineering-judgment` and `security`; `runner` and `scout` get none. Each section is the resolved prompt value `rules/<category>` (`kernel-settings`, Prompt values), so a project's `extends` or `replace` applies, and names its plugin file and the layers that changed it. Selection ignores the target's files and `applies` until T31 selects by rule id. The first `--ticket` call made while the ticket's active package is its `implementer` package stamps `rules-read` in its attempt record (`kernel-state`, Attempt record); later calls print the same text and leave the stamp alone, and a call under another role's package stamps nothing, so a `simplifier` or `runner` reading its rules never hides an implementer that read none (risk R2). The `<id>` form lands with T31 and answers `kernel/not-implemented` until then.
 - **Writes:** `.bdk/changes/<id>/attempts/`
 - **Output:** `schema/cli/output/rules-show.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/no-open-ticket`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -164,6 +164,11 @@ Print one rule by id, or the rules of a ticket. The kernel SHALL implement the c
 
 - **WHEN** `bdk rules show CQ-4` runs
 - **THEN** the exit code is 2 and the error object carries `rule: kernel/not-implemented`
+
+#### Scenario: simplifier read does not stamp
+
+- **WHEN** the implementer of ticket `A-7f3k9m2q` never ran `rules show`, and after `dispatch build 02-3 simplifier A-7f3k9m2q` the simplifier runs `bdk rules show --ticket A-7f3k9m2q`
+- **THEN** the simplifier gets the implementer's categories, the attempt record has no `rules-read`, and `attempt close A-7f3k9m2q ok` still writes the rules finding
 
 ### Requirement: bdk rules add
 

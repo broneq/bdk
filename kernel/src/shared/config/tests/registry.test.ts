@@ -120,8 +120,8 @@ describe("validateLayers", () => {
   });
 
   it("names every owner below a planned key's ancestor set as a scalar", () => {
-    const result = validate(layer("project", { execution: 3 }));
-    expect(result.problems).toMatchObject([{ key: "execution", message: "lands with T23" }]);
+    const result = validate(layer("project", { archive: 3 }));
+    expect(result.problems).toMatchObject([{ key: "archive", message: "lands with T30" }]);
   });
 
   it("hints the kebab-case form of a camelCase planned key", () => {

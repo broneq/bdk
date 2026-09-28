@@ -30,7 +30,7 @@ Open a ticket for one loop iteration, or refuse with the next rung of the ladder
   - `<loop>` (required). Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier.
   - `<target>` (required). Task id for task-redispatch, part id for verify-fix, the Change id for review-fix, an artifact id for verifier.
   - `--escalate`. Open the round's one-shot escalation ticket (A-drabina); allowed only when the round's budget is used up or it oscillates.
-- **Behaviour:** The kernel issues no dispatch package without an open ticket. Counts, rounds, scopes and the ladder follow `kernel-loops`. The ticket id is a merge-safe `A-` id (`kernel-state`, Identifiers); the record is written to `attempts/<loop>-<target>-<ticket>.md` with `attempt`, `of`, `scope`, `narrowed-from` and `dropped` stamped by the kernel. A task or part target needs its part started (`part start`), a `verifier` target an artifact node that is not `blocked` or `skipped`, and a `review-fix` target the `review` node not `blocked`; otherwise `policy/not-ready`. An unknown task, part or artifact is `input/not-found`; a target of the wrong type for the loop is `input/invalid-argument`. Refuses with `policy/ticket-open` while a ticket of the same loop and target is open; tickets of other targets may be open at the same time (parallel waves). A plain open refuses with `policy/budget-exhausted` when the round's budget is used up and with `policy/oscillation` when the round oscillates, `instead` naming `--escalate` when escalation is available (`kernel-loops`, Escalation ladder) and otherwise `change resume`. `--escalate` when the round's budget is not used up and the round does not oscillate, when escalation is disabled, already used in the round or over `policy.escalation.per-change`, is `policy/invalid-transition` naming the reason. An escalation ticket carries `escalation: true`, does not count against `of`, keeps the round's latest scope and returns `escalation.model` from `policy.escalation.model`; the checkpoint runs before it is issued (`kernel-loops`, Checkpoint). Narrowing drops findings as `kernel-loops`, Scope narrowing says, writing one kernel `finding` entry. After writing, the kernel re-reads the records of the key; when another open ticket of the key exists it removes its own record and refuses `policy/ticket-open`.
+- **Behaviour:** The kernel issues no dispatch package without an open ticket. Counts, rounds, scopes and the ladder follow `kernel-loops`. The ticket id is a merge-safe `A-` id (`kernel-state`, Identifiers); the record is written to `attempts/<loop>-<target>-<ticket>.md` with `attempt`, `of`, `scope`, `narrowed-from` and `dropped` stamped by the kernel. A task or part target needs its part started (`part start`), a `verifier` target an artifact node that is not `blocked` or `skipped`, and a `review-fix` target the `review` node not `blocked`; otherwise `policy/not-ready`. An unknown task, part or artifact is `input/not-found`; a target of the wrong type for the loop is `input/invalid-argument`. Refuses with `policy/ticket-open` while a ticket of the same loop and target is open; tickets of other targets may be open at the same time (parallel waves). A plain open refuses with `policy/budget-exhausted` when the round's budget is used up and with `policy/oscillation` when the round oscillates, `instead` naming `--escalate` when escalation is available (`kernel-loops`, Escalation ladder) and otherwise `change resume`. `--escalate` when the round's budget is not used up and the round does not oscillate, when escalation is disabled, already used in the round or over `policy.escalation.per-change`, is `policy/invalid-transition` naming the reason. An escalation ticket carries `escalation: true`, does not count against `of`, keeps the round's latest scope and returns `escalation.model` from `policy.escalation.model`; the checkpoint runs before it is issued (`kernel-loops`, Checkpoint). Narrowing drops findings as `kernel-loops`, Scope narrowing says, writing one kernel `finding` entry. After writing, the kernel re-reads the records of the key; when another open ticket of the key exists it removes its own record and refuses `policy/ticket-open`. For the loops that change code (`task-redispatch`, `verify-fix`, `review-fix`) the output lists `steps`: the post-task step nodes of the pipeline that apply to the Change, in pipeline order, each with its evidence `kind` and the `role` that runs it (`kernel-pipeline`, Artifact kinds), which the orchestrator dispatches under this ticket after the implementer returns (T23-D41); the `verifier` loop has no `steps`.
 - **Writes:** `.bdk/changes/<id>/attempts/`, `.bdk/changes/<id>/log/`, `git:commit`
 - **Output:** `schema/cli/output/attempt-open.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/not-ready`, `policy/budget-exhausted`, `policy/oscillation`, `policy/ticket-open`, `policy/invalid-transition`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -54,6 +54,20 @@ Open a ticket for one loop iteration, or refuse with the next rung of the ladder
       {
         "id": "L-d3f6g8h2",
         "summary": "rename helper for clarity"
+      }
+    ],
+    "steps": [
+      {
+        "kind": "simplify",
+        "role": "simplifier"
+      },
+      {
+        "kind": "tests-scoped",
+        "role": "runner"
+      },
+      {
+        "kind": "lint",
+        "role": "runner"
       }
     ]
   }
@@ -107,6 +121,16 @@ Open a ticket for one loop iteration, or refuse with the next rung of the ladder
 - **WHEN** the round of `task-redispatch 02-3` has used its budget, escalation is enabled and `bdk attempt open task-redispatch 02-3 --escalate --json` runs
 - **THEN** the exit code is 0, the record has `escalation: true`, the output has `escalation.model: opus` under the default policy, and a second `--escalate` in the same round is `policy/invalid-transition`
 
+#### Scenario: steps in pipeline order
+
+- **WHEN** `bdk attempt open task-redispatch 02-3 --json` runs on a Change with the shipped pipeline
+- **THEN** `steps` is `simplify` (`simplifier`), `tests-scoped` (`runner`), `lint` (`runner`), in that order
+
+#### Scenario: verifier ticket has no steps
+
+- **WHEN** `bdk attempt open verifier plan-verify --json` runs
+- **THEN** the output has no `steps`
+
 ### Requirement: bdk attempt close
 
 Close a ticket with its outcome; check the diff, the evidence and the declared entries. The kernel SHALL implement the command as this requirement and its output schema specify.
@@ -119,10 +143,10 @@ Close a ticket with its outcome; check the diff, the evidence and the declared e
   - `ok|fail|not-run` (required). ok: done; fail: findings remain (fingerprints stored); not-run: the check could not be performed (P4).
   - `--envelope <path>`. The subagent's envelope file; its entry ids are checked.
   - `--reason <text>`. Required with not-run: which precondition was missing. Written as the record's body.
-- **Behaviour:** Runs the diff check of `kernel-loops`, Diff check, for the ticket's target: a forbidden path is a refusal and leaves the ticket open; undeclared files become one kernel `finding` entry and `diff.undeclared` in the output. With `--envelope`, the report's `entries` must all exist under the ticket (entries whose `ticket` is this ticket, written by `log add --ticket`; `log ingest` refuses such a report before it is stored); missing ids refuse with `policy/entries-missing` naming them. A `fail` stores the fingerprints of the ticket's `finding` and `blocker` entries (`kernel-loops`, Finding fingerprints and oscillation). `not-run` needs `--reason` (`input/missing-argument`) and advances the round's `not-run` counter without consuming the budget. The close stamps `closed-at` and `outcome` in place (`kernel-state`, Derived state and mutation). `next` is the orchestrator's instruction from `kernel-loops`, Escalation ladder: `post-task-steps`, `retry`, `narrow` with the next scope, `escalate`, or `parked`; for `parked` the kernel writes the ladder question (`question`, `park: true`, `review: true`, `source: kernel`, options, `refs` naming the target and the tickets of the round), runs the checkpoint, and `next` carries the entry id and the resume command. When the ticket's dispatch package names the role `implementer` and its attempt record has no `rules-read` (`kernel-cli/rules`, `rules show --ticket`), the close writes one kernel `finding` with `review: true`, summary `implementer closed <ticket> without reading its rules`, refs naming the target and the ticket, and returns its id as `rulesFinding`; the close itself goes on (risk R2). The evidence checks (`policy/stale-evidence`, P5; `policy/missing-citation`, T4) run from T23 part C. A ticket that does not exist is `input/not-found`; a closed one is `policy/no-open-ticket`.
-- **Writes:** `.bdk/changes/<id>/attempts/`, `.bdk/changes/<id>/log/`, `git:commit`
+- **Behaviour:** Runs the diff check of `kernel-loops`, Diff check, for the ticket's target: a forbidden path is a refusal and leaves the ticket open; undeclared files become one kernel `finding` entry and `diff.undeclared` in the output. With `--envelope`, the report's `entries` must all exist under the ticket (entries whose `ticket` is this ticket, written by `log add --ticket`; `log ingest` refuses such a report before it is stored); missing ids refuse with `policy/entries-missing` naming them. A `fail` stores the fingerprints of the ticket's `finding` and `blocker` entries (`kernel-loops`, Finding fingerprints and oscillation). `not-run` needs `--reason` (`input/missing-argument`) and advances the round's `not-run` counter without consuming the budget. The close stamps `closed-at` and `outcome` in place (`kernel-state`, Derived state and mutation). `next` is the orchestrator's instruction from `kernel-loops`, Escalation ladder: `commit`, `retry`, `narrow` with the next scope, `escalate`, or `parked`; for `parked` the kernel writes the ladder question (`question`, `park: true`, `review: true`, `source: kernel`, options, `refs` naming the target and the tickets of the round), runs the checkpoint, and `next` carries the entry id and the resume command. When the ticket's dispatch package names the role `implementer` and its attempt record has no `rules-read` (`kernel-cli/rules`, `rules show --ticket`), the close writes one kernel `finding` with `review: true`, summary `implementer closed <ticket> without reading its rules`, refs naming the target and the ticket, and returns its id as `rulesFinding`; the close itself goes on (risk R2). Evidence checks (P5, T4, T23-D41): an `ok` close of a ticket that holds an `implementer` package (a code ticket) first records the `simplify` manifest from the ticket's stored `simplifier` report (`source: kernel`, the report as its one committed file, the tree hash of the target, verdict `pass` for `status: done` or `done-with-concerns` and `not-run` for `blocked` or `needs-context`; no citation, as kernel evidence cites nothing), then checks every post-task step kind the pipeline applies, in pipeline order: the ticket's latest manifest of the kind must exist with verdict `pass` or `not-run` (`policy/missing-evidence` otherwise, naming the kind, with `instead` naming `attempt close <ticket> fail` for a `fail` verdict and the step's role for a missing one), must be fresh against the current tree hash of the target (`policy/stale-evidence` naming the kind and the changed files), and, for `pass`, must carry at least one citation and still hold every `stored: committed` file with its recorded hash (`policy/missing-citation`). A `not-run` step verdict is accepted while the part of the target (every part for the Change) holds at most `policy.budgets.not-run` `not-run` manifests of that kind; past it the close is `policy/missing-evidence` with `instead` naming `attempt close <ticket> not-run --reason`. A `fail` or `not-run` close runs no evidence check, and any refusal leaves the ticket open. A ticket that does not exist is `input/not-found`; a closed one is `policy/no-open-ticket`.
+- **Writes:** `.bdk/changes/<id>/attempts/`, `.bdk/changes/<id>/log/`, `.bdk/changes/<id>/evidence/`, `git:commit`
 - **Output:** `schema/cli/output/attempt-close.json`
-- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/no-open-ticket`, `policy/do-not-touch`, `policy/entries-missing`, `policy/stale-evidence`, `policy/missing-citation`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
+- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/no-open-ticket`, `policy/do-not-touch`, `policy/entries-missing`, `policy/stale-evidence`, `policy/missing-citation`, `policy/missing-evidence`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
 - **Example:**
 
   ```bash
@@ -189,13 +213,38 @@ Close a ticket with its outcome; check the diff, the evidence and the declared e
 
 #### Scenario: policy/stale-evidence
 
-- **WHEN** the evidence manifest is older than the last code change (P5; emitted from T23)
+- **WHEN** the evidence manifest is older than the last code change (P5)
 - **THEN** the exit code is 2 and the error object carries `rule: policy/stale-evidence`
 
 #### Scenario: policy/missing-citation
 
-- **WHEN** a PASS verdict cites no value that resolves inside the recorded evidence (T4; emitted from T23)
+- **WHEN** a PASS verdict cites no value that resolves inside the recorded evidence (T4)
 - **THEN** the exit code is 2 and the error object carries `rule: policy/missing-citation`
+
+#### Scenario: policy/missing-evidence
+
+- **WHEN** a code ticket closes `ok` and its latest `lint` manifest has verdict `fail`, or it has no `lint` manifest
+- **THEN** the exit code is 2, the error object carries `rule: policy/missing-evidence` naming `lint`, and the ticket stays open
+
+#### Scenario: stale step evidence refused
+
+- **WHEN** the runner recorded `tests-scoped` and `lint` for `02-3` and a file of the part changed before `bdk attempt close <ticket> ok`
+- **THEN** the exit code is 2 with `rule: policy/stale-evidence` naming the kinds and the changed file
+
+#### Scenario: fresh cited evidence closes the ticket
+
+- **WHEN** a code ticket has a stored `simplifier` report with `status: done` and fresh `tests-scoped` and `lint` manifests with `pass` and a resolving citation, and `bdk attempt close <ticket> ok --json` runs
+- **THEN** the exit code is 0, a `simplify` manifest with `source: kernel` and verdict `pass` exists for the target, and `next.action` is `commit`
+
+#### Scenario: not-run within budget
+
+- **WHEN** the `lint` manifest of a code ticket has verdict `not-run` and the part holds no other `not-run` `lint` manifest
+- **THEN** `attempt close <ticket> ok` exits 0
+
+#### Scenario: verifier ticket needs no step evidence
+
+- **WHEN** a ticket holding only a `verifier` package closes `ok` with no manifest
+- **THEN** the exit code is 0
 
 #### Scenario: runtime/git-missing
 

@@ -7940,9 +7940,15 @@ var commands_default = {
         "policy/entries-missing",
         "policy/stale-evidence",
         "policy/missing-citation",
+        "policy/missing-evidence",
         "runtime/git-missing"
       ],
-      writes: [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit"]
+      writes: [
+        ".bdk/changes/<id>/attempts/",
+        ".bdk/changes/<id>/log/",
+        ".bdk/changes/<id>/evidence/",
+        "git:commit"
+      ]
     },
     {
       id: "attempt-list",
@@ -8112,12 +8118,17 @@ var commands_default = {
           value: "<task|part|file>"
         },
         {
+          name: "--since-ticket-start",
+          value: "<ticket>",
+          description: "Only entries written at or after the ticket's `opened-at`."
+        },
+        {
           name: "--all"
         }
       ],
       output: "output/log-list.json",
       exits: [0, 2, 3, 4, 5],
-      refusals: [],
+      refusals: ["input/not-found"],
       writes: []
     },
     {
@@ -8216,7 +8227,7 @@ var commands_default = {
         {
           name: "<role>",
           required: true,
-          description: "Role skill under skills/roles/: implementer, verifier, design-verifier, reviewer, pr-reviewer, runner, scout."
+          description: "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, pr-reviewer, runner, scout."
         },
         {
           name: "<ticket>",
@@ -8232,7 +8243,7 @@ var commands_default = {
         "policy/package-too-large",
         "policy/placeholder"
       ],
-      writes: [".bdk/changes/<id>/dispatch/"]
+      writes: [".bdk/changes/<id>/dispatch/", ".bdk/changes/<id>/attempts/"]
     },
     {
       id: "dispatch-show",
@@ -8301,7 +8312,7 @@ var commands_default = {
     {
       id: "evidence-check",
       argv: ["evidence", "check"],
-      summary: "Is the evidence for a task still fresh against the working tree?",
+      summary: "Is the evidence for a target still fresh against the working tree?",
       availability: "read",
       mode: "command",
       slice: "evidence",
@@ -8309,8 +8320,9 @@ var commands_default = {
       changeScoped: true,
       args: [
         {
-          name: "<task|evidence-id>",
-          required: true
+          name: "<target|evidence-id>",
+          required: true,
+          description: "A task, part or Change id, or an `E-` id."
         }
       ],
       flags: [],
@@ -15626,6 +15638,7 @@ var RULES = [
   "policy/entries-missing",
   "policy/stale-evidence",
   "policy/missing-citation",
+  "policy/missing-evidence",
   "policy/invalid-transition",
   "policy/git-in-progress",
   "policy/git-hook-failed",
@@ -15940,14 +15953,17 @@ function keySteps(node3, key) {
 var PLANNED_KEYS = [
   { key: "policy.checkpoint.squash-at-close", owner: "T30" },
   { key: "execution.concurrency", owner: "T23" },
-  { key: "archive.keep-evidence", owner: "T23" },
+  { key: "archive.keep-evidence", owner: "T30" },
   { key: "rules.propose-when.changes", owner: "T31" },
   { key: "rules.propose-when.authors", owner: "T31" },
   { key: "rules.propose-when.failed-attempts", owner: "T31" },
   { key: "rules.max-per-package", owner: "T31" },
   { key: "rules.max-learnings-per-change", owner: "T31" },
   { key: "rules.disabled", owner: "T31" },
-  { key: "spec.normative-word", owner: "T30" }
+  { key: "spec.normative-word", owner: "T30" },
+  { key: "policy.evidence.non-executable", owner: "T23" },
+  { key: "policy.evidence.build-config", owner: "T23" },
+  { key: "policy.evidence.max-committed-bytes", owner: "T23" }
 ];
 var MCP = "removed with the bundled MCP servers (ADR-0001)";
 var REMOVED_KEYS = [

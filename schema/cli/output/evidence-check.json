@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/evidence-check.json",
   "title": "bdk evidence check --json",
-  "description": "Is the evidence for a task still fresh against the working tree?",
+  "description": "Is the evidence for a target still fresh against the working tree?",
   "type": "object",
   "additionalProperties": false,
   "required": ["fresh", "treeHash", "evidence"],
@@ -54,7 +54,7 @@
       "treeHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
       "evidence": [
         {
-          "evidence": "E-b6n9t",
+          "evidence": "E-b6n9t2kq",
           "kind": "tests-scoped",
           "treeHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
           "fresh": false,

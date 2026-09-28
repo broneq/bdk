@@ -240,7 +240,7 @@ describe("bdk config check", () => {
       "policy/unknown-config-key",
     );
     expect(refusal.why).toContain("archive.keep-evidence");
-    expect(refusal.why).toContain("lands with T23");
+    expect(refusal.why).toContain("lands with T30");
   });
 
   it("acceptance: one root, several consumers", () => {

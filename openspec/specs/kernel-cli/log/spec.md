@@ -40,7 +40,7 @@ Append one ledger entry; the kernel stamps id, time, author and source. The kern
   - `--supersedes <id>`.
   - `--status proposed|accepted|superseded|resolved|routed`.
   - stdin: Body text when --body - is given.
-- **Behaviour:** Available to subagents: every role writes its own entries (T23-D14). `type: transition` is not accepted here and `--source` does not exist: `source` is `agent:<role>` when `--ticket` names an open ticket whose dispatch package names the role, and `kernel` for the main thread without a ticket; passing `id`, `at`, `author`, `source` or `fingerprint` as a flag in any form is `input/forbidden-field` (P1, T20 acceptance: `--source user` exits 3). A ticket without an open attempt record or without a dispatch package is `policy/no-open-ticket`. Validation: type from the list, summary 1-120 characters, >= 1 ref, the T14 entry schema; `--category` only with `finding` or `blocker`, the types that carry the field (`input/invalid-argument`); `--status` defaults to `proposed`, `superseded` is refused (`input/invalid-argument`, it is derived from `--supersedes`) and so is `routed` (only `log route` sets it). `--supersedes` must name an existing entry (`input/not-found`). A `blocker` under a ticket whose package role is `verifier` or `design-verifier` and whose `--category` is missing or not an `id` of the resolved `policy.verifier.blocking-categories` is written as an `observation` with `review: true` (an observation has no `category` field, so the category is named in the body) and a body that starts with `Downgraded from blocker: category <id|none> is not a blocking category (P8).` followed by the given body; the output's `downgraded` names the original type and category (P8). Nothing caps the number of entries per ticket (T23-D13). The kernel stamps `id` (retrying when the id exists in the Change), `at` from its clock, `author` from git (`user.name <user.email>`), `source`, `ticket` and, for `learning`, `fingerprint`, and writes `log/<ts>-<type>-<id>.md`. Dedupe by key (`kernel-state`, Ledger deduplication) returns the existing entry with `deduplicated: true` and writes nothing.
+- **Behaviour:** Available to subagents: every role writes its own entries (T23-D14). `type: transition` is not accepted here and `--source` does not exist: `source` is `agent:<role>` when `--ticket` names an open ticket whose active package (`kernel-state`, Attempt record, `package`) names the role, and `kernel` for the main thread without a ticket; passing `id`, `at`, `author`, `source` or `fingerprint` as a flag in any form is `input/forbidden-field` (P1, T20 acceptance: `--source user` exits 3). A ticket without an open attempt record or without a dispatch package is `policy/no-open-ticket`. Validation: type from the list, summary 1-120 characters, >= 1 ref, the T14 entry schema; `--category` only with `finding` or `blocker`, the types that carry the field (`input/invalid-argument`); `--status` defaults to `proposed`, `superseded` is refused (`input/invalid-argument`, it is derived from `--supersedes`) and so is `routed` (only `log route` sets it). `--supersedes` must name an existing entry (`input/not-found`). A `blocker` under a ticket whose active package's role is `verifier` or `design-verifier` and whose `--category` is missing or not an `id` of the resolved `policy.verifier.blocking-categories` is written as an `observation` with `review: true` (an observation has no `category` field, so the category is named in the body) and a body that starts with `Downgraded from blocker: category <id|none> is not a blocking category (P8).` followed by the given body; the output's `downgraded` names the original type and category (P8). Nothing caps the number of entries per ticket (T23-D13). The kernel stamps `id` (retrying when the id exists in the Change), `at` from its clock, `author` from git (`user.name <user.email>`), `source`, `ticket` and, for `learning`, `fingerprint`, and writes `log/<ts>-<type>-<id>.md`. Dedupe by key (`kernel-state`, Ledger deduplication) returns the existing entry with `deduplicated: true` and writes nothing.
 - **Writes:** `.bdk/changes/<id>/log/`
 - **Output:** `schema/cli/output/log-add.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/forbidden-field`, `input/not-found`, `policy/no-open-ticket`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -142,9 +142,9 @@ Store a role's report under its ticket. The kernel SHALL implement the command a
 - **Availability:** `agent`
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
-  - `--ticket <ticket>`. Required; the role and the report path come from the ticket's dispatch package.
+  - `--ticket <ticket>`. Required; the role and the report path come from the ticket's active package.
   - stdin: The report: a YAML frontmatter holding the envelope, then the Markdown body.
-- **Behaviour:** Every role, the `implementer` included, stores its report here (T23-D14, `role-contracts`, Role contract content). The frontmatter holds the envelope fields the role writes: `status`, `files`, `entries`, `evidence` and, for `blocked` and `needs-context`, `reason` (`kernel-state`, Report envelope); a frontmatter carrying `schema`, `ticket` or `role` is `input/forbidden-field`, because the kernel stamps them from the ticket and its package. A missing frontmatter, an unknown field or a field failing the envelope schema is `input/invalid-envelope`, whose `why` names the field and its line. Every id in `entries` must be an entry whose `ticket` is this ticket (`policy/entries-missing` naming the others); every id in `evidence` must name a manifest recorded under the ticket (`policy/entries-missing` as well). `--ticket` must name an open ticket with a dispatch package (`policy/no-open-ticket`). On success the kernel writes the report to the package's `report` path, frontmatter first in flow style so the envelope stays within 15 lines, and a later call under the same open ticket replaces it. A refused report writes nothing, so the agent fixes it and calls again before it returns. The command writes no ledger entry: entries come only from `log add` (T23-D14).
+- **Behaviour:** Every role, the `implementer` included, stores its report here (T23-D14, `role-contracts`, Role contract content). The frontmatter holds the envelope fields the role writes: `status`, `files`, `entries`, `evidence` and, for `blocked` and `needs-context`, `reason` (`kernel-state`, Report envelope); a frontmatter carrying `schema`, `ticket` or `role` is `input/forbidden-field`, because the kernel stamps them from the ticket and its package. A missing frontmatter, an unknown field or a field failing the envelope schema is `input/invalid-envelope`, whose `why` names the field and its line. Every id in `entries` must be an entry whose `ticket` is this ticket (`policy/entries-missing` naming the others); every id in `evidence` must name a manifest recorded under the ticket (`policy/entries-missing` as well). `--ticket` must name an open ticket with a dispatch package (`policy/no-open-ticket`). On success the kernel writes the report to the active package's `report` path, so the reports of the ticket's other roles stay, frontmatter first in flow style so the envelope stays within 15 lines, and a later call under the same open ticket replaces it. A refused report writes nothing, so the agent fixes it and calls again before it returns. The command writes no ledger entry: entries come only from `log add` (T23-D14).
 - **Writes:** `.bdk/changes/<id>/reports/`
 - **Output:** `schema/cli/output/log-ingest.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/invalid-envelope`, `input/forbidden-field`, `policy/no-open-ticket`, `policy/entries-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -220,11 +220,16 @@ Store a role's report under its ticket. The kernel SHALL implement the command a
 - **WHEN** an `implementer` pipes a valid report to `bdk log ingest --ticket A-7f3k9m2q`
 - **THEN** the report is written at the package's `report` path with `schema`, `ticket: A-7f3k9m2q` and `role: implementer` stamped, and a second call replaces it with `replaced: true`
 
+#### Scenario: each role of a ticket keeps its report
+
+- **WHEN** the implementer of ticket `A-7f3k9m2q` stored its report, `dispatch build 02-3 runner A-7f3k9m2q` ran, and the runner pipes its report to `bdk log ingest --ticket A-7f3k9m2q`
+- **THEN** the runner report is written at `reports/02-3-runner-A-7f3k9m2q.md` with `role: runner`, `replaced` is false, and the implementer report is unchanged
+
 ### Requirement: bdk log list
 
 Ledger entries as summaries, filtered by type, status, review flag or reference. The kernel SHALL implement the command as this requirement and its output schema specify.
 
-- **Synopsis:** `bdk log list [--type decision|finding|observation|blocker|question|assumption|risk|learning|report|transition] [--status proposed|accepted|superseded|resolved|routed] [--review] [--for <task|part|file>] [--all]`
+- **Synopsis:** `bdk log list [--type decision|finding|observation|blocker|question|assumption|risk|learning|report|transition] [--status proposed|accepted|superseded|resolved|routed] [--review] [--for <task|part|file>] [--since-ticket-start <ticket>] [--all]`
 - **Availability:** `read`
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
@@ -232,11 +237,12 @@ Ledger entries as summaries, filtered by type, status, review flag or reference.
   - `--status proposed|accepted|superseded|resolved|routed`.
   - `--review`. Only review: true entries.
   - `--for <task|part|file>`.
+  - `--since-ticket-start <ticket>`. Only entries written at or after the ticket's `opened-at`.
   - `--all`.
-- **Behaviour:** Summaries only, read from the index, ordered by `at` then id. `status` is the derived status (`superseded` when another entry names the entry in `supersedes`). `--for` keeps entries with a ref equal to the value, a task ref of the part (`02` matches `02-3`) or a symbol ref of the file (`src/a.ts` matches `src/a.ts#login`). `< 200 ms` at 1 000 entries is the T20 target, met by the index. Every run appends one line (`at`, duration in milliseconds, entry count, whether the index was refreshed) to `.bdk/.machine/telemetry/log-list.jsonl`, kept below 256 KB by dropping the oldest half.
+- **Behaviour:** Summaries only, read from the index, ordered by `at` then id. `status` is the derived status (`superseded` when another entry names the entry in `supersedes`). `--for` keeps entries with a ref equal to the value, a task ref of the part (`02` matches `02-3`) or a symbol ref of the file (`src/a.ts` matches `src/a.ts#login`). `--since-ticket-start` keeps entries whose `at` is at or after the `opened-at` of the ticket, open or closed, so an orchestrator reads what other agents logged while the ticket ran (swarm skill, T23-D49); a ticket the Change does not hold is `input/not-found`. The filters combine. `< 200 ms` at 1 000 entries is the T20 target, met by the index. Every run appends one line (`at`, duration in milliseconds, entry count, whether the index was refreshed) to `.bdk/.machine/telemetry/log-list.jsonl`, kept below 256 KB by dropping the oldest half.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/log-list.json`
-- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: none; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
+- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
 - **Example:**
 
   ```bash
@@ -275,6 +281,16 @@ Ledger entries as summaries, filtered by type, status, review flag or reference.
 
 - **WHEN** `bdk log list --json` runs twice on a Change with 1 000 entries and the second run finds the index fresh
 - **THEN** the second run takes less than 200 ms end to end and its telemetry line records the duration
+
+#### Scenario: input/not-found
+
+- **WHEN** `--since-ticket-start` names a ticket the active Change does not hold
+- **THEN** the exit code is 3 and the error object carries `rule: input/not-found`
+
+#### Scenario: entries since a ticket started
+
+- **WHEN** entry `L-1` was written before ticket `A-7f3k9m2q` was opened and entries `L-2` and `L-3` after it, and `bdk log list --since-ticket-start A-7f3k9m2q --json` runs
+- **THEN** `items` holds `L-2` and `L-3` and not `L-1`
 
 ### Requirement: bdk log show
 

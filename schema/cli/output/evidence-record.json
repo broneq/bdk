@@ -54,14 +54,14 @@
   },
   "examples": [
     {
-      "evidence": "E-b6n9t",
-      "path": ".bdk/changes/2026-09-25-passwordless-login/evidence/02-3-1.md",
+      "evidence": "E-b6n9t2kq",
+      "path": ".bdk/changes/2026-09-25-passwordless-login/evidence/02-3-E-b6n9t2kq.md",
       "treeHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
       "files": [
         {
-          "path": ".bdk/.machine/evidence/02-3-tests.json",
+          "path": ".bdk/changes/2026-09-25-passwordless-login/evidence/02-3-E-b6n9t2kq-02-3-tests.json",
           "hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
-          "stored": "machine"
+          "stored": "committed"
         }
       ],
       "verdict": "pass",
