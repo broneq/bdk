@@ -33,7 +33,7 @@ function writeFinding(store: Store, dir: string, n: number): void {
       status: "proposed",
       source: "kernel",
       author: AUTHOR,
-      at: "2026-09-25T10:00:00Z",
+      at: "2026-09-25T10:00:00.000Z",
       refs: ["src/a.ts"],
     },
     body: "",

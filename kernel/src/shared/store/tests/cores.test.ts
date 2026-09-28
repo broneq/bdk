@@ -80,7 +80,7 @@ function closeOpenTicket(): void {
   const path = join(dir, "attempts/task-redispatch-02-3-A-4m8rt2wx.md");
   const text = readFileSync(path, "utf8").replace(
     "author: Jan Kowalski <jan@example.com>\n",
-    "author: Jan Kowalski <jan@example.com>\nclosed-at: 2026-09-25T12:10:00Z\noutcome: ok\n",
+    "author: Jan Kowalski <jan@example.com>\nclosed-at: 2026-09-25T12:10:00.000Z\noutcome: ok\n",
   );
   writeFileSync(path, text);
 }

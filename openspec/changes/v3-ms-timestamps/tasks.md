@@ -2,13 +2,13 @@
 
 ## 1. Reproduce
 
-- [ ] 1.1 Write a failing E2E test in `kernel/src/log/tests/log.e2e.ts`: two `log add` calls in one second, then `log list` must list them in write order with distinct `at` values; run it until it fails on the random id order (repeat the pair in a loop within the test so the tie is certain); verify it fails on the current bundle
+- [x] 1.1 Write a failing E2E test in `kernel/src/log/tests/log.e2e.ts`: two `log add` calls in one second, then `log list` must list them in write order with distinct `at` values; run it until it fails on the random id order (repeat the pair in a loop within the test so the tie is certain); verify it fails on the current bundle
 
 ## 2. Clock and schema
 
-- [ ] 2.1 Write failing unit tests for `shared/clock`: `systemClock` and `fixedClock` give the fixed-width millisecond form; `fixedClock` keeps the milliseconds of its input; implement; verify they pass
-- [ ] 2.2 Write failing unit tests for `timestamp` in `shared/store/state/common.ts`: both forms accepted, the second form normalised to `.000`, other precisions and offsets refused, a written document holds the normalised form; implement with a zod transform; verify unit tests and `pnpm build` regenerate `schema/state/`
-- [ ] 2.3 Write failing unit tests for the entry file name: `entryPath` keeps the second, the registry check accepts a millisecond `at` whose second matches the name and refuses another second; implement in `ledger.ts` and `registry.ts`; verify they pass
+- [x] 2.1 Write failing unit tests for `shared/clock`: `systemClock` and `fixedClock` give the fixed-width millisecond form; `fixedClock` keeps the milliseconds of its input; implement; verify they pass
+- [x] 2.2 Write failing unit tests for `timestamp` in `shared/store/state/common.ts`: both forms accepted, the second form normalised to `.000`, other precisions and offsets refused, a written document holds the normalised form; implement with a zod transform; verify unit tests and `pnpm build` regenerate `schema/state/`
+- [x] 2.3 Write failing unit tests for the entry file name: `entryPath` keeps the second, the registry check accepts a millisecond `at` whose second matches the name and refuses another second; implement in `ledger.ts` and `registry.ts`; verify they pass
 
 ## 3. Gate and index
 

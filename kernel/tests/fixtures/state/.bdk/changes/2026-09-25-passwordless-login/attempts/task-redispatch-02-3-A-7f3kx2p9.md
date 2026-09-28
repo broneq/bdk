@@ -6,9 +6,9 @@ target: 02-3
 attempt: 1
 of: 3
 scope: full
-opened-at: 2026-09-25T11:02:40Z
+opened-at: 2026-09-25T11:02:40.000Z
 author: Jan Kowalski <jan@example.com>
-closed-at: 2026-09-25T11:51:09Z
+closed-at: 2026-09-25T11:51:09.000Z
 outcome: fail
 findings:
   - fingerprint: sha256:b3c8b0e841c4d079433939ad8b646533041376ad0980b49af99931f33a7e8adc

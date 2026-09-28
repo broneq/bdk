@@ -12290,6 +12290,9 @@ function handlePipeResult(left, next, ctx) {
   }
   return next._zod.run({ value: left.value, issues: left.issues }, ctx);
 }
+var $ZodPreprocess = /* @__PURE__ */ $constructor("$ZodPreprocess", (inst, def) => {
+  $ZodPipe.init(inst, def);
+});
 var $ZodReadonly = /* @__PURE__ */ $constructor("$ZodReadonly", (inst, def) => {
   $ZodType.init(inst, def);
   defineLazyInternal(inst, "propValues", (zod) => zod.def.innerType._zod.propValues);
@@ -15536,6 +15539,10 @@ function pipe(in_, out) {
     // ...util.normalizeParams(params),
   });
 }
+var ZodPreprocess = /* @__PURE__ */ $constructor("ZodPreprocess", (inst, def) => {
+  ZodPipe.init(inst, def);
+  $ZodPreprocess.init(inst, def);
+});
 var ZodReadonly = /* @__PURE__ */ $constructor("ZodReadonly", (inst, def) => {
   $ZodReadonly.init(inst, def);
   ZodType.init(inst, def);
@@ -15558,6 +15565,13 @@ function refine(fn, _params = {}) {
 }
 function superRefine(fn, params) {
   return _superRefine(fn, params);
+}
+function preprocess(fn, schema) {
+  return new ZodPreprocess({
+    type: "pipe",
+    in: transform(fn),
+    out: schema
+  });
 }
 
 // node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/classic/iso.js
@@ -16673,7 +16687,11 @@ var evidenceId = string2().regex(new RegExp(`^E-${ID_BODY}$`)).meta({ descriptio
 var changeId = string2().regex(new RegExp(`^${CHANGE_ID_PATTERN}$`)).meta({ description: "`<yyyy-mm-dd>-<slug>`, the slug kebab-case and at most 40 characters." });
 var idReference = string2().regex(new RegExp(`^(?:${CHANGE_ID_PATTERN}/)?[LAE]-${ID_BODY}$`)).meta({ description: "A bare id within the Change or `<changeId>/<id>` across Changes." });
 var hash = string2().regex(/^sha256:[0-9a-f]{64}$/);
-var timestamp = iso_exports.datetime({ precision: 0 }).meta({ description: "ISO 8601 UTC with seconds." });
+var SECOND_FORM = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+var timestamp = preprocess(
+  (value) => typeof value === "string" && SECOND_FORM.test(value) ? `${value.slice(0, -1)}.000Z` : value,
+  iso_exports.datetime({ precision: 3 }).meta({ description: "ISO 8601 UTC with milliseconds; a read also takes seconds." })
+);
 var date3 = iso_exports.date();
 var relativePath = string2().regex(/^(?!\/|\.\/)(?!(?:.*\/)?\.\.(?:\/|$))[^\\]+$/).meta({ description: "Relative to the project root, `/` separated, no `..` segment." });
 var role = string2().regex(/^[a-z][a-z0-9-]*$/).meta({ description: "Role skill name (`implementer`, `plan-verifier`, ...)." });
@@ -16683,6 +16701,9 @@ var author = string2().min(1).meta({ description: "Git `user.name <user.email>`.
 var severity = _enum(["critical", "high", "medium", "low"]);
 var scope = _enum(TICKET_SCOPES);
 var glob2 = string2().min(1);
+function secondStamp(at) {
+  return `${at.slice(0, 19).replaceAll("-", "").replaceAll(":", "")}Z`;
+}
 
 // kernel/src/shared/store/state/attempt.ts
 var VERSION = 1;
@@ -17159,7 +17180,7 @@ function same(fields) {
   return (data, groups) => Object.entries(fields).find(([group, value]) => String(value(data)) !== groups[group])?.[0];
 }
 var field = (name) => (data) => data[name];
-var stamp = (data) => String(data.at).replaceAll("-", "").replaceAll(":", "");
+var stamp = (data) => secondStamp(String(data.at));
 var CHANGE_ROWS = [
   {
     pattern: new RegExp(`^log/(?<at>\\d{8}T\\d{6}Z)-(?<type>[a-z]+)-(?<id>L-${ID2})\\.md$`),
@@ -17964,8 +17985,7 @@ function source(glob3) {
 import { join as join8 } from "node:path";
 var ATTEMPTS = 16;
 function entryFileName(data) {
-  const stamp2 = String(data.at).replaceAll("-", "").replaceAll(":", "");
-  return `${stamp2}-${String(data.type)}-${String(data.id)}.md`;
+  return `${secondStamp(String(data.at))}-${String(data.type)}-${String(data.id)}.md`;
 }
 function entryPath(changeDir, data) {
   return join8(changeDir, "log", entryFileName(data));
@@ -26020,7 +26040,7 @@ function settingsRegistry() {
 
 // kernel/src/shared/clock/index.ts
 function format(date4) {
-  return `${date4.toISOString().slice(0, 19)}Z`;
+  return date4.toISOString();
 }
 var systemClock = { now: () => format(/* @__PURE__ */ new Date()) };
 

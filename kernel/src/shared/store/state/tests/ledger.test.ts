@@ -15,7 +15,7 @@ function draft(id: string) {
     status: "proposed",
     source: "kernel",
     author: "Ada <ada@example.com>",
-    at: "2026-09-25T10:15:02Z",
+    at: "2026-09-25T10:15:02.000Z",
     refs: ["src/a.ts"],
   };
 }
@@ -31,6 +31,12 @@ function sequence(...ids: string[]): () => number {
 describe("entryPath", () => {
   it("is log/<ts>-<type>-<id>.md", () => {
     expect(entryPath(DIR, draft("L-e8k2s5vw"))).toBe(
+      `${DIR}/log/20260925T101502Z-finding-L-e8k2s5vw.md`,
+    );
+  });
+
+  it("keeps the second of an at with milliseconds", () => {
+    expect(entryPath(DIR, { ...draft("L-e8k2s5vw"), at: "2026-09-25T10:15:02.345Z" })).toBe(
       `${DIR}/log/20260925T101502Z-finding-L-e8k2s5vw.md`,
     );
   });

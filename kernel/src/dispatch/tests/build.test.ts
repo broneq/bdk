@@ -44,7 +44,12 @@ describe("dispatch build", () => {
     expect(report.bytes).toBe(new TextEncoder().encode(text).length);
     expect(readDocument(h.store, `${ROOT}/${report.path}`)).toMatchObject({
       kind: "dispatch",
-      data: { attempt: 1, of: 3, at: "2026-09-25T10:05:00Z", "template-hash": report.templateHash },
+      data: {
+        attempt: 1,
+        of: 3,
+        at: "2026-09-25T10:05:00.000Z",
+        "template-hash": report.templateHash,
+      },
     });
     const own = headings(body).filter((line) =>
       [
@@ -111,34 +116,34 @@ describe("dispatch build", () => {
     const h = dispatchHarness();
     const accepted = writeEntry(h.store, {
       type: "decision",
-      at: "2026-09-25T10:01:00Z",
+      at: "2026-09-25T10:01:00.000Z",
       summary: "tokens are single use",
       refs: ["02-3"],
     });
     writeEntry(h.store, {
       type: "decision",
-      at: "2026-09-25T10:01:01Z",
+      at: "2026-09-25T10:01:01.000Z",
       status: "proposed",
       summary: "maybe rotate keys",
       refs: ["02-3"],
     });
     const blocker = writeEntry(h.store, {
       type: "blocker",
-      at: "2026-09-25T10:01:02Z",
+      at: "2026-09-25T10:01:02.000Z",
       status: "proposed",
       summary: "the clock source is unknown",
       refs: ["02"],
     });
     writeEntry(h.store, {
       type: "blocker",
-      at: "2026-09-25T10:01:03Z",
+      at: "2026-09-25T10:01:03.000Z",
       status: "resolved",
       summary: "old blocker",
       refs: ["02-3"],
     });
     const byFile = writeEntry(h.store, {
       type: "decision",
-      at: "2026-09-25T10:01:04Z",
+      at: "2026-09-25T10:01:04.000Z",
       summary: "verify.ts owns expiry",
       refs: ["src/auth/verify.ts#verifyLink"],
     });
@@ -153,7 +158,7 @@ describe("dispatch build", () => {
     }
     writeEntry(h.store, {
       type: "decision",
-      at: "2026-09-25T10:01:07Z",
+      at: "2026-09-25T10:01:07.000Z",
       summary: "another part",
       refs: ["03-1"],
     });
@@ -197,7 +202,7 @@ describe("dispatch build", () => {
     const first = (await built(h)).report.templateHash;
     h.store.write(
       `${DIR}/log/20260925T100100Z-finding-L-aaaaaaa1.md`,
-      "---\nschema: 1\nid: L-aaaaaaa1\ntype: finding\nsummary: s\nstatus: proposed\nsource: user\nauthor: Ada Lovelace <ada@example.com>\nat: 2026-09-25T10:01:00Z\nrefs: [02-3]\n---\n",
+      "---\nschema: 1\nid: L-aaaaaaa1\ntype: finding\nsummary: s\nstatus: proposed\nsource: user\nauthor: Ada Lovelace <ada@example.com>\nat: 2026-09-25T10:01:00.000Z\nrefs: [02-3]\n---\n",
     );
     expect((await built(h)).report.templateHash).toBe(first);
     const skill = `${PLUGIN}/skills/roles/implementer/SKILL.md`;
@@ -238,7 +243,7 @@ describe("dispatch build", () => {
     const h = dispatchHarness();
     writeEntry(h.store, {
       type: "decision",
-      at: "2026-09-25T10:01:00Z",
+      at: "2026-09-25T10:01:00.000Z",
       summary: "a long decision",
       refs: ["02-3"],
     });

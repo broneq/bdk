@@ -41,10 +41,10 @@ describe("T21 acceptance", () => {
       rmSync(path);
       fileStore().write(
         join(dir, "log", name.replace(/^\d{8}T\d{6}Z/, "20260101T000000Z")),
-        text.replace(/^at: .*$/m, "at: 2026-01-01T00:00:00Z"),
+        text.replace(/^at: .*$/m, "at: 2026-01-01T00:00:00.000Z"),
       );
     }
-    passGate(dir, "gate:design", "plan", "user", "2026-01-01T00:01:00Z");
+    passGate(dir, "gate:design", "plan", "user", "2026-01-01T00:01:00.000Z");
     expect(next(root)).toMatchObject({ artifact: { id: "plan" } });
     writeDesign(dir, "design", "Changed after the gate.\n");
     done(root, "design");

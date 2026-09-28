@@ -16,6 +16,7 @@ import type { Git } from "../../src/shared/git/index.ts";
 import { newId } from "../../src/shared/ids/index.ts";
 import { createRegistry, loadIndex } from "../../src/shared/registry/index.ts";
 import {
+  secondStamp,
   fileIndex,
   fileStore,
   readChange,
@@ -156,7 +157,7 @@ function merge(root: string): string[] {
 function work(root: string, branch: string, at: string, rule: string, capability: string): void {
   const store = fileStore();
   const change = (path: string) => join(root, ".bdk/changes", CHANGE_ID, path);
-  const stamp = at.replaceAll("-", "").replaceAll(":", "");
+  const stamp = secondStamp(at);
   const ticket = newId("A-");
   const common = { schema: 1, author: AUTHOR, at, ticket };
   const entry = (type: string, own: Record<string, unknown>) => {
@@ -330,10 +331,10 @@ describe("two-branch merge", () => {
   it("merges parallel work on documents no command writes yet without conflict", () => {
     const root = forked();
     on(root, "a", () => {
-      work(root, "a", "2026-09-26T08:00:00Z", "TQ-8", "auth-session");
+      work(root, "a", "2026-09-26T08:00:00.000Z", "TQ-8", "auth-session");
     });
     on(root, "b", () => {
-      work(root, "b", "2026-09-26T08:00:00Z", "TQ-9", "auth-mail");
+      work(root, "b", "2026-09-26T08:00:00.000Z", "TQ-9", "auth-mail");
     });
     expect(merge(root)).toStrictEqual([]);
     expect(validateTree(root)).toBeGreaterThan(50);
@@ -342,7 +343,7 @@ describe("two-branch merge", () => {
   it("merges an id drawn on both branches, and reading the Change names both files", () => {
     const root = forked();
     const write = (type: string, at: string) => () => {
-      const stamp = at.replaceAll("-", "").replaceAll(":", "");
+      const stamp = secondStamp(at);
       writeDocument(
         fileStore(),
         join(root, `.bdk/changes/${CHANGE_ID}/log/${stamp}-${type}-L-dup00000.md`),
@@ -362,8 +363,8 @@ describe("two-branch merge", () => {
         },
       );
     };
-    on(root, "a", write("decision", "2026-09-26T08:00:00Z"));
-    on(root, "b", write("risk", "2026-09-26T08:00:01Z"));
+    on(root, "a", write("decision", "2026-09-26T08:00:00.000Z"));
+    on(root, "b", write("risk", "2026-09-26T08:00:01.000Z"));
     expect(merge(root)).toStrictEqual([]);
     expect(() => validateTree(root)).toThrow(
       /L-dup00000 is used by both .*decision-L-dup00000\.md and .*risk-L-dup00000\.md/,

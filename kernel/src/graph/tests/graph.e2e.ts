@@ -15,7 +15,7 @@ import {
   refused,
   repository,
 } from "../../../tests/support/repo.ts";
-import { fileStore, readDocument, writeDocument } from "../../shared/store/index.ts";
+import { secondStamp, fileStore, readDocument, writeDocument } from "../../shared/store/index.ts";
 
 interface Opened {
   readonly root: string;
@@ -65,26 +65,22 @@ function soon(): string {
 function passGate(dir: string, gate: string, to: string): void {
   const at = soon();
   const id = `L-u${String(Date.now() % 10_000_000).padStart(7, "0")}`;
-  writeDocument(
-    fileStore(),
-    join(dir, `log/${at.replaceAll("-", "").replaceAll(":", "")}-transition-${id}.md`),
-    {
-      data: {
-        schema: 1,
-        id,
-        type: "transition",
-        summary: `${gate} passed`,
-        status: "accepted",
-        source: "user",
-        author: "BDK Test <test@example.com>",
-        at,
-        refs: [gate],
-        gate,
-        to,
-      },
-      body: "",
+  writeDocument(fileStore(), join(dir, `log/${secondStamp(at)}-transition-${id}.md`), {
+    data: {
+      schema: 1,
+      id,
+      type: "transition",
+      summary: `${gate} passed`,
+      status: "accepted",
+      source: "user",
+      author: "BDK Test <test@example.com>",
+      at,
+      refs: [gate],
+      gate,
+      to,
     },
-  );
+    body: "",
+  });
 }
 
 function done(root: string, id: string): Record<string, unknown> {

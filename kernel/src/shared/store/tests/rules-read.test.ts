@@ -19,8 +19,8 @@ const CHANGE = "2026-09-25-login";
 const DIR = `${ROOT}/.bdk/changes/${CHANGE}`;
 const LIVE: ChangeLocation = { id: CHANGE, dir: DIR, archived: false };
 const TICKET = "A-7f3k9m2q";
-const FIRST = "2026-09-25T10:00:41Z";
-const LATER = "2026-09-25T10:05:00Z";
+const FIRST = "2026-09-25T10:00:41.000Z";
+const LATER = "2026-09-25T10:05:00.000Z";
 
 function withAttempt(): Store {
   const store = memoryStore();
@@ -34,7 +34,7 @@ function withAttempt(): Store {
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: "Ada <ada@example.com>",
     },
     body: "",

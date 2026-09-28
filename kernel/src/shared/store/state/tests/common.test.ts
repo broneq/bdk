@@ -52,15 +52,25 @@ describe("scalars", () => {
     expect(hash.safeParse(`sha1:${"0".repeat(40)}`).success).toBe(false);
   });
 
-  it("takes a UTC timestamp with seconds and nothing finer", () => {
-    expect(timestamp.safeParse("2026-09-25T09:12:03Z").success).toBe(true);
+  it("takes a UTC timestamp with milliseconds, or with seconds normalised to .000", () => {
+    expect(timestamp.parse("2026-09-25T09:12:03.120Z")).toBe("2026-09-25T09:12:03.120Z");
+    expect(timestamp.parse("2026-09-25T09:12:03Z")).toBe("2026-09-25T09:12:03.000Z");
     for (const text of [
       "2026-09-25T09:12Z",
-      "2026-09-25T09:12:03.120Z",
+      "2026-09-25T09:12:03.12Z",
+      "2026-09-25T09:12:03.1234Z",
       "2026-09-25T11:12:03+02:00",
+      "2026-09-25T11:12:03.000+02:00",
     ]) {
       expect(timestamp.safeParse(text).success).toBe(false);
     }
+  });
+
+  it("orders normalised seconds before later milliseconds of the same second", () => {
+    const [second, later] = ["2026-09-25T09:12:03Z", "2026-09-25T09:12:03.500Z"].map((text) =>
+      timestamp.parse(text),
+    );
+    expect(String(second) < String(later)).toBe(true);
   });
 
   it("takes a calendar date", () => {

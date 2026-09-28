@@ -6,7 +6,7 @@ summary: Design gate passed by /bdk:plan
 status: accepted
 source: user
 author: Jan Kowalski <jan@example.com>
-at: 2026-09-25T10:02:15Z
+at: 2026-09-25T10:02:15.000Z
 refs:
   - gate:design
   - design.md

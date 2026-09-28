@@ -32,6 +32,7 @@ import {
   memoryStore,
   readDocument,
   readMarker,
+  secondStamp,
   writeDocument,
   writeMarker,
 } from "../../shared/store/index.ts";
@@ -47,7 +48,7 @@ import {
   changeStatusOutput,
 } from "../schema/outputs.ts";
 
-const NOW = "2026-09-26T08:00:00Z";
+const NOW = "2026-09-26T08:00:00.000Z";
 const NEW_ID = "2026-09-26-users-log-in-with-a-one-time-link";
 
 interface Harness {
@@ -96,7 +97,7 @@ function writeTransition(
   to: string,
   source = "kernel",
 ): void {
-  writeDocument(store, `${DIR}/log/${at.replace(/[-:]/g, "")}-transition-${id}.md`, {
+  writeDocument(store, `${DIR}/log/${secondStamp(at)}-transition-${id}.md`, {
     data: {
       schema: 1,
       id,
@@ -123,7 +124,7 @@ function addAttempt(store: Store, ticket: string): void {
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
     },
     body: "",
@@ -143,7 +144,9 @@ describe("domain", () => {
   });
 
   it("builds the id from the UTC date and the slug", () => {
-    expect(changeIdOf("2026-09-26T23:59:59Z", "Add dark mode")).toBe("2026-09-26-add-dark-mode");
+    expect(changeIdOf("2026-09-26T23:59:59.000Z", "Add dark mode")).toBe(
+      "2026-09-26-add-dark-mode",
+    );
   });
 });
 
@@ -331,8 +334,8 @@ describe("change new", () => {
 describe("change status", () => {
   it("derives the stage, profile and confirmation from the ledger", async () => {
     const h = harness(repository());
-    writeTransition(h.store, "L-t0000001", "2026-09-25T09:10:00Z", "design");
-    writeTransition(h.store, "L-t0000002", "2026-09-25T09:20:00Z", "plan-part:02");
+    writeTransition(h.store, "L-t0000001", "2026-09-25T09:10:00.000Z", "design");
+    writeTransition(h.store, "L-t0000002", "2026-09-25T09:20:00.000Z", "plan-part:02");
 
     const result = await h.run(["change", "status", "--json"]);
 
@@ -396,7 +399,7 @@ describe("change status", () => {
           attempt: 1,
           of: 3,
           scope: "full",
-          openedAt: "2026-09-25T10:00:00Z",
+          openedAt: "2026-09-25T10:00:00.000Z",
         },
       ],
     });
@@ -436,7 +439,7 @@ describe("change list", () => {
 
   it("lists live Changes newest updatedAt first, with branch and state", async () => {
     const h = twoChanges();
-    writeTransition(h.store, "L-t0000001", "2026-09-25T09:10:00Z", "design");
+    writeTransition(h.store, "L-t0000001", "2026-09-25T09:10:00.000Z", "design");
     await h.run(["change", "park"]);
     writeChangeDoc(h.store, "2026-09-23-no-marker");
 
@@ -692,8 +695,8 @@ describe("change resume", () => {
 });
 
 describe("change on the artifact graph", () => {
-  const T0 = "2026-09-25T10:00:00Z";
-  const T1 = "2026-09-25T10:05:00Z";
+  const T0 = "2026-09-25T10:00:00.000Z";
+  const T1 = "2026-09-25T10:05:00.000Z";
 
   it.each([
     [[], "/bdk:design"],

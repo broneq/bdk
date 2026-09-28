@@ -103,7 +103,7 @@ export function harness(extra: (deps: PartDeps) => Registration[] = () => []): H
   return {
     store,
     git,
-    run: (argv, at = "2026-09-25T10:00:00Z") => {
+    run: (argv, at = "2026-09-25T10:00:00.000Z") => {
       const deps: PartDeps = {
         store,
         git,
@@ -140,7 +140,7 @@ export function openTicket(store: Store, ticket: string, target: string): void {
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
     },
     body: "",

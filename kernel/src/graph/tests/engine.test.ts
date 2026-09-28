@@ -35,7 +35,7 @@ function state(result: Graph, id: string): string | undefined {
 
 let n = 0;
 /** A kernel `done` transition for `to` with the fake hash of version 1. */
-function done(to: string, hash: string, at = "2026-09-25T10:00:00Z") {
+function done(to: string, hash: string, at = "2026-09-25T10:00:00.000Z") {
   n += 1;
   return { id: `L-d${String(n).padStart(7, "0")}`, type: "transition", to, inputHash: hash, at };
 }
@@ -85,8 +85,8 @@ describe("node states", () => {
 
   it("the latest done entry counts", () => {
     const entries = [
-      done("design", "design.md@2", "2026-09-25T10:00:00Z"),
-      done("design", "design.md@1", "2026-09-25T11:00:00Z"),
+      done("design", "design.md@2", "2026-09-25T10:00:00.000Z"),
+      done("design", "design.md@1", "2026-09-25T11:00:00.000Z"),
     ];
     expect(state(graph({ ...small, entries }), "design")).toBe("done");
   });
@@ -110,7 +110,7 @@ describe("node states", () => {
       entries: [
         done("design", "design.md@1"),
         done("architecture", "architecture.md@1"),
-        userGate("gate:design", "2026-09-25T11:00:00Z"),
+        userGate("gate:design", "2026-09-25T11:00:00.000Z"),
       ],
     });
     expect(result.next?.id).toBe("plan");
@@ -127,7 +127,7 @@ describe("node states", () => {
     const passed = [
       done("design", "design.md@1"),
       done("architecture", "architecture.md@1"),
-      userGate("gate:design", "2026-09-25T11:00:00Z"),
+      userGate("gate:design", "2026-09-25T11:00:00.000Z"),
     ];
     const one = graph({
       files,
@@ -181,7 +181,7 @@ describe("node states", () => {
 });
 
 describe("sealing", () => {
-  const passedAt = "2026-09-25T11:00:00Z";
+  const passedAt = "2026-09-25T11:00:00.000Z";
   const entries = [
     done("design", "design.md@1"),
     done("architecture", "architecture.md@1"),
@@ -196,12 +196,12 @@ describe("sealing", () => {
   });
 
   it("a loop-back moves the ready time past the old entry", () => {
-    const loop = [...entries, done("design", "design.md@2", "2026-09-25T12:00:00Z")];
+    const loop = [...entries, done("design", "design.md@2", "2026-09-25T12:00:00.000Z")];
     const result = graph({ ...small, entries: loop }, {}, { "design.md": "2" });
     expect(result.find("gate:design")?.gate).toMatchObject({
       ready: true,
       done: false,
-      readyAt: "2026-09-25T12:00:00Z",
+      readyAt: "2026-09-25T12:00:00.000Z",
     });
     expect(result.waitingGate?.gate).toBe("gate:design");
     expect(result.next).toBeUndefined();
@@ -226,8 +226,8 @@ describe("next", () => {
         done("plan-part:01", "plan/parts/01-a.md@1"),
         done("execute-part:01", "plan/parts/01-a.md@1"),
         done("review", "tree@1"),
-        userGate("gate:review", "2026-09-25T11:00:00Z"),
-        done("close", "x", "2026-09-25T12:00:00Z"),
+        userGate("gate:review", "2026-09-25T11:00:00.000Z"),
+        done("close", "x", "2026-09-25T12:00:00.000Z"),
       ],
     });
     expect(
@@ -251,7 +251,7 @@ describe("done markers", () => {
       id: `L-s${String(n).padStart(7, "0")}`,
       type: "transition",
       to: "execute-part:01",
-      at: "2026-09-25T11:00:00Z",
+      at: "2026-09-25T11:00:00.000Z",
     };
     const result = graph({ profile: "tiny", files, entries: [planned, start] });
     expect(state(result, "execute-part:01")).toBe("ready");
@@ -264,7 +264,7 @@ describe("done markers", () => {
       id: `L-s${String(n).padStart(7, "0")}`,
       type: "transition",
       to: "execute-part:01",
-      at: "2026-09-25T12:00:00Z",
+      at: "2026-09-25T12:00:00.000Z",
     };
     const result = graph({
       profile: "tiny",

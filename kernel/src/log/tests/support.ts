@@ -22,7 +22,7 @@ export const CHANGE = "2026-09-25-login";
 export const DIR = `${ROOT}/.bdk/changes/${CHANGE}`;
 export const BRANCH = "feat/login";
 export const AUTHOR = "Ada Lovelace <ada@example.com>";
-export const AT = "2026-09-25T10:15:02Z";
+export const AT = "2026-09-25T10:15:02.000Z";
 
 export interface FakeGit extends Git {
   branch: string | undefined;
@@ -62,7 +62,7 @@ export function writeChangeDoc(
       profile: "small",
       intent: "Users log in with a one-time link.",
       source: "user",
-      at: "2026-09-25T09:00:00Z",
+      at: "2026-09-25T09:00:00.000Z",
       author: AUTHOR,
       overridden: [],
     },

@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { newId } from "../../ids/index.ts";
 import type { Store } from "../store.ts";
+import { secondStamp } from "./common.ts";
 import { writeDocument } from "./documents.ts";
 
 type Data = Readonly<Record<string, unknown>>;
@@ -12,8 +13,7 @@ type Data = Readonly<Record<string, unknown>>;
 const ATTEMPTS = 16;
 
 function entryFileName(data: Data): string {
-  const stamp = String(data.at).replaceAll("-", "").replaceAll(":", "");
-  return `${stamp}-${String(data.type)}-${String(data.id)}.md`;
+  return `${secondStamp(String(data.at))}-${String(data.type)}-${String(data.id)}.md`;
 }
 
 export function entryPath(changeDir: string, data: Data): string {

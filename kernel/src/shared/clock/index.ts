@@ -1,12 +1,13 @@
 // The one source of `at` (`kernel-architecture`, shared entry (a)): ISO 8601
-// UTC to the second, injectable so tests never read the wall clock.
+// UTC with milliseconds at a fixed width, so string order is time order;
+// injectable so tests never read the wall clock.
 
 export interface Clock {
   now(): string;
 }
 
 function format(date: Date): string {
-  return `${date.toISOString().slice(0, 19)}Z`;
+  return date.toISOString();
 }
 
 export const systemClock: Clock = { now: () => format(new Date()) };

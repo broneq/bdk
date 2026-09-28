@@ -6,7 +6,7 @@ summary: Change opened at design
 status: accepted
 source: kernel
 author: Jan Kowalski <jan@example.com>
-at: 2026-09-25T09:13:00Z
+at: 2026-09-25T09:13:00.000Z
 refs:
   - change.md
 to: design

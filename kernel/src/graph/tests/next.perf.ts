@@ -15,7 +15,7 @@ describe("T21 performance", () => {
     for (let nn = 1; nn <= 8; nn++) writePart(dir, "plan", `0${String(nn)}`);
     done(root, "plan");
     for (let i = 0; i < 1000; i++) {
-      entry(dir, "2026-09-25T10:00:00Z", {
+      entry(dir, "2026-09-25T10:00:00.000Z", {
         type: "finding",
         summary: `Finding ${String(i)}`,
         status: "proposed",

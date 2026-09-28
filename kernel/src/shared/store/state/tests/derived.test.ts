@@ -14,7 +14,7 @@ function entry(partial: Partial<EntryFacts> & Pick<EntryFacts, "type">): EntryFa
   counter++;
   return {
     id: `L-${String(counter).padStart(8, "0")}`,
-    at: "2026-09-25T10:00:00Z",
+    at: "2026-09-25T10:00:00.000Z",
     source: "kernel",
     refs: ["design.md"],
     ...partial,
@@ -40,8 +40,8 @@ describe("stageOf", () => {
     expect(
       stageOf(
         [
-          entry({ type: "transition", to: "plan", at: "2026-09-25T11:00:00Z" }),
-          entry({ type: "transition", to: "design", at: "2026-09-25T10:00:00Z" }),
+          entry({ type: "transition", to: "plan", at: "2026-09-25T11:00:00.000Z" }),
+          entry({ type: "transition", to: "design", at: "2026-09-25T10:00:00.000Z" }),
         ],
         same,
       ),
@@ -86,14 +86,14 @@ describe("parkedQuestion", () => {
 
   it("is undefined once a decision names the question", () => {
     const park = entry({ type: "question", park: true });
-    const resume = entry({ type: "decision", refs: [park.id], at: "2026-09-25T11:00:00Z" });
+    const resume = entry({ type: "decision", refs: [park.id], at: "2026-09-25T11:00:00.000Z" });
     expect(parkedQuestion([park, resume])).toBeUndefined();
   });
 
   it("looks only at the latest park question", () => {
-    const first = entry({ type: "question", park: true, at: "2026-09-25T09:00:00Z" });
+    const first = entry({ type: "question", park: true, at: "2026-09-25T09:00:00.000Z" });
     const resume = entry({ type: "decision", refs: [first.id] });
-    const second = entry({ type: "question", park: true, at: "2026-09-25T12:00:00Z" });
+    const second = entry({ type: "question", park: true, at: "2026-09-25T12:00:00.000Z" });
     expect(parkedQuestion([first, resume, second])?.id).toBe(second.id);
   });
 });

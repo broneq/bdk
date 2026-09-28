@@ -6,7 +6,7 @@ summary: design done
 status: accepted
 source: kernel
 author: Jan Kowalski <jan@example.com>
-at: 2026-09-25T10:01:00Z
+at: 2026-09-25T10:01:00.000Z
 refs:
   - design
   - design.md

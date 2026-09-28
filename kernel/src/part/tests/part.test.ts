@@ -19,10 +19,10 @@ import {
 import { DIR, harness, openTicket, tasks } from "./support.ts";
 import type { Harness } from "./support.ts";
 
-const T0 = "2026-09-25T10:00:00Z";
-const T1 = "2026-09-25T10:05:00Z";
-const T2 = "2026-09-25T10:10:00Z";
-const T3 = "2026-09-25T10:15:00Z";
+const T0 = "2026-09-25T10:00:00.000Z";
+const T1 = "2026-09-25T10:05:00.000Z";
+const T2 = "2026-09-25T10:10:00.000Z";
+const T3 = "2026-09-25T10:15:00.000Z";
 const HASH = (c: string) => c.repeat(40);
 
 /** A tiny Change whose plan is done: part 01 with tasks 01-1 and 01-2, part 02 after 01. */
