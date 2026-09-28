@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/broneq/bdk-skill-kit/compare/v0.2.1...v0.2.2) (2026-09-28)
+
+
+### Features
+
+* treat a skills dir nested in another as a container ([daa432d](https://github.com/broneq/bdk-skill-kit/commit/daa432d1ae8cb9a395bcb8f87dcf62522ff451d5))
+* treat a skills dir nested in another as a container ([b141885](https://github.com/broneq/bdk-skill-kit/commit/b14188571023b807338b1ea552db72cdd0d7a17e))
+
 ## [0.2.1](https://github.com/broneq/bdk-skill-kit/compare/v0.2.0...v0.2.1) (2026-09-26)
 
 
