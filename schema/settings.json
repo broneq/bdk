@@ -186,11 +186,12 @@
       "additionalProperties": false
     },
     "policy": {
-      "description": "How the pipeline proceeds: whether each human gate waits for the user.",
+      "description": "Composed of policy.gates, policy.budgets, policy.oscillation, policy.escalation, policy.checkpoint.",
       "default": {},
       "type": "object",
       "properties": {
         "gates": {
+          "description": "How the pipeline proceeds: whether each human gate waits for the user.",
           "default": {},
           "type": "object",
           "properties": {
@@ -205,6 +206,103 @@
               "description": "auto lets a policy transition pass gate:review.",
               "type": "string",
               "enum": ["manual", "auto"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "budgets": {
+          "description": "How many tickets each loop may open in one round before the ladder moves on.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "task-redispatch": {
+              "default": 3,
+              "description": "Re-dispatches of one task.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "verify-fix": {
+              "default": 2,
+              "description": "Fix rounds after a failed verification of one part.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "review-fix": {
+              "default": 2,
+              "description": "Fix rounds after the review of the Change.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "verifier": {
+              "default": 2,
+              "description": "Iterations of one verifier over one artifact.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "not-run": {
+              "default": 3,
+              "description": "Consecutive not-run closes of one loop and target.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "oscillation": {
+          "description": "When a finding that keeps coming back shortens the ladder.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "threshold": {
+              "default": 2,
+              "description": "Fail records of one round that carry the same fingerprint.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "escalation": {
+          "description": "The one-shot escalation ticket with a fresh context and a stronger model.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "false skips the escalation rung.",
+              "type": "boolean"
+            },
+            "model": {
+              "default": "opus",
+              "description": "The model class the escalation ticket names; the dispatch adapter maps it.",
+              "type": "string",
+              "minLength": 1
+            },
+            "per-change": {
+              "default": 3,
+              "description": "Escalation tickets one Change may open in total.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "checkpoint": {
+          "description": "Pathspec commits of the Change directory at park, escalation and session end.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "false skips every checkpoint; the task commits still carry the Change.",
+              "type": "boolean"
             }
           },
           "additionalProperties": false

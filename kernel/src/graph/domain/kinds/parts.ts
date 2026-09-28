@@ -2,7 +2,11 @@
 // `execute-part` (`kernel-pipeline`, Artifact kinds; design D-7). A
 // collection node of an instanced kind has one instance per part file.
 import { BaseKind, fileChecks, partFiles } from "./kind.ts";
-import type { ChangeView, Check, DoneBy, Inputs, Instance } from "./kind.ts";
+import type { ChangeView, Check, DoneBy, Inputs, Instance, PlanPartFacts } from "./kind.ts";
+
+/** S1: a plan part fits one dispatch (`kernel-loops`, Plan part checks). */
+const PART_LIMIT_BYTES = 8192;
+const PART_TASK_LIMIT = 8;
 
 /** A kind with one instance per `<dir>/<nn>-<slug>.md`. */
 abstract class PartKind extends BaseKind {
@@ -32,9 +36,93 @@ export class DesignPartKind extends PartKind {
   protected readonly dir = "design/parts";
 }
 
+/** The baseline checks, then the plan part checks of `kernel-loops` (S1, P6, P7). */
 export class PlanPartKind extends PartKind {
   readonly name = "plan-part";
   protected readonly dir = "plan/parts";
+  override validate(view: ChangeView, target: { readonly nn?: string | undefined }): Check[] {
+    const checks = super.validate(view, target);
+    const nn = target.nn ?? "";
+    const path = partFiles(view, this.dir).get(nn);
+    const file = path === undefined ? undefined : view.file(path);
+    if (path === undefined || file === undefined) return checks;
+    checks.push(
+      file.bytes > PART_LIMIT_BYTES
+        ? {
+            id: "size",
+            ok: false,
+            why: `${path} is ${String(file.bytes)} bytes, over the limit of ${String(PART_LIMIT_BYTES)}`,
+            rule: "policy/part-too-large",
+            instead: `bdk part split ${nn} <task-ids>`,
+          }
+        : { id: "size", ok: true },
+    );
+    const facts = view.planPart(path);
+    if (file.data === undefined || facts === undefined) return checks;
+    return [...checks, ...partChecks(view, path, nn, file.data, facts)];
+  }
+}
+
+function partChecks(
+  view: ChangeView,
+  path: string,
+  nn: string,
+  data: Readonly<Record<string, unknown>>,
+  facts: PlanPartFacts,
+): Check[] {
+  const count = facts.tasks.length;
+  const overlap = facts.overlaps[0];
+  const impact = data["spec-impact"];
+  const missing = (Array.isArray(impact) ? impact.map(String) : []).find(
+    (capability) => view.file(`spec-delta/${capability}.md`) === undefined,
+  );
+  return [
+    count === 0 || count > PART_TASK_LIMIT
+      ? {
+          id: "tasks",
+          ok: false,
+          why:
+            count === 0
+              ? `${path} holds no task`
+              : `${path} holds ${String(count)} tasks, over the limit of ${String(PART_TASK_LIMIT)}`,
+          rule: "policy/part-too-many-tasks",
+          instead:
+            count === 0 ? `add a task under ## ${nn}-1 <title>` : `bdk part split ${nn} <task-ids>`,
+        }
+      : { id: "tasks", ok: true },
+    overlap === undefined
+      ? { id: "do-not-touch", ok: true }
+      : {
+          id: "do-not-touch",
+          ok: false,
+          why: facts.overlaps
+            .map(
+              (found) =>
+                `task ${found.task} declares ${found.path}, which do-not-touch ${found.glob} forbids`,
+            )
+            .join("; "),
+          rule: "policy/do-not-touch-overlap",
+          instead: `drop ${overlap.path} from task ${overlap.task} or narrow do-not-touch`,
+        },
+    facts.placeholders.length === 0
+      ? { id: "placeholder", ok: true }
+      : {
+          id: "placeholder",
+          ok: false,
+          why: `a placeholder holds ${facts.placeholders.join(", ")}`,
+          rule: "policy/placeholder",
+        },
+    facts.problems.length === 0
+      ? { id: "grammar", ok: true }
+      : { id: "grammar", ok: false, why: facts.problems.join("; ") },
+    missing === undefined
+      ? { id: "spec-impact", ok: true }
+      : {
+          id: "spec-impact",
+          ok: false,
+          why: `spec-impact names ${missing}, but spec-delta/${missing}.md is missing`,
+        },
+  ];
 }
 
 export class DesignIndexKind extends BaseKind {
@@ -59,7 +147,10 @@ export class DesignIndexKind extends BaseKind {
   }
 }
 
-/** One instance per plan part, following its `depends-on`; done through `part done` (T22). */
+/**
+ * One instance per plan part, following its `depends-on`; done through
+ * `part done`, which hashes the plan part file (T22 design D-8).
+ */
 export class ExecutePartKind extends BaseKind {
   readonly name = "execute-part";
   override readonly doneBy: DoneBy = { through: "command", command: "bdk part done {nn}" };
@@ -75,12 +166,63 @@ export class ExecutePartKind extends BaseKind {
   writes(): readonly string[] {
     return [];
   }
-  /** Defined by T22. */
-  inputs(): Inputs {
-    return { none: true };
+  inputs(view: ChangeView, nn?: string): Inputs {
+    const path = nn === undefined ? undefined : partFiles(view, "plan/parts").get(nn);
+    return { files: path === undefined ? [] : [path] };
   }
-  /** T22 adds the trailer and ticket checks. */
-  validate(): Check[] {
-    return [];
+  /** Started, every task committed with the part's trailers, no ticket of the part open. */
+  validate(
+    view: ChangeView,
+    target: { readonly id: string; readonly nn?: string | undefined },
+  ): Check[] {
+    const nn = target.nn ?? "";
+    const started = view.entries.some(
+      (entry) => entry.type === "transition" && entry.source === "kernel" && entry.to === target.id,
+    );
+    const checks: Check[] = [
+      started
+        ? { id: "started", ok: true }
+        : {
+            id: "started",
+            ok: false,
+            why: `${target.id} is not started`,
+            instead: `bdk part start ${nn}`,
+          },
+    ];
+    const { work } = view;
+    if (work === undefined) {
+      return [
+        ...checks,
+        { id: "work", ok: false, why: "the trailer commits and open tickets were not read" },
+      ];
+    }
+    const path = partFiles(view, "plan/parts").get(nn);
+    const tasks = (path === undefined ? undefined : view.planPart(path))?.tasks ?? [];
+    const uncommitted = tasks.find(
+      (task) => !work.commits.some((commit) => commit.part === nn && commit.task === task.id),
+    );
+    checks.push(
+      uncommitted === undefined
+        ? { id: "commits", ok: true }
+        : {
+            id: "commits",
+            ok: false,
+            why: `task ${uncommitted.id} has no commit carrying BDK-Part: ${nn} and BDK-Task: ${uncommitted.id}`,
+            instead: `bdk commit ${uncommitted.id}`,
+          },
+    );
+    const own = new Set([nn, ...tasks.map((task) => task.id)]);
+    const open = work.openTickets.find((ticket) => own.has(ticket.target));
+    checks.push(
+      open === undefined
+        ? { id: "tickets", ok: true }
+        : {
+            id: "tickets",
+            ok: false,
+            why: `ticket ${open.ticket} is open on ${open.target}`,
+            instead: `bdk attempt close ${open.ticket} <outcome>`,
+          },
+    );
+    return checks;
   }
 }

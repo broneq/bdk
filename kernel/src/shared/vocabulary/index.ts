@@ -46,6 +46,11 @@ export const AGENT_SOURCE_PATTERN = new RegExp(`^${AGENT}$`);
 /** A fixed provenance value or `agent:<role>`. */
 export const SOURCE_PATTERN = new RegExp(`^(${FIXED_SOURCES.join("|")}|${AGENT})$`);
 
+/** The loops a ticket counts against; `not-run` is a counter of each loop, not a loop. */
+export const LOOPS = ["task-redispatch", "verify-fix", "review-fix", "verifier"] as const;
+
+export type Loop = (typeof LOOPS)[number];
+
 /** How much of a review a retry reruns. */
 export const TICKET_SCOPES = ["full", "high+", "blockers"] as const;
 

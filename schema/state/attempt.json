@@ -7,17 +7,24 @@
   "properties": {
     "schema": { "type": "number", "const": 1 },
     "ticket": { "$ref": "common.json#/$defs/ticketId" },
-    "loop": { "type": "string", "minLength": 1, "description": "Loop kind from policy." },
+    "loop": {
+      "type": "string",
+      "enum": ["task-redispatch", "verify-fix", "review-fix", "verifier"],
+      "description": "The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds)."
+    },
     "target": {
       "type": "string",
       "minLength": 1,
-      "description": "Task, part, artifact or Change id."
+      "description": "Task id (task-redispatch), part id (verify-fix), Change id (review-fix) or artifact id (verifier)."
     },
     "attempt": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
     "of": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
     "scope": { "$ref": "common.json#/$defs/scope" },
     "narrowed-from": { "$ref": "common.json#/$defs/scope" },
-    "escalation": { "type": "boolean" },
+    "escalation": {
+      "description": "The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.",
+      "type": "boolean"
+    },
     "opened-at": { "$ref": "common.json#/$defs/timestamp" },
     "author": { "$ref": "common.json#/$defs/author" },
     "closed-at": {

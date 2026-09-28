@@ -21,12 +21,12 @@ function entry(partial: Partial<EntryFacts> & Pick<EntryFacts, "type">): EntryFa
   };
 }
 
-const same = (to: string): string => to;
+const same = { stage: (to: string): string => to, rank: (): number => 0 };
 
 describe("stageOf", () => {
   it("maps the target of the latest transition through the resolver", () => {
     const stages: Record<string, string> = { "plan-part:02": "plan", design: "design" };
-    const resolve = (to: string): string => stages[to] ?? to;
+    const resolve = { stage: (to: string): string => stages[to] ?? to, rank: () => 0 };
     expect(stageOf([entry({ type: "transition", to: "plan-part:02" })], resolve)).toBe("plan");
     expect(stageOf([entry({ type: "transition", to: "review" })], resolve)).toBe("review");
     expect(stageOf([], resolve)).toBe("intent");
@@ -58,6 +58,23 @@ describe("stageOf", () => {
         same,
       ),
     ).toBe("b");
+  });
+
+  it("breaks a tie of one second by the later stage in pipeline order", () => {
+    const order = ["intent", "plan", "execute"];
+    const pipeline = {
+      stage: (to: string): string => (to.startsWith("execute-part:") ? "execute" : to),
+      rank: (stage: string): number => order.indexOf(stage),
+    };
+    expect(
+      stageOf(
+        [
+          entry({ type: "transition", to: "execute-part:01", id: "L-aaaaaaaa" }),
+          entry({ type: "transition", to: "plan", id: "L-zzzzzzzz" }),
+        ],
+        pipeline,
+      ),
+    ).toBe("execute");
   });
 });
 

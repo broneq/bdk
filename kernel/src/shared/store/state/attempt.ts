@@ -4,7 +4,7 @@ import * as z from "zod";
 
 import { author, hash, ledgerId, relativePath, scope, ticketId, timestamp } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
-import { ENTRY_TYPES } from "../../vocabulary/index.ts";
+import { ENTRY_TYPES, LOOPS } from "../../vocabulary/index.ts";
 
 const VERSION = 1;
 
@@ -17,13 +17,22 @@ export const attemptKind = {
     .strictObject({
       schema: z.literal(VERSION),
       ticket: ticketId,
-      loop: z.string().min(1).meta({ description: "Loop kind from policy." }),
-      target: z.string().min(1).meta({ description: "Task, part, artifact or Change id." }),
+      loop: z.enum(LOOPS).meta({
+        description:
+          "The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds).",
+      }),
+      target: z.string().min(1).meta({
+        description:
+          "Task id (task-redispatch), part id (verify-fix), Change id (review-fix) or artifact id (verifier).",
+      }),
       attempt: counter,
       of: counter,
       scope,
       "narrowed-from": scope.optional(),
-      escalation: z.boolean().optional(),
+      escalation: z.boolean().optional().meta({
+        description:
+          "The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.",
+      }),
       "opened-at": timestamp,
       author,
       "closed-at": timestamp.optional().meta({ description: "Present exactly when `outcome` is." }),
@@ -53,3 +62,5 @@ export const attemptKind = {
     .meta({ title: "Attempt record", description: "The body is the close reason." }),
   migrations: [],
 } as const satisfies DocumentKind;
+
+export type AttemptRecord = z.output<typeof attemptKind.schema>;

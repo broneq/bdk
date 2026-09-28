@@ -4,74 +4,78 @@
   "title": "bdk attempt open --json",
   "description": "Open a ticket for one loop iteration, or refuse with the next rung of the ladder.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["ticket", "loop", "target", "attempt", "of", "scope"],
   "properties": {
     "ticket": {
       "type": "string",
+      "pattern": "^A-[0-9a-z]{8}$",
       "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "loop": {
       "type": "string",
-      "description": "Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier, task-escalation."
+      "enum": ["task-redispatch", "verify-fix", "review-fix", "verifier"],
+      "description": "The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds)."
     },
     "target": {
       "type": "string",
-      "description": "Task, part or Change id the loop runs on."
+      "minLength": 1,
+      "description": "Task id (task-redispatch), part id (verify-fix), Change id (review-fix) or artifact id (verifier)."
     },
-    "attempt": {
-      "type": "integer",
-      "minimum": 1
-    },
+    "attempt": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
     "of": {
       "type": "integer",
       "minimum": 1,
-      "description": "Budget for this loop kind."
+      "maximum": 9007199254740991,
+      "description": "The loop's budget for the round."
     },
-    "scope": {
-      "enum": ["full", "high+", "blockers"]
-    },
+    "scope": { "type": "string", "enum": ["full", "high+", "blockers"] },
     "openedAt": {
       "type": "string",
       "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
       "description": "ISO 8601 UTC with seconds."
     },
-    "closedAt": {
-      "type": "string",
-      "format": "date-time",
-      "description": "ISO 8601 UTC with seconds."
-    },
-    "outcome": {
-      "enum": ["ok", "fail", "not-run"]
-    },
-    "notRunCount": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "narrowedFrom": {
-      "enum": ["full", "high+", "blockers"]
-    },
+    "narrowedFrom": { "type": "string", "enum": ["full", "high+", "blockers"] },
     "dropped": {
+      "description": "Proposed findings of the previous fail that the new scope drops.",
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "summary"],
         "properties": {
           "id": {
             "type": "string",
+            "pattern": "^L-[0-9a-z]{8}$",
             "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
           },
-          "summary": {
-            "type": "string"
-          }
+          "summary": { "type": "string" }
+        },
+        "required": ["id", "summary"],
+        "additionalProperties": false
+      }
+    },
+    "entry": {
+      "description": "The kernel finding that records the dropped findings for the review gate.",
+      "type": "string",
+      "pattern": "^L-[0-9a-z]{8}$"
+    },
+    "escalation": {
+      "description": "Present on the round's escalation ticket (--escalate).",
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "From policy.escalation.model."
         }
       },
-      "description": "Findings that fell out of scope N+1 and became finding entries for the human."
+      "required": ["model"],
+      "additionalProperties": false
     }
   },
+  "required": ["ticket", "loop", "target", "attempt", "of", "scope", "openedAt"],
+  "additionalProperties": false,
   "examples": [
     {
-      "ticket": "A-7f3k",
+      "ticket": "A-7f3k9m2q",
       "loop": "task-redispatch",
       "target": "02-3",
       "attempt": 2,
@@ -79,12 +83,8 @@
       "scope": "high+",
       "openedAt": "2026-09-25T10:02:11Z",
       "narrowedFrom": "full",
-      "dropped": [
-        {
-          "id": "L-d3f6g",
-          "summary": "rename helper for clarity"
-        }
-      ]
+      "dropped": [{ "id": "L-d3f6g8h2", "summary": "rename helper for clarity" }],
+      "entry": "L-k4n8p2rt"
     }
   ]
 }

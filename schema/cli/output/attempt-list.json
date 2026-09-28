@@ -4,88 +4,80 @@
   "title": "bdk attempt list --json",
   "description": "Tickets and attempt records, open first.",
   "type": "object",
-  "allOf": [
-    {
-      "$ref": "../common/list-page.json"
-    },
-    {
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["ticket", "loop", "target", "attempt", "of", "scope", "openedAt"],
-            "properties": {
-              "ticket": {
-                "type": "string",
-                "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
-              },
-              "loop": {
-                "type": "string",
-                "description": "Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier, task-escalation."
-              },
-              "target": {
-                "type": "string",
-                "description": "Task, part or Change id the loop runs on."
-              },
-              "attempt": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "of": {
-                "type": "integer",
-                "minimum": 1,
-                "description": "Budget for this loop kind."
-              },
-              "scope": {
-                "enum": ["full", "high+", "blockers"]
-              },
-              "openedAt": {
-                "type": "string",
-                "format": "date-time",
-                "description": "ISO 8601 UTC with seconds."
-              },
-              "closedAt": {
-                "type": "string",
-                "format": "date-time",
-                "description": "ISO 8601 UTC with seconds."
-              },
-              "outcome": {
-                "enum": ["ok", "fail", "not-run"]
-              },
-              "notRunCount": {
-                "type": "integer",
-                "minimum": 0
-              }
-            }
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "pattern": "^A-[0-9a-z]{8}$",
+            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
+          },
+          "loop": {
+            "type": "string",
+            "enum": ["task-redispatch", "verify-fix", "review-fix", "verifier"],
+            "description": "The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds)."
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Task id (task-redispatch), part id (verify-fix), Change id (review-fix) or artifact id (verifier)."
+          },
+          "attempt": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "of": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "scope": { "type": "string", "enum": ["full", "high+", "blockers"] },
+          "openedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "description": "ISO 8601 UTC with seconds."
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "description": "ISO 8601 UTC with seconds."
+          },
+          "outcome": { "type": "string", "enum": ["ok", "fail", "not-run"] },
+          "escalation": { "type": "boolean", "const": true },
+          "entries": {
+            "description": "Ledger entries written under the ticket; with --for naming a task.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
-        "budgets": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object",
-            "required": ["used", "of"],
-            "properties": {
-              "used": {
-                "type": "integer"
-              },
-              "of": {
-                "type": "integer"
-              }
-            }
-          },
-          "description": "Per loop kind for the --for target."
-        }
+        "required": ["ticket", "loop", "target", "attempt", "of", "scope", "openedAt"],
+        "additionalProperties": false
+      }
+    },
+    "total": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "truncated": { "type": "boolean" },
+    "for": { "description": "The --for filter as given.", "type": "string" },
+    "budgets": {
+      "description": "With --for: `used` and `of` of each loop's current round of the target, and `not-run` the consecutive not-run counter.",
+      "type": "object",
+      "propertyNames": { "type": "string" },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "used": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          "of": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+        },
+        "required": ["used", "of"],
+        "additionalProperties": false
       }
     }
-  ],
-  "unevaluatedProperties": false,
+  },
+  "required": ["items", "total", "truncated"],
+  "additionalProperties": false,
   "examples": [
     {
       "items": [
         {
-          "ticket": "A-7f3k",
+          "ticket": "A-7f3k9m2q",
           "loop": "task-redispatch",
           "target": "02-3",
           "attempt": 2,
@@ -93,22 +85,14 @@
           "scope": "high+",
           "openedAt": "2026-09-25T10:02:11Z",
           "closedAt": "2026-09-25T10:19:40Z",
-          "outcome": "fail"
+          "outcome": "fail",
+          "entries": 2
         }
       ],
       "total": 1,
       "truncated": false,
       "for": "02-3",
-      "budgets": {
-        "task-redispatch": {
-          "used": 2,
-          "of": 3
-        },
-        "not-run": {
-          "used": 0,
-          "of": 3
-        }
-      }
+      "budgets": { "task-redispatch": { "used": 2, "of": 3 }, "not-run": { "used": 0, "of": 3 } }
     }
   ]
 }

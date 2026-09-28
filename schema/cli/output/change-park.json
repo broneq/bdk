@@ -21,11 +21,20 @@
       "type": "object",
       "properties": {
         "done": { "type": "boolean" },
-        "commit": { "type": "string" },
-        "skipped": { "description": "Why no checkpoint ran.", "type": "string" }
+        "commit": {
+          "description": "The checkpoint commit, abbreviated; present when done.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{7}$"
+        },
+        "skipped": {
+          "description": "Why no checkpoint commit was made; present when not done.",
+          "type": "string",
+          "minLength": 1
+        }
       },
       "required": ["done"],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "The checkpoint of the Change directory (`kernel-loops`, Checkpoint)."
     }
   },
   "required": ["change", "entry", "options", "resume", "checkpoint"],
@@ -36,7 +45,7 @@
       "entry": "L-t4w7n3kd",
       "options": ["accept as debt", "split part 02"],
       "resume": "bdk change resume 2026-09-25-passwordless-login --option <n>",
-      "checkpoint": { "done": false, "skipped": "change checkpoint lands with T22" }
+      "checkpoint": { "done": true, "commit": "a1b2c3d" }
     }
   ]
 }

@@ -1,8 +1,10 @@
 // `kernel-cli/log` (T20 records) through the committed bundle in real
 // repositories: one case per exit code and per declared rule of `log add`,
 // `list`, `show` and `resolve`, every output validated against its schema,
-// and the T20 acceptance cases on the ledger. `policy/observation-cap` of
-// `log add` is T23's (the cap needs dispatch packages) and stays untested here.
+// and the T20 acceptance cases on the ledger; `log ingest` (T22) with a
+// hand-written attempt record and dispatch package until T23 builds them.
+// `policy/observation-cap` of `log add` and `log ingest` is T23's (the cap
+// needs dispatch packages) and stays untested here.
 import { readdirSync, rmSync, utimesSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -334,5 +336,143 @@ describe("bdk log show and resolve", () => {
       5,
       "runtime/not-a-repo",
     );
+  });
+});
+
+const TICKET = "A-9c2d4f6h";
+
+/** An open verifier ticket with its dispatch package; answers the package's report path. */
+function ticketed(dir: string, closed = false): string {
+  const id = dir.split("/").at(-1) ?? "";
+  const report = `.bdk/changes/${id}/reports/plan-verify-plan-verifier-${TICKET}.md`;
+  writeDocument(fileStore(), join(dir, `attempts/verifier-plan-verify-${TICKET}.md`), {
+    data: {
+      schema: 1,
+      ticket: TICKET,
+      loop: "verifier",
+      target: "plan-verify",
+      attempt: 1,
+      of: 2,
+      scope: "full",
+      "opened-at": "2026-09-25T10:00:00Z",
+      author: "BDK Test <test@example.com>",
+      ...(closed ? { "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" } : {}),
+    },
+    body: "",
+  });
+  writeDocument(fileStore(), join(dir, `dispatch/plan-verify-plan-verifier-${TICKET}.md`), {
+    data: {
+      schema: 1,
+      ticket: TICKET,
+      target: "plan-verify",
+      role: "plan-verifier",
+      attempt: 1,
+      of: 2,
+      scope: "full",
+      at: "2026-09-25T10:00:01Z",
+      "kernel-version": "3.0.0",
+      "template-hash": `sha256:${"0".repeat(64)}`,
+      report,
+    },
+    body: "",
+  });
+  return report;
+}
+
+const REPORT =
+  "# Plan verification\n\nPart 02 leans on a helper that does not exist.\n\n" +
+  "```bdk-entries\n" +
+  "- type: blocker\n" +
+  "  summary: plan claims verifyToken exists; it does not\n" +
+  "  refs: [plan/parts/02-login.md, src/auth/token.ts]\n" +
+  "- type: finding\n" +
+  "  summary: part 02 has no test for expiry\n" +
+  "  refs: [plan/parts/02-login.md]\n" +
+  "  severity: high\n" +
+  "```\n";
+
+function ingest(root: string, stdin: string, ...args: string[]) {
+  return bdk(["log", "ingest", "--ticket", TICKET, ...args, "--json"], root, { stdin });
+}
+
+describe("bdk log ingest", () => {
+  it("exit 0: a report on stdin is stored and its entries carry the role", () => {
+    const { root, dir } = opened();
+    const report = ticketed(dir);
+    const result = answered(ingest(root, REPORT), "output/log-ingest.json") as {
+      entries: { source: string; ticket: string; type: string }[];
+      downgraded: unknown[];
+    };
+    expect(result.entries.map((entry) => [entry.type, entry.source, entry.ticket])).toEqual([
+      ["blocker", "agent:plan-verifier", TICKET],
+      ["finding", "agent:plan-verifier", TICKET],
+    ]);
+    expect(result.downgraded).toEqual([]);
+    expect(read(root, report)).toBe(REPORT);
+    expect(logFiles(dir)).toHaveLength(3);
+  });
+
+  it("exit 0: --file reads the report without copying it; a second ingest deduplicates", () => {
+    const { root, dir } = opened();
+    const report = ticketed(dir);
+    fileStore().write(join(root, "notes.md"), REPORT);
+    const first = answered(ingest(root, "", "--file", "notes.md"), "output/log-ingest.json");
+    const again = answered(ingest(root, "", "--file", "notes.md"), "output/log-ingest.json");
+    expect(again.entries).toEqual(first.entries);
+    expect(() => read(root, report)).toThrow();
+    expect(logFiles(dir)).toHaveLength(3);
+  });
+
+  it("exit 3 input/invalid-block: a wrong type names item, field and line; nothing written", () => {
+    const { root, dir } = opened();
+    ticketed(dir);
+    const before = logFiles(dir);
+    const result = refused(
+      ingest(root, REPORT.replace("- type: finding", "- type: bug")),
+      3,
+      "input/invalid-block",
+    );
+    expect(result.why).toMatch(/^item 2, line 9: type "bug" /);
+    expect(logFiles(dir)).toEqual(before);
+  });
+
+  it("exit 3 input/forbidden-field: an item carries source", () => {
+    const { root, dir } = opened();
+    ticketed(dir);
+    const result = refused(
+      ingest(root, REPORT.replace("  severity: high", "  source: user")),
+      3,
+      "input/forbidden-field",
+    );
+    expect(result.why).toBe("item 2, line 12: source is stamped by the kernel");
+  });
+
+  it("exit 3 input/missing-argument: no --ticket", () => {
+    const { root } = opened();
+    refused(bdk(["log", "ingest", "--json"], root, { stdin: REPORT }), 3, "input/missing-argument");
+  });
+
+  it("exit 2 policy/no-open-ticket: the ticket is closed", () => {
+    const { root, dir } = opened();
+    ticketed(dir, true);
+    refused(ingest(root, REPORT), 2, "policy/no-open-ticket");
+  });
+
+  it("exit 2 policy/no-active-change", () => {
+    refused(ingest(repository(), REPORT), 2, "policy/no-active-change");
+  });
+
+  it("exit 4 state/ledger-invalid", () => {
+    const { root, dir } = opened();
+    ticketed(dir);
+    fileStore().write(
+      join(dir, "log/20260101T000000Z-finding-L-broken00.md"),
+      "---\nschema: 1\n---\n",
+    );
+    refused(ingest(root, REPORT), 4, "state/ledger-invalid");
+  });
+
+  it("exit 5 runtime/not-a-repo", () => {
+    refused(ingest(outsideRepository(), REPORT), 5, "runtime/not-a-repo");
   });
 });

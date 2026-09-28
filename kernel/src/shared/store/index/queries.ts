@@ -129,15 +129,25 @@ export function openAttempts(index: IndexDb, changeId: string): OpenAttempt[] {
   }));
 }
 
-/** The role of an open ticket's dispatch package; undefined without both. */
-export function ticketRole(index: IndexDb, changeId: string, ticket: string): string | undefined {
+/** An open ticket's dispatch package: its role and its path from the project root. */
+export interface TicketDispatch {
+  readonly role: string;
+  readonly path: string;
+}
+
+/** The dispatch package of an open ticket; undefined without both. */
+export function ticketDispatch(
+  index: IndexDb,
+  changeId: string,
+  ticket: string,
+): TicketDispatch | undefined {
   const row = index.database
     .prepare(
-      `SELECT d.role FROM attempts a JOIN dispatches d ON d.change_id = a.change_id AND d.ticket = a.ticket
+      `SELECT d.role, d.path FROM attempts a JOIN dispatches d ON d.change_id = a.change_id AND d.ticket = a.ticket
        WHERE a.change_id = ? AND a.ticket = ? AND a.closed_at IS NULL ORDER BY d.path LIMIT 1`,
     )
     .get(changeId, ticket);
-  return row === undefined ? undefined : String(row.role);
+  return row === undefined ? undefined : { role: String(row.role), path: String(row.path) };
 }
 
 /** Every indexed Change, archived ones included, newest `updatedAt` first. */

@@ -8,7 +8,12 @@ export { closest } from "./hint.ts";
 export { mergeLayers } from "./merge.ts";
 export type { Merged } from "./merge.ts";
 export type { ConfigProblem } from "./problems.ts";
-export { createConfigRegistry, defineConfigModule, definePromptKey } from "./registry.ts";
+export {
+  createConfigRegistry,
+  defineConfigModule,
+  definePromptKey,
+  moduleValue,
+} from "./registry.ts";
 export type { ConfigModule, ConfigRegistry, PromptKey } from "./registry.ts";
 export { declaredSteps, unknownKeyMessage, validateLayers } from "./validate.ts";
 export type { Validated } from "./validate.ts";
@@ -20,7 +25,13 @@ export { promptsModule } from "./modules.ts";
 export { promptContent, resolvePrompts } from "./prompts.ts";
 export type { PromptFile, PromptInput, PromptMode, PromptValue, Prompts } from "./prompts.ts";
 export { resolveConfig } from "./resolve.ts";
-export { displayPath, problemRefusal, resolveOrRefuse, schemaCommand } from "./refusal.ts";
+export {
+  displayPath,
+  problemRefusal,
+  resolveOrRefuse,
+  schemaCommand,
+  schemaModules,
+} from "./refusal.ts";
 export type { ResolveScope, Resolved } from "./refusal.ts";
 export type { ConfigContext, Resolution } from "./resolve.ts";
 export { overriddenKeys, SNAPSHOT_PATH, writeSnapshot } from "./snapshot.ts";

@@ -60,7 +60,7 @@ describe("files and hash inputs", () => {
     ["plan-verify", undefined, [], { files: ["plan/parts/01-auth.md", "plan/parts/02-mail.md"] }],
     ["review", undefined, [], { codeTree: true }],
     ["gate", undefined, [], { none: true }],
-    ["execute-part", "01", [], { none: true }],
+    ["execute-part", "01", [], { files: ["plan/parts/01-auth.md"] }],
     ["close", undefined, [], { none: true }],
     ["post-task-step", undefined, [], { none: true }],
     ["design-part", "07", ["design/parts/07-<slug>.md"], { files: [] }],
@@ -155,9 +155,214 @@ describe("the baseline validator", () => {
   });
 
   it("has no checks for the kinds done elsewhere", () => {
-    for (const name of ["gate", "execute-part", "post-task-step", "close"]) {
+    for (const name of ["gate", "post-task-step", "close"]) {
       expect(kind(name).validate(fakeView(), { id: name })).toStrictEqual([]);
     }
+  });
+});
+
+describe("plan part checks", () => {
+  const PART = "plan/parts/02-mail.md";
+  const data = { id: "02", "depends-on": [], "do-not-touch": [], "spec-impact": "none" };
+
+  function checks(fixture: ViewFixture) {
+    return kind("plan-part").validate(fakeView(fixture), { id: "plan-part:02", nn: "02" });
+  }
+
+  function check(fixture: ViewFixture, id: string) {
+    return checks(fixture).find((found) => found.id === id);
+  }
+
+  it("runs every check in order on a valid part", () => {
+    expect(checks({ files: { [PART]: { data } } })).toStrictEqual(
+      [
+        "exists",
+        "non-empty",
+        "schema",
+        "size",
+        "tasks",
+        "do-not-touch",
+        "placeholder",
+        "grammar",
+        "spec-impact",
+      ].map((id) => ({ id, ok: true })),
+    );
+  });
+
+  it("size passes at 8 192 bytes and fails at 8 193", () => {
+    expect(check({ files: { [PART]: { data, bytes: 8192 } } }, "size")).toStrictEqual({
+      id: "size",
+      ok: true,
+    });
+    expect(check({ files: { [PART]: { data, bytes: 8193 } } }, "size")).toStrictEqual({
+      id: "size",
+      ok: false,
+      why: `${PART} is 8193 bytes, over the limit of 8192`,
+      rule: "policy/part-too-large",
+      instead: "bdk part split 02 <task-ids>",
+    });
+  });
+
+  it("tasks fails with no task and with nine", () => {
+    const none = check(
+      { files: { [PART]: { data } }, planParts: { [PART]: { tasks: [] } } },
+      "tasks",
+    );
+    expect(none).toMatchObject({ ok: false, rule: "policy/part-too-many-tasks" });
+    expect(none?.why).toBe(`${PART} holds no task`);
+    const nine = Array.from({ length: 9 }, (_, at) => ({ id: `02-${String(at + 1)}`, files: [] }));
+    const many = check(
+      { files: { [PART]: { data } }, planParts: { [PART]: { tasks: nine } } },
+      "tasks",
+    );
+    expect(many).toMatchObject({ ok: false, rule: "policy/part-too-many-tasks" });
+    expect(many?.why).toBe(`${PART} holds 9 tasks, over the limit of 8`);
+    const eight = { [PART]: { tasks: nine.slice(0, 8) } };
+    expect(check({ files: { [PART]: { data } }, planParts: eight }, "tasks")?.ok).toBe(true);
+  });
+
+  it("do-not-touch names the task, the path and the glob", () => {
+    const overlaps = [{ task: "02-1", path: "src/legacy/a.ts", glob: "src/legacy/**" }];
+    expect(
+      check({ files: { [PART]: { data } }, planParts: { [PART]: { overlaps } } }, "do-not-touch"),
+    ).toMatchObject({
+      ok: false,
+      why: "task 02-1 declares src/legacy/a.ts, which do-not-touch src/legacy/** forbids",
+      rule: "policy/do-not-touch-overlap",
+    });
+  });
+
+  it("placeholder names the fields", () => {
+    const placeholders = ["task 02-1 **Test cases:** item 2", "goal"];
+    expect(
+      check(
+        { files: { [PART]: { data } }, planParts: { [PART]: { placeholders } } },
+        "placeholder",
+      ),
+    ).toMatchObject({
+      ok: false,
+      why: "a placeholder holds task 02-1 **Test cases:** item 2, goal",
+      rule: "policy/placeholder",
+    });
+  });
+
+  it("grammar lists the problems with the default rule", () => {
+    const problems = ["task 02-1 has no **Files:** list", "task id 02-1 appears twice"];
+    const found = check(
+      { files: { [PART]: { data } }, planParts: { [PART]: { problems } } },
+      "grammar",
+    );
+    expect(found).toStrictEqual({
+      id: "grammar",
+      ok: false,
+      why: "task 02-1 has no **Files:** list; task id 02-1 appears twice",
+    });
+  });
+
+  it("spec-impact needs spec-delta/<capability>.md", () => {
+    const impact = { ...data, "spec-impact": ["auth", "kernel-cli/part"] };
+    expect(
+      check({ files: { [PART]: { data: impact }, "spec-delta/auth.md": {} } }, "spec-impact"),
+    ).toStrictEqual({
+      id: "spec-impact",
+      ok: false,
+      why: "spec-impact names kernel-cli/part, but spec-delta/kernel-cli/part.md is missing",
+    });
+    const both = {
+      [PART]: { data: impact },
+      "spec-delta/auth.md": {},
+      "spec-delta/kernel-cli/part.md": {},
+    };
+    expect(check({ files: both }, "spec-impact")?.ok).toBe(true);
+  });
+
+  it("an invalid frontmatter keeps the baseline and the size checks only", () => {
+    expect(
+      checks({ files: { [PART]: { invalid: "id: required" } } }).map((found) => found.id),
+    ).toStrictEqual(["exists", "non-empty", "schema", "size"]);
+  });
+});
+
+describe("execute-part checks", () => {
+  const files = { "plan/parts/02-mail.md": { data: { id: "02", "depends-on": [] } } };
+  const planParts = {
+    "plan/parts/02-mail.md": {
+      tasks: [
+        { id: "02-1", files: ["src/a.ts"] },
+        { id: "02-2", files: ["src/b.ts"] },
+      ],
+    },
+  };
+  const started = [{ id: "L-s0000001", type: "transition", to: "execute-part:02" }];
+
+  function checks(fixture: ViewFixture) {
+    return kind("execute-part").validate(fakeView({ files, planParts, ...fixture }), {
+      id: "execute-part:02",
+      nn: "02",
+    });
+  }
+
+  it("passes when started, every task committed and no ticket open", () => {
+    const work = {
+      commits: [
+        { commit: "a".repeat(40), part: "02", task: "02-1" },
+        { commit: "b".repeat(40), part: "02", task: "02-2" },
+      ],
+      openTickets: [{ ticket: "A-7h3k9m2p", target: "03-1" }],
+    };
+    expect(checks({ entries: started, work })).toStrictEqual([
+      { id: "started", ok: true },
+      { id: "commits", ok: true },
+      { id: "tickets", ok: true },
+    ]);
+  });
+
+  it("names a task without a trailer commit and an open ticket", () => {
+    const work = {
+      commits: [
+        { commit: "a".repeat(40), part: "02", task: "02-1" },
+        { commit: "c".repeat(40), part: "05", task: "02-2" },
+      ],
+      openTickets: [{ ticket: "A-7h3k9m2p", target: "02-2" }],
+    };
+    expect(checks({ entries: started, work })).toStrictEqual([
+      { id: "started", ok: true },
+      {
+        id: "commits",
+        ok: false,
+        why: "task 02-2 has no commit carrying BDK-Part: 02 and BDK-Task: 02-2",
+        instead: "bdk commit 02-2",
+      },
+      {
+        id: "tickets",
+        ok: false,
+        why: "ticket A-7h3k9m2p is open on 02-2",
+        instead: "bdk attempt close A-7h3k9m2p <outcome>",
+      },
+    ]);
+  });
+
+  it("an open ticket on the part itself fails too", () => {
+    const work = { commits: [], openTickets: [{ ticket: "A-7h3k9m2p", target: "02" }] };
+    expect(checks({ entries: started, work }).find((c) => c.id === "tickets")?.ok).toBe(false);
+  });
+
+  it("fails started without a start marker", () => {
+    const work = { commits: [], openTickets: [] };
+    expect(checks({ work })[0]).toStrictEqual({
+      id: "started",
+      ok: false,
+      why: "execute-part:02 is not started",
+      instead: "bdk part start 02",
+    });
+  });
+
+  it("fails without the work facts", () => {
+    expect(checks({ entries: started }).at(-1)).toStrictEqual({
+      id: "work",
+      ok: false,
+      why: "the trailer commits and open tickets were not read",
+    });
   });
 });
 

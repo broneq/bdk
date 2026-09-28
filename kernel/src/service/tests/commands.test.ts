@@ -1,11 +1,12 @@
-// The two handlers through the registry, on an in-memory store: the Node gate
+// The handlers through the registry, on an in-memory store: the Node gate
 // exemption of `doctor` and the standalone `version`.
 import { describe, expect, it } from "vitest";
 
 import commands from "../../../../schema/cli/commands.json" with { type: "json" };
 import { settingsRegistry } from "../../registrations.ts";
 import { createRegistry, loadIndex } from "../../shared/registry/index.ts";
-import { memoryStore } from "../../shared/store/index.ts";
+import { fakeGit } from "../../log/tests/support.ts";
+import { memoryIndex, memoryStore } from "../../shared/store/index.ts";
 import { serviceRegistrations } from "../index.ts";
 
 const index = loadIndex(commands);
@@ -17,6 +18,8 @@ const registry = createRegistry(
     pluginRoot: "/plugins/bdk",
     contract: index.contract,
     settings: settingsRegistry(),
+    git: fakeGit(),
+    openIndex: memoryIndex,
   }),
 );
 

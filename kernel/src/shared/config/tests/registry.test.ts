@@ -6,6 +6,7 @@ import {
   defineConfigModule,
   definePromptKey,
   mergeLayers,
+  moduleValue,
   validateLayers,
 } from "../index.ts";
 import type { Layer } from "../index.ts";
@@ -112,9 +113,9 @@ describe("validateLayers", () => {
   });
 
   it("names the owner task of a key declared for a later task", () => {
-    const result = validate(layer("project", { policy: { budgets: { "task-redispatch": 5 } } }));
+    const result = validate(layer("project", { policy: { log: { "max-observations": 5 } } }));
     expect(result.problems).toMatchObject([
-      { key: "policy.budgets.task-redispatch", message: "lands with T22" },
+      { key: "policy.log.max-observations", message: "lands with T23" },
     ]);
   });
 
@@ -124,11 +125,11 @@ describe("validateLayers", () => {
   });
 
   it("hints the kebab-case form of a camelCase planned key", () => {
-    const result = validate(layer("project", { policy: { budgets: { taskRedispatch: 5 } } }));
+    const result = validate(layer("project", { policy: { log: { maxObservations: 5 } } }));
     expect(result.problems).toMatchObject([
       {
-        key: "policy.budgets.taskRedispatch",
-        message: "unknown key; did you mean policy.budgets.task-redispatch?",
+        key: "policy.log.maxObservations",
+        message: "unknown key; did you mean policy.log.max-observations?",
       },
     ]);
   });
@@ -222,5 +223,102 @@ describe("validateLayers", () => {
         message: "the id a appears twice in one layer",
       },
     ]);
+  });
+});
+
+describe("dotted module keys", () => {
+  const gates = defineConfigModule({
+    key: "policy.gates",
+    consumer: "graph",
+    owner: "T21",
+    description: "Human gates.",
+    schema: z.strictObject({ design: z.enum(["manual", "auto"]).default("manual") }).prefault({}),
+  });
+  const budgets = defineConfigModule({
+    key: "policy.budgets",
+    consumer: "attempt",
+    owner: "T22",
+    description: "Loop budgets.",
+    schema: z.strictObject({ verifier: z.int().min(0).default(2) }).prefault({}),
+  });
+  const checkpoint = defineConfigModule({
+    key: "policy.checkpoint",
+    consumer: "change",
+    owner: "T22",
+    description: "Checkpoint commits.",
+    schema: z.strictObject({ enabled: z.boolean().default(true) }).prefault({}),
+  });
+  const policy = createConfigRegistry({ modules: [gates, budgets, checkpoint], prompts: [] });
+
+  function check(...layers: Layer[]) {
+    return validateLayers(policy, layers, mergeLayers(layers));
+  }
+
+  it("composes the modules of one root into one strict object", () => {
+    expect(policy.keys).toStrictEqual([
+      "policy",
+      "policy.gates",
+      "policy.gates.design",
+      "policy.budgets",
+      "policy.budgets.verifier",
+      "policy.checkpoint",
+      "policy.checkpoint.enabled",
+    ]);
+    const result = check(layer("project", { policy: { budgets: { verifier: 3 } } }));
+    expect(result.problems).toStrictEqual([]);
+    expect(result.value).toStrictEqual({
+      policy: {
+        gates: { design: "manual" },
+        budgets: { verifier: 3 },
+        checkpoint: { enabled: true },
+      },
+    });
+  });
+
+  it("fails on a module whose key is a prefix of another's", () => {
+    const whole = defineConfigModule({ ...gates, key: "policy" });
+    expect(() => createConfigRegistry({ modules: [whole, gates], prompts: [] })).toThrow(
+      /policy overlaps policy.gates/,
+    );
+    expect(() => createConfigRegistry({ modules: [gates, whole], prompts: [] })).toThrow(
+      /policy.gates overlaps policy/,
+    );
+  });
+
+  it("fails on two modules with the same dotted key", () => {
+    expect(() => createConfigRegistry({ modules: [gates, gates], prompts: [] })).toThrow(
+      /policy.gates is declared twice/,
+    );
+  });
+
+  it("answers an unknown key under the composed root with a hint", () => {
+    const result = check(layer("project", { policy: { budgets: { verfier: 3 } } }));
+    expect(result.problems).toMatchObject([
+      {
+        rule: "policy/unknown-config-key",
+        key: "policy.budgets.verfier",
+        message: "unknown key; did you mean policy.budgets.verifier?",
+      },
+    ]);
+  });
+
+  it("names the owner of a planned key inside a registered subtree", () => {
+    const result = check(layer("project", { policy: { checkpoint: { "squash-at-close": true } } }));
+    expect(result.problems).toMatchObject([
+      { key: "policy.checkpoint.squash-at-close", message: "lands with T30" },
+    ]);
+  });
+
+  it("names the owner of a planned subtree next to registered ones", () => {
+    const result = check(layer("project", { policy: { log: { "max-observations": 1 } } }));
+    expect(result.problems).toMatchObject([
+      { key: "policy.log.max-observations", message: "lands with T23" },
+    ]);
+  });
+
+  it("reads a module's value by its dotted key", () => {
+    const result = check(layer("project", { policy: { gates: { design: "auto" } } }));
+    expect(moduleValue(gates, result.value ?? {})).toStrictEqual({ design: "auto" });
+    expect(moduleValue(budgets, result.value ?? {})).toStrictEqual({ verifier: 2 });
   });
 });

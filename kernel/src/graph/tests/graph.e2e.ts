@@ -2,9 +2,7 @@
 // repositories: one case per exit code and per declared rule of `next`,
 // `explain`, `validate` and `done`, every output validated against its schema.
 // Rules owned by later tasks stay untested here and land with their owners'
-// cases: `policy/part-too-large`, `policy/part-too-many-tasks`,
-// `policy/do-not-touch-overlap` and `policy/placeholder` (T22, the part
-// validators), `policy/spec-invalid` (T30, the spec delta validator) and
+// cases: `policy/spec-invalid` (T30, the spec delta validator) and
 // `policy/missing-citation` (T23, verdict citations).
 import { readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -41,11 +39,20 @@ function writeDesign(dir: string, name: "design" | "architecture", body = "Text.
   write(dir, `${name}.md`, `---\nschema: 1\ntitle: ${name}\n---\n${body}`);
 }
 
-function writePlanPart(dir: string, nn: string): void {
+/** One task `<nn>-1` in the plan task grammar. */
+function taskBody(nn: string, testCase = "stores a token"): string {
+  return `## ${nn}-1 Store the token\n\n**Files:**\n\n- Create: \`src/part-${nn}.ts\`\n\n**Test cases:**\n\n- ${testCase}\n`;
+}
+
+function writePlanPart(
+  dir: string,
+  nn: string,
+  fields: { body?: string; doNotTouch?: string } = {},
+): void {
   write(
     dir,
     `plan/parts/${nn}-part.md`,
-    `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\ngoal: g\nsuccess-measure: m\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n---\nTasks.\n`,
+    `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\ngoal: g\nsuccess-measure: m\ndo-not-touch: [${fields.doNotTouch ?? ""}]\ndepends-on: []\nspec-impact: none\n---\n${fields.body ?? taskBody(nn)}`,
   );
 }
 
@@ -231,6 +238,22 @@ describe("bdk validate", () => {
     const text = bdk(["validate", "design"], root);
     expect(text.code).toBe(2);
     expect(text.stdout + text.stderr).toContain("policy/validation-failed");
+  });
+
+  it.each([
+    ["policy/part-too-large", { body: `${taskBody("01")}\n${"x".repeat(8192)}\n` }],
+    ["policy/part-too-many-tasks", { body: "No tasks yet.\n" }],
+    ["policy/do-not-touch-overlap", { doNotTouch: '"src/**"' }],
+    ["policy/placeholder", { body: taskBody("01", "TODO") }],
+  ])("exit 2 %s in text mode; valid: false under --json", (rule, fields) => {
+    const { root, dir } = opened();
+    writePlanPart(dir, "01", fields);
+    expect(
+      answered(bdk(["validate", "plan-part:01", "--json"], root), "output/validate.json"),
+    ).toMatchObject({ valid: false });
+    const text = bdk(["validate", "plan-part:01"], root);
+    expect(text.code).toBe(2);
+    expect(text.stdout + text.stderr).toContain(rule);
   });
 
   it("exit 3 input/not-found: nothing is actionable", () => {

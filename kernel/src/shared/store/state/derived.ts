@@ -30,16 +30,36 @@ function latest<T extends EntryFacts>(entries: readonly T[]): T | undefined {
   return best;
 }
 
+/** How a Change's transitions map to stages: the pipeline's, or a test's. */
+export interface StageMap {
+  /** A node or instance id's pipeline stage; a stage id maps to itself (T21). */
+  stage(to: string): string;
+  /** The stage's position in the pipeline; later stages rank higher. */
+  rank(stage: string): number;
+}
+
 /**
- * The stage of the latest transition's target; `stageOfTarget` maps a node or
- * instance id to its pipeline stage and a stage id to itself (T21).
+ * The stage of the latest transition's target. Entry times have second
+ * precision, so the kernel's own transitions of one second (`done plan-verify`
+ * then `part start`) tie: the later stage in pipeline order wins the tie.
  */
-export function stageOf(
-  entries: readonly EntryFacts[],
-  stageOfTarget: (to: string) => string,
-): string {
-  const to = latest(entries.filter((entry) => entry.type === "transition"))?.to;
-  return to === undefined ? "intent" : stageOfTarget(to);
+export function stageOf(entries: readonly EntryFacts[], stages: StageMap): string {
+  let best: { readonly at: string; readonly rank: number; readonly id: string } | undefined;
+  let stage = "intent";
+  for (const entry of entries) {
+    if (entry.type !== "transition" || entry.to === undefined) continue;
+    const candidate = stages.stage(entry.to);
+    const rank = stages.rank(candidate);
+    if (
+      best === undefined ||
+      entry.at > best.at ||
+      (entry.at === best.at && (rank > best.rank || (rank === best.rank && entry.id > best.id)))
+    ) {
+      best = { at: entry.at, rank, id: entry.id };
+      stage = candidate;
+    }
+  }
+  return stage;
 }
 
 /** The park question that holds the Change, or undefined when it is not parked. */

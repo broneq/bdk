@@ -13,7 +13,7 @@ export function listAllChanges(
 ): Promise<ListItem[]> {
   return withIndex(deps.openIndex, deps.store, projectRoot, (index) => {
     refreshAll(index);
-    const stageOfTarget = stageResolver(deps);
+    const stages = stageResolver(deps);
     const branches = new Map<string, string>();
     for (const marker of listMarkers(deps.store, projectRoot)) {
       if (!branches.has(marker.change)) branches.set(marker.change, marker.branch);
@@ -21,7 +21,7 @@ export function listAllChanges(
     return listChanges(index)
       .filter((change) => options.archived || !change.archived)
       .map((change) => {
-        const facts = changeFacts(index, change.id, stageOfTarget);
+        const facts = changeFacts(index, change.id, stages);
         const branch = branches.get(change.id);
         const state = change.archived
           ? "archived"

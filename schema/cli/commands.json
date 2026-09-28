@@ -167,7 +167,7 @@
       "output": "output/change-park.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": ["policy/invalid-transition", "policy/ticket-open", "runtime/git-missing"],
-      "writes": [".bdk/changes/<id>/log/", ".bdk/changes/<id>/attempts/"]
+      "writes": [".bdk/changes/<id>/log/", "git:commit"]
     },
     {
       "id": "change-takeover",
@@ -187,8 +187,19 @@
       ],
       "output": "output/change-takeover.json",
       "exits": [0, 2, 3, 4, 5],
-      "refusals": ["policy/invalid-transition", "policy/ticket-open"],
-      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", ".bdk/.machine/"]
+      "refusals": [
+        "policy/invalid-transition",
+        "policy/ticket-open",
+        "state/trailer-mismatch",
+        "runtime/git-missing"
+      ],
+      "writes": [
+        ".bdk/changes/<id>/attempts/",
+        ".bdk/changes/<id>/log/",
+        ".bdk/changes/<id>/",
+        ".bdk/.machine/",
+        ".bdk/rules/"
+      ]
     },
     {
       "id": "change-checkpoint",
@@ -203,7 +214,12 @@
       "flags": [],
       "output": "output/change-checkpoint.json",
       "exits": [0, 2, 3, 4, 5],
-      "refusals": ["policy/git-in-progress", "policy/ticket-open", "runtime/git-missing"],
+      "refusals": [
+        "policy/git-in-progress",
+        "policy/git-hook-failed",
+        "policy/ticket-open",
+        "runtime/git-missing"
+      ],
       "writes": ["git:commit"]
     },
     {
@@ -408,7 +424,8 @@
         "policy/part-too-large",
         "policy/part-too-many-tasks",
         "policy/do-not-touch-overlap",
-        "policy/placeholder"
+        "policy/placeholder",
+        "policy/validation-failed"
       ],
       "writes": [".bdk/changes/<id>/log/"]
     },
@@ -483,15 +500,20 @@
         {
           "name": "<loop>",
           "required": true,
-          "description": "Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier, task-escalation."
+          "description": "Loop kind from policy: task-redispatch, verify-fix, review-fix, verifier."
         },
         {
           "name": "<target>",
           "required": true,
-          "description": "Task, part or Change id."
+          "description": "Task id for task-redispatch, part id for verify-fix, the Change id for review-fix, an artifact id for verifier."
         }
       ],
-      "flags": [],
+      "flags": [
+        {
+          "name": "--escalate",
+          "description": "Open the round's one-shot escalation ticket (A-drabina); allowed only when the round's budget is used up or it oscillates."
+        }
+      ],
       "output": "output/attempt-open.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": [
@@ -499,9 +521,10 @@
         "policy/not-ready",
         "policy/budget-exhausted",
         "policy/oscillation",
-        "policy/ticket-open"
+        "policy/ticket-open",
+        "policy/invalid-transition"
       ],
-      "writes": [".bdk/changes/<id>/attempts/"]
+      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit"]
     },
     {
       "id": "attempt-close",
@@ -528,12 +551,12 @@
         {
           "name": "--envelope",
           "value": "<path>",
-          "description": "The subagent's envelope file; its log ids and files are checked."
+          "description": "The subagent's envelope file; its entry ids are checked."
         },
         {
           "name": "--reason",
           "value": "<text>",
-          "description": "Required with not-run: which precondition was missing."
+          "description": "Required with not-run: which precondition was missing. Written as the record's body."
         }
       ],
       "output": "output/attempt-close.json",
@@ -547,7 +570,7 @@
         "policy/missing-citation",
         "runtime/git-missing"
       ],
-      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/"]
+      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit"]
     },
     {
       "id": "attempt-list",
@@ -1220,7 +1243,7 @@
         {
           "name": "--message",
           "value": "<text>",
-          "description": "Subject line; default from the task title."
+          "description": "Subject line; default the task title."
         }
       ],
       "output": "output/commit.json",
@@ -1229,6 +1252,7 @@
         "input/not-found",
         "policy/do-not-touch",
         "policy/git-in-progress",
+        "policy/git-hook-failed",
         "policy/nothing-to-commit",
         "policy/ticket-open",
         "runtime/git-missing"

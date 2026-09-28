@@ -9,8 +9,9 @@ import { partFiles } from "../domain/kinds/index.ts";
 import type { Kind } from "../domain/kinds/index.ts";
 import type { DoneReport } from "../domain/reports.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
+import type { AppendResult } from "../../log/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
-import type { Refusal, Rule } from "../../shared/refusal/index.ts";
+import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import { generateDesignIndex, generatePlanIndex, refreshChange } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
@@ -63,12 +64,14 @@ export function markDone(
     }
 
     for (const target of targets) {
-      const failed = checksOf(read, target).find((check) => !check.ok);
-      if (failed !== undefined) {
+      const failed = checksOf(read, target).filter((check) => !check.ok);
+      const first = failed[0];
+      if (first !== undefined) {
+        const named = failed.map((check) => `${check.id}: ${check.why ?? "failed"}`).join("; ");
         return refuse(
-          (failed.rule ?? "policy/validation-failed") as Rule,
-          `${target.id} fails check ${failed.id}: ${failed.why ?? "failed"}`,
-          [...(failed.instead === undefined ? [] : [failed.instead]), `bdk validate ${target.id}`],
+          "policy/validation-failed",
+          `${target.id} fails ${failed.length === 1 ? "check" : "checks"} ${named}`,
+          [...(first.instead === undefined ? [] : [first.instead]), `bdk validate ${target.id}`],
         );
       }
     }
@@ -76,23 +79,7 @@ export function markDone(
 
     let entry: string | undefined;
     for (const target of targets) {
-      const inputHash = (await read.currentHash(target)) ?? emptyHash(deps, change);
-      const files = kind.writes(read.view, target.nn).filter((path) => !path.includes("<"));
-      const written = await appendEntry(
-        deps,
-        change,
-        index,
-        {
-          type: "transition",
-          summary: `${target.id} done`,
-          status: "accepted",
-          refs: [target.id, ...files],
-          body: "",
-          to: target.id,
-          inputHash,
-        },
-        { dedupe: false },
-      );
+      const written = await writeDoneMarker(deps, change, index, read, target);
       if ("refused" in written) return written;
       entry = written.entry.id;
     }
@@ -108,6 +95,39 @@ export function markDone(
       ...(entry === undefined ? {} : { entry }),
     };
   });
+}
+
+/**
+ * The done marker of a node (`kernel-pipeline`, Node states): a kernel
+ * `transition` to the node with the hash of its current inputs. `bdk done`
+ * and `part done` are its only callers.
+ */
+export async function writeDoneMarker(
+  deps: GraphDeps,
+  change: ActiveChange,
+  index: IndexDb,
+  read: ChangeGraph,
+  target: GraphNode,
+): Promise<AppendResult | Refusal> {
+  const kind = read.kinds.get(target.kind);
+  if (kind === undefined) throw new Error(`${target.id} has the unknown kind ${target.kind}`);
+  const inputHash = (await read.currentHash(target)) ?? emptyHash(deps, change);
+  const files = kind.writes(read.view, target.nn).filter((path) => !path.includes("<"));
+  return appendEntry(
+    deps,
+    change,
+    index,
+    {
+      type: "transition",
+      summary: `${target.id} done`,
+      status: "accepted",
+      refs: [target.id, ...files],
+      body: "",
+      to: target.id,
+      inputHash,
+    },
+    { dedupe: false },
+  );
 }
 
 /** The refusals that depend only on the node and its kind. */

@@ -223,7 +223,7 @@ describe("state write map", () => {
     );
     expect(problems(stateSpec, seeded, writes)).toStrictEqual([
       "attempt open declares .bdk/changes/<id>/dispatch/, which the file table does not name it for",
-      "attempt open: **Writes:** .bdk/changes/<id>/attempts/ differs from writes[] .bdk/changes/<id>/attempts/, .bdk/changes/<id>/dispatch/",
+      "attempt open: **Writes:** .bdk/changes/<id>/attempts/, .bdk/changes/<id>/log/, git:commit differs from writes[] .bdk/changes/<id>/attempts/, .bdk/changes/<id>/log/, git:commit, .bdk/changes/<id>/dispatch/",
     ]);
   });
 
@@ -236,9 +236,12 @@ describe("state write map", () => {
   });
 
   it("fails on source user from another writer", () => {
-    const seeded = stateSpec.replace("`change park` (`kernel`)", "`change park` (`user`)");
+    const seeded = stateSpec.replace(
+      "`change park` and `attempt close` at the end of the ladder (`kernel`",
+      "`change park` and `attempt close` at the end of the ladder (`user`",
+    );
     expect(problems(seeded, commands, writes)).toStrictEqual([
-      "entry type question: source user stamped by change park",
+      "entry type question: source user stamped by change park, attempt close",
     ]);
   });
 });

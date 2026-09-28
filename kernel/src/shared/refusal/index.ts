@@ -33,6 +33,7 @@ export const RULES = [
   "policy/observation-cap",
   "policy/invalid-transition",
   "policy/git-in-progress",
+  "policy/git-hook-failed",
   "policy/nothing-to-commit",
   "policy/spec-invalid",
   "policy/spec-conflict",

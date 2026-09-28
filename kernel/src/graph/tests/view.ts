@@ -1,6 +1,13 @@
 // A `ChangeView` from literals, for the pure tests of the kinds, the engine
 // and the gate rule: files by path, entries in order, report statuses by id.
-import type { ChangeView, FileFacts, GraphEntry, Inputs } from "../domain/kinds/index.ts";
+import type {
+  ChangeView,
+  FileFacts,
+  GraphEntry,
+  Inputs,
+  PlanPartFacts,
+  WorkFacts,
+} from "../domain/kinds/index.ts";
 import type { Profile } from "../../shared/vocabulary/index.ts";
 
 export interface ViewFixture {
@@ -13,6 +20,9 @@ export interface ViewFixture {
   })[];
   /** Entry id -> the status of the report it points at. */
   readonly reports?: Readonly<Record<string, string>>;
+  /** Plan part path -> its parsed body; a plan part file without one holds task `<nn>-1`. */
+  readonly planParts?: Readonly<Record<string, Partial<PlanPartFacts>>>;
+  readonly work?: WorkFacts;
 }
 
 export function fakeView(fixture: ViewFixture = {}): ChangeView {
@@ -40,6 +50,18 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
         .map((path) => path.slice(dir.length + 1))
         .sort(),
     reportStatus: (entry) => fixture.reports?.[entry.id],
+    planPart: (path) => {
+      if (files[path] === undefined) return undefined;
+      const nn = /(\d{2})-[^/]*\.md$/.exec(path)?.[1] ?? "01";
+      return {
+        tasks: [{ id: `${nn}-1`, files: ["src/a.ts"] }],
+        problems: [],
+        placeholders: [],
+        overlaps: [],
+        ...fixture.planParts?.[path],
+      };
+    },
+    ...(fixture.work === undefined ? {} : { work: fixture.work }),
   };
 }
 

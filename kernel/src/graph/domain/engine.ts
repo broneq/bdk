@@ -259,11 +259,20 @@ function skipReason(node: PipelineNode, kind: Kind, input: GraphInput): string |
   return kind.skip?.(input.view);
 }
 
-/** Node id -> the latest `transition` from the kernel naming it in `to`. */
+/**
+ * Node id -> its latest done marker: a kernel `transition` naming it in `to`
+ * with an `input-hash`. A kernel transition without one (the `part start`
+ * marker, a stage transition) is not a done marker.
+ */
 function latestDone(entries: readonly GraphEntry[]): Map<string, GraphEntry> {
   const latest = new Map<string, GraphEntry>();
   for (const entry of entries) {
-    if (entry.type !== "transition" || entry.source !== "kernel" || entry.to === undefined)
+    if (
+      entry.type !== "transition" ||
+      entry.source !== "kernel" ||
+      entry.to === undefined ||
+      entry.inputHash === undefined
+    )
       continue;
     const known = latest.get(entry.to);
     if (

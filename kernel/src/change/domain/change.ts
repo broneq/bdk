@@ -9,8 +9,6 @@ export const DEFAULT_PARK_OPTIONS = ["accept as debt", "change decision X", "spl
 
 export const DEFAULT_PARK_REASON = "Change parked: choose how to continue";
 
-export const CHECKPOINT_SKIPPED = "change checkpoint lands with T22";
-
 /** Latin letters NFKD does not split into a base letter and an accent. */
 const UNDECOMPOSED: Readonly<Record<string, string>> = {
   ł: "l",
@@ -89,7 +87,7 @@ interface OpenTicketView {
 }
 
 /** The closed lists of the change outputs; `schema/` builds its enums from them. */
-export const PART_STATES = ["blocked", "ready", "started", "done"] as const;
+export const PART_STATES = ["blocked", "ready", "started", "done", "stale"] as const;
 export const SPEC_IMPACTS = ["none", "delta"] as const;
 export const CHANGE_STATES = ["active", "parked", "archived"] as const;
 export const RESUMED_FROM = ["parked", "other-branch", "other-machine"] as const;
@@ -128,7 +126,7 @@ interface GateView {
   readonly pending: readonly PendingEntryView[];
 }
 
-/** A plan part; lands with T22. */
+/** A plan part as `part list` reports it. */
 interface PartView {
   readonly part: string;
   readonly title: string;
@@ -182,9 +180,24 @@ export interface ParkReport {
   readonly entry: string;
   readonly options: readonly string[];
   readonly resume: string;
-  readonly checkpoint: {
-    readonly done: boolean;
-    readonly commit?: string | undefined;
-    readonly skipped?: string | undefined;
-  };
+  readonly checkpoint: CheckpointView;
+}
+
+/** A checkpoint that ran (`done` with the short commit) or why it was skipped. */
+export interface CheckpointView {
+  readonly done: boolean;
+  readonly commit?: string | undefined;
+  readonly skipped?: string | undefined;
+}
+
+export interface CheckpointReport extends CheckpointView {
+  readonly change: string;
+}
+
+export interface TakeoverReport {
+  readonly change: string;
+  /** The session that held the tickets; stamped from T24. */
+  readonly previousSession?: string | undefined;
+  readonly closedTickets: readonly string[];
+  readonly rebuilt: boolean;
 }

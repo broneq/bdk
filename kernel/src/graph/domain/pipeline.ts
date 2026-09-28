@@ -148,6 +148,17 @@ export function stageOfTarget(pipeline: Pipeline, to: string): string {
   return pipeline.nodes.find((candidate) => candidate.kind === kind)?.stage ?? to;
 }
 
+/** `stageOfTarget` with the pipeline's stage order, for `stageOf` (`shared/store`). */
+export function stageMap(pipeline: Pipeline): {
+  stage(to: string): string;
+  rank(stage: string): number;
+} {
+  return {
+    stage: (to) => stageOfTarget(pipeline, to),
+    rank: (stage) => pipeline.stages.findIndex((candidate) => candidate.id === stage),
+  };
+}
+
 /** The command of a stage, the one the user types to enter it. */
 export function stageCommand(pipeline: Pipeline, stage: string): string | undefined {
   return pipeline.stages.find((candidate) => candidate.id === stage)?.command;

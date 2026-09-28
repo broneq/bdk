@@ -186,14 +186,68 @@ describe("bdk config check", () => {
   });
 
   it("acceptance: key of a later task", () => {
-    const root = fixture({ ".bdk/settings.yaml": "policy:\n  budgets:\n    verifier: 3\n" }).root;
+    const root = fixture({
+      ".bdk/settings.yaml": "policy:\n  log:\n    max-observations: 3\n",
+    }).root;
     const refusal = refused(
       bdk(["config", "check", "--json"], root),
       2,
       "policy/unknown-config-key",
     );
-    expect(refusal.why).toContain("policy.budgets.verifier");
-    expect(refusal.why).toContain("T22");
+    expect(refusal.why).toContain("policy.log.max-observations");
+    expect(refusal.why).toContain("lands with T23");
+  });
+
+  it("acceptance: one root, several consumers", () => {
+    const root = fixture({
+      ".bdk/settings.yaml": "policy:\n  budgets:\n    verifier: 3\n  gates:\n    design: auto\n",
+    }).root;
+    expect(bdk(["config", "check"], root).code).toBe(0);
+    const shown = bdk(["config", "show", "policy", "--json"], root);
+    expect(shown.code).toBe(0);
+    expect(JSON.parse(shown.stdout)).toMatchObject({
+      value: { budgets: { verifier: 3 }, gates: { design: "auto" } },
+    });
+    const typo = fixture({ ".bdk/settings.yaml": "policy:\n  budgets:\n    verfier: 3\n" }).root;
+    const refusal = refused(
+      bdk(["config", "check", "--json"], typo),
+      2,
+      "policy/unknown-config-key",
+    );
+    expect(refusal.why).toContain("did you mean policy.budgets.verifier?");
+    expect(refusal.instead[0]).toBe("bdk config schema policy.budgets");
+  });
+
+  it("acceptance: planned key inside a registered subtree", () => {
+    const root = fixture({
+      ".bdk/settings.yaml": "policy:\n  checkpoint:\n    squash-at-close: true\n",
+    }).root;
+    const refusal = refused(
+      bdk(["config", "check", "--json"], root),
+      2,
+      "policy/unknown-config-key",
+    );
+    expect(refusal.why).toContain("lands with T30");
+  });
+
+  it("acceptance: T22 defaults", () => {
+    const root = fixture({}).root;
+    const shown = bdk(["config", "show", "policy", "--json"], root);
+    expect(shown.code).toBe(0);
+    expect(JSON.parse(shown.stdout)).toMatchObject({
+      value: {
+        budgets: {
+          "task-redispatch": 3,
+          "verify-fix": 2,
+          "review-fix": 2,
+          verifier: 2,
+          "not-run": 3,
+        },
+        oscillation: { threshold: 2 },
+        escalation: { enabled: true, model: "opus", "per-change": 3 },
+        checkpoint: { enabled: true },
+      },
+    });
   });
 
   it("acceptance: local override visible in the snapshot", () => {

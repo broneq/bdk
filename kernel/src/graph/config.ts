@@ -8,19 +8,15 @@ import { defineConfigModule, definePromptKey } from "../shared/config/index.ts";
 
 const gate = z.enum(["manual", "auto"]).default("manual");
 
-export const policyModule = defineConfigModule({
-  key: "policy",
+export const gatesModule = defineConfigModule({
+  key: "policy.gates",
   consumer: "graph",
   owner: "T21",
   description: "How the pipeline proceeds: whether each human gate waits for the user.",
   schema: z
     .strictObject({
-      gates: z
-        .strictObject({
-          design: gate.meta({ description: "auto lets a policy transition pass gate:design." }),
-          review: gate.meta({ description: "auto lets a policy transition pass gate:review." }),
-        })
-        .prefault({}),
+      design: gate.meta({ description: "auto lets a policy transition pass gate:design." }),
+      review: gate.meta({ description: "auto lets a policy transition pass gate:review." }),
     })
     .prefault({}),
 });

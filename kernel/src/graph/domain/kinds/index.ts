@@ -17,6 +17,8 @@ export type {
   Inputs,
   Kind,
   KindRegistry,
+  PlanPartFacts,
+  WorkFacts,
 } from "./kind.ts";
 
 export function kindRegistry(extra: readonly Kind[] = []): KindRegistry {

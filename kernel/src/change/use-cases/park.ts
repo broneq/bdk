@@ -1,17 +1,14 @@
 // `bdk change park`: writes the park question (`park: true`, the options,
-// `source: kernel`). The checkpoint commit lands with T22 (design D-14).
+// `source: kernel`), then runs the checkpoint and reports it; a skipped
+// checkpoint never fails the park (T22 design D-11).
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
-import { refuse } from "../../shared/refusal/index.ts";
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import { listEntries, openAttempts, parkedQuestion } from "../../shared/store/index.ts";
-import {
-  CHECKPOINT_SKIPPED,
-  DEFAULT_PARK_OPTIONS,
-  DEFAULT_PARK_REASON,
-  resumeCommand,
-} from "../domain/change.ts";
+import { DEFAULT_PARK_OPTIONS, DEFAULT_PARK_REASON, resumeCommand } from "../domain/change.ts";
 import type { ParkReport } from "../domain/change.ts";
+import { implicitCheckpoint, resolvedSettings } from "./checkpoint.ts";
 import type { ChangeDeps } from "./deps.ts";
 
 const TEXT_MAX = 120;
@@ -19,6 +16,7 @@ const TEXT_MAX = 120;
 export function parkChange(
   deps: ChangeDeps,
   change: ActiveChange,
+  globalDir: string,
   input: { readonly reason?: string | undefined; readonly options: readonly string[] },
 ): Promise<ParkReport | Refusal> {
   const summary = input.reason ?? DEFAULT_PARK_REASON;
@@ -35,6 +33,8 @@ export function parkChange(
       ),
     );
   }
+  const settings = resolvedSettings(deps, change, globalDir);
+  if (isRefusal(settings)) return Promise.resolve(settings);
   return withChangeIndex(deps, change, async (index) => {
     const tickets = openAttempts(index, change.id);
     if (tickets.length > 0) {
@@ -64,7 +64,7 @@ export function parkChange(
       entry: entry.entry.id,
       options,
       resume: resumeCommand(change.id),
-      checkpoint: { done: false, skipped: CHECKPOINT_SKIPPED },
+      checkpoint: await implicitCheckpoint(deps, change, settings),
     };
   });
 }

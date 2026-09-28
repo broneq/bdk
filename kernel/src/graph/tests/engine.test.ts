@@ -224,7 +224,7 @@ describe("next", () => {
       files: { "change.md": {}, "plan/parts/01-a.md": { data: { "depends-on": [] } } },
       entries: [
         done("plan-part:01", "plan/parts/01-a.md@1"),
-        done("execute-part:01", "x"),
+        done("execute-part:01", "plan/parts/01-a.md@1"),
         done("review", "tree@1"),
         userGate("gate:review", "2026-09-25T11:00:00Z"),
         done("close", "x", "2026-09-25T12:00:00Z"),
@@ -235,6 +235,59 @@ describe("next", () => {
     ).toStrictEqual([]);
     expect(result.next).toBeUndefined();
     expect(result.waitingGate).toBeUndefined();
+  });
+});
+
+describe("done markers", () => {
+  const files = {
+    "change.md": {},
+    "plan/parts/01-a.md": { data: { "depends-on": [] } },
+  };
+  const planned = done("plan-part:01", "plan/parts/01-a.md@1");
+
+  it("a kernel transition without input-hash leaves the node ready", () => {
+    n += 1;
+    const start = {
+      id: `L-s${String(n).padStart(7, "0")}`,
+      type: "transition",
+      to: "execute-part:01",
+      at: "2026-09-25T11:00:00Z",
+    };
+    const result = graph({ profile: "tiny", files, entries: [planned, start] });
+    expect(state(result, "execute-part:01")).toBe("ready");
+    expect(result.find("execute-part:01")?.recorded).toBeUndefined();
+  });
+
+  it("a later start marker does not hide the done marker before it", () => {
+    n += 1;
+    const start = {
+      id: `L-s${String(n).padStart(7, "0")}`,
+      type: "transition",
+      to: "execute-part:01",
+      at: "2026-09-25T12:00:00Z",
+    };
+    const result = graph({
+      profile: "tiny",
+      files,
+      entries: [planned, done("execute-part:01", "plan/parts/01-a.md@1"), start],
+    });
+    expect(state(result, "execute-part:01")).toBe("done");
+  });
+
+  it("execute-part is stale when its plan part changed after part done", () => {
+    const result = graph(
+      {
+        profile: "tiny",
+        files,
+        entries: [
+          done("plan-part:01", "plan/parts/01-a.md@2"),
+          done("execute-part:01", "plan/parts/01-a.md@1"),
+        ],
+      },
+      {},
+      { "plan/parts/01-a.md": "2" },
+    );
+    expect(state(result, "execute-part:01")).toBe("stale");
   });
 });
 
