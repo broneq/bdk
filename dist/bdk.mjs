@@ -22265,6 +22265,7 @@ var SKILL_CONTEXT = {
       title: "Reviewer prompt"
     }
   ],
+  swarm: [{ kind: "concurrency" }],
   "test-driven-development": [rules("test-quality"), tools("test")]
 };
 

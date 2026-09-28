@@ -228,6 +228,18 @@ exports[`ctx skill output > pr-review is unchanged 1`] = `
 }"
 `;
 
+exports[`ctx skill output > swarm is unchanged 1`] = `
+"{
+  "content": "## BDK context: swarm\\n\\n### Concurrency\\n\\nRun at most 5 agents at once.\\n",
+  "parts": [
+    {
+      "kind": "concurrency",
+      "source": "execution.concurrency"
+    }
+  ]
+}"
+`;
+
 exports[`ctx skill output > test-driven-development is unchanged 1`] = `
 "{
   "content": "## BDK context: test-driven-development\\n\\n### Rules: test-quality\\n\\n# rules/test-quality.md\\n\\n- **Default.** Plugin text.\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n",

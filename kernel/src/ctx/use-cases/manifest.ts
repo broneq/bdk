@@ -63,5 +63,6 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
       title: "Reviewer prompt",
     },
   ],
+  swarm: [{ kind: "concurrency" }],
   "test-driven-development": [rules("test-quality"), tools("test")],
 };
