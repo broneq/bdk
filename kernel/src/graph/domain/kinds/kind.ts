@@ -63,6 +63,22 @@ export interface WorkFacts {
   readonly openTickets: readonly { readonly ticket: string; readonly target: string }[];
 }
 
+/**
+ * An evidence manifest of the Change as the step kinds read it
+ * (`kernel-state`, Evidence manifest); the use case computed `fresh` against
+ * the current tree hash of the manifest's own target.
+ */
+export interface EvidenceFacts {
+  readonly id: string;
+  readonly kind: string;
+  readonly target: string;
+  readonly at: string;
+  readonly verdict?: string | undefined;
+  /** True when the manifest carries at least one citation. */
+  readonly cited: boolean;
+  readonly fresh: boolean;
+}
+
 /** One Change as the kinds and the engine see it. */
 export interface ChangeView {
   readonly id: string;
@@ -80,6 +96,12 @@ export interface ChangeView {
   reportStatus(entry: GraphEntry): string | undefined;
   /** The parsed body of a plan part whose frontmatter validated, by its Change-relative path. */
   planPart(path: string): PlanPartFacts | undefined;
+  /** The `evidence` ids the report file of a `report` entry lists; [] when unreadable. */
+  reportEvidence(entry: GraphEntry): readonly string[];
+  /** The evidence manifests of the Change, ordered by `at`, then id. */
+  readonly evidence: readonly EvidenceFacts[];
+  /** The current tree hash of plan part `nn`, when the use case computed it. */
+  partTree(nn: string): string | undefined;
   /** Loaded by the commands that validate; undefined elsewhere. */
   readonly work?: WorkFacts | undefined;
 }
@@ -101,9 +123,15 @@ export interface Instance {
   readonly requires: readonly string[];
 }
 
-/** The files whose path and bytes form the hash, the committed code tree, or nothing (T1). */
+/**
+ * The files whose path and bytes form the hash, the committed code tree, a
+ * tree hash the use case computed (a part's, for the step kinds), or nothing (T1).
+ */
 export type Inputs =
-  { readonly files: readonly string[] } | { readonly codeTree: true } | { readonly none: true };
+  | { readonly files: readonly string[] }
+  | { readonly codeTree: true }
+  | { readonly tree: string }
+  | { readonly none: true };
 
 /** How a node of the kind becomes done (`kernel-pipeline`, Artifact kinds). */
 export type DoneBy =
@@ -111,7 +139,9 @@ export type DoneBy =
   | { readonly through: "construction" }
   | { readonly through: "gate" }
   /** `{nn}` in `command` stands for the instance number. */
-  | { readonly through: "command"; readonly command: string };
+  | { readonly through: "command"; readonly command: string }
+  /** The latest fresh evidence manifest covering the instance's part; `command` records it. */
+  | { readonly through: "evidence"; readonly command: string };
 
 export interface Kind {
   readonly name: string;
@@ -123,6 +153,11 @@ export interface Kind {
   /** The paths the kind writes, relative to the Change directory; patterns before an instance exists. */
   writes(view: ChangeView, nn?: string): readonly string[];
   inputs(view: ChangeView, nn?: string): Inputs;
+  /**
+   * Only kinds done through evidence have it: the latest manifest of the kind
+   * covering part `nn`, or undefined when none does.
+   */
+  evidence?(view: ChangeView, nn: string): EvidenceFacts | undefined;
   /** Every check of the validator, passing or not. */
   validate(
     view: ChangeView,

@@ -18961,7 +18961,7 @@ function line(item3) {
 }
 
 // kernel/src/attempt/use-cases/close.ts
-import { isAbsolute as isAbsolute2, join as join27 } from "node:path";
+import { isAbsolute as isAbsolute3, join as join29 } from "node:path";
 
 // kernel/src/attempt/domain/ladder.ts
 function currentRound(records, entries) {
@@ -19989,7 +19989,7 @@ next: ${report2.next}
 }
 
 // kernel/src/graph/use-cases/done.ts
-import { join as join23 } from "node:path";
+import { join as join25 } from "node:path";
 
 // kernel/src/graph/domain/kinds/kind.ts
 var BaseKind = class {
@@ -20293,13 +20293,89 @@ var GateKind = class extends FilelessKind {
   name = "gate";
   doneBy = { through: "gate" };
 };
-var PostTaskStepKind = class extends FilelessKind {
-  name = "post-task-step";
-  doneBy = {
-    through: "command",
-    command: "the post-task step runner (T23)"
-  };
+var DONE_VERDICTS = ["pass", "not-run"];
+var PostTaskStepKind = class extends BaseKind {
+  /** `command` records the kind's evidence; `bdk done` refused names it. */
+  constructor(name, command) {
+    super();
+    this.name = name;
+    this.command = command;
+    this.doneBy = { through: "evidence", command };
+  }
+  name;
+  command;
+  doneBy;
+  instances(view) {
+    return [...partFiles(view, "plan/parts").keys()].map((nn) => ({ nn, requires: [] }));
+  }
+  writes(view, nn) {
+    return [`evidence/${nn ?? "<nn>"}-<evidenceId>.md`];
+  }
+  inputs(view, nn) {
+    const tree = nn === void 0 ? void 0 : view.partTree(nn);
+    return tree === void 0 ? { none: true } : { tree };
+  }
+  /**
+   * The latest manifest of the kind covering part `nn`: its target is a task
+   * of the part, the part or the Change. `at` has second precision, so of two
+   * manifests of one second the fresh one counts as the later.
+   */
+  evidence(view, nn) {
+    const path = partFiles(view, "plan/parts").get(nn);
+    const tasks = new Set(
+      (path === void 0 ? void 0 : view.planPart(path))?.tasks.map((task) => task.id)
+    );
+    let latest2;
+    for (const manifest of view.evidence) {
+      const covers = manifest.target === nn || manifest.target === view.id || tasks.has(manifest.target);
+      if (manifest.kind !== this.name || !covers) continue;
+      if (latest2 === void 0 || manifest.at > latest2.at || manifest.fresh || !latest2.fresh) {
+        latest2 = manifest;
+      }
+    }
+    return latest2;
+  }
+  validate(view, target) {
+    const nn = target.nn ?? "";
+    const latest2 = this.evidence(view, nn);
+    if (latest2 === void 0) {
+      return [
+        {
+          id: "evidence",
+          ok: false,
+          why: `no ${this.name} manifest covers part ${nn}`,
+          instead: this.command
+        }
+      ];
+    }
+    return [
+      { id: "evidence", ok: true, why: `${latest2.id} of ${latest2.target}` },
+      latest2.fresh ? { id: "fresh", ok: true } : {
+        id: "fresh",
+        ok: false,
+        why: `${latest2.id} was recorded on another tree of ${latest2.target}`,
+        rule: "policy/stale-evidence",
+        instead: this.command
+      },
+      DONE_VERDICTS.includes(latest2.verdict) ? { id: "verdict", ok: true, why: latest2.verdict ?? "" } : {
+        id: "verdict",
+        ok: false,
+        why: `${latest2.id} says ${latest2.verdict ?? "no verdict"}`,
+        instead: this.command
+      }
+    ];
+  }
 };
+function postTaskSteps() {
+  return [
+    new PostTaskStepKind("simplify", "bdk attempt close <ticket> ok"),
+    new PostTaskStepKind(
+      "tests-scoped",
+      "bdk evidence record tests-scoped <file> --ticket <ticket>"
+    ),
+    new PostTaskStepKind("lint", "bdk evidence record lint <file> --ticket <ticket>")
+  ];
+}
 var CloseKind = class extends FilelessKind {
   name = "close";
   doneBy = { through: "command", command: "bdk change close" };
@@ -20332,7 +20408,30 @@ function verdictChecks(view, id) {
     why: `live blocker ${blockers.map((entry) => entry.id).join(", ")} names ${id}`,
     instead: "resolve the blocker: bdk log resolve <id>"
   };
-  return [verdict, blocker];
+  return [verdict, blocker, ...latest2 === void 0 ? [] : [evidenceCheck(view, latest2)]];
+}
+function evidenceCheck(view, report2) {
+  const manifests = new Map(view.evidence.map((manifest) => [manifest.id, manifest]));
+  for (const id of view.reportEvidence(report2)) {
+    const manifest = manifests.get(id);
+    if (manifest === void 0) {
+      return {
+        id: "evidence",
+        ok: false,
+        why: `the report lists ${id}, which names no evidence manifest of the Change`
+      };
+    }
+    if (manifest.verdict === "pass" && !manifest.cited) {
+      return {
+        id: "evidence",
+        ok: false,
+        why: `the report lists ${id}, a pass without a citation`,
+        rule: "policy/missing-citation",
+        instead: "bdk evidence record <kind> <file> --ticket <ticket> --verdict pass --cite <pointer>"
+      };
+    }
+  }
+  return { id: "evidence", ok: true };
 }
 var PlanVerifyKind = class extends BaseKind {
   name = "plan-verify";
@@ -20373,7 +20472,7 @@ function kindRegistry(extra = []) {
     new PlanVerifyKind(),
     new GateKind(),
     new ExecutePartKind(),
-    new PostTaskStepKind(),
+    ...postTaskSteps(),
     new ReviewKind(),
     new SpecDeltaKind(),
     new CloseKind(),
@@ -20557,6 +20656,7 @@ function stageCommand(pipeline, stage2) {
 }
 
 // kernel/src/graph/domain/engine.ts
+var DONE_VERDICTS2 = ["pass", "not-run"];
 function evaluate(input) {
   const { pipeline, kinds, view } = input;
   const drafts = /* @__PURE__ */ new Map();
@@ -20587,10 +20687,12 @@ function evaluate(input) {
   });
   const done2 = latestDone(view.entries);
   const results = /* @__PURE__ */ new Map();
-  const expand = (ids) => ids.flatMap((id) => {
+  const expand = (ids, nn) => ids.flatMap((id) => {
     const draft = drafts.get(id);
     if (draft?.skipped !== void 0) return [];
-    return draft?.instances !== void 0 && draft.instances.length > 0 ? draft.instances : [id];
+    if (draft?.instances === void 0 || draft.instances.length === 0) return [id];
+    const paired = nn === void 0 ? void 0 : draft.instances.find((instance) => drafts.get(instance)?.nn === nn);
+    return paired === void 0 ? draft.instances : [paired];
   });
   const resolve5 = (id) => {
     const known = results.get(id);
@@ -20623,7 +20725,8 @@ function evaluate(input) {
     if (draft.skipped !== void 0) {
       return { ...base, state: "skipped", requires: [], why: draft.skipped };
     }
-    const requires = [...expand(draft.node.requires ?? []), ...draft.extra];
+    const evidenced = draft.kind.doneBy.through === "evidence" ? draft.nn : void 0;
+    const requires = [...expand(draft.node.requires ?? [], evidenced), ...draft.extra];
     const open2 = firstOpen(requires);
     if (draft.kind.doneBy.through === "gate") {
       const gate2 = gateOf(draft, requires, open2 === void 0);
@@ -20641,6 +20744,19 @@ function evaluate(input) {
       return open2 === void 0 ? { ...base, requires, state: "ready", why: pending } : { ...base, requires, state: "blocked", why: open2 };
     }
     if (draft.kind.doneBy.through === "construction") return { ...base, requires, state: "done" };
+    if (evidenced !== void 0) {
+      const latest2 = draft.kind.evidence?.(view, evidenced);
+      if (latest2 !== void 0 && !latest2.fresh) {
+        const why2 = `evidence ${latest2.id} of ${latest2.target} was recorded on another tree`;
+        return { ...base, requires, state: "stale", why: why2 };
+      }
+      if (latest2 !== void 0 && DONE_VERDICTS2.includes(latest2.verdict)) {
+        return { ...base, requires, state: "done" };
+      }
+      const why = latest2 === void 0 ? void 0 : `evidence ${latest2.id} of ${latest2.target} says ${latest2.verdict ?? "no verdict"}`;
+      if (open2 !== void 0) return { ...base, requires, state: "blocked", why: open2 };
+      return { ...base, requires, state: "ready", ...why === void 0 ? {} : { why } };
+    }
     const recorded2 = draft.instances === void 0 ? done2.get(draft.id) : void 0;
     if (recorded2 !== void 0) {
       const inputs = draft.kind.inputs(view, draft.nn);
@@ -20689,8 +20805,9 @@ function evaluate(input) {
   const gates = nodes.flatMap(
     (node3) => node3.gate === void 0 || node3.state === "skipped" ? [] : [node3.gate]
   );
+  const waiting = (node3) => kinds.get(node3.kind)?.doneBy.through === "evidence" && node3.requires.some((id) => byId.get(id)?.state !== "done");
   const next = nodes.find(
-    (node3) => (node3.state === "ready" || node3.state === "stale") && !node3.sealed && node3.kind !== GATE_KIND && !(node3.instances !== void 0 && node3.instances.length > 0)
+    (node3) => (node3.state === "ready" || node3.state === "stale" && !waiting(node3)) && !node3.sealed && node3.kind !== GATE_KIND && !(node3.instances !== void 0 && node3.instances.length > 0)
   );
   const waitingGate = next === void 0 ? nodes.find((node3) => node3.gate?.ready === true && !node3.gate.done && !node3.sealed)?.gate : void 0;
   return {
@@ -20766,7 +20883,9 @@ var KIND_NAMES = [
   "plan-verify",
   "gate",
   "execute-part",
-  "post-task-step",
+  "simplify",
+  "tests-scoped",
+  "lint",
   "review",
   "spec-delta",
   "close"
@@ -20781,21 +20900,545 @@ function pipelinePrompt(kind) {
 }
 var pipelinePrompts = KIND_NAMES.map(pipelinePrompt);
 
-// kernel/src/graph/use-cases/hash.ts
-import { createHash as createHash3 } from "node:crypto";
+// kernel/src/evidence/render/evidence.ts
+function renderRecord(report2) {
+  const head = report2.deduplicated ? `${report2.evidence} already records this evidence: ${report2.path}` : `recorded ${report2.evidence}: ${report2.path}`;
+  const verdict = report2.verdict === void 0 ? [] : [`verdict: ${report2.verdict}`];
+  const files = report2.files.map((file) => `  ${file.stored}: ${file.path}`);
+  return [head, `tree: ${report2.treeHash}`, ...verdict, "files:", ...files, ""].join("\n");
+}
+function renderCheck(subject, report2) {
+  const lines = report2.evidence.map(
+    (entry) => `  ${entry.evidence} ${entry.kind}${entry.verdict === void 0 ? "" : ` ${entry.verdict}`}: fresh`
+  );
+  return [`evidence of ${subject} is fresh (tree ${report2.treeHash})`, ...lines, ""].join("\n");
+}
+function staleWhy(subject, report2) {
+  if (report2.evidence.length === 0) return `${subject} has no evidence`;
+  const stale = report2.evidence.filter((entry) => !entry.fresh).map((entry) => `${entry.evidence} ${entry.kind} (changed: ${entry.changedSince.join(", ")})`);
+  return `evidence of ${subject} is stale: ${stale.join("; ")}`;
+}
+
+// kernel/src/evidence/use-cases/scope.ts
 import { join as join20 } from "node:path";
+
+// kernel/src/evidence/config.ts
+var glob3 = string2().min(1).meta({ title: "non-empty glob" });
+function globs(defaults, description) {
+  return appendOnly(
+    array(glob3).refine((items) => new Set(items).size === items.length, "globs must be unique").meta({ uniqueItems: true, description })
+  ).default([...defaults]);
+}
+var NON_EXECUTABLE = [
+  "**/*.md",
+  "**/*.mdx",
+  "**/*.txt",
+  "**/*.rst",
+  "**/*.png",
+  "**/*.jpg",
+  "**/*.jpeg",
+  "**/*.gif",
+  "**/*.svg",
+  "**/*.webp",
+  "docs/**",
+  "LICENSE*",
+  "CHANGELOG*",
+  ".bdk/**"
+];
+var BUILD_CONFIG = [
+  "package.json",
+  "pnpm-lock.yaml",
+  "package-lock.json",
+  "yarn.lock",
+  "tsconfig*.json",
+  "pyproject.toml",
+  "uv.lock",
+  "poetry.lock",
+  "requirements*.txt",
+  "go.mod",
+  "go.sum",
+  "Cargo.toml",
+  "Cargo.lock",
+  "Gemfile",
+  "Gemfile.lock",
+  "pom.xml",
+  "build.gradle*",
+  "Makefile",
+  "CMakeLists.txt"
+];
+var evidenceModule = defineConfigModule({
+  key: "policy.evidence",
+  consumer: "evidence",
+  owner: "T23",
+  description: "Which files the tree hash covers and which evidence files are committed.",
+  schema: strictObject({
+    "non-executable": globs(
+      NON_EXECUTABLE,
+      "Files that never change the tree hash; layers append to the defaults."
+    ),
+    "build-config": globs(
+      BUILD_CONFIG,
+      "Files that always change the tree hash, wherever they are; wins over non-executable."
+    ),
+    "max-committed-bytes": int().min(0).default(65536).meta({
+      description: "The largest UTF-8 text evidence file copied into the Change; 0 commits none."
+    })
+  }).prefault({})
+});
+
+// kernel/src/evidence/use-cases/tree.ts
+import { createHash as createHash3 } from "node:crypto";
+function fileClass(policy, path) {
+  if (firstMatch(policy.buildConfig, path) !== void 0) return "build-config";
+  if (firstMatch(policy.nonExecutable, path) !== void 0) return "non-executable";
+  return "executable";
+}
+function coveredPaths(policy, scopeFiles, workTreeFiles2) {
+  const covered = /* @__PURE__ */ new Set();
+  for (const path of scopeFiles)
+    if (fileClass(policy, path) !== "non-executable") covered.add(path);
+  for (const path of workTreeFiles2)
+    if (fileClass(policy, path) === "build-config") covered.add(path);
+  return [...covered].sort(byteOrder);
+}
+function treeOf(paths, read3) {
+  const tree = [...paths].sort(byteOrder).map((path) => {
+    const bytes2 = read3(path);
+    return { path, hash: bytes2 === void 0 ? "absent" : sha256(bytes2) };
+  });
+  const hash2 = createHash3("sha256");
+  for (const entry of tree) hash2.update(`${entry.path}\0${entry.hash}\0`);
+  return { treeHash: `sha256:${hash2.digest("hex")}`, tree };
+}
+function changedSince(recorded2, current) {
+  const before = new Map(recorded2.map((entry) => [entry.path, entry.hash]));
+  const after = new Map(current.map((entry) => [entry.path, entry.hash]));
+  const paths = /* @__PURE__ */ new Set([...before.keys(), ...after.keys()]);
+  return [...paths].filter((path) => before.get(path) !== after.get(path)).sort(byteOrder);
+}
+function sha256(bytes2) {
+  return `sha256:${createHash3("sha256").update(bytes2).digest("hex")}`;
+}
+function byteOrder(a, b) {
+  return Buffer.compare(Buffer.from(a), Buffer.from(b));
+}
+
+// kernel/src/evidence/use-cases/scope.ts
+function evidenceSettings(deps, projectRoot, globalDir2) {
+  return resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir: globalDir2,
+      projectRoot,
+      pluginRoot: deps.pluginRoot
+    },
+    { removed: "ignore" }
+  );
+}
+function filePolicy(settings) {
+  const policy = moduleValue(evidenceModule, settings);
+  return { nonExecutable: policy["non-executable"], buildConfig: policy["build-config"] };
+}
+function scopeOf(parts, changeId2, target) {
+  const holder = taskHolders(parts).get(target);
+  if (holder !== void 0) return [holder];
+  const part = parts.find((found) => found.id === target);
+  if (part !== void 0) return [part];
+  return target === changeId2 ? parts : void 0;
+}
+async function scopeTree(deps, projectRoot, policy, scope2) {
+  return treeIn(deps.store, projectRoot, policy, scope2, await workTreeFiles(deps.git, projectRoot));
+}
+async function currentTrees(deps, change, policy, parts, targets) {
+  const workTree = await workTreeFiles(deps.git, change.projectRoot);
+  const trees = /* @__PURE__ */ new Map();
+  const byScope = /* @__PURE__ */ new Map();
+  for (const target of targets) {
+    if (trees.has(target)) continue;
+    const scope2 = scopeOf(parts, change.id, target) ?? parts;
+    const key = scope2.map((part) => part.id).join(" ");
+    let tree = byScope.get(key);
+    if (tree === void 0) {
+      tree = treeIn(deps.store, change.projectRoot, policy, scope2, workTree);
+      byScope.set(key, tree);
+    }
+    trees.set(target, tree);
+  }
+  return trees;
+}
+function treeIn(store2, projectRoot, policy, scope2, workTree) {
+  const declared3 = scope2.flatMap(
+    (part) => part.tasks.flatMap((task) => task.files.map((file) => file.path))
+  );
+  const paths = coveredPaths(policy, declared3, workTree);
+  return treeOf(paths, (path) => store2.readBytes(join20(projectRoot, path)));
+}
+
+// kernel/src/evidence/use-cases/check.ts
+var EVIDENCE_ID = /^E-[0-9a-z]{8}$/;
+async function checkEvidence(deps, change, globalDir2, subject) {
+  const manifests = readManifests(deps.store, change.dir);
+  const parts = readPlanParts(deps.store, change.dir);
+  let target = subject;
+  let checked;
+  if (EVIDENCE_ID.test(subject)) {
+    const manifest = manifests.find((found) => found.data.id === subject);
+    if (manifest === void 0) {
+      return refuse("input/not-found", `${change.id} has no evidence ${subject}`, [
+        "bdk evidence check <target>"
+      ]);
+    }
+    target = manifest.data.target;
+    checked = [manifest];
+  } else {
+    if (scopeOf(parts, change.id, subject) === void 0) {
+      return refuse("input/not-found", `${change.id} holds no task, part or Change ${subject}`, [
+        "bdk part list"
+      ]);
+    }
+    checked = manifests.filter((manifest) => manifest.data.target === subject);
+  }
+  const settings = evidenceSettings(deps, change.projectRoot, globalDir2);
+  if ("refused" in settings) return settings;
+  const scope2 = scopeOf(parts, change.id, target) ?? parts;
+  const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope2);
+  const fresh = (manifest) => manifest.data["tree-hash"] === current.treeHash;
+  const latest2 = /* @__PURE__ */ new Map();
+  for (const manifest of checked) {
+    const known = latest2.get(manifest.data.kind);
+    if (known === void 0 || manifest.data.at > known.data.at || fresh(manifest) || !fresh(known)) {
+      latest2.set(manifest.data.kind, manifest);
+    }
+  }
+  const evidence = [...latest2.values()].map((manifest) => ({
+    evidence: manifest.data.id,
+    kind: manifest.data.kind,
+    treeHash: manifest.data["tree-hash"],
+    fresh: fresh(manifest),
+    ...manifest.data.verdict === void 0 ? {} : { verdict: manifest.data.verdict },
+    changedSince: changedSince(manifest.data.tree, current.tree)
+  }));
+  return {
+    fresh: evidence.length > 0 && evidence.every((entry) => entry.fresh),
+    treeHash: current.treeHash,
+    evidence
+  };
+}
+
+// kernel/src/evidence/use-cases/record.ts
+import { basename, isAbsolute as isAbsolute2, join as join21, relative as relative5 } from "node:path";
+
+// kernel/src/evidence/domain/citation.ts
+function citationProblem(citation, files) {
+  const parsed = parse5(citation);
+  if (parsed === void 0) {
+    return `${citation} is not a citation: use <file>#<json-pointer>, <file>:<line> or <file>:<line>=<text>`;
+  }
+  const file = parsed.file === "" ? only(files) : named(files, parsed.file);
+  if (file === void 0) {
+    return parsed.file === "" ? `${citation} names no file, and ${String(files.length)} files are recorded` : `${citation}: ${parsed.file} is not a recorded file`;
+  }
+  const where = `${citation} in ${file.given}`;
+  if (file.text === void 0) return `${where}: the file is not text, so it is not citable`;
+  return "pointer" in parsed.target ? pointerProblem(where, file.text, parsed.target.pointer) : lineProblem(where, file.text, parsed.target.line, parsed.target.contains);
+}
+function isText(bytes2) {
+  if (bytes2.includes(0)) return false;
+  try {
+    new TextDecoder("utf-8", { fatal: true }).decode(bytes2);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function parse5(citation) {
+  if (citation.startsWith("/")) return { file: "", target: { pointer: citation } };
+  const hash2 = citation.indexOf("#");
+  if (hash2 >= 0) {
+    return { file: citation.slice(0, hash2), target: { pointer: citation.slice(hash2 + 1) } };
+  }
+  const line2 = /^(?<file>[^:]*):(?<line>\d+)(?:=(?<text>.*))?$/s.exec(citation)?.groups;
+  if (line2?.line === void 0) return void 0;
+  const target = line2.text === void 0 ? { line: Number(line2.line) } : { line: Number(line2.line), contains: line2.text };
+  return { file: line2.file ?? "", target };
+}
+function only(files) {
+  return files.length === 1 ? files[0] : void 0;
+}
+function named(files, name) {
+  return files.find((file) => file.given === name) ?? files.find((file) => file.given.split("/").at(-1) === name);
+}
+function pointerProblem(where, text8, pointer) {
+  if (pointer !== "" && !pointer.startsWith("/")) {
+    return `${where}: ${pointer} is not a JSON pointer; it starts with /`;
+  }
+  let value;
+  try {
+    value = JSON.parse(text8);
+  } catch {
+    return `${where}: the file does not parse as JSON`;
+  }
+  const tokens = pointer === "" ? [] : pointer.slice(1).split("/");
+  for (const token of tokens) {
+    const key = token.replaceAll("~1", "/").replaceAll("~0", "~");
+    const next = step(value, key);
+    if (next === void 0) return `${where}: ${pointer} names no value`;
+    value = next.value;
+  }
+  return void 0;
+}
+function step(value, key) {
+  if (Array.isArray(value)) {
+    if (!/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= value.length) return void 0;
+    return { value: value[Number(key)] };
+  }
+  if (typeof value === "object" && value !== null && Object.hasOwn(value, key)) {
+    return { value: value[key] };
+  }
+  return void 0;
+}
+function lineProblem(where, text8, line2, contains) {
+  const lines = text8.endsWith("\n") ? text8.slice(0, -1).split("\n") : text8.split("\n");
+  const found = line2 >= 1 && text8 !== "" ? lines[line2 - 1] : void 0;
+  if (found === void 0) return `${where}: the file has no line ${String(line2)}`;
+  if (contains !== void 0 && !found.replace(/\r$/, "").includes(contains)) {
+    return `${where}: line ${String(line2)} does not contain ${contains}`;
+  }
+  return void 0;
+}
+
+// kernel/src/evidence/use-cases/record.ts
+var KIND = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+var VERDICTS = ["pass", "fail", "not-run"];
+var MACHINE_EVIDENCE = ".bdk/.machine/evidence/";
+async function recordEvidence(deps, change, where, input) {
+  const usage = `bdk evidence record ${input.kind} <file> --ticket <ticket> --verdict pass --cite <pointer>`;
+  if (!KIND.test(input.kind)) {
+    return refuse("input/invalid-argument", `kind ${input.kind} is not kebab-case`, [usage]);
+  }
+  if (input.ticket === void 0) {
+    return refuse("input/missing-argument", "evidence record needs --ticket", [usage]);
+  }
+  if (input.verdict !== void 0 && !VERDICTS.includes(input.verdict)) {
+    return refuse(
+      "input/invalid-argument",
+      `verdict ${input.verdict} is not pass, fail or not-run`,
+      [usage]
+    );
+  }
+  const verdict = input.verdict;
+  const ticket = input.ticket;
+  const record4 = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
+  if (record4 === void 0 || record4.data.outcome !== void 0) {
+    return refuse(
+      "policy/no-open-ticket",
+      record4 === void 0 ? `${change.id} has no ticket ${ticket}` : `ticket ${ticket} is already closed ${record4.data.outcome ?? ""}`,
+      ["bdk attempt list", "bdk attempt open <loop> <target>"]
+    );
+  }
+  const sources = readSources(deps, change.projectRoot, where.cwd, input.files);
+  if ("refused" in sources) return sources;
+  const citations = checkCitations(sources, verdict, input.citations);
+  if (citations !== void 0) return citations;
+  const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
+  if ("refused" in resolved) return resolved;
+  const target = record4.data.target;
+  const parts = readPlanParts(deps.store, change.dir);
+  const scope2 = scopeOf(parts, change.id, target) ?? parts;
+  const { treeHash, tree } = await scopeTree(
+    deps,
+    change.projectRoot,
+    filePolicy(resolved.value),
+    scope2
+  );
+  const hashes = sources.map((source2) => source2.hash);
+  const earlier = ticketManifests(readManifests(deps.store, change.dir), ticket).find(
+    (manifest) => manifest.data.kind === input.kind && manifest.data["tree-hash"] === treeHash && manifest.data.verdict === verdict && same2(manifest.data.citations ?? [], input.citations) && same2(
+      manifest.data.files.map((file) => file.hash),
+      hashes
+    )
+  );
+  if (earlier !== void 0) return reportOf(change.projectRoot, earlier, true);
+  const id = newId("E-", deps.random);
+  const limit = moduleValue(evidenceModule, resolved.value)["max-committed-bytes"];
+  const files = sources.map((source2) => {
+    const name = `${target}-${id}-${source2.name}`;
+    const hash2 = source2.hash;
+    if (source2.text && source2.bytes.length <= limit) {
+      const path3 = join21(relative5(change.projectRoot, change.dir), "evidence", name);
+      deps.store.writeBytes(join21(change.projectRoot, path3), source2.bytes);
+      return { path: path3, hash: hash2, stored: "committed" };
+    }
+    if (source2.path.startsWith(MACHINE_EVIDENCE))
+      return { path: source2.path, hash: hash2, stored: "machine" };
+    const path2 = `${MACHINE_EVIDENCE}${name}`;
+    deps.store.writeBytes(join21(change.projectRoot, path2), source2.bytes);
+    return { path: path2, hash: hash2, stored: "machine" };
+  });
+  const active9 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
+  const path = join21(change.dir, "evidence", `${target}-${id}.md`);
+  const data = {
+    schema: 1,
+    id,
+    kind: input.kind,
+    ticket,
+    target,
+    at: deps.clock.now(),
+    author: await authorIdent(deps.git, change.projectRoot),
+    source: active9 === void 0 ? "kernel" : `agent:${active9.role}`,
+    "tree-hash": treeHash,
+    tree: [...tree],
+    files,
+    ...verdict === void 0 ? {} : { verdict },
+    ...input.citations.length === 0 ? {} : { citations: [...input.citations] }
+  };
+  writeDocument(deps.store, path, { data, body: "" });
+  return reportOf(change.projectRoot, { path, data }, false);
+}
+function readSources(deps, projectRoot, cwd, given) {
+  const sources = [];
+  for (const file of given) {
+    const absolute = isAbsolute2(file) ? file : join21(cwd, file);
+    const bytes2 = deps.store.readBytes(absolute);
+    if (bytes2 === void 0) {
+      return refuse("input/not-found", `evidence file ${file} does not exist`, [
+        "bdk evidence record <kind> <file> --ticket <ticket>"
+      ]);
+    }
+    const name = basename(absolute);
+    if (sources.some((source2) => source2.name === name)) {
+      return refuse(
+        "input/invalid-argument",
+        `two evidence files are named ${name}; the Change stores them by file name`,
+        ["copy one of them under another name and record both"]
+      );
+    }
+    sources.push({
+      given: file,
+      path: relative5(projectRoot, absolute),
+      name,
+      bytes: bytes2,
+      hash: sha256(bytes2),
+      text: isText(bytes2)
+    });
+  }
+  return sources;
+}
+function checkCitations(sources, verdict, citations) {
+  const files = sources.map((source2) => ({
+    given: source2.given,
+    text: source2.text ? new TextDecoder().decode(source2.bytes) : void 0
+  }));
+  if (verdict === "pass" && citations.length === 0) {
+    return refuse(
+      "policy/missing-citation",
+      `a pass verdict needs --cite naming a value in ${sources.map((source2) => source2.given).join(", ")}`,
+      ["--cite <file>#<json-pointer>", "--cite <file>:<line>", "--cite <file>:<line>=<text>"]
+    );
+  }
+  for (const citation of citations) {
+    const problem = citationProblem(citation, files);
+    if (problem !== void 0) {
+      return refuse("policy/missing-citation", problem, [
+        "cite a value the recorded files hold",
+        "record the verdict fail when the evidence does not show a pass"
+      ]);
+    }
+  }
+  return void 0;
+}
+function same2(a, b) {
+  return a.length === b.length && a.every((value, at) => value === b[at]);
+}
+function reportOf(projectRoot, manifest, deduplicated) {
+  const data = manifest.data;
+  return {
+    evidence: data.id,
+    path: relative5(projectRoot, manifest.path),
+    treeHash: data["tree-hash"],
+    files: data.files,
+    ...data.verdict === void 0 ? {} : { verdict: data.verdict },
+    ...data.citations === void 0 ? {} : { citations: data.citations },
+    deduplicated
+  };
+}
+
+// kernel/src/evidence/commands/evidence.ts
+function text2(value) {
+  return typeof value === "string" ? value : void 0;
+}
+function list2(value) {
+  if (value === void 0 || value === true) return [];
+  return typeof value === "string" ? [value] : [...value];
+}
+function active2(change) {
+  if (change === void 0) throw new Error("evidence commands are Change-scoped");
+  return change;
+}
+function recordCommand(deps) {
+  return async (context) => {
+    const report2 = await recordEvidence(
+      deps,
+      active2(context.change),
+      { cwd: context.cwd, globalDir: globalDir(context.runtime) },
+      {
+        kind: context.positionals["<kind>"] ?? "",
+        files: context.lists["<file>"] ?? [],
+        ticket: text2(context.flags["--ticket"]),
+        verdict: text2(context.flags["--verdict"]),
+        citations: list2(context.flags["--cite"])
+      }
+    );
+    return isRefusal(report2) ? report2 : { data: report2, text: renderRecord(report2) };
+  };
+}
+function checkCommand(deps) {
+  return async (context) => {
+    const subject = context.positionals["<target|evidence-id>"] ?? "";
+    const report2 = await checkEvidence(
+      deps,
+      active2(context.change),
+      globalDir(context.runtime),
+      subject
+    );
+    if (isRefusal(report2)) return report2;
+    if (!context.json && !report2.fresh) {
+      return refuse("policy/stale-evidence", staleWhy(subject, report2), [
+        "re-run the checks and bdk evidence record <kind> <file> --ticket <ticket>"
+      ]);
+    }
+    return { data: report2, text: renderCheck(subject, report2) };
+  };
+}
+
+// kernel/src/evidence/index.ts
+var evidenceConfig = {
+  modules: [evidenceModule]
+};
+function evidenceRegistrations(deps) {
+  return [
+    { id: "evidence-record", handler: recordCommand(deps) },
+    { id: "evidence-check", handler: checkCommand(deps) }
+  ];
+}
+
+// kernel/src/graph/use-cases/hash.ts
+import { createHash as createHash4 } from "node:crypto";
+import { join as join22 } from "node:path";
 function inputHasher(store2, changeDir, codeTree) {
   return (inputs) => {
     if ("codeTree" in inputs) return codeTree ?? filesHash(store2, changeDir, []);
+    if ("tree" in inputs) return inputs.tree;
     return filesHash(store2, changeDir, "files" in inputs ? inputs.files : []);
   };
 }
 function filesHash(store2, changeDir, files) {
-  const hash2 = createHash3("sha256");
+  const hash2 = createHash4("sha256");
   for (const path of [...files].sort()) {
     hash2.update(path);
     hash2.update("\0");
-    hash2.update(store2.read(join20(changeDir, path)) ?? "");
+    hash2.update(store2.read(join22(changeDir, path)) ?? "");
     hash2.update("\0");
   }
   return `sha256:${hash2.digest("hex")}`;
@@ -20803,7 +21446,7 @@ function filesHash(store2, changeDir, files) {
 
 // kernel/src/graph/use-cases/pipeline.ts
 var import_yaml7 = __toESM(require_dist(), 1);
-import { join as join21 } from "node:path";
+import { join as join23 } from "node:path";
 
 // kernel/src/graph/schema/pipeline.ts
 var KEBAB = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
@@ -20838,7 +21481,7 @@ var pipelineSchema = strictObject({
 var PIPELINE_FILE = "pipeline/pipeline.yaml";
 var cache2 = /* @__PURE__ */ new WeakMap();
 function loadPipeline(store2, pluginRoot, settings, kinds) {
-  const path = join21(pluginRoot, PIPELINE_FILE);
+  const path = join23(pluginRoot, PIPELINE_FILE);
   const text8 = store2.read(path);
   if (text8 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
   const known = cache2.get(kinds)?.get(text8);
@@ -20892,7 +21535,7 @@ function keyOf(path) {
 }
 
 // kernel/src/graph/use-cases/view.ts
-import { join as join22 } from "node:path";
+import { join as join24 } from "node:path";
 function changeView(input) {
   const { store: store2, dir } = input;
   const files = /* @__PURE__ */ new Map();
@@ -20900,7 +21543,7 @@ function changeView(input) {
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
   const read3 = (path) => {
     if (files.has(path)) return files.get(path);
-    const facts = readFacts(store2, join22(dir, path));
+    const facts = readFacts(store2, join24(dir, path));
     files.set(path, facts);
     return facts;
   };
@@ -20911,23 +21554,30 @@ function changeView(input) {
     parts.set(path, facts);
     return facts;
   };
+  const reportData = (entry) => {
+    const row = byId.get(entry.id);
+    if (row === void 0) return void 0;
+    const report2 = documentData(store2, join24(input.projectRoot, row.path))?.report;
+    return typeof report2 === "string" ? documentData(store2, join24(dir, report2)) : void 0;
+  };
   return {
     id: input.id,
     kind: input.kind,
     profile: input.profile,
     entries: input.entries,
     file: (path) => read3(path)?.facts,
-    list: (sub) => store2.list(join22(dir, sub)).filter((name) => !name.endsWith("/")),
+    list: (sub) => store2.list(join24(dir, sub)).filter((name) => !name.endsWith("/")),
     reportStatus: (entry) => {
-      const row = byId.get(entry.id);
-      if (row === void 0) return void 0;
-      const data = documentData(store2, join22(input.projectRoot, row.path));
-      const report2 = data?.report;
-      if (typeof report2 !== "string") return void 0;
-      const status = documentData(store2, join22(dir, report2))?.status;
+      const status = reportData(entry)?.status;
       return typeof status === "string" ? status : void 0;
     },
+    reportEvidence: (entry) => {
+      const evidence = reportData(entry)?.evidence;
+      return Array.isArray(evidence) ? evidence.map(String) : [];
+    },
     planPart,
+    evidence: input.evidence ?? [],
+    partTree: (nn) => input.partTrees?.get(nn),
     ...input.work === void 0 ? {} : { work: input.work }
   };
 }
@@ -20944,7 +21594,7 @@ function planPartFacts(data, body) {
     tasks: tasks.map((task) => ({ id: task.id, files: task.files.map((file) => file.path) })),
     problems,
     placeholders: planPlaceholders(
-      { goal: text2(data.goal), "success-measure": text2(data["success-measure"]) },
+      { goal: text3(data.goal), "success-measure": text3(data["success-measure"]) },
       tasks
     ),
     overlaps
@@ -20977,7 +21627,7 @@ function documentData(store2, path) {
     throw error2;
   }
 }
-function text2(value) {
+function text3(value) {
   return typeof value === "string" ? value : "";
 }
 
@@ -21011,7 +21661,8 @@ async function readGraph(deps, change, index2, globalDir2, options = {}) {
     kind: row?.kind ?? "feature",
     profile: effectiveProfile(base, entries),
     entries,
-    ...options.work === true ? { work: await workFacts(deps, change, index2) } : {}
+    ...options.work === true ? { work: await workFacts(deps, change, index2) } : {},
+    ...await evidenceFacts(deps, change, resolved, options.work === true)
   });
   const reviewed = pipeline.nodes.some((node3) => {
     const kind = kinds.get(node3.kind);
@@ -21058,6 +21709,27 @@ async function readGraph(deps, change, index2, globalDir2, options = {}) {
     entries,
     parked: parkedQuestion(entries),
     currentHash
+  };
+}
+async function evidenceFacts(deps, change, resolved, validating) {
+  const manifests = readManifests(deps.store, change.dir);
+  if (manifests.length === 0 && !validating) return {};
+  const parts = readPlanParts(deps.store, change.dir);
+  const trees = await currentTrees(deps, change, filePolicy(resolved.value), parts, [
+    ...parts.map((part) => part.id),
+    ...manifests.map((manifest) => manifest.data.target)
+  ]);
+  return {
+    evidence: manifests.map(({ data }) => ({
+      id: data.id,
+      kind: data.kind,
+      target: data.target,
+      at: data.at,
+      verdict: data.verdict,
+      cited: (data.citations ?? []).length > 0,
+      fresh: trees.get(data.target)?.treeHash === data["tree-hash"]
+    })),
+    partTrees: new Map(parts.map((part) => [part.id, trees.get(part.id)?.treeHash ?? ""]))
   };
 }
 async function workFacts(deps, change, index2) {
@@ -21211,7 +21883,7 @@ function markDone(deps, change, globalDir2, id) {
       if (first !== void 0) {
         const named2 = failed.map((check) => `${check.id}: ${check.why ?? "failed"}`).join("; ");
         return refuse(
-          "policy/validation-failed",
+          first.rule === "policy/missing-citation" ? first.rule : "policy/validation-failed",
           `${target.id} fails ${failed.length === 1 ? "check" : "checks"} ${named2}`,
           [...first.instead === void 0 ? [] : [first.instead], `bdk validate ${target.id}`]
         );
@@ -21224,7 +21896,7 @@ function markDone(deps, change, globalDir2, id) {
       if ("refused" in written) return written;
       entry = written.entry.id;
     }
-    if (generated !== void 0) deps.store.write(join23(change.dir, generated.path), generated.text);
+    if (generated !== void 0) deps.store.write(join25(change.dir, generated.path), generated.text);
     const after = await reread(deps, change, index2, globalDir2);
     if ("refused" in after) return after;
     return {
@@ -21278,7 +21950,7 @@ function refusal(read3, node3, kind) {
       "bdk next"
     ]);
   }
-  if (doneBy.through === "command") {
+  if (doneBy.through === "command" || doneBy.through === "evidence") {
     const command = doneBy.command.replaceAll("{nn}", node3.nn ?? "<nn>");
     return refuse(
       "policy/invalid-transition",
@@ -21411,7 +22083,7 @@ function finish(node3, kind) {
 }
 
 // kernel/src/graph/use-cases/instruction.ts
-import { posix as posix4, relative as relative5, sep as sep5 } from "node:path";
+import { posix as posix4, relative as relative6, sep as sep5 } from "node:path";
 
 // kernel/src/ctx/render/sections.ts
 function renderContext({ heading, sections }) {
@@ -21477,7 +22149,7 @@ var SKILL_CONTEXT = {
 
 // kernel/src/ctx/use-cases/parts.ts
 var import_yaml8 = __toESM(require_dist(), 1);
-import { join as join24 } from "node:path/posix";
+import { join as join26 } from "node:path/posix";
 
 // kernel/src/rules/render/show.ts
 function renderTicketRules(rules2) {
@@ -21498,13 +22170,13 @@ ${section.text}`)
 import { posix as posix3 } from "node:path";
 
 // kernel/src/rules/config.ts
-var text3 = string2().min(1);
+var text4 = string2().min(1);
 var languagesModule = defineConfigModule({
   key: "languages",
   consumer: "rules",
   owner: "T12",
   description: "Languages and frameworks of the project; a name gets content from the rules/languages/<name> prompt value.",
-  schema: array(text3).refine((names) => new Set(names).size === names.length, "names must be unique").meta({ uniqueItems: true }).default([])
+  schema: array(text4).refine((names) => new Set(names).size === names.length, "names must be unique").meta({ uniqueItems: true }).default([])
 });
 var RULE_CATEGORIES = [
   "code-quality",
@@ -21677,18 +22349,18 @@ function rulesRegistrations(deps) {
 
 // kernel/src/ctx/config.ts
 var ID4 = /^[a-z0-9][a-z0-9-]*$/;
-var text4 = string2().min(1);
-var withFiles = text4.regex(/\{files\}/, "must contain the {files} placeholder");
+var text5 = string2().min(1);
+var withFiles = text5.regex(/\{files\}/, "must contain the {files} placeholder");
 var entryFields = {
   id: string2().regex(ID4, "must be kebab-case: lowercase letters, digits and -").meta({
     description: "Unique within the array; the merge key and the path segment."
   }),
-  command: text4.meta({ description: "The full, unscoped command." }),
+  command: text5.meta({ description: "The full, unscoped command." }),
   scoped: withFiles.optional().meta({ description: "The command for given paths ({files})." }),
   related: withFiles.optional().meta({ description: "The command for the tests covering given source paths ({files})." }),
-  failed: text4.optional().meta({ description: "Re-run of the previous failures." }),
-  incremental: text4.optional().meta({ description: "The incremental form." }),
-  when: text4.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
+  failed: text5.optional().meta({ description: "Re-run of the previous failures." }),
+  incremental: text5.optional().meta({ description: "The incremental form." }),
+  when: text5.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
 };
 function tools2(tier, description) {
   const entry = (tier === void 0 ? strictObject(entryFields) : strictObject({ ...entryFields, tier })).meta({ title: "tool entry" });
@@ -21786,7 +22458,7 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "file": {
-      const text8 = input.store.read(join24(input.pluginRoot, part.path));
+      const text8 = input.store.read(join26(input.pluginRoot, part.path));
       if (text8 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
       return [{ title: part.title, body: text8, part: { kind: "file", source: part.path } }];
     }
@@ -21888,13 +22560,13 @@ function width(text8) {
 
 // kernel/src/ctx/use-cases/startup.ts
 var import_yaml9 = __toESM(require_dist(), 1);
-import { join as join25 } from "node:path/posix";
+import { join as join27 } from "node:path/posix";
 var STARTUP_FILE = "STARTUP_INSTRUCTIONS.md";
 var AGENTS_DIR = "agents";
 var OPEN = "<!-- bdk:agents-table -->";
 var CLOSE = "<!-- /bdk:agents-table -->";
 function readStartup(deps) {
-  const text8 = deps.store.read(join25(deps.pluginRoot, STARTUP_FILE));
+  const text8 = deps.store.read(join27(deps.pluginRoot, STARTUP_FILE));
   if (text8 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
   const lines = text8.split("\n");
   const open2 = lines.indexOf(OPEN);
@@ -21905,8 +22577,8 @@ function readStartup(deps) {
   return { before: lines.slice(0, open2 + 1), rows: agents(deps), after: lines.slice(close) };
 }
 function agents(deps) {
-  const dir = join25(deps.pluginRoot, AGENTS_DIR);
-  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join25(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
+  const dir = join27(deps.pluginRoot, AGENTS_DIR);
+  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join27(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
 }
 function agentRow(path, text8) {
   const { frontmatter } = splitFrontmatter(text8);
@@ -21951,7 +22623,7 @@ function instructionOf(deps, change, read3, node3) {
   const key = templateKey(deps, node3.kind);
   const value = read3.resolved.prompts.values.get(key);
   if (value === void 0) throw new Error(`the prompt value ${key} has no file in any layer`);
-  const dir = relative5(change.projectRoot, change.dir).split(sep5).join("/");
+  const dir = relative6(change.projectRoot, change.dir).split(sep5).join("/");
   const writes = kind.writes(read3.view, node3.nn);
   return composeInstruction({
     node: node3,
@@ -22024,13 +22696,13 @@ function nextStep(deps, change, globalDir2) {
 }
 
 // kernel/src/graph/commands/graph.ts
-function active2(change) {
+function active3(change) {
   if (change === void 0) throw new Error("this graph command is Change-scoped");
   return change;
 }
 function nextCommand(deps) {
   return async (context) => {
-    const outcome = await nextStep(deps, active2(context.change), globalDir(context.runtime));
+    const outcome = await nextStep(deps, active3(context.change), globalDir(context.runtime));
     return isRefusal(outcome) ? outcome : { data: outcome.report, text: renderNext(outcome) };
   };
 }
@@ -22038,7 +22710,7 @@ function explainCommand(deps) {
   return async (context) => {
     const report2 = await explainNode(
       deps,
-      active2(context.change),
+      active3(context.change),
       globalDir(context.runtime),
       context.positionals["<artifact>"] ?? ""
     );
@@ -22049,7 +22721,7 @@ function validateCommand(deps) {
   return async (context) => {
     const report2 = await validateNode(
       deps,
-      active2(context.change),
+      active3(context.change),
       globalDir(context.runtime),
       context.positionals["<artifact>"]
     );
@@ -22072,7 +22744,7 @@ function doneCommand(deps) {
   return async (context) => {
     const report2 = await markDone(
       deps,
-      active2(context.change),
+      active3(context.change),
       globalDir(context.runtime),
       context.positionals["<artifact>"] ?? ""
     );
@@ -22448,7 +23120,7 @@ function wavesOf2(parts) {
 }
 
 // kernel/src/part/use-cases/split.ts
-import { join as join26 } from "node:path";
+import { join as join28 } from "node:path";
 
 // kernel/src/part/domain/split.ts
 var TASK_HEADING = /^## (\d{2}-[1-9]\d*)(?:\s|$)/;
@@ -22528,7 +23200,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
     const first = part.tasks.find((task) => task.id === moved[0]);
     const file = `plan/parts/${newPart}-${slugOf(first?.title ?? part.data.title)}.md`;
     const original = frontmatterOf(deps, part);
-    writeDocument(deps.store, join26(change.dir, file), {
+    writeDocument(deps.store, join28(change.dir, file), {
       data: { ...original, id: newPart, title: `${part.data.title} (split from ${id})` },
       body: body.moved
     });
@@ -22554,7 +23226,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
       title: `${part.data.title} (split from ${id})`,
       "depends-on": [...part.data["depends-on"]]
     });
-    deps.store.write(join26(change.dir, "plan/index.md"), generatePlanIndex(rows));
+    deps.store.write(join28(change.dir, "plan/index.md"), generatePlanIndex(rows));
     const written = await appendEntry(
       deps,
       change,
@@ -22646,13 +23318,13 @@ function startPart(deps, change, globalDir2, id) {
 }
 
 // kernel/src/part/commands/part.ts
-function active3(change) {
+function active4(change) {
   if (change === void 0) throw new Error("this part command is Change-scoped");
   return change;
 }
 function listCommand2(deps) {
   return async (context) => {
-    const report2 = await listParts(deps, active3(context.change), globalDir(context.runtime));
+    const report2 = await listParts(deps, active4(context.change), globalDir(context.runtime));
     return isRefusal(report2) ? report2 : { data: report2, text: renderList3(report2) };
   };
 }
@@ -22660,7 +23332,7 @@ function startCommand(deps) {
   return async (context) => {
     const report2 = await startPart(
       deps,
-      active3(context.change),
+      active4(context.change),
       globalDir(context.runtime),
       context.positionals["<part>"] ?? ""
     );
@@ -22671,7 +23343,7 @@ function doneCommand2(deps) {
   return async (context) => {
     const report2 = await donePart(
       deps,
-      active3(context.change),
+      active4(context.change),
       globalDir(context.runtime),
       context.positionals["<part>"] ?? ""
     );
@@ -22682,7 +23354,7 @@ function splitCommand(deps) {
   return async (context) => {
     const report2 = await splitPart(
       deps,
-      active3(context.change),
+      active4(context.change),
       globalDir(context.runtime),
       context.positionals["<part>"] ?? "",
       context.positionals["<task-ids>"] ?? ""
@@ -22979,7 +23651,7 @@ function diffReport(diff) {
   return { declared: diff.declared, touched: diff.touched, undeclared: diff.undeclared };
 }
 function missingEntries(deps, cwd, envelope, underTicket) {
-  const path = isAbsolute2(envelope) ? envelope : join27(cwd, envelope);
+  const path = isAbsolute3(envelope) ? envelope : join29(cwd, envelope);
   const document = deps.store.read(path) === void 0 ? void 0 : readDocument(deps.store, path);
   if (document === void 0 || !("data" in document) || document.kind !== "report") {
     return refuse("input/not-found", `no report envelope at ${envelope}`, [
@@ -23165,7 +23837,7 @@ function item2(record4, entries) {
 }
 
 // kernel/src/attempt/use-cases/open.ts
-import { join as join28 } from "node:path";
+import { join as join30 } from "node:path";
 var PART_ID = /^\d{2}$/;
 var SUMMARY_MAX3 = 120;
 function openAttempt(deps, change, globalDir2, input) {
@@ -23211,7 +23883,7 @@ function openAttempt(deps, change, globalDir2, input) {
     }
     const ticket = newId("A-", deps.random);
     const openedAt = deps.clock.now();
-    const path = join28(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
+    const path = join30(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
     writeDocument(deps.store, path, {
       data: {
         schema: 1,
@@ -23361,16 +24033,16 @@ async function recordDropped(deps, change, index2, target, scope2, dropped) {
 }
 
 // kernel/src/attempt/commands/attempt.ts
-function text5(value) {
+function text6(value) {
   return typeof value === "string" ? value : void 0;
 }
-function active4(change) {
+function active5(change) {
   if (change === void 0) throw new Error("attempt commands are Change-scoped");
   return change;
 }
 function openCommand(deps) {
   return async (context) => {
-    const report2 = await openAttempt(deps, active4(context.change), globalDir(context.runtime), {
+    const report2 = await openAttempt(deps, active5(context.change), globalDir(context.runtime), {
       loop: context.positionals["<loop>"] ?? "",
       target: context.positionals["<target>"] ?? "",
       escalate: context.flags["--escalate"] === true
@@ -23382,13 +24054,13 @@ function closeCommand(deps) {
   return async (context) => {
     const report2 = await closeAttempt(
       deps,
-      active4(context.change),
+      active5(context.change),
       { cwd: context.cwd, globalDir: globalDir(context.runtime) },
       {
         ticket: context.positionals["<ticket>"] ?? "",
         outcome: context.positionals.outcome ?? "",
-        envelope: text5(context.flags["--envelope"]),
-        reason: text5(context.flags["--reason"])
+        envelope: text6(context.flags["--envelope"]),
+        reason: text6(context.flags["--reason"])
       }
     );
     return isRefusal(report2) ? report2 : { data: report2, text: renderClose(report2) };
@@ -23397,8 +24069,8 @@ function closeCommand(deps) {
 function listCommand3(deps) {
   return async (context) => {
     const all = context.flags["--all"] === true;
-    const target = text5(context.flags["--for"]);
-    const report2 = await listAttempts(deps, active4(context.change), globalDir(context.runtime), {
+    const target = text6(context.flags["--for"]);
+    const report2 = await listAttempts(deps, active5(context.change), globalDir(context.runtime), {
       for: target,
       all
     });
@@ -23632,7 +24304,7 @@ function listAllChanges(deps, projectRoot, options) {
 }
 
 // kernel/src/change/use-cases/new.ts
-import { join as join29 } from "node:path";
+import { join as join31 } from "node:path";
 
 // kernel/src/change/domain/change.ts
 var SLUG_MAX = 40;
@@ -23728,7 +24400,7 @@ async function newChange(deps, where, input) {
   await ensureIgnored(deps.store, deps.git, projectRoot);
   const dir = liveChangeDir(projectRoot, id);
   const profile = input.profile ?? "small";
-  writeDocument(deps.store, join29(dir, "change.md"), {
+  writeDocument(deps.store, join31(dir, "change.md"), {
     data: {
       schema: 1,
       id,
@@ -23984,14 +24656,14 @@ function done(value) {
 }
 
 // kernel/src/change/use-cases/status.ts
-import { join as join30 } from "node:path";
+import { join as join32 } from "node:path";
 function changeStatus(deps, change, globalDir2) {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index2) => {
     refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
     const read3 = await readGraph(deps, change, index2, globalDir2);
     if ("refused" in read3) return read3;
     const graph = graphSummary(read3);
-    const document = readDocument(deps.store, join30(change.dir, "change.md"));
+    const document = readDocument(deps.store, join32(change.dir, "change.md"));
     const data = document !== void 0 && "data" in document ? document.data : {};
     const facts = changeFacts(index2, change.id, stageResolver(deps));
     return {
@@ -24073,14 +24745,14 @@ function takeover(deps, change, input) {
 }
 
 // kernel/src/change/commands/change.ts
-function text6(value) {
+function text7(value) {
   return typeof value === "string" ? value : void 0;
 }
 function values(value) {
   if (value === void 0 || value === true) return [];
   return typeof value === "string" ? [value] : [...value];
 }
-function active5(change) {
+function active6(change) {
   if (change === void 0) throw new Error("this change command is Change-scoped");
   return change;
 }
@@ -24092,8 +24764,8 @@ function newCommand(deps) {
       {
         intent: context.positionals["<intent>"] ?? "",
         kind: context.flags["--kind"] === "bug" ? "bug" : "feature",
-        profile: text6(context.flags["--profile"]),
-        reason: text6(context.flags["--reason"]),
+        profile: text7(context.flags["--profile"]),
+        reason: text7(context.flags["--reason"]),
         inferred: context.flags["--inferred"] === true
       }
     );
@@ -24102,7 +24774,7 @@ function newCommand(deps) {
 }
 function statusCommand(deps) {
   return async (context) => {
-    const report2 = await changeStatus(deps, active5(context.change), globalDir(context.runtime));
+    const report2 = await changeStatus(deps, active6(context.change), globalDir(context.runtime));
     return isRefusal(report2) ? report2 : { data: report2, text: renderStatus(report2) };
   };
 }
@@ -24125,8 +24797,8 @@ function resumeCommand3(deps) {
       },
       {
         id: context.positionals["<id>"] ?? "",
-        option: text6(context.flags["--option"]),
-        profile: text6(context.flags["--profile"])
+        option: text7(context.flags["--option"]),
+        profile: text7(context.flags["--profile"])
       }
     );
     return isRefusal(report2) ? report2 : { data: report2, text: renderResume(report2) };
@@ -24134,8 +24806,8 @@ function resumeCommand3(deps) {
 }
 function parkCommand(deps) {
   return async (context) => {
-    const report2 = await parkChange(deps, active5(context.change), globalDir(context.runtime), {
-      reason: text6(context.flags["--reason"]),
+    const report2 = await parkChange(deps, active6(context.change), globalDir(context.runtime), {
+      reason: text7(context.flags["--reason"]),
       options: values(context.flags["--option"])
     });
     return isRefusal(report2) ? report2 : { data: report2, text: renderPark(report2) };
@@ -24143,13 +24815,13 @@ function parkCommand(deps) {
 }
 function checkpointCommand(deps) {
   return async (context) => {
-    const report2 = await checkpoint(deps, active5(context.change), globalDir(context.runtime));
+    const report2 = await checkpoint(deps, active6(context.change), globalDir(context.runtime));
     return isRefusal(report2) ? report2 : { data: report2, text: renderCheckpoint(report2) };
   };
 }
 function takeoverCommand(deps) {
   return async (context) => {
-    const report2 = await takeover(deps, active5(context.change), {
+    const report2 = await takeover(deps, active6(context.change), {
       closeTickets: context.flags["--close-tickets"] === true
     });
     return isRefusal(report2) ? report2 : { data: report2, text: renderTakeover(report2) };
@@ -24180,7 +24852,7 @@ function renderCommit(report2) {
 }
 
 // kernel/src/commit/use-cases/commit.ts
-import { relative as relative6, sep as sep6 } from "node:path";
+import { relative as relative7, sep as sep6 } from "node:path";
 
 // kernel/src/commit/domain/report.ts
 function commitMessage(subject, trailers) {
@@ -24213,7 +24885,7 @@ function commitTask(deps, change, input) {
     }
     const diff = await diffCheck(deps, change, index2, { task: input.task });
     if ("refused" in diff) return diff;
-    const dir = `${relative6(change.projectRoot, change.dir).split(sep6).join("/")}/`;
+    const dir = `${relative7(change.projectRoot, change.dir).split(sep6).join("/")}/`;
     const code = [...diff.declared, ...diff.undeclared];
     if (code.length === 0 && (await changedPaths(deps.git, change.projectRoot, [dir])).length === 0) {
       return refuse(
@@ -24278,14 +24950,14 @@ async function recordUndeclared2(deps, change, index2, task, paths) {
 }
 
 // kernel/src/commit/commands/commit.ts
-function active6(change) {
+function active7(change) {
   if (change === void 0) throw new Error("commit is Change-scoped");
   return change;
 }
 function commitCommand(deps) {
   return async (context) => {
     const message = context.flags["--message"];
-    const report2 = await commitTask(deps, active6(context.change), {
+    const report2 = await commitTask(deps, active7(context.change), {
       task: context.positionals["<task>"] ?? "",
       message: typeof message === "string" ? message : void 0
     });
@@ -24299,7 +24971,7 @@ function commitRegistrations(deps) {
 }
 
 // kernel/src/config/render/check.ts
-function renderCheck(report2) {
+function renderCheck2(report2) {
   const lines = report2.problems.map(
     (problem) => `warn ${problem.code} ${problem.path}: ${problem.message}`
   );
@@ -24313,7 +24985,7 @@ function renderCheck(report2) {
 }
 
 // kernel/src/config/use-cases/check.ts
-import { join as join31 } from "node:path";
+import { join as join33 } from "node:path";
 var LEGACY_SETTINGS = ".bdk/settings.json";
 function checkConfig(input) {
   const resolved = resolveOrRefuse(input);
@@ -24348,7 +25020,7 @@ function report(input, resolved) {
       });
     }
   }
-  if (input.store.exists(join31(input.projectRoot, LEGACY_SETTINGS))) {
+  if (input.store.exists(join33(input.projectRoot, LEGACY_SETTINGS))) {
     problems.push({
       layer: "project",
       path: LEGACY_SETTINGS,
@@ -24359,7 +25031,7 @@ function report(input, resolved) {
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
   if (snapshot !== void 0) {
     input.store.write(
-      join31(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      join33(input.projectRoot, OFFLINE_SCHEMA_PATH),
       offlineSchemaText(input.settings)
     );
   }
@@ -24381,10 +25053,10 @@ function configInput(deps, context) {
 }
 
 // kernel/src/config/commands/check.ts
-function checkCommand(deps) {
+function checkCommand2(deps) {
   return (context) => {
     const outcome = checkConfig(configInput(deps, context));
-    return isRefusal(outcome) ? outcome : { data: outcome, text: renderCheck(outcome) };
+    return isRefusal(outcome) ? outcome : { data: outcome, text: renderCheck2(outcome) };
   };
 }
 
@@ -24463,10 +25135,10 @@ function originOf(leaf, set) {
 }
 function leafKeys(value, prefix) {
   if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join32(prefix, key)));
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join34(prefix, key)));
   }
   if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item3) => leafKeys(item3, join32(prefix, item3.id)));
+    return value.flatMap((item3) => leafKeys(item3, join34(prefix, item3.id)));
   }
   return [prefix];
 }
@@ -24476,7 +25148,7 @@ function isMapping(value) {
 function hasId(value) {
   return isMapping(value) && typeof value.id === "string";
 }
-function join32(prefix, key) {
+function join34(prefix, key) {
   return prefix === "" ? key : `${prefix}.${key}`;
 }
 
@@ -24713,7 +25385,7 @@ ${(0, import_yaml11.stringify)(outcome.origins)}`;
 }
 
 // kernel/src/config/use-cases/layout.ts
-import { join as join33 } from "node:path";
+import { join as join35 } from "node:path";
 
 // kernel/src/config/domain/layout.ts
 var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
@@ -24726,8 +25398,8 @@ function classifyLayout(state) {
 // kernel/src/config/use-cases/layout.ts
 function detectLayout(store2, root) {
   return classifyLayout({
-    bdk: store2.isDirectory(join33(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => store2.exists(join33(root, marker)))
+    bdk: store2.isDirectory(join35(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store2.exists(join35(root, marker)))
   });
 }
 
@@ -24735,7 +25407,7 @@ function detectLayout(store2, root) {
 function configRegistrations(deps) {
   return [
     { id: "config-show", handler: showCommand3(deps) },
-    { id: "config-check", handler: checkCommand(deps) },
+    { id: "config-check", handler: checkCommand2(deps) },
     { id: "config-schema", handler: schemaCommand2(deps) },
     { id: "config-set", handler: setCommand(deps) }
   ];
@@ -24752,8 +25424,8 @@ function renderShow2(report2) {
 }
 
 // kernel/src/dispatch/use-cases/build.ts
-import { createHash as createHash4 } from "node:crypto";
-import { join as join35, posix as posix5 } from "node:path";
+import { createHash as createHash5 } from "node:crypto";
+import { join as join37, posix as posix5 } from "node:path";
 
 // kernel/src/export/commands/agents.ts
 import { resolve as resolve3 } from "node:path";
@@ -24770,7 +25442,7 @@ function renderAgents(report2) {
 }
 
 // kernel/src/export/use-cases/agents.ts
-import { join as join34, relative as relative7 } from "node:path";
+import { join as join36, relative as relative8 } from "node:path";
 
 // kernel/src/export/domain/adapters.ts
 var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
@@ -24859,11 +25531,11 @@ function adapterFile(adapter, host) {
 // kernel/src/export/use-cases/agents.ts
 function exportAgents(deps, request) {
   const host = HOSTS[request.host];
-  const out = request.out ?? join34(deps.pluginRoot, "agents");
+  const out = request.out ?? join36(deps.pluginRoot, "agents");
   const drift = [];
   const files = ADAPTERS.map((adapter) => {
-    const target = join34(out, `${adapter.name}.md`);
-    const path = relative7(request.root, target);
+    const target = join36(out, `${adapter.name}.md`);
+    const path = relative8(request.root, target);
     const content = adapterFile(adapter, host);
     const current = deps.store.read(target);
     const changed = current !== content;
@@ -25095,11 +25767,11 @@ function buildPackage(deps, change, globalDir2, input) {
         ["split the task or the part so its text and entries fit", "bdk part split <nn>"]
       );
     }
-    const dir = join35(change.dir, "dispatch");
-    const path = join35(dir, name);
+    const dir = join37(change.dir, "dispatch");
+    const path = join37(dir, name);
     for (const earlier of deps.store.list(dir)) {
       if (earlier !== name && earlier.endsWith(`-${input.ticket}.md`)) {
-        deps.store.remove(join35(dir, earlier));
+        deps.store.remove(join37(dir, earlier));
       }
     }
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
@@ -25189,12 +25861,12 @@ function doNotTouch(part) {
   return globs2.length === 0 ? "`do-not-touch`: none." : `\`do-not-touch\`: ${globs2.map((glob4) => `\`${glob4}\``).join(", ")}.`;
 }
 function intentOf(deps, change) {
-  const document = readDocument(deps.store, join35(change.dir, "change.md"));
+  const document = readDocument(deps.store, join37(change.dir, "change.md"));
   const intent = document !== void 0 && "data" in document ? document.data.intent : void 0;
   return typeof intent === "string" ? intent : `Change ${change.id}.`;
 }
 function readRoleBody(deps, role2) {
-  const path = join35(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
+  const path = join37(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
   const text8 = deps.store.read(path);
   if (text8 === void 0) throw new Error(`the plugin has no role skill at ${path}`);
   return splitFrontmatter(text8).body.trim();
@@ -25208,7 +25880,7 @@ function entriesText(deps, change, full, counted, target) {
 ${others}`;
 }
 function entryText(deps, change, entry) {
-  const document = readDocument(deps.store, join35(change.projectRoot, entry.path));
+  const document = readDocument(deps.store, join37(change.projectRoot, entry.path));
   const body = document === void 0 ? "" : document.body.trim();
   const refs = entry.refs.map((ref) => `\`${ref}\``).join(", ");
   return `### ${entry.id} ${entry.type}, ${entry.status}
@@ -25223,19 +25895,19 @@ function categoryList(categories) {
   return categories.map((category2) => `- \`${category2.id}\`: ${category2.description}`).join("\n");
 }
 function hashOf(texts) {
-  const hash2 = createHash4("sha256");
+  const hash2 = createHash5("sha256");
   for (const text8 of texts) hash2.update(`${normalise2(text8)}
 \0`);
   return `sha256:${hash2.digest("hex")}`;
 }
 
 // kernel/src/dispatch/use-cases/show.ts
-import { isAbsolute as isAbsolute3, join as join36, posix as posix6, relative as relative8, sep as sep7 } from "node:path";
+import { isAbsolute as isAbsolute4, join as join38, posix as posix6, relative as relative9, sep as sep7 } from "node:path";
 var TICKET = /^A-[0-9a-z]{8}$/;
 function showPackage(deps, change, cwd, value) {
-  const dir = join36(change.dir, "dispatch");
-  const path = TICKET.test(value) ? ticketPackage(deps, dir, value) : isAbsolute3(value) ? value : join36(cwd, value);
-  const inside = path === void 0 ? "" : relative8(dir, path);
+  const dir = join38(change.dir, "dispatch");
+  const path = TICKET.test(value) ? ticketPackage(deps, dir, value) : isAbsolute4(value) ? value : join38(cwd, value);
+  const inside = path === void 0 ? "" : relative9(dir, path);
   const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep7) ? void 0 : deps.store.read(path);
   const document = path === void 0 || content === void 0 ? void 0 : readDocument(deps.store, path);
   if (path === void 0 || content === void 0 || document === void 0 || !("data" in document)) {
@@ -25253,7 +25925,7 @@ function showPackage(deps, change, cwd, value) {
 }
 function ticketPackage(deps, dir, ticket) {
   const name = deps.store.list(dir).find((file) => file.endsWith(`-${ticket}.md`));
-  return name === void 0 ? void 0 : join36(dir, name);
+  return name === void 0 ? void 0 : join38(dir, name);
 }
 
 // kernel/src/dispatch/commands/dispatch.ts
@@ -25286,505 +25958,6 @@ function dispatchRegistrations(deps) {
   return [
     { id: "dispatch-build", handler: buildCommand(deps) },
     { id: "dispatch-show", handler: showCommand4(deps) }
-  ];
-}
-
-// kernel/src/evidence/render/evidence.ts
-function renderRecord(report2) {
-  const head = report2.deduplicated ? `${report2.evidence} already records this evidence: ${report2.path}` : `recorded ${report2.evidence}: ${report2.path}`;
-  const verdict = report2.verdict === void 0 ? [] : [`verdict: ${report2.verdict}`];
-  const files = report2.files.map((file) => `  ${file.stored}: ${file.path}`);
-  return [head, `tree: ${report2.treeHash}`, ...verdict, "files:", ...files, ""].join("\n");
-}
-function renderCheck2(subject, report2) {
-  const lines = report2.evidence.map(
-    (entry) => `  ${entry.evidence} ${entry.kind}${entry.verdict === void 0 ? "" : ` ${entry.verdict}`}: fresh`
-  );
-  return [`evidence of ${subject} is fresh (tree ${report2.treeHash})`, ...lines, ""].join("\n");
-}
-function staleWhy(subject, report2) {
-  if (report2.evidence.length === 0) return `${subject} has no evidence`;
-  const stale = report2.evidence.filter((entry) => !entry.fresh).map((entry) => `${entry.evidence} ${entry.kind} (changed: ${entry.changedSince.join(", ")})`);
-  return `evidence of ${subject} is stale: ${stale.join("; ")}`;
-}
-
-// kernel/src/evidence/use-cases/scope.ts
-import { join as join37 } from "node:path";
-
-// kernel/src/evidence/config.ts
-var glob3 = string2().min(1).meta({ title: "non-empty glob" });
-function globs(defaults, description) {
-  return appendOnly(
-    array(glob3).refine((items) => new Set(items).size === items.length, "globs must be unique").meta({ uniqueItems: true, description })
-  ).default([...defaults]);
-}
-var NON_EXECUTABLE = [
-  "**/*.md",
-  "**/*.mdx",
-  "**/*.txt",
-  "**/*.rst",
-  "**/*.png",
-  "**/*.jpg",
-  "**/*.jpeg",
-  "**/*.gif",
-  "**/*.svg",
-  "**/*.webp",
-  "docs/**",
-  "LICENSE*",
-  "CHANGELOG*",
-  ".bdk/**"
-];
-var BUILD_CONFIG = [
-  "package.json",
-  "pnpm-lock.yaml",
-  "package-lock.json",
-  "yarn.lock",
-  "tsconfig*.json",
-  "pyproject.toml",
-  "uv.lock",
-  "poetry.lock",
-  "requirements*.txt",
-  "go.mod",
-  "go.sum",
-  "Cargo.toml",
-  "Cargo.lock",
-  "Gemfile",
-  "Gemfile.lock",
-  "pom.xml",
-  "build.gradle*",
-  "Makefile",
-  "CMakeLists.txt"
-];
-var evidenceModule = defineConfigModule({
-  key: "policy.evidence",
-  consumer: "evidence",
-  owner: "T23",
-  description: "Which files the tree hash covers and which evidence files are committed.",
-  schema: strictObject({
-    "non-executable": globs(
-      NON_EXECUTABLE,
-      "Files that never change the tree hash; layers append to the defaults."
-    ),
-    "build-config": globs(
-      BUILD_CONFIG,
-      "Files that always change the tree hash, wherever they are; wins over non-executable."
-    ),
-    "max-committed-bytes": int().min(0).default(65536).meta({
-      description: "The largest UTF-8 text evidence file copied into the Change; 0 commits none."
-    })
-  }).prefault({})
-});
-
-// kernel/src/evidence/use-cases/tree.ts
-import { createHash as createHash5 } from "node:crypto";
-function fileClass(policy, path) {
-  if (firstMatch(policy.buildConfig, path) !== void 0) return "build-config";
-  if (firstMatch(policy.nonExecutable, path) !== void 0) return "non-executable";
-  return "executable";
-}
-function coveredPaths(policy, scopeFiles, workTreeFiles2) {
-  const covered = /* @__PURE__ */ new Set();
-  for (const path of scopeFiles)
-    if (fileClass(policy, path) !== "non-executable") covered.add(path);
-  for (const path of workTreeFiles2)
-    if (fileClass(policy, path) === "build-config") covered.add(path);
-  return [...covered].sort(byteOrder);
-}
-function treeOf(paths, read3) {
-  const tree = [...paths].sort(byteOrder).map((path) => {
-    const bytes2 = read3(path);
-    return { path, hash: bytes2 === void 0 ? "absent" : sha256(bytes2) };
-  });
-  const hash2 = createHash5("sha256");
-  for (const entry of tree) hash2.update(`${entry.path}\0${entry.hash}\0`);
-  return { treeHash: `sha256:${hash2.digest("hex")}`, tree };
-}
-function changedSince(recorded2, current) {
-  const before = new Map(recorded2.map((entry) => [entry.path, entry.hash]));
-  const after = new Map(current.map((entry) => [entry.path, entry.hash]));
-  const paths = /* @__PURE__ */ new Set([...before.keys(), ...after.keys()]);
-  return [...paths].filter((path) => before.get(path) !== after.get(path)).sort(byteOrder);
-}
-function sha256(bytes2) {
-  return `sha256:${createHash5("sha256").update(bytes2).digest("hex")}`;
-}
-function byteOrder(a, b) {
-  return Buffer.compare(Buffer.from(a), Buffer.from(b));
-}
-
-// kernel/src/evidence/use-cases/scope.ts
-function evidenceSettings(deps, projectRoot, globalDir2) {
-  return resolveOrRefuse(
-    {
-      store: deps.store,
-      settings: deps.settings,
-      globalDir: globalDir2,
-      projectRoot,
-      pluginRoot: deps.pluginRoot
-    },
-    { removed: "ignore" }
-  );
-}
-function filePolicy(settings) {
-  const policy = moduleValue(evidenceModule, settings);
-  return { nonExecutable: policy["non-executable"], buildConfig: policy["build-config"] };
-}
-function scopeOf(parts, changeId2, target) {
-  const holder = taskHolders(parts).get(target);
-  if (holder !== void 0) return [holder];
-  const part = parts.find((found) => found.id === target);
-  if (part !== void 0) return [part];
-  return target === changeId2 ? parts : void 0;
-}
-async function scopeTree(deps, projectRoot, policy, scope2) {
-  const declared3 = scope2.flatMap(
-    (part) => part.tasks.flatMap((task) => task.files.map((file) => file.path))
-  );
-  const paths = coveredPaths(policy, declared3, await workTreeFiles(deps.git, projectRoot));
-  return treeOf(paths, (path) => deps.store.readBytes(join37(projectRoot, path)));
-}
-
-// kernel/src/evidence/use-cases/check.ts
-var EVIDENCE_ID = /^E-[0-9a-z]{8}$/;
-async function checkEvidence(deps, change, globalDir2, subject) {
-  const manifests = readManifests(deps.store, change.dir);
-  const parts = readPlanParts(deps.store, change.dir);
-  let target = subject;
-  let checked;
-  if (EVIDENCE_ID.test(subject)) {
-    const manifest = manifests.find((found) => found.data.id === subject);
-    if (manifest === void 0) {
-      return refuse("input/not-found", `${change.id} has no evidence ${subject}`, [
-        "bdk evidence check <target>"
-      ]);
-    }
-    target = manifest.data.target;
-    checked = [manifest];
-  } else {
-    if (scopeOf(parts, change.id, subject) === void 0) {
-      return refuse("input/not-found", `${change.id} holds no task, part or Change ${subject}`, [
-        "bdk part list"
-      ]);
-    }
-    const latest2 = /* @__PURE__ */ new Map();
-    for (const manifest of manifests) {
-      if (manifest.data.target === subject) latest2.set(manifest.data.kind, manifest);
-    }
-    checked = [...latest2.values()];
-  }
-  const settings = evidenceSettings(deps, change.projectRoot, globalDir2);
-  if ("refused" in settings) return settings;
-  const scope2 = scopeOf(parts, change.id, target) ?? parts;
-  const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope2);
-  const evidence = checked.map((manifest) => ({
-    evidence: manifest.data.id,
-    kind: manifest.data.kind,
-    treeHash: manifest.data["tree-hash"],
-    fresh: manifest.data["tree-hash"] === current.treeHash,
-    ...manifest.data.verdict === void 0 ? {} : { verdict: manifest.data.verdict },
-    changedSince: changedSince(manifest.data.tree, current.tree)
-  }));
-  return {
-    fresh: evidence.length > 0 && evidence.every((entry) => entry.fresh),
-    treeHash: current.treeHash,
-    evidence
-  };
-}
-
-// kernel/src/evidence/use-cases/record.ts
-import { basename, isAbsolute as isAbsolute4, join as join38, relative as relative9 } from "node:path";
-
-// kernel/src/evidence/domain/citation.ts
-function citationProblem(citation, files) {
-  const parsed = parse7(citation);
-  if (parsed === void 0) {
-    return `${citation} is not a citation: use <file>#<json-pointer>, <file>:<line> or <file>:<line>=<text>`;
-  }
-  const file = parsed.file === "" ? only(files) : named(files, parsed.file);
-  if (file === void 0) {
-    return parsed.file === "" ? `${citation} names no file, and ${String(files.length)} files are recorded` : `${citation}: ${parsed.file} is not a recorded file`;
-  }
-  const where = `${citation} in ${file.given}`;
-  if (file.text === void 0) return `${where}: the file is not text, so it is not citable`;
-  return "pointer" in parsed.target ? pointerProblem(where, file.text, parsed.target.pointer) : lineProblem(where, file.text, parsed.target.line, parsed.target.contains);
-}
-function isText(bytes2) {
-  if (bytes2.includes(0)) return false;
-  try {
-    new TextDecoder("utf-8", { fatal: true }).decode(bytes2);
-    return true;
-  } catch {
-    return false;
-  }
-}
-function parse7(citation) {
-  if (citation.startsWith("/")) return { file: "", target: { pointer: citation } };
-  const hash2 = citation.indexOf("#");
-  if (hash2 >= 0) {
-    return { file: citation.slice(0, hash2), target: { pointer: citation.slice(hash2 + 1) } };
-  }
-  const line2 = /^(?<file>[^:]*):(?<line>\d+)(?:=(?<text>.*))?$/s.exec(citation)?.groups;
-  if (line2?.line === void 0) return void 0;
-  const target = line2.text === void 0 ? { line: Number(line2.line) } : { line: Number(line2.line), contains: line2.text };
-  return { file: line2.file ?? "", target };
-}
-function only(files) {
-  return files.length === 1 ? files[0] : void 0;
-}
-function named(files, name) {
-  return files.find((file) => file.given === name) ?? files.find((file) => file.given.split("/").at(-1) === name);
-}
-function pointerProblem(where, text8, pointer) {
-  if (pointer !== "" && !pointer.startsWith("/")) {
-    return `${where}: ${pointer} is not a JSON pointer; it starts with /`;
-  }
-  let value;
-  try {
-    value = JSON.parse(text8);
-  } catch {
-    return `${where}: the file does not parse as JSON`;
-  }
-  const tokens = pointer === "" ? [] : pointer.slice(1).split("/");
-  for (const token of tokens) {
-    const key = token.replaceAll("~1", "/").replaceAll("~0", "~");
-    const next = step(value, key);
-    if (next === void 0) return `${where}: ${pointer} names no value`;
-    value = next.value;
-  }
-  return void 0;
-}
-function step(value, key) {
-  if (Array.isArray(value)) {
-    if (!/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= value.length) return void 0;
-    return { value: value[Number(key)] };
-  }
-  if (typeof value === "object" && value !== null && Object.hasOwn(value, key)) {
-    return { value: value[key] };
-  }
-  return void 0;
-}
-function lineProblem(where, text8, line2, contains) {
-  const lines = text8.endsWith("\n") ? text8.slice(0, -1).split("\n") : text8.split("\n");
-  const found = line2 >= 1 && text8 !== "" ? lines[line2 - 1] : void 0;
-  if (found === void 0) return `${where}: the file has no line ${String(line2)}`;
-  if (contains !== void 0 && !found.replace(/\r$/, "").includes(contains)) {
-    return `${where}: line ${String(line2)} does not contain ${contains}`;
-  }
-  return void 0;
-}
-
-// kernel/src/evidence/use-cases/record.ts
-var KIND = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-var VERDICTS = ["pass", "fail", "not-run"];
-var MACHINE_EVIDENCE = ".bdk/.machine/evidence/";
-async function recordEvidence(deps, change, where, input) {
-  const usage = `bdk evidence record ${input.kind} <file> --ticket <ticket> --verdict pass --cite <pointer>`;
-  if (!KIND.test(input.kind)) {
-    return refuse("input/invalid-argument", `kind ${input.kind} is not kebab-case`, [usage]);
-  }
-  if (input.ticket === void 0) {
-    return refuse("input/missing-argument", "evidence record needs --ticket", [usage]);
-  }
-  if (input.verdict !== void 0 && !VERDICTS.includes(input.verdict)) {
-    return refuse(
-      "input/invalid-argument",
-      `verdict ${input.verdict} is not pass, fail or not-run`,
-      [usage]
-    );
-  }
-  const verdict = input.verdict;
-  const ticket = input.ticket;
-  const record4 = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
-  if (record4 === void 0 || record4.data.outcome !== void 0) {
-    return refuse(
-      "policy/no-open-ticket",
-      record4 === void 0 ? `${change.id} has no ticket ${ticket}` : `ticket ${ticket} is already closed ${record4.data.outcome ?? ""}`,
-      ["bdk attempt list", "bdk attempt open <loop> <target>"]
-    );
-  }
-  const sources = readSources(deps, change.projectRoot, where.cwd, input.files);
-  if ("refused" in sources) return sources;
-  const citations = checkCitations(sources, verdict, input.citations);
-  if (citations !== void 0) return citations;
-  const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
-  if ("refused" in resolved) return resolved;
-  const target = record4.data.target;
-  const parts = readPlanParts(deps.store, change.dir);
-  const scope2 = scopeOf(parts, change.id, target) ?? parts;
-  const { treeHash, tree } = await scopeTree(
-    deps,
-    change.projectRoot,
-    filePolicy(resolved.value),
-    scope2
-  );
-  const hashes = sources.map((source2) => source2.hash);
-  const earlier = ticketManifests(readManifests(deps.store, change.dir), ticket).find(
-    (manifest) => manifest.data.kind === input.kind && manifest.data["tree-hash"] === treeHash && manifest.data.verdict === verdict && same2(manifest.data.citations ?? [], input.citations) && same2(
-      manifest.data.files.map((file) => file.hash),
-      hashes
-    )
-  );
-  if (earlier !== void 0) return reportOf(change.projectRoot, earlier, true);
-  const id = newId("E-", deps.random);
-  const limit = moduleValue(evidenceModule, resolved.value)["max-committed-bytes"];
-  const files = sources.map((source2) => {
-    const name = `${target}-${id}-${source2.name}`;
-    const hash2 = source2.hash;
-    if (source2.text && source2.bytes.length <= limit) {
-      const path3 = join38(relative9(change.projectRoot, change.dir), "evidence", name);
-      deps.store.writeBytes(join38(change.projectRoot, path3), source2.bytes);
-      return { path: path3, hash: hash2, stored: "committed" };
-    }
-    if (source2.path.startsWith(MACHINE_EVIDENCE))
-      return { path: source2.path, hash: hash2, stored: "machine" };
-    const path2 = `${MACHINE_EVIDENCE}${name}`;
-    deps.store.writeBytes(join38(change.projectRoot, path2), source2.bytes);
-    return { path: path2, hash: hash2, stored: "machine" };
-  });
-  const active9 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
-  const path = join38(change.dir, "evidence", `${target}-${id}.md`);
-  const data = {
-    schema: 1,
-    id,
-    kind: input.kind,
-    ticket,
-    target,
-    at: deps.clock.now(),
-    author: await authorIdent(deps.git, change.projectRoot),
-    source: active9 === void 0 ? "kernel" : `agent:${active9.role}`,
-    "tree-hash": treeHash,
-    tree: [...tree],
-    files,
-    ...verdict === void 0 ? {} : { verdict },
-    ...input.citations.length === 0 ? {} : { citations: [...input.citations] }
-  };
-  writeDocument(deps.store, path, { data, body: "" });
-  return reportOf(change.projectRoot, { path, data }, false);
-}
-function readSources(deps, projectRoot, cwd, given) {
-  const sources = [];
-  for (const file of given) {
-    const absolute = isAbsolute4(file) ? file : join38(cwd, file);
-    const bytes2 = deps.store.readBytes(absolute);
-    if (bytes2 === void 0) {
-      return refuse("input/not-found", `evidence file ${file} does not exist`, [
-        "bdk evidence record <kind> <file> --ticket <ticket>"
-      ]);
-    }
-    const name = basename(absolute);
-    if (sources.some((source2) => source2.name === name)) {
-      return refuse(
-        "input/invalid-argument",
-        `two evidence files are named ${name}; the Change stores them by file name`,
-        ["copy one of them under another name and record both"]
-      );
-    }
-    sources.push({
-      given: file,
-      path: relative9(projectRoot, absolute),
-      name,
-      bytes: bytes2,
-      hash: sha256(bytes2),
-      text: isText(bytes2)
-    });
-  }
-  return sources;
-}
-function checkCitations(sources, verdict, citations) {
-  const files = sources.map((source2) => ({
-    given: source2.given,
-    text: source2.text ? new TextDecoder().decode(source2.bytes) : void 0
-  }));
-  if (verdict === "pass" && citations.length === 0) {
-    return refuse(
-      "policy/missing-citation",
-      `a pass verdict needs --cite naming a value in ${sources.map((source2) => source2.given).join(", ")}`,
-      ["--cite <file>#<json-pointer>", "--cite <file>:<line>", "--cite <file>:<line>=<text>"]
-    );
-  }
-  for (const citation of citations) {
-    const problem = citationProblem(citation, files);
-    if (problem !== void 0) {
-      return refuse("policy/missing-citation", problem, [
-        "cite a value the recorded files hold",
-        "record the verdict fail when the evidence does not show a pass"
-      ]);
-    }
-  }
-  return void 0;
-}
-function same2(a, b) {
-  return a.length === b.length && a.every((value, at) => value === b[at]);
-}
-function reportOf(projectRoot, manifest, deduplicated) {
-  const data = manifest.data;
-  return {
-    evidence: data.id,
-    path: relative9(projectRoot, manifest.path),
-    treeHash: data["tree-hash"],
-    files: data.files,
-    ...data.verdict === void 0 ? {} : { verdict: data.verdict },
-    ...data.citations === void 0 ? {} : { citations: data.citations },
-    deduplicated
-  };
-}
-
-// kernel/src/evidence/commands/evidence.ts
-function text7(value) {
-  return typeof value === "string" ? value : void 0;
-}
-function list2(value) {
-  if (value === void 0 || value === true) return [];
-  return typeof value === "string" ? [value] : [...value];
-}
-function active7(change) {
-  if (change === void 0) throw new Error("evidence commands are Change-scoped");
-  return change;
-}
-function recordCommand(deps) {
-  return async (context) => {
-    const report2 = await recordEvidence(
-      deps,
-      active7(context.change),
-      { cwd: context.cwd, globalDir: globalDir(context.runtime) },
-      {
-        kind: context.positionals["<kind>"] ?? "",
-        files: context.lists["<file>"] ?? [],
-        ticket: text7(context.flags["--ticket"]),
-        verdict: text7(context.flags["--verdict"]),
-        citations: list2(context.flags["--cite"])
-      }
-    );
-    return isRefusal(report2) ? report2 : { data: report2, text: renderRecord(report2) };
-  };
-}
-function checkCommand2(deps) {
-  return async (context) => {
-    const subject = context.positionals["<target|evidence-id>"] ?? "";
-    const report2 = await checkEvidence(
-      deps,
-      active7(context.change),
-      globalDir(context.runtime),
-      subject
-    );
-    if (isRefusal(report2)) return report2;
-    if (!context.json && !report2.fresh) {
-      return refuse("policy/stale-evidence", staleWhy(subject, report2), [
-        "re-run the checks and bdk evidence record <kind> <file> --ticket <ticket>"
-      ]);
-    }
-    return { data: report2, text: renderCheck2(subject, report2) };
-  };
-}
-
-// kernel/src/evidence/index.ts
-var evidenceConfig = {
-  modules: [evidenceModule]
-};
-function evidenceRegistrations(deps) {
-  return [
-    { id: "evidence-record", handler: recordCommand(deps) },
-    { id: "evidence-check", handler: checkCommand2(deps) }
   ];
 }
 

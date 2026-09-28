@@ -14,6 +14,7 @@ export function inputHasher(
 ): (inputs: Inputs) => string {
   return (inputs) => {
     if ("codeTree" in inputs) return codeTree ?? filesHash(store, changeDir, []);
+    if ("tree" in inputs) return inputs.tree;
     return filesHash(store, changeDir, "files" in inputs ? inputs.files : []);
   };
 }

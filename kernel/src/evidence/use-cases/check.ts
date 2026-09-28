@@ -38,11 +38,7 @@ export async function checkEvidence(
         "bdk part list",
       ]);
     }
-    const latest = new Map<string, ManifestFile>();
-    for (const manifest of manifests) {
-      if (manifest.data.target === subject) latest.set(manifest.data.kind, manifest);
-    }
-    checked = [...latest.values()];
+    checked = manifests.filter((manifest) => manifest.data.target === subject);
   }
 
   const settings = evidenceSettings(deps, change.projectRoot, globalDir);
@@ -50,11 +46,25 @@ export async function checkEvidence(
   // An artifact target (a verifier ticket's manifest) covers the whole Change.
   const scope = scopeOf(parts, change.id, target) ?? parts;
   const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope);
-  const evidence = checked.map((manifest) => ({
+  const fresh = (manifest: ManifestFile) => manifest.data["tree-hash"] === current.treeHash;
+  // Manifests are in `at` order; of two in one second the fresh one counts as the later.
+  const latest = new Map<string, ManifestFile>();
+  for (const manifest of checked) {
+    const known = latest.get(manifest.data.kind);
+    if (
+      known === undefined ||
+      manifest.data.at > known.data.at ||
+      fresh(manifest) ||
+      !fresh(known)
+    ) {
+      latest.set(manifest.data.kind, manifest);
+    }
+  }
+  const evidence = [...latest.values()].map((manifest) => ({
     evidence: manifest.data.id,
     kind: manifest.data.kind,
     treeHash: manifest.data["tree-hash"],
-    fresh: manifest.data["tree-hash"] === current.treeHash,
+    fresh: fresh(manifest),
     ...(manifest.data.verdict === undefined ? {} : { verdict: manifest.data.verdict }),
     changedSince: changedSince(manifest.data.tree, current.tree),
   }));

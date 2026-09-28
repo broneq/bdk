@@ -1,0 +1,1 @@
+Run the simplify step {node} of Change {change} inside each task's ticket: dispatch the simplifier on the task's uncommitted diff, then store its report. `bdk attempt close <ticket> ok` records the `simplify` evidence from that report.

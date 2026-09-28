@@ -2,6 +2,7 @@
 // and the gate rule: files by path, entries in order, report statuses by id.
 import type {
   ChangeView,
+  EvidenceFacts,
   FileFacts,
   GraphEntry,
   Inputs,
@@ -23,6 +24,16 @@ export interface ViewFixture {
   /** Plan part path -> its parsed body; a plan part file without one holds task `<nn>-1`. */
   readonly planParts?: Readonly<Record<string, Partial<PlanPartFacts>>>;
   readonly work?: WorkFacts;
+  /** Evidence manifests in order; `at` defaults to 10:00, `cited` to false, `fresh` to true. */
+  readonly evidence?: readonly (Partial<EvidenceFacts> & {
+    readonly id: string;
+    readonly kind: string;
+    readonly target: string;
+  })[];
+  /** Entry id -> the `evidence` ids its report file lists. */
+  readonly reportEvidence?: Readonly<Record<string, readonly string[]>>;
+  /** Plan part number -> its current tree hash. */
+  readonly partTrees?: Readonly<Record<string, string>>;
 }
 
 export function fakeView(fixture: ViewFixture = {}): ChangeView {
@@ -50,6 +61,14 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
         .map((path) => path.slice(dir.length + 1))
         .sort(),
     reportStatus: (entry) => fixture.reports?.[entry.id],
+    reportEvidence: (entry) => fixture.reportEvidence?.[entry.id] ?? [],
+    evidence: (fixture.evidence ?? []).map((manifest) => ({
+      at: "2026-09-25T10:00:00Z",
+      cited: false,
+      fresh: true,
+      ...manifest,
+    })),
+    partTree: (nn) => fixture.partTrees?.[nn],
     planPart: (path) => {
       if (files[path] === undefined) return undefined;
       const nn = /(\d{2})-[^/]*\.md$/.exec(path)?.[1] ?? "01";
@@ -72,6 +91,7 @@ export function fakeHash(
   return (inputs) => {
     if ("codeTree" in inputs) return `tree@${versions.tree ?? "1"}`;
     if ("none" in inputs) throw new Error("hash asked for none");
+    if ("tree" in inputs) return inputs.tree;
     return inputs.files.map((path) => `${path}@${versions[path] ?? "1"}`).join(",");
   };
 }

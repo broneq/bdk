@@ -23,9 +23,9 @@
 
 ## 4. Graph: step kinds and nodes
 
-- [ ] 4.1 Write failing engine tests: step instances pair by part, other collections stay whole, evidence-derived `done` and `stale`, `next` returns a stale step, `bdk done` on a step refused naming its command, the fake `contract-snapshot` kind on the step base (T23-D51), and `plan-verify` stale after a plan part edit; verify they fail
-- [ ] 4.2 Implement the `post-task-step` base with `simplify`, `tests-scoped`, `lint` (done through evidence, inputs from the part tree hash through `evidence`'s `index.ts`), instance pairing in the engine, verdict kinds checking the `evidence` ids of their report (`policy/missing-citation`), `pipeline/simplify.md`, `tests-scoped.md`, `lint.md` replacing `post-task-step.md`, and the three nodes in `pipeline/pipeline.yaml` after `execute` with `review` requiring them; verify 4.1 passes, the shipped pipeline content test, the kind registry scenario (fifteen kinds) and the import scan (`graph -> evidence`) pass
-- [ ] 4.3 Write E2E tests for the node scenarios of the `kernel-pipeline` delta (latest fresh evidence, done refused, pairing, steps follow execute in `change status`, stale step evidence, verdict for an older part hash); verify `pnpm build && pnpm test:e2e` passes them
+- [x] 4.1 Write failing engine tests: step instances pair by part, other collections stay whole, evidence-derived `done` and `stale`, `next` returns a stale step, `bdk done` on a step refused naming its command, the fake `contract-snapshot` kind on the step base (T23-D51), and `plan-verify` stale after a plan part edit; verify they fail
+- [x] 4.2 Implement the `post-task-step` base with `simplify`, `tests-scoped`, `lint` (done through evidence, inputs from the part tree hash through `evidence`'s `index.ts`), instance pairing in the engine, verdict kinds checking the `evidence` ids of their report (`policy/missing-citation`), `pipeline/simplify.md`, `tests-scoped.md`, `lint.md` replacing `post-task-step.md`, and the three nodes in `pipeline/pipeline.yaml` after `execute` with `review` requiring them; verify 4.1 passes, the shipped pipeline content test, the kind registry scenario (fifteen kinds) and the import scan (`graph -> evidence`) pass
+- [x] 4.3 Write E2E tests for the node scenarios of the `kernel-pipeline` delta (latest fresh evidence, done refused, pairing, steps follow execute in `change status`, stale step evidence, verdict for an older part hash); verify `pnpm build && pnpm test:e2e` passes them
 
 ## 5. Dispatch, rules, log
 

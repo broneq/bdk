@@ -6,6 +6,7 @@ import { evidenceModule } from "./config.ts";
 import type { EvidenceDeps } from "./use-cases/deps.ts";
 
 export type { EvidenceDeps } from "./use-cases/deps.ts";
+export { currentTrees, filePolicy } from "./use-cases/scope.ts";
 
 export const evidenceConfig = {
   modules: [evidenceModule],

@@ -22,7 +22,7 @@ const planParts = {
 };
 
 describe("the kind registry", () => {
-  it("holds exactly the thirteen kinds", () => {
+  it("holds exactly the fifteen kinds", () => {
     expect([...kinds.keys()].sort()).toStrictEqual(
       [
         "architecture",
@@ -35,7 +35,9 @@ describe("the kind registry", () => {
         "intent",
         "plan-part",
         "plan-verify",
-        "post-task-step",
+        "simplify",
+        "tests-scoped",
+        "lint",
         "review",
         "spec-delta",
       ].sort(),
@@ -62,7 +64,7 @@ describe("files and hash inputs", () => {
     ["gate", undefined, [], { none: true }],
     ["execute-part", "01", [], { files: ["plan/parts/01-auth.md"] }],
     ["close", undefined, [], { none: true }],
-    ["post-task-step", undefined, [], { none: true }],
+    ["lint", "01", ["evidence/01-<evidenceId>.md"], { none: true }],
     ["design-part", "07", ["design/parts/07-<slug>.md"], { files: [] }],
   ])("%s %s", (name, nn, writes, inputs) => {
     expect(kind(name).writes(view, nn)).toStrictEqual(writes);
@@ -155,7 +157,7 @@ describe("the baseline validator", () => {
   });
 
   it("has no checks for the kinds done elsewhere", () => {
-    for (const name of ["gate", "post-task-step", "close"]) {
+    for (const name of ["gate", "close"]) {
       expect(kind(name).validate(fakeView(), { id: name })).toStrictEqual([]);
     }
   });
@@ -436,6 +438,7 @@ describe("verdict kinds", () => {
     expect(kind("plan-verify").validate(report(status), { id: "plan-verify" })).toStrictEqual([
       { id: "verdict", ok: true },
       { id: "blockers", ok: true },
+      { id: "evidence", ok: true },
     ]);
   });
 
@@ -474,7 +477,8 @@ describe("doneBy", () => {
     ["design", { through: "done" }],
     ["gate", { through: "gate" }],
     ["execute-part", { through: "command", command: "bdk part done {nn}" }],
-    ["post-task-step", { through: "command", command: "the post-task step runner (T23)" }],
+    ["simplify", { through: "evidence", command: "bdk attempt close <ticket> ok" }],
+    ["lint", { through: "evidence", command: "bdk evidence record lint <file> --ticket <ticket>" }],
     ["close", { through: "command", command: "bdk change close" }],
   ])("%s", (name, doneBy) => {
     expect(kind(name).doneBy).toStrictEqual(doneBy);

@@ -5,12 +5,13 @@ import type { Graph, GraphNode } from "../domain/engine.ts";
 import { evaluate } from "../domain/engine.ts";
 import type { GatePolicy } from "../domain/gate.ts";
 import { kindRegistry } from "../domain/kinds/index.ts";
-import type { ChangeView, KindRegistry, WorkFacts } from "../domain/kinds/index.ts";
+import type { ChangeView, EvidenceFacts, KindRegistry, WorkFacts } from "../domain/kinds/index.ts";
 import { stageMap } from "../domain/pipeline.ts";
 import type { Pipeline } from "../domain/pipeline.ts";
 import { gateView } from "../domain/reports.ts";
 import type { GateView, PendingView } from "../domain/reports.ts";
 import { gatesModule } from "../config.ts";
+import { currentTrees, filePolicy } from "../../evidence/index.ts";
 import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
 import type { Resolved } from "../../shared/config/index.ts";
 import { codeTreeHash, trailerCommits } from "../../shared/git/index.ts";
@@ -23,6 +24,8 @@ import {
   listEntries,
   openAttempts,
   parkedQuestion,
+  readManifests,
+  readPlanParts,
   stageOf,
 } from "../../shared/store/index.ts";
 import type { EntryRow, IndexDb } from "../../shared/store/index.ts";
@@ -87,6 +90,7 @@ export async function readGraph(
     profile: effectiveProfile(base, entries),
     entries,
     ...(options.work === true ? { work: await workFacts(deps, change, index) } : {}),
+    ...(await evidenceFacts(deps, change, resolved, options.work === true)),
   });
   const reviewed = pipeline.nodes.some((node) => {
     const kind = kinds.get(node.kind);
@@ -140,6 +144,38 @@ export async function readGraph(
     entries,
     parked: parkedQuestion(entries),
     currentHash,
+  };
+}
+
+/**
+ * The manifests with their freshness and the tree hash of every plan part,
+ * through one work-tree listing; skipped while the Change has no manifest,
+ * unless a validator reads the part trees.
+ */
+async function evidenceFacts(
+  deps: GraphDeps,
+  change: ActiveChange,
+  resolved: Resolved,
+  validating: boolean,
+): Promise<{ evidence?: EvidenceFacts[]; partTrees?: ReadonlyMap<string, string> }> {
+  const manifests = readManifests(deps.store, change.dir);
+  if (manifests.length === 0 && !validating) return {};
+  const parts = readPlanParts(deps.store, change.dir);
+  const trees = await currentTrees(deps, change, filePolicy(resolved.value), parts, [
+    ...parts.map((part) => part.id),
+    ...manifests.map((manifest) => manifest.data.target),
+  ]);
+  return {
+    evidence: manifests.map(({ data }) => ({
+      id: data.id,
+      kind: data.kind,
+      target: data.target,
+      at: data.at,
+      verdict: data.verdict,
+      cited: (data.citations ?? []).length > 0,
+      fresh: trees.get(data.target)?.treeHash === data["tree-hash"],
+    })),
+    partTrees: new Map(parts.map((part) => [part.id, trees.get(part.id)?.treeHash ?? ""])),
   };
 }
 

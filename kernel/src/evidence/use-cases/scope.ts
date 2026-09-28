@@ -55,15 +55,58 @@ export function scopeOf(
   return target === changeId ? parts : undefined;
 }
 
+interface TreeDeps {
+  readonly store: Store;
+  readonly git: Git;
+}
+
 export async function scopeTree(
-  deps: { readonly store: Store; readonly git: Git },
+  deps: TreeDeps,
   projectRoot: string,
   policy: FilePolicy,
   scope: readonly PlanPartFile[],
 ): Promise<Tree> {
+  return treeIn(deps.store, projectRoot, policy, scope, await workTreeFiles(deps.git, projectRoot));
+}
+
+/**
+ * The current tree of each target through one work-tree listing: a task's
+ * part, a part, the Change; any other target (an artifact) covers the Change.
+ */
+export async function currentTrees(
+  deps: TreeDeps,
+  change: { readonly id: string; readonly projectRoot: string },
+  policy: FilePolicy,
+  parts: readonly PlanPartFile[],
+  targets: Iterable<string>,
+): Promise<Map<string, Tree>> {
+  const workTree = await workTreeFiles(deps.git, change.projectRoot);
+  const trees = new Map<string, Tree>();
+  const byScope = new Map<string, Tree>();
+  for (const target of targets) {
+    if (trees.has(target)) continue;
+    const scope = scopeOf(parts, change.id, target) ?? parts;
+    const key = scope.map((part) => part.id).join(" ");
+    let tree = byScope.get(key);
+    if (tree === undefined) {
+      tree = treeIn(deps.store, change.projectRoot, policy, scope, workTree);
+      byScope.set(key, tree);
+    }
+    trees.set(target, tree);
+  }
+  return trees;
+}
+
+function treeIn(
+  store: Store,
+  projectRoot: string,
+  policy: FilePolicy,
+  scope: readonly PlanPartFile[],
+  workTree: readonly string[],
+): Tree {
   const declared = scope.flatMap((part) =>
     part.tasks.flatMap((task) => task.files.map((file) => file.path)),
   );
-  const paths = coveredPaths(policy, declared, await workTreeFiles(deps.git, projectRoot));
-  return treeOf(paths, (path) => deps.store.readBytes(join(projectRoot, path)));
+  const paths = coveredPaths(policy, declared, workTree);
+  return treeOf(paths, (path) => store.readBytes(join(projectRoot, path)));
 }

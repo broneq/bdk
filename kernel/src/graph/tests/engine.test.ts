@@ -229,6 +229,13 @@ describe("next", () => {
         userGate("gate:review", "2026-09-25T11:00:00.000Z"),
         done("close", "x", "2026-09-25T12:00:00.000Z"),
       ],
+      evidence: ["simplify", "tests-scoped", "lint"].map((kind, at) => ({
+        id: `E-0000000${String(at)}`,
+        kind,
+        target: "01",
+        verdict: "pass",
+        cited: true,
+      })),
     });
     expect(
       result.nodes.filter((node) => node.state !== "done" && node.state !== "skipped"),
@@ -301,6 +308,9 @@ describe("graph variants", () => {
       "intent",
       "plan",
       "execute",
+      "simplify",
+      "tests-scoped",
+      "lint",
       "review",
       "gate:review",
       "close",
@@ -318,6 +328,9 @@ describe("graph variants", () => {
       "plan",
       "plan-verify",
       "execute",
+      "simplify",
+      "tests-scoped",
+      "lint",
       "review",
       "gate:review",
       "close",

@@ -2,8 +2,7 @@
 // repositories: one case per exit code and per declared rule of `next`,
 // `explain`, `validate` and `done`, every output validated against its schema.
 // Rules owned by later tasks stay untested here and land with their owners'
-// cases: `policy/spec-invalid` (T30, the spec delta validator) and
-// `policy/missing-citation` (T23, verdict citations).
+// cases: `policy/spec-invalid` (T30, the spec delta validator).
 import { readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -96,6 +95,70 @@ function pastDesignGate(): Opened {
   done(change.root, "architecture");
   passGate(change.dir, "gate:design", "plan");
   return change;
+}
+
+/**
+ * A passing `plan-verify` verdict listing `evidence`: the report file and the
+ * `report` entry naming it, as `log ingest` writes them.
+ */
+function verdict(dir: string, evidence: readonly string[] = []): void {
+  const at = soon();
+  const report = "reports/plan-verify-plan-verifier-A-00000001.md";
+  writeDocument(fileStore(), join(dir, report), {
+    data: {
+      schema: 1,
+      ticket: "A-00000001",
+      role: "plan-verifier",
+      status: "done",
+      files: [],
+      entries: [],
+      evidence: [...evidence],
+    },
+    body: "PASS\n",
+  });
+  const id = `L-r${String(Date.now() % 10_000_000).padStart(7, "0")}`;
+  writeDocument(
+    fileStore(),
+    join(dir, `log/${at.replaceAll("-", "").replaceAll(":", "")}-report-${id}.md`),
+    {
+      data: {
+        schema: 1,
+        id,
+        type: "report",
+        summary: "plan-verify passed",
+        status: "accepted",
+        source: "agent:plan-verifier",
+        author: "BDK Test <test@example.com>",
+        at,
+        refs: ["plan-verify"],
+        report,
+      },
+      body: "",
+    },
+  );
+}
+
+/** A `tests-scoped` pass manifest of the Change without citations, as no command writes it. */
+function uncited(dir: string): string {
+  const id = "E-uncited1";
+  writeDocument(fileStore(), join(dir, `evidence/01-${id}.md`), {
+    data: {
+      schema: 1,
+      id,
+      kind: "tests-scoped",
+      ticket: "A-00000001",
+      target: "01",
+      at: soon(),
+      author: "BDK Test <test@example.com>",
+      source: "agent:runner",
+      "tree-hash": `sha256:${"0".repeat(64)}`,
+      tree: [],
+      files: [{ path: "out.json", hash: `sha256:${"1".repeat(64)}`, stored: "machine" }],
+      verdict: "pass",
+    },
+    body: "",
+  });
+  return id;
 }
 
 function transitions(dir: string): Record<string, unknown>[] {
@@ -306,6 +369,25 @@ describe("bdk done", () => {
     writePlanPart(dir, "02");
     expect(done(root, "plan")).toMatchObject({ artifact: "plan", next: "plan-verify" });
     expect(fileStore().read(join(dir, "plan/index.md"))).toContain("| 02 |");
+  });
+
+  it("exit 0: plan-verify on a verdict, stale after a plan part edit", () => {
+    const { root, dir } = pastDesignGate();
+    writePlanPart(dir, "01");
+    done(root, "plan");
+    verdict(dir);
+    expect(done(root, "plan-verify")).toMatchObject({ artifact: "plan-verify", state: "done" });
+    writePlanPart(dir, "01", { body: taskBody("01", "stores a hashed token") });
+    const report = answered(bdk(["explain", "plan-verify", "--json"], root), "output/explain.json");
+    expect(report).toMatchObject({ state: "stale" });
+  });
+
+  it("exit 2 policy/missing-citation: the verdict lists a pass without a citation", () => {
+    const { root, dir } = pastDesignGate();
+    writePlanPart(dir, "01");
+    done(root, "plan");
+    verdict(dir, [uncited(dir)]);
+    refused(bdk(["done", "plan-verify", "--json"], root), 2, "policy/missing-citation");
   });
 
   it("exit 3 input/not-found", () => {
