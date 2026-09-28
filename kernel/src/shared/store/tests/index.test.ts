@@ -268,7 +268,7 @@ describe("refresh", () => {
       expect(refreshAll(index)).toBe(true);
       const id = "2026-09-25-passwordless-login";
       const count = (sql: string): unknown => selectReadOnly(index, sql).rows[0]?.[0];
-      expect(count("SELECT count(*) FROM changes")).toBe(1);
+      expect(count("SELECT count(*) FROM changes")).toBe(2);
       expect(count("SELECT count(*) FROM attempts")).toBe(4);
       expect(count("SELECT count(*) FROM dispatches")).toBe(3);
       expect(listEntries(index, id).length).toBeGreaterThan(3);

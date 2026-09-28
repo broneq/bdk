@@ -87,9 +87,10 @@ function manifest(store: Store, id: string, ticket: string): void {
       author: AUTHOR,
       source: "kernel",
       "tree-hash": HASH,
+      tree: [],
       files: [
         {
-          path: `.bdk/changes/${CHANGE}/evidence/02-${id}.junit.xml`,
+          path: `.bdk/changes/${CHANGE}/evidence/02-${id}-junit.xml`,
           hash: HASH,
           stored: "committed",
         },

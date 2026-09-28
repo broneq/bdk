@@ -16760,8 +16760,11 @@ var attemptKind = {
       })
     ).optional().meta({ description: "Finding fingerprints of a `fail` (oscillation check)." }),
     dropped: array(ledgerId).optional(),
+    package: relativePath.optional().meta({
+      description: "The ticket's active package: the latest `dispatch build` of the ticket (T23-D42)."
+    }),
     "rules-read": timestamp.optional().meta({
-      description: "First `rules show --ticket` call for the ticket (risk R2); read by `attempt close`."
+      description: "First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`."
     })
   }).superRefine((data, context) => {
     const closed = data["closed-at"] !== void 0;
@@ -17097,6 +17100,9 @@ var evidenceKind = {
     author,
     source: union([literal("kernel"), agentSource]),
     "tree-hash": hash,
+    tree: array(strictObject({ path: relativePath, hash: union([hash, literal("absent")]) })).meta({
+      description: "The covered files the tree hash was computed over, in path order; `absent` for a deleted file."
+    }),
     files: array(
       strictObject({
         path: relativePath,
@@ -17112,13 +17118,34 @@ var evidenceKind = {
   migrations: []
 };
 
-// kernel/src/shared/store/state/report.ts
+// kernel/src/shared/store/state/pruned.ts
 var VERSION8 = 1;
-var reportKind = {
-  name: "report",
+var PRUNED_DIRS = ["dispatch", "reports"];
+var prunedKind = {
+  name: "pruned",
   version: VERSION8,
   schema: strictObject({
     schema: literal(VERSION8),
+    dir: _enum(PRUNED_DIRS).meta({ description: "The directory it indexes." }),
+    at: timestamp,
+    files: array(
+      strictObject({
+        path: string2().regex(/^[^/\\]+$/).meta({ description: "The removed file's name within `dir`." }),
+        hash,
+        bytes: int().min(0)
+      })
+    ).meta({ description: "Each removed file: name, `sha256:` hash, size." })
+  }).meta({ title: "Pruned index" }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/report.ts
+var VERSION9 = 1;
+var reportKind = {
+  name: "report",
+  version: VERSION9,
+  schema: strictObject({
+    schema: literal(VERSION9),
     ticket: ticketId,
     role,
     status: _enum(["done", "done-with-concerns", "needs-context", "blocked"]),
@@ -17141,13 +17168,13 @@ var reportKind = {
 };
 
 // kernel/src/shared/store/state/rule.ts
-var VERSION9 = 1;
+var VERSION10 = 1;
 var RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
 var ruleKind = {
   name: "rule",
-  version: VERSION9,
+  version: VERSION10,
   schema: strictObject({
-    schema: literal(VERSION9),
+    schema: literal(VERSION10),
     id: string2().regex(RULE_ID).meta({ description: "Equals the file name without `.md` (`CQ-4`, `BDK-SEC-2`)." }),
     kind: _enum(["house", "knowledge"]),
     applies: array(glob2).optional().meta({ description: "Absent: every file." }),
@@ -17187,6 +17214,7 @@ var STATE_KINDS = {
   evidence: evidenceKind,
   dispatch: dispatchKind,
   report: reportKind,
+  pruned: prunedKind,
   "plan-part": planPartKind,
   "plan-index": planIndexKind,
   design: designKind,
@@ -17234,7 +17262,12 @@ var CHANGE_ROWS = [
     kind: "evidence",
     check: same({ id: field("id"), target: field("target") })
   },
-  { pattern: new RegExp(`^evidence/.+-E-${ID2}\\.(?!md$)[a-z0-9.]+$`), kind: "evidence-capture" },
+  { pattern: new RegExp(`^evidence/.+-E-${ID2}-[^/]+$`), kind: "evidence-capture" },
+  {
+    pattern: /^(?<dir>dispatch|reports)\/pruned\.md$/,
+    kind: "pruned",
+    check: same({ dir: field("dir") })
+  },
   {
     pattern: new RegExp(`^dispatch/(?<role>.+)-(?<ticket>A-${ID2})\\.md$`),
     kind: "dispatch",

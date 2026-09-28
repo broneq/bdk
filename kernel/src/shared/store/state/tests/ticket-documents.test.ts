@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { attemptKind } from "../attempt.ts";
 import { dispatchKind } from "../dispatch.ts";
 import { evidenceKind } from "../evidence.ts";
+import { prunedKind } from "../pruned.ts";
 import { reportKind } from "../report.ts";
 import * as example from "./examples.ts";
 import { issues, without } from "./issues.ts";
@@ -37,6 +38,12 @@ describe("attempt", () => {
   it("rejects a loop outside the four loops", () => {
     expect(issues(attempt, { ...open, loop: "task-escalation" })).toStrictEqual(["loop"]);
     expect(issues(attempt, { ...open, loop: "not-run" })).toStrictEqual(["loop"]);
+  });
+
+  it("names the active package by its path", () => {
+    const record = { ...open, package: ".bdk/changes/x/dispatch/02-3-runner-A-7f3kx2p9.md" };
+    expect(issues(attempt, record)).toStrictEqual([]);
+    expect(issues(attempt, { ...open, package: "/abs/pkg.md" })).toStrictEqual(["package"]);
   });
 
   it("accepts an escalation ticket", () => {
@@ -93,9 +100,17 @@ describe("evidence", () => {
     "author",
     "source",
     "tree-hash",
+    "tree",
     "files",
   ])("requires %s", (key) => {
     expect(issues(evidence, without(example.evidence, key))).toStrictEqual([key]);
+  });
+
+  it("hashes each tree path or marks it absent", () => {
+    expect(
+      issues(evidence, { ...example.evidence, tree: [{ path: "src/a.ts", hash: "gone" }] }),
+    ).toStrictEqual(["tree.0.hash"]);
+    expect(issues(evidence, { ...example.evidence, tree: [] })).toStrictEqual([]);
   });
 
   it("needs at least one file", () => {
@@ -159,5 +174,26 @@ describe("report", () => {
     ["evidence", ["L-m2x9v7qa"]],
   ])("rejects %s: %j", (key, value) => {
     expect(issues(report, { ...example.report, [key]: value })).toStrictEqual([`${key}.0`]);
+  });
+});
+
+describe("pruned", () => {
+  const pruned = prunedKind.schema;
+
+  it("accepts the example and an empty index", () => {
+    expect(issues(pruned, example.pruned)).toStrictEqual([]);
+    expect(issues(pruned, { ...example.pruned, files: [] })).toStrictEqual([]);
+  });
+
+  it.each(["schema", "dir", "at", "files"])("requires %s", (key) => {
+    expect(issues(pruned, without(example.pruned, key))).toStrictEqual([key]);
+  });
+
+  it.each([
+    ["dir", "evidence"],
+    ["files", [{ path: "a.md", hash: "sha256:x", bytes: 1 }]],
+    ["files", [{ path: "a.md", hash: example.pruned.files[0]?.hash, bytes: -1 }]],
+  ])("rejects %s: %j", (key, value) => {
+    expect(issues(pruned, { ...example.pruned, [key]: value })[0]).toMatch(new RegExp(`^${key}`));
   });
 });

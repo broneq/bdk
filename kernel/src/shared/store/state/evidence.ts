@@ -1,5 +1,6 @@
 // `evidence/<target>-<evidenceId>.md` (`kernel-state`, Evidence manifest):
-// one verification artifact and the working-tree hash at capture.
+// one verification artifact and the working-tree hash at capture. Committed
+// captures sit beside it as `evidence/<target>-<evidenceId>-<file name>`.
 import * as z from "zod";
 
 import {
@@ -31,6 +32,12 @@ export const evidenceKind = {
       author,
       source: z.union([z.literal("kernel"), agentSource]),
       "tree-hash": hash,
+      tree: z
+        .array(z.strictObject({ path: relativePath, hash: z.union([hash, z.literal("absent")]) }))
+        .meta({
+          description:
+            "The covered files the tree hash was computed over, in path order; `absent` for a deleted file.",
+        }),
       files: z
         .array(
           z.strictObject({

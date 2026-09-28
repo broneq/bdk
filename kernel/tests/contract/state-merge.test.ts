@@ -205,7 +205,7 @@ function work(root: string, branch: string, at: string, rule: string, capability
   });
 
   const evidence = newId("E-");
-  const capture = `.bdk/changes/${CHANGE_ID}/evidence/02-3-${evidence}.txt`;
+  const capture = `.bdk/changes/${CHANGE_ID}/evidence/02-3-${evidence}-out.txt`;
   writeDocument(store, join(root, capture), { body: `6 passed on ${branch}\n` });
   writeDocument(store, change(`evidence/02-3-${evidence}.md`), {
     data: {
@@ -215,6 +215,7 @@ function work(root: string, branch: string, at: string, rule: string, capability
       target: "02-3",
       source: "agent:implementer",
       "tree-hash": HASH,
+      tree: [{ path: "src/auth/magic-link.ts", hash: HASH }],
       files: [{ path: capture, hash: HASH, stored: "committed" }],
       verdict: "pass",
     },
