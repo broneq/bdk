@@ -37,6 +37,18 @@ describe("citationProblem", () => {
     },
   );
 
+  it.each([
+    ["/tmp/out/run.txt:3=0 failed"],
+    ["/tmp/out/summary.json#/summary/failed"],
+    ["/tmp/out/run.txt:1"],
+  ])("resolves %s against a file given by its absolute path", (citation) => {
+    const files = [
+      { ...SUMMARY, given: "/tmp/out/summary.json" },
+      { ...RUN, given: "/tmp/out/run.txt" },
+    ];
+    expect(citationProblem(citation, files)).toBeUndefined();
+  });
+
   it("resolves a line without the file part against the only file", () => {
     expect(citationProblem(":3=0 failed", [RUN])).toBeUndefined();
   });

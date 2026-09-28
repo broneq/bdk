@@ -162,6 +162,7 @@ describe("T4: the runner records its checks as evidence", () => {
     expect(pass.some((sentence) => sentence.includes("cit"))).toBe(true);
     const notRun = sentences(body).filter((sentence) => sentence.includes("`not-run`"));
     expect(notRun.some((sentence) => sentence.includes("reason"))).toBe(true);
+    expect(body).toContain("never write or edit that output yourself");
   });
 });
 

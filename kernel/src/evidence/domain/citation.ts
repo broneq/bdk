@@ -2,7 +2,8 @@
 // T23-D8, D47). A citation names a value inside a recorded file:
 // `<file>#<json-pointer>`, `<file>:<line>` or `<file>:<line>=<text>`. The file
 // part is the path as given or the file name, and may be left out when one
-// file is recorded; a bare `/pointer` is `#/pointer`.
+// file is recorded; a bare `/pointer` is `#/pointer` unless it starts with a
+// recorded file's path, so an absolute path cites its file.
 
 /** A recorded file as the validator sees it. */
 export interface CitedFile {
@@ -16,7 +17,7 @@ type Target = { readonly pointer: string } | { readonly line: number; readonly c
 
 /** Why `citation` does not resolve inside `files`, or undefined when it does. */
 export function citationProblem(citation: string, files: readonly CitedFile[]): string | undefined {
-  const parsed = parse(citation);
+  const parsed = parse(citation, files);
   if (parsed === undefined) {
     return `${citation} is not a citation: use <file>#<json-pointer>, <file>:<line> or <file>:<line>=<text>`;
   }
@@ -44,19 +45,37 @@ export function isText(bytes: Uint8Array): boolean {
   }
 }
 
-function parse(citation: string): { file: string; target: Target } | undefined {
+function parse(
+  citation: string,
+  files: readonly CitedFile[],
+): { file: string; target: Target } | undefined {
+  const file = recordedPrefix(citation, files);
+  if (file !== undefined) return located(file, citation.slice(file.length));
   if (citation.startsWith("/")) return { file: "", target: { pointer: citation } };
   const hash = citation.indexOf("#");
-  if (hash >= 0) {
-    return { file: citation.slice(0, hash), target: { pointer: citation.slice(hash + 1) } };
-  }
-  const line = /^(?<file>[^:]*):(?<line>\d+)(?:=(?<text>.*))?$/s.exec(citation)?.groups;
+  if (hash >= 0) return located(citation.slice(0, hash), citation.slice(hash));
+  const colon = citation.indexOf(":");
+  return colon < 0 ? undefined : located(citation.slice(0, colon), citation.slice(colon));
+}
+
+/** The longest path or name of a recorded file that `citation` starts with, then `#` or `:`. */
+function recordedPrefix(citation: string, files: readonly CitedFile[]): string | undefined {
+  return files
+    .flatMap((file) => [file.given, file.given.split("/").at(-1) ?? file.given])
+    .filter((name) => citation.startsWith(`${name}#`) || citation.startsWith(`${name}:`))
+    .sort((a, b) => b.length - a.length)[0];
+}
+
+/** `rest` is `#<pointer>`, `:<line>` or `:<line>=<text>`. */
+function located(file: string, rest: string): { file: string; target: Target } | undefined {
+  if (rest.startsWith("#")) return { file, target: { pointer: rest.slice(1) } };
+  const line = /^:(?<line>\d+)(?:=(?<text>.*))?$/s.exec(rest)?.groups;
   if (line?.line === undefined) return undefined;
   const target =
     line.text === undefined
       ? { line: Number(line.line) }
       : { line: Number(line.line), contains: line.text };
-  return { file: line.file ?? "", target };
+  return { file, target };
 }
 
 function only(files: readonly CitedFile[]): CitedFile | undefined {

@@ -42,7 +42,7 @@ export function checksText(
   ticket: string,
 ): string {
   const intro =
-    "Run the checks in this order. Save each check's output to a file and record it; for `pass`, cite the output line or JSON value that shows the result.";
+    "Run the checks in this order. Save each check's output to a file and end the file with the line `exit <code>`, so a check that prints nothing still leaves a line to cite; never write or edit the output yourself. Record each file; for `pass`, cite the output line or JSON value that shows the result.";
   if (kinds.length === 0) return `${intro}\n\nThis Change runs no check after a task.`;
   const sections = kinds.map((kind) => {
     const record = `\`bdk evidence record ${kind} <file> --ticket ${ticket} --verdict pass|fail|not-run --cite <citation>\``;

@@ -17372,37 +17372,37 @@ ${body}`;
 function readDocument(store2, path, kinds = {}) {
   const text8 = store2.read(path);
   if (text8 === void 0) return void 0;
-  const located = locateOr(path, "state/ledger-invalid");
-  if (isOpaque(located.kind)) return { kind: located.kind, body: text8 };
-  const kind = kindOf(located.kind, kinds);
-  const { data, body } = parseText(located, text8);
+  const located2 = locateOr(path, "state/ledger-invalid");
+  if (isOpaque(located2.kind)) return { kind: located2.kind, body: text8 };
+  const kind = kindOf(located2.kind, kinds);
+  const { data, body } = parseText(located2, text8);
   const version3 = data.schema;
   if (version3 !== kind.version && Number.isInteger(version3)) {
     const found = Number(version3);
     if (found < kind.version) {
       throw invalid2(
         "state/ledger-invalid",
-        `${located.display} carries ${located.kind} schema ${found}, this kernel reads ${kind.version}`,
+        `${located2.display} carries ${located2.kind} schema ${found}, this kernel reads ${kind.version}`,
         ["bdk rebuild"]
       );
     }
     throw invalid2(
       "state/ledger-invalid",
-      `${located.display} carries ${located.kind} schema ${found}, written by a newer BDK than this kernel (${kind.version})`,
+      `${located2.display} carries ${located2.kind} schema ${found}, written by a newer BDK than this kernel (${kind.version})`,
       ["upgrade the BDK plugin, then retry"]
     );
   }
   return {
-    kind: located.kind,
-    data: validate2(located, kind.schema, data, "state/ledger-invalid"),
+    kind: located2.kind,
+    data: validate2(located2, kind.schema, data, "state/ledger-invalid"),
     body
   };
 }
 function writeDocument(store2, path, document, kinds = {}) {
-  const located = locateOr(path, "policy/validation-failed");
-  if (isOpaque(located.kind)) {
+  const located2 = locateOr(path, "policy/validation-failed");
+  if (isOpaque(located2.kind)) {
     if (document.data !== void 0) {
-      throw invalid2("policy/validation-failed", `${located.display} takes no frontmatter`, [
+      throw invalid2("policy/validation-failed", `${located2.display} takes no frontmatter`, [
         "write the body only"
       ]);
     }
@@ -17410,27 +17410,27 @@ function writeDocument(store2, path, document, kinds = {}) {
     return;
   }
   if (document.data === void 0) {
-    throw invalid2("policy/validation-failed", `${located.display} needs frontmatter`, [
-      `write a ${located.kind} document`
+    throw invalid2("policy/validation-failed", `${located2.display} needs frontmatter`, [
+      `write a ${located2.kind} document`
     ]);
   }
-  const kind = kindOf(located.kind, kinds);
-  const data = validate2(located, kind.schema, document.data, "policy/validation-failed");
-  store2.write(path, renderDocument(data, document.body, styleOf(located.kind)));
+  const kind = kindOf(located2.kind, kinds);
+  const data = validate2(located2, kind.schema, document.data, "policy/validation-failed");
+  store2.write(path, renderDocument(data, document.body, styleOf(located2.kind)));
 }
 function migrateDocument(store2, path, kinds = {}) {
   const text8 = store2.read(path);
-  const located = locate(path);
+  const located2 = locate(path);
   if (text8 === void 0) return { status: "skipped", why: `${path} does not exist` };
-  if (located === void 0) return { status: "skipped", why: `${path} is not a state document` };
-  if (isOpaque(located.kind)) return { status: "current" };
-  const kind = kindOf(located.kind, kinds);
+  if (located2 === void 0) return { status: "skipped", why: `${path} is not a state document` };
+  if (isOpaque(located2.kind)) return { status: "current" };
+  const kind = kindOf(located2.kind, kinds);
   try {
-    const { data, body } = parseText(located, text8);
+    const { data, body } = parseText(located2, text8);
     const from = Number(data.schema);
     if (from === kind.version) return { status: "current" };
     if (from > kind.version) {
-      return { status: "skipped", why: `${located.display} was written by a newer BDK` };
+      return { status: "skipped", why: `${located2.display} was written by a newer BDK` };
     }
     let migrated = data;
     for (let version3 = from; version3 < kind.version; version3++) {
@@ -17438,13 +17438,13 @@ function migrateDocument(store2, path, kinds = {}) {
       if (step2 === void 0) {
         return {
           status: "skipped",
-          why: `${located.display}: no migration from ${located.kind} schema ${version3}`
+          why: `${located2.display}: no migration from ${located2.kind} schema ${version3}`
         };
       }
       migrated = step2(migrated);
     }
-    const valid = validate2(located, kind.schema, migrated, "state/ledger-invalid");
-    store2.write(path, renderDocument(valid, body, styleOf(located.kind)));
+    const valid = validate2(located2, kind.schema, migrated, "state/ledger-invalid");
+    store2.write(path, renderDocument(valid, body, styleOf(located2.kind)));
     return { status: "migrated", from, to: kind.version };
   } catch (error2) {
     if (error2 instanceof KernelRefusal) return { status: "skipped", why: error2.refusal.why };
@@ -17452,8 +17452,8 @@ function migrateDocument(store2, path, kinds = {}) {
   }
 }
 function locateOr(path, rule2) {
-  const located = locate(path);
-  if (located !== void 0) return located;
+  const located2 = locate(path);
+  if (located2 !== void 0) return located2;
   throw invalid2(rule2, `${path} matches no row of the layout table`, [
     "move or remove the file; kernel-state lists the paths of a Change"
   ]);
@@ -17467,11 +17467,11 @@ function styleOf(kind) {
 function kindOf(name, kinds) {
   return kinds[name] ?? STATE_KINDS[name];
 }
-function parseText(located, text8) {
+function parseText(located2, text8) {
   const { frontmatter, body } = splitFrontmatter(text8);
   const fail = (why) => {
-    throw invalid2("state/ledger-invalid", `${located.display}: ${why}`, [
-      `fix ${located.display} or restore it from git`
+    throw invalid2("state/ledger-invalid", `${located2.display}: ${why}`, [
+      `fix ${located2.display} or restore it from git`
     ]);
   };
   if (frontmatter === void 0) return fail("no YAML frontmatter");
@@ -17488,7 +17488,7 @@ function parseText(located, text8) {
   if (!Number.isInteger(record4.schema)) return fail("schema: expected an integer version");
   return { data: record4, body };
 }
-function validate2(located, schema, data, rule2) {
+function validate2(located2, schema, data, rule2) {
   const result2 = schema.safeParse(data);
   if (!result2.success) {
     const problems = result2.error.issues.map((issue2) => {
@@ -17497,12 +17497,12 @@ function validate2(located, schema, data, rule2) {
       const name = [path, keys].filter((part) => part !== "").join(".");
       return name === "" ? issue2.message : `${name}: ${issue2.message}`;
     });
-    throw invalid2(rule2, `${located.display}: ${problems.join("; ")}`, [`fix ${located.display}`]);
+    throw invalid2(rule2, `${located2.display}: ${problems.join("; ")}`, [`fix ${located2.display}`]);
   }
-  const mismatch = located.check(result2.data);
+  const mismatch = located2.check(result2.data);
   if (mismatch !== void 0) {
-    throw invalid2(rule2, `${located.display}: ${mismatch} does not match the file name`, [
-      `rename ${located.display} or fix ${mismatch}`
+    throw invalid2(rule2, `${located2.display}: ${mismatch} does not match the file name`, [
+      `rename ${located2.display} or fix ${mismatch}`
     ]);
   }
   return result2.data;
@@ -19349,7 +19349,7 @@ import { basename, isAbsolute as isAbsolute2, join as join17, relative as relati
 
 // kernel/src/evidence/domain/citation.ts
 function citationProblem(citation, files) {
-  const parsed = parse5(citation);
+  const parsed = parse5(citation, files);
   if (parsed === void 0) {
     return `${citation} is not a citation: use <file>#<json-pointer>, <file>:<line> or <file>:<line>=<text>`;
   }
@@ -19370,16 +19370,24 @@ function isText(bytes2) {
     return false;
   }
 }
-function parse5(citation) {
+function parse5(citation, files) {
+  const file = recordedPrefix(citation, files);
+  if (file !== void 0) return located(file, citation.slice(file.length));
   if (citation.startsWith("/")) return { file: "", target: { pointer: citation } };
   const hash2 = citation.indexOf("#");
-  if (hash2 >= 0) {
-    return { file: citation.slice(0, hash2), target: { pointer: citation.slice(hash2 + 1) } };
-  }
-  const line2 = /^(?<file>[^:]*):(?<line>\d+)(?:=(?<text>.*))?$/s.exec(citation)?.groups;
+  if (hash2 >= 0) return located(citation.slice(0, hash2), citation.slice(hash2));
+  const colon = citation.indexOf(":");
+  return colon < 0 ? void 0 : located(citation.slice(0, colon), citation.slice(colon));
+}
+function recordedPrefix(citation, files) {
+  return files.flatMap((file) => [file.given, file.given.split("/").at(-1) ?? file.given]).filter((name) => citation.startsWith(`${name}#`) || citation.startsWith(`${name}:`)).sort((a, b) => b.length - a.length)[0];
+}
+function located(file, rest) {
+  if (rest.startsWith("#")) return { file, target: { pointer: rest.slice(1) } };
+  const line2 = /^:(?<line>\d+)(?:=(?<text>.*))?$/s.exec(rest)?.groups;
   if (line2?.line === void 0) return void 0;
   const target = line2.text === void 0 ? { line: Number(line2.line) } : { line: Number(line2.line), contains: line2.text };
-  return { file: line2.file ?? "", target };
+  return { file, target };
 }
 function only(files) {
   return files.length === 1 ? files[0] : void 0;
@@ -25814,7 +25822,7 @@ function withWhen(command, entry) {
   return `- \`${command}\`${entry.when === void 0 ? "" : `: ${entry.when}`}`;
 }
 function checksText(kinds, tools3, files, ticket) {
-  const intro = "Run the checks in this order. Save each check's output to a file and record it; for `pass`, cite the output line or JSON value that shows the result.";
+  const intro = "Run the checks in this order. Save each check's output to a file and end the file with the line `exit <code>`, so a check that prints nothing still leaves a line to cite; never write or edit the output yourself. Record each file; for `pass`, cite the output line or JSON value that shows the result.";
   if (kinds.length === 0) return `${intro}
 
 This Change runs no check after a task.`;

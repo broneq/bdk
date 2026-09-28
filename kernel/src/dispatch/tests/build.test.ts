@@ -374,6 +374,14 @@ describe("the runner's Checks section (T23-D44)", () => {
     expect(section.indexOf("### tests-scoped")).toBeLessThan(section.indexOf("### lint"));
   });
 
+  it("tells the runner to end each output file with the exit code and cite only what the check wrote", async () => {
+    const h = dispatchHarness();
+    h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOLS);
+    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
+    expect(section).toContain("end the file with the line `exit <code>`");
+    expect(section).toMatch(/never write or edit the output yourself/);
+  });
+
   it("uses the scoped form, else the command, of a fast test entry", async () => {
     const h = dispatchHarness();
     h.store.write(
