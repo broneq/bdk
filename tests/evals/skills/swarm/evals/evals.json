@@ -1,0 +1,73 @@
+{
+  "skill_name": "swarm",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Follow the BDK swarm skill to run wave 1 of the active Change. The plan has four tasks: 01-1 (Files: `src/a`, `src/b`), 01-2 (Files: `src/c`), 01-3 (Files: `src/b`, `src/d`) and 01-4 (Files: `src/e`). `execution.concurrency` is 2. Say which tasks you dispatch in which wave, and how many agents run at once.",
+      "expected_output": "01-1, 01-2 and 01-4 share no file and can go in the first wave, but at most two agents run at once, so the third waits for a free slot; 01-3 shares `src/b` with 01-1 and waits for the next wave. Each agent gets only its package path from `bdk dispatch build`.",
+      "assertions": [
+        {
+          "name": "overlapping_task_waits",
+          "description": "Holds back the task whose Files overlap another task of the wave (01-3 overlaps 01-1 on src/b) for the next wave"
+        },
+        {
+          "name": "respects_concurrency",
+          "description": "Never has more than two agents running at once, taking the number from the Concurrency section of the BDK context"
+        },
+        {
+          "name": "package_path_prompt",
+          "description": "Each agent prompt is the package path from bdk dispatch build plus at most one sentence, with no task text pasted in"
+        },
+        {
+          "name": "reads_ledger_between_waves",
+          "description": "Before the next wave, reads what the finished tickets logged with bdk log list --since-ticket-start <ticket>"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Following the BDK swarm skill, the implementer agent of ticket A-7f3k9m2q returned an envelope with status done, but no report exists at the report path its package names. What do you do, and what do you do if the resumed agent again returns without a stored report?",
+      "expected_output": "Resume the same agent once, naming the missing report at the package's report path. If the report is still missing after the resume, close the ticket fail with bdk attempt close A-7f3k9m2q fail and the reason; no second resume, and no step package is built for the ticket before the resume is over.",
+      "assertions": [
+        {
+          "name": "resumes_once_naming_problem",
+          "description": "Resumes the same agent exactly once and names the missing report in the resume message"
+        },
+        {
+          "name": "closes_fail_after_second_failure",
+          "description": "After the second failure closes the ticket with bdk attempt close <ticket> fail and a reason, without a further resume"
+        },
+        {
+          "name": "no_next_package_during_resume",
+          "description": "Does not build the simplifier or runner package of the ticket while the implementer's resume is pending"
+        },
+        {
+          "name": "does_not_write_report",
+          "description": "Does not write the report file itself or ask another agent to write it"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Following the BDK swarm skill, three implementer agents of one wave are running. One of them sends you a SendMessage to main: 'critical: the schema migration drops user data, see finding L-4m8rt2wx'. Two more packages of the wave are still waiting for a free slot. What do you do next?",
+      "expected_output": "Stop the wave: start no new agent, let the running agents finish, read entry L-4m8rt2wx from the ledger, and decide on it before any further dispatch.",
+      "assertions": [
+        {
+          "name": "starts_no_new_agent",
+          "description": "Does not dispatch the two waiting packages after the critical message"
+        },
+        {
+          "name": "lets_running_agents_finish",
+          "description": "Does not kill or abandon the agents already running"
+        },
+        {
+          "name": "reads_named_entry",
+          "description": "Reads the entry the message names (L-4m8rt2wx) through the ledger before deciding"
+        }
+      ],
+      "files": []
+    }
+  ]
+}
