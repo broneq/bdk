@@ -30,10 +30,11 @@ export function commandHelp(index: CommandIndex, record: CommandRecord): string 
     lines.push("", "arguments:");
     for (const arg of record.args) {
       const values = arg.values === undefined ? "" : ` (${arg.values.join("|")})`;
+      const repeatable = arg.repeatable === true ? " (repeatable)" : "";
       const detail = [arg.required ? "required" : "optional", arg.description]
         .filter(Boolean)
         .join("; ");
-      lines.push(`  ${arg.name}${values}  ${detail}`);
+      lines.push(`  ${arg.name}${values}${repeatable}  ${detail}`);
     }
   }
   if (record.flags.length > 0) {

@@ -54,6 +54,15 @@ export const INDEX: CommandIndex = {
     }),
     record({ id: "attempt-list", argv: ["attempt", "list"], owner: "T22" }),
     record({
+      id: "evidence-record",
+      argv: ["evidence", "record"],
+      owner: "T23",
+      args: [
+        { name: "<kind>", required: true },
+        { name: "<file>", required: true, repeatable: true, description: "Evidence files." },
+      ],
+    }),
+    record({
       id: "log-add",
       argv: ["log", "add"],
       owner: "T20",

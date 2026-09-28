@@ -371,6 +371,37 @@ describe("repeatable flags", () => {
   });
 });
 
+describe("repeatable arguments", () => {
+  const lists: Handler = (ctx) => ({
+    data: { positionals: ctx.positionals, lists: ctx.lists },
+    text: "ok",
+  });
+
+  it("collects every remaining positional into the last argument, in order", async () => {
+    const result = await run(["evidence", "record", "lint", "a.json", "b.txt", "--json"], {
+      registrations: [{ id: "evidence-record", handler: lists }],
+    });
+    expect(result.code).toBe(0);
+    expect(result.json).toStrictEqual({
+      positionals: { "<kind>": "lint", "<file>": "a.json" },
+      lists: { "<file>": ["a.json", "b.txt"] },
+    });
+  });
+
+  it("still needs one value of a required repeatable argument", async () => {
+    const result = await run(["evidence", "record", "lint", "--json"], {
+      registrations: [{ id: "evidence-record", handler: lists }],
+    });
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/missing-argument" });
+  });
+
+  it("marks a repeatable argument in --help", async () => {
+    const result = await run(["evidence", "record", "--help"]);
+    expect(result.stdout).toMatch(/<file> \(repeatable\) {2}required; Evidence files\./);
+  });
+});
+
 describe("forbidden fields", () => {
   it.each([
     [["--source", "user"]],

@@ -14,20 +14,25 @@ const STAMPED = ["--id", "--at", "--author", "--source", "--fingerprint"] as con
 export type FlagValue = string | true | readonly string[];
 
 export interface Parsed {
+  /** Each argument's value; a repeatable argument's first value. */
   readonly positionals: Readonly<Record<string, string>>;
+  /** Every value of a repeatable argument, in order. */
+  readonly lists: Readonly<Record<string, readonly string[]>>;
   readonly flags: Readonly<Record<string, FlagValue>>;
 }
 
 export function parse(record: CommandRecord, tokens: readonly string[]): Parsed | Refusal {
   const help = [`${commandLine(record)} --help`];
   const positionals: Record<string, string> = {};
+  const lists: Record<string, string[]> = {};
   const flags: Record<string, FlagValue> = {};
   let position = 0;
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i] ?? "";
     if (!token.startsWith("--")) {
-      const arg = record.args[position++];
+      const arg = record.args[position];
+      if (arg?.repeatable !== true) position++;
       if (arg === undefined) {
         return refuse(
           "input/invalid-argument",
@@ -42,7 +47,8 @@ export function parse(record: CommandRecord, tokens: readonly string[]): Parsed 
           help,
         );
       }
-      positionals[arg.name] = token;
+      positionals[arg.name] ??= token;
+      if (arg.repeatable === true) (lists[arg.name] ??= []).push(token);
       continue;
     }
 
@@ -115,7 +121,7 @@ export function parse(record: CommandRecord, tokens: readonly string[]): Parsed 
       help,
     );
   }
-  return { positionals, flags };
+  return { positionals, lists, flags };
 }
 
 export function takesValue(flag: FlagSpec): boolean {

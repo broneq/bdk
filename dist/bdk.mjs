@@ -8285,7 +8285,8 @@ var commands_default = {
         {
           name: "<file>",
           required: true,
-          description: "Repeatable; the evidence files (reports, snapshots, captures)."
+          description: "Repeatable; the evidence files (reports, snapshots, captures).",
+          repeatable: true
         }
       ],
       flags: [
@@ -8301,7 +8302,8 @@ var commands_default = {
         {
           name: "--cite",
           value: "<pointer>",
-          description: "Repeatable; JSON pointer into a measured file or file:line in a snapshot, required for pass."
+          description: "Repeatable; JSON pointer into a measured file or file:line in a snapshot, required for pass.",
+          repeatable: true
         }
       ],
       output: "output/evidence-record.json",
@@ -8681,7 +8683,8 @@ var commands_default = {
         {
           name: "--applies",
           value: "<glob>",
-          description: "Repeatable; default derived from the current task's files."
+          description: "Repeatable; default derived from the current task's files.",
+          repeatable: true
         },
         {
           name: "--kind",
@@ -25586,6 +25589,8 @@ var arg = object({
   name: string2(),
   required: boolean2(),
   values: array(string2()).optional(),
+  /** The last argument only: it takes every remaining positional. */
+  repeatable: literal(true).optional(),
   description: string2().optional()
 });
 var flag = object({
@@ -25631,12 +25636,14 @@ var STAMPED2 = ["--id", "--at", "--author", "--source", "--fingerprint"];
 function parse8(record4, tokens) {
   const help = [`${commandLine(record4)} --help`];
   const positionals = {};
+  const lists = {};
   const flags = {};
   let position = 0;
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i] ?? "";
     if (!token.startsWith("--")) {
-      const arg2 = record4.args[position++];
+      const arg2 = record4.args[position];
+      if (arg2?.repeatable !== true) position++;
       if (arg2 === void 0) {
         return refuse(
           "input/invalid-argument",
@@ -25651,7 +25658,8 @@ function parse8(record4, tokens) {
           help
         );
       }
-      positionals[arg2.name] = token;
+      positionals[arg2.name] ??= token;
+      if (arg2.repeatable === true) (lists[arg2.name] ??= []).push(token);
       continue;
     }
     const equals = token.indexOf("=");
@@ -25718,7 +25726,7 @@ function parse8(record4, tokens) {
       help
     );
   }
-  return { positionals, flags };
+  return { positionals, lists, flags };
 }
 function takesValue(flag2) {
   return flag2.value !== void 0 || flag2.values !== void 0;
@@ -25749,8 +25757,9 @@ function commandHelp(index2, record4) {
     lines.push("", "arguments:");
     for (const arg2 of record4.args) {
       const values2 = arg2.values === void 0 ? "" : ` (${arg2.values.join("|")})`;
+      const repeatable = arg2.repeatable === true ? " (repeatable)" : "";
       const detail = [arg2.required ? "required" : "optional", arg2.description].filter(Boolean).join("; ");
-      lines.push(`  ${arg2.name}${values2}  ${detail}`);
+      lines.push(`  ${arg2.name}${values2}${repeatable}  ${detail}`);
     }
   }
   if (record4.flags.length > 0) {
@@ -25960,6 +25969,7 @@ async function dispatch(record4, registration, options, rest, asJson, { cwd, run
   const context = {
     record: record4,
     positionals: parsed.positionals,
+    lists: parsed.lists,
     flags: parsed.flags,
     json: asJson,
     cwd,

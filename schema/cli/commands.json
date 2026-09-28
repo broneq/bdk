@@ -913,7 +913,8 @@
         {
           "name": "<file>",
           "required": true,
-          "description": "Repeatable; the evidence files (reports, snapshots, captures)."
+          "description": "Repeatable; the evidence files (reports, snapshots, captures).",
+          "repeatable": true
         }
       ],
       "flags": [
@@ -929,7 +930,8 @@
         {
           "name": "--cite",
           "value": "<pointer>",
-          "description": "Repeatable; JSON pointer into a measured file or file:line in a snapshot, required for pass."
+          "description": "Repeatable; JSON pointer into a measured file or file:line in a snapshot, required for pass.",
+          "repeatable": true
         }
       ],
       "output": "output/evidence-record.json",
@@ -1309,7 +1311,8 @@
         {
           "name": "--applies",
           "value": "<glob>",
-          "description": "Repeatable; default derived from the current task's files."
+          "description": "Repeatable; default derived from the current task's files.",
+          "repeatable": true
         },
         {
           "name": "--kind",

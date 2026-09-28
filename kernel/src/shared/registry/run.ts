@@ -57,6 +57,8 @@ interface Invocation {
 interface CommandContext {
   readonly record: CommandRecord;
   readonly positionals: Readonly<Record<string, string>>;
+  /** Every value of a repeatable argument (`Parsed.lists`). */
+  readonly lists: Readonly<Record<string, readonly string[]>>;
   readonly flags: Readonly<Record<string, FlagValue>>;
   readonly json: boolean;
   readonly cwd: string;
@@ -200,6 +202,7 @@ async function dispatch(
   const context: CommandContext = {
     record,
     positionals: parsed.positionals,
+    lists: parsed.lists,
     flags: parsed.flags,
     json: asJson,
     cwd,
