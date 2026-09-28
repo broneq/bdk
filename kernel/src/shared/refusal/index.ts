@@ -43,6 +43,7 @@ export const RULES = [
   "policy/profile-downgrade",
   "policy/detached-head",
   "policy/rule-format",
+  "policy/generated-drift",
   "policy/duplicate-rule-id",
   "guard/subagent-git",
   "guard/subagent-kernel-command",

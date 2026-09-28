@@ -437,7 +437,7 @@ Files:
 | `attempts/`                    | `attempt open`, `attempt close`, `change takeover`                                                                            | kernel                  |
 | `evidence/`                    | `evidence record`                                                                                                             | kernel                  |
 | `dispatch/`                    | `dispatch build`                                                                                                              | kernel                  |
-| `reports/`                     | worker and runner roles at the package's `report` path; `log ingest` (a read-only role's report on stdin); `dispatch run`     | host file tools; kernel |
+| `reports/`                     | the `implementer` role at the package's `report` path; `log ingest` (the report of every other role, on stdin)                | host file tools; kernel |
 | any file (migration)           | `rebuild`, `change takeover`                                                                                                  | kernel                  |
 | the Change directory (archive) | `change close`                                                                                                                | kernel                  |
 | `.bdk/rules/<ruleId>.md`       | `rules add --accept`, `rules import`, `import`                                                                                | kernel                  |

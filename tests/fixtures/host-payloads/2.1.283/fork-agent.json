@@ -1,0 +1,122 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.283",
+    "check_id": "fork-agent",
+    "recordings": 2
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-1>",
+      "agent_type": "bdk-probe:probe-reader",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "echo role-fork-ran",
+        "description": "Echo role-fork-ran message"
+      },
+      "tool_use_id": "<TOOL-USE-1>"
+    },
+    {
+      "duration_api_ms": 6700,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-1>",
+      "total_cost_usd": 0.0371181,
+      "usage": {
+        "input_tokens": 18,
+        "cache_creation_input_tokens": 10814,
+        "cache_read_input_tokens": 36146,
+        "output_tokens": 194,
+        "output_tokens_details": {
+          "thinking_tokens": 111
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 10814,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 75,
+            "cache_read_input_tokens": 22816,
+            "cache_creation_input_tokens": 1328,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 1328
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 35,
+          "outputTokens": 478,
+          "cacheReadInputTokens": 42201,
+          "cacheCreationInputTokens": 17890,
+          "webSearchRequests": 0,
+          "costUSD": 0.0371181,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 233,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "subagent_stats": {
+        "spawned": 0,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 0
+        },
+        "started_in_background": 0,
+        "max_depth": 0,
+        "spawned_by_subagents": 0,
+        "completed": 0,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {}
+      },
+      "is_error": false,
+      "num_turns": 2,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "ROLE-FORK marker=FORK-BANG-RESOLVED",
+      "ttft_ms": 1291,
+      "type": "result",
+      "duration_ms": 14768,
+      "uuid": "<UUID-1>",
+      "ttft_stream_ms": 637,
+      "time_to_request_ms": 86,
+      "first_content_frame_ms": 637,
+      "queued_turn_count": 0,
+      "result_index": 0
+    }
+  ]
+}

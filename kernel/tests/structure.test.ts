@@ -166,6 +166,11 @@ describe("node: boundary", () => {
       'import { readFile } from "node:fs/promises";',
     ],
     [
+      "node:child_process in a slice",
+      "dispatch/use-cases/run.ts",
+      'import { spawn } from "node:child_process";',
+    ],
+    [
       "node:child_process in store",
       "shared/store/extra.ts",
       'import { spawn } from "node:child_process";',
@@ -182,11 +187,6 @@ describe("node: boundary", () => {
     ],
   ])("fails on %s", (_, path, text) => {
     expect(nodeViolations(seeded(path, text))).toHaveLength(1);
-  });
-
-  it("allows node:child_process in the dispatch runner", () => {
-    const text = 'import { spawn } from "node:child_process";';
-    expect(nodeViolations(seeded("dispatch/use-cases/run.ts", text))).toStrictEqual([]);
   });
 });
 

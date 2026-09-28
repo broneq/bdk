@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Host exports (`export`). Generators for host-specific files. `agents` writes a host's agent files from the role skills; `rules export` (in the `rules` group) writes the rule projection.
+Host exports (`export`). Generators for host-specific files. `agents` writes a host's adapter files from the kernel's adapter definitions and the per-host tool map (`role-contracts`, Adapters); `rules export` (in the `rules` group) writes the rule projection.
 
 Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
 
@@ -12,7 +12,7 @@ Representative refusal:
 {
   "refused": true,
   "rule": "input/missing-argument",
-  "why": "--host is required: claude, gemini, cursor or opencode",
+  "why": "--host is required: claude is the only host in 3.0",
   "instead": [
     "bdk export agents --host claude",
     "bdk export agents --help"
@@ -24,19 +24,19 @@ Representative refusal:
 
 ### Requirement: bdk export agents
 
-Generate a host's agent files from the role skills and the per-host tool map. The kernel SHALL implement the command as this requirement and its output schema specify.
+Generate a host's adapter files from the kernel's adapter definitions and the per-host tool map. The kernel SHALL implement the command as this requirement and its output schema specify.
 
-- **Synopsis:** `bdk export agents [--host claude|gemini|cursor|opencode] [--out <dir>] [--check]`
+- **Synopsis:** `bdk export agents --host claude [--out <dir>] [--check]`
 - **Availability:** `orchestrator`
 - **Mode:** `command`
 - **Arguments:**
-  - `--host claude|gemini|cursor|opencode`. Required.
-  - `--out <dir>`. Default the host's agents directory.
-  - `--check`. Exit 2 when the committed files differ; write nothing.
-- **Behaviour:** BDK's own `agents/` is the Claude Code output of this generator, checked by a content test (T23 acceptance: byte-identical). `setup` runs it for the detected host.
-- **Writes:** `<host agents directory>`
+  - `--host claude`. Required. Claude Code is the only host in 3.0; any other value is `input/invalid-argument`.
+  - `--out <dir>`. Default the `agents/` directory of the plugin root, the directory that holds the running bundle's `dist/`.
+  - `--check`. Compare instead of writing; exit 2 when a generated file differs or is missing; write nothing.
+- **Behaviour:** Writes exactly one file per adapter (`worker`, `reader`, `reviewer`, `runner`, `scout`, `role-contracts`, Adapters) at `<out>/<adapter>.md`: frontmatter with `name`, `description`, the host's `tools:` for the adapter's tool classes, the adapter's model tier and a generated marker, then a body of one sentence. The output is a pure function of the kernel version and the host: LF line endings, no timestamp, fixed key order. Other files in `<out>` are never read, written or compared, so the v2 agents that live next to the adapters until T42 are untouched. BDK's own `agents/` is the Claude Code output of this generator; the CI content check is `export agents --host claude --check`.
+- **Writes:** `<out>/{worker,reader,reviewer,runner,scout}.md`
 - **Output:** `schema/cli/output/export-agents.json`
-- **Exit codes and rules:** `0, 3, 5`. Specific rules: none; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
+- **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `policy/generated-drift`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
 - **Example:**
 
   ```bash
@@ -64,3 +64,28 @@ Generate a host's agent files from the role skills and the per-host tool map. Th
 
 - **WHEN** `bdk export agents --host claude --check --json` runs as in the example
 - **THEN** the exit code is 0 and stdout validates against `schema/cli/output/export-agents.json`
+
+#### Scenario: committed adapters reproduced byte for byte
+
+- **WHEN** `bdk export agents --host claude --out <tmp>` runs in the BDK repository and `<tmp>` is compared with the committed `agents/`
+- **THEN** each of the five adapter files is byte-identical to its committed copy, and `files` lists exactly the five adapters
+
+#### Scenario: policy/generated-drift
+
+- **WHEN** `agents/reader.md` was edited by hand and `bdk export agents --host claude --check` runs
+- **THEN** the exit code is 2, the error object carries `rule: policy/generated-drift`, `why` names `agents/reader.md`, and no file is written
+
+#### Scenario: missing adapter file
+
+- **WHEN** `agents/scout.md` does not exist and `bdk export agents --host claude --check` runs
+- **THEN** the exit code is 2 with `rule: policy/generated-drift` naming `agents/scout.md`
+
+#### Scenario: v2 agents left alone
+
+- **WHEN** `<out>` also holds `implementer.md` and `bdk export agents --host claude --out <out>` runs
+- **THEN** `implementer.md` keeps its bytes and is absent from `files`
+
+#### Scenario: host without a tool map
+
+- **WHEN** `bdk export agents --host gemini` runs
+- **THEN** the exit code is 3 with `rule: input/invalid-argument`, and `why` names `claude` as the only supported host

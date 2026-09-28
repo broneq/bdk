@@ -46,7 +46,7 @@ const VOCABULARY = "vocabulary";
 
 const NODE_BOUNDARY: Readonly<Record<string, readonly string[]>> = {
   fs: ["shared/store/", "shared/config/", "shared/git/"],
-  child_process: ["shared/git/", "dispatch/use-cases/run.ts"],
+  child_process: ["shared/git/"],
   sqlite: ["shared/store/"],
 };
 
