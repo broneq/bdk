@@ -500,6 +500,15 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Fixed by T21**: pipeline nodes name their loop in `budget` (`task-redispatch`, `verify-fix`, `review-fix`, `verifier`, `not-run`); `execute-part:<nn>` is done only through `part done`, which writes its `transition` (`bdk done` refuses it with `policy/invalid-transition`); the part validators plug into the `plan-part` kind that `validate` and `done` already run. T22 decides how `policy.budgets.*` joins the `policy` module the `graph` slice registered (open question of T21).
 
+**Resolution** (2026-09-28, Change `v3-t22-attempts-budgets-escalation`, #54):
+
+- Escalation model and cost limit: `policy.escalation.model` (the model the escalation ticket names) and `policy.escalation.per-change` (default 3); an escalation is `attempt open <loop> <target> --escalate`, one per round, and does not count against the loop budget.
+- Fingerprint: `(type, first file ref as path or path#symbol, normalised summary)`; oscillation is a fingerprint in `policy.oscillation.threshold` (default 2) fail records of one round, consecutive or not.
+- Default budgets: `task-redispatch` 3, `verify-fix` 2, `review-fix` 2, `verifier` 2, `not-run` 3, under `policy.budgets`.
+- Squashing checkpoints at `close`: handed to T30 as `policy.checkpoint.squash-at-close`, default off.
+- Plan part file format: the frontmatter of T14 plus the task grammar of `kernel-state` (heading `## <nn>-<k>`, `Files:`, `Test cases:` or `Verification: none`, `Depends on:`, `Stop rule:`).
+- `takeover` stays a separate command: it closes open tickets as `not-run` with `--close-tickets`, writes a transition and runs the rebuild.
+
 **Dependencies**: T21.
 
 ### T23 Dispatch packages, role contracts, envelope, evidence primitives
@@ -527,6 +536,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Fixed by T21**: the `post-task-step` kind exists without nodes (T23 adds them and their order); the fake-kind extensibility test is the base for the evidence primitives E2E; verdict kinds (`plan-verify`, `review`) hash what they judge, and their verdict is the latest `report` entry naming the node.
 
+**Fixed by T22**: `dispatch build` refuses a package with a placeholder in an executable field using the task grammar check of `shared/store/state/plan.ts`; `policy/stale-evidence` and `policy/missing-citation` are checked by `attempt close`; the P8 downgrade and the `observation` cap apply in `log ingest` (`downgraded` stays empty until then); `policy.verifier` and `policy.log` join `policy` as their own modules, as `policy.budgets` did.
+
 **Dependencies**: T22.
 
 ### T24 Guard hooks and gates (`PreToolUse`, `UserPromptExpansion`, `SessionEnd`)
@@ -553,6 +564,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Fixed by T21**: a gate counts a `transition` whose `gate` is the node id, whose `source` is `user` (or `policy` while `policy.gates.<gate>` is `auto`) and whose `at` is not earlier than the gate's ready time (the latest `done` among its requirements); `next` returns `waiting: gate` with `command` and the pending entries, which is what `prompt-expansion` checks before writing.
 
+**Fixed by T22**: `hooks session-end` calls the `shared/store` checkpoint core (`checkpointChange`) and reports a skip; session ids let `change takeover` report `previousSession` and check liveness; the `pre-tool` deny list for subagents covers `bdk commit`, `bdk attempt` and `bdk part`.
+
 **Dependencies**: T22, T01.
 
 ---
@@ -577,6 +590,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **Acceptance signal**: E2E: a delta without WHEN rejected; a delta removing a scenario without REMOVED = ERROR; two Changes editing the same capability -> merge refuses and shows both; manual edit of `spec.md` after merge -> `doctor` reports it; merge is idempotent (twice = the same file); `openspec validate` accepts the merged `.bdk/specs/` on CI.
 
 **To resolve in the spec**: merge algorithm (by Requirement name, by order?), handling of MODIFIED, `bdk-merge-hash` format, whether BDK's own spec (from `openspec/specs/`) migrates through this mechanism (see T00 / T50).
+
+**Fixed by T22**: `policy.checkpoint.squash-at-close` (default off) is a planned key owned by T30, registered inside the `policy.checkpoint` module of the `change` slice.
 
 **Dependencies**: T21 (the `spec-delta` kind), T22 (part validation).
 
@@ -677,6 +692,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **To resolve in the spec**: details of the wave strategy and the place of Workflow (the design leaves it open); how `design` drives Lavish in the thin version and what the AskUserQuestion fallback loses; content of the instructions returned by `next` per artifact (shared with T21 - who owns the templates); whether `run` re-renders after each gate or only at the stop.
 
 **Fixed by T21**: stage skills read `next` (artifact, instruction, gates) and finish with `bdk done <id>`; `design` writes `architecture: false` in `design.md` for a product-only Change, splits into `design/parts/` when needed (then `done design` raises the profile to `large` itself) and keeps a single `design.md` under 12 KB.
+
+**Fixed by T22**: the `/bdk:plan` template follows the task grammar of `kernel-state`; `change resume --option <n>` answers a ladder `question`; the skills act on `attempt close` `next.action` (`post-task-steps`, `retry`, `narrow`, `escalate`, `parked`).
 
 **Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
 
