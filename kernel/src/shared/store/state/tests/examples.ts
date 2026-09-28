@@ -109,7 +109,7 @@ export const evidence = {
 export const pruned = {
   schema: 1,
   dir: "dispatch",
-  at: "2026-09-26T08:00:00Z",
+  at: "2026-09-26T08:00:00.000Z",
   files: [{ path: "02-3-implementer-A-7f3kx2p9.md", hash: HASH, bytes: 3771 }],
 };
 

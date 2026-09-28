@@ -11,7 +11,7 @@ const CHANGE = "2026-09-25-login";
 const REL = `.bdk/changes/archive/${CHANGE}`;
 const DIR = `/repo/${REL}`;
 const TICKET = "A-7f3k9m2q";
-const NOW = "2026-09-26T08:00:00Z";
+const NOW = "2026-09-26T08:00:00.000Z";
 
 function sha(text: string): string {
   return `sha256:${createHash("sha256").update(text).digest("hex")}`;
@@ -87,7 +87,7 @@ describe("pruneChange", () => {
     const store = seeded();
     pruneChange(store, DIR, NOW);
     const before = store.read(`${DIR}/dispatch/pruned.md`);
-    expect(pruneChange(store, DIR, "2026-09-27T08:00:00Z")).toStrictEqual([]);
+    expect(pruneChange(store, DIR, "2026-09-27T08:00:00.000Z")).toStrictEqual([]);
     expect(store.read(`${DIR}/dispatch/pruned.md`)).toBe(before);
     expect(store.list(`${DIR}/reports`)).toStrictEqual(["pruned.md"]);
   });
@@ -96,7 +96,7 @@ describe("pruneChange", () => {
     const store = seeded();
     pruneChange(store, DIR, NOW);
     store.write(`${DIR}/reports/01-1-runner-${TICKET}.md`, "late\n");
-    expect(pruneChange(store, DIR, "2026-09-27T08:00:00Z")).toStrictEqual(["reports"]);
+    expect(pruneChange(store, DIR, "2026-09-27T08:00:00.000Z")).toStrictEqual(["reports"]);
     expect(store.list(`${DIR}/reports`)).toStrictEqual(["pruned.md"]);
     expect(index(store, "reports").data.files).toStrictEqual([
       { path: `01-1-runner-${TICKET}.md`, hash: sha("late\n"), bytes: 5 },

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { DIR, harness, setChange, writeEntry, writeManifest, writePlanPart } from "./support.ts";
 import type { Harness } from "./support.ts";
 
-const T0 = "2026-09-25T10:00:00Z";
+const T0 = "2026-09-25T10:00:00.000Z";
 
 /** A tiny Change with one plan part whose plan and execute part are done. */
 async function executed(): Promise<Harness> {

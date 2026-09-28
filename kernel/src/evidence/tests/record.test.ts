@@ -78,7 +78,7 @@ describe("evidence record", () => {
       kind: "tests-scoped",
       ticket,
       target: "01-1",
-      at: "2026-09-25T11:02:00Z",
+      at: "2026-09-25T11:02:00.000Z",
       source: "kernel",
       "tree-hash": expected.treeHash,
       tree: expected.tree,

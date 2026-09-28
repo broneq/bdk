@@ -127,7 +127,7 @@ export function packaged(h: Harness, ticket: string, role: string, target = "01-
       attempt: 1,
       of: 3,
       scope: "full",
-      at: "2026-09-25T11:00:30Z",
+      at: "2026-09-25T11:00:30.000Z",
       "kernel-version": "3.0.0",
       "template-hash": `sha256:${"0".repeat(64)}`,
       report: `${REL}/reports/${target}-${role}-${ticket}.md`,

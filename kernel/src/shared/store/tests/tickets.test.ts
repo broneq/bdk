@@ -41,7 +41,7 @@ function seeded(): Store {
       attempt: 1,
       of: 3,
       scope: "full",
-      "opened-at": "2026-09-25T10:00:00Z",
+      "opened-at": "2026-09-25T10:00:00.000Z",
       author: "Ada <ada@example.com>",
     },
     body: "",
@@ -100,7 +100,7 @@ describe("stampPackage and activePackage", () => {
     const [record] = readAttempts(store, DIR);
     if (record === undefined) throw new Error("no record");
     writeDocument(store, record.path, {
-      data: { ...record.data, "closed-at": "2026-09-25T10:30:00Z", outcome: "ok" },
+      data: { ...record.data, "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" },
       body: "",
     });
     expect(openPackage(store, ROOT, DIR, TICKET)).toBeUndefined();
@@ -131,11 +131,19 @@ describe("manifests", () => {
 
   function withManifests(): Store {
     const store = seeded();
-    manifest(store, "E-00000003", { at: "2026-09-25T10:03:00Z" });
-    manifest(store, "E-00000001", { at: "2026-09-25T10:01:00Z", target: "02-1", ticket: OTHER });
-    manifest(store, "E-00000002", { at: "2026-09-25T10:03:00Z", target: "02" });
-    manifest(store, "E-00000004", { at: "2026-09-25T10:00:00Z", target: "03-1", ticket: OTHER });
-    manifest(store, "E-00000005", { at: "2026-09-25T10:04:00Z", target: CHANGE });
+    manifest(store, "E-00000003", { at: "2026-09-25T10:03:00.000Z" });
+    manifest(store, "E-00000001", {
+      at: "2026-09-25T10:01:00.000Z",
+      target: "02-1",
+      ticket: OTHER,
+    });
+    manifest(store, "E-00000002", { at: "2026-09-25T10:03:00.000Z", target: "02" });
+    manifest(store, "E-00000004", {
+      at: "2026-09-25T10:00:00.000Z",
+      target: "03-1",
+      ticket: OTHER,
+    });
+    manifest(store, "E-00000005", { at: "2026-09-25T10:04:00.000Z", target: CHANGE });
     return store;
   }
 

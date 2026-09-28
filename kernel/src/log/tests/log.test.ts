@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Store } from "../../shared/store/index.ts";
-import { writeDocument } from "../../shared/store/index.ts";
+import { secondStamp, writeDocument } from "../../shared/store/index.ts";
 import { allowedMoves, findDuplicate, withResolution } from "../domain/entry.ts";
 import { logRegistrations } from "../index.ts";
 import { logAddOutput, logListOutput, logResolveOutput, logShowOutput } from "../schema/outputs.ts";
@@ -588,7 +588,7 @@ describe("log list", () => {
   it("keeps the entries at or after a ticket's opened-at with --since-ticket-start (T23-D49)", async () => {
     const store = repository();
     const risk = (id: string, at: string) => {
-      writeDocument(store, `${DIR}/log/${at.replace(/[-:]/g, "")}-risk-${id}.md`, {
+      writeDocument(store, `${DIR}/log/${secondStamp(at)}-risk-${id}.md`, {
         data: {
           schema: 1,
           id,
@@ -603,9 +603,9 @@ describe("log list", () => {
         body: "",
       });
     };
-    risk("L-00000001", "2026-09-25T09:59:59Z");
-    risk("L-00000002", "2026-09-25T10:00:00Z");
-    risk("L-00000003", "2026-09-25T10:20:00Z");
+    risk("L-00000001", "2026-09-25T09:59:59.000Z");
+    risk("L-00000002", "2026-09-25T10:00:00.000Z");
+    risk("L-00000003", "2026-09-25T10:20:00.000Z");
     addAttempt(store, "A-7f3k9m2q", undefined, true);
     const { run } = harness(store);
     const ids = async (...flags: string[]) =>

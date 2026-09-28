@@ -163,8 +163,14 @@ describe("post-task step nodes", () => {
       evidence: [
         manifest("E-00000001", "simplify", "01-1"),
         manifest("E-00000002", "simplify", "01-1", { fresh: false }),
-        manifest("E-00000003", "simplify", "02-1", { at: "2026-09-25T10:00:00Z", fresh: false }),
-        manifest("E-00000004", "simplify", "02-2", { at: "2026-09-25T10:00:01Z", fresh: false }),
+        manifest("E-00000003", "simplify", "02-1", {
+          at: "2026-09-25T10:00:00.000Z",
+          fresh: false,
+        }),
+        manifest("E-00000004", "simplify", "02-2", {
+          at: "2026-09-25T10:00:01.000Z",
+          fresh: false,
+        }),
       ],
     });
     expect(result.find("simplify:01")?.state).toBe("done");

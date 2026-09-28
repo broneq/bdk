@@ -47,7 +47,7 @@ export async function checkEvidence(
   const scope = scopeOf(parts, change.id, target) ?? parts;
   const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope);
   const fresh = (manifest: ManifestFile) => manifest.data["tree-hash"] === current.treeHash;
-  // Manifests are in `at` order; of two in one second the fresh one counts as the later.
+  // Manifests are in `at` order; of two with one `at` the fresh one counts as the later.
   const latest = new Map<string, ManifestFile>();
   for (const manifest of checked) {
     const known = latest.get(manifest.data.kind);

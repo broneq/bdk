@@ -60,8 +60,8 @@ export class PostTaskStepKind extends BaseKind {
 
   /**
    * The latest manifest of the kind covering part `nn`: its target is a task
-   * of the part, the part or the Change. `at` has second precision, so of two
-   * manifests of one second the fresh one counts as the later.
+   * of the part, the part or the Change. Of two manifests with one `at` (one
+   * millisecond) the fresh one counts as the later.
    */
   evidence(view: ChangeView, nn: string): EvidenceFacts | undefined {
     const path = partFiles(view, "plan/parts").get(nn);

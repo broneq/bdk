@@ -62,9 +62,9 @@ export async function started(body01 = tasks("01", 2)): Promise<Harness> {
   writePlanPart(h.store, "01", { body: body01 });
   writePlanPart(h.store, "02", { body: tasks("02", 1), dependsOn: ["01"] });
   for (const path of ["src/01-1.ts", "src/01-2.ts", "src/02-1.ts"]) h.put(path, `// ${path}\n`);
-  const done = await h.run(["done", "plan", "--json"], "2026-09-25T10:00:00Z");
+  const done = await h.run(["done", "plan", "--json"], "2026-09-25T10:00:00.000Z");
   expect(done.code, done.stdout).toBe(0);
-  const start = await h.run(["part", "start", "01", "--json"], "2026-09-25T10:01:00Z");
+  const start = await h.run(["part", "start", "01", "--json"], "2026-09-25T10:01:00.000Z");
   expect(start.code, start.stdout).toBe(0);
   return h;
 }
@@ -101,7 +101,7 @@ export function withPackage(h: Harness, ticket: string, role: string, target = "
       attempt: 1,
       of: 3,
       scope: "full",
-      at: "2026-09-25T11:00:00Z",
+      at: "2026-09-25T11:00:00.000Z",
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `${REL}/reports/${target}-${role}-${ticket}.md`,

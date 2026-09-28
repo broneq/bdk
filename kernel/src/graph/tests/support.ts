@@ -21,7 +21,12 @@ import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import type { ConfigRegistry } from "../../shared/config/index.ts";
 import { currentTrees, filePolicy } from "../../evidence/index.ts";
-import { memoryIndex, readPlanParts, secondStamp, writeDocument } from "../../shared/store/index.ts";
+import {
+  memoryIndex,
+  readPlanParts,
+  secondStamp,
+  writeDocument,
+} from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import type { KindRegistry } from "../domain/kinds/index.ts";
 import { graphRegistrations } from "../index.ts";
@@ -206,7 +211,7 @@ export async function writeManifest(
       kind,
       ticket: "A-7f3kx2p9",
       target,
-      at: fields.at ?? "2026-09-25T10:30:00Z",
+      at: fields.at ?? "2026-09-25T10:30:00.000Z",
       author: "Ada Lovelace <ada@example.com>",
       source: "agent:runner",
       "tree-hash": fields.stale === true ? `sha256:${"0".repeat(64)}` : tree?.treeHash,

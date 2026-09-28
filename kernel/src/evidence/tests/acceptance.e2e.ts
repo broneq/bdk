@@ -147,10 +147,8 @@ describe("T23 part C acceptance", () => {
     expect(manifest(skipped)).not.toContain("citations:");
     expect(manifest(passed)).toContain("verdict: pass");
     expect(manifest(passed)).toContain("- /failed");
-    // Both share one second of `at`, so either may count as the latest.
     const [latest, ...rest] = check(change, "01-1").evidence;
     expect(rest).toStrictEqual([]);
-    expect(latest).toMatchObject({ kind: "contract-snapshot", fresh: true });
-    expect([skipped, passed]).toContain(latest?.evidence);
+    expect(latest).toMatchObject({ kind: "contract-snapshot", fresh: true, evidence: passed });
   });
 });

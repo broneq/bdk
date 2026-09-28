@@ -166,7 +166,7 @@ async function recordSimplify(
   return "refused" in recorded ? recorded : undefined;
 }
 
-/** The latest manifest of a kind; of two in one second the fresh one counts as the later. */
+/** The latest manifest of a kind; of two with one `at` the fresh one counts as the later. */
 function latestOf(
   manifests: readonly ManifestFile[],
   kind: string,

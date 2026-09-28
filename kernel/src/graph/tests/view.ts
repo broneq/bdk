@@ -63,7 +63,7 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
     reportStatus: (entry) => fixture.reports?.[entry.id],
     reportEvidence: (entry) => fixture.reportEvidence?.[entry.id] ?? [],
     evidence: (fixture.evidence ?? []).map((manifest) => ({
-      at: "2026-09-25T10:00:00Z",
+      at: "2026-09-25T10:00:00.000Z",
       cited: false,
       fresh: true,
       ...manifest,

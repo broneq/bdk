@@ -55,26 +55,22 @@ export function soon(): string {
 export function passGate(dir: string, gate: string, to: string): void {
   const at = soon();
   const id = `L-u${String(Date.now() % 10_000_000).padStart(7, "0")}`;
-  writeDocument(
-    fileStore(),
-    join(dir, `log/${secondStamp(at)}-transition-${id}.md`),
-    {
-      data: {
-        schema: 1,
-        id,
-        type: "transition",
-        summary: `${gate} passed`,
-        status: "accepted",
-        source: "user",
-        author: "BDK Test <test@example.com>",
-        at,
-        refs: [gate],
-        gate,
-        to,
-      },
-      body: "",
+  writeDocument(fileStore(), join(dir, `log/${secondStamp(at)}-transition-${id}.md`), {
+    data: {
+      schema: 1,
+      id,
+      type: "transition",
+      summary: `${gate} passed`,
+      status: "accepted",
+      source: "user",
+      author: "BDK Test <test@example.com>",
+      at,
+      refs: [gate],
+      gate,
+      to,
     },
-  );
+    body: "",
+  });
 }
 
 export function done(root: string, id: string): Record<string, unknown> {
@@ -112,23 +108,19 @@ export function verdict(dir: string, evidence: readonly string[] = []): void {
     body: "PASS\n",
   });
   const id = `L-r${String(Date.now() % 10_000_000).padStart(7, "0")}`;
-  writeDocument(
-    fileStore(),
-    join(dir, `log/${secondStamp(at)}-report-${id}.md`),
-    {
-      data: {
-        schema: 1,
-        id,
-        type: "report",
-        summary: "plan-verify passed",
-        status: "accepted",
-        source: "agent:plan-verifier",
-        author: "BDK Test <test@example.com>",
-        at,
-        refs: ["plan-verify"],
-        report,
-      },
-      body: "",
+  writeDocument(fileStore(), join(dir, `log/${secondStamp(at)}-report-${id}.md`), {
+    data: {
+      schema: 1,
+      id,
+      type: "report",
+      summary: "plan-verify passed",
+      status: "accepted",
+      source: "agent:plan-verifier",
+      author: "BDK Test <test@example.com>",
+      at,
+      refs: ["plan-verify"],
+      report,
     },
-  );
+    body: "",
+  });
 }

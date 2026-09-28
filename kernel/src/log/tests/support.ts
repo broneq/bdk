@@ -157,7 +157,7 @@ export function writePackage(store: Store, ticket: string, role: string, target 
       attempt: 1,
       of: 3,
       scope: "full",
-      at: "2026-09-25T10:00:01Z",
+      at: "2026-09-25T10:00:01.000Z",
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/${target}-${role}-${ticket}.md`,
