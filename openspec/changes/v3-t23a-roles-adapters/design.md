@@ -81,7 +81,7 @@ Spike facts this design relies on:
 - [R1 Host changes the role mechanism in a later version] → Facts carry the host version in HOST-FACTS and the probe reruns with one command; the fallback for single-instance roles is the Agent tool with the same package, no change to role definitions.
 - [R2 An agent skips `rules show --ticket` and codes without rules] → The command stands before the role's work in every contract; part B records the call per ticket and `attempt close` adds a `finding` when a worker closes without it; T31 adds rule-ID citations; T40 measures on-demand versus embedded rules.
 - [R3 Evidence fresh although a shared file outside the task changed] → T23-D7 widens the hash to the part (part C); changes outside the part are caught by the end-of-plan full suite.
-- [R4 18 files in `agents/` during the transition] → Generated marker in each adapter, `export agents --check` in CI, the STARTUP agents table stays v2 until T42 (P11).
+- [R4 18 files in `agents/` during the transition] → Generated marker in each adapter, `export agents --check` in CI; the STARTUP agents table (generated from `agents/`, P11) lists the adapters with descriptions that say they are started by BDK role skills, not for general tasks.
 - [R5 Orchestrator drops or rewrites entries] → Gone with T23-D14: agents write entries themselves; `attempt close --envelope` still checks the ids.
 - [R6 Evidence primitives without a real consumer] → `tests-scoped` and `lint` consume them from day one (part C).
 - [R7 P8 downgrade hides a real blocker] → Downgraded entry keeps `review: true` and its text; `log ingest` lists `downgraded` (part B).

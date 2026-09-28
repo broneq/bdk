@@ -70,6 +70,9 @@ jobs:
       - name: Committed bundle and generated schemas are up to date
         run: git diff --exit-code dist/ schema/
 
+      - name: Committed adapters are the generator's output
+        run: node dist/bdk.mjs export agents --host claude --check
+
       - name: Lint
         run: pnpm lint
 

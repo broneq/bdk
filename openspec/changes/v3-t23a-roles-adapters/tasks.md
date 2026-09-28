@@ -10,11 +10,11 @@
 
 ## 2. Adapter generator (`export` slice)
 
-- [ ] 2.1 Write failing unit tests for the adapter definitions and the Claude Code rendering: five adapters, tools and models per `role-contracts` Adapters, generated marker, one-sentence body, LF, fixed key order, output independent of time; verify they fail for the missing module
-- [ ] 2.2 Implement the `export` slice domain and use case (definitions and host tool map in kernel code, T23-D19 to D21) and verify the unit tests from 2.1 pass with coverage thresholds met
-- [ ] 2.3 Write failing E2E tests for `bdk export agents` covering every scenario of the `kernel-cli/export` delta (example run, byte-identical regeneration, `policy/generated-drift` on an edit and on a missing file, v2 agents untouched, `--host gemini` refused); verify they fail against the stub
-- [ ] 2.4 Implement the command (`--out` default from the bundle location, `--check` writes nothing), register the slice in `kernel/src/registrations.ts`, rebuild `dist/bdk.mjs`; verify `pnpm build && pnpm test:e2e` passes the tests from 2.3
-- [ ] 2.5 Generate `agents/{worker,reader,reviewer,runner,scout}.md` with `node dist/bdk.mjs export agents --host claude`, add `export agents --host claude --check` to CI next to the other generated-file checks; verify `pnpm skill-check` passes over `agents/` and the check exits 0
+- [x] 2.1 Write failing unit tests for the adapter definitions and the Claude Code rendering: five adapters, tools and models per `role-contracts` Adapters, generated marker, one-sentence body, LF, fixed key order, output independent of time; verify they fail for the missing module
+- [x] 2.2 Implement the `export` slice domain and use case (definitions and host tool map in kernel code, T23-D19 to D21) and verify the unit tests from 2.1 pass with coverage thresholds met
+- [x] 2.3 Write failing E2E tests for `bdk export agents` covering every scenario of the `kernel-cli/export` delta (example run, byte-identical regeneration, `policy/generated-drift` on an edit and on a missing file, v2 agents untouched, `--host gemini` refused); verify they fail against the stub
+- [x] 2.4 Implement the command (`--out` default from the bundle location, `--check` writes nothing), register the slice in `kernel/src/registrations.ts`, rebuild `dist/bdk.mjs`; verify `pnpm build && pnpm test:e2e` passes the tests from 2.3
+- [x] 2.5 Generate `agents/{worker,reader,reviewer,runner,scout}.md` with `node dist/bdk.mjs export agents --host claude`, add `export agents --host claude --check` to CI next to the other generated-file checks; verify `pnpm skill-check` passes over `agents/` and the check exits 0
 
 ## 3. Role skills
 
@@ -25,7 +25,7 @@
 
 ## 4. Documentation
 
-- [ ] 4.1 Update `docs/guide/reference/agents.md`, the `README.md` Agents table and any drift-guarded listing to show the five adapters and the seven roles next to the v2 agents (v2 rows stay until T42); verify `pnpm docs:build` and the drift guards in `pnpm test:contract` pass
+- [x] 4.1 Update `docs/guide/reference/agents.md`, the `README.md` Agents table and any drift-guarded listing to show the five adapters and the seven roles next to the v2 agents (v2 rows stay until T42); verify `pnpm docs:build` and the drift guards in `pnpm test:contract` pass
 - [ ] 4.2 Check `docs/guide/` for mentions of a headless runner, `execution.runner` or `execution.host` and remove them; verify with a repository grep limited to shipped docs
 
 ## 5. Acceptance

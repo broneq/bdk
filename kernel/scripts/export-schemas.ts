@@ -45,6 +45,7 @@ import {
   logResolveOutput,
   logShowOutput,
 } from "../src/log/schema/outputs.ts";
+import { exportAgentsOutput } from "../src/export/schema/agents.ts";
 import { measureOutput } from "../src/measure/schema/measure.ts";
 import {
   partDoneOutput,
@@ -79,6 +80,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/hooks-session-start.json", sessionStartOutput],
   ["output/hooks-skill-exists.json", skillExistsOutput],
   ["output/measure.json", measureOutput],
+  ["output/export-agents.json", exportAgentsOutput],
   ["output/log-add.json", logAddOutput],
   ["output/log-ingest.json", logIngestOutput],
   ["output/log-list.json", logListOutput],

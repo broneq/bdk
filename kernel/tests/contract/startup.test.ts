@@ -10,7 +10,9 @@ import { startupContext } from "../../src/ctx/index.ts";
 import { fileStore } from "../../src/shared/store/index.ts";
 import { REPO_ROOT } from "../support/run.ts";
 
-const REGENERATE = "node dist/bdk.mjs ctx startup > STARTUP_INSTRUCTIONS.md";
+// Through a temp file: `>` would truncate the file before `ctx startup` reads it.
+const REGENERATE =
+  "node dist/bdk.mjs ctx startup > STARTUP.tmp && mv STARTUP.tmp STARTUP_INSTRUCTIONS.md";
 
 describe("STARTUP_INSTRUCTIONS.md", () => {
   const committed = readFileSync(join(REPO_ROOT, "STARTUP_INSTRUCTIONS.md"), "utf8");

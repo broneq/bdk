@@ -12358,7 +12358,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve4) {
+function isRecursive(inst, stack, resolve5) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -12368,7 +12368,7 @@ function isRecursive(inst, stack, resolve4) {
   let result2 = NONE;
   const check = (child) => {
     if (result2 !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve4);
+      const answer = isRecursive(child, stack, resolve5);
       if (answer > result2)
         result2 = answer;
     }
@@ -12379,7 +12379,7 @@ function isRecursive(inst, stack, resolve4) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve4) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve5) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -12443,7 +12443,7 @@ function isRecursive(inst, stack, resolve4) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve4 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve5 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -20344,7 +20344,7 @@ function evaluate(input) {
     if (draft?.skipped !== void 0) return [];
     return draft?.instances !== void 0 && draft.instances.length > 0 ? draft.instances : [id];
   });
-  const resolve4 = (id) => {
+  const resolve5 = (id) => {
     const known = results.get(id);
     if (known !== void 0) return known;
     const draft = drafts.get(id);
@@ -20355,7 +20355,7 @@ function evaluate(input) {
   };
   const firstOpen = (requires) => {
     for (const id of requires) {
-      const required2 = resolve4(id);
+      const required2 = resolve5(id);
       if (required2 === void 0) return `${id} does not exist`;
       if (required2.state !== "done") return `${id} is ${required2.state}, not done`;
     }
@@ -20413,7 +20413,7 @@ function evaluate(input) {
     let readyAt;
     let incomplete = false;
     for (const id of requires) {
-      const required2 = resolve4(id);
+      const required2 = resolve5(id);
       const at = required2?.gate?.passedIn?.at ?? required2?.recorded?.at ?? (required2?.kind !== void 0 && kinds.get(required2.kind)?.doneBy.through === "construction" ? "" : void 0);
       if (at === void 0) incomplete = true;
       else if (at !== "" && (readyAt === void 0 || at > readyAt)) readyAt = at;
@@ -20430,7 +20430,7 @@ function evaluate(input) {
       entries: view.entries
     });
   };
-  for (const id of order2) resolve4(id);
+  for (const id of order2) resolve5(id);
   const sealed = sealedIds(order2, results);
   const nodes = order2.flatMap((id) => {
     const result2 = results.get(id);
@@ -24267,6 +24267,151 @@ function configRegistrations(deps) {
   ];
 }
 
+// kernel/src/export/commands/agents.ts
+import { resolve as resolve3 } from "node:path";
+
+// kernel/src/export/render/agents.ts
+function renderAgents(report2) {
+  const lines = report2.files.map(
+    (file) => `${file.changed ? "written  " : "unchanged"}  ${file.path}`
+  );
+  const changed = report2.files.filter((file) => file.changed).length;
+  lines.push(`${report2.host}: ${changed} of ${report2.files.length} adapter files changed`);
+  return `${lines.join("\n")}
+`;
+}
+
+// kernel/src/export/use-cases/agents.ts
+import { join as join34, relative as relative7 } from "node:path";
+
+// kernel/src/export/domain/adapters.ts
+var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
+function sentence(name, rule2) {
+  return CONTRACT.replace("%s", name) + rule2;
+}
+var READ_ONLY = ["read", "search", "shell", "message"];
+var ADAPTERS = [
+  {
+    name: "worker",
+    description: "BDK adapter for dispatched work that edits files (implementer and simplify packages). Started by BDK role skills and the swarm skill; not for general tasks.",
+    sentence: sentence("worker", "change only the files it allows."),
+    tools: ["read", "edit", "shell", "search", "message"],
+    tier: "balanced"
+  },
+  {
+    name: "reader",
+    description: "BDK read-only adapter for deep verification (verifier, design-verifier). Started by BDK role skills; not for general tasks.",
+    sentence: sentence("reader", "never change a file."),
+    tools: READ_ONLY,
+    tier: "deep"
+  },
+  {
+    name: "reviewer",
+    description: "BDK read-only adapter for code review with test runs (reviewer, pr-reviewer). Started by BDK role skills and the swarm skill; not for general tasks.",
+    sentence: sentence("reviewer", "never change a file."),
+    tools: READ_ONLY,
+    tier: "balanced"
+  },
+  {
+    name: "runner",
+    description: "BDK adapter that runs the project's tests and checks for a dispatch package (runner). Started by BDK role skills and the swarm skill; not for general tasks.",
+    sentence: sentence("runner", "never change a project file yourself."),
+    tools: ["read", "shell", "message"],
+    tier: "fast"
+  },
+  {
+    name: "scout",
+    description: "BDK read-only adapter for fast searches and log triage (scout). Started by BDK role skills and the swarm skill; not for general tasks.",
+    sentence: sentence("scout", "never change a file."),
+    tools: READ_ONLY,
+    tier: "fast"
+  }
+];
+
+// kernel/src/export/domain/hosts.ts
+var HOSTS = {
+  claude: {
+    id: "claude",
+    tools: {
+      read: ["Read"],
+      search: ["Grep", "Glob"],
+      edit: ["Edit", "Write"],
+      shell: ["Bash"],
+      message: ["SendMessage"]
+    },
+    models: { fast: "haiku", balanced: "sonnet", deep: "opus" }
+  }
+};
+function adapterFile(adapter, host) {
+  const tools3 = adapter.tools.flatMap((tool) => host.tools[tool]);
+  return [
+    "---",
+    `# Generated by \`bdk export agents --host ${host.id}\`; do not edit.`,
+    `name: ${adapter.name}`,
+    `description: ${adapter.description}`,
+    `model: ${host.models[adapter.tier]}`,
+    "tools:",
+    ...tools3.map((tool) => `  - ${tool}`),
+    "---",
+    "",
+    adapter.sentence,
+    ""
+  ].join("\n");
+}
+
+// kernel/src/export/use-cases/agents.ts
+function exportAgents(deps, request) {
+  const host = HOSTS[request.host];
+  const out = request.out ?? join34(deps.pluginRoot, "agents");
+  const drift = [];
+  const files = ADAPTERS.map((adapter) => {
+    const target = join34(out, `${adapter.name}.md`);
+    const path = relative7(request.root, target);
+    const content = adapterFile(adapter, host);
+    const current = deps.store.read(target);
+    const changed = current !== content;
+    if (changed && request.check)
+      drift.push(`${path} (${current === void 0 ? "missing" : "edited"})`);
+    if (changed && !request.check) deps.store.write(target, content);
+    return { adapter: adapter.name, path, changed };
+  });
+  if (drift.length > 0) {
+    return refuse(
+      "policy/generated-drift",
+      `${drift.length} generated adapter files differ from bdk export agents --host ${host.id}: ${drift.join(", ")}`,
+      [`bdk export agents --host ${host.id}`]
+    );
+  }
+  return { host: host.id, files, changed: files.some((file) => file.changed) };
+}
+
+// kernel/src/export/commands/agents.ts
+function agentsCommand(deps) {
+  return (context) => {
+    const host = context.flags["--host"];
+    if (typeof host !== "string") {
+      return refuse(
+        "input/missing-argument",
+        "--host is required: claude is the only host in 3.0",
+        ["bdk export agents --host claude", "bdk export agents --help"]
+      );
+    }
+    const out = context.flags["--out"];
+    const report2 = exportAgents(deps, {
+      host,
+      ...typeof out === "string" ? { out: resolve3(context.cwd, out) } : {},
+      check: context.flags["--check"] === true,
+      root: context.workTree ?? context.cwd
+    });
+    return isRefusal(report2) ? report2 : { data: report2, text: renderAgents(report2) };
+  };
+}
+
+// kernel/src/export/index.ts
+function exportRegistrations(deps) {
+  return [{ id: "export-agents", handler: agentsCommand(deps) }];
+}
+
 // kernel/src/hooks/render/session-start.ts
 function renderSessionStart({ startup, project }) {
   if (project === void 0) return { content: startup };
@@ -24288,12 +24433,12 @@ ${lines.join("\n")}
 }
 
 // kernel/src/hooks/use-cases/session-start.ts
-import { join as join34 } from "node:path";
+import { join as join35 } from "node:path";
 function sessionStart(input) {
   const startup = startupContext(input).content;
   if (input.workTree === void 0) return { startup };
   const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
-  if (!input.store.isDirectory(join34(projectRoot, ".bdk"))) return { startup };
+  if (!input.store.isDirectory(join35(projectRoot, ".bdk"))) return { startup };
   const { errors, report: report2 } = inspectConfig({ ...input, projectRoot });
   const { layout, present } = detectLayout(input.store, projectRoot);
   const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
@@ -24335,11 +24480,11 @@ function renderSkillExists(name, foundIn) {
 
 // kernel/src/hooks/use-cases/skill-exists.ts
 var import_yaml12 = __toESM(require_dist(), 1);
-import { join as join35 } from "node:path";
+import { join as join36 } from "node:path";
 function findSkill(input, name) {
   for (const skills of skillDirs(input)) {
     for (const entry of subdirs(input.store, skills)) {
-      const file = join35(skills, entry, "SKILL.md");
+      const file = join36(skills, entry, "SKILL.md");
       const text6 = input.store.read(file);
       if (text6 !== void 0 && frontmatterName(text6) === name) return file;
     }
@@ -24347,21 +24492,21 @@ function findSkill(input, name) {
   return void 0;
 }
 function skillDirs({ store: store2, home, projectRoot }) {
-  const plugins = join35(home, ".claude", "plugins");
-  const marketplaces = join35(plugins, "marketplaces");
-  const cache3 = join35(plugins, "cache");
+  const plugins = join36(home, ".claude", "plugins");
+  const marketplaces = join36(plugins, "marketplaces");
+  const cache3 = join36(plugins, "cache");
   const versions = subdirs(store2, cache3).flatMap(
-    (marketplace) => subdirs(store2, join35(cache3, marketplace)).flatMap(
-      (plugin) => subdirs(store2, join35(cache3, marketplace, plugin)).map(
-        (version3) => join35(cache3, marketplace, plugin, version3)
+    (marketplace) => subdirs(store2, join36(cache3, marketplace)).flatMap(
+      (plugin) => subdirs(store2, join36(cache3, marketplace, plugin)).map(
+        (version3) => join36(cache3, marketplace, plugin, version3)
       )
     )
   );
   return [
-    join35(home, ".claude", "skills"),
-    join35(projectRoot, ".claude", "skills"),
-    ...subdirs(store2, marketplaces).map((marketplace) => join35(marketplaces, marketplace, "skills")),
-    ...versions.map((version3) => join35(version3, "skills"))
+    join36(home, ".claude", "skills"),
+    join36(projectRoot, ".claude", "skills"),
+    ...subdirs(store2, marketplaces).map((marketplace) => join36(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join36(version3, "skills"))
   ];
 }
 function subdirs(store2, dir) {
@@ -24772,7 +24917,7 @@ function nodeVersionRefusal(version3) {
 }
 
 // kernel/src/shared/registry/resolve.ts
-function resolve3(index2, argv) {
+function resolve4(index2, argv) {
   for (let length = 3; length >= 1; length--) {
     const words = argv.slice(0, length);
     if (words.length < length) continue;
@@ -24844,7 +24989,7 @@ async function run(index2, byId, options, invocation) {
   const { argv, streams } = invocation;
   const asJson = argv.includes("--json");
   const help = argv.includes("--help");
-  const resolved = resolve3(index2, argv);
+  const resolved = resolve4(index2, argv);
   if (resolved === void 0) {
     const [first] = argv;
     const usage = first === void 0 || first === "--help" ? globalHelp(index2) : help ? groupHelp(index2, first) : void 0;
@@ -24978,18 +25123,18 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join36 } from "node:path";
+import { join as join37 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store: store2, root } = input;
-  if (!store2.exists(join36(root, SETTINGS_FILES[0]))) return [];
+  if (!store2.exists(join37(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store2, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join36(root, file);
+    const path = join37(root, file);
     const text6 = store2.read(path);
     if (text6 === void 0 || modelineUrl(text6) === url) continue;
     if (input.fix) store2.write(path, withModeline(text6, version3));
@@ -25003,7 +25148,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join36(root, OFFLINE_SCHEMA_PATH);
+  const copy = join37(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store2.read(copy);
   if (current !== expected) {
@@ -25151,7 +25296,8 @@ function registrations(deps) {
     ...partRegistrations(deps),
     ...attemptRegistrations(deps),
     ...commitRegistrations(deps),
-    ...queryRegistrations(deps)
+    ...queryRegistrations(deps),
+    ...exportRegistrations(deps)
   ];
 }
 function settingsRegistry() {
