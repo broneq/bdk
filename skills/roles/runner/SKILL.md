@@ -22,11 +22,13 @@ If the package is missing or does not parse, stop and return `blocked` with the 
 
 ## Work
 
-You run the checks the package names, exactly as written, and report their outcome. You change no project file.
+You run the checks of the package's `Checks` section, exactly as written and in its order, and record their outcome as evidence. You change no project file.
 
-- Run each check once; report its command, exit code and the shortest decisive lines of output.
-- Log each failure as a `finding` with the failing test or file and line.
-- When a check cannot run (missing tool, broken setup), do not work around it: report it as not run with the reason and log an `observation`.
+- Run each check once and save its output to a file; report its command, exit code and the shortest decisive lines of output.
+- Record each check with `bdk evidence record <kind> <file> --ticket <ticket>` and the verdict the output shows, and put the evidence id in your envelope.
+- For `pass`, cite with `--cite` the output line or JSON value that shows the result; the kernel refuses a `pass` without a citation.
+- Log each failure as a `finding` with the failing test or file and line, and record the check as `fail`.
+- When a check cannot run (missing tool, broken setup, no command configured), do not work around it: record `not-run` with the reason in the file and log an `observation`.
 - Never edit code or configuration to make a check pass.
 
 ## Ledger

@@ -153,6 +153,18 @@ describe("T23-D43: the simplifier keeps behaviour", () => {
   });
 });
 
+describe("T4: the runner records its checks as evidence", () => {
+  it("records each check, cites the output for pass and gives the reason for not-run", () => {
+    const { body } = readRole("runner");
+    expect(body).toMatch(/`Checks` section/);
+    expect(body).toContain("bdk evidence record <kind> <file> --ticket <ticket>");
+    const pass = sentences(body).filter((sentence) => sentence.includes("`pass`"));
+    expect(pass.some((sentence) => sentence.includes("cit"))).toBe(true);
+    const notRun = sentences(body).filter((sentence) => sentence.includes("`not-run`"));
+    expect(notRun.some((sentence) => sentence.includes("reason"))).toBe(true);
+  });
+});
+
 describe("P8: verifiers block only on the package's categories", () => {
   it.each(["verifier", "design-verifier"])(
     "%s names the category list and the not-a-FAIL list",
