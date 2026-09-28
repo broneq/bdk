@@ -36,6 +36,6 @@
 
 ## 7. Acceptance
 
-- [ ] 7.1 Run the part B acceptance end to end on the E2E fixture Change: `attempt open`, `dispatch build`, `dispatch show`, `rules show --ticket`, `log add` (with a downgraded verifier blocker), `log ingest`, `attempt close --envelope`; verify every step's exit code and output against the specs
+- [x] 7.1 Run the part B acceptance end to end on the E2E fixture Change: `attempt open`, `dispatch build`, `dispatch show`, `rules show --ticket`, `log add` (with a downgraded verifier blocker), `log ingest`, `attempt close --envelope`; verify every step's exit code and output against the specs (kept as `kernel/src/dispatch/tests/acceptance.e2e.ts`: an implementer and a verifier ticket, every output schema-validated)
 - [ ] 7.2 Live check on Claude Code: fork `bdk:verifier` on a real package from the fixture and confirm it calls `dispatch show`, `rules show --ticket` and `log ingest --ticket` and returns the envelope; record the result in the PR description
 - [ ] 7.3 Run `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm skill-check`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pytest tests/unit/`, `pnpm docs:build` and `openspec validate v3-t23b-dispatch-envelope --strict`; verify all pass
