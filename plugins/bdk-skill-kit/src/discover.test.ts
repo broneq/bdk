@@ -67,4 +67,23 @@ describe("discover", () => {
     const out = runChecks(await loadConfig(root), { cwd: root, paths: [] }).findings;
     expect(out.map((f) => [f.rule, f.file])).toEqual([["unused-files", "skills/demo/leftover.md"]]);
   });
+
+  it("treats a skills dir nested in another as a container, not a stray", async () => {
+    const root = tree({
+      "skill-check.config.mjs": `export default { targets: [{ kind: "skills", dirs: ["skills", "skills/roles/"] }] };`,
+      "skills/demo/SKILL.md": skill("demo"),
+      "skills/roles/verifier/SKILL.md": skill("verifier"),
+    });
+    const { docs, strays } = discover(root, (await loadConfig(root)).targets);
+    expect(strays).toEqual([]);
+    expect(docs.map((d) => d.dir)).toEqual(["skills/demo", "skills/roles/verifier"]);
+  });
+
+  it("still reports a nested directory that no target names", async () => {
+    const root = tree({
+      "skill-check.config.mjs": config,
+      "skills/roles/verifier/SKILL.md": skill("verifier"),
+    });
+    expect(discover(root, (await loadConfig(root)).targets).strays).toEqual(["skills/roles"]);
+  });
 });

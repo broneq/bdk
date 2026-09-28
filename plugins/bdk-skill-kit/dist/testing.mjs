@@ -8486,6 +8486,9 @@ var toPosix = (path) => path.split(sep).join("/");
 function discover(root, targets) {
   const docs = [];
   const strays = [];
+  const containers = new Set(
+    targets.filter((t) => t.kind === "skills").flatMap((t) => t.dirs.map((d) => toPosix(relative(root, join2(root, d)))))
+  );
   for (const target of targets) {
     for (const dir of target.dirs) {
       const base = join2(root, dir);
@@ -8502,6 +8505,7 @@ function discover(root, targets) {
       for (const entry of sorted(base)) {
         if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
         const skillDir = join2(base, entry.name);
+        if (containers.has(toPosix(relative(root, skillDir)))) continue;
         const names = sorted(skillDir);
         const skillFile = names.find((e) => e.isFile() && e.name.toLowerCase() === "skill.md");
         if (skillFile) {
