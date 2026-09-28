@@ -151,6 +151,7 @@ export function openAttempt(
       ...(dropped.length === 0 ? {} : { dropped }),
       ...(entry === undefined ? {} : { entry: entry.id }),
       ...(input.escalate ? { escalation: { model: policy.escalation.model } } : {}),
+      ...(loop === "verifier" ? {} : { steps: targets.steps }),
     };
   });
 }

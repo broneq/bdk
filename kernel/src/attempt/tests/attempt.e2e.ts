@@ -33,6 +33,11 @@ describe("bdk attempt open", () => {
     const change = started();
     const report = answered(open(change, "task-redispatch", "01-1"), "output/attempt-open.json");
     expect(report).toMatchObject({ attempt: 1, of: 3, scope: "full" });
+    expect(report.steps).toStrictEqual([
+      { kind: "simplify", role: "simplifier" },
+      { kind: "tests-scoped", role: "runner" },
+      { kind: "lint", role: "runner" },
+    ]);
     expect(
       read(
         change.root,

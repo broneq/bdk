@@ -22833,15 +22833,18 @@ async function artifactPaths(deps, change, index2, globalDir2, target) {
 async function targetSteps(deps, change, index2, globalDir2, target) {
   const read3 = await readGraph(deps, change, index2, globalDir2);
   if ("refused" in read3) return read3;
+  const policy = filePolicy(read3.resolved.value);
+  const files = [...new Set(targetFiles(readPlanParts(deps.store, change.dir), target))].filter((path) => fileClass(policy, path) === "executable").sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+  return { steps: postTaskSteps2(read3), files };
+}
+function postTaskSteps2(read3) {
   const steps = /* @__PURE__ */ new Map();
   for (const node3 of read3.graph.nodes) {
     const kind = read3.kinds.get(node3.kind);
     if (!(kind instanceof PostTaskStepKind) || node3.state === "skipped") continue;
     steps.set(kind.name, { kind: kind.name, role: kind.role });
   }
-  const policy = filePolicy(read3.resolved.value);
-  const files = [...new Set(targetFiles(readPlanParts(deps.store, change.dir), target))].filter((path) => fileClass(policy, path) === "executable").sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
-  return { steps: [...steps.values()], files };
+  return [...steps.values()];
 }
 function targetFiles(parts, target) {
   const holder = taskHolders(parts).get(target);
@@ -23494,6 +23497,7 @@ async function workTargets(deps, change, index2, globalDir2) {
     entries: read3.entries,
     parked: read3.parked,
     started: startedParts(read3.entries),
+    steps: postTaskSteps2(read3),
     node: (id) => {
       const found = read3.graph.find(id);
       if (found === void 0) return void 0;
@@ -23988,7 +23992,8 @@ function openAttempt(deps, change, globalDir2, input) {
       ...narrowedFrom === void 0 ? {} : { narrowedFrom },
       ...dropped.length === 0 ? {} : { dropped },
       ...entry === void 0 ? {} : { entry: entry.id },
-      ...input.escalate ? { escalation: { model: policy.escalation.model } } : {}
+      ...input.escalate ? { escalation: { model: policy.escalation.model } } : {},
+      ...loop === "verifier" ? {} : { steps: targets.steps }
     };
   });
 }

@@ -1,7 +1,8 @@
 // What `attempt open` checks a target against: the node states of the
 // Change's graph, the started parts and the resolved settings, read once.
 // The attempt slice reaches the graph only through this function.
-import { readGraph } from "../../graph/index.ts";
+import { postTaskSteps, readGraph } from "../../graph/index.ts";
+import type { PostTaskStep } from "../../graph/index.ts";
 import type { Mapping } from "../../shared/config/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -18,6 +19,8 @@ export interface WorkTargets {
   readonly started: ReadonlySet<string>;
   /** A node's state and why, or undefined when the graph has no such node. */
   node(id: string): { readonly state: NodeState; readonly why?: string } | undefined;
+  /** The post-task steps the Change's graph applies, in pipeline order (T23-D41). */
+  readonly steps: readonly PostTaskStep[];
 }
 
 export async function workTargets(
@@ -33,6 +36,7 @@ export async function workTargets(
     entries: read.entries,
     parked: read.parked,
     started: startedParts(read.entries),
+    steps: postTaskSteps(read),
     node: (id) => {
       const found = read.graph.find(id);
       if (found === undefined) return undefined;

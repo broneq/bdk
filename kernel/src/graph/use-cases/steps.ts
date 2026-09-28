@@ -11,8 +11,9 @@ import type { IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import type { GraphDeps } from "./deps.ts";
 import { readGraph } from "./graph.ts";
+import type { ChangeGraph } from "./graph.ts";
 
-interface PostTaskStep {
+export interface PostTaskStep {
   readonly kind: string;
   readonly role: Role;
 }
@@ -33,17 +34,22 @@ export async function targetSteps(
 ): Promise<TargetSteps | Refusal> {
   const read = await readGraph(deps, change, index, globalDir);
   if ("refused" in read) return read;
+  const policy = filePolicy(read.resolved.value);
+  const files = [...new Set(targetFiles(readPlanParts(deps.store, change.dir), target))]
+    .filter((path) => fileClass(policy, path) === "executable")
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return { steps: postTaskSteps(read), files };
+}
+
+/** The post-task step kinds the Change's graph applies, in pipeline order. */
+export function postTaskSteps(read: ChangeGraph): PostTaskStep[] {
   const steps = new Map<string, PostTaskStep>();
   for (const node of read.graph.nodes) {
     const kind = read.kinds.get(node.kind);
     if (!(kind instanceof PostTaskStepKind) || node.state === "skipped") continue;
     steps.set(kind.name, { kind: kind.name, role: kind.role });
   }
-  const policy = filePolicy(read.resolved.value);
-  const files = [...new Set(targetFiles(readPlanParts(deps.store, change.dir), target))]
-    .filter((path) => fileClass(policy, path) === "executable")
-    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  return { steps: [...steps.values()], files };
+  return [...steps.values()];
 }
 
 /** A task's `Files:`, a part's, or every part's for any other target. */

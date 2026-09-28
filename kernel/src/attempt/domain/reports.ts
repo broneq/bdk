@@ -20,6 +20,8 @@ export interface AttemptOpenReport {
   /** The kernel `finding` recording the dropped findings for the human. */
   readonly entry?: string | undefined;
   readonly escalation?: { readonly model: string } | undefined;
+  /** The post-task steps a code loop runs under the ticket, in pipeline order (T23-D41). */
+  readonly steps?: readonly { readonly kind: string; readonly role: string }[] | undefined;
 }
 
 export interface DiffReport {

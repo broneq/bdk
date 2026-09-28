@@ -50,6 +50,24 @@ describe("attempt open", () => {
     );
   });
 
+  it("lists the post-task steps in pipeline order with their roles for the code loops (T23-D41)", async () => {
+    const h = await started();
+    const steps = [
+      { kind: "simplify", role: "simplifier" },
+      { kind: "tests-scoped", role: "runner" },
+      { kind: "lint", role: "runner" },
+    ];
+    expect(
+      attemptOpenOutput.parse((await open(h, "task-redispatch", "01-1")).json).steps,
+    ).toStrictEqual(steps);
+    expect(attemptOpenOutput.parse((await open(h, "verify-fix", "01")).json).steps).toStrictEqual(
+      steps,
+    );
+    const verifier = await open(h, "verifier", "plan");
+    expect(verifier.code, verifier.stdout).toBe(0);
+    expect(attemptOpenOutput.parse(verifier.json)).not.toHaveProperty("steps");
+  });
+
   it.each([
     ["an unknown loop", ["task-escalation", "01-1"]],
     ["a part id for task-redispatch", ["task-redispatch", "01"]],
