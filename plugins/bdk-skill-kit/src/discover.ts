@@ -16,6 +16,12 @@ const toPosix = (path: string) => path.split(sep).join("/");
 export function discover(root: string, targets: LoadedTarget[]): Discovery {
   const docs: Document[] = [];
   const strays: string[] = [];
+  // A directory that is itself a configured skills dir holds skills, not one skill.
+  const containers = new Set(
+    targets
+      .filter((t) => t.kind === "skills")
+      .flatMap((t) => t.dirs.map((d) => toPosix(relative(root, join(root, d))))),
+  );
   for (const target of targets) {
     for (const dir of target.dirs) {
       const base = join(root, dir);
@@ -32,6 +38,7 @@ export function discover(root: string, targets: LoadedTarget[]): Discovery {
       for (const entry of sorted(base)) {
         if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
         const skillDir = join(base, entry.name);
+        if (containers.has(toPosix(relative(root, skillDir)))) continue;
         const names = sorted(skillDir);
         const skillFile = names.find((e) => e.isFile() && e.name.toLowerCase() === "skill.md");
         if (skillFile) {

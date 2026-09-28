@@ -51,6 +51,8 @@ export default defineConfig({
 });
 ```
 
+A skills dir may sit inside another one, for example `dirs: ["skills", "skills/roles"]`: the outer scan then treats `skills/roles` as a container of skills, not as a skill directory without `SKILL.md`.
+
 A rule setting is `"off"`, `"warning"`, `"error"` or `[severity, options]`. A target can override settings with its own `rules`.
 
 ### Project policy rules

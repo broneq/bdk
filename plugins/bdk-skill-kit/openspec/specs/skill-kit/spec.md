@@ -93,6 +93,7 @@ Every finding SHALL carry a rule ID, a severity (`error` or `warning`), a file p
 The config SHALL declare targets. Each target SHALL have a kind, a list of directories, a profile and a name:
 
 - kind `skills` scans `<dir>/<name>/SKILL.md`, matching the file name in any letter case so that `skill-file-name` can report a wrong case;
+- a subdirectory of a `skills` dir that is itself a `skills` dir of any target is a container of skills, not a skill directory, so the outer scan skips it;
 - kind `agents` scans `<dir>/*.md`;
 - the profile is `claude-code` (the default) or `portable`;
 - the name defaults to the first directory.
@@ -108,6 +109,11 @@ The config SHALL also declare the plugins to load, per-rule settings, per-target
 
 - **WHEN** the config sets a rule to `off`
 - **THEN** that rule reports nothing and `--list-rules` no longer lists it
+
+#### Scenario: nested skills dir
+
+- **WHEN** a config declares `dirs: ["skills", "skills/roles"]` and `skills/roles/` holds `lead/SKILL.md` and no `SKILL.md` of its own
+- **THEN** `skills/roles/lead/SKILL.md` is checked and no `skill-file-name` finding names `skills/roles`
 
 #### Scenario: portable agents target
 
