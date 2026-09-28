@@ -337,6 +337,7 @@
                 },
                 "required": ["id", "description"],
                 "additionalProperties": false,
+                "title": "category entry",
                 "description": "A category a verifier or design-verifier blocker may name."
               }
             },
@@ -366,6 +367,7 @@
                 },
                 "required": ["id", "description"],
                 "additionalProperties": false,
+                "title": "category entry",
                 "description": "Something a verifier never blocks on."
               }
             }

@@ -1,5 +1,48 @@
 ## MODIFIED Requirements
 
+### Requirement: Invocation
+
+The kernel SHALL accept exactly one invocation form and resolve its project root, active Change and flags as follows.
+
+- **Form.** `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs <group> [<verb>] <positional...> [--flag [value]]`. Groups and verbs are lowercase words. A mandatory choice that changes the command's meaning is a positional literal (`attempt close A-7f3k ok`, `config set --global` being the one flag-shaped exception because the layer is a target, not a meaning); optional inputs and switches are flags. Flags never repeat a positional. Boolean flags take no value. A flag is given at most once unless its index record marks it `repeatable` (`log add --ref`, `change park --option`); a repeatable flag collects its values in order, and `--help` shows it as repeatable. `--skip-verify` is not a CLI flag anywhere: it reaches the kernel only inside the `UserPromptExpansion` payload (P2).
+- **Project root.** The kernel walks up from the working directory to the nearest directory containing `.bdk/`; without one, the git work tree root is the project root and `.bdk/` is created by the first writing command (`config set` from `/bdk:setup`, `import` on a v2 layout). Every command except the standalone ones requires the project root to be inside a git work tree (`runtime/not-a-repo` otherwise) and Node at or above the minimum (`runtime/node-version`). Three commands are standalone and need no work tree: `version`, so `doctor` and the wrapper's STOP line can always quote it; `ctx startup` and `hooks session-start`, because the host runs the SessionStart hook in any directory and a session outside a repository must get the STARTUP text, not a STOP line (outside a work tree `hooks session-start` prints STARTUP only, `kernel-cli/hooks`). The standalone commands still require the Node minimum, except `version`. `doctor` needs the work tree but not the Node minimum: it reports a Node below the minimum as a `fail` finding and exits 0 (`kernel-cli/service`, `bdk doctor`), because diagnosing that Node is its job. The bundle is built for the minimum line and loads `node:sqlite` only when a command opens the index, so a Node below the minimum that still loads the bundle (22.x before 22.13, 23.x before 23.4) reaches the kernel's own check and gets the refusal with the install line. Older lines (20 and below) are not supported and may fail in the module loader; the wrapper forms of Output modes turn that into a STOP line in inject mode and a block in guard mode.
+- **Active Change.** Every Change-scoped command resolves the active Change from the current git branch: one active Change per branch (Key boundaries, hooks table). No command takes a `--change` flag in contract version 3; cross-Change reads use the qualified reference `<changeId>/<id>` (`kernel-cli`, Conventions). The binding is a local marker per branch (`kernel-state`, Branch binding); the current branch is read from `HEAD`, and a detached `HEAD` has no active Change. Without an active Change the command exits 2 with `policy/no-active-change` and an `instead` that names `/bdk:change new` and `bdk change resume <id>` (with the ids of the unarchived Changes when there are any); a marker naming a Change whose directory is gone is `state/change-dir-missing`.
+- **`--json`.** Every command accepts `--json` and then prints exactly one JSON object on stdout, validated by its schema under `schema/cli/output/`. Without `--json` the same data is rendered as text. Only the JSON form is a contract; skills and tests that parse output use `--json`. Inject-mode commands (`kernel-cli`, Output modes) print Markdown by default and, with `--json`, the same content as an object (`content` plus the parts it was composed from) while still exiting 0; the `!` wrapper never passes `--json`. Guard-mode commands print the host's stdout shape (`kernel-cli/hooks`, Hook payloads) by default and their own decision record with `--json`, which is how tests drive them.
+- **`--help`.** `bdk --help`, `bdk <group> --help` and `bdk <group> <verb> --help` print usage generated from the same command index these specs are built on (`schema/cli/commands.json`): synopsis, availability, arguments, flags, exit codes. `--help` is the only usage text a skill may rely on (T02 decision R-13); a skill that repeats usage documentation fails the T15 content check. The kernel generates the usage text at run time from the index bundled into `dist/bdk.mjs`, so the text cannot drift from the record; a contract test asserts the parity for every record.
+- **stdin.** Only `log ingest` (the role's report, its envelope as frontmatter), `log add --body -` (the entry body) and the `hooks` group (the host's hook payload) read stdin. Every other command ignores it.
+- **Environment.** `CLAUDE_PLUGIN_ROOT` locates the bundle (set by the host). The personal configuration layer is `~/.config/bdk/settings.yaml` (XDG; the Windows equivalent is an open design item). `${CLAUDE_PLUGIN_DATA}` is used only for caches. No other environment variable changes behaviour.
+- **Streams.** stdout carries the result (text, JSON or Markdown). stderr carries diagnostics and is never part of the contract; guard hooks are the exception, where stderr is the message the host shows the user on exit 2 (`kernel-cli`, Output modes).
+
+#### Scenario: outside a git work tree
+
+- **WHEN** any command except `version`, `ctx startup` and `hooks session-start` runs with a project root that is not inside a git work tree
+- **THEN** the exit code is 5 and the error object carries `rule: runtime/not-a-repo`
+
+#### Scenario: help parity
+
+- **WHEN** `bdk <group> <verb> --help` runs
+- **THEN** the usage text lists exactly the arguments, flags and exit codes of that command's record in `schema/cli/commands.json`
+
+#### Scenario: Node below the minimum
+
+- **WHEN** any command except `version` and `doctor` runs on a Node below 22.13.0 that loads the bundle (for example 22.12.0)
+- **THEN** the exit code is 5, the error object carries `rule: runtime/node-version`, `why` names the running and the minimum version, and `instead` carries an install line such as `nvm install 24`
+
+#### Scenario: help for a stubbed command
+
+- **WHEN** `bdk <group> <verb> --help` runs for a command whose owner task has not landed
+- **THEN** the exit code is 0 and the usage text is generated from the record exactly as for an implemented command
+
+#### Scenario: repeatable flag
+
+- **WHEN** `bdk log add finding "x" --ref a.ts --ref 02-3` runs
+- **THEN** the entry's `refs` are `a.ts` and `02-3` in that order, while a second `--ticket` is `input/invalid-argument`
+
+#### Scenario: detached HEAD
+
+- **WHEN** a Change-scoped command runs with a detached `HEAD`
+- **THEN** the exit code is 2 with `rule: policy/no-active-change` and `why` says that `HEAD` is detached
+
 ### Requirement: Exit codes and the error object
 
 Every non-zero exit except 1 SHALL emit one four-field error object; the class prefix of `rule` SHALL determine the exit code.
@@ -44,7 +87,7 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 | ------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `input/unknown-command`         | 3    | every command                                                                                                                                   | The group or verb does not exist; `instead` names `bdk --help` and the closest match.                                                                                                                  |
 | `input/unknown-flag`            | 3    | every command                                                                                                                                   | A flag the command does not declare.                                                                                                                                                                   |
-| `input/missing-argument`        | 3    | every command                                                                                                                                   | A required positional or flag value is absent, or stdin is empty where a block was expected.                                                                                                           |
+| `input/missing-argument`        | 3    | every command                                                                                                                                   | A required positional or flag value is absent, or stdin is empty where a report or a body was expected.                                                                                                |
 | `input/invalid-argument`        | 3    | every command                                                                                                                                   | A value has the wrong form: an unknown outcome literal, a malformed id, a non-existent layer, a path outside the project.                                                                              |
 | `input/forbidden-field`         | 3    | `log add`, `log ingest`                                                                                                                         | A kernel-stamped field (`id`, `at`, `author`, `source`, `fingerprint`; `schema`, `ticket` and `role` of a report envelope) was passed as input (P1), including as a flag the command does not declare. |
 | `input/invalid-envelope`        | 3    | `log ingest`                                                                                                                                    | The report's envelope frontmatter is missing, carries an unknown field or fails the envelope schema; `why` names the field and its line, and nothing is stored.                                        |

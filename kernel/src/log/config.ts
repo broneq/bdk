@@ -16,7 +16,7 @@ const item = (description: string) =>
       }),
       description: z.string().min(1),
     })
-    .meta({ description });
+    .meta({ title: "category entry", description });
 
 const BLOCKING = [
   {

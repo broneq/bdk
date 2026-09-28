@@ -196,12 +196,15 @@ export interface AddResult extends AppendResult {
   readonly downgraded?: { readonly type: "blocker"; readonly category: string | null } | undefined;
 }
 
-/** `log ingest`: the entries written or matched, in block order. */
+/** `log ingest`: the stored report and whether it replaced an earlier one. */
 export interface IngestReport {
   readonly ticket: string;
-  readonly entries: readonly EntryView[];
-  /** P8 downgrades of blockers without a closed-list category; empty until T23. */
-  readonly downgraded: readonly { readonly entry: string; readonly originalCategory: string }[];
+  readonly role: string;
+  /** The package's `report` path, from the project root. */
+  readonly path: string;
+  readonly status: "done" | "done-with-concerns" | "needs-context" | "blocked";
+  readonly entries: readonly string[];
+  readonly replaced: boolean;
 }
 
 export interface ShownEntry {

@@ -13,6 +13,7 @@ import type { DocumentKind } from "./common.ts";
 import { locate, STATE_KINDS } from "./registry.ts";
 import type { KindName, Located, OpaqueKind } from "./registry.ts";
 import { renderDocument } from "./render.ts";
+import type { RenderStyle } from "./render.ts";
 
 type Data = Record<string, unknown>;
 
@@ -135,7 +136,7 @@ export function writeDocument(
   }
   const kind = kindOf(located.kind, kinds);
   const data = validate(located, kind.schema, document.data, "policy/validation-failed");
-  store.write(path, renderDocument(data, document.body));
+  store.write(path, renderDocument(data, document.body, styleOf(located.kind)));
 }
 
 /** Brings an older document to the current version of its kind; never downgrades. */
@@ -169,7 +170,7 @@ export function migrateDocument(
       migrated = step(migrated);
     }
     const valid = validate(located, kind.schema, migrated, "state/ledger-invalid");
-    store.write(path, renderDocument(valid, body));
+    store.write(path, renderDocument(valid, body, styleOf(located.kind)));
     return { status: "migrated", from, to: kind.version };
   } catch (error) {
     if (error instanceof KernelRefusal) return { status: "skipped", why: error.refusal.why };
@@ -187,6 +188,11 @@ function locateOr(path: string, rule: Rule): Located {
 
 function isOpaque(kind: KindName | OpaqueKind): kind is OpaqueKind {
   return kind === "spec-delta" || kind === "evidence-capture";
+}
+
+/** The report envelope is what an agent returns, so its lists stay on one line. */
+function styleOf(kind: KindName): RenderStyle {
+  return kind === "report" ? "flow" : "block";
 }
 
 function kindOf(name: KindName, kinds: KindOverrides): DocumentKind {

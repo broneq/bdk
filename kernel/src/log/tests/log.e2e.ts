@@ -427,71 +427,91 @@ describe("bdk log add --category (P8)", () => {
 });
 
 const REPORT =
-  "# Plan verification\n\nPart 02 leans on a helper that does not exist.\n\n" +
-  "```bdk-entries\n" +
-  "- type: blocker\n" +
-  "  summary: plan claims verifyToken exists; it does not\n" +
-  "  refs: [plan/parts/02-login.md, src/auth/token.ts]\n" +
-  "- type: finding\n" +
-  "  summary: part 02 has no test for expiry\n" +
-  "  refs: [plan/parts/02-login.md]\n" +
-  "  severity: high\n" +
-  "```\n";
+  "---\n" +
+  "status: done-with-concerns\n" +
+  "files: []\n" +
+  "entries: []\n" +
+  "evidence: []\n" +
+  "---\n" +
+  "# Plan verification\n\nPart 02 leans on a helper that does not exist.\n";
 
 function ingest(root: string, stdin: string, ...args: string[]) {
   return bdk(["log", "ingest", "--ticket", TICKET, ...args, "--json"], root, { stdin });
 }
 
 describe("bdk log ingest", () => {
-  it("exit 0: a report on stdin is stored and its entries carry the role", () => {
+  it("exit 0: the report is stored with the stamped fields; no entry is written", () => {
     const { root, dir } = opened();
     const report = ticketed(dir);
-    const result = answered(ingest(root, REPORT), "output/log-ingest.json") as {
-      entries: { source: string; ticket: string; type: string }[];
-      downgraded: unknown[];
-    };
-    expect(result.entries.map((entry) => [entry.type, entry.source, entry.ticket])).toEqual([
-      ["blocker", "agent:plan-verifier", TICKET],
-      ["finding", "agent:plan-verifier", TICKET],
-    ]);
-    expect(result.downgraded).toEqual([]);
-    expect(read(root, report)).toBe(REPORT);
-    expect(logFiles(dir)).toHaveLength(3);
-  });
-
-  it("exit 0: --file reads the report without copying it; a second ingest deduplicates", () => {
-    const { root, dir } = opened();
-    const report = ticketed(dir);
-    fileStore().write(join(root, "notes.md"), REPORT);
-    const first = answered(ingest(root, "", "--file", "notes.md"), "output/log-ingest.json");
-    const again = answered(ingest(root, "", "--file", "notes.md"), "output/log-ingest.json");
-    expect(again.entries).toEqual(first.entries);
-    expect(() => read(root, report)).toThrow();
-    expect(logFiles(dir)).toHaveLength(3);
-  });
-
-  it("exit 3 input/invalid-block: a wrong type names item, field and line; nothing written", () => {
-    const { root, dir } = opened();
-    ticketed(dir);
-    const before = logFiles(dir);
-    const result = refused(
-      ingest(root, REPORT.replace("- type: finding", "- type: bug")),
-      3,
-      "input/invalid-block",
+    const id = add(root, "observation", "naming drifts", "--ref", "02", "--ticket", TICKET).entry
+      .id;
+    const result = answered(
+      ingest(root, REPORT.replace("entries: []", `entries: [${id}]`)),
+      "output/log-ingest.json",
     );
-    expect(result.why).toMatch(/^item 2, line 9: type "bug" /);
-    expect(logFiles(dir)).toEqual(before);
+    expect(result).toStrictEqual({
+      ticket: TICKET,
+      role: "verifier",
+      path: report,
+      status: "done-with-concerns",
+      entries: [id],
+      replaced: false,
+    });
+    expect(read(root, report)).toBe(
+      `---\nschema: 1\nticket: ${TICKET}\nrole: verifier\nstatus: done-with-concerns\n` +
+        `files: []\nentries: [ ${id} ]\nevidence: []\n---\n` +
+        "# Plan verification\n\nPart 02 leans on a helper that does not exist.\n",
+    );
+    // The Change's opening transition and the observation; ingest adds none.
+    expect(logFiles(dir)).toHaveLength(2);
   });
 
-  it("exit 3 input/forbidden-field: an item carries source", () => {
+  it("exit 0: a second call under the same ticket replaces the report", () => {
+    const { root, dir } = opened();
+    const report = ticketed(dir);
+    answered(ingest(root, REPORT), "output/log-ingest.json");
+    const again = answered(
+      ingest(root, REPORT.replace("# Plan", "# Second plan")),
+      "output/log-ingest.json",
+    );
+    expect(again.replaced).toBe(true);
+    expect(read(root, report)).toContain("# Second plan verification");
+  });
+
+  it("exit 3 input/invalid-envelope: a wrong status names the field and its line; nothing written", () => {
+    const { root, dir } = opened();
+    const report = ticketed(dir);
+    const result = refused(
+      ingest(root, REPORT.replace("status: done-with-concerns", "status: finished")),
+      3,
+      "input/invalid-envelope",
+    );
+    expect(result.why).toMatch(/^line 2: status is invalid/);
+    expect(() => read(root, report)).toThrow();
+  });
+
+  it("exit 3 input/forbidden-field: the frontmatter carries role", () => {
     const { root, dir } = opened();
     ticketed(dir);
     const result = refused(
-      ingest(root, REPORT.replace("  severity: high", "  source: user")),
+      ingest(root, REPORT.replace("files: []", "role: verifier\nfiles: []")),
       3,
       "input/forbidden-field",
     );
-    expect(result.why).toBe("item 2, line 12: source is stamped by the kernel");
+    expect(result.why).toBe("line 3: role is stamped by the kernel");
+  });
+
+  it("exit 2 policy/entries-missing: an entry of no ticket; nothing written", () => {
+    const { root, dir } = opened();
+    const report = ticketed(dir);
+    const id = add(root, "observation", "written without a ticket", "--ref", "02").entry.id;
+    const result = refused(
+      ingest(root, REPORT.replace("entries: []", `entries: [${id}]`)),
+      2,
+      "policy/entries-missing",
+    );
+    expect(result.why).toContain(id);
+    expect(() => read(root, report)).toThrow();
   });
 
   it("exit 3 input/missing-argument: no --ticket", () => {

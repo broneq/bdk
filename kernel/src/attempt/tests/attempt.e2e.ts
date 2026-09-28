@@ -213,21 +213,20 @@ describe("bdk attempt close", () => {
     expect(result.why).toContain("L-missing0");
   });
 
-  it("exit 2 policy/entries-missing: the counter of log ingest checked at close", () => {
+  it("exit 2 policy/entries-missing: the ids log ingest checked are checked again at close", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
     dispatched(change, ticket, "01-1");
-    const block =
-      "```bdk-entries\n" +
-      "- type: finding\n  summary: expired link accepted\n  refs: [src/01-1.ts]\n" +
-      "- type: risk\n  summary: clock skew on the token\n  refs: [src/01-1.ts]\n" +
-      "```\n";
+    const ids = [
+      logUnder(change, ticket, "expired link accepted", "src/01-1.ts"),
+      logUnder(change, ticket, "clock skew on the token", "src/01-1.ts"),
+    ];
+    const report = `---\nstatus: done\nfiles: [src/01-1.ts]\nentries: [${ids.join(", ")}]\nevidence: []\n---\n# Done\n`;
     const ingested = answered(
-      bdk(["log", "ingest", "--ticket", ticket, "--json"], change.root, { stdin: block }),
+      bdk(["log", "ingest", "--ticket", ticket, "--json"], change.root, { stdin: report }),
       "output/log-ingest.json",
-    ) as { entries: { id: string }[] };
-    const ids = ingested.entries.map((entry) => entry.id);
-    expect(ids).toHaveLength(2);
+    );
+    expect(ingested.entries).toStrictEqual(ids);
     const result = refused(
       close(change, ticket, "ok", "--envelope", envelope(change, ticket, [...ids, "L-missing0"])),
       2,

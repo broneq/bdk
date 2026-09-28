@@ -135,14 +135,14 @@ function validate(input: AddInput): Refusal | undefined {
 }
 
 /** Why `value` cannot be superseded, or undefined when it names an existing entry. */
-export interface SupersedesProblem {
+interface SupersedesProblem {
   readonly rule: "input/invalid-argument" | "input/not-found";
   /** Completes a sentence whose subject is the entry id: "is not an entry id". */
   readonly why: string;
 }
 
 /** `supersedes` names an existing entry: bare in this Change, or qualified in any Change. */
-export function supersedesProblem(
+function supersedesProblem(
   deps: LogDeps,
   change: ActiveChange,
   index: IndexDb,

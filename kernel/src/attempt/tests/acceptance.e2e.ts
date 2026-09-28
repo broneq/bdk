@@ -153,17 +153,18 @@ describe("T22 acceptance", () => {
     refused(bdk(["part", "start", "03", "--json"], change.root), 2, "policy/part-too-large");
   });
 
-  it("a bdk-entries block with a wrong type is refused with its line number", () => {
+  // T23-D26 replaced the `bdk-entries` block by the report envelope.
+  it("a report envelope with a wrong status is refused with its line number", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
     dispatched(change, ticket, "01-1");
     const report =
-      "# Review\n\nOne problem.\n\n```bdk-entries\n- type: bug\n  summary: s\n  refs: [src/01-1.ts]\n```\n";
+      "---\nfiles: [src/01-1.ts]\nstatus: finished\nentries: []\nevidence: []\n---\n# Done\n";
     const result = refused(
       bdk(["log", "ingest", "--ticket", ticket, "--json"], change.root, { stdin: report }),
       3,
-      "input/invalid-block",
+      "input/invalid-envelope",
     );
-    expect(result.why).toMatch(/^item 1, line 6: type "bug" /);
+    expect(result.why).toMatch(/^line 3: status is invalid/);
   });
 });

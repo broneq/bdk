@@ -55,7 +55,7 @@ var require_identity = __commonJS({
     var isMap3 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === MAP;
     var isPair = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === PAIR;
     var isScalar3 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === SCALAR;
-    var isSeq3 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === SEQ;
+    var isSeq2 = (node3) => !!node3 && typeof node3 === "object" && node3[NODE_TYPE] === SEQ;
     function isCollection2(node3) {
       if (node3 && typeof node3 === "object")
         switch (node3[NODE_TYPE]) {
@@ -92,7 +92,7 @@ var require_identity = __commonJS({
     exports.isNode = isNode2;
     exports.isPair = isPair;
     exports.isScalar = isScalar3;
-    exports.isSeq = isSeq3;
+    exports.isSeq = isSeq2;
   }
 });
 
@@ -104,7 +104,7 @@ var require_visit = __commonJS({
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
     var REMOVE = /* @__PURE__ */ Symbol("remove node");
-    function visit(node3, visitor) {
+    function visit2(node3, visitor) {
       const visitor_ = initVisitor(visitor);
       if (identity.isDocument(node3)) {
         const cd = visit_(null, node3.contents, visitor_, Object.freeze([node3]));
@@ -113,9 +113,9 @@ var require_visit = __commonJS({
       } else
         visit_(null, node3, visitor_, Object.freeze([]));
     }
-    visit.BREAK = BREAK;
-    visit.SKIP = SKIP;
-    visit.REMOVE = REMOVE;
+    visit2.BREAK = BREAK;
+    visit2.SKIP = SKIP;
+    visit2.REMOVE = REMOVE;
     function visit_(key, node3, visitor, path) {
       const ctrl = callVisitor(key, node3, visitor, path);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
@@ -249,7 +249,7 @@ var require_visit = __commonJS({
         throw new Error(`Cannot replace node with ${pt} parent`);
       }
     }
-    exports.visit = visit;
+    exports.visit = visit2;
     exports.visitAsync = visitAsync;
   }
 });
@@ -259,7 +259,7 @@ var require_directives = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/doc/directives.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var visit = require_visit();
+    var visit2 = require_visit();
     var escapeChars = {
       "!": "%21",
       ",": "%2C",
@@ -403,7 +403,7 @@ var require_directives = __commonJS({
         let tagNames;
         if (doc && tagEntries.length > 0 && identity.isNode(doc.contents)) {
           const tags = {};
-          visit.visit(doc.contents, (_key, node3) => {
+          visit2.visit(doc.contents, (_key, node3) => {
             if (identity.isNode(node3) && node3.tag)
               tags[node3.tag] = true;
           });
@@ -430,7 +430,7 @@ var require_anchors = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/doc/anchors.js"(exports) {
     "use strict";
     var identity = require_identity();
-    var visit = require_visit();
+    var visit2 = require_visit();
     function anchorIsValid(anchor2) {
       if (/[\x00-\x19\s,[\]{}]/.test(anchor2)) {
         const sa = JSON.stringify(anchor2);
@@ -441,7 +441,7 @@ var require_anchors = __commonJS({
     }
     function anchorNames(root) {
       const anchors = /* @__PURE__ */ new Set();
-      visit.visit(root, {
+      visit2.visit(root, {
         Value(_key, node3) {
           if (node3.anchor)
             anchors.add(node3.anchor);
@@ -621,7 +621,7 @@ var require_Alias = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/nodes/Alias.js"(exports) {
     "use strict";
     var anchors = require_anchors();
-    var visit = require_visit();
+    var visit2 = require_visit();
     var identity = require_identity();
     var Node = require_Node();
     var toJS = require_toJS();
@@ -647,7 +647,7 @@ var require_Alias = __commonJS({
           nodes = ctx.aliasResolveCache;
         } else {
           nodes = [];
-          visit.visit(doc, {
+          visit2.visit(doc, {
             Node: (_key, node3) => {
               if (identity.isAlias(node3) || identity.hasAnchor(node3))
                 nodes.push(node3);
@@ -3414,7 +3414,7 @@ var require_Document = __commonJS({
     var applyReviver = require_applyReviver();
     var createNode = require_createNode();
     var directives = require_directives();
-    var Document = class _Document {
+    var Document2 = class _Document {
       constructor(value, replacer, options) {
         this.commentBefore = null;
         this.comment = null;
@@ -3704,7 +3704,7 @@ var require_Document = __commonJS({
         return true;
       throw new Error("Expected a YAML collection as document contents");
     }
-    exports.Document = Document;
+    exports.Document = Document2;
   }
 });
 
@@ -5069,13 +5069,13 @@ var require_compose_node = __commonJS({
 var require_compose_doc = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
-    var Document = require_Document();
+    var Document2 = require_Document();
     var composeNode = require_compose_node();
     var resolveEnd = require_resolve_end();
     var resolveProps = require_resolve_props();
     function composeDoc(options, directives, { offset, start, value, end }, onError) {
       const opts = Object.assign({ _directives: directives }, options);
-      const doc = new Document.Document(void 0, opts);
+      const doc = new Document2.Document(void 0, opts);
       const ctx = {
         atKey: false,
         atRoot: true,
@@ -5114,7 +5114,7 @@ var require_composer = __commonJS({
     "use strict";
     var node_process = __require("process");
     var directives = require_directives();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var errors = require_errors();
     var identity = require_identity();
     var composeDoc = require_compose_doc();
@@ -5303,7 +5303,7 @@ ${end.comment}` : end.comment;
           this.doc = null;
         } else if (forceDoc) {
           const opts = Object.assign({ _directives: this.directives }, this.options);
-          const doc = new Document.Document(void 0, opts);
+          const doc = new Document2.Document(void 0, opts);
           if (this.atDirectives)
             this.onError(endOffset, "MISSING_CHAR", "Missing directives-end indicator line");
           doc.range = [0, endOffset, endOffset];
@@ -5569,15 +5569,15 @@ var require_cst_visit = __commonJS({
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
     var REMOVE = /* @__PURE__ */ Symbol("remove item");
-    function visit(cst, visitor) {
+    function visit2(cst, visitor) {
       if ("type" in cst && cst.type === "document")
         cst = { start: cst.start, value: cst.value };
       _visit(Object.freeze([]), cst, visitor);
     }
-    visit.BREAK = BREAK;
-    visit.SKIP = SKIP;
-    visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path) => {
+    visit2.BREAK = BREAK;
+    visit2.SKIP = SKIP;
+    visit2.REMOVE = REMOVE;
+    visit2.itemAtPath = (cst, path) => {
       let item3 = cst;
       for (const [field2, index2] of path) {
         const tok = item3?.[field2];
@@ -5588,8 +5588,8 @@ var require_cst_visit = __commonJS({
       }
       return item3;
     };
-    visit.parentCollection = (cst, path) => {
-      const parent = visit.itemAtPath(cst, path.slice(0, -1));
+    visit2.parentCollection = (cst, path) => {
+      const parent = visit2.itemAtPath(cst, path.slice(0, -1));
       const field2 = path[path.length - 1][0];
       const coll = parent?.[field2];
       if (coll && "items" in coll)
@@ -5620,7 +5620,7 @@ var require_cst_visit = __commonJS({
       }
       return typeof ctrl === "function" ? ctrl(item3, path) : ctrl;
     }
-    exports.visit = visit;
+    exports.visit = visit2;
   }
 });
 
@@ -7225,7 +7225,7 @@ var require_public_api = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
     var composer = require_composer();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var errors = require_errors();
     var log = require_log();
     var identity = require_identity();
@@ -7308,7 +7308,7 @@ var require_public_api = __commonJS({
       }
       if (identity.isDocument(value) && !_replacer)
         return value.toString(options);
-      return new Document.Document(value, _replacer, options).toString(options);
+      return new Document2.Document(value, _replacer, options).toString(options);
     }
     exports.parse = parse9;
     exports.parseAllDocuments = parseAllDocuments;
@@ -7322,7 +7322,7 @@ var require_dist = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/index.js"(exports) {
     "use strict";
     var composer = require_composer();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var Schema = require_Schema();
     var errors = require_errors();
     var Alias = require_Alias();
@@ -7336,9 +7336,9 @@ var require_dist = __commonJS({
     var lineCounter = require_line_counter();
     var parser = require_parser();
     var publicApi = require_public_api();
-    var visit = require_visit();
+    var visit2 = require_visit();
     exports.Composer = composer.Composer;
-    exports.Document = Document.Document;
+    exports.Document = Document2.Document;
     exports.Schema = Schema.Schema;
     exports.YAMLError = errors.YAMLError;
     exports.YAMLParseError = errors.YAMLParseError;
@@ -7364,8 +7364,8 @@ var require_dist = __commonJS({
     exports.parseAllDocuments = publicApi.parseAllDocuments;
     exports.parseDocument = publicApi.parseDocument;
     exports.stringify = publicApi.stringify;
-    exports.visit = visit.visit;
-    exports.visitAsync = visit.visitAsync;
+    exports.visit = visit2.visit;
+    exports.visitAsync = visit2.visitAsync;
   }
 });
 
@@ -17241,9 +17241,18 @@ function locate(path) {
 
 // kernel/src/shared/store/state/render.ts
 var import_yaml2 = __toESM(require_dist(), 1);
-function renderDocument(data, body) {
-  return `---
+function renderDocument(data, body, style = "block") {
+  if (style === "block") return `---
 ${(0, import_yaml2.stringify)(data, { lineWidth: 0 })}---
+${body}`;
+  const document = new import_yaml2.Document(data);
+  (0, import_yaml2.visit)(document, {
+    Seq(_, node3) {
+      node3.flow = true;
+    }
+  });
+  return `---
+${document.toString({ lineWidth: 0 })}---
 ${body}`;
 }
 
@@ -17295,7 +17304,7 @@ function writeDocument(store2, path, document, kinds = {}) {
   }
   const kind = kindOf(located.kind, kinds);
   const data = validate2(located, kind.schema, document.data, "policy/validation-failed");
-  store2.write(path, renderDocument(data, document.body));
+  store2.write(path, renderDocument(data, document.body, styleOf(located.kind)));
 }
 function migrateDocument(store2, path, kinds = {}) {
   const text7 = store2.read(path);
@@ -17323,7 +17332,7 @@ function migrateDocument(store2, path, kinds = {}) {
       migrated = step(migrated);
     }
     const valid = validate2(located, kind.schema, migrated, "state/ledger-invalid");
-    store2.write(path, renderDocument(valid, body));
+    store2.write(path, renderDocument(valid, body, styleOf(located.kind)));
     return { status: "migrated", from, to: kind.version };
   } catch (error2) {
     if (error2 instanceof KernelRefusal) return { status: "skipped", why: error2.refusal.why };
@@ -17339,6 +17348,9 @@ function locateOr(path, rule2) {
 }
 function isOpaque(kind) {
   return kind === "spec-delta" || kind === "evidence-capture";
+}
+function styleOf(kind) {
+  return kind === "report" ? "flow" : "block";
 }
 function kindOf(name, kinds) {
   return kinds[name] ?? STATE_KINDS[name];
@@ -17840,7 +17852,7 @@ function wavesOf(what, parts) {
   }
   const waves = /* @__PURE__ */ new Map();
   const path = [];
-  const visit = (id) => {
+  const visit2 = (id) => {
     const known = waves.get(id);
     if (known !== void 0) return known;
     const start = path.indexOf(id);
@@ -17849,12 +17861,12 @@ function wavesOf(what, parts) {
       invalid3(`${what} parts ${cycle.join(", ")} form a dependency cycle`);
     }
     path.push(id);
-    const wave = 1 + Math.max(0, ...(byId.get(id)?.["depends-on"] ?? []).map(visit));
+    const wave = 1 + Math.max(0, ...(byId.get(id)?.["depends-on"] ?? []).map(visit2));
     path.pop();
     waves.set(id, wave);
     return wave;
   };
-  for (const id of byId.keys()) visit(id);
+  for (const id of byId.keys()) visit2(id);
   return waves;
 }
 function invalid3(why) {
@@ -18804,7 +18816,7 @@ function line(item3) {
 }
 
 // kernel/src/attempt/use-cases/close.ts
-import { isAbsolute as isAbsolute3, join as join27 } from "node:path";
+import { isAbsolute as isAbsolute2, join as join26 } from "node:path";
 
 // kernel/src/attempt/domain/ladder.ts
 function currentRound(records, entries) {
@@ -18937,9 +18949,6 @@ function compare2(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-// kernel/src/log/commands/log.ts
-import { isAbsolute as isAbsolute2, join as join19 } from "node:path";
-
 // kernel/src/log/render/log.ts
 function renderAdd(result2) {
   const { entry } = result2;
@@ -18951,13 +18960,10 @@ ${downgrade}${result2.path}
 `;
 }
 function renderIngest(report2) {
-  const count2 = report2.entries.length;
-  const lines = report2.entries.map(
-    (entry) => `${entry.id} ${entry.type} ${entry.status}: ${entry.summary}`
-  );
-  return `${String(count2)} ${count2 === 1 ? "entry" : "entries"} ingested under ${report2.ticket}
-${lines.map((line2) => `${line2}
-`).join("")}`;
+  const verb = report2.replaced ? "replaced" : "stored";
+  return `report ${verb} for ${report2.ticket} (${report2.role}, ${report2.status})
+${report2.path}
+`;
 }
 function renderList2(items) {
   if (items.length === 0) return "no entries\n";
@@ -19163,7 +19169,7 @@ var item = (description) => strictObject({
     description: "Unique within the array; the merge key."
   }),
   description: string2().min(1)
-}).meta({ description });
+}).meta({ title: "category entry", description });
 var BLOCKING = [
   {
     id: "architecture",
@@ -19357,215 +19363,143 @@ function checkSupersedes(deps, change, index2, value) {
 // kernel/src/log/use-cases/ingest.ts
 import { join as join16 } from "node:path";
 
-// kernel/src/log/use-cases/block.ts
+// kernel/src/log/use-cases/envelope.ts
 var import_yaml6 = __toESM(require_dist(), 1);
-var INFO = "bdk-entries";
-function readBlock(input) {
-  const lines = input.split("\n");
-  const found = fences(lines);
-  if (typeof found === "string") return { invalid: found };
-  if (found.length !== 1) {
+function readEnvelope(input) {
+  const split = splitFrontmatter(input);
+  if (split.frontmatter === void 0) {
     return {
-      invalid: `the input holds ${String(found.length)} fenced ${INFO} blocks; it needs exactly one`
+      invalid: "the report has no frontmatter; it opens with a --- line, the envelope fields and a closing --- line"
     };
   }
-  const [fence] = found;
-  const outside = [...lines.slice(0, fence.open), ...lines.slice(fence.close + 1)];
-  const offset = fence.open + 1;
   const counter2 = new import_yaml6.LineCounter();
-  const document = (0, import_yaml6.parseDocument)(lines.slice(fence.open + 1, fence.close).join("\n"), {
+  const document = (0, import_yaml6.parseDocument)(split.frontmatter, {
     lineCounter: counter2,
     uniqueKeys: true,
     prettyErrors: false
   });
-  const lineOf = (node3) => counter2.linePos(node3?.range?.[0] ?? 0).line + offset;
+  const lineAt = (offset) => counter2.linePos(offset).line + 1;
+  const end = split.frontmatter.split("\n").length + 1;
   const [error2] = document.errors;
   if (error2 !== void 0) {
-    const line2 = counter2.linePos(error2.pos[0]).line + offset;
-    return { invalid: `line ${String(line2)}: ${error2.message.split("\n")[0] ?? ""}` };
-  }
-  const root = document.contents;
-  if (!(0, import_yaml6.isSeq)(root)) {
     return {
-      invalid: `line ${String(lineOf(root))}: the ${INFO} block is not a YAML sequence of entries`
+      invalid: `line ${String(lineAt(error2.pos[0]))}: ${error2.message.split("\n")[0] ?? ""}`
     };
   }
-  const items = [];
-  for (const [at, node3] of root.items.entries()) {
-    const position = at + 1;
-    if (!(0, import_yaml6.isMap)(node3)) {
-      return {
-        invalid: `item ${String(position)}, line ${String(lineOf(node3))}: an entry is a mapping of fields`
-      };
-    }
-    const fields = {};
-    const keyLines = {};
-    for (const pair of node3.items) {
-      const key = (0, import_yaml6.isScalar)(pair.key) ? String(pair.key.value) : String(pair.key);
-      fields[key] = (0, import_yaml6.isScalar)(pair.value) ? pair.value.value : pair.value?.toJSON();
-      keyLines[key] = lineOf(pair.key);
-    }
-    items.push({ position, line: lineOf(node3), fields, lines: keyLines });
+  const root = document.contents;
+  if (root === null) return { fields: {}, lines: {}, end, body: split.body };
+  if (!(0, import_yaml6.isMap)(root)) {
+    return { invalid: "line 2: the frontmatter is not a mapping of envelope fields" };
   }
-  return { items, report: outside.some((line2) => line2.trim() !== "") };
-}
-function fences(lines) {
-  const found = [];
-  let at = 0;
-  while (at < lines.length) {
-    const opening = /^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)/.exec(lines[at] ?? "");
-    if (opening === null) {
-      at++;
-      continue;
-    }
-    const marker = opening[1] ?? "";
-    const closing = new RegExp(
-      `^ {0,3}${marker.startsWith("`") ? "`" : "~"}{${String(marker.length)},}\\s*$`
-    );
-    let close = at + 1;
-    while (close < lines.length && !closing.test(lines[close] ?? "")) close++;
-    if (opening[2] === INFO) {
-      if (close === lines.length)
-        return `line ${String(at + 1)}: the ${INFO} fence is never closed`;
-      found.push({ open: at, close });
-    }
-    at = close + 1;
+  const lines = {};
+  for (const pair of root.items) {
+    const key = (0, import_yaml6.isScalar)(pair.key) ? String(pair.key.value) : String(pair.key);
+    lines[key] = lineAt(pair.key.range?.[0] ?? 0);
   }
-  return found;
+  const fields = document.toJS();
+  return { fields, lines, end, body: split.body };
 }
 
 // kernel/src/log/use-cases/ingest.ts
-var STAMPED = ["id", "at", "author", "source", "ticket", "fingerprint"];
-var FIELDS = [
-  "type",
-  "summary",
-  "refs",
-  "body",
-  "review",
-  "supersedes",
-  "status",
-  "severity",
-  "category",
-  "options"
-];
-var TYPES = ENTRY_TYPES.filter((type) => type !== "transition");
-var STAND_INS = {
-  schema: 1,
-  id: "L-00000000",
-  source: "kernel",
-  author: "bdk",
-  at: "2026-01-01T00:00:00Z"
-};
-var FINGERPRINT = `sha256:${"0".repeat(64)}`;
-function ingestBlock(deps, change, input) {
+var STAMPED = ["schema", "ticket", "role"];
+var FIELDS = ["status", "files", "entries", "evidence", "reason"];
+function ingestReport(deps, change, input) {
   return withChangeIndex(deps, change, async (index2) => {
     const dispatch2 = ticketDispatch(index2, change.id, input.ticket);
-    if (dispatch2 === void 0) {
+    const report2 = dispatch2 === void 0 ? void 0 : reportPath(deps, change, dispatch2.path);
+    if (dispatch2 === void 0 || report2 === void 0) {
       return refuse(
         "policy/no-open-ticket",
         `${input.ticket} has no open attempt record with a dispatch package in ${change.id}`,
-        ["bdk attempt list", "bdk attempt open <loop> <target>"]
+        ["bdk attempt list", "bdk dispatch build <target>"]
       );
     }
-    const block = readBlock(input.text);
-    if ("invalid" in block) return invalidBlock(block.invalid);
-    const drafts = [];
-    for (const item3 of block.items) {
-      const draft = checkItem(deps, change, index2, item3, input.ticket);
-      if (isRefusal(draft)) return draft;
-      drafts.push(draft);
-    }
-    if (input.stdin && block.report) storeReport(deps, change, dispatch2.path, input.text);
-    const entries = [];
-    for (const draft of drafts) {
-      const appended = await appendEntry(deps, change, index2, draft, { dedupe: true });
-      if (isRefusal(appended)) return appended;
-      entries.push(appended.entry);
-      refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
-    }
-    return { ticket: input.ticket, entries, downgraded: [] };
+    const envelope = readEnvelope(input.text);
+    if ("invalid" in envelope) return invalidEnvelope(envelope.invalid);
+    const data = checkEnvelope(envelope, input.ticket, dispatch2.role);
+    if ("refused" in data) return data;
+    const missing = missingIds(deps, change, index2, input.ticket, data);
+    if (missing !== void 0) return missing;
+    const path = join16(change.projectRoot, report2);
+    const replaced = deps.store.read(path) !== void 0;
+    writeDocument(deps.store, path, { data, body: envelope.body });
+    return {
+      ticket: input.ticket,
+      role: dispatch2.role,
+      path: report2,
+      status: data.status,
+      entries: data.entries,
+      replaced
+    };
   });
 }
-function invalidBlock(why) {
+function reportPath(deps, change, dispatchPath) {
+  const dispatch2 = readDocument(deps.store, join16(change.projectRoot, dispatchPath));
+  if (dispatch2 === void 0 || !("data" in dispatch2)) return void 0;
+  const report2 = dispatch2.data.report;
+  return typeof report2 === "string" ? report2 : void 0;
+}
+function invalidEnvelope(why) {
   return refuse("input/invalid-envelope", why, [
-    "end the report with one ```bdk-entries fence holding a YAML list of entries",
-    "bdk log add <type> <summary> --ref <ref> for a single entry"
+    "fix the named field and pipe the whole report again",
+    `the frontmatter holds ${FIELDS.join(", ")}; reason only for blocked and needs-context`
   ]);
 }
-function checkItem(deps, change, index2, item3, ticket) {
-  const { fields } = item3;
-  const at = (field2) => `item ${String(item3.position)}, line ${String(item3.lines[field2] ?? item3.line)}: ${field2}`;
-  const stamped = Object.keys(fields).find(
-    (field2) => STAMPED.includes(field2)
-  );
+function checkEnvelope(envelope, ticket, role2) {
+  const at = (field3) => `line ${String(envelope.lines[field3] ?? envelope.end)}: ${field3}`;
+  const names = Object.keys(envelope.fields);
+  const stamped = names.find((field3) => STAMPED.includes(field3));
   if (stamped !== void 0) {
     return refuse("input/forbidden-field", `${at(stamped)} is stamped by the kernel`, [
-      "drop the field; the kernel stamps it from the ticket"
+      "drop the field; the kernel stamps schema, ticket and role from the ticket"
     ]);
   }
-  const unknown3 = Object.keys(fields).find(
-    (field2) => !FIELDS.includes(field2)
-  );
+  const unknown3 = names.find((field3) => !FIELDS.includes(field3));
   if (unknown3 !== void 0) {
-    return invalidBlock(`${at(unknown3)} is not an entry field; allowed: ${FIELDS.join(", ")}`);
-  }
-  const type = fields.type;
-  if (typeof type !== "string" || !TYPES.includes(type)) {
-    return invalidBlock(
-      `${at("type")} ${type === void 0 ? "is missing" : `${JSON.stringify(type)} is not a type a role writes`}; one of: ${TYPES.join(", ")}`
+    return invalidEnvelope(
+      `${at(unknown3)} is not an envelope field; allowed: ${FIELDS.join(", ")}`
     );
   }
-  if (fields.body !== void 0 && typeof fields.body !== "string") {
-    return invalidBlock(`${at("body")} is not a string`);
-  }
-  if (typeof fields.summary === "string" && fields.summary.trim() === "") {
-    return invalidBlock(`${at("summary")} is empty`);
-  }
-  if (fields.status === "superseded" || fields.status === "routed") {
-    return invalidBlock(
-      `${at("status")} ${fields.status} is ${fields.status === "superseded" ? "derived from supersedes" : "set only by log route"}, never written`
-    );
-  }
-  const { body, ...rest } = fields;
-  const parsed = STATE_KINDS.entry.schema.safeParse({
-    ...STAND_INS,
+  const parsed = STATE_KINDS.report.schema.safeParse({
+    schema: STATE_KINDS.report.version,
     ticket,
-    status: "proposed",
-    ...rest,
-    ...type === "learning" ? { fingerprint: FINGERPRINT } : {}
+    role: role2,
+    ...envelope.fields
   });
-  if (!parsed.success) {
-    const [issue2] = parsed.error.issues;
-    const field2 = issue2?.code === "unrecognized_keys" ? issue2.keys[0] ?? "type" : String(issue2?.path[0] ?? "type");
-    const why = issue2?.code === "unrecognized_keys" ? `is not a field of a ${type}` : `is invalid: ${issue2?.message ?? ""}`;
-    return invalidBlock(`${at(field2)} ${why}`);
-  }
-  const data = parsed.data;
-  const supersedes = data.supersedes;
-  if (supersedes !== void 0) {
-    const problem = supersedesProblem(deps, change, index2, supersedes);
-    if (problem !== void 0)
-      return invalidBlock(`${at("supersedes")} ${supersedes} ${problem.why}`);
-  }
-  return {
-    type,
-    summary: data.summary,
-    refs: data.refs,
-    body: body ?? "",
-    ticket,
-    ...rest.status === void 0 ? {} : { status: data.status },
-    ...data.review === true ? { review: true } : {},
-    ...supersedes === void 0 ? {} : { supersedes },
-    ...data.severity === void 0 ? {} : { severity: data.severity },
-    ...data.category === void 0 ? {} : { category: data.category },
-    ...data.options === void 0 ? {} : { options: data.options }
-  };
+  if (parsed.success) return parsed.data;
+  const [issue2] = parsed.error.issues;
+  const field2 = String(issue2?.path[0] ?? "status");
+  const message = issue2?.message ?? "";
+  return invalidEnvelope(
+    field2 in envelope.fields ? `${at(field2)} is invalid: ${message}` : `${field2} is missing from the frontmatter, which ends at line ${String(envelope.end)}: ${message}`
+  );
 }
-function storeReport(deps, change, dispatchPath, text7) {
-  const dispatch2 = readDocument(deps.store, join16(change.projectRoot, dispatchPath));
-  if (dispatch2 === void 0 || !("data" in dispatch2)) return;
-  const report2 = dispatch2.data.report;
-  if (typeof report2 === "string") deps.store.write(join16(change.projectRoot, report2), text7);
+function missingIds(deps, change, index2, ticket, data) {
+  const written = new Set(
+    listEntries(index2, change.id).filter((entry) => entry.ticket === ticket).map((entry) => entry.id)
+  );
+  const recorded2 = ticketEvidence(deps, change, ticket);
+  const missing = [
+    ...data.entries.filter((id) => !written.has(id)),
+    ...data.evidence.filter((id) => !recorded2.has(id))
+  ];
+  if (missing.length === 0) return void 0;
+  return refuse(
+    "policy/entries-missing",
+    `the envelope lists ${missing.join(", ")}, which ${missing.length === 1 ? "is" : "are"} not recorded under ${ticket}`,
+    [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`]
+  );
+}
+function ticketEvidence(deps, change, ticket) {
+  const dir = join16(change.dir, "evidence");
+  const ids = /* @__PURE__ */ new Set();
+  for (const name of deps.store.list(dir)) {
+    if (!name.endsWith(".md")) continue;
+    const document = readDocument(deps.store, join16(dir, name));
+    if (document === void 0 || !("data" in document) || document.kind !== "evidence") continue;
+    if (document.data.ticket === ticket) ids.add(String(document.data.id));
+  }
+  return ids;
 }
 
 // kernel/src/log/use-cases/list.ts
@@ -19734,31 +19668,18 @@ function ingestCommand(deps) {
     const ticket = text(context.flags["--ticket"]);
     if (ticket === void 0) {
       return refuse("input/missing-argument", "log ingest needs --ticket, the role's open ticket", [
-        "bdk log ingest --ticket <ticket> --file <report>"
+        "bdk log ingest --ticket <ticket> < report.md"
       ]);
     }
-    const file = text(context.flags["--file"]);
-    let input = file === void 0 ? context.runtime.readStdin() : void 0;
-    if (file !== void 0) {
-      input = deps.store.read(isAbsolute2(file) ? file : join19(context.cwd, file));
-      if (input === void 0) {
-        return refuse("input/invalid-argument", `--file ${file} does not exist`, [
-          `bdk log ingest --ticket ${ticket} --file .bdk/changes/<id>/reports/<report>.md`
-        ]);
-      }
-    }
-    if (input === void 0 || input.trim() === "") {
+    const input = context.runtime.readStdin();
+    if (input.trim() === "") {
       return refuse(
         "input/missing-argument",
-        "stdin is empty; log ingest reads a bdk-entries block",
-        [`bdk log ingest --ticket ${ticket} --file <report>`]
+        "stdin is empty; log ingest reads the report, its envelope as frontmatter",
+        [`bdk log ingest --ticket ${ticket} < report.md`]
       );
     }
-    const report2 = await ingestBlock(deps, active(context.change), {
-      ticket,
-      text: input,
-      stdin: file === void 0
-    });
+    const report2 = await ingestReport(deps, active(context.change), { ticket, text: input });
     return isRefusal(report2) ? report2 : { data: report2, text: renderIngest(report2) };
   };
 }
@@ -19921,7 +19842,7 @@ next: ${report2.next}
 }
 
 // kernel/src/graph/use-cases/done.ts
-import { join as join23 } from "node:path";
+import { join as join22 } from "node:path";
 
 // kernel/src/graph/domain/kinds/kind.ts
 var BaseKind = class {
@@ -20337,15 +20258,15 @@ function gateView(gate2, pending) {
 }
 function chainOf(start, find) {
   const seen = /* @__PURE__ */ new Map();
-  const visit = (node3) => {
+  const visit2 = (node3) => {
     for (const id of [...node3.instances ?? [], ...node3.requires]) {
       const required2 = find(id);
       if (required2 === void 0 || seen.has(id) || id === start.id) continue;
       seen.set(id, required2);
-      visit(required2);
+      visit2(required2);
     }
   };
-  visit(start);
+  visit2(start);
   const rest = [...seen.values()].sort(
     (a, b) => b.position - a.position || (a.nn === void 0 ? -1 : 1) - (b.nn === void 0 ? -1 : 1) || (a.nn ?? "").localeCompare(b.nn ?? "")
   );
@@ -20449,13 +20370,13 @@ function cycleOf(nodes, ids) {
   const byId = new Map(nodes.map((node3) => [node3.id, node3]));
   const finished = /* @__PURE__ */ new Set();
   const path = [];
-  const visit = (id) => {
+  const visit2 = (id) => {
     if (finished.has(id) || !ids.has(id)) return void 0;
     const start = path.indexOf(id);
     if (start >= 0) return [...path.slice(start), id];
     path.push(id);
     for (const required2 of byId.get(id)?.requires ?? []) {
-      const found = visit(required2);
+      const found = visit2(required2);
       if (found !== void 0) return found;
     }
     path.pop();
@@ -20463,7 +20384,7 @@ function cycleOf(nodes, ids) {
     return void 0;
   };
   for (const node3 of nodes) {
-    const found = visit(node3.id);
+    const found = visit2(node3.id);
     if (found !== void 0) return found;
   }
   return void 0;
@@ -20658,17 +20579,17 @@ function latestDone(entries) {
 }
 function sealedIds(order2, results) {
   const sealed = /* @__PURE__ */ new Set();
-  const visit = (id) => {
+  const visit2 = (id) => {
     const node3 = results.get(id);
     if (node3 === void 0) return;
     for (const required2 of [...node3.requires, ...node3.instances ?? []]) {
       if (sealed.has(required2)) continue;
       sealed.add(required2);
-      visit(required2);
+      visit2(required2);
     }
   };
   for (const id of order2) {
-    if (results.get(id)?.gate?.done === true) visit(id);
+    if (results.get(id)?.gate?.done === true) visit2(id);
   }
   return sealed;
 }
@@ -20712,7 +20633,7 @@ var pipelinePrompts = KIND_NAMES.map(pipelinePrompt);
 
 // kernel/src/graph/use-cases/hash.ts
 import { createHash as createHash3 } from "node:crypto";
-import { join as join20 } from "node:path";
+import { join as join19 } from "node:path";
 function inputHasher(store2, changeDir, codeTree) {
   return (inputs) => {
     if ("codeTree" in inputs) return codeTree ?? filesHash(store2, changeDir, []);
@@ -20724,7 +20645,7 @@ function filesHash(store2, changeDir, files) {
   for (const path of [...files].sort()) {
     hash2.update(path);
     hash2.update("\0");
-    hash2.update(store2.read(join20(changeDir, path)) ?? "");
+    hash2.update(store2.read(join19(changeDir, path)) ?? "");
     hash2.update("\0");
   }
   return `sha256:${hash2.digest("hex")}`;
@@ -20732,7 +20653,7 @@ function filesHash(store2, changeDir, files) {
 
 // kernel/src/graph/use-cases/pipeline.ts
 var import_yaml7 = __toESM(require_dist(), 1);
-import { join as join21 } from "node:path";
+import { join as join20 } from "node:path";
 
 // kernel/src/graph/schema/pipeline.ts
 var KEBAB = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
@@ -20767,7 +20688,7 @@ var pipelineSchema = strictObject({
 var PIPELINE_FILE = "pipeline/pipeline.yaml";
 var cache2 = /* @__PURE__ */ new WeakMap();
 function loadPipeline(store2, pluginRoot, settings, kinds) {
-  const path = join21(pluginRoot, PIPELINE_FILE);
+  const path = join20(pluginRoot, PIPELINE_FILE);
   const text7 = store2.read(path);
   if (text7 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
   const known = cache2.get(kinds)?.get(text7);
@@ -20821,7 +20742,7 @@ function keyOf(path) {
 }
 
 // kernel/src/graph/use-cases/view.ts
-import { join as join22 } from "node:path";
+import { join as join21 } from "node:path";
 function changeView(input) {
   const { store: store2, dir } = input;
   const files = /* @__PURE__ */ new Map();
@@ -20829,7 +20750,7 @@ function changeView(input) {
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
   const read3 = (path) => {
     if (files.has(path)) return files.get(path);
-    const facts = readFacts(store2, join22(dir, path));
+    const facts = readFacts(store2, join21(dir, path));
     files.set(path, facts);
     return facts;
   };
@@ -20846,14 +20767,14 @@ function changeView(input) {
     profile: input.profile,
     entries: input.entries,
     file: (path) => read3(path)?.facts,
-    list: (sub) => store2.list(join22(dir, sub)).filter((name) => !name.endsWith("/")),
+    list: (sub) => store2.list(join21(dir, sub)).filter((name) => !name.endsWith("/")),
     reportStatus: (entry) => {
       const row = byId.get(entry.id);
       if (row === void 0) return void 0;
-      const data = documentData(store2, join22(input.projectRoot, row.path));
+      const data = documentData(store2, join21(input.projectRoot, row.path));
       const report2 = data?.report;
       if (typeof report2 !== "string") return void 0;
-      const status = documentData(store2, join22(dir, report2))?.status;
+      const status = documentData(store2, join21(dir, report2))?.status;
       return typeof status === "string" ? status : void 0;
     },
     planPart,
@@ -21153,7 +21074,7 @@ function markDone(deps, change, globalDir2, id) {
       if ("refused" in written) return written;
       entry = written.entry.id;
     }
-    if (generated !== void 0) deps.store.write(join23(change.dir, generated.path), generated.text);
+    if (generated !== void 0) deps.store.write(join22(change.dir, generated.path), generated.text);
     const after = await reread(deps, change, index2, globalDir2);
     if ("refused" in after) return after;
     return {
@@ -21406,7 +21327,7 @@ var SKILL_CONTEXT = {
 
 // kernel/src/ctx/use-cases/parts.ts
 var import_yaml8 = __toESM(require_dist(), 1);
-import { join as join24 } from "node:path/posix";
+import { join as join23 } from "node:path/posix";
 
 // kernel/src/rules/render/show.ts
 function renderTicketRules(rules2) {
@@ -21693,7 +21614,7 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "file": {
-      const text7 = input.store.read(join24(input.pluginRoot, part.path));
+      const text7 = input.store.read(join23(input.pluginRoot, part.path));
       if (text7 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
       return [{ title: part.title, body: text7, part: { kind: "file", source: part.path } }];
     }
@@ -21795,13 +21716,13 @@ function width(text7) {
 
 // kernel/src/ctx/use-cases/startup.ts
 var import_yaml9 = __toESM(require_dist(), 1);
-import { join as join25 } from "node:path/posix";
+import { join as join24 } from "node:path/posix";
 var STARTUP_FILE = "STARTUP_INSTRUCTIONS.md";
 var AGENTS_DIR = "agents";
 var OPEN = "<!-- bdk:agents-table -->";
 var CLOSE = "<!-- /bdk:agents-table -->";
 function readStartup(deps) {
-  const text7 = deps.store.read(join25(deps.pluginRoot, STARTUP_FILE));
+  const text7 = deps.store.read(join24(deps.pluginRoot, STARTUP_FILE));
   if (text7 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
   const lines = text7.split("\n");
   const open2 = lines.indexOf(OPEN);
@@ -21812,8 +21733,8 @@ function readStartup(deps) {
   return { before: lines.slice(0, open2 + 1), rows: agents(deps), after: lines.slice(close) };
 }
 function agents(deps) {
-  const dir = join25(deps.pluginRoot, AGENTS_DIR);
-  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join25(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
+  const dir = join24(deps.pluginRoot, AGENTS_DIR);
+  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join24(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
 }
 function agentRow(path, text7) {
   const { frontmatter } = splitFrontmatter(text7);
@@ -22337,7 +22258,7 @@ function wavesOf2(parts) {
 }
 
 // kernel/src/part/use-cases/split.ts
-import { join as join26 } from "node:path";
+import { join as join25 } from "node:path";
 
 // kernel/src/part/domain/split.ts
 var TASK_HEADING = /^## (\d{2}-[1-9]\d*)(?:\s|$)/;
@@ -22417,7 +22338,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
     const first = part.tasks.find((task) => task.id === moved[0]);
     const file = `plan/parts/${newPart}-${slugOf(first?.title ?? part.data.title)}.md`;
     const original = frontmatterOf(deps, part);
-    writeDocument(deps.store, join26(change.dir, file), {
+    writeDocument(deps.store, join25(change.dir, file), {
       data: { ...original, id: newPart, title: `${part.data.title} (split from ${id})` },
       body: body.moved
     });
@@ -22443,7 +22364,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
       title: `${part.data.title} (split from ${id})`,
       "depends-on": [...part.data["depends-on"]]
     });
-    deps.store.write(join26(change.dir, "plan/index.md"), generatePlanIndex(rows));
+    deps.store.write(join25(change.dir, "plan/index.md"), generatePlanIndex(rows));
     const written = await appendEntry(
       deps,
       change,
@@ -22865,7 +22786,7 @@ function diffReport(diff) {
   return { declared: diff.declared, touched: diff.touched, undeclared: diff.undeclared };
 }
 function missingEntries(deps, cwd, envelope, underTicket) {
-  const path = isAbsolute3(envelope) ? envelope : join27(cwd, envelope);
+  const path = isAbsolute2(envelope) ? envelope : join26(cwd, envelope);
   const document = deps.store.read(path) === void 0 ? void 0 : readDocument(deps.store, path);
   if (document === void 0 || !("data" in document) || document.kind !== "report") {
     return refuse("input/not-found", `no report envelope at ${envelope}`, [
@@ -23031,7 +22952,7 @@ function item2(record4, entries) {
 }
 
 // kernel/src/attempt/use-cases/open.ts
-import { join as join28 } from "node:path";
+import { join as join27 } from "node:path";
 var PART_ID = /^\d{2}$/;
 var SUMMARY_MAX3 = 120;
 function openAttempt(deps, change, globalDir2, input) {
@@ -23077,7 +22998,7 @@ function openAttempt(deps, change, globalDir2, input) {
     }
     const ticket = newId("A-", deps.random);
     const openedAt = deps.clock.now();
-    const path = join28(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
+    const path = join27(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
     writeDocument(deps.store, path, {
       data: {
         schema: 1,
@@ -23495,7 +23416,7 @@ function listAllChanges(deps, projectRoot, options) {
 }
 
 // kernel/src/change/use-cases/new.ts
-import { join as join29 } from "node:path";
+import { join as join28 } from "node:path";
 
 // kernel/src/change/domain/change.ts
 var SLUG_MAX = 40;
@@ -23591,7 +23512,7 @@ async function newChange(deps, where, input) {
   await ensureIgnored(deps.store, deps.git, projectRoot);
   const dir = liveChangeDir(projectRoot, id);
   const profile = input.profile ?? "small";
-  writeDocument(deps.store, join29(dir, "change.md"), {
+  writeDocument(deps.store, join28(dir, "change.md"), {
     data: {
       schema: 1,
       id,
@@ -23847,14 +23768,14 @@ function done(value) {
 }
 
 // kernel/src/change/use-cases/status.ts
-import { join as join30 } from "node:path";
+import { join as join29 } from "node:path";
 function changeStatus(deps, change, globalDir2) {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index2) => {
     refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
     const read3 = await readGraph(deps, change, index2, globalDir2);
     if ("refused" in read3) return read3;
     const graph = graphSummary(read3);
-    const document = readDocument(deps.store, join30(change.dir, "change.md"));
+    const document = readDocument(deps.store, join29(change.dir, "change.md"));
     const data = document !== void 0 && "data" in document ? document.data : {};
     const facts = changeFacts(index2, change.id, stageResolver(deps));
     return {
@@ -24176,7 +24097,7 @@ function renderCheck(report2) {
 }
 
 // kernel/src/config/use-cases/check.ts
-import { join as join31 } from "node:path";
+import { join as join30 } from "node:path";
 var LEGACY_SETTINGS = ".bdk/settings.json";
 function checkConfig(input) {
   const resolved = resolveOrRefuse(input);
@@ -24211,7 +24132,7 @@ function report(input, resolved) {
       });
     }
   }
-  if (input.store.exists(join31(input.projectRoot, LEGACY_SETTINGS))) {
+  if (input.store.exists(join30(input.projectRoot, LEGACY_SETTINGS))) {
     problems.push({
       layer: "project",
       path: LEGACY_SETTINGS,
@@ -24222,7 +24143,7 @@ function report(input, resolved) {
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
   if (snapshot !== void 0) {
     input.store.write(
-      join31(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      join30(input.projectRoot, OFFLINE_SCHEMA_PATH),
       offlineSchemaText(input.settings)
     );
   }
@@ -24326,10 +24247,10 @@ function originOf(leaf, set) {
 }
 function leafKeys(value, prefix) {
   if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join32(prefix, key)));
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join31(prefix, key)));
   }
   if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item3) => leafKeys(item3, join32(prefix, item3.id)));
+    return value.flatMap((item3) => leafKeys(item3, join31(prefix, item3.id)));
   }
   return [prefix];
 }
@@ -24339,7 +24260,7 @@ function isMapping(value) {
 function hasId(value) {
   return isMapping(value) && typeof value.id === "string";
 }
-function join32(prefix, key) {
+function join31(prefix, key) {
   return prefix === "" ? key : `${prefix}.${key}`;
 }
 
@@ -24574,7 +24495,7 @@ ${(0, import_yaml11.stringify)(outcome.origins)}`;
 }
 
 // kernel/src/config/use-cases/layout.ts
-import { join as join33 } from "node:path";
+import { join as join32 } from "node:path";
 
 // kernel/src/config/domain/layout.ts
 var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
@@ -24587,8 +24508,8 @@ function classifyLayout(state) {
 // kernel/src/config/use-cases/layout.ts
 function detectLayout(store2, root) {
   return classifyLayout({
-    bdk: store2.isDirectory(join33(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => store2.exists(join33(root, marker)))
+    bdk: store2.isDirectory(join32(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store2.exists(join32(root, marker)))
   });
 }
 
@@ -24617,7 +24538,7 @@ function renderAgents(report2) {
 }
 
 // kernel/src/export/use-cases/agents.ts
-import { join as join34, relative as relative7 } from "node:path";
+import { join as join33, relative as relative7 } from "node:path";
 
 // kernel/src/export/domain/adapters.ts
 var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
@@ -24697,10 +24618,10 @@ function adapterFile(adapter, host) {
 // kernel/src/export/use-cases/agents.ts
 function exportAgents(deps, request) {
   const host = HOSTS[request.host];
-  const out = request.out ?? join34(deps.pluginRoot, "agents");
+  const out = request.out ?? join33(deps.pluginRoot, "agents");
   const drift = [];
   const files = ADAPTERS.map((adapter) => {
-    const target = join34(out, `${adapter.name}.md`);
+    const target = join33(out, `${adapter.name}.md`);
     const path = relative7(request.root, target);
     const content = adapterFile(adapter, host);
     const current = deps.store.read(target);
@@ -24768,12 +24689,12 @@ ${lines.join("\n")}
 }
 
 // kernel/src/hooks/use-cases/session-start.ts
-import { join as join35 } from "node:path";
+import { join as join34 } from "node:path";
 function sessionStart(input) {
   const startup = startupContext(input).content;
   if (input.workTree === void 0) return { startup };
   const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
-  if (!input.store.isDirectory(join35(projectRoot, ".bdk"))) return { startup };
+  if (!input.store.isDirectory(join34(projectRoot, ".bdk"))) return { startup };
   const { errors, report: report2 } = inspectConfig({ ...input, projectRoot });
   const { layout, present } = detectLayout(input.store, projectRoot);
   const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
@@ -24815,11 +24736,11 @@ function renderSkillExists(name, foundIn) {
 
 // kernel/src/hooks/use-cases/skill-exists.ts
 var import_yaml12 = __toESM(require_dist(), 1);
-import { join as join36 } from "node:path";
+import { join as join35 } from "node:path";
 function findSkill(input, name) {
   for (const skills of skillDirs(input)) {
     for (const entry of subdirs(input.store, skills)) {
-      const file = join36(skills, entry, "SKILL.md");
+      const file = join35(skills, entry, "SKILL.md");
       const text7 = input.store.read(file);
       if (text7 !== void 0 && frontmatterName(text7) === name) return file;
     }
@@ -24827,21 +24748,21 @@ function findSkill(input, name) {
   return void 0;
 }
 function skillDirs({ store: store2, home, projectRoot }) {
-  const plugins = join36(home, ".claude", "plugins");
-  const marketplaces = join36(plugins, "marketplaces");
-  const cache3 = join36(plugins, "cache");
+  const plugins = join35(home, ".claude", "plugins");
+  const marketplaces = join35(plugins, "marketplaces");
+  const cache3 = join35(plugins, "cache");
   const versions = subdirs(store2, cache3).flatMap(
-    (marketplace) => subdirs(store2, join36(cache3, marketplace)).flatMap(
-      (plugin) => subdirs(store2, join36(cache3, marketplace, plugin)).map(
-        (version3) => join36(cache3, marketplace, plugin, version3)
+    (marketplace) => subdirs(store2, join35(cache3, marketplace)).flatMap(
+      (plugin) => subdirs(store2, join35(cache3, marketplace, plugin)).map(
+        (version3) => join35(cache3, marketplace, plugin, version3)
       )
     )
   );
   return [
-    join36(home, ".claude", "skills"),
-    join36(projectRoot, ".claude", "skills"),
-    ...subdirs(store2, marketplaces).map((marketplace) => join36(marketplaces, marketplace, "skills")),
-    ...versions.map((version3) => join36(version3, "skills"))
+    join35(home, ".claude", "skills"),
+    join35(projectRoot, ".claude", "skills"),
+    ...subdirs(store2, marketplaces).map((marketplace) => join35(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join35(version3, "skills"))
   ];
 }
 function subdirs(store2, dir) {
@@ -25458,18 +25379,18 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join37 } from "node:path";
+import { join as join36 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store: store2, root } = input;
-  if (!store2.exists(join37(root, SETTINGS_FILES[0]))) return [];
+  if (!store2.exists(join36(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store2, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join37(root, file);
+    const path = join36(root, file);
     const text7 = store2.read(path);
     if (text7 === void 0 || modelineUrl(text7) === url) continue;
     if (input.fix) store2.write(path, withModeline(text7, version3));
@@ -25483,7 +25404,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join37(root, OFFLINE_SCHEMA_PATH);
+  const copy = join36(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store2.read(copy);
   if (current !== expected) {

@@ -1,196 +1,156 @@
-// `bdk log ingest` (`kernel-cli/log`; T22 design D-13): the `bdk-entries`
-// block of a read-only role's report, validated whole like `log add` before
-// any entry is written, then appended under the ticket with the role's
-// provenance. A whole report from stdin is stored at the package's `report`.
+// `bdk log ingest` (`kernel-cli/log`; T23-D25, D26): a role's report with its
+// envelope as frontmatter, validated whole before anything is written, then
+// stored at the dispatch package's `report` path with `schema`, `ticket` and
+// `role` stamped. It writes no ledger entry: entries come only from `log add`.
 import { join } from "node:path";
 
-import { isRefusal, refuse } from "../../shared/refusal/index.ts";
+import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
+  listEntries,
   readDocument,
-  refreshChange,
   STATE_KINDS,
   ticketDispatch,
+  writeDocument,
 } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
-import { ENTRY_TYPES } from "../../shared/vocabulary/index.ts";
-import type { EntryView, IngestReport } from "../domain/entry.ts";
-import { supersedesProblem } from "./add.ts";
-import { appendEntry } from "./append.ts";
-import type { EntryDraft } from "./append.ts";
-import { readBlock } from "./block.ts";
-import type { BlockItem } from "./block.ts";
+import type { IngestReport } from "../domain/entry.ts";
 import type { LogDeps } from "./deps.ts";
 import { withChangeIndex } from "./deps.ts";
+import { readEnvelope } from "./envelope.ts";
+import type { Envelope } from "./envelope.ts";
 
-/** Stamped by the kernel (P1); an item carrying one is `input/forbidden-field`. */
-const STAMPED = ["id", "at", "author", "source", "ticket", "fingerprint"] as const;
-const FIELDS = [
-  "type",
-  "summary",
-  "refs",
-  "body",
-  "review",
-  "supersedes",
-  "status",
-  "severity",
-  "category",
-  "options",
-] as const;
-const TYPES = ENTRY_TYPES.filter((type) => type !== "transition");
-
-/** Stand-ins for the stamped fields, so the entry schema checks only what the role wrote. */
-const STAND_INS = {
-  schema: 1,
-  id: "L-00000000",
-  source: "kernel",
-  author: "bdk",
-  at: "2026-01-01T00:00:00Z",
-} as const;
-const FINGERPRINT = `sha256:${"0".repeat(64)}`;
+/** Stamped by the kernel from the ticket and its package (P1). */
+const STAMPED: readonly string[] = ["schema", "ticket", "role"];
+const FIELDS: readonly string[] = ["status", "files", "entries", "evidence", "reason"];
 
 export interface IngestInput {
   readonly ticket: string;
   readonly text: string;
-  /** True when the text came from stdin: a whole report is then stored. */
-  readonly stdin: boolean;
 }
 
-export function ingestBlock(
+export function ingestReport(
   deps: LogDeps,
   change: ActiveChange,
   input: IngestInput,
 ): Promise<IngestReport | Refusal> {
-  return withChangeIndex(deps, change, async (index) => {
+  // eslint-disable-next-line @typescript-eslint/require-await -- withChangeIndex takes an async body
+  return withChangeIndex(deps, change, async (index): Promise<IngestReport | Refusal> => {
     const dispatch = ticketDispatch(index, change.id, input.ticket);
-    if (dispatch === undefined) {
+    const report = dispatch === undefined ? undefined : reportPath(deps, change, dispatch.path);
+    if (dispatch === undefined || report === undefined) {
       return refuse(
         "policy/no-open-ticket",
         `${input.ticket} has no open attempt record with a dispatch package in ${change.id}`,
-        ["bdk attempt list", "bdk attempt open <loop> <target>"],
+        ["bdk attempt list", "bdk dispatch build <target>"],
       );
     }
-    const block = readBlock(input.text);
-    if ("invalid" in block) return invalidBlock(block.invalid);
-    const drafts: EntryDraft[] = [];
-    for (const item of block.items) {
-      const draft = checkItem(deps, change, index, item, input.ticket);
-      if (isRefusal(draft)) return draft;
-      drafts.push(draft);
-    }
-    if (input.stdin && block.report) storeReport(deps, change, dispatch.path, input.text);
-    const entries: EntryView[] = [];
-    for (const draft of drafts) {
-      const appended = await appendEntry(deps, change, index, draft, { dedupe: true });
-      if (isRefusal(appended)) return appended;
-      entries.push(appended.entry);
-      refreshChange(index, { id: change.id, dir: change.dir, archived: false });
-    }
-    return { ticket: input.ticket, entries, downgraded: [] };
+    const envelope = readEnvelope(input.text);
+    if ("invalid" in envelope) return invalidEnvelope(envelope.invalid);
+    const data = checkEnvelope(envelope, input.ticket, dispatch.role);
+    if ("refused" in data) return data;
+    const missing = missingIds(deps, change, index, input.ticket, data);
+    if (missing !== undefined) return missing;
+    const path = join(change.projectRoot, report);
+    const replaced = deps.store.read(path) !== undefined;
+    writeDocument(deps.store, path, { data, body: envelope.body });
+    return {
+      ticket: input.ticket,
+      role: dispatch.role,
+      path: report,
+      status: data.status,
+      entries: data.entries,
+      replaced,
+    };
   });
 }
 
-function invalidBlock(why: string): Refusal {
+type ReportData = ReturnType<typeof STATE_KINDS.report.schema.parse>;
+
+/** The package's `report` path from the project root. */
+function reportPath(deps: LogDeps, change: ActiveChange, dispatchPath: string): string | undefined {
+  const dispatch = readDocument(deps.store, join(change.projectRoot, dispatchPath));
+  if (dispatch === undefined || !("data" in dispatch)) return undefined;
+  const report = dispatch.data.report;
+  return typeof report === "string" ? report : undefined;
+}
+
+function invalidEnvelope(why: string): Refusal {
   return refuse("input/invalid-envelope", why, [
-    "end the report with one ```bdk-entries fence holding a YAML list of entries",
-    "bdk log add <type> <summary> --ref <ref> for a single entry",
+    "fix the named field and pipe the whole report again",
+    `the frontmatter holds ${FIELDS.join(", ")}; reason only for blocked and needs-context`,
   ]);
 }
 
-/** The item as a draft, or the refusal naming its first invalid field and line. */
-function checkItem(
+/** The stamped envelope, or the refusal naming its first bad field and line. */
+function checkEnvelope(envelope: Envelope, ticket: string, role: string): ReportData | Refusal {
+  const at = (field: string) => `line ${String(envelope.lines[field] ?? envelope.end)}: ${field}`;
+  const names = Object.keys(envelope.fields);
+  const stamped = names.find((field) => STAMPED.includes(field));
+  if (stamped !== undefined) {
+    return refuse("input/forbidden-field", `${at(stamped)} is stamped by the kernel`, [
+      "drop the field; the kernel stamps schema, ticket and role from the ticket",
+    ]);
+  }
+  const unknown = names.find((field) => !FIELDS.includes(field));
+  if (unknown !== undefined) {
+    return invalidEnvelope(
+      `${at(unknown)} is not an envelope field; allowed: ${FIELDS.join(", ")}`,
+    );
+  }
+  const parsed = STATE_KINDS.report.schema.safeParse({
+    schema: STATE_KINDS.report.version,
+    ticket,
+    role,
+    ...envelope.fields,
+  });
+  if (parsed.success) return parsed.data;
+  const [issue] = parsed.error.issues;
+  const field = String(issue?.path[0] ?? "status");
+  const message = issue?.message ?? "";
+  return invalidEnvelope(
+    field in envelope.fields
+      ? `${at(field)} is invalid: ${message}`
+      : `${field} is missing from the frontmatter, which ends at line ${String(envelope.end)}: ${message}`,
+  );
+}
+
+/** `policy/entries-missing` naming the envelope's ids not recorded under the ticket. */
+function missingIds(
   deps: LogDeps,
   change: ActiveChange,
   index: IndexDb,
-  item: BlockItem,
   ticket: string,
-): EntryDraft | Refusal {
-  const { fields } = item;
-  const at = (field: string) =>
-    `item ${String(item.position)}, line ${String(item.lines[field] ?? item.line)}: ${field}`;
-  const stamped = Object.keys(fields).find((field) =>
-    (STAMPED as readonly string[]).includes(field),
+  data: ReportData,
+): Refusal | undefined {
+  const written = new Set(
+    listEntries(index, change.id)
+      .filter((entry) => entry.ticket === ticket)
+      .map((entry) => entry.id),
   );
-  if (stamped !== undefined) {
-    return refuse("input/forbidden-field", `${at(stamped)} is stamped by the kernel`, [
-      "drop the field; the kernel stamps it from the ticket",
-    ]);
-  }
-  const unknown = Object.keys(fields).find(
-    (field) => !(FIELDS as readonly string[]).includes(field),
+  const recorded = ticketEvidence(deps, change, ticket);
+  const missing = [
+    ...data.entries.filter((id) => !written.has(id)),
+    ...data.evidence.filter((id) => !recorded.has(id)),
+  ];
+  if (missing.length === 0) return undefined;
+  return refuse(
+    "policy/entries-missing",
+    `the envelope lists ${missing.join(", ")}, which ${missing.length === 1 ? "is" : "are"} not recorded under ${ticket}`,
+    [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`],
   );
-  if (unknown !== undefined) {
-    return invalidBlock(`${at(unknown)} is not an entry field; allowed: ${FIELDS.join(", ")}`);
-  }
-  const type = fields.type;
-  if (typeof type !== "string" || !(TYPES as readonly string[]).includes(type)) {
-    return invalidBlock(
-      `${at("type")} ${type === undefined ? "is missing" : `${JSON.stringify(type)} is not a type a role writes`}; one of: ${TYPES.join(", ")}`,
-    );
-  }
-  if (fields.body !== undefined && typeof fields.body !== "string") {
-    return invalidBlock(`${at("body")} is not a string`);
-  }
-  if (typeof fields.summary === "string" && fields.summary.trim() === "") {
-    return invalidBlock(`${at("summary")} is empty`);
-  }
-  if (fields.status === "superseded" || fields.status === "routed") {
-    return invalidBlock(
-      `${at("status")} ${fields.status} is ${fields.status === "superseded" ? "derived from supersedes" : "set only by log route"}, never written`,
-    );
-  }
-  const { body, ...rest } = fields;
-  const parsed = STATE_KINDS.entry.schema.safeParse({
-    ...STAND_INS,
-    ticket,
-    status: "proposed",
-    ...rest,
-    ...(type === "learning" ? { fingerprint: FINGERPRINT } : {}),
-  });
-  if (!parsed.success) {
-    const [issue] = parsed.error.issues;
-    const field =
-      issue?.code === "unrecognized_keys"
-        ? (issue.keys[0] ?? "type")
-        : String(issue?.path[0] ?? "type");
-    const why =
-      issue?.code === "unrecognized_keys"
-        ? `is not a field of a ${type}`
-        : `is invalid: ${issue?.message ?? ""}`;
-    return invalidBlock(`${at(field)} ${why}`);
-  }
-  const data = parsed.data as Readonly<Record<string, unknown>>;
-  const supersedes = data.supersedes as string | undefined;
-  if (supersedes !== undefined) {
-    const problem = supersedesProblem(deps, change, index, supersedes);
-    if (problem !== undefined)
-      return invalidBlock(`${at("supersedes")} ${supersedes} ${problem.why}`);
-  }
-  return {
-    type,
-    summary: data.summary as string,
-    refs: data.refs as string[],
-    body: body ?? "",
-    ticket,
-    ...(rest.status === undefined ? {} : { status: data.status as string }),
-    ...(data.review === true ? { review: true } : {}),
-    ...(supersedes === undefined ? {} : { supersedes }),
-    ...(data.severity === undefined ? {} : { severity: data.severity as string }),
-    ...(data.category === undefined ? {} : { category: data.category as string }),
-    ...(data.options === undefined ? {} : { options: data.options as string[] }),
-  };
 }
 
-/** A read-only role has no file tool: its report reaches the package's `report` path here. */
-function storeReport(
-  deps: LogDeps,
-  change: ActiveChange,
-  dispatchPath: string,
-  text: string,
-): void {
-  const dispatch = readDocument(deps.store, join(change.projectRoot, dispatchPath));
-  if (dispatch === undefined || !("data" in dispatch)) return;
-  const report = dispatch.data.report;
-  if (typeof report === "string") deps.store.write(join(change.projectRoot, report), text);
+/** The ids of the evidence manifests recorded under the ticket. */
+function ticketEvidence(deps: LogDeps, change: ActiveChange, ticket: string): Set<string> {
+  const dir = join(change.dir, "evidence");
+  const ids = new Set<string>();
+  for (const name of deps.store.list(dir)) {
+    if (!name.endsWith(".md")) continue;
+    const document = readDocument(deps.store, join(dir, name));
+    if (document === undefined || !("data" in document) || document.kind !== "evidence") continue;
+    if (document.data.ticket === ticket) ids.add(String(document.data.id));
+  }
+  return ids;
 }

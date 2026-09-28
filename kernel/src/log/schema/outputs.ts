@@ -56,36 +56,29 @@ export const logAddOutput = z
 export const logIngestOutput = z
   .strictObject({
     ticket: z.string().regex(/^A-[0-9a-z]{8}$/),
-    entries: z.array(entryViewSchema).meta({
-      description:
-        "The block's entries in order; an entry equal to a live one of the ticket is that entry, not written again.",
+    role: z.string().min(1).meta({ description: "The role of the ticket's dispatch package." }),
+    path: z.string().min(1).meta({
+      description: "The package's `report` path from the project root, where the report is stored.",
     }),
-    downgraded: z.array(z.strictObject({ entry: entryId, originalCategory: z.string() })).meta({
-      description:
-        "Blockers without a category from the closed list, stored as observation with review: true (P8; from T23).",
+    status: z.enum(["done", "done-with-concerns", "needs-context", "blocked"]),
+    entries: z.array(entryId).meta({
+      description: "The envelope's entry ids, each written under the ticket.",
+    }),
+    replaced: z.boolean().meta({
+      description: "True when an earlier report of the same open ticket was replaced.",
     }),
   })
   .meta({
     title: "bdk log ingest --json",
-    description: "Ingest a `bdk-entries` block from a read-only role's report under its ticket.",
+    description: "Store a role's report under its ticket.",
     examples: [
       {
         ticket: "A-9c2d4f6h",
-        entries: [
-          {
-            id: "L-w4m1q7ra",
-            type: "blocker",
-            summary: "plan claims verifyToken exists; it does not",
-            status: "proposed",
-            source: "agent:plan-verifier",
-            author: AUTHOR,
-            at: "2026-09-25T10:31:44Z",
-            refs: ["plan/parts/02-login.md", "src/auth/token.ts"],
-            review: false,
-            ticket: "A-9c2d4f6h",
-          },
-        ],
-        downgraded: [],
+        role: "verifier",
+        path: ".bdk/changes/2026-09-25-passwordless-login/reports/02-verifier-A-9c2d4f6h.md",
+        status: "done-with-concerns",
+        entries: ["L-w4m1q7ra"],
+        replaced: false,
       },
     ],
   }) satisfies z.ZodType<IngestReport>;
