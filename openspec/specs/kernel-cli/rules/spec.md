@@ -123,7 +123,7 @@ Print one rule by id, or the rules of a ticket. The kernel SHALL implement the c
         "text": "# TypeScript\n..."
       }
     ],
-    "rulesRead": "2026-09-25T10:00:41Z"
+    "rulesRead": "2026-09-25T10:00:41.305Z"
   }
   ```
 

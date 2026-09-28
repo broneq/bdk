@@ -28,7 +28,7 @@ The kernel has one time source, `shared/clock` (`kernel-architecture`, shared en
 
 **MS-5 Index schema version 4.** The index stores `at` as text; bumping the version drops and rebuilds every index, so no index holds a mix of widths.
 
-**MS-6 Output schemas.** The state JSON Schemas are generated from zod and describe the input (both forms); the CLI output schemas describe the millisecond form. The hand-written output examples change to milliseconds.
+**MS-6 Output schemas.** The state JSON Schemas describe committed files, so their `timestamp` takes both forms: the generator exports the zod output type, which is the millisecond form, so the `timestamp` metadata carries the pattern of both forms. The CLI output schemas describe the millisecond form (`precision: 3`). The hand-written output examples change to milliseconds.
 
 ## Risks / Trade-offs
 

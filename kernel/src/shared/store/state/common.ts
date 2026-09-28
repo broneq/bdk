@@ -53,13 +53,17 @@ const SECOND_FORM = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
  * order; a read also takes the second form and normalises it to `.000`, which
  * keeps hand-written and older files in order among new ones.
  */
-export const timestamp = z.preprocess(
-  (value) =>
-    typeof value === "string" && SECOND_FORM.test(value) ? `${value.slice(0, -1)}.000Z` : value,
-  z.iso
-    .datetime({ precision: 3 })
-    .meta({ description: "ISO 8601 UTC with milliseconds; a read also takes seconds." }),
-);
+export const timestamp = z
+  .preprocess(
+    (value) =>
+      typeof value === "string" && SECOND_FORM.test(value) ? `${value.slice(0, -1)}.000Z` : value,
+    z.iso.datetime({ precision: 3 }),
+  )
+  .meta({
+    description: "ISO 8601 UTC with milliseconds; a read also takes seconds.",
+    // The published schema describes committed files, so it takes both forms.
+    pattern: String.raw`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$`,
+  });
 
 export const date = z.iso.date();
 

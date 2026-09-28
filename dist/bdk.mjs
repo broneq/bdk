@@ -16690,8 +16690,12 @@ var hash = string2().regex(/^sha256:[0-9a-f]{64}$/);
 var SECOND_FORM = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 var timestamp = preprocess(
   (value) => typeof value === "string" && SECOND_FORM.test(value) ? `${value.slice(0, -1)}.000Z` : value,
-  iso_exports.datetime({ precision: 3 }).meta({ description: "ISO 8601 UTC with milliseconds; a read also takes seconds." })
-);
+  iso_exports.datetime({ precision: 3 })
+).meta({
+  description: "ISO 8601 UTC with milliseconds; a read also takes seconds.",
+  // The published schema describes committed files, so it takes both forms.
+  pattern: String.raw`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$`
+});
 var date3 = iso_exports.date();
 var relativePath = string2().regex(/^(?!\/|\.\/)(?!(?:.*\/)?\.\.(?:\/|$))[^\\]+$/).meta({ description: "Relative to the project root, `/` separated, no `..` segment." });
 var role = string2().regex(/^[a-z][a-z0-9-]*$/).meta({ description: "Role skill name (`implementer`, `plan-verifier`, ...)." });

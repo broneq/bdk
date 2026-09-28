@@ -17,7 +17,7 @@
 
 ## 4. Contract and docs
 
-- [ ] 4.1 Update the hand-written output schema examples to the millisecond form and the `kernel-cli` Conventions scenario test; sync the main specs (`kernel-cli`, `kernel-state`, `kernel-pipeline`) from the deltas; verify `pnpm test:contract` and `openspec validate --specs --strict` pass
+- [x] 4.1 Update the hand-written output schema examples to the millisecond form and the `kernel-cli` Conventions scenario test; sync the main specs (`kernel-cli`, `kernel-state`, `kernel-pipeline`) from the deltas; verify `pnpm test:contract` and `openspec validate --specs --strict` pass
 - [ ] 4.2 Update the comments that explain second precision (`shared/clock`, `derived.ts`, `attempt/domain/ladder.ts`) and any README or `docs/guide` text naming the time format; verify `pnpm docs:build` passes
 
 ## 5. Acceptance

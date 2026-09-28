@@ -48,7 +48,7 @@ Open a ticket for one loop iteration, or refuse with the next rung of the ladder
     "attempt": 2,
     "of": 3,
     "scope": "high+",
-    "openedAt": "2026-09-25T10:02:11Z",
+    "openedAt": "2026-09-25T10:02:11.482Z",
     "narrowedFrom": "full",
     "dropped": [
       {
@@ -247,8 +247,8 @@ Tickets and attempt records, open first. The kernel SHALL implement the command 
         "attempt": 2,
         "of": 3,
         "scope": "high+",
-        "openedAt": "2026-09-25T10:02:11Z",
-        "closedAt": "2026-09-25T10:19:40Z",
+        "openedAt": "2026-09-25T10:02:11.482Z",
+        "closedAt": "2026-09-25T10:19:40.917Z",
         "outcome": "fail",
         "entries": 2
       }

@@ -19,7 +19,9 @@ const source = z
   .regex(SOURCE_PATTERN)
   .meta({ description: "Who produced the entry (P1); stamped by the kernel." });
 
-const timestamp = z.iso.datetime().meta({ description: "ISO 8601 UTC with seconds." });
+const timestamp = z.iso
+  .datetime({ precision: 3 })
+  .meta({ description: "ISO 8601 UTC with milliseconds." });
 
 const relativePath = z.string().min(1).meta({ description: "Path relative to the project root." });
 

@@ -48,7 +48,9 @@ const gate = z
           status: z.enum(ENTRY_STATUSES),
           source: z.string().regex(SOURCE_PATTERN),
           author: z.string().optional(),
-          at: z.iso.datetime().meta({ description: "ISO 8601 UTC with seconds." }),
+          at: z.iso
+            .datetime({ precision: 3 })
+            .meta({ description: "ISO 8601 UTC with milliseconds." }),
           refs: z.array(z.string()).min(1),
           review: z.boolean().optional(),
           supersedes: entryId.optional(),
