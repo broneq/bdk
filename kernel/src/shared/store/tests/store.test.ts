@@ -76,6 +76,18 @@ describe.each(implementations)("%s store", (_, make) => {
     expect(store.list(join(root, "x/y"))).toStrictEqual(["z.md"]);
   });
 
+  it("reads and writes bytes that are not UTF-8, keeping the size", () => {
+    const { root, store } = open({ "t.txt": "héllo" });
+    const binary = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff]);
+    store.writeBytes(join(root, "bin/capture.png"), binary);
+    expect(store.readBytes(join(root, "bin/capture.png"))).toStrictEqual(binary);
+    expect(store.stat(join(root, "bin/capture.png"))?.size).toBe(6);
+    expect(Buffer.from(store.readBytes(join(root, "t.txt")) ?? [])).toStrictEqual(
+      Buffer.from("héllo"),
+    );
+    expect(store.readBytes(join(root, "missing"))).toBeUndefined();
+  });
+
   it("lists direct children sorted, directories with a trailing slash", () => {
     const { root, store } = open({ "d/b.md": "", "d/a.md": "", "d/sub/c.md": "", "d/empty/": "" });
     expect(store.list(join(root, "d"))).toStrictEqual(["a.md", "b.md", "empty/", "sub/"]);

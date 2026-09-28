@@ -16295,16 +16295,19 @@ function fileStore() {
         throw error2;
       }
     },
-    write(path, content) {
-      mkdirSync(dirname2(path), { recursive: true });
-      const temp = `${path}.${randomBytes(4).toString("hex")}.tmp`;
-      writeFileSync(temp, content);
+    readBytes(path) {
       try {
-        renameSync(temp, path);
+        return new Uint8Array(readFileSync(path));
       } catch (error2) {
-        rmSync(temp, { force: true });
+        if (isCode(error2, "ENOENT")) return void 0;
         throw error2;
       }
+    },
+    write(path, content) {
+      replaceFile(path, content);
+    },
+    writeBytes(path, content) {
+      replaceFile(path, content);
     },
     list(dir) {
       try {
@@ -16334,6 +16337,17 @@ function fileStore() {
       appendFileSync(path, content);
     }
   };
+}
+function replaceFile(path, content) {
+  mkdirSync(dirname2(path), { recursive: true });
+  const temp = `${path}.${randomBytes(4).toString("hex")}.tmp`;
+  writeFileSync(temp, content);
+  try {
+    renameSync(temp, path);
+  } catch (error2) {
+    rmSync(temp, { force: true });
+    throw error2;
+  }
 }
 function readStdin() {
   return readFileSync(0, "utf8");
@@ -24619,7 +24633,9 @@ function overlay(store2, path, text7) {
   };
   return {
     read: (candidate) => candidate === path ? text7 : store2.read(candidate),
+    readBytes: (candidate) => candidate === path ? new TextEncoder().encode(text7) : store2.readBytes(candidate),
     write: readOnly,
+    writeBytes: readOnly,
     remove: readOnly,
     append: readOnly,
     list: (dir) => store2.list(dir),

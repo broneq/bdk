@@ -181,7 +181,10 @@ function overlay(store: Store, path: string, text: string): Store {
   };
   return {
     read: (candidate) => (candidate === path ? text : store.read(candidate)),
+    readBytes: (candidate) =>
+      candidate === path ? new TextEncoder().encode(text) : store.readBytes(candidate),
     write: readOnly,
+    writeBytes: readOnly,
     remove: readOnly,
     append: readOnly,
     list: (dir) => store.list(dir),
