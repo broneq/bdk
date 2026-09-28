@@ -84,6 +84,14 @@ export const INDEX: CommandIndex = {
       owner: "T24",
       exits: [0, 2],
     }),
+    record({
+      id: "hooks-prompt-expansion",
+      argv: ["hooks", "prompt-expansion"],
+      mode: "guard",
+      owner: "T24",
+      changeScoped: true,
+      exits: [0, 2],
+    }),
   ],
 };
 

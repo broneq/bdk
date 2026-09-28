@@ -295,6 +295,60 @@ describe("mode wrappers", () => {
     expect(stub.stderr).toContain("T24");
   });
 
+  it("guard mode: a block's stderr starts with the rule id", async () => {
+    const result = await run(["hooks", "pre-tool"], {
+      registrations: [
+        {
+          id: "hooks-pre-tool",
+          handler: () => refuse("guard/subagent-git", "subagents may not run git stash", ["x"]),
+        },
+      ],
+    });
+    expect(result.code).toBe(2);
+    expect(result.stderr).toBe("guard/subagent-git: subagents may not run git stash\n");
+    expect(result.stdout).toBe("");
+  });
+
+  it("guard mode: blockOutput goes to stdout, the error object replaces it under --json", async () => {
+    const registrations: Registration[] = [
+      {
+        id: "hooks-pre-tool",
+        handler: () => refuse("guard/subagent-git", "no stash", ["x"]),
+        blockOutput: (refusal) => `host:${refusal.rule}`,
+      },
+    ];
+    const text = await run(["hooks", "pre-tool"], { registrations });
+    expect(text.code).toBe(2);
+    expect(text.stdout).toBe("host:guard/subagent-git\n");
+    const json = await run(["hooks", "pre-tool", "--json"], { registrations });
+    expect(json.code).toBe(2);
+    expect(json.json).toMatchObject({ refused: true, rule: "guard/subagent-git" });
+  });
+
+  it("resolvesChange handler: the registry leaves the Change to the handler", async () => {
+    let calls = 0;
+    const resolver: ActiveChangeResolver = () => {
+      calls += 1;
+      return refuse("policy/no-active-change", "no Change on main", ["x"]);
+    };
+    const result = await run(["hooks", "prompt-expansion", "--json"], {
+      activeChange: resolver,
+      registrations: [
+        {
+          id: "hooks-prompt-expansion",
+          resolvesChange: "handler",
+          handler: (context) => {
+            expect(context.change).toBeUndefined();
+            return { data: { resolver: context.resolveChange !== undefined }, text: "" };
+          },
+        },
+      ],
+    });
+    expect(result.code).toBe(0);
+    expect(result.json).toEqual({ resolver: true });
+    expect(calls).toBe(0);
+  });
+
   it("guard mode: a crash blocks with exit 2", async () => {
     const result = await run(["hooks", "pre-tool"], {
       registrations: [
