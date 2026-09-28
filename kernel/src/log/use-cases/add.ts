@@ -1,13 +1,16 @@
 // `bdk log add`: validates the input, then appends through `appendEntry`
 // with deduplication. Nothing is written before every check has passed.
 import { parseReference } from "../../shared/ids/index.ts";
-import { refuse } from "../../shared/refusal/index.ts";
+import { resolveOrRefuse } from "../../shared/config/index.ts";
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { findChange, findEntry, refreshChange } from "../../shared/store/index.ts";
+import { findChange, findEntry, refreshChange, ticketDispatch } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
 import { appendEntry } from "./append.ts";
-import type { AppendResult } from "../domain/entry.ts";
+import { verifierModule } from "../config.ts";
+import type { AddResult } from "../domain/entry.ts";
+import { classify, mayDowngrade } from "../domain/p8.ts";
 import type { LogDeps } from "./deps.ts";
 import { withChangeIndex } from "./deps.ts";
 
@@ -23,13 +26,17 @@ export interface AddInput {
   readonly ticket?: string;
   readonly review: boolean;
   readonly supersedes?: string;
+  readonly category?: string;
 }
+
+const CATEGORY_TYPES: readonly string[] = ["finding", "blocker"];
 
 export function addEntry(
   deps: LogDeps,
   change: ActiveChange,
+  globalDir: string,
   input: AddInput,
-): Promise<AppendResult | Refusal> {
+): Promise<AddResult | Refusal> {
   const invalid = validate(input);
   if (invalid !== undefined) return Promise.resolve(invalid);
   return withChangeIndex(deps, change, async (index) => {
@@ -37,8 +44,52 @@ export function addEntry(
       const missing = checkSupersedes(deps, change, index, input.supersedes);
       if (missing !== undefined) return missing;
     }
-    return appendEntry(deps, change, index, input, { dedupe: true });
+    const role =
+      input.ticket === undefined ? undefined : ticketDispatch(index, change.id, input.ticket)?.role;
+    let blocking: readonly string[] = [];
+    if (mayDowngrade(input.type, role)) {
+      const categories = blockingCategories(deps, change, globalDir);
+      if (isRefusal(categories)) return categories;
+      blocking = categories;
+    }
+    const { downgraded, ...classified } = classify(input, role, blocking);
+    // A downgraded blocker is an observation, which carries no category field.
+    const { category, ...rest } = input;
+    const base = downgraded === undefined && category !== undefined ? { ...rest, category } : rest;
+    const appended = await appendEntry(
+      deps,
+      change,
+      index,
+      { ...base, ...classified },
+      { dedupe: true },
+    );
+    return "refused" in appended || downgraded === undefined
+      ? appended
+      : { ...appended, downgraded };
   });
+}
+
+/** The ids of the resolved `policy.verifier.blocking-categories`, or the settings refusal. */
+function blockingCategories(
+  deps: LogDeps,
+  change: ActiveChange,
+  globalDir: string,
+): readonly string[] | Refusal {
+  const resolved = resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir,
+      projectRoot: change.projectRoot,
+      pluginRoot: deps.pluginRoot,
+    },
+    { removed: "ignore" },
+  );
+  if ("refused" in resolved) return resolved;
+  const policy = verifierModule.schema.parse(
+    (resolved.value.policy as Record<string, unknown> | undefined)?.verifier,
+  );
+  return policy["blocking-categories"].map((category) => category.id);
 }
 
 function validate(input: AddInput): Refusal | undefined {
@@ -54,6 +105,16 @@ function validate(input: AddInput): Refusal | undefined {
     return refuse("input/missing-argument", "log add needs at least one non-empty --ref", [
       `bdk log add ${input.type} "${input.summary}" --ref <file|symbol|part|task|rule|entry>`,
     ]);
+  }
+  if (input.category !== undefined && !CATEGORY_TYPES.includes(input.type)) {
+    return refuse(
+      "input/invalid-argument",
+      `--category applies to finding and blocker, the types that carry it, not ${input.type}`,
+      [
+        `bdk log add ${input.type} "${input.summary}" --ref <ref>`,
+        "bdk log add blocker ... --category <id>",
+      ],
+    );
   }
   if (input.status === "superseded") {
     return refuse(

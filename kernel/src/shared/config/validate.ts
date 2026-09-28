@@ -9,6 +9,7 @@ import { keySteps } from "./keys.ts";
 import type { KeyNode, KeyStep } from "./keys.ts";
 import { knownReason, PLANNED_KEYS, within } from "./known.ts";
 import type { Layer, LayerName } from "./layers.ts";
+import { withDefaultItems } from "./merge.ts";
 import type { Merged } from "./merge.ts";
 import type { ConfigProblem } from "./problems.ts";
 import type { ConfigRegistry } from "./registry.ts";
@@ -34,11 +35,15 @@ export function validateLayers(
     });
   }
 
-  const parsed = registry.schema.safeParse(merged.value);
+  const defaults = registry.schema.safeParse({});
+  const seeded: Merged = defaults.success
+    ? { ...merged, value: withDefaultItems(defaults.data, merged.value) }
+    : merged;
+  const parsed = registry.schema.safeParse(seeded.value);
   if (!parsed.success) {
     const reported = problems.map((problem) => problem.key);
     for (const issue of parsed.error.issues) {
-      for (const problem of fromIssue(issue, merged, layers, candidates)) {
+      for (const problem of fromIssue(issue, seeded, layers, candidates)) {
         // Pass one already named the leaves of an unknown subtree.
         if (reported.some((key) => within(key, problem.key))) continue;
         problems.push(problem);

@@ -15,8 +15,8 @@
 
 ## 3. `log`: P8 and report storage
 
-- [ ] 3.1 Register `policy.verifier` (`blocking-categories`, `not-a-fail`, consumer `log`) and drop the observation cap code paths; verify `bdk config show policy.verifier --json` matches the `not-a-fail defaults` scenario and the settings contract test passes
-- [ ] 3.2 Write failing tests for `log add --category` and the P8 downgrade (verifier without category, verifier in category, implementer never downgraded, design-verifier with a project category); implement; verify unit and E2E pass
+- [x] 3.1 Register `policy.verifier` (`blocking-categories`, `not-a-fail`, consumer `log`) and drop the observation cap code paths; verify `bdk config show policy.verifier --json` matches the `not-a-fail defaults` scenario and the settings contract test passes
+- [x] 3.2 Write failing tests for `log add --category` and the P8 downgrade (verifier without category, verifier in category, implementer never downgraded, design-verifier with a project category); implement; verify unit and E2E pass
 - [ ] 3.3 Write failing tests for the reworked `log ingest` (every scenario of the delta: example, invalid envelope with line, forbidden field, no open ticket, no cap, entries missing, evidence missing, implementer stores and replaces); replace the T22 implementation; verify unit and E2E pass and no code path reads a `bdk-entries` block
 
 ## 4. `dispatch` slice

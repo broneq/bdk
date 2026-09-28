@@ -1,10 +1,8 @@
 // `kernel-cli/log` (T20 records) through the committed bundle in real
 // repositories: one case per exit code and per declared rule of `log add`,
 // `list`, `show` and `resolve`, every output validated against its schema,
-// and the T20 acceptance cases on the ledger; `log ingest` (T22) with a
-// hand-written attempt record and dispatch package until T23 builds them.
-// `policy/observation-cap` of `log add` and `log ingest` is T23's (the cap
-// needs dispatch packages) and stays untested here.
+// and the T20 acceptance cases on the ledger; `log add --category` (P8) and
+// `log ingest` (T23) with a hand-written attempt record and dispatch package.
 import { readdirSync, rmSync, utimesSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -341,16 +339,16 @@ describe("bdk log show and resolve", () => {
 
 const TICKET = "A-9c2d4f6h";
 
-/** An open verifier ticket with its dispatch package; answers the package's report path. */
-function ticketed(dir: string, closed = false): string {
+/** An open ticket of `role` with its dispatch package; answers the package's report path. */
+function ticketed(dir: string, closed = false, role = "verifier"): string {
   const id = dir.split("/").at(-1) ?? "";
-  const report = `.bdk/changes/${id}/reports/plan-verify-plan-verifier-${TICKET}.md`;
-  writeDocument(fileStore(), join(dir, `attempts/verifier-plan-verify-${TICKET}.md`), {
+  const report = `.bdk/changes/${id}/reports/02-${role}-${TICKET}.md`;
+  writeDocument(fileStore(), join(dir, `attempts/verifier-02-${TICKET}.md`), {
     data: {
       schema: 1,
       ticket: TICKET,
       loop: "verifier",
-      target: "plan-verify",
+      target: "02",
       attempt: 1,
       of: 2,
       scope: "full",
@@ -360,13 +358,13 @@ function ticketed(dir: string, closed = false): string {
     },
     body: "",
   });
-  writeDocument(fileStore(), join(dir, `dispatch/plan-verify-plan-verifier-${TICKET}.md`), {
+  writeDocument(fileStore(), join(dir, `dispatch/02-${role}-${TICKET}.md`), {
     data: {
       schema: 1,
       ticket: TICKET,
-      target: "plan-verify",
-      role: "plan-verifier",
-      adapter: "reader",
+      target: "02",
+      role,
+      adapter: role === "implementer" ? "worker" : "reader",
       attempt: 1,
       of: 2,
       scope: "full",
@@ -379,6 +377,54 @@ function ticketed(dir: string, closed = false): string {
   });
   return report;
 }
+
+describe("bdk log add --category (P8)", () => {
+  const blocker = (root: string, ...extra: string[]) =>
+    answered(
+      bdk(
+        [
+          "log",
+          "add",
+          "blocker",
+          "naming is inconsistent",
+          "--ref",
+          "02",
+          "--ticket",
+          TICKET,
+          ...extra,
+          "--json",
+        ],
+        root,
+      ),
+      "output/log-add.json",
+    ) as { entry: { id: string; type: string; review: boolean }; downgraded?: unknown };
+
+  it("exit 0: a verifier blocker without a category is an observation for review", () => {
+    const { root, dir } = opened();
+    ticketed(dir);
+    const result = blocker(root);
+    expect(result.entry).toMatchObject({ type: "observation", review: true });
+    expect(result.downgraded).toStrictEqual({ type: "blocker", category: null });
+    const shown = bdk(["log", "show", result.entry.id, "--json"], root);
+    expect((shown.json as { entry: { body: string } }).entry.body).toMatch(
+      /^Downgraded from blocker: category none is not a blocking category \(P8\)\./,
+    );
+  });
+
+  it("exit 0: a verifier blocker in a blocking category stays a blocker", () => {
+    const { root, dir } = opened();
+    ticketed(dir);
+    const result = blocker(root, "--category", "false-code-claim");
+    expect(result.entry.type).toBe("blocker");
+    expect(result.downgraded).toBeUndefined();
+  });
+
+  it("exit 0: an implementer blocker is never downgraded", () => {
+    const { root, dir } = opened();
+    ticketed(dir, false, "implementer");
+    expect(blocker(root).entry.type).toBe("blocker");
+  });
+});
 
 const REPORT =
   "# Plan verification\n\nPart 02 leans on a helper that does not exist.\n\n" +

@@ -186,7 +186,7 @@
       "additionalProperties": false
     },
     "policy": {
-      "description": "Composed of policy.gates, policy.budgets, policy.oscillation, policy.escalation, policy.checkpoint.",
+      "description": "Composed of policy.gates, policy.budgets, policy.oscillation, policy.escalation, policy.verifier, policy.checkpoint.",
       "default": {},
       "type": "object",
       "properties": {
@@ -290,6 +290,84 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "verifier": {
+          "description": "What a verifier may block on (P8): a blocker outside blocking-categories is downgraded to a reviewed observation.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "blocking-categories": {
+              "default": [
+                {
+                  "id": "architecture",
+                  "description": "Materially invalid architecture, or a contradiction with an accepted decision."
+                },
+                { "id": "security", "description": "A security, privacy or authentication risk." },
+                {
+                  "id": "irreversible-step",
+                  "description": "An irreversible or high-cost step without justification, such as a migration or data loss."
+                },
+                {
+                  "id": "integration-failure",
+                  "description": "A critical integration, data, rollout or rollback failure."
+                },
+                {
+                  "id": "unresolved-decision",
+                  "description": "An execution-critical unresolved decision or omitted requirement."
+                },
+                {
+                  "id": "false-code-claim",
+                  "description": "A claim about the real code that is false."
+                }
+              ],
+              "description": "Merged by id; replace the array to disable a category.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]*$",
+                    "description": "Unique within the array; the merge key."
+                  },
+                  "description": { "type": "string", "minLength": 1 }
+                },
+                "required": ["id", "description"],
+                "additionalProperties": false,
+                "description": "A category a verifier or design-verifier blocker may name."
+              }
+            },
+            "not-a-fail": {
+              "default": [
+                { "id": "style", "description": "Style." },
+                { "id": "template-conformance", "description": "Template conformance." },
+                { "id": "files-bookkeeping", "description": "`Files:` bookkeeping." },
+                { "id": "wording", "description": "Wording." },
+                { "id": "report-length", "description": "Report length." },
+                {
+                  "id": "verification-defect",
+                  "description": "A verification defect, unless it removes the only real evidence of the change's safety."
+                }
+              ],
+              "description": "Merged by id; shown in a verifier's package next to the categories.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]*$",
+                    "description": "Unique within the array; the merge key."
+                  },
+                  "description": { "type": "string", "minLength": 1 }
+                },
+                "required": ["id", "description"],
+                "additionalProperties": false,
+                "description": "Something a verifier never blocks on."
+              }
             }
           },
           "additionalProperties": false

@@ -13,7 +13,7 @@ import { exportRegistrations } from "./export/index.ts";
 import { graphConfig, graphRegistrations } from "./graph/index.ts";
 import { hooksRegistrations } from "./hooks/index.ts";
 import type { HooksDeps } from "./hooks/index.ts";
-import { logRegistrations } from "./log/index.ts";
+import { logConfig, logRegistrations } from "./log/index.ts";
 import type { LogDeps } from "./log/index.ts";
 import { measureRegistrations } from "./measure/index.ts";
 import { partRegistrations } from "./part/index.ts";
@@ -66,6 +66,7 @@ export function settingsRegistry(): ConfigRegistry {
       ...ctxConfig.modules,
       ...graphConfig.modules,
       ...attemptConfig.modules,
+      ...logConfig.modules,
       checkpointModule,
       promptsModule,
     ],

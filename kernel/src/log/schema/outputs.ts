@@ -3,7 +3,7 @@
 import * as z from "zod";
 
 import type {
-  AppendResult,
+  AddResult,
   EntrySummary,
   IngestReport,
   ResolveResult,
@@ -22,6 +22,13 @@ export const logAddOutput = z
       description:
         "True when an equal entry existed: `entry` is that entry and nothing was written.",
     }),
+    downgraded: z
+      .strictObject({ type: z.literal("blocker"), category: z.string().nullable() })
+      .optional()
+      .meta({
+        description:
+          "Present when a verifier blocker outside the blocking categories was written as an observation (P8).",
+      }),
   })
   .meta({
     title: "bdk log add --json",
@@ -44,7 +51,7 @@ export const logAddOutput = z
         deduplicated: false,
       },
     ],
-  }) satisfies z.ZodType<AppendResult>;
+  }) satisfies z.ZodType<AddResult>;
 
 export const logIngestOutput = z
   .strictObject({

@@ -1,16 +1,20 @@
 // Text renderings of the log commands (`kernel-cli`, Output modes).
 import type {
-  AppendResult,
+  AddResult,
   EntrySummary,
   IngestReport,
   ResolveResult,
   ShownEntry,
 } from "../domain/entry.ts";
 
-export function renderAdd(result: AppendResult): string {
+export function renderAdd(result: AddResult): string {
   const { entry } = result;
   const verb = result.deduplicated ? "already recorded as" : "added";
-  return `${verb} ${entry.id} (${entry.type}, ${entry.status}): ${entry.summary}\n${result.path}\n`;
+  const downgrade =
+    result.downgraded === undefined
+      ? ""
+      : `downgraded from blocker: category ${result.downgraded.category ?? "none"} is not a blocking category (P8)\n`;
+  return `${verb} ${entry.id} (${entry.type}, ${entry.status}): ${entry.summary}\n${downgrade}${result.path}\n`;
 }
 
 export function renderIngest(report: IngestReport): string {

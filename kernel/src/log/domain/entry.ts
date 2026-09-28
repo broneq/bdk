@@ -191,6 +191,11 @@ export interface AppendResult {
   readonly deduplicated: boolean;
 }
 
+/** `log add`: the append result and, for a P8 downgrade, the original type and category. */
+export interface AddResult extends AppendResult {
+  readonly downgraded?: { readonly type: "blocker"; readonly category: string | null } | undefined;
+}
+
 /** `log ingest`: the entries written or matched, in block order. */
 export interface IngestReport {
   readonly ticket: string;

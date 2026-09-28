@@ -81,6 +81,41 @@ describe("bdk config show", () => {
     });
   });
 
+  it("exit 0: policy.verifier defaults to the six P8 categories and the not-a-fail list", () => {
+    const result = bdk(["config", "show", "policy.verifier", "--json"], fixture({}).root);
+    expect(result.code).toBe(0);
+    const value = (result.json as { value: Record<string, { id: string }[]> }).value;
+    const ids = (key: string) => (value[key] ?? []).map((item) => item.id);
+    expect(ids("blocking-categories")).toStrictEqual([
+      "architecture",
+      "security",
+      "irreversible-step",
+      "integration-failure",
+      "unresolved-decision",
+      "false-code-claim",
+    ]);
+    expect(ids("not-a-fail")).toStrictEqual([
+      "style",
+      "template-conformance",
+      "files-bookkeeping",
+      "wording",
+      "report-length",
+      "verification-defect",
+    ]);
+  });
+
+  it("exit 0: a project item extends the blocking categories by id", () => {
+    const root = fixture({
+      ".bdk/settings.yaml":
+        "policy:\n  verifier:\n    blocking-categories:\n      - id: accessibility\n        description: WCAG AA failure.\n",
+    }).root;
+    const result = bdk(["config", "show", "policy.verifier.blocking-categories", "--json"], root);
+    expect(result.code).toBe(0);
+    const ids = (result.json as { value: { id: string }[] }).value.map((item) => item.id);
+    expect(ids).toHaveLength(7);
+    expect(ids.at(-1)).toBe("accessibility");
+  });
+
   it("exit 0: text mode prints the tool list as YAML with its when text", () => {
     const result = bdk(
       ["config", "show", "tools.test"],

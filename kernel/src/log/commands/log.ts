@@ -1,6 +1,7 @@
 // The log handlers (T20, T22 `ingest`): flags in, use case, `--json` object or text out.
 import { isAbsolute, join } from "node:path";
 
+import { globalDir } from "../../shared/config/index.ts";
 import type { FlagValue, Handler } from "../../shared/registry/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import { capLines, listPage } from "../../shared/output/index.ts";
@@ -31,7 +32,7 @@ function active(change: ActiveChange | undefined): ActiveChange {
 export function addCommand(deps: LogDeps): Handler {
   return async (context) => {
     const body = text(context.flags["--body"]);
-    const result = await addEntry(deps, active(context.change), {
+    const result = await addEntry(deps, active(context.change), globalDir(context.runtime), {
       type: context.positionals.type ?? "",
       summary: context.positionals["<summary>"] ?? "",
       refs: list(context.flags["--ref"]),
@@ -40,6 +41,7 @@ export function addCommand(deps: LogDeps): Handler {
       ...optional("status", text(context.flags["--status"])),
       ...optional("ticket", text(context.flags["--ticket"])),
       ...optional("supersedes", text(context.flags["--supersedes"])),
+      ...optional("category", text(context.flags["--category"])),
     });
     return isRefusal(result) ? result : { data: result, text: renderAdd(result) };
   };

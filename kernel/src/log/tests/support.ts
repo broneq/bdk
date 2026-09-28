@@ -15,6 +15,7 @@ import {
 } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import type { LogDeps } from "../index.ts";
+import { settingsRegistry } from "../../registrations.ts";
 
 export const ROOT = "/work/repo";
 export const CHANGE = "2026-09-25-login";
@@ -90,7 +91,15 @@ export function sequentialRandom(): () => number {
 }
 
 export function logDeps(store: Store, git: Git = fakeGit(), at = AT): LogDeps {
-  return { store, git, openIndex: memoryIndex, clock: fixedClock(at), random: sequentialRandom() };
+  return {
+    store,
+    git,
+    openIndex: memoryIndex,
+    clock: fixedClock(at),
+    random: sequentialRandom(),
+    pluginRoot: "/plugin",
+    settings: settingsRegistry(),
+  };
 }
 
 export interface RunResult {

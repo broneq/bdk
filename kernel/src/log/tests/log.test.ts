@@ -77,6 +77,143 @@ function addAttempt(store: Store, ticket: string, role: string | undefined, clos
   });
 }
 
+describe("log add --category (P8)", () => {
+  const blocker = (ticket: string, ...extra: string[]) => [
+    "log",
+    "add",
+    "blocker",
+    "naming is inconsistent",
+    "--ref",
+    "02-3",
+    "--ticket",
+    ticket,
+    ...extra,
+    "--json",
+  ];
+
+  it("downgrades a verifier blocker without a category to a reviewed observation", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-9c2d4f6h", "verifier");
+    const result = await run(blocker("A-9c2d4f6h", "--body", "Two spellings of token."));
+    expect(result.code).toBe(0);
+    const output = logAddOutput.parse(result.json);
+    expect(output.entry).toMatchObject({ type: "observation", review: true });
+    expect(output.downgraded).toStrictEqual({ type: "blocker", category: null });
+    const shown = await run(["log", "show", output.entry.id, "--json"]);
+    expect(logShowOutput.parse(shown.json).entry.body).toBe(
+      "Downgraded from blocker: category none is not a blocking category (P8).\n\nTwo spellings of token.\n",
+    );
+  });
+
+  it("downgrades a verifier blocker whose category is not a blocking one and names it", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-9c2d4f6h", "verifier");
+    const result = await run(blocker("A-9c2d4f6h", "--category", "style"));
+    const output = logAddOutput.parse(result.json);
+    expect(output.downgraded).toStrictEqual({ type: "blocker", category: "style" });
+    const shown = await run(["log", "show", output.entry.id, "--json"]);
+    expect(logShowOutput.parse(shown.json).entry.body).toBe(
+      "Downgraded from blocker: category style is not a blocking category (P8).\n",
+    );
+  });
+
+  it("keeps a verifier blocker in a blocking category", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-9c2d4f6h", "verifier");
+    const result = await run(blocker("A-9c2d4f6h", "--category", "false-code-claim"));
+    const output = logAddOutput.parse(result.json);
+    expect(output.entry).toMatchObject({ type: "blocker", category: "false-code-claim" });
+    expect(output.downgraded).toBeUndefined();
+  });
+
+  it("never downgrades an implementer blocker", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-7f3k9m2q", "implementer");
+    const result = await run(blocker("A-7f3k9m2q"));
+    expect(logAddOutput.parse(result.json).entry.type).toBe("blocker");
+    expect(logAddOutput.parse(result.json).downgraded).toBeUndefined();
+  });
+
+  it("accepts a project category for a design-verifier", async () => {
+    const store = repository();
+    store.write(
+      `${ROOT}/.bdk/settings.yaml`,
+      "policy:\n  verifier:\n    blocking-categories:\n      - id: accessibility\n        description: WCAG AA failure.\n",
+    );
+    const { run } = harness(store);
+    addAttempt(store, "A-d3s1g2n4", "design-verifier");
+    const kept = await run(blocker("A-d3s1g2n4", "--category", "accessibility"));
+    expect(logAddOutput.parse(kept.json).entry.type).toBe("blocker");
+    const downgraded = await run([
+      "log",
+      "add",
+      "blocker",
+      "the palette is off",
+      "--ref",
+      "design.md",
+      "--ticket",
+      "A-d3s1g2n4",
+      "--category",
+      "wording",
+      "--json",
+    ]);
+    expect(logAddOutput.parse(downgraded.json).entry.type).toBe("observation");
+  });
+
+  it("stores the category of a finding", async () => {
+    const { run } = harness();
+    const result = await run([
+      "log",
+      "add",
+      "finding",
+      "token logged",
+      "--ref",
+      "src/auth/token.ts",
+      "--category",
+      "security",
+      "--json",
+    ]);
+    expect(logAddOutput.parse(result.json).entry).toMatchObject({ category: "security" });
+  });
+
+  it("refuses --category on a type without the field", async () => {
+    const { run } = harness();
+    const result = await run([
+      "log",
+      "add",
+      "decision",
+      "magic links first",
+      "--ref",
+      "design.md",
+      "--category",
+      "security",
+      "--json",
+    ]);
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+  });
+
+  it("writes a sixth observation under one ticket: no cap (T23-D13)", async () => {
+    const { run, store } = harness();
+    addAttempt(store, "A-9c2d4f6h", "verifier");
+    for (const n of [1, 2, 3, 4, 5, 6]) {
+      const result = await run([
+        "log",
+        "add",
+        "observation",
+        `note number ${"x".repeat(n)}`,
+        "--ref",
+        "02-3",
+        "--ticket",
+        "A-9c2d4f6h",
+        "--json",
+      ]);
+      expect(result.code).toBe(0);
+    }
+    expect(logFiles(store)).toHaveLength(6);
+  });
+});
+
 describe("log add", () => {
   it("stamps id, at, author and source kernel, and writes log/<ts>-<type>-<id>.md", async () => {
     const { run, store } = harness();

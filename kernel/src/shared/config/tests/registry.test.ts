@@ -310,9 +310,11 @@ describe("dotted module keys", () => {
   });
 
   it("names the owner of a planned subtree next to registered ones", () => {
-    const result = check(layer("project", { policy: { verifier: { "not-a-fail": [] } } }));
+    const withoutCheckpoint = createConfigRegistry({ modules: [gates, budgets], prompts: [] });
+    const layers = [layer("project", { policy: { checkpoint: { "squash-at-close": true } } })];
+    const result = validateLayers(withoutCheckpoint, layers, mergeLayers(layers));
     expect(result.problems).toMatchObject([
-      { key: "policy.verifier.not-a-fail", message: "lands with T23" },
+      { key: "policy.checkpoint.squash-at-close", message: "lands with T30" },
     ]);
   });
 
@@ -320,5 +322,75 @@ describe("dotted module keys", () => {
     const result = check(layer("project", { policy: { gates: { design: "auto" } } }));
     expect(moduleValue(gates, result.value ?? {})).toStrictEqual({ design: "auto" });
     expect(moduleValue(budgets, result.value ?? {})).toStrictEqual({ verifier: 2 });
+  });
+});
+
+describe("default items of an id array", () => {
+  const item = z.strictObject({ id: z.string(), description: z.string().min(1) });
+  const verifier = defineConfigModule({
+    key: "policy.verifier",
+    consumer: "log",
+    owner: "T23",
+    description: "Verifier categories.",
+    schema: z
+      .strictObject({
+        "blocking-categories": z.array(item).default([
+          { id: "architecture", description: "Invalid architecture." },
+          { id: "security", description: "A security risk." },
+        ]),
+      })
+      .prefault({}),
+  });
+  const registry = createConfigRegistry({ modules: [verifier], prompts: [] });
+
+  function check(...layers: Layer[]) {
+    return validateLayers(registry, layers, mergeLayers(layers));
+  }
+
+  const ids = (value: Record<string, unknown> | undefined) =>
+    (moduleValue(verifier, value ?? {})["blocking-categories"] as { id: string }[]).map(
+      (entry) => entry.id,
+    );
+
+  it("keeps the defaults when no layer sets the array", () => {
+    expect(ids(check().value)).toStrictEqual(["architecture", "security"]);
+  });
+
+  it("appends a layer's new item after the defaults", () => {
+    const result = check(
+      layer("project", {
+        policy: {
+          verifier: { "blocking-categories": [{ id: "accessibility", description: "WCAG AA." }] },
+        },
+      }),
+    );
+    expect(ids(result.value)).toStrictEqual(["architecture", "security", "accessibility"]);
+  });
+
+  it("merges a layer's item into the default with the same id", () => {
+    const result = check(
+      layer("project", {
+        policy: { verifier: { "blocking-categories": [{ id: "security", description: "Ours." }] } },
+      }),
+    );
+    expect(moduleValue(verifier, result.value ?? {})["blocking-categories"]).toStrictEqual([
+      { id: "architecture", description: "Invalid architecture." },
+      { id: "security", description: "Ours." },
+    ]);
+  });
+
+  it("names an invalid layer item by its id, not by its index among the defaults", () => {
+    const result = check(
+      layer("project", {
+        policy: { verifier: { "blocking-categories": [{ id: "accessibility", description: "" }] } },
+      }),
+    );
+    expect(result.problems).toMatchObject([
+      {
+        rule: "policy/config-invalid",
+        key: "policy.verifier.blocking-categories.accessibility.description",
+        layer: "project",
+      },
+    ]);
   });
 });
