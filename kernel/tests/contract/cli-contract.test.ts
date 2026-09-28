@@ -70,8 +70,9 @@ const MENTION_ALLOWLIST = new Map([
   ],
   ["design done", "Approach B command; Approach B was rejected"],
   ["review open", "Approach B command; Approach B was rejected"],
-  ["execute --wave N", "plan wording replaced by dispatch run (design D-9)"],
-  ["run", "plan wording replaced by dispatch run (design D-9); /bdk:run is a skill"],
+  ["execute --wave N", "plan wording for the headless runner, dropped by T23-D6"],
+  ["run", "plan wording for the headless runner, dropped by T23-D6; /bdk:run is a skill"],
+  ["dispatch run <part> --wave <n>", "T10 record of the headless runner, removed by T23-D6"],
   [
     "stage",
     "the group of the stage enter fallback, in the design's pre-tool deny wording; never added",

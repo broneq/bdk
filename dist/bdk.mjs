@@ -8256,38 +8256,6 @@ var commands_default = {
       writes: []
     },
     {
-      id: "dispatch-run",
-      argv: ["dispatch", "run"],
-      summary: "Headless runner: spawn one host CLI process per package of a wave and collect the reports.",
-      availability: "orchestrator",
-      mode: "command",
-      slice: "dispatch",
-      owner: "T23",
-      changeScoped: true,
-      args: [
-        {
-          name: "<part>",
-          required: true
-        }
-      ],
-      flags: [
-        {
-          name: "--wave",
-          value: "<n>",
-          description: "Wave number from plan/index.md; default the next wave with open tickets."
-        },
-        {
-          name: "--concurrency",
-          value: "<n>",
-          description: "Cap; default execution.concurrency."
-        }
-      ],
-      output: "output/dispatch-run.json",
-      exits: [0, 2, 3, 4, 5],
-      refusals: ["input/not-found", "policy/no-open-ticket", "policy/invalid-transition"],
-      writes: [".bdk/changes/<id>/reports/", ".bdk/.machine/"]
-    },
-    {
       id: "evidence-record",
       argv: ["evidence", "record"],
       summary: "Register verification evidence: a manifest with the tree hash and the hashes of the files.",
@@ -8838,7 +8806,7 @@ var commands_default = {
     {
       id: "export-agents",
       argv: ["export", "agents"],
-      summary: "Generate a host's agent files from the role skills and the per-host tool map.",
+      summary: "Generate a host's adapter files from the kernel's adapter definitions and the per-host tool map.",
       availability: "orchestrator",
       mode: "command",
       slice: "export",
@@ -8848,23 +8816,23 @@ var commands_default = {
       flags: [
         {
           name: "--host",
-          values: ["claude", "gemini", "cursor", "opencode"],
-          description: "Required."
+          values: ["claude"],
+          description: "Required. Claude Code is the only host in 3.0."
         },
         {
           name: "--out",
           value: "<dir>",
-          description: "Default the host's agents directory."
+          description: "Default the agents/ directory of the plugin root."
         },
         {
           name: "--check",
-          description: "Exit 2 when the committed files differ; write nothing."
+          description: "Compare instead of writing; exit 2 when a generated file differs or is missing; write nothing."
         }
       ],
       output: "output/export-agents.json",
-      exits: [0, 3, 5],
-      refusals: [],
-      writes: ["<host agents directory>"]
+      exits: [0, 2, 3, 5],
+      refusals: ["policy/generated-drift"],
+      writes: ["<out>/{worker,reader,reviewer,runner,scout}.md"]
     },
     {
       id: "hooks-session-start",
@@ -15650,6 +15618,7 @@ var RULES = [
   "policy/profile-downgrade",
   "policy/detached-head",
   "policy/rule-format",
+  "policy/generated-drift",
   "policy/duplicate-rule-id",
   "guard/subagent-git",
   "guard/subagent-kernel-command",
@@ -15933,9 +15902,7 @@ var PLANNED_KEYS = [
   { key: "policy.checkpoint.squash-at-close", owner: "T30" },
   { key: "policy.verifier.blocking-categories", owner: "T23" },
   { key: "policy.log.max-observations", owner: "T23" },
-  { key: "execution.runner", owner: "T23" },
   { key: "execution.concurrency", owner: "T23" },
-  { key: "execution.host", owner: "T23" },
   { key: "archive.keep-evidence", owner: "T23" },
   { key: "rules.propose-when.changes", owner: "T31" },
   { key: "rules.propose-when.authors", owner: "T31" },
