@@ -8,7 +8,7 @@ import type { DocumentKind } from "./common.ts";
 
 const VERSION = 1;
 
-export const PRUNED_DIRS = ["dispatch", "reports"] as const;
+const PRUNED_DIRS = ["dispatch", "reports"] as const;
 
 export const prunedKind = {
   name: "pruned",
@@ -34,5 +34,3 @@ export const prunedKind = {
     .meta({ title: "Pruned index" }),
   migrations: [],
 } as const satisfies DocumentKind;
-
-export type PrunedIndex = z.output<typeof prunedKind.schema>;
