@@ -1,26 +1,4 @@
-# kernel-cli/part Specification
-
-## Purpose
-
-Plan parts (`part`). Parts of a plan (S1): read with `list`, opened with `start`, closed with `done`, divided with `split`. State is derived from trailers and attempt records, never stored in the plan file.
-
-Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
-
-Representative refusal:
-
-```json refusal
-{
-  "refused": true,
-  "rule": "policy/part-too-large",
-  "why": "plan/parts/02-login.md is 9 412 bytes; the limit is 8 192",
-  "instead": [
-    "bdk part split 02 02-3,02-4",
-    "shorten the part and run bdk validate plan-part:02"
-  ]
-}
-```
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: bdk part list
 

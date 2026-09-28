@@ -1,23 +1,4 @@
-# kernel-cli/attempt Specification
-
-## Purpose
-
-Tickets and attempts (`attempt`). Every dispatch runs under a ticket (P4): `open` issues one or refuses with the next rung of the ladder, `close` records the outcome and performs the diff, evidence and entry checks, `list` reads the records and the budgets.
-
-Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
-
-Representative refusal:
-
-```json refusal
-{
-  "refused": true,
-  "rule": "policy/budget-exhausted",
-  "why": "task-redispatch 02-3 used 3 of 3 attempts in this round",
-  "instead": ["bdk attempt open task-redispatch 02-3 --escalate"]
-}
-```
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: bdk attempt open
 

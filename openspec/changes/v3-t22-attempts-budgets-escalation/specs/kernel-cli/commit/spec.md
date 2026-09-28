@@ -1,26 +1,4 @@
-# kernel-cli/commit Specification
-
-## Purpose
-
-Task commits (`commit`). The one kernel command that creates a task commit with BDK trailers.
-
-Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
-
-Representative refusal:
-
-```json refusal
-{
-  "refused": true,
-  "rule": "policy/do-not-touch",
-  "why": "diff for 02-3 touches src/billing/invoice.ts, which is under do-not-touch src/billing/** of part 02",
-  "instead": [
-    "revert the change under src/billing/",
-    "bdk log add blocker \"02-3 needs a change in billing\" --ref src/billing/invoice.ts --ref 02-3"
-  ]
-}
-```
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: bdk commit
 
