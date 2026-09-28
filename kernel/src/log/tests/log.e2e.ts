@@ -3,7 +3,7 @@
 // `list`, `show` and `resolve`, every output validated against its schema,
 // and the T20 acceptance cases on the ledger; `log add --category` (P8) and
 // `log ingest` (T23) with a hand-written attempt record and dispatch package.
-import { readdirSync, rmSync, utimesSync } from "node:fs";
+import { readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -200,6 +200,40 @@ describe("bdk log list", () => {
     ) as { items: { id: string; at: string }[] };
     expect(page.items.map((item) => item.id)).toStrictEqual(written);
     expect(new Set(page.items.map((item) => item.at)).size).toBe(written.length);
+  });
+
+  it("exit 0: a hand-written entry with a second-form at reads as .000 and lists before a later one of its second", () => {
+    const { root, dir } = opened();
+    const later = add(root, "finding", "aaa", "--ref", "src/a.ts") as {
+      entry: { id: string; at: string };
+    };
+    const second = later.entry.at.slice(0, 19);
+    writeFileSync(
+      join(dir, "log", `${second.replaceAll("-", "").replaceAll(":", "")}Z-finding-L-00000000.md`),
+      [
+        "---",
+        "schema: 1",
+        "id: L-00000000",
+        "type: finding",
+        "summary: written by hand",
+        "status: proposed",
+        "source: kernel",
+        "author: BDK Test <test@example.com>",
+        `at: ${second}Z`,
+        "refs:",
+        "  - src/a.ts",
+        "---",
+        "",
+      ].join("\n"),
+    );
+    const page = answered(
+      bdk(["log", "list", "--type", "finding", "--json"], root),
+      "output/log-list.json",
+    ) as { items: { id: string; at: string }[] };
+    expect(page.items).toStrictEqual([
+      expect.objectContaining({ id: "L-00000000", at: `${second}.000Z` }),
+      expect.objectContaining({ id: later.entry.id, at: later.entry.at }),
+    ]);
   });
 
   it("exit 0: entries with derived status, filtered by type", () => {
