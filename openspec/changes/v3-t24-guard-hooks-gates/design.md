@@ -45,7 +45,7 @@ Constraints: `hooks` may import `change`, `graph`, `log`, `ctx`, `config` (`kern
 
 It never parses JSON (no `jq` dependency; a JSON escape such as `\"` only makes a substring test match more often). Whatever passes the prefilter, the kernel decides exactly from the parsed payload, so an over-match costs one Node start and never a wrong decision. A main-thread `git status` matches none of the rows and returns without Node, which is what keeps a broken kernel from blocking ordinary work.
 
-Before the kernel line the script checks `command -v node` and the bundle file, and on failure prints `guard/kernel-unavailable: Node or dist/bdk.mjs is missing; install Node >= 22.13 and run /bdk:setup` to stderr and exits 2. The kernel line matches the `guard-wrapper` regex: `printf '%s' "$payload" | node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks pre-tool || exit 2`. `hooks.json` runs `sh "${CLAUDE_PLUGIN_ROOT}/hooks/guard/pre-tool.sh" || exit 2`, so a missing script (sh exits 127) also blocks. `prompt-expansion.sh` has the same availability check and no prefilter, because its matcher already selects the four stage commands.
+Before the kernel line the script checks `command -v node` and the bundle file, and on failure prints `guard/kernel-unavailable: ...` naming the missing Node or bundle to stderr and exits 2. The kernel line matches the `guard-wrapper` regex: `printf '%s' "$payload" | node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks pre-tool || exit 2`. `hooks.json` sources the script into the shell the host already starts (`. "$f"`) after checking `[ -r "$f" ]`, so a missing script also blocks. Measured on macOS, running it as `sh <script>` instead adds a second shell of about 4 ms to every Bash, Edit, Write and Agent call, which alone exceeds the 5 ms budget of a dropped payload; the explicit readability check is needed because a failing `.` ends macOS `/bin/sh` with exit 1, a non-blocking error for the host. `prompt-expansion.sh` has the same availability check and no prefilter, because its matcher already selects the four stage commands.
 
 Alternatives: the design's prefilter inline in `hooks.json` (one very long line nobody can test; the same logic in a script is testable with `sh` in a unit test); `jq` for exact fields (a new user dependency, and 10-20 ms per call); per-tool matchers with separate prefilters (four entries with duplicated availability checks). A regex over the command text only, as the design sketched for the spec guard, was rejected in D-2.
 
@@ -114,7 +114,9 @@ Alternatives: the handler returning an answer plus an exit code (breaks the one 
 
 ### D-11 Prompt-expansion resolves its own Change
 
-The index marks `hooks prompt-expansion` Change-scoped, which makes the registry refuse before the handler runs when the branch has no Change. The contract also says a non-BDK command or a non-stage BDK skill passes with empty stdout and no Change. The record therefore becomes `changeScoped: false` and declares `policy/no-active-change` and the three `state/*` rules itself; the handler parses the payload first and resolves the Change only for a stage command, through the same resolver `main.ts` binds.
+The index marks `hooks prompt-expansion` Change-scoped, and it does emit the Change rules for a stage command, so the record stays as it is. But the registry resolves a Change-scoped record's Change before the handler runs, while the contract also says a non-BDK command or a non-stage BDK skill passes with empty stdout and no Change. A `Registration` therefore gains `resolvesChange: "handler"`: the registry skips its resolution and hands the resolver to the handler, which parses the payload first and resolves the Change only for a stage command.
+
+Alternatives: dropping `changeScoped` from the record (the contract test ties `policy/no-active-change` to `changeScoped`, and the record would then have to repeat every common rule); relying on the matcher alone (the kernel would block `/bdk:mermaid-drawer` on a branch without a Change the moment a matcher is widened).
 
 ### D-12 Outcomes of a stage command
 
@@ -140,13 +142,17 @@ Alternatives for the plain transition: writing one on every retype (noise in the
 
 ### D-14 Session end: report, never refuse
 
-`hooks session-end` resolves the active Change itself and calls `checkpointChange`. It stays a non-standalone record: outside a git work tree the registry answers `runtime/not-a-repo` as a STOP block with exit 0, which the host ignores for this event, so the Invocation rule keeps its three standalone commands. Every other non-commit outcome is `done: false` with `skipped` naming the reason: `no active Change`, `policy.checkpoint.enabled is false`, `nothing changed`, `rebase in progress` (and merge, cherry-pick), `open tickets`, `git hook failed: <line>`. The T10 record declared `policy/git-in-progress` and `policy/ticket-open` as STOP-block rules; they leave the record, because the host ignores this event's output and exit code (hooks reference, `SessionEnd`), and T22 already decided that implicit checkpoint callers report skips. Content is empty, or one line `[BDK] checkpoint <sha7> of <change>` after a commit.
+`hooks session-end` resolves the active Change itself and calls `checkpointChange`. It stays a non-standalone record: outside a git work tree the registry answers `runtime/not-a-repo` as a STOP block with exit 0, which the host ignores for this event, so it does not become standalone (only `hooks pre-tool` does, D-16). Every other non-commit outcome is `done: false` with `skipped` naming the reason: `no active Change`, or the reason the checkpoint core reports, the same text `change park` shows (the disabled policy, nothing changed, the operation in progress, the open tickets by id, the git hook's output). The T10 record declared `policy/git-in-progress` and `policy/ticket-open` as STOP-block rules; they leave the record, because the host ignores this event's output and exit code (hooks reference, `SessionEnd`), and T22 already decided that implicit checkpoint callers report skips. Content is empty, or one line `[BDK] checkpoint <sha7> of <change>` after a commit.
 
 ### D-15 `previousSession` from the ledger
 
 `change takeover` sets `previousSession` to the `session` of the latest `transition` entry that carries one and is not later than the oldest open ticket's `opened` time. The stage command that started the work is the last thing the kernel learnt about the session that opened the tickets. Liveness stays a user confirmation: the host exposes no API to ask whether a session is alive, so the output names the session and the command still requires `--close-tickets`.
 
 Alternative: a `.machine/` session marker written by every hook (a second source of truth that a fresh clone would lack).
+
+### D-16 `hooks pre-tool` is standalone
+
+The host runs `PreToolUse` in whatever directory the session is in, and the guards read only the payload (its `cwd` included). A non-standalone record would answer `runtime/not-a-repo` outside a git work tree, which guard mode turns into a block: a subagent's `git init` in a fresh directory would be denied. The record gets `standalone: true` and the Invocation rule lists it as the fourth standalone command. `hooks prompt-expansion` stays non-standalone: a stage command outside a repository has no Change, so blocking it is the right outcome.
 
 ## Risks / Trade-offs
 

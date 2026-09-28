@@ -9,7 +9,7 @@ SessionEnd content hook: Change checkpoint commit when enabled and safe. The ker
 - **Mode:** `inject`
 - **Arguments:**
   - stdin: SessionEnd payload (`kernel-cli/hooks`, Hook payloads).
-- **Behaviour:** Resolves the active Change of the branch and runs the `shared/store` checkpoint core that `change checkpoint` uses (`kernel-loops`, Checkpoint). Every outcome other than a commit is reported, never refused: `checkpoint.done` is false and `skipped` names the reason (`no active Change`, `policy.checkpoint.enabled is false`, `nothing changed`, `rebase in progress`, `merge in progress`, `cherry-pick in progress`, `open tickets`, `git hook failed: <first line>`), because the host ignores this event's output and exit code (hooks reference, `SessionEnd`) and implicit checkpoint callers report skips (T22). Content is empty, or one line `[BDK] checkpoint <sha7> of <change>` after a commit. Fires on `/clear`, `/exit`, SIGTERM and after every headless run (HOST-FACTS `end-clear`, `end-exit`, `end-term`, `end-headless`), never after SIGKILL (`end-kill`), so recovery never assumes it ran. The payload field is `reason` as recorded (HOST-FACTS `end-payload`), echoed in the output; an unreadable payload is ignored, since the checkpoint does not depend on it.
+- **Behaviour:** Resolves the active Change of the branch and runs the `shared/store` checkpoint core that `change checkpoint` uses (`kernel-loops`, Checkpoint). Every outcome other than a commit is reported, never refused: `checkpoint.done` is false and `skipped` is `no active Change` or the reason the checkpoint core reports, as `change park` reports it (the disabled policy, nothing changed under the Change directory, the rebase, merge or cherry-pick in progress, the open tickets by id, the git hook's output), because the host ignores this event's output and exit code (hooks reference, `SessionEnd`) and implicit checkpoint callers report skips (T22). Content is empty, or one line `[BDK] checkpoint <sha7> of <change>` after a commit. Fires on `/clear`, `/exit`, SIGTERM and after every headless run (HOST-FACTS `end-clear`, `end-exit`, `end-term`, `end-headless`), never after SIGKILL (`end-kill`), so recovery never assumes it ran. The payload field is `reason` as recorded (HOST-FACTS `end-payload`), echoed in the output; an unreadable payload is ignored, since the checkpoint does not depend on it.
 - **Writes:** `git:commit`
 - **Output:** `schema/cli/output/hooks-session-end.json` for `--json`; Markdown otherwise (`kernel-cli`, Output modes).
 - **Exit codes and rules:** `0` always (inject mode). Rules rendered as a STOP block: none; a skipped checkpoint is data; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -25,7 +25,7 @@ SessionEnd content hook: Change checkpoint commit when enabled and safe. The ker
     "reason": "prompt_input_exit",
     "checkpoint": {
       "done": false,
-      "skipped": "open tickets"
+      "skipped": "ticket A-7f3k9m2q is open; a subagent may still be writing"
     }
   }
   ```
@@ -46,7 +46,7 @@ SessionEnd content hook: Change checkpoint commit when enabled and safe. The ker
 #### Scenario: policy/ticket-open
 
 - **WHEN** a ticket is still open
-- **THEN** the exit code is 0, no commit is made, no `BDK STOP` line is printed and `checkpoint.skipped` is `open tickets`
+- **THEN** the exit code is 0, no commit is made, no `BDK STOP` line is printed and `checkpoint.skipped` names the open ticket
 
 #### Scenario: policy/git-in-progress
 
@@ -64,13 +64,13 @@ UserPromptExpansion guard: the only writer of `source: user` stage transitions. 
 
 - **Synopsis:** `bdk hooks prompt-expansion`
 - **Availability:** `hook`
-- **Mode:** `guard`
+- **Mode:** `guard`; Change-scoped
 - **Arguments:**
   - stdin: UserPromptExpansion payload (`kernel-cli/hooks`, Hook payloads).
-- **Behaviour:** Parses the payload first. A `command_name` outside the `bdk:` namespace, or a BDK skill that is neither a pipeline stage command nor `run`, passes with empty stdout and no Change lookup. For a stage command it checks the user-typed marker (Prompt-expansion outcomes), resolves the Change from the branch, reads the graph once and applies the outcomes of Prompt-expansion outcomes: gate ready -> pass and write `source: user`; gate not ready -> block naming what is missing; gate already done -> pass without writing (S5); no gate in the profile -> pass with a plain stage entry, carrying `skip-verify` for `/bdk:execute` when `command_args` holds the token `--skip-verify` (P2); `/bdk:run` -> `source: policy` entries for the ready `auto` gates (T02 decision R-9); no active Change -> block with the hint; kernel missing -> the guard script blocks with `guard/kernel-unavailable`. On pass, stdout is the gate status as plain text, which the host adds to the skill's context. `command_name` arrives namespaced (`bdk:plan`, HOST-FACTS `upe-name`) and a nested `claude -p "/bdk:plan"` counts as user-typed (`upe-headless`), which `hooks pre-tool` denies from tool calls (`guard/nested-stage-command`). The registry does not resolve the Change for this record (a non-stage command must pass without one); the handler resolves it and emits the Change rules itself.
+- **Behaviour:** Parses the payload first. A `command_name` outside the `bdk:` namespace, or a BDK skill that is neither a pipeline stage command nor `run`, passes with empty stdout and no Change lookup. For a stage command it checks the user-typed marker (Prompt-expansion outcomes), resolves the Change from the branch, reads the graph once and applies the outcomes of Prompt-expansion outcomes: gate ready -> pass and write `source: user`; gate not ready -> block naming what is missing; gate already done -> pass without writing (S5); no gate in the profile -> pass with a plain stage entry, carrying `skip-verify` for `/bdk:execute` when `command_args` holds the token `--skip-verify` (P2); `/bdk:run` -> `source: policy` entries for the ready `auto` gates (T02 decision R-9); no active Change -> block with the hint; kernel missing -> the guard script blocks with `guard/kernel-unavailable`. On pass, stdout is the gate status as plain text, which the host adds to the skill's context. `command_name` arrives namespaced (`bdk:plan`, HOST-FACTS `upe-name`) and a nested `claude -p "/bdk:plan"` counts as user-typed (`upe-headless`), which `hooks pre-tool` denies from tool calls (`guard/nested-stage-command`). The record is Change-scoped, but its registration asks the registry to leave the resolution to the handler, which resolves the Change only for a stage command, so a non-stage command passes without one.
 - **Writes:** `.bdk/changes/<id>/log/`
 - **Output:** `schema/cli/output/hooks-prompt-expansion.json` for `--json` (the kernel's own decision record, used by tests); the host's stdout shape otherwise (Hook payloads below).
-- **Exit codes and rules:** `0` (pass) or `2` (block); guard mode never exits 3, 4 or 5. Rules: `policy/gate-not-ready`, `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object), all reported as exit 2.
+- **Exit codes and rules:** `0` (pass) or `2` (block); guard mode never exits 3, 4 or 5. Rules: `policy/gate-not-ready`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object), all reported as exit 2.
 - **Example:**
 
   ```bash
@@ -133,7 +133,7 @@ PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.m
 
 - **Synopsis:** `bdk hooks pre-tool`
 - **Availability:** `hook`
-- **Mode:** `guard`
+- **Mode:** `guard`; standalone (`kernel-cli`, Invocation): the guards read only the payload, so a tool call outside a git work tree is decided, not blocked with `runtime/not-a-repo`
 - **Arguments:**
   - stdin: PreToolUse payload (`kernel-cli/hooks`, Hook payloads).
 - **Behaviour:** Reached only after the shell prefilter (Guard hooks file and prefilter). Reads a Bash command through the command reader (Pre-tool command reading) and applies the guards of Pre-tool guards in this order: `guard/spec-dir-write`, `guard/hooks-from-bash`, `guard/nested-stage-command`, `guard/subagent-git`, `guard/subagent-kernel-command`, `guard/reader-write`, `guard/dispatch-prompt`; the first match denies. Denied kernel commands: every `orchestrator` and `hook` verb of `kernel-cli`, Availability classes, matched by exact verb. On deny the kernel prints the host's `permissionDecision: deny` JSON with the reason and exits 2 (stderr carries `<rule>: <reason>`). Main-thread git is never touched. The user's own `!` bash-mode commands do not pass through this hook (HOST-FACTS `bang-pretool`), a known gap. A payload that is not JSON, or lacks `tool_name` or `tool_input`, is blocked with `input/invalid-argument`.
@@ -311,18 +311,29 @@ No transition written here carries `input-hash`, so none changes a node's state 
 
 | Event                 | Matcher                                      | Command                                                                                                                                                          |
 | --------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PreToolUse`          | `^(Bash\|Edit\|Write\|NotebookEdit\|Agent)$` | `sh "${CLAUDE_PLUGIN_ROOT}/hooks/guard/pre-tool.sh" \|\| exit 2`                                                                                                 |
-| `UserPromptExpansion` | `^bdk:(plan\|execute\|close\|run)$`          | `sh "${CLAUDE_PLUGIN_ROOT}/hooks/guard/prompt-expansion.sh" \|\| exit 2`                                                                                         |
+| `PreToolUse`          | `^(Bash\|Edit\|Write\|NotebookEdit\|Agent)$` | the guard form below with `pre-tool.sh`                                                                                                                          |
+| `UserPromptExpansion` | `^bdk:(plan\|execute\|close\|run)$`          | the guard form below with `prompt-expansion.sh`                                                                                                                  |
 | `SessionEnd`          | none                                         | `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks session-end 2>&1 \|\| echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."` |
+
+The guard form sources the script into the shell the host already starts, so a payload the prefilter drops costs no second process, and checks first that the script is readable, because a failing `.` ends some shells with exit 1, which the host would treat as a non-blocking error:
+
+```sh
+f="${CLAUDE_PLUGIN_ROOT}/hooks/guard/<script>"; [ -r "$f" ] || { echo "guard/kernel-unavailable: $f is missing, so BDK cannot check <what>; reinstall the BDK plugin" >&2; exit 2; }; . "$f"
+```
 
 The matchers are anchored because the host tests a matcher with other characters than letters, digits, `_`, `-`, `|`, `,` and spaces as an unanchored regular expression (hooks reference, matchers). `MultiEdit` is left out: the host has no such tool (HOST-FACTS `input-multiedit`). The `Agent` matcher follows HOST-FACTS `agent-tool-name`.
 
-Both guard scripts are POSIX `sh`, read the payload from stdin once, first check that `node` is on `PATH` and `dist/bdk.mjs` exists (otherwise `guard/kernel-unavailable: ...` on stderr and exit 2), and end with one kernel line that matches the `guard-wrapper` regex of `kernel-cli`, Output modes, feeding the payload on stdin. `pre-tool.sh` calls the kernel only when the raw payload contains one of: `.bdk/specs`; `bdk.mjs` and `hooks`; `/bdk:`; `"agent_id"` and either `git` or `bdk.mjs`; `bdk:reader`, `bdk:reviewer` or `bdk:scout`; `"subagent_type"` and either `bdk:worker` or `bdk:runner`. Otherwise it exits 0 without starting Node. The prefilter only over-approximates: whatever it lets through, the kernel decides from the parsed payload.
+Both guard scripts are POSIX `sh`, read the payload from stdin once, check before starting the kernel (in `pre-tool.sh` after the prefilter) that `node` is on `PATH` and `dist/bdk.mjs` exists (otherwise `guard/kernel-unavailable: ...` on stderr and exit 2), and end with one kernel line that matches the `guard-wrapper` regex of `kernel-cli`, Output modes, feeding the payload on stdin. `pre-tool.sh` calls the kernel only when the raw payload contains one of: `.bdk/specs`; `bdk.mjs` and `hooks`; `/bdk:`; `"agent_id"` and either `git` or `bdk.mjs`; `bdk:reader`, `bdk:reviewer` or `bdk:scout`; `"subagent_type"` and either `bdk:worker` or `bdk:runner`. Otherwise it exits 0 without starting Node. The prefilter only over-approximates: whatever it lets through, the kernel decides from the parsed payload.
 
 #### Scenario: hooks file entries
 
 - **WHEN** `hooks/hooks.json` is inspected
 - **THEN** it holds exactly the `SessionStart` entry of `plugin-tooling` and the three entries above, and each guard script's kernel line matches `guard-wrapper`
+
+#### Scenario: guard script missing
+
+- **WHEN** `CLAUDE_PLUGIN_ROOT` points to a directory without `hooks/guard/` and a guard command runs
+- **THEN** it exits 2 and stderr starts with `guard/kernel-unavailable`
 
 #### Scenario: main-thread git without Node
 
@@ -453,7 +464,7 @@ The T24 acceptance signal SHALL pass end to end through `dist/bdk.mjs` on a fixt
 
 The guards SHALL stay within the NFR "Latency" budgets, measured locally through the bundle in the `perf` test project (`pnpm test:perf`), which CI does not run.
 
-On a fixture of 750 recorded-shape `PreToolUse` payloads (main-thread and subagent Bash, edit tools, `Agent` calls, a project path containing `git`): the p95 of `pre-tool.sh` on a payload the prefilter drops is under 5 ms; the p95 of a `pre-tool` call that reaches the kernel is under 150 ms; the p95 of `prompt-expansion` on a typed stage command that writes its transition is under 150 ms.
+On a fixture of 750 recorded-shape `PreToolUse` payloads (main-thread and subagent Bash, edit tools, `Agent` calls, a project path containing `git`): on a payload the prefilter drops, the p95 of the time the guard adds over a bare `sh -c` reading the same payload is under 5 ms; the p95 of a `pre-tool` call that reaches the kernel is under 150 ms; the p95 of `prompt-expansion` on a typed stage command that writes its transition is under 150 ms.
 
 #### Scenario: latency budgets
 

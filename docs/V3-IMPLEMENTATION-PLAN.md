@@ -578,6 +578,15 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Fixed by T22**: `hooks session-end` calls the `shared/store` checkpoint core (`checkpointChange`) and reports a skip; session ids let `change takeover` report `previousSession` and check liveness; the `pre-tool` deny list for subagents covers `bdk commit`, `bdk attempt` and `bdk part`.
 
+**Resolution** (2026-09-28, Change `v3-t24-guard-hooks-gates`, #56):
+
+- Exact git guard regex: no regex over the text; a shell command reader yields simple commands and git's verb after its global options, so a quoted `git reset` in a commit message or a heredoc body never counts (design D-2, D-3).
+- `ask` in the main thread: stays an unused extension; the kernel answers only `deny` or silence.
+- Text of the block and deny messages: `<rule>: <what was matched>; <instruction>`, one row per rule in `kernel-cli/hooks`, Hook payloads.
+- `--skip-verify` in `command_args`: an exact whitespace-separated token; `command_input` is read when `command_args` is absent.
+- Also decided: `pre-tool` denies a nested `claude ... /bdk:<stage>` from any thread (`guard/nested-stage-command`, HOST-FACTS `upe-headless`); the T23 inputs land as `guard/dispatch-prompt` and `guard/reader-write`; `MultiEdit` leaves the matcher (HOST-FACTS `input-multiedit`); `hooks session-end` reports every skip as data; `hooks pre-tool` is standalone, so it decides outside a git work tree (design D-16).
+- Handed to T41: how `/bdk:run` passes an `auto` gate that becomes ready after it was typed (recommendation in the Change's design, Open Questions).
+
 **Dependencies**: T22, T01.
 
 ---
@@ -707,6 +716,8 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **Fixed by T21**: stage skills read `next` (artifact, instruction, gates) and finish with `bdk done <id>`; `design` writes `architecture: false` in `design.md` for a product-only Change, splits into `design/parts/` when needed (then `done design` raises the profile to `large` itself) and keeps a single `design.md` under 12 KB.
 
 **Fixed by T22**: the `/bdk:plan` template follows the task grammar of `kernel-state`; `change resume --option <n>` answers a ladder `question`; the skills act on `attempt close` `next.action` (`post-task-steps`, `retry`, `narrow`, `escalate`, `parked`).
+
+**Fixed by T24**: `hooks prompt-expansion` passes by policy only the `auto` gates that are ready when `/bdk:run` is typed; a writer for an `auto` gate that becomes ready later in the run is T41's decision (Change `v3-t24-guard-hooks-gates`, design Open Questions).
 
 **Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
 
