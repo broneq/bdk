@@ -117,6 +117,7 @@ describe("role skills", () => {
       expect(body).toMatch(/never write the report file yourself/);
       expect(body).not.toMatch(/write the (full )?report to/i);
       expect(body).toMatch(/return only the envelope/i);
+      expect(body).toContain("report path as the package names it");
     });
 
     it(`keeps its body within ${BODY_BUDGET} bytes`, () => {

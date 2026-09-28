@@ -55,4 +55,4 @@ reason: <required for blocked and needs-context>
 
 The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
 
-Then return only the envelope, at most 15 lines, and the report path.
+Then return only the envelope, at most 15 lines, and the report path as the package names it.
