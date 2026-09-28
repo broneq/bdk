@@ -220,6 +220,16 @@ describe("bdk config check", () => {
     expect(refusal.why).toContain("did you mean tools.test?");
   });
 
+  it("exit 2: a prompt file for a role body is no prompt key (role-contracts)", () => {
+    const root = fixture({ ".bdk/prompts/roles/verifier.md": "Ours.\n" }).root;
+    const refusal = refused(
+      bdk(["config", "check", "--json"], root),
+      2,
+      "policy/unknown-config-key",
+    );
+    expect(refusal.why).toContain("roles/verifier");
+  });
+
   it("acceptance: key of a later task", () => {
     const root = fixture({
       ".bdk/settings.yaml": "archive:\n  keep-evidence: true\n",

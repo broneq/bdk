@@ -28,7 +28,7 @@
 ## 5. `attempt close` and role contracts
 
 - [x] 5.1 Write failing tests for the missing-rules finding (implementer without `rules-read` gets one `finding` with `review: true` and `rulesFinding`; with `rules-read` none; a verifier ticket never); implement in `attempt close`; verify unit and E2E pass
-- [ ] 5.2 Update the seven role skills: every role pipes its report to `bdk log ingest --ticket`, checks the exit code and resubmits a refused report; the implementer no longer writes the report file; extend `kernel/tests/contract/role-contracts.test.ts` with the `every role stores its report through ingest` scenario and a check that no `roles/` prompt key is registered; verify the content test, `pnpm skill-check` and the 4 096-byte budget pass
+- [x] 5.2 Update the seven role skills: every role pipes its report to `bdk log ingest --ticket`, checks the exit code and resubmits a refused report; the implementer no longer writes the report file; extend `kernel/tests/contract/role-contracts.test.ts` with the `every role stores its report through ingest` scenario and a check that no `roles/` prompt key is registered; verify the content test, `pnpm skill-check` and the 4 096-byte budget pass
 
 ## 6. Documentation
 

@@ -35,16 +35,16 @@ Record what others need as soon as you know it, each entry with at least one ref
 
 ## Output
 
-Return only the envelope, at most 15 lines:
+Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
 
 ```
 status: done | done-with-concerns | needs-context | blocked
-ticket: <ticket>
-files: <paths you changed, or none>
-entries: <ledger ids you wrote>
-evidence: <evidence ids, or none>
-report: <report path from the package>
+files: [<paths you changed>]
+entries: [<ledger ids you wrote>]
+evidence: [<evidence ids>]
 reason: <required for blocked and needs-context>
 ```
 
-Before you return, pipe the full report, with the envelope as its frontmatter, to `bdk log ingest --ticket <ticket>`; the kernel stores it at the package's `report` path.
+The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
+
+Then return only the envelope, at most 15 lines, and the report path.
