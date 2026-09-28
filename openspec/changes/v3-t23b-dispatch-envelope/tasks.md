@@ -22,7 +22,7 @@
 ## 4. `dispatch` slice
 
 - [ ] 4.1 Write failing unit tests for the package template: section order, task-target embedding, non-task targets naming paths, entry selection by target / part / `Files:` (T23-D32), verifier categories and `not-a-fail`, role body without frontmatter, `template-hash` normalisation and stability (T23-D33); verify they fail for the missing module
-- [ ] 4.2 Implement `dispatch build` (role-to-adapter map from `export`, lists from `log`, rule texts from `rules`, placeholder check from `shared/store`, 12 288-byte limit naming the largest section) and `dispatch show` (ticket or path under `dispatch/`); register the slice; verify 4.1 passes and the import scan accepts `dispatch -> rules|log|export` only
+- [ ] 4.2 Implement `dispatch build` (role-to-adapter map from `export`, lists from `log`, rule texts from `rules`, placeholder check from `shared/store`, 12 288-byte limit naming the largest section) and `dispatch show` (ticket or path under `dispatch/`); register the slice; verify 4.1 passes and the import scan accepts `dispatch -> rules|log|export|graph` only (T23-D37)
 - [ ] 4.3 Write E2E tests for every scenario of the `kernel-cli/dispatch` delta including acceptance B (13 KB package refused, `TODO` in `Files:` refused, no ticket refused, package embeds the role body, the `rules show --ticket` command and only accepted decisions and open blockers in full), and record the fixture package size; verify `pnpm test:e2e` passes
 
 ## 5. `attempt close` and role contracts
