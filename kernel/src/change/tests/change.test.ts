@@ -275,10 +275,7 @@ describe("change new", () => {
 
   it("opens the Change without next when the graph refuses the settings", async () => {
     const h = harness();
-    h.store.write(
-      `${ROOT}/.bdk/settings.local.yaml`,
-      "policy:\n  checkpoint:\n    squash-at-close: 3\n",
-    );
+    h.store.write(`${ROOT}/.bdk/settings.local.yaml`, "rules:\n  max-per-package: 3\n");
 
     const result = await h.run(["change", "new", "Add dark mode", "--json"]);
 

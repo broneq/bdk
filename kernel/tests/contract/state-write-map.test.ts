@@ -65,7 +65,7 @@ function writesLines(): Map<string, string[]> {
 
 /**
  * A path in one namespace: `change:<path in the Change>` (`change:` alone is
- * the whole Change), `archive:` or `rules:`; undefined outside the state.
+ * the whole Change), `archive:`, `rules:` or `specs:`; undefined outside the state.
  */
 function statePath(path: string): string | undefined {
   if (path === ".bdk/changes/" || path === ".bdk/changes/<id>/") return "change:";
@@ -73,6 +73,7 @@ function statePath(path: string): string | undefined {
   if (path.startsWith(".bdk/changes/<id>/"))
     return `change:${path.slice(".bdk/changes/<id>/".length)}`;
   if (path.startsWith(".bdk/rules/")) return "rules:";
+  if (path.startsWith(".bdk/specs/")) return "specs:";
   return undefined;
 }
 

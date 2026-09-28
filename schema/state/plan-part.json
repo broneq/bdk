@@ -27,6 +27,7 @@
       }
     },
     "spec-impact": {
+      "description": "Absent means none for the tiny and small profiles; a large part must declare it (T30).",
       "anyOf": [
         { "type": "string", "const": "none" },
         {
@@ -39,15 +40,6 @@
       ]
     }
   },
-  "required": [
-    "schema",
-    "id",
-    "title",
-    "goal",
-    "success-measure",
-    "do-not-touch",
-    "depends-on",
-    "spec-impact"
-  ],
+  "required": ["schema", "id", "title", "goal", "success-measure", "do-not-touch", "depends-on"],
   "additionalProperties": false
 }

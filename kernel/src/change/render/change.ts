@@ -1,6 +1,7 @@
 // Text renderings of the change commands (`kernel-cli`, Output modes).
 import type {
   CheckpointReport,
+  CloseReport,
   ListItem,
   NewReport,
   ParkReport,
@@ -145,4 +146,18 @@ export function renderCheckpoint(report: CheckpointReport): string {
 
 export function renderTakeover(report: TakeoverReport): string {
   return `took over ${report.change}: closed ${report.closedTickets.join(", ")} as not-run, state rebuilt\n`;
+}
+
+export function renderClose(report: CloseReport, dryRun: boolean): string {
+  const merged = report.spec.unchanged
+    ? "no spec change"
+    : `specs ${report.spec.merged.join(", ")}`;
+  const head = dryRun
+    ? `would close ${report.change}: ${merged}, archive to ${report.archivedTo}`
+    : `closed ${report.change}: ${merged}, archived to ${report.archivedTo}`;
+  const policy =
+    report.gatesByPolicy.length === 0
+      ? []
+      : [`passed by policy: ${report.gatesByPolicy.join(", ")}`];
+  return `${[head, ...policy].join("\n")}\n\n${report.summary}`;
 }

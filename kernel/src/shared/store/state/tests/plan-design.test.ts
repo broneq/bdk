@@ -31,9 +31,16 @@ describe("plan part", () => {
     expect(issues(schema, { ...example.planPart, "spec-impact": "none" })).toStrictEqual([]);
   });
 
-  it.each(Object.keys(example.planPart))("requires %s", (key) => {
-    expect(issues(schema, without(example.planPart, key))).toStrictEqual([key]);
+  it("accepts a part without spec-impact (T30: none by default in tiny and small)", () => {
+    expect(issues(schema, without(example.planPart, "spec-impact"))).toStrictEqual([]);
   });
+
+  it.each(Object.keys(example.planPart).filter((key) => key !== "spec-impact"))(
+    "requires %s",
+    (key) => {
+      expect(issues(schema, without(example.planPart, key))).toStrictEqual([key]);
+    },
+  );
 
   it.each([
     ["id", "2"],

@@ -8,5 +8,5 @@
   ],
   "project": ["kernel/**/*.ts", "kernel/**/*.mjs"],
   "tags": ["-public"],
-  "ignoreBinaries": ["uv"]
+  "ignoreBinaries": ["uv", "openspec"]
 }

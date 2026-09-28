@@ -1,9 +1,10 @@
-// Generates `schema/cli/output/change-{new,status,list,resume,park,takeover,checkpoint}.json`
+// Generates `schema/cli/output/change-{new,status,list,resume,park,takeover,checkpoint,close}.json`
 // (kernel/scripts/export-schemas.ts; design D-14, D-15 of T20).
 import * as z from "zod";
 
 import type {
   CheckpointReport,
+  CloseReport,
   ListItem,
   NewReport,
   ParkReport,
@@ -341,3 +342,50 @@ export const changeCheckpointOutput = z
     description: "Pathspec commit of the Change directory: `chore(bdk): checkpoint <change>`.",
     examples: [{ change: CHANGE, done: true, commit: "a1b2c3d" }],
   }) satisfies z.ZodType<CheckpointReport>;
+
+export const changeCloseOutput = z
+  .strictObject({
+    change: changeId,
+    archivedTo: z
+      .string()
+      .regex(/^\.bdk\/changes\/archive\/[^/]+$/)
+      .meta({ description: "Path relative to the project root: `.bdk/changes/archive/<id>`." }),
+    spec: z.strictObject({
+      merged: z
+        .array(z.string().min(1))
+        .meta({ description: "The capabilities the merge wrote or confirmed, in path order." }),
+      unchanged: z.boolean().meta({ description: "True when the Change has no spec delta." }),
+    }),
+    learning: z
+      .strictObject({
+        proposedRules: z.array(entryId).meta({
+          description:
+            "learning entries above the T31 thresholds; nothing under .bdk/rules/ changes before the user accepts.",
+        }),
+        spec: z.array(entryId),
+        nothing: z.array(entryId),
+      })
+      .meta({ description: "Empty lists until T31 lands `log route` and the rule projection." }),
+    gatesByPolicy: z
+      .array(z.string().regex(/^gate:[a-z-]+$/))
+      .meta({ description: "Gates passed by a `source: policy` transition." }),
+    summary: z.string().min(1).meta({
+      description:
+        "PR summary in Markdown from the ledger: intent, decisions, assumptions, risks, open findings, merged capabilities.",
+    }),
+  })
+  .meta({
+    title: "bdk change close --json",
+    description:
+      "Close the Change after the review gate: spec merge, archive, one pathspec commit, PR summary.",
+    examples: [
+      {
+        change: CHANGE,
+        archivedTo: `.bdk/changes/archive/${CHANGE}`,
+        spec: { merged: ["auth/login"], unchanged: false },
+        learning: { proposedRules: [], spec: [], nothing: [] },
+        gatesByPolicy: [],
+        summary: "## Users log in with a link\n\n### Spec\n\n- `auth/login`\n",
+      },
+    ],
+  }) satisfies z.ZodType<CloseReport>;

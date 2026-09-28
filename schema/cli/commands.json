@@ -234,10 +234,6 @@
       "args": [],
       "flags": [
         {
-          "name": "--squash",
-          "description": "Squash checkpoint commits (policy default open, V2-2)."
-        },
-        {
           "name": "--dry-run",
           "description": "Report what would be merged, routed and archived; write nothing."
         }
@@ -248,13 +244,16 @@
         "policy/gate-not-ready",
         "policy/ticket-open",
         "policy/spec-conflict",
+        "policy/spec-invalid",
         "policy/merge-hash-mismatch",
+        "policy/git-in-progress",
+        "policy/git-hook-failed",
         "state/trailer-mismatch",
         "runtime/git-missing"
       ],
       "writes": [
         ".bdk/changes/<id>/log/",
-        ".bdk/changes/archive/<date>-<id>/",
+        ".bdk/changes/archive/<id>/",
         ".bdk/specs/",
         ".claude/rules/bdk-generated.md",
         "git:commit"
@@ -1602,8 +1601,8 @@
         }
       ],
       "output": "output/doctor.json",
-      "exits": [0, 2, 3, 5],
-      "refusals": ["policy/merge-hash-mismatch"],
+      "exits": [0, 3, 5],
+      "refusals": [],
       "writes": []
     },
     {

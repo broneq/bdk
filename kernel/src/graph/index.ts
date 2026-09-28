@@ -18,6 +18,7 @@ export type { ChangeGraph } from "./use-cases/graph.ts";
 export type { GateView } from "./domain/reports.ts";
 export { checksOf } from "./use-cases/validate.ts";
 export { writeDoneMarker } from "./use-cases/done.ts";
+export { gateRefusal, requireGate } from "./use-cases/gate.ts";
 
 export const graphConfig = {
   modules: [gatesModule],

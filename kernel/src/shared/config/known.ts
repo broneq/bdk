@@ -18,15 +18,12 @@ export interface RemovedKey {
 }
 
 export const PLANNED_KEYS: readonly PlannedKey[] = [
-  { key: "policy.checkpoint.squash-at-close", owner: "T30" },
-  { key: "archive.keep-evidence", owner: "T30" },
   { key: "rules.propose-when.changes", owner: "T31" },
   { key: "rules.propose-when.authors", owner: "T31" },
   { key: "rules.propose-when.failed-attempts", owner: "T31" },
   { key: "rules.max-per-package", owner: "T31" },
   { key: "rules.max-learnings-per-change", owner: "T31" },
   { key: "rules.disabled", owner: "T31" },
-  { key: "spec.normative-word", owner: "T30" },
 ];
 
 const MCP = "removed with the bundled MCP servers (ADR-0001)";

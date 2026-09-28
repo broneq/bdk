@@ -91,6 +91,12 @@ jobs:
       - name: E2E tests
         run: pnpm test:e2e
 
+      # The OpenSpec compatibility contract test (T30-D14) validates the
+      # merged .bdk/specs/ with the version CLAUDE.md pins; it fails in CI
+      # when openspec is missing.
+      - name: Install OpenSpec
+        run: npm install --global @fission-ai/openspec@1.13.2
+
       - name: Contract and structural tests
         run: pnpm test:contract
 

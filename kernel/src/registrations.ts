@@ -2,7 +2,7 @@
 // index without a handler here answers `kernel/not-implemented` until its
 // owner task adds one; a module is registered with its consumer (S6).
 import { attemptConfig, attemptRegistrations } from "./attempt/index.ts";
-import { changeRegistrations } from "./change/index.ts";
+import { changeConfig, changeRegistrations } from "./change/index.ts";
 import { commitRegistrations } from "./commit/index.ts";
 import type { ChangeDeps } from "./change/index.ts";
 import { configRegistrations } from "./config/index.ts";
@@ -12,7 +12,7 @@ import { dispatchRegistrations } from "./dispatch/index.ts";
 import { evidenceConfig, evidenceRegistrations } from "./evidence/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
-import { graphConfig, graphRegistrations } from "./graph/index.ts";
+import { graphConfig, graphRegistrations, requireGate } from "./graph/index.ts";
 import { hooksRegistrations } from "./hooks/index.ts";
 import type { HooksDeps } from "./hooks/index.ts";
 import { logConfig, logRegistrations } from "./log/index.ts";
@@ -25,6 +25,7 @@ import { rulesConfig, rulesRegistrations } from "./rules/index.ts";
 import type { RulesDeps } from "./rules/index.ts";
 import type { QueryDeps } from "./query/index.ts";
 import { serviceRegistrations } from "./service/index.ts";
+import { specConfig, specRegistrations } from "./spec/index.ts";
 import type { ServiceDeps } from "./service/index.ts";
 import { createConfigRegistry, promptsModule } from "./shared/config/index.ts";
 import type { ConfigRegistry } from "./shared/config/index.ts";
@@ -59,6 +60,10 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...exportRegistrations(deps),
     ...rulesRegistrations(deps),
     ...dispatchRegistrations(deps),
+    ...specRegistrations({
+      ...deps,
+      reviewGate: (change, globalDir) => requireGate(deps, change, globalDir, "gate:review"),
+    }),
   ];
 }
 
@@ -72,6 +77,8 @@ export function settingsRegistry(): ConfigRegistry {
       ...attemptConfig.modules,
       ...logConfig.modules,
       ...evidenceConfig.modules,
+      ...changeConfig.modules,
+      ...specConfig.modules,
       checkpointModule,
       promptsModule,
     ],

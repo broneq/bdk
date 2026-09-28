@@ -10,6 +10,7 @@ import type {
   PlanPartFacts,
   WorkFacts,
 } from "../domain/kinds/index.ts";
+import type { Mapping } from "../../shared/config/index.ts";
 import { KernelRefusal } from "../../shared/refusal/index.ts";
 import {
   firstMatch,
@@ -19,6 +20,7 @@ import {
 } from "../../shared/store/index.ts";
 import type { EntryRow, Store } from "../../shared/store/index.ts";
 import type { Profile } from "../../shared/vocabulary/index.ts";
+import { deltaCapabilities, deltaProblems } from "../../spec/index.ts";
 
 export interface ViewInput {
   readonly store: Store;
@@ -33,6 +35,8 @@ export interface ViewInput {
   readonly evidence?: readonly EvidenceFacts[];
   /** Plan part number -> its current tree hash, when computed. */
   readonly partTrees?: ReadonlyMap<string, string>;
+  /** The resolved settings, for `spec.normative-word`. */
+  readonly settings: Readonly<Mapping>;
 }
 
 interface Read {
@@ -75,6 +79,8 @@ export function changeView(input: ViewInput): ChangeView {
     entries: input.entries,
     file: (path) => read(path)?.facts,
     list: (sub) => store.list(join(dir, sub)).filter((name) => !name.endsWith("/")),
+    specDeltas: () => deltaCapabilities(store, dir),
+    specProblems: (capability) => deltaProblems(store, input, capability, input.settings),
     reportStatus: (entry: GraphEntry) => {
       const status = reportData(entry)?.status;
       return typeof status === "string" ? status : undefined;

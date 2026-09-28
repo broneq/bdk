@@ -613,7 +613,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **To resolve in the spec**: merge algorithm (by Requirement name, by order?), handling of MODIFIED, `bdk-merge-hash` format, whether BDK's own spec (from `openspec/specs/`) migrates through this mechanism (see T00 / T50).
 
-**Fixed by T22**: `policy.checkpoint.squash-at-close` (default off) is a planned key owned by T30, registered inside the `policy.checkpoint` module of the `change` slice.
+**Resolved in the spec** (Change `v3-t30-living-spec`, design T30-D0 to D16): one Change for all of T30; merge by Requirement name, REMOVED then MODIFIED in place then ADDED appended, canonical rendering, idempotent without a stored base; MODIFIED replaces the whole block, and a single scenario is removed only by listing it under its requirement in REMOVED; conflicts per Requirement against archived Changes closed after this Change was created, resolved by a `decision` entry naming that Change and the delta; `bdk-merge-hash: sha256:<hex>` over the body plus `bdk-change: <id>` in the frontmatter; delta paths nested by capability (`spec-delta/auth/login.md`); `spec-impact` optional, `none` by default in `tiny` and `small`, required in `large`; the archive is `.bdk/changes/archive/<id>/`; `doctor` reports a `merge-hash` finding and never refuses; BDK's own spec stays in `openspec/` (T50 decides). `change close --squash` and `policy.checkpoint.squash-at-close` are dropped from contract 3 (user decision): a squash merge of the PR folds the checkpoint commits without rewriting the commits that trailers name.
 
 **Dependencies**: T21 (the `spec-delta` kind), T22 (part validation).
 

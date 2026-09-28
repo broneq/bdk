@@ -75,6 +75,7 @@ flowchart TB
     attempt -->|"freshness, simplify evidence"| evidence
     attempt -->|"post-task steps"| graphSlice
     graphSlice -->|"step freshness"| evidence
+    graphSlice -->|"delta check"| spec
     commit -->|"diff check"| part
     commit -->|"finding entries"| log
     commit -->|"tiny guard"| measure
@@ -114,6 +115,11 @@ flowchart TB
 - **WHEN** the kernel's registrations are listed after T23 part C
 - **THEN** the `evidence` slice registers handlers for `evidence record` and `evidence check`, and neither answers `input/unknown-command` or `kernel/not-implemented`
 
+#### Scenario: T30 slices registered
+
+- **WHEN** the registry is listed after T30
+- **THEN** `spec delta check`, `spec merge`, `spec diff` and `change close` have handlers, the `spec` and `archive` config modules are registered with consumers `spec` and `change`, and no import of `kernel/src/spec/` reaches another slice
+
 ### Requirement: Dependency matrix
 
 A slice SHALL import another slice only through that slice's `index.ts` and only along a row of the matrix; the graph SHALL stay acyclic.
@@ -123,7 +129,7 @@ A slice imports another slice only through that slice's `index.ts`, and only alo
 | From                                                              | May import                                         | Why                                                                                                                                                                                                                                                                                                                                                                  |
 | ----------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `change`                                                          | `measure`, `graph`, `part`, `log`, `spec`, `rules` | `new` measures and asks the graph for the first artifact; `status` lists the plan parts as `part list` does; every verb writes entries; `close` merges specs and regenerates the rule projection.                                                                                                                                                                    |
-| `graph`                                                           | `log`, `ctx`, `evidence`                           | `done` writes the entry; `next` composes the instruction from the kind template and the skill context; a post-task step node's state comes from `evidence`'s freshness of its latest covering manifest.                                                                                                                                                              |
+| `graph`                                                           | `log`, `ctx`, `evidence`, `spec`                   | `done` writes the entry; `next` composes the instruction from the kind template and the skill context; a post-task step node's state comes from `evidence`'s freshness of its latest covering manifest; the `spec-delta` and `plan-part` validators run `spec`'s delta check.                                                                                        |
 | `part`                                                            | `graph`, `log`, `measure`                          | `start`, `done` and `split` run the `plan-part` and `execute-part` checks and write transition and decision entries; `done` of a `tiny` Change measures its commits (tiny guard).                                                                                                                                                                                    |
 | `attempt`                                                         | `part`, `log`, `evidence`, `graph`                 | `close` runs `part`'s diff check, `evidence`'s freshness check, records the `simplify` manifest through `evidence` and writes findings; `open` and `close` read the post-task step nodes and their order from `graph`.                                                                                                                                               |
 | `commit`                                                          | `part`, `log`, `measure`                           | The same diff check as `attempt close`, the finding for undeclared files, and the tiny guard.                                                                                                                                                                                                                                                                        |

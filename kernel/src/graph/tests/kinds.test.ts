@@ -71,6 +71,28 @@ describe("files and hash inputs", () => {
     expect(kind(name).inputs(view, nn)).toStrictEqual(inputs);
   });
 
+  it("spec-delta lists nested deltas and fails delta:<capability> with policy/spec-invalid", () => {
+    const view = fakeView({
+      files: { "spec-delta/auth/login.md": {}, "spec-delta/mail.md": {} },
+      specProblems: { "auth/login": ["p:3 when-missing: w", "p:9 scenario-lost: s"] },
+    });
+    expect(kind("spec-delta").inputs(view)).toStrictEqual({
+      files: ["spec-delta/auth/login.md", "spec-delta/mail.md"],
+    });
+    const failed = kind("spec-delta")
+      .validate(view, { id: "spec-delta" })
+      .filter((check) => !check.ok);
+    expect(failed).toStrictEqual([
+      {
+        id: "delta:auth/login",
+        ok: false,
+        why: "p:3 when-missing: w; p:9 scenario-lost: s",
+        rule: "policy/spec-invalid",
+        instead: "bdk spec delta check auth/login",
+      },
+    ]);
+  });
+
   it("design-index hashes every design part, spec-delta every delta", () => {
     const parts = fakeView({
       files: {
@@ -145,6 +167,11 @@ describe("the baseline validator", () => {
         .validate(deltas, { id: "spec-delta" })
         .every((c) => c.ok),
     ).toBe(true);
+    expect(
+      kind("spec-delta")
+        .validate(deltas, { id: "spec-delta" })
+        .map((check) => check.id),
+    ).toContain("delta:auth");
     expect(
       kind("intent").validate(fakeView({ files: { "change.md": {} } }), { id: "intent" }),
     ).toHaveLength(3);
@@ -276,6 +303,43 @@ describe("plan part checks", () => {
       "spec-delta/kernel-cli/part.md": {},
     };
     expect(check({ files: both }, "spec-impact")?.ok).toBe(true);
+  });
+
+  it("spec-impact fails a delta that fails spec delta check, naming its problems", () => {
+    const impact = { ...data, "spec-impact": ["auth/login"] };
+    const problem =
+      '.bdk/changes/2026-09-25-login/spec-delta/auth/login.md:7 then-missing: scenario "x" has no "- **THEN**" bullet';
+    expect(
+      check(
+        {
+          files: { [PART]: { data: impact }, "spec-delta/auth/login.md": {} },
+          specProblems: { "auth/login": [problem] },
+        },
+        "spec-impact",
+      ),
+    ).toStrictEqual({
+      id: "spec-impact",
+      ok: false,
+      why: `spec-impact names auth/login, whose delta fails spec delta check: ${problem}`,
+      instead: "bdk spec delta check auth/login",
+    });
+  });
+
+  it("an absent spec-impact passes in small and tiny, fails in large", () => {
+    const absent = Object.fromEntries(
+      Object.entries(data).filter(([key]) => key !== "spec-impact"),
+    );
+    for (const profile of ["tiny", "small"] as const) {
+      expect(check({ profile, files: { [PART]: { data: absent } } }, "spec-impact")?.ok).toBe(true);
+    }
+    expect(
+      check({ profile: "large", files: { [PART]: { data: absent } } }, "spec-impact"),
+    ).toStrictEqual({
+      id: "spec-impact",
+      ok: false,
+      why: "a large Change must declare spec-impact: none or the capabilities the part changes",
+      instead: "add spec-impact to the frontmatter of plan/parts/02-mail.md",
+    });
   });
 
   it("an invalid frontmatter keeps the baseline and the size checks only", () => {

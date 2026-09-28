@@ -1,8 +1,7 @@
 // `kernel-cli/graph` (T21 records) through the committed bundle in real
 // repositories: one case per exit code and per declared rule of `next`,
 // `explain`, `validate` and `done`, every output validated against its schema.
-// Rules owned by later tasks stay untested here and land with their owners'
-// cases: `policy/spec-invalid` (T30, the spec delta validator).
+// `policy/spec-invalid` is covered with the spec fixtures in `spec/tests/spec.e2e.ts`.
 import { readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";

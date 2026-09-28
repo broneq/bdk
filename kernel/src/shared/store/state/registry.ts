@@ -91,7 +91,7 @@ const CHANGE_ROWS: readonly Row[] = [
     check: same({ id: field("id") }),
   },
   { pattern: /^plan\/index\.md$/, kind: "plan-index" },
-  { pattern: new RegExp(`^spec-delta/${SLUG}\\.md$`), kind: "spec-delta" },
+  { pattern: new RegExp(`^spec-delta/${SLUG}(?:/${SLUG})*\\.md$`), kind: "spec-delta" },
   {
     pattern: new RegExp(`^attempts/(?<loop>.+)-(?<ticket>A-${ID})\\.md$`),
     kind: "attempt",

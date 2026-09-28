@@ -137,7 +137,21 @@ describe("bdk doctor", () => {
     expect(result.json).toMatchObject({ rule: "runtime/not-a-repo" });
   });
 
-  it.todo("exit 2: policy/merge-hash-mismatch arrives with the merge-hash check of T30");
+  it("policy/merge-hash-mismatch: never refuses, reports the merge-hash finding", () => {
+    const { root } = fixture();
+    const spec = ".bdk/specs/auth/login/spec.md";
+    fileStore().write(
+      join(root, spec),
+      `---\nbdk-merge-hash: sha256:${"0".repeat(64)}\n---\n# auth/login Specification\n`,
+    );
+    const result = runBdk(["doctor", "--json"], root);
+    expect(result.code).toBe(0);
+    expect(result.json).toMatchObject({
+      ok: false,
+      findings: [expect.objectContaining({ id: "merge-hash", level: "fail" })],
+    });
+    expect(JSON.stringify(result.json)).toContain(spec);
+  });
 });
 
 /** A tiny Change with part 01 (tasks 01-1, 01-2) started; answers the root, the Change dir and id. */

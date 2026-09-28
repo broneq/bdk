@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { settingsRegistry } from "../../registrations.ts";
 import { modeline, OFFLINE_SCHEMA_PATH, offlineSchemaText } from "../../shared/config/index.ts";
 import { memoryStore } from "../../shared/store/index.ts";
+import { renderLiving } from "../../spec/use-cases/living.ts";
 import { doctor } from "../use-cases/doctor.ts";
 import { version } from "../use-cases/version.ts";
 
@@ -209,5 +210,40 @@ describe("doctor schema checks", () => {
       { fix: true },
     );
     expect(report.findings.map((finding) => finding.id)).toStrictEqual(["v2-layout"]);
+  });
+});
+
+describe("doctor merge-hash (T30-D13)", () => {
+  const SPEC = `${ROOT}/.bdk/specs/auth/login/spec.md`;
+  const merged = renderLiving(
+    "auth/login",
+    { purpose: "Signing in without a password, through a link sent by e-mail.", requirements: [] },
+    "2026-09-25-passwordless-login",
+  ).text;
+
+  it("reports no finding for specs the merge wrote", () => {
+    expect(run({ ...HEALTHY, [SPEC]: merged }).findings).toStrictEqual([]);
+  });
+
+  it("fails a spec edited after the merge, with the restore line as repair", () => {
+    const report = run({ ...HEALTHY, [SPEC]: `${merged}Edited.\n` });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toStrictEqual([
+      {
+        id: "merge-hash",
+        level: "fail",
+        summary:
+          ".bdk/specs/auth/login/spec.md was edited outside spec merge: content hash differs from bdk-merge-hash",
+        repair:
+          "git restore --source=$(git log -1 --format=%H --grep='^chore(bdk): close' -- .bdk/specs/auth/login/spec.md) -- .bdk/specs/auth/login/spec.md",
+      },
+    ]);
+  });
+
+  it("fails a spec file without the key", () => {
+    const report = run({ ...HEALTHY, [SPEC]: "# auth/login Specification\n" });
+    expect(report.findings.map((item) => item.summary)).toStrictEqual([
+      ".bdk/specs/auth/login/spec.md has no bdk-merge-hash: it was written outside spec merge",
+    ]);
   });
 });

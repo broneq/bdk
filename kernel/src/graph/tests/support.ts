@@ -126,6 +126,7 @@ export function writePlanPart(
   nn: string,
   fields: {
     dependsOn?: readonly string[];
+    /** `absent` leaves the field out (T30: none by default in tiny and small). */
     specImpact?: string;
     doNotTouch?: readonly string[];
     body?: string;
@@ -134,7 +135,7 @@ export function writePlanPart(
   const list = (items: readonly string[] = []) => `[${items.map((id) => `"${id}"`).join(", ")}]`;
   store.write(
     `${DIR}/plan/parts/${nn}-part.md`,
-    `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\ngoal: g\nsuccess-measure: m\ndo-not-touch: ${list(fields.doNotTouch)}\ndepends-on: ${list(fields.dependsOn)}\nspec-impact: ${fields.specImpact ?? "none"}\n---\n${fields.body ?? taskBody(nn)}`,
+    `---\nschema: 1\nid: "${nn}"\ntitle: Part ${nn}\ngoal: g\nsuccess-measure: m\ndo-not-touch: ${list(fields.doNotTouch)}\ndepends-on: ${list(fields.dependsOn)}${fields.specImpact === "absent" ? "" : `\nspec-impact: ${fields.specImpact ?? "none"}`}\n---\n${fields.body ?? taskBody(nn)}`,
   );
 }
 

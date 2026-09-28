@@ -111,7 +111,7 @@ describe("config schema", () => {
   });
 
   it("answers exit 3 for an unknown module", async () => {
-    expect((await run(["config", "schema", "archive"])).code).toBe(3);
+    expect((await run(["config", "schema", "rules"])).code).toBe(3);
   });
 });
 

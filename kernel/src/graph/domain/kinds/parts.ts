@@ -1,6 +1,7 @@
 // The kinds of parts: `design-part`, `design-index`, `plan-part` and
 // `execute-part` (`kernel-pipeline`, Artifact kinds; design D-7). A
 // collection node of an instanced kind has one instance per part file.
+import { deltaPath } from "./documents.ts";
 import { BaseKind, fileChecks, partFiles } from "./kind.ts";
 import type { ChangeView, Check, DoneBy, Inputs, Instance, PlanPartFacts } from "./kind.ts";
 
@@ -72,10 +73,7 @@ function partChecks(
 ): Check[] {
   const count = facts.tasks.length;
   const overlap = facts.overlaps[0];
-  const impact = data["spec-impact"];
-  const missing = (Array.isArray(impact) ? impact.map(String) : []).find(
-    (capability) => view.file(`spec-delta/${capability}.md`) === undefined,
-  );
+  const impact = specImpactCheck(view, path, data["spec-impact"]);
   return [
     count === 0 || count > PART_TASK_LIMIT
       ? {
@@ -115,14 +113,42 @@ function partChecks(
     facts.problems.length === 0
       ? { id: "grammar", ok: true }
       : { id: "grammar", ok: false, why: facts.problems.join("; ") },
-    missing === undefined
-      ? { id: "spec-impact", ok: true }
-      : {
-          id: "spec-impact",
-          ok: false,
-          why: `spec-impact names ${missing}, but spec-delta/${missing}.md is missing`,
-        },
+    impact,
   ];
+}
+
+/**
+ * Every capability `spec-impact` names has a delta that passes `spec delta
+ * check`; absent is `none` except in a `large` Change (T30-D10).
+ */
+function specImpactCheck(view: ChangeView, path: string, impact: unknown): Check {
+  if (impact === undefined && view.profile === "large") {
+    return {
+      id: "spec-impact",
+      ok: false,
+      why: "a large Change must declare spec-impact: none or the capabilities the part changes",
+      instead: `add spec-impact to the frontmatter of ${path}`,
+    };
+  }
+  for (const capability of Array.isArray(impact) ? impact.map(String) : []) {
+    const problems = view.specProblems(capability);
+    if (view.file(deltaPath(capability)) === undefined || problems === undefined) {
+      return {
+        id: "spec-impact",
+        ok: false,
+        why: `spec-impact names ${capability}, but ${deltaPath(capability)} is missing`,
+      };
+    }
+    if (problems.length > 0) {
+      return {
+        id: "spec-impact",
+        ok: false,
+        why: `spec-impact names ${capability}, whose delta fails spec delta check: ${problems.join("; ")}`,
+        instead: `bdk spec delta check ${capability}`,
+      };
+    }
+  }
+  return { id: "spec-impact", ok: true };
 }
 
 export class DesignIndexKind extends BaseKind {

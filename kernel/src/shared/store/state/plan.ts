@@ -26,7 +26,13 @@ export const planPartKind = {
       "success-measure": z.string().min(1).meta({ description: "What a reviewer can observe." }),
       "do-not-touch": z.array(glob),
       "depends-on": z.array(partId),
-      "spec-impact": z.union([z.literal("none"), z.array(capability)]),
+      "spec-impact": z
+        .union([z.literal("none"), z.array(capability)])
+        .optional()
+        .meta({
+          description:
+            "Absent means none for the tiny and small profiles; a large part must declare it (T30).",
+        }),
     })
     .meta({ title: "Plan part" }),
   migrations: [],

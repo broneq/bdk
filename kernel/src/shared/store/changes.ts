@@ -25,6 +25,11 @@ function archiveDir(projectRoot: string): string {
   return join(changesDir(projectRoot), "archive");
 }
 
+/** Where `change close` moves a Change. */
+export function archivedChangeDir(projectRoot: string, id: string): string {
+  return join(archiveDir(projectRoot), id);
+}
+
 /** Where `change new` creates a Change. */
 export function liveChangeDir(projectRoot: string, id: string): string {
   return join(changesDir(projectRoot), id);

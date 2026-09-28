@@ -7,6 +7,7 @@ import type { ActiveChange, FlagValue, Handler } from "../../shared/registry/ind
 import { findProjectRoot } from "../../shared/store/index.ts";
 import {
   renderCheckpoint,
+  renderClose,
   renderList,
   renderNew,
   renderPark,
@@ -15,6 +16,7 @@ import {
   renderTakeover,
 } from "../render/change.ts";
 import { checkpoint } from "../use-cases/checkpoint.ts";
+import { closeChange } from "../use-cases/close.ts";
 import type { ChangeDeps } from "../use-cases/deps.ts";
 import { listAllChanges } from "../use-cases/list.ts";
 import { newChange } from "../use-cases/new.ts";
@@ -113,5 +115,15 @@ export function takeoverCommand(deps: ChangeDeps): Handler {
       closeTickets: context.flags["--close-tickets"] === true,
     });
     return isRefusal(report) ? report : { data: report, text: renderTakeover(report) };
+  };
+}
+
+export function closeCommand(deps: ChangeDeps): Handler {
+  return async (context) => {
+    const dryRun = context.flags["--dry-run"] === true;
+    const report = await closeChange(deps, active(context.change), globalDir(context.runtime), {
+      dryRun,
+    });
+    return isRefusal(report) ? report : { data: report, text: renderClose(report, dryRun) };
   };
 }

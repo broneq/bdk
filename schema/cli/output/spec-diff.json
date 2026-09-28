@@ -4,48 +4,50 @@
   "title": "bdk spec diff --json",
   "description": "What the merged spec would look like: requirement-level diff of the Change's deltas against `.bdk/specs/`.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["capabilities"],
   "properties": {
     "capabilities": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["capability", "requirements"],
         "properties": {
           "capability": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "description": "The capability path, e.g. `auth/login`."
           },
           "requirements": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["name", "change"],
               "properties": {
-                "name": {
-                  "type": "string"
-                },
+                "name": { "type": "string", "minLength": 1 },
                 "change": {
-                  "enum": ["added", "modified", "removed", "renamed", "unchanged"]
+                  "type": "string",
+                  "enum": ["added", "modified", "removed"],
+                  "description": "`modified` covers a REMOVED entry listing only scenarios."
                 },
                 "scenarios": {
                   "type": "object",
                   "properties": {
-                    "added": {
-                      "type": "integer"
-                    },
-                    "removed": {
-                      "type": "integer"
-                    }
-                  }
+                    "added": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+                    "removed": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+                  },
+                  "required": ["added", "removed"],
+                  "additionalProperties": false
                 }
-              }
+              },
+              "required": ["name", "change", "scenarios"],
+              "additionalProperties": false
             }
           }
-        }
+        },
+        "required": ["capability", "requirements"],
+        "additionalProperties": false
       }
     }
   },
+  "required": ["capabilities"],
+  "additionalProperties": false,
   "examples": [
     {
       "capabilities": [
@@ -55,10 +57,7 @@
             {
               "name": "Magic link expires",
               "change": "added",
-              "scenarios": {
-                "added": 2,
-                "removed": 0
-              }
+              "scenarios": { "added": 2, "removed": 0 }
             }
           ]
         }
