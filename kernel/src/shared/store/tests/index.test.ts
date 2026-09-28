@@ -177,10 +177,10 @@ function seeded(): Store {
 }
 
 describe("schema", () => {
-  it("creates schema version 3 with the public tables and the entries view", async () => {
+  it("creates schema version 4 with the public tables and the entries view", async () => {
     const index = await open(memoryStore());
-    expect(INDEX_SCHEMA_VERSION).toBe(3);
-    expect(index.schemaVersion()).toBe(3);
+    expect(INDEX_SCHEMA_VERSION).toBe(4);
+    expect(index.schemaVersion()).toBe(4);
     const names = selectReadOnly(
       index,
       "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE '\\_%' ESCAPE '\\' ORDER BY name",
@@ -504,10 +504,31 @@ describe("on disk", () => {
     old.close();
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(3);
+    expect(index.schemaVersion()).toBe(4);
     expect(
       selectReadOnly(index, "SELECT count(*) FROM sqlite_master WHERE name = 'meta'").rows,
     ).toEqual([[0]]);
+  });
+
+  it("drops an index of version 3, which holds times to the second, and rebuilds it with milliseconds", async () => {
+    const store = fileStore();
+    const dir = join(root, ".bdk/changes", CHANGE);
+    const location: ChangeLocation = { id: CHANGE, dir, archived: false };
+    writeChange(store, dir);
+    writeEntryFile(store, { id: "L-aaaaaaa1", at: "2026-09-25T09:01:00.000Z" }, dir);
+    const first = await openIndex(store, root);
+    refreshChange(first, location);
+    first.database.exec("UPDATE _entries SET at = '2026-09-25T09:01:00Z'");
+    first.database.exec("UPDATE _meta SET value = '3' WHERE key = 'schema_version'");
+    first.close();
+
+    const index = await openIndex(store, root);
+    opened.push(index);
+    expect(index.schemaVersion()).toBe(4);
+    expect(refreshChange(index, location)).toBe(true);
+    expect(listEntries(index, CHANGE).map((entry) => entry.at)).toEqual([
+      "2026-09-25T09:01:00.000Z",
+    ]);
   });
 
   it("rebuilds a file that is not a SQLite database", async () => {
@@ -515,7 +536,7 @@ describe("on disk", () => {
     writeFileSync(path(), "not a database, just bytes ".repeat(100));
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(3);
+    expect(index.schemaVersion()).toBe(4);
   });
 
   it("refuses state/corrupted-index when the index path is a directory", async () => {

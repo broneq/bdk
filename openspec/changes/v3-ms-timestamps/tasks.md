@@ -12,8 +12,8 @@
 
 ## 3. Gate and index
 
-- [ ] 3.1 Write a failing unit test for the gate scenario `transition of the ready second` (ready at `.800`, transition at the second form); implement truncation to the second in `graph/domain/gate.ts`; verify the gate tests pass
-- [ ] 3.2 Bump `INDEX_SCHEMA_VERSION` to 4 with a failing test that an index of version 3 is dropped and rebuilt with normalised times; verify the index tests pass
+- [x] 3.1 Write a failing unit test for the gate scenario `transition of the ready second` (ready at `.800`, transition at the second form); implement truncation to the second in `graph/domain/gate.ts`; verify the gate tests pass
+- [x] 3.2 Bump `INDEX_SCHEMA_VERSION` to 4 with a failing test that an index of version 3 is dropped and rebuilt with normalised times; verify the index tests pass
 
 ## 4. Contract and docs
 

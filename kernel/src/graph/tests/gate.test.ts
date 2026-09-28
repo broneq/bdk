@@ -45,6 +45,13 @@ describe("the gate rule", () => {
     });
   });
 
+  it("a transition of the ready second passes, compared at one-second resolution", () => {
+    const status = gate([entry({ id: "L-00000001", at: "2026-09-25T10:00:00.000Z" })], {
+      readyAt: "2026-09-25T10:00:00.800Z",
+    });
+    expect(status).toMatchObject({ ready: true, done: true, passedBy: "user" });
+  });
+
   it("an older entry does not count", () => {
     const status = gate([entry({ id: "L-00000001", at: "2026-09-25T09:59:59.000Z" })]);
     expect(status).toMatchObject({ ready: true, done: false });

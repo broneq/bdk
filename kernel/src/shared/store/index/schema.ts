@@ -4,7 +4,7 @@
 // `superseded_by` are never stale after a partial refresh.
 import type { DatabaseSync } from "node:sqlite";
 
-export const INDEX_SCHEMA_VERSION = 3;
+export const INDEX_SCHEMA_VERSION = 4;
 
 const TABLES = `
 CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);

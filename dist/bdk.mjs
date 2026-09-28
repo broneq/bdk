@@ -16354,7 +16354,7 @@ function isExecutableFile(file, windows) {
 }
 
 // kernel/src/shared/store/index/schema.ts
-var INDEX_SCHEMA_VERSION = 3;
+var INDEX_SCHEMA_VERSION = 4;
 var TABLES = `
 CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE _dirs (
@@ -20301,7 +20301,7 @@ function gateStatus(input) {
     (entry) => entry.type === "transition" && entry.gate === input.id
   );
   const accepted = (entry) => entry.source === "user" || entry.source === "policy" && input.policy === "auto";
-  const timely = (entry) => input.readyAt === void 0 || entry.at >= input.readyAt;
+  const timely = (entry) => input.readyAt === void 0 || toSecond(entry.at) >= toSecond(input.readyAt);
   const passing = input.incomplete ? void 0 : naming.filter((entry) => accepted(entry) && timely(entry)).at(-1);
   const done2 = passing !== void 0;
   const pending = input.entries.filter((entry) => entry.review && live(entry)).reverse();
@@ -20316,6 +20316,9 @@ function gateStatus(input) {
     ...passing === void 0 ? {} : { passedIn: passing },
     why: explain(input, naming, passing, accepted, timely)
   };
+}
+function toSecond(at) {
+  return at.slice(0, 19);
 }
 function explain(input, naming, passing, accepted, timely) {
   const since = input.readyAt === void 0 ? "" : `ready since ${input.readyAt}; `;
