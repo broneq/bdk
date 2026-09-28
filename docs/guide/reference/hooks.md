@@ -69,7 +69,7 @@ Typing the command is how you pass a gate: only a payload with the host's user-t
 | `/bdk:run`                                           | passes each ready gate set to `auto` in `policy.gates` with a `source: policy` entry, and names the `manual` gates you still type                              |
 | a stage command on a branch without an active Change | blocks with `policy/no-active-change`                                                                                                                          |
 
-Every other command, BDK or not, passes untouched.
+Every other command, BDK or not, passes untouched. The host fires this hook only for an installed command, and the `plan`, `execute`, `close` and `run` skills are still being written (T41), so until they ship no gate passes this way.
 
 ## SessionEnd
 
