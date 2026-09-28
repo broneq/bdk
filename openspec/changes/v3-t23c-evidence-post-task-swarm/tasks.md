@@ -9,7 +9,7 @@
 ## 2. State and settings
 
 - [x] 2.1 Write failing unit tests for the state changes: manifest `tree` field, attempt record `package` field, `pruned` document kind and its layout paths (`dispatch/pruned.md`, `reports/pruned.md`), capture path `evidence/<target>-<evidenceId>-<name>`; implement in `kernel/src/shared/store/state/` and `registry.ts`; verify unit tests and the state schema contract test pass after `pnpm build`
-- [ ] 2.2 Write failing tests for append-only arrays in the layer merge (`append-only array` scenario, defaults kept, duplicates dropped); implement the merge flag in `shared/config`; verify unit tests and the existing merge scenarios pass
+- [x] 2.2 Write failing tests for append-only arrays in the layer merge (`append-only array` scenario, defaults kept, duplicates dropped); implement the merge flag in `shared/config`; verify unit tests and the existing merge scenarios pass
 - [ ] 2.3 Write failing tests for the `policy.evidence` module (`evidence defaults`, `project appends a glob`) and the `execution` module under consumer `ctx` (`concurrency default`, out of range); register both; verify `bdk config show` E2E, the settings contract test and the S6 consumer test pass once their readers land in 3.x and 6.1
 - [ ] 2.4 Write failing unit tests for the `shared/store` ticket queries: the active package of a ticket, the `package` stamp written once per `dispatch build`, and the manifests of a ticket and of a part; implement; verify unit tests and the rebuild test (index recreated from files) pass
 

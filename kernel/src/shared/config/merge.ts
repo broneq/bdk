@@ -1,6 +1,7 @@
 // The merge of `kernel-settings`, Merge (design D-5): mappings deep-merge,
-// arrays of mappings with an `id` merge by id, everything else is replaced
-// whole. `origins` records, per leaf, the layer that set it.
+// arrays of mappings with an `id` merge by id, append-only arrays (T23-D48)
+// gain the items a layer adds, everything else is replaced whole. `origins`
+// records, per leaf, the layer that set it.
 import type { FileLayerName, Layer } from "./layers.ts";
 import type { ConfigProblem } from "./problems.ts";
 import { isIdArray, isRecord, joinKey } from "./values.ts";
@@ -13,12 +14,13 @@ export interface Merged {
   readonly problems: ConfigProblem[];
 }
 
-export function mergeLayers(layers: readonly Layer[]): Merged {
+/** `appendOnly` holds the dotted keys of the append-only arrays (`ConfigRegistry.appendOnly`). */
+export function mergeLayers(layers: readonly Layer[], appendOnly: ReadonlySet<string>): Merged {
   const origins: Record<string, FileLayerName> = {};
   const problems: ConfigProblem[] = [];
   let value: Mapping = {};
   for (const layer of layers) {
-    const context = { layer, origins, problems };
+    const context = { layer, origins, problems, appendOnly };
     value = mergeMapping(value, layer.values, "", context);
   }
   return { value, origins, problems };
@@ -26,18 +28,34 @@ export function mergeLayers(layers: readonly Layer[]): Merged {
 
 /**
  * `value` with the registry's default items under every array of mappings
- * with an `id` that a layer set: a layer's items merge into the defaults by
- * id (`kernel-settings`, Merge), as if the defaults were the lowest layer.
- * Scalars, mappings and other arrays are left to the schema defaults.
+ * with an `id` and every append-only array that a layer set: a layer's items
+ * merge into the defaults by id or append to them (`kernel-settings`, Merge),
+ * as if the defaults were the lowest layer. Scalars, mappings and other arrays
+ * are left to the schema defaults.
  */
-export function withDefaultItems(defaults: unknown, value: Mapping): Mapping {
+export function withDefaultItems(
+  defaults: unknown,
+  value: Mapping,
+  appendOnly: ReadonlySet<string>,
+  prefix = "",
+): Mapping {
   const out: Mapping = { ...value };
   if (!isRecord(defaults)) return out;
   for (const [key, next] of Object.entries(value)) {
     const lower = defaults[key];
-    if (isRecord(next)) out[key] = withDefaultItems(lower, next);
-    else if (isIdArray(next) && isIdArray(lower)) out[key] = itemsById(lower, next);
+    const path = joinKey(prefix, key);
+    if (isRecord(next)) out[key] = withDefaultItems(lower, next, appendOnly, path);
+    else if (appendOnly.has(path) && Array.isArray(next) && Array.isArray(lower)) {
+      out[key] = appended(lower, next);
+    } else if (isIdArray(next) && isIdArray(lower)) out[key] = itemsById(lower, next);
   }
+  return out;
+}
+
+/** `lower` followed by the items of `higher` it does not hold, each once. */
+function appended(lower: readonly unknown[], higher: readonly unknown[]): unknown[] {
+  const out = [...lower];
+  for (const item of higher) if (!out.includes(item)) out.push(item);
   return out;
 }
 
@@ -56,6 +74,7 @@ function itemsById(
 
 interface Context {
   readonly layer: Layer;
+  readonly appendOnly: ReadonlySet<string>;
   readonly origins: Record<string, FileLayerName>;
   readonly problems: ConfigProblem[];
 }
@@ -73,6 +92,10 @@ function mergeValue(lower: unknown, next: unknown, path: string, context: Contex
   if (isRecord(next) && Object.keys(next).length > 0) {
     if (!isRecord(lower)) forget(context.origins, path);
     return mergeMapping(isRecord(lower) ? lower : {}, next, path, context);
+  }
+  if (context.appendOnly.has(path) && Array.isArray(next)) {
+    context.origins[path] = context.layer.name;
+    return appended(Array.isArray(lower) ? lower : [], next);
   }
   if (isIdArray(next)) {
     reportDuplicates(next, path, context);

@@ -60,7 +60,7 @@ describe("settings", () => {
   const registry = settingsRegistry();
   const check = (values: Record<string, unknown>) => {
     const layers: Layer[] = [{ name: "project", path: "/p.yaml", text: "", values }];
-    return validateLayers(registry, layers, mergeLayers(layers));
+    return validateLayers(registry, layers, mergeLayers(layers, registry.appendOnly));
   };
 
   it("policy.gates resolve to manual by default and accept auto", () => {

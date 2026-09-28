@@ -40,7 +40,7 @@ export interface Resolution {
 export function resolveConfig(context: ConfigContext): Resolution {
   const read = readLayers(context.store, context);
   const layers = context.removed === "ignore" ? read.map(withoutRemovedKeys) : read;
-  const merged = mergeLayers(layers);
+  const merged = mergeLayers(layers, context.registry.appendOnly);
   const validated = validateLayers(context.registry, layers, merged);
   const prompts = resolvePrompts({ ...context, layers });
   const problems = [...validated.problems, ...prompts.problems];

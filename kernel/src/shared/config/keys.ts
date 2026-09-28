@@ -1,5 +1,6 @@
 // The key tree of the registry, read from the modules' zod schemas: which
-// keys exist, which arrays merge by id, and where a free-form mapping starts.
+// keys exist, which arrays merge by id or by appending, and where a
+// free-form mapping starts.
 // Validation walks it to find unknown keys before zod sees the merged tree.
 import * as z from "zod";
 
@@ -9,9 +10,22 @@ export type KeyNode =
   | { readonly kind: "object"; readonly children: ReadonlyMap<string, KeyNode> }
   | { readonly kind: "idArray"; readonly item: KeyNode }
   | { readonly kind: "record"; readonly value: KeyNode }
+  | { readonly kind: "appendArray" }
   | { readonly kind: "leaf" };
 
 const LEAF: KeyNode = { kind: "leaf" };
+
+const APPEND_ONLY = new WeakSet<z.ZodType>();
+
+/**
+ * Marks an array schema append-only (`kernel-settings`, Merge): each layer
+ * appends the items the default and the lower layers do not hold, so no layer
+ * removes an item. Wrap the array itself, before `.default()`.
+ */
+export function appendOnly<S extends z.ZodArray>(schema: S): S {
+  APPEND_ONLY.add(schema);
+  return schema;
+}
 
 export function keyTree(schema: z.ZodType): KeyNode {
   const inner = unwrap(schema);
@@ -24,6 +38,7 @@ export function keyTree(schema: z.ZodType): KeyNode {
     return { kind: "object", children };
   }
   if (inner instanceof z.ZodArray) {
+    if (APPEND_ONLY.has(inner)) return { kind: "appendArray" };
     const item = unwrap(inner.element as z.ZodType);
     if (item instanceof z.ZodObject && "id" in (item.shape as object)) {
       return { kind: "idArray", item: keyTree(item) };
@@ -61,6 +76,13 @@ export function keyPaths(node: KeyNode, prefix = ""): string[] {
   const paths: string[] = prefix === "" ? [] : [prefix];
   for (const [key, child] of node.children) paths.push(...keyPaths(child, joinKey(prefix, key)));
   return paths;
+}
+
+/** The dotted paths of the append-only arrays below `node`. */
+export function appendOnlyPaths(node: KeyNode, prefix = ""): string[] {
+  if (node.kind === "appendArray") return [prefix];
+  if (node.kind !== "object") return [];
+  return [...node.children].flatMap(([key, child]) => appendOnlyPaths(child, joinKey(prefix, key)));
 }
 
 /** The leaf paths below `node`: records end with `.<key>`, id arrays end the path. */

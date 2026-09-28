@@ -2,6 +2,7 @@ import * as z from "zod";
 import { describe, expect, it } from "vitest";
 
 import {
+  appendOnly,
   createConfigRegistry,
   defineConfigModule,
   definePromptKey,
@@ -53,7 +54,7 @@ function layer(name: Layer["name"], values: Record<string, unknown>): Layer {
 }
 
 function validate(...layers: Layer[]) {
-  return validateLayers(registry, layers, mergeLayers(layers));
+  return validateLayers(registry, layers, mergeLayers(layers, registry.appendOnly));
 }
 
 describe("createConfigRegistry", () => {
@@ -251,7 +252,7 @@ describe("dotted module keys", () => {
   const policy = createConfigRegistry({ modules: [gates, budgets, checkpoint], prompts: [] });
 
   function check(...layers: Layer[]) {
-    return validateLayers(policy, layers, mergeLayers(layers));
+    return validateLayers(policy, layers, mergeLayers(layers, policy.appendOnly));
   }
 
   it("composes the modules of one root into one strict object", () => {
@@ -312,7 +313,11 @@ describe("dotted module keys", () => {
   it("names the owner of a planned subtree next to registered ones", () => {
     const withoutCheckpoint = createConfigRegistry({ modules: [gates, budgets], prompts: [] });
     const layers = [layer("project", { policy: { checkpoint: { "squash-at-close": true } } })];
-    const result = validateLayers(withoutCheckpoint, layers, mergeLayers(layers));
+    const result = validateLayers(
+      withoutCheckpoint,
+      layers,
+      mergeLayers(layers, withoutCheckpoint.appendOnly),
+    );
     expect(result.problems).toMatchObject([
       { key: "policy.checkpoint.squash-at-close", message: "lands with T30" },
     ]);
@@ -344,7 +349,7 @@ describe("default items of an id array", () => {
   const registry = createConfigRegistry({ modules: [verifier], prompts: [] });
 
   function check(...layers: Layer[]) {
-    return validateLayers(registry, layers, mergeLayers(layers));
+    return validateLayers(registry, layers, mergeLayers(layers, registry.appendOnly));
   }
 
   const ids = (value: Record<string, unknown> | undefined) =>
@@ -391,6 +396,58 @@ describe("default items of an id array", () => {
         key: "policy.verifier.blocking-categories.accessibility.description",
         layer: "project",
       },
+    ]);
+  });
+});
+
+describe("append-only arrays", () => {
+  const evidence = defineConfigModule({
+    key: "policy.evidence",
+    consumer: "evidence",
+    owner: "T23",
+    description: "File classes.",
+    schema: z
+      .strictObject({
+        "non-executable": appendOnly(z.array(z.string().min(1))).default(["**/*.md", "docs/**"]),
+      })
+      .prefault({}),
+  });
+  const withEvidence = createConfigRegistry({ modules: [evidence], prompts: [] });
+  const check = (...layers: Layer[]) =>
+    validateLayers(withEvidence, layers, mergeLayers(layers, withEvidence.appendOnly));
+
+  it("declares the key append-only", () => {
+    expect([...withEvidence.appendOnly]).toStrictEqual(["policy.evidence.non-executable"]);
+  });
+
+  it("keeps the defaults when no layer sets the key", () => {
+    expect(check().value).toStrictEqual({
+      policy: { evidence: { "non-executable": ["**/*.md", "docs/**"] } },
+    });
+  });
+
+  it("appends a layer's items after the defaults, each once", () => {
+    const resolved = check(
+      layer("project", { policy: { evidence: { "non-executable": ["site/**", "**/*.md"] } } }),
+      layer("local", { policy: { evidence: { "non-executable": ["site/**", "tmp/**"] } } }),
+    );
+    expect(resolved.problems).toStrictEqual([]);
+    expect(resolved.value).toStrictEqual({
+      policy: { evidence: { "non-executable": ["**/*.md", "docs/**", "site/**", "tmp/**"] } },
+    });
+  });
+
+  it("keeps the defaults when a layer sets an empty list", () => {
+    const resolved = check(layer("project", { policy: { evidence: { "non-executable": [] } } }));
+    expect(resolved.value).toStrictEqual({
+      policy: { evidence: { "non-executable": ["**/*.md", "docs/**"] } },
+    });
+  });
+
+  it("still validates the items a layer appends", () => {
+    const resolved = check(layer("project", { policy: { evidence: { "non-executable": [""] } } }));
+    expect(resolved.problems.map((problem) => [problem.rule, problem.layer])).toStrictEqual([
+      ["policy/config-invalid", "project"],
     ]);
   });
 });

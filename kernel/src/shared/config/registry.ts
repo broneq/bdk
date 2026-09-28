@@ -3,7 +3,7 @@
 // `config.ts`; the composition root assembles them into one registry.
 import * as z from "zod";
 
-import { keyPaths, keyTree } from "./keys.ts";
+import { appendOnlyPaths, keyPaths, keyTree } from "./keys.ts";
 import type { KeyNode } from "./keys.ts";
 import { within } from "./known.ts";
 import { joinKey, valueAt } from "./values.ts";
@@ -37,6 +37,8 @@ export interface ConfigRegistry {
   readonly tree: KeyNode;
   /** Every declared key path, parents first. */
   readonly keys: readonly string[];
+  /** The dotted keys of the append-only arrays, for the merge. */
+  readonly appendOnly: ReadonlySet<string>;
   promptKey(key: string): PromptKey | undefined;
 }
 
@@ -68,6 +70,7 @@ export function createConfigRegistry(parts: {
     schema,
     tree,
     keys: keyPaths(tree),
+    appendOnly: new Set(appendOnlyPaths(tree)),
     promptKey: (key) => prompts.find((prompt) => matches(prompt.key, key)),
   };
 }

@@ -15803,24 +15803,32 @@ function editDistance(a, b) {
 }
 
 // kernel/src/shared/config/merge.ts
-function mergeLayers(layers) {
+function mergeLayers(layers, appendOnly2) {
   const origins = {};
   const problems = [];
   let value = {};
   for (const layer of layers) {
-    const context = { layer, origins, problems };
+    const context = { layer, origins, problems, appendOnly: appendOnly2 };
     value = mergeMapping(value, layer.values, "", context);
   }
   return { value, origins, problems };
 }
-function withDefaultItems(defaults, value) {
+function withDefaultItems(defaults, value, appendOnly2, prefix = "") {
   const out = { ...value };
   if (!isRecord(defaults)) return out;
   for (const [key, next] of Object.entries(value)) {
     const lower = defaults[key];
-    if (isRecord(next)) out[key] = withDefaultItems(lower, next);
-    else if (isIdArray(next) && isIdArray(lower)) out[key] = itemsById(lower, next);
+    const path = joinKey(prefix, key);
+    if (isRecord(next)) out[key] = withDefaultItems(lower, next, appendOnly2, path);
+    else if (appendOnly2.has(path) && Array.isArray(next) && Array.isArray(lower)) {
+      out[key] = appended(lower, next);
+    } else if (isIdArray(next) && isIdArray(lower)) out[key] = itemsById(lower, next);
   }
+  return out;
+}
+function appended(lower, higher) {
+  const out = [...lower];
+  for (const item3 of higher) if (!out.includes(item3)) out.push(item3);
   return out;
 }
 function itemsById(lower, higher) {
@@ -15844,6 +15852,10 @@ function mergeValue(lower, next, path, context) {
   if (isRecord(next) && Object.keys(next).length > 0) {
     if (!isRecord(lower)) forget(context.origins, path);
     return mergeMapping(isRecord(lower) ? lower : {}, next, path, context);
+  }
+  if (context.appendOnly.has(path) && Array.isArray(next)) {
+    context.origins[path] = context.layer.name;
+    return appended(Array.isArray(lower) ? lower : [], next);
   }
   if (isIdArray(next)) {
     reportDuplicates(next, path, context);
@@ -15888,6 +15900,7 @@ function forget(origins, path) {
 
 // kernel/src/shared/config/keys.ts
 var LEAF = { kind: "leaf" };
+var APPEND_ONLY = /* @__PURE__ */ new WeakSet();
 function keyTree(schema) {
   const inner = unwrap(schema);
   if (inner instanceof ZodObject) {
@@ -15899,6 +15912,7 @@ function keyTree(schema) {
     return { kind: "object", children };
   }
   if (inner instanceof ZodArray) {
+    if (APPEND_ONLY.has(inner)) return { kind: "appendArray" };
     const item3 = unwrap(inner.element);
     if (item3 instanceof ZodObject && "id" in item3.shape) {
       return { kind: "idArray", item: keyTree(item3) };
@@ -15926,6 +15940,11 @@ function keyPaths(node3, prefix = "") {
   const paths = prefix === "" ? [] : [prefix];
   for (const [key, child] of node3.children) paths.push(...keyPaths(child, joinKey(prefix, key)));
   return paths;
+}
+function appendOnlyPaths(node3, prefix = "") {
+  if (node3.kind === "appendArray") return [prefix];
+  if (node3.kind !== "object") return [];
+  return [...node3.children].flatMap(([key, child]) => appendOnlyPaths(child, joinKey(prefix, key)));
 }
 function keySteps(node3, key) {
   if (key === "") return void 0;
@@ -16031,6 +16050,7 @@ function createConfigRegistry(parts) {
     schema,
     tree,
     keys: keyPaths(tree),
+    appendOnly: new Set(appendOnlyPaths(tree)),
     promptKey: (key) => prompts2.find((prompt2) => matches(prompt2.key, key))
   };
 }
@@ -16091,7 +16111,7 @@ function validateLayers(registry3, layers, merged) {
     });
   }
   const defaults = registry3.schema.safeParse({});
-  const seeded = defaults.success ? { ...merged, value: withDefaultItems(defaults.data, merged.value) } : merged;
+  const seeded = defaults.success ? { ...merged, value: withDefaultItems(defaults.data, merged.value, registry3.appendOnly) } : merged;
   const parsed = registry3.schema.safeParse(seeded.value);
   if (!parsed.success) {
     const reported = problems.map((problem) => problem.key);
@@ -18696,7 +18716,7 @@ function isGlobList(value) {
 function resolveConfig(context) {
   const read3 = readLayers(context.store, context);
   const layers = context.removed === "ignore" ? read3.map(withoutRemovedKeys) : read3;
-  const merged = mergeLayers(layers);
+  const merged = mergeLayers(layers, context.registry.appendOnly);
   const validated = validateLayers(context.registry, layers, merged);
   const prompts2 = resolvePrompts({ ...context, layers });
   const problems = [...validated.problems, ...prompts2.problems];
@@ -19358,14 +19378,14 @@ function addEntry(deps, change, globalDir2, input) {
     const { downgraded, ...classified } = classify(input, role2, blocking);
     const { category: category2, ...rest } = input;
     const base = downgraded === void 0 && category2 !== void 0 ? { ...rest, category: category2 } : rest;
-    const appended = await appendEntry(
+    const appended2 = await appendEntry(
       deps,
       change,
       index2,
       { ...base, ...classified },
       { dedupe: true }
     );
-    return "refused" in appended || downgraded === void 0 ? appended : { ...appended, downgraded };
+    return "refused" in appended2 || downgraded === void 0 ? appended2 : { ...appended2, downgraded };
   });
 }
 function validate3(input) {
