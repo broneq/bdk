@@ -16724,6 +16724,7 @@ var LOOPS = ["task-redispatch", "verify-fix", "review-fix", "verifier"];
 var TICKET_SCOPES = ["full", "high+", "blockers"];
 var ROLES = [
   "implementer",
+  "simplifier",
   "verifier",
   "design-verifier",
   "reviewer",
@@ -18572,6 +18573,15 @@ function stampRulesRead(store2, changeDir, ticket, now) {
 
 // kernel/src/shared/store/tickets.ts
 import { join as join13 } from "node:path";
+function stampPackage(store2, changeDir, ticket, packagePath) {
+  const record4 = readAttempts(store2, changeDir).find((file) => file.data.ticket === ticket);
+  if (record4 === void 0) return false;
+  writeDocument(store2, record4.path, {
+    data: { ...record4.data, package: packagePath },
+    body: record4.body
+  });
+  return true;
+}
 function activePackage(store2, projectRoot, changeDir, ticket) {
   const record4 = readAttempts(store2, changeDir).find((file) => file.data.ticket === ticket);
   const path = record4?.data.package;
@@ -22211,6 +22221,7 @@ var WRITERS = {
 var NONE2 = { categories: [], languages: false };
 var ROLE_RULES = {
   implementer: WRITERS,
+  simplifier: WRITERS,
   reviewer: WRITERS,
   "pr-reviewer": WRITERS,
   verifier: {
@@ -25489,6 +25500,7 @@ var ADAPTERS = [
 ];
 var ROLE_ADAPTERS = {
   implementer: "worker",
+  simplifier: "worker",
   verifier: "reader",
   "design-verifier": "reader",
   reviewer: "reviewer",
@@ -25769,12 +25781,8 @@ function buildPackage(deps, change, globalDir2, input) {
     }
     const dir = join37(change.dir, "dispatch");
     const path = join37(dir, name);
-    for (const earlier of deps.store.list(dir)) {
-      if (earlier !== name && earlier.endsWith(`-${input.ticket}.md`)) {
-        deps.store.remove(join37(dir, earlier));
-      }
-    }
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
+    stampPackage(deps.store, change.dir, input.ticket, posix5.relative(change.projectRoot, path));
     return {
       path: posix5.relative(change.projectRoot, path),
       bytes: size,
@@ -25906,7 +25914,7 @@ import { isAbsolute as isAbsolute4, join as join38, posix as posix6, relative as
 var TICKET = /^A-[0-9a-z]{8}$/;
 function showPackage(deps, change, cwd, value) {
   const dir = join38(change.dir, "dispatch");
-  const path = TICKET.test(value) ? ticketPackage(deps, dir, value) : isAbsolute4(value) ? value : join38(cwd, value);
+  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join38(cwd, value);
   const inside = path === void 0 ? "" : relative9(dir, path);
   const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep7) ? void 0 : deps.store.read(path);
   const document = path === void 0 || content === void 0 ? void 0 : readDocument(deps.store, path);
@@ -25923,9 +25931,9 @@ function showPackage(deps, change, cwd, value) {
     frontmatter: document.data
   };
 }
-function ticketPackage(deps, dir, ticket) {
-  const name = deps.store.list(dir).find((file) => file.endsWith(`-${ticket}.md`));
-  return name === void 0 ? void 0 : join38(dir, name);
+function ticketPackage(deps, change, ticket) {
+  const active9 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
+  return active9 === void 0 ? void 0 : join38(change.projectRoot, active9.path);
 }
 
 // kernel/src/dispatch/commands/dispatch.ts

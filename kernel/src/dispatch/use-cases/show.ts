@@ -5,7 +5,7 @@ import { isAbsolute, join, posix, relative, sep } from "node:path";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { readDocument } from "../../shared/store/index.ts";
+import { activePackage, readDocument } from "../../shared/store/index.ts";
 import type { ShowReport } from "../domain/report.ts";
 import type { DispatchDeps } from "./deps.ts";
 
@@ -19,7 +19,7 @@ export function showPackage(
 ): ShowReport | Refusal {
   const dir = join(change.dir, "dispatch");
   const path = TICKET.test(value)
-    ? ticketPackage(deps, dir, value)
+    ? ticketPackage(deps, change, value)
     : isAbsolute(value)
       ? value
       : join(cwd, value);
@@ -51,7 +51,12 @@ export function showPackage(
   };
 }
 
-function ticketPackage(deps: DispatchDeps, dir: string, ticket: string): string | undefined {
-  const name = deps.store.list(dir).find((file) => file.endsWith(`-${ticket}.md`));
-  return name === undefined ? undefined : join(dir, name);
+/** The ticket's active package (T23-D42): the one its last `dispatch build` stamped. */
+function ticketPackage(
+  deps: DispatchDeps,
+  change: ActiveChange,
+  ticket: string,
+): string | undefined {
+  const active = activePackage(deps.store, change.projectRoot, change.dir, ticket);
+  return active === undefined ? undefined : join(change.projectRoot, active.path);
 }

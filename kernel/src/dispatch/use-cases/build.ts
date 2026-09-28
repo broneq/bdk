@@ -1,7 +1,8 @@
 // `bdk dispatch build <target> <role> <ticket>` (`kernel-cli/dispatch`;
-// T23-D31 to D33, D37): the package of an open ticket from the one template,
-// stamped whole, at most 12 288 bytes. Nothing is written before every check
-// has passed.
+// T23-D31 to D33, D37, D42): the package of an open ticket from the one
+// template, stamped whole, at most 12 288 bytes. A ticket keeps one package per
+// role, and the last one built is its active package. Nothing is written
+// before every check has passed.
 import { createHash } from "node:crypto";
 import { join, posix } from "node:path";
 
@@ -22,6 +23,7 @@ import {
   readPlanParts,
   renderDocument,
   splitFrontmatter,
+  stampPackage,
   STATE_KINDS,
   TASK_ID,
   taskHolders,
@@ -158,12 +160,8 @@ export function buildPackage(
     }
     const dir = join(change.dir, "dispatch");
     const path = join(dir, name);
-    for (const earlier of deps.store.list(dir)) {
-      if (earlier !== name && earlier.endsWith(`-${input.ticket}.md`)) {
-        deps.store.remove(join(dir, earlier));
-      }
-    }
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
+    stampPackage(deps.store, change.dir, input.ticket, posix.relative(change.projectRoot, path));
     return {
       path: posix.relative(change.projectRoot, path),
       bytes: size,

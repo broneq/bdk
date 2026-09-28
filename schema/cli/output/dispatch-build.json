@@ -25,6 +25,7 @@
       "type": "string",
       "enum": [
         "implementer",
+        "simplifier",
         "verifier",
         "design-verifier",
         "reviewer",

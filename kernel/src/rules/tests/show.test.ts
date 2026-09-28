@@ -126,6 +126,17 @@ describe("rules show --ticket", () => {
     ]);
   });
 
+  it("prints the implementer's categories and language rules for a simplifier", async () => {
+    const store = withPlugin(repository());
+    ticket(store, "A-s1m2p3l4", "simplifier");
+    const result = await run(store, ["rules", "show", "--ticket", "A-s1m2p3l4", "--json"]);
+    expect(result.code).toBe(0);
+    ticket(store, "A-i1m2p3l4", "implementer");
+    const implementer = await run(store, ["rules", "show", "--ticket", "A-i1m2p3l4", "--json"]);
+    expect(keysOf(result.json)).toStrictEqual(keysOf(implementer.json));
+    expect(keysOf(result.json)).toContain("rules/languages/typescript");
+  });
+
   it("prints no section for a runner", async () => {
     const store = withPlugin(repository());
     ticket(store, "A-r2n4t6m8", "runner");

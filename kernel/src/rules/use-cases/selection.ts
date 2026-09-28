@@ -18,6 +18,7 @@ const NONE: RoleRules = { categories: [], languages: false };
 
 export const ROLE_RULES: Readonly<Record<Role, RoleRules>> = {
   implementer: WRITERS,
+  simplifier: WRITERS,
   reviewer: WRITERS,
   "pr-reviewer": WRITERS,
   verifier: {

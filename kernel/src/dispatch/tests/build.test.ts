@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { writeEntry } from "../../graph/tests/support.ts";
 import { ROOT } from "../../log/tests/support.ts";
-import { readDocument } from "../../shared/store/index.ts";
+import { activePackage, readDocument } from "../../shared/store/index.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
 import { build, dispatchHarness, DIR, PLUGIN, ticket, TICKET } from "./support.ts";
 import type { DispatchHarness } from "./support.ts";
@@ -216,11 +216,36 @@ describe("dispatch build", () => {
     expect((await built(h)).report.templateHash).not.toBe(changed);
   });
 
-  it("replaces an earlier package of the same ticket", async () => {
+  it("keeps one package per role of a ticket and stamps the newest as the active package", async () => {
     const h = dispatchHarness();
     await built(h);
+    const simplifier = await built(h, "02-3", "simplifier", TICKET);
+    expect(simplifier.report.adapter).toBe("worker");
+    const runner = await built(h, "02-3", "runner", TICKET);
+    expect(h.store.list(`${DIR}/dispatch`).sort()).toStrictEqual([
+      `02-3-implementer-${TICKET}.md`,
+      `02-3-runner-${TICKET}.md`,
+      `02-3-simplifier-${TICKET}.md`,
+    ]);
+    expect(activePackage(h.store, ROOT, DIR, TICKET)?.path).toBe(runner.report.path);
+    const shown = await h.run(["dispatch", "show", TICKET, "--json"]);
+    expect(dispatchShowOutput.parse(shown.json)).toMatchObject({
+      path: runner.report.path,
+      frontmatter: { role: "runner" },
+    });
+  });
+
+  it("replaces a rebuilt role package of the ticket", async () => {
+    const h = dispatchHarness();
+    await built(h, "02-3", "runner", TICKET);
     await built(h, "02-3", "runner", TICKET);
     expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([`02-3-runner-${TICKET}.md`]);
+  });
+
+  it("embeds the simplifier's role body for a simplifier package", async () => {
+    const { body, report } = await built(dispatchHarness(), "02-3", "simplifier", TICKET);
+    expect(report).toMatchObject({ role: "simplifier", adapter: "worker" });
+    expect(body).toContain("## Role: simplifier");
   });
 
   it("refuses a Files item holding a placeholder with policy/placeholder", async () => {
@@ -282,7 +307,7 @@ describe("dispatch build", () => {
     },
   );
 
-  it("refuses a role outside the seven with input/invalid-argument", async () => {
+  it("refuses a role outside the eight with input/invalid-argument", async () => {
     const result = await build(dispatchHarness(), "02-3", "planner", TICKET);
     expect(result.code).toBe(3);
     expect(refusal(result)).toMatchObject({ rule: "input/invalid-argument" });

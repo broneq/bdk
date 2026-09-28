@@ -168,7 +168,7 @@ describe("bdk dispatch build", () => {
     refused(build(change, "09-1", "implementer", "A-00000000"), 3, "input/not-found");
   });
 
-  it("exit 3 input/invalid-argument: a role outside the seven", () => {
+  it("exit 3 input/invalid-argument: a role outside the eight", () => {
     const change = started();
     refused(build(change, "01-1", "planner", "A-00000000"), 3, "input/invalid-argument");
   });
@@ -209,6 +209,25 @@ describe("bdk dispatch show", () => {
     const byPath = bdk(["dispatch", "show", report.path], change.root);
     expect(byPath.code).toBe(0);
     expect(byPath.stdout).toBe(text);
+  });
+
+  it("exit 0: one package per role of a ticket, the ticket showing the last one built", () => {
+    const change = started();
+    const ticket = opened(change, "task-redispatch", "01-1");
+    built(change, "01-1", "implementer", ticket);
+    built(change, "01-1", "simplifier", ticket);
+    built(change, "01-1", "runner", ticket);
+    const runner = built(change, "01-1", "runner", ticket);
+    expect(packages(change).sort()).toStrictEqual([
+      `01-1-implementer-${ticket}.md`,
+      `01-1-runner-${ticket}.md`,
+      `01-1-simplifier-${ticket}.md`,
+    ]);
+    const shown = answered(
+      bdk(["dispatch", "show", ticket, "--json"], change.root),
+      "output/dispatch-show.json",
+    );
+    expect(shown).toMatchObject({ path: runner.path, frontmatter: { role: "runner" } });
   });
 
   it("exit 0: a package over 100 lines prints whole in text mode", () => {
