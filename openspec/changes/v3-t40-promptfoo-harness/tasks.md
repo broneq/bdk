@@ -36,7 +36,7 @@
 ## 5. With / without mode (D-9)
 
 - [x] 5.1 Write failing unit tests for the task file parser (`{id, prompt, assert}` list, errors name the entry) and the two-cell config generation (only the plugin copy differs); implement `evals/suites/with-without/`; verify they pass
-- [ ] 5.2 Add an example task file for `bdk:mermaid-drawer` and document the mode in `evals/README.md`; verify `pnpm eval with-without --skill bdk:mermaid-drawer --tasks <example> --probe` runs one run per cell and prints the projection (after 6.1's approval of probe spending)
+- [x] 5.2 Add an example task file for `bdk:mermaid-drawer` and document the mode in `evals/README.md`; verify `pnpm eval with-without --skill bdk:mermaid-drawer --tasks <example> --probe` runs one run per cell and prints the projection (after 6.1's approval of probe spending)
 
 ## 6. Probe, approval, measured series
 
