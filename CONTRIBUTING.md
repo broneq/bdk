@@ -51,7 +51,7 @@ Every BDK skill:
 2. Keep it language-agnostic — no hardcoded tool names, paths, or commands
 3. Start with the standard header (see `.claude/rules/portability-check.md`)
 4. Add an entry to the Skills table in `README.md`
-5. Write an eval in `tests/skills/<name>/`
+5. Measure it against its absence: a task file and `pnpm eval with-without --skill bdk:<name> --tasks <file>` (`evals/README.md`)
 6. Review it with `/bdk-skill-kit:skill-authoring` and run `pnpm skill-check` (conventions: `.claude/rules/skills.md`)
 
 ## Adding an Agent
