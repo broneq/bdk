@@ -16,6 +16,7 @@ import {
   RUNS_DIR,
   readVersions,
   resultsFile,
+  sandboxOf,
 } from "../../harness/paths.ts";
 import type { Versions } from "../../harness/paths.ts";
 import { buildPluginCopy } from "../../harness/plugins.ts";
@@ -73,6 +74,8 @@ interface SeriesSpec {
   readonly series: string;
   /** The series' own directory under `evals/.runs/`. */
   readonly dir: string;
+  /** The series' sandbox outside the repository: working copies and the config home. */
+  readonly sandbox: string;
   readonly arms: Readonly<Record<Arm, ArmBuild>>;
   readonly versions: Versions;
   readonly runs: number;
@@ -92,7 +95,7 @@ function describeSeries(spec: SeriesSpec): SeriesSetup {
   const cells = Object.fromEntries(
     Object.entries(CELLS).map(([name, arm]): [string, CellSetup] => {
       const build = spec.arms[arm];
-      const workDir = join(spec.dir, "work", name);
+      const workDir = join(spec.sandbox, "work", name);
       const debugFile = join(spec.dir, "debug", `${name}.log`);
       return [
         name,
@@ -103,7 +106,7 @@ function describeSeries(spec: SeriesSpec): SeriesSetup {
             plugin: build.plugin,
             workDir,
             debugFile,
-            configHome: configHome(spec.dir),
+            configHome: configHome(spec.sandbox),
             maxBudgetUsd: spec.runCapUsd,
           }),
           plan: {
@@ -141,30 +144,33 @@ function describeSeries(spec: SeriesSpec): SeriesSetup {
   };
 }
 
-function buildArms(dir: string, versions: Versions): Record<Arm, ArmBuild> {
+function buildArms(sandbox: string, versions: Versions): Record<Arm, ArmBuild> {
   const fixtureBase = prepareFixture(versions.fixture, join(RUNS_DIR, "cache"), {
     install: npmCi,
   });
-  mkdirSync(configHome(dir), { recursive: true });
+  mkdirSync(configHome(sandbox), { recursive: true });
   const task = readTask(TASK_DIR);
   const build = (arm: Arm): ArmBuild => {
     const plugin = buildPluginCopy(
       arm === "v2"
-        ? { repoRoot: REPO_ROOT, ref: versions.v2Tag, target: join(dir, "plugins", arm) }
+        ? { repoRoot: REPO_ROOT, ref: versions.v2Tag, target: join(sandbox, "plugins", arm) }
         : {
             repoRoot: REPO_ROOT,
             ref: "HEAD",
-            target: join(dir, "plugins", arm),
+            target: join(sandbox, "plugins", arm),
             keepSkills: V3_SKILLS,
             keepAgents: V3_AGENTS,
             variant: { name: "execute", file: VARIANTS[arm] },
           },
     );
-    const base = join(dir, "bases", arm);
+    const base = join(sandbox, "bases", arm);
     freshCopy(fixtureBase, base);
     if (arm === "v2") seedV2(base, task);
     else
-      seedV3(base, task, { bundle: join(plugin.dir, "dist/bdk.mjs"), configHome: configHome(dir) });
+      seedV3(base, task, {
+        bundle: join(plugin.dir, "dist/bdk.mjs"),
+        configHome: configHome(sandbox),
+      });
     return { plugin: plugin.dir, bdkCommit: plugin.commit, variantHash: plugin.variantHash, base };
   };
   return Object.fromEntries(ARMS.map((arm) => [arm, build(arm)])) as Record<Arm, ArmBuild>;
@@ -182,12 +188,15 @@ export function executeAbRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
         (name) => readRows(resultsFile(SUITE, name)).length > 0,
       );
       const dir = join(RUNS_DIR, "series", SUITE, series);
+      const sandbox = sandboxOf(SUITE, series);
       rmSync(dir, { recursive: true, force: true });
+      rmSync(sandbox, { recursive: true, force: true });
       const runs = options.probe ? 1 : options.runs;
       const setup = describeSeries({
         series,
         dir,
-        arms: buildArms(dir, versions),
+        sandbox,
+        arms: buildArms(sandbox, versions),
         versions,
         runs,
         budgetUsd: options.budget,
@@ -224,6 +233,7 @@ export function executeAbRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
         const setup = describeSeries({
           series: "check",
           dir,
+          sandbox: dir,
           arms: Object.fromEntries(ARMS.map((arm) => [arm, placeholder(arm)])) as Record<
             Arm,
             ArmBuild

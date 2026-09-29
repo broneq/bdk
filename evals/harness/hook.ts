@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { assertCanStart, costOf, readLedger, record } from "./budget.ts";
 import { freshCopy } from "./fixture.ts";
 import { checkIsolation } from "./isolation.ts";
+import type { JudgeRequest, Judgement } from "./judge.ts";
 import { appendRow, modelsOf } from "./results.ts";
 import type { ResultRow } from "./results.ts";
 import { RUN_VARS, SERIES_ENV, readPlan } from "./series.ts";
@@ -101,6 +102,20 @@ function readText(file: string): string | undefined {
 /** Where a run's raw records go: the session result, its debug log, the judge's answers. */
 export function rawDirOf(context: RunContext): string {
   return join(context.plan.rawDir, context.cellName, `${context.item}.run-${String(context.run)}`);
+}
+
+/** Keeps a judge's request and answer with the run's raw records, for the spot-check. */
+export function recordJudgement(
+  context: RunContext,
+  request: JudgeRequest,
+  judgement: Judgement,
+): void {
+  const dir = rawDirOf(context);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    join(dir, "judge.json"),
+    `${JSON.stringify({ prompt: request.prompt, answer: judgement.output }, null, 2)}\n`,
+  );
 }
 
 export async function afterRun(

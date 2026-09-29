@@ -4,8 +4,10 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { recordJudgement } from "../../harness/hook.ts";
 import type { EvalResult, Measurement, RunContext, SuiteHooks } from "../../harness/hook.ts";
 import { judge } from "../../harness/judge.ts";
+import type { JudgeRequest, Judgement } from "../../harness/judge.ts";
 import {
   acceptance,
   acceptanceScore,
@@ -45,19 +47,24 @@ const RUBRIC_SCHEMA = {
 export interface HookDeps {
   readonly judge: typeof judge;
   readonly exec: Exec;
+  /** Keeps the rubric's request and answer with the run's raw records, for the spot-check. */
+  readonly record: (context: RunContext, request: JudgeRequest, judgement: Judgement) => void;
 }
 
 async function rubric(
   deps: HookDeps,
+  context: RunContext,
   finalMessage: string,
   endState: unknown,
 ): Promise<{ score: number; cost: number; models: readonly string[] }> {
   if (finalMessage.trim() === "") return { score: 0, cost: 0, models: [] };
-  const verdict = await deps.judge({
+  const request = {
     system: RUBRIC_SYSTEM,
     prompt: `Recorded end state:\n${JSON.stringify(endState, null, 2)}\n\nFinal message:\n${finalMessage}`,
     schema: RUBRIC_SCHEMA,
-  });
+  };
+  const verdict = await deps.judge(request);
+  deps.record(context, request, verdict);
   const accurate = (verdict.output as { accurate?: unknown }).accurate === true;
   return { score: accurate ? 1 : 0, cost: verdict.cost, models: verdict.models };
 }
@@ -131,6 +138,7 @@ async function measure(
   const output = result.response?.output;
   const graded = await rubric(
     deps,
+    context,
     typeof output === "string" ? output : JSON.stringify(output ?? ""),
     endState,
   );
@@ -154,4 +162,4 @@ export function createHooks(deps: HookDeps): SuiteHooks {
   return { measure: (context, result) => measure(deps, context, result) };
 }
 
-export const hooks = createHooks({ judge, exec: runCheck });
+export const hooks = createHooks({ judge, exec: runCheck, record: recordJudgement });

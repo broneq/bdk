@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { BudgetReached, readLedger, record } from "./budget.ts";
-import { afterRun, beforeRun, extensionHook, runContext } from "./hook.ts";
+import { afterRun, beforeRun, extensionHook, recordJudgement, runContext } from "./hook.ts";
 import type { EvalResult, SuiteHooks } from "./hook.ts";
 import { readRows } from "./results.ts";
 import type { CellPlan, SeriesPlan } from "./series.ts";
@@ -169,6 +169,22 @@ describe("afterRun", () => {
     expect(row.discarded).toBe("provider error: crash");
     const silent = await afterRun(runContext(plan, VARS), { response: { output: "x" } }, MEASURE);
     expect(silent.discarded).toMatch(/no reported cost/);
+  });
+});
+
+describe("recordJudgement", () => {
+  it("writes the judge's prompt and answer next to the run's raw records", () => {
+    const { dir, plan } = setup();
+    recordJudgement(
+      runContext(plan, VARS),
+      { system: "s", prompt: "p", schema: {} },
+      { output: { accurate: false, reason: "r" }, cost: 0.01, models: [] },
+    );
+    const file = join(dir, "raw/a/task.run-2/judge.json");
+    expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
+      prompt: "p",
+      answer: { accurate: false, reason: "r" },
+    });
   });
 });
 

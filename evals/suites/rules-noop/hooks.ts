@@ -2,10 +2,7 @@
 // hook after every run. An M1 run's answer is judged COVERED, MISSED or WRONG
 // against its bullet; an M2 run's review is judged per seeded violation, and
 // the distinct problems it claims are counted for the clean controls.
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-
-import { rawDirOf } from "../../harness/hook.ts";
+import { recordJudgement } from "../../harness/hook.ts";
 import type { EvalResult, Measurement, RunContext, SuiteHooks } from "../../harness/hook.ts";
 import { judge } from "../../harness/judge.ts";
 import type { JudgeRequest, Judgement } from "../../harness/judge.ts";
@@ -191,15 +188,6 @@ async function measure(
 
 export function createHooks(deps: HookDeps): SuiteHooks {
   return { measure: (context, result) => measure(deps, context, result) };
-}
-
-function recordJudgement(context: RunContext, request: JudgeRequest, judgement: Judgement): void {
-  const dir = rawDirOf(context);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(
-    join(dir, "judge.json"),
-    `${JSON.stringify({ prompt: request.prompt, answer: judgement.output }, null, 2)}\n`,
-  );
 }
 
 export const hooks = createHooks({

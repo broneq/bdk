@@ -26,6 +26,7 @@ import {
   RUNS_DIR,
   readVersions,
   resultsFile,
+  sandboxOf,
 } from "../../harness/paths.ts";
 import type { Versions } from "../../harness/paths.ts";
 import { buildPluginCopy, sha256File } from "../../harness/plugins.ts";
@@ -100,6 +101,8 @@ export interface WithWithoutSpec {
   readonly series: string;
   /** The series' own directory under `evals/.runs/`. */
   readonly dir: string;
+  /** The series' sandbox outside the repository: working copies and the config home. */
+  readonly sandbox: string;
   readonly tasks: readonly WithWithoutTask[];
   readonly cells: Readonly<Record<Cell, CellBuild>>;
   /** The base every run copies: the prepared fixture, or an empty repository. */
@@ -120,11 +123,11 @@ function skillSlug(skill: string): string {
 
 /** The series without I/O, over plugin copies and a base already built. */
 export function describeWithWithout(spec: WithWithoutSpec): SeriesSetup {
-  const configHome = join(spec.dir, "config-home");
+  const configHome = join(spec.sandbox, "config-home");
   const cells = Object.fromEntries(
     CELL_NAMES.map((name): [string, CellSetup] => {
       const build = spec.cells[name];
-      const workDir = join(spec.dir, "work", name);
+      const workDir = join(spec.sandbox, "work", name);
       const debugFile = join(spec.dir, "debug", `${name}.log`);
       return [
         name,
@@ -237,20 +240,23 @@ export function withWithoutRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
         (name) => readRows(resultsFile(SUITE, name)).length > 0,
       );
       const dir = join(RUNS_DIR, "series", SUITE, series);
+      const sandbox = sandboxOf(SUITE, series);
       rmSync(dir, { recursive: true, force: true });
-      mkdirSync(join(dir, "config-home"), { recursive: true });
+      rmSync(sandbox, { recursive: true, force: true });
+      mkdirSync(join(sandbox, "config-home"), { recursive: true });
       const base =
         fixture === "default"
           ? prepareFixture(versions.fixture, join(RUNS_DIR, "cache"), {
               install: npmCi,
             })
-          : emptyBase(join(dir, "empty-base"));
+          : emptyBase(join(sandbox, "empty-base"));
       const setup = describeWithWithout({
         skill,
         series,
         dir,
+        sandbox,
         tasks,
-        cells: buildCells(dir, skillPath),
+        cells: buildCells(sandbox, skillPath),
         base,
         fixture,
         versions,
@@ -290,6 +296,7 @@ export function withWithoutRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
           skill: "bdk:mermaid-drawer",
           series: "check",
           dir,
+          sandbox: dir,
           tasks: readTasks(EXAMPLE_TASKS),
           cells: { with: placeholder("with"), without: placeholder("without") },
           base: join(dir, "base"),

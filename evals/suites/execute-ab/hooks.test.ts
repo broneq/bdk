@@ -77,8 +77,13 @@ function result(output: string): EvalResult {
   };
 }
 
-function deps(): { judged: JudgeRequest[]; hooks: ReturnType<typeof createHooks> } {
+function deps(): {
+  judged: JudgeRequest[];
+  recorded: unknown[];
+  hooks: ReturnType<typeof createHooks>;
+} {
   const judged: JudgeRequest[] = [];
+  const recorded: unknown[] = [];
   const hooks = createHooks({
     judge: (request) => {
       judged.push(request);
@@ -89,13 +94,14 @@ function deps(): { judged: JudgeRequest[]; hooks: ReturnType<typeof createHooks>
       });
     },
     exec: () => 0,
+    record: (_context, _request, judgement) => recorded.push(judgement.output),
   });
-  return { judged, hooks };
+  return { judged, recorded, hooks };
 }
 
 describe("execute-ab measure", () => {
   it("measures a v3 run: acceptance, completeness, kernel metrics, envelope and the rubric", async () => {
-    const { judged, hooks } = deps();
+    const { judged, recorded, hooks } = deps();
     const measured = await hooks.measure(
       context("v3-thin", workDir()),
       result("Parts 01 and 02 done."),
@@ -115,6 +121,7 @@ describe("execute-ab measure", () => {
     expect(measured.models).toEqual(["claude-sonnet-5"]);
     expect(judged[0]?.prompt).toMatch(/"tasksCommitted": \[\]/);
     expect(judged[0]?.prompt).toMatch(/Final message:\nParts 01 and 02 done\.$/);
+    expect(recorded).toEqual([{ accurate: true, reason: "ok" }]);
   });
 
   it("marks the kernel metrics of the v2 arm as not applicable", async () => {

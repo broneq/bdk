@@ -29,14 +29,19 @@ function spec(fixture: "default" | "none"): WithWithoutSpec {
     skill: "bdk:mermaid-drawer",
     series: "series-mermaid-drawer-2026-09-29",
     dir: "/tmp/ww",
+    sandbox: "/tmp/sandbox",
     tasks: readTasks(EXAMPLE_TASKS),
     cells: {
       with: {
-        plugin: "/tmp/ww/plugins/with",
+        plugin: "/tmp/sandbox/plugins/with",
         bdkCommit: "b".repeat(40),
         variantHash: "c".repeat(64),
       },
-      without: { plugin: "/tmp/ww/plugins/without", bdkCommit: "b".repeat(40), variantHash: null },
+      without: {
+        plugin: "/tmp/sandbox/plugins/without",
+        bdkCommit: "b".repeat(40),
+        variantHash: null,
+      },
     },
     base: "/tmp/base",
     fixture,
@@ -72,11 +77,11 @@ describe("describeWithWithout", () => {
       ...withoutRest
     } = config("without");
     expect(withRest).toEqual(withoutRest);
-    expect(withPlugins).toEqual([{ type: "local", path: "/tmp/ww/plugins/with" }]);
-    expect(withoutPlugins).toEqual([{ type: "local", path: "/tmp/ww/plugins/without" }]);
+    expect(withPlugins).toEqual([{ type: "local", path: "/tmp/sandbox/plugins/with" }]);
+    expect(withoutPlugins).toEqual([{ type: "local", path: "/tmp/sandbox/plugins/without" }]);
     expect([withDir, withoutDir, withLog, withoutLog]).toEqual([
-      "/tmp/ww/work/with",
-      "/tmp/ww/work/without",
+      "/tmp/sandbox/work/with",
+      "/tmp/sandbox/work/without",
       "/tmp/ww/debug/with.log",
       "/tmp/ww/debug/without.log",
     ]);

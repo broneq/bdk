@@ -1,7 +1,9 @@
-// Fixed locations of the harness (design D-1): everything a run produces
-// lives under `evals/.runs/` (gitignored); only result rows are committed.
+// Fixed locations of the harness (design D-1): configs, raw outputs and the
+// ledger live under `evals/.runs/` (gitignored), what a session sees lives in
+// a sandbox outside the repository; only result rows are committed.
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { homedir } from "node:os";
+import { dirname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { FixturePin } from "./fixture.ts";
@@ -11,6 +13,32 @@ export const REPO_ROOT = dirname(EVALS_DIR);
 export const RUNS_DIR = join(EVALS_DIR, ".runs");
 /** One ledger for every suite, so one budget covers all of T40 (design D-10). */
 export const LEDGER_FILE = join(RUNS_DIR, "budget.json");
+/**
+ * Working copies, plugin copies and config homes: outside the BDK repository,
+ * because a session that walks up from its working copy must not find the
+ * repository's own kernel or skills (design D-2 "As built (sandbox)").
+ */
+export const SANDBOX_DIR = join(
+  process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"),
+  "bdk-evals",
+);
+
+/** A series' sandbox directory; refused when it would lie inside the repository. */
+export function sandboxOf(
+  suite: string,
+  series: string,
+  root = SANDBOX_DIR,
+  repoRoot = REPO_ROOT,
+): string {
+  const dir = join(root, suite, series);
+  const path = relative(repoRoot, dir);
+  if (!path.startsWith("..") && !isAbsolute(path)) {
+    throw new Error(
+      `the eval sandbox ${dir} lies inside the BDK repository; point XDG_CACHE_HOME elsewhere`,
+    );
+  }
+  return dir;
+}
 
 export interface Versions {
   readonly fixture: FixturePin;
