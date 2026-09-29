@@ -38,7 +38,7 @@ openspec/specs/          — living specs of BDK v3 (kernel-cli, kernel-architec
 
 ## v3 Work Tracking
 
-- Roadmap and task scope: `docs/V3-IMPLEMENTATION-PLAN.md`. Status: one GitHub issue per task `Tnn` in the `v3.0` milestone, with "blocked by" links for dependencies. Board: https://github.com/users/broneq/projects/1 (set `Status` to In progress when starting a task).
+- Roadmap: `docs/V3-IMPLEMENTATION-PLAN.md`, which also holds the scope of the tasks it already lists. A task added later (T43 onward) keeps its scope (Goal, Scope, Input, Acceptance signal, To resolve in the spec, Dependencies) in its GitHub issue body, not in the plan. Status: one GitHub issue per task `Tnn` in the `v3.0` milestone, with "blocked by" links for dependencies. Board: https://github.com/users/broneq/projects/1 (set `Status` to In progress when starting a task).
 - Pick the next task from issues whose blockers are all closed. Each task runs as an OpenSpec Change `v3-tnn-<slug>` (lowercase: OpenSpec rejects capitals) on a branch `v3/Tnn-<slug>` and ends with a PR into `staging/v3`. Closing keywords only fire on the default branch, so after the merge close the issue with `gh issue close N -c "Done in #PR"`.
 - Start a task: `/opsx:propose v3-tnn-<slug>` (or `/opsx:new` + `/opsx:continue` to review artifacts one at a time), naming the task ID and issue. Then `/opsx:apply`, `/opsx:verify`, `/opsx:archive`. Project context and artifact rules: `openspec/config.yaml`.
 - Requires the OpenSpec CLI: `npm i -g @fission-ai/openspec@1.13.2`. Its global profile must be `custom` with `ff` and `verify` enabled before running `openspec update`, otherwise the update deletes `/opsx:ff` and `/opsx:verify` from `.claude/`.
