@@ -47,8 +47,8 @@
 
 ## 7. Reports and documentation
 
-- [ ] 7.1 Complete `docs/V3-EVAL-EXECUTE-AB.md`: noise floor, per-arm medians and ranges, the three comparisons, the decision (thin skills or fallback B) under the criterion committed in 3.6, secondary findings for T41, any `v3-long` vs `v2` primary regression raised to the user; verify the decision follows mechanically from the rows
-- [ ] 7.2 Complete `docs/V3-EVAL-RULES-NOOP.md`: noise floor, per-bullet table with provisional classes, spot-check agreement, hand-off notes for T31; verify one row per bullet
+- [x] 7.1 Complete `docs/V3-EVAL-EXECUTE-AB.md`: noise floor, per-arm medians and ranges, the three comparisons, the decision (thin skills or fallback B) under the criterion committed in 3.6, secondary findings for T41, any `v3-long` vs `v2` primary regression raised to the user; verify the decision follows mechanically from the rows
+- [x] 7.2 Complete `docs/V3-EVAL-RULES-NOOP.md`: noise floor, per-bullet table with provisional classes, spot-check agreement, hand-off notes for T31; verify one row per bullet
 - [ ] 7.3 Add `tests/evals/README.md` naming `evals/` as the replacement and T32 as the removal task, add the removal to T32's scope and the T40 resolution (decisions, report links, T41 gate outcome) to `docs/V3-IMPLEMENTATION-PLAN.md`, point `.claude/rules/skill-test-eval.md` at `evals/`, update `CLAUDE.md` (architecture and development commands) and `README.md`; run the `docs-sync` skill for the user site; verify `pnpm docs:build` and `pnpm test:contract` pass
 - [ ] 7.4 Post the T41 gate outcome as a comment on issue #61 (T41) with the report link; verify the comment is visible
 
