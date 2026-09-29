@@ -47,12 +47,13 @@ describe("result rows", () => {
     ]);
   });
 
-  it("reads the rows of every measured series of a suite, without probes", () => {
+  it("reads the rows of every measured series of a suite, without probes or other records", () => {
     const dir = mkdtempSync(join(tmpdir(), "bdk-evals-results-"));
     dirs.push(dir);
     appendRow(join(dir, "series-2026-09-28.jsonl"), row({ series: "series-2026-09-28" }));
     appendRow(join(dir, "series-2026-09-28-2.jsonl"), row({ series: "series-2026-09-28-2" }));
     appendRow(join(dir, "probe-2026-09-28.jsonl"), row({ series: "probe-2026-09-28" }));
+    writeFileSync(join(dir, "spot-check-2026-09-28.jsonl"), '{"item":"task","agree":true}\n');
     writeFileSync(join(dir, "report.md"), "# report\n");
     expect(readSuiteRows(dir).map((read) => read.series)).toEqual([
       "series-2026-09-28",

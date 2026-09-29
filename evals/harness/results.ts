@@ -58,11 +58,14 @@ export function readRows(file: string): ResultRow[] {
     .map((line) => JSON.parse(line) as ResultRow);
 }
 
-/** The rows of every measured series of a suite; probe series are left out. */
+/**
+ * The rows of every measured series of a suite. Probe series and other records
+ * kept next to them, such as a judge spot-check, are left out.
+ */
 export function readSuiteRows(dir: string): ResultRow[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter((file) => file.endsWith(".jsonl") && !file.startsWith("probe-"))
+    .filter((file) => file.endsWith(".jsonl") && file.startsWith("series-"))
     .map((file) => file.slice(0, -".jsonl".length))
     .sort()
     .flatMap((series) => readRows(join(dir, `${series}.jsonl`)));

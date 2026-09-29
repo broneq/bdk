@@ -41,9 +41,9 @@
 ## 6. Probe, approval, measured series
 
 - [x] 6.1 Run `pnpm eval execute-ab --probe` and `pnpm eval rules-noop --probe`; show the user per-cell cost and the projection against the 100 USD budget; verify the user approves the full series or a reduced one, and record the answer in design.md D-10 "As run"
-- [ ] 6.2 Run the approved `execute-ab` series; verify every counted run has a result row with all provenance fields, and discarded runs carry a reason
-- [ ] 6.3 Run the approved `rules-noop` series; spot-check 10% of judged items plus every uncertain one and record the agreement; verify every bullet has a row
-- [ ] 6.4 Generate the tables with `pnpm eval report execute-ab` and `pnpm eval report rules-noop`; commit `evals/results/`; verify the reports' numbers equal the rows
+- [x] 6.2 Run the approved `execute-ab` series; verify every counted run has a result row with all provenance fields, and discarded runs carry a reason
+- [x] 6.3 Run the approved `rules-noop` series; spot-check 10% of judged items plus every uncertain one and record the agreement; verify every bullet has a row
+- [x] 6.4 Generate the tables with `pnpm eval report execute-ab` and `pnpm eval report rules-noop`; commit `evals/results/`; verify the reports' numbers equal the rows
 
 ## 7. Reports and documentation
 
