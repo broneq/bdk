@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import { readLedger, spent } from "../../harness/budget.ts";
 import type { RunOptions, SuiteRunner } from "../../harness/cli.ts";
-import { prepareFixture } from "../../harness/fixture.ts";
+import { npmCi, prepareFixture } from "../../harness/fixture.ts";
 import {
   EVALS_DIR,
   LEDGER_FILE,
@@ -242,11 +242,7 @@ export function withWithoutRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
       const base =
         fixture === "default"
           ? prepareFixture(versions.fixture, join(RUNS_DIR, "cache"), {
-              install: (target) =>
-                execFileSync("npm", ["ci", "--no-audit", "--no-fund"], {
-                  cwd: target,
-                  stdio: "inherit",
-                }),
+              install: npmCi,
             })
           : emptyBase(join(dir, "empty-base"));
       const setup = describeWithWithout({

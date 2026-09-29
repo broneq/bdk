@@ -1,7 +1,6 @@
 // The execute A/B suite (design D-4, D-5, D-7): one fixture task executed by
 // three arms. A series builds each arm's plugin copy and seeded base once,
 // then every run starts from a fresh copy of its arm's base.
-import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -9,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { readLedger, spent } from "../../harness/budget.ts";
 import type { RunOptions, SuiteRunner } from "../../harness/cli.ts";
-import { freshCopy, prepareFixture } from "../../harness/fixture.ts";
+import { freshCopy, npmCi, prepareFixture } from "../../harness/fixture.ts";
 import {
   EVALS_DIR,
   LEDGER_FILE,
@@ -144,8 +143,7 @@ function describeSeries(spec: SeriesSpec): SeriesSetup {
 
 function buildArms(dir: string, versions: Versions): Record<Arm, ArmBuild> {
   const fixtureBase = prepareFixture(versions.fixture, join(RUNS_DIR, "cache"), {
-    install: (base) =>
-      execFileSync("npm", ["ci", "--no-audit", "--no-fund"], { cwd: base, stdio: "inherit" }),
+    install: npmCi,
   });
   mkdirSync(configHome(dir), { recursive: true });
   const task = readTask(TASK_DIR);

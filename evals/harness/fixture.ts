@@ -97,3 +97,19 @@ export function freshCopy(base: string, target: string): void {
     verbatimSymlinks: true,
   });
 }
+
+/**
+ * `npm ci` in the fixture base, the suites' install step. `pnpm eval` runs
+ * under pnpm, which exports its own `npm_config_*` settings; npm does not know
+ * them and warns, so the fixture's install gets the environment without them.
+ */
+export function npmCi(dir: string, env: NodeJS.ProcessEnv = process.env): void {
+  const clean = Object.fromEntries(
+    Object.entries(env).filter(([key]) => !key.toLowerCase().startsWith("npm_config_")),
+  );
+  execFileSync("npm", ["ci", "--no-audit", "--no-fund"], {
+    cwd: dir,
+    env: clean,
+    stdio: "inherit",
+  });
+}

@@ -1,10 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { FixtureMismatch, freshCopy, prepareFixture } from "./fixture.ts";
+import { FixtureMismatch, freshCopy, npmCi, prepareFixture } from "./fixture.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -105,5 +105,27 @@ describe("freshCopy", () => {
     freshCopy(base, work);
     expect(existsSync(join(work, "run1.txt"))).toBe(false);
     expect(git(work, "rev-parse", "HEAD")).toBe(git(base, "rev-parse", "HEAD"));
+  });
+});
+
+describe("npmCi", () => {
+  it("runs npm ci in the directory without pnpm's npm_config_ settings", () => {
+    const bin = temp();
+    const work = temp();
+    // A stand-in npm that records its arguments and environment.
+    writeFileSync(join(bin, "npm"), '#!/bin/sh\necho "$@" > args.txt\nenv > env.txt\n', {
+      mode: 0o755,
+    });
+    npmCi(work, {
+      PATH: `${bin}:${process.env.PATH ?? ""}`,
+      npm_config_verify_deps_before_run: "false",
+      NPM_CONFIG_GLOBALCONFIG: "/x",
+      KEEP_ME: "1",
+    });
+    expect(readFileSync(join(work, "args.txt"), "utf8").trim()).toBe("ci --no-audit --no-fund");
+    const env = readFileSync(join(work, "env.txt"), "utf8");
+    expect(env).toContain("KEEP_ME=1");
+    expect(env.toLowerCase()).not.toContain("npm_config_verify_deps_before_run");
+    expect(env.toLowerCase()).not.toContain("npm_config_globalconfig");
   });
 });
