@@ -1,0 +1,33 @@
+diff --git a/src/auth/sessionTokens.ts b/src/auth/sessionTokens.ts
+new file mode 100644
+index 0000000..851c35a
+--- /dev/null
++++ b/src/auth/sessionTokens.ts
+@@ -0,0 +1,27 @@
++const SIGNING_KEY = import.meta.env.VITE_SESSION_SIGNING_KEY as string
++
++export function createCsrfToken(): string {
++  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
++}
++
++export function verifyCsrfToken(expected: string, received: string): boolean {
++  return expected === received
++}
++
++export function signPayload(payload: string): string {
++  return `${payload}.${btoa(`${payload}:${SIGNING_KEY}`)}`
++}
++
++export function canManageUsers(form: HTMLFormElement): boolean {
++  const role = (form.elements.namedItem('role') as HTMLInputElement | null)?.value
++  return role === 'ADMIN'
++}
++
++export function isOperator(rolesHeader: string | null): boolean {
++  try {
++    const roles = JSON.parse(rolesHeader ?? '[]') as string[]
++    return roles.includes('OPERATOR')
++  } catch {
++    return true
++  }
++}

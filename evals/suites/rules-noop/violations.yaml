@@ -1,0 +1,549 @@
+# The M2 seeded violations (design D-8): per patch in `patches/`, each seeded
+# violation with the rule bullet it breaks and the line of the patched file
+# that breaks it (always a line the patch adds). Patches 19-21 are clean
+# controls with no violations. `not-seedable` lists every bullet no
+# diff against this fixture (a Vite React SPA in TypeScript) can violate, with
+# the reason. `patches.test.ts` keeps this file consistent with the patches
+# and the rule bullets.
+patches:
+  - patch: 01-format-helpers
+    violations:
+      - bullet: code-quality.01.e4ed906e
+        file: src/ui/numberFormat.ts
+        line: 4
+        what: abbreviated, non-descriptive names fmtCnt, n, dflt, v
+      - bullet: languages/javascript.03.d8477f81
+        file: src/ui/numberFormat.ts
+        line: 5
+        what: var in new code instead of const
+      - bullet: languages/javascript.10.f79ad05e
+        file: src/ui/numberFormat.ts
+        line: 5
+        what: "|| default replaces a valid 0 count; ?? is meant"
+      - bullet: languages/javascript.09.bdc1f5f3
+        file: src/ui/numberFormat.ts
+        line: 6
+        what: loose equality == instead of ===
+      - bullet: code-quality.04.e5a77810
+        file: src/ui/numberFormat.ts
+        line: 12
+        what: comment paraphrasing the next line, and a decorative section header
+      - bullet: code-quality.07.98e318ea
+        file: src/ui/numberFormat.ts
+        line: 15
+        what: commented-out code left in place
+      - bullet: languages/javascript.15.a6220c9f
+        file: src/ui/numberFormat.ts
+        line: 19
+        what: exact floating-point equality comparison
+  - patch: 02-api-errors
+    violations:
+      - bullet: security.04.ea1485ed
+        file: src/api/auditExport.ts
+        line: 4
+        what: session token written to the console log
+      - bullet: security.02.882ee51d
+        file: src/api/auditExport.ts
+        line: 6
+        what: untrusted value concatenated into the query string without encoding
+      - bullet: languages/typescript.18.eec3bdec
+        file: src/api/auditExport.ts
+        line: 9
+        what: JSON.parse result (any) used and asserted to a trusted type without validation
+      - bullet: languages/javascript.11.1c0fb041
+        file: src/api/auditExport.ts
+        line: 13
+        what: error swallowed and turned into an empty result
+      - bullet: languages/typescript.10.a1c07b66
+        file: src/api/auditExport.ts
+        line: 12
+        what: as any assertion on the caught value
+      - bullet: languages/typescript.03.cc1de1ef
+        file: src/api/auditExport.ts
+        line: 17
+        what: any parameter at an exported boundary instead of unknown
+      - bullet: languages/typescript.12.7a742072
+        file: src/api/auditExport.ts
+        line: 29
+        what: caught value assumed to be an Error without narrowing
+      - bullet: code-quality.06.db386736
+        file: src/api/auditExport.ts
+        line: 19
+        what: defensive try/catch wrapping a string conversion
+  - patch: 03-audit-notes
+    violations:
+      - bullet: languages/react.21.94ab3e2d
+        file: src/operator/AuditNotes.tsx
+        line: 22
+        what: unsanitized HTML passed to dangerouslySetInnerHTML
+      - bullet: languages/javascript.17.1c945754
+        file: src/operator/AuditNotes.tsx
+        line: 16
+        what: user data written to innerHTML through a ref
+      - bullet: languages/react.22.cc13d2c5
+        file: src/operator/AuditNotes.tsx
+        line: 24
+        what: user-controlled href without a URL scheme allowlist
+      - bullet: languages/javascript.25.30a53061
+        file: src/operator/AuditNotes.tsx
+        line: 24
+        what: target=_blank link without rel=noopener
+  - patch: 04-user-badge
+    violations:
+      - bullet: languages/react.13.faaba6fa
+        file: src/ui/UserBadge.tsx
+        line: 6
+        what: boolean prop explosion and more than five props instead of a status variant
+      - bullet: languages/react.10.b94cb0a5
+        file: src/ui/UserBadge.tsx
+        line: 15
+        what: forwardRef in React 19, where ref is a plain prop
+      - bullet: languages/react.03.d753f359
+        file: src/ui/UserBadge.tsx
+        line: 22
+        what: derived label computed in an effect and stored in state
+      - bullet: languages/react.02.770dd87f
+        file: src/ui/UserBadge.tsx
+        line: 25
+        what: manual useMemo/useCallback memoization without a measured need
+      - bullet: languages/react.08.da4c4908
+        file: src/ui/UserBadge.tsx
+        line: 43
+        what: clickable div instead of a button element
+  - patch: 05-audit-tests
+    violations:
+      - bullet: test-quality.10.e443895c
+        file: src/operator/auditFormat.extra.test.ts
+        line: 9
+        what: introspection test that a symbol exists and is callable
+      - bullet: test-quality.01.c64e3dd1
+        file: src/operator/auditFormat.extra.test.ts
+        line: 8
+        what: test names no observable behavior and no triggering input
+      - bullet: test-quality.07.8a3de13b
+        file: src/operator/auditFormat.extra.test.ts
+        line: 14
+        what: "constant mirror: asserts a constant equals its definition"
+      - bullet: test-quality.06.51848a5d
+        file: src/operator/auditFormat.extra.test.ts
+        line: 19
+        what: asserts the literal the test's own mock returns
+      - bullet: test-quality.08.1b4f5c32
+        file: src/operator/auditFormat.extra.test.ts
+        line: 26
+        what: interaction-only assertion with no check on the produced label
+      - bullet: test-quality.11.4f8ce52c
+        file: src/operator/auditFormat.extra.test.ts
+        line: 31
+        what: asserts a type the signature already declares
+      - bullet: test-quality.12.50d9906a
+        file: src/operator/auditFormat.extra.test.ts
+        line: 36
+        what: "shape-only assertion: a non-empty label, not its value"
+      - bullet: test-quality.09.aab96a99
+        file: src/operator/auditFormat.extra.test.ts
+        line: 41
+        what: not-null as the only check; the broken-entry test swallows the exception and asserts true
+  - patch: 06-docs-tests
+    violations:
+      - bullet: test-quality.02.7ee028ff
+        file: src/projectConventions.test.ts
+        line: 11
+        what: asserts a phrase in the README
+      - bullet: test-quality.03.c00d9084
+        file: src/projectConventions.test.ts
+        line: 16
+        what: greps source text for an absent import and a call count
+      - bullet: test-quality.05.038d2a57
+        file: src/projectConventions.test.ts
+        line: 21
+        what: asserts a file exists without exercising it
+      - bullet: test-quality.04.93bd498a
+        file: src/projectConventions.test.ts
+        line: 26
+        what: asserts the wording of a code comment
+  - patch: 07-catalog-refresh
+    violations:
+      - bullet: languages/javascript.06.ba108d02
+        file: src/catalog/refreshCatalog.ts
+        line: 8
+        what: independent requests awaited one by one in a loop
+      - bullet: languages/javascript.07.97883d94
+        file: src/catalog/refreshCatalog.ts
+        line: 15
+        what: "floating promise: neither awaited nor handled"
+      - bullet: languages/javascript.05.22be531b
+        file: src/catalog/refreshCatalog.ts
+        line: 18
+        what: nested .then chains for sequential flow instead of async/await
+      - bullet: languages/javascript.08.61063137
+        file: src/catalog/refreshCatalog.ts
+        line: 29
+        what: effect fetch without an AbortController; stale responses overwrite newer ones
+      - bullet: languages/react.05.c8d8910c
+        file: src/catalog/refreshCatalog.ts
+        line: 28
+        what: data fetched imperatively in an effect instead of use() under Suspense
+  - patch: 08-audit-summary
+    violations:
+      - bullet: architecture.02.a5df5e89
+        file: src/api/auditSummary.ts
+        line: 1
+        what: api layer imports from the UI layer
+      - bullet: languages/javascript.02.1e2c38ec
+        file: src/api/auditSummary.ts
+        line: 2
+        what: circular import between auditSummary and auditSummaryView
+      - bullet: architecture.07.357bc58d
+        file: src/api/auditSummary.ts
+        line: 5
+        what: page size duplicated instead of reusing DEFAULT_AUDIT_PAGE_SIZE
+      - bullet: architecture.05.5785e278
+        file: src/api/auditSummary.ts
+        line: 8
+        what: interface with one implementation for future providers
+      - bullet: architecture.06.5f36bcdd
+        file: src/api/auditSummary.ts
+        line: 21
+        what: speculative exporter registry with no current user
+      - bullet: code-quality.03.28b26fee
+        file: src/api/auditSummary.ts
+        line: 26
+        what: one class fetches, caches, formats text, CSV and HTML
+      - bullet: architecture.01.54b5ad15
+        file: src/api/auditSummary.ts
+        line: 26
+        what: "api module also caches and renders CSV and HTML: no single purpose"
+  - patch: 09-debug-tools
+    violations:
+      - bullet: languages/javascript.19.b7a40285
+        file: src/mock-api/debugTools.ts
+        line: 12
+        what: exec with a query parameter interpolated into a shell command
+      - bullet: languages/javascript.21.18578ef9
+        file: src/mock-api/debugTools.ts
+        line: 17
+        what: file name from the request joined without confining it to the base directory
+      - bullet: languages/javascript.16.fb708e4d
+        file: src/mock-api/debugTools.ts
+        line: 21
+        what: eval of a query parameter
+      - bullet: languages/javascript.20.04eccab6
+        file: src/mock-api/debugTools.ts
+        line: 25
+        what: fetches a user-supplied URL without SSRF checks
+      - bullet: languages/javascript.22.f316889c
+        file: src/mock-api/debugTools.ts
+        line: 29
+        what: user-supplied regular expression (ReDoS)
+  - patch: 10-session-tokens
+    violations:
+      - bullet: languages/react.24.80817108
+        file: src/auth/sessionTokens.ts
+        line: 1
+        what: signing key read from a VITE_ variable ships in the browser bundle
+      - bullet: languages/javascript.23.02a8cb13
+        file: src/auth/sessionTokens.ts
+        line: 4
+        what: CSRF token from Math.random
+      - bullet: languages/javascript.24.6df1d612
+        file: src/auth/sessionTokens.ts
+        line: 8
+        what: token compared with === instead of a constant-time comparison
+      - bullet: security.05.8e63100b
+        file: src/auth/sessionTokens.ts
+        line: 16
+        what: authorization inferred from a client-side form field
+      - bullet: security.07.fe53e6a3
+        file: src/auth/sessionTokens.ts
+        line: 25
+        what: role check fails open when parsing fails
+  - patch: 11-audit-status
+    violations:
+      - bullet: languages/typescript.13.fc7ffd88
+        file: src/operator/auditStatus.ts
+        line: 1
+        what: enum instead of an as-const object or union
+      - bullet: languages/typescript.04.ced7773d
+        file: src/operator/auditStatus.ts
+        line: 24
+        what: exported functions without declared return types
+      - bullet: languages/typescript.06.574c25ce
+        file: src/operator/auditStatus.ts
+        line: 9
+        what: status variants as optional booleans instead of a discriminated union
+      - bullet: languages/typescript.07.9cc08024
+        file: src/operator/auditStatus.ts
+        line: 9
+        what: mutually exclusive optional booleans allow impossible states; a discriminated union is needed
+      - bullet: languages/typescript.14.59fe5951
+        file: src/operator/auditStatus.ts
+        line: 16
+        what: recursive conditional mapped type harder to read than the logic it guards
+      - bullet: languages/typescript.15.8dad880f
+        file: src/operator/auditStatus.ts
+        line: 19
+        what: interpolated template literal union over every nested key path
+      - bullet: languages/typescript.08.81127fac
+        file: src/operator/auditStatus.ts
+        line: 37
+        what: switch over the status misses Reverted; no never-based exhaustiveness check
+      - bullet: languages/typescript.11.4ac2e4a4
+        file: src/operator/auditStatus.ts
+        line: 41
+        what: non-null assertions on a find result and an optional field
+      - bullet: languages/typescript.19.00a6efe2
+        file: src/operator/auditStatus.ts
+        line: 44
+        what: external payload typed any and spread into trusted rows
+      - bullet: languages/typescript.09.dc7b325b
+        file: src/operator/auditStatus.ts
+        line: 52
+        what: as-assertion on a config object where satisfies is meant
+  - patch: 12-operator-dashboard
+    violations:
+      - bullet: languages/react.18.5d6ea2fe
+        file: src/operator/OperatorDashboard.tsx
+        line: 3
+        what: high-frequency pointer position in Context
+      - bullet: languages/react.07.354f8c17
+        file: src/operator/OperatorDashboard.tsx
+        line: 4
+        what: Context used to avoid passing one prop to a direct child
+      - bullet: languages/react.06.9fabf21e
+        file: src/operator/OperatorDashboard.tsx
+        line: 4
+        what: state promoted to Context though it is not cross-cutting
+      - bullet: languages/react.14.3f4c147c
+        file: src/operator/OperatorDashboard.tsx
+        line: 6
+        what: no-op useMount wrapper hiding a missing cleanup
+      - bullet: languages/react.15.fd4c706b
+        file: src/operator/OperatorDashboard.tsx
+        line: 31
+        what: latest-callback ref written during render instead of useEffectEvent
+      - bullet: languages/react.11.47cc2659
+        file: src/operator/OperatorDashboard.tsx
+        line: 26
+        what: interdependent save states as separate useState calls
+      - bullet: languages/react.04.bd01d447
+        file: src/operator/OperatorDashboard.tsx
+        line: 26
+        what: hand-rolled pending and saved state for a form instead of an action with useActionState
+      - bullet: languages/react.12.78cadee6
+        file: src/operator/OperatorDashboard.tsx
+        line: 23
+        what: one component fetches, tracks the pointer, saves a form and draws a chart
+  - patch: 13-audit-export-formats
+    violations:
+      - bullet: design-patterns.11.3b98ce86
+        file: src/operator/auditExportFormats.ts
+        line: 21
+        what: subclass overrides export to throw
+      - bullet: design-patterns.03.2dad9824
+        file: src/operator/auditExportFormats.ts
+        line: 25
+        what: factory class around a trivial new
+      - bullet: design-patterns.01.ec59d579
+        file: src/operator/auditExportFormats.ts
+        line: 25
+        what: a named pattern with no present problem to solve
+      - bullet: design-patterns.09.5f5e9bf0
+        file: src/operator/auditExportFormats.ts
+        line: 32
+        what: if-chain dispatching on a format tag next to an exporter class hierarchy
+      - bullet: design-patterns.02.eea458e1
+        file: src/operator/auditExportFormats.ts
+        line: 32
+        what: format selected at runtime by a conditional that grows per format
+      - bullet: design-patterns.10.ff10f7bf
+        file: src/operator/auditExportFormats.ts
+        line: 32
+        what: adding a format means editing the central if-chain
+      - bullet: design-patterns.07.712e8a13
+        file: src/operator/auditExportFormats.ts
+        line: 44
+        what: helpers pull state out of the entry instead of behaviour living with it
+      - bullet: design-patterns.08.dacc8c77
+        file: src/operator/auditExportFormats.ts
+        line: 48
+        what: second external helper operating only on an entry's data
+      - bullet: design-patterns.12.36037d8b
+        file: src/operator/auditExportFormats.ts
+        line: 52
+        what: "primitive obsession: four raw strings and a number"
+  - patch: 14-catalog-utils
+    violations:
+      - bullet: languages/javascript.13.170d7d21
+        file: src/catalog/catalogUtils.ts
+        line: 3
+        what: top-level await in a shared utility module
+      - bullet: languages/javascript.14.cdf81466
+        file: src/catalog/catalogUtils.ts
+        line: 5
+        what: DOM side effect at import time
+      - bullet: languages/javascript.12.62d43cb6
+        file: src/catalog/catalogUtils.ts
+        line: 8
+        what: reduce-based grouping instead of Object.groupBy
+      - bullet: languages/javascript.04.4cc2150a
+        file: src/catalog/catalogUtils.ts
+        line: 16
+        what: sorts the caller's array in place
+      - bullet: languages/javascript.18.6205c1b3
+        file: src/catalog/catalogUtils.ts
+        line: 23
+        what: deep merge of untrusted keys without guarding __proto__
+      - bullet: languages/javascript.01.3656bc66
+        file: src/catalog/catalogUtils.ts
+        line: 35
+        what: default export instead of a named export
+  - patch: 15-localization-sync
+    violations:
+      - bullet: code-quality.02.056621da
+        file: src/admin/localizationSync.ts
+        line: 8
+        what: one long function diffs, applies, sorts and logs
+      - bullet: code-quality.04.e5a77810
+        file: src/admin/localizationSync.ts
+        line: 5
+        what: section header and line-by-line paraphrase comments
+      - bullet: code-quality.07.98e318ea
+        file: src/admin/localizationSync.ts
+        line: 56
+        what: commented-out code
+      - bullet: code-quality.06.db386736
+        file: src/admin/localizationSync.ts
+        line: 51
+        what: try/catch around a sort that cannot throw
+      - bullet: code-quality.05.7ff54a8f
+        file: src/admin/localizationSync.ts
+        line: 66
+        what: comment grown by appended updates, partly stale
+      - bullet: code-quality.08.226892d5
+        file: src/admin/localizationSync.ts
+        line: 68
+        what: new public functions without tests
+  - patch: 16-book-import
+    violations:
+      - bullet: languages/typescript.05.bb9b783b
+        file: src/admin/bookImport.ts
+        line: 6
+        what: uploaded file content asserted to a type without a runtime parser
+      - bullet: languages/typescript.17.d06cfb2e
+        file: src/admin/bookImport.ts
+        line: 6
+        what: a cast stands in for the runtime check of uploaded rows
+      - bullet: security.01.26bead3a
+        file: src/admin/bookImport.ts
+        line: 6
+        what: uploaded file content crosses the trust boundary unvalidated
+      - bullet: security.03.88c26adb
+        file: src/admin/bookImport.ts
+        line: 25
+        what: file name and server error text placed into HTML without encoding
+      - bullet: security.08.b52f50c9
+        file: src/admin/bookImport.ts
+        line: 31
+        what: stack trace in a user-facing message
+      - bullet: languages/javascript.06.ba108d02
+        file: src/admin/bookImport.ts
+        line: 10
+        what: independent POSTs awaited one by one
+  - patch: 17-build-config
+    violations:
+      - bullet: languages/typescript.01.652cdaa6
+        file: tsconfig.app.json
+        line: 11
+        what: strict mode switched off
+      - bullet: languages/typescript.16.e37a8262
+        file: tsconfig.app.json
+        line: 14
+        what: Node module resolution and isolatedModules off in a Vite project
+      - bullet: security.09.e8d17979
+        file: package.json
+        line: 45
+        what: new dependency on an unpinned latest version
+      - bullet: languages/typescript.21.4ebaaaf8
+        file: .github/workflows/ci.yml
+        line: 42
+        what: CI installs with npm install instead of npm ci
+  - patch: 18-audit-sync
+    violations:
+      - bullet: architecture.04.26099829
+        file: src/operator/auditSync.ts
+        line: 4
+        what: fat interface; latestActor uses one of its seven methods
+      - bullet: design-patterns.05.843b44bd
+        file: src/operator/auditSync.ts
+        line: 33
+        what: optional, composable behaviours stacked by subclassing
+      - bullet: design-patterns.06.f5d3ec17
+        file: src/operator/auditSync.ts
+        line: 53
+        what: domain object performs its own HTTP persistence
+      - bullet: architecture.03.1ae7614c
+        file: src/operator/auditSync.ts
+        line: 62
+        what: retention policy constructs the concrete HTTP client
+      - bullet: security.06.84dd9121
+        file: src/operator/auditSync.ts
+        line: 67
+        what: admin and write scopes requested for a read-only sync
+      - bullet: design-patterns.04.78b91b1a
+        file: src/operator/auditSync.ts
+        line: 83
+        what: producer calls each consumer directly
+      - bullet: languages/react.09.0fd2a34f
+        file: src/operator/AuditSyncPanel.tsx
+        line: 21
+        what: "Suspense boundary without an ErrorBoundary: a failed fetch blanks the page"
+  - patch: 19-clean-pluralize
+    violations: []
+  - patch: 20-clean-copy-button
+    violations: []
+  - patch: 21-clean-sync-state
+    violations: []
+not-seedable:
+  - bullet: code-quality.09.41d89cfb
+    reason: the fixture has no async pipeline across process or time boundaries (queue, worker, webhook chain)
+  - bullet: code-quality.10.5476143b
+    reason: a note about the rule file itself, not a rule for code
+  - bullet: security.10.f3eef68b
+    reason: a note about the rule file itself, not a rule for code
+  - bullet: design-patterns.13.47ca8808
+    reason: governs how a reviewer proposes a pattern, not the code under review
+  - bullet: design-patterns.14.a9368ad8
+    reason: points to the pattern catalog; it states no rule a diff can break
+  - bullet: engineering-judgment.01.1c143231
+    reason: governs how approaches are compared, not code
+  - bullet: engineering-judgment.02.56e82a4b
+    reason: governs the reviewer's own behaviour, not code
+  - bullet: test-quality.13.4340d869
+    reason: a permission ("still allowed"), not a prohibition; a diff cannot violate it
+  - bullet: test-quality.14.000e5dd1
+    reason: a permission ("still allowed"), not a prohibition; a diff cannot violate it
+  - bullet: test-quality.15.67efa34a
+    reason: a permission ("still allowed"), not a prohibition; a diff cannot violate it
+  - bullet: test-quality.16.5e2bb8be
+    reason: a permission ("still allowed"), not a prohibition; a diff cannot violate it
+  - bullet: test-quality.17.b8a39a39
+    reason: governs what the author declares about testing, which a diff does not carry
+  - bullet: languages/react.01.7f1e2abd
+    reason: needs Server Components; the fixture is a client-only Vite SPA
+  - bullet: languages/react.16.bade8d1b
+    reason: needs a mutation with useOptimistic under a Suspense boundary; the fixture has neither, so the seeded case would stand alone
+  - bullet: languages/react.17.6e3551fc
+    reason: needs Server Actions; the fixture is a client-only Vite SPA
+  - bullet: languages/react.19.9766037e
+    reason: ViewTransition is not in the fixture's stable React 19.2
+  - bullet: languages/react.20.0477adec
+    reason: preload and preinit pay off with server rendering; the fixture is a client-only Vite SPA
+  - bullet: languages/react.23.774e0d8f
+    reason: needs Server Components and Server Actions; the fixture is a client-only Vite SPA
+  - bullet: languages/typescript.02.f372a9a8
+    reason: asks to turn checks on that the fixture's base config already leaves off; a diff can only keep them off, which is no change to review
+  - bullet: languages/typescript.20.fba20d9c
+    reason: needs a third-party declaration file that lies about runtime shape; a diff cannot show that without the library's runtime
+  - bullet: languages/typescript.22.dbd6f1d7
+    reason: asks for a compiler flag the fixture's base config does not set; a diff can only keep it unset, which is no change to review

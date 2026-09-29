@@ -1,0 +1,58 @@
+diff --git a/src/operator/auditStatus.ts b/src/operator/auditStatus.ts
+new file mode 100644
+index 0000000..6ab3157
+--- /dev/null
++++ b/src/operator/auditStatus.ts
+@@ -0,0 +1,52 @@
++export enum AuditStatus {
++  Pending,
++  Applied,
++  Reverted,
++}
++
++export type AuditRow = {
++  id: number
++  isPending?: boolean
++  isApplied?: boolean
++  isReverted?: boolean
++  revertedBy?: string
++  appliedAt?: string
++}
++
++export type DeepPartialPath<T, P extends string = ''> = T extends object
++  ? {
++      [K in keyof T & string]: T[K] extends object
++        ? DeepPartialPath<T[K], `${P}${K}.`> | `${P}${K}`
++        : `${P}${K}`
++    }[keyof T & string]
++  : never
++
++export function statusOf(row: AuditRow) {
++  if (row.isReverted) return AuditStatus.Reverted
++  if (row.isApplied) return AuditStatus.Applied
++  return AuditStatus.Pending
++}
++
++export function statusLabel(status: AuditStatus) {
++  switch (status) {
++    case AuditStatus.Pending:
++      return 'Pending'
++    case AuditStatus.Applied:
++      return 'Applied'
++  }
++  return 'Unknown'
++}
++
++export function revertedBy(rows: AuditRow[], id: number) {
++  return rows.find((row) => row.id === id)!.revertedBy!
++}
++
++export function parseRows(payload: any) {
++  return payload.rows.map((row: any) => ({ ...row, id: Number(row.id) }))
++}
++
++export const STATUS_COLORS = {
++  pending: 'amber',
++  applied: 'green',
++  reverted: 'grey',
++} as Record<'pending' | 'applied' | 'reverted', string>

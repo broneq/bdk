@@ -1,0 +1,60 @@
+diff --git a/src/operator/auditExportFormats.ts b/src/operator/auditExportFormats.ts
+new file mode 100644
+index 0000000..29d3338
+--- /dev/null
++++ b/src/operator/auditExportFormats.ts
+@@ -0,0 +1,54 @@
++import type { AuditLog } from '../api/operator'
++
++export class AuditExporter {
++  export(entries: AuditLog[]): string {
++    return entries.map((entry) => String(entry.id)).join('\n')
++  }
++
++  preview(entries: AuditLog[]): string {
++    return this.export(entries.slice(0, 5))
++  }
++}
++
++export class JsonAuditExporter extends AuditExporter {
++  export(entries: AuditLog[]): string {
++    return JSON.stringify(entries)
++  }
++}
++
++export class PdfAuditExporter extends AuditExporter {
++  export(): string {
++    throw new Error('PDF export is not supported')
++  }
++}
++
++export class AuditExporterFactory {
++  create(): AuditExporter {
++    return new AuditExporter()
++  }
++}
++
++export function exportAudit(kind: string, entries: AuditLog[]): string {
++  if (kind === 'json') {
++    return JSON.stringify(entries)
++  } else if (kind === 'csv') {
++    return entries.map((entry) => `${entry.id},${entry.action}`).join('\n')
++  } else if (kind === 'tsv') {
++    return entries.map((entry) => `${entry.id}\t${entry.action}`).join('\n')
++  } else if (kind === 'text') {
++    return entries.map((entry) => `${entry.id} ${entry.action}`).join('\n')
++  }
++  return ''
++}
++
++export function entryTargetLabel(entry: AuditLog): string {
++  return `${entry.targetType ?? ''}#${entry.targetId ?? ''}`
++}
++
++export function entryIsForTarget(entry: AuditLog, targetType: string, targetId: string): boolean {
++  return entry.targetType === targetType && String(entry.targetId) === targetId
++}
++
++export function exportFileName(format: string, actor: string, day: string, page: number): string {
++  return `${day}-${actor}-${page}.${format}`
++}

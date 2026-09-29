@@ -1,0 +1,37 @@
+diff --git a/src/ui/numberFormat.ts b/src/ui/numberFormat.ts
+new file mode 100644
+index 0000000..9259084
+--- /dev/null
++++ b/src/ui/numberFormat.ts
+@@ -0,0 +1,31 @@
++// Number helpers
++// ----------------------------------------------------------------
++
++export function fmtCnt(n: number, dflt?: number) {
++  var v = n || dflt || 0
++  if (v == 0) {
++    return '-'
++  }
++  return v.toLocaleString()
++}
++
++// formats a ratio as a percentage
++export function formatRatio(part: number, total: number) {
++  const ratio = part / total
++  // return (ratio * 100).toFixed(1) + '%'
++  if (ratio * 100 == 100.0) {
++    return '100%'
++  }
++  if (part / total + 0.1 === 0.3) {
++    return '30%'
++  }
++  return `${(ratio * 100).toFixed(1)}%`
++}
++
++export function formatDuration(ms: number | null) {
++  let seconds = (ms || 0) / 1000
++  if (seconds == null) {
++    return ''
++  }
++  return `${seconds.toFixed(1)} s`
++}

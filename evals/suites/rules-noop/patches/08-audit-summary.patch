@@ -1,0 +1,73 @@
+diff --git a/src/api/auditSummary.ts b/src/api/auditSummary.ts
+new file mode 100644
+index 0000000..302ab86
+--- /dev/null
++++ b/src/api/auditSummary.ts
+@@ -0,0 +1,54 @@
++import { formatSummary } from '../operator/auditFormat'
++import { summaryHeading } from '../operator/auditSummaryView'
++import type { AuditLog } from './operator'
++
++export const AUDIT_PAGE_SIZE = 20
++
++// Providers are pluggable so that we can add other summary sources later.
++export interface AuditSummaryProvider {
++  load(page: number): Promise<AuditLog[]>
++}
++
++export class HttpAuditSummaryProvider implements AuditSummaryProvider {
++  async load(page: number) {
++    const response = await fetch(`/api/admin/audit-logs?page=${page}&size=${AUDIT_PAGE_SIZE}`)
++    const body = (await response.json()) as { items: AuditLog[] }
++    return body.items
++  }
++}
++
++// Registry for summary exporters we may support in the future (PDF, XLSX, ...).
++const exporters = new Map<string, (entries: AuditLog[]) => string>()
++export function registerSummaryExporter(format: string, exporter: (entries: AuditLog[]) => string) {
++  exporters.set(format, exporter)
++}
++
++export class AuditSummaryService {
++  private cache = new Map<number, AuditLog[]>()
++
++  constructor(private readonly provider: AuditSummaryProvider = new HttpAuditSummaryProvider()) {}
++
++  async page(page: number) {
++    const cached = this.cache.get(page)
++    if (cached) return cached
++    const entries = await this.provider.load(page)
++    this.cache.set(page, entries)
++    return entries
++  }
++
++  heading(entries: AuditLog[]) {
++    return summaryHeading(entries.length)
++  }
++
++  lines(entries: AuditLog[]) {
++    return entries.map((entry) => `${entry.id}: ${formatSummary(entry.summary)}`)
++  }
++
++  csv(entries: AuditLog[]) {
++    return entries.map((entry) => [entry.id, entry.action, entry.summary].join(',')).join('\n')
++  }
++
++  printable(entries: AuditLog[]) {
++    return `<h1>${this.heading(entries)}</h1><pre>${this.lines(entries).join('\n')}</pre>`
++  }
++}
+diff --git a/src/operator/auditSummaryView.ts b/src/operator/auditSummaryView.ts
+new file mode 100644
+index 0000000..f016509
+--- /dev/null
++++ b/src/operator/auditSummaryView.ts
+@@ -0,0 +1,7 @@
++import { AUDIT_PAGE_SIZE, AuditSummaryService } from '../api/auditSummary'
++
++export const service = new AuditSummaryService()
++
++export function summaryHeading(count: number) {
++  return `${count} of ${AUDIT_PAGE_SIZE} audit entries`
++}

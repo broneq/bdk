@@ -1,0 +1,35 @@
+diff --git a/src/operator/AuditNotes.tsx b/src/operator/AuditNotes.tsx
+new file mode 100644
+index 0000000..ae0c177
+--- /dev/null
++++ b/src/operator/AuditNotes.tsx
+@@ -0,0 +1,29 @@
++import { useEffect, useRef } from 'react'
++
++import type { AuditLog } from '../api/operator'
++
++type AuditNotesProps = {
++  entry: AuditLog
++  noteHtml: string
++  referenceUrl: string
++}
++
++export function AuditNotes({ entry, noteHtml, referenceUrl }: AuditNotesProps) {
++  const previewRef = useRef<HTMLDivElement>(null)
++
++  useEffect(() => {
++    if (previewRef.current) {
++      previewRef.current.innerHTML = `<strong>${entry.actorLogin}</strong>: ${entry.summary}`
++    }
++  }, [entry])
++
++  return (
++    <section className="audit-notes">
++      <div dangerouslySetInnerHTML={{ __html: noteHtml }} />
++      <div ref={previewRef} />
++      <a href={referenceUrl} target="_blank">
++        Open reference
++      </a>
++    </section>
++  )
++}

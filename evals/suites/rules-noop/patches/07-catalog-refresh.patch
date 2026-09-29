@@ -1,0 +1,41 @@
+diff --git a/src/catalog/refreshCatalog.ts b/src/catalog/refreshCatalog.ts
+new file mode 100644
+index 0000000..d324b87
+--- /dev/null
++++ b/src/catalog/refreshCatalog.ts
+@@ -0,0 +1,35 @@
++import { useEffect, useState } from 'react'
++
++type Book = { id: number; title: string }
++
++export async function loadBooks(ids: number[]): Promise<Book[]> {
++  const books: Book[] = []
++  for (const id of ids) {
++    const response = await fetch(`/api/books/${id}`)
++    books.push((await response.json()) as Book)
++  }
++  return books
++}
++
++export function refreshCatalogCache(ids: number[]) {
++  loadBooks(ids)
++  return fetch('/api/catalog/refresh', { method: 'POST' })
++    .then((response) => response.json())
++    .then((result: { refreshed: number }) => {
++      return fetch('/api/catalog/stats').then((stats) =>
++        stats.json().then((body: { total: number }) => ({ ...result, total: body.total })),
++      )
++    })
++}
++
++export function useCatalogSearch(query: string) {
++  const [books, setBooks] = useState<Book[]>([])
++
++  useEffect(() => {
++    fetch(`/api/books?query=${encodeURIComponent(query)}`)
++      .then((response) => response.json())
++      .then((body: Book[]) => setBooks(body))
++  }, [query])
++
++  return books
++}
