@@ -25,8 +25,9 @@ export default defineConfig({
   targets: [
     {
       kind: "skills",
-      // Role skills sit one level deeper (plugin.json `skills` key).
-      dirs: ["skills", "skills/roles"],
+      // Role skills sit one level deeper (plugin.json `skills` key). The
+      // execute A/B arms are installed as `skills/execute` in eval plugin copies.
+      dirs: ["skills", "skills/roles", "evals/suites/execute-ab/variants"],
       rules: {
         "block-form": ["error", { patterns: [wrapper] }],
         // Without the pair the host drops the whole skill in default permission mode.
@@ -36,13 +37,13 @@ export default defineConfig({
           {
             entries: [
               {
-                names: ["plan", "execute", "close", "run"],
+                names: ["plan", "execute", "close", "run", "execute-thin", "execute-long"],
                 field: "disable-model-invocation",
                 equals: true,
                 reason: "a gate is started by the user only",
               },
               {
-                names: ["execute", "close"],
+                names: ["execute", "close", "execute-thin", "execute-long"],
                 field: "disallowed-tools",
                 includes: ["Edit", "Write", "NotebookEdit"],
                 reason: "the gate delegates edits to workers",

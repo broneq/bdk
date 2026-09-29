@@ -1,0 +1,118 @@
+diff --git a/src/i18n/messages.ts b/src/i18n/messages.ts
+index 9a8811b..bba8041 100644
+--- a/src/i18n/messages.ts
++++ b/src/i18n/messages.ts
+@@ -376,0 +377 @@ export const UI_MESSAGES = {
++  'ui.operator.export-csv': 'Export CSV',
+diff --git a/src/operator/OperatorPage.tsx b/src/operator/OperatorPage.tsx
+index 78a2270..2885533 100644
+--- a/src/operator/OperatorPage.tsx
++++ b/src/operator/OperatorPage.tsx
+@@ -34,0 +35 @@ import { AuditEntryDetails } from './AuditEntryDetails'
++import { auditCsvFilename, toAuditCsv } from './auditCsv'
+@@ -232,0 +234,21 @@ export function OperatorPage({ session }: { session: SessionResponse }) {
++  function exportCsv(rows: readonly AuditLog[]) {
++    const blob = new Blob([toAuditCsv(rows)], {
++      type: 'text/csv;charset=utf-8',
++    })
++    const url = URL.createObjectURL(blob)
++    const link = document.createElement('a')
++
++    link.href = url
++    link.download = auditCsvFilename(
++      {
++        action: query.action,
++        actorLogin: query.actorLogin,
++        page: query.page,
++        targetType: query.targetType,
++      },
++      new Date(),
++    )
++    link.click()
++    URL.revokeObjectURL(url)
++  }
++
+@@ -263,0 +286,4 @@ export function OperatorPage({ session }: { session: SessionResponse }) {
++  const exportRows =
++    auditPageState.status === 'ready'
++      ? (auditPageState.value.content ?? EMPTY_AUDIT_ROWS)
++      : EMPTY_AUDIT_ROWS
+@@ -353,0 +380,7 @@ export function OperatorPage({ session }: { session: SessionResponse }) {
++              <button
++                disabled={exportRows.length === 0}
++                type="button"
++                onClick={() => exportCsv(exportRows)}
++              >
++                {t('ui.operator.export-csv')}
++              </button>
+diff --git a/src/operator/auditCsv.ts b/src/operator/auditCsv.ts
+new file mode 100644
+index 0000000..34f0bd4
+--- /dev/null
++++ b/src/operator/auditCsv.ts
+@@ -0,0 +1,65 @@
++import type { AuditLog } from '../api/operator'
++
++export type AuditCsvFilters = {
++  targetType?: string
++  action?: string
++  actorLogin?: string
++  page: number
++}
++
++const CSV_COLUMNS = [
++  'id',
++  'createdAt',
++  'targetType',
++  'targetId',
++  'action',
++  'actorLogin',
++  'summary',
++] as const satisfies readonly (keyof AuditLog)[]
++
++const FORMULA_PREFIXES = ['=', '+', '-', '@']
++
++export function toAuditCsv(entries: readonly AuditLog[]) {
++  const lines = [
++    CSV_COLUMNS.join(','),
++    ...entries.map((entry) =>
++      CSV_COLUMNS.map((column) => formatCsvValue(entry[column])).join(','),
++    ),
++  ]
++
++  return lines.map((line) => `${line}\r\n`).join('')
++}
++
++export function auditCsvFilename(filters: AuditCsvFilters, now: Date) {
++  const actor = slug(filters.actorLogin ?? '')
++  const parts = [
++    'audit-log',
++    now.toISOString().slice(0, 10),
++    filters.targetType?.toLowerCase(),
++    filters.action?.toLowerCase(),
++    actor,
++    `page-${filters.page + 1}`,
++  ]
++
++  return `${parts.filter(Boolean).join('-')}.csv`
++}
++
++function formatCsvValue(value: string | number | undefined) {
++  if (value === undefined) {
++    return ''
++  }
++
++  const text =
++    typeof value === 'string' && FORMULA_PREFIXES.some((prefix) => value.startsWith(prefix))
++      ? `'${value}`
++      : String(value)
++
++  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
++}
++
++function slug(value: string) {
++  return value
++    .toLowerCase()
++    .replace(/[^a-z0-9]+/g, '-')
++    .replace(/^-+|-+$/g, '')
++}
