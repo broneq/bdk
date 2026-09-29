@@ -72,6 +72,35 @@ export interface TestCase {
 /** The vars the hook reads to find the run's cell, item and run number. */
 export const RUN_VARS = { cell: "bdk_cell", item: "bdk_item", run: "bdk_run" } as const;
 
+const RAW_OPEN = "{% raw %}";
+const RAW_CLOSE = "{% endraw %}";
+const TEMPLATE_SYNTAX = /\{\{|\{%|\{#/;
+
+/**
+ * A var value promptfoo passes on unchanged. promptfoo renders every string
+ * var as a Nunjucks template before it fills the prompt, so a diff with JSX
+ * such as `{{ __html: x }}` fails to render, and a valid `{{ x }}` silently
+ * turns empty. A value with template syntax is wrapped in a raw block.
+ */
+export function literalVar(value: string): string {
+  if (!TEMPLATE_SYNTAX.test(value)) return value;
+  if (/\{%-?\s*endraw/.test(value)) {
+    throw new Error("a var value contains a Nunjucks endraw tag and cannot be passed literally");
+  }
+  return `${RAW_OPEN}${value}${RAW_CLOSE}`;
+}
+
+/** The value `literalVar` wrapped, as the hook reads it back from the test's vars. */
+export function varValue(value: string): string {
+  return value.startsWith(RAW_OPEN) && value.endsWith(RAW_CLOSE)
+    ? value.slice(RAW_OPEN.length, -RAW_CLOSE.length)
+    : value;
+}
+
+function literalVars(vars: Readonly<Record<string, string>> = {}): Record<string, string> {
+  return Object.fromEntries(Object.entries(vars).map(([key, value]) => [key, literalVar(value)]));
+}
+
 export function expandTests(
   cells: readonly string[],
   items: readonly EvalItem[],
@@ -86,8 +115,8 @@ export function expandTests(
         tests.push({
           description: `${cell} ${item.id} run ${run}`,
           vars: {
-            ...item.vars,
-            ...cellVars[cell],
+            ...literalVars(item.vars),
+            ...literalVars(cellVars[cell]),
             [RUN_VARS.cell]: cell,
             [RUN_VARS.item]: item.id,
             [RUN_VARS.run]: String(run),

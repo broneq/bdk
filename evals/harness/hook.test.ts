@@ -71,6 +71,12 @@ describe("runContext", () => {
     expect(runContext(plan, VARS)).toMatchObject({ cellName: "a", item: "task", run: 2 });
   });
 
+  it("gives the suite a var value unwrapped from its raw block", () => {
+    const { plan } = setup();
+    const diff = "{% raw %}+ <div x={{ a: 1 }} />{% endraw %}";
+    expect(runContext(plan, { ...VARS, diff }).vars.diff).toBe("+ <div x={{ a: 1 }} />");
+  });
+
   it("refuses a test of an unknown cell", () => {
     const { plan } = setup();
     expect(() => runContext(plan, { bdk_cell: "zz" })).toThrow(/zz/);

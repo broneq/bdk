@@ -12,7 +12,7 @@ import { checkIsolation } from "./isolation.ts";
 import type { JudgeRequest, Judgement } from "./judge.ts";
 import { appendRow, modelsOf } from "./results.ts";
 import type { ResultRow } from "./results.ts";
-import { RUN_VARS, SERIES_ENV, readPlan } from "./series.ts";
+import { RUN_VARS, SERIES_ENV, readPlan, varValue } from "./series.ts";
 import type { CellPlan, SeriesPlan } from "./series.ts";
 
 export interface ToolCall {
@@ -78,7 +78,7 @@ export function runContext(plan: SeriesPlan, vars: Readonly<Record<string, strin
     cell,
     item: vars[RUN_VARS.item] ?? "",
     run: Number(vars[RUN_VARS.run]),
-    vars,
+    vars: Object.fromEntries(Object.entries(vars).map(([key, value]) => [key, varValue(value)])),
   };
 }
 

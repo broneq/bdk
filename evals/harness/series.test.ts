@@ -3,7 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { expandTests, freshSeriesName, readPlan, writePlan } from "./series.ts";
+import {
+  expandTests,
+  freshSeriesName,
+  literalVar,
+  readPlan,
+  varValue,
+  writePlan,
+} from "./series.ts";
 import type { SeriesPlan } from "./series.ts";
 
 const dirs: string[] = [];
@@ -35,6 +42,13 @@ describe("expandTests", () => {
     expect(tests.map((test) => test.vars.p)).toEqual(["item", "/bdk:execute"]);
   });
 
+  it("wraps a var with template syntax in a raw block, so promptfoo passes a JSX diff unchanged", () => {
+    const diff = "+ <div dangerouslySetInnerHTML={{ __html: noteHtml }} />";
+    const [test] = expandTests(["a"], [{ id: "p", vars: { diff } }], 1);
+    expect(test?.vars.diff).toBe(`{% raw %}${diff}{% endraw %}`);
+    expect(varValue(test?.vars.diff ?? "")).toBe(diff);
+  });
+
   it("keeps an item's assertions", () => {
     const [test] = expandTests(
       ["a"],
@@ -42,6 +56,17 @@ describe("expandTests", () => {
       1,
     );
     expect(test?.assert).toEqual([{ type: "contains", value: "x" }]);
+  });
+});
+
+describe("literalVar", () => {
+  it("leaves a value without template syntax as it is", () => {
+    expect(literalVar("plain { text }")).toBe("plain { text }");
+    expect(varValue("plain { text }")).toBe("plain { text }");
+  });
+
+  it("refuses a value a raw block cannot hold", () => {
+    expect(() => literalVar("{{ x }} {%- endraw %}")).toThrow(/endraw/);
   });
 });
 
