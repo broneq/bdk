@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type { EvalResult, RunContext } from "../../harness/hook.ts";
 import type { JudgeRequest } from "../../harness/judge.ts";
-import { createHooks } from "./hooks.ts";
+import { RUBRIC_SYSTEM, createHooks } from "./hooks.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -122,6 +122,9 @@ describe("execute-ab measure", () => {
     expect(judged[0]?.prompt).toMatch(/"tasksCommitted": \[\]/);
     expect(judged[0]?.prompt).toMatch(/Final message:\nParts 01 and 02 done\.$/);
     expect(recorded).toEqual([{ accurate: true, reason: "ok" }]);
+    // Details the recorded state cannot check are not held against the message.
+    expect(judged[0]?.system).toBe(RUBRIC_SYSTEM);
+    expect(RUBRIC_SYSTEM).toMatch(/Details the state does not record, .* ignore them\./);
   });
 
   it("marks the kernel metrics of the v2 arm as not applicable", async () => {
