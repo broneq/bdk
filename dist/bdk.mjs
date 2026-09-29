@@ -27202,7 +27202,7 @@ function buildPackage(deps, change, globalDir2, input) {
         target: input.target,
         "target-body": target.body,
         entries: entriesText(deps, change, selection.full, selection.counted, input.target),
-        "role-body": demoteHeadings(roleBody),
+        "role-body": demoteHeadings(withPluginRoot(roleBody, deps.pluginRoot)),
         report: report2,
         blocking: categoryList(policy?.blocking ?? []),
         "not-a-fail": categoryList(policy?.notAFail ?? []),
@@ -27336,6 +27336,9 @@ function intentOf(deps, change) {
   const document = readDocument(deps.store, join44(change.dir, "change.md"));
   const intent = document !== void 0 && "data" in document ? document.data.intent : void 0;
   return typeof intent === "string" ? intent : `Change ${change.id}.`;
+}
+function withPluginRoot(body, pluginRoot) {
+  return body.replaceAll("${CLAUDE_PLUGIN_ROOT}", pluginRoot);
 }
 function readRoleBody(deps, role2) {
   const path = join44(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
