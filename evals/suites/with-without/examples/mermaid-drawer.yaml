@@ -2,7 +2,8 @@
 # Each prompt asks for a diagram in plain words, so the skill is picked by the
 # model in the "with" cell and simply absent in the "without" cell. The
 # assertions check what the skill fixes: the diagram type chosen by the
-# relationship, labelled edges and no decorative colour.
+# relationship, labelled edges, and colour that sets fill, stroke and text
+# colour together, so it stays readable in dark mode.
 - id: login-sequence
   prompt: >-
     Draw a diagram of how our single-page app logs a user in: the browser posts the
@@ -34,6 +35,8 @@
     - type: javascript
       value: "/```mermaid\\s*\\n\\s*flowchart/.test(String(output))"
     - type: javascript
-      value: "!/^\\s*(classDef|style)\\s/m.test(String(output))"
+      value: >-
+        String(output).split("\n").filter((line) => /^\s*(classDef|style)\s.*fill:/.test(line))
+        .every((line) => /stroke:/.test(line) && /[\s,]color:/.test(line))
     - type: javascript
       value: "/-->\\|[^|]+\\||--\\s[^-]+\\s-->/.test(String(output))"
