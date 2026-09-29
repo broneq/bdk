@@ -10,7 +10,8 @@ agents/                  — subagent definitions used internally by skills
 hooks/                   — hooks.json + shell scripts
 rules/                   — convention docs distributed WITH the plugin to end-users
 STARTUP_INSTRUCTIONS.md  — injected into user sessions at SessionStart via hook
-tests/evals/             — skill behavior evals (LLM output grading, iterations)
+tests/evals/             — legacy v2 skill evals; replaced by evals/, removed in T32
+evals/                   - promptfoo measurement harness (T40): harness/, suites/ (execute-ab, rules-noop, with-without), results/ (committed rows)
 tests/unit/              — pytest unit/integration tests for scripts
 kernel/                  - v3 TypeScript kernel: src/ (slices, shared/), tests/ (E2E harness, contract tests)
 dist/bdk.mjs             - committed kernel bundle built by `pnpm build`; never edit by hand
@@ -76,7 +77,11 @@ pnpm docs:build
 pnpm skill-check
 pnpm skill-check --baseline-prune
 
-# Run skill evals — see .claude/rules/skill-test-eval.md for format
+# Skill measurements (evals/README.md): probe first, the full series only after its projection is approved
+pnpm eval <suite> --probe
+pnpm eval check                # render and validate every suite config, no model call (CI)
+pnpm eval report <suite>
+pnpm eval with-without --skill bdk:<name> --tasks <file>
 ```
 
 ## Adding a New Skill
@@ -84,7 +89,7 @@ pnpm skill-check --baseline-prune
 1. Create `skills/<name>/SKILL.md`
 2. Review with `/bdk-skill-kit:skill-authoring`, run `pnpm skill-check`; BDK-only conventions: `.claude/rules/skills.md`
 3. Add entry to `## Skills` table in `README.md`
-4. Write eval in `tests/evals/skills/<name>/`
+4. Measure it against its absence: a task file and `pnpm eval with-without --skill bdk:<name> --tasks <file>` (`evals/README.md`)
 
 Portability rule: skill only makes sense for one language stack or domain → not BDK. Put in target project's `.claude/` instead.
 

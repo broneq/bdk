@@ -41,7 +41,7 @@ Every BDK skill:
    /plugin install ~/projects/bdk
    ```
 3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
-4. Run evals if available — see `.claude/rules/skill-test-eval.md`
+4. Measure the change when it can move behaviour: `pnpm eval with-without --skill bdk:<name> --tasks <file>` (probe first; see `evals/README.md`)
 
 ---
 
