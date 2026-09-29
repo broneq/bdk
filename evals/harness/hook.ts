@@ -26,7 +26,10 @@ export interface ToolCall {
 
 /** The part of a promptfoo result row the harness reads. */
 export interface EvalResult {
+  /** A provider error, or the reason an assertion failed (`failureReason` tells them apart). */
   readonly error?: string | null;
+  /** promptfoo's `ResultFailureReason`: 0 none, 1 an assertion failed, 2 an error. */
+  readonly failureReason?: number;
   /** The test's assertions; absent or null when the test has none. */
   readonly gradingResult?: { readonly pass: boolean; readonly score: number } | null;
   /** The whole call, background subagents included: the session's wall time. */
@@ -118,6 +121,8 @@ export function recordJudgement(
   );
 }
 
+const ASSERTION_FAILED = 1;
+
 export async function afterRun(
   context: RunContext,
   result: EvalResult,
@@ -134,7 +139,9 @@ export async function afterRun(
   } catch {
     // Charged at the run cap below: the most the session could have spent.
   }
-  const providerError = result.response?.error ?? result.error ?? null;
+  const providerError =
+    result.response?.error ??
+    (result.failureReason === ASSERTION_FAILED ? null : (result.error ?? null));
   let discarded: string | null =
     providerError !== null
       ? `provider error: ${providerError}`

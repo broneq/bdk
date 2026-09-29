@@ -163,6 +163,17 @@ describe("afterRun", () => {
     expect(broken.discarded).toBe("harness error: vitest crashed");
   });
 
+  it("counts a run whose assertion failed, since promptfoo reports that failure as its error", async () => {
+    const { plan } = setup();
+    writeFileSync(join(plan.rawDir, "..", "a.log"), CLEAN_LOG);
+    const row = await afterRun(
+      runContext(plan, VARS),
+      { ...RESULT, error: "Custom function returned false", failureReason: 1 },
+      MEASURE,
+    );
+    expect(row.discarded).toBeNull();
+  });
+
   it("charges the run cap and discards a run without a reported cost", async () => {
     const { plan } = setup();
     writeFileSync(join(plan.rawDir, "..", "a.log"), CLEAN_LOG);
