@@ -46,8 +46,9 @@ export async function judge(request: JudgeRequest): Promise<Judgement> {
       systemPrompt: request.system,
       tools: [],
       settingSources: [],
-      // The structured answer takes a turn of its own.
-      maxTurns: 3,
+      // The structured answer takes a turn of its own, and the model at times
+      // needs another to fit the schema: 3 turns failed 19 of 1965 M1 judgements.
+      maxTurns: 5,
       thinking: { type: "disabled" },
       outputFormat: { type: "json_schema", schema: request.schema },
       env: { ...process.env, ENABLE_CLAUDEAI_MCP_SERVERS: "false" },
