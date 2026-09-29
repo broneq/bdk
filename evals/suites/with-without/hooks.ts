@@ -11,7 +11,7 @@ export function measure(result: EvalResult): Measurement {
       assert_pass: grading === null ? null : grading.pass ? 1 : 0,
       assert_score: grading === null ? null : grading.score,
       turns: metadata?.numTurns ?? null,
-      wall_s: metadata?.durationMs === undefined ? null : metadata.durationMs / 1000,
+      wall_s: result.latencyMs === undefined ? null : result.latencyMs / 1000,
     },
     extraCost: 0,
     templateHashes: [],

@@ -59,11 +59,11 @@ function context(arm: string, dir: string): RunContext {
 
 function result(output: string): EvalResult {
   return {
+    latencyMs: 3000,
     response: {
       output,
       metadata: {
         numTurns: 12,
-        durationMs: 3000,
         toolCalls: [
           { name: "Bash", input: { command: 'node "/p/dist/bdk.mjs" next --json' }, output: "{}" },
           {

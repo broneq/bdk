@@ -28,6 +28,8 @@ export interface EvalResult {
   readonly error?: string | null;
   /** The test's assertions; absent or null when the test has none. */
   readonly gradingResult?: { readonly pass: boolean; readonly score: number } | null;
+  /** The whole call, background subagents included: the session's wall time. */
+  readonly latencyMs?: number;
   readonly response?: {
     readonly output?: unknown;
     readonly error?: string;
@@ -36,7 +38,6 @@ export interface EvalResult {
       readonly modelUsage?: Record<string, { readonly costUSD?: number }>;
       readonly toolCalls?: readonly ToolCall[];
       readonly numTurns?: number;
-      readonly durationMs?: number;
     };
   };
 }

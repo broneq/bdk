@@ -1,0 +1,172 @@
+diff --git a/dist/src/claude-agent-sdk-BnNkI2di.js b/dist/src/claude-agent-sdk-BnNkI2di.js
+index 5f85aa4b31834615e6c71827f9ca5f2ecfdd01b6..cf6937409e3846a04b219dc8d8e15d587112dd03 100644
+--- a/dist/src/claude-agent-sdk-BnNkI2di.js
++++ b/dist/src/claude-agent-sdk-BnNkI2di.js
+@@ -688,6 +688,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 				let lastResultMsg;
+ 				let lastMainResultMsg;
+ 				let resultMsgCount = 0;
++				let turnsTotal = 0;
+ 				for await (const msg of res) if (msg.type === "assistant") {
+ 					const turnIndex = emitTurnSpan(msg);
+ 					for (const block of msg.message.content) if (block.type === "tool_use") {
+@@ -734,10 +735,11 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 				} else if (msg.type === "result") {
+ 					lastResultMsg = msg;
+ 					resultMsgCount++;
++					turnsTotal += msg.num_turns ?? 0;
+ 					if (!(msg.origin?.kind === "task-notification" && !("subkind" in msg.origin && msg.origin.subkind === "scheduled-trigger"))) lastMainResultMsg = msg;
+ 				}
+ 				drainOrphans();
+-				const finalMsg = lastMainResultMsg ?? lastResultMsg;
++				const finalMsg = lastResultMsg;
+ 				if (!finalMsg) return { error: "Claude Agent SDK call didn't return a result" };
+ 				if (sdkExportsNativeSpans && tpTraceId && tpSpanId) {
+ 					let nativeSpansArrived = false;
+@@ -811,7 +813,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 						metadata: {
+ 							skillCalls,
+ 							toolCalls: toolCallsArray,
+-							numTurns: finalMsg.num_turns,
++							numTurns: turnsTotal,
+ 							durationMs: finalMsg.duration_ms,
+ 							durationApiMs: finalMsg.duration_api_ms,
+ 							modelUsage: finalMsg.modelUsage,
+@@ -835,7 +837,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 					metadata: {
+ 						skillCalls,
+ 						toolCalls: toolCallsArray,
+-						numTurns: finalMsg.num_turns,
++						numTurns: turnsTotal,
+ 						durationMs: finalMsg.duration_ms,
+ 						durationApiMs: finalMsg.duration_api_ms,
+ 						modelUsage: finalMsg.modelUsage,
+diff --git a/dist/src/claude-agent-sdk-CiwKDeqg.cjs b/dist/src/claude-agent-sdk-CiwKDeqg.cjs
+index cfbba8d62536567998cb8346e046e0c09699b14b..49d48c186d54f6ede4923c1e4ed23671174468dc 100644
+--- a/dist/src/claude-agent-sdk-CiwKDeqg.cjs
++++ b/dist/src/claude-agent-sdk-CiwKDeqg.cjs
+@@ -692,6 +692,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 				let lastResultMsg;
+ 				let lastMainResultMsg;
+ 				let resultMsgCount = 0;
++				let turnsTotal = 0;
+ 				for await (const msg of res) if (msg.type === "assistant") {
+ 					const turnIndex = emitTurnSpan(msg);
+ 					for (const block of msg.message.content) if (block.type === "tool_use") {
+@@ -738,10 +739,11 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 				} else if (msg.type === "result") {
+ 					lastResultMsg = msg;
+ 					resultMsgCount++;
++					turnsTotal += msg.num_turns ?? 0;
+ 					if (!(msg.origin?.kind === "task-notification" && !("subkind" in msg.origin && msg.origin.subkind === "scheduled-trigger"))) lastMainResultMsg = msg;
+ 				}
+ 				drainOrphans();
+-				const finalMsg = lastMainResultMsg ?? lastResultMsg;
++				const finalMsg = lastResultMsg;
+ 				if (!finalMsg) return { error: "Claude Agent SDK call didn't return a result" };
+ 				if (sdkExportsNativeSpans && tpTraceId && tpSpanId) {
+ 					let nativeSpansArrived = false;
+@@ -815,7 +817,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 						metadata: {
+ 							skillCalls,
+ 							toolCalls: toolCallsArray,
+-							numTurns: finalMsg.num_turns,
++							numTurns: turnsTotal,
+ 							durationMs: finalMsg.duration_ms,
+ 							durationApiMs: finalMsg.duration_api_ms,
+ 							modelUsage: finalMsg.modelUsage,
+@@ -839,7 +841,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 					metadata: {
+ 						skillCalls,
+ 						toolCalls: toolCallsArray,
+-						numTurns: finalMsg.num_turns,
++						numTurns: turnsTotal,
+ 						durationMs: finalMsg.duration_ms,
+ 						durationApiMs: finalMsg.duration_api_ms,
+ 						modelUsage: finalMsg.modelUsage,
+diff --git a/dist/src/claude-agent-sdk-D-C550TU.js b/dist/src/claude-agent-sdk-D-C550TU.js
+index b0970cf359d7da69f0be9d9c1c0bc6414a5f2942..bec49c59b1f4b8c0448bd3c05d8a017ac2b0dd36 100644
+--- a/dist/src/claude-agent-sdk-D-C550TU.js
++++ b/dist/src/claude-agent-sdk-D-C550TU.js
+@@ -689,6 +689,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 				let lastResultMsg;
+ 				let lastMainResultMsg;
+ 				let resultMsgCount = 0;
++				let turnsTotal = 0;
+ 				for await (const msg of res) if (msg.type === "assistant") {
+ 					const turnIndex = emitTurnSpan(msg);
+ 					for (const block of msg.message.content) if (block.type === "tool_use") {
+@@ -735,10 +736,11 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 				} else if (msg.type === "result") {
+ 					lastResultMsg = msg;
+ 					resultMsgCount++;
++					turnsTotal += msg.num_turns ?? 0;
+ 					if (!(msg.origin?.kind === "task-notification" && !("subkind" in msg.origin && msg.origin.subkind === "scheduled-trigger"))) lastMainResultMsg = msg;
+ 				}
+ 				drainOrphans();
+-				const finalMsg = lastMainResultMsg ?? lastResultMsg;
++				const finalMsg = lastResultMsg;
+ 				if (!finalMsg) return { error: "Claude Agent SDK call didn't return a result" };
+ 				if (sdkExportsNativeSpans && tpTraceId && tpSpanId) {
+ 					let nativeSpansArrived = false;
+@@ -812,7 +814,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 						metadata: {
+ 							skillCalls,
+ 							toolCalls: toolCallsArray,
+-							numTurns: finalMsg.num_turns,
++							numTurns: turnsTotal,
+ 							durationMs: finalMsg.duration_ms,
+ 							durationApiMs: finalMsg.duration_api_ms,
+ 							modelUsage: finalMsg.modelUsage,
+@@ -836,7 +838,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 					metadata: {
+ 						skillCalls,
+ 						toolCalls: toolCallsArray,
+-						numTurns: finalMsg.num_turns,
++						numTurns: turnsTotal,
+ 						durationMs: finalMsg.duration_ms,
+ 						durationApiMs: finalMsg.duration_api_ms,
+ 						modelUsage: finalMsg.modelUsage,
+diff --git a/dist/src/claude-agent-sdk-DEURn9hl.js b/dist/src/claude-agent-sdk-DEURn9hl.js
+index 4537be2d98997a19755745dd43bb9f75b83ff2fb..9dd55d62b8f523582248cb3abfdd8736c077b4d8 100644
+--- a/dist/src/claude-agent-sdk-DEURn9hl.js
++++ b/dist/src/claude-agent-sdk-DEURn9hl.js
+@@ -688,6 +688,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 				let lastResultMsg;
+ 				let lastMainResultMsg;
+ 				let resultMsgCount = 0;
++				let turnsTotal = 0;
+ 				for await (const msg of res) if (msg.type === "assistant") {
+ 					const turnIndex = emitTurnSpan(msg);
+ 					for (const block of msg.message.content) if (block.type === "tool_use") {
+@@ -734,10 +735,11 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 				} else if (msg.type === "result") {
+ 					lastResultMsg = msg;
+ 					resultMsgCount++;
++					turnsTotal += msg.num_turns ?? 0;
+ 					if (!(msg.origin?.kind === "task-notification" && !("subkind" in msg.origin && msg.origin.subkind === "scheduled-trigger"))) lastMainResultMsg = msg;
+ 				}
+ 				drainOrphans();
+-				const finalMsg = lastMainResultMsg ?? lastResultMsg;
++				const finalMsg = lastResultMsg;
+ 				if (!finalMsg) return { error: "Claude Agent SDK call didn't return a result" };
+ 				if (sdkExportsNativeSpans && tpTraceId && tpSpanId) {
+ 					let nativeSpansArrived = false;
+@@ -811,7 +813,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 						metadata: {
+ 							skillCalls,
+ 							toolCalls: toolCallsArray,
+-							numTurns: finalMsg.num_turns,
++							numTurns: turnsTotal,
+ 							durationMs: finalMsg.duration_ms,
+ 							durationApiMs: finalMsg.duration_api_ms,
+ 							modelUsage: finalMsg.modelUsage,
+@@ -835,7 +837,7 @@ var ClaudeCodeSDKProvider = class ClaudeCodeSDKProvider {
+ 					metadata: {
+ 						skillCalls,
+ 						toolCalls: toolCallsArray,
+-						numTurns: finalMsg.num_turns,
++						numTurns: turnsTotal,
+ 						durationMs: finalMsg.duration_ms,
+ 						durationApiMs: finalMsg.duration_api_ms,
+ 						modelUsage: finalMsg.modelUsage,

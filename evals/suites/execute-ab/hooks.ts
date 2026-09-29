@@ -135,13 +135,12 @@ async function measure(
     endState,
   );
   const turns = result.response?.metadata?.numTurns;
-  const durationMs = result.response?.metadata?.durationMs;
   return {
     metrics: {
       acceptance: acceptanceScore(checks),
       completeness,
       turns: turns ?? null,
-      wall_s: durationMs === undefined ? null : durationMs / 1000,
+      wall_s: result.latencyMs === undefined ? null : result.latencyMs / 1000,
       ...kernel,
       rubric: graded.score,
     },

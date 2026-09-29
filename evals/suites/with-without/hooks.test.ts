@@ -7,7 +7,8 @@ describe("measure", () => {
     expect(
       measure({
         gradingResult: { pass: false, score: 0.5 },
-        response: { metadata: { numTurns: 4, durationMs: 12_500 } },
+        latencyMs: 12_500,
+        response: { metadata: { numTurns: 4 } },
       }).metrics,
     ).toEqual({ assert_pass: 0, assert_score: 0.5, turns: 4, wall_s: 12.5 });
   });

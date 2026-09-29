@@ -14,7 +14,9 @@ export function needsInstall(evalsDir: string): boolean {
 
 export function ensureTools(evalsDir: string): void {
   if (!needsInstall(evalsDir)) return;
-  execFileSync("pnpm", ["--dir", evalsDir, "install", "--frozen-lockfile", "--ignore-workspace"], {
+  // `evals/pnpm-workspace.yaml` makes the directory its own workspace: its patch,
+  // build and release-age settings apply only when the install reads it.
+  execFileSync("pnpm", ["--dir", evalsDir, "install", "--frozen-lockfile"], {
     stdio: "inherit",
   });
 }
