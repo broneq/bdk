@@ -10,7 +10,8 @@
   "packageManager": "pnpm@10.22.0",
   "scripts": {
     "build": "node kernel/build.mjs",
-    "lint": "eslint --max-warnings 0 kernel",
+    "lint": "eslint --max-warnings 0 kernel evals",
+    "eval": "node evals/harness/main.ts",
     "lint:py": "uv run --group lint ruff check && uv run --group lint ruff format --check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
