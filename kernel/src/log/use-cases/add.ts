@@ -4,7 +4,16 @@ import { parseReference } from "../../shared/ids/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { findChange, findEntry, openPackage, refreshChange } from "../../shared/store/index.ts";
+import {
+  findChange,
+  findEntry,
+  openPackage,
+  readAttempts,
+  readPlanParts,
+  refreshChange,
+  TASK_ID,
+  targetFiles,
+} from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
 import { appendEntry } from "./append.ts";
 import type { AddResult } from "../domain/entry.ts";
@@ -26,6 +35,8 @@ export interface AddInput {
   readonly review: boolean;
   readonly supersedes?: string;
   readonly category?: string;
+  /** Only with `learning`; defaults to the `Files:` of the ticket's task. */
+  readonly applies?: readonly string[];
 }
 
 const CATEGORY_TYPES: readonly string[] = ["finding", "blocker"];
@@ -54,8 +65,9 @@ export function addEntry(
       blocking = policy.blocking.map((category) => category.id);
     }
     const { downgraded, ...classified } = classify(input, role, blocking);
+    const applies = input.applies ?? defaultApplies(deps, change, input);
     // A downgraded blocker is an observation, which carries no category field.
-    const { category, ...rest } = input;
+    const { category, ...rest } = applies === undefined ? input : { ...input, applies };
     const base = downgraded === undefined && category !== undefined ? { ...rest, category } : rest;
     const appended = await appendEntry(
       deps,
@@ -104,12 +116,32 @@ function validate(input: AddInput): Refusal | undefined {
       ],
     );
   }
-  if (input.status === "routed") {
-    return refuse("input/invalid-argument", "--status routed is set only by log route", [
-      "bdk log route <id> rule|spec|nothing",
-    ]);
+  if (input.applies !== undefined && input.type !== "learning") {
+    return refuse(
+      "input/invalid-argument",
+      `--applies names the files a lesson is about; it applies to learning, not ${input.type}`,
+      [
+        `bdk log add ${input.type} "${input.summary}" --ref <ref>`,
+        "bdk log add learning ... --applies <glob>",
+      ],
+    );
   }
   return undefined;
+}
+
+/** A learning under a task ticket is about the task's `Files:`; any other entry has no default. */
+function defaultApplies(
+  deps: LogDeps,
+  change: ActiveChange,
+  input: AddInput,
+): readonly string[] | undefined {
+  if (input.type !== "learning" || input.ticket === undefined) return undefined;
+  const target = readAttempts(deps.store, change.dir).find(
+    (record) => record.data.ticket === input.ticket,
+  )?.data.target;
+  if (target === undefined || !TASK_ID.test(target)) return undefined;
+  const files = targetFiles(readPlanParts(deps.store, change.dir), target);
+  return files === undefined || files.length === 0 ? undefined : files;
 }
 
 /** Why `value` cannot be superseded, or undefined when it names an existing entry. */

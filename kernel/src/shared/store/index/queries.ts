@@ -17,7 +17,10 @@ export interface EntryRow extends EntryFacts {
   readonly severity?: string;
   readonly category?: string;
   readonly fingerprint?: string;
-  readonly routedTo?: string;
+  /** A learning's globs. */
+  readonly applies?: readonly string[];
+  /** A learning's supporting attempts or entries. */
+  readonly evidence?: readonly string[];
   readonly gate?: string;
   /** `input-hash` of a transition written by `done`. */
   readonly inputHash?: string;
@@ -205,7 +208,8 @@ function refsOf(index: IndexDb, changeId: string): Map<string, string[]> {
 function toEntry(row: Row, refs: readonly string[]): EntryRow {
   const optional = (value: unknown): string | undefined =>
     typeof value === "string" || typeof value === "number" ? String(value) : undefined;
-  const options = optional(row.options);
+  const listOf = (value: unknown): string[] | undefined =>
+    typeof value === "string" ? (JSON.parse(value) as string[]) : undefined;
   return omitUndefined<EntryRow>({
     changeId: String(row.change_id),
     id: String(row.id),
@@ -222,13 +226,14 @@ function toEntry(row: Row, refs: readonly string[]): EntryRow {
     severity: optional(row.severity),
     category: optional(row.category),
     fingerprint: optional(row.fingerprint),
-    routedTo: optional(row.routed_to),
+    applies: listOf(row.applies),
+    evidence: listOf(row.evidence),
     to: optional(row.to_stage),
     gate: optional(row.gate),
     inputHash: optional(row.input_hash),
     profile: optional(row.profile),
     park: row.park === 1 ? true : undefined,
-    options: options === undefined ? undefined : (JSON.parse(options) as string[]),
+    options: listOf(row.options),
     path: String(row.path),
     refs: [...refs],
   });

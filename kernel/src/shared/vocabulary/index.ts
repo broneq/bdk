@@ -20,10 +20,10 @@ export const ENTRY_TYPES = [
 export type EntryType = (typeof ENTRY_TYPES)[number];
 
 /** The statuses an entry file stores; `superseded` is derived, never stored. */
-export const STORED_STATUSES = ["proposed", "accepted", "resolved", "routed"] as const;
+export const STORED_STATUSES = ["proposed", "accepted", "resolved"] as const;
 
 /** The statuses the kernel reports: the stored ones plus the derived `superseded`. */
-export const ENTRY_STATUSES = ["proposed", "accepted", "superseded", "resolved", "routed"] as const;
+export const ENTRY_STATUSES = ["proposed", "accepted", "superseded", "resolved"] as const;
 
 /** Smallest first: a profile only ever rises. */
 export const PROFILES = ["tiny", "small", "large"] as const;

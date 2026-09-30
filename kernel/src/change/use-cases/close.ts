@@ -33,7 +33,7 @@ import { closeSummary } from "../domain/close.ts";
 import { resolvedSettings } from "./checkpoint.ts";
 import type { ChangeDeps } from "./deps.ts";
 
-const DONE = new Set(["superseded", "resolved", "routed"]);
+const DONE = new Set(["superseded", "resolved"]);
 
 export function closeChange(
   deps: ChangeDeps,

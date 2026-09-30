@@ -49,7 +49,6 @@ export const entryViewSchema = z.strictObject({
   profile: z.string().optional(),
   evidence: z.array(z.string()).optional(),
   applies: z.array(z.string()).optional(),
-  routedTo: z.string().optional(),
   report: z.string().optional(),
   to: z.string().optional(),
   gate: z.string().optional(),

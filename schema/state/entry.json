@@ -13,7 +13,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -41,7 +41,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -70,7 +70,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -94,7 +94,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -122,7 +122,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -150,7 +150,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -173,7 +173,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -196,7 +196,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -211,8 +211,11 @@
           "$ref": "common.json#/$defs/hash"
         },
         "evidence": { "type": "array", "items": { "$ref": "common.json#/$defs/idReference" } },
-        "applies": { "type": "array", "items": { "$ref": "common.json#/$defs/glob" } },
-        "routed-to": { "type": "string", "enum": ["rule", "spec", "nothing"] }
+        "applies": {
+          "description": "The files the lesson is about.",
+          "type": "array",
+          "items": { "$ref": "common.json#/$defs/glob" }
+        }
       },
       "required": [
         "schema",
@@ -237,7 +240,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },
@@ -272,7 +275,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "resolved"],
           "description": "`superseded` is derived from `supersedes`, never stored."
         },
         "source": { "$ref": "common.json#/$defs/provenance" },

@@ -35,6 +35,8 @@ export interface EntryDraft {
   readonly severity?: string;
   readonly category?: string;
   readonly options?: readonly string[];
+  /** A learning's globs (`log add --applies`). */
+  readonly applies?: readonly string[];
   /** Kernel-only own fields (`change park`, `change new`, `change resume`, `done`). */
   readonly park?: boolean;
   readonly profile?: string;
@@ -113,6 +115,7 @@ export async function appendEntry(
       ...(draft.category === undefined ? {} : { category: draft.category }),
       ...(fingerprint === undefined ? {} : { fingerprint }),
       ...(draft.options === undefined ? {} : { options: [...draft.options] }),
+      ...(draft.applies === undefined ? {} : { applies: [...draft.applies] }),
       ...(draft.park === true ? { park: true } : {}),
       ...(draft.profile === undefined ? {} : { profile: draft.profile }),
       ...(draft.to === undefined ? {} : { to: draft.to }),

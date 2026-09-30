@@ -663,8 +663,14 @@
           "value": "<id>"
         },
         {
+          "name": "--applies",
+          "value": "<glob>",
+          "description": "Repeatable; only with learning. Default: the Files: of the ticket's task.",
+          "repeatable": true
+        },
+        {
           "name": "--status",
-          "values": ["proposed", "accepted", "superseded", "resolved", "routed"]
+          "values": ["proposed", "accepted", "superseded", "resolved"]
         }
       ],
       "stdin": "Body text when --body - is given.",
@@ -734,7 +740,7 @@
         },
         {
           "name": "--status",
-          "values": ["proposed", "accepted", "superseded", "resolved", "routed"]
+          "values": ["proposed", "accepted", "superseded", "resolved"]
         },
         {
           "name": "--review",
@@ -814,26 +820,6 @@
       "output": "output/log-resolve.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": ["input/not-found", "policy/invalid-transition"],
-      "writes": [".bdk/changes/<id>/log/"]
-    },
-    {
-      "id": "log-route",
-      "argv": ["log", "route"],
-      "summary": "Route learning entries at close: rule proposal, spec, or nothing, by the T31 thresholds.",
-      "availability": "orchestrator",
-      "mode": "command",
-      "slice": "log",
-      "owner": "T31",
-      "changeScoped": true,
-      "args": [],
-      "flags": [
-        {
-          "name": "--dry-run"
-        }
-      ],
-      "output": "output/log-route.json",
-      "exits": [0, 2, 3, 4, 5],
-      "refusals": [],
       "writes": [".bdk/changes/<id>/log/"]
     },
     {

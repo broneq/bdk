@@ -403,6 +403,69 @@ describe("log add", () => {
     expect(logFiles(store)).toHaveLength(1);
   });
 
+  it("writes a learning's applies, from --applies or the ticket task's Files", async () => {
+    const { run, store } = harness();
+    const explicit = await run([
+      "log",
+      "add",
+      "learning",
+      "forms need a pending state",
+      "--ref",
+      "web/Form.tsx",
+      "--applies",
+      "web/**",
+      "--applies",
+      "src/ui/**",
+      "--json",
+    ]);
+    expect(logAddOutput.parse(explicit.json).entry.applies).toStrictEqual(["web/**", "src/ui/**"]);
+
+    store.write(
+      `${DIR}/plan/parts/02-part.md`,
+      '---\nschema: 1\nid: "02"\ntitle: Part 02\ngoal: g\nsuccess-measure: m\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n---\n## 02-3 Build the form\n\n**Files:**\n\n- Modify: `web/Form.tsx`\n\n**Test cases:**\n\n- submits\n',
+    );
+    addAttempt(store, "A-7f3k9m2q", "implementer");
+    const derived = await run([
+      "log",
+      "add",
+      "learning",
+      "the form resets on error",
+      "--ref",
+      "02-3",
+      "--ticket",
+      "A-7f3k9m2q",
+      "--json",
+    ]);
+    expect(logAddOutput.parse(derived.json).entry).toMatchObject({
+      applies: ["web/Form.tsx"],
+      fingerprint: expect.stringMatching(/^sha256:/) as unknown,
+    });
+    expect(store.list(`${ROOT}/.bdk/rules`)).toStrictEqual([]);
+  });
+
+  it("refuses --applies on a type other than learning", async () => {
+    const { run, store } = harness();
+    const result = await run([
+      "log",
+      "add",
+      "finding",
+      "x",
+      "--ref",
+      "02-3",
+      "--applies",
+      "src/**",
+      "--json",
+    ]);
+    expect(result).toMatchObject({ code: 3, json: { rule: "input/invalid-argument" } });
+    expect(logFiles(store)).toEqual([]);
+  });
+
+  it("answers log route as an unknown command", async () => {
+    const { run } = harness();
+    const result = await run(["log", "route", "--json"]);
+    expect(result).toMatchObject({ code: 3, json: { rule: "input/unknown-command" } });
+  });
+
   it("deduplicates a live entry by type, normalised summary and refs, not a resolved one", async () => {
     const { run, store } = harness();
     await run([
@@ -552,6 +615,12 @@ describe("log list", () => {
     expect(await ids("--for", "src/a.ts")).toEqual(["L-00000002"]);
     const page = logListOutput.parse((await run(["log", "list", "--for", "02", "--json"])).json);
     expect(page.for).toBe("02");
+  });
+
+  it("refuses the removed routed status as a filter", async () => {
+    const { run } = await seeded();
+    const result = await run(["log", "list", "--status", "routed", "--json"]);
+    expect(result).toMatchObject({ code: 3, json: { rule: "input/invalid-argument" } });
   });
 
   it("caps the page at 100 items unless --all", async () => {
@@ -809,6 +878,12 @@ describe("log resolve", () => {
     expect((await run(["log", "resolve", ...second, "--json"])).json).toMatchObject({ rule });
   });
 
+  it("refuses the removed routed status", async () => {
+    const { run } = await withEntries();
+    const result = await run(["log", "resolve", "L-00000001", "routed", "--json"]);
+    expect(result).toMatchObject({ code: 3, json: { rule: "input/invalid-argument" } });
+  });
+
   it("refuses superseded without --by, with a missing --by, by itself and by an entry already superseding", async () => {
     const { run } = await withEntries();
     await run([
@@ -874,7 +949,7 @@ describe("domain", () => {
   it("allows proposed -> accepted|resolved|superseded, accepted -> resolved|superseded, nothing else", () => {
     expect(allowedMoves("finding", "proposed")).toEqual(["accepted", "resolved", "superseded"]);
     expect(allowedMoves("finding", "accepted")).toEqual(["resolved", "superseded"]);
-    for (const status of ["resolved", "routed", "superseded"])
+    for (const status of ["resolved", "superseded"])
       expect(allowedMoves("finding", status)).toEqual([]);
     expect(allowedMoves("transition", "proposed")).toEqual([]);
   });

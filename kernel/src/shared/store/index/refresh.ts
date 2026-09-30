@@ -187,6 +187,8 @@ function insertRows(
   const text = (value: unknown): string | null =>
     typeof value === "string" || typeof value === "number" ? String(value) : null;
   const flag = (value: unknown): number => (value === true ? 1 : 0);
+  const list = (value: unknown): string | null =>
+    Array.isArray(value) ? JSON.stringify(value) : null;
   switch (kind) {
     case "change":
       database
@@ -211,9 +213,9 @@ function insertRows(
       database
         .prepare(
           `INSERT INTO _entries (change_id, id, type, summary, status, source, author, at, ticket,
-            supersedes, review, severity, category, fingerprint, routed_to, to_stage, gate, input_hash,
-            profile, park, options, path)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            supersedes, review, severity, category, fingerprint, applies, evidence, to_stage, gate,
+            input_hash, profile, park, options, path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           location.id,
@@ -230,13 +232,14 @@ function insertRows(
           text(data.severity),
           text(data.category),
           text(data.fingerprint),
-          text(data["routed-to"]),
+          list(data.applies),
+          list(data.evidence),
           text(data.to),
           text(data.gate),
           text(data["input-hash"]),
           text(data.profile),
           flag(data.park),
-          Array.isArray(data.options) ? JSON.stringify(data.options) : null,
+          list(data.options),
           path,
         );
       const ref = database.prepare(
@@ -266,17 +269,46 @@ function insertRows(
           text(data.outcome),
           path,
         );
+      insertFindings(index, location.id, String(data.ticket), data.findings);
       return;
     case "dispatch":
       database
         .prepare(
-          "INSERT OR REPLACE INTO dispatches (change_id, ticket, target, role, path) VALUES (?, ?, ?, ?, ?)",
+          "INSERT OR REPLACE INTO dispatches (change_id, ticket, target, role, rules, rules_truncated, path) VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(location.id, text(data.ticket), text(data.target), text(data.role), path);
+        .run(
+          location.id,
+          text(data.ticket),
+          text(data.target),
+          text(data.role),
+          list(data.rules) ?? "[]",
+          Number(data["rules-truncated"] ?? 0),
+          path,
+        );
       return;
     default:
       return;
   }
+}
+
+/** The fingerprints an attempt record keeps for the oscillation check, one row each. */
+function insertFindings(index: IndexDb, changeId: string, ticket: string, findings: unknown): void {
+  if (!Array.isArray(findings)) return;
+  const insert = index.database.prepare(
+    "INSERT INTO findings (change_id, ticket, position, fingerprint, type, file, symbol) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  );
+  (findings as Record<string, unknown>[]).forEach((finding, position) => {
+    const symbol = finding.symbol;
+    insert.run(
+      changeId,
+      ticket,
+      position,
+      String(finding.fingerprint),
+      String(finding.type),
+      String(finding.file),
+      typeof symbol === "string" ? symbol : null,
+    );
+  });
 }
 
 /** Two files carrying one id refuse as `readChange` does, naming both. */
@@ -306,6 +338,11 @@ function removeFile(index: IndexDb, changeId: string, path: string): void {
       "DELETE FROM refs WHERE change_id = ? AND entry_id IN (SELECT id FROM _entries WHERE path = ?)",
     )
     .run(changeId, path);
+  database
+    .prepare(
+      "DELETE FROM findings WHERE change_id = ? AND ticket IN (SELECT ticket FROM attempts WHERE path = ?)",
+    )
+    .run(changeId, path);
   for (const table of ["_entries", "attempts", "dispatches", "_files"]) {
     database.prepare(`DELETE FROM ${table} WHERE path = ?`).run(path);
   }
@@ -317,7 +354,15 @@ function removeFile(index: IndexDb, changeId: string, path: string): void {
 function removeChange(index: IndexDb, changeId: string): void {
   const { database } = index;
   database.prepare("DELETE FROM changes WHERE id = ?").run(changeId);
-  for (const table of ["_entries", "refs", "attempts", "dispatches", "_files", "_dirs"]) {
+  for (const table of [
+    "_entries",
+    "refs",
+    "attempts",
+    "findings",
+    "dispatches",
+    "_files",
+    "_dirs",
+  ]) {
     database.prepare(`DELETE FROM ${table} WHERE change_id = ?`).run(changeId);
   }
 }

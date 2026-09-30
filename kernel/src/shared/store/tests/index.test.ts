@@ -86,7 +86,12 @@ function writeEntryFile(
   return path;
 }
 
-function writeAttempt(store: Store, ticket: string, closed: boolean): void {
+function writeAttempt(
+  store: Store,
+  ticket: string,
+  closed: boolean,
+  findings?: readonly Record<string, string>[],
+): void {
   writeDocument(store, `${DIR}/attempts/task-redispatch-02-3-${ticket}.md`, {
     data: {
       schema: 1,
@@ -99,12 +104,19 @@ function writeAttempt(store: Store, ticket: string, closed: boolean): void {
       "opened-at": "2026-09-25T10:00:00.000Z",
       author: AUTHOR,
       ...(closed ? { "closed-at": "2026-09-25T10:30:00.000Z", outcome: "ok" } : {}),
+      ...(findings === undefined ? {} : { findings }),
     },
     body: "",
   });
 }
 
-function writeDispatch(store: Store, ticket: string, role: string): void {
+function writeDispatch(
+  store: Store,
+  ticket: string,
+  role: string,
+  rules: readonly string[] = [],
+  truncated = 0,
+): void {
   writeDocument(store, `${DIR}/dispatch/02-3-${role}-${ticket}.md`, {
     data: {
       schema: 1,
@@ -119,8 +131,8 @@ function writeDispatch(store: Store, ticket: string, role: string): void {
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${ticket}.md`,
-      rules: [],
-      "rules-truncated": 0,
+      rules: [...rules],
+      "rules-truncated": truncated,
     },
     body: "",
   });
@@ -178,15 +190,22 @@ function seeded(): Store {
 }
 
 describe("schema", () => {
-  it("creates schema version 4 with the public tables and the entries view", async () => {
+  it("creates schema version 5 with the public tables and the entries view", async () => {
     const index = await open(memoryStore());
-    expect(INDEX_SCHEMA_VERSION).toBe(4);
-    expect(index.schemaVersion()).toBe(4);
+    expect(INDEX_SCHEMA_VERSION).toBe(5);
+    expect(index.schemaVersion()).toBe(5);
     const names = selectReadOnly(
       index,
       "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE '\\_%' ESCAPE '\\' ORDER BY name",
     ).rows.flat();
-    expect(names).toEqual(["attempts", "changes", "dispatches", "entries", "refs"]);
+    expect(names).toEqual(["attempts", "changes", "dispatches", "entries", "findings", "refs"]);
+    const columns = selectReadOnly(
+      index,
+      "SELECT name FROM pragma_table_info('entries')",
+    ).rows.flat();
+    expect(columns).toContain("applies");
+    expect(columns).toContain("evidence");
+    expect(columns).not.toContain("routed_to");
   });
 });
 
@@ -238,6 +257,62 @@ describe("refresh", () => {
     ).toStrictEqual([
       ["implementer", `.bdk/changes/${CHANGE}/dispatch/02-3-implementer-A-bbbbbbb1.md`],
     ]);
+  });
+
+  it("indexes the rule ids and truncation of a package", async () => {
+    const store = seeded();
+    writeAttempt(store, "A-bbbbbbb1", false);
+    writeDispatch(store, "A-bbbbbbb1", "implementer", ["BDK-CQ-1", "API-1"], 3);
+    const index = await open(store);
+    refreshChange(index, LIVE);
+    expect(
+      selectReadOnly(index, "SELECT rules, rules_truncated FROM dispatches").rows,
+    ).toStrictEqual([['["BDK-CQ-1","API-1"]', 3]]);
+  });
+
+  it("indexes the findings of an attempt record and drops them with the record", async () => {
+    const store = seeded();
+    const fingerprint = (c: string) => `sha256:${c.repeat(64)}`;
+    writeAttempt(store, "A-bbbbbbb1", true, [
+      { fingerprint: fingerprint("c"), type: "finding", file: "src/a.ts", symbol: "login" },
+      { fingerprint: fingerprint("d"), type: "blocker", file: "src/b.ts" },
+    ]);
+    const index = await open(store);
+    refreshChange(index, LIVE);
+    const query =
+      "SELECT ticket, position, fingerprint, type, file, symbol FROM findings ORDER BY position";
+    expect(selectReadOnly(index, query).rows).toStrictEqual([
+      ["A-bbbbbbb1", 0, fingerprint("c"), "finding", "src/a.ts", "login"],
+      ["A-bbbbbbb1", 1, fingerprint("d"), "blocker", "src/b.ts", null],
+    ]);
+    writeAttempt(store, "A-bbbbbbb1", true, [
+      { fingerprint: fingerprint("e"), type: "finding", file: "src/a.ts" },
+    ]);
+    refreshChange(index, LIVE);
+    expect(selectReadOnly(index, "SELECT fingerprint FROM findings").rows).toStrictEqual([
+      [fingerprint("e")],
+    ]);
+  });
+
+  it("indexes the applies and evidence of a learning", async () => {
+    const store = seeded();
+    writeEntryFile(store, {
+      id: "L-aaaaaaa4",
+      type: "learning",
+      at: "2026-09-25T09:04:00.000Z",
+      refs: ["src/api/login.ts"],
+      fingerprint: `sha256:${"f".repeat(64)}`,
+      applies: ["src/api/**"],
+      evidence: ["A-bbbbbbb1"],
+    });
+    const index = await open(store);
+    refreshChange(index, LIVE);
+    expect(listEntries(index, CHANGE, { type: "learning" })).toEqual([
+      expect.objectContaining({ applies: ["src/api/**"], evidence: ["A-bbbbbbb1"] }),
+    ]);
+    expect(
+      selectReadOnly(index, "SELECT applies, evidence FROM entries WHERE id = 'L-aaaaaaa4'").rows,
+    ).toStrictEqual([['["src/api/**"]', '["A-bbbbbbb1"]']]);
   });
 
   it("indexes the input hash of a transition", async () => {
@@ -504,7 +579,7 @@ describe("on disk", () => {
     old.close();
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(4);
+    expect(index.schemaVersion()).toBe(5);
     expect(
       selectReadOnly(index, "SELECT count(*) FROM sqlite_master WHERE name = 'meta'").rows,
     ).toEqual([[0]]);
@@ -524,11 +599,26 @@ describe("on disk", () => {
 
     const index = await openIndex(store, root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(4);
+    expect(index.schemaVersion()).toBe(5);
     expect(refreshChange(index, location)).toBe(true);
     expect(listEntries(index, CHANGE).map((entry) => entry.at)).toEqual([
       "2026-09-25T09:01:00.000Z",
     ]);
+  });
+
+  it("drops an index of version 4, which has no findings table, and rebuilds it", async () => {
+    const store = fileStore();
+    const dir = join(root, ".bdk/changes", CHANGE);
+    writeChange(store, dir);
+    const first = await openIndex(store, root);
+    first.database.exec("DROP TABLE findings");
+    first.database.exec("UPDATE _meta SET value = '4' WHERE key = 'schema_version'");
+    first.close();
+
+    const index = await openIndex(store, root);
+    opened.push(index);
+    expect(index.schemaVersion()).toBe(5);
+    expect(selectReadOnly(index, "SELECT count(*) FROM findings").rows).toEqual([[0]]);
   });
 
   it("rebuilds a file that is not a SQLite database", async () => {
@@ -536,7 +626,7 @@ describe("on disk", () => {
     writeFileSync(path(), "not a database, just bytes ".repeat(100));
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(4);
+    expect(index.schemaVersion()).toBe(5);
   });
 
   it("refuses state/corrupted-index when the index path is a directory", async () => {

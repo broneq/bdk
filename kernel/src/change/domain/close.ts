@@ -13,7 +13,7 @@ const SECTIONS = [
   ["Open findings", ["finding", "blocker"]],
 ] as const;
 
-/** `entries` are the live ones: the caller drops superseded, resolved and routed entries. */
+/** `entries` are the live ones: the caller drops superseded and resolved entries. */
 export function closeSummary(
   intent: string,
   entries: readonly SummaryEntry[],

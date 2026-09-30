@@ -8035,8 +8035,14 @@ var commands_default = {
           value: "<id>"
         },
         {
+          name: "--applies",
+          value: "<glob>",
+          description: "Repeatable; only with learning. Default: the Files: of the ticket's task.",
+          repeatable: true
+        },
+        {
           name: "--status",
-          values: ["proposed", "accepted", "superseded", "resolved", "routed"]
+          values: ["proposed", "accepted", "superseded", "resolved"]
         }
       ],
       stdin: "Body text when --body - is given.",
@@ -8106,7 +8112,7 @@ var commands_default = {
         },
         {
           name: "--status",
-          values: ["proposed", "accepted", "superseded", "resolved", "routed"]
+          values: ["proposed", "accepted", "superseded", "resolved"]
         },
         {
           name: "--review",
@@ -8186,26 +8192,6 @@ var commands_default = {
       output: "output/log-resolve.json",
       exits: [0, 2, 3, 4, 5],
       refusals: ["input/not-found", "policy/invalid-transition"],
-      writes: [".bdk/changes/<id>/log/"]
-    },
-    {
-      id: "log-route",
-      argv: ["log", "route"],
-      summary: "Route learning entries at close: rule proposal, spec, or nothing, by the T31 thresholds.",
-      availability: "orchestrator",
-      mode: "command",
-      slice: "log",
-      owner: "T31",
-      changeScoped: true,
-      args: [],
-      flags: [
-        {
-          name: "--dry-run"
-        }
-      ],
-      output: "output/log-route.json",
-      exits: [0, 2, 3, 4, 5],
-      refusals: [],
       writes: [".bdk/changes/<id>/log/"]
     },
     {
@@ -16428,7 +16414,7 @@ function isExecutableFile(file, windows) {
 }
 
 // kernel/src/shared/store/index/schema.ts
-var INDEX_SCHEMA_VERSION = 4;
+var INDEX_SCHEMA_VERSION = 5;
 var TABLES = `
 CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE _dirs (
@@ -16449,7 +16435,7 @@ CREATE TABLE _entries (
   change_id TEXT NOT NULL, id TEXT NOT NULL, type TEXT NOT NULL, summary TEXT NOT NULL,
   status TEXT NOT NULL, source TEXT NOT NULL, author TEXT NOT NULL, at TEXT NOT NULL,
   ticket TEXT, supersedes TEXT, review INTEGER NOT NULL, severity TEXT, category TEXT,
-  fingerprint TEXT, routed_to TEXT, to_stage TEXT, gate TEXT, input_hash TEXT, profile TEXT,
+  fingerprint TEXT, applies TEXT, evidence TEXT, to_stage TEXT, gate TEXT, input_hash TEXT, profile TEXT,
   park INTEGER NOT NULL, options TEXT, path TEXT NOT NULL,
   PRIMARY KEY (change_id, id)
 );
@@ -16467,8 +16453,14 @@ CREATE TABLE attempts (
 );
 CREATE TABLE dispatches (
   change_id TEXT NOT NULL, ticket TEXT NOT NULL, target TEXT NOT NULL, role TEXT NOT NULL,
-  path TEXT PRIMARY KEY
+  rules TEXT NOT NULL, rules_truncated INTEGER NOT NULL, path TEXT PRIMARY KEY
 );
+CREATE TABLE findings (
+  change_id TEXT NOT NULL, ticket TEXT NOT NULL, position INTEGER NOT NULL,
+  fingerprint TEXT NOT NULL, type TEXT NOT NULL, file TEXT NOT NULL, symbol TEXT,
+  PRIMARY KEY (change_id, ticket, position)
+);
+CREATE INDEX findings_fingerprint ON findings (fingerprint);
 CREATE VIEW entries AS
 SELECT e.change_id, e.id, e.type, e.summary,
   CASE WHEN s.id IS NULL THEN e.status ELSE 'superseded' END AS status,
@@ -16476,7 +16468,8 @@ SELECT e.change_id, e.id, e.type, e.summary,
   CASE WHEN s.id IS NULL THEN NULL
        WHEN s.change_id = e.change_id THEN s.id
        ELSE s.change_id || '/' || s.id END AS superseded_by,
-  e.review, e.severity, e.category, e.fingerprint, e.routed_to, e.to_stage, e.gate, e.input_hash,
+  e.review, e.severity, e.category, e.fingerprint, e.applies, e.evidence, e.to_stage, e.gate,
+  e.input_hash,
   e.profile, e.park, e.options, e.path
 FROM _entries e
 LEFT JOIN _entries s ON s.rowid = (
@@ -16736,7 +16729,7 @@ var ENTRY_TYPES = [
   "report",
   "transition"
 ];
-var STORED_STATUSES = ["proposed", "accepted", "resolved", "routed"];
+var STORED_STATUSES = ["proposed", "accepted", "resolved"];
 var PROFILES = ["tiny", "small", "large"];
 var CHANGE_KINDS = ["feature", "bug"];
 var CHANGE_SOURCES = ["user", "inferred"];
@@ -17146,16 +17139,7 @@ function variant(type, own2) {
 var learning = variant("learning", {
   fingerprint: hash.meta({ description: "Kernel-stamped (`kernel-state`, Fingerprints)." }),
   evidence: array(idReference).optional(),
-  applies: array(glob2).optional(),
-  "routed-to": _enum(["rule", "spec", "nothing"]).optional()
-}).superRefine((data, context) => {
-  if (data.status === "routed" && data["routed-to"] === void 0) {
-    context.addIssue({
-      code: "custom",
-      path: ["routed-to"],
-      message: "required when status is routed"
-    });
-  }
+  applies: array(glob2).optional().meta({ description: "The files the lesson is about." })
 });
 var entryKind = {
   name: "entry",
@@ -17668,6 +17652,7 @@ function insertRows(index2, location, path, kind, data) {
   const { database } = index2;
   const text9 = (value) => typeof value === "string" || typeof value === "number" ? String(value) : null;
   const flag2 = (value) => value === true ? 1 : 0;
+  const list3 = (value) => Array.isArray(value) ? JSON.stringify(value) : null;
   switch (kind) {
     case "change":
       database.prepare(
@@ -17689,9 +17674,9 @@ function insertRows(index2, location, path, kind, data) {
       refuseDuplicate(index2, "_entries", "id", location.id, id, path);
       database.prepare(
         `INSERT INTO _entries (change_id, id, type, summary, status, source, author, at, ticket,
-            supersedes, review, severity, category, fingerprint, routed_to, to_stage, gate, input_hash,
-            profile, park, options, path)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            supersedes, review, severity, category, fingerprint, applies, evidence, to_stage, gate,
+            input_hash, profile, park, options, path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         location.id,
         id,
@@ -17707,13 +17692,14 @@ function insertRows(index2, location, path, kind, data) {
         text9(data.severity),
         text9(data.category),
         text9(data.fingerprint),
-        text9(data["routed-to"]),
+        list3(data.applies),
+        list3(data.evidence),
         text9(data.to),
         text9(data.gate),
         text9(data["input-hash"]),
         text9(data.profile),
         flag2(data.park),
-        Array.isArray(data.options) ? JSON.stringify(data.options) : null,
+        list3(data.options),
         path
       );
       const ref = database.prepare(
@@ -17741,15 +17727,42 @@ function insertRows(index2, location, path, kind, data) {
         text9(data.outcome),
         path
       );
+      insertFindings(index2, location.id, String(data.ticket), data.findings);
       return;
     case "dispatch":
       database.prepare(
-        "INSERT OR REPLACE INTO dispatches (change_id, ticket, target, role, path) VALUES (?, ?, ?, ?, ?)"
-      ).run(location.id, text9(data.ticket), text9(data.target), text9(data.role), path);
+        "INSERT OR REPLACE INTO dispatches (change_id, ticket, target, role, rules, rules_truncated, path) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      ).run(
+        location.id,
+        text9(data.ticket),
+        text9(data.target),
+        text9(data.role),
+        list3(data.rules) ?? "[]",
+        Number(data["rules-truncated"] ?? 0),
+        path
+      );
       return;
     default:
       return;
   }
+}
+function insertFindings(index2, changeId2, ticket, findings) {
+  if (!Array.isArray(findings)) return;
+  const insert = index2.database.prepare(
+    "INSERT INTO findings (change_id, ticket, position, fingerprint, type, file, symbol) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  );
+  findings.forEach((finding, position) => {
+    const symbol = finding.symbol;
+    insert.run(
+      changeId2,
+      ticket,
+      position,
+      String(finding.fingerprint),
+      String(finding.type),
+      String(finding.file),
+      typeof symbol === "string" ? symbol : null
+    );
+  });
 }
 function refuseDuplicate(index2, table, column, changeId2, id, path) {
   const other = index2.database.prepare(`SELECT path FROM ${table} WHERE change_id = ? AND ${column} = ?`).get(changeId2, id);
@@ -17765,6 +17778,9 @@ function removeFile(index2, changeId2, path) {
   database.prepare(
     "DELETE FROM refs WHERE change_id = ? AND entry_id IN (SELECT id FROM _entries WHERE path = ?)"
   ).run(changeId2, path);
+  database.prepare(
+    "DELETE FROM findings WHERE change_id = ? AND ticket IN (SELECT ticket FROM attempts WHERE path = ?)"
+  ).run(changeId2, path);
   for (const table of ["_entries", "attempts", "dispatches", "_files"]) {
     database.prepare(`DELETE FROM ${table} WHERE path = ?`).run(path);
   }
@@ -17775,7 +17791,7 @@ function removeFile(index2, changeId2, path) {
 function removeChange(index2, changeId2) {
   const { database } = index2;
   database.prepare("DELETE FROM changes WHERE id = ?").run(changeId2);
-  for (const table of ["_entries", "refs", "attempts", "dispatches", "_files", "_dirs"]) {
+  for (const table of ["_entries", "refs", "attempts", "findings", "dispatches", "_files", "_dirs"]) {
     database.prepare(`DELETE FROM ${table} WHERE change_id = ?`).run(changeId2);
   }
 }
@@ -17895,7 +17911,7 @@ function refsOf(index2, changeId2) {
 }
 function toEntry(row, refs) {
   const optional3 = (value) => typeof value === "string" || typeof value === "number" ? String(value) : void 0;
-  const options = optional3(row.options);
+  const listOf = (value) => typeof value === "string" ? JSON.parse(value) : void 0;
   return omitUndefined({
     changeId: String(row.change_id),
     id: String(row.id),
@@ -17912,13 +17928,14 @@ function toEntry(row, refs) {
     severity: optional3(row.severity),
     category: optional3(row.category),
     fingerprint: optional3(row.fingerprint),
-    routedTo: optional3(row.routed_to),
+    applies: listOf(row.applies),
+    evidence: listOf(row.evidence),
     to: optional3(row.to_stage),
     gate: optional3(row.gate),
     inputHash: optional3(row.input_hash),
     profile: optional3(row.profile),
     park: row.park === 1 ? true : void 0,
-    options: options === void 0 ? void 0 : JSON.parse(options),
+    options: listOf(row.options),
     path: String(row.path),
     refs: [...refs]
   });
@@ -20528,7 +20545,6 @@ var OPTIONAL = [
   ["profile", "profile"],
   ["evidence", "evidence"],
   ["applies", "applies"],
-  ["routed-to", "routedTo"],
   ["report", "report"],
   ["to", "to"],
   ["gate", "gate"],
@@ -20658,6 +20674,7 @@ async function appendEntry(deps, change, index2, draft, options) {
       ...draft.category === void 0 ? {} : { category: draft.category },
       ...fingerprint2 === void 0 ? {} : { fingerprint: fingerprint2 },
       ...draft.options === void 0 ? {} : { options: [...draft.options] },
+      ...draft.applies === void 0 ? {} : { applies: [...draft.applies] },
       ...draft.park === true ? { park: true } : {},
       ...draft.profile === void 0 ? {} : { profile: draft.profile },
       ...draft.to === void 0 ? {} : { to: draft.to },
@@ -20798,7 +20815,8 @@ function addEntry(deps, change, globalDir2, input) {
       blocking = policy.blocking.map((category3) => category3.id);
     }
     const { downgraded, ...classified } = classify(input, role2, blocking);
-    const { category: category2, ...rest } = input;
+    const applies = input.applies ?? defaultApplies(deps, change, input);
+    const { category: category2, ...rest } = applies === void 0 ? input : { ...input, applies };
     const base = downgraded === void 0 && category2 !== void 0 ? { ...rest, category: category2 } : rest;
     const appended2 = await appendEntry(
       deps,
@@ -20844,12 +20862,26 @@ function validate3(input) {
       ]
     );
   }
-  if (input.status === "routed") {
-    return refuse("input/invalid-argument", "--status routed is set only by log route", [
-      "bdk log route <id> rule|spec|nothing"
-    ]);
+  if (input.applies !== void 0 && input.type !== "learning") {
+    return refuse(
+      "input/invalid-argument",
+      `--applies names the files a lesson is about; it applies to learning, not ${input.type}`,
+      [
+        `bdk log add ${input.type} "${input.summary}" --ref <ref>`,
+        "bdk log add learning ... --applies <glob>"
+      ]
+    );
   }
   return void 0;
+}
+function defaultApplies(deps, change, input) {
+  if (input.type !== "learning" || input.ticket === void 0) return void 0;
+  const target = readAttempts(deps.store, change.dir).find(
+    (record4) => record4.data.ticket === input.ticket
+  )?.data.target;
+  if (target === void 0 || !TASK_ID.test(target)) return void 0;
+  const files = targetFiles(readPlanParts(deps.store, change.dir), target);
+  return files === void 0 || files.length === 0 ? void 0 : files;
 }
 function supersedesProblem(deps, change, index2, value) {
   const reference = parseReference(value);
@@ -21182,7 +21214,8 @@ function addCommand(deps) {
       ...optional2("status", text2(context.flags["--status"])),
       ...optional2("ticket", text2(context.flags["--ticket"])),
       ...optional2("supersedes", text2(context.flags["--supersedes"])),
-      ...optional2("category", text2(context.flags["--category"]))
+      ...optional2("category", text2(context.flags["--category"])),
+      ...context.flags["--applies"] === void 0 ? {} : { applies: list2(context.flags["--applies"]) }
     });
     return isRefusal(result2) ? result2 : { data: result2, text: renderAdd(result2) };
   };
@@ -25890,7 +25923,7 @@ ${merged.map((capability2) => `- \`${capability2}\``).join("\n")}`
 }
 
 // kernel/src/change/use-cases/close.ts
-var DONE = /* @__PURE__ */ new Set(["superseded", "resolved", "routed"]);
+var DONE = /* @__PURE__ */ new Set(["superseded", "resolved"]);
 function closeChange(deps, change, globalDir2, input) {
   const settings = resolvedSettings(deps, change, globalDir2);
   if (isRefusal(settings)) return Promise.resolve(settings);

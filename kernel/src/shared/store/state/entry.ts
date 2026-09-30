@@ -46,16 +46,7 @@ function variant<T extends EntryType, S extends z.ZodRawShape>(type: T, own: S) 
 const learning = variant("learning", {
   fingerprint: hash.meta({ description: "Kernel-stamped (`kernel-state`, Fingerprints)." }),
   evidence: z.array(idReference).optional(),
-  applies: z.array(glob).optional(),
-  "routed-to": z.enum(["rule", "spec", "nothing"]).optional(),
-}).superRefine((data, context) => {
-  if (data.status === "routed" && data["routed-to"] === undefined) {
-    context.addIssue({
-      code: "custom",
-      path: ["routed-to"],
-      message: "required when status is routed",
-    });
-  }
+  applies: z.array(glob).optional().meta({ description: "The files the lesson is about." }),
 });
 
 export const entryKind = {
