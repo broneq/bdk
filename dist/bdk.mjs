@@ -21505,7 +21505,8 @@ function pipelineProblems(pipeline, declared2) {
       problems.push(`${at}.if: features.${feature} is not a declared features key`);
     }
     for (const rule2 of node3.rules ?? []) {
-      if (!declared2.rules.has(rule2)) problems.push(`${at}.rules: rules/${rule2} is not declared`);
+      if (!declared2.rules.has(rule2))
+        problems.push(`${at}.rules: ${rule2} is no rule category of the pack`);
     }
     problems.push(...gateProblems(node3, at, stages, declared2));
   });
