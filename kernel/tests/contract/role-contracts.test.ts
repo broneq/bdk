@@ -177,6 +177,30 @@ describe("P8: verifiers block only on the package's categories", () => {
   );
 });
 
+describe("S4: rule ids are cited", () => {
+  const CITING = [
+    "implementer",
+    "simplifier",
+    "reviewer",
+    "pr-reviewer",
+    "verifier",
+    "design-verifier",
+  ];
+  const citation = (body: string): string[] =>
+    sentences(body).filter((sentence) => /rule id/i.test(sentence));
+
+  it.each(CITING)("%s cites the rule id with --ref on the entry and in the report", (name) => {
+    const cited = citation(readRole(name).body);
+    expect(cited, name).toHaveLength(1);
+    expect(cited[0]).toContain("--ref <id>");
+    expect(cited[0]).toMatch(/report/);
+  });
+
+  it.each(["runner", "scout"])("%s carries no citation line", (name) => {
+    expect(citation(readRole(name).body)).toStrictEqual([]);
+  });
+});
+
 describe("adapters named by the roles", () => {
   it("are all produced by bdk export agents", () => {
     const produced = new Set(ADAPTERS.map((adapter) => `bdk:${adapter.name}`));

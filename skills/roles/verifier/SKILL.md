@@ -42,6 +42,8 @@ For each task, check:
 
 Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`. A finding that must stop other work also goes to the orchestrator: `SendMessage` to `main` with one sentence and the entry id.
 
+When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-CQ-4`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
+
 ## Output
 
 Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
