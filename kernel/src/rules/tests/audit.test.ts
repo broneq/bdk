@@ -249,3 +249,64 @@ describe("projection", () => {
     expect(scoped.content).toMatch(/^---\npaths:\n {2}- "\*\.tsx"\n {2}- "web\/\*\*"\n---\n/);
   });
 });
+
+describe("rules stats text mode", () => {
+  function projectRule(id: string): string {
+    return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n---\n\nText of ${id}.\n`;
+  }
+
+  it("prints the recurring items, the entries with the hidden count and the citations", async () => {
+    const store = repository();
+    store.write(`${ROOT}/.bdk/rules/API-1.md`, projectRule("API-1"));
+    store.write(`${ROOT}/.bdk/rules/API-2.md`, projectRule("API-2"));
+    for (const id of ["2026-09-20-one", "2026-09-21-two", "2026-09-22-three"]) {
+      changeWith(store, id, [`${id.slice(0, 10)}T10:00:00.000Z`]);
+    }
+    changeWith(store, "2026-09-23-cite", ["2026-09-23T10:00:00.000Z"], {
+      type: "finding",
+      fingerprint: "unused",
+    });
+    const cite = `${ROOT}/.bdk/changes/2026-09-23-cite/log`;
+    const [file = ""] = store.list(cite);
+    store.write(
+      `${cite}/${file}`,
+      (store.read(`${cite}/${file}`) ?? "").replace("src/a.test.ts", "API-1"),
+    );
+
+    const lines = (await run(store, ["rules", "stats", "--entries"])).stdout.split("\n");
+    expect(lines[0]).toBe("recurring in at least 3 Changes:");
+    expect(lines[1]).toMatch(/^ {2}3 Changes, 3x: negative case missed in 2026-09-2\d-\w+$/);
+    expect(lines).toContain("entries:");
+    expect(lines.filter((line) => /^ {2}2026-09-2\d-\w+\/L-/.test(line))).toHaveLength(4);
+    expect(lines).toContain("citations: 1 of 2 rules cited");
+    expect(lines).toContain("  API-1: 1 entries in 1 Changes");
+  });
+
+  it("says none when nothing recurs", async () => {
+    const store = repository();
+    const lines = (await run(store, ["rules", "stats"])).stdout.split("\n");
+    expect(lines.slice(0, 3)).toStrictEqual([
+      "recurring in at least 3 Changes:",
+      "  none",
+      "citations: 0 of 0 rules cited",
+    ]);
+  });
+});
+
+describe("rules check with a path", () => {
+  it("counts only the rules under the path and ignores problems elsewhere", async () => {
+    const store = repository();
+    const rule = (id: string) =>
+      `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n---\n\nText.\n`;
+    store.write(`${ROOT}/.bdk/rules/API-1.md`, rule("API-1"));
+    store.write(`${ROOT}/.bdk/rules/BAD-1.md`, "---\nschema: 1\nid: BAD-1\n---\n\nText.\n");
+    const one = await run(store, ["rules", "check", ".bdk/rules/API-1.md"]);
+    expect(one.code, one.stdout).toBe(0);
+    expect(one.stdout).toBe("rules valid: 1 (0 bundle, 1 project, 0 tombstones)\n");
+    const all = await run(store, ["rules", "check", "--json"]);
+    expect(all).toMatchObject({ code: 2, json: { rule: "policy/rule-format" } });
+    expect((all.json as { why: string }).why).toContain(".bdk/rules/BAD-1.md");
+    const missing = await run(store, ["rules", "check", "nope.md", "--json"]);
+    expect(missing).toMatchObject({ code: 3, json: { rule: "input/not-found" } });
+  });
+});
