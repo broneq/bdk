@@ -25,6 +25,7 @@ export {
   selectFor,
 } from "./use-cases/context.ts";
 export type { RulesInput } from "./use-cases/context.ts";
+export { ruleHealth } from "./use-cases/health.ts";
 export { PROJECT_RULES_DIR } from "./use-cases/store.ts";
 export type { RulesDeps } from "./use-cases/deps.ts";
 

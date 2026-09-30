@@ -4002,10 +4002,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep12, value } = collItem;
+        const { start, key, sep: sep13, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep12?.[0],
+          next: key ?? sep13?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4019,7 +4019,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep12) {
+          if (!keyProps.anchor && !keyProps.tag && !sep13) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4043,7 +4043,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep12 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep13 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4059,7 +4059,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep12, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep13, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4150,7 +4150,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep12 = "";
+        let sep13 = "";
         for (const token of end) {
           const { source: source2, type } = token;
           switch (type) {
@@ -4164,13 +4164,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep12 + cb;
-              sep12 = "";
+                comment += sep13 + cb;
+              sep13 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep12 += source2;
+                sep13 += source2;
               hasSpace = true;
               break;
             default:
@@ -4213,18 +4213,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep12, value } = collItem;
+        const { start, key, sep: sep13, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep12?.[0],
+          next: key ?? sep13?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep12 && !value) {
+          if (!props.anchor && !props.tag && !sep13 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4278,8 +4278,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap3 && !sep12 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep12, null, props, onError);
+        if (!isMap3 && !sep13 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep13, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4291,7 +4291,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep12 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep13 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4302,8 +4302,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap3 && !props.found && ctx.options.strict) {
-              if (sep12)
-                for (const st of sep12) {
+              if (sep13)
+                for (const st of sep13) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4320,7 +4320,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep12, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep13, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4500,7 +4500,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep12 = "";
+      let sep13 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4517,24 +4517,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep12 + indent.slice(trimIndent) + content;
-          sep12 = "\n";
+          value += sep13 + indent.slice(trimIndent) + content;
+          sep13 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep12 === " ")
-            sep12 = "\n";
-          else if (!prevMoreIndented && sep12 === "\n")
-            sep12 = "\n\n";
-          value += sep12 + indent.slice(trimIndent) + content;
-          sep12 = "\n";
+          if (sep13 === " ")
+            sep13 = "\n";
+          else if (!prevMoreIndented && sep13 === "\n")
+            sep13 = "\n\n";
+          value += sep13 + indent.slice(trimIndent) + content;
+          sep13 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep12 === "\n")
+          if (sep13 === "\n")
             value += "\n";
           else
-            sep12 = "\n";
+            sep13 = "\n";
         } else {
-          value += sep12 + content;
-          sep12 = " ";
+          value += sep13 + content;
+          sep13 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4717,25 +4717,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd, "");
-      let sep12 = " ";
+      let sep13 = " ";
       let pos = line2.lastIndex;
       while (match = line2.exec(source2)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep12 === "\n")
-            res += sep12;
+          if (sep13 === "\n")
+            res += sep13;
           else
-            sep12 = "\n";
+            sep13 = "\n";
         } else {
-          res += sep12 + lm;
-          sep12 = " ";
+          res += sep13 + lm;
+          sep13 = " ";
         }
         pos = line2.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source2);
-      return res + sep12 + (match?.[1] ?? "");
+      return res + sep13 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source2, onError) {
       let res = "";
@@ -5545,14 +5545,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep12, value }) {
+    function stringifyItem({ start, key, sep: sep13, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep12)
-        for (const st of sep12)
+      if (sep13)
+        for (const st of sep13)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6719,18 +6719,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep12;
+          let sep13;
           if (scalar.end) {
-            sep12 = scalar.end;
-            sep12.push(this.sourceToken);
+            sep13 = scalar.end;
+            sep13.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep12 = [this.sourceToken];
+            sep13 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep12 }]
+            items: [{ start, key: scalar, sep: sep13 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6883,15 +6883,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep12 = it.sep;
-                  sep12.push(this.sourceToken);
+                  const sep13 = it.sep;
+                  sep13.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep12 }]
+                    items: [{ start: start2, key, sep: sep13 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7085,13 +7085,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep12 = fc.end.splice(1, fc.end.length);
-            sep12.push(this.sourceToken);
+            const sep13 = fc.end.splice(1, fc.end.length);
+            sep13.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep12 }]
+              items: [{ start, key: fc, sep: sep13 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -7269,7 +7269,7 @@ var require_public_api = __commonJS({
       }
       return doc;
     }
-    function parse12(src, reviver, options) {
+    function parse13(src, reviver, options) {
       let _reviver = void 0;
       if (typeof reviver === "function") {
         _reviver = reviver;
@@ -7310,7 +7310,7 @@ var require_public_api = __commonJS({
         return value.toString(options);
       return new Document2.Document(value, _replacer, options).toString(options);
     }
-    exports.parse = parse12;
+    exports.parse = parse13;
     exports.parseAllDocuments = parseAllDocuments;
     exports.parseDocument = parseDocument3;
     exports.stringify = stringify5;
@@ -10326,17 +10326,17 @@ var validateAsync = async (schema, value, _ctx) => {
   return result2.issues.length === 0;
 };
 var _encode = (_Err) => {
-  const parse12 = _parse(_Err);
+  const parse13 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
     const ctx = _ctx ? { ..._ctx, direction: "backward" } : { direction: "backward" };
-    return parse12(schema, value, ctx, finalizeParams(fn, _params));
+    return parse13(schema, value, ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
 var _decode = (_Err) => {
-  const parse12 = _parse(_Err);
+  const parse13 = _parse(_Err);
   const fn = (schema, value, _ctx, _params) => {
-    return parse12(schema, value, _ctx, finalizeParams(fn, _params));
+    return parse13(schema, value, _ctx, finalizeParams(fn, _params));
   };
   return fn;
 };
@@ -19213,7 +19213,7 @@ function line(item3) {
 }
 
 // kernel/src/attempt/use-cases/close.ts
-import { isAbsolute as isAbsolute3, join as join40 } from "node:path";
+import { isAbsolute as isAbsolute3, join as join41 } from "node:path";
 
 // kernel/src/attempt/domain/ladder.ts
 function currentRound(records, entries2) {
@@ -20072,7 +20072,7 @@ next: ${report2.next}
 }
 
 // kernel/src/graph/use-cases/done.ts
-import { join as join38 } from "node:path";
+import { join as join39 } from "node:path";
 
 // kernel/src/graph/domain/kinds/kind.ts
 var BaseKind = class {
@@ -21859,8 +21859,8 @@ function filesHash(store2, changeDir, files) {
 }
 
 // kernel/src/graph/use-cases/pipeline.ts
-var import_yaml11 = __toESM(require_dist(), 1);
-import { join as join32 } from "node:path";
+var import_yaml12 = __toESM(require_dist(), 1);
+import { join as join33 } from "node:path";
 
 // kernel/src/graph/schema/pipeline.ts
 var KEBAB = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
@@ -21958,8 +21958,8 @@ var SKILL_CONTEXT = {
 };
 
 // kernel/src/ctx/use-cases/parts.ts
-var import_yaml9 = __toESM(require_dist(), 1);
-import { join as join30 } from "node:path/posix";
+var import_yaml10 = __toESM(require_dist(), 1);
+import { join as join31 } from "node:path/posix";
 
 // kernel/src/rules/render/outputs.ts
 function renderCheck2(report2) {
@@ -22528,6 +22528,9 @@ function writeProjection(store2, projectRoot2, context, write = true) {
   });
   return { files };
 }
+function projectionDrift(store2, projectRoot2, context) {
+  return writeProjection(store2, projectRoot2, context, false).files.filter((file) => file.changed).map((file) => file.path);
+}
 function regenerate2(store2, projectRoot2, context) {
   return writeProjection(store2, projectRoot2, context).files.filter((file) => file.changed).map((file) => file.path);
 }
@@ -22679,10 +22682,44 @@ function explainRules(deps, projectRoot2, globalDir2, cwd, file, role2) {
 }
 
 // kernel/src/rules/use-cases/import.ts
+var import_yaml9 = __toESM(require_dist(), 1);
+import { join as join30, relative as relative9, resolve as resolve5, sep as sep8 } from "node:path";
+
+// kernel/src/rules/use-cases/health.ts
 var import_yaml8 = __toESM(require_dist(), 1);
-import { join as join29, relative as relative8, resolve as resolve5, sep as sep7 } from "node:path";
+import { join as join29, relative as relative8, sep as sep7 } from "node:path";
+var HOST_RULES_DIR = ".claude/rules";
+function ruleHealth(deps, projectRoot2, globalDir2) {
+  const host = join29(projectRoot2, HOST_RULES_DIR);
+  if (!deps.store.exists(join29(projectRoot2, PROJECT_RULES_DIR)) && !deps.store.exists(host)) {
+    return void 0;
+  }
+  const withoutId = (deps.store.isDirectory(host) ? markdownFiles(deps.store, host) : []).filter((path) => !isProjection(path.slice(path.lastIndexOf("/") + 1))).filter((path) => !carriesId(deps.store.read(path) ?? "")).map((path) => relative8(projectRoot2, path).split(sep7).join("/"));
+  const context = loadContext(deps, projectRoot2, globalDir2);
+  if ("refused" in context) return { withoutId, invalid: context.why, drifted: [] };
+  const refusal2 = formatRefusal(context.problems);
+  if (refusal2 !== void 0) return { withoutId, invalid: refusal2.why, drifted: [] };
+  return { withoutId, drifted: projectionDrift(deps.store, projectRoot2, context) };
+}
+function carriesId(text10) {
+  const { frontmatter } = splitFrontmatter(text10);
+  if (frontmatter === void 0) return false;
+  try {
+    const parsed = (0, import_yaml8.parse)(frontmatter);
+    return typeof parsed === "object" && parsed !== null && "id" in parsed;
+  } catch {
+    return false;
+  }
+}
+function markdownFiles(store2, dir) {
+  return store2.list(dir).flatMap(
+    (name) => name.endsWith("/") ? markdownFiles(store2, join29(dir, name)) : name.endsWith(".md") ? [join29(dir, name)] : []
+  ).sort();
+}
+
+// kernel/src/rules/use-cases/import.ts
 function importRules(deps, projectRoot2, globalDir2, input) {
-  const target = input.dir === void 0 ? join29(projectRoot2, ".claude/rules") : resolve5(input.cwd, input.dir);
+  const target = input.dir === void 0 ? join30(projectRoot2, ".claude/rules") : resolve5(input.cwd, input.dir);
   if (!deps.store.exists(target)) {
     return refuse("input/not-found", `${input.dir ?? ".claude/rules/"} does not exist`, [
       "bdk rules import <dir>"
@@ -22705,7 +22742,7 @@ function importRules(deps, projectRoot2, globalDir2, input) {
   if ("refused" in context) return context;
   const next = numberer(deps.store, projectRoot2, context);
   const since = deps.clock.now().slice(0, 10);
-  const display = (path) => relative8(projectRoot2, path).split(sep7).join("/");
+  const display = (path) => relative9(projectRoot2, path).split(sep8).join("/");
   const imported = [];
   const drafts = [];
   const skipped = [];
@@ -22768,7 +22805,7 @@ function readSource(store2, path, name) {
   let meta2 = {};
   if (split.frontmatter !== void 0) {
     try {
-      const parsed = (0, import_yaml8.parse)(split.frontmatter);
+      const parsed = (0, import_yaml9.parse)(split.frontmatter);
       if (typeof parsed === "object" && parsed !== null) meta2 = parsed;
     } catch (error2) {
       return `unreadable frontmatter: ${error2.message.split("\n")[0] ?? ""}`;
@@ -22780,11 +22817,6 @@ function readSource(store2, path, name) {
   const paths = meta2.paths;
   const applies = typeof paths === "string" ? [paths] : Array.isArray(paths) ? paths.filter((glob4) => typeof glob4 === "string") : void 0;
   return applies === void 0 || applies.length === 0 ? { texts } : { texts, applies };
-}
-function markdownFiles(store2, dir) {
-  return store2.list(dir).flatMap(
-    (name) => name.endsWith("/") ? markdownFiles(store2, join29(dir, name)) : name.endsWith(".md") ? [join29(dir, name)] : []
-  ).sort();
 }
 
 // kernel/src/rules/use-cases/citations.ts
@@ -23339,7 +23371,7 @@ function sectionsOf(input, resolved, part) {
       return [
         {
           title: `Project commands: ${part.group}`,
-          body: entries2.length === 0 ? "none configured\n" : (0, import_yaml9.stringify)(entries2),
+          body: entries2.length === 0 ? "none configured\n" : (0, import_yaml10.stringify)(entries2),
           part: { kind: "tools", source: `tools.${part.group}` }
         }
       ];
@@ -23356,7 +23388,7 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "file": {
-      const text10 = input.store.read(join30(input.pluginRoot, part.path));
+      const text10 = input.store.read(join31(input.pluginRoot, part.path));
       if (text10 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
       return [{ title: part.title, body: text10, part: { kind: "file", source: part.path } }];
     }
@@ -23460,14 +23492,14 @@ function width(text10) {
 }
 
 // kernel/src/ctx/use-cases/startup.ts
-var import_yaml10 = __toESM(require_dist(), 1);
-import { join as join31 } from "node:path/posix";
+var import_yaml11 = __toESM(require_dist(), 1);
+import { join as join32 } from "node:path/posix";
 var STARTUP_FILE = "STARTUP_INSTRUCTIONS.md";
 var AGENTS_DIR = "agents";
 var OPEN = "<!-- bdk:agents-table -->";
 var CLOSE = "<!-- /bdk:agents-table -->";
 function readStartup(deps) {
-  const text10 = deps.store.read(join31(deps.pluginRoot, STARTUP_FILE));
+  const text10 = deps.store.read(join32(deps.pluginRoot, STARTUP_FILE));
   if (text10 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
   const lines = text10.split("\n");
   const open2 = lines.indexOf(OPEN);
@@ -23478,12 +23510,12 @@ function readStartup(deps) {
   return { before: lines.slice(0, open2 + 1), rows: agents(deps), after: lines.slice(close) };
 }
 function agents(deps) {
-  const dir = join31(deps.pluginRoot, AGENTS_DIR);
-  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join31(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
+  const dir = join32(deps.pluginRoot, AGENTS_DIR);
+  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow(`${AGENTS_DIR}/${file}`, deps.store.read(join32(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
 }
 function agentRow(path, text10) {
   const { frontmatter } = splitFrontmatter(text10);
-  const data = frontmatter === void 0 ? void 0 : (0, import_yaml10.parse)(frontmatter);
+  const data = frontmatter === void 0 ? void 0 : (0, import_yaml11.parse)(frontmatter);
   const field2 = (name) => {
     const value = typeof data === "object" && data !== null ? data[name] : void 0;
     if (typeof value !== "string" || value.trim() === "") {
@@ -23524,7 +23556,7 @@ function ctxRegistrations(deps) {
 var PIPELINE_FILE = "pipeline/pipeline.yaml";
 var cache2 = /* @__PURE__ */ new WeakMap();
 function loadPipeline(store2, pluginRoot, settings, kinds) {
-  const path = join32(pluginRoot, PIPELINE_FILE);
+  const path = join33(pluginRoot, PIPELINE_FILE);
   const text10 = store2.read(path);
   if (text10 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
   const known = cache2.get(kinds)?.get(text10);
@@ -23541,7 +23573,7 @@ function loadPipeline(store2, pluginRoot, settings, kinds) {
 function pipelineErrors(text10, declared2) {
   let data;
   try {
-    data = (0, import_yaml11.parse)(text10);
+    data = (0, import_yaml12.parse)(text10);
   } catch (error2) {
     return { errors: [error2 instanceof Error ? error2.message : String(error2)] };
   }
@@ -23576,7 +23608,7 @@ function keyOf(path) {
 }
 
 // kernel/src/graph/use-cases/view.ts
-import { join as join37 } from "node:path";
+import { join as join38 } from "node:path";
 
 // kernel/src/spec/render/spec.ts
 function renderCheck3(report2) {
@@ -23612,7 +23644,7 @@ function renderDiff(report2) {
 }
 
 // kernel/src/spec/use-cases/check.ts
-import { join as join34, relative as relative10 } from "node:path";
+import { join as join35, relative as relative11 } from "node:path";
 
 // kernel/src/spec/domain/grammar.ts
 var SECTIONS = [
@@ -23970,7 +24002,7 @@ function sorted2(problems) {
 }
 
 // kernel/src/spec/use-cases/files.ts
-import { join as join33, relative as relative9 } from "node:path";
+import { join as join34, relative as relative10 } from "node:path";
 
 // kernel/src/spec/config.ts
 var specModule = defineConfigModule({
@@ -24027,15 +24059,15 @@ function renderLiving(capability2, content, change) {
 
 // kernel/src/spec/use-cases/files.ts
 function listDeltas(store2, changeDir) {
-  const root = join33(changeDir, "spec-delta");
+  const root = join34(changeDir, "spec-delta");
   const found = [];
   const visit2 = (dir) => {
     for (const name of store2.list(dir)) {
-      const path = join33(dir, name);
+      const path = join34(dir, name);
       if (name.endsWith("/")) visit2(path);
       else if (name.endsWith(".md")) {
         const text10 = store2.read(path) ?? "";
-        const capability2 = relative9(root, path).slice(0, -".md".length).replaceAll("\\", "/");
+        const capability2 = relative10(root, path).slice(0, -".md".length).replaceAll("\\", "/");
         found.push({ capability: capability2, path, text: text10, delta: parseDelta(text10) });
       }
     }
@@ -24046,10 +24078,10 @@ function listDeltas(store2, changeDir) {
   );
 }
 function specsDir(projectRoot2) {
-  return join33(projectRoot2, ".bdk", "specs");
+  return join34(projectRoot2, ".bdk", "specs");
 }
 function readCurrent(store2, projectRoot2, capability2) {
-  const path = join33(specsDir(projectRoot2), capability2, "spec.md");
+  const path = join34(specsDir(projectRoot2), capability2, "spec.md");
   const text10 = store2.read(path);
   return text10 === void 0 ? { path } : { path, text: text10, living: livingOf(text10) };
 }
@@ -24088,13 +24120,13 @@ function deltaReport(store2, change, file, word) {
   const problems = checkDelta({ delta: file.delta, current, changeId: change.id, word });
   return {
     capability: file.capability,
-    path: relative10(change.projectRoot, file.path),
+    path: relative11(change.projectRoot, file.path),
     valid: problems.length === 0,
     problems
   };
 }
 function deltaProblems(store2, change, capability2, settings) {
-  const path = join34(change.dir, "spec-delta", `${capability2}.md`);
+  const path = join35(change.dir, "spec-delta", `${capability2}.md`);
   const text10 = store2.read(path);
   if (text10 === void 0) return void 0;
   const file = { capability: capability2, path, text: text10, delta: parseDelta(text10) };
@@ -24175,7 +24207,7 @@ function diffDelta(current, delta) {
 }
 
 // kernel/src/spec/use-cases/merge.ts
-import { relative as relative11 } from "node:path";
+import { relative as relative12 } from "node:path";
 
 // kernel/src/spec/domain/merge.ts
 function mergeDelta(current, delta) {
@@ -24211,7 +24243,7 @@ function mergeDelta(current, delta) {
 }
 
 // kernel/src/spec/use-cases/conflicts.ts
-import { join as join35 } from "node:path";
+import { join as join36 } from "node:path";
 
 // kernel/src/spec/domain/conflict.ts
 function namedBlocks(delta) {
@@ -24250,14 +24282,14 @@ function conflictsOf(ours, counterparts) {
 
 // kernel/src/spec/use-cases/conflicts.ts
 function entries(store2, changeDir) {
-  const dir = join35(changeDir, "log");
+  const dir = join36(changeDir, "log");
   return store2.list(dir).filter((name) => name.endsWith(".md")).flatMap((name) => {
-    const document = readDocument(store2, join35(dir, name));
+    const document = readDocument(store2, join36(dir, name));
     return document !== void 0 && "data" in document ? [document.data] : [];
   });
 }
 function createdAt(store2, changeDir) {
-  const document = readDocument(store2, join35(changeDir, "change.md"));
+  const document = readDocument(store2, join36(changeDir, "change.md"));
   return document !== void 0 && "data" in document ? String(document.data.at) : void 0;
 }
 function closedAt(ledger) {
@@ -24280,7 +24312,7 @@ function findConflicts(store2, change, deltas) {
   return deltas.flatMap((file) => {
     const ref = `spec-delta/${file.capability}.md`;
     const counterparts = closed.flatMap((location2) => {
-      const text10 = store2.read(join35(location2.dir, ref));
+      const text10 = store2.read(join36(location2.dir, ref));
       if (text10 === void 0) return [];
       const resolved = decisions.some((refs) => refs.includes(location2.id) && refs.includes(ref));
       return [{ change: location2.id, delta: parseDelta(text10), resolved }];
@@ -24316,7 +24348,7 @@ function planMerge(store2, change, word, dryRun) {
     const living = current.living;
     if (living === void 0) continue;
     if (!hashMatches(living)) {
-      const path = relative11(change.projectRoot, current.path);
+      const path = relative12(change.projectRoot, current.path);
       return refuse(
         "policy/merge-hash-mismatch",
         living.hash === void 0 ? `${path} was not written by the merge: it has no bdk-merge-hash` : `${path} was edited by hand: content hash differs from bdk-merge-hash`,
@@ -24339,7 +24371,7 @@ function planMerge(store2, change, word, dryRun) {
     if (text10 !== current.text) writes.push({ path: current.path, text: text10 });
     return {
       capability: file.capability,
-      path: relative11(change.projectRoot, current.path),
+      path: relative12(change.projectRoot, current.path),
       mergeHash: hash2,
       ...result2.counts
     };
@@ -24398,19 +24430,19 @@ function diffCommand(deps) {
 }
 
 // kernel/src/spec/use-cases/hash.ts
-import { join as join36, relative as relative12 } from "node:path";
+import { join as join37, relative as relative13 } from "node:path";
 function mergeHashFindings(store2, projectRoot2) {
   const found = [];
   const visit2 = (dir) => {
     for (const name of store2.list(dir)) {
-      const path = join36(dir, name);
+      const path = join37(dir, name);
       if (name.endsWith("/")) {
         visit2(path);
         continue;
       }
       if (name !== "spec.md") continue;
       const living = livingOf(store2.read(path) ?? "");
-      const shown = relative12(projectRoot2, path);
+      const shown = relative13(projectRoot2, path);
       if (living.hash === void 0) {
         found.push({
           path: shown,
@@ -24448,7 +24480,7 @@ function changeView(input) {
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
   const read2 = (path) => {
     if (files.has(path)) return files.get(path);
-    const facts = readFacts(store2, join37(dir, path));
+    const facts = readFacts(store2, join38(dir, path));
     files.set(path, facts);
     return facts;
   };
@@ -24462,8 +24494,8 @@ function changeView(input) {
   const reportData = (entry) => {
     const row = byId.get(entry.id);
     if (row === void 0) return void 0;
-    const report2 = documentData(store2, join37(input.projectRoot, row.path))?.report;
-    return typeof report2 === "string" ? documentData(store2, join37(dir, report2)) : void 0;
+    const report2 = documentData(store2, join38(input.projectRoot, row.path))?.report;
+    return typeof report2 === "string" ? documentData(store2, join38(dir, report2)) : void 0;
   };
   return {
     id: input.id,
@@ -24471,7 +24503,7 @@ function changeView(input) {
     profile: input.profile,
     entries: input.entries,
     file: (path) => read2(path)?.facts,
-    list: (sub) => store2.list(join37(dir, sub)).filter((name) => !name.endsWith("/")),
+    list: (sub) => store2.list(join38(dir, sub)).filter((name) => !name.endsWith("/")),
     specDeltas: () => deltaCapabilities(store2, dir),
     specProblems: (capability2) => deltaProblems(store2, input, capability2, input.settings),
     reportStatus: (entry) => {
@@ -24804,7 +24836,7 @@ function markDone(deps, change, globalDir2, id) {
       if ("refused" in written) return written;
       entry = written.entry.id;
     }
-    if (generated !== void 0) deps.store.write(join38(change.dir, generated.path), generated.text);
+    if (generated !== void 0) deps.store.write(join39(change.dir, generated.path), generated.text);
     const after = await reread(deps, change, index2, globalDir2);
     if ("refused" in after) return after;
     return {
@@ -24991,14 +25023,14 @@ function finish(node3, kind) {
 }
 
 // kernel/src/graph/use-cases/instruction.ts
-import { posix as posix4, relative as relative13, sep as sep8 } from "node:path";
+import { posix as posix4, relative as relative14, sep as sep9 } from "node:path";
 function instructionOf(deps, change, read2, node3) {
   const kind = read2.kinds.get(node3.kind);
   if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
   const key = templateKey(deps, node3.kind);
   const value = read2.resolved.prompts.values.get(key);
   if (value === void 0) throw new Error(`the prompt value ${key} has no file in any layer`);
-  const dir = relative13(change.projectRoot, change.dir).split(sep8).join("/");
+  const dir = relative14(change.projectRoot, change.dir).split(sep9).join("/");
   const writes = kind.writes(read2.view, node3.nn);
   return composeInstruction({
     node: node3,
@@ -25610,7 +25642,7 @@ function wavesOf2(parts) {
 }
 
 // kernel/src/part/use-cases/split.ts
-import { join as join39 } from "node:path";
+import { join as join40 } from "node:path";
 
 // kernel/src/part/domain/split.ts
 var TASK_HEADING = /^## (\d{2}-[1-9]\d*)(?:\s|$)/;
@@ -25690,7 +25722,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
     const first = part.tasks.find((task) => task.id === moved[0]);
     const file = `plan/parts/${newPart}-${slugOf(first?.title ?? part.data.title)}.md`;
     const original = frontmatterOf(deps, part);
-    writeDocument(deps.store, join39(change.dir, file), {
+    writeDocument(deps.store, join40(change.dir, file), {
       data: { ...original, id: newPart, title: `${part.data.title} (split from ${id})` },
       body: body.moved
     });
@@ -25716,7 +25748,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
       title: `${part.data.title} (split from ${id})`,
       "depends-on": [...part.data["depends-on"]]
     });
-    deps.store.write(join39(change.dir, "plan/index.md"), generatePlanIndex(rows));
+    deps.store.write(join40(change.dir, "plan/index.md"), generatePlanIndex(rows));
     const written = await appendEntry(
       deps,
       change,
@@ -26159,7 +26191,7 @@ function diffReport(diff) {
   return { declared: diff.declared, touched: diff.touched, undeclared: diff.undeclared };
 }
 function missingEntries(deps, cwd, envelope, underTicket) {
-  const path = isAbsolute3(envelope) ? envelope : join40(cwd, envelope);
+  const path = isAbsolute3(envelope) ? envelope : join41(cwd, envelope);
   const document = deps.store.read(path) === void 0 ? void 0 : readDocument(deps.store, path);
   if (document === void 0 || !("data" in document) || document.kind !== "report") {
     return refuse("input/not-found", `no report envelope at ${envelope}`, [
@@ -26347,7 +26379,7 @@ function item2(record4, entries2) {
 }
 
 // kernel/src/attempt/use-cases/open.ts
-import { join as join41 } from "node:path";
+import { join as join42 } from "node:path";
 var PART_ID = /^\d{2}$/;
 var SUMMARY_MAX3 = 120;
 function openAttempt(deps, change, globalDir2, input) {
@@ -26393,7 +26425,7 @@ function openAttempt(deps, change, globalDir2, input) {
     }
     const ticket = newId("A-", deps.random);
     const openedAt = deps.clock.now();
-    const path = join41(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
+    const path = join42(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
     writeDocument(deps.store, path, {
       data: {
         schema: 1,
@@ -26788,7 +26820,7 @@ function viewOf(result2) {
 }
 
 // kernel/src/change/use-cases/close.ts
-import { relative as relative14, sep as sep9 } from "node:path";
+import { relative as relative15, sep as sep10 } from "node:path";
 
 // kernel/src/change/config.ts
 var archiveModule = defineConfigModule({
@@ -26925,7 +26957,7 @@ function gatesByPolicy(entries2) {
   return [...new Set(gates)].sort();
 }
 function relativePath2(projectRoot2, path) {
-  return relative14(projectRoot2, path).split(sep9).join("/");
+  return relative15(projectRoot2, path).split(sep10).join("/");
 }
 
 // kernel/src/change/use-cases/facts.ts
@@ -26971,7 +27003,7 @@ function listAllChanges(deps, projectRoot2, options) {
 }
 
 // kernel/src/change/use-cases/new.ts
-import { join as join42 } from "node:path";
+import { join as join43 } from "node:path";
 
 // kernel/src/change/domain/change.ts
 var SLUG_MAX = 40;
@@ -27067,7 +27099,7 @@ async function newChange(deps, where, input) {
   await ensureIgnored(deps.store, deps.git, projectRoot2);
   const dir = liveChangeDir(projectRoot2, id);
   const profile = input.profile ?? "small";
-  writeDocument(deps.store, join42(dir, "change.md"), {
+  writeDocument(deps.store, join43(dir, "change.md"), {
     data: {
       schema: 1,
       id,
@@ -27323,14 +27355,14 @@ function done(value) {
 }
 
 // kernel/src/change/use-cases/status.ts
-import { join as join43 } from "node:path";
+import { join as join44 } from "node:path";
 function changeStatus(deps, change, globalDir2) {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index2) => {
     refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
     const read2 = await readGraph(deps, change, index2, globalDir2);
     if ("refused" in read2) return read2;
     const graph = graphSummary(read2);
-    const document = readDocument(deps.store, join43(change.dir, "change.md"));
+    const document = readDocument(deps.store, join44(change.dir, "change.md"));
     const data = document !== void 0 && "data" in document ? document.data : {};
     const facts = changeFacts(index2, change.id, stageResolver(deps));
     const tickets = openAttempts(index2, change.id);
@@ -27359,7 +27391,7 @@ function changeStatus(deps, change, globalDir2) {
 }
 
 // kernel/src/change/use-cases/takeover.ts
-import { join as join44 } from "node:path";
+import { join as join45 } from "node:path";
 function takeover(deps, change, input) {
   return withChangeIndex(deps, change, async (index2) => {
     const open2 = readAttempts(deps.store, change.dir).filter(
@@ -27423,7 +27455,7 @@ function takeover(deps, change, input) {
 function previousSession(deps, change, index2, opened) {
   const candidates = listEntries(index2, change.id, { type: "transition" }).filter((entry) => entry.at <= opened).reverse();
   for (const entry of candidates) {
-    const document = readDocument(deps.store, join44(change.projectRoot, entry.path));
+    const document = readDocument(deps.store, join45(change.projectRoot, entry.path));
     const session = document !== void 0 && "data" in document ? document.data.session : void 0;
     if (typeof session === "string" && session !== "") return session;
   }
@@ -27551,7 +27583,7 @@ function renderCommit(report2) {
 }
 
 // kernel/src/commit/use-cases/commit.ts
-import { relative as relative15, sep as sep10 } from "node:path";
+import { relative as relative16, sep as sep11 } from "node:path";
 
 // kernel/src/commit/domain/report.ts
 function commitMessage(subject, trailers) {
@@ -27584,7 +27616,7 @@ function commitTask(deps, change, input) {
     }
     const diff = await diffCheck(deps, change, index2, { task: input.task });
     if ("refused" in diff) return diff;
-    const dir = `${relative15(change.projectRoot, change.dir).split(sep10).join("/")}/`;
+    const dir = `${relative16(change.projectRoot, change.dir).split(sep11).join("/")}/`;
     const code = [...diff.declared, ...diff.undeclared];
     if (code.length === 0 && (await changedPaths(deps.git, change.projectRoot, [dir])).length === 0) {
       return refuse(
@@ -27684,7 +27716,7 @@ function renderCheck4(report2) {
 }
 
 // kernel/src/config/use-cases/check.ts
-import { join as join45 } from "node:path";
+import { join as join46 } from "node:path";
 var LEGACY_SETTINGS = ".bdk/settings.json";
 function checkConfig(input) {
   const resolved = resolveOrRefuse(input);
@@ -27719,7 +27751,7 @@ function report(input, resolved) {
       });
     }
   }
-  if (input.store.exists(join45(input.projectRoot, LEGACY_SETTINGS))) {
+  if (input.store.exists(join46(input.projectRoot, LEGACY_SETTINGS))) {
     problems.push({
       layer: "project",
       path: LEGACY_SETTINGS,
@@ -27730,7 +27762,7 @@ function report(input, resolved) {
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
   if (snapshot !== void 0) {
     input.store.write(
-      join45(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      join46(input.projectRoot, OFFLINE_SCHEMA_PATH),
       offlineSchemaText(input.settings)
     );
   }
@@ -27817,7 +27849,7 @@ function renderSet(report2) {
 }
 
 // kernel/src/config/use-cases/set.ts
-var import_yaml12 = __toESM(require_dist(), 1);
+var import_yaml13 = __toESM(require_dist(), 1);
 
 // kernel/src/config/domain/origins.ts
 function leafOrigins(value, key, set) {
@@ -27834,10 +27866,10 @@ function originOf(leaf, set) {
 }
 function leafKeys(value, prefix) {
   if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join46(prefix, key)));
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join47(prefix, key)));
   }
   if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item3) => leafKeys(item3, join46(prefix, item3.id)));
+    return value.flatMap((item3) => leafKeys(item3, join47(prefix, item3.id)));
   }
   return [prefix];
 }
@@ -27847,7 +27879,7 @@ function isMapping(value) {
 function hasId(value) {
   return isMapping(value) && typeof value.id === "string";
 }
-function join46(prefix, key) {
+function join47(prefix, key) {
   return prefix === "" ? key : `${prefix}.${key}`;
 }
 
@@ -27949,7 +27981,7 @@ async function setConfig(input, request) {
   const steps = declaredSteps(input.settings, key);
   if (steps === void 0) return unknownKey(input, key);
   const text10 = input.store.read(file.path);
-  const document = (0, import_yaml12.parseDocument)(text10 ?? "");
+  const document = (0, import_yaml13.parseDocument)(text10 ?? "");
   if (document.errors.length > 0) {
     return refuse("policy/config-invalid", `${displayPath(input, file.path)} is not valid YAML`, [
       `fix ${displayPath(input, file.path)}`
@@ -27972,10 +28004,10 @@ async function setConfig(input, request) {
   };
 }
 function parseValue(raw, usage) {
-  const parsed = (0, import_yaml12.parseDocument)(raw);
+  const parsed = (0, import_yaml13.parseDocument)(raw);
   const [error2] = parsed.errors;
-  if (error2 !== void 0 || !(0, import_yaml12.isNode)(parsed.contents)) {
-    const reason = error2 instanceof import_yaml12.YAMLParseError ? `: ${error2.message.split("\n")[0] ?? ""}` : "";
+  if (error2 !== void 0 || !(0, import_yaml13.isNode)(parsed.contents)) {
+    const reason = error2 instanceof import_yaml13.YAMLParseError ? `: ${error2.message.split("\n")[0] ?? ""}` : "";
     return refuse("input/invalid-argument", `${raw} is not a YAML value${reason}`, [usage]);
   }
   return parsed.contents;
@@ -27990,23 +28022,23 @@ function editDocument(document, steps, value, raw) {
       continue;
     }
     const sequence = document.getIn(path, true);
-    const items = (0, import_yaml12.isSeq)(sequence) ? sequence.items : [];
-    const found = items.findIndex((item4) => (0, import_yaml12.isMap)(item4) && item4.get("id") === step2.segment);
+    const items = (0, import_yaml13.isSeq)(sequence) ? sequence.items : [];
+    const found = items.findIndex((item4) => (0, import_yaml13.isMap)(item4) && item4.get("id") === step2.segment);
     if (found !== -1) {
       path.push(found);
       continue;
     }
     const item3 = last ? withId(document, value, step2.segment) : document.createNode({ id: step2.segment });
     if (isRefusal(item3)) return item3;
-    if ((0, import_yaml12.isSeq)(sequence)) sequence.add(item3);
+    if ((0, import_yaml13.isSeq)(sequence)) sequence.add(item3);
     else document.setIn(path, document.createNode([item3]));
     if (last) return {};
-    path.push((0, import_yaml12.isSeq)(sequence) ? sequence.items.length - 1 : 0);
+    path.push((0, import_yaml13.isSeq)(sequence) ? sequence.items.length - 1 : 0);
   }
   const current = document.getIn(path, true);
-  const previous = (0, import_yaml12.isNode)(current) ? current.toJSON() : void 0;
+  const previous = (0, import_yaml13.isNode)(current) ? current.toJSON() : void 0;
   const kept = previous === void 0 ? {} : { previous };
-  if ((0, import_yaml12.isNode)(current) && inline(current) && inline(value) && !raw.includes("\n")) {
+  if ((0, import_yaml13.isNode)(current) && inline(current) && inline(value) && !raw.includes("\n")) {
     const [start, end] = current.range ?? [0, 0];
     const [from, to] = value.range ?? [0, raw.length];
     return { ...kept, splice: { start, end, text: raw.slice(from, to) } };
@@ -28015,10 +28047,10 @@ function editDocument(document, steps, value, raw) {
   return kept;
 }
 function inline(node3) {
-  return (0, import_yaml12.isScalar)(node3) || (0, import_yaml12.isCollection)(node3) && node3.flow === true;
+  return (0, import_yaml13.isScalar)(node3) || (0, import_yaml13.isCollection)(node3) && node3.flow === true;
 }
 function withId(document, value, id) {
-  if (!(0, import_yaml12.isMap)(value)) {
+  if (!(0, import_yaml13.isMap)(value)) {
     return refuse(
       "input/invalid-argument",
       `a new item ${id} needs a mapping value, e.g. {command: ...}`,
@@ -28069,7 +28101,7 @@ function setCommand(deps) {
 }
 
 // kernel/src/config/commands/show.ts
-var import_yaml13 = __toESM(require_dist(), 1);
+var import_yaml14 = __toESM(require_dist(), 1);
 function showCommand3(deps) {
   return (context) => {
     const key = context.positionals["<key>"];
@@ -28079,13 +28111,13 @@ function showCommand3(deps) {
     });
     if (isRefusal(outcome)) return outcome;
     const origins = outcome.origins === void 0 ? "" : `# origins
-${(0, import_yaml13.stringify)(outcome.origins)}`;
-    return { data: outcome, text: `${(0, import_yaml13.stringify)(outcome.value)}${origins}` };
+${(0, import_yaml14.stringify)(outcome.origins)}`;
+    return { data: outcome, text: `${(0, import_yaml14.stringify)(outcome.value)}${origins}` };
   };
 }
 
 // kernel/src/config/use-cases/layout.ts
-import { join as join47 } from "node:path";
+import { join as join48 } from "node:path";
 
 // kernel/src/config/domain/layout.ts
 var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
@@ -28098,8 +28130,8 @@ function classifyLayout(state) {
 // kernel/src/config/use-cases/layout.ts
 function detectLayout(store2, root) {
   return classifyLayout({
-    bdk: store2.isDirectory(join47(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => store2.exists(join47(root, marker)))
+    bdk: store2.isDirectory(join48(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store2.exists(join48(root, marker)))
   });
 }
 
@@ -28125,7 +28157,7 @@ function renderShow2(report2) {
 
 // kernel/src/dispatch/use-cases/build.ts
 import { createHash as createHash7 } from "node:crypto";
-import { join as join49, posix as posix5 } from "node:path";
+import { join as join50, posix as posix5 } from "node:path";
 
 // kernel/src/export/commands/agents.ts
 import { resolve as resolve6 } from "node:path";
@@ -28142,7 +28174,7 @@ function renderAgents(report2) {
 }
 
 // kernel/src/export/use-cases/agents.ts
-import { join as join48, relative as relative16 } from "node:path";
+import { join as join49, relative as relative17 } from "node:path";
 
 // kernel/src/export/domain/adapters.ts
 var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
@@ -28232,11 +28264,11 @@ function adapterFile(adapter, host) {
 // kernel/src/export/use-cases/agents.ts
 function exportAgents(deps, request) {
   const host = HOSTS[request.host];
-  const out = request.out ?? join48(deps.pluginRoot, "agents");
+  const out = request.out ?? join49(deps.pluginRoot, "agents");
   const drift = [];
   const files = ADAPTERS.map((adapter) => {
-    const target = join48(out, `${adapter.name}.md`);
-    const path = relative16(request.root, target);
+    const target = join49(out, `${adapter.name}.md`);
+    const path = relative17(request.root, target);
     const content = adapterFile(adapter, host);
     const current = deps.store.read(target);
     const changed = current !== content;
@@ -28535,8 +28567,8 @@ ${rule2.text}`)
         ["split the task or the part so its text and entries fit", "bdk part split <nn>"]
       );
     }
-    const dir = join49(change.dir, "dispatch");
-    const path = join49(dir, name);
+    const dir = join50(change.dir, "dispatch");
+    const path = join50(dir, name);
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
     stampPackage(deps.store, change.dir, input.ticket, posix5.relative(change.projectRoot, path));
     return {
@@ -28635,7 +28667,7 @@ function doNotTouch(part) {
   return globs2.length === 0 ? "`do-not-touch`: none." : `\`do-not-touch\`: ${globs2.map((glob4) => `\`${glob4}\``).join(", ")}.`;
 }
 function intentOf(deps, change) {
-  const document = readDocument(deps.store, join49(change.dir, "change.md"));
+  const document = readDocument(deps.store, join50(change.dir, "change.md"));
   const intent = document !== void 0 && "data" in document ? document.data.intent : void 0;
   return typeof intent === "string" ? intent : `Change ${change.id}.`;
 }
@@ -28643,7 +28675,7 @@ function withPluginRoot(body, pluginRoot) {
   return body.replaceAll("${CLAUDE_PLUGIN_ROOT}", pluginRoot);
 }
 function readRoleBody(deps, role2) {
-  const path = join49(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
+  const path = join50(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
   const text10 = deps.store.read(path);
   if (text10 === void 0) throw new Error(`the plugin has no role skill at ${path}`);
   return splitFrontmatter(text10).body.trim();
@@ -28657,7 +28689,7 @@ function entriesText(deps, change, full, counted, target) {
 ${others}`;
 }
 function entryText(deps, change, entry) {
-  const document = readDocument(deps.store, join49(change.projectRoot, entry.path));
+  const document = readDocument(deps.store, join50(change.projectRoot, entry.path));
   const body = document === void 0 ? "" : document.body.trim();
   const refs = entry.refs.map((ref) => `\`${ref}\``).join(", ");
   return `### ${entry.id} ${entry.type}, ${entry.status}
@@ -28679,13 +28711,13 @@ function hashOf(texts) {
 }
 
 // kernel/src/dispatch/use-cases/show.ts
-import { isAbsolute as isAbsolute4, join as join50, posix as posix6, relative as relative17, sep as sep11 } from "node:path";
+import { isAbsolute as isAbsolute4, join as join51, posix as posix6, relative as relative18, sep as sep12 } from "node:path";
 var TICKET = /^A-[0-9a-z]{8}$/;
 function showPackage(deps, change, cwd, value) {
-  const dir = join50(change.dir, "dispatch");
-  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join50(cwd, value);
-  const inside = path === void 0 ? "" : relative17(dir, path);
-  const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep11) ? void 0 : deps.store.read(path);
+  const dir = join51(change.dir, "dispatch");
+  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join51(cwd, value);
+  const inside = path === void 0 ? "" : relative18(dir, path);
+  const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep12) ? void 0 : deps.store.read(path);
   const document = path === void 0 || content === void 0 ? void 0 : readDocument(deps.store, path);
   if (path === void 0 || content === void 0 || document === void 0 || !("data" in document)) {
     return refuse(
@@ -28702,7 +28734,7 @@ function showPackage(deps, change, cwd, value) {
 }
 function ticketPackage(deps, change, ticket) {
   const active10 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
-  return active10 === void 0 ? void 0 : join50(change.projectRoot, active10.path);
+  return active10 === void 0 ? void 0 : join51(change.projectRoot, active10.path);
 }
 
 // kernel/src/dispatch/commands/dispatch.ts
@@ -29351,7 +29383,7 @@ function commandLine(record4) {
 // kernel/src/shared/registry/parse.ts
 var IMPLICIT_FLAGS = ["--json", "--help"];
 var STAMPED2 = ["--id", "--at", "--author", "--source", "--fingerprint"];
-function parse10(record4, tokens2) {
+function parse11(record4, tokens2) {
   const help = [`${commandLine(record4)} --help`];
   const positionals = {};
   const lists = {};
@@ -29659,7 +29691,7 @@ async function run(index2, byId, options, invocation) {
   return 0;
 }
 async function dispatch(record4, registration, options, rest, asJson, { cwd, runtime }) {
-  const parsed = parse10(record4, rest);
+  const parsed = parse11(record4, rest);
   if (isRefusal(parsed)) return parsed;
   let workTree;
   if (record4.standalone !== true) {
@@ -29826,7 +29858,7 @@ function pendingLines(gate2) {
 }
 
 // kernel/src/hooks/use-cases/prompt-expansion.ts
-import { join as join51 } from "node:path";
+import { join as join52 } from "node:path";
 var NAMESPACE = "bdk:";
 var SKIP_VERIFY = "--skip-verify";
 async function promptExpansion(deps, input, raw) {
@@ -29960,7 +29992,7 @@ async function runGates(read2, typed, write) {
   };
 }
 function recordedSkipVerify(deps, change, path) {
-  const document = readDocument(deps.store, join51(change.projectRoot, path));
+  const document = readDocument(deps.store, join52(change.projectRoot, path));
   return document !== void 0 && "data" in document && document.data["skip-verify"] === true;
 }
 function summary(view) {
@@ -30068,12 +30100,12 @@ ${lines.join("\n")}
 }
 
 // kernel/src/hooks/use-cases/session-start.ts
-import { join as join52 } from "node:path";
+import { join as join53 } from "node:path";
 function sessionStart(input) {
   const startup = startupContext(input).content;
   if (input.workTree === void 0) return { startup };
   const projectRoot2 = findProjectRoot(input.store, input.cwd, input.workTree);
-  if (!input.store.isDirectory(join52(projectRoot2, ".bdk"))) return { startup };
+  if (!input.store.isDirectory(join53(projectRoot2, ".bdk"))) return { startup };
   const { errors, report: report2 } = inspectConfig({ ...input, projectRoot: projectRoot2 });
   const { layout, present: present2 } = detectLayout(input.store, projectRoot2);
   const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
@@ -30114,12 +30146,12 @@ function renderSkillExists(name, foundIn) {
 }
 
 // kernel/src/hooks/use-cases/skill-exists.ts
-var import_yaml14 = __toESM(require_dist(), 1);
-import { join as join53 } from "node:path";
+var import_yaml15 = __toESM(require_dist(), 1);
+import { join as join54 } from "node:path";
 function findSkill(input, name) {
   for (const skills of skillDirs(input)) {
     for (const entry of subdirs(input.store, skills)) {
-      const file = join53(skills, entry, "SKILL.md");
+      const file = join54(skills, entry, "SKILL.md");
       const text10 = input.store.read(file);
       if (text10 !== void 0 && frontmatterName(text10) === name) return file;
     }
@@ -30127,21 +30159,21 @@ function findSkill(input, name) {
   return void 0;
 }
 function skillDirs({ store: store2, home, projectRoot: projectRoot2 }) {
-  const plugins = join53(home, ".claude", "plugins");
-  const marketplaces = join53(plugins, "marketplaces");
-  const cache3 = join53(plugins, "cache");
+  const plugins = join54(home, ".claude", "plugins");
+  const marketplaces = join54(plugins, "marketplaces");
+  const cache3 = join54(plugins, "cache");
   const versions = subdirs(store2, cache3).flatMap(
-    (marketplace) => subdirs(store2, join53(cache3, marketplace)).flatMap(
-      (plugin) => subdirs(store2, join53(cache3, marketplace, plugin)).map(
-        (version3) => join53(cache3, marketplace, plugin, version3)
+    (marketplace) => subdirs(store2, join54(cache3, marketplace)).flatMap(
+      (plugin) => subdirs(store2, join54(cache3, marketplace, plugin)).map(
+        (version3) => join54(cache3, marketplace, plugin, version3)
       )
     )
   );
   return [
-    join53(home, ".claude", "skills"),
-    join53(projectRoot2, ".claude", "skills"),
-    ...subdirs(store2, marketplaces).map((marketplace) => join53(marketplaces, marketplace, "skills")),
-    ...versions.map((version3) => join53(version3, "skills"))
+    join54(home, ".claude", "skills"),
+    join54(projectRoot2, ".claude", "skills"),
+    ...subdirs(store2, marketplaces).map((marketplace) => join54(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join54(version3, "skills"))
   ];
 }
 function subdirs(store2, dir) {
@@ -30151,7 +30183,7 @@ function frontmatterName(text10) {
   const { frontmatter } = splitFrontmatter(text10);
   if (frontmatter === void 0) return void 0;
   try {
-    const data = (0, import_yaml14.parse)(frontmatter);
+    const data = (0, import_yaml15.parse)(frontmatter);
     const name = typeof data === "object" && data !== null ? data.name : void 0;
     return typeof name === "string" ? name : void 0;
   } catch {
@@ -30330,18 +30362,18 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join54 } from "node:path";
+import { join as join55 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store: store2, root } = input;
-  if (!store2.exists(join54(root, SETTINGS_FILES[0]))) return [];
+  if (!store2.exists(join55(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store2, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join54(root, file);
+    const path = join55(root, file);
     const text10 = store2.read(path);
     if (text10 === void 0 || modelineUrl(text10) === url) continue;
     if (input.fix) store2.write(path, withModeline(text10, version3));
@@ -30355,7 +30387,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join54(root, OFFLINE_SCHEMA_PATH);
+  const copy = join55(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store2.read(copy);
   if (current !== expected) {
@@ -30405,12 +30437,40 @@ function doctor(input) {
       repair: `git restore --source=$(git log -1 --format=%H --grep='^chore(bdk): close' -- ${found.path}) -- ${found.path}`
     });
   }
+  findings.push(...ruleFindings(input, root));
   return {
     ok: findings.every((item3) => item3.level === "ok"),
     version: version2(input),
     layout,
     findings
   };
+}
+function ruleFindings(input, root) {
+  const health = ruleHealth(input, root, input.globalDir);
+  if (health === void 0) return [];
+  const findings = health.withoutId.map((file) => ({
+    id: "rule-without-id",
+    level: "warn",
+    summary: `${file} holds rules without an id`,
+    repair: "bdk rules import"
+  }));
+  if (health.invalid !== void 0) {
+    findings.push({
+      id: "rules-invalid",
+      level: "fail",
+      summary: health.invalid,
+      repair: "bdk rules check"
+    });
+  }
+  if (health.drifted.length > 0) {
+    findings.push({
+      id: "projection-outdated",
+      level: "warn",
+      summary: `${health.drifted.join(" and ")} differ${health.drifted.length === 1 ? "s" : ""} from the rules under .bdk/rules/`,
+      repair: "bdk rules export --claude"
+    });
+  }
+  return findings;
 }
 
 // kernel/src/service/commands/doctor.ts
@@ -30421,6 +30481,7 @@ function doctorCommand(deps) {
       nodeVersion: context.runtime.nodeVersion,
       cwd: context.cwd,
       workTree: context.workTree ?? context.cwd,
+      globalDir: globalDir(context.runtime),
       fix: context.flags["--fix"] === true
     });
     return { data, text: renderDoctor(data) };

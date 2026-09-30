@@ -15,6 +15,7 @@ import { prefixOf } from "../domain/rule.ts";
 import type { ImportedFile, ImportReport } from "../domain/report.ts";
 import type { RulesDeps } from "./deps.ts";
 import { regenerate } from "./export.ts";
+import { markdownFiles } from "./health.ts";
 import { loadContext } from "./settings.ts";
 import type { RuleDraft } from "./write.ts";
 import {
@@ -154,18 +155,4 @@ function readSource(store: Store, path: string, name: string): Source | string {
         ? paths.filter((glob): glob is string => typeof glob === "string")
         : undefined;
   return applies === undefined || applies.length === 0 ? { texts } : { texts, applies };
-}
-
-/** Every `*.md` below the directory, subdirectories included, in path order. */
-function markdownFiles(store: Store, dir: string): string[] {
-  return store
-    .list(dir)
-    .flatMap((name) =>
-      name.endsWith("/")
-        ? markdownFiles(store, join(dir, name))
-        : name.endsWith(".md")
-          ? [join(dir, name)]
-          : [],
-    )
-    .sort();
 }

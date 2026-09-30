@@ -66,6 +66,13 @@ function writeProjection(
   return { files };
 }
 
+/** The projection paths that differ from the rules, written nowhere; `doctor` reports them. */
+export function projectionDrift(store: Store, projectRoot: string, context: RuleContext): string[] {
+  return writeProjection(store, projectRoot, context, false)
+    .files.filter((file) => file.changed)
+    .map((file) => file.path);
+}
+
 /** The projection paths a write changed, for `accept` and `import`. */
 export function regenerate(store: Store, projectRoot: string, context: RuleContext): string[] {
   return writeProjection(store, projectRoot, context)

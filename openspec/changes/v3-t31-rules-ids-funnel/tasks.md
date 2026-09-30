@@ -35,7 +35,7 @@
 - [x] 5.3 Write failing tests for the index version 5 (`findings` table from attempt records, `dispatches.rules` and `rules_truncated`, `entries.applies` and `entries.evidence`, `routed_to` dropped, automatic rebuild from version 4); then implement; verify the tests pass
 - [x] 5.4 Write failing tests for `log add learning --applies` (default from the ticket task's `Files:`, `input/invalid` on another type), `routed` refused by `log add`, `log list` and `log resolve`, and `log route` answering unknown command; then implement in `kernel/src/log/` and remove `route`; verify the tests pass
 - [x] 5.5 Write failing tests for `change close` (no `learning` output field, no `.claude/rules` write, scenario "close proposes no rule"), then remove the routing in `kernel/src/change/use-cases/close.ts` and `schema/outputs.ts`; verify the tests pass
-- [ ] 5.6 Write failing tests for `doctor` checks `rule-without-id` (warn, repair `bdk rules import`), `rules-invalid` (fail) and `projection-outdated` (warn), then implement in `kernel/src/service/`; verify the tests pass
+- [x] 5.6 Write failing tests for `doctor` checks `rule-without-id` (warn, repair `bdk rules import`), `rules-invalid` (fail) and `projection-outdated` (warn), then implement in `kernel/src/service/`; verify the tests pass
 - [ ] 5.7 Update the error-code and availability tables used by `cli-contract.test.ts` and `kernel-contract.test.ts` for `rule-format`, `duplicate-rule-id`, `generated-drift`, and the removed `log route` and `rules add`; verify `pnpm test:contract` passes
 
 ## 6. The shipped pack

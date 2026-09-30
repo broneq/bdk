@@ -7,8 +7,11 @@ import { ruleContext } from "./context.ts";
 import type { RuleContext } from "./context.ts";
 import type { RulesDeps } from "./deps.ts";
 
+/** What reading the rules needs; `doctor` has no index, git or clock to give. */
+export type ReadDeps = Pick<RulesDeps, "store" | "pluginRoot" | "settings">;
+
 export function loadContext(
-  deps: RulesDeps,
+  deps: ReadDeps,
   projectRoot: string,
   globalDir: string,
 ): RuleContext | Refusal {
