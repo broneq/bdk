@@ -55,7 +55,7 @@
 
 ## 8. Acceptance
 
-- [ ] 8.1 In a fixture project with a scoped project rule (`applies: src/api/**`) and a global one: `dispatch build` for a task touching `src/api/x.ts` stamps both ids, for a task touching `docs/a.md` only the global one; `rules show --ticket` prints exactly the stamped ids with their text; verify by running `dist/bdk.mjs` end to end
-- [ ] 8.2 In the same fixture: three `log add learning` entries with the same fingerprint in three Changes appear in `rules stats` `recurring`, two do not; `rules accept --from` writes the rule and regenerates `.claude/rules/bdk-generated-scoped.md` with the `paths:` union; `rules export --claude --check` exits 0, and after a hand edit exits with `generated-drift`; `change close` writes no rule
-- [ ] 8.3 Run `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm eval check` and `pnpm docs:build`; verify all pass
-- [ ] 8.4 Run `openspec validate v3-t31-rules-ids-funnel --strict`; verify it reports the change valid
+- [x] 8.1 In a fixture project with a scoped project rule (`applies: src/api/**`) and a global one: `dispatch build` for a task touching `src/api/x.ts` stamps both ids, for a task touching `docs/a.md` only the global one; `rules show --ticket` prints exactly the stamped ids with their text; verify by running `dist/bdk.mjs` end to end
+- [x] 8.2 In the same fixture: three `log add learning` entries with the same fingerprint in three Changes appear in `rules stats` `recurring`, two do not; `rules accept --from` writes the rule and regenerates `.claude/rules/bdk-generated-scoped.md` with the `paths:` union; `rules export --claude --check` exits 0, and after a hand edit exits with `generated-drift`; `change close` writes no rule
+- [x] 8.3 Run `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm eval check` and `pnpm docs:build`; verify all pass
+- [x] 8.4 Run `openspec validate v3-t31-rules-ids-funnel --strict`; verify it reports the change valid
