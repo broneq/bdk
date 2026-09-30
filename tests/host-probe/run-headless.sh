@@ -62,12 +62,14 @@ run_check() {
         --allowedTools "$allowed" --output-format json "$prompt" > "$tmp/Result.json" 2> "$tmp/stderr.txt"
     fi
     save_rendered "$tmp"
+    node "$here/timeline.mjs" "$tmp" "$tmp/Timeline.json" 2>/dev/null
     hits=$(grep -lE "$keep" "$tmp"/*-*.json 2>/dev/null)
     if [ -n "$hits" ] || grep -qE "$keep" "$tmp/Result.json"; then
       rm -f "$out/$id--"*
       for f in $hits; do cp "$f" "$out/$id--$(basename "$f")"; done
       cp "$tmp/Result.json" "$out/$id--Result.json"
       [ -f "$tmp/Rendered.json" ] && cp "$tmp/Rendered.json" "$out/$id--Rendered.json"
+      [ -f "$tmp/Timeline.json" ] && cp "$tmp/Timeline.json" "$out/$id--Timeline.json"
       rm -rf "$tmp"
       echo "recorded      $id ($(printf '%s' "$hits" | grep -c .) payload(s), attempt $attempt)"
       return 0
@@ -75,6 +77,7 @@ run_check() {
   done
   rm -f "$out/$id--"*
   cp "$tmp/Result.json" "$out/$id--Result.json" 2>/dev/null
+  cp "$tmp/Timeline.json" "$out/$id--Timeline.json" 2>/dev/null
   rm -rf "$tmp"
   echo "not triggered $id (result kept as $id--Result.json)"
   return 1
@@ -145,5 +148,36 @@ selected send-message-id && { run_check send-message-id '.' "Task Agent SendMess
 
 selected send-message-main && { run_check send-message-main '.' "Task Agent SendMessage Bash(echo *)" \
   "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner, run_in_background true, and this prompt: Use the SendMessage tool with to set to main and the message CRITICAL-FROM-SUB, report verbatim what the tool returned, then reply DONE. Wait until it finishes. Reply with every message you received from it, verbatim, and its final answer." || status=1; }
+
+# Agent lifecycle and messaging checks for the T41 agent registry.
+selected lifecycle && { run_check lifecycle '"hook_event_name":"Subagent(Start|Stop)"|"tool_name":"Agent"' "Task Agent Bash(echo *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner in the foreground and this prompt: Use the Agent tool with subagent_type bdk-probe:probe-worker and prompt go, in the foreground, and report its answer. Reply with the subagent's answer verbatim." || status=1; }
+
+selected lifecycle-bg && { run_check lifecycle-bg '"hook_event_name":"Subagent(Start|Stop)"|"tool_name":"Agent"' "Task Agent Bash(echo *) Bash(sleep *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-sleeper, run_in_background true, and this prompt: Run with the Bash tool, one call each: sleep 5, then echo bg-done. Then reply BG-DONE. Wait until it finishes, then reply with its answer and its agentId." || status=1; }
+
+selected stop-kill && { run_check stop-kill '"tool_name":"TaskStop"|"hook_event_name":"Subagent(Start|Stop)"' "Task Agent TaskStop Bash(echo *) Bash(sleep *)" \
+  "Step 1: use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-sleeper, run_in_background true, and this prompt: Run with the Bash tool: sleep 60. Then run echo never-printed and reply LATE. Step 2: immediately after it starts, stop it with the TaskStop tool, using its task or agent ID. Reply with the launch result and what TaskStop returned, verbatim." || status=1; }
+
+selected max-turns && { run_check max-turns '"agent_type":"bdk-probe:probe-short"' "Task Agent Bash(echo *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-short, prompt go, in the foreground. Reply with its answer verbatim." || status=1; }
+
+selected send-live-id && { run_check send-live-id '"tool_name":"SendMessage"' "Task Agent SendMessage Bash(echo *) Bash(sleep *)" \
+  "Step 1: use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-sleeper, run_in_background true, and this prompt: Run with the Bash tool, one call each and in this order: sleep 20, echo alpha-step-2, sleep 10, echo alpha-step-4. Then reply with every message you received from other agents, verbatim, and after which step each arrived, or NONE. The launch result contains its agentId. Step 2: immediately after, use the subagent tool with subagent_type bdk-probe:probe-spawner in the foreground, with this prompt (put the real agentId from step 1 in place of ID): Use the SendMessage tool with to set to ID and the message PING-FROM-BETA, then report verbatim what the tool returned. Step 3: wait until the step 1 agent finishes. Reply with the step 1 agentId, beta's answer and the step 1 agent's answer, verbatim." || status=1; }
+
+selected agent-schema && { run_check agent-schema '.' "Task Agent Bash(echo *)" \
+  "Step 1: list every parameter name of the subagent tool (named Task or Agent) exactly as your tool schema defines it. Step 2: use that tool with subagent_type bdk-probe:probe-spawner in the foreground and this prompt: Quote verbatim any system text you received that lists other agents, their names or IDs (a sibling roster); if there is none, reply NO-ROSTER. Reply with the parameter list and the subagent's answer verbatim." || status=1; }
+
+selected effort && { run_check effort '"agent_type":"bdk-probe:probe-effort-(low|none)"' "Task Agent Bash(echo *)" \
+  "Use the subagent tool (named Task or Agent) twice, one after the other, both in the foreground: first with subagent_type bdk-probe:probe-effort-low and prompt go, then with subagent_type bdk-probe:probe-effort-none and prompt go. Reply with both answers verbatim." || status=1; }
+
+selected subagent-stop-block && { export BDK_PROBE_BLOCK=SubagentStop; run_check subagent-stop-block 'continued-after-SubagentStop' "Task Agent Bash(echo *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-worker and prompt go, in the foreground. Reply with its answer verbatim." || status=1; unset BDK_PROBE_BLOCK; }
+
+selected stop-block && { export BDK_PROBE_BLOCK=Stop; run_check stop-block 'continued-after-Stop' "Bash(echo *)" \
+  "Reply OK and do nothing else." || status=1; unset BDK_PROBE_BLOCK; }
+
+selected inject-id && { export BDK_PROBE_INJECT=1; run_check inject-id 'BDK-AGENT-ID' "Task Agent Bash(echo *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner in the foreground and this prompt: Quote verbatim every line in your context that starts with BDK-AGENT-ID, or reply NONE. Reply with the subagent's answer verbatim." || status=1; unset BDK_PROBE_INJECT; }
 
 exit $status

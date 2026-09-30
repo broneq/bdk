@@ -1,0 +1,150 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.284",
+    "check_id": "stop-kill",
+    "recordings": 4
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-3>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-3>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-3>",
+      "agent_id": "<AGENT-4>",
+      "agent_type": "bdk-probe:probe-sleeper",
+      "hook_event_name": "SubagentStart"
+    },
+    {
+      "session_id": "<SESSION-3>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-3>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-3>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "TaskStop",
+      "tool_input": {
+        "task_id": "<AGENT-4>"
+      },
+      "tool_use_id": "<TOOL-USE-4>"
+    },
+    {
+      "session_id": "<SESSION-3>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-3>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-3>",
+      "permission_mode": "default",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "TaskStop",
+      "tool_input": {
+        "task_id": "<AGENT-4>"
+      },
+      "tool_response": {
+        "message": "Successfully stopped task: <AGENT-4> (Probe sleeper test with TaskStop)",
+        "task_id": "<AGENT-4>",
+        "task_type": "local_agent",
+        "command": "Probe sleeper test with TaskStop"
+      },
+      "tool_use_id": "<TOOL-USE-4>",
+      "duration_ms": 3
+    },
+    {
+      "duration_api_ms": 9824,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-3>",
+      "total_cost_usd": 0.0172126,
+      "usage": {
+        "input_tokens": 36,
+        "cache_creation_input_tokens": 1782,
+        "cache_read_input_tokens": 97226,
+        "output_tokens": 778,
+        "output_tokens_details": {
+          "thinking_tokens": 320
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 1782,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 209,
+            "cache_read_input_tokens": 25033,
+            "cache_creation_input_tokens": 650,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 650
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 36,
+          "outputTokens": 778,
+          "cacheReadInputTokens": 97226,
+          "cacheCreationInputTokens": 1782,
+          "webSearchRequests": 0,
+          "costUSD": 0.0172126,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 320,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "subagent_stats": {
+        "spawned": 1,
+        "requested": {
+          "background": 1,
+          "foreground": 0,
+          "unset": 0
+        },
+        "started_in_background": 1,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 0,
+        "failed": 0,
+        "killed": {
+          "parent": 1,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "bdk-probe:probe-sleeper": 1
+        }
+      },
+      "is_error": false,
+      "num_turns": 4,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "**Launch result:**\n```\nAsync agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)\nagentId: <AGENT-4>\n```\n\n**TaskStop result:**\n```json\n{\n  \"message\": \"Successfully stopped task: <AGENT-4> (Probe sleeper test with TaskStop)\",\n  \"task_id\": \"<AGENT-4>\",\n  \"task_type\": \"local_agent\",\n  \"command\": \"Probe sleeper test with TaskStop\"\n}\n```\n\n**Task notification status:** `killed`\n\nAgent stopped before `sleep 60` completed.",
+      "ttft_ms": 2416,
+      "type": "result",
+      "duration_ms": 10192,
+      "uuid": "<UUID-3>",
+      "ttft_stream_ms": 909,
+      "time_to_request_ms": 79,
+      "first_content_frame_ms": 909,
+      "queued_turn_count": 0,
+      "result_index": 0
+    }
+  ]
+}

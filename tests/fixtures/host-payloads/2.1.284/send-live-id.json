@@ -1,0 +1,241 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.284",
+    "check_id": "send-live-id",
+    "recordings": 4
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-10>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-10>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-10>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-11>",
+      "agent_type": "bdk-probe:probe-spawner",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "SendMessage",
+      "tool_input": {
+        "to": "ab5f39d90eb639306",
+        "summary": "PING-FROM-BETA",
+        "message": "PING-FROM-BETA",
+        "type": "message",
+        "recipient": "ab5f39d90eb639306",
+        "content": "PING-FROM-BETA"
+      },
+      "tool_use_id": "<TOOL-USE-12>"
+    },
+    {
+      "session_id": "<SESSION-10>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-10>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-10>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-11>",
+      "agent_type": "bdk-probe:probe-spawner",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "SendMessage",
+      "tool_input": {
+        "to": "ab5f39d90eb639306",
+        "summary": "PING-FROM-BETA",
+        "message": "PING-FROM-BETA"
+      },
+      "tool_response": {
+        "success": true,
+        "message": "Message queued for delivery to ab5f39d90eb639306 at its next tool round.",
+        "pin": {
+          "id": "ab5f39d90eb639306",
+          "name": "ab5f39d90eb639306",
+          "ref": "eff64c"
+        }
+      },
+      "tool_use_id": "<TOOL-USE-12>",
+      "duration_ms": 3
+    },
+    {
+      "hook_event_name": "TimelineExcerpt",
+      "note": "Tool calls and queued agent messages of each subagent, from the transcripts",
+      "agents": {
+        "aa447ff72cd0e20c8": [
+          {
+            "at": "2026-09-30T12:29:24.862Z",
+            "kind": "tool_use",
+            "tool": "SendMessage",
+            "input": "{\"to\":\"ab5f39d90eb639306\",\"message\":\"PING-FROM-BETA\",\"type\":\"message\",\"recipient\":\"ab5f39d90eb639306\",\"content\":\"PING-FROM-BETA\"}"
+          },
+          {
+            "at": "2026-09-30T12:29:24.914Z",
+            "kind": "tool_result",
+            "text": "{\"success\":true,\"message\":\"Message queued for delivery to ab5f39d90eb639306 at its next tool round.\",\"pin\":{\"id\":\"ab5f39d90eb639306\",\"name\":\"ab5f39d90eb639306\",\"ref\":\"eff64c\"}}"
+          },
+          {
+            "at": "2026-09-30T12:29:27.671Z",
+            "kind": "text",
+            "text": "Tool result:\n\n```json\n{\n  \"success\": true,\n  \"message\": \"Message queued for delivery to ab5f39d90eb639306 at its next tool round.\",\n  \"pin\": {\n    \"id\": \"ab5f39d90eb639306\",\n    \"name\": \"ab5f39d90eb639306\",\n    \"ref\": \"eff64c\"\n  }\n}\n```"
+          }
+        ],
+        "ab5f39d90eb639306": [
+          {
+            "at": "2026-09-30T12:29:24.094Z",
+            "kind": "tool_use",
+            "tool": "Bash",
+            "input": "{\"command\":\"sleep 20\",\"description\":\"Sleep for 20 seconds\"}"
+          },
+          {
+            "at": "2026-09-30T12:29:44.433Z",
+            "kind": "tool_result",
+            "text": "(Bash completed with no output)"
+          },
+          {
+            "at": "2026-09-30T12:29:44.435Z",
+            "kind": "attachment",
+            "type": "queued_command",
+            "text": "{\"type\":\"queued_command\",\"prompt\":\"<agent-message from=\\\"<AGENT-11>\\\">\\nPING-FROM-BETA\\n</agent-message>\",\"source_uuid\":\"<UUID-10>\",\"origin\":{\"kind\":\"peer\",\"from\":\"<AGENT-11>\",\"senderTaskId\":\"<AGENT-11>\",\"name\":\"bdk-probe:probe-spawner\",\"body\":\"PING-FROM-BETA\"},\"isMeta\":true,\"sendMessageToolAbsent\":true}"
+          },
+          {
+            "at": "2026-09-30T12:29:46.441Z",
+            "kind": "tool_use",
+            "tool": "Bash",
+            "input": "{\"command\":\"echo alpha-step-2\",\"description\":\"Echo alpha-step-2\"}"
+          },
+          {
+            "at": "2026-09-30T12:29:46.552Z",
+            "kind": "tool_result",
+            "text": "alpha-step-2"
+          },
+          {
+            "at": "2026-09-30T12:29:47.919Z",
+            "kind": "tool_use",
+            "tool": "Bash",
+            "input": "{\"command\":\"sleep 10\",\"description\":\"Sleep for 10 seconds\"}"
+          },
+          {
+            "at": "2026-09-30T12:29:58.183Z",
+            "kind": "tool_result",
+            "text": "(Bash completed with no output)"
+          },
+          {
+            "at": "2026-09-30T12:29:59.453Z",
+            "kind": "tool_use",
+            "tool": "Bash",
+            "input": "{\"command\":\"echo alpha-step-4\",\"description\":\"Echo alpha-step-4\"}"
+          },
+          {
+            "at": "2026-09-30T12:29:59.540Z",
+            "kind": "tool_result",
+            "text": "alpha-step-4"
+          },
+          {
+            "at": "2026-09-30T12:30:01.287Z",
+            "kind": "text",
+            "text": "All commands completed. I received one message from another agent:\n\n**After step 1 (sleep 20):**\nPING-FROM-BETA"
+          }
+        ]
+      }
+    },
+    {
+      "duration_api_ms": 26635,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-10>",
+      "total_cost_usd": 0.0686812,
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 885,
+        "cache_read_input_tokens": 25267,
+        "output_tokens": 416,
+        "output_tokens_details": {
+          "thinking_tokens": 241
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 885,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 10,
+            "output_tokens": 416,
+            "cache_read_input_tokens": 25267,
+            "cache_creation_input_tokens": 885,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 885
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 96,
+          "outputTokens": 2450,
+          "cacheReadInputTokens": 132717,
+          "cacheCreationInputTokens": 26760,
+          "webSearchRequests": 0,
+          "costUSD": 0.0686812,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 1221,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "origin": {
+        "kind": "task-notification",
+        "producer": "session-task"
+      },
+      "subagent_stats": {
+        "spawned": 2,
+        "requested": {
+          "background": 1,
+          "foreground": 1,
+          "unset": 0
+        },
+        "started_in_background": 1,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 2,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "bdk-probe:probe-sleeper": 1,
+          "bdk-probe:probe-spawner": 1
+        }
+      },
+      "is_error": false,
+      "num_turns": 1,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "**Step 1 agent (ab5f39d90eb639306) completed:**\n\n```\nAll commands completed. I received one message from another agent:\n\n**After step 1 (sleep 20):**\nPING-FROM-BETA\n```\n\n**Step 2 spawner agent result (verbatim):**\n\n```json\n{\n  \"success\": true,\n  \"message\": \"Message queued for delivery to ab5f39d90eb639306 at its next tool round.\",\n  \"pin\": {\n    \"id\": \"ab5f39d90eb639306\",\n    \"name\": \"ab5f39d90eb639306\",\n    \"ref\": \"eff64c\"\n  }\n}\n```",
+      "ttft_ms": 2523,
+      "type": "result",
+      "duration_ms": 3843,
+      "uuid": "<UUID-11>",
+      "ttft_stream_ms": 556,
+      "time_to_request_ms": 59,
+      "first_content_frame_ms": 557,
+      "queued_turn_count": 0,
+      "result_index": 1
+    }
+  ]
+}
