@@ -33,9 +33,9 @@ function spec(kind: "m1" | "m2", items: readonly EvalItem[]): MeasurementSpec {
 }
 
 describe("items", () => {
-  it("has one M1 item per question and one M2 item per patch, carrying its text", () => {
+  it("has one M1 item per pack bullet and one M2 item per patch, carrying its text", () => {
     const m1 = m1Items();
-    expect(m1).toHaveLength(131);
+    expect(m1).toHaveLength(85);
     expect(m1[0]?.vars.question).not.toBe("");
     const m2 = m2Items();
     // Seeded patches first, the clean controls last, so a probe always takes a control.
@@ -53,7 +53,7 @@ describe("items", () => {
       measurementItems("m2", ["35-settings-path", "22-operator-toolkit"])?.map((item) => item.id),
     ).toEqual(["22-operator-toolkit", "35-settings-path"]);
     expect(() => measurementItems("m2", ["99-missing"])).toThrow(UsageError);
-    expect(measurementItems("m1", undefined)).toHaveLength(131);
+    expect(measurementItems("m1", undefined)).toHaveLength(85);
   });
 
   it("probes items spread over the list, first and last included", () => {
@@ -113,10 +113,13 @@ describe("reviewerSystem", () => {
     expect(without).not.toContain("## Rules:");
   });
 
-  it("appends every rule file under its ctx section title in the with cells", () => {
+  it("appends the reviewer's pack rules under their ctx section titles in the with cells", () => {
     const withRules = reviewerSystem(true);
     expect(withRules).toContain("## Rules: security");
     expect(withRules).toContain("## Language rules: typescript");
+    expect(withRules).toContain("\n- [BDK-CQ-1] **Naming.**");
+    expect(withRules).not.toContain("## Rules: engineering-judgment");
+    expect(withRules).not.toContain("## Rules: plan");
     expect(withRules.startsWith(reviewerSystem(false))).toBe(true);
   });
 });

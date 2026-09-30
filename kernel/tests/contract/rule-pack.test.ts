@@ -1,12 +1,14 @@
-// `rule-pack`, Migration report (T31): every bullet T40 measured has exactly
-// one row in `docs/V3-RULES-MIGRATION.md`, and that row carries a decision.
-// The measured ids come from the committed M1 rows, which hold one question
-// per bullet.
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+// `rule-pack` (T31): the shipped pack's layout and admission, and the
+// migration report every bullet T40 measured has a row in. The measured ids
+// come from the committed M1 rows, which hold one question per bullet.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
+import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 
-import { REPO_ROOT } from "../support/run.ts";
+import { PACK_DIRS } from "../../src/rules/domain/rule.ts";
+import { splitFrontmatter } from "../../src/shared/store/index.ts";
+import { REPO_ROOT, runBdk } from "../support/run.ts";
 
 const RESULTS = join(REPO_ROOT, "evals/results/rules-noop");
 const REPORT = join(REPO_ROOT, "docs/V3-RULES-MIGRATION.md");
@@ -62,5 +64,104 @@ describe("docs/V3-RULES-MIGRATION.md", () => {
       expect(own[0]?.decision, id).toMatch(DECISION);
     }
     expect(rows.filter((row) => !measured.has(row.id)).map((row) => row.id)).toStrictEqual([]);
+  });
+});
+
+interface PackRule {
+  /** Relative to `rules/`, without the file name. */
+  readonly dir: string;
+  readonly name: string;
+  readonly data: Record<string, unknown>;
+}
+
+const PACK = join(REPO_ROOT, "rules");
+
+function packRules(dir = PACK): PackRule[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry): PackRule[] => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return packRules(path);
+    if (dir === PACK && entry.name === "README.md") return [];
+    const { frontmatter } = splitFrontmatter(readFileSync(path, "utf8"));
+    const data = (frontmatter === undefined ? {} : parse(frontmatter)) as Record<string, unknown>;
+    return [{ dir: relative(PACK, dir).split("\\").join("/"), name: entry.name, data }];
+  });
+}
+
+/** The ids the migration report keeps; a later measurement report adds its own. */
+const MEASURED_REPORTS = ["docs/V3-RULES-MIGRATION.md"];
+
+function keptIds(): Set<string> {
+  const kept = new Set<string>();
+  for (const report of MEASURED_REPORTS) {
+    for (const row of reportRows(readFileSync(join(REPO_ROOT, report), "utf8"))) {
+      const id = /^kept as (\S+)$/.exec(row.decision)?.[1];
+      if (id !== undefined) kept.add(id);
+    }
+  }
+  return kept;
+}
+
+describe("the shipped pack", () => {
+  const rules = packRules();
+
+  it("every file sits in a pack directory, named by its BDK id, with origin bdk", () => {
+    expect(rules.length).toBeGreaterThan(0);
+    for (const rule of rules) {
+      const where = `rules/${rule.dir}/${rule.name}`;
+      const prefix = PACK_DIRS[rule.dir];
+      expect(prefix, `${where} is in no pack directory`).toBeDefined();
+      expect(rule.data.id, where).toMatch(new RegExp(`^BDK-${prefix ?? ""}-[1-9][0-9]*$`));
+      expect(rule.name, where).toBe(`${String(rule.data.id)}.md`);
+      expect(rule.data.origin, where).toBe("bdk");
+    }
+  });
+
+  it("every knowledge rule carries source and verified", () => {
+    for (const rule of rules.filter((found) => found.data.kind === "knowledge")) {
+      expect(rule.data, rule.name).toHaveProperty("source");
+      expect(rule.data, rule.name).toHaveProperty("verified");
+    }
+  });
+
+  it("holds the plan rules BDK-PL-1 to BDK-PL-3 as house rules", () => {
+    const plan = rules.filter((rule) => rule.dir === "plan");
+    expect(plan.map((rule) => rule.data.id).sort()).toStrictEqual([
+      "BDK-PL-1",
+      "BDK-PL-2",
+      "BDK-PL-3",
+    ]);
+    for (const rule of plan) expect(rule.data.kind, rule.name).toBe("house");
+  });
+
+  it("every language rule has a measurement row", () => {
+    const kept = keptIds();
+    const unmeasured = rules
+      .filter((rule) => rule.dir.startsWith("languages/"))
+      .filter((rule) => !kept.has(String(rule.data.id)))
+      .map((rule) => `rules/${rule.dir}/`);
+    expect([...new Set(unmeasured)], "measure the pack before it ships").toStrictEqual([]);
+  });
+
+  it("every kept bullet exists in the pack and is no tombstone", () => {
+    const byId = new Map(rules.map((rule) => [String(rule.data.id), rule]));
+    for (const id of keptIds()) {
+      expect(byId.get(id)?.data, id).toBeDefined();
+      expect(byId.get(id)?.data.removed, id).toBeUndefined();
+    }
+  });
+
+  it("validates with bdk rules check", () => {
+    const result = runBdk(["rules", "check", "--json"], REPO_ROOT);
+    expect(result.code, result.stdout).toBe(0);
+  });
+
+  it("keeps no v2 rule file next to the pack directories", () => {
+    for (const dir of ["", "languages"]) {
+      const files = readdirSync(join(PACK, dir)).filter(
+        (name) => name.endsWith(".md") && !(dir === "" && name === "README.md"),
+      );
+      expect(files, `rules/${dir}`).toStrictEqual([]);
+    }
+    expect(existsSync(join(PACK, "README.md"))).toBe(true);
   });
 });

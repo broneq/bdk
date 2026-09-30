@@ -1,12 +1,13 @@
 // The one-turn prompts of the rules no-op suite (design D-8). M1 asks a
 // question blind; M2 reviews a seeded patch with the reviewer role and its
-// adapter as the system prompt, and the rule files appended only in the
-// "with" cells, under the section titles `bdk ctx skill` gives them.
-import { readFileSync, readdirSync } from "node:fs";
+// adapter as the system prompt, and the pack rules the reviewer reads appended
+// only in the "with" cells, as `- [<id>] <text>` lines under the section
+// titles `bdk ctx skill` gives them.
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { REPO_ROOT } from "../../harness/paths.ts";
-import { RULE_DIRS } from "./bullets.ts";
+import { readPack } from "./bullets.ts";
 
 export const M1_SYSTEM = [
   "You answer questions about software engineering practice.",
@@ -38,18 +39,20 @@ function body(markdown: string): string {
     .trim();
 }
 
-/** Every rule file as a section titled like its `bdk ctx skill` section. */
+/** The pack directories the reviewer role reads (the kernel's reviewer prefixes: no EJ, no PL). */
+const REVIEWER_SKIPS = new Set(["engineering-judgment", "plan"]);
+
+/** The reviewer's pack rules, one section per directory titled like its `bdk ctx skill` section. */
 function ruleSections(repoRoot = REPO_ROOT): string[] {
-  return RULE_DIRS.flatMap((dir) =>
-    readdirSync(join(repoRoot, dir))
-      .filter((name) => name.endsWith(".md"))
-      .sort()
-      .map((name) => {
-        const stem = name.slice(0, -".md".length);
-        const title = dir === "rules" ? `Rules: ${stem}` : `Language rules: ${stem}`;
-        return `## ${title}\n\n${readFileSync(join(repoRoot, dir, name), "utf8").trim()}`;
-      }),
-  );
+  const sections = new Map<string, string[]>();
+  for (const rule of readPack(repoRoot)) {
+    if (REVIEWER_SKIPS.has(rule.dir)) continue;
+    const title = rule.dir.startsWith("languages/")
+      ? `Language rules: ${rule.dir.slice("languages/".length)}`
+      : `Rules: ${rule.dir}`;
+    sections.set(title, [...(sections.get(title) ?? []), `- [${rule.id}] ${rule.text}`]);
+  }
+  return [...sections].map(([title, lines]) => `## ${title}\n\n${lines.join("\n")}`);
 }
 
 /** The reviewer system prompt: adapter, role contract, the one-turn note, and the rules when `withRules`. */

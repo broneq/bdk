@@ -1,9 +1,10 @@
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { prepareFixture } from "../../harness/fixture.ts";
-import { readVersions, RUNS_DIR } from "../../harness/paths.ts";
-import { readBullets } from "./bullets.ts";
+import { readVersions, REPO_ROOT, RUNS_DIR } from "../../harness/paths.ts";
+import { MIGRATION_REPORT, measuredIds } from "./bullets.ts";
 import { addedLines, checkPatch, patchNames, readPatch, readViolations } from "./patches.ts";
 
 describe("addedLines", () => {
@@ -43,7 +44,8 @@ describe("addedLines", () => {
 });
 
 describe("violations.yaml", () => {
-  const bullets = new Set(readBullets().map((bullet) => bullet.id));
+  // Every bullet T40 measured: the patches still seed the ones the migration removed.
+  const bullets = measuredIds(readFileSync(join(REPO_ROOT, MIGRATION_REPORT), "utf8"));
   const violations = readViolations();
   const seeded = violations.patches.flatMap((entry) => entry.violations);
 

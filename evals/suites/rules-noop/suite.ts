@@ -75,8 +75,12 @@ function hash(text: string): string {
   return createHash("sha256").update(text).digest("hex");
 }
 
+/** The questions of the bullets still in the pack; a removed bullet has no text to judge against. */
 export function m1Items(): EvalItem[] {
-  return readQuestions().map((entry) => ({ id: entry.bullet, vars: { question: entry.question } }));
+  const inPack = new Set(readBullets().map((bullet) => bullet.id));
+  return readQuestions()
+    .filter((entry) => inPack.has(entry.bullet))
+    .map((entry) => ({ id: entry.bullet, vars: { question: entry.question } }));
 }
 
 /** Seeded patches first, then the clean controls, so a probe's last item is always a control. */
