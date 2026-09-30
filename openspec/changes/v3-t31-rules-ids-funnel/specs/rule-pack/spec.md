@@ -49,7 +49,7 @@ No other file lives under `rules/` except `rules/README.md`, which states the de
 
 ### Requirement: Pack admission
 
-A rule SHALL enter the shipped pack only after the measurement procedure: M1 (the rule's question answered blind by Haiku and Sonnet, judged COVERED, MISSED or WRONG) and M2 (seeded violations reviewed with and without the rule, against an A/A noise floor), both run through the T40 harness (`skill-evals`). A `house` rule is admitted unless it is COVERED for both models in M1 and shows no measurable difference in M2 with a `without` mean detection of at least 0.8; a `knowledge` rule is admitted only when M1 is WRONG, MISSED or MIXED for at least one model. The procedure is mandatory for every new `rules/languages/<name>/` directory and for every rule added to an existing one.
+A rule SHALL enter the shipped pack only after the measurement procedure: M1 (the rule's question answered blind by Haiku and Sonnet, judged COVERED, MISSED or WRONG) and M2 (seeded violations reviewed with and without the rule, against an A/A noise floor), both run through the T40 harness (`skill-evals`). A `house` rule is admitted unless it is COVERED for both models in M1 and shows no measurable difference in M2 with a `without` mean detection of at least 0.8; a `knowledge` rule is admitted only when M1 is WRONG, MISSED or MIXED for at least one model. The procedure is mandatory for every new `rules/languages/<name>/` directory and for every rule added to an existing one. The `SEC` rules migrated from v2 are the one exception: they are kept without the house test, because a missed security problem costs more than the prompt space (T31 review of the migration report).
 
 #### Scenario: knowledge rules carry their source
 

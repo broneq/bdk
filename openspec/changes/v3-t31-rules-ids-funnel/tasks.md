@@ -11,7 +11,7 @@
 
 - [x] 2.1 Write the failing content test for `rule-pack` "every measured bullet has a row" (T40 ids from `evals/results/rules-noop/` against the rows of `docs/V3-RULES-MIGRATION.md`); verify it fails on the missing report
 - [x] 2.2 Write `docs/V3-RULES-MIGRATION.md`: one row per bullet with T40 id, excerpt, class, spot-check correction, kind, decision (`kept as <id>` or `removed: <reason>`), re-measured M2 result where applicable, then counts per decision and file, applying design D-1 and D-2; verify the content test from 2.1 passes
-- [ ] 2.3 Present the report to the user for review of every kind and removal; apply the corrections; verify the user approved it before group 6 starts
+- [x] 2.3 Present the report to the user for review of every kind and removal; apply the corrections; verify the user approved it before group 6 starts
 
 ## 3. Rule store and settings (kernel)
 

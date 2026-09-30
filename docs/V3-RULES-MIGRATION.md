@@ -9,6 +9,7 @@ T31 (issue #58) turns the 131 bullets of the v2 rule files into the per-rule pac
   - not a rule: removed;
   - `knowledge`: kept only when M1 is WRONG, MISSED or MIXED for Haiku or Sonnet, otherwise removed;
   - `house`: removed when it is a measured no-op (M1 COVERED for both, M2 seeded with no measurable difference and a `without` mean detection of at least 0.8), otherwise kept. A no-op candidate that M2 could not seed is kept, because no ablation tested it.
+- **Exception** (user review of this report): the bullets of `rules/security.md` are kept as `house` rules whatever their class, because a security problem the reviewer misses costs more than the prompt space the rule takes. The file's note about itself (`security.10`) is still removed, like the same note in `rules/code-quality.md`.
 - **Numbering**: kept bullets are numbered per prefix in their original file order. A removed bullet gets no id and no tombstone (T5).
 - **Class** is the T40 class the decision used: the spot-check correction applied, and for the 14 re-seeded bullets the class of the re-measurement (`series-m2-2026-09-30`), whose `with` vs `without` result is in the last column.
 - The plan rules `BDK-PL-1` to `BDK-PL-3` (P7) are new and come from no bullet.
@@ -21,14 +22,14 @@ T31 (issue #58) turns the 131 bullets of the v2 rule files into the per-rule pac
 | `rules/code-quality.md`         | 8    | 1                       | 0                                   | 1                   |
 | `rules/design-patterns.md`      | 11   | 2                       | 0                                   | 1                   |
 | `rules/engineering-judgment.md` | 2    | 0                       | 0                                   | 0                   |
-| `rules/security.md`             | 0    | 1                       | 0                                   | 9                   |
+| `rules/security.md`             | 9    | 0                       | 0                                   | 1                   |
 | `rules/test-quality.md`         | 11   | 6                       | 0                                   | 0                   |
 | `rules/languages/javascript.md` | 8    | 11                      | 6                                   | 0                   |
 | `rules/languages/react.md`      | 19   | 1                       | 4                                   | 0                   |
 | `rules/languages/typescript.md` | 12   | 5                       | 5                                   | 0                   |
-| total                           | 76   | 28                      | 15                                  | 12                  |
+| total                           | 85   | 27                      | 15                                  | 4                   |
 
-76 bullets are kept, 55 removed. `rules/security.md` loses every bullet: nine state a principle without a valid alternative and one is a measured no-op, so the pack has no `SEC` rule and `rules/security/` stays empty until a measured rule enters it.
+85 bullets are kept, 46 removed.
 
 ## Per bullet
 
@@ -87,18 +88,18 @@ T31 (issue #58) turns the 131 bullets of the v2 rule files into the per-rule pac
 
 ### `rules/security.md`
 
-| T40 id                 | excerpt                         | class           | spot-check correction | kind       | decision                                                      | re-measured M2 |
-| ---------------------- | ------------------------------- | --------------- | --------------------- | ---------- | ------------------------------------------------------------- | -------------- |
-| `security.01.26bead3a` | Trust boundaries                | no-op candidate |                       | not a rule | removed: not a rule (a principle without a valid alternative) |                |
-| `security.02.882ee51d` | Injection                       | no-op candidate |                       | not a rule | removed: not a rule (a principle without a valid alternative) |                |
-| `security.03.88c26adb` | Output encoding                 | no-op candidate |                       | not a rule | removed: not a rule (a principle without a valid alternative) |                |
-| `security.04.ea1485ed` | Secrets                         | no-op candidate |                       | not a rule | removed: not a rule (a principle without a valid alternative) |                |
-| `security.05.8e63100b` | Authentication vs authorisation | no-op candidate |                       | not a rule | removed: not a rule (a principle without a valid alternative) |                |
-| `security.06.84dd9121` | Least privilege                 | no-op candidate |                       | not a rule | removed: not a rule (a principle without a valid alternative) |                |
-| `security.07.fe53e6a3` | Fail closed                     | no-op candidate |                       | not a rule | removed: not a rule (a principle without a valid alternative) |                |
-| `security.08.b52f50c9` | Sensitive data exposure         | no-op candidate |                       | not a rule | removed: not a rule (a principle without a valid alternative) |                |
-| `security.09.e8d17979` | Dependency hygiene              | no-op candidate |                       | house      | removed: measured no-op                                       |                |
-| `security.10.f3eef68b` | No language-specific tooling    | no-op candidate |                       | not a rule | removed: not a rule (a note about the file)                   |                |
+| T40 id                 | excerpt                         | class           | spot-check correction | kind       | decision                                    | re-measured M2 |
+| ---------------------- | ------------------------------- | --------------- | --------------------- | ---------- | ------------------------------------------- | -------------- |
+| `security.01.26bead3a` | Trust boundaries                | no-op candidate |                       | house      | kept as BDK-SEC-1                           |                |
+| `security.02.882ee51d` | Injection                       | no-op candidate |                       | house      | kept as BDK-SEC-2                           |                |
+| `security.03.88c26adb` | Output encoding                 | no-op candidate |                       | house      | kept as BDK-SEC-3                           |                |
+| `security.04.ea1485ed` | Secrets                         | no-op candidate |                       | house      | kept as BDK-SEC-4                           |                |
+| `security.05.8e63100b` | Authentication vs authorisation | no-op candidate |                       | house      | kept as BDK-SEC-5                           |                |
+| `security.06.84dd9121` | Least privilege                 | no-op candidate |                       | house      | kept as BDK-SEC-6                           |                |
+| `security.07.fe53e6a3` | Fail closed                     | no-op candidate |                       | house      | kept as BDK-SEC-7                           |                |
+| `security.08.b52f50c9` | Sensitive data exposure         | no-op candidate |                       | house      | kept as BDK-SEC-8                           |                |
+| `security.09.e8d17979` | Dependency hygiene              | no-op candidate |                       | house      | kept as BDK-SEC-9                           |                |
+| `security.10.f3eef68b` | No language-specific tooling    | no-op candidate |                       | not a rule | removed: not a rule (a note about the file) |                |
 
 ### `rules/test-quality.md`
 

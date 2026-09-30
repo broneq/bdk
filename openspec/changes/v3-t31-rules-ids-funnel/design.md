@@ -48,6 +48,8 @@ Per T40 bullet, after applying the spot-check corrections of `docs/V3-EVAL-RULES
 4. `house`: removed when it is one of the 44 measured no-ops (M1 COVERED for both, M2 no measurable difference, `without` mean detection >= 0.8); otherwise kept. The 15 not-seedable no-op candidates are kept when `house`, because M2 never tested them.
 5. The 14 unclear bullets with detection 0 in both cells get fixed seeds first and are re-measured (M2 only, cells `with`, `with-prime`, `without`, 5 runs each); their class is recomputed with T40's rule before step 4 applies.
 
+6. Exception (user, at the review of the migration report): the bullets of `rules/security.md` are kept as `house` rules whatever their class; a security problem the reviewer misses costs more than the prompt space. Its note about the file itself is removed as not a rule.
+
 Removed bullets get no number, so no tombstone exists for them (T5). Kept bullets are numbered per prefix in their original file order.
 
 - Alternative: remove all 59 no-op candidates. Lost (user): 15 of them were never tested by ablation.
