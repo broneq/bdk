@@ -35,7 +35,8 @@ function changeWithTasks(root: string, title: string): string {
   return id;
 }
 
-function stampedProjectRules(root: string, target: string): string[] {
+/** Every id the implementer package of `target` stamps, in package order. */
+function stampedRules(root: string, target: string): string[] {
   const ticket = answered(
     bdk(["attempt", "open", "task-redispatch", target, "--json"], root),
     "output/attempt-open.json",
@@ -49,7 +50,11 @@ function stampedProjectRules(root: string, target: string): string[] {
     "output/rules-show.json",
   ) as { rules: { id: string; text: string }[] };
   for (const rule of shown.rules) expect(rule.text.length, rule.id).toBeGreaterThan(0);
-  return shown.rules.map((rule) => rule.id).filter((id) => !id.startsWith("BDK-"));
+  return shown.rules.map((rule) => rule.id);
+}
+
+function stampedProjectRules(root: string, target: string): string[] {
+  return stampedRules(root, target).filter((id) => !id.startsWith("BDK-"));
 }
 
 describe("T31 acceptance", () => {
@@ -61,6 +66,20 @@ describe("T31 acceptance", () => {
     changeWithTasks(root, "Scope the rules");
     expect(stampedProjectRules(root, "01-1")).toStrictEqual(["NAMING-1", "API-1"]);
     expect(stampedProjectRules(root, "01-2")).toStrictEqual(["NAMING-1"]);
+  });
+
+  it("rules explain lists the same ids, in the same order, as the package of a one-file task", () => {
+    const root = repository({
+      ".bdk/rules/API-1.md": projectRule("API-1", "applies: [src/api/**]\n"),
+      ".bdk/rules/NAMING-1.md": projectRule("NAMING-1"),
+      ".bdk/settings.yaml": "languages: [typescript]\n",
+    });
+    changeWithTasks(root, "Explain the selection");
+    const explained = answered(
+      bdk(["rules", "explain", "src/api/x.ts", "--role", "implementer", "--json"], root),
+      "output/rules-explain.json",
+    ) as { rules: { id: string }[] };
+    expect(stampedRules(root, "01-1")).toStrictEqual(explained.rules.map((rule) => rule.id));
   });
 
   it("8.2: a lesson in three Changes recurs, is adopted, and the projection guards it", () => {
