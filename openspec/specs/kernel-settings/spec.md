@@ -80,7 +80,7 @@ Every key the kernel accepts SHALL be declared by exactly one registered config 
 
 A module declares its key, its zod schema with defaults, a description and its consumer slice, and lives in the consumer slice's `config.ts` (`kernel-architecture`, Slice anatomy); `shared/config` and `shared/store` declare the modules they consume themselves, in `shared/config/modules.ts` and `shared/<module>/config.ts`. The consumer column of the tables below names that slice; another slice that needs the value reads it through the consumer's `index.ts`, within the dependency matrix. A module is registered by the task that lands its consumer, so the registry holds a subset of the keys this spec declares. Validation is strict and reports every error with the full dotted key, the layer and the file:
 
-- a key this spec declares whose owner task has not registered it answers `policy/unknown-config-key` with `why` naming the owner task (`lands with T31`);
+- a key this spec declares whose owner task has not registered it answers `policy/unknown-config-key` with `why` naming the owner task (`lands with Tnn`); after T31 no declared key is waiting for its owner, and the mechanism stays for the keys later tasks declare;
 - a removed v2 key (requirement "Removed v2 keys") answers `policy/unknown-config-key` with `why` naming its replacement or the reason it is gone;
 - any other key answers `policy/unknown-config-key`, with a "did you mean" hint when a declared key is within edit distance 2;
 - a value failing its module answers `policy/config-invalid`.
@@ -94,8 +94,8 @@ A module's key is a root key (`tools`) or a dotted subtree of a root (`policy.bu
 
 #### Scenario: key of a later task
 
-- **WHEN** `.bdk/settings.yaml` sets `rules.max-per-package` before T31 registers its module
-- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` and `why` naming the key, the layer and `lands with T31`
+- **WHEN** this spec declares a key for an owner task whose module is not registered yet, and `.bdk/settings.yaml` sets it
+- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` and `why` naming the key, the layer and `lands with <owner>`
 
 #### Scenario: key without a consumer
 
@@ -161,7 +161,7 @@ The settings SHALL declare the project toolchain keys below, owned by T12.
 | `tools.build`     | array of tool entries             | `[]`    | T12   | `ctx`    | `build-tools` (`type` becomes `id`) |
 | `features.lavish` | boolean                           | `true`  | T12   | `ctx`    | `features.lavish`                   |
 
-`languages` is free-form: a name gets content only when a `rules/languages/<name>` prompt value exists. The `rules` slice owns the rule text (`kernel-architecture`, Dependency matrix), and `ctx` reads it through `rules`. `features.lavish: false` makes skills fall back to `AskUserQuestion` (R-11).
+`languages` is free-form: a name gets rules only when the bundle ships a pack under `rules/languages/<name>/` (`rule-pack`, Pack layout); a project's own language rules are ordinary rule files with `applies`. The `rules` slice owns the rule text (`kernel-architecture`, Dependency matrix), and `ctx` reads it through `rules`. `features.lavish: false` makes skills fall back to `AskUserQuestion` (R-11).
 
 #### Scenario: empty project
 
@@ -265,38 +265,36 @@ The settings SHALL declare the execution and archive keys below.
 
 ### Requirement: Keys of rules and specs
 
-The settings SHALL declare the rule and spec keys below.
+The settings SHALL declare the rule and spec keys below. `rules.audit.min-changes` is the number of distinct Changes an item must appear in to be listed as recurring by `rules stats`; `rules.prune.uncited-changes` is how many recent Changes `rules prune` looks back for citations. `rules.warn-above` is the number of rules one role may read before `hooks session-start` warns; it is no cap, since every applying rule reaches the agent. The earlier drafts `rules.propose-when.changes`, `rules.propose-when.authors`, `rules.propose-when.failed-attempts` and `rules.max-learnings-per-change` are not keys: nothing is proposed at `close` (user decision 2026-09-30), so a layer setting one of them gets `policy/unknown-config-key` from the general rule.
 
-| Key                                  | Type                     | Default | Owner | Consumer | v2 origin |
-| ------------------------------------ | ------------------------ | ------- | ----- | -------- | --------- |
-| `rules.propose-when.changes`         | integer >= 1             | `2`     | T31   | `rules`  | none      |
-| `rules.propose-when.authors`         | integer >= 1             | `2`     | T31   | `rules`  | none      |
-| `rules.propose-when.failed-attempts` | integer >= 1             | `1`     | T31   | `rules`  | none      |
-| `rules.max-per-package`              | integer >= 1             | `20`    | T31   | `rules`  | none      |
-| `rules.max-learnings-per-change`     | integer >= 0             | `10`    | T31   | `log`    | none      |
-| `rules.disabled`                     | array of unique rule ids | `[]`    | T31   | `rules`  | none      |
-| `spec.normative-word`                | non-empty string         | `SHALL` | T30   | `spec`   | none      |
+| Key                           | Type                    | Default | Owner | Consumer | v2 origin |
+| ----------------------------- | ----------------------- | ------- | ----- | -------- | --------- |
+| `rules.warn-above`            | integer >= 1            | `100`   | T31   | `rules`  | none      |
+| `rules.disabled`              | array of unique strings | `[]`    | T31   | `rules`  | none      |
+| `rules.audit.min-changes`     | integer >= 1            | `3`     | T31   | `rules`  | none      |
+| `rules.prune.uncited-changes` | integer >= 1            | `20`    | T31   | `rules`  | none      |
+| `spec.normative-word`         | non-empty string        | `SHALL` | T30   | `spec`   | none      |
 
 #### Scenario: out-of-range value
 
-- **WHEN** the `rules` module is registered and `.bdk/settings.yaml` sets `rules.max-per-package: 0`
-- **THEN** `bdk config check` exits 2 with `rule: policy/config-invalid` naming `rules.max-per-package`
+- **WHEN** the `rules` module is registered and `.bdk/settings.yaml` sets `rules.warn-above: 0`
+- **THEN** `bdk config check` exits 2 with `rule: policy/config-invalid` naming `rules.warn-above`
 
 ### Requirement: Removed v2 keys
 
 The kernel SHALL refuse a key that v2 had and v3 dropped or renamed with `policy/unknown-config-key`, and `why` SHALL name the replacement or the reason.
 
-| v2 key                       | Replacement or reason                                                  |
-| ---------------------------- | ---------------------------------------------------------------------- |
-| `test-tools`                 | `tools.test`                                                           |
-| `lint-tools`                 | `tools.lint`                                                           |
-| `build-tools`                | `tools.build`                                                          |
-| `quality`                    | `prompts.files.rules/<category>` or `.bdk/prompts/rules/<category>.md` |
-| `language-rules`             | `prompts.files.rules/languages/<language>`                             |
-| `features.caveman`           | no consumer in v3 (#39)                                                |
-| `features.serena`            | removed with the bundled MCP servers (ADR-0001)                        |
-| `features.code-review-graph` | removed with the bundled MCP servers (ADR-0001)                        |
-| `$schema`                    | the yaml-language-server modeline                                      |
+| v2 key                       | Replacement or reason                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `test-tools`                 | `tools.test`                                                                                      |
+| `lint-tools`                 | `tools.lint`                                                                                      |
+| `build-tools`                | `tools.build`                                                                                     |
+| `quality`                    | project rules in `.bdk/rules/` (`bdk rules import`), BDK rules switched off with `rules.disabled` |
+| `language-rules`             | the bundle's language packs selected by `languages`, project rules with `applies`                 |
+| `features.caveman`           | no consumer in v3 (#39)                                                                           |
+| `features.serena`            | removed with the bundled MCP servers (ADR-0001)                                                   |
+| `features.code-review-graph` | removed with the bundled MCP servers (ADR-0001)                                                   |
+| `$schema`                    | the yaml-language-server modeline                                                                 |
 
 #### Scenario: removed key named
 
@@ -307,42 +305,45 @@ The kernel SHALL refuse a key that v2 had and v3 dropped or renamed with `policy
 
 Markdown configuration values SHALL be files, one per prompt key, resolved across the same four layers, each layer contributing by `mode: extends` (appended to the value below) or `mode: replace` (discarding it).
 
-A prompt key is the file path relative to a prompts directory without `.md` (`rules/security`), so it never contains a dot; its first segment is never `dir` or `files`. Each layer has one prompts directory, set only by `prompts.dir` in that layer's own file and never inherited; a relative `prompts.dir` resolves against the project root for the project and local layers and against the global layer's directory for the global layer. In the same layer, `prompts.files.<key>` wins over `<dir>/<key>.md`; its string form is a path with `mode: extends`, its object form carries `path`, `mode` and `applies`. A file's optional frontmatter carries `mode` and `applies` (a list of globs); for a file mapped by `prompts.files`, a frontmatter `mode` or `applies` that differs from the YAML entry answers `policy/config-invalid`. The default layer is the plugin file the prompt key declares, when it has one. Prompt keys are registered like YAML keys, as literal keys or as one-segment patterns: a prompts directory file or a `prompts.files` entry whose key is not registered answers `policy/unknown-config-key`. `applies` is validated as a list of globs and passed to the consumer, which interprets it; `rules` resolves the rule sets for `ctx` and for `rules show --ticket` and ignores `applies` until T31.
+A prompt key is the file path relative to a prompts directory without `.md` (`fragments/decision/lavish`), so it never contains a dot; its first segment is never `dir` or `files`. Each layer has one prompts directory, set only by `prompts.dir` in that layer's own file and never inherited; a relative `prompts.dir` resolves against the project root for the project and local layers and against the global layer's directory for the global layer. In the same layer, `prompts.files.<key>` wins over `<dir>/<key>.md`; its string form is a path with `mode: extends`, its object form carries `path`, `mode` and `applies`. A file's optional frontmatter carries `mode` and `applies` (a list of globs); for a file mapped by `prompts.files`, a frontmatter `mode` or `applies` that differs from the YAML entry answers `policy/config-invalid`. The default layer is the plugin file the prompt key declares, when it has one. Prompt keys are registered like YAML keys, as literal keys or as one-segment patterns: a prompts directory file or a `prompts.files` entry whose key is not registered answers `policy/unknown-config-key`. `applies` is validated as a list of globs and passed to the consumer, which interprets it. Rules are not prompt values (T31): the keys `rules/<category>` and `rules/languages/*` are not registered, and a prompts file or `prompts.files` entry for one answers `policy/unknown-config-key` whose `why` says that project rules live in `.bdk/rules/` and BDK rules are switched off with `rules.disabled`.
 
-| Prompt key                                              | Default file (plugin)                    | Owner | Consumer | v2 origin                 |
-| ------------------------------------------------------- | ---------------------------------------- | ----- | -------- | ------------------------- |
-| `rules/code-quality`                                    | `rules/code-quality.md`                  | T12   | `rules`  | `quality.code-quality`    |
-| `rules/architecture`                                    | `rules/architecture.md`                  | T12   | `rules`  | `quality.architecture`    |
-| `rules/design-patterns`                                 | `rules/design-patterns.md`               | T12   | `rules`  | `quality.design-patterns` |
-| `rules/security`                                        | `rules/security.md`                      | T12   | `rules`  | `quality.security`        |
-| `rules/engineering-judgment`                            | `rules/engineering-judgment.md`          | T12   | `rules`  | none                      |
-| `rules/test-quality`                                    | `rules/test-quality.md`                  | T12   | `rules`  | none                      |
-| `rules/languages/*`                                     | `rules/languages/<name>.md` when shipped | T12   | `rules`  | `language-rules.<name>`   |
-| `fragments/decision/lavish`                             | `fragments/decision/lavish.md`           | T13   | `ctx`    | none                      |
-| `fragments/decision/ask-user`                           | `fragments/decision/ask-user.md`         | T13   | `ctx`    | none                      |
-| `pipeline/<kind>` (one literal key per registered kind) | `pipeline/<kind>.md`                     | T21   | `graph`  | none                      |
+| Prompt key                                              | Default file (plugin)            | Owner | Consumer | v2 origin |
+| ------------------------------------------------------- | -------------------------------- | ----- | -------- | --------- |
+| `fragments/decision/lavish`                             | `fragments/decision/lavish.md`   | T13   | `ctx`    | none      |
+| `fragments/decision/ask-user`                           | `fragments/decision/ask-user.md` | T13   | `ctx`    | none      |
+| `pipeline/<kind>` (one literal key per registered kind) | `pipeline/<kind>.md`             | T21   | `graph`  | none      |
 
 `pipeline/<kind>` is the instruction template of an artifact kind (`kernel-pipeline`, Instruction); a file for a name that is not a registered kind answers `policy/unknown-config-key`. Later tasks add prompt keys through a delta.
 
 #### Scenario: extends then replace
 
-- **WHEN** the plugin default of `rules/security` exists, the project layer has `.bdk/prompts/rules/security.md` with `mode: extends` and the local layer has `.bdk/prompts.local/rules/security.md` with `mode: replace`
-- **THEN** the resolved value of `rules/security` is the local file alone, and `bdk config show prompts.rules/security --json` lists only the local file with mode `replace`
+- **WHEN** the plugin default of `fragments/decision/lavish` exists, the project layer has `.bdk/prompts/fragments/decision/lavish.md` with `mode: extends` and the local layer has `.bdk/prompts.local/fragments/decision/lavish.md` with `mode: replace`
+- **THEN** the resolved value of `fragments/decision/lavish` is the local file alone, and `bdk config show prompts.fragments/decision/lavish --json` lists only the local file with mode `replace`
 
 #### Scenario: file mapped from anywhere
 
-- **WHEN** `.bdk/settings.yaml` sets `prompts.files.rules/security: docs/security-rules.md` and that file has no frontmatter
-- **THEN** the project contribution to `rules/security` is `docs/security-rules.md` with `mode: extends`
+- **WHEN** `.bdk/settings.yaml` sets `prompts.files.fragments/decision/lavish: docs/lavish.md` and that file has no frontmatter
+- **THEN** the project contribution to `fragments/decision/lavish` is `docs/lavish.md` with `mode: extends`
 
 #### Scenario: custom directory
 
-- **WHEN** `.bdk/settings.yaml` sets `prompts.dir: docs/bdk-prompts` and `docs/bdk-prompts/rules/architecture.md` exists
-- **THEN** that file is the project contribution to `rules/architecture` and `.bdk/prompts/` is not read
+- **WHEN** `.bdk/settings.yaml` sets `prompts.dir: docs/bdk-prompts` and `docs/bdk-prompts/fragments/decision/ask-user.md` exists
+- **THEN** that file is the project contribution to `fragments/decision/ask-user` and `.bdk/prompts/` is not read
 
 #### Scenario: unknown prompt file
 
-- **WHEN** `.bdk/prompts/rules/secrity.md` exists
-- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` naming `rules/secrity` and the project layer
+- **WHEN** `.bdk/prompts/fragments/decision/lavsh.md` exists
+- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` naming `fragments/decision/lavsh` and the project layer
+
+#### Scenario: rule prompt file refused
+
+- **WHEN** `.bdk/prompts/rules/security.md` exists
+- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key`, and `why` names the file, `.bdk/rules/` and `rules.disabled`
+
+#### Scenario: dropped funnel key
+
+- **WHEN** `.bdk/settings.yaml` sets `rules.propose-when.authors: 1`
+- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` naming the key
 
 #### Scenario: project replaces a fragment
 
