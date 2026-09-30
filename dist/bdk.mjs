@@ -16737,6 +16737,7 @@ var FIXED_SOURCES = ["user", "policy", "inferred", "kernel"];
 var AGENT = "agent:[a-z][a-z0-9-]*";
 var AGENT_SOURCE_PATTERN = new RegExp(`^${AGENT}$`);
 var SOURCE_PATTERN = new RegExp(`^(${FIXED_SOURCES.join("|")}|${AGENT})$`);
+var RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
 var LOOPS = ["task-redispatch", "verify-fix", "review-fix", "verifier"];
 var TICKET_SCOPES = ["full", "high+", "blockers"];
 var ROLES = [
@@ -17044,53 +17045,13 @@ var designIndexKind = {
   migrations: []
 };
 
-// kernel/src/shared/store/state/rule.ts
+// kernel/src/shared/store/state/dispatch.ts
 var VERSION5 = 1;
-var adoptedFrom = string2().regex(new RegExp(`^${CHANGE_ID_PATTERN}/[LA]-[0-9a-z]{8}$`));
-var RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
-var ruleKind = {
-  name: "rule",
+var dispatchKind = {
+  name: "dispatch",
   version: VERSION5,
   schema: strictObject({
     schema: literal(VERSION5),
-    id: string2().regex(RULE_ID).meta({ description: "Equals the file name without `.md` (`CQ-4`, `BDK-SEC-2`)." }),
-    kind: _enum(["house", "knowledge"]),
-    applies: array(glob2).optional().meta({ description: "Absent: every file." }),
-    roles: array(role).optional().meta({ description: "Absent: every role." }),
-    severity,
-    origin: union([_enum(["bdk", "import", "user"]), adoptedFrom]).meta({
-      description: "The shipped pack, `rules import`, `rules accept` without `--from`, or the entry or attempt it was adopted from."
-    }),
-    evidence: array(adoptedFrom).min(1).optional().meta({ description: "Every `--from` ref of `rules accept`." }),
-    since: date3,
-    source: string2().min(1).optional().meta({
-      description: "Required exactly when `kind` is `knowledge`: where the fact comes from."
-    }),
-    verified: date3.optional().meta({ description: "Required exactly when `kind` is `knowledge`." }),
-    removed: string2().min(1).optional().meta({
-      description: "Tombstone reason; the id is never reused."
-    })
-  }).superRefine((data, context) => {
-    const knowledge = data.kind === "knowledge";
-    for (const key of ["source", "verified"]) {
-      if (knowledge === (data[key] !== void 0)) continue;
-      context.addIssue({
-        code: "custom",
-        path: [key],
-        message: knowledge ? "required when kind is knowledge" : "only for kind knowledge"
-      });
-    }
-  }).meta({ title: "Rule file" }),
-  migrations: []
-};
-
-// kernel/src/shared/store/state/dispatch.ts
-var VERSION6 = 1;
-var dispatchKind = {
-  name: "dispatch",
-  version: VERSION6,
-  schema: strictObject({
-    schema: literal(VERSION6),
     ticket: ticketId,
     target: string2().min(1),
     role,
@@ -17115,11 +17076,11 @@ var dispatchKind = {
 };
 
 // kernel/src/shared/store/state/entry.ts
-var VERSION7 = 1;
+var VERSION6 = 1;
 var category = string2().min(1).meta({ description: "One of the P8 blocking categories." });
 function variant(type, own2) {
   return strictObject({
-    schema: literal(VERSION7),
+    schema: literal(VERSION6),
     id: ledgerId,
     type: literal(type),
     summary: string2().min(1).max(120),
@@ -17143,7 +17104,7 @@ var learning = variant("learning", {
 });
 var entryKind = {
   name: "entry",
-  version: VERSION7,
+  version: VERSION6,
   schema: discriminatedUnion("type", [
     variant("decision", {
       profile: _enum(["small", "large"]).optional().meta({
@@ -17178,12 +17139,12 @@ var entryKind = {
 };
 
 // kernel/src/shared/store/state/evidence.ts
-var VERSION8 = 1;
+var VERSION7 = 1;
 var evidenceKind = {
   name: "evidence",
-  version: VERSION8,
+  version: VERSION7,
   schema: strictObject({
-    schema: literal(VERSION8),
+    schema: literal(VERSION7),
     id: evidenceId,
     kind: string2().min(1).meta({
       description: "`tests-scoped`, `lint`, `typecheck`, `ui-capture` or a project kind."
@@ -17213,13 +17174,13 @@ var evidenceKind = {
 };
 
 // kernel/src/shared/store/state/pruned.ts
-var VERSION9 = 1;
+var VERSION8 = 1;
 var PRUNED_DIRS = ["dispatch", "reports"];
 var prunedKind = {
   name: "pruned",
-  version: VERSION9,
+  version: VERSION8,
   schema: strictObject({
-    schema: literal(VERSION9),
+    schema: literal(VERSION8),
     dir: _enum(PRUNED_DIRS).meta({ description: "The directory it indexes." }),
     at: timestamp,
     files: array(
@@ -17234,12 +17195,12 @@ var prunedKind = {
 };
 
 // kernel/src/shared/store/state/report.ts
-var VERSION10 = 1;
+var VERSION9 = 1;
 var reportKind = {
   name: "report",
-  version: VERSION10,
+  version: VERSION9,
   schema: strictObject({
-    schema: literal(VERSION10),
+    schema: literal(VERSION9),
     ticket: ticketId,
     role,
     status: _enum(["done", "done-with-concerns", "needs-context", "blocked"]),
@@ -17258,6 +17219,45 @@ var reportKind = {
       message: `required when status is ${data.status}`
     });
   }).meta({ title: "Report envelope" }),
+  migrations: []
+};
+
+// kernel/src/shared/store/state/rule.ts
+var VERSION10 = 1;
+var adoptedFrom = string2().regex(new RegExp(`^${CHANGE_ID_PATTERN}/[LA]-[0-9a-z]{8}$`));
+var ruleKind = {
+  name: "rule",
+  version: VERSION10,
+  schema: strictObject({
+    schema: literal(VERSION10),
+    id: string2().regex(RULE_ID).meta({ description: "Equals the file name without `.md` (`CQ-4`, `BDK-SEC-2`)." }),
+    kind: _enum(["house", "knowledge"]),
+    applies: array(glob2).optional().meta({ description: "Absent: every file." }),
+    roles: array(role).optional().meta({ description: "Absent: every role." }),
+    severity,
+    origin: union([_enum(["bdk", "import", "user"]), adoptedFrom]).meta({
+      description: "The shipped pack, `rules import`, `rules accept` without `--from`, or the entry or attempt it was adopted from."
+    }),
+    evidence: array(adoptedFrom).min(1).optional().meta({ description: "Every `--from` ref of `rules accept`." }),
+    since: date3,
+    source: string2().min(1).optional().meta({
+      description: "Required exactly when `kind` is `knowledge`: where the fact comes from."
+    }),
+    verified: date3.optional().meta({ description: "Required exactly when `kind` is `knowledge`." }),
+    removed: string2().min(1).optional().meta({
+      description: "Tombstone reason; the id is never reused."
+    })
+  }).superRefine((data, context) => {
+    const knowledge = data.kind === "knowledge";
+    for (const key of ["source", "verified"]) {
+      if (knowledge === (data[key] !== void 0)) continue;
+      context.addIssue({
+        code: "custom",
+        path: [key],
+        message: knowledge ? "required when kind is knowledge" : "only for kind knowledge"
+      });
+    }
+  }).meta({ title: "Rule file" }),
   migrations: []
 };
 
@@ -17791,7 +17791,15 @@ function removeFile(index2, changeId2, path) {
 function removeChange(index2, changeId2) {
   const { database } = index2;
   database.prepare("DELETE FROM changes WHERE id = ?").run(changeId2);
-  for (const table of ["_entries", "refs", "attempts", "findings", "dispatches", "_files", "_dirs"]) {
+  for (const table of [
+    "_entries",
+    "refs",
+    "attempts",
+    "findings",
+    "dispatches",
+    "_files",
+    "_dirs"
+  ]) {
     database.prepare(`DELETE FROM ${table} WHERE change_id = ?`).run(changeId2);
   }
 }
@@ -26008,7 +26016,6 @@ function closeReport(change, index2, plan, archivedTo) {
     change: change.id,
     archivedTo,
     spec: { merged, unchanged: merged.length === 0 },
-    learning: { proposedRules: [], spec: [], nothing: [] },
     gatesByPolicy: gatesByPolicy(entries2),
     summary: closeSummary(findChangeRow(index2, change.id)?.intent ?? change.id, live2, merged)
   };

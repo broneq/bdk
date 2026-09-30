@@ -47,6 +47,9 @@ export const AGENT_SOURCE_PATTERN = new RegExp(`^${AGENT}$`);
 /** A fixed provenance value or `agent:<role>`. */
 export const SOURCE_PATTERN = new RegExp(`^(${FIXED_SOURCES.join("|")}|${AGENT})$`);
 
+/** A rule id: `CQ-4`, `BDK-SEC-2`; the number never reuses a tombstone's. */
+export const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
+
 /** The loops a ticket counts against; `not-run` is a counter of each loop, not a loop. */
 export const LOOPS = ["task-redispatch", "verify-fix", "review-fix", "verifier"] as const;
 

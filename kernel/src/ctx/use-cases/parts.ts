@@ -18,6 +18,9 @@ import {
   ruleLines,
 } from "../../rules/index.ts";
 import type { RulesInput } from "../../rules/index.ts";
+
+/** The BDK pack categories a `rules` part or a pipeline node may name. */
+export { RULE_CATEGORIES };
 import { executionModule, featuresModule, fragmentPrompts, toolsModule } from "../config.ts";
 import type { Section } from "../domain/report.ts";
 import type { CtxInput } from "./input.ts";

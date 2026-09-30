@@ -1,10 +1,10 @@
 // Generates `schema/cli/output/rules-show.json` (kernel/scripts/export-schemas.ts).
 import * as z from "zod";
 
-import { ROLES } from "../../shared/vocabulary/index.ts";
+import { ROLES, RULE_ID } from "../../shared/vocabulary/index.ts";
 import type { RulesShow } from "../domain/report.ts";
 
-const ruleId = z.string().regex(/^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/);
+const ruleId = z.string().regex(RULE_ID);
 const kind = z.enum(["house", "knowledge"]);
 const severity = z.enum(["critical", "high", "medium", "low"]);
 const globs = z.array(z.string().min(1));

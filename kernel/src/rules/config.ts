@@ -4,8 +4,7 @@
 // Rules themselves are files, not prompt values (T31).
 import * as z from "zod";
 
-import { defineConfigModule } from "../shared/config/index.ts";
-import { RULE_ID } from "../shared/store/index.ts";
+import { defineConfigModule, RULE_ID } from "../shared/config/index.ts";
 
 const text = z.string().min(1);
 const count = z.int().min(1);

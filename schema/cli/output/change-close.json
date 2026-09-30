@@ -28,39 +28,6 @@
       "required": ["merged", "unchanged"],
       "additionalProperties": false
     },
-    "learning": {
-      "type": "object",
-      "properties": {
-        "proposedRules": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^L-[0-9a-z]{8}$",
-            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
-          },
-          "description": "learning entries above the T31 thresholds; nothing under .bdk/rules/ changes before the user accepts."
-        },
-        "spec": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^L-[0-9a-z]{8}$",
-            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
-          }
-        },
-        "nothing": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^L-[0-9a-z]{8}$",
-            "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
-          }
-        }
-      },
-      "required": ["proposedRules", "spec", "nothing"],
-      "additionalProperties": false,
-      "description": "Empty lists until T31 lands `log route` and the rule projection."
-    },
     "gatesByPolicy": {
       "type": "array",
       "items": { "type": "string", "pattern": "^gate:[a-z-]+$" },
@@ -72,14 +39,13 @@
       "description": "PR summary in Markdown from the ledger: intent, decisions, assumptions, risks, open findings, merged capabilities."
     }
   },
-  "required": ["change", "archivedTo", "spec", "learning", "gatesByPolicy", "summary"],
+  "required": ["change", "archivedTo", "spec", "gatesByPolicy", "summary"],
   "additionalProperties": false,
   "examples": [
     {
       "change": "2026-09-25-passwordless-login",
       "archivedTo": ".bdk/changes/archive/2026-09-25-passwordless-login",
       "spec": { "merged": ["auth/login"], "unchanged": false },
-      "learning": { "proposedRules": [], "spec": [], "nothing": [] },
       "gatesByPolicy": [],
       "summary": "## Users log in with a link\n\n### Spec\n\n- `auth/login`\n"
     }

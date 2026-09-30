@@ -31,7 +31,6 @@ export { generateDesignIndex, generatePlanIndex, planWaves } from "./state/index
 export { hasPlaceholder, parsePlanTasks, planPlaceholders, TASK_ID } from "./state/plan.ts";
 export type { ParsedTasks, PlanFile, PlanTask } from "./state/plan.ts";
 export { STATE_KINDS } from "./state/registry.ts";
-export { RULE_ID } from "./state/rule.ts";
 export type { KindName } from "./state/registry.ts";
 export {
   archivedChangeDir,

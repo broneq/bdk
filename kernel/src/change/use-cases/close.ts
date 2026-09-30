@@ -138,7 +138,6 @@ function closeReport(
     change: change.id,
     archivedTo,
     spec: { merged, unchanged: merged.length === 0 },
-    learning: { proposedRules: [], spec: [], nothing: [] },
     gatesByPolicy: gatesByPolicy(entries),
     summary: closeSummary(findChangeRow(index, change.id)?.intent ?? change.id, live, merged),
   };

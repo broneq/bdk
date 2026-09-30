@@ -5,7 +5,7 @@ import * as z from "zod";
 
 import { hash, relativePath, role, scope, ticketId, timestamp } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
-import { RULE_ID } from "./rule.ts";
+import { RULE_ID } from "../../vocabulary/index.ts";
 
 const VERSION = 1;
 

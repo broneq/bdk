@@ -4,6 +4,7 @@
 import * as z from "zod";
 
 import { CHANGE_ID_PATTERN } from "../../ids/index.ts";
+import { RULE_ID } from "../../vocabulary/index.ts";
 import { date, glob, role, severity } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
 
@@ -11,8 +12,6 @@ const VERSION = 1;
 
 /** A qualified ledger entry or attempt ticket: what `rules accept --from` names. */
 const adoptedFrom = z.string().regex(new RegExp(`^${CHANGE_ID_PATTERN}/[LA]-[0-9a-z]{8}$`));
-
-export const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
 
 export const ruleKind = {
   name: "rule",
