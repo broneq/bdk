@@ -180,6 +180,21 @@
         "additionalProperties": false
       }
     },
+    "rulesTruncated": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ticket": { "type": "string" },
+          "target": { "type": "string" },
+          "role": { "type": "string" },
+          "count": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }
+        },
+        "required": ["ticket", "target", "role", "count"],
+        "additionalProperties": false
+      },
+      "description": "Open tickets whose active package dropped rules at `rules.max-per-package`, with the count."
+    },
     "overriddenKeys": {
       "type": "array",
       "items": { "type": "string" },
@@ -197,6 +212,7 @@
     "gates",
     "parts",
     "openTickets",
+    "rulesTruncated",
     "overriddenKeys"
   ],
   "additionalProperties": false,
@@ -234,6 +250,7 @@
       ],
       "parts": [],
       "openTickets": [],
+      "rulesTruncated": [],
       "overriddenKeys": ["policy.escalation.enabled"]
     }
   ]

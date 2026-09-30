@@ -14,7 +14,8 @@ import type { CtxDeps } from "./use-cases/input.ts";
 import { readStartup } from "./use-cases/startup.ts";
 
 export type { CtxDeps } from "./use-cases/input.ts";
-export { ruleSet } from "./use-cases/parts.ts";
+export { categoryText } from "./use-cases/parts.ts";
+export { RULE_CATEGORIES } from "../rules/index.ts";
 
 /** The rendered STARTUP instructions, as `bdk ctx startup` prints them. */
 export function startupContext(deps: Pick<CtxDeps, "store" | "pluginRoot">): ContextReport {

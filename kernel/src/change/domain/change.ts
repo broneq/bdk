@@ -152,7 +152,16 @@ export interface StatusReport {
   readonly gates: readonly GateView[];
   readonly parts: readonly PartView[];
   readonly openTickets: readonly OpenTicketView[];
+  /** Open tickets whose active package dropped rules at `rules.max-per-package`. */
+  readonly rulesTruncated: readonly TruncatedView[];
   readonly overriddenKeys: readonly string[];
+}
+
+export interface TruncatedView {
+  readonly ticket: string;
+  readonly target: string;
+  readonly role: string;
+  readonly count: number;
 }
 
 export interface ListItem {

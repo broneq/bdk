@@ -119,6 +119,8 @@ function writeDispatch(store: Store, ticket: string, role: string): void {
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${ticket}.md`,
+      rules: [],
+      "rules-truncated": 0,
     },
     body: "",
   });

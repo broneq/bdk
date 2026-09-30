@@ -34,14 +34,17 @@ describe("rule", () => {
     expect(issues(schema, { ...example.rule, id })).toStrictEqual(["id"]);
   });
 
-  it.each(["bdk", "import", "2026-09-25-passwordless-login/L-q81c0zt4"])(
-    "accepts the origin %j",
-    (origin) => {
-      expect(issues(schema, { ...example.rule, origin })).toStrictEqual([]);
-    },
-  );
+  it.each([
+    "bdk",
+    "import",
+    "user",
+    "2026-09-25-passwordless-login/L-q81c0zt4",
+    "2026-09-25-passwordless-login/A-7f3kx2p9",
+  ])("accepts the origin %j", (origin) => {
+    expect(issues(schema, { ...example.rule, origin })).toStrictEqual([]);
+  });
 
-  it.each(["user", "L-q81c0zt4", "2026-09-25-passwordless-login/A-7f3kx2p9"])(
+  it.each(["team", "L-q81c0zt4", "2026-09-25-passwordless-login/E-7f3kx2p9"])(
     "rejects the origin %j",
     (origin) => {
       expect(issues(schema, { ...example.rule, origin })).toStrictEqual(["origin"]);
@@ -57,6 +60,14 @@ describe("rule", () => {
     ["verified", "2026-09-20"],
   ])("rejects %s on a house rule", (key, value) => {
     expect(issues(schema, { ...example.rule, [key]: value })).toStrictEqual([key]);
+  });
+
+  it("accepts qualified evidence and refuses a bare id in it", () => {
+    const evidence = ["2026-09-25-passwordless-login/L-q81c0zt4"];
+    expect(issues(schema, { ...example.rule, evidence })).toStrictEqual([]);
+    expect(issues(schema, { ...example.rule, evidence: ["L-q81c0zt4"] })).toStrictEqual([
+      "evidence.0",
+    ]);
   });
 
   it("accepts a tombstone", () => {

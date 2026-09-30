@@ -38,25 +38,22 @@ const skills: SkillFile[] = readdirSync(join(REPO_ROOT, "skills"), { withFileTyp
 
 const registry = settingsRegistry();
 
-/** The plugin files a part reads; undefined for a prompt key ctx does not declare. */
+/** The plugin files and directories a part reads; undefined for a prompt key ctx does not declare. */
 function partFiles(part: Part): (string | undefined)[] {
   switch (part.kind) {
     case "rules":
-      return [registry.promptKey(`rules/${part.category}`)?.defaultFile];
+      return [`rules/${part.category}`];
     case "fragment":
       return ["lavish", "ask-user"].map(
         (id) => registry.promptKey(`fragments/decision/${id}`)?.defaultFile,
       );
     case "language-rules":
-      return [
-        registry.prompts.some((prompt) => prompt.key === "rules/languages/*")
-          ? "rules/languages"
-          : undefined,
-      ];
+      return ["rules/languages"];
     case "file":
       return [part.path];
     case "tools":
     case "concurrency":
+    case "project-rules":
       return [];
   }
 }

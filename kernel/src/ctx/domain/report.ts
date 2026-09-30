@@ -4,6 +4,7 @@
 type PartKind =
   | "rules"
   | "language-rules"
+  | "project-rules"
   | "fragment"
   | "tools"
   | "concurrency"

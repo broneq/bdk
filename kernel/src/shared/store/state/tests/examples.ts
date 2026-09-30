@@ -126,6 +126,8 @@ export const dispatch = {
   "kernel-version": "3.0.0-dev",
   "template-hash": HASH,
   report: ".bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-A-7f3kx2p9.md",
+  rules: [],
+  "rules-truncated": 0,
 };
 
 export const report = {

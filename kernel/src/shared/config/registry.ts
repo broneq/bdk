@@ -5,7 +5,8 @@ import * as z from "zod";
 
 import { appendOnlyPaths, keyPaths, keyTree } from "./keys.ts";
 import type { KeyNode } from "./keys.ts";
-import { within } from "./known.ts";
+import { PLANNED_KEYS, within } from "./known.ts";
+import type { PlannedKey } from "./known.ts";
 import { joinKey, valueAt } from "./values.ts";
 
 export interface ConfigModule<S extends z.ZodType = z.ZodType> {
@@ -39,6 +40,8 @@ export interface ConfigRegistry {
   readonly keys: readonly string[];
   /** The dotted keys of the append-only arrays, for the merge. */
   readonly appendOnly: ReadonlySet<string>;
+  /** Keys the spec declares for a task that has not registered them yet. */
+  readonly planned: readonly PlannedKey[];
   promptKey(key: string): PromptKey | undefined;
 }
 
@@ -56,6 +59,8 @@ const RESERVED = new Set(["dir", "files"]);
 export function createConfigRegistry(parts: {
   readonly modules: readonly ConfigModule[];
   readonly prompts: readonly PromptKey[];
+  /** Defaults to the kernel's list; a test passes its own. */
+  readonly planned?: readonly PlannedKey[];
 }): ConfigRegistry {
   checkModuleKeys(parts.modules);
   const seen = new Set<string>();
@@ -71,6 +76,7 @@ export function createConfigRegistry(parts: {
     tree,
     keys: keyPaths(tree),
     appendOnly: new Set(appendOnlyPaths(tree)),
+    planned: parts.planned ?? PLANNED_KEYS,
     promptKey: (key) => prompts.find((prompt) => matches(prompt.key, key)),
   };
 }

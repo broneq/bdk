@@ -31,6 +31,7 @@ export { generateDesignIndex, generatePlanIndex, planWaves } from "./state/index
 export { hasPlaceholder, parsePlanTasks, planPlaceholders, TASK_ID } from "./state/plan.ts";
 export type { ParsedTasks, PlanFile, PlanTask } from "./state/plan.ts";
 export { STATE_KINDS } from "./state/registry.ts";
+export { RULE_ID } from "./state/rule.ts";
 export type { KindName } from "./state/registry.ts";
 export {
   archivedChangeDir,
@@ -66,7 +67,7 @@ export { taskProgress } from "./progress.ts";
 export type { TaskProgress } from "./progress.ts";
 export { rebuildChanges } from "./rebuild.ts";
 export type { RebuildResult } from "./rebuild.ts";
-export { readAttempts, readPlanParts, taskHolders } from "./work.ts";
+export { readAttempts, readPlanParts, targetFiles, taskHolders } from "./work.ts";
 export { stampRulesRead } from "./rules-read.ts";
 export {
   activePackage,

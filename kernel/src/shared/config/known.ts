@@ -17,14 +17,7 @@ export interface RemovedKey {
   readonly reason: string;
 }
 
-export const PLANNED_KEYS: readonly PlannedKey[] = [
-  { key: "rules.propose-when.changes", owner: "T31" },
-  { key: "rules.propose-when.authors", owner: "T31" },
-  { key: "rules.propose-when.failed-attempts", owner: "T31" },
-  { key: "rules.max-per-package", owner: "T31" },
-  { key: "rules.max-learnings-per-change", owner: "T31" },
-  { key: "rules.disabled", owner: "T31" },
-];
+export const PLANNED_KEYS: readonly PlannedKey[] = [];
 
 const MCP = "removed with the bundled MCP servers (ADR-0001)";
 
@@ -34,14 +27,36 @@ export const REMOVED_KEYS: readonly RemovedKey[] = [
   { key: "build-tools", reason: "use tools.build" },
   {
     key: "quality",
-    reason: "use prompts.files.rules/<category> or .bdk/prompts/rules/<category>.md",
+    reason:
+      "use project rules in .bdk/rules/ (bdk rules import) and switch BDK rules off with rules.disabled",
   },
-  { key: "language-rules", reason: "use prompts.files.rules/languages/<language>" },
+  {
+    key: "language-rules",
+    reason: "use the language packs selected by languages, and project rules with applies",
+  },
   { key: "features.caveman", reason: "no consumer in v3 (#39)" },
   { key: "features.serena", reason: MCP },
   { key: "features.code-review-graph", reason: MCP },
   { key: "$schema", reason: "use the yaml-language-server modeline" },
 ];
+
+/**
+ * Prompt keys that are no longer prompt values: rules became files with ids
+ * (T31), so a prompts file or `prompts.files` entry for one is refused with
+ * where rules live now.
+ */
+const RETIRED_PROMPTS: readonly RemovedKey[] = [
+  {
+    key: "rules/",
+    reason:
+      "rules are no longer prompt values: add project rules as files in .bdk/rules/ (bdk rules accept, bdk rules import) and switch BDK rules off with rules.disabled",
+  },
+];
+
+/** Why an unregistered prompt key is refused beyond "unknown", or undefined. */
+export function retiredPromptReason(promptKey: string): string | undefined {
+  return RETIRED_PROMPTS.find((entry) => promptKey.startsWith(entry.key))?.reason;
+}
 
 /** The layer with every removed v2 key taken out of its values. */
 export function withoutRemovedKeys<L extends { readonly values: Readonly<Mapping> }>(layer: L): L {
@@ -68,12 +83,20 @@ export function within(key: string, base: string): boolean {
 }
 
 /** Why a key the registry does not declare is refused, or undefined for a plain unknown key. */
-export function knownReason(key: string): string | undefined {
+export function knownReason(
+  key: string,
+  planned: readonly PlannedKey[] = PLANNED_KEYS,
+): string | undefined {
+  const files = "prompts.files.";
+  if (key.startsWith(files)) {
+    const retired = retiredPromptReason(key.slice(files.length));
+    if (retired !== undefined) return retired;
+  }
   const removed = REMOVED_KEYS.find((entry) => within(key, entry.key));
   if (removed !== undefined) return `removed v2 key: ${removed.reason}`;
-  const owners = PLANNED_KEYS.filter(
-    (entry) => within(key, entry.key) || within(entry.key, key),
-  ).map((entry) => entry.owner);
+  const owners = planned
+    .filter((entry) => within(key, entry.key) || within(entry.key, key))
+    .map((entry) => entry.owner);
   if (owners.length === 0) return undefined;
   return `lands with ${[...new Set(owners)].sort().join(", ")}`;
 }

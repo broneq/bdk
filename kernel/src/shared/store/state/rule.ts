@@ -9,7 +9,10 @@ import type { DocumentKind } from "./common.ts";
 
 const VERSION = 1;
 
-const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
+/** A qualified ledger entry or attempt ticket: what `rules accept --from` names. */
+const adoptedFrom = z.string().regex(new RegExp(`^${CHANGE_ID_PATTERN}/[LA]-[0-9a-z]{8}$`));
+
+export const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
 
 export const ruleKind = {
   name: "rule",
@@ -25,12 +28,15 @@ export const ruleKind = {
       applies: z.array(glob).optional().meta({ description: "Absent: every file." }),
       roles: z.array(role).optional().meta({ description: "Absent: every role." }),
       severity,
-      origin: z
-        .union([
-          z.enum(["bdk", "import"]),
-          z.string().regex(new RegExp(`^${CHANGE_ID_PATTERN}/L-[0-9a-z]{8}$`)),
-        ])
-        .meta({ description: "The shipped pack, `rules import`, or the learning it came from." }),
+      origin: z.union([z.enum(["bdk", "import", "user"]), adoptedFrom]).meta({
+        description:
+          "The shipped pack, `rules import`, `rules accept` without `--from`, or the entry or attempt it was adopted from.",
+      }),
+      evidence: z
+        .array(adoptedFrom)
+        .min(1)
+        .optional()
+        .meta({ description: "Every `--from` ref of `rules accept`." }),
       since: date,
       source: z.string().min(1).optional().meta({
         description: "Required exactly when `kind` is `knowledge`: where the fact comes from.",

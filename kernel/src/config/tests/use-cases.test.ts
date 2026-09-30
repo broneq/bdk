@@ -4,7 +4,11 @@ import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 
 import { settingsRegistry } from "../../registrations.ts";
-import { OFFLINE_SCHEMA_PATH, settingsJsonSchema } from "../../shared/config/index.ts";
+import {
+  createConfigRegistry,
+  OFFLINE_SCHEMA_PATH,
+  settingsJsonSchema,
+} from "../../shared/config/index.ts";
 import type { Git } from "../../shared/git/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import { memoryStore } from "../../shared/store/index.ts";
@@ -23,7 +27,7 @@ const URL = "https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings
 const MODELINE = `# yaml-language-server: $schema=${URL}`;
 const PLUGIN_FILES = {
   [`${PLUGIN}/.claude-plugin/plugin.json`]: '{"version":"3.0.0"}',
-  [`${PLUGIN}/rules/security.md`]: "- default\n",
+  [`${PLUGIN}/fragments/decision/lavish.md`]: "- default\n",
 };
 const settings = settingsRegistry();
 
@@ -66,7 +70,7 @@ describe("showConfig", () => {
         features: { lavish: true },
         tools: { test: [], lint: [], build: [] },
         prompts: {
-          "rules/security": { mode: "extends", files: [{ layer: "default" }] },
+          "fragments/decision/lavish": { mode: "extends", files: [{ layer: "default" }] },
         },
       },
       layers: [
@@ -115,15 +119,18 @@ describe("showConfig", () => {
 
   it("shows a prompt value as its files and effective mode, never inlined", () => {
     const { input } = setup({
-      [`${ROOT}/.bdk/prompts/rules/security.md`]: "---\nmode: extends\n---\n- project\n",
-      [`${ROOT}/.bdk/prompts.local/rules/security.md`]: "---\nmode: replace\n---\n- local\n",
+      [`${ROOT}/.bdk/prompts/fragments/decision/lavish.md`]: "---\nmode: extends\n---\n- project\n",
+      [`${ROOT}/.bdk/prompts.local/fragments/decision/lavish.md`]:
+        "---\nmode: replace\n---\n- local\n",
     });
-    expect(showConfig(input, { key: "prompts.rules/security", origins: false })).toStrictEqual(
+    expect(
+      showConfig(input, { key: "prompts.fragments/decision/lavish", origins: false }),
+    ).toStrictEqual(
       expect.objectContaining({
-        key: "prompts.rules/security",
+        key: "prompts.fragments/decision/lavish",
         value: {
           mode: "replace",
-          files: [{ layer: "local", path: ".bdk/prompts.local/rules/security.md" }],
+          files: [{ layer: "local", path: ".bdk/prompts.local/fragments/decision/lavish.md" }],
         },
       }),
     );
@@ -152,7 +159,7 @@ describe("showConfig", () => {
 
   it("refuses an unknown prompt key", () => {
     const { input } = setup({});
-    expect(refusal(showConfig(input, { key: "prompts.rules/nope", origins: false })).rule).toBe(
+    expect(refusal(showConfig(input, { key: "prompts.fragments/nope", origins: false })).rule).toBe(
       "policy/unknown-config-key",
     );
   });
@@ -182,10 +189,15 @@ describe("checkConfig", () => {
   });
 
   it("names the owner task of a planned key", () => {
-    const { input } = setup({ [PROJECT]: "rules:\n  max-per-package: 3\n" });
-    const outcome = refusal(checkConfig(input));
+    const { input } = setup({ [PROJECT]: "gates:\n  max-per-run: 3\n" });
+    const planned = createConfigRegistry({
+      modules: settings.modules,
+      prompts: settings.prompts,
+      planned: [{ key: "gates.max-per-run", owner: "T99" }],
+    });
+    const outcome = refusal(checkConfig({ ...input, settings: planned }));
     expect(outcome.why).toBe(
-      "rules.max-per-package in the project layer (.bdk/settings.yaml): lands with T31",
+      "gates.max-per-run in the project layer (.bdk/settings.yaml): lands with T99",
     );
     expect(outcome.instead).toStrictEqual(["bdk config schema", "fix .bdk/settings.yaml"]);
   });
@@ -277,9 +289,9 @@ describe("configSchema", () => {
 
   it("answers input/not-found for an unregistered module", () => {
     const { input } = setup({});
-    const outcome = refusal(configSchema(input, { module: "rules", url: false }));
+    const outcome = refusal(configSchema(input, { module: "gates", url: false }));
     expect(outcome.rule).toBe("input/not-found");
-    expect(outcome.why).toContain("rules");
+    expect(outcome.why).toContain("gates");
   });
 });
 

@@ -11,7 +11,7 @@ import { toolEntries } from "../../ctx/index.ts";
 import { artifactPaths, targetSteps } from "../../graph/index.ts";
 import { verifierPolicy, withChangeIndex } from "../../log/index.ts";
 import type { VerifierCategory } from "../../log/index.ts";
-import { roleSections } from "../../rules/index.ts";
+import { ruleContext, selectFor } from "../../rules/index.ts";
 import { readKernelVersion, resolveOrRefuse } from "../../shared/config/index.ts";
 import type { Resolved } from "../../shared/config/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
@@ -28,6 +28,7 @@ import {
   stampPackage,
   STATE_KINDS,
   TASK_ID,
+  targetFiles,
   taskHolders,
   writeDocument,
 } from "../../shared/store/index.ts";
@@ -59,10 +60,12 @@ export interface BuildInput {
   readonly ticket: string;
 }
 
-/** What the target section says and which names select its entries. */
+/** What the target section says, which names select its entries, and its file set. */
 interface TargetFacts {
   readonly body: string;
   readonly names: readonly string[];
+  /** The files rules are selected by; undefined for an artifact or the Change. */
+  readonly files: readonly string[] | undefined;
 }
 
 export function buildPackage(
@@ -138,8 +141,19 @@ export function buildPackage(
       },
       verifier ? "verifier" : role === "runner" ? "runner" : undefined,
     );
-    const rules = roleSections(deps, resolved, role).map((section) => section.text);
-    const templateHash = hashOf([templateSkeleton(), roleBody, ...rules]);
+    const rules = selectFor(
+      ruleContext(
+        { store: deps.store, pluginRoot: deps.pluginRoot, projectRoot: change.projectRoot },
+        resolved,
+      ),
+      role,
+      target.files,
+    );
+    const templateHash = hashOf([
+      templateSkeleton(),
+      roleBody,
+      ...rules.selected.map(({ rule }) => `${rule.id}\n${rule.text}`),
+    ]);
     const kernelVersion = readKernelVersion(deps.store, deps.pluginRoot);
     const data = {
       schema: STATE_KINDS.dispatch.version,
@@ -154,6 +168,8 @@ export function buildPackage(
       "kernel-version": kernelVersion,
       "template-hash": templateHash,
       report,
+      rules: rules.selected.map(({ rule }) => rule.id),
+      "rules-truncated": rules.beyondCap.length,
     };
     const text = renderDocument(data, packageBody(sections));
     const size = bytes(text);
@@ -232,7 +248,8 @@ async function targetFacts(
       );
     }
     const body = `From \`${changeRel}/${part.file}\`:\n\n${demoteHeadings(text)}\n\n${doNotTouch(part)}`;
-    return { body, names: [target, part.id, ...task.files.map((file) => file.path)] };
+    const files = task.files.map((file) => file.path);
+    return { body, names: [target, part.id, ...files], files: targetFiles(parts, target) };
   }
   if (PART_ID.test(target)) {
     const part = parts.find((found) => found.id === target);
@@ -240,6 +257,7 @@ async function targetFacts(
     return {
       body: `${readList([`${changeRel}/${part.file}`])}\n\n${doNotTouch(part)}`,
       names: [target],
+      files: targetFiles(parts, target),
     };
   }
   if (target === change.id) {
@@ -249,6 +267,7 @@ async function targetFacts(
         ...parts.map((part) => `${changeRel}/${part.file}`),
       ]),
       names: [target],
+      files: undefined,
     };
   }
   const paths = await artifactPaths(deps, change, index, globalDir, target);
@@ -261,6 +280,7 @@ async function targetFacts(
         ? "The artifact has no file: work on the committed code tree of the Change."
         : readList(paths.map((path) => `${changeRel}/${path}`)),
     names: [target],
+    files: undefined,
   };
 }
 
@@ -335,7 +355,7 @@ function categoryList(categories: readonly VerifierCategory[]): string {
   return categories.map((category) => `- \`${category.id}\`: ${category.description}`).join("\n");
 }
 
-/** sha256 over the normalised texts in order (T23-D33). */
+/** sha256 over the normalised texts in order (T23-D33); a rule's text is hashed with its id. */
 function hashOf(texts: readonly string[]): string {
   const hash = createHash("sha256");
   for (const text of texts) hash.update(`${normalise(text)}\n\0`);

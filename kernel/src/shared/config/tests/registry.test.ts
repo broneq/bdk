@@ -41,13 +41,22 @@ const features = defineConfigModule({
 });
 
 const security = definePromptKey({
-  key: "rules/security",
+  key: "guides/security",
   consumer: "ctx",
   owner: "T12",
-  defaultFile: "rules/security.md",
+  defaultFile: "guides/security.md",
 });
 
-const registry = createConfigRegistry({ modules: [tools, features], prompts: [security] });
+const PLANNED = [
+  { key: "gates.max-per-run", owner: "T99" },
+  { key: "gates.propose-when.changes", owner: "T99" },
+];
+
+const registry = createConfigRegistry({
+  modules: [tools, features],
+  prompts: [security],
+  planned: PLANNED,
+});
 
 function layer(name: Layer["name"], values: Record<string, unknown>): Layer {
   return { name, path: `/${name}.yaml`, text: "", values };
@@ -65,19 +74,19 @@ describe("createConfigRegistry", () => {
   });
 
   it("fails on a prompt key that is reserved or holds a dot", () => {
-    for (const key of ["dir/x", "files", "rules/a.b"]) {
+    for (const key of ["dir/x", "files", "guides/a.b"]) {
       const bad = definePromptKey({ key, consumer: "ctx", owner: "T12" });
       expect(() => createConfigRegistry({ modules: [], prompts: [bad] })).toThrow(/prompt key/);
     }
   });
 
   it("finds a literal and a pattern prompt key", () => {
-    const languages = definePromptKey({ key: "rules/languages/*", consumer: "ctx", owner: "T12" });
+    const languages = definePromptKey({ key: "guides/languages/*", consumer: "ctx", owner: "T12" });
     const both = createConfigRegistry({ modules: [], prompts: [security, languages] });
-    expect(both.promptKey("rules/security")).toBe(security);
-    expect(both.promptKey("rules/languages/go")).toBe(languages);
-    expect(both.promptKey("rules/languages/go/x")).toBeUndefined();
-    expect(both.promptKey("rules/secrity")).toBeUndefined();
+    expect(both.promptKey("guides/security")).toBe(security);
+    expect(both.promptKey("guides/languages/go")).toBe(languages);
+    expect(both.promptKey("guides/languages/go/x")).toBeUndefined();
+    expect(both.promptKey("guides/secrity")).toBeUndefined();
   });
 
   it("lists the declared key paths", () => {
@@ -114,23 +123,23 @@ describe("validateLayers", () => {
   });
 
   it("names the owner task of a key declared for a later task", () => {
-    const result = validate(layer("project", { rules: { "max-per-package": 5 } }));
+    const result = validate(layer("project", { gates: { "max-per-run": 5 } }));
     expect(result.problems).toMatchObject([
-      { key: "rules.max-per-package", message: "lands with T31" },
+      { key: "gates.max-per-run", message: "lands with T99" },
     ]);
   });
 
   it("names every owner below a planned key's ancestor set as a scalar", () => {
-    const result = validate(layer("project", { rules: 3 }));
-    expect(result.problems).toMatchObject([{ key: "rules", message: "lands with T31" }]);
+    const result = validate(layer("project", { gates: 3 }));
+    expect(result.problems).toMatchObject([{ key: "gates", message: "lands with T99" }]);
   });
 
   it("hints the kebab-case form of a camelCase planned key", () => {
-    const result = validate(layer("project", { rules: { proposeWhen: { changes: 5 } } }));
+    const result = validate(layer("project", { gates: { proposeWhen: { changes: 5 } } }));
     expect(result.problems).toMatchObject([
       {
-        key: "rules.proposeWhen.changes",
-        message: "unknown key; did you mean rules.propose-when.changes?",
+        key: "gates.proposeWhen.changes",
+        message: "unknown key; did you mean gates.propose-when.changes?",
       },
     ]);
   });
@@ -250,15 +259,19 @@ describe("dotted module keys", () => {
     schema: z.strictObject({ enabled: z.boolean().default(true) }).prefault({}),
   });
   const policy = createConfigRegistry({ modules: [gates, budgets, checkpoint], prompts: [] });
-  // A registered module under the root of planned keys (T31 plans `rules.max-per-package`).
+  // A registered module under the root of a planned key (T99 plans `gates.max-per-run`).
   const proposeWhen = defineConfigModule({
-    key: "rules.propose-when",
+    key: "gates.propose-when",
     consumer: "rules",
-    owner: "T31",
-    description: "Rule proposal thresholds.",
+    owner: "T98",
+    description: "Proposal thresholds.",
     schema: z.strictObject({ changes: z.int().min(1).default(2) }).prefault({}),
   });
-  const rules = createConfigRegistry({ modules: [proposeWhen], prompts: [] });
+  const planned = createConfigRegistry({
+    modules: [proposeWhen],
+    prompts: [],
+    planned: [{ key: "gates.max-per-run", owner: "T99" }],
+  });
 
   function check(...layers: Layer[]) {
     return validateLayers(policy, layers, mergeLayers(layers, policy.appendOnly));
@@ -313,18 +326,18 @@ describe("dotted module keys", () => {
   });
 
   it("names the owner of a planned key inside a registered subtree", () => {
-    const layers = [layer("project", { rules: { "max-per-package": 5 } })];
-    const result = validateLayers(rules, layers, mergeLayers(layers, rules.appendOnly));
+    const layers = [layer("project", { gates: { "max-per-run": 5 } })];
+    const result = validateLayers(planned, layers, mergeLayers(layers, planned.appendOnly));
     expect(result.problems).toMatchObject([
-      { key: "rules.max-per-package", message: "lands with T31" },
+      { key: "gates.max-per-run", message: "lands with T99" },
     ]);
   });
 
   it("names the owner of a planned subtree next to registered ones", () => {
-    const layers = [layer("project", { rules: { "max-per-package": 5, "propose-when": {} } })];
-    const result = validateLayers(rules, layers, mergeLayers(layers, rules.appendOnly));
+    const layers = [layer("project", { gates: { "max-per-run": 5, "propose-when": {} } })];
+    const result = validateLayers(planned, layers, mergeLayers(layers, planned.appendOnly));
     expect(result.problems).toMatchObject([
-      { key: "rules.max-per-package", message: "lands with T31" },
+      { key: "gates.max-per-run", message: "lands with T99" },
     ]);
   });
 

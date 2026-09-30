@@ -48,6 +48,8 @@ Out of scope: the audit skill and the `rules` skill replacing `add-rule` and `re
 - `kernel-settings`: the `rules.*` key table and the removed `rules/*` prompt keys.
 - `kernel-architecture`: the `log` and `rules` rows of the slice table.
 - `role-contracts`: rule ids cited by the implementer and the reviewing roles.
+- `kernel-pipeline`: a node's `rules` names categories of the BDK pack instead of rule prompt keys.
+- `skill-evals`: the `rules-noop` suite reads the per-rule pack and takes a `--patches` filter.
 
 ## Impact
 

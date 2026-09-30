@@ -11,14 +11,22 @@ import type { CtxInput } from "../use-cases/input.ts";
 const PLUGIN = "/plugin";
 const PROJECT = "/repo";
 
+function rule(id: string, text: string, extra = "", origin = "bdk"): string {
+  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: ${origin}\nsince: 2026-09-30\n${extra}---\n\n${text}\n`;
+}
+
+function pack(dir: string, id: string, text: string, extra = ""): Record<string, string> {
+  return { [`rules/${dir}/${id}.md`]: rule(id, text, extra) };
+}
+
 const PLUGIN_FILES: Record<string, string> = {
-  "rules/code-quality.md": "# Code Quality Rules\n\n- **Naming.** Plain.\n",
-  "rules/architecture.md": "# Architecture Rules\n\n- **Layers.** Down only.\n",
-  "rules/design-patterns.md": "# Design Patterns\n",
-  "rules/security.md": "# Security Rules\n\n- **Secrets.** Never logged.\n",
-  "rules/engineering-judgment.md": "# Engineering Judgment\n",
-  "rules/test-quality.md": "# Test Quality\n",
-  "rules/languages/typescript.md": "# TypeScript\n\n- **Strict.** On.\n",
+  ...pack("code-quality", "BDK-CQ-1", "**Naming.** Plain."),
+  ...pack("architecture", "BDK-ARCH-1", "**Layers.** Down only."),
+  ...pack("security", "BDK-SEC-1", "**Secrets.** Never logged."),
+  ...pack("security", "BDK-SEC-2", "**Tokens.** Short-lived."),
+  ...pack("engineering-judgment", "BDK-EJ-1", "**Trade-offs.** Named."),
+  ...pack("plan", "BDK-PL-1", "**Done.** Checkable in review."),
+  ...pack("languages/typescript", "BDK-TS-1", "**Strict.** On.", "applies: ['**/*.ts']\n"),
   "fragments/decision/lavish.md": "**Decision tier: lavish**\n",
   "fragments/decision/ask-user.md": "**Decision tier: ask-user**\n",
   "skills/cr/references/review-engine.md": "# Review engine\n\nSteps.\n",
@@ -67,13 +75,11 @@ describe("ctx skill", () => {
         "",
         "### Rules: architecture",
         "",
-        "# Architecture Rules",
-        "",
-        "- **Layers.** Down only.",
+        "- [BDK-ARCH-1] **Layers.** Down only.",
         "",
         "### Rules: engineering-judgment",
         "",
-        "# Engineering Judgment",
+        "- [BDK-EJ-1] **Trade-offs.** Named.",
         "",
         "### Asking the user",
         "",
@@ -138,29 +144,52 @@ describe("ctx skill", () => {
     });
   });
 
-  it("appends a project file with mode extends to the plugin rule set", () => {
+  it("prints each pack rule with its id, and leaves a disabled one out", () => {
     const report = compose("create-plan", {
-      ".bdk/prompts/rules/security.md": "---\nmode: extends\n---\n- **Ours.** Too.\n",
+      ".bdk/settings.yaml": "rules:\n  disabled: [BDK-SEC-2]\n",
     });
     const section = report.content.split("### Rules: security\n\n")[1]?.split("\n### ")[0];
-    expect(section).toBe("# Security Rules\n\n- **Secrets.** Never logged.\n\n- **Ours.** Too.\n");
+    expect(section).toBe("- [BDK-SEC-1] **Secrets.** Never logged.\n");
+    expect(report.content).toContain(
+      "### Rules: plan\n\n- [BDK-PL-1] **Done.** Checkable in review.\n",
+    );
   });
 
-  it("puts a project file with mode replace in place of the plugin rule set", () => {
-    const report = compose("create-plan", {
-      ".bdk/prompts/rules/security.md": "---\nmode: replace\n---\n- **Ours.** Only.\n",
+  it("prints the project's rules under their own title, with applies", () => {
+    const report = compose("design", {
+      ".bdk/rules/API-1.md": rule(
+        "API-1",
+        "Handlers stay thin.",
+        "applies: [src/api/**]\n",
+        "user",
+      ),
     });
-    const section = report.content.split("### Rules: security\n\n")[1]?.split("\n### ")[0];
-    expect(section).toBe("- **Ours.** Only.\n");
+    expect(titles(report.content)).toContain("Project rules");
+    expect(report.content).toContain("- [API-1] Handlers stay thin. (applies: src/api/**)\n");
+    expect(report.parts).toContainEqual({ kind: "project-rules", source: ".bdk/rules" });
   });
 
-  it("prints the language rules of every language with a value, in order", () => {
+  it("omits the project rules part when the project has none", () => {
+    expect(titles(compose("design").content)).not.toContain("Project rules");
+  });
+
+  it("stops on a rule prompt file left from before rule ids", () => {
+    const outcome = composeSkill(
+      input({ ".bdk/prompts/rules/security.md": "- **Ours.** Too.\n" }),
+      "design",
+    );
+    expect(outcome).toMatchObject({ rule: "policy/unknown-config-key" });
+    expect("why" in outcome ? outcome.why : "").toMatch(/\.bdk\/rules\//);
+  });
+
+  it("prints the language rules of every language with a pack, in order", () => {
     const report = compose("create-plan", {
       ".bdk/settings.yaml": "languages: [typescript, cobol]\n",
     });
     expect(titles(report.content).filter((title) => title.startsWith("Language"))).toStrictEqual([
       "Language rules: typescript",
     ]);
+    expect(report.content).toContain("- [BDK-TS-1] **Strict.** On. (applies: **/*.ts)\n");
     expect(report.parts).toContainEqual({
       kind: "language-rules",
       source: "rules/languages/typescript",

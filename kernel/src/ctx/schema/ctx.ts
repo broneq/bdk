@@ -14,6 +14,7 @@ export const ctxOutput = z
           kind: z.enum([
             "rules",
             "language-rules",
+            "project-rules",
             "fragment",
             "tools",
             "concurrency",
@@ -23,7 +24,7 @@ export const ctxOutput = z
           ]),
           source: z.string().meta({
             description:
-              "The prompt key (rules/security), tools group (tools.test), settings key (execution.concurrency) or plugin path that produced the part.",
+              "The rule directory (rules/security, .bdk/rules), prompt key (fragments/decision/lavish), tools group (tools.test), settings key (execution.concurrency) or plugin path that produced the part.",
           }),
         }),
       )

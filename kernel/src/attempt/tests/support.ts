@@ -131,6 +131,8 @@ export function packaged(h: Harness, ticket: string, role: string, target = "01-
       "kernel-version": "3.0.0",
       "template-hash": `sha256:${"0".repeat(64)}`,
       report: `${REL}/reports/${target}-${role}-${ticket}.md`,
+      rules: [],
+      "rules-truncated": 0,
     },
     body: "",
   });

@@ -68,6 +68,23 @@ export function taskHolders(parts: readonly PlanPartFile[]): Map<string, PlanPar
   return holders;
 }
 
+/**
+ * The files a target's rules are selected by (`kernel-cli/rules`, Selection):
+ * a task's `Files:`, the union of a part's tasks' `Files:`, and undefined for
+ * any other target (an artifact or the Change).
+ */
+export function targetFiles(
+  parts: readonly PlanPartFile[],
+  target: string,
+): readonly string[] | undefined {
+  const holder = taskHolders(parts).get(target);
+  const task = holder?.tasks.find((found) => found.id === target);
+  if (task !== undefined) return task.files.map((file) => file.path);
+  const part = parts.find((found) => found.id === target);
+  if (part === undefined) return undefined;
+  return [...new Set(part.tasks.flatMap((found) => found.files.map((file) => file.path)))];
+}
+
 export interface AttemptFile {
   readonly path: string;
   readonly data: AttemptRecord;

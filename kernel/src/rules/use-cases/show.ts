@@ -1,19 +1,64 @@
-// `bdk rules show --ticket <ticket>` (`kernel-cli/rules`; T23-D27, D28): the
-// rules the ticket's role reads, resolved as prompt values, and the first
-// call under the implementer's package stamped as `rules-read` in the attempt
-// record (T23-D42, risk R2). The ticket must be open with a dispatch package;
-// the role comes from its active package.
-import { withChangeIndex } from "../../log/index.ts";
+// `bdk rules show` (`kernel-cli/rules`; T23-D27, D28, T31): one rule by id,
+// tombstones and disabled rules included, or the rules whose ids the ticket's
+// active package records, in that order. The first `--ticket` call under the
+// implementer's package stamps `rules-read` in the attempt record (T23-D42,
+// risk R2). The ticket must be open with a dispatch package.
 import { resolveOrRefuse } from "../../shared/config/index.ts";
+import type { Resolved } from "../../shared/config/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { openPackage, readAttempts, stampRulesRead } from "../../shared/store/index.ts";
-import { ROLES } from "../../shared/vocabulary/index.ts";
-import type { Role } from "../../shared/vocabulary/index.ts";
-import type { TicketRules } from "../domain/report.ts";
+import {
+  openPackage,
+  readAttempts,
+  readPlanParts,
+  refreshChange,
+  stampRulesRead,
+  targetFiles,
+  withIndex,
+} from "../../shared/store/index.ts";
+import type { OneRule, TicketRules } from "../domain/report.ts";
+import { ruleContext } from "./context.ts";
 import type { RulesDeps } from "./deps.ts";
-import { roleSections } from "./sections.ts";
+import { matchedGlob } from "./selection.ts";
+
+export function showRule(
+  deps: RulesDeps,
+  projectRoot: string,
+  globalDir: string,
+  id: string,
+): OneRule | Refusal {
+  const resolved = resolve(deps, projectRoot, globalDir);
+  if ("refused" in resolved) return resolved;
+  const context = ruleContext({ ...deps, projectRoot }, resolved);
+  const rule = context.rules.find((found) => found.id === id);
+  if (rule === undefined) {
+    return refuse("input/not-found", `no rule of the bundle or of .bdk/rules/ has the id ${id}`, [
+      "bdk rules check",
+      "bdk rules explain <file>",
+    ]);
+  }
+  const optional = {
+    applies: rule.applies,
+    roles: rule.roles,
+    evidence: rule.evidence,
+    source: rule.source,
+    verified: rule.verified,
+    removed: rule.removed,
+  };
+  return {
+    id: rule.id,
+    scope: rule.scope,
+    file: rule.file,
+    kind: rule.kind,
+    severity: rule.severity,
+    origin: rule.origin,
+    since: rule.since,
+    ...Object.fromEntries(Object.entries(optional).filter(([, value]) => value !== undefined)),
+    disabled: context.disabled.includes(id),
+    text: rule.text,
+  };
+}
 
 export function showTicketRules(
   deps: RulesDeps,
@@ -21,7 +66,8 @@ export function showTicketRules(
   globalDir: string,
   ticket: string,
 ): Promise<TicketRules | Refusal> {
-  return withChangeIndex(deps, change, () => {
+  return withIndex(deps.openIndex, deps.store, change.projectRoot, (index) => {
+    refreshChange(index, { id: change.id, dir: change.dir, archived: false });
     const record = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
     if (record === undefined) {
       return refuse("input/not-found", `${change.id} has no ticket ${ticket}`, [
@@ -39,18 +85,37 @@ export function showTicketRules(
         "bdk attempt list",
       ]);
     }
-    const resolved = resolveOrRefuse(
-      {
-        store: deps.store,
-        settings: deps.settings,
-        globalDir,
-        projectRoot: change.projectRoot,
-        pluginRoot: deps.pluginRoot,
-      },
-      { removed: "ignore" },
-    );
+    const resolved = resolve(deps, change.projectRoot, globalDir);
     if ("refused" in resolved) return resolved;
-    const sections = isRole(dispatch.role) ? roleSections(deps, resolved, dispatch.role) : [];
+    const loaded = new Map(
+      ruleContext({ ...deps, projectRoot: change.projectRoot }, resolved).rules.map((rule) => [
+        rule.id,
+        rule,
+      ]),
+    );
+    const missing = dispatch.data.rules.filter((id) => !loaded.has(id));
+    if (missing.length > 0) {
+      return refuse(
+        "input/not-found",
+        `the package of ticket ${ticket} records ${missing.join(", ")}, which no rule file holds`,
+        [`bdk dispatch build ${record.data.target} ${dispatch.role} ${ticket}`],
+      );
+    }
+    const files = targetFiles(readPlanParts(deps.store, change.dir), record.data.target);
+    const rules = dispatch.data.rules.flatMap((id) => {
+      const rule = loaded.get(id);
+      if (rule === undefined) return [];
+      return [
+        {
+          id,
+          kind: rule.kind,
+          severity: rule.severity,
+          ...(rule.applies === undefined ? {} : { applies: rule.applies }),
+          matchedBy: matchedGlob(rule, files),
+          text: rule.text,
+        },
+      ];
+    });
     const rulesRead =
       dispatch.role === "implementer"
         ? stampRulesRead(deps.store, change.dir, ticket, deps.clock.now())
@@ -59,12 +124,22 @@ export function showTicketRules(
       ticket,
       role: dispatch.role,
       target: record.data.target,
-      sections,
+      rules,
+      truncated: dispatch.data["rules-truncated"],
       ...(rulesRead === undefined ? {} : { rulesRead }),
     };
   });
 }
 
-function isRole(role: string): role is Role {
-  return (ROLES as readonly string[]).includes(role);
+function resolve(deps: RulesDeps, projectRoot: string, globalDir: string): Resolved | Refusal {
+  return resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir,
+      projectRoot,
+      pluginRoot: deps.pluginRoot,
+    },
+    { removed: "ignore" },
+  );
 }

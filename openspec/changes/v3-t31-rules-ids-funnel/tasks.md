@@ -4,7 +4,7 @@
 
 - [x] 1.1 Write a failing harness unit test for a patch filter of the `rules-noop` suite (`pnpm eval rules-noop --patches <id,...>` renders only the M2 tests of those patches; an unknown id is a usage error), then implement it in `evals/harness/cli.ts` and `evals/suites/rules-noop/suite.ts`; verify with the harness unit tests and `pnpm eval check`
 - [x] 1.2 Fix the seeds of the 14 bullets with detection 0 in both cells (`evals/suites/rules-noop/violations.yaml`, `patches.ts`) so each patch holds exactly one unambiguous violation of its bullet; verify with the suite's patch-application test and `pnpm eval check`
-- [ ] 1.3 Run `pnpm eval rules-noop --patches <the 14> --probe`, present the projected cost of the full series to the user and wait for approval; verify the probe row is written under `evals/results/rules-noop/`
+- [x] 1.3 Run `pnpm eval rules-noop --patches <the 14> --probe`, present the projected cost of the full series to the user and wait for approval; verify the probe row is written under `evals/results/rules-noop/`
 - [ ] 1.4 After approval run the full series (cells `with`, `with-prime`, `without`, 5 runs), recompute the 14 classes with T40's rule and append the results to `docs/V3-EVAL-RULES-NOOP.md`; verify with `pnpm eval report rules-noop` and the committed rows
 
 ## 2. Classification and the migration report
@@ -15,18 +15,18 @@
 
 ## 3. Rule store and settings (kernel)
 
-- [ ] 3.1 Write failing unit tests for the rule store: bundle and `.bdk/rules/` loading with one schema, `BDK-` prefix accepted only in the bundle, id equals file name, tombstones kept, `origin` and `evidence` fields, `knowledge` needs `source` and `verified`, `languages` gating language packs, `rules.disabled` and `unknown-disabled-id`
-- [ ] 3.2 Implement the store in `kernel/src/rules/` (reading through `shared/store`, no `log` import) and the rule frontmatter schema change; verify 3.1 passes
-- [ ] 3.3 Write failing tests for the settings change: `rules.audit.min-changes` (3) and `rules.prune.uncited-changes` (20) registered, `rules.propose-when.*` and `rules.max-learnings-per-change` refused with their `why`, a `.bdk/prompts/rules/<category>.md` file refused with `unknown-config-key` pointing at `.bdk/rules/`; then move the T31 keys out of `PLANNED_KEYS` in `kernel/src/shared/config/known.ts`, unregister the `rules/*` prompt keys in `kernel/src/rules/config.ts`, and update `settings-spec.test.ts` expectations; verify the tests pass
-- [ ] 3.4 Update the dependency-matrix test for `rules` importing `shared` only; verify `kernel/tests/contract/structure.test.ts` and `pnpm knip` pass
+- [x] 3.1 Write failing unit tests for the rule store: bundle and `.bdk/rules/` loading with one schema, `BDK-` prefix accepted only in the bundle, id equals file name, tombstones kept, `origin` and `evidence` fields, `knowledge` needs `source` and `verified`, `languages` gating language packs, `rules.disabled` and `unknown-disabled-id`
+- [x] 3.2 Implement the store in `kernel/src/rules/` (reading through `shared/store`, no `log` import) and the rule frontmatter schema change; verify 3.1 passes
+- [x] 3.3 Write failing tests for the settings change: `rules.audit.min-changes` (3) and `rules.prune.uncited-changes` (20) registered, `rules.propose-when.*` and `rules.max-learnings-per-change` refused with their `why`, a `.bdk/prompts/rules/<category>.md` file refused with `unknown-config-key` pointing at `.bdk/rules/`; then move the T31 keys out of `PLANNED_KEYS` in `kernel/src/shared/config/known.ts`, unregister the `rules/*` prompt keys in `kernel/src/rules/config.ts`, and update `settings-spec.test.ts` expectations; verify the tests pass
+- [x] 3.4 Update the dependency-matrix test for `rules` importing `shared` only; verify `kernel/tests/contract/structure.test.ts` and `pnpm knip` pass
 
 ## 4. Selection, dispatch, ctx and status (kernel)
 
-- [ ] 4.1 Write failing unit tests for selection (design D-5): role prefix map incl. `PL` for `verifier`, `roles` override, project rules to every rule-reading role, file sets for task, part and artifact targets, glob match through `shared/store/glob.ts`, the ordering (global, specificity, `since`, id), the cap and the truncation count
-- [ ] 4.2 Replace `kernel/src/rules/use-cases/selection.ts` with the id-based selection; verify 4.1 passes
-- [ ] 4.3 Write failing tests for `dispatch build`: the package stamps `rules` and `rules-truncated`, `template-hash` changes when a selected rule text or id changes and stays when an unselected rule changes; then implement in `kernel/src/dispatch/use-cases/build.ts` and the package schema; verify the tests and the state fixture test pass
+- [x] 4.1 Write failing unit tests for selection (design D-5): role prefix map incl. `PL` for `verifier`, `roles` override, project rules to every rule-reading role, file sets for task, part and artifact targets, glob match through `shared/store/glob.ts`, the ordering (global, specificity, `since`, id), the cap and the truncation count
+- [x] 4.2 Replace `kernel/src/rules/use-cases/selection.ts` with the id-based selection; verify 4.1 passes
+- [x] 4.3 Write failing tests for `dispatch build`: the package stamps `rules` and `rules-truncated`, `template-hash` changes when a selected rule text or id changes and stays when an unselected rule changes; then implement in `kernel/src/dispatch/use-cases/build.ts` and the package schema; verify the tests and the state fixture test pass
 - [ ] 4.4 Write failing tests for `ctx skill`: `rules` part renders `- [<id>] <text>` with `(applies: ...)`, `language-rules` read from the pack dirs, the new `project-rules` part, `rules("plan")` for `create-plan`; then implement in `kernel/src/ctx/` and `manifest.ts`; verify the tests, `ctx-skill-output.test.ts` and `skill-context.test.ts` pass
-- [ ] 4.5 Write a failing test for `change status` `rulesTruncated` (scenario "rules truncated"), then implement it; verify the test passes
+- [x] 4.5 Write a failing test for `change status` `rulesTruncated` (scenario "rules truncated"), then implement it; verify the test passes
 
 ## 5. Commands and the ledger (kernel)
 

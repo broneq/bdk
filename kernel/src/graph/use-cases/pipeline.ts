@@ -10,6 +10,7 @@ import type { KindRegistry } from "../domain/kinds/index.ts";
 import { pipelineProblems } from "../domain/pipeline.ts";
 import type { Declared, Pipeline } from "../domain/pipeline.ts";
 import { pipelineSchema } from "../schema/pipeline.ts";
+import { RULE_CATEGORIES } from "../../ctx/index.ts";
 import type { ConfigRegistry } from "../../shared/config/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 
@@ -55,7 +56,7 @@ export function pipelineErrors(
   return errors.length === 0 ? { pipeline: parsed.data, errors } : { errors };
 }
 
-/** What a pipeline may name, read from the settings registry and the kinds. */
+/** What a pipeline may name, read from the settings registry, the kinds and the pack's categories. */
 export function declaredBy(settings: ConfigRegistry, kinds: KindRegistry): Declared {
   const below = (prefix: string): Set<string> =>
     new Set(
@@ -63,11 +64,7 @@ export function declaredBy(settings: ConfigRegistry, kinds: KindRegistry): Decla
         .filter((key) => key.startsWith(prefix) && !key.slice(prefix.length).includes("."))
         .map((key) => key.slice(prefix.length)),
     );
-  const rules = new Set(
-    settings.prompts
-      .map((prompt) => /^rules\/([a-z0-9-]+)$/.exec(prompt.key)?.[1])
-      .filter((name) => name !== undefined),
-  );
+  const rules = new Set(RULE_CATEGORIES);
   return {
     kinds: new Set(kinds.keys()),
     features: below("features."),

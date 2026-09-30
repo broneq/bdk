@@ -8,7 +8,16 @@ import type * as z from "zod";
 
 import { promptContent } from "../../shared/config/index.ts";
 import type { ConfigModule, PromptKey, Resolved } from "../../shared/config/index.ts";
-import { languageSections, ruleSection, ruleSet as rulesRuleSet } from "../../rules/index.ts";
+import {
+  languageRules,
+  packRules,
+  PROJECT_RULES_DIR,
+  projectRules,
+  RULE_CATEGORIES,
+  ruleContext,
+  ruleLines,
+} from "../../rules/index.ts";
+import type { RulesInput } from "../../rules/index.ts";
 import { executionModule, featuresModule, fragmentPrompts, toolsModule } from "../config.ts";
 import type { Section } from "../domain/report.ts";
 import type { CtxInput } from "./input.ts";
@@ -16,22 +25,31 @@ import type { Part } from "./manifest.ts";
 
 export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Section[] {
   switch (part.kind) {
-    case "rules": {
-      const section = ruleSection(input, resolved, part.category);
+    case "rules":
       return [
         {
           title: `Rules: ${part.category}`,
-          body: section.text,
-          part: { kind: "rules", source: section.key },
+          body: categoryText(input, resolved, part.category),
+          part: { kind: "rules", source: `rules/${part.category}` },
+        },
+      ];
+    case "language-rules":
+      return languageRules(ruleContext(input, resolved)).map(({ language, rules }) => ({
+        title: `Language rules: ${language}`,
+        body: ruleLines(rules),
+        part: { kind: "language-rules", source: `rules/languages/${language}` },
+      }));
+    case "project-rules": {
+      const rules = projectRules(ruleContext(input, resolved));
+      if (rules.length === 0) return [];
+      return [
+        {
+          title: "Project rules",
+          body: ruleLines(rules),
+          part: { kind: "project-rules", source: PROJECT_RULES_DIR },
         },
       ];
     }
-    case "language-rules":
-      return languageSections(input, resolved).map((section) => ({
-        title: `Language rules: ${section.key.slice("rules/languages/".length)}`,
-        body: section.text,
-        part: { kind: "language-rules", source: section.key },
-      }));
     case "fragment": {
       const choice = lavish(input, resolved) ? "lavish" : "ask-user";
       const key = declared(fragmentPrompts, `fragments/decision/${choice}`);
@@ -72,15 +90,15 @@ export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Sec
 }
 
 /**
- * The resolved text of the rule set `rules/<category>`, as `ctx skill` puts
- * it in a skill's context; the graph's instructions carry the same text.
+ * The enabled pack rules of one category as `- [<id>] <text>` lines, as `ctx
+ * skill` prints them; the graph's instructions carry the same text. An
+ * unknown category is a broken manifest or pipeline and throws.
  */
-export function ruleSet(
-  store: CtxInput["store"],
-  resolved: Resolved,
-  category: string,
-): string | undefined {
-  return rulesRuleSet(store, resolved, category);
+export function categoryText(input: RulesInput, resolved: Resolved, category: string): string {
+  if (!RULE_CATEGORIES.includes(category)) {
+    throw new Error(`${category} is not a rule category of the pack`);
+  }
+  return ruleLines(packRules(ruleContext(input, resolved), category));
 }
 
 function prompt(input: CtxInput, resolved: Resolved, key: string): string {

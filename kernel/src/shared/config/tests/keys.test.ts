@@ -13,8 +13,10 @@ describe("keySteps", () => {
       { segment: "unit", id: true },
       { segment: "scoped", id: false },
     ]);
-    expect(keySteps(registry.tree, "prompts.files.rules/security")?.at(-1)).toStrictEqual({
-      segment: "rules/security",
+    expect(
+      keySteps(registry.tree, "prompts.files.fragments/decision/lavish")?.at(-1),
+    ).toStrictEqual({
+      segment: "fragments/decision/lavish",
       id: false,
     });
   });
@@ -26,15 +28,15 @@ describe("keySteps", () => {
 
 describe("declaredSteps", () => {
   it("accepts a registered prompt key under prompts.files and refuses another", () => {
-    expect(declaredSteps(registry, "prompts.files.rules/languages/go")).toHaveLength(3);
-    expect(declaredSteps(registry, "prompts.files.rules/nope")).toBeUndefined();
+    expect(declaredSteps(registry, "prompts.files.fragments/decision/lavish")).toHaveLength(3);
+    expect(declaredSteps(registry, "prompts.files.fragments/nope")).toBeUndefined();
   });
 });
 
 describe("unknownKeyMessage", () => {
   it.each([
     ["tools.tests", "unknown key; did you mean tools.test?"],
-    ["rules.max-per-package", "lands with T31"],
+    ["rules.max-learnings-per-change", "unknown key"],
     ["features.serena", expect.stringMatching(/^removed v2 key: /) as unknown],
     ["zzz", "unknown key"],
   ])("explains %s", (key, message) => {

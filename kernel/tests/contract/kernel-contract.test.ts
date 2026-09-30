@@ -42,7 +42,7 @@ function examplesOf(file: string): unknown[] {
 
 /** A copy of `value` without its first required field, which every schema must reject. */
 function broken(file: string, value: unknown): unknown {
-  const [field] = requiredOf(file);
+  const [field] = requiredOf(file, value);
   if (field === undefined) throw new Error(`${file} requires no field, so nothing can break it`);
   const copy = { ...(value as Record<string, unknown>) };
   Reflect.deleteProperty(copy, field);

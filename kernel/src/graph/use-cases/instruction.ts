@@ -1,5 +1,5 @@
 // Gathers what the instruction of a node needs (design D-9): the resolved
-// template `pipeline/<kind>`, the rule sets through `ctx`, and the ledger
+// template `pipeline/<kind>`, the pack's rules by id through `ctx`, and the ledger
 // entries that concern the node, newest first.
 import { posix, relative, sep } from "node:path";
 
@@ -8,7 +8,7 @@ import { composeInstruction } from "../domain/instruction.ts";
 import { live } from "../domain/kinds/index.ts";
 import type { GraphEntry } from "../domain/kinds/index.ts";
 import { pipelinePrompts } from "../config.ts";
-import { ruleSet } from "../../ctx/index.ts";
+import { categoryText } from "../../ctx/index.ts";
 import { promptContent } from "../../shared/config/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import type { GraphDeps } from "./deps.ts";
@@ -36,7 +36,11 @@ export function instructionOf(
     paths: writes.map((path) => posix.join(dir, path)),
     rules: (node.node.rules ?? []).map((category) => ({
       category,
-      text: ruleSet(deps.store, read.resolved, category) ?? "",
+      text: categoryText(
+        { store: deps.store, pluginRoot: deps.pluginRoot, projectRoot: change.projectRoot },
+        read.resolved,
+        category,
+      ),
     })),
     ledger: ledgerOf(read.view.entries, [node.id, ...writes]),
   });

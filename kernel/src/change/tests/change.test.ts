@@ -23,6 +23,7 @@ import {
   runBdk,
   sequentialRandom,
   writeChangeDoc,
+  writePackage,
 } from "../../log/tests/support.ts";
 import type { FakeGit } from "../../log/tests/support.ts";
 import { settingsRegistry } from "../../registrations.ts";
@@ -275,7 +276,7 @@ describe("change new", () => {
 
   it("opens the Change without next when the graph refuses the settings", async () => {
     const h = harness();
-    h.store.write(`${ROOT}/.bdk/settings.local.yaml`, "rules:\n  max-per-package: 3\n");
+    h.store.write(`${ROOT}/.bdk/settings.local.yaml`, "rules:\n  max-learnings-per-change: 3\n");
 
     const result = await h.run(["change", "new", "Add dark mode", "--json"]);
 
@@ -346,6 +347,7 @@ describe("change status", () => {
       stage: "plan",
       parts: [],
       openTickets: [],
+      rulesTruncated: [],
       overriddenKeys: [],
     });
   });
@@ -373,6 +375,23 @@ describe("change status", () => {
 
     const result = await h.run(["change", "status", "--json"]);
     expect(result.json).toMatchObject({ profile: "large" });
+  });
+
+  it("lists the open tickets whose package dropped rules at the cap", async () => {
+    const h = harness(repository());
+    addAttempt(h.store, "A-7f3k9m2q");
+    writePackage(h.store, "A-7f3k9m2q", "implementer", "02-3", 5);
+    addAttempt(h.store, "A-00000009");
+    writePackage(h.store, "A-00000009", "implementer", "02-3", 0);
+
+    const result = await h.run(["change", "status", "--json"]);
+    expect(changeStatusOutput.parse(result.json).rulesTruncated).toStrictEqual([
+      { ticket: "A-7f3k9m2q", target: "02-3", role: "implementer", count: 5 },
+    ]);
+    const text = await h.run(["change", "status"]);
+    expect(text.stdout).toContain(
+      "rules truncated: A-7f3k9m2q (implementer, 02-3) dropped 5 rules at rules.max-per-package",
+    );
   });
 
   it("shows the parked block and open tickets", async () => {
