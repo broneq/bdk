@@ -1,0 +1,96 @@
+diff --git a/src/operator/OperatorDashboard.tsx b/src/operator/OperatorDashboard.tsx
+new file mode 100644
+index 0000000..52411a0
+--- /dev/null
++++ b/src/operator/OperatorDashboard.tsx
+@@ -0,0 +1,90 @@
++import { createContext, useContext, useEffect, useRef, useState } from 'react'
++
++const PointerContext = createContext({ x: 0, y: 0 })
++const ActorContext = createContext('')
++
++function useMount(effect: () => void) {
++  // eslint-disable-next-line react-hooks/exhaustive-deps
++  useEffect(effect, [])
++}
++
++function ActorName() {
++  const actor = useContext(ActorContext)
++  return <span>{actor}</span>
++}
++
++function PointerReadout() {
++  const { x, y } = useContext(PointerContext)
++  return <span>{`${x}, ${y}`}</span>
++}
++
++type DashboardProps = { actor: string; onRefresh: () => void }
++
++export function OperatorDashboard({ actor, onRefresh }: DashboardProps) {
++  const [pointer, setPointer] = useState({ x: 0, y: 0 })
++  const [isSaving, setIsSaving] = useState(false)
++  const [isSaved, setIsSaved] = useState(false)
++  const [saveError, setSaveError] = useState<string | null>(null)
++  const [entries, setEntries] = useState<string[]>([])
++  const [filter, setFilter] = useState('')
++  const onRefreshRef = useRef(onRefresh)
++  onRefreshRef.current = onRefresh
++
++  useMount(() => {
++    const listener = (event: MouseEvent) => setPointer({ x: event.clientX, y: event.clientY })
++    window.addEventListener('mousemove', listener)
++  })
++
++  useEffect(() => {
++    const timer = window.setInterval(() => onRefreshRef.current(), 30_000)
++    return () => window.clearInterval(timer)
++  }, [])
++
++  useEffect(() => {
++    fetch('/api/admin/audit-logs')
++      .then((response) => response.json())
++      .then((body: { items: { summary: string }[] }) => setEntries(body.items.map((item) => item.summary)))
++  }, [])
++
++  async function save() {
++    setIsSaving(true)
++    setIsSaved(false)
++    setSaveError(null)
++    try {
++      await fetch('/api/admin/operator-notes', { method: 'POST', body: filter })
++      setIsSaved(true)
++    } catch (error) {
++      setSaveError(String(error))
++    } finally {
++      setIsSaving(false)
++    }
++  }
++
++  return (
++    <PointerContext.Provider value={pointer}>
++      <ActorContext.Provider value={actor}>
++        <header>
++          <ActorName />
++          <PointerReadout />
++        </header>
++        <input value={filter} onChange={(event) => setFilter(event.target.value)} />
++        <ul>
++          {entries
++            .filter((entry) => entry.includes(filter))
++            .map((entry) => (
++              <li key={entry}>{entry}</li>
++            ))}
++        </ul>
++        <button onClick={save} disabled={isSaving}>
++          {isSaving ? 'Saving…' : isSaved ? 'Saved' : 'Save'}
++        </button>
++        {saveError && <p role="alert">{saveError}</p>}
++        <svg width="400" height="80">
++          {entries.map((entry, index) => (
++            <rect key={entry} x={index * 12} y={80 - entry.length} width={10} height={entry.length} />
++          ))}
++        </svg>
++      </ActorContext.Provider>
++    </PointerContext.Provider>
++  )
++}

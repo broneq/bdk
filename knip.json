@@ -4,9 +4,11 @@
     "kernel/src/main.ts",
     "kernel/src/shared/*/index.ts",
     "kernel/scripts/export-schemas.ts",
-    "skill-check.config.ts"
+    "skill-check.config.ts",
+    "evals/suites/*/hooks.ts"
   ],
-  "project": ["kernel/**/*.ts", "kernel/**/*.mjs"],
+  "project": ["kernel/**/*.ts", "kernel/**/*.mjs", "evals/**/*.ts"],
+  "ignore": ["evals/suites/*/hidden/**"],
   "tags": ["-public"],
   "ignoreBinaries": ["uv", "openspec"]
 }

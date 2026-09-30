@@ -1,0 +1,1 @@
+Operators can export the audit rows they are looking at as a CSV file: an "Export CSV" button on the operator audit page downloads the current page of rows, with a file name that records the date, the active filters and the page.

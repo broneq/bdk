@@ -41,7 +41,7 @@ Every BDK skill:
    /plugin install ~/projects/bdk
    ```
 3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
-4. Run evals if available — see `.claude/rules/skill-test-eval.md`
+4. Measure the change when it can move behaviour: `pnpm eval with-without --skill bdk:<name> --tasks <file>` (probe first; see `evals/README.md`)
 
 ---
 
@@ -51,7 +51,7 @@ Every BDK skill:
 2. Keep it language-agnostic — no hardcoded tool names, paths, or commands
 3. Start with the standard header (see `.claude/rules/portability-check.md`)
 4. Add an entry to the Skills table in `README.md`
-5. Write an eval in `tests/skills/<name>/`
+5. Measure it against its absence: a task file and `pnpm eval with-without --skill bdk:<name> --tasks <file>` (`evals/README.md`)
 6. Review it with `/bdk-skill-kit:skill-authoring` and run `pnpm skill-check` (conventions: `.claude/rules/skills.md`)
 
 ## Adding an Agent

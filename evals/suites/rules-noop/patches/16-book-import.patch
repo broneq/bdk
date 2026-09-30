@@ -1,0 +1,44 @@
+diff --git a/src/admin/bookImport.ts b/src/admin/bookImport.ts
+new file mode 100644
+index 0000000..f5fd79d
+--- /dev/null
++++ b/src/admin/bookImport.ts
+@@ -0,0 +1,38 @@
++import type { BookCreateRequest } from '../api/catalog'
++
++type ImportResult = { imported: number; errors: string[] }
++
++export async function importBooks(file: File): Promise<ImportResult> {
++  const rows = JSON.parse(await file.text()) as BookCreateRequest[]
++  const errors: string[] = []
++  let imported = 0
++  for (const row of rows) {
++    const response = await fetch('/api/books', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify(row),
++    })
++    if (response.ok) {
++      imported += 1
++    } else {
++      errors.push(await response.text())
++    }
++  }
++  return { imported, errors }
++}
++
++export function importSummaryHtml(result: ImportResult, fileName: string): string {
++  return `<p>Imported ${result.imported} books from <b>${fileName}</b></p>` +
++    result.errors.map((error) => `<li>${error}</li>`).join('')
++}
++
++export function importErrorMessage(error: unknown): string {
++  if (error instanceof Error) {
++    return `Import failed: ${error.message}\n${error.stack ?? ''}`
++  }
++  return 'Import failed'
++}
++
++export function logImport(fileName: string, result: ImportResult) {
++  console.info('import ' + fileName + ' done: ' + JSON.stringify(result))
++}

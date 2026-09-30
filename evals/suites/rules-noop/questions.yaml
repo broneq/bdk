@@ -1,0 +1,267 @@
+# M1 knowledge test (design D-8): one question per rule bullet. A model answers
+# blind, without the rules; the judge compares the answer with the bullet. A
+# question asks for what the bullet says without quoting it: no run of six
+# words is shared with the bullet (checked by questions.test.ts). A changed
+# bullet gets a new id, so its question must be reviewed again.
+- bullet: architecture.01.54b5ad15
+  question: How should a module's responsibilities and its public surface be shaped so the rest of a codebase can depend on it safely?
+- bullet: architecture.02.a5df5e89
+  question: What rules govern which way imports and dependencies between the layers of an application may point?
+- bullet: architecture.03.1ae7614c
+  question: In a layered design, where should the interface for persistence live when the business logic needs to store data, and why?
+- bullet: architecture.04.26099829
+  question: A dozen consumers implement one large interface, and several of them leave half its methods unimplemented. What does that tell you, and what should change?
+- bullet: architecture.05.5785e278
+  question: When is the right moment to pull a shared abstraction out of similar code, and when is it too early?
+- bullet: architecture.06.5f36bcdd
+  question: What should justify introducing a new layer of indirection or a new abstraction into a codebase?
+- bullet: architecture.07.357bc58d
+  question: A configuration value is declared in the backend and again as a literal in the frontend. What principle does this touch, and what is the risk?
+- bullet: code-quality.01.e4ed906e
+  question: What makes an identifier name good, and when are shortened names acceptable?
+- bullet: code-quality.02.056621da
+  question: How large should a single function be, and what is the measure of "too large"?
+- bullet: code-quality.03.28b26fee
+  question: A class both saves records to the database and formats them for display. What design principle applies, and what should be done?
+- bullet: code-quality.04.e5a77810
+  question: When should code carry a comment, and which kinds of comments should not be written at all?
+- bullet: code-quality.05.7ff54a8f
+  question: You edit a function whose comment already runs to several sentences. How should you treat that comment as part of your change?
+- bullet: code-quality.06.db386736
+  question: Where in a program should inputs be validated and errors guarded against, and where is defensive checking unnecessary?
+- bullet: code-quality.07.98e318ea
+  question: What should happen to code that is no longer used?
+- bullet: code-quality.08.226892d5
+  question: What testing obligation comes with adding a new public function or endpoint, and what are those tests for?
+- bullet: code-quality.09.41d89cfb
+  question: A feature runs as a background chain of queue, worker and webhook calls that can fail at several external services. What logging does it need, and in what minimum form?
+- bullet: code-quality.10.5476143b
+  question: Should a set of general code-quality principles for reviewers mention specific linters or test runners?
+- bullet: design-patterns.01.ec59d579
+  question: When is it appropriate to introduce a named design pattern into code, and when is it not?
+- bullet: design-patterns.02.eea458e1
+  question: A function contains an if/else chain choosing between several algorithms at runtime, and a new branch is added every release. Which pattern fits, and why?
+- bullet: design-patterns.03.2dad9824
+  question: When is it worth centralising object creation in a dedicated creator, and when is that overkill?
+- bullet: design-patterns.04.78b91b1a
+  question: A component must notify a changing set of other components when something happens, without knowing who they are. Which pattern applies?
+- bullet: design-patterns.05.843b44bd
+  question: How should optional, combinable extra behaviour be added to an object without creating a subclass for each combination?
+- bullet: design-patterns.06.f5d3ec17
+  question: How should database access be separated from domain objects, and which pattern does that?
+- bullet: design-patterns.07.712e8a13
+  question: Helper functions throughout a codebase extract fields from an object and compute results from them externally. What principle is violated, and where should that logic live?
+- bullet: design-patterns.08.dacc8c77
+  question: You find two functions outside a class that only read and modify that class's fields. What should you do before a third one appears?
+- bullet: design-patterns.09.5f5e9bf0
+  question: Code switches on a "kind" string to decide how to process each document type. What refactoring removes the switch, and what is the benefit?
+- bullet: design-patterns.10.ff10f7bf
+  question: Supporting a new payment method requires editing a central function that every checkout path calls. Which SOLID principle is at stake, and when should you act on it?
+- bullet: design-patterns.11.3b98ce86
+  question: A subclass overrides an inherited method to throw "not supported". Which principle does that break, and what should be done instead?
+- bullet: design-patterns.12.36037d8b
+  question: Name common structural anti-patterns in object-oriented code that reviewers should flag, with a short description of each.
+- bullet: design-patterns.13.47ca8808
+  question: When recommending a design pattern in a review or a plan, what should the recommendation contain?
+- bullet: design-patterns.14.a9368ad8
+  question: Which design patterns come up most often in code review, and how should less common patterns from the classic catalog be treated?
+- bullet: engineering-judgment.01.1c143231
+  question: When AI agents write the code, how much weight should implementation effort carry when choosing between two technical approaches?
+- bullet: engineering-judgment.02.56e82a4b
+  question: While implementing a feature you notice an unrelated part of the codebase that is plainly broken. What should you do?
+- bullet: security.01.26bead3a
+  question: Which data entering an application should be treated as untrusted, and where should it be checked?
+- bullet: security.02.882ee51d
+  question: How should user input be combined with SQL queries or shell commands so that it cannot change their meaning?
+- bullet: security.03.88c26adb
+  question: When and how should user-supplied data be escaped so it is safe in HTML, URLs, scripts and logs?
+- bullet: security.04.ea1485ed
+  question: Where may API keys, passwords and connection strings appear in a project, and where must they never appear?
+- bullet: security.05.8e63100b
+  question: What is the difference between checking who a user is and checking what they may do, and where should each check happen?
+- bullet: security.06.84dd9121
+  question: How much access should a service account, database role or API token be given?
+- bullet: security.07.fe53e6a3
+  question: An authorization check throws an unexpected exception. Should the request proceed or be denied, and what is the general principle?
+- bullet: security.08.b52f50c9
+  question: What should an API response or user-facing error message leave out, and why?
+- bullet: security.09.e8d17979
+  question: What practices keep third-party packages from becoming a security liability?
+- bullet: security.10.f3eef68b
+  question: Should a general set of security review principles name particular vulnerability scanners or linters?
+- bullet: test-quality.01.c64e3dd1
+  question: Before writing a unit test, what should you be able to state about it, and what if you cannot?
+- bullet: test-quality.02.7ee028ff
+  question: Is it a good idea to write a test that checks that the README contains a certain sentence? Why or why not?
+- bullet: test-quality.03.c00d9084
+  question: Should a test read source files to check that some import is not used, or that a naming convention is followed?
+- bullet: test-quality.04.93bd498a
+  question: Should a test check that a function's docstring mentions a particular parameter or term?
+- bullet: test-quality.05.038d2a57
+  question: Is a test that only checks that a configuration file exists on disk worth having? What should you test instead?
+- bullet: test-quality.06.51848a5d
+  question: A test configures a mock to return 42 and then asserts that the result is 42. What is wrong with it?
+- bullet: test-quality.07.8a3de13b
+  question: What is the value of a test asserting that MAX_RETRIES equals 3 when MAX_RETRIES is defined as 3?
+- bullet: test-quality.08.1b4f5c32
+  question: A test only verifies that a dependency's save method was called once, and checks nothing else. What is the problem?
+- bullet: test-quality.09.aab96a99
+  question: Which kinds of test assertions make a test pass no matter what the code under test does?
+- bullet: test-quality.10.e443895c
+  question: Is a test that imports a module and checks that a function is defined and callable useful?
+- bullet: test-quality.11.4f8ce52c
+  question: In a statically typed language, should a test assert that a function returns a string when its signature already says so?
+- bullet: test-quality.12.50d9906a
+  question: A test asserts that a response object has five keys and an "items" field, without looking at any values. What does such a test miss?
+- bullet: test-quality.13.4340d869
+  question: If tests on prose content are discouraged, may you still test that a template engine substitutes a placeholder correctly? Why?
+- bullet: test-quality.14.000e5dd1
+  question: Is it legitimate to test that a YAML configuration file parses and conforms to its schema?
+- bullet: test-quality.15.67efa34a
+  question: Which string outputs of a program are legitimate to assert on exactly in tests?
+- bullet: test-quality.16.5e2bb8be
+  question: When are snapshot tests of generated output acceptable?
+- bullet: test-quality.17.b8a39a39
+  question: A change only edits documentation, and the only possible test would check wording. What should you do about testing it?
+- bullet: languages/javascript.01.3656bc66
+  question: Which module system and export style should new JavaScript code use, and why?
+- bullet: languages/javascript.02.1e2c38ec
+  question: Two JavaScript modules import each other. What problems can that cause, and how should it be fixed?
+- bullet: languages/javascript.03.d8477f81
+  question: How should JavaScript code choose between const, let and var?
+- bullet: languages/javascript.04.4cc2150a
+  question: How should modern JavaScript sort, reverse or update an array that other code also holds a reference to?
+- bullet: languages/javascript.05.22be531b
+  question: What is the preferred way to write sequential asynchronous JavaScript, and why?
+- bullet: languages/javascript.06.ba108d02
+  question: A loop awaits a network request for each of ten unrelated ids, one after another. What is wrong, and what should be used instead?
+- bullet: languages/javascript.07.97883d94
+  question: What happens when an async function is called without await or a catch handler, and how should that be prevented?
+- bullet: languages/javascript.08.61063137
+  question: How should long-running fetches and other asynchronous operations in JavaScript be stopped when their result is no longer needed?
+- bullet: languages/javascript.09.bdc1f5f3
+  question: Which equality operator should JavaScript code use, and why?
+- bullet: languages/javascript.10.f79ad05e
+  question: What is the problem with `count || 10` as a default value in JavaScript, and what is the better alternative for defaults and for reading nested properties?
+- bullet: languages/javascript.11.1c0fb041
+  question: How should JavaScript code wrap a low-level error in a higher-level one, and how should different kinds of failure be represented?
+- bullet: languages/javascript.12.62d43cb6
+  question: Which recent built-in JavaScript features replace common hand-written helpers or utility-library calls?
+- bullet: languages/javascript.13.170d7d21
+  question: Where is it appropriate to use await at the top level of an ES module, and where is it harmful?
+- bullet: languages/javascript.14.cdf81466
+  question: How should a JavaScript codebase separate computation from I/O and other side effects, and what should not happen when a module is imported?
+- bullet: languages/javascript.15.a6220c9f
+  question: Which classic JavaScript pitfalls silently produce wrong results, and how do you avoid them?
+- bullet: languages/javascript.16.fb708e4d
+  question: Which JavaScript features can execute a string or path supplied by an attacker as code, and what should be used instead?
+- bullet: languages/javascript.17.1c945754
+  question: How should a browser application insert user-supplied text into the page safely?
+- bullet: languages/javascript.18.6205c1b3
+  question: What danger arises when deep-merging JSON received from users into objects, and how is it prevented?
+- bullet: languages/javascript.19.b7a40285
+  question: In Node.js, how should a child process be started when some of its arguments come from users?
+- bullet: languages/javascript.20.04eccab6
+  question: A server fetches a URL that the user supplied. What checks must happen before the request is made?
+- bullet: languages/javascript.21.18578ef9
+  question: A Node.js endpoint reads a file whose name comes from the request. How do you stop it from reading files outside the intended folder?
+- bullet: languages/javascript.22.f316889c
+  question: How can a regular expression take down a Node.js service, and how do you guard against it?
+- bullet: languages/javascript.23.02a8cb13
+  question: Which random number source should be used for session tokens in JavaScript, and why not Math.random?
+- bullet: languages/javascript.24.6df1d612
+  question: How should a server compare an incoming token or HMAC with the expected value?
+- bullet: languages/javascript.25.30a53061
+  question: What must a page check when it receives window messages from other frames, and what should be added to links that open a new tab on another site?
+- bullet: languages/react.01.7f1e2abd
+  question: In modern React with a server-rendering framework, which components should run on the client, and where should the client boundary be placed?
+- bullet: languages/react.02.770dd87f
+  question: With the React Compiler enabled, should components still use useMemo, useCallback and React.memo?
+- bullet: languages/react.03.d753f359
+  question: What is useEffect meant for, and how should values computed from props or state be handled instead?
+- bullet: languages/react.04.bd01d447
+  question: How should form submission, pending state and errors be handled in React 19?
+- bullet: languages/react.05.c8d8910c
+  question: What is the recommended way to load data in React 19 components instead of isLoading flags in state?
+- bullet: languages/react.06.9fabf21e
+  question: How should a React app decide between local component state, Context and an external state library?
+- bullet: languages/react.07.354f8c17
+  question: A prop is passed down through four layers of components that do not use it. What should you do before reaching for Context?
+- bullet: languages/react.08.da4c4908
+  question: How should React components use native HTML elements and ARIA attributes for accessibility?
+- bullet: languages/react.09.0fd2a34f
+  question: How should Suspense boundaries and error boundaries be combined in a React app, and where should errors be reported centrally?
+- bullet: languages/react.10.b94cb0a5
+  question: How are refs passed to function components in React 19, and how should resources tied to a ref be released?
+- bullet: languages/react.11.47cc2659
+  question: When should a React component use useState, useReducer or useActionState?
+- bullet: languages/react.12.78cadee6
+  question: When should a large React component be split into smaller ones?
+- bullet: languages/react.13.faaba6fa
+  question: A React button component has isLoading, isError, isDisabled and isRounded props plus six more. What is the design problem, and how should the props be restructured?
+- bullet: languages/react.14.3f4c147c
+  question: When should logic be extracted into a custom React hook, where should the hook live, and what kinds of hooks are not worth writing?
+- bullet: languages/react.15.fd4c706b
+  question: An effect needs to call the latest version of a callback prop without re-running whenever the callback changes. What is the modern React tool for this, and how must it be used?
+- bullet: languages/react.16.bade8d1b
+  question: Where should useOptimistic be used relative to Suspense boundaries, and what goes wrong when the two are mixed?
+- bullet: languages/react.17.6e3551fc
+  question: Should a React Server Action signal a failure by returning a value or by throwing, and what decides it?
+- bullet: languages/react.18.5d6ea2fe
+  question: Which kinds of values belong in React Context, and which belong in a separate state store, whether or not the React Compiler is used?
+- bullet: languages/react.19.9766037e
+  question: When is it worth using React's ViewTransition component, and when is it not?
+- bullet: languages/react.20.0477adec
+  question: Where in a React app should preload and preinit be called for fonts, scripts and styles, and why there?
+- bullet: languages/react.21.94ab3e2d
+  question: Where do cross-site scripting risks remain in React despite JSX escaping, and how should they be handled?
+- bullet: languages/react.22.cc13d2c5
+  question: Is it safe to render a user-supplied URL as a link's href in React? What must be checked?
+- bullet: languages/react.23.774e0d8f
+  question: How much should a React Server Action trust the arguments and ids it receives from the client?
+- bullet: languages/react.24.80817108
+  question: Which data must never reach client components in a React app, and how can it leak into the browser bundle?
+- bullet: languages/typescript.01.652cdaa6
+  question: When should a TypeScript project enable the strict compiler option, and how should a project without it be treated?
+- bullet: languages/typescript.02.f372a9a8
+  question: Which TypeScript compiler options beyond the strict family are worth enabling to catch null and optional-property bugs, and what does each do?
+- bullet: languages/typescript.03.cc1de1ef
+  question: Which type should TypeScript code give to parsed JSON and API responses, and why not any?
+- bullet: languages/typescript.04.ced7773d
+  question: Where should explicit type annotations be written in TypeScript, and where should inference be left to do the work?
+- bullet: languages/typescript.05.bb9b783b
+  question: Does a TypeScript type on a request body guarantee anything about the data at runtime? How should incoming data be handled?
+- bullet: languages/typescript.06.574c25ce
+  question: How should TypeScript model a value that can be in one of several distinct states?
+- bullet: languages/typescript.07.9cc08024
+  question: How can TypeScript types be designed so that impossible combinations of values fail to compile?
+- bullet: languages/typescript.08.81127fac
+  question: How do you make the TypeScript compiler fail when a new member is added to a union but a switch statement does not handle it?
+- bullet: languages/typescript.09.dc7b325b
+  question: How should a TypeScript configuration object be checked against a type while keeping its narrow literal types?
+- bullet: languages/typescript.10.a1c07b66
+  question: What are the risks of type assertions with `as` in TypeScript, and what should replace them?
+- bullet: languages/typescript.11.4ac2e4a4
+  question: What does the non-null assertion operator do in TypeScript, and how should its use be judged?
+- bullet: languages/typescript.12.7a742072
+  question: What is the type of the value caught in a TypeScript catch block, how should it be handled, and what is an alternative to throwing for expected failures?
+- bullet: languages/typescript.13.fc7ffd88
+  question: Should new TypeScript code use enum? What are the alternatives, and why?
+- bullet: languages/typescript.14.59fe5951
+  question: When do advanced TypeScript generics and conditional types become a problem, and what should you do about it?
+- bullet: languages/typescript.15.8dad880f
+  question: When are TypeScript template literal types a good fit, and when do they cause trouble?
+- bullet: languages/typescript.16.e37a8262
+  question: Which module-related compiler options should a TypeScript project built with a modern bundler set, and why?
+- bullet: languages/typescript.17.d06cfb2e
+  question: Can TypeScript types protect a server from malicious requests? What must be done at runtime?
+- bullet: languages/typescript.18.eec3bdec
+  question: What type does JSON.parse produce in TypeScript, and what risks follow from using its result directly?
+- bullet: languages/typescript.19.00a6efe2
+  question: Why does it matter for security whether user input is typed any or unknown in TypeScript?
+- bullet: languages/typescript.20.fba20d9c
+  question: How far can you rely on the type declarations of a third-party npm package at a security boundary?
+- bullet: languages/typescript.21.4ebaaaf8
+  question: What supply-chain risks come with npm dependencies, and what practices reduce them?
+- bullet: languages/typescript.22.dbd6f1d7
+  question: What problem does the TypeScript option verbatimModuleSyntax solve?

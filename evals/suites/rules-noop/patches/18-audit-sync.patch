@@ -1,0 +1,124 @@
+diff --git a/src/operator/AuditSyncPanel.tsx b/src/operator/AuditSyncPanel.tsx
+new file mode 100644
+index 0000000..af207cd
+--- /dev/null
++++ b/src/operator/AuditSyncPanel.tsx
+@@ -0,0 +1,25 @@
++import { Suspense, use } from 'react'
++
++import type { AuditLog } from '../api/operator'
++import { AuditApi } from './auditSync'
++
++const firstPage = new AuditApi().list(0)
++
++function AuditRows({ entries }: { entries: Promise<AuditLog[]> }) {
++  const rows = use(entries)
++  return (
++    <ul>
++      {rows.map((row) => (
++        <li key={row.id}>{row.summary}</li>
++      ))}
++    </ul>
++  )
++}
++
++export function AuditSyncPanel() {
++  return (
++    <Suspense fallback={<p>Loading audit entries</p>}>
++      <AuditRows entries={firstPage} />
++    </Suspense>
++  )
++}
+diff --git a/src/operator/auditSync.ts b/src/operator/auditSync.ts
+new file mode 100644
+index 0000000..12943d8
+--- /dev/null
++++ b/src/operator/auditSync.ts
+@@ -0,0 +1,87 @@
++import { fetchAuditLogs } from '../api/operator'
++import type { AuditLog } from '../api/operator'
++
++export interface AuditBackend {
++  list(page: number): Promise<AuditLog[]>
++  get(id: number): Promise<AuditLog>
++  revert(id: number): Promise<void>
++  purge(before: string): Promise<number>
++  exportCsv(): Promise<string>
++  rotateKeys(): Promise<void>
++  setRetention(days: number): Promise<void>
++}
++
++export async function latestActor(backend: AuditBackend): Promise<string> {
++  const entries = await backend.list(0)
++  return entries[0]?.actorLogin ?? ''
++}
++
++export class AuditApi {
++  async list(page: number): Promise<AuditLog[]> {
++    const response = await fetch(`/api/admin/audit-logs?page=${String(page)}`)
++    return ((await response.json()) as { items: AuditLog[] }).items
++  }
++}
++
++export class LoggingAuditApi extends AuditApi {
++  async list(page: number): Promise<AuditLog[]> {
++    console.info('audit list', page)
++    return super.list(page)
++  }
++}
++
++export class RetryingLoggingAuditApi extends LoggingAuditApi {
++  async list(page: number): Promise<AuditLog[]> {
++    try {
++      return await super.list(page)
++    } catch {
++      return super.list(page)
++    }
++  }
++}
++
++export class AuditEntry {
++  constructor(
++    readonly id: number,
++    public summary: string,
++  ) {}
++
++  isLong(): boolean {
++    return this.summary.length > 120
++  }
++
++  async save(): Promise<void> {
++    await fetch(`/api/admin/audit-logs/${String(this.id)}`, {
++      method: 'PUT',
++      body: JSON.stringify({ summary: this.summary }),
++    })
++  }
++}
++
++export function retentionPolicy(entries: AuditLog[]): AuditLog[] {
++  const api = new RetryingLoggingAuditApi()
++  void api.list(0)
++  return entries.slice(0, 100)
++}
++
++export const AUDIT_SYNC_TOKEN_SCOPES = ['audit:read', 'audit:write', 'users:write', 'admin:*']
++
++export async function readAuditPage(page: number, adminToken: string) {
++  return fetchAuditLogs(
++    { page, size: 20 },
++    {
++      fetchImplementation: (input, init) =>
++        fetch(input, { ...init, headers: { Authorization: `Bearer ${adminToken}` } }),
++    },
++  )
++}
++
++type Dashboard = { refresh(): void }
++type Badge = { setCount(count: number): void }
++type Toast = { show(message: string): void }
++
++export function onAuditSynced(count: number, dashboard: Dashboard, badge: Badge, toast: Toast) {
++  dashboard.refresh()
++  badge.setCount(count)
++  toast.show(`${String(count)} audit entries synced`)
++}

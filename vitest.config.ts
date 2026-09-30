@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 // Four projects (design D-2 of v3-t11-kernel-skeleton): `unit` runs the
-// slices' tests from source with coverage thresholds, `e2e` runs the committed
+// slices' and the eval harness's tests from source with coverage thresholds, `e2e` runs the committed
 // bundle in child processes, `contract` runs the contract, structure and
 // dependency tests and the docs site guards over the whole repository, and
 // `perf` runs the wall-clock budgets through the bundle. CI does not run
@@ -12,7 +12,14 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["kernel/src/**/*.test.ts", "kernel/tests/support/**/*.test.ts"],
+          include: [
+            "kernel/src/**/*.test.ts",
+            "kernel/tests/support/**/*.test.ts",
+            "evals/harness/**/*.test.ts",
+            "evals/suites/**/*.test.ts",
+          ],
+          // Hidden acceptance tests are fixture code, run inside a fixture copy.
+          exclude: ["evals/suites/*/hidden/**"],
         },
       },
       {
@@ -35,8 +42,18 @@ export default defineConfig({
     ],
     coverage: {
       provider: "v8",
-      include: ["kernel/src/**/*.ts"],
-      exclude: ["kernel/src/**/tests/**", "kernel/src/main.ts"],
+      include: ["kernel/src/**/*.ts", "evals/harness/**/*.ts", "evals/suites/**/*.ts"],
+      exclude: [
+        "kernel/src/**/tests/**",
+        "kernel/src/main.ts",
+        "evals/**/*.test.ts",
+        "evals/harness/main.ts",
+        // Wrappers around the Agent SDK and the promptfoo binary: exercised
+        // by `pnpm eval check` in CI and by measured runs, not unit tests.
+        "evals/harness/judge.ts",
+        "evals/harness/tools.ts",
+        "evals/suites/*/hidden/**",
+      ],
       thresholds: { lines: 90, functions: 90, statements: 90, branches: 85 },
     },
   },

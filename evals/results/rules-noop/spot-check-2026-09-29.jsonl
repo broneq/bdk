@@ -1,0 +1,520 @@
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"architecture.01.54b5ad15","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"architecture.02.a5df5e89","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"architecture.03.1ae7614c","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"architecture.05.5785e278","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"architecture.07.357bc58d","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.01.e4ed906e","run":3,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"COVERED","agree":false,"note":"loop counters and coordinates are idiomatic short names; scope-based advice does not contradict the rule"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.01.e4ed906e","run":4,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"COVERED","agree":false,"note":"same: i, j, x, y, ctx are idiomatic; the answer asks for descriptive names otherwise"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.01.e4ed906e","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.02.056621da","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.04.e5a77810","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.04.e5a77810","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.04.e5a77810","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.04.e5a77810","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.04.e5a77810","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.05.7ff54a8f","run":1,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.06.db386736","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.06.db386736","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.08.226892d5","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.09.41d89cfb","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"code-quality.10.5476143b","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.02.eea458e1","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.04.78b91b1a","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.06.f5d3ec17","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.08.dacc8c77","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.10.ff10f7bf","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.10.ff10f7bf","run":5,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.12.36037d8b","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.12.36037d8b","run":4,"measurement":"M1","selected":["sample"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.12.36037d8b","run":5,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.14.a9368ad8","run":1,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"MISSED","agree":false,"note":"names a different recurring set; it does not recommend against the rule"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.14.a9368ad8","run":2,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"names all five as common and asks justification for the rest"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.14.a9368ad8","run":4,"measurement":"M1","selected":["sample"],"judge":"WRONG","check":"MISSED","agree":false,"note":"names a different common set; it does not recommend against the rule"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"design-patterns.14.a9368ad8","run":5,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"MISSED","agree":false,"note":"same as 31"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"engineering-judgment.02.56e82a4b","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"engineering-judgment.02.56e82a4b","run":2,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"COVERED","agree":false,"note":"filing a documented ticket is flagging it explicitly, which the rule allows"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"engineering-judgment.02.56e82a4b","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"same: a documented ticket flags the bug"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"engineering-judgment.02.56e82a4b","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"same: a documented ticket flags the bug"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"engineering-judgment.02.56e82a4b","run":5,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"same: a filed issue flags the bug"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.02.1e2c38ec","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.03.d8477f81","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.03.d8477f81","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.03.d8477f81","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.04.4cc2150a","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.04.4cc2150a","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.04.4cc2150a","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.05.22be531b","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.06.ba108d02","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.08.61063137","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.09.bdc1f5f3","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.10.f79ad05e","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.11.1c0fb041","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.12.62d43cb6","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"the point is native stdlib over hand-rolling; the named APIs are examples"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.13.170d7d21","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.15.a6220c9f","run":1,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.17.1c945754","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.17.1c945754","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.17.1c945754","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.18.6205c1b3","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.19.b7a40285","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.20.04eccab6","run":1,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"scheme allowlist, private ranges after resolution and redirect re-checks state the point"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.20.04eccab6","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.20.04eccab6","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.20.04eccab6","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.21.18578ef9","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.21.18578ef9","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.22.f316889c","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.22.f316889c","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.22.f316889c","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.23.02a8cb13","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/javascript.25.30a53061","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.02.770dd87f","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.02.770dd87f","run":3,"measurement":"M1","selected":["sample","uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.04.bd01d447","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.04.bd01d447","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.05.c8d8910c","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.05.c8d8910c","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.06.9fabf21e","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.08.da4c4908","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.09.0fd2a34f","run":1,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.09.0fd2a34f","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.10.b94cb0a5","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.12.78cadee6","run":3,"measurement":"M1","selected":["sample"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.12.78cadee6","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.14.3f4c147c","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.14.3f4c147c","run":4,"measurement":"M1","selected":["sample"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.15.fd4c706b","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.15.fd4c706b","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.16.bade8d1b","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.19.9766037e","run":1,"measurement":"M1","selected":["sample"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.19.9766037e","run":2,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"WRONG","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.20.0477adec","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.21.94ab3e2d","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.21.94ab3e2d","run":2,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"names dangerouslySetInnerHTML as the hatch and DOMPurify at it; runs 1 and 3 with the same content were COVERED"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.21.94ab3e2d","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.21.94ab3e2d","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"same as 92"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/react.23.774e0d8f","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.01.652cdaa6","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.01.652cdaa6","run":2,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.03.cc1de1ef","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.03.cc1de1ef","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.05.bb9b783b","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.07.9cc08024","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.07.9cc08024","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.08.81127fac","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"a never-typed binding in the default branch is the guard; the helper is \"preferably\"; run 5 with the same pattern was COVERED"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.08.81127fac","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.09.dc7b325b","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.09.dc7b325b","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.11.4ac2e4a4","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.13.fc7ffd88","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.15.8dad880f","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.15.8dad880f","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.17.d06cfb2e","run":2,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"types erased, runtime validation required; run 4 with the same content was COVERED"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.17.d06cfb2e","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.18.eec3bdec","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.18.eec3bdec","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"any from JSON.parse, validate against a schema at the boundary; run 1 with the same content was COVERED"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.19.00a6efe2","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"languages/typescript.21.4ebaaaf8","run":2,"measurement":"M1","selected":["sample"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"security.01.26bead3a","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"security.03.88c26adb","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"security.05.8e63100b","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"security.07.fe53e6a3","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"security.09.e8d17979","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"security.09.e8d17979","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"security.09.e8d17979","run":5,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"pin via lock files, minimal footprint, well-maintained alternatives; run 3 with the same content was COVERED"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.01.c64e3dd1","run":2,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.02.7ee028ff","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.03.c00d9084","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.05.038d2a57","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.07.8a3de13b","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.09.aab96a99","run":2,"measurement":"M1","selected":["sample","uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.09.aab96a99","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"always-true and not-null-only assertions named; run 4 missing the same third item was COVERED"}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.09.aab96a99","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.10.e443895c","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.11.4f8ce52c","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.13.4340d869","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.15.67efa34a","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.15.67efa34a","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.16.5e2bb8be","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.16.5e2bb8be","run":5,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"haiku","item":"test-quality.17.b8a39a39","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"architecture.02.a5df5e89","run":3,"measurement":"M1","selected":["sample","uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"architecture.02.a5df5e89","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"architecture.04.26099829","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"architecture.06.5f36bcdd","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.01.e4ed906e","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.03.28b26fee","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.04.e5a77810","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.04.e5a77810","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.05.7ff54a8f","run":2,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.05.7ff54a8f","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.05.7ff54a8f","run":4,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.07.98e318ea","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"code-quality.09.41d89cfb","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.01.ec59d579","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.03.2dad9824","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.05.843b44bd","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.07.712e8a13","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.09.5f5e9bf0","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.11.3b98ce86","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.12.36037d8b","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.12.36037d8b","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.12.36037d8b","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.13.47ca8808","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.14.a9368ad8","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"design-patterns.14.a9368ad8","run":4,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"MISSED","agree":false,"note":"names a different common set; it does not recommend against the rule"}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"engineering-judgment.01.1c143231","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"engineering-judgment.02.56e82a4b","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.01.3656bc66","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.03.d8477f81","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.03.d8477f81","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.03.d8477f81","run":5,"measurement":"M1","selected":["sample","uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.05.22be531b","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.07.97883d94","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.09.bdc1f5f3","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.11.1c0fb041","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.12.62d43cb6","run":1,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"groupBy and at named with the thesis; runs 2, 3 and 5 with the same coverage were COVERED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.12.62d43cb6","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.12.62d43cb6","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.12.62d43cb6","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.13.170d7d21","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.15.a6220c9f","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.15.a6220c9f","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.15.a6220c9f","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.15.a6220c9f","run":5,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"floats, NaN and this named; runs 1, 2 and 4 with the same coverage were COVERED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.17.1c945754","run":5,"measurement":"M1","selected":["sample","uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.19.b7a40285","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.21.18578ef9","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.21.18578ef9","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.21.18578ef9","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.22.f316889c","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.23.02a8cb13","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/javascript.25.30a53061","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.02.770dd87f","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.04.bd01d447","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.04.bd01d447","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.04.bd01d447","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.06.9fabf21e","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.08.da4c4908","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.09.0fd2a34f","run":2,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.09.0fd2a34f","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.09.0fd2a34f","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"MISSED","agree":false,"note":"per-boundary onError with a shared reporter, no root onCaughtError; runs 2, 3 and 5 with the same content were MISSED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.09.0fd2a34f","run":5,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.10.b94cb0a5","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.11.47cc2659","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.12.78cadee6","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.12.78cadee6","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.12.78cadee6","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.12.78cadee6","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.13.faaba6fa","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.13.faaba6fa","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.14.3f4c147c","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.14.3f4c147c","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.15.fd4c706b","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.16.bade8d1b","run":2,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.16.bade8d1b","run":3,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"MISSED","agree":false,"note":"keeps useOptimistic with the state owner as the rule does; only the Suspense placement differs; run 5 with the same content was MISSED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.16.bade8d1b","run":5,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.18.5d6ea2fe","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.19.9766037e","run":2,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.19.9766037e","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"MISSED","agree":false,"note":"names route transitions as a prime use; run 2 with the same content was MISSED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.19.9766037e","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"MISSED","agree":false,"note":"same as 218"}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.20.0477adec","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.20.0477adec","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.22.cc13d2c5","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/react.24.80817108","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.02.f372a9a8","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.04.ced7773d","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.06.574c25ce","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.07.9cc08024","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"discriminated unions plus exhaustiveness state the point; haiku run 2 without branding was COVERED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.08.81127fac","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.08.81127fac","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.08.81127fac","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.08.81127fac","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.10.a1c07b66","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.12.7a742072","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.14.59fe5951","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.15.8dad880f","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.16.e37a8262","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.17.d06cfb2e","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.18.eec3bdec","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.18.eec3bdec","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.19.00a6efe2","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"languages/typescript.21.4ebaaaf8","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"security.01.26bead3a","run":1,"measurement":"M1","selected":["sample","uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"security.03.88c26adb","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"security.05.8e63100b","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"security.07.fe53e6a3","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"security.09.e8d17979","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"security.09.e8d17979","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"security.09.e8d17979","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.01.c64e3dd1","run":1,"measurement":"M1","selected":["sample"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.01.c64e3dd1","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.01.c64e3dd1","run":5,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.03.c00d9084","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.05.038d2a57","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.07.8a3de13b","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.09.aab96a99","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.11.4f8ce52c","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.13.4340d869","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.15.67efa34a","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet-prime","item":"test-quality.17.b8a39a39","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"architecture.02.a5df5e89","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"architecture.04.26099829","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"architecture.06.5f36bcdd","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.01.e4ed906e","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.03.28b26fee","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.04.e5a77810","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.04.e5a77810","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.05.7ff54a8f","run":1,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.05.7ff54a8f","run":2,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.05.7ff54a8f","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.07.98e318ea","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"code-quality.09.41d89cfb","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.01.ec59d579","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.03.2dad9824","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.05.843b44bd","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.07.712e8a13","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.09.5f5e9bf0","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.11.3b98ce86","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.12.36037d8b","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.12.36037d8b","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.12.36037d8b","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.13.47ca8808","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.14.a9368ad8","run":1,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.14.a9368ad8","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.14.a9368ad8","run":4,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"MISSED","agree":false,"note":"names a different common set; runs 1 and 3 with the same content were MISSED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"design-patterns.14.a9368ad8","run":5,"measurement":"M1","selected":["uncertain"],"judge":"WRONG","check":"MISSED","agree":false,"note":"same as 284"}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"engineering-judgment.01.1c143231","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.01.3656bc66","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.03.d8477f81","run":1,"measurement":"M1","selected":["sample","uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.03.d8477f81","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.03.d8477f81","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.05.22be531b","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.07.97883d94","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.09.bdc1f5f3","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.11.1c0fb041","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.12.62d43cb6","run":1,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"names at and groupBy and the stdlib thesis; runs 2 and 3 with the same content were COVERED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.12.62d43cb6","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.12.62d43cb6","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.13.170d7d21","run":1,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.13.170d7d21","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.15.a6220c9f","run":1,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"three of four listed foot-guns with their fixes; run 2 with the same coverage was COVERED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.15.a6220c9f","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.15.a6220c9f","run":5,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"same as 300"}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.17.1c945754","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.17.1c945754","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.17.1c945754","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.19.b7a40285","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.21.18578ef9","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.21.18578ef9","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.21.18578ef9","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.22.f316889c","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.22.f316889c","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.23.02a8cb13","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/javascript.25.30a53061","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.02.770dd87f","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.04.bd01d447","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.06.9fabf21e","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.08.da4c4908","run":2,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.09.0fd2a34f","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.09.0fd2a34f","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"pairs boundaries and centralizes reporting like runs 1 and 5, which were COVERED"}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.09.0fd2a34f","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.10.b94cb0a5","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.12.78cadee6","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.12.78cadee6","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.12.78cadee6","run":3,"measurement":"M1","selected":["sample","uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.12.78cadee6","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.12.78cadee6","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.13.faaba6fa","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.14.3f4c147c","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.15.fd4c706b","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.16.bade8d1b","run":3,"measurement":"M1","selected":["sample"],"judge":"WRONG","check":"WRONG","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.16.bade8d1b","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"COVERED","agree":false,"note":"puts useOptimistic in the state owner inside the boundary, which is the placement the rule gives"}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.18.5d6ea2fe","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.19.9766037e","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.20.0477adec","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.20.0477adec","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.22.cc13d2c5","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/react.24.80817108","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.02.f372a9a8","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.04.ced7773d","run":3,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.06.574c25ce","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.07.9cc08024","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.08.81127fac","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.08.81127fac","run":2,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.08.81127fac","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.08.81127fac","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.08.81127fac","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.10.a1c07b66","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.12.7a742072","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.14.59fe5951","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.15.8dad880f","run":1,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.15.8dad880f","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.15.8dad880f","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.16.e37a8262","run":4,"measurement":"M1","selected":["sample"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.17.d06cfb2e","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.18.eec3bdec","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.18.eec3bdec","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.18.eec3bdec","run":5,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.20.fba20d9c","run":4,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"languages/typescript.22.dbd6f1d7","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"security.01.26bead3a","run":3,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"security.02.882ee51d","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"security.04.ea1485ed","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"security.06.84dd9121","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"security.08.b52f50c9","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"security.10.f3eef68b","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.01.c64e3dd1","run":1,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.01.c64e3dd1","run":3,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.01.c64e3dd1","run":4,"measurement":"M1","selected":["uncertain"],"judge":"MISSED","check":"MISSED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.02.7ee028ff","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.04.93bd498a","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.06.51848a5d","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.08.1b4f5c32","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.10.e443895c","run":4,"measurement":"M1","selected":["uncertain"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.10.e443895c","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.12.50d9906a","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.14.000e5dd1","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m1-2026-09-29","cell":"sonnet","item":"test-quality.16.5e2bb8be","run":5,"measurement":"M1","selected":["sample"],"judge":"COVERED","check":"COVERED","agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"01-format-helpers","run":1,"measurement":"M2","selected":["sample"],"problems":7,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"flags the section header at lines 1-2, which the known problem names; the judge wanted the line-12 paraphrase too"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"01-format-helpers","run":2,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"same as 0:P5"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"01-format-helpers","run":4,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"same as 0:P5"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"02-api-errors","run":2,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":false,"disagreements":[{"problem":"P6","judge":false,"check":true,"note":"the finding at lines 13,18,24 names describeFailure's any parameter"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"02-api-errors","run":3,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"02-api-errors","run":4,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"02-api-errors","run":5,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"04-user-badge","run":1,"measurement":"M2","selected":["sample"],"problems":5,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"05-audit-tests","run":1,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"05-audit-tests","run":2,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"05-audit-tests","run":3,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"06-docs-tests","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":4,"agree":false,"disagreements":[{"problem":"P4","judge":false,"check":true,"note":"line 26 finding is the assertion on a code comment"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"06-docs-tests","run":3,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"06-docs-tests","run":5,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"08-audit-summary","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"08-audit-summary","run":2,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"08-audit-summary","run":3,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"08-audit-summary","run":4,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"08-audit-summary","run":5,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"10-session-tokens","run":1,"measurement":"M2","selected":["sample"],"problems":5,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"11-audit-status","run":1,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"collapse into a single discriminant is the discriminated union; runs 21, 23, 24 were Y"},{"problem":"P5","judge":false,"check":true,"note":"nontrivial recursive mapped type under the readability rule; run 23 with the same text was Y"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"11-audit-status","run":2,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"11-audit-status","run":3,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"same as 20:P3"},{"problem":"P5","judge":false,"check":true,"note":"same as 20:P5"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"11-audit-status","run":4,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"11-audit-status","run":5,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"12-operator-dashboard","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"12-operator-dashboard","run":2,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"12-operator-dashboard","run":4,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"13-audit-export-formats","run":1,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":false,"disagreements":[{"problem":"P7","judge":false,"check":true,"note":"free functions reading AuditLog fields that should become its methods is behaviour living with the data"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"13-audit-export-formats","run":2,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"13-audit-export-formats","run":3,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"13-audit-export-formats","run":4,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"14-catalog-utils","run":1,"measurement":"M2","selected":["sample"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"15-localization-sync","run":1,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"15-localization-sync","run":3,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"15-localization-sync","run":4,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"15-localization-sync","run":5,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"16-book-import","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P2","judge":false,"check":true,"note":"the finding says the file content is cast into a trusted type with no runtime validation"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"16-book-import","run":2,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"16-book-import","run":4,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"names untrusted file content cast with no validation, which is the trust-boundary problem"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"16-book-import","run":5,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"the finding says \"at this trust boundary\" explicitly"}]}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"18-audit-sync","run":1,"measurement":"M2","selected":["sample"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with-prime","item":"20-clean-copy-button","run":1,"measurement":"M2","selected":["sample"],"problems":0,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"01-format-helpers","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":7,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"same as 0:P5"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"01-format-helpers","run":4,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"same as 0:P5"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"01-format-helpers","run":5,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"same as 0:P5"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"02-api-errors","run":1,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"02-api-errors","run":2,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":false,"disagreements":[{"problem":"P4","judge":false,"check":true,"note":"failures silently swallowed and returned as [] is the known problem"},{"problem":"P5","judge":false,"check":true,"note":"line-12 finding names any in the catch and .message without narrowing"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"02-api-errors","run":3,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"unchecked as-cast of the parsed external response with no runtime validation"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"02-api-errors","run":5,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":false,"disagreements":[{"problem":"P6","judge":false,"check":true,"note":"the finding at lines 13,17,26 names the any parameter"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"04-user-badge","run":1,"measurement":"M2","selected":["sample"],"problems":5,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"05-audit-tests","run":1,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"05-audit-tests","run":2,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"05-audit-tests","run":3,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"05-audit-tests","run":4,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":false,"disagreements":[{"problem":"P6","judge":false,"check":true,"note":"typeof string check named as shape-only; run 52 with the same text was Y"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"05-audit-tests","run":5,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"06-docs-tests","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"06-docs-tests","run":3,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"06-docs-tests","run":4,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"08-audit-summary","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":7,"agree":false,"disagreements":[{"problem":"P7","judge":true,"check":false,"note":"only the class-level SRP finding; runs 14-16 and 60-62 with the same finding were n"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"08-audit-summary","run":2,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"08-audit-summary","run":3,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"08-audit-summary","run":4,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"08-audit-summary","run":5,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":false,"disagreements":[{"problem":"P1","judge":true,"check":false,"note":"names only the cycle, like runs 14-16 and 59, which were n"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"10-session-tokens","run":1,"measurement":"M2","selected":["sample"],"problems":5,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"11-audit-status","run":1,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"11-audit-status","run":2,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"11-audit-status","run":3,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"the finding asks for a discriminated union with one tag"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"11-audit-status","run":4,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"the finding says \"model as a discriminated union instead\""}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"11-audit-status","run":5,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"complex recursive mapped type under the readability rule; run 65 was Y"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"12-operator-dashboard","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"12-operator-dashboard","run":3,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"12-operator-dashboard","run":4,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"12-operator-dashboard","run":5,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"13-audit-export-formats","run":1,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"13-audit-export-formats","run":2,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"13-audit-export-formats","run":3,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"13-audit-export-formats","run":4,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"13-audit-export-formats","run":5,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"14-catalog-utils","run":1,"measurement":"M2","selected":["sample"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"15-localization-sync","run":4,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"15-localization-sync","run":5,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"16-book-import","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"untrusted user-supplied file content cast with no runtime validation, as in 39:P3"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"16-book-import","run":4,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"same as 82:P3"}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"16-book-import","run":5,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P2","judge":false,"check":true,"note":"the finding says force-cast with as and \"not just type-asserted\""}]}
+{"series":"series-m2-2026-09-29","cell":"with","item":"17-build-config","run":2,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"17-build-config","run":3,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"18-audit-sync","run":1,"measurement":"M2","selected":["sample"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"with","item":"20-clean-copy-button","run":1,"measurement":"M2","selected":["sample"],"problems":0,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"01-format-helpers","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"01-format-helpers","run":2,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"01-format-helpers","run":4,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"01-format-helpers","run":5,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"02-api-errors","run":1,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"02-api-errors","run":2,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"02-api-errors","run":3,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"02-api-errors","run":5,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"04-user-badge","run":1,"measurement":"M2","selected":["sample"],"problems":5,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"04-user-badge","run":3,"measurement":"M2","selected":["uncertain"],"problems":5,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"clickable div without role or keyboard handling is the known problem; run 97 was Y"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"04-user-badge","run":4,"measurement":"M2","selected":["uncertain"],"problems":5,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"same as 98:P5"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"05-audit-tests","run":1,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"05-audit-tests","run":2,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":false,"disagreements":[{"problem":"P4","judge":false,"check":true,"note":"the finding says the test asserts the mock's own return value"},{"problem":"P5","judge":false,"check":true,"note":"the finding says only the spy call is asserted, not the label"},{"problem":"P7","judge":false,"check":true,"note":"the finding says length > 0 does not verify the label content"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"05-audit-tests","run":3,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"05-audit-tests","run":4,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"05-audit-tests","run":5,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"06-docs-tests","run":1,"measurement":"M2","selected":["sample"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"07-catalog-refresh","run":2,"measurement":"M2","selected":["uncertain"],"problems":5,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"08-audit-summary","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":7,"agree":false,"disagreements":[{"problem":"P5","judge":false,"check":true,"note":"the finding names the exporters registry as dead code that nothing reads"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"08-audit-summary","run":3,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"08-audit-summary","run":5,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"09-debug-tools","run":1,"measurement":"M2","selected":["uncertain"],"problems":5,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"10-session-tokens","run":1,"measurement":"M2","selected":["sample"],"problems":5,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"11-audit-status","run":1,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":false,"disagreements":[{"problem":"P3","judge":false,"check":true,"note":"same as 20:P3"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"11-audit-status","run":2,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"11-audit-status","run":3,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"11-audit-status","run":4,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"11-audit-status","run":5,"measurement":"M2","selected":["uncertain"],"problems":10,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"12-operator-dashboard","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"12-operator-dashboard","run":3,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"12-operator-dashboard","run":4,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":false,"disagreements":[{"problem":"P4","judge":false,"check":true,"note":"same finding as runs 117 and 118, which were Y"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"12-operator-dashboard","run":5,"measurement":"M2","selected":["uncertain"],"problems":8,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"13-audit-export-formats","run":1,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":false,"disagreements":[{"problem":"P1","judge":false,"check":true,"note":"the finding says the override breaks substitutability with the base export"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"13-audit-export-formats","run":5,"measurement":"M2","selected":["uncertain"],"problems":9,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"14-catalog-utils","run":1,"measurement":"M2","selected":["sample"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"14-catalog-utils","run":2,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"14-catalog-utils","run":3,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"15-localization-sync","run":1,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"15-localization-sync","run":4,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"16-book-import","run":1,"measurement":"M2","selected":["sample","uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P1","judge":false,"check":true,"note":"cast via as with no runtime validation; P2 and P3 on the same finding were Y"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"16-book-import","run":2,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P2","judge":false,"check":true,"note":"untrusted JSON cast with as and no runtime validation"},{"problem":"P3","judge":false,"check":true,"note":"same finding names the content untrusted"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"16-book-import","run":3,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"16-book-import","run":4,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":false,"disagreements":[{"problem":"P6","judge":false,"check":true,"note":"sequential import without batching or concurrency control; run 130 was Y"}]}
+{"series":"series-m2-2026-09-29","cell":"without","item":"16-book-import","run":5,"measurement":"M2","selected":["uncertain"],"problems":6,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"17-build-config","run":1,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"18-audit-sync","run":1,"measurement":"M2","selected":["sample"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"18-audit-sync","run":5,"measurement":"M2","selected":["uncertain"],"problems":7,"agree":true}
+{"series":"series-m2-2026-09-29","cell":"without","item":"20-clean-copy-button","run":1,"measurement":"M2","selected":["sample"],"problems":0,"agree":true}
+{"series":"series-m2-2026-09-29-2","cell":"with-prime","item":"03-audit-notes","run":1,"measurement":"M2","selected":["sample"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29-2","cell":"with-prime","item":"03-audit-notes","run":3,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29-2","cell":"with-prime","item":"03-audit-notes","run":4,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29-2","cell":"without","item":"03-audit-notes","run":1,"measurement":"M2","selected":["sample"],"problems":4,"agree":true}
+{"series":"series-m2-2026-09-29-2","cell":"without","item":"03-audit-notes","run":5,"measurement":"M2","selected":["uncertain"],"problems":4,"agree":true}

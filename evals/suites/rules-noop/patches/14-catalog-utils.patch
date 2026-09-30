@@ -1,0 +1,43 @@
+diff --git a/src/catalog/catalogUtils.ts b/src/catalog/catalogUtils.ts
+new file mode 100644
+index 0000000..ef71c1f
+--- /dev/null
++++ b/src/catalog/catalogUtils.ts
+@@ -0,0 +1,37 @@
++type Book = { id: number; title: string; category: string; ratings: number[] }
++
++export const catalogDefaults = (await (await fetch('/api/catalog/defaults')).json()) as { pageSize: number }
++
++document.documentElement.dataset.catalogReady = 'true'
++
++export function booksByCategory(books: Book[]) {
++  return books.reduce<Record<string, Book[]>>((groups, book) => {
++    groups[book.category] = groups[book.category] ?? []
++    groups[book.category].push(book)
++    return groups
++  }, {})
++}
++
++export function topRated(books: Book[]) {
++  return books.sort((a, b) => average(b.ratings) - average(a.ratings))[0]
++}
++
++function average(values: number[]) {
++  return values.reduce((sum, value) => sum + value, 0) / values.length
++}
++
++export function mergePreferences(target: Record<string, unknown>, incoming: Record<string, unknown>) {
++  for (const key of Object.keys(incoming)) {
++    const value = incoming[key]
++    if (value && typeof value === 'object') {
++      target[key] = mergePreferences((target[key] as Record<string, unknown>) ?? {}, value as Record<string, unknown>)
++    } else {
++      target[key] = value
++    }
++  }
++  return target
++}
++
++export default function lastBook(books: Book[]) {
++  return books[books.length - 1]
++}

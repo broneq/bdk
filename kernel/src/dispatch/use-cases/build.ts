@@ -130,7 +130,7 @@ export function buildPackage(
         target: input.target,
         "target-body": target.body,
         entries: entriesText(deps, change, selection.full, selection.counted, input.target),
-        "role-body": demoteHeadings(roleBody),
+        "role-body": demoteHeadings(withPluginRoot(roleBody, deps.pluginRoot)),
         report,
         blocking: categoryList(policy?.blocking ?? []),
         "not-a-fail": categoryList(policy?.notAFail ?? []),
@@ -283,6 +283,16 @@ function intentOf(deps: DispatchDeps, change: ActiveChange): string {
   const document = readDocument(deps.store, join(change.dir, "change.md"));
   const intent = document !== undefined && "data" in document ? document.data.intent : undefined;
   return typeof intent === "string" ? intent : `Change ${change.id}.`;
+}
+
+/**
+ * The role body as Claude Code would load the skill: `${CLAUDE_PLUGIN_ROOT}`
+ * replaced by the plugin's path. A subagent reads the package with Read, which
+ * substitutes nothing, and its Bash has no such variable. The template hash is
+ * taken before, so it stays the same wherever the plugin is installed.
+ */
+function withPluginRoot(body: string, pluginRoot: string): string {
+  return body.replaceAll("${CLAUDE_PLUGIN_ROOT}", pluginRoot);
 }
 
 /** The plugin's role skill without its frontmatter; a missing file is a broken plugin. */

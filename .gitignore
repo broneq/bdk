@@ -9,3 +9,6 @@ tmp_*.py
 /.lavish/
 node_modules/
 coverage/
+
+# skill eval harness: fixture cache, plugin copies, per-run copies, raw outputs
+/evals/.runs/

@@ -9,7 +9,8 @@ context: |
   Sources of truth for v3 work:
   - Roadmap and task index: docs/V3-IMPLEMENTATION-PLAN.md. Every task Tnn has
     Goal, Scope, Input, Acceptance signal, "To resolve in the spec" and
-    Dependencies sections.
+    Dependencies sections: in the plan for the tasks it lists, in the GitHub
+    issue body for a task added later (T43 onward).
   - Design: docs/v3/2026-09-23-0703-bdk-v3-change-centric-design.md.
   - Decision register: docs/v3/2026-09-23-0703-bdk-v3-decisions.md (IDs D*, S*,
     Q*, K*, A-*, R-*, T1-T6, P1-P11, V*).
@@ -33,7 +34,7 @@ context: |
 rules:
   proposal:
     - A change for a roadmap task is named `v3-tnn-<slug>` (tnn is the plan task ID in lowercase, e.g. v3-t01-host-live-checks; OpenSpec rejects capitals). Changes outside the roadmap use a descriptive kebab-case name without the prefix.
-    - 'The first line under "Why" links the plan section and the tracking issue, e.g. "Plan: docs/V3-IMPLEMENTATION-PLAN.md, T01. Tracks #46."'
+    - 'The first line under "Why" links the task''s scope and the tracking issue, e.g. "Plan: docs/V3-IMPLEMENTATION-PLAN.md, T01. Tracks #46.", or "Scope: #99. Tracks #99." for a task scoped in its issue.'
     - Carry the task's Input over by citation - design section headings and decision IDs (e.g. D2, T1, P8). Do not restate a decision; do not reopen a decided one.
     - Every item under the task's "To resolve in the spec" is either resolved in proposal.md / design.md or listed as an open question for the user with a recommendation.
     - Stay inside the task's Scope. Work the plan assigns to another task is named as out of scope with that task's ID.

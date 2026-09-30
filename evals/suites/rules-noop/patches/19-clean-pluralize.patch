@@ -1,0 +1,36 @@
+diff --git a/src/ui/pluralize.test.ts b/src/ui/pluralize.test.ts
+new file mode 100644
+index 0000000..2c08d79
+--- /dev/null
++++ b/src/ui/pluralize.test.ts
+@@ -0,0 +1,16 @@
++import { describe, expect, it } from 'vitest'
++
++import { pluralize } from './pluralize'
++
++const ENTRY = { one: 'entry', other: 'entries' }
++
++describe('pluralize', () => {
++  it('uses the singular form for exactly one item', () => {
++    expect(pluralize(1, ENTRY)).toBe('1 entry')
++  })
++
++  it('uses the plural form for zero and for several items', () => {
++    expect(pluralize(0, ENTRY)).toBe('0 entries')
++    expect(pluralize(12, ENTRY)).toBe('12 entries')
++  })
++})
+diff --git a/src/ui/pluralize.ts b/src/ui/pluralize.ts
+new file mode 100644
+index 0000000..e901d45
+--- /dev/null
++++ b/src/ui/pluralize.ts
+@@ -0,0 +1,8 @@
++const PLURAL_RULES = new Intl.PluralRules('en')
++
++export type PluralForms = { readonly one: string; readonly other: string }
++
++export function pluralize(count: number, forms: PluralForms): string {
++  const form = PLURAL_RULES.select(count) === 'one' ? forms.one : forms.other
++  return `${count} ${form}`
++}

@@ -1,0 +1,48 @@
+diff --git a/src/ui/syncState.test.ts b/src/ui/syncState.test.ts
+new file mode 100644
+index 0000000..c2a84b4
+--- /dev/null
++++ b/src/ui/syncState.test.ts
+@@ -0,0 +1,12 @@
++import { describe, expect, it } from 'vitest'
++
++import { describeSyncState } from './syncState'
++
++describe('describeSyncState', () => {
++  it('describes each state with its own detail', () => {
++    expect(describeSyncState({ kind: 'idle' })).toBe('Not started')
++    expect(describeSyncState({ kind: 'running', startedAt: '09:00' })).toBe('Running since 09:00')
++    expect(describeSyncState({ kind: 'failed', reason: 'timeout' })).toBe('Failed: timeout')
++    expect(describeSyncState({ kind: 'done', changed: 3 })).toBe('3 changed')
++  })
++})
+diff --git a/src/ui/syncState.ts b/src/ui/syncState.ts
+new file mode 100644
+index 0000000..7d64218
+--- /dev/null
++++ b/src/ui/syncState.ts
+@@ -0,0 +1,24 @@
++export type SyncState =
++  | { readonly kind: 'idle' }
++  | { readonly kind: 'running'; readonly startedAt: string }
++  | { readonly kind: 'failed'; readonly reason: string }
++  | { readonly kind: 'done'; readonly changed: number }
++
++export function assertNever(value: never): never {
++  throw new Error(`unhandled value: ${JSON.stringify(value)}`)
++}
++
++export function describeSyncState(state: SyncState): string {
++  switch (state.kind) {
++    case 'idle':
++      return 'Not started'
++    case 'running':
++      return `Running since ${state.startedAt}`
++    case 'failed':
++      return `Failed: ${state.reason}`
++    case 'done':
++      return `${state.changed} changed`
++    default:
++      return assertNever(state)
++  }
++}

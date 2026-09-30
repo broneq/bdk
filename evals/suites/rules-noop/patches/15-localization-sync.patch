@@ -1,0 +1,76 @@
+diff --git a/src/admin/localizationSync.ts b/src/admin/localizationSync.ts
+new file mode 100644
+index 0000000..74d67f6
+--- /dev/null
++++ b/src/admin/localizationSync.ts
+@@ -0,0 +1,70 @@
++import type { LocalizationResponse as Localization } from '../api/localizations'
++
++export type SyncReport = { added: string[]; changed: string[]; removed: string[] }
++
++// ===== Localization sync =====
++
++// Compare two localization lists and apply the result.
++export function syncLocalizations(current: Localization[], incoming: Localization[], dryRun: boolean) {
++  // build a map of current entries
++  const currentByKey = new Map<string, Localization>()
++  for (const entry of current) {
++    currentByKey.set(`${entry.messageKey}:${entry.language}`, entry)
++  }
++  // build a map of incoming entries
++  const incomingByKey = new Map<string, Localization>()
++  for (const entry of incoming) {
++    incomingByKey.set(`${entry.messageKey}:${entry.language}`, entry)
++  }
++  const report: SyncReport = { added: [], changed: [], removed: [] }
++  // find added and changed entries
++  for (const [key, entry] of incomingByKey) {
++    const existing = currentByKey.get(key)
++    if (!existing) {
++      report.added.push(key)
++    } else if (existing.messageText !== entry.messageText) {
++      report.changed.push(key)
++    }
++  }
++  // find removed entries
++  for (const key of currentByKey.keys()) {
++    if (!incomingByKey.has(key)) {
++      report.removed.push(key)
++    }
++  }
++  // apply unless dry run
++  if (!dryRun) {
++    for (const key of report.removed) {
++      currentByKey.delete(key)
++    }
++    for (const key of [...report.added, ...report.changed]) {
++      const entry = incomingByKey.get(key)
++      if (entry) {
++        currentByKey.set(key, entry)
++      }
++    }
++  }
++  // sort the keys for stable output
++  let sortedKeys: string[] = []
++  try {
++    sortedKeys = [...currentByKey.keys()].sort()
++  } catch (error) {
++    sortedKeys = []
++  }
++  // log the result
++  console.info(`sync: ${report.added.length} added, ${report.changed.length} changed, ${report.removed.length} removed`)
++  // const legacy = current.filter((entry) => entry.language === 'pl')
++  // report.removed.push(...legacy.map((entry) => entry.messageKey))
++  return { report, entries: sortedKeys.map((key) => currentByKey.get(key)!) }
++}
++
++/**
++ * Returns the language of a localization key.
++ * Keys have the shape `messageKey:language`.
++ * Note: older keys used `/` as the separator, see issue 12.
++ * Update: the separator is now always `:` since the migration.
++ * Update 2: some imported keys still carry a trailing space, trim them.
++ */
++export function languageOfKey(key: string) {
++  return key.split(':')[1]?.trim()
++}

@@ -17,5 +17,6 @@
     "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["kernel/**/*.ts", "*.config.ts"]
+  "include": ["kernel/**/*.ts", "evals/**/*.ts", "*.config.ts"],
+  "exclude": ["evals/node_modules", "evals/.runs", "evals/suites/*/hidden"]
 }

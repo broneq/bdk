@@ -1,0 +1,42 @@
+diff --git a/src/mock-api/debugTools.ts b/src/mock-api/debugTools.ts
+new file mode 100644
+index 0000000..b860010
+--- /dev/null
++++ b/src/mock-api/debugTools.ts
+@@ -0,0 +1,36 @@
++import { exec } from 'node:child_process'
++import { readFile } from 'node:fs/promises'
++import { join } from 'node:path'
++
++const FIXTURE_DIR = join(process.cwd(), 'src/mock-api/fixtures')
++
++export async function handleDebugRequest(url: URL): Promise<string> {
++  switch (url.pathname) {
++    case '/__debug/git-log': {
++      const branch = url.searchParams.get('branch') ?? 'main'
++      return new Promise((resolve, reject) => {
++        exec(`git log --oneline -5 ${branch}`, (error, stdout) => (error ? reject(error) : resolve(stdout)))
++      })
++    }
++    case '/__debug/fixture': {
++      const name = url.searchParams.get('name') ?? 'index.json'
++      return readFile(join(FIXTURE_DIR, name), 'utf8')
++    }
++    case '/__debug/eval': {
++      const expression = url.searchParams.get('expr') ?? '1 + 1'
++      return String(eval(expression))
++    }
++    case '/__debug/proxy': {
++      const target = url.searchParams.get('url') ?? ''
++      const response = await fetch(target)
++      return response.text()
++    }
++    case '/__debug/grep': {
++      const pattern = new RegExp(url.searchParams.get('pattern') ?? '.*')
++      const text = await readFile(join(FIXTURE_DIR, 'index.json'), 'utf8')
++      return text.split('\n').filter((line) => pattern.test(line)).join('\n')
++    }
++    default:
++      return 'unknown debug command'
++  }
++}

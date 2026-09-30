@@ -1,0 +1,58 @@
+diff --git a/src/operator/auditFormat.extra.test.ts b/src/operator/auditFormat.extra.test.ts
+new file mode 100644
+index 0000000..2ad7504
+--- /dev/null
++++ b/src/operator/auditFormat.extra.test.ts
+@@ -0,0 +1,52 @@
++import { describe, expect, it, vi } from 'vitest'
++
++import { DEFAULT_AUDIT_PAGE_SIZE } from '../api/operator'
++import * as auditFormat from './auditFormat'
++import { createAuditEntryLabel, formatAuditDescriptor } from './auditFormat'
++
++describe('auditFormat extras', () => {
++  it('exports the formatting helpers', () => {
++    expect(typeof auditFormat.formatActor).toBe('function')
++    expect(auditFormat.formatSummary).toBeDefined()
++  })
++
++  it('uses a page size of 20', () => {
++    expect(DEFAULT_AUDIT_PAGE_SIZE).toBe(20)
++  })
++
++  it('returns the mocked descriptor', () => {
++    const spy = vi.spyOn(auditFormat, 'formatAuditDescriptor').mockReturnValue('BOOK/7')
++    expect(auditFormat.formatAuditDescriptor({ id: 1 } as never)).toBe('BOOK/7')
++    spy.mockRestore()
++  })
++
++  it('calls the descriptor helper when labelling', () => {
++    const spy = vi.spyOn(auditFormat, 'formatAuditDescriptor')
++    createAuditEntryLabel({ id: 3, targetType: 'BOOK', targetId: 7 } as never, 0)
++    expect(spy).toHaveBeenCalledTimes(1)
++  })
++
++  it('returns a string label', () => {
++    const label = createAuditEntryLabel({ id: 3 } as never, 0)
++    expect(typeof label).toBe('string')
++  })
++
++  it('builds a non-empty label', () => {
++    const label = createAuditEntryLabel({ id: 5, targetType: 'BOOK', targetId: 2 } as never, 0)
++    expect(label.length).toBeGreaterThan(0)
++  })
++
++  it('builds a descriptor', () => {
++    const descriptor = formatAuditDescriptor({ id: 4, targetType: 'BOOK', targetId: 1 } as never)
++    expect(descriptor).not.toBeNull()
++  })
++
++  it('handles a broken entry', () => {
++    try {
++      formatAuditDescriptor(undefined as never)
++    } catch {
++      // expected
++    }
++    expect(true).toBe(true)
++  })
++})

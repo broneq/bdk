@@ -5,6 +5,8 @@ paths:
 
 # Skill Evals
 
+> Legacy: `tests/evals/` is replaced by the promptfoo harness in `evals/` (`evals/README.md`, T40) and removed in T32. New measurements go to `evals/`; for a skill with / without comparison use `pnpm eval with-without`.
+
 Store evals in `tests/evals/skills/<skill-name>/`.
 
 ## Directory Structure

@@ -1,0 +1,53 @@
+diff --git a/src/ui/UserBadge.tsx b/src/ui/UserBadge.tsx
+new file mode 100644
+index 0000000..2a648f7
+--- /dev/null
++++ b/src/ui/UserBadge.tsx
+@@ -0,0 +1,47 @@
++import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
++
++type UserBadgeProps = {
++  login: string
++  roles: string[]
++  isLoading: boolean
++  isError: boolean
++  isDisabled: boolean
++  isCompact: boolean
++  isRounded: boolean
++  isHighlighted: boolean
++  onSelect: (login: string) => void
++}
++
++export const UserBadge = forwardRef<HTMLDivElement, UserBadgeProps>(function UserBadge(
++  { login, roles, isLoading, isError, isDisabled, isCompact, isRounded, isHighlighted, onSelect },
++  ref,
++) {
++  const [label, setLabel] = useState('')
++
++  useEffect(() => {
++    setLabel(`${login} (${roles.join(', ')})`)
++  }, [login, roles])
++
++  const className = useMemo(
++    () =>
++      ['user-badge', isCompact && 'compact', isRounded && 'rounded', isHighlighted && 'highlight']
++        .filter(Boolean)
++        .join(' '),
++    [isCompact, isRounded, isHighlighted],
++  )
++
++  const handleClick = useCallback(() => {
++    if (!isDisabled) {
++      onSelect(login)
++    }
++  }, [isDisabled, login, onSelect])
++
++  if (isLoading) return <span>…</span>
++  if (isError) return <span>!</span>
++
++  return (
++    <div ref={ref} className={className} onClick={handleClick}>
++      {label}
++    </div>
++  )
++})

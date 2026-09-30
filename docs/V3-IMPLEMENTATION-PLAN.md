@@ -651,7 +651,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **Scope**:
 
 - `bdk import`: `settings.json` -> `settings.yaml` (key mapping from T12), old `.bdk/design/*.md` -> intents of new Changes (`change new` with the content), `.bdk/runs/`, `.bdk/plans/`, `.bdk/verify-plan/` -> a report of what was ignored; `hooks session-start` detects the v2 layout and prints the instruction (content, exit 0); `doctor` does the same on demand.
-- Deletion: `scripts/*.py`, `hooks/*/check.py` and `register.py`, `hooks/check-rules-drift/` (not ported, T02 decision Q-6), `hooks/check-bdk-config/settings.schema.json`, `hooks/is-command-exists/` (not called), `tests/unit/` (pytest), `pyproject.toml`, `uv.lock` (not needed for MCP, T03), `__pycache__` in `skills/execute-plan`, `skills/create-fixture`, `skills/refine-rules/scripts`; `tests/evals/` after replacement by promptfoo (T40); the 13 `bdk-*` meta-skills and the eight agent files replaced by adapters (T42).
+- Deletion: `scripts/*.py`, `hooks/*/check.py` and `register.py`, `hooks/check-rules-drift/` (not ported, T02 decision Q-6), `hooks/check-bdk-config/settings.schema.json`, `hooks/is-command-exists/` (not called), `tests/unit/` (pytest), `pyproject.toml`, `uv.lock` (not needed for MCP, T03), `__pycache__` in `skills/execute-plan`, `skills/create-fixture`, `skills/refine-rules/scripts`; `tests/evals/` and `.claude/rules/skill-test-eval.md` (replaced by the promptfoo harness in `evals/`, T40; `tests/evals/README.md` says so); the 13 `bdk-*` meta-skills and the eight agent files replaced by adapters (T42).
 - Side items: `ensure_ignored()` (if not done earlier in T20), `features.caveman` (#39: a consumer or removal of the key; in v3 a key without a consumer is an error, so it must either go or work), merge or close `fix/39` (`fix/38` is closed by T04).
 - BDK repo `.gitignore`: `/.bdk/` -> the two v3 paths; `/.lavish/` unchanged (user decision).
 - `plugin.json` 3.0.0 (breaking, release-please), `CHANGELOG` via release-please (not by hand).
@@ -686,6 +686,17 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **Acceptance signal**: two reports in `docs/` with the noise floor and a decision each (thin skills / fallback B; per-bullet rule table handed to T31); `tests/evals/` marked for removal in T32; the harness runs with one command on a clean machine with an API key, in "with / without" mode for any skill.
 
 **To resolve in the spec**: number of repetitions; rubrics; decision thresholds for A and B; whether promptfoo goes into CI or stays local; the fixture task set shared by the two measurements, and whether T03's task set and reference answers can be reused.
+
+**Resolution** (2026-09-29, Change `v3-t40-promptfoo-harness`, #60; reports `docs/V3-EVAL-EXECUTE-AB.md` and `docs/V3-EVAL-RULES-NOOP.md`):
+
+- Harness: promptfoo 0.123.1 with the built-in `anthropic:claude-agent-sdk` provider (the probe passed, so no `claude -p` fallback), pinned in `evals/package.json`; one command per suite, `pnpm eval <suite>`, with `--probe` first and a hard budget ledger; result rows with provenance committed in `evals/results/`. Local runs only; CI runs `pnpm eval check` without a key or model call.
+- Fixture: `kamkie/technical-interview-frontend` at `946a2081`, fetched at run time (no licence), its agent instructions stripped; sessions run in a sandbox outside the repository. T03's task set was not reused.
+- Repetitions and thresholds: 5 runs per cell, an A/A pair per measurement, the T03 D-7 difference rule; orchestrator Opus 5.5, judge Sonnet 5.
+- **T41 gate: thin is "no worse"** on acceptance and step completeness (no measurable difference to `v3-long`), so T41 writes thin stage skills. One of five thin runs stopped after part 01 with the kernel pointing at part 02; the report hands T41 the fix candidates. `v3-long` vs `v2`: no primary regression, cost about 2.5 times lower.
+- Rules: provisional classes for all 131 bullets (59 no-op candidates, 55 unclear, 13 effective, 4 corrects the model), the rule files as a whole measurably raise the reviewer's detection (gap 0.25, noise 0.08); handed to T31 with the judge spot-check.
+- With / without mode: `pnpm eval with-without --skill bdk:<name> --tasks <file>`, probed on `bdk:mermaid-drawer`.
+- Spend: about 127 USD of an approved 135 USD budget, most of it on the 20 Opus execute sessions and one stopped series.
+- Follow-up: T43 (#99) turns the harness into a regression eval of plain model vs BDK v3.
 
 **Dependencies**: T23 (the kernel provides `next`, `dispatch`, envelope), T02 (skill choice).
 

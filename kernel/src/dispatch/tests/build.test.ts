@@ -101,7 +101,9 @@ describe("dispatch build", () => {
     const { body } = await built(h);
     const skill = h.store.read(`${PLUGIN}/skills/roles/implementer/SKILL.md`) ?? "";
     const skillBody = skill.slice(skill.indexOf("\n---\n") + 5).trim();
-    expect(body).toContain(skillBody.replace(/^(#{1,5} )/gm, "#$1"));
+    const loaded = skillBody.replaceAll("${CLAUDE_PLUGIN_ROOT}", PLUGIN);
+    expect(body).toContain(loaded.replace(/^(#{1,5} )/gm, "#$1"));
+    expect(body).not.toContain("${CLAUDE_PLUGIN_ROOT}");
     expect(body).toContain("\n## Role: implementer\n");
     expect(body).not.toContain("user-invocable:");
   });

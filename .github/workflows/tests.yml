@@ -164,3 +164,26 @@ jobs:
 
       - name: Skill content check
         run: pnpm skill-check
+
+  eval-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      # The harness entry point is TypeScript run by Node's type stripping
+      # (Node >= 22.18); .nvmrc pins a line that has it.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Renders every suite's promptfoo config and validates it with the
+      # pinned promptfoo (installed into evals/node_modules on first use).
+      # No credentials and no model call: measured runs are local only.
+      - name: Eval configs render and validate
+        run: pnpm eval check
