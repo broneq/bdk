@@ -9,7 +9,7 @@ Check the rule files of the bundle and the project: unique ids, `[PREFIX-n]` for
 - **Mode:** `command`
 - **Arguments:**
   - `<path>` (optional). A rule file or a directory; default `.bdk/rules/` together with the bundle's pack under `rules/`.
-- **Behaviour:** Every rule file is validated against the rule frontmatter (`kernel-state`, Rule file frontmatter): the `id` equals the file name without `.md`; a bundle rule's id starts with `BDK-` and a project rule's id never does; a `kind: knowledge` rule carries `source` and `verified`; a tombstone (`removed` set) keeps its id and its body. Across the bundle and `.bdk/rules/` together no id appears twice, which catches the duplicate two parallel Changes can create (V1-6); the later file renumbers, since numbers are never reused. Every id in `rules.disabled` must name an existing rule (`unknown-disabled-id`). With problems it exits 2 with the refusal of the first problem's rule (`policy/duplicate-rule-id` before `policy/rule-format`): `why` names the first file, its line and the count of further problems, `instead` names the file to fix; `--json` then still prints the full `problems` list on stdout before the error object on stderr. Without problems it exits 0 with `valid: true`. Green on CI is the T31 acceptance signal.
+- **Behaviour:** Every rule file is validated against the rule frontmatter (`kernel-state`, Rule file frontmatter): the `id` equals the file name without `.md`; a bundle rule's id starts with `BDK-` and a project rule's id never does; a `kind: knowledge` rule carries `source` and `verified`; a tombstone (`removed` set) keeps its id and its body. Across the bundle and `.bdk/rules/` together no id appears twice, which catches the duplicate two parallel Changes can create (V1-6); the later file renumbers, since numbers are never reused. Every id in `rules.disabled` must name an existing rule (`unknown-disabled-id`). With problems it exits 2 with the refusal of the first problem's rule (`policy/duplicate-rule-id` before `policy/rule-format`): `why` names the first file, its line and the count of further problems, and `instead` names the file to fix, as `config check` does. Without problems it exits 0 with `valid: true` and the counts. Green on CI is the T31 acceptance signal.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/rules-check.json`
 - **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `input/not-found`, `policy/rule-format`, `policy/duplicate-rule-id`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -25,8 +25,7 @@ Check the rule files of the bundle and the project: unique ids, `[PREFIX-n]` for
     "rules": 87,
     "bundle": 81,
     "project": 6,
-    "tombstones": 1,
-    "problems": []
+    "tombstones": 1
   }
   ```
 
@@ -238,7 +237,7 @@ List rules whose globs match no file or that no Change cited in the last N Chang
 - **Mode:** `command`
 - **Arguments:**
   - `--uncited <n>`. The number of most recent Changes (by creation time, archived ones included) to look back; default `rules.prune.uncited-changes`.
-- **Behaviour:** Reports only; removal is a manual edit that sets `removed` and leaves a tombstone. Two reasons: `no-match`, a rule with `applies` none of whose globs matches a file tracked by git; `uncited`, a rule no entry of the last `<n>` Changes names in its `refs` (`rules stats` counts the same refs), reported only once the project has at least `<n>` Changes. Tombstones and disabled rules are skipped. Bundle rules are reported like project rules; the user disables them with `rules.disabled`.
+- **Behaviour:** Reports only; removal is a manual edit that sets `removed` and leaves a tombstone. Two reasons: `no-match`, a rule with `applies` none of whose globs matches a file git tracks or would add (untracked files that are not ignored); `uncited`, a rule no entry of the last `<n>` Changes names in its `refs` (`rules stats` counts the same refs), reported only once the project has at least `<n>` Changes. Tombstones and disabled rules are skipped. Bundle rules are reported like project rules; the user disables them with `rules.disabled`.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/rules-prune.json`
 - **Exit codes and rules:** `0, 3, 4, 5`. Specific rules: `state/corrupted-index`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -291,7 +290,7 @@ Import a project's `.claude/rules/*.md` into `.bdk/rules/`, one rule per top-lev
   - `<dir>` (optional). Default `.claude/rules/`.
   - `--dry-run`. Report what would be written; write nothing.
   - `--prefix <PREFIX>`. Override the prefix derived from the file name; only with a single file in `<dir>` or a file path.
-- **Behaviour:** For each `*.md` file: the prefix is the file name without `.md`, uppercased, with every run of characters outside `[A-Z0-9]` turned into `-` and trimmed (`api-style.md` becomes `API-STYLE`), unless `--prefix`; each top-level bullet of the body becomes one rule with the next free number of its prefix, and a file without top-level bullets becomes one rule holding its body; `applies` is the file's `paths:` frontmatter, and a file without `paths:` gives global rules (no `applies`); every imported rule has `kind: house`, `severity: medium`, `origin: import` and `since` set to today. Skipped with a reason: the generated projection (`bdk-generated*.md`), a file whose frontmatter already carries an `id`, and an empty file. The import never judges content; the user edits or tombstones what is not a rule (`rule-pack`, What a rule is). After a write it regenerates the projection as `rules export --claude` does. Also run by `import` for the v2 cut.
+- **Behaviour:** For each `*.md` file, subdirectories included: the prefix is the file name without `.md`, uppercased, with every run of characters outside `[A-Z0-9]` turned into `-` and trimmed (`api-style.md` becomes `API-STYLE`), unless `--prefix`; each top-level bullet of the body becomes one rule with the next free number of its prefix, and a file without top-level bullets becomes one rule holding its body; `applies` is the file's `paths:` frontmatter, and a file without `paths:` gives global rules (no `applies`); every imported rule has `kind: house`, `severity: medium`, `origin: import` and `since` set to today. Skipped with a reason: the generated projection (`bdk-generated*.md`), a file whose frontmatter already carries an `id`, an empty file, a file whose name yields no valid project prefix (rerun it with `--prefix`), and a file whose `paths:` fails the rule schema. The import never judges content; the user edits or tombstones what is not a rule (`rule-pack`, What a rule is). The output lists every imported file with its rule ids, every skipped file with the reason, `dryRun`, and the projection files rewritten. After a write it regenerates the projection as `rules export --claude` does; the imported source files stay, and the user removes them since the projection now carries their rules. Also run by `import` for the v2 cut.
 - **Writes:** `.bdk/rules/`, `.claude/rules/bdk-generated.md`, `.claude/rules/bdk-generated-scoped.md`
 - **Output:** `schema/cli/output/rules-import.json`
 - **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `input/not-found`, `policy/rule-format`, `policy/duplicate-rule-id`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -320,6 +319,10 @@ Import a project's `.claude/rules/*.md` into `.bdk/rules/`, one rule per top-lev
         "from": ".claude/rules/bdk-generated.md",
         "why": "generated by rules export"
       }
+    ],
+    "dryRun": false,
+    "projection": [
+      ".claude/rules/bdk-generated-scoped.md"
     ]
   }
   ```
@@ -339,7 +342,7 @@ Import a project's `.claude/rules/*.md` into `.bdk/rules/`, one rule per top-lev
 
 #### Scenario: policy/rule-format
 
-- **WHEN** `--prefix` is given a value that is not `[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*`, or starts with `BDK`
+- **WHEN** `--prefix` is given a value that is not `[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*`, or is `BDK` or starts with `BDK-`
 - **THEN** the exit code is 2 and the error object carries `rule: policy/rule-format`
 
 #### Scenario: policy/duplicate-rule-id
@@ -363,7 +366,7 @@ The audit view: recurring items across Changes, the raw findings and learnings t
   - `--min-changes <n>`. Default `rules.audit.min-changes`.
   - `--entries`. Add the raw item list.
   - `--all`. Lift the 100-item limit of `entries`.
-- **Behaviour:** Reads every Change the index holds, archived ones included. `recurring`: each fingerprint of a `learning` entry or an attempt finding (`kernel-state`, Fingerprints) seen in at least `<n>` distinct Changes, with the count of Changes, of occurrences, the Change ids and one summary; occurrences inside one Change count as one Change. `entries` (with `--entries`): every `learning`, `finding` and `blocker` entry and every attempt finding, newest first, each with its qualified id, type, summary, refs, `applies` and `evidence` when present, and whether a rule's `origin` or `evidence` already names it (`adopted`); the list is the input of the audit skill, which groups items by meaning, because a fingerprint only groups near-identical wording. `citations`: for each rule id, the number of entries naming it in `refs` and the number of distinct Changes, rules never cited included with zero. Nothing is proposed or written: adoption is `rules accept`.
+- **Behaviour:** Reads every Change the index holds, archived ones included. `recurring`: each fingerprint of a `learning` entry or an attempt finding (`kernel-state`, Fingerprints) seen in at least `<n>` distinct Changes, with the count of Changes, of occurrences, the Change ids and one summary; occurrences inside one Change count as one Change. `entries` (with `--entries`): every `learning`, `finding` and `blocker` entry and every attempt finding, newest first, as a page (`items`, `total`, `truncated`), each with its qualified id, type, summary, refs, `applies` and `evidence` when present, and whether a rule's `origin` or `evidence` already names it (`adopted`); the list is the input of the audit skill, which groups items by meaning, because a fingerprint only groups near-identical wording. `citations`: for each rule id, the number of entries naming it in `refs` and the number of distinct Changes, rules never cited included with zero. Nothing is proposed or written: adoption is `rules accept`.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/rules-stats.json`
 - **Exit codes and rules:** `0, 3, 4, 5`. Specific rules: `state/corrupted-index`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -437,7 +440,7 @@ Generate the host projection of the project's rules, `.claude/rules/bdk-generate
 - **Arguments:**
   - `--claude`. Target Claude Code (the only target in 3.0).
   - `--check`. Exit 2 when the committed projection is out of date; write nothing.
-- **Behaviour:** Projects the enabled, non-tombstone rules of `.bdk/rules/` only; the bundle's `BDK-*` pack reaches agents through their packages and is never projected into the main session. `bdk-generated.md` holds the global rules and has no `paths:`; `bdk-generated-scoped.md` holds the rules with `applies` and carries `paths:` equal to the sorted union of their `applies`; each rule appears as `- [<id>] <text>`, ordered by id, and a file with no rules is not written (an existing one is deleted). Both files start with a generated-file marker naming `bdk rules export` and are never edited by hand. `rules accept` and `rules import` regenerate them; a hand edit of `.bdk/rules/` is caught by `--check`, the CI form.
+- **Behaviour:** Projects the enabled, non-tombstone rules of `.bdk/rules/` only; the bundle's `BDK-*` pack reaches agents through their packages and is never projected into the main session. `bdk-generated.md` holds the global rules and has no `paths:`; `bdk-generated-scoped.md` holds the rules with `applies` and carries `paths:` equal to the sorted union of their `applies`; each rule appears as `- [<id>] <text>`, a scoped one followed by ` (applies: <globs>)` so the model sees its own scope inside the union, ordered by id, and a file with no rules is not written (an existing one is deleted). Both files start with a generated-file marker naming `bdk rules export` and are never edited by hand. `rules accept` and `rules import` regenerate them; a hand edit of `.bdk/rules/` is caught by `--check`, the CI form.
 - **Writes:** `.claude/rules/bdk-generated.md`, `.claude/rules/bdk-generated-scoped.md`
 - **Output:** `schema/cli/output/rules-export.json`
 - **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `policy/rule-format`, `policy/generated-drift`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -508,7 +511,7 @@ Adopt a rule: the user's explicit decision, the only path by which a rule file i
   - `--applies <glob>`. Repeatable; absent means global.
   - `--role <role>`. Repeatable; absent means the default of project rules.
   - `--from <ref>`. Repeatable; a qualified entry id (`<changeId>/L-...`) or attempt finding the rule comes from.
-  - `--source <text>`, `--verified <date>`. Required with `--kind knowledge`.
+  - `--source <text>`, `--verified <date>`. Required with `--kind knowledge` and refused without it (`policy/rule-format`).
 - **Behaviour:** Writes `.bdk/rules/<PREFIX>-<n>.md` where `<n>` is one above the highest number of the prefix, tombstones included, so a number is never reused; `origin` is the first `--from` ref, or `user` without one, and `evidence` holds every `--from` ref; `since` is today. Every `--from` ref must resolve in the index (`input/not-found`). Runs no model and proposes nothing: the audit skill (T42) calls it only after the user accepted the proposal, and the orchestrator-only guard keeps subagents from calling it (T3). Then regenerates the projection as `rules export --claude` does. Works without an active Change, because the audit runs in its own session. No other command or hook writes a rule file (`kernel-state`, Write map).
 - **Writes:** `.bdk/rules/`, `.claude/rules/bdk-generated.md`, `.claude/rules/bdk-generated-scoped.md`
 - **Output:** `schema/cli/output/rules-accept.json`

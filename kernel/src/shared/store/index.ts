@@ -11,12 +11,17 @@ export { rebuildChange, refreshAll, refreshChange } from "./index/refresh.ts";
 export {
   findChangeRow,
   findEntry,
+  hasAttempt,
+  listAllEntries,
+  listAttemptFindings,
   listChanges,
   listEntries,
   openAttempts,
   selectReadOnly,
+  truncatedPackages,
 } from "./index/queries.ts";
 export type {
+  AttemptFindingRow,
   ChangeRow,
   EntryFilter,
   EntryRow,

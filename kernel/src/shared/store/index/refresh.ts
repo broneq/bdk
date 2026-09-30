@@ -254,7 +254,7 @@ function insertRows(
       database
         .prepare(
           `INSERT INTO attempts (change_id, ticket, loop, target, attempt, "of", scope, opened_at,
-            closed_at, outcome, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            closed_at, outcome, package, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           location.id,
@@ -267,6 +267,7 @@ function insertRows(
           text(data["opened-at"]),
           text(data["closed-at"]),
           text(data.outcome),
+          text(data.package),
           path,
         );
       insertFindings(index, location.id, String(data.ticket), data.findings);

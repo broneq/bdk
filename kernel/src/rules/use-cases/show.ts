@@ -3,8 +3,6 @@
 // active package records, in that order. The first `--ticket` call under the
 // implementer's package stamps `rules-read` in the attempt record (T23-D42,
 // risk R2). The ticket must be open with a dispatch package.
-import { resolveOrRefuse } from "../../shared/config/index.ts";
-import type { Resolved } from "../../shared/config/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -18,9 +16,9 @@ import {
   withIndex,
 } from "../../shared/store/index.ts";
 import type { OneRule, TicketRules } from "../domain/report.ts";
-import { ruleContext } from "./context.ts";
 import type { RulesDeps } from "./deps.ts";
 import { matchedGlob } from "./selection.ts";
+import { loadContext } from "./settings.ts";
 
 export function showRule(
   deps: RulesDeps,
@@ -28,9 +26,8 @@ export function showRule(
   globalDir: string,
   id: string,
 ): OneRule | Refusal {
-  const resolved = resolve(deps, projectRoot, globalDir);
-  if ("refused" in resolved) return resolved;
-  const context = ruleContext({ ...deps, projectRoot }, resolved);
+  const context = loadContext(deps, projectRoot, globalDir);
+  if ("refused" in context) return context;
   const rule = context.rules.find((found) => found.id === id);
   if (rule === undefined) {
     return refuse("input/not-found", `no rule of the bundle or of .bdk/rules/ has the id ${id}`, [
@@ -85,14 +82,9 @@ export function showTicketRules(
         "bdk attempt list",
       ]);
     }
-    const resolved = resolve(deps, change.projectRoot, globalDir);
-    if ("refused" in resolved) return resolved;
-    const loaded = new Map(
-      ruleContext({ ...deps, projectRoot: change.projectRoot }, resolved).rules.map((rule) => [
-        rule.id,
-        rule,
-      ]),
-    );
+    const context = loadContext(deps, change.projectRoot, globalDir);
+    if ("refused" in context) return context;
+    const loaded = new Map(context.rules.map((rule) => [rule.id, rule]));
     const missing = dispatch.data.rules.filter((id) => !loaded.has(id));
     if (missing.length > 0) {
       return refuse(
@@ -129,17 +121,4 @@ export function showTicketRules(
       ...(rulesRead === undefined ? {} : { rulesRead }),
     };
   });
-}
-
-function resolve(deps: RulesDeps, projectRoot: string, globalDir: string): Resolved | Refusal {
-  return resolveOrRefuse(
-    {
-      store: deps.store,
-      settings: deps.settings,
-      globalDir,
-      projectRoot,
-      pluginRoot: deps.pluginRoot,
-    },
-    { removed: "ignore" },
-  );
 }

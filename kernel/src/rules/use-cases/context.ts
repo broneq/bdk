@@ -6,6 +6,7 @@ import type { Resolved } from "../../shared/config/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import { languagesModule, rulesModule } from "../config.ts";
+import { ruleLine } from "../domain/projection.ts";
 import { PACK_DIRS } from "../domain/rule.ts";
 import type { LoadedRule } from "../domain/rule.ts";
 import { selectRules } from "./selection.ts";
@@ -83,15 +84,7 @@ export function languageRules(
 
 /** `- [<id>] <text>` per rule, ` (applies: ...)` after a scoped one. */
 export function ruleLines(rules: readonly LoadedRule[]): string {
-  return rules
-    .map((rule) => {
-      const applies =
-        rule.applies === undefined || rule.applies.length === 0
-          ? ""
-          : ` (applies: ${rule.applies.join(", ")})`;
-      return `- [${rule.id}] ${rule.text.replace(/\n/g, "\n  ")}${applies}\n`;
-    })
-    .join("");
+  return rules.map(ruleLine).join("");
 }
 
 function enabled(context: RuleContext): LoadedRule[] {

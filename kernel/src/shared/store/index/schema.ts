@@ -39,7 +39,7 @@ CREATE TABLE refs (
 CREATE TABLE attempts (
   change_id TEXT NOT NULL, ticket TEXT NOT NULL, loop TEXT NOT NULL, target TEXT NOT NULL,
   attempt INTEGER NOT NULL, "of" INTEGER NOT NULL, scope TEXT NOT NULL,
-  opened_at TEXT NOT NULL, closed_at TEXT, outcome TEXT, path TEXT NOT NULL,
+  opened_at TEXT NOT NULL, closed_at TEXT, outcome TEXT, package TEXT, path TEXT NOT NULL,
   PRIMARY KEY (change_id, ticket)
 );
 CREATE TABLE dispatches (

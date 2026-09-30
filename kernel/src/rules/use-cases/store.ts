@@ -175,6 +175,7 @@ function duplicates(declared: readonly Declared[]): RuleProblem[] {
     .map((group) => ({
       code: "duplicate-id" as const,
       file: group[0]?.file ?? "",
+      id: group[0]?.id ?? "",
       message: `${group[0]?.id ?? ""} is declared by ${group.map((rule) => rule.file).join(" and ")}; the later file takes the next free number`,
     }));
 }

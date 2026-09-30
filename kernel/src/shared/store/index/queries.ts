@@ -103,6 +103,95 @@ export function findEntry(index: IndexDb, changeId: string, id: string): EntryRo
   );
 }
 
+/** Entries of every indexed Change, archived ones included, newest first; `types` narrows them. */
+export function listAllEntries(index: IndexDb, types?: readonly string[]): EntryRow[] {
+  const where = types === undefined ? "" : `WHERE e.type IN (${types.map(() => "?").join(", ")})`;
+  const rows = index.database
+    .prepare(`SELECT * FROM entries e ${where} ORDER BY e.at DESC, e.change_id, e.id`)
+    .all(...(types ?? [])) as Row[];
+  const refs = new Map<string, string[]>();
+  const all = index.database
+    .prepare("SELECT change_id, entry_id, ref FROM refs ORDER BY change_id, entry_id, position")
+    .all() as { change_id: string; entry_id: string; ref: string }[];
+  for (const row of all) {
+    const key = `${row.change_id}/${row.entry_id}`;
+    refs.set(key, [...(refs.get(key) ?? []), row.ref]);
+  }
+  return rows.map((row) =>
+    toEntry(row, refs.get(`${String(row.change_id)}/${String(row.id)}`) ?? []),
+  );
+}
+
+/** One finding fingerprint an attempt record keeps (`kernel-state`, Attempt record). */
+export interface AttemptFindingRow {
+  readonly changeId: string;
+  readonly ticket: string;
+  readonly fingerprint: string;
+  readonly type: string;
+  readonly file: string;
+  readonly symbol?: string;
+  /** The attempt's `closed-at`, or `opened-at` while it is open. */
+  readonly at: string;
+}
+
+/** The findings of every attempt record, archived Changes included, newest first. */
+export function listAttemptFindings(index: IndexDb): AttemptFindingRow[] {
+  const rows = index.database
+    .prepare(
+      `SELECT f.change_id, f.ticket, f.fingerprint, f.type, f.file, f.symbol,
+         COALESCE(a.closed_at, a.opened_at) AS at
+       FROM findings f JOIN attempts a ON a.change_id = f.change_id AND a.ticket = f.ticket
+       ORDER BY at DESC, f.change_id, f.ticket, f.position`,
+    )
+    .all() as Row[];
+  return rows.map((row) =>
+    omitUndefined<AttemptFindingRow>({
+      changeId: String(row.change_id),
+      ticket: String(row.ticket),
+      fingerprint: String(row.fingerprint),
+      type: String(row.type),
+      file: String(row.file),
+      symbol: typeof row.symbol === "string" ? row.symbol : undefined,
+      at: String(row.at),
+    }),
+  );
+}
+
+/** An open ticket whose active package dropped rules at `rules.max-per-package`. */
+export interface TruncatedPackage {
+  readonly ticket: string;
+  readonly target: string;
+  readonly role: string;
+  readonly count: number;
+}
+
+/** The open tickets of the Change whose active package records `rules-truncated` above 0. */
+export function truncatedPackages(index: IndexDb, changeId: string): TruncatedPackage[] {
+  const rows = index.database
+    .prepare(
+      `SELECT a.ticket, d.target, d.role, d.rules_truncated FROM attempts a
+       JOIN dispatches d ON d.change_id = a.change_id AND d.path = a.package
+       WHERE a.change_id = ? AND a.closed_at IS NULL AND d.rules_truncated > 0
+       ORDER BY a.opened_at, a.ticket`,
+    )
+    .all(changeId) as Row[];
+  return rows.map((row) => ({
+    ticket: String(row.ticket),
+    target: String(row.target),
+    role: String(row.role),
+    count: Number(row.rules_truncated),
+  }));
+}
+
+/** True when the Change holds an attempt record of the ticket. */
+export function hasAttempt(index: IndexDb, changeId: string, ticket: string): boolean {
+  return (
+    index.database
+      .prepare("SELECT 1 FROM attempts WHERE change_id = ? AND ticket = ?")
+      .get(changeId, ticket) !== undefined
+  );
+}
+
 export interface OpenAttempt {
   readonly ticket: string;
   readonly loop: string;

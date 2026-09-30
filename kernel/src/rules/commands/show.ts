@@ -1,5 +1,5 @@
 // The `rules show` handler: `<id>` prints one rule, `--ticket` the rules the
-// ticket's active package records.
+// ticket's active package records; only the ticket form needs the Change.
 import { globalDir } from "../../shared/config/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
@@ -18,9 +18,7 @@ export function showCommand(deps: RulesDeps): Handler {
       ]);
     }
     if (typeof id === "string") {
-      const projectRoot =
-        context.change?.projectRoot ??
-        findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd);
+      const projectRoot = findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd);
       const rule = showRule(deps, projectRoot, globalDir(context.runtime), id);
       return isRefusal(rule) ? rule : { data: rule, text: renderRule(rule) };
     }
@@ -29,8 +27,11 @@ export function showCommand(deps: RulesDeps): Handler {
         "bdk rules show --ticket <ticket>",
       ]);
     }
-    if (context.change === undefined) throw new Error("rules show is Change-scoped");
-    const rules = await showTicketRules(deps, context.change, globalDir(context.runtime), ticket);
+    // The registration resolves the Change here: only the --ticket form needs one.
+    const change = context.resolveChange?.();
+    if (change === undefined) throw new Error("rules show resolves its Change in the handler");
+    if (isRefusal(change)) return change;
+    const rules = await showTicketRules(deps, change, globalDir(context.runtime), ticket);
     return isRefusal(rules) ? rules : { data: rules, text: renderTicketRules(rules) };
   };
 }

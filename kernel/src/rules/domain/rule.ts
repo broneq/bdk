@@ -34,6 +34,8 @@ export interface RuleProblem {
   /** Display path of the file, or `rules.disabled`. */
   readonly file: string;
   readonly line?: number;
+  /** The duplicated id of a `duplicate-id` problem. */
+  readonly id?: string;
   readonly message: string;
 }
 

@@ -157,7 +157,7 @@ export interface StatusReport {
   readonly overriddenKeys: readonly string[];
 }
 
-export interface TruncatedView {
+interface TruncatedView {
   readonly ticket: string;
   readonly target: string;
   readonly role: string;

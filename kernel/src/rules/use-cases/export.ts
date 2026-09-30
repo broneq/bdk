@@ -1,0 +1,74 @@
+// `bdk rules export --claude` (`kernel-cli/rules`; design D-7 of v3-t31): the
+// projection of the project's enabled rules into the two generated host
+// files, rewritten by `accept` and `import` too. `--check` compares instead
+// of writing, the CI form that catches a hand edit of `.bdk/rules/`.
+import { join } from "node:path";
+
+import { refuse } from "../../shared/refusal/index.ts";
+import type { Refusal } from "../../shared/refusal/index.ts";
+import type { Store } from "../../shared/store/index.ts";
+import { projectionFiles } from "../domain/projection.ts";
+import type { ExportReport } from "../domain/report.ts";
+import { projectRules } from "./context.ts";
+import type { RuleContext } from "./context.ts";
+import type { RulesDeps } from "./deps.ts";
+import { formatRefusal } from "./check.ts";
+import { loadContext } from "./settings.ts";
+import { PROJECT_RULES_DIR } from "./store.ts";
+
+export function exportRules(
+  deps: RulesDeps,
+  projectRoot: string,
+  globalDir: string,
+  check: boolean,
+): ExportReport | Refusal {
+  const context = loadContext(deps, projectRoot, globalDir);
+  if ("refused" in context) return context;
+  // Only the project's own rules are projected, so only their problems block it.
+  const problem = formatRefusal(
+    context.problems.filter((found) => found.file.startsWith(`${PROJECT_RULES_DIR}/`)),
+  );
+  if (problem !== undefined) return problem;
+  const report = writeProjection(deps.store, projectRoot, context, !check);
+  const drifted = report.files.filter((file) => file.changed).map((file) => file.path);
+  if (check && drifted.length > 0) {
+    return refuse(
+      "policy/generated-drift",
+      `${drifted.join(" and ")} differ from the rules under .bdk/rules/`,
+      ["bdk rules export --claude", "commit the regenerated files"],
+    );
+  }
+  return report;
+}
+
+/** Writes (or, with `write` false, only compares) the projection files; `changed` marks a difference. */
+function writeProjection(
+  store: Store,
+  projectRoot: string,
+  context: RuleContext,
+  write = true,
+): ExportReport {
+  const files = projectionFiles(projectRules(context)).map((file) => {
+    const path = join(projectRoot, file.path);
+    const current = store.read(path);
+    const changed = current !== file.content;
+    if (write && changed) {
+      if (file.content === undefined) store.remove(path);
+      else store.write(path, file.content);
+    }
+    return {
+      path: file.path,
+      rules: file.rules,
+      ...(file.paths === undefined ? {} : { paths: file.paths }),
+      changed,
+    };
+  });
+  return { files };
+}
+
+/** The projection paths a write changed, for `accept` and `import`. */
+export function regenerate(store: Store, projectRoot: string, context: RuleContext): string[] {
+  return writeProjection(store, projectRoot, context)
+    .files.filter((file) => file.changed)
+    .map((file) => file.path);
+}
