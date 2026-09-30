@@ -1,7 +1,7 @@
 ---
 name: probe-sleeper
 description: Host probe subagent that works in several timed Bash steps, to record when messages reach a running agent and what happens when it is stopped. Use only when a probe step asks for it.
-tools: Bash
+tools: Bash, SendMessage
 model: haiku
 ---
 

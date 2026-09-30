@@ -1,0 +1,272 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.284",
+    "check_id": "lead-detach",
+    "recordings": 6
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-3>",
+      "agent_id": "<AGENT-3>",
+      "agent_type": "bdk-probe:probe-spawner",
+      "hook_event_name": "SubagentStart"
+    },
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-3>",
+      "agent_id": "<AGENT-4>",
+      "agent_type": "bdk-probe:probe-sleeper",
+      "hook_event_name": "SubagentStart"
+    },
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-3>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-3>",
+      "agent_type": "bdk-probe:probe-spawner",
+      "hook_event_name": "SubagentStop",
+      "stop_hook_active": false,
+      "agent_transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>/subagents/agent-<AGENT-3>.jsonl",
+      "last_assistant_message": "SPAWNED",
+      "background_tasks": [
+        {
+          "id": "<AGENT-3>",
+          "type": "subagent",
+          "status": "running",
+          "description": "Probe spawner nesting test",
+          "agent_type": "bdk-probe:probe-spawner"
+        },
+        {
+          "id": "<AGENT-4>",
+          "type": "subagent",
+          "status": "running",
+          "description": "Sleep test background task",
+          "agent_type": "bdk-probe:probe-sleeper"
+        }
+      ],
+      "session_crons": []
+    },
+    {
+      "session_id": "<SESSION-2>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-4>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-4>",
+      "agent_type": "bdk-probe:probe-sleeper",
+      "hook_event_name": "SubagentStop",
+      "stop_hook_active": false,
+      "agent_transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-2>/subagents/agent-<AGENT-4>.jsonl",
+      "last_assistant_message": "CHILD-DONE",
+      "background_tasks": [
+        {
+          "id": "<AGENT-4>",
+          "type": "subagent",
+          "status": "running",
+          "description": "Sleep test background task",
+          "agent_type": "bdk-probe:probe-sleeper"
+        }
+      ],
+      "session_crons": []
+    },
+    {
+      "hook_event_name": "TimelineExcerpt",
+      "main": [
+        {
+          "at": "2026-09-30T12:41:19.449Z",
+          "kind": "tool_use",
+          "tool": "Agent",
+          "input": "{\"subagent_type\":\"bdk-probe:probe-spawner\",\"description\":\"Probe spawner nesting test\",\"prompt\":\"Use the Agent tool with subagent_type bdk-probe:probe-sleeper, run_in_background true, and this prompt: Run with the Bash tool: sleep 10, then r..."
+        },
+        {
+          "at": "2026-09-30T12:41:19.521Z",
+          "kind": "tool_result",
+          "text": "Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)\nagentId: <AGENT-3> (internal ID - do not mention to user. Use S..."
+        },
+        {
+          "at": "2026-09-30T12:41:22.282Z",
+          "kind": "text",
+          "text": "Spawner launched. Waiting for background agent completion."
+        },
+        {
+          "at": "2026-09-30T12:41:23.707Z",
+          "kind": "user",
+          "origin": {
+            "kind": "task-notification",
+            "producer": "session-task"
+          },
+          "text": "<task-notification>\n<task-id><AGENT-3></task-id>\n<tool-use-id>toolu_01VpdTyNhGbgNfMtDhmcBY6X</tool-use-id>\n<output-file><CLAUDE_TMP>/<PROJECT>/<SESSION-2>/tasks/<AGENT-3>.output</output-file>\n<status>completed</status>\n<summary>Agent \"Probe spawner nesting test\" finished</summary>\n<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same tas..."
+        },
+        {
+          "at": "2026-09-30T12:41:26.119Z",
+          "kind": "text",
+          "text": "Spawner completed with \"SPAWNED\". Sleeper still running in background. Waiting for sleeper completion."
+        },
+        {
+          "at": "2026-09-30T12:41:36.083Z",
+          "kind": "user",
+          "origin": {
+            "kind": "task-notification",
+            "producer": "session-task"
+          },
+          "text": "<task-notification>\n<task-id><AGENT-4></task-id>\n<tool-use-id>toolu_01LHdpDv5dZJ3aNguykbZESk</tool-use-id>\n<output-file><CLAUDE_TMP>/<PROJECT>/<SESSION-2>/tasks/<AGENT-4>.output</output-file>\n<status>completed</status>\n<summary>Agent \"Sleep test background task\" finished</summary>\n<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same tas..."
+        },
+        {
+          "at": "2026-09-30T12:41:41.006Z",
+          "kind": "text",
+          "text": "Sleeper completed: CHILD-DONE.\n\n**Probe results:**\n- Spawner (<AGENT-3>) launched, completed \"SPAWNED\" in 4.2s\n- Spawner spawned sleeper (<AGENT-4>) in background\n- Sleeper ran sleep 10, completed \"CHILD-DONE\" in 13.9s\n- Nes..."
+        }
+      ],
+      "agents": {
+        "a69dcdb99d07ad494": [
+          {
+            "at": "2026-09-30T12:41:22.069Z",
+            "kind": "tool_use",
+            "tool": "Agent",
+            "input": "{\"subagent_type\":\"bdk-probe:probe-sleeper\",\"run_in_background\":true,\"description\":\"Sleep test background task\",\"prompt\":\"Run with the Bash tool: sleep 10, then reply CHILD-DONE.\"}"
+          },
+          {
+            "at": "2026-09-30T12:41:22.124Z",
+            "kind": "tool_result",
+            "text": "Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)\nagentId: <AGENT-4> (internal ID - do not mention to user. Use S..."
+          },
+          {
+            "at": "2026-09-30T12:41:23.645Z",
+            "kind": "text",
+            "text": "SPAWNED"
+          }
+        ],
+        "aef40010fa2e2145c": [
+          {
+            "at": "2026-09-30T12:41:24.757Z",
+            "kind": "tool_use",
+            "tool": "Bash",
+            "input": "{\"command\":\"sleep 10\",\"description\":\"Sleep for 10 seconds\"}"
+          },
+          {
+            "at": "2026-09-30T12:41:35.043Z",
+            "kind": "tool_result",
+            "text": "(Bash completed with no output)"
+          },
+          {
+            "at": "2026-09-30T12:41:36.006Z",
+            "kind": "text",
+            "text": "CHILD-DONE"
+          }
+        ]
+      }
+    },
+    {
+      "duration_api_ms": 21905,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-2>",
+      "total_cost_usd": 0.05937230000000001,
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 658,
+        "cache_read_input_tokens": 25622,
+        "output_tokens": 408,
+        "output_tokens_details": {
+          "thinking_tokens": 231
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 658,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 10,
+            "output_tokens": 408,
+            "cache_read_input_tokens": 25622,
+            "cache_creation_input_tokens": 658,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 658
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 74,
+          "outputTokens": 1838,
+          "cacheReadInputTokens": 120053,
+          "cacheCreationInputTokens": 22779,
+          "webSearchRequests": 0,
+          "costUSD": 0.05937230000000001,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 1199,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "origin": {
+        "kind": "task-notification",
+        "producer": "session-task"
+      },
+      "subagent_stats": {
+        "spawned": 2,
+        "requested": {
+          "background": 1,
+          "foreground": 0,
+          "unset": 1
+        },
+        "started_in_background": 2,
+        "max_depth": 2,
+        "spawned_by_subagents": 1,
+        "completed": 2,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "bdk-probe:probe-spawner": 1,
+          "bdk-probe:probe-sleeper": 1
+        }
+      },
+      "is_error": false,
+      "num_turns": 1,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "Sleeper completed: CHILD-DONE.\n\n**Probe results:**\n- Spawner (<AGENT-3>) launched, completed \"SPAWNED\" in 4.2s\n- Spawner spawned sleeper (<AGENT-4>) in background\n- Sleeper ran sleep 10, completed \"CHILD-DONE\" in 13.9s\n- Nested background agent chain: spawner (foreground) → sleeper (background) worked\n- Spawner properly ended turn without blocking on sleeper completion\n- Background task notifications fire independently for each agent\n\n**Learned:** Nested foreground/background agent spawning and messaging work. Spawner can launch background children and exit while they continue running.",
+      "ttft_ms": 3083,
+      "type": "result",
+      "duration_ms": 5020,
+      "uuid": "<UUID-2>",
+      "ttft_stream_ms": 668,
+      "time_to_request_ms": 54,
+      "first_content_frame_ms": 668,
+      "queued_turn_count": 0,
+      "result_index": 2
+    }
+  ]
+}
