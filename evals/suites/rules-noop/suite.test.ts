@@ -4,7 +4,16 @@ import { describe, expect, it } from "vitest";
 import { readVersions } from "../../harness/paths.ts";
 import type { EvalItem } from "../../harness/series.ts";
 import { reviewerSystem } from "./prompts.ts";
-import { HAIKU, SONNET, describeMeasurement, m1Items, m2Items, probeItems } from "./suite.ts";
+import { UsageError } from "../../harness/cli.ts";
+import {
+  HAIKU,
+  SONNET,
+  describeMeasurement,
+  m1Items,
+  m2Items,
+  measurementItems,
+  probeItems,
+} from "./suite.ts";
 import type { MeasurementSpec } from "./suite.ts";
 
 function spec(kind: "m1" | "m2", items: readonly EvalItem[]): MeasurementSpec {
@@ -29,8 +38,22 @@ describe("items", () => {
     expect(m1).toHaveLength(131);
     expect(m1[0]?.vars.question).not.toBe("");
     const m2 = m2Items();
-    expect(m2.map((item) => item.id).at(-1)).toBe("21-clean-sync-state");
+    // Seeded patches first, the clean controls last, so a probe always takes a control.
+    expect(m2.map((item) => item.id).slice(-3)).toEqual([
+      "19-clean-pluralize",
+      "20-clean-copy-button",
+      "21-clean-sync-state",
+    ]);
     expect(m2[0]?.vars.diff).toMatch(/^diff --git /);
+  });
+
+  it("with a patch filter measures only those patches, and no M1", () => {
+    expect(measurementItems("m1", ["22-operator-toolkit"])).toBeNull();
+    expect(
+      measurementItems("m2", ["35-settings-path", "22-operator-toolkit"])?.map((item) => item.id),
+    ).toEqual(["22-operator-toolkit", "35-settings-path"]);
+    expect(() => measurementItems("m2", ["99-missing"])).toThrow(UsageError);
+    expect(measurementItems("m1", undefined)).toHaveLength(131);
   });
 
   it("probes items spread over the list, first and last included", () => {

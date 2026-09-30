@@ -1,0 +1,31 @@
+diff --git a/src/api/operatorToolkit.ts b/src/api/operatorToolkit.ts
+new file mode 100644
+index 0000000..1544b55
+--- /dev/null
++++ b/src/api/operatorToolkit.ts
+@@ -0,0 +1,25 @@
++import { fetchBackendRead } from './http'
++import { AUDIT_LOGS_PATH, type AuditLogPage } from './operator'
++
++export async function countAuditLogs(actorLogin: string): Promise<number> {
++  const query = new URLSearchParams({ actorLogin, size: '1' })
++  const response = await fetchBackendRead(globalThis.fetch, `${AUDIT_LOGS_PATH}?${query.toString()}`, {
++    Accept: 'application/json',
++  })
++  const page = (await response.json()) as AuditLogPage
++  return page.totalElements ?? 0
++}
++
++export function saveThemePreference(theme: 'dark' | 'light'): void {
++  window.localStorage.setItem('theme', theme)
++  document.documentElement.dataset.theme = theme
++}
++
++export function formatDuration(milliseconds: number): string {
++  const seconds = Math.round(milliseconds / 1000)
++  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`
++}
++
++export function playNotificationSound(): void {
++  void new Audio('/sounds/notify.mp3').play()
++}

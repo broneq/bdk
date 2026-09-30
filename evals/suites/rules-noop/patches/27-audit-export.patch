@@ -1,0 +1,29 @@
+diff --git a/src/operator/auditExport.ts b/src/operator/auditExport.ts
+new file mode 100644
+index 0000000..aa9c108
+--- /dev/null
++++ b/src/operator/auditExport.ts
+@@ -0,0 +1,23 @@
++import type { AuditLog } from '../api/operator'
++
++export type AuditExportFormat = 'csv' | 'json' | 'ndjson' | 'markdown' | 'tsv'
++
++export function exportAuditLogs(logs: readonly AuditLog[], format: AuditExportFormat): string {
++  if (format === 'csv') {
++    const header = 'id,action,actor,createdAt'
++    const rows = logs.map((log) => [log.id, log.action, log.actorLogin, log.createdAt].join(','))
++    return [header, ...rows].join('\n')
++  } else if (format === 'json') {
++    return JSON.stringify(logs, null, 2)
++  } else if (format === 'ndjson') {
++    return logs.map((log) => JSON.stringify(log)).join('\n')
++  } else if (format === 'markdown') {
++    const header = '| id | action | actor | created |\n| --- | --- | --- | --- |'
++    const rows = logs.map((log) => `| ${log.id} | ${log.action} | ${log.actorLogin} | ${log.createdAt} |`)
++    return [header, ...rows].join('\n')
++  } else {
++    const header = 'id\taction\tactor\tcreatedAt'
++    const rows = logs.map((log) => [log.id, log.action, log.actorLogin, log.createdAt].join('\t'))
++    return [header, ...rows].join('\n')
++  }
++}

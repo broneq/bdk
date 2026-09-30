@@ -1,0 +1,16 @@
+diff --git a/src/operator/recentAudit.ts b/src/operator/recentAudit.ts
+new file mode 100644
+index 0000000..ad4258b
+--- /dev/null
++++ b/src/operator/recentAudit.ts
+@@ -0,0 +1,10 @@
++import { fetchBackendRead } from '../api/http'
++import type { AuditLogPage } from '../api/operator'
++
++export async function fetchRecentAuditLogs(actorLogin: string): Promise<AuditLogPage> {
++  const query = new URLSearchParams({ actorLogin, page: '0', size: '20', sort: 'id,DESC' })
++  const response = await fetchBackendRead(globalThis.fetch, `/api/admin/audit-logs?${query.toString()}`, {
++    Accept: 'application/json',
++  })
++  return (await response.json()) as AuditLogPage
++}

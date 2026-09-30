@@ -1,0 +1,33 @@
+diff --git a/src/ui/greeting.ts b/src/ui/greeting.ts
+new file mode 100644
+index 0000000..983710c
+--- /dev/null
++++ b/src/ui/greeting.ts
+@@ -0,0 +1,27 @@
++export interface GreetingStrategy {
++  greet(name: string): string
++}
++
++export class DefaultGreetingStrategy implements GreetingStrategy {
++  greet(name: string): string {
++    return `Hello, ${name}`
++  }
++}
++
++export class GreetingStrategyFactory {
++  create(): GreetingStrategy {
++    return new DefaultGreetingStrategy()
++  }
++}
++
++export class GreetingContext {
++  constructor(private readonly strategy: GreetingStrategy) {}
++
++  execute(name: string): string {
++    return this.strategy.greet(name)
++  }
++}
++
++export function greetAccount(name: string): string {
++  return new GreetingContext(new GreetingStrategyFactory().create()).execute(name)
++}

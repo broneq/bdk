@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { readLedger, spent } from "../../harness/budget.ts";
+import { UsageError } from "../../harness/cli.ts";
 import type { RunOptions, SuiteRunner } from "../../harness/cli.ts";
 import {
   EVALS_DIR,
@@ -27,7 +28,7 @@ import { ensureTools, evaluate, validateConfig } from "../../harness/tools.ts";
 import { assertCommitted, headCommit } from "../../harness/tree.ts";
 import { readBullets } from "./bullets.ts";
 import type { MeasurementKind } from "./hooks.ts";
-import { patchNames, readPatch, readViolations } from "./patches.ts";
+import { readPatch, readViolations } from "./patches.ts";
 import { M1_PROMPT, M1_SYSTEM, M2_PROMPT, reviewerSystem } from "./prompts.ts";
 import { readQuestions } from "./questions.ts";
 import { M1_CELLS, M2_CELLS, rulesReport } from "./table.ts";
@@ -78,8 +79,29 @@ export function m1Items(): EvalItem[] {
   return readQuestions().map((entry) => ({ id: entry.bullet, vars: { question: entry.question } }));
 }
 
+/** Seeded patches first, then the clean controls, so a probe's last item is always a control. */
 export function m2Items(): EvalItem[] {
-  return patchNames().map((name) => ({ id: name, vars: { diff: readPatch(name) } }));
+  const patches = readViolations().patches;
+  return [
+    ...patches.filter((entry) => entry.violations.length > 0),
+    ...patches.filter((entry) => entry.violations.length === 0),
+  ].map(({ patch }) => ({ id: patch, vars: { diff: readPatch(patch) } }));
+}
+
+/**
+ * A measurement's items: all of them, or with a patch filter only those M2
+ * patches (in list order) and null for M1, which the filter skips.
+ */
+export function measurementItems(
+  kind: MeasurementKind,
+  patches: readonly string[] | undefined,
+): EvalItem[] | null {
+  if (patches === undefined) return allItems(kind);
+  if (kind === "m1") return null;
+  const items = m2Items();
+  const unknown = patches.filter((name) => !items.some((item) => item.id === name));
+  if (unknown.length > 0) throw new UsageError(`unknown patch ${unknown.join(", ")}`);
+  return items.filter((item) => patches.includes(item.id)).sort((a, b) => a.id.localeCompare(b.id));
 }
 
 /** Items spread evenly over the list; for M2 the last item, a clean control, is always one of them. */
@@ -166,7 +188,8 @@ export function rulesNoopRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
       const bdkCommit = headCommit();
       const date = new Date().toISOString().slice(0, 10);
       for (const kind of KINDS) {
-        const all = allItems(kind);
+        const all = measurementItems(kind, options.patches);
+        if (all === null) continue;
         const items = options.probe ? probeItems(all, PROBE_ITEMS[kind]) : all;
         const series = freshSeriesName(
           `${options.probe ? "probe" : "series"}-${kind}-${date}`,

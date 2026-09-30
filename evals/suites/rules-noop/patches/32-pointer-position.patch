@@ -1,0 +1,27 @@
+diff --git a/src/ui/PointerPosition.tsx b/src/ui/PointerPosition.tsx
+new file mode 100644
+index 0000000..88ff213
+--- /dev/null
++++ b/src/ui/PointerPosition.tsx
+@@ -0,0 +1,21 @@
++import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
++
++type PointerPosition = { x: number; y: number }
++
++const PointerPositionContext = createContext<PointerPosition>({ x: 0, y: 0 })
++
++export function PointerPositionProvider({ children }: { children: ReactNode }) {
++  const [position, setPosition] = useState<PointerPosition>({ x: 0, y: 0 })
++
++  useEffect(() => {
++    const onMove = (event: PointerEvent) => setPosition({ x: event.clientX, y: event.clientY })
++    window.addEventListener('pointermove', onMove)
++    return () => window.removeEventListener('pointermove', onMove)
++  }, [])
++
++  return <PointerPositionContext value={position}>{children}</PointerPositionContext>
++}
++
++export function usePointerPosition(): PointerPosition {
++  return useContext(PointerPositionContext)
++}

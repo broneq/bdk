@@ -1,7 +1,9 @@
 # The M2 seeded violations (design D-8): per patch in `patches/`, each seeded
 # violation with the rule bullet it breaks and the line of the patched file
 # that breaks it (always a line the patch adds). Patches 19-21 are clean
-# controls with no violations. `not-seedable` lists every bullet no
+# controls with no violations. Patches 22-35 re-seed, one violation each, the
+# 14 bullets no cell detected in the first series (T31); their seeds in the
+# earlier patches are no longer mapped. `not-seedable` lists every bullet no
 # diff against this fixture (a Vite React SPA in TypeScript) can violate, with
 # the reason. `patches.test.ts` keeps this file consistent with the patches
 # and the rule bullets.
@@ -62,10 +64,6 @@ patches:
         file: src/api/auditExport.ts
         line: 17
         what: any parameter at an exported boundary instead of unknown
-      - bullet: languages/typescript.12.7a742072
-        file: src/api/auditExport.ts
-        line: 29
-        what: caught value assumed to be an Error without narrowing
       - bullet: code-quality.06.db386736
         file: src/api/auditExport.ts
         line: 19
@@ -180,24 +178,12 @@ patches:
         file: src/catalog/refreshCatalog.ts
         line: 29
         what: effect fetch without an AbortController; stale responses overwrite newer ones
-      - bullet: languages/react.05.c8d8910c
-        file: src/catalog/refreshCatalog.ts
-        line: 28
-        what: data fetched imperatively in an effect instead of use() under Suspense
   - patch: 08-audit-summary
     violations:
-      - bullet: architecture.02.a5df5e89
-        file: src/api/auditSummary.ts
-        line: 1
-        what: api layer imports from the UI layer
       - bullet: languages/javascript.02.1e2c38ec
         file: src/api/auditSummary.ts
         line: 2
         what: circular import between auditSummary and auditSummaryView
-      - bullet: architecture.07.357bc58d
-        file: src/api/auditSummary.ts
-        line: 5
-        what: page size duplicated instead of reusing DEFAULT_AUDIT_PAGE_SIZE
       - bullet: architecture.05.5785e278
         file: src/api/auditSummary.ts
         line: 8
@@ -210,10 +196,6 @@ patches:
         file: src/api/auditSummary.ts
         line: 26
         what: one class fetches, caches, formats text, CSV and HTML
-      - bullet: architecture.01.54b5ad15
-        file: src/api/auditSummary.ts
-        line: 26
-        what: "api module also caches and renders CSV and HTML: no single purpose"
   - patch: 09-debug-tools
     violations:
       - bullet: languages/javascript.19.b7a40285
@@ -264,10 +246,6 @@ patches:
         file: src/operator/auditStatus.ts
         line: 1
         what: enum instead of an as-const object or union
-      - bullet: languages/typescript.04.ced7773d
-        file: src/operator/auditStatus.ts
-        line: 24
-        what: exported functions without declared return types
       - bullet: languages/typescript.06.574c25ce
         file: src/operator/auditStatus.ts
         line: 9
@@ -276,10 +254,6 @@ patches:
         file: src/operator/auditStatus.ts
         line: 9
         what: mutually exclusive optional booleans allow impossible states; a discriminated union is needed
-      - bullet: languages/typescript.14.59fe5951
-        file: src/operator/auditStatus.ts
-        line: 16
-        what: recursive conditional mapped type harder to read than the logic it guards
       - bullet: languages/typescript.15.8dad880f
         file: src/operator/auditStatus.ts
         line: 19
@@ -310,10 +284,6 @@ patches:
         file: src/operator/OperatorDashboard.tsx
         line: 4
         what: Context used to avoid passing one prop to a direct child
-      - bullet: languages/react.06.9fabf21e
-        file: src/operator/OperatorDashboard.tsx
-        line: 4
-        what: state promoted to Context though it is not cross-cutting
       - bullet: languages/react.14.3f4c147c
         file: src/operator/OperatorDashboard.tsx
         line: 6
@@ -326,10 +296,6 @@ patches:
         file: src/operator/OperatorDashboard.tsx
         line: 26
         what: interdependent save states as separate useState calls
-      - bullet: languages/react.04.bd01d447
-        file: src/operator/OperatorDashboard.tsx
-        line: 26
-        what: hand-rolled pending and saved state for a form instead of an action with useActionState
       - bullet: languages/react.12.78cadee6
         file: src/operator/OperatorDashboard.tsx
         line: 23
@@ -344,18 +310,10 @@ patches:
         file: src/operator/auditExportFormats.ts
         line: 25
         what: factory class around a trivial new
-      - bullet: design-patterns.01.ec59d579
-        file: src/operator/auditExportFormats.ts
-        line: 25
-        what: a named pattern with no present problem to solve
       - bullet: design-patterns.09.5f5e9bf0
         file: src/operator/auditExportFormats.ts
         line: 32
         what: if-chain dispatching on a format tag next to an exporter class hierarchy
-      - bullet: design-patterns.02.eea458e1
-        file: src/operator/auditExportFormats.ts
-        line: 32
-        what: format selected at runtime by a conditional that grows per format
       - bullet: design-patterns.10.ff10f7bf
         file: src/operator/auditExportFormats.ts
         line: 32
@@ -478,22 +436,10 @@ patches:
         file: src/operator/auditSync.ts
         line: 33
         what: optional, composable behaviours stacked by subclassing
-      - bullet: design-patterns.06.f5d3ec17
-        file: src/operator/auditSync.ts
-        line: 53
-        what: domain object performs its own HTTP persistence
-      - bullet: architecture.03.1ae7614c
-        file: src/operator/auditSync.ts
-        line: 62
-        what: retention policy constructs the concrete HTTP client
       - bullet: security.06.84dd9121
         file: src/operator/auditSync.ts
         line: 67
         what: admin and write scopes requested for a read-only sync
-      - bullet: design-patterns.04.78b91b1a
-        file: src/operator/auditSync.ts
-        line: 83
-        what: producer calls each consumer directly
       - bullet: languages/react.09.0fd2a34f
         file: src/operator/AuditSyncPanel.tsx
         line: 21
@@ -504,6 +450,90 @@ patches:
     violations: []
   - patch: 21-clean-sync-state
     violations: []
+  - patch: 22-operator-toolkit
+    violations:
+      - bullet: architecture.01.54b5ad15
+        file: src/api/operatorToolkit.ts
+        line: 13
+        what: "api module mixes audit queries with theme storage, duration formatting and sound playback: no single purpose"
+  - patch: 23-audit-notice
+    violations:
+      - bullet: architecture.02.a5df5e89
+        file: src/api/auditNotice.tsx
+        line: 1
+        what: "api layer imports a UI component to render an error"
+  - patch: 24-audit-retention
+    violations:
+      - bullet: architecture.03.1ae7614c
+        file: src/operator/auditRetention.ts
+        line: 4
+        what: "retention policy constructs the concrete HTTP archive instead of depending on an abstraction it owns"
+  - patch: 25-recent-audit
+    violations:
+      - bullet: architecture.07.357bc58d
+        file: src/operator/recentAudit.ts
+        line: 6
+        what: "audit log path, page size and sort repeated as literals instead of reusing AUDIT_LOGS_PATH and the api defaults"
+  - patch: 26-greeting-strategy
+    violations:
+      - bullet: design-patterns.01.ec59d579
+        file: src/ui/greeting.ts
+        line: 1
+        what: "Strategy, Factory and context classes around a one-line greeting with a single implementation"
+  - patch: 27-audit-export
+    violations:
+      - bullet: design-patterns.02.eea458e1
+        file: src/operator/auditExport.ts
+        line: 6
+        what: "export format chosen by an if-chain that grows with every format"
+  - patch: 28-language-change
+    violations:
+      - bullet: design-patterns.04.78b91b1a
+        file: src/account/languageChange.ts
+        line: 16
+        what: "producer calls every subscriber directly, and the subscriber set depends on runtime feature flags"
+  - patch: 29-suspicious-actors
+    violations:
+      - bullet: design-patterns.06.f5d3ec17
+        file: src/operator/suspiciousActors.ts
+        line: 6
+        what: "domain rule builds the query URL and fetches audit logs itself instead of going through a data-access interface"
+  - patch: 30-display-name-form
+    violations:
+      - bullet: languages/react.04.bd01d447
+        file: src/account/DisplayNameForm.tsx
+        line: 4
+        what: "hand-rolled pending and error state for a form instead of an action with useActionState"
+  - patch: 31-category-count
+    violations:
+      - bullet: languages/react.05.c8d8910c
+        file: src/catalog/CategoryCount.tsx
+        line: 7
+        what: "data fetched in an effect with a loading flag instead of use() under Suspense"
+  - patch: 32-pointer-position
+    violations:
+      - bullet: languages/react.06.9fabf21e
+        file: src/ui/PointerPosition.tsx
+        line: 5
+        what: "high-frequency pointer position held in Context; every consumer re-renders on each move"
+  - patch: 33-audit-overview
+    violations:
+      - bullet: languages/typescript.04.ced7773d
+        file: src/operator/auditOverview.ts
+        line: 3
+        what: "exported functions without declared return types"
+  - patch: 34-audit-refresh
+    violations:
+      - bullet: languages/typescript.12.7a742072
+        file: src/operator/auditRefresh.ts
+        line: 9
+        what: "caught value asserted to Error without narrowing"
+  - patch: 35-settings-path
+    violations:
+      - bullet: languages/typescript.14.59fe5951
+        file: src/ui/settingsPath.ts
+        line: 3
+        what: "recursive conditional path types for a two-level settings object"
 not-seedable:
   - bullet: code-quality.09.41d89cfb
     reason: the fixture has no async pipeline across process or time boundaries (queue, worker, webhook chain)

@@ -1,0 +1,52 @@
+diff --git a/src/account/languageChange.ts b/src/account/languageChange.ts
+new file mode 100644
+index 0000000..c978ac8
+--- /dev/null
++++ b/src/account/languageChange.ts
+@@ -0,0 +1,25 @@
++import { updateAccountLanguage, type UserAccount } from '../api/account'
++import type { SessionResponse } from '../api/session'
++import {
++  applyDocumentLanguage,
++  recordLanguageMetric,
++  refreshOperatorBanner,
++  resetCatalogFilters,
++} from './languageSubscribers'
++
++export async function changeAccountLanguage(
++  session: SessionResponse,
++  language: string,
++  enabledFeatures: ReadonlySet<string>,
++): Promise<UserAccount> {
++  const account = await updateAccountLanguage(session, language)
++  applyDocumentLanguage(language)
++  resetCatalogFilters()
++  if (enabledFeatures.has('operator-banner')) {
++    refreshOperatorBanner(language)
++  }
++  if (enabledFeatures.has('metrics')) {
++    recordLanguageMetric(language)
++  }
++  return account
++}
+diff --git a/src/account/languageSubscribers.ts b/src/account/languageSubscribers.ts
+new file mode 100644
+index 0000000..3b72f98
+--- /dev/null
++++ b/src/account/languageSubscribers.ts
+@@ -0,0 +1,15 @@
++export function applyDocumentLanguage(language: string): void {
++  document.documentElement.lang = language
++}
++
++export function resetCatalogFilters(): void {
++  window.sessionStorage.removeItem('catalog-filters')
++}
++
++export function refreshOperatorBanner(language: string): void {
++  window.dispatchEvent(new CustomEvent('operator-banner:refresh', { detail: language }))
++}
++
++export function recordLanguageMetric(language: string): void {
++  navigator.sendBeacon('/api/metrics/language', language)
++}

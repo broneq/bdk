@@ -1,0 +1,38 @@
+diff --git a/src/account/DisplayNameForm.tsx b/src/account/DisplayNameForm.tsx
+new file mode 100644
+index 0000000..268b00c
+--- /dev/null
++++ b/src/account/DisplayNameForm.tsx
+@@ -0,0 +1,32 @@
++import { useState, type FormEvent } from 'react'
++
++export function DisplayNameForm({ onSave }: { onSave: (name: string) => Promise<void> }) {
++  const [pending, setPending] = useState(false)
++  const [error, setError] = useState<string | null>(null)
++
++  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
++    event.preventDefault()
++    setPending(true)
++    setError(null)
++    try {
++      await onSave(String(new FormData(event.currentTarget).get('displayName') ?? ''))
++    } catch {
++      setError('Could not save the display name.')
++    } finally {
++      setPending(false)
++    }
++  }
++
++  return (
++    <form onSubmit={handleSubmit}>
++      <label>
++        Display name
++        <input name="displayName" required />
++      </label>
++      <button type="submit" disabled={pending}>
++        Save
++      </button>
++      {error !== null && <p role="alert">{error}</p>}
++    </form>
++  )
++}

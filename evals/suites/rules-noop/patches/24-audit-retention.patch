@@ -1,0 +1,48 @@
+diff --git a/src/api/httpAuditArchive.ts b/src/api/httpAuditArchive.ts
+new file mode 100644
+index 0000000..3594884
+--- /dev/null
++++ b/src/api/httpAuditArchive.ts
+@@ -0,0 +1,21 @@
++import { fetchBackendRead } from './http'
++
++export class HttpAuditArchive {
++  async olderThan(days: number): Promise<number[]> {
++    const response = await fetchBackendRead(
++      globalThis.fetch,
++      `/api/admin/audit-logs/archive?olderThanDays=${days}`,
++      { Accept: 'application/json' },
++    )
++    return (await response.json()) as number[]
++  }
++
++  async purge(ids: readonly number[]): Promise<void> {
++    await globalThis.fetch('/api/admin/audit-logs/archive', {
++      method: 'DELETE',
++      credentials: 'same-origin',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify(ids),
++    })
++  }
++}
+diff --git a/src/operator/auditRetention.ts b/src/operator/auditRetention.ts
+new file mode 100644
+index 0000000..b97a3da
+--- /dev/null
++++ b/src/operator/auditRetention.ts
+@@ -0,0 +1,15 @@
++import { HttpAuditArchive } from '../api/httpAuditArchive'
++
++export class AuditRetentionPolicy {
++  private readonly archive = new HttpAuditArchive()
++
++  constructor(private readonly retentionDays: number) {}
++
++  async apply(): Promise<number> {
++    const expired = await this.archive.olderThan(this.retentionDays)
++    if (expired.length > 0) {
++      await this.archive.purge(expired)
++    }
++    return expired.length
++  }
++}

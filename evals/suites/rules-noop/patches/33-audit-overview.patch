@@ -1,0 +1,25 @@
+diff --git a/src/operator/auditOverview.ts b/src/operator/auditOverview.ts
+new file mode 100644
+index 0000000..bb14f11
+--- /dev/null
++++ b/src/operator/auditOverview.ts
+@@ -0,0 +1,19 @@
++import type { AuditLog } from '../api/operator'
++
++export function summarizeAuditLogs(logs: readonly AuditLog[]) {
++  const byAction = new Map<string, number>()
++  for (const log of logs) {
++    const action = log.action ?? 'UNKNOWN'
++    byAction.set(action, (byAction.get(action) ?? 0) + 1)
++  }
++  return {
++    total: logs.length,
++    byAction,
++    latest: logs[0]?.createdAt,
++    actors: new Set(logs.map((log) => log.actorLogin)),
++  }
++}
++
++export function auditRowLabel(log: AuditLog) {
++  return `${log.action ?? 'UNKNOWN'} by ${log.actorLogin ?? 'unknown'}`
++}
