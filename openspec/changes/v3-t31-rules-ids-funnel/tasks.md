@@ -48,10 +48,10 @@
 
 ## 7. Content and documentation
 
-- [ ] 7.1 Write the failing `role-contracts.test.ts` case "rule ids are cited", then add the "Rule citations (S4)" bullet to the implementer, simplifier, reviewer, pr-reviewer, verifier and design-verifier role skills; verify the test and `pnpm skill-check` pass
-- [ ] 7.2 Write the failing content test "definition in the convention and the guide", then rewrite `.claude/rules/quality-rules.md` for rule files, ids and the definition, and rewrite `docs/guide/concepts/quality-and-language-rules.md` and `docs/guide/workflows/rules-hygiene.md` for ids, selection, `rules.disabled`, `log add learning`, `rules stats` and `rules accept`; verify the test, `pnpm docs:build` and the docs drift guards in `pnpm test:contract` pass
-- [ ] 7.3 Update `README.md` "Quality Rules", `STARTUP_INSTRUCTIONS.md` "Quality Rules" (no `quality` settings section; rules by id) and the T31 resolution in `docs/V3-IMPLEMENTATION-PLAN.md`; verify `pnpm test:contract` (startup test) passes
-- [ ] 7.4 Regenerate `schema/cli` and `schema/state`, run `pnpm build` and `pnpm format`; verify `git diff --exit-code` after a second `pnpm build` and `pnpm format:check`
+- [x] 7.1 Write the failing `role-contracts.test.ts` case "rule ids are cited", then add the "Rule citations (S4)" bullet to the implementer, simplifier, reviewer, pr-reviewer, verifier and design-verifier role skills; verify the test and `pnpm skill-check` pass
+- [x] 7.2 Write the failing content test "definition in the convention and the guide", then rewrite `.claude/rules/quality-rules.md` for rule files, ids and the definition, and rewrite `docs/guide/concepts/quality-and-language-rules.md` and `docs/guide/workflows/rules-hygiene.md` for ids, selection, `rules.disabled`, `log add learning`, `rules stats` and `rules accept`; verify the test, `pnpm docs:build` and the docs drift guards in `pnpm test:contract` pass
+- [x] 7.3 Update `README.md` "Quality Rules", `STARTUP_INSTRUCTIONS.md` "Quality Rules" (no `quality` settings section; rules by id) and the T31 resolution in `docs/V3-IMPLEMENTATION-PLAN.md`; verify `pnpm test:contract` (startup test) passes
+- [x] 7.4 Regenerate `schema/cli` and `schema/state`, run `pnpm build` and `pnpm format`; verify `git diff --exit-code` after a second `pnpm build` and `pnpm format:check`
 
 ## 8. Acceptance
 

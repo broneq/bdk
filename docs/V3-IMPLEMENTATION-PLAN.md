@@ -305,7 +305,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **To resolve in the spec**: full list of v3 keys (migration from today's `settings.json`: `features.*`, `tools.*`, `quality.*`, `languages`), XDG path on Windows, format of the versioned schema URL, what a "key without a consumer" looks like technically (consumer registration).
 
-Keys added by the T02 decisions (each with a consumer in the named task): `features.lavish` (T41, default true, `AskUserQuestion` fallback), `policy.gates.<gate>: manual | auto` (T21, T24), `execution.runner: host-agent | headless` and `execution.concurrency` (T23), `rules.propose-when.*` thresholds and `rules.max-per-package` (T31), `archive.keep-evidence` (T30, which lands its consumer `change close`; T23-D53).
+Keys added by the T02 decisions (each with a consumer in the named task): `features.lavish` (T41, default true, `AskUserQuestion` fallback), `policy.gates.<gate>: manual | auto` (T21, T24), `execution.runner: host-agent | headless` and `execution.concurrency` (T23), `rules.propose-when.*` thresholds and `rules.max-per-package` (T31; both dropped by T31, see its Resolution), `archive.keep-evidence` (T30, which lands its consumer `change close`; T23-D53).
 
 **Resolution** (2026-09-25, Change `v3-t12-layered-config`, #50):
 
@@ -644,6 +644,14 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Dependencies**: T13, T14 (rule and learning schemas), T40 (promptfoo harness), T23 (dispatch by ID).
 
+**Resolution** (2026-09-30, Change `v3-t31-rules-ids-funnel`, #58; reports `docs/V3-RULES-MIGRATION.md` and the re-measurement in `docs/V3-EVAL-RULES-NOOP.md`):
+
+- Definition: a rule is a choice among valid alternatives, `house` or `knowledge`; a fact about the project's own system and a process lesson are not rules. Stated in `rules/README.md`, `.claude/rules/quality-rules.md` and the user guide.
+- Pack: one file per rule, `rules/<category>/BDK-<P>-<n>.md` and `rules/languages/<name>/`, read from the installed plugin and never copied into a project (`setup` imports nothing); `rules.disabled` switches any rule off. Every one of the 131 measured bullets has a row in the migration report; the `SEC` rules are kept without the house test (user decision). `rules/plan/` holds `BDK-PL-1..3`.
+- Selection: role prefix sets held in the kernel, `roles` overrides them, `applies` intersects the target's files; global first, then glob specificity, `since`, id. **No cap** (user decision at implementation): a cap drops configured rules silently, so `rules.max-per-package` and "rules truncated" are gone and `hooks session-start` warns above `rules.warn-above` (100) instead.
+- Funnel: nothing is proposed at `close` and there are no `rules.propose-when.*` keys. Lessons are `log add learning` entries (with `applies`); `rules stats` is the audit view (recurrence across distinct Changes, raw entries, citations); `rules accept` is the explicit adoption; `rules add` and `log route` are removed.
+- Commands: `rules check`, `show`, `explain`, `prune`, `import` (one rule per top-level bullet, global without `paths:`), `export --claude` (two generated files, global and scoped), `stats`, `accept`; `doctor` reports `rule-without-id`, `rules-invalid` and `projection-outdated`. Role contracts cite rule ids with `--ref` (S4).
+
 ### T32 v2 -> v3 import, Python cut, cleanup
 
 **Goal**: hard cut (Q1): a plugin without Python, a one-off `bdk import`, the defects from the side items list removed.
@@ -706,13 +714,13 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Scope**:
 
-- `setup`: new project or import; writes `settings.yaml` with the schema modeline, `.gitignore` (two paths), checks `doctor`, imports the `BDK-*` rule pack (T31), exports adapters for the host (`bdk export agents --host`, T23); no questions about things the kernel measures.
+- `setup`: new project or import; writes `settings.yaml` with the schema modeline, `.gitignore` (two paths), checks `doctor`, runs `bdk rules import` on hand-written `.claude/rules/` (the `BDK-*` pack is read from the plugin, never imported; T31), exports adapters for the host (`bdk export agents --host`, T23); no questions about things the kernel measures.
 - `change`: a skill (T02 section 13.3, user decision 2026-09-25): `new`, status, resume, park; entry into a Change; the starting profile judged by the skill against the `tiny` checklist of T20 design D-11 (all true: no new or changed behaviour visible to a user or an API, no change to a data model, schema or configuration, no `spec-impact`, at most 2 files in 1 module; any doubt is `small`) and passed as `--profile tiny --reason <why>`; `change new --inferred` when another skill (`cr`, `debugging`) opens a Change on the user's behalf, marked `source: inferred`.
 - `design`: today's `design` (Lavish when `features.lavish`, otherwise AskUserQuestion; 2+ approaches, self-critique, `design-verifier` role over the `reader` adapter with the closed P8 list) plus decision export to the ledger (absorbs `create-adr`, per the T02 disposition); for `large` it first writes `architecture.md`, then one design part per `touches` group (T21 kinds `architecture`, `design-part`, `design-index`); it decides the split itself after exploration (at least 3 subsystems with their own interfaces, or a design over the 12 KB limit; T20 design D-11) and records it as a `decision` with `profile: large`; ends with a render of the gate status (`next`: the command to type + `review: true` entries).
 - `plan`: `create-plan`; parts <= 8 KB with the P6 fields; tick list of rule IDs from `PL`; `disable-model-invocation: true`.
 - `verify-plan`: a separate skill (T02 section 5, user decision 2026-09-25, overriding the merge proposal) with `context: fork` and `agent: bdk:reader`: plan-verifier loop with a budget and the P8 list; verdict bound to the part hash (P2); invoked by `plan` and standalone.
 - `execute`: `subagent-execute-plan` (661 lines today) as a per-part loop: `attempt open`, `dispatch build`, dispatch through the swarm skill of T23 (the host's Agent tool with **only the package path**, T23-D0, D6), envelope, `log ingest` storing the report of every role except the implementer (T23-D14), `attempt close`, post-task steps from the graph, `commit <task>`, `part done`; wave strategy (including `features.workflow` as an option); `disable-model-invocation: true`, `disallowed-tools: Edit Write NotebookEdit` (P9); ends with the review gate status.
-- `close`: `spec merge`, `learning` funnel (rule proposals per T31 thresholds, spec, nothing), archive per `archive.keep-evidence`, `rules export --claude` regeneration, PR summary from the ledger (intent, decisions, assumptions, open findings); `disable-model-invocation: true`, `disallowed-tools` (P9).
+- `close`: `spec merge`, no rule proposal (T31: lessons stay `learning` entries for the audit skill, which works from `rules stats` and adopts with `rules accept`), archive per `archive.keep-evidence`, `rules export --claude` regeneration, PR summary from the ledger (intent, decisions, assumptions, open findings); `disable-model-invocation: true`, `disallowed-tools` (P9).
 - `run`: drives a Change through every gate whose `policy.gates.<gate>` is `auto`, writing `source: policy` transitions (T21, T24), and stops at the first `manual` gate with the same render as the stage skills; `disable-model-invocation: true`.
 - Every skill: `!` blocks only `ctx` / `next` in the wrapper form; `allowed-tools` with the node rule; `/bdk:` namespace; no model names in the prose (P11); the Lavish / AskUserQuestion fragment comes from `ctx` (T13).
 - CI content tests (A3): line limits, wrapper, `allowed-tools`, `disable-model-invocation` on `plan` / `execute` / `close` / `run`, `disallowed-tools` on `execute` / `close`, no `mcp__plugin_bdk_` tool names (T03); `skill-check` (T15) over `skills/` in CI.

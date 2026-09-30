@@ -165,3 +165,17 @@ describe("the shipped pack", () => {
     expect(existsSync(join(PACK, "README.md"))).toBe(true);
   });
 });
+
+describe("the definition of a rule", () => {
+  it.each([".claude/rules/quality-rules.md", "docs/guide/concepts/quality-and-language-rules.md"])(
+    "%s states it, names both kinds and the two non-rules",
+    (path) => {
+      const text = readFileSync(join(REPO_ROOT, path), "utf8").replace(/\s+/g, " ");
+      expect(text).toContain("a choice among valid alternatives");
+      expect(text).toMatch(/`house`/);
+      expect(text).toMatch(/`knowledge`/);
+      expect(text).toContain("a fact about the project's own system");
+      expect(text).toContain("a process lesson");
+    },
+  );
+});
