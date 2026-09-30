@@ -5,7 +5,7 @@
 - [x] 1.1 Write a failing harness unit test for a patch filter of the `rules-noop` suite (`pnpm eval rules-noop --patches <id,...>` renders only the M2 tests of those patches; an unknown id is a usage error), then implement it in `evals/harness/cli.ts` and `evals/suites/rules-noop/suite.ts`; verify with the harness unit tests and `pnpm eval check`
 - [x] 1.2 Fix the seeds of the 14 bullets with detection 0 in both cells (`evals/suites/rules-noop/violations.yaml`, `patches.ts`) so each patch holds exactly one unambiguous violation of its bullet; verify with the suite's patch-application test and `pnpm eval check`
 - [x] 1.3 Run `pnpm eval rules-noop --patches <the 14> --probe`, present the projected cost of the full series to the user and wait for approval; verify the probe row is written under `evals/results/rules-noop/`
-- [ ] 1.4 After approval run the full series (cells `with`, `with-prime`, `without`, 5 runs), recompute the 14 classes with T40's rule and append the results to `docs/V3-EVAL-RULES-NOOP.md`; verify with `pnpm eval report rules-noop` and the committed rows
+- [x] 1.4 After approval run the full series (cells `with`, `with-prime`, `without`, 5 runs), recompute the 14 classes with T40's rule and append the results to `docs/V3-EVAL-RULES-NOOP.md`; verify with `pnpm eval report rules-noop` and the committed rows
 
 ## 2. Classification and the migration report
 

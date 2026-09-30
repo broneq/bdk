@@ -80,6 +80,34 @@ Design D-6 asks for a spot-check of 10% of judged items plus every item the judg
 - Apply the spot-check corrections (or re-judge those items) before a class decides a bullet's fate.
 - The harness can rerun either measurement after a rewrite: `pnpm eval rules-noop --probe`, then the full series (`evals/README.md`).
 
+## Re-measurement of the 14 re-seeded bullets (T31)
+
+T31 replaced the seeds of the 14 bullets no cell detected with one unambiguous violation each (patches `22-operator-toolkit` to `35-settings-path`; the earlier patches no longer map these bullets) and measured them again: probe `probe-m2-2026-09-30`, then the approved full series `series-m2-2026-09-30` (210 runs: cells `with`, `with-prime` and `without`, 5 runs each, all counted). M1 is unchanged. The classes follow the same rule as above; `evals/results/rules-noop/report.md` holds the combined table.
+
+| bullet                           | with     | without  | with vs without                | class           |
+| -------------------------------- | -------- | -------- | ------------------------------ | --------------- |
+| architecture.01.54b5ad15         | 1 [1..1] | 1 [1..1] | no difference (gap 0, noise 0) | no-op candidate |
+| architecture.02.a5df5e89         | 1 [0..1] | 1 [0..1] | no difference (gap 0, noise 1) | unclear         |
+| architecture.03.1ae7614c         | 1 [0..1] | 0 [0..0] | no difference (gap 1, noise 1) | unclear         |
+| architecture.07.357bc58d         | 0 [0..0] | 0 [0..1] | no difference (gap 0, noise 1) | unclear         |
+| design-patterns.01.ec59d579      | 1 [1..1] | 1 [1..1] | no difference (gap 0, noise 0) | no-op candidate |
+| design-patterns.02.eea458e1      | 1 [0..1] | 0 [0..0] | no difference (gap 1, noise 1) | unclear         |
+| design-patterns.04.78b91b1a      | 1 [0..1] | 0 [0..0] | no difference (gap 1, noise 1) | unclear         |
+| design-patterns.06.f5d3ec17      | 0 [0..0] | 0 [0..0] | no difference (gap 0, noise 0) | unclear         |
+| languages/react.04.bd01d447      | 1 [0..1] | 0 [0..0] | no difference (gap 1, noise 1) | unclear         |
+| languages/react.05.c8d8910c      | 0 [0..1] | 0 [0..0] | no difference (gap 0, noise 1) | unclear         |
+| languages/react.06.9fabf21e      | 1 [1..1] | 0 [0..1] | no difference (gap 1, noise 1) | unclear         |
+| languages/typescript.04.ced7773d | 0 [0..0] | 0 [0..0] | no difference (gap 0, noise 0) | unclear         |
+| languages/typescript.12.7a742072 | 1 [1..1] | 1 [1..1] | no difference (gap 0, noise 0) | no-op candidate |
+| languages/typescript.14.59fe5951 | 1 [0..1] | 0 [0..0] | no difference (gap 1, noise 1) | unclear         |
+
+- The new seeds are detected: 10 of the 14 now have a median of 1 in the `with` cell, against 0 in every cell before.
+- 3 bullets become no-op candidates: the reviewer finds the violation in every run with or without the rule.
+- 6 bullets show `with` ahead of `without` (median 1 against 0) but within the noise of 5 runs.
+- 1 bullet (`architecture.02`) has no gap, but its `without` interval reaches 0, so it misses the no-op bar.
+- 4 bullets still have a median of 0 in both cells (`architecture.07`, `design-patterns.06`, `react.05`, `typescript.04`). With a clean seed, that says the one-turn review does not see these problems whether or not the rule is in its prompt.
+- Totals over all 131 bullets: no-op candidate 62, unclear 52, effective 13, corrects the model 4.
+
 ## Per bullet
 
 `with` and `without` are the median [min..max] per-run detection of the bullet's seeded violations; "not seedable" has no M2. M1 columns are majority outcomes.
