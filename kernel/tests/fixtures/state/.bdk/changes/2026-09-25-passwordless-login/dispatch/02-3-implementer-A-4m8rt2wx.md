@@ -12,7 +12,6 @@ kernel-version: 3.0.0-dev
 template-hash: sha256:ed6c03db03a785e2eb2a9935d4737aa48579b40ebb932e3b77be0adf59ae64a2
 report: .bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-A-4m8rt2wx.md
 rules: [BDK-CQ-1, BDK-TS-2]
-rules-truncated: 0
 ---
 ## Intent
 Users log in with a one-time link sent by email instead of a password.

@@ -145,13 +145,7 @@ export async function runBdk(
  * package at `dispatch/<target>-<role>-<ticket>.md`, stamped as the ticket's
  * active one (T23-D42).
  */
-export function writePackage(
-  store: Store,
-  ticket: string,
-  role: string,
-  target = "02-3",
-  truncated = 0,
-): void {
+export function writePackage(store: Store, ticket: string, role: string, target = "02-3"): void {
   const path = `.bdk/changes/${CHANGE}/dispatch/${target}-${role}-${ticket}.md`;
   writeDocument(store, `${ROOT}/${path}`, {
     data: {
@@ -168,7 +162,6 @@ export function writePackage(
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/${target}-${role}-${ticket}.md`,
       rules: [],
-      "rules-truncated": truncated,
     },
     body: "",
   });

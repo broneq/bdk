@@ -25,7 +25,7 @@
 - [x] 4.1 Write failing unit tests for selection (design D-5): role prefix map incl. `PL` for `verifier`, `roles` override, project rules to every rule-reading role, file sets for task, part and artifact targets, glob match through `shared/store/glob.ts`, the ordering (global, specificity, `since`, id), the cap and the truncation count
 - [x] 4.2 Replace `kernel/src/rules/use-cases/selection.ts` with the id-based selection; verify 4.1 passes
 - [x] 4.3 Write failing tests for `dispatch build`: the package stamps `rules` and `rules-truncated`, `template-hash` changes when a selected rule text or id changes and stays when an unselected rule changes; then implement in `kernel/src/dispatch/use-cases/build.ts` and the package schema; verify the tests and the state fixture test pass
-- [ ] 4.4 Write failing tests for `ctx skill`: `rules` part renders `- [<id>] <text>` with `(applies: ...)`, `language-rules` read from the pack dirs, the new `project-rules` part, `rules("plan")` for `create-plan`; then implement in `kernel/src/ctx/` and `manifest.ts`; verify the tests, `ctx-skill-output.test.ts` and `skill-context.test.ts` pass
+- [x] 4.4 Write failing tests for `ctx skill`: `rules` part renders `- [<id>] <text>` with `(applies: ...)`, `language-rules` read from the pack dirs, the new `project-rules` part, `rules("plan")` for `create-plan`; then implement in `kernel/src/ctx/` and `manifest.ts`; verify the tests, `ctx-skill-output.test.ts` and `skill-context.test.ts` pass
 - [x] 4.5 Write a failing test for `change status` `rulesTruncated` (scenario "rules truncated"), then implement it; verify the test passes
 
 ## 5. Commands and the ledger (kernel)
@@ -36,13 +36,15 @@
 - [x] 5.4 Write failing tests for `log add learning --applies` (default from the ticket task's `Files:`, `input/invalid` on another type), `routed` refused by `log add`, `log list` and `log resolve`, and `log route` answering unknown command; then implement in `kernel/src/log/` and remove `route`; verify the tests pass
 - [x] 5.5 Write failing tests for `change close` (no `learning` output field, no `.claude/rules` write, scenario "close proposes no rule"), then remove the routing in `kernel/src/change/use-cases/close.ts` and `schema/outputs.ts`; verify the tests pass
 - [x] 5.6 Write failing tests for `doctor` checks `rule-without-id` (warn, repair `bdk rules import`), `rules-invalid` (fail) and `projection-outdated` (warn), then implement in `kernel/src/service/`; verify the tests pass
-- [ ] 5.7 Update the error-code and availability tables used by `cli-contract.test.ts` and `kernel-contract.test.ts` for `rule-format`, `duplicate-rule-id`, `generated-drift`, and the removed `log route` and `rules add`; verify `pnpm test:contract` passes
+- [x] 5.7 Update the error-code and availability tables used by `cli-contract.test.ts` and `kernel-contract.test.ts` for `rule-format`, `duplicate-rule-id`, `generated-drift`, and the removed `log route` and `rules add`; verify `pnpm test:contract` passes
+
+- [x] 5.8 Remove the rule cap (user decision at implementation, design D-5): drop `rules.max-per-package`, the package's `rules-truncated`, `truncated` of `rules show --ticket`, `beyondCap` of `rules explain`, `rulesTruncated` of `change status` and the index column behind it; add `rules.warn-above` and the `[BDK] rules warning` line of `hooks session-start`; verify the selection, dispatch, rules, change and hooks tests pass
 
 ## 6. The shipped pack
 
-- [ ] 6.1 Write the failing content tests of `rule-pack`: pack files match their directory, `knowledge` rules carry `source` and `verified`, plan rules exist, new language pack without a measurement fails, kept bullets exist in the pack
-- [ ] 6.2 Write one file per kept rule under `rules/<category>/` and `rules/languages/<name>/` from the approved report, `BDK-PL-1..3` under `rules/plan/`, and `rules/README.md` (definition and admission); delete the nine category files; verify 6.1 passes and `bdk rules check` exits 0 in the repository
-- [ ] 6.3 Point the `rules-noop` suite's bullet reader (`evals/suites/rules-noop/bullets.ts`) at the per-rule layout with the old T40 ids mapped through the report; verify `pnpm eval check` and the suite unit tests pass
+- [x] 6.1 Write the failing content tests of `rule-pack`: pack files match their directory, `knowledge` rules carry `source` and `verified`, plan rules exist, new language pack without a measurement fails, kept bullets exist in the pack
+- [x] 6.2 Write one file per kept rule under `rules/<category>/` and `rules/languages/<name>/` from the approved report, `BDK-PL-1..3` under `rules/plan/`, and `rules/README.md` (definition and admission); delete the nine category files; verify 6.1 passes and `bdk rules check` exits 0 in the repository
+- [x] 6.3 Point the `rules-noop` suite's bullet reader (`evals/suites/rules-noop/bullets.ts`) at the per-rule layout with the old T40 ids mapped through the report; verify `pnpm eval check` and the suite unit tests pass
 
 ## 7. Content and documentation
 

@@ -16517,12 +16517,12 @@ CREATE TABLE refs (
 CREATE TABLE attempts (
   change_id TEXT NOT NULL, ticket TEXT NOT NULL, loop TEXT NOT NULL, target TEXT NOT NULL,
   attempt INTEGER NOT NULL, "of" INTEGER NOT NULL, scope TEXT NOT NULL,
-  opened_at TEXT NOT NULL, closed_at TEXT, outcome TEXT, package TEXT, path TEXT NOT NULL,
+  opened_at TEXT NOT NULL, closed_at TEXT, outcome TEXT, path TEXT NOT NULL,
   PRIMARY KEY (change_id, ticket)
 );
 CREATE TABLE dispatches (
   change_id TEXT NOT NULL, ticket TEXT NOT NULL, target TEXT NOT NULL, role TEXT NOT NULL,
-  rules TEXT NOT NULL, rules_truncated INTEGER NOT NULL, path TEXT PRIMARY KEY
+  rules TEXT NOT NULL, path TEXT PRIMARY KEY
 );
 CREATE TABLE findings (
   change_id TEXT NOT NULL, ticket TEXT NOT NULL, position INTEGER NOT NULL,
@@ -17136,9 +17136,6 @@ var dispatchKind = {
     report: relativePath.meta({ description: "Where the role's report is written." }),
     rules: array(string2().regex(RULE_ID)).meta({
       description: "The rules selected for the ticket, in order (T31); may be empty."
-    }),
-    "rules-truncated": int().min(0).meta({
-      description: "Rules dropped at `rules.max-per-package`."
     })
   }).meta({ title: "Dispatch package" }),
   migrations: []
@@ -17782,7 +17779,7 @@ function insertRows(index2, location2, path, kind, data) {
       refuseDuplicate(index2, "attempts", "ticket", location2.id, String(data.ticket), path);
       database.prepare(
         `INSERT INTO attempts (change_id, ticket, loop, target, attempt, "of", scope, opened_at,
-            closed_at, outcome, package, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            closed_at, outcome, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         location2.id,
         text10(data.ticket),
@@ -17794,21 +17791,19 @@ function insertRows(index2, location2, path, kind, data) {
         text10(data["opened-at"]),
         text10(data["closed-at"]),
         text10(data.outcome),
-        text10(data.package),
         path
       );
       insertFindings(index2, location2.id, String(data.ticket), data.findings);
       return;
     case "dispatch":
       database.prepare(
-        "INSERT OR REPLACE INTO dispatches (change_id, ticket, target, role, rules, rules_truncated, path) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT OR REPLACE INTO dispatches (change_id, ticket, target, role, rules, path) VALUES (?, ?, ?, ?, ?, ?)"
       ).run(
         location2.id,
         text10(data.ticket),
         text10(data.target),
         text10(data.role),
         list4(data.rules) ?? "[]",
-        Number(data["rules-truncated"] ?? 0),
         path
       );
       return;
@@ -17952,20 +17947,6 @@ function listAttemptFindings(index2) {
       at: String(row.at)
     })
   );
-}
-function truncatedPackages(index2, changeId2) {
-  const rows = index2.database.prepare(
-    `SELECT a.ticket, d.target, d.role, d.rules_truncated FROM attempts a
-       JOIN dispatches d ON d.change_id = a.change_id AND d.path = a.package
-       WHERE a.change_id = ? AND a.closed_at IS NULL AND d.rules_truncated > 0
-       ORDER BY a.opened_at, a.ticket`
-  ).all(changeId2);
-  return rows.map((row) => ({
-    ticket: String(row.ticket),
-    target: String(row.target),
-    role: String(row.role),
-    count: Number(row.rules_truncated)
-  }));
 }
 function hasAttempt(index2, changeId2, ticket) {
   return index2.database.prepare("SELECT 1 FROM attempts WHERE change_id = ? AND ticket = ?").get(changeId2, ticket) !== void 0;
@@ -21970,9 +21951,7 @@ function renderExplain2(report2) {
   const lines = [`${report2.file} (${report2.role})`];
   for (const rule2 of report2.rules) {
     const matched = rule2.matchedBy === null ? "global" : `matched by ${rule2.matchedBy}`;
-    lines.push(
-      `- [${rule2.id}] ${matched}${rule2.beyondCap ? ", beyond rules.max-per-package" : ""}`
-    );
+    lines.push(`- [${rule2.id}] ${matched}`);
   }
   if (report2.rules.length === 0) lines.push("No rule applies.");
   if (report2.disabled.length > 0) lines.push(`disabled: ${report2.disabled.join(", ")}`);
@@ -22129,8 +22108,8 @@ var rulesModule = defineConfigModule({
   owner: "T31",
   description: "Rule selection per dispatch package and the audit view of rules stats.",
   schema: strictObject({
-    "max-per-package": count.default(20).meta({
-      description: "Rules a dispatch package holds at most; the rest are counted as truncated."
+    "warn-above": count.default(100).meta({
+      description: "Rules one role may read before hooks session-start warns; no cap, every applying rule reaches the agent."
     }),
     disabled: array(string2().regex(RULE_ID)).refine((ids) => new Set(ids).size === ids.length, "ids must be unique").meta({ uniqueItems: true, description: "Rule ids switched off, BDK ones included." }).default([]),
     audit: strictObject({
@@ -22199,10 +22178,8 @@ function selectRules(input) {
     applying.push({ rule: rule2, ...match });
   }
   applying.sort(compare4);
-  const ordered = applying.map(({ rule: rule2, matchedBy }) => ({ rule: rule2, matchedBy }));
   return {
-    selected: ordered.slice(0, input.cap),
-    beyondCap: ordered.slice(input.cap),
+    selected: applying.map(({ rule: rule2, matchedBy }) => ({ rule: rule2, matchedBy })),
     disabled: switchedOff
   };
 }
@@ -22389,7 +22366,7 @@ function ruleContext(input, resolved) {
     ...set,
     languages,
     disabled: settings.disabled,
-    cap: settings["max-per-package"],
+    warnAbove: settings["warn-above"],
     minChanges: settings.audit["min-changes"],
     uncitedChanges: settings.prune["uncited-changes"]
   };
@@ -22400,8 +22377,7 @@ function selectFor(context, role2, files) {
     role: role2,
     files,
     languages: context.languages,
-    disabled: context.disabled,
-    cap: context.cap
+    disabled: context.disabled
   });
 }
 function packRules(context, pack) {
@@ -22667,16 +22643,14 @@ function explainRules(deps, projectRoot2, globalDir2, cwd, file, role2) {
   if ("refused" in context) return context;
   const path = inside.split(sep6).join("/");
   const selection = selectFor(context, role2, [path]);
-  const listed = (beyondCap) => (beyondCap ? selection.beyondCap : selection.selected).map(({ rule: rule2, matchedBy }) => ({
-    id: rule2.id,
-    matchedBy,
-    kind: rule2.kind,
-    beyondCap
-  }));
   return {
     file: path,
     role: role2,
-    rules: [...listed(false), ...listed(true)],
+    rules: selection.selected.map(({ rule: rule2, matchedBy }) => ({
+      id: rule2.id,
+      matchedBy,
+      kind: rule2.kind
+    })),
     disabled: selection.disabled
   };
 }
@@ -23096,20 +23070,16 @@ function acceptCommand(deps) {
 function renderTicketRules(rules2) {
   const heading = `## BDK rules: ${rules2.ticket} (${rules2.role}, ${rules2.target})
 `;
-  const truncated = rules2.truncated === 0 ? "" : `
-${String(rules2.truncated)} more rules applied beyond rules.max-per-package.
-`;
-  if (rules2.rules.length === 0)
-    return `${heading}
+  if (rules2.rules.length === 0) return `${heading}
 No rules for the role ${rules2.role}.
-${truncated}`;
+`;
   const lines = rules2.rules.map((rule2) => {
     const matched = rule2.matchedBy === null ? "" : ` (matched by ${rule2.matchedBy})`;
     return `- [${rule2.id}] ${rule2.text}${matched}`;
   });
   return `${heading}
 ${lines.join("\n")}
-${truncated}`;
+`;
 }
 function renderRule(rule2) {
   const fields = [
@@ -23216,7 +23186,6 @@ function showTicketRules(deps, change, globalDir2, ticket) {
       role: dispatch2.role,
       target: record4.data.target,
       rules: rules2,
-      truncated: dispatch2.data["rules-truncated"],
       ...rulesRead === void 0 ? {} : { rulesRead }
     };
   });
@@ -23248,6 +23217,20 @@ function showCommand2(deps) {
     const rules2 = await showTicketRules(deps, change, globalDir(context.runtime), ticket);
     return isRefusal(rules2) ? rules2 : { data: rules2, text: renderTicketRules(rules2) };
   };
+}
+
+// kernel/src/rules/use-cases/load.ts
+function rulesOverLimit(deps, projectRoot2, globalDir2) {
+  const context = loadContext(deps, projectRoot2, globalDir2);
+  if ("refused" in context) return void 0;
+  let heaviest;
+  for (const role2 of ROLES) {
+    const rules2 = selectFor(context, role2, void 0).selected.length;
+    if (heaviest === void 0 || rules2 > heaviest.rules) {
+      heaviest = { role: role2, rules: rules2, limit: context.warnAbove };
+    }
+  }
+  return heaviest !== void 0 && heaviest.rules > heaviest.limit ? heaviest : void 0;
 }
 
 // kernel/src/rules/index.ts
@@ -26681,13 +26664,6 @@ function renderStatus(report2) {
   }
   const more = report2.openTickets.length - TICKETS_SHOWN;
   if (more > 0) lines.push(`... ${String(more)} more open tickets (bdk attempt list)`);
-  for (const truncated of report2.rulesTruncated.slice(0, TICKETS_SHOWN)) {
-    lines.push(
-      `rules truncated: ${truncated.ticket} (${truncated.role}, ${truncated.target}) dropped ${String(truncated.count)} rules at rules.max-per-package`
-    );
-  }
-  const hidden = report2.rulesTruncated.length - TICKETS_SHOWN;
-  if (hidden > 0) lines.push(`... ${String(hidden)} more tickets with truncated rules (--json)`);
   if (report2.overriddenKeys.length > 0) {
     lines.push(`overridden by global or local: ${report2.overriddenKeys.join(", ")}`);
   }
@@ -27384,7 +27360,6 @@ function changeStatus(deps, change, globalDir2) {
       gates: graph.gates,
       parts: await partItems(deps, change, read2),
       openTickets: tickets,
-      rulesTruncated: truncatedPackages(index2, change.id),
       overriddenKeys: Array.isArray(data.overridden) ? data.overridden.map(String) : []
     };
   });
@@ -28554,8 +28529,7 @@ ${rule2.text}`)
       "kernel-version": kernelVersion,
       "template-hash": templateHash,
       report: report2,
-      rules: rules2.selected.map(({ rule: rule2 }) => rule2.id),
-      "rules-truncated": rules2.beyondCap.length
+      rules: rules2.selected.map(({ rule: rule2 }) => rule2.id)
     };
     const text10 = renderDocument(data, packageBody(sections));
     const size = bytes(text10);
@@ -30087,7 +30061,10 @@ function renderSessionStart({ startup, project }) {
       ({ why, instead }) => `[BDK] config: ${why} Instead: ${instead.join("; ")}`
     ),
     ...project.warnings.map((warning) => `[BDK] config warning: ${warning}`),
-    ...project.v2Markers.length === 0 ? [] : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run bdk import.`]
+    ...project.v2Markers.length === 0 ? [] : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run bdk import.`],
+    ...project.rules === void 0 ? [] : [
+      `[BDK] rules warning: ${project.rules.role} reads ${String(project.rules.rules)} rules (rules.warn-above: ${String(project.rules.limit)}); switch rules off with rules.disabled or narrow them with applies.`
+    ]
   ];
   return {
     content: lines.length === 0 ? startup : `${startup.trimEnd()}
@@ -30109,13 +30086,15 @@ function sessionStart(input) {
   const { errors, report: report2 } = inspectConfig({ ...input, projectRoot: projectRoot2 });
   const { layout, present: present2 } = detectLayout(input.store, projectRoot2);
   const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
+  const rules2 = errors.length === 0 ? rulesOverLimit(input, projectRoot2, input.globalDir) : void 0;
   return {
     startup,
     project: {
       layout,
       v2Markers: present2,
       errors: errors.map(({ why, instead }) => ({ why, instead })),
-      warnings
+      warnings,
+      ...rules2 === void 0 ? {} : { rules: rules2 }
     }
   };
 }

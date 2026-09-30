@@ -23,6 +23,8 @@ interface ProjectFindings {
   readonly errors: readonly { readonly why: string; readonly instead: readonly string[] }[];
   /** `<path>: <message>` of each config check warning shown. */
   readonly warnings: readonly string[];
+  /** The role reading the most rules, when it reads more than `rules.warn-above`. */
+  readonly rules?: { readonly role: string; readonly rules: number; readonly limit: number };
 }
 
 export interface SessionFindings {

@@ -454,7 +454,6 @@ function ticketed(dir: string, closed = false, role = "verifier"): string {
       "template-hash": `sha256:${"0".repeat(64)}`,
       report,
       rules: [],
-      "rules-truncated": 0,
     },
     body: "",
   });

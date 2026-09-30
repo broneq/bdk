@@ -77,7 +77,7 @@ Print one rule by id, or the rules selected for a ticket. The kernel SHALL imple
 - **Arguments:**
   - `<id>`. A rule id, e.g. `BDK-CQ-4` or `API-2`. Exactly one of `<id>` and `--ticket`.
   - `--ticket <ticket>`. Print the rules selected for the ticket's active package.
-- **Behaviour:** With `<id>`, prints the rule's frontmatter and text; a tombstone prints its id and `removed: <reason>` and exits 0; a disabled rule prints with `disabled: true`. With `--ticket`, the ticket must be open and have a dispatch package (`policy/no-open-ticket` otherwise), and the kernel prints the rules whose ids the active package records in its `rules` field (`kernel-state`, Dispatch package), in that order, each with its id, `kind`, `severity`, `applies` and the glob that matched, followed by `truncated` from `rules-truncated`. **Selection**, performed by `dispatch build` and exposed by `rules explain`: the candidates are every non-tombstone rule of the bundle and of `.bdk/rules/` that is not in `rules.disabled`, where a bundle rule under `rules/languages/<name>/` is a candidate only when `<name>` is in `languages`; a candidate is read by the role when its `roles` names the role, or, without `roles`, when its prefix is in the role's set held in the kernel (`implementer`, `simplifier`, `reviewer`, `pr-reviewer`: `CQ`, `ARCH`, `DP`, `SEC`, `TQ` and the language prefixes; `verifier`: `ARCH`, `TQ`, `EJ`, `PL`; `design-verifier`: `ARCH`, `EJ`, `SEC`; `runner`, `scout`: none), a project rule without `roles` being read by every role except `runner` and `scout`; the target's file set is the task's `Files:` for a task, the union of its tasks' `Files:` for a part, and none for an artifact or the Change; a rule without `applies` always applies, a rule with `applies` applies when any file of the set matches any of its globs (repository-relative, `**` crosses directories), and every rule applies when there is no file set. Order: rules without `applies` first, then by the specificity of the matched glob (more literal path segments first, then more literal characters), then by `since`, then by id. The first `rules.max-per-package` rules are selected; the rest are counted as truncated. The first `--ticket` call made while the ticket's active package is its `implementer` package stamps `rules-read` in its attempt record (`kernel-state`, Attempt record); later calls print the same rules and leave the stamp alone, and a call under another role's package stamps nothing, so a `simplifier` or `runner` reading its rules never hides an implementer that read none (risk R2).
+- **Behaviour:** With `<id>`, prints the rule's frontmatter and text; a tombstone prints its id and `removed: <reason>` and exits 0; a disabled rule prints with `disabled: true`. With `--ticket`, the ticket must be open and have a dispatch package (`policy/no-open-ticket` otherwise), and the kernel prints the rules whose ids the active package records in its `rules` field (`kernel-state`, Dispatch package), in that order, each with its id, `kind`, `severity`, `applies` and the glob that matched. **Selection**, performed by `dispatch build` and exposed by `rules explain`: the candidates are every non-tombstone rule of the bundle and of `.bdk/rules/` that is not in `rules.disabled`, where a bundle rule under `rules/languages/<name>/` is a candidate only when `<name>` is in `languages`; a candidate is read by the role when its `roles` names the role, or, without `roles`, when its prefix is in the role's set held in the kernel (`implementer`, `simplifier`, `reviewer`, `pr-reviewer`: `CQ`, `ARCH`, `DP`, `SEC`, `TQ` and the language prefixes; `verifier`: `ARCH`, `TQ`, `EJ`, `PL`; `design-verifier`: `ARCH`, `EJ`, `SEC`; `runner`, `scout`: none), a project rule without `roles` being read by every role except `runner` and `scout`; the target's file set is the task's `Files:` for a task, the union of its tasks' `Files:` for a part, and none for an artifact or the Change; a rule without `applies` always applies, a rule with `applies` applies when any file of the set matches any of its globs (repository-relative, `**` crosses directories), and every rule applies when there is no file set. Order: rules without `applies` first, then by the specificity of the matched glob (more literal path segments first, then more literal characters), then by `since`, then by id. Every applying rule is selected: there is no cap, because a configured rule the agent never sees fails silently; `hooks session-start` warns when a role reads more than `rules.warn-above` rules instead (`kernel-cli/hooks`). The first `--ticket` call made while the ticket's active package is its `implementer` package stamps `rules-read` in its attempt record (`kernel-state`, Attempt record); later calls print the same rules and leave the stamp alone, and a call under another role's package stamps nothing, so a `simplifier` or `runner` reading its rules never hides an implementer that read none (risk R2).
 - **Writes:** `.bdk/changes/<id>/attempts/`
 - **Output:** `schema/cli/output/rules-show.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/no-open-ticket`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -108,7 +108,6 @@ Print one rule by id, or the rules selected for a ticket. The kernel SHALL imple
         "text": "Forms go through Actions ..."
       }
     ],
-    "truncated": 0,
     "rulesRead": "2026-09-25T10:00:41.305Z"
   }
   ```
@@ -151,10 +150,10 @@ Print one rule by id, or the rules selected for a ticket. The kernel SHALL imple
 - **WHEN** `rules.disabled` holds `BDK-SEC-3`, the project holds `SECP-1` without `applies`, and a `reviewer` package is built
 - **THEN** its `rules` contains `SECP-1` and not `BDK-SEC-3`
 
-#### Scenario: truncation
+#### Scenario: no cap
 
-- **WHEN** 25 rules apply to a ticket and `rules.max-per-package` is 20
-- **THEN** the package records 20 ids, `rules-truncated: 5`, and `rules show --ticket` reports `truncated: 5`
+- **WHEN** 120 rules apply to a ticket
+- **THEN** the package records all 120 ids and `rules show --ticket` prints all 120
 
 #### Scenario: first read is stamped
 
@@ -176,7 +175,7 @@ Which rules apply to a file for a role, and why. The kernel SHALL implement the 
 - **Arguments:**
   - `<file>` (required). A path inside the repository; it need not exist, so a planned file can be explained.
   - `--role <role>`. Default `implementer`.
-- **Behaviour:** The selection of `rules show --ticket` for a file set of one file and the given role, without the cap, exposed for humans; each rule carries the glob that matched (`null` for a global rule) and whether it would fall beyond `rules.max-per-package`. Disabled rules are listed separately with `disabled: true`, so a user sees why a rule is missing.
+- **Behaviour:** The selection of `rules show --ticket` for a file set of one file and the given role, exposed for humans; each rule carries the glob that matched (`null` for a global rule). Disabled rules are listed separately with `disabled: true`, so a user sees why a rule is missing.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/rules-explain.json`
 - **Exit codes and rules:** `0, 3, 5`. Specific rules: `input/not-found`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -194,14 +193,12 @@ Which rules apply to a file for a role, and why. The kernel SHALL implement the 
       {
         "id": "BDK-CQ-1",
         "matchedBy": null,
-        "kind": "house",
-        "beyondCap": false
+        "kind": "house"
       },
       {
         "id": "API-1",
         "matchedBy": "src/api/**",
-        "kind": "house",
-        "beyondCap": false
+        "kind": "house"
       }
     ],
     "disabled": [
@@ -226,7 +223,7 @@ Which rules apply to a file for a role, and why. The kernel SHALL implement the 
 #### Scenario: same selection as dispatch
 
 - **WHEN** a task's `Files:` is exactly `src/api/login.ts` and its `reviewer` package is built
-- **THEN** the package's `rules` equals the ids `rules explain src/api/login.ts --role reviewer` lists within the cap, in the same order
+- **THEN** the package's `rules` equals the ids `rules explain src/api/login.ts --role reviewer` lists, in the same order
 
 ### Requirement: bdk rules prune
 

@@ -12,6 +12,13 @@ export function renderSessionStart({ startup, project }: SessionFindings): Sessi
     ...(project.v2Markers.length === 0
       ? []
       : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run bdk import.`]),
+    ...(project.rules === undefined
+      ? []
+      : [
+          `[BDK] rules warning: ${project.rules.role} reads ${String(project.rules.rules)} rules ` +
+            `(rules.warn-above: ${String(project.rules.limit)}); ` +
+            "switch rules off with rules.disabled or narrow them with applies.",
+        ]),
   ];
   return {
     content: lines.length === 0 ? startup : `${startup.trimEnd()}\n\n${lines.join("\n")}\n`,

@@ -64,11 +64,11 @@ The settings SHALL declare the project toolchain keys below, owned by T12.
 
 ### Requirement: Keys of rules and specs
 
-The settings SHALL declare the rule and spec keys below. `rules.audit.min-changes` is the number of distinct Changes an item must appear in to be listed as recurring by `rules stats`; `rules.prune.uncited-changes` is how many recent Changes `rules prune` looks back for citations. The earlier drafts `rules.propose-when.changes`, `rules.propose-when.authors`, `rules.propose-when.failed-attempts` and `rules.max-learnings-per-change` are not keys: nothing is proposed at `close` (user decision 2026-09-30), so a layer setting one of them gets `policy/unknown-config-key` from the general rule.
+The settings SHALL declare the rule and spec keys below. `rules.audit.min-changes` is the number of distinct Changes an item must appear in to be listed as recurring by `rules stats`; `rules.prune.uncited-changes` is how many recent Changes `rules prune` looks back for citations. `rules.warn-above` is the number of rules one role may read before `hooks session-start` warns; it is no cap, since every applying rule reaches the agent. The earlier drafts `rules.propose-when.changes`, `rules.propose-when.authors`, `rules.propose-when.failed-attempts` and `rules.max-learnings-per-change` are not keys: nothing is proposed at `close` (user decision 2026-09-30), so a layer setting one of them gets `policy/unknown-config-key` from the general rule.
 
 | Key                           | Type                    | Default | Owner | Consumer | v2 origin |
 | ----------------------------- | ----------------------- | ------- | ----- | -------- | --------- |
-| `rules.max-per-package`       | integer >= 1            | `20`    | T31   | `rules`  | none      |
+| `rules.warn-above`            | integer >= 1            | `100`   | T31   | `rules`  | none      |
 | `rules.disabled`              | array of unique strings | `[]`    | T31   | `rules`  | none      |
 | `rules.audit.min-changes`     | integer >= 1            | `3`     | T31   | `rules`  | none      |
 | `rules.prune.uncited-changes` | integer >= 1            | `20`    | T31   | `rules`  | none      |
@@ -76,8 +76,8 @@ The settings SHALL declare the rule and spec keys below. `rules.audit.min-change
 
 #### Scenario: out-of-range value
 
-- **WHEN** the `rules` module is registered and `.bdk/settings.yaml` sets `rules.max-per-package: 0`
-- **THEN** `bdk config check` exits 2 with `rule: policy/config-invalid` naming `rules.max-per-package`
+- **WHEN** the `rules` module is registered and `.bdk/settings.yaml` sets `rules.warn-above: 0`
+- **THEN** `bdk config check` exits 2 with `rule: policy/config-invalid` naming `rules.warn-above`
 
 ### Requirement: Removed v2 keys
 

@@ -13,7 +13,6 @@ interface Shown {
   readonly role: string;
   readonly target: string;
   readonly rules: readonly { id: string; matchedBy: string | null; text: string }[];
-  readonly truncated: number;
   readonly rulesRead: string;
 }
 
@@ -53,7 +52,6 @@ describe("bdk rules show --ticket", () => {
       matchedBy: null,
       text: "Text of NAMING-1.",
     });
-    expect(first.truncated).toBe(0);
     expect(attemptText(change.dir, ticket)).toContain(`rules-read: ${first.rulesRead}`);
 
     const second = bdk(["rules", "show", "--ticket", ticket], change.root);

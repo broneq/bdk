@@ -33,7 +33,7 @@ describe("defaults", () => {
     expect(check({}).value).toStrictEqual({
       languages: [],
       rules: {
-        "max-per-package": 20,
+        "warn-above": 100,
         disabled: [],
         audit: { "min-changes": 3 },
         prune: { "uncited-changes": 20 },

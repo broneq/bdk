@@ -117,7 +117,6 @@ export function showTicketRules(
       role: dispatch.role,
       target: record.data.target,
       rules,
-      truncated: dispatch.data["rules-truncated"],
       ...(rulesRead === undefined ? {} : { rulesRead }),
     };
   });

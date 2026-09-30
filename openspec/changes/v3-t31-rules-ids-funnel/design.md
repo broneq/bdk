@@ -77,8 +77,8 @@ Implemented once in the `rules` slice and used by `dispatch build`, `rules expla
 - File set: task `Files:`; part = union of its tasks' `Files:`; artifact or Change target = none, and then `applies` does not narrow (dropping every scoped rule for a design verifier would silently lose the project's rules).
 - Match: `shared/store/glob.ts`, repository-relative paths; a rule applies when any file matches any glob.
 - Order: global first; then specificity of the best matching glob, measured as the number of path segments without a wildcard, then the number of literal characters; then `since`; then id. Deterministic, so the package and `template-hash` are stable.
-- Cap: `rules.max-per-package` (20); dropped rules are counted, not listed, in `rules-truncated`.
-- The package stamps `rules` (ids) and `rules-truncated`; `rules show --ticket` prints those ids with their current text. The package is thus the record of what the agent was given (P10).
+- No cap: every applying rule is selected. A cap drops configured rules silently, and with the shipped pack alone a TypeScript and React reviewer already reads about 80 rules, so a cap of 20 cut every scoped project rule, which sorts after the global ones (user decision at implementation, replacing `rules.max-per-package`). `hooks session-start` warns instead when a role would read more than `rules.warn-above` (100) rules.
+- The package stamps `rules` (ids); `rules show --ticket` prints those ids with their current text. The package is thus the record of what the agent was given (P10).
 
 - Alternative: recompute the selection in `rules show --ticket`. Lost: a rule edited or disabled between `dispatch build` and the agent's read would make the package, its hash and what the agent saw disagree.
 - Alternative: a per-rule priority field instead of specificity. Lost: one more field to maintain; specificity follows from `applies`, which the author writes anyway.
@@ -139,9 +139,9 @@ The measurement is a harness run, not a one-off script: the T40 suite gains a pa
 - [The house/knowledge classification of 131 bullets is a judgment and decides removals] -> the migration report is reviewed by the user before any pack file is written; every row names its reason.
 - [The re-measurement costs model time] -> probe first, full series only after the user approves the projection; limited to the 14 patches' bullets.
 - [Recurrence by exact fingerprint rarely fires, so `recurring` may stay empty] -> accepted: `recurring` is a cheap first signal, the audit skill works from `--entries`.
-- [`rules.max-per-package` truncates silently for agents] -> `change status` lists truncated tickets and `rules explain` shows which rules fall beyond the cap.
+- [No cap: a project with many rules grows every package's prompt] -> `hooks session-start` warns above `rules.warn-above`; `rules.disabled` and `applies` are the levers, and `rules explain` shows what a role reads for a file.
 - [Removing the rule prompt keys breaks projects that already override `rules/<category>`] -> v3 is unreleased; the refusal names the replacement, and T32's import converts v2 `quality` overrides.
-- [An artifact target (design verifier) has no file set, so every scoped rule reaches it] -> bounded by the cap and by roles; the alternative (none) loses project rules silently.
+- [An artifact target (design verifier) has no file set, so every scoped rule reaches it] -> bounded by roles; the alternative (none) loses project rules silently.
 - [A parallel `rules accept` of the same prefix on two branches creates the same file] -> the permitted add/add conflict of `kernel-state`; `rules check` on CI names both, the later one renumbers.
 
 ## Migration Plan

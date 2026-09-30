@@ -96,6 +96,19 @@ describe("bdk hooks session-start", () => {
     expect(bdk(["hooks", "session-start"], root).stdout).toBe(STARTUP);
   });
 
+  it("many rules warned: the heaviest role over rules.warn-above, one line, exit 0", () => {
+    const root = fixture({
+      ".bdk/settings.yaml": `${MODELINE}languages: [typescript]\nrules:\n  warn-above: 10\n`,
+    }).root;
+    const result = bdk(["hooks", "session-start"], root);
+    expect(result.code).toBe(0);
+    const lines = afterStartup(result.stdout);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(
+      /^\[BDK\] rules warning: implementer reads \d+ rules \(rules\.warn-above: 10\); switch rules off with rules\.disabled or narrow them with applies\.$/,
+    );
+  });
+
   it("prints STARTUP alone in a repository without .bdk/ and outside a work tree, writing nothing", () => {
     for (const root of [fixture().root, fixture({}, false).root]) {
       const result = bdk(["hooks", "session-start"], root);

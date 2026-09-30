@@ -29,7 +29,6 @@ export const ticketRulesOutput = z
         }),
       )
       .meta({ description: "The rules the active package records, in its order." }),
-    truncated: z.int().min(0).meta({ description: "The package's `rules-truncated`." }),
     rulesRead: z.iso.datetime({ precision: 3 }).optional().meta({
       description:
         "The `rules-read` stamp of the attempt record: the time of the implementer's first call for the ticket; absent until then.",
@@ -84,7 +83,6 @@ export const rulesShowOutput = z.union([ticketRulesOutput, oneRuleOutput]).meta(
           text: "Forms go through Actions ...",
         },
       ],
-      truncated: 0,
       rulesRead: "2026-09-25T10:00:41.305Z",
     },
     {

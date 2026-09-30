@@ -28,7 +28,8 @@ export interface RulesInput {
 export interface RuleContext extends RuleSet {
   readonly languages: readonly string[];
   readonly disabled: readonly string[];
-  readonly cap: number;
+  /** `rules.warn-above`: the rules one role may read before `hooks session-start` warns. */
+  readonly warnAbove: number;
   readonly minChanges: number;
   readonly uncitedChanges: number;
 }
@@ -41,7 +42,7 @@ export function ruleContext(input: RulesInput, resolved: Resolved): RuleContext 
     ...set,
     languages,
     disabled: settings.disabled,
-    cap: settings["max-per-package"],
+    warnAbove: settings["warn-above"],
     minChanges: settings.audit["min-changes"],
     uncitedChanges: settings.prune["uncited-changes"],
   };
@@ -59,7 +60,6 @@ export function selectFor(
     files,
     languages: context.languages,
     disabled: context.disabled,
-    cap: context.cap,
   });
 }
 

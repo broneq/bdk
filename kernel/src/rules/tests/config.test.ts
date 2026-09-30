@@ -30,7 +30,7 @@ describe("defaults", () => {
     expect(check({}).value).toStrictEqual({
       languages: [],
       rules: {
-        "max-per-package": 20,
+        "warn-above": 100,
         disabled: [],
         audit: { "min-changes": 3 },
         prune: { "uncited-changes": 20 },
@@ -59,7 +59,7 @@ describe("rules", () => {
     expect(
       keysOf({
         rules: {
-          "max-per-package": 12,
+          "warn-above": 12,
           disabled: ["BDK-SEC-3", "API-2"],
           audit: { "min-changes": 2 },
           prune: { "uncited-changes": 40 },
@@ -69,8 +69,8 @@ describe("rules", () => {
   });
 
   it.each([
-    ["max-per-package below 1", { "max-per-package": 0 }, "rules.max-per-package"],
-    ["a fractional cap", { "max-per-package": 2.5 }, "rules.max-per-package"],
+    ["warn-above below 1", { "warn-above": 0 }, "rules.warn-above"],
+    ["a fractional warn-above", { "warn-above": 2.5 }, "rules.warn-above"],
     ["a disabled id twice", { disabled: ["BDK-SEC-3", "BDK-SEC-3"] }, "rules.disabled"],
     ["a disabled value that is no id", { disabled: ["security"] }, "rules.disabled.0"],
     ["min-changes below 1", { audit: { "min-changes": 0 } }, "rules.audit.min-changes"],

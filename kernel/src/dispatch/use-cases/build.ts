@@ -169,7 +169,6 @@ export function buildPackage(
       "template-hash": templateHash,
       report,
       rules: rules.selected.map(({ rule }) => rule.id),
-      "rules-truncated": rules.beyondCap.length,
     };
     const text = renderDocument(data, packageBody(sections));
     const size = bytes(text);

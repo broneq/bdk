@@ -18,9 +18,7 @@ export function renderExplain(report: ExplainReport): string {
   const lines = [`${report.file} (${report.role})`];
   for (const rule of report.rules) {
     const matched = rule.matchedBy === null ? "global" : `matched by ${rule.matchedBy}`;
-    lines.push(
-      `- [${rule.id}] ${matched}${rule.beyondCap ? ", beyond rules.max-per-package" : ""}`,
-    );
+    lines.push(`- [${rule.id}] ${matched}`);
   }
   if (report.rules.length === 0) lines.push("No rule applies.");
   if (report.disabled.length > 0) lines.push(`disabled: ${report.disabled.join(", ")}`);

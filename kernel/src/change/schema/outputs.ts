@@ -164,19 +164,6 @@ export const changeStatusOutput = z
         openedAt: timestamp,
       }),
     ),
-    rulesTruncated: z
-      .array(
-        z.strictObject({
-          ticket: z.string(),
-          target: z.string(),
-          role: z.string(),
-          count: z.int().min(1),
-        }),
-      )
-      .meta({
-        description:
-          "Open tickets whose active package dropped rules at `rules.max-per-package`, with the count.",
-      }),
     overriddenKeys,
   })
   .meta({
@@ -217,7 +204,6 @@ export const changeStatusOutput = z
         ],
         parts: [],
         openTickets: [],
-        rulesTruncated: [],
         overriddenKeys: ["policy.escalation.enabled"],
       },
     ],

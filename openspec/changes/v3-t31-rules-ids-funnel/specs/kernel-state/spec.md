@@ -68,22 +68,21 @@ Types and their own fields:
 
 A dispatch package SHALL be written only by `dispatch build`, with the frontmatter fields below (K3, K4, P10) and the body sections that `kernel-cli/dispatch`, `bdk dispatch build`, lists in order; the whole file is at most 12 288 bytes.
 
-| Field             | Type                        | Req. | Stamped | Meaning                                                          |
-| ----------------- | --------------------------- | ---- | ------- | ---------------------------------------------------------------- |
-| `schema`          | integer                     | yes  | kernel  |                                                                  |
-| `ticket`          | `A-` id                     | yes  | kernel  |                                                                  |
-| `target`          | string                      | yes  | kernel  |                                                                  |
-| `role`            | string                      | yes  | kernel  | Role skill name (`implementer`, `verifier`, ...).                |
-| `adapter`         | string                      | yes  | kernel  | The role's adapter (`role-contracts`, Role-to-adapter map).      |
-| `attempt`         | integer >= 1                | yes  | kernel  |                                                                  |
-| `of`              | integer >= 1                | yes  | kernel  |                                                                  |
-| `scope`           | `full \| high+ \| blockers` | yes  | kernel  |                                                                  |
-| `at`              | timestamp                   | yes  | kernel  |                                                                  |
-| `kernel-version`  | string                      | yes  | kernel  | P10.                                                             |
-| `template-hash`   | hash                        | yes  | kernel  | P10.                                                             |
-| `report`          | path                        | yes  | kernel  | Where the role's report is written (`reports/...`).              |
-| `rules`           | array of rule ids           | yes  | kernel  | The rules selected for the ticket, in order (T31); may be empty. |
-| `rules-truncated` | integer >= 0                | yes  | kernel  | Rules dropped at `rules.max-per-package`.                        |
+| Field            | Type                        | Req. | Stamped | Meaning                                                          |
+| ---------------- | --------------------------- | ---- | ------- | ---------------------------------------------------------------- |
+| `schema`         | integer                     | yes  | kernel  |                                                                  |
+| `ticket`         | `A-` id                     | yes  | kernel  |                                                                  |
+| `target`         | string                      | yes  | kernel  |                                                                  |
+| `role`           | string                      | yes  | kernel  | Role skill name (`implementer`, `verifier`, ...).                |
+| `adapter`        | string                      | yes  | kernel  | The role's adapter (`role-contracts`, Role-to-adapter map).      |
+| `attempt`        | integer >= 1                | yes  | kernel  |                                                                  |
+| `of`             | integer >= 1                | yes  | kernel  |                                                                  |
+| `scope`          | `full \| high+ \| blockers` | yes  | kernel  |                                                                  |
+| `at`             | timestamp                   | yes  | kernel  |                                                                  |
+| `kernel-version` | string                      | yes  | kernel  | P10.                                                             |
+| `template-hash`  | hash                        | yes  | kernel  | P10.                                                             |
+| `report`         | path                        | yes  | kernel  | Where the role's report is written (`reports/...`).              |
+| `rules`          | array of rule ids           | yes  | kernel  | The rules selected for the ticket, in order (T31); may be empty. |
 
 #### Scenario: package without template hash
 
@@ -98,7 +97,7 @@ A dispatch package SHALL be written only by `dispatch build`, with the frontmatt
 #### Scenario: package records its rules
 
 - **WHEN** a package is built for a `runner` ticket
-- **THEN** its frontmatter holds `rules: []` and `rules-truncated: 0`, and a package without `rules` fails validation naming `rules`
+- **THEN** its frontmatter holds `rules: []`, and a package without `rules` fails validation naming `rules`
 
 ### Requirement: Rule file frontmatter
 
@@ -253,7 +252,7 @@ Public tables, the contract of `bdk query` (columns in camelCase are snake_case 
 | `entries`    | ledger entry                             | `change_id`, `id`, `type`, `summary`, `status` (derived: `superseded` when superseded), `source`, `author`, `at`, `ticket`, `supersedes`, `superseded_by`, `review` (0 or 1), `severity`, `category`, `fingerprint`, `applies` (JSON), `evidence` (JSON), `to_stage`, `gate`, `input_hash`, `profile`, `park`, `options` (JSON), `path` |
 | `refs`       | ref of an entry                          | `change_id`, `entry_id`, `position`, `ref`                                                                                                                                                                                                                                                                                              |
 | `attempts`   | attempt record                           | `change_id`, `ticket`, `loop`, `target`, `attempt`, `of`, `scope`, `opened_at`, `closed_at`, `outcome`, `path`                                                                                                                                                                                                                          |
-| `dispatches` | dispatch package                         | `change_id`, `ticket`, `target`, `role`, `rules` (JSON), `rules_truncated`, `path`                                                                                                                                                                                                                                                      |
+| `dispatches` | dispatch package                         | `change_id`, `ticket`, `target`, `role`, `rules` (JSON), `path`                                                                                                                                                                                                                                                                         |
 | `findings`   | attempt finding                          | `change_id`, `ticket`, `position`, `fingerprint`, `type`, `file`, `symbol`                                                                                                                                                                                                                                                              |
 
 Tables whose name starts with `_` (`_meta` with the schema version, `_files` and `_dirs` for freshness) are internal. Paths are relative to the project root. The index schema version is 5 (T21 added `input_hash`; 4 stores the normalised millisecond times; 5 adds `findings`, the rule columns of `dispatches` and drops `routed_to`, T31); any other version drops every table and rebuilds. Freshness per Change (V1-9): the modification time and file count of the Change directory and of its `log/`, `attempts/` and `dispatch/` directories; when they equal the recorded values the Change is not read at all; otherwise each file is compared by inode, modification time and size and only new or changed files are parsed and validated, removed ones deleted. A recorded directory state younger than two seconds at recording time is not trusted, so a write in the same clock tick is never missed. A refresh runs in one `BEGIN IMMEDIATE` transaction with a busy timeout of 5 s, so concurrent kernel processes serialise on it. A committed file that fails validation, or two files carrying one id, are `state/ledger-invalid` naming the files and leave the index unchanged. An index file that SQLite cannot open is deleted and rebuilt once; if that fails too, the command exits 4 with `state/corrupted-index`.

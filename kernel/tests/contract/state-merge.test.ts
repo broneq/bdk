@@ -239,7 +239,6 @@ function work(root: string, branch: string, at: string, rule: string, capability
       "template-hash": HASH,
       report,
       rules: [],
-      "rules-truncated": 0,
     },
     body: "## Task 02-3\n",
   });

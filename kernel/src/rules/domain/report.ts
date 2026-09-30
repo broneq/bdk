@@ -18,8 +18,6 @@ export interface TicketRules {
   readonly role: string;
   readonly target: string;
   readonly rules: readonly ShownRule[];
-  /** The package's `rules-truncated`. */
-  readonly truncated: number;
   /** Absent until an implementer of the ticket read its rules. */
   readonly rulesRead?: string | undefined;
 }
@@ -57,8 +55,6 @@ interface ExplainedRule {
   /** The glob that matched the file; null for a global rule. */
   readonly matchedBy: string | null;
   readonly kind: LoadedRule["kind"];
-  /** True when the rule would fall beyond `rules.max-per-package`. */
-  readonly beyondCap: boolean;
 }
 
 export interface ExplainReport {

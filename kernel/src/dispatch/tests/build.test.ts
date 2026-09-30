@@ -8,6 +8,7 @@ import { kindRegistry, PostTaskStepKind } from "../../graph/domain/kinds/index.t
 import { writeEntry } from "../../graph/tests/support.ts";
 import { repository, ROOT } from "../../log/tests/support.ts";
 import { activePackage, readDocument } from "../../shared/store/index.ts";
+import type { Store } from "../../shared/store/index.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
 import {
   build,
@@ -34,6 +35,17 @@ async function built(h: DispatchHarness, ...argv: string[]) {
 
 function projectRule(id: string, extra = ""): string {
   return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
+}
+
+/** The frontmatter a package stamps. */
+function stamped(store: Store, path: string): Record<string, unknown> {
+  const document = readDocument(store, `${ROOT}/${path}`);
+  return document !== undefined && "data" in document ? document.data : {};
+}
+
+/** The rule ids a package stamps. */
+function stampedRules(store: Store, path: string): string[] {
+  return stamped(store, path).rules as string[];
 }
 
 function headings(body: string): string[] {
@@ -231,7 +243,7 @@ describe("dispatch build", () => {
     expect((await built(h)).report.templateHash).not.toBe(changed);
   });
 
-  it("stamps the selected rule ids in order and the truncation", async () => {
+  it("stamps the selected rule ids in order", async () => {
     const h = dispatchHarness();
     h.store.write(
       `${ROOT}/.bdk/rules/AUTH-1.md`,
@@ -241,15 +253,12 @@ describe("dispatch build", () => {
     h.store.write(`${ROOT}/.bdk/rules/PLAN-1.md`, projectRule("PLAN-1", "roles: [verifier]\n"));
     h.store.write(`${ROOT}/.bdk/rules/NAMING-1.md`, projectRule("NAMING-1"));
     const { report } = await built(h, "02-3", "reviewer", TICKET);
-    const data = readDocument(h.store, `${ROOT}/${report.path}`);
-    expect(data).toMatchObject({
-      data: { rules: ["NAMING-1", "AUTH-1"], "rules-truncated": 0 },
-    });
-    h.store.write(`${ROOT}/.bdk/settings.yaml`, "rules:\n  max-per-package: 1\n");
-    const capped = await built(h, "02-3", "reviewer", TICKET);
-    expect(readDocument(h.store, `${ROOT}/${capped.report.path}`)).toMatchObject({
-      data: { rules: ["NAMING-1"], "rules-truncated": 1 },
-    });
+    const rules = stampedRules(h.store, report.path);
+    expect(rules.filter((id) => !id.startsWith("BDK-"))).toStrictEqual(["NAMING-1", "AUTH-1"]);
+    // The pack's global reviewer rules come too, all of them: there is no cap.
+    expect(rules).toContain("BDK-CQ-1");
+    expect(rules.filter((id) => id.startsWith("BDK-TQ-"))).toHaveLength(11);
+    expect(stamped(h.store, report.path)).not.toHaveProperty("rules-truncated");
   });
 
   it("selects by the union of a part's tasks' files", async () => {
@@ -261,9 +270,8 @@ describe("dispatch build", () => {
     );
     h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "applies: [web/**]\n"));
     const { report } = await built(h, "02", "reviewer", "A-p4r7t0k2");
-    expect(readDocument(h.store, `${ROOT}/${report.path}`)).toMatchObject({
-      data: { rules: ["STORE-1"] },
-    });
+    const rules = stampedRules(h.store, report.path);
+    expect(rules.filter((id) => !id.startsWith("BDK-"))).toStrictEqual(["STORE-1"]);
   });
 
   it("changes the hash with a selected rule's text or id, not with an unselected rule", async () => {

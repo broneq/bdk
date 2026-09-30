@@ -29,16 +29,12 @@
             "description": "The glob that matched the file; null for a global rule.",
             "type": ["string", "null"]
           },
-          "kind": { "type": "string", "enum": ["house", "knowledge"] },
-          "beyondCap": {
-            "type": "boolean",
-            "description": "True when the rule falls beyond rules.max-per-package."
-          }
+          "kind": { "type": "string", "enum": ["house", "knowledge"] }
         },
-        "required": ["id", "matchedBy", "kind", "beyondCap"],
+        "required": ["id", "matchedBy", "kind"],
         "additionalProperties": false
       },
-      "description": "The selection in package order, without the cap."
+      "description": "The selection in package order."
     },
     "disabled": {
       "type": "array",
@@ -53,8 +49,8 @@
       "file": "src/api/login.ts",
       "role": "reviewer",
       "rules": [
-        { "id": "BDK-CQ-1", "matchedBy": null, "kind": "house", "beyondCap": false },
-        { "id": "API-1", "matchedBy": "src/api/**", "kind": "house", "beyondCap": false }
+        { "id": "BDK-CQ-1", "matchedBy": null, "kind": "house" },
+        { "id": "API-1", "matchedBy": "src/api/**", "kind": "house" }
       ],
       "disabled": ["BDK-SEC-3"]
     }

@@ -18,7 +18,6 @@ export {
   listEntries,
   openAttempts,
   selectReadOnly,
-  truncatedPackages,
 } from "./index/queries.ts";
 export type {
   AttemptFindingRow,

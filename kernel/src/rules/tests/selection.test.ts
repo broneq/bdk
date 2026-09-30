@@ -44,7 +44,6 @@ function ids(input: Partial<SelectionInput>): string[] {
     files: undefined,
     languages: [],
     disabled: [],
-    cap: 20,
     ...input,
   }).selected.map((entry) => entry.rule.id);
 }
@@ -106,7 +105,6 @@ describe("selectRules", () => {
       files: undefined,
       languages: [],
       disabled: ["BDK-SEC-1"],
-      cap: 20,
     });
     const selected = selection.selected.map((entry) => entry.rule.id);
     expect(selected).toContain("SECP-1");
@@ -130,7 +128,6 @@ describe("selectRules", () => {
       files: ["src/api/login.ts"],
       languages: [],
       disabled: [],
-      cap: 20,
     });
     expect(selection.selected.map((entry) => [entry.rule.id, entry.matchedBy])).toStrictEqual([
       ["NAMING-2", null],
@@ -142,23 +139,15 @@ describe("selectRules", () => {
     ]);
   });
 
-  it("keeps the first rules up to the cap and counts the rest", () => {
-    const rules = Array.from({ length: 25 }, (_, index) => rule(`API-${String(index + 1)}`));
+  it("selects every applying rule: there is no cap", () => {
+    const rules = Array.from({ length: 120 }, (_, index) => rule(`API-${String(index + 1)}`));
     const selection = selectRules({
       rules,
       role: "implementer",
       files: undefined,
       languages: [],
       disabled: [],
-      cap: 20,
     });
-    expect(selection.selected).toHaveLength(20);
-    expect(selection.beyondCap.map((entry) => entry.rule.id)).toStrictEqual([
-      "API-21",
-      "API-22",
-      "API-23",
-      "API-24",
-      "API-25",
-    ]);
+    expect(selection.selected).toHaveLength(120);
   });
 });

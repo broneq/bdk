@@ -29,7 +29,6 @@ export interface SelectionInput {
   readonly files: readonly string[] | undefined;
   readonly languages: readonly string[];
   readonly disabled: readonly string[];
-  readonly cap: number;
 }
 
 interface SelectedRule {
@@ -39,10 +38,8 @@ interface SelectedRule {
 }
 
 export interface Selection {
-  /** The first `cap` rules, in package order. */
+  /** Every applying rule, in package order: there is no cap (design D-5). */
   readonly selected: readonly SelectedRule[];
-  /** The rules that apply beyond the cap, in order. */
-  readonly beyondCap: readonly SelectedRule[];
   /** Ids of rules the role would read here that `rules.disabled` switches off. */
   readonly disabled: readonly string[];
 }
@@ -63,10 +60,8 @@ export function selectRules(input: SelectionInput): Selection {
     applying.push({ rule, ...match });
   }
   applying.sort(compare);
-  const ordered = applying.map(({ rule, matchedBy }) => ({ rule, matchedBy }));
   return {
-    selected: ordered.slice(0, input.cap),
-    beyondCap: ordered.slice(input.cap),
+    selected: applying.map(({ rule, matchedBy }) => ({ rule, matchedBy })),
     disabled: switchedOff,
   };
 }

@@ -31,9 +31,6 @@ export const dispatchKind = {
       rules: z.array(z.string().regex(RULE_ID)).meta({
         description: "The rules selected for the ticket, in order (T31); may be empty.",
       }),
-      "rules-truncated": z.int().min(0).meta({
-        description: "Rules dropped at `rules.max-per-package`.",
-      }),
     })
     .meta({ title: "Dispatch package" }),
   migrations: [],

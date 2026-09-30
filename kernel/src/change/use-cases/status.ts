@@ -7,13 +7,7 @@ import { graphSummary, readGraph, stageResolver } from "../../graph/index.ts";
 import { partItems } from "../../part/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import {
-  openAttempts,
-  readDocument,
-  refreshChange,
-  truncatedPackages,
-  withIndex,
-} from "../../shared/store/index.ts";
+import { openAttempts, readDocument, refreshChange, withIndex } from "../../shared/store/index.ts";
 import { resumeCommand } from "../domain/change.ts";
 import type { StatusReport } from "../domain/change.ts";
 import type { ChangeDeps } from "./deps.ts";
@@ -53,7 +47,6 @@ export function changeStatus(
       gates: graph.gates,
       parts: await partItems(deps, change, read),
       openTickets: tickets,
-      rulesTruncated: truncatedPackages(index, change.id),
       overriddenKeys: Array.isArray(data.overridden) ? data.overridden.map(String) : [],
     };
   });

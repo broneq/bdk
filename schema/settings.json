@@ -17,9 +17,9 @@
       "default": {},
       "type": "object",
       "properties": {
-        "max-per-package": {
-          "default": 20,
-          "description": "Rules a dispatch package holds at most; the rest are counted as truncated.",
+        "warn-above": {
+          "default": 100,
+          "description": "Rules one role may read before hooks session-start warns; no cap, every applying rule reaches the agent.",
           "type": "integer",
           "minimum": 1,
           "maximum": 9007199254740991

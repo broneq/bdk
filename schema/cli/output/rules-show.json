@@ -45,12 +45,6 @@
           },
           "description": "The rules the active package records, in its order."
         },
-        "truncated": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991,
-          "description": "The package's `rules-truncated`."
-        },
         "rulesRead": {
           "description": "The `rules-read` stamp of the attempt record: the time of the implementer's first call for the ticket; absent until then.",
           "type": "string",
@@ -58,7 +52,7 @@
           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}(?:Z))$"
         }
       },
-      "required": ["ticket", "role", "target", "rules", "truncated"],
+      "required": ["ticket", "role", "target", "rules"],
       "additionalProperties": false,
       "title": "rules of a ticket"
     },
@@ -148,7 +142,6 @@
           "text": "Forms go through Actions ..."
         }
       ],
-      "truncated": 0,
       "rulesRead": "2026-09-25T10:00:41.305Z"
     },
     {

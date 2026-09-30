@@ -1,10 +1,11 @@
 // `bdk hooks session-start`: the STARTUP text, then, in a BDK project, the
-// configuration check and the v2 layout detection as findings. Nothing here
+// configuration check, the v2 layout detection and the rules load as findings. Nothing here
 // refuses: a configuration problem must not stop the model at session start.
 import { join } from "node:path";
 
 import { detectLayout, inspectConfig } from "../../config/index.ts";
 import { startupContext } from "../../ctx/index.ts";
+import { rulesOverLimit } from "../../rules/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
 import type { SessionFindings } from "../domain/report.ts";
 import type { HooksDeps } from "./input.ts";
@@ -27,6 +28,8 @@ export function sessionStart(input: SessionStartInput): SessionFindings {
   const warnings = (report?.problems ?? [])
     .filter((warning) => warning.code !== "legacy-settings")
     .map((warning) => `${warning.path}: ${warning.message}`);
+  const rules =
+    errors.length === 0 ? rulesOverLimit(input, projectRoot, input.globalDir) : undefined;
   return {
     startup,
     project: {
@@ -34,6 +37,7 @@ export function sessionStart(input: SessionStartInput): SessionFindings {
       v2Markers: present,
       errors: errors.map(({ why, instead }) => ({ why, instead })),
       warnings,
+      ...(rules === undefined ? {} : { rules }),
     },
   };
 }

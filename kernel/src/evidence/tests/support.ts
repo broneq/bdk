@@ -106,7 +106,6 @@ export function withPackage(h: Harness, ticket: string, role: string, target = "
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `${REL}/reports/${target}-${role}-${ticket}.md`,
       rules: [],
-      "rules-truncated": 0,
     },
     body: "",
   });

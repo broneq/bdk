@@ -47,12 +47,9 @@ export const rulesExplainOutput = z
             .nullable()
             .meta({ description: "The glob that matched the file; null for a global rule." }),
           kind: z.enum(["house", "knowledge"]),
-          beyondCap: z
-            .boolean()
-            .meta({ description: "True when the rule falls beyond rules.max-per-package." }),
         }),
       )
-      .meta({ description: "The selection in package order, without the cap." }),
+      .meta({ description: "The selection in package order." }),
     disabled: z.array(ruleId).meta({
       description: "Rules the role would read for the file that rules.disabled switches off.",
     }),
@@ -65,8 +62,8 @@ export const rulesExplainOutput = z
         file: "src/api/login.ts",
         role: "reviewer",
         rules: [
-          { id: "BDK-CQ-1", matchedBy: null, kind: "house", beyondCap: false },
-          { id: "API-1", matchedBy: "src/api/**", kind: "house", beyondCap: false },
+          { id: "BDK-CQ-1", matchedBy: null, kind: "house" },
+          { id: "API-1", matchedBy: "src/api/**", kind: "house" },
         ],
         disabled: ["BDK-SEC-3"],
       },

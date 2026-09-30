@@ -157,32 +157,6 @@ export function listAttemptFindings(index: IndexDb): AttemptFindingRow[] {
   );
 }
 
-/** An open ticket whose active package dropped rules at `rules.max-per-package`. */
-export interface TruncatedPackage {
-  readonly ticket: string;
-  readonly target: string;
-  readonly role: string;
-  readonly count: number;
-}
-
-/** The open tickets of the Change whose active package records `rules-truncated` above 0. */
-export function truncatedPackages(index: IndexDb, changeId: string): TruncatedPackage[] {
-  const rows = index.database
-    .prepare(
-      `SELECT a.ticket, d.target, d.role, d.rules_truncated FROM attempts a
-       JOIN dispatches d ON d.change_id = a.change_id AND d.path = a.package
-       WHERE a.change_id = ? AND a.closed_at IS NULL AND d.rules_truncated > 0
-       ORDER BY a.opened_at, a.ticket`,
-    )
-    .all(changeId) as Row[];
-  return rows.map((row) => ({
-    ticket: String(row.ticket),
-    target: String(row.target),
-    role: String(row.role),
-    count: Number(row.rules_truncated),
-  }));
-}
-
 /** True when the Change holds an attempt record of the ticket. */
 export function hasAttempt(index: IndexDb, changeId: string, ticket: string): boolean {
   return (

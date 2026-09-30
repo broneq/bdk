@@ -115,7 +115,6 @@ function writeDispatch(
   ticket: string,
   role: string,
   rules: readonly string[] = [],
-  truncated = 0,
 ): void {
   writeDocument(store, `${DIR}/dispatch/02-3-${role}-${ticket}.md`, {
     data: {
@@ -132,7 +131,6 @@ function writeDispatch(
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${ticket}.md`,
       rules: [...rules],
-      "rules-truncated": truncated,
     },
     body: "",
   });
@@ -259,15 +257,15 @@ describe("refresh", () => {
     ]);
   });
 
-  it("indexes the rule ids and truncation of a package", async () => {
+  it("indexes the rule ids of a package", async () => {
     const store = seeded();
     writeAttempt(store, "A-bbbbbbb1", false);
-    writeDispatch(store, "A-bbbbbbb1", "implementer", ["BDK-CQ-1", "API-1"], 3);
+    writeDispatch(store, "A-bbbbbbb1", "implementer", ["BDK-CQ-1", "API-1"]);
     const index = await open(store);
     refreshChange(index, LIVE);
-    expect(
-      selectReadOnly(index, "SELECT rules, rules_truncated FROM dispatches").rows,
-    ).toStrictEqual([['["BDK-CQ-1","API-1"]', 3]]);
+    expect(selectReadOnly(index, "SELECT rules FROM dispatches").rows).toStrictEqual([
+      ['["BDK-CQ-1","API-1"]'],
+    ]);
   });
 
   it("indexes the findings of an attempt record and drops them with the record", async () => {

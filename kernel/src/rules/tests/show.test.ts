@@ -48,7 +48,7 @@ function ticket(
   store: Store,
   id: string,
   role: string | undefined,
-  fields: { closed?: boolean; rules?: readonly string[]; truncated?: number } = {},
+  fields: { closed?: boolean; rules?: readonly string[] } = {},
 ): void {
   writeDocument(store, `${DIR}/attempts/task-redispatch-02-3-${id}.md`, {
     data: {
@@ -65,17 +65,11 @@ function ticket(
     },
     body: "",
   });
-  if (role !== undefined) built(store, id, role, fields.rules ?? [], fields.truncated ?? 0);
+  if (role !== undefined) built(store, id, role, fields.rules ?? []);
 }
 
 /** What `dispatch build` leaves: the role's package, stamped as the ticket's active one. */
-function built(
-  store: Store,
-  id: string,
-  role: string,
-  rules: readonly string[] = [],
-  truncated = 0,
-): void {
+function built(store: Store, id: string, role: string, rules: readonly string[] = []): void {
   const path = `.bdk/changes/${CHANGE}/dispatch/02-3-${role}-${id}.md`;
   writeDocument(store, `${ROOT}/${path}`, {
     data: {
@@ -92,7 +86,6 @@ function built(
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/02-3-${role}-${id}.md`,
       rules: [...rules],
-      "rules-truncated": truncated,
     },
     body: "",
   });
@@ -117,7 +110,7 @@ const show = (store: Store, id: string, at = FIRST) =>
 describe("rules show --ticket", () => {
   it("prints the package's rules in its order with the matched glob, and stamps rules-read", async () => {
     const store = withRules(repository());
-    ticket(store, "A-7f3k9m2q", "implementer", { rules: ["API-1", "BDK-TS-1"], truncated: 2 });
+    ticket(store, "A-7f3k9m2q", "implementer", { rules: ["API-1", "BDK-TS-1"] });
     const result = await show(store, "A-7f3k9m2q");
     expect(result.code, result.stdout).toBe(0);
     expect(ticketRulesOutput.parse(result.json)).toStrictEqual({
@@ -142,7 +135,6 @@ describe("rules show --ticket", () => {
           text: "Text of BDK-TS-1.",
         },
       ],
-      truncated: 2,
       rulesRead: FIRST,
     });
     expect(readAttempts(store, DIR)[0]?.data["rules-read"]).toBe(FIRST);

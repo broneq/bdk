@@ -39,12 +39,12 @@ CREATE TABLE refs (
 CREATE TABLE attempts (
   change_id TEXT NOT NULL, ticket TEXT NOT NULL, loop TEXT NOT NULL, target TEXT NOT NULL,
   attempt INTEGER NOT NULL, "of" INTEGER NOT NULL, scope TEXT NOT NULL,
-  opened_at TEXT NOT NULL, closed_at TEXT, outcome TEXT, package TEXT, path TEXT NOT NULL,
+  opened_at TEXT NOT NULL, closed_at TEXT, outcome TEXT, path TEXT NOT NULL,
   PRIMARY KEY (change_id, ticket)
 );
 CREATE TABLE dispatches (
   change_id TEXT NOT NULL, ticket TEXT NOT NULL, target TEXT NOT NULL, role TEXT NOT NULL,
-  rules TEXT NOT NULL, rules_truncated INTEGER NOT NULL, path TEXT PRIMARY KEY
+  rules TEXT NOT NULL, path TEXT PRIMARY KEY
 );
 CREATE TABLE findings (
   change_id TEXT NOT NULL, ticket TEXT NOT NULL, position INTEGER NOT NULL,

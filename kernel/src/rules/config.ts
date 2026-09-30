@@ -29,8 +29,9 @@ export const rulesModule = defineConfigModule({
   description: "Rule selection per dispatch package and the audit view of rules stats.",
   schema: z
     .strictObject({
-      "max-per-package": count.default(20).meta({
-        description: "Rules a dispatch package holds at most; the rest are counted as truncated.",
+      "warn-above": count.default(100).meta({
+        description:
+          "Rules one role may read before hooks session-start warns; no cap, every applying rule reaches the agent.",
       }),
       disabled: z
         .array(z.string().regex(RULE_ID))

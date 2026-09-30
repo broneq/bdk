@@ -6,7 +6,8 @@ import type { SessionStartReport } from "../domain/report.ts";
 export const sessionStartOutput = z
   .strictObject({
     content: z.string().meta({
-      description: "The STARTUP text followed by one [BDK] line per problem found.",
+      description:
+        "The STARTUP text followed by one [BDK] line per problem found and a rules warning.",
     }),
     layout: z.enum(["v3", "v2", "none"]).optional().meta({
       description: "The state layout of the project; absent outside a BDK project.",

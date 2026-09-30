@@ -1,6 +1,6 @@
 // `bdk rules explain` (`kernel-cli/rules`): the selection `dispatch build`
-// makes, for a file set of one file and a role, without the cap, so a user
-// sees why a rule is present, missing or beyond `rules.max-per-package`.
+// makes, for a file set of one file and a role, so a user sees why a rule is
+// present or missing.
 import { relative, resolve, sep } from "node:path";
 
 import { refuse } from "../../shared/refusal/index.ts";
@@ -29,17 +29,14 @@ export function explainRules(
   if ("refused" in context) return context;
   const path = inside.split(sep).join("/");
   const selection = selectFor(context, role, [path]);
-  const listed = (beyondCap: boolean) =>
-    (beyondCap ? selection.beyondCap : selection.selected).map(({ rule, matchedBy }) => ({
-      id: rule.id,
-      matchedBy,
-      kind: rule.kind,
-      beyondCap,
-    }));
   return {
     file: path,
     role,
-    rules: [...listed(false), ...listed(true)],
+    rules: selection.selected.map(({ rule, matchedBy }) => ({
+      id: rule.id,
+      matchedBy,
+      kind: rule.kind,
+    })),
     disabled: selection.disabled,
   };
 }

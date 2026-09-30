@@ -4,17 +4,12 @@ import type { OneRule, TicketRules } from "../domain/report.ts";
 
 export function renderTicketRules(rules: TicketRules): string {
   const heading = `## BDK rules: ${rules.ticket} (${rules.role}, ${rules.target})\n`;
-  const truncated =
-    rules.truncated === 0
-      ? ""
-      : `\n${String(rules.truncated)} more rules applied beyond rules.max-per-package.\n`;
-  if (rules.rules.length === 0)
-    return `${heading}\nNo rules for the role ${rules.role}.\n${truncated}`;
+  if (rules.rules.length === 0) return `${heading}\nNo rules for the role ${rules.role}.\n`;
   const lines = rules.rules.map((rule) => {
     const matched = rule.matchedBy === null ? "" : ` (matched by ${rule.matchedBy})`;
     return `- [${rule.id}] ${rule.text}${matched}`;
   });
-  return `${heading}\n${lines.join("\n")}\n${truncated}`;
+  return `${heading}\n${lines.join("\n")}\n`;
 }
 
 export function renderRule(rule: OneRule): string {

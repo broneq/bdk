@@ -53,13 +53,6 @@ export function renderStatus(report: StatusReport): string {
   }
   const more = report.openTickets.length - TICKETS_SHOWN;
   if (more > 0) lines.push(`... ${String(more)} more open tickets (bdk attempt list)`);
-  for (const truncated of report.rulesTruncated.slice(0, TICKETS_SHOWN)) {
-    lines.push(
-      `rules truncated: ${truncated.ticket} (${truncated.role}, ${truncated.target}) dropped ${String(truncated.count)} rules at rules.max-per-package`,
-    );
-  }
-  const hidden = report.rulesTruncated.length - TICKETS_SHOWN;
-  if (hidden > 0) lines.push(`... ${String(hidden)} more tickets with truncated rules (--json)`);
   if (report.overriddenKeys.length > 0) {
     lines.push(`overridden by global or local: ${report.overriddenKeys.join(", ")}`);
   }
