@@ -54,5 +54,5 @@
 
 ## 8. Acceptance
 
-- [ ] 8.1 Check the acceptance signal end to end: both reports present with noise floor and decision; `tests/evals/` marked for removal in T32; on a fresh clone with only credentials (an `ANTHROPIC_API_KEY` or a Claude Code login), `pnpm install && pnpm eval with-without --skill bdk:mermaid-drawer --tasks <example> --probe` runs without manual setup; `pnpm eval check` green in CI without a key
+- [x] 8.1 Check the acceptance signal end to end: both reports present with noise floor and decision; `tests/evals/` marked for removal in T32; on a fresh clone with only credentials (an `ANTHROPIC_API_KEY` or a Claude Code login), `pnpm install && pnpm eval with-without --skill bdk:mermaid-drawer --tasks <example> --probe` runs without manual setup; `pnpm eval check` green in CI without a key
 - [x] 8.2 Run `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip && pnpm test:unit && pnpm skill-check` and `openspec validate v3-t40-promptfoo-harness --strict`; verify all pass
