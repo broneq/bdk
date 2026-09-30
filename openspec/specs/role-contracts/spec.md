@@ -99,6 +99,7 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 - **Blocking categories (P8).** The `verifier` and `design-verifier` contracts tell the agent to raise a `blocker` only with a category from the closed list in its package and to treat everything on the package's "not a FAIL" list as an `observation` or nothing; the list itself comes from policy through the package, not from the role body.
 - **Simplify (T23-D43).** The `simplifier` contract tells the agent to simplify the ticket's uncommitted diff without changing behaviour, within the task's `Files:`, and to leave the changes uncommitted; it carries the implementer's working-tree sentence (T3).
 - **Evidence (T4).** The `runner` contract tells the agent to run each check of its package's `Checks` section and record it with `bdk evidence record <kind> <file> --ticket <ticket>` and a verdict, citing the output line or JSON value that shows the result for `pass`, and to record `not-run` with the reason when a check cannot run.
+- **Rule citations (S4).** The `implementer`, `simplifier`, `reviewer`, `pr-reviewer`, `verifier` and `design-verifier` contracts tell the agent to cite the id of every rule that forced a decision or that a finding violates, as a `--ref <id>` of the entry it writes (`BDK-CQ-4`, `API-2`) and by id in its report; a rule id is written exactly as `rules show --ticket` prints it. The kernel counts those refs as citations (`kernel-cli/rules`, bdk rules stats).
 - **Size.** A role skill body, without frontmatter, SHALL be at most 4 096 bytes, so that it fits in a 12 KB package next to the task (K4).
 
 #### Scenario: P3 wording
@@ -135,6 +136,11 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 - **WHEN** the content test reads `skills/roles/simplifier/SKILL.md`
 - **THEN** it tells the agent to keep behaviour unchanged and to stay within the task's `Files:`
+
+#### Scenario: rule ids are cited
+
+- **WHEN** the content test reads the bodies of `implementer`, `simplifier`, `reviewer`, `pr-reviewer`, `verifier` and `design-verifier`
+- **THEN** each tells the agent to cite the rule id with `--ref` on the entry and in the report, and the bodies of `runner` and `scout` carry no such line
 
 ### Requirement: Swarm skill
 

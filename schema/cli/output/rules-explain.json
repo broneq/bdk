@@ -2,50 +2,57 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-explain.json",
   "title": "bdk rules explain --json",
-  "description": "Which rules apply to a file, and why.",
+  "description": "Which rules apply to a file for a role, and why.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["file", "rules"],
   "properties": {
-    "file": {
+    "file": { "type": "string", "minLength": 1, "description": "Relative to the project root." },
+    "role": {
       "type": "string",
-      "description": "Path relative to the project root."
+      "enum": [
+        "implementer",
+        "simplifier",
+        "verifier",
+        "design-verifier",
+        "reviewer",
+        "pr-reviewer",
+        "runner",
+        "scout"
+      ]
     },
     "rules": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "matchedBy"],
         "properties": {
-          "id": {
-            "type": "string"
-          },
+          "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$" },
           "matchedBy": {
-            "type": "string",
-            "description": "The applies glob that matched."
+            "description": "The glob that matched the file; null for a global rule.",
+            "type": ["string", "null"]
           },
-          "kind": {
-            "enum": ["house", "knowledge"]
-          }
-        }
-      }
+          "kind": { "type": "string", "enum": ["house", "knowledge"] }
+        },
+        "required": ["id", "matchedBy", "kind"],
+        "additionalProperties": false
+      },
+      "description": "The selection in package order."
+    },
+    "disabled": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$" },
+      "description": "Rules the role would read for the file that rules.disabled switches off."
     }
   },
+  "required": ["file", "role", "rules", "disabled"],
+  "additionalProperties": false,
   "examples": [
     {
-      "file": "src/auth/login.ts",
+      "file": "src/api/login.ts",
+      "role": "reviewer",
       "rules": [
-        {
-          "id": "SEC-2",
-          "matchedBy": "src/auth/**",
-          "kind": "house"
-        },
-        {
-          "id": "CQ-4",
-          "matchedBy": "**/*.ts",
-          "kind": "house"
-        }
-      ]
+        { "id": "BDK-CQ-1", "matchedBy": null, "kind": "house" },
+        { "id": "API-1", "matchedBy": "src/api/**", "kind": "house" }
+      ],
+      "disabled": ["BDK-SEC-3"]
     }
   ]
 }

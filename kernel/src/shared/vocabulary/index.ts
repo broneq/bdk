@@ -20,10 +20,10 @@ export const ENTRY_TYPES = [
 export type EntryType = (typeof ENTRY_TYPES)[number];
 
 /** The statuses an entry file stores; `superseded` is derived, never stored. */
-export const STORED_STATUSES = ["proposed", "accepted", "resolved", "routed"] as const;
+export const STORED_STATUSES = ["proposed", "accepted", "resolved"] as const;
 
 /** The statuses the kernel reports: the stored ones plus the derived `superseded`. */
-export const ENTRY_STATUSES = ["proposed", "accepted", "superseded", "resolved", "routed"] as const;
+export const ENTRY_STATUSES = ["proposed", "accepted", "superseded", "resolved"] as const;
 
 /** Smallest first: a profile only ever rises. */
 export const PROFILES = ["tiny", "small", "large"] as const;
@@ -46,6 +46,9 @@ export const AGENT_SOURCE_PATTERN = new RegExp(`^${AGENT}$`);
 
 /** A fixed provenance value or `agent:<role>`. */
 export const SOURCE_PATTERN = new RegExp(`^(${FIXED_SOURCES.join("|")}|${AGENT})$`);
+
+/** A rule id: `CQ-4`, `BDK-SEC-2`; the number never reuses a tombstone's. */
+export const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
 
 /** The loops a ticket counts against; `not-run` is a counter of each loop, not a loop. */
 export const LOOPS = ["task-redispatch", "verify-fix", "review-fix", "verifier"] as const;

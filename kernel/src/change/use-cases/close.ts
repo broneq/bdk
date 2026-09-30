@@ -33,7 +33,7 @@ import { closeSummary } from "../domain/close.ts";
 import { resolvedSettings } from "./checkpoint.ts";
 import type { ChangeDeps } from "./deps.ts";
 
-const DONE = new Set(["superseded", "resolved", "routed"]);
+const DONE = new Set(["superseded", "resolved"]);
 
 export function closeChange(
   deps: ChangeDeps,
@@ -138,7 +138,6 @@ function closeReport(
     change: change.id,
     archivedTo,
     spec: { merged, unchanged: merged.length === 0 },
-    learning: { proposedRules: [], spec: [], nothing: [] },
     gatesByPolicy: gatesByPolicy(entries),
     summary: closeSummary(findChangeRow(index, change.id)?.intent ?? change.id, live, merged),
   };

@@ -42,7 +42,7 @@ The kernel reads the settings; skills and scripts ask it. Skills need Node >= 22
 
 The `policy` keys bound the workflow, each subtree read by its own part of the kernel: `policy.gates.design` and `policy.gates.review` (`manual` or `auto`), `policy.budgets` (tickets per loop and round: `task-redispatch` 3, `verify-fix` 2, `review-fix` 2, `verifier` 2, and 3 consecutive `not-run` closes), `policy.oscillation.threshold` (2 failed attempts with the same finding end the retries early), `policy.escalation` (`enabled` true, `model` `opus`, at most `per-change` 3 escalation tickets per Change) `policy.checkpoint.enabled` (true: the kernel commits the Change directory when it parks or escalates) and `policy.verifier` (`blocking-categories`, the only categories a verifier may block on, and `not-a-fail`, what it must never block on; each item an `id` and a `description`, merged by `id`, so a project adds or rewords a category but the default items always stay) and `policy.evidence` (`non-executable` globs whose changes never make evidence stale, `build-config` globs that always count as source, and `max-committed-bytes`, 65 536: a smaller text evidence file is committed, the rest stays in `.bdk/.machine`). `bdk config show policy` prints them all with their defaults. `execution.concurrency` (1 to 15, default 5) caps how many role agents of one wave run at once. `spec.normative-word` (default `SHALL`) is the word every requirement of a spec delta must state, and `archive.keep-evidence` (default `false`) keeps the full `dispatch/` and `reports/` bodies when a Change closes instead of pruning them to a hash index.
 
-A skill gets everything that depends on the settings (rule sets, language rules, the decision fragment, the configured tool commands, shared reference files) from `node "$BDK/dist/bdk.mjs" ctx skill <name>`, called by two context lines at the top of its body: a `!` line Claude Code runs at load time, and a fallback sentence that makes the model run the same command when the host did not. Fragments are prompt values like rule sets (`fragments/decision/lavish`, `fragments/decision/ask-user`), so a project extends or replaces them the same way. `.bdk/settings.json` from BDK 2 is not read; `bdk import` (planned) converts it.
+A skill gets everything that depends on the settings (rules, the decision fragment, the configured tool commands, shared reference files) from `node "$BDK/dist/bdk.mjs" ctx skill <name>`, called by two context lines at the top of its body: a `!` line Claude Code runs at load time, and a fallback sentence that makes the model run the same command when the host did not. Fragments are prompt values (`fragments/decision/lavish`, `fragments/decision/ask-user`), which a project extends or replaces through `.bdk/prompts/` or `prompts.files`. `.bdk/settings.json` from BDK 2 is not read; `bdk import` (planned) converts it.
 
 ### Change state
 
@@ -292,66 +292,31 @@ Omit any form your tool does not support; BDK falls back cleanly from a missing 
 
 ## Quality Rules
 
-BDK ships language-agnostic rule sets (`code-quality`, `architecture`, `design-patterns`, `security`, `engineering-judgment`, `test-quality`) injected into `/bdk:cr`, `/bdk:create-plan`, and `/bdk:design` outputs.
+A rule is a choice among valid alternatives that BDK or your project made and wants followed, stated as one instruction: a `house` rule states the choice, a `knowledge` rule a fact about a library or tool that a model gets wrong (with `source` and `verified`). A fact about your own system or a process lesson is not a rule. Each rule is one file named by its id, and agents cite that id.
 
-### Four usage patterns
-
-Each rule set is a prompt value: the prompt key `rules/<name>` (`rules/code-quality`, `rules/security`, ...), whose default is the plugin's `rules/<name>.md`.
-
-**1. Zero config (recommended for most projects).** No file. BDK defaults are used as-is.
-
-**2. Extend defaults.** Put your additions in `.bdk/prompts/rules/code-quality.md`. The BDK default content is emitted first, then your file's content appended.
-
-**3. Replace defaults.** When your project has its own complete rule set, start the file with frontmatter:
-
-```markdown
----
-mode: replace
----
-```
-
-**4. Point at existing project doc.** Map the key to any file instead of copying it:
-
-```yaml
-prompts:
-  files:
-    rules/code-quality: docs/standards/coding.md
-    rules/security: {path: docs/standards/security.md, mode: replace}
-```
-
-The same works one layer up (your global prompts directory next to the global settings file) and one layer down (`.bdk/prompts.local/`, personal). `prompts.dir` moves a layer's prompts directory. `bdk config show prompts.rules/code-quality` lists the files that make up the value.
-
-### Behaviour on misconfiguration
-
-A prompt file whose key BDK does not declare (`.bdk/prompts/rules/secrity.md`) or a `prompts.files` entry that names a missing file is refused by `bdk config check`, with the key, the layer and the file. `/bdk:cr` and `/bdk:create-plan` surface the error and stop, rather than silently dropping the rule context.
-
-### Adding a new rule category
-
-See `.claude/rules/quality-rules.md` (BDK-dev convention).
-
----
-
-## Language Rules
-
-Companion to Quality Rules, but keyed by the project's `languages` array rather than a flat rule name. BDK ships per-language principle sheets in `rules/languages/<lang>.md` (React, TypeScript, and JavaScript today; Vue, Python, Go, … follow the same pattern). Each agent that writes or reviews code (`code-reviewer`, `implementer`, `fixer`, `plan-verifier`) preloads them via the `bdk-rules-languages` meta-skill; `/bdk:create-plan` receives them as `Language rules: <lang>` sections of its context and copies them into the plan's `<!-- INJECT-LANGUAGES -->` marker.
-
-Declare the project's stack in `.bdk/settings.yaml`:
+BDK ships its pack in `rules/<category>/` (`BDK-CQ`, `BDK-ARCH`, `BDK-DP`, `BDK-SEC`, `BDK-TQ`, `BDK-EJ`, `BDK-PL`) and `rules/languages/<name>/` (`BDK-JS`, `BDK-TS`, `BDK-REACT`), read from the installed plugin. A language pack is read when its name is in `languages`. Your project's rules live in `.bdk/rules/<ID>.md` with your own prefixes; `applies` globs scope a rule to files, `roles` names the roles that read it.
 
 ```yaml
 languages: [react, typescript]
+rules:
+  disabled: [BDK-CQ-4]   # switch a rule off, shipped ones included
+  warn-above: 100        # session start warns when one role reads more rules
 ```
 
-Override or extend a default rule sheet per language through the prompt key `rules/languages/<lang>` (same `extends` | `replace` semantics as quality rules): a file `.bdk/prompts/rules/languages/react.md`, or
+`dispatch build` selects the rules for the role and the task's files, with no cap, and records their ids in the package; the agent reads them with `rules show --ticket`.
 
-```yaml
-prompts:
-  files:
-    rules/languages/react: docs/team-react-conventions.md
-```
+| Command                                                    | What it does                                                                                         |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `node "$BDK/dist/bdk.mjs" rules check [<path>]`            | Validates the shipped and project rule files and refuses a duplicate id.                             |
+| `node "$BDK/dist/bdk.mjs" rules show <id>`                 | Prints one rule, a tombstone or a disabled rule included.                                            |
+| `node "$BDK/dist/bdk.mjs" rules explain <file> [--role]`   | Lists the rules a role reads for a file, with the glob that matched.                                 |
+| `node "$BDK/dist/bdk.mjs" rules import [<dir>]`            | Turns hand-written `.claude/rules/*.md` into rule files, one per top-level bullet.                   |
+| `node "$BDK/dist/bdk.mjs" rules export --claude [--check]` | Writes the `.claude/rules/bdk-generated*.md` projection of the project rules, or checks it.          |
+| `node "$BDK/dist/bdk.mjs" rules stats [--entries]`         | The audit view: recurring learnings and findings across Changes, raw entries, citations per rule id. |
+| `node "$BDK/dist/bdk.mjs" rules accept "<text>" --prefix`  | Adopts a rule: writes the next id of the prefix and regenerates the projection.                      |
+| `node "$BDK/dist/bdk.mjs" rules prune [--uncited <n>]`     | Reports rules whose globs match no file and rules no recent entry cites.                             |
 
-A language listed without a matching `rules/languages/<lang>.md` (and no override) is silently skipped — no error.
-
-Authoring a new language sheet: see `.claude/rules/language-rules.md`.
+A lesson is recorded as `log add learning` and becomes a rule only through `rules accept`; see [Quality and language rules](docs/guide/concepts/quality-and-language-rules.md) and [Rules hygiene](docs/guide/workflows/rules-hygiene.md). Adding a rule to the pack: `.claude/rules/quality-rules.md` (BDK-dev convention).
 
 ---
 

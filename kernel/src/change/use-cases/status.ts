@@ -1,12 +1,13 @@
 // `bdk change status`: the active Change at a glance, derived from the
-// ledger and its artifact graph; `parts` as `part list` reports them.
+// ledger and its artifact graph; `parts` as `part list` reports them, and the
+// open tickets whose package dropped rules at the cap.
 import { join } from "node:path";
 
 import { graphSummary, readGraph, stageResolver } from "../../graph/index.ts";
 import { partItems } from "../../part/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { openAttempts, readDocument, withIndex, refreshChange } from "../../shared/store/index.ts";
+import { openAttempts, readDocument, refreshChange, withIndex } from "../../shared/store/index.ts";
 import { resumeCommand } from "../domain/change.ts";
 import type { StatusReport } from "../domain/change.ts";
 import type { ChangeDeps } from "./deps.ts";
@@ -25,6 +26,7 @@ export function changeStatus(
     const document = readDocument(deps.store, join(change.dir, "change.md"));
     const data = document !== undefined && "data" in document ? document.data : {};
     const facts = changeFacts(index, change.id, stageResolver(deps));
+    const tickets = openAttempts(index, change.id);
     return {
       change: change.id,
       kind: facts.kind,
@@ -44,7 +46,7 @@ export function changeStatus(
       nodes: graph.nodes,
       gates: graph.gates,
       parts: await partItems(deps, change, read),
-      openTickets: openAttempts(index, change.id),
+      openTickets: tickets,
       overriddenKeys: Array.isArray(data.overridden) ? data.overridden.map(String) : [],
     };
   });

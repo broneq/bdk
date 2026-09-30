@@ -23,7 +23,7 @@ The plugin SHALL ship `pipeline/pipeline.yaml`, and the kernel SHALL load it on 
 | `nodes[].kinds`    | array of `feature, bug`       | no       | Default all. The node exists only for these Change kinds.                                                                         |
 | `nodes[].if`       | `features.<name>`             | no       | The node exists only while that boolean feature switch resolves to `true`; the name must be a declared `features` key.            |
 | `nodes[].budget`   | a loop name                   | no       | One of `task-redispatch`, `verify-fix`, `review-fix`, `verifier`, `not-run`; the value lives in `policy.budgets` (read by T22).   |
-| `nodes[].rules`    | array of rule categories      | no       | Rule sets the instruction carries, each a declared `rules/<category>` prompt key.                                                 |
+| `nodes[].rules`    | array of rule categories      | no       | Rule sets the instruction carries, each a category directory of the BDK pack (`rule-pack`, Pack layout), e.g. `code-quality`.     |
 | `nodes[].policy`   | a key of `policy.gates`       | for gate | The setting that says whether this gate is `manual` or `auto`.                                                                    |
 | `nodes[].opens`    | a stage id                    | for gate | The stage whose command passes the gate; the gate's `command` is that stage's `command`.                                          |
 
@@ -58,6 +58,11 @@ The file SHALL hold no expression other than `if: features.<name>`, no loop cons
 
 - **WHEN** the content test loads the shipped `pipeline/pipeline.yaml`
 - **THEN** it validates, every `kind` is registered, every gate has `policy` and `opens`, and every gate's `policy` is a declared `policy.gates` key
+
+#### Scenario: rule category of the pack
+
+- **WHEN** a node carries `rules: [code-quality, plan]`
+- **THEN** validation passes, and a node carrying `rules: [languages/react]` or `rules: [style]` fails naming `nodes[<n>].rules`, because only the pack's category directories are rule categories
 
 ### Requirement: Artifact kinds
 

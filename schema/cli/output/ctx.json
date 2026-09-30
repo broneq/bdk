@@ -19,6 +19,7 @@
             "enum": [
               "rules",
               "language-rules",
+              "project-rules",
               "fragment",
               "tools",
               "concurrency",
@@ -29,7 +30,7 @@
           },
           "source": {
             "type": "string",
-            "description": "The prompt key (rules/security), tools group (tools.test), settings key (execution.concurrency) or plugin path that produced the part."
+            "description": "The rule directory (rules/security, .bdk/rules), prompt key (fragments/decision/lavish), tools group (tools.test), settings key (execution.concurrency) or plugin path that produced the part."
           }
         },
         "required": ["kind", "source"],

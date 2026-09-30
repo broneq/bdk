@@ -178,7 +178,7 @@ describe("state spec tables", () => {
   });
 
   it("fail on a renamed field", () => {
-    const seeded = spec.replace("| `template-hash`  |", "| `template-digest` |");
+    const seeded = spec.replace(/\| `template-hash` +\|/, "| `template-digest` |");
     expect(drift(seeded)).toStrictEqual([
       "dispatch: template-digest is in the spec, not in the schema",
       "dispatch: template-hash is in the schema, not in the spec",

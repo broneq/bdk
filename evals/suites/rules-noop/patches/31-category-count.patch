@@ -1,0 +1,29 @@
+diff --git a/src/catalog/CategoryCount.tsx b/src/catalog/CategoryCount.tsx
+new file mode 100644
+index 0000000..9930c76
+--- /dev/null
++++ b/src/catalog/CategoryCount.tsx
+@@ -0,0 +1,23 @@
++import { useEffect, useState } from 'react'
++
++export function CategoryCount({ loadCount }: { loadCount: (signal: AbortSignal) => Promise<number> }) {
++  const [count, setCount] = useState<number | null>(null)
++  const [loading, setLoading] = useState(true)
++
++  useEffect(() => {
++    const controller = new AbortController()
++    setLoading(true)
++    loadCount(controller.signal)
++      .then((value) => {
++        setCount(value)
++        setLoading(false)
++      })
++      .catch(() => setLoading(false))
++    return () => controller.abort()
++  }, [loadCount])
++
++  if (loading) {
++    return <span className="state-spinner" aria-label="Loading" />
++  }
++  return <span>{count ?? 0} categories</span>
++}

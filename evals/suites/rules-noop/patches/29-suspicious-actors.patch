@@ -1,0 +1,19 @@
+diff --git a/src/operator/suspiciousActors.ts b/src/operator/suspiciousActors.ts
+new file mode 100644
+index 0000000..3f5c77c
+--- /dev/null
++++ b/src/operator/suspiciousActors.ts
+@@ -0,0 +1,13 @@
++import type { AuditLog, AuditLogPage } from '../api/operator'
++
++const FAILURE_THRESHOLD = 5
++
++export async function isSuspiciousActor(actorLogin: string): Promise<boolean> {
++  const response = await globalThis.fetch(
++    `/api/admin/audit-logs?actorLogin=${encodeURIComponent(actorLogin)}&action=LOGIN_FAILURE&size=100&sort=id,DESC`,
++    { credentials: 'same-origin', headers: { Accept: 'application/json' } },
++  )
++  const page = (await response.json()) as AuditLogPage
++  const failures: AuditLog[] = page.content ?? []
++  return failures.length >= FAILURE_THRESHOLD
++}

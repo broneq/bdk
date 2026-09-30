@@ -3,74 +3,159 @@
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-show.json",
   "title": "bdk rules show --json",
   "description": "Print one rule by id, or the rules of a ticket.",
-  "type": "object",
-  "properties": {
-    "ticket": { "type": "string", "pattern": "^A-[0-9a-z]{8}$" },
-    "role": {
-      "type": "string",
-      "enum": [
-        "implementer",
-        "simplifier",
-        "verifier",
-        "design-verifier",
-        "reviewer",
-        "pr-reviewer",
-        "runner",
-        "scout"
-      ]
-    },
-    "target": { "type": "string", "minLength": 1 },
-    "sections": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "key": { "type": "string", "pattern": "^rules\\/", "description": "The prompt key." },
-          "file": {
-            "type": "string",
-            "description": "The plugin file of the default, relative to the plugin root; else the lowest file."
-          },
-          "layers": {
-            "type": "array",
-            "items": { "type": "string", "enum": ["default", "global", "project", "local"] },
-            "description": "The layers whose files form the value, lowest first."
-          },
-          "text": { "type": "string", "description": "The resolved prompt value." }
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "ticket": { "type": "string", "pattern": "^A-[0-9a-z]{8}$" },
+        "role": {
+          "type": "string",
+          "enum": [
+            "implementer",
+            "simplifier",
+            "verifier",
+            "design-verifier",
+            "reviewer",
+            "pr-reviewer",
+            "runner",
+            "scout"
+          ]
         },
-        "required": ["key", "file", "layers", "text"],
-        "additionalProperties": false
+        "target": { "type": "string", "minLength": 1 },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$"
+              },
+              "kind": { "type": "string", "enum": ["house", "knowledge"] },
+              "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+              "applies": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "matchedBy": {
+                "description": "The glob that matched a file of the target; null for a rule without applies or a target without files.",
+                "type": ["string", "null"]
+              },
+              "text": { "type": "string" }
+            },
+            "required": ["id", "kind", "severity", "matchedBy", "text"],
+            "additionalProperties": false
+          },
+          "description": "The rules the active package records, in its order."
+        },
+        "rulesRead": {
+          "description": "The `rules-read` stamp of the attempt record: the time of the implementer's first call for the ticket; absent until then.",
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}(?:Z))$"
+        }
       },
-      "description": "The role's rule categories, then the language rules, in order."
+      "required": ["ticket", "role", "target", "rules"],
+      "additionalProperties": false,
+      "title": "rules of a ticket"
     },
-    "rulesRead": {
-      "description": "The `rules-read` stamp of the attempt record: the time of the implementer's first call for the ticket; absent until then.",
-      "type": "string",
-      "format": "date-time",
-      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}(?:Z))$"
+    {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$" },
+        "scope": { "type": "string", "enum": ["bundle", "project"] },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Relative to the plugin root for the bundle, to the project root otherwise."
+        },
+        "kind": { "type": "string", "enum": ["house", "knowledge"] },
+        "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+        "applies": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "implementer",
+              "simplifier",
+              "verifier",
+              "design-verifier",
+              "reviewer",
+              "pr-reviewer",
+              "runner",
+              "scout"
+            ]
+          }
+        },
+        "origin": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "since": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        "source": { "type": "string" },
+        "verified": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        "removed": { "description": "The tombstone's reason.", "type": "string" },
+        "disabled": {
+          "type": "boolean",
+          "description": "True when `rules.disabled` names the rule."
+        },
+        "text": { "type": "string" }
+      },
+      "required": [
+        "id",
+        "scope",
+        "file",
+        "kind",
+        "severity",
+        "origin",
+        "since",
+        "disabled",
+        "text"
+      ],
+      "additionalProperties": false,
+      "title": "one rule"
     }
-  },
-  "required": ["ticket", "role", "target", "sections"],
-  "additionalProperties": false,
+  ],
   "examples": [
     {
       "ticket": "A-7f3k9m2q",
       "role": "implementer",
       "target": "02-3",
-      "sections": [
+      "rules": [
         {
-          "key": "rules/code-quality",
-          "file": "rules/code-quality.md",
-          "layers": ["default"],
-          "text": "# Code Quality Rules\n..."
+          "id": "BDK-CQ-1",
+          "kind": "house",
+          "severity": "medium",
+          "matchedBy": null,
+          "text": "Descriptive identifiers; no abbreviations unless idiomatic for the language."
         },
         {
-          "key": "rules/languages/typescript",
-          "file": "rules/languages/typescript.md",
-          "layers": ["default", "project"],
-          "text": "# TypeScript\n..."
+          "id": "BDK-REACT-4",
+          "kind": "house",
+          "severity": "medium",
+          "applies": ["**/*.tsx"],
+          "matchedBy": "**/*.tsx",
+          "text": "Forms go through Actions ..."
         }
       ],
       "rulesRead": "2026-09-25T10:00:41.305Z"
+    },
+    {
+      "id": "API-2",
+      "scope": "project",
+      "file": ".bdk/rules/API-2.md",
+      "kind": "house",
+      "severity": "high",
+      "applies": ["src/api/**"],
+      "origin": "2026-09-25-passwordless-login/L-m2x9v7qa",
+      "evidence": ["2026-09-25-passwordless-login/L-m2x9v7qa"],
+      "since": "2026-09-27",
+      "disabled": false,
+      "text": "Every handler validates its input with the shared schema before it reads the body."
     }
   ]
 }

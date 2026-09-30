@@ -161,6 +161,7 @@ export function writePackage(store: Store, ticket: string, role: string, target 
       "kernel-version": "3.0.0-dev",
       "template-hash": `sha256:${"a".repeat(64)}`,
       report: `.bdk/changes/${CHANGE}/reports/${target}-${role}-${ticket}.md`,
+      rules: [],
     },
     body: "",
   });

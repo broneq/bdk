@@ -34,7 +34,7 @@ const registry = createConfigRegistry({
       schema: z.array(z.string()).default([]),
     }),
   ],
-  prompts: [definePromptKey({ key: "rules/security", consumer: "ctx", owner: "T12" })],
+  prompts: [definePromptKey({ key: "guides/security", consumer: "ctx", owner: "T12" })],
 });
 
 function resolve(files: Record<string, string>, removed?: "ignore" | "report") {
@@ -65,7 +65,7 @@ describe("resolveConfig", () => {
       languages: "project",
       "features.lavish": "local",
     });
-    expect(resolution.prompts.values.get("rules/security")).toStrictEqual({
+    expect(resolution.prompts.values.get("guides/security")).toStrictEqual({
       mode: "extends",
       files: [],
     });
@@ -74,12 +74,12 @@ describe("resolveConfig", () => {
   it("collects the problems of the keys and of the prompt files", () => {
     const { resolution } = resolve({
       [`${PROJECT}/.bdk/settings.yaml`]: "featurs: {}\n",
-      [`${PROJECT}/.bdk/prompts/rules/x.md`]: "- x\n",
+      [`${PROJECT}/.bdk/prompts/guides/x.md`]: "- x\n",
     });
     expect(resolution.value).toBeUndefined();
     expect(resolution.problems.map((problem) => problem.key)).toStrictEqual([
       "featurs",
-      "prompts.rules/x",
+      "prompts.guides/x",
     ]);
   });
 });
@@ -127,7 +127,7 @@ describe("writeSnapshot", () => {
       [`${GLOBAL}/settings.yaml`]: "features:\n  other: true\n",
       [`${PROJECT}/.bdk/settings.yaml`]: "languages: [go]\nfeatures:\n  lavish: true\n",
       [`${PROJECT}/.bdk/settings.local.yaml`]: "features:\n  lavish: false\n",
-      [`${PROJECT}/.bdk/prompts.local/rules/security.md`]: "- mine\n",
+      [`${PROJECT}/.bdk/prompts.local/guides/security.md`]: "- mine\n",
     });
     const written = writeSnapshot(store, PROJECT, resolution);
     expect(written).toBe(SNAPSHOT_PATH);
@@ -136,12 +136,12 @@ describe("writeSnapshot", () => {
     expect(snapshot).toStrictEqual({
       resolved: { features: { lavish: false, other: true }, languages: ["go"] },
       prompts: {
-        "rules/security": {
+        "guides/security": {
           mode: "extends",
-          files: [{ layer: "local", path: `${PROJECT}/.bdk/prompts.local/rules/security.md` }],
+          files: [{ layer: "local", path: `${PROJECT}/.bdk/prompts.local/guides/security.md` }],
         },
       },
-      overriddenKeys: ["features.lavish", "features.other", "prompts.rules/security"],
+      overriddenKeys: ["features.lavish", "features.other", "prompts.guides/security"],
     });
   });
 

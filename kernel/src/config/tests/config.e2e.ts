@@ -129,14 +129,14 @@ describe("bdk config show", () => {
 
   it("exit 0: a prompt value is its files and mode", () => {
     const root = fixture({
-      ".bdk/prompts/rules/security.md": "---\nmode: replace\n---\n- x\n",
+      ".bdk/prompts/fragments/decision/lavish.md": "---\nmode: replace\n---\n- x\n",
     }).root;
-    const result = bdk(["config", "show", "prompts.rules/security", "--json"], root);
+    const result = bdk(["config", "show", "prompts.fragments/decision/lavish", "--json"], root);
     expect(result.code).toBe(0);
     expect(result.json).toMatchObject({
       value: {
         mode: "replace",
-        files: [{ layer: "project", path: ".bdk/prompts/rules/security.md" }],
+        files: [{ layer: "project", path: ".bdk/prompts/fragments/decision/lavish.md" }],
       },
     });
   });
@@ -230,17 +230,16 @@ describe("bdk config check", () => {
     expect(refusal.why).toContain("roles/verifier");
   });
 
-  it("acceptance: key of a later task", () => {
+  it("acceptance: dropped funnel key", () => {
     const root = fixture({
-      ".bdk/settings.yaml": "rules:\n  max-per-package: 5\n",
+      ".bdk/settings.yaml": "rules:\n  propose-when:\n    authors: 1\n",
     }).root;
     const refusal = refused(
       bdk(["config", "check", "--json"], root),
       2,
       "policy/unknown-config-key",
     );
-    expect(refusal.why).toContain("rules.max-per-package");
-    expect(refusal.why).toContain("lands with T31");
+    expect(refusal.why).toContain("rules.propose-when");
   });
 
   it("acceptance: one root, several consumers", () => {
@@ -436,7 +435,7 @@ describe("bdk config schema", () => {
   });
 
   it("exit 3: input/not-found", () => {
-    refused(bdk(["config", "schema", "rules", "--json"], fixture().root), 3, "input/not-found");
+    refused(bdk(["config", "schema", "gates", "--json"], fixture().root), 3, "input/not-found");
   });
 
   it("exit 5: runtime/not-a-repo", () => {

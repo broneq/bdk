@@ -1,133 +1,75 @@
 # Rules hygiene
 
-!!! warning "Describes BDK v2"
+Rules cost context in every package that carries them, and a rule nobody needs still costs it. Left alone, a rule set turns into a changelog: incident stories written as rules, near-duplicates, and rules for code that no longer exists.
 
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+BDK keeps two things apart. A **lesson** is what happened: it goes into the ledger as a `learning` entry and never becomes a rule by itself. A **rule** is a choice you decide to keep: you adopt it explicitly, and it gets an id. The audit in between is where you decide.
 
-`.claude/rules/` costs context every single session. Left alone it turns into a changelog:
-post-incident "rules" written as incident narratives, appended to whichever file was
-nearest, duplicating rules that already exist, in files already over budget.
+## Record lessons, not rules
 
-Two skills keep that from happening. `/bdk:add-rule` prevents accretion at the source;
-`/bdk:refine-rules` cleans up what accumulated.
+When an agent or you learn something the hard way, record it as a learning in the current Change:
 
-## Route before you write - capture conventions
-
-This table is in every session already, from `STARTUP_INSTRUCTIONS.md`:
-
-| The knowledge                                           | Where it goes                                                     |
-| ------------------------------------------------------- | ----------------------------------------------------------------- |
-| Cross-cutting invariant whose violation fails silently  | `.claude/rules/`, scoped by the narrowest `paths:` that covers it |
-| Trap visible at the code site where the mistake happens | a doc comment there                                               |
-| Something a test or lint already enforces               | one line naming the enforcer                                      |
-| Anything else                                           | nothing                                                           |
-
-A line that a rename or file move would force you to edit is a code mirror, not a rule.
-
-!!! warning
-**"Nothing" is the frequent, correct answer.** Never write something down just to have
-written it. The worst outcome is not a badly-routed rule - it is a rule written at all
-when none was warranted.
-
-## Capture one lesson - `/bdk:add-rule`
-
-```
-/bdk:add-rule <lesson or convention to capture>
+```bash
+bdk log add learning "forms lost the pending state on retry" --ref 02-3 --ticket A-7f3k9m2q
 ```
 
-It distils one imperative, falsifiable MUST/NEVER sentence - never the incident story,
-only the consequence - then applies a four-part admission test (durability, decision,
-visibility, derivability) and routes the result:
+`--applies <glob>` names the files the lesson is about; under a task ticket it defaults to the task's `Files:`. The kernel stamps a fingerprint, so the same lesson in several Changes can be counted. Closing a Change writes no rule.
 
-| Verdict                                                         | Route                                       |
-| --------------------------------------------------------------- | ------------------------------------------- |
-| Passes all four, governs a broad surface                        | Rule file                                   |
-| Passes all four, true only for a subset of files                | Narrow-glob rule file, created if none fits |
-| Procedural how-to with a deterministic backstop, near-immutable | Project skill                               |
-| True but pull-based - the trap is visible at the code site      | Doc comment there                           |
-| A test or lint already enforces it                              | One-line signpost naming the enforcer       |
-| Fails durability, or fails the decision test                    | Nothing, with a reason                      |
+## Audit what recurs
 
-When several destinations fit, the preference order is
-`narrow glob > wide glob > skill > doc comment > nothing`. Skills fail open and rules fail
-closed, so an ambient constraint is never routed to a skill.
-
-It then deduplicates: one fact has exactly one home. An existing rule covering the same
-constraint is **sharpened in place**, never joined by a near-duplicate and never given the
-newest violation's story as an appendix. A second file that genuinely needs the fact gets
-a one-line pointer, not a copy.
-
-Finally it checks the target's budget. Over budget means the candidate is staged in
-`.claude/rules/_inbox.md` instead, with a recommendation to run `/bdk:refine-rules` - an
-over-budget file has a compaction duty before it may grow. You approve the exact text and
-location before anything is written, and every touched file is re-linted with zero new
-errors as the exit criterion.
-
-## Clean up what accumulated - `/bdk:refine-rules`
-
-```
-/bdk:refine-rules [rules-dir]
+```bash
+bdk rules stats
+bdk rules stats --entries
 ```
 
-Defaults to `.claude/rules`. It rewrites the directory into rule files describing only the
-current, verified state of the code, in one uniform voice.
+`rules stats` looks at every Change the index holds, archived ones included:
 
-The premise is worth stating plainly: **every existing sentence is an unverified claim,
-not a fact.** Rule files were written by whichever agent or engineer was in the seat on a
-given day. Prior wording earns no trust by having survived; it earns trust by matching the
-code you actually read.
+- **recurring**: lessons and findings with the same fingerprint in at least `rules.audit.min-changes` Changes (3 by default);
+- **entries** (with `--entries`): the raw learnings, findings and blockers, newest first, each marked when a rule was already adopted from it;
+- **citations**: how often each rule id was cited by an entry, and in how many Changes.
 
-Six verdicts, one per bullet:
+A lesson that recurs is a candidate, not a rule. Before you adopt it, check it against the definition in [Quality and language rules](../concepts/quality-and-language-rules.md#what-a-rule-is): a fact about your own system belongs in code or documentation, and a process lesson stays a lesson.
 
-| Verdict     | Meaning                                                                         |
-| ----------- | ------------------------------------------------------------------------------- |
-| RULE        | Present-tense, falsifiable, passes all four admission tests                     |
-| NARROW-GLOB | True, but only for a subset - moves to a file whose `paths:` names that subset  |
-| SKILL       | Procedural how-to with a deterministic backstop - extracted to a project skill  |
-| SIGNPOST    | Already enforced by a test or lint - compressed to one line naming the enforcer |
-| RELOCATE    | True and valuable but pull-based - becomes a doc comment at the code site       |
-| NOISE       | Changelog, history, narration, hedged guess, TODO - dropped outright            |
+## Adopt a rule
 
-Surviving RULE claims are then **verified against real code**. Checkable claims (file
-locations, exports, config settings, banned API patterns, "X calls Y") are dispatched to
-exploration subagents briefed to default to skepticism: CONFIRMED only with positive
-evidence, otherwise CONTRADICTED or UNVERIFIED. Contradicted claims are dropped, or
-corrected only with positive evidence of the replacement. Unverified ones survive but are
-flagged for you.
+```bash
+bdk rules accept "Keep the pending state in the form's own store." \
+  --prefix FORM --applies "web/forms/**" \
+  --from 2026-09-25-login/L-00000012
+```
 
-Budgets: 150 lines or 8 KB per file, roughly 5 lines per bullet. Genuinely RULE-grade
-content that still exceeds them gets split into narrower `paths:` scopes, not an
-exemption.
+`rules accept` is the only way besides `rules import` that creates a rule file. It writes `.bdk/rules/FORM-<n>.md` with the next free number (tombstones included), records the entries of `--from` as its `origin` and `evidence`, and regenerates the `.claude/rules/bdk-generated*.md` projection. Other flags: `--kind knowledge` with `--source` and `--verified`, `--severity`, and `--role` to name the roles that read it.
 
-!!! warning
-You approve the plan before anything is written, and the plan lists every target -
-relocation doc comments, narrowed globs, extracted skills - so you see the full blast
-radius. Relocation happens in the same change set, doc comments written **first**, rule
-files overwritten second: cutting before relocating destroys knowledge if the run is
-interrupted.
+## Remove what no longer pays
 
-`paths:` frontmatter is preserved verbatim, because it is functional metadata read by the
-host to decide when a rule loads, not prose.
+```bash
+bdk rules prune
+```
+
+`rules prune` reports rules whose `applies` globs match no file of the work tree, and, once the project has at least `rules.prune.uncited-changes` Changes (20 by default), rules that no entry of those Changes cites. It only reports. To remove a project rule, turn its file into a tombstone: add `removed: <reason>` to the frontmatter and keep the body, so the id is never reused. To stop reading a shipped rule, list its id in `rules.disabled`.
+
+## Hand-written `.claude/rules/`
+
+Files you wrote in `.claude/rules/` still load in an interactive session, but the kernel does not select them for agents and nobody can cite them. `bdk doctor` lists them; `bdk rules import` turns them into rule files, one per top-level bullet, with `applies` from their `paths:`. Then delete the originals: the generated projection carries the rules.
+
+`/bdk:add-rule` and `/bdk:refine-rules` still write `.claude/rules/` directly; run `bdk rules import` after them.
 
 ## A working rhythm
 
-| Moment                                                     | Command                                                      |
-| ---------------------------------------------------------- | ------------------------------------------------------------ |
-| You just learned something the hard way                    | `/bdk:add-rule` - and accept "nothing" as an answer          |
-| A rule file crossed its budget, or `_inbox.md` has entries | `/bdk:refine-rules`                                          |
-| Before a big refactor                                      | `/bdk:refine-rules`, so you refactor against verified claims |
+| Moment                                               | Command                                               |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| You just learned something the hard way              | `bdk log add learning ...`                            |
+| Every few Changes                                    | `bdk rules stats`, then `bdk rules accept` or nothing |
+| Session start warns that a role reads too many rules | `bdk rules prune`, `rules.disabled`, `applies`        |
+| Before a big refactor                                | `bdk rules prune`                                     |
 
 ## What you get
 
-| Artifact                                  | Path                                                              |
-| ----------------------------------------- | ----------------------------------------------------------------- |
-| New or sharpened rules                    | `.claude/rules/<file>.md`, with `paths:` frontmatter              |
-| Staged candidates for an over-budget file | `.claude/rules/_inbox.md`                                         |
-| Relocated knowledge                       | doc comments at the code sites                                    |
-| Lint status                               | zero errors from the rule linter, as the exit gate of both skills |
+| Artifact                | Path                                                        |
+| ----------------------- | ----------------------------------------------------------- |
+| Lessons                 | `learning` entries in `.bdk/changes/<id>/log/`              |
+| Project rules           | `.bdk/rules/<ID>.md`                                        |
+| Projection for the host | `.claude/rules/bdk-generated.md`, `bdk-generated-scoped.md` |
 
 ## Next step
 
-Back to the [tier table](../index.md#how-you-work-with-it) for the next change - or
-[Quality and language rules](../concepts/quality-and-language-rules.md) for the rule sets
-BDK ships versus the ones your project owns.
+Back to the [tier table](../index.md#how-you-work-with-it) for the next change, or [Quality and language rules](../concepts/quality-and-language-rules.md) for the pack BDK ships and how agents read rules.

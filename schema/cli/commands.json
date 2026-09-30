@@ -255,7 +255,6 @@
         ".bdk/changes/<id>/log/",
         ".bdk/changes/archive/<id>/",
         ".bdk/specs/",
-        ".claude/rules/bdk-generated.md",
         "git:commit"
       ]
     },
@@ -663,8 +662,14 @@
           "value": "<id>"
         },
         {
+          "name": "--applies",
+          "value": "<glob>",
+          "description": "Repeatable; only with learning. Default: the Files: of the ticket's task.",
+          "repeatable": true
+        },
+        {
           "name": "--status",
-          "values": ["proposed", "accepted", "superseded", "resolved", "routed"]
+          "values": ["proposed", "accepted", "superseded", "resolved"]
         }
       ],
       "stdin": "Body text when --body - is given.",
@@ -734,7 +739,7 @@
         },
         {
           "name": "--status",
-          "values": ["proposed", "accepted", "superseded", "resolved", "routed"]
+          "values": ["proposed", "accepted", "superseded", "resolved"]
         },
         {
           "name": "--review",
@@ -814,26 +819,6 @@
       "output": "output/log-resolve.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": ["input/not-found", "policy/invalid-transition"],
-      "writes": [".bdk/changes/<id>/log/"]
-    },
-    {
-      "id": "log-route",
-      "argv": ["log", "route"],
-      "summary": "Route learning entries at close: rule proposal, spec, or nothing, by the T31 thresholds.",
-      "availability": "orchestrator",
-      "mode": "command",
-      "slice": "log",
-      "owner": "T31",
-      "changeScoped": true,
-      "args": [],
-      "flags": [
-        {
-          "name": "--dry-run"
-        }
-      ],
-      "output": "output/log-route.json",
-      "exits": [0, 2, 3, 4, 5],
-      "refusals": [],
       "writes": [".bdk/changes/<id>/log/"]
     },
     {
@@ -1244,7 +1229,7 @@
     {
       "id": "rules-check",
       "argv": ["rules", "check"],
-      "summary": "Check rule files: unique ids, `[PREFIX-n]` format, `source` / `verified` on knowledge rules, tombstones.",
+      "summary": "Check the rule files of the bundle and the project: ids, `[PREFIX-n]` format, frontmatter, `source` / `verified` on knowledge rules, tombstones, `rules.disabled`.",
       "availability": "read",
       "mode": "command",
       "slice": "rules",
@@ -1254,7 +1239,7 @@
         {
           "name": "<path>",
           "required": false,
-          "description": "A rule file or directory; default .bdk/rules/ and the bundle's rules."
+          "description": "A rule file or directory; default .bdk/rules/ and the bundle's pack."
         }
       ],
       "flags": [],
@@ -1266,24 +1251,24 @@
     {
       "id": "rules-show",
       "argv": ["rules", "show"],
-      "summary": "Print one rule by id, or the rules of a ticket.",
+      "summary": "Print one rule by id, tombstones included, or the rules a ticket's active package records.",
       "availability": "agent",
       "mode": "command",
       "slice": "rules",
-      "owner": "T23",
+      "owner": "T31",
       "changeScoped": true,
       "args": [
         {
           "name": "<id>",
           "required": false,
-          "description": "PREFIX-n, e.g. CQ-4. Exactly one of <id> and --ticket."
+          "description": "A rule id, e.g. BDK-CQ-4 or API-2. Exactly one of <id> and --ticket."
         }
       ],
       "flags": [
         {
           "name": "--ticket",
           "value": "<ticket>",
-          "description": "Print the rules for the ticket's role and target."
+          "description": "Print the rules the ticket's active package records, in its order."
         }
       ],
       "output": "output/rules-show.json",
@@ -1292,46 +1277,93 @@
       "writes": [".bdk/changes/<id>/attempts/"]
     },
     {
-      "id": "rules-add",
-      "argv": ["rules", "add"],
-      "summary": "Propose a rule from work in progress: writes a learning entry with applies globs; no rule file changes.",
+      "id": "rules-accept",
+      "argv": ["rules", "accept"],
+      "summary": "Adopt a rule: write `.bdk/rules/<PREFIX>-<n>.md` from the user's decision and regenerate the projection.",
       "availability": "orchestrator",
       "mode": "command",
       "slice": "rules",
       "owner": "T31",
-      "changeScoped": true,
+      "changeScoped": false,
       "args": [
         {
           "name": "<text>",
-          "required": true
+          "required": true,
+          "description": "The rule text, one choice stated as an instruction; - reads stdin."
         }
       ],
       "flags": [
         {
-          "name": "--applies",
-          "value": "<glob>",
-          "description": "Repeatable; default derived from the current task's files.",
-          "repeatable": true
+          "name": "--prefix",
+          "value": "<PREFIX>",
+          "description": "An existing or new project prefix; never BDK."
         },
         {
           "name": "--kind",
-          "values": ["house", "knowledge"]
+          "values": ["house", "knowledge"],
+          "description": "Default house."
         },
         {
-          "name": "--accept",
-          "value": "<entry>",
-          "description": "Accept a routed learning entry into .bdk/rules/ and assign its id (the manual accept of the funnel)."
+          "name": "--severity",
+          "values": ["critical", "high", "medium", "low"],
+          "description": "Default medium."
+        },
+        {
+          "name": "--applies",
+          "value": "<glob>",
+          "description": "Repeatable; absent means global.",
+          "repeatable": true
+        },
+        {
+          "name": "--role",
+          "values": [
+            "implementer",
+            "simplifier",
+            "reviewer",
+            "pr-reviewer",
+            "verifier",
+            "design-verifier",
+            "runner",
+            "scout"
+          ],
+          "description": "Repeatable; absent means every rule-reading role.",
+          "repeatable": true
+        },
+        {
+          "name": "--from",
+          "value": "<ref>",
+          "description": "Repeatable; a qualified entry or ticket id the rule comes from.",
+          "repeatable": true
+        },
+        {
+          "name": "--source",
+          "value": "<text>",
+          "description": "Where the fact comes from; required with --kind knowledge."
+        },
+        {
+          "name": "--verified",
+          "value": "<date>",
+          "description": "YYYY-MM-DD; required with --kind knowledge."
         }
       ],
-      "output": "output/rules-add.json",
+      "output": "output/rules-accept.json",
       "exits": [0, 2, 3, 4, 5],
-      "refusals": ["input/not-found", "policy/rule-format"],
-      "writes": [".bdk/changes/<id>/log/", ".bdk/rules/"]
+      "refusals": [
+        "input/not-found",
+        "policy/rule-format",
+        "policy/duplicate-rule-id",
+        "state/corrupted-index"
+      ],
+      "writes": [
+        ".bdk/rules/",
+        ".claude/rules/bdk-generated.md",
+        ".claude/rules/bdk-generated-scoped.md"
+      ]
     },
     {
       "id": "rules-explain",
       "argv": ["rules", "explain"],
-      "summary": "Which rules apply to a file, and why.",
+      "summary": "Which rules apply to a file for a role, and why.",
       "availability": "read",
       "mode": "command",
       "slice": "rules",
@@ -1346,7 +1378,15 @@
       "flags": [
         {
           "name": "--role",
-          "values": ["worker", "reader", "reviewer", "verifier", "runner"]
+          "values": [
+            "implementer",
+            "simplifier",
+            "reviewer",
+            "pr-reviewer",
+            "verifier",
+            "design-verifier"
+          ],
+          "description": "Default implementer."
         }
       ],
       "output": "output/rules-explain.json",
@@ -1357,7 +1397,7 @@
     {
       "id": "rules-prune",
       "argv": ["rules", "prune"],
-      "summary": "List rules whose globs match no file or that no Change cited in the last N closes.",
+      "summary": "List rules whose globs match no file or that no entry of the last N Changes cites.",
       "availability": "read",
       "mode": "command",
       "slice": "rules",
@@ -1368,18 +1408,18 @@
         {
           "name": "--uncited",
           "value": "<n>",
-          "description": "Changes without a citation; default from policy."
+          "description": "The most recent Changes to look back; default rules.prune.uncited-changes."
         }
       ],
       "output": "output/rules-prune.json",
-      "exits": [0, 3, 5],
-      "refusals": [],
+      "exits": [0, 3, 4, 5],
+      "refusals": ["state/corrupted-index"],
       "writes": []
     },
     {
       "id": "rules-import",
       "argv": ["rules", "import"],
-      "summary": "Import a project's `.claude/rules/*.md` into `.bdk/rules/` with ids and applies from paths.",
+      "summary": "Import a project's `.claude/rules/*.md` into `.bdk/rules/`, one rule per top-level bullet, applies from `paths:`.",
       "availability": "orchestrator",
       "mode": "command",
       "slice": "rules",
@@ -1394,23 +1434,28 @@
       ],
       "flags": [
         {
-          "name": "--dry-run"
+          "name": "--dry-run",
+          "description": "Report what would be written; write nothing."
         },
         {
           "name": "--prefix",
           "value": "<PREFIX>",
-          "description": "Override the prefix derived from the file name."
+          "description": "Override the prefix derived from the file name; one file only."
         }
       ],
       "output": "output/rules-import.json",
       "exits": [0, 2, 3, 5],
       "refusals": ["input/not-found", "policy/rule-format", "policy/duplicate-rule-id"],
-      "writes": [".bdk/rules/"]
+      "writes": [
+        ".bdk/rules/",
+        ".claude/rules/bdk-generated.md",
+        ".claude/rules/bdk-generated-scoped.md"
+      ]
     },
     {
       "id": "rules-stats",
       "argv": ["rules", "stats"],
-      "summary": "Recurrence by fingerprint and citations by rule id, from the index.",
+      "summary": "The audit view: recurring items across Changes, the raw findings and learnings, citations by rule id.",
       "availability": "read",
       "mode": "command",
       "slice": "rules",
@@ -1419,7 +1464,17 @@
       "args": [],
       "flags": [
         {
-          "name": "--all"
+          "name": "--min-changes",
+          "value": "<n>",
+          "description": "Distinct Changes an item must appear in; default rules.audit.min-changes."
+        },
+        {
+          "name": "--entries",
+          "description": "Add the raw learning, finding and blocker entries and attempt findings."
+        },
+        {
+          "name": "--all",
+          "description": "Lift the 100-item limit of entries."
         }
       ],
       "output": "output/rules-stats.json",
@@ -1430,7 +1485,7 @@
     {
       "id": "rules-export",
       "argv": ["rules", "export"],
-      "summary": "Generate the host projection of the rules, `.claude/rules/bdk-generated.md`, with `paths:` from applies.",
+      "summary": "Generate the host projection of the project's rules: `.claude/rules/bdk-generated.md` and `bdk-generated-scoped.md`.",
       "availability": "orchestrator",
       "mode": "command",
       "slice": "rules",
@@ -1449,8 +1504,8 @@
       ],
       "output": "output/rules-export.json",
       "exits": [0, 2, 3, 5],
-      "refusals": ["policy/rule-format"],
-      "writes": [".claude/rules/bdk-generated.md"]
+      "refusals": ["policy/rule-format", "policy/generated-drift"],
+      "writes": [".claude/rules/bdk-generated.md", ".claude/rules/bdk-generated-scoped.md"]
     },
     {
       "id": "export-agents",

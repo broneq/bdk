@@ -8,6 +8,7 @@ export type SuiteName = (typeof SUITES)[number];
 
 const USAGE = [
   "usage: pnpm eval <suite> [--probe] [--runs N] [--budget USD] [--run-cap USD]",
+  "       pnpm eval rules-noop --patches <name,...> [...]   (M2 of those patches only)",
   "       pnpm eval with-without --skill <plugin:name> --tasks <file> [--fixture default|none] [...]",
   "       pnpm eval check",
   "       pnpm eval report <suite>",
@@ -24,6 +25,8 @@ export interface RunOptions {
   readonly skill?: string;
   readonly tasks?: string;
   readonly fixture?: "default" | "none";
+  /** rules-noop only: measure M2 of these patches and skip M1. */
+  readonly patches?: readonly string[];
 }
 
 export type Options =
@@ -104,6 +107,13 @@ export function parseArgs(argv: readonly string[]): Options {
         options = { ...options, fixture: text };
         break;
       }
+      case "--patches": {
+        const names = (value() ?? "").split(",").filter((name) => name !== "");
+        if (names.length === 0) throw new UsageError("--patches needs a comma-separated list");
+        if (suite !== "rules-noop") throw new UsageError("--patches applies to rules-noop only");
+        options = { ...options, patches: names };
+        break;
+      }
       default:
         throw new UsageError(`unknown flag ${flag}`);
     }
@@ -146,14 +156,16 @@ export interface CliDeps {
 }
 
 export async function run(argv: readonly string[], deps: CliDeps): Promise<number> {
-  let options: Options;
   try {
-    options = parseArgs(argv);
+    return await dispatch(parseArgs(argv), deps);
   } catch (error) {
     if (!(error instanceof UsageError)) throw error;
     deps.printError(`${error.message}\n${USAGE}`);
     return 2;
   }
+}
+
+async function dispatch(options: Options, deps: CliDeps): Promise<number> {
   switch (options.command) {
     case "check":
       for (const suite of SUITES) await deps.suites[suite].check();

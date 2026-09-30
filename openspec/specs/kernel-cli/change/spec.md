@@ -545,15 +545,15 @@ Pathspec commit of the Change directory: `chore(bdk): checkpoint <change>`. The 
 
 ### Requirement: bdk change close
 
-Close the Change after the review gate: spec merge, learning routing, archive, PR summary. The kernel SHALL implement the command as this requirement and its output schema specify.
+Close the Change after the review gate: spec merge, archive, PR summary. The kernel SHALL implement the command as this requirement and its output schema specify.
 
 - **Synopsis:** `bdk change close [--dry-run]`
 - **Availability:** `orchestrator`
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
-  - `--dry-run`. Report what would be merged, routed and archived; write nothing.
-- **Behaviour:** The checks run in this order, the first failing one refusing, and nothing is written before all pass: the `close` node is ready, that is `gate:review` is done through a `source: user` or `source: policy` transition (`policy/gate-not-ready`); no ticket of the Change is open (`policy/ticket-open`); progress from git trailers agrees with the attempt records (`state/trailer-mismatch`, `kernel-loops`, Progress from git); no rebase, merge or cherry-pick is in progress (`policy/git-in-progress`); then `spec merge`'s checks in its order (`policy/merge-hash-mismatch`, `policy/spec-conflict`, `policy/spec-invalid`), so a manual spec edit is caught here at the latest. Then, unless `--dry-run`: the merge writes `.bdk/specs/`; the `close` transition entry is written (`source: kernel`); `dispatch/` and `reports/` are pruned to their hash indexes unless `archive.keep-evidence` (`kernel-state`, Pruned index); the Change directory moves to `.bdk/changes/archive/<id>/` (the id already starts with its creation date); the branch marker of the Change is removed, so the branch has no active Change; one pathspec commit, subject `chore(bdk): close <id>` with the trailer `BDK-Change: <id>`, stages `.bdk/specs/`, `.bdk/changes/<id>/` and `.bdk/changes/archive/<id>/` only, so files the user staged are never swept in. A git hook rejecting that commit is `policy/git-hook-failed`; the archive stays in the work tree for the user to commit. The output's `summary` is the PR summary in Markdown, built from the ledger alone: the intent from `change.md`, the live `decision`, `assumption` and `risk` entries, the live `finding` and `blocker` entries as open findings, and the merged capabilities. `gatesByPolicy` lists the gates passed by a `source: policy` transition. `spec.unchanged` is true when the Change has no delta. The `learning` lists stay empty until T31 lands `log route` and the rule projection (`.claude/rules/bdk-generated.md`); T31 fills them at close. `--dry-run` is the form `/bdk:close` runs first to show the user what will happen: the same checks and the same output, with `archivedTo` naming the target path, and nothing written. `--squash` is not part of contract version 3 (user decision, 2026-09-28): a squash merge of the PR folds the checkpoint commits without rewriting the commits that trailers and attempt records name.
-- **Writes:** `.bdk/changes/<id>/log/`, `.bdk/changes/archive/<id>/`, `.bdk/specs/`, `.claude/rules/bdk-generated.md`, `git:commit`
+  - `--dry-run`. Report what would be merged and archived; write nothing.
+- **Behaviour:** The checks run in this order, the first failing one refusing, and nothing is written before all pass: the `close` node is ready, that is `gate:review` is done through a `source: user` or `source: policy` transition (`policy/gate-not-ready`); no ticket of the Change is open (`policy/ticket-open`); progress from git trailers agrees with the attempt records (`state/trailer-mismatch`, `kernel-loops`, Progress from git); no rebase, merge or cherry-pick is in progress (`policy/git-in-progress`); then `spec merge`'s checks in its order (`policy/merge-hash-mismatch`, `policy/spec-conflict`, `policy/spec-invalid`), so a manual spec edit is caught here at the latest. Then, unless `--dry-run`: the merge writes `.bdk/specs/`; the `close` transition entry is written (`source: kernel`); `dispatch/` and `reports/` are pruned to their hash indexes unless `archive.keep-evidence` (`kernel-state`, Pruned index); the Change directory moves to `.bdk/changes/archive/<id>/` (the id already starts with its creation date); the branch marker of the Change is removed, so the branch has no active Change; one pathspec commit, subject `chore(bdk): close <id>` with the trailer `BDK-Change: <id>`, stages `.bdk/specs/`, `.bdk/changes/<id>/` and `.bdk/changes/archive/<id>/` only, so files the user staged are never swept in. A git hook rejecting that commit is `policy/git-hook-failed`; the archive stays in the work tree for the user to commit. The output's `summary` is the PR summary in Markdown, built from the ledger alone: the intent from `change.md`, the live `decision`, `assumption` and `risk` entries, the live `finding` and `blocker` entries as open findings, and the merged capabilities. `gatesByPolicy` lists the gates passed by a `source: policy` transition. `spec.unchanged` is true when the Change has no delta. Close routes no `learning` entry and proposes no rule: lessons and findings stay in the archived ledger, where the audit view `bdk rules stats` reads them (`kernel-cli/rules`; user decision 2026-09-30). `--dry-run` is the form `/bdk:close` runs first to show the user what will happen: the same checks and the same output, with `archivedTo` naming the target path, and nothing written. `--squash` is not part of contract version 3 (user decision, 2026-09-28): a squash merge of the PR folds the checkpoint commits without rewriting the commits that trailers and attempt records name.
+- **Writes:** `.bdk/changes/<id>/log/`, `.bdk/changes/archive/<id>/`, `.bdk/specs/`, `git:commit`
 - **Output:** `schema/cli/output/change-close.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `policy/gate-not-ready`, `policy/ticket-open`, `policy/spec-conflict`, `policy/spec-invalid`, `policy/merge-hash-mismatch`, `policy/git-in-progress`, `policy/git-hook-failed`, `state/trailer-mismatch`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
 - **Example:**
@@ -570,11 +570,6 @@ Close the Change after the review gate: spec merge, learning routing, archive, P
       "merged": [
         "auth/login"
       ]
-    },
-    "learning": {
-      "proposedRules": [],
-      "spec": [],
-      "nothing": []
     },
     "gatesByPolicy": [],
     "summary": "## Passwordless login\n..."
@@ -648,6 +643,11 @@ Close the Change after the review gate: spec merge, learning routing, archive, P
 
 - **WHEN** `bdk change close --dry-run --json` runs on a Change ready to close
 - **THEN** the exit code is 0, the output names the capabilities it would merge and the archive path, and `git status --porcelain` is unchanged
+
+#### Scenario: close proposes no rule
+
+- **WHEN** the Change holds `learning` entries whose fingerprints recur in three other Changes and `change close` runs
+- **THEN** no entry changes status, no file under `.bdk/rules/` or `.claude/rules/` changes, and the output has no `learning` field
 
 ### Requirement: bdk measure
 

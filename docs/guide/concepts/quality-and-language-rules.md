@@ -1,100 +1,110 @@
 # Quality and language rules
 
-!!! warning "Describes BDK v2"
+A rule is a standing instruction the agents that write, review and verify code receive with their task. BDK ships a pack of rules, and your project adds its own. Every rule has an id, every agent report cites the ids that shaped its work, and the kernel decides which rules each agent reads.
 
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+## What a rule is
 
-BDK injects two kinds of standing instruction into the skills and agents that write or review code: **quality rules**, which are language-agnostic principles, and **language rules**, which are per-stack sheets. Both are overridable per project, and both are resolved at injection time rather than baked into any skill.
+A rule is a choice among valid alternatives that BDK or your project made and wants followed, stated as one instruction. It has one of two kinds:
 
-## Why they are separate from skills
+- `house`: the choice itself, for example "write paths go through command handlers; queries never mutate".
+- `knowledge`: a fact about a library, language or tool that a model gets wrong or does not know. It carries `source` (where the fact comes from) and `verified` (the date it was last checked), and stays only while it still corrects the model.
 
-A rule written inside `/bdk:cr` helps exactly one skill and is invisible to `/bdk:create-plan`, to the implementer subagent, and to you. Keeping rules in standalone files means one statement of a principle, one place to override it, and a reviewer and an implementer that are working from the same text.
+Not a rule:
 
-It also enforces portability. A rule file is a bullet list of principles with no tool names and no language-specific code blocks, so `/bdk:cr` stays correct in a Go repo and a React repo alike. Anything that would name `pytest` or `eslint` belongs in `.bdk/settings.json`, not in a rule.
+- a fact about the project's own system ("users and permissions are joined by `user_id`"). It belongs in code, documentation or a living spec;
+- a process lesson ("the negative test was forgotten"). It is a `learning` or `finding` entry, which the audit reads;
+- a principle every competent engineer applies with no alternative being rejected;
+- knowledge the models already have.
 
-## The shipped rule sets
+## Rule files and ids
 
-| Rule set               | Covers                                                               |
-| ---------------------- | -------------------------------------------------------------------- |
-| `code-quality`         | Function-level hygiene                                               |
-| `architecture`         | Layering, boundaries, dependency direction                           |
-| `design-patterns`      | Pattern choice and anti-patterns                                     |
-| `security`             | Trust boundaries, injection, secrets, authorization, least privilege |
-| `engineering-judgment` | Weighing quality and maintainability against implementation effort   |
-| `test-quality`         | What a test should assert and what it should not                     |
+Each rule is one Markdown file whose name is its id. The frontmatter holds the metadata, the body holds the instruction:
 
-They are consumed by `/bdk:cr`, `/bdk:create-plan`, and `/bdk:design`, and preloaded into the agents that need them (see [Agents](agents.md)).
+```markdown
+---
+schema: 1
+id: API-2
+kind: house
+severity: high
+origin: user
+since: 2026-09-30
+applies: ["src/api/**"]
+---
 
-## Four ways to use them
-
-**1. Zero config.** No settings entry at all. BDK's defaults apply as shipped. This is the right choice for most projects.
-
-**2. Extend a default.** Point at a file of project-specific additions:
-
-```json
-{
-  "quality": {
-    "code-quality": "docs/standards/coding.md"
-  }
-}
+Validate every request body against its schema before the handler reads it.
 ```
 
-The BDK default is emitted first, then your file's content is appended.
+| Field                | Meaning                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| `id`                 | `<PREFIX>-<n>`. `BDK-` ids belong to the shipped pack; your project picks its own prefixes. |
+| `kind`               | `house` or `knowledge`.                                                                     |
+| `severity`           | `critical`, `high`, `medium` or `low`.                                                      |
+| `origin`             | `bdk`, `user`, `import`, or the entry or ticket the rule was adopted from.                  |
+| `applies`            | Globs of the files the rule is about. Without it the rule is global.                        |
+| `roles`              | The roles that read the rule, when the default for its prefix does not fit.                 |
+| `source`, `verified` | Required for a `knowledge` rule.                                                            |
+| `removed`            | Makes the file a tombstone: the rule is gone, its id is never reused.                       |
 
-**3. Replace a default.** When your project already has a complete rule set of its own:
+## The shipped pack
 
-```json
-{
-  "quality": {
-    "code-quality": {
-      "path": "docs/standards/coding.md",
-      "mode": "replace"
-    }
-  }
-}
+The pack lives in the installed plugin, one directory per category, and is never copied into your project:
+
+| Directory                     | Prefix                          | Covers                                                               |
+| ----------------------------- | ------------------------------- | -------------------------------------------------------------------- |
+| `rules/code-quality/`         | `BDK-CQ`                        | Function-level hygiene                                               |
+| `rules/architecture/`         | `BDK-ARCH`                      | Layering, boundaries, dependency direction                           |
+| `rules/design-patterns/`      | `BDK-DP`                        | Pattern choice and anti-patterns                                     |
+| `rules/security/`             | `BDK-SEC`                       | Trust boundaries, injection, secrets, authorization, least privilege |
+| `rules/test-quality/`         | `BDK-TQ`                        | What a test should assert and what it should not                     |
+| `rules/engineering-judgment/` | `BDK-EJ`                        | Weighing quality against implementation effort                       |
+| `rules/plan/`                 | `BDK-PL`                        | What a plan must hold to be checkable                                |
+| `rules/languages/<name>/`     | `BDK-JS`, `BDK-TS`, `BDK-REACT` | JavaScript, TypeScript and React                                     |
+
+A rule enters the pack only after a measurement shows that the models need it: a `house` rule that both measured models already follow, with no measurable effect on review, is left out. `rules/README.md` in the plugin states the admission rule.
+
+A language pack is read only when its name is in `languages`:
+
+```yaml
+languages: [typescript, react]
 ```
 
-**4. Point at a document you already have.** Mechanically identical to pattern 2, but worth calling out: the path can be any existing standards doc in the repo. There is nothing to copy and nothing to keep in sync.
+## Your project's rules
 
-A bare string means `extends`. The object form exists only so you can say `replace`. Keys are the rule-set names in the table above; the v3 settings are described in the [README](https://github.com/broneq/bdk/blob/main/README.md#settings).
+Your own rules live in `.bdk/rules/`, one file per rule, committed with the code. The easiest ways to create them:
 
-!!! note
-Prefer `extends`. `replace` discards principles you may not have noticed you were relying on, and a later BDK release that adds a principle to that set will not reach your project.
+- `bdk rules import` turns hand-written `.claude/rules/*.md` files into rule files, one per top-level bullet, with `applies` taken from `paths:`.
+- `bdk rules accept "<text>" --prefix API` writes the next free id of a prefix, for example after an audit of learnings (see [Rules hygiene](../workflows/rules-hygiene.md)).
 
-## Language rules
+To switch a rule off, shipped ones included, list its id:
 
-Language rules are the same idea keyed by stack rather than by rule name. BDK ships per-language principle sheets at `rules/languages/<lang>.md`, currently React, TypeScript, and JavaScript, and further languages follow the same pattern with no code change.
-
-Declare the project's stack:
-
-```json
-{
-  "languages": ["react", "typescript"]
-}
+```yaml
+rules:
+  disabled: [BDK-CQ-4, API-2]
 ```
 
-Override or extend a sheet with the same `extends` and `replace` semantics, under a separate key so a language override cannot be confused with a quality override:
+## Which rules an agent reads
 
-```json
-{
-  "languages": ["react"],
-  "language-rules": {
-    "react": "docs/team-react-conventions.md"
-  }
-}
+When the kernel builds a dispatch package, it selects the rules for the role and the task:
+
+1. A shipped rule is read by the roles its prefix is meant for: the implementer, simplifier and reviewers read `CQ`, `ARCH`, `DP`, `SEC`, `TQ` and the language prefixes; the verifier reads `ARCH`, `TQ`, `EJ` and `PL`; the design verifier reads `ARCH`, `EJ` and `SEC`. A project rule is read by every role that reads rules. `roles` in a rule overrides both.
+2. A rule with `applies` is selected only when one of the task's files matches one of its globs. A target without a file set, such as a design artifact, gets every rule.
+3. Global rules come first, then scoped rules by how specific the matching glob is.
+
+Every applying rule is selected: there is no cap, because a configured rule the agent never sees fails silently. When one role would read more than `rules.warn-above` rules (100 by default), the session start prints a `[BDK] rules warning` line; switch rules off or narrow them with `applies`.
+
+The package records the selected ids. The agent reads exactly those rules with `bdk rules show --ticket <ticket>`, and cites the id of every rule that forced a decision or that a finding breaks. To see what a role would read for a file, run:
+
+```bash
+bdk rules explain src/api/users.ts --role reviewer
 ```
 
-The `languages` array is free-form. An entry only needs a matching sheet, shipped or supplied by you, to inject anything, and a language listed with no matching sheet and no override is silently skipped rather than erroring. That is deliberate: declaring `languages: ["python", "typescript"]` in a mixed repo should describe the repo honestly, not fail because one sheet does not exist yet.
+## Checking the rules
 
-Language rules reach code-writing and code-reviewing agents through the `bdk-rules-languages` meta-skill, and reach skills such as `/bdk:create-plan` as `Language rules: <language>` sections of their `bdk ctx skill` context.
+`bdk rules check` validates every rule file, shipped and project, and refuses a duplicate id. `bdk doctor` reports hand-written `.claude/rules/` files without an id, invalid rule files, and a generated projection that is out of date.
 
-## When an override is misconfigured
-
-Rule resolution runs inside a dynamic block in a skill body, which captures standard output only and ignores exit status. A resolver that failed quietly would render as silence, and a missing rule file would look exactly like a rule set that is legitimately empty.
-
-So `bdk ctx skill` prints a problem into the skill's context itself, as a `BDK STOP:` line with what to do instead, and the skill stops there. An unknown settings key or an invalid value shows up as a visible stop, not as a review that silently ran with no standards.
+`bdk rules export --claude` writes `.claude/rules/bdk-generated.md` and `.claude/rules/bdk-generated-scoped.md` from your project rules, so an interactive Claude Code session sees them too. The files are generated: `--check` fails when someone edited them by hand.
 
 ## Related
 
+- [Rules hygiene](../workflows/rules-hygiene.md) for the audit that turns lessons into rules.
 - [The shared foundation](shared-foundation.md) for how rules reach subagents.
-- The [README](https://github.com/broneq/bdk/blob/main/README.md#settings) for the v3 settings.

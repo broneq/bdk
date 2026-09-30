@@ -453,6 +453,7 @@ function ticketed(dir: string, closed = false, role = "verifier"): string {
       "kernel-version": "3.0.0",
       "template-hash": `sha256:${"0".repeat(64)}`,
       report,
+      rules: [],
     },
     body: "",
   });

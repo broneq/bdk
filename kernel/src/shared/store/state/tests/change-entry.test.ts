@@ -152,11 +152,11 @@ describe("entry", () => {
     expect(issues(entry, without(example.learning, "fingerprint"))).toStrictEqual(["fingerprint"]);
   });
 
-  it("requires routed-to on a routed learning", () => {
-    const routed = { ...example.learning, status: "routed" };
-    expect(issues(entry, routed)).toStrictEqual(["routed-to"]);
-    expect(issues(entry, { ...routed, "routed-to": "rule" })).toStrictEqual([]);
-    expect(issues(entry, { ...routed, "routed-to": "backlog" })).toStrictEqual(["routed-to"]);
+  it("rejects the routed status and a routed-to field", () => {
+    expect(issues(entry, { ...example.learning, status: "routed" })).toStrictEqual(["status"]);
+    expect(issues(entry, { ...example.learning, "routed-to": "rule" })).toStrictEqual([
+      "routed-to",
+    ]);
   });
 
   it("requires report on a report entry", () => {

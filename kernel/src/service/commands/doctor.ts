@@ -1,3 +1,4 @@
+import { globalDir } from "../../shared/config/index.ts";
 import type { Handler } from "../../shared/registry/index.ts";
 import { renderDoctor } from "../render/doctor.ts";
 import { doctor } from "../use-cases/doctor.ts";
@@ -11,6 +12,7 @@ export function doctorCommand(deps: ServiceDeps): Handler {
       nodeVersion: context.runtime.nodeVersion,
       cwd: context.cwd,
       workTree: context.workTree ?? context.cwd,
+      globalDir: globalDir(context.runtime),
       fix: context.flags["--fix"] === true,
     });
     return { data, text: renderDoctor(data) };

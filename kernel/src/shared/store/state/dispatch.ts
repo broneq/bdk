@@ -5,6 +5,7 @@ import * as z from "zod";
 
 import { hash, relativePath, role, scope, ticketId, timestamp } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
+import { RULE_ID } from "../../vocabulary/index.ts";
 
 const VERSION = 1;
 
@@ -27,6 +28,9 @@ export const dispatchKind = {
       "kernel-version": z.string().min(1),
       "template-hash": hash,
       report: relativePath.meta({ description: "Where the role's report is written." }),
+      rules: z.array(z.string().regex(RULE_ID)).meta({
+        description: "The rules selected for the ticket, in order (T31); may be empty.",
+      }),
     })
     .meta({ title: "Dispatch package" }),
   migrations: [],

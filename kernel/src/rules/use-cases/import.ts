@@ -1,0 +1,158 @@
+// `bdk rules import` (`kernel-cli/rules`; design D-8 of v3-t31): a project's
+// hand-written `.claude/rules/*.md` into `.bdk/rules/`, one rule per
+// top-level bullet, `applies` from `paths:`, global without it. The import
+// never judges content; the user edits or tombstones what is not a rule.
+import { join, relative, resolve, sep } from "node:path";
+import { parse } from "yaml";
+
+import { refuse } from "../../shared/refusal/index.ts";
+import type { Refusal } from "../../shared/refusal/index.ts";
+import { splitFrontmatter } from "../../shared/store/index.ts";
+import type { Store } from "../../shared/store/index.ts";
+import { prefixFromName, prefixProblem, ruleTexts } from "../domain/import.ts";
+import { isProjection } from "../domain/projection.ts";
+import { prefixOf } from "../domain/rule.ts";
+import type { ImportedFile, ImportReport } from "../domain/report.ts";
+import type { RulesDeps } from "./deps.ts";
+import { regenerate } from "./export.ts";
+import { markdownFiles } from "./health.ts";
+import { loadContext } from "./settings.ts";
+import type { RuleDraft } from "./write.ts";
+import {
+  draftProblem,
+  duplicateRefusal,
+  numberer,
+  ruleDraft,
+  ruleFormat,
+  writeRule,
+} from "./write.ts";
+
+export interface ImportInput {
+  readonly cwd: string;
+  /** A directory or one file; default `.claude/rules/`. */
+  readonly dir?: string | undefined;
+  readonly dryRun: boolean;
+  readonly prefix?: string | undefined;
+}
+
+export function importRules(
+  deps: RulesDeps,
+  projectRoot: string,
+  globalDir: string,
+  input: ImportInput,
+): ImportReport | Refusal {
+  const target =
+    input.dir === undefined ? join(projectRoot, ".claude/rules") : resolve(input.cwd, input.dir);
+  if (!deps.store.exists(target)) {
+    return refuse("input/not-found", `${input.dir ?? ".claude/rules/"} does not exist`, [
+      "bdk rules import <dir>",
+    ]);
+  }
+  const files = deps.store.isDirectory(target) ? markdownFiles(deps.store, target) : [target];
+  if (input.prefix !== undefined) {
+    const problem = prefixProblem(input.prefix);
+    if (problem !== undefined)
+      return ruleFormat(problem, "pick a project prefix, e.g. --prefix API");
+    if (files.length > 1) {
+      return refuse(
+        "input/invalid-argument",
+        `--prefix applies to one file; ${input.dir ?? ".claude/rules/"} holds ${String(files.length)}`,
+        ["bdk rules import <file> --prefix <PREFIX>", "bdk rules import"],
+      );
+    }
+  }
+  const context = loadContext(deps, projectRoot, globalDir);
+  if ("refused" in context) return context;
+  const next = numberer(deps.store, projectRoot, context);
+  const since = deps.clock.now().slice(0, 10);
+  const display = (path: string): string => relative(projectRoot, path).split(sep).join("/");
+
+  const imported: ImportedFile[] = [];
+  const drafts: RuleDraft[] = [];
+  const skipped: { from: string; why: string }[] = [];
+  for (const path of files) {
+    const from = display(path);
+    const name = path.slice(path.lastIndexOf("/") + 1);
+    const read = readSource(deps.store, path, name);
+    if (typeof read === "string") {
+      skipped.push({ from, why: read });
+      continue;
+    }
+    const prefix = input.prefix ?? prefixFromName(name);
+    if (prefix === undefined || prefixProblem(prefix) !== undefined) {
+      skipped.push({ from, why: `no project prefix from ${name}; rerun with --prefix` });
+      continue;
+    }
+    const fields = {
+      kind: "house",
+      applies: read.applies,
+      severity: "medium",
+      origin: "import",
+      since,
+    };
+    // The frontmatter is the same for every rule of the file: check it before numbers are taken.
+    const invalid = draftProblem(ruleDraft(`${prefix}-1`, "probe", fields));
+    if (invalid !== undefined) {
+      skipped.push({ from, why: invalid });
+      continue;
+    }
+    const own = read.texts.map((text) =>
+      ruleDraft(`${prefix}-${String(next(prefix))}`, text, fields),
+    );
+    drafts.push(...own);
+    imported.push({
+      from,
+      rules: own.map((draft) => draft.id),
+      ...(read.applies === undefined ? {} : { applies: read.applies }),
+    });
+  }
+  const duplicate = duplicateRefusal(context, [
+    ...new Set(drafts.map((draft) => prefixOf(draft.id))),
+  ]);
+  if (duplicate !== undefined) return duplicate;
+
+  let projection: string[] = [];
+  if (!input.dryRun && drafts.length > 0) {
+    for (const draft of drafts) writeRule(deps.store, projectRoot, draft);
+    const after = loadContext(deps, projectRoot, globalDir);
+    if ("refused" in after) return after;
+    projection = regenerate(deps.store, projectRoot, after);
+  }
+  return {
+    imported,
+    skipped,
+    dryRun: input.dryRun,
+    projection,
+  };
+}
+
+interface Source {
+  readonly texts: string[];
+  readonly applies?: string[];
+}
+
+/** The rule texts and `paths:` of a file, or why it is skipped. */
+function readSource(store: Store, path: string, name: string): Source | string {
+  if (isProjection(name)) return "generated by rules export";
+  const split = splitFrontmatter(store.read(path) ?? "");
+  let meta: Record<string, unknown> = {};
+  if (split.frontmatter !== undefined) {
+    try {
+      const parsed: unknown = parse(split.frontmatter);
+      if (typeof parsed === "object" && parsed !== null) meta = parsed as Record<string, unknown>;
+    } catch (error) {
+      return `unreadable frontmatter: ${(error as Error).message.split("\n")[0] ?? ""}`;
+    }
+  }
+  if (meta.id !== undefined) return "already carries an id";
+  const texts = ruleTexts(split.body);
+  if (texts.length === 0) return "empty";
+  const paths = meta.paths;
+  const applies =
+    typeof paths === "string"
+      ? [paths]
+      : Array.isArray(paths)
+        ? paths.filter((glob): glob is string => typeof glob === "string")
+        : undefined;
+  return applies === undefined || applies.length === 0 ? { texts } : { texts, applies };
+}

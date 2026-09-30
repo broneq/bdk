@@ -18,30 +18,30 @@ const registry = createConfigRegistry({
   modules: [],
   prompts: [
     definePromptKey({
-      key: "rules/security",
+      key: "guides/security",
       consumer: "ctx",
       owner: "T12",
-      defaultFile: "rules/security.md",
+      defaultFile: "guides/security.md",
     }),
     definePromptKey({
-      key: "rules/architecture",
+      key: "guides/architecture",
       consumer: "ctx",
       owner: "T12",
-      defaultFile: "rules/architecture.md",
+      defaultFile: "guides/architecture.md",
     }),
     definePromptKey({
-      key: "rules/languages/*",
+      key: "guides/languages/*",
       consumer: "ctx",
       owner: "T12",
-      defaultFile: "rules/languages/{name}.md",
+      defaultFile: "guides/languages/{name}.md",
     }),
   ],
 });
 
 function resolve(files: Record<string, string>) {
   const store = memoryStore({
-    [`${PLUGIN}/rules/security.md`]: "- default security\n",
-    [`${PLUGIN}/rules/languages/go.md`]: "- default go\n",
+    [`${PLUGIN}/guides/security.md`]: "- default security\n",
+    [`${PLUGIN}/guides/languages/go.md`]: "- default go\n",
     ...files,
   });
   const layers = readLayers(store, { globalDir: GLOBAL, projectRoot: PROJECT });
@@ -59,33 +59,34 @@ function resolve(files: Record<string, string>) {
 describe("resolvePrompts", () => {
   it("starts from the plugin default and appends extends contributions per layer", () => {
     const { values, problems } = resolve({
-      [`${GLOBAL}/prompts/rules/security.md`]: "- mine\n",
-      [`${PROJECT}/.bdk/prompts/rules/security.md`]: "---\nmode: extends\n---\n- team\n",
+      [`${GLOBAL}/prompts/guides/security.md`]: "- mine\n",
+      [`${PROJECT}/.bdk/prompts/guides/security.md`]: "---\nmode: extends\n---\n- team\n",
     });
     expect(problems).toStrictEqual([]);
-    expect(values.get("rules/security")).toStrictEqual({
+    expect(values.get("guides/security")).toStrictEqual({
       mode: "extends",
       files: [
-        { layer: "default", path: `${PLUGIN}/rules/security.md` },
-        { layer: "global", path: `${GLOBAL}/prompts/rules/security.md` },
-        { layer: "project", path: `${PROJECT}/.bdk/prompts/rules/security.md` },
+        { layer: "default", path: `${PLUGIN}/guides/security.md` },
+        { layer: "global", path: `${GLOBAL}/prompts/guides/security.md` },
+        { layer: "project", path: `${PROJECT}/.bdk/prompts/guides/security.md` },
       ],
     });
   });
 
   it("lets a replace contribution discard everything below it", () => {
     const { values } = resolve({
-      [`${PROJECT}/.bdk/prompts/rules/security.md`]: "---\nmode: extends\n---\n- team\n",
-      [`${PROJECT}/.bdk/prompts.local/rules/security.md`]: "---\nmode: replace\n---\n- only mine\n",
+      [`${PROJECT}/.bdk/prompts/guides/security.md`]: "---\nmode: extends\n---\n- team\n",
+      [`${PROJECT}/.bdk/prompts.local/guides/security.md`]:
+        "---\nmode: replace\n---\n- only mine\n",
     });
-    expect(values.get("rules/security")).toStrictEqual({
+    expect(values.get("guides/security")).toStrictEqual({
       mode: "replace",
-      files: [{ layer: "local", path: `${PROJECT}/.bdk/prompts.local/rules/security.md` }],
+      files: [{ layer: "local", path: `${PROJECT}/.bdk/prompts.local/guides/security.md` }],
     });
   });
 
   it("lists every literal key, with an empty file list when nothing contributes", () => {
-    expect(resolve({}).values.get("rules/architecture")).toStrictEqual({
+    expect(resolve({}).values.get("guides/architecture")).toStrictEqual({
       mode: "extends",
       files: [],
     });
@@ -94,13 +95,13 @@ describe("resolvePrompts", () => {
   it("maps a file from anywhere with prompts.files, winning over the directory", () => {
     const { values, problems } = resolve({
       [`${PROJECT}/.bdk/settings.yaml`]:
-        "prompts:\n  files:\n    rules/security: docs/security-rules.md\n",
+        "prompts:\n  files:\n    guides/security: docs/security-rules.md\n",
       [`${PROJECT}/docs/security-rules.md`]: "- from docs\n",
-      [`${PROJECT}/.bdk/prompts/rules/security.md`]: "- ignored\n",
+      [`${PROJECT}/.bdk/prompts/guides/security.md`]: "- ignored\n",
     });
     expect(problems).toStrictEqual([]);
-    expect(values.get("rules/security")?.files).toStrictEqual([
-      { layer: "default", path: `${PLUGIN}/rules/security.md` },
+    expect(values.get("guides/security")?.files).toStrictEqual([
+      { layer: "default", path: `${PLUGIN}/guides/security.md` },
       { layer: "project", path: `${PROJECT}/docs/security-rules.md` },
     ]);
   });
@@ -108,10 +109,10 @@ describe("resolvePrompts", () => {
   it("takes mode and applies from the object form", () => {
     const { values } = resolve({
       [`${PROJECT}/.bdk/settings.yaml`]:
-        "prompts:\n  files:\n    rules/security: {path: sec.md, mode: replace, applies: ['src/**']}\n",
+        "prompts:\n  files:\n    guides/security: {path: sec.md, mode: replace, applies: ['src/**']}\n",
       [`${PROJECT}/sec.md`]: "- x\n",
     });
-    expect(values.get("rules/security")).toStrictEqual({
+    expect(values.get("guides/security")).toStrictEqual({
       mode: "replace",
       files: [{ layer: "project", path: `${PROJECT}/sec.md`, applies: ["src/**"] }],
     });
@@ -120,13 +121,13 @@ describe("resolvePrompts", () => {
   it("refuses a frontmatter that contradicts the YAML entry", () => {
     const { problems } = resolve({
       [`${PROJECT}/.bdk/settings.yaml`]:
-        "prompts:\n  files:\n    rules/security: {path: sec.md, mode: replace}\n",
+        "prompts:\n  files:\n    guides/security: {path: sec.md, mode: replace}\n",
       [`${PROJECT}/sec.md`]: "---\nmode: extends\n---\n- x\n",
     });
     expect(problems).toMatchObject([
       {
         rule: "policy/config-invalid",
-        key: "prompts.rules/security",
+        key: "prompts.guides/security",
         layer: "project",
         path: `${PROJECT}/sec.md`,
       },
@@ -135,58 +136,60 @@ describe("resolvePrompts", () => {
 
   it("refuses a mapped file that does not exist", () => {
     const { problems } = resolve({
-      [`${PROJECT}/.bdk/settings.yaml`]: "prompts:\n  files:\n    rules/security: nope.md\n",
+      [`${PROJECT}/.bdk/settings.yaml`]: "prompts:\n  files:\n    guides/security: nope.md\n",
     });
     expect(problems).toMatchObject([
-      { rule: "policy/config-invalid", key: "prompts.files.rules/security", layer: "project" },
+      { rule: "policy/config-invalid", key: "prompts.files.guides/security", layer: "project" },
     ]);
   });
 
   it("reads each layer's own prompts.dir and never inherits it", () => {
     const { values } = resolve({
       [`${PROJECT}/.bdk/settings.yaml`]: "prompts:\n  dir: docs/bdk-prompts\n",
-      [`${PROJECT}/docs/bdk-prompts/rules/architecture.md`]: "- team\n",
-      [`${PROJECT}/.bdk/prompts/rules/architecture.md`]: "- not read\n",
-      [`${PROJECT}/.bdk/prompts.local/rules/architecture.md`]: "- local\n",
+      [`${PROJECT}/docs/bdk-prompts/guides/architecture.md`]: "- team\n",
+      [`${PROJECT}/.bdk/prompts/guides/architecture.md`]: "- not read\n",
+      [`${PROJECT}/.bdk/prompts.local/guides/architecture.md`]: "- local\n",
     });
-    expect(values.get("rules/architecture")?.files).toStrictEqual([
-      { layer: "project", path: `${PROJECT}/docs/bdk-prompts/rules/architecture.md` },
-      { layer: "local", path: `${PROJECT}/.bdk/prompts.local/rules/architecture.md` },
+    expect(values.get("guides/architecture")?.files).toStrictEqual([
+      { layer: "project", path: `${PROJECT}/docs/bdk-prompts/guides/architecture.md` },
+      { layer: "local", path: `${PROJECT}/.bdk/prompts.local/guides/architecture.md` },
     ]);
   });
 
   it("resolves a relative global prompts.dir against the global directory", () => {
     const { values } = resolve({
       [`${GLOBAL}/settings.yaml`]: "prompts:\n  dir: my-prompts\n",
-      [`${GLOBAL}/my-prompts/rules/architecture.md`]: "- mine\n",
+      [`${GLOBAL}/my-prompts/guides/architecture.md`]: "- mine\n",
     });
-    expect(values.get("rules/architecture")?.files).toStrictEqual([
-      { layer: "global", path: `${GLOBAL}/my-prompts/rules/architecture.md` },
+    expect(values.get("guides/architecture")?.files).toStrictEqual([
+      { layer: "global", path: `${GLOBAL}/my-prompts/guides/architecture.md` },
     ]);
   });
 
   it("resolves pattern keys from layer files and plugin defaults", () => {
-    const { values } = resolve({ [`${PROJECT}/.bdk/prompts/rules/languages/elixir.md`]: "- ex\n" });
-    expect(values.get("rules/languages/go")?.files).toStrictEqual([
-      { layer: "default", path: `${PLUGIN}/rules/languages/go.md` },
+    const { values } = resolve({
+      [`${PROJECT}/.bdk/prompts/guides/languages/elixir.md`]: "- ex\n",
+    });
+    expect(values.get("guides/languages/go")?.files).toStrictEqual([
+      { layer: "default", path: `${PLUGIN}/guides/languages/go.md` },
     ]);
-    expect(values.get("rules/languages/elixir")?.files).toStrictEqual([
-      { layer: "project", path: `${PROJECT}/.bdk/prompts/rules/languages/elixir.md` },
+    expect(values.get("guides/languages/elixir")?.files).toStrictEqual([
+      { layer: "project", path: `${PROJECT}/.bdk/prompts/guides/languages/elixir.md` },
     ]);
   });
 
   it("refuses an unknown prompt file naming key and layer, and ignores non-Markdown files", () => {
     const { problems } = resolve({
-      [`${PROJECT}/.bdk/prompts/rules/secrity.md`]: "- typo\n",
+      [`${PROJECT}/.bdk/prompts/guides/secrity.md`]: "- typo\n",
       [`${PROJECT}/.bdk/prompts/README.txt`]: "notes\n",
     });
     expect(problems).toStrictEqual([
       {
         rule: "policy/unknown-config-key",
-        key: "prompts.rules/secrity",
+        key: "prompts.guides/secrity",
         layer: "project",
-        path: `${PROJECT}/.bdk/prompts/rules/secrity.md`,
-        message: "no prompt key rules/secrity is registered; did you mean rules/security?",
+        path: `${PROJECT}/.bdk/prompts/guides/secrity.md`,
+        message: "no prompt key guides/secrity is registered; did you mean guides/security?",
       },
     ]);
   });
@@ -198,9 +201,9 @@ describe("resolvePrompts", () => {
     ["an unknown frontmatter field", "---\nmood: happy\n---\n"],
     ["invalid YAML", "---\nmode: [\n---\n"],
   ])("refuses %s in the frontmatter", (_, text) => {
-    const { problems } = resolve({ [`${PROJECT}/.bdk/prompts/rules/security.md`]: text });
+    const { problems } = resolve({ [`${PROJECT}/.bdk/prompts/guides/security.md`]: text });
     expect(problems).toMatchObject([
-      { rule: "policy/config-invalid", key: "prompts.rules/security", layer: "project" },
+      { rule: "policy/config-invalid", key: "prompts.guides/security", layer: "project" },
     ]);
   });
 });
@@ -208,10 +211,10 @@ describe("resolvePrompts", () => {
 describe("promptContent", () => {
   it("reads the bodies on demand, without frontmatter, separated by a blank line", () => {
     const { values, store } = resolve({
-      [`${PROJECT}/.bdk/prompts/rules/security.md`]:
+      [`${PROJECT}/.bdk/prompts/guides/security.md`]:
         "---\nmode: extends\napplies: ['src/**']\n---\n- team\n",
     });
-    const value = values.get("rules/security");
+    const value = values.get("guides/security");
     expect(value).toBeDefined();
     if (value !== undefined) {
       expect(promptContent(store, value)).toBe("- default security\n\n- team\n");
@@ -220,7 +223,7 @@ describe("promptContent", () => {
 
   it("reads only layer files while resolving, never the plugin defaults", () => {
     const reads: string[] = [];
-    const base = memoryStore({ [`${PROJECT}/.bdk/prompts/rules/security.md`]: "- team\n" });
+    const base = memoryStore({ [`${PROJECT}/.bdk/prompts/guides/security.md`]: "- team\n" });
     const store: Store = { ...base, read: (path) => (reads.push(path), base.read(path)) };
     const layers = readLayers(store, { globalDir: GLOBAL, projectRoot: PROJECT });
     resolvePrompts({
@@ -232,7 +235,7 @@ describe("promptContent", () => {
       pluginRoot: PLUGIN,
     });
     expect(reads.filter((path) => path.endsWith(".md"))).toStrictEqual([
-      `${PROJECT}/.bdk/prompts/rules/security.md`,
+      `${PROJECT}/.bdk/prompts/guides/security.md`,
     ]);
   });
 });

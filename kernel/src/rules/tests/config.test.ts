@@ -7,6 +7,8 @@ import {
   validateLayers,
 } from "../../shared/config/index.ts";
 import type { Layer } from "../../shared/config/index.ts";
+import { readLayers, resolvePrompts } from "../../shared/config/index.ts";
+import { memoryStore } from "../../shared/store/index.ts";
 import { rulesConfig } from "../index.ts";
 
 const registry = createConfigRegistry({
@@ -24,8 +26,17 @@ function keysOf(values: Record<string, unknown>): [string, string][] {
 }
 
 describe("defaults", () => {
-  it("resolves languages to an empty list", () => {
-    expect(check({}).value).toStrictEqual({ languages: [], prompts: {} });
+  it("resolves languages and the rules keys to their defaults", () => {
+    expect(check({}).value).toStrictEqual({
+      languages: [],
+      rules: {
+        "warn-above": 100,
+        disabled: [],
+        audit: { "min-changes": 3 },
+        prune: { "uncited-changes": 20 },
+      },
+      prompts: {},
+    });
   });
 });
 
@@ -43,21 +54,75 @@ describe("languages", () => {
   });
 });
 
+describe("rules", () => {
+  it("accepts the four keys", () => {
+    expect(
+      keysOf({
+        rules: {
+          "warn-above": 12,
+          disabled: ["BDK-SEC-3", "API-2"],
+          audit: { "min-changes": 2 },
+          prune: { "uncited-changes": 40 },
+        },
+      }),
+    ).toStrictEqual([]);
+  });
+
+  it.each([
+    ["warn-above below 1", { "warn-above": 0 }, "rules.warn-above"],
+    ["a fractional warn-above", { "warn-above": 2.5 }, "rules.warn-above"],
+    ["a disabled id twice", { disabled: ["BDK-SEC-3", "BDK-SEC-3"] }, "rules.disabled"],
+    ["a disabled value that is no id", { disabled: ["security"] }, "rules.disabled.0"],
+    ["min-changes below 1", { audit: { "min-changes": 0 } }, "rules.audit.min-changes"],
+  ])("refuses %s", (_, rules, key) => {
+    expect(keysOf({ rules })).toStrictEqual([[key, "policy/config-invalid"]]);
+  });
+
+  it.each(["propose-when", "max-learnings-per-change"])(
+    "refuses the dropped funnel key rules.%s",
+    (key) => {
+      expect(keysOf({ rules: { [key]: 1 } })).toStrictEqual([
+        [`rules.${key}`, "policy/unknown-config-key"],
+      ]);
+    },
+  );
+});
+
 describe("prompt keys", () => {
-  it("declares the rule categories and the language pattern with plugin defaults", () => {
-    expect(rulesConfig.prompts.map((prompt) => [prompt.key, prompt.defaultFile])).toStrictEqual([
-      ["rules/code-quality", "rules/code-quality.md"],
-      ["rules/architecture", "rules/architecture.md"],
-      ["rules/design-patterns", "rules/design-patterns.md"],
-      ["rules/security", "rules/security.md"],
-      ["rules/engineering-judgment", "rules/engineering-judgment.md"],
-      ["rules/test-quality", "rules/test-quality.md"],
-      ["rules/languages/*", "rules/languages/{name}.md"],
-    ]);
+  it("declares none: rules are files, not prompt values (T31)", () => {
+    expect(rulesConfig.prompts).toStrictEqual([]);
   });
 
   it("names rules as the consumer of every key it declares (T23-D30)", () => {
-    const consumers = [...rulesConfig.modules, ...rulesConfig.prompts].map((item) => item.consumer);
+    const consumers = rulesConfig.modules.map((item) => item.consumer);
     expect(new Set(consumers)).toStrictEqual(new Set(["rules"]));
+  });
+});
+
+describe("retired rule prompt files", () => {
+  const retired = /\.bdk\/rules\/.*rules\.disabled/;
+
+  it("refuses a rules prompt file, naming where rules live now", () => {
+    const store = memoryStore({ "/repo/.bdk/prompts/rules/security.md": "- Ours.\n" });
+    const { problems } = resolvePrompts({
+      store,
+      registry,
+      layers: readLayers(store, { globalDir: "/home/.config/bdk", projectRoot: "/repo" }),
+      globalDir: "/home/.config/bdk",
+      projectRoot: "/repo",
+      pluginRoot: "/plugin",
+    });
+    expect(problems.map((problem) => [problem.key, problem.rule])).toStrictEqual([
+      ["prompts.rules/security", "policy/unknown-config-key"],
+    ]);
+    expect(problems[0]?.message).toMatch(retired);
+  });
+
+  it("refuses a prompts.files entry for a rule set the same way", () => {
+    const problems = check({ prompts: { files: { "rules/languages/go": "go.md" } } }).problems;
+    expect(problems.map((problem) => [problem.key, problem.rule])).toStrictEqual([
+      ["prompts.files.rules/languages/go", "policy/unknown-config-key"],
+    ]);
+    expect(problems[0]?.message).toMatch(retired);
   });
 });

@@ -55,8 +55,19 @@ export function validatorFor(file: string): ValidateFunction {
 }
 
 /** The required top-level fields of a schema, following `allOf` and file `$ref`s. */
-export function requiredOf(file: string): string[] {
+/**
+ * The required fields of a schema file. A union (`anyOf`) requires the fields
+ * of the branch `value` fills: the first branch whose required fields it holds.
+ */
+export function requiredOf(file: string, value?: unknown): string[] {
   const schema = readSchema(file);
+  if (Array.isArray(schema.anyOf)) {
+    const held = value !== null && typeof value === "object" ? Object.keys(value) : [];
+    const branch = (schema.anyOf as Record<string, unknown>[])
+      .map((part) => (Array.isArray(part.required) ? (part.required as string[]) : []))
+      .find((required) => required.length > 0 && required.every((field) => held.includes(field)));
+    return branch ?? [];
+  }
   const own = Array.isArray(schema.required) ? (schema.required as string[]) : [];
   const parts = Array.isArray(schema.allOf) ? (schema.allOf as Record<string, unknown>[]) : [];
   const inherited = parts.flatMap((part) => {

@@ -7,10 +7,63 @@
   "properties": {
     "languages": {
       "default": [],
-      "description": "Languages and frameworks of the project; a name gets content from the rules/languages/<name> prompt value.",
+      "description": "Languages and frameworks of the project; a name selects the bundle's pack rules/languages/<name>/.",
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
+    },
+    "rules": {
+      "description": "Rule selection per dispatch package and the audit view of rules stats.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "warn-above": {
+          "default": 100,
+          "description": "Rules one role may read before hooks session-start warns; no cap, every applying rule reaches the agent.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "disabled": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$"
+          },
+          "uniqueItems": true,
+          "description": "Rule ids switched off, BDK ones included."
+        },
+        "audit": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "min-changes": {
+              "default": 3,
+              "description": "Distinct Changes an item must appear in to be listed as recurring.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "prune": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "uncited-changes": {
+              "default": 20,
+              "description": "Recent Changes rules prune looks back for citations.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     },
     "tools": {
       "description": "The commands the project runs, one entry per command, merged by id.",

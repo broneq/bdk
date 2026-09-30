@@ -59,10 +59,30 @@ function reviews(
 }
 
 const bullets: Bullet[] = [
-  { id: "security.01.aaaaaaaa", file: "rules/security.md", ordinal: 1, text: "**Trust.** A | B." },
-  { id: "security.02.bbbbbbbb", file: "rules/security.md", ordinal: 2, text: "**Inject.** No." },
-  { id: "security.03.cccccccc", file: "rules/security.md", ordinal: 3, text: "**Encode.** Yes." },
-  { id: "security.04.dddddddd", file: "rules/security.md", ordinal: 4, text: "**Note.** Meta." },
+  {
+    id: "security.01.aaaaaaaa",
+    rule: "BDK-SEC-1",
+    file: "rules/security/BDK-SEC-1.md",
+    text: "**Trust.** A | B.",
+  },
+  {
+    id: "security.02.bbbbbbbb",
+    rule: "BDK-SEC-2",
+    file: "rules/security/BDK-SEC-2.md",
+    text: "**Inject.** No.",
+  },
+  {
+    id: "security.03.cccccccc",
+    rule: "BDK-SEC-3",
+    file: "rules/security/BDK-SEC-3.md",
+    text: "**Encode.** Yes.",
+  },
+  {
+    id: "security.04.dddddddd",
+    rule: "BDK-SEC-4",
+    file: "rules/security/BDK-SEC-4.md",
+    text: "**Note.** Meta.",
+  },
 ];
 
 const violations: Violations = {

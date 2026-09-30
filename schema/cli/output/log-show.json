@@ -31,7 +31,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 120 },
         "status": {
           "type": "string",
-          "enum": ["proposed", "accepted", "superseded", "resolved", "routed"],
+          "enum": ["proposed", "accepted", "superseded", "resolved"],
           "description": "Derived: `superseded` when another entry names this one in `supersedes`."
         },
         "source": {
@@ -62,7 +62,6 @@
         "profile": { "type": "string" },
         "evidence": { "type": "array", "items": { "type": "string" } },
         "applies": { "type": "array", "items": { "type": "string" } },
-        "routedTo": { "type": "string" },
         "report": { "type": "string" },
         "to": { "type": "string" },
         "gate": { "type": "string" },

@@ -39,7 +39,6 @@ export interface EntryView {
   readonly profile?: string | undefined;
   readonly evidence?: readonly string[] | undefined;
   readonly applies?: readonly string[] | undefined;
-  readonly routedTo?: string | undefined;
   readonly report?: string | undefined;
   readonly to?: string | undefined;
   readonly gate?: string | undefined;
@@ -77,7 +76,6 @@ const OPTIONAL: readonly (readonly [string, keyof EntryView])[] = [
   ["profile", "profile"],
   ["evidence", "evidence"],
   ["applies", "applies"],
-  ["routed-to", "routedTo"],
   ["report", "report"],
   ["to", "to"],
   ["gate", "gate"],

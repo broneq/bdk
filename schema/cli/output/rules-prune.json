@@ -2,42 +2,32 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-prune.json",
   "title": "bdk rules prune --json",
-  "description": "List rules whose globs match no file or that no Change cited in the last N closes.",
+  "description": "List rules whose globs match no file or that no entry of the last N Changes cites.",
   "type": "object",
-  "allOf": [
-    {
-      "$ref": "../common/list-page.json"
-    },
-    {
-      "type": "object",
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["id", "reason"],
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "reason": {
-                "enum": ["no-match", "uncited"]
-              },
-              "detail": {
-                "type": "string"
-              }
-            }
-          }
-        }
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$" },
+          "reason": { "type": "string", "enum": ["no-match", "uncited"] },
+          "detail": { "type": "string", "minLength": 1 }
+        },
+        "required": ["id", "reason", "detail"],
+        "additionalProperties": false
       }
-    }
-  ],
-  "unevaluatedProperties": false,
+    },
+    "total": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "truncated": { "type": "boolean" }
+  },
+  "required": ["items", "total", "truncated"],
+  "additionalProperties": false,
   "examples": [
     {
       "items": [
         {
-          "id": "DP-3",
+          "id": "API-3",
           "reason": "no-match",
           "detail": "applies: [\"legacy/**\"] matches 0 files"
         }

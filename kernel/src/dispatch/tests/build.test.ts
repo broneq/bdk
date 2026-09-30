@@ -8,6 +8,7 @@ import { kindRegistry, PostTaskStepKind } from "../../graph/domain/kinds/index.t
 import { writeEntry } from "../../graph/tests/support.ts";
 import { repository, ROOT } from "../../log/tests/support.ts";
 import { activePackage, readDocument } from "../../shared/store/index.ts";
+import type { Store } from "../../shared/store/index.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
 import {
   build,
@@ -30,6 +31,21 @@ async function built(h: DispatchHarness, ...argv: string[]) {
   const report = dispatchBuildOutput.parse(result.json);
   const text = h.store.read(`${ROOT}/${report.path}`) ?? "";
   return { report, text, body: text.slice(text.indexOf("\n---\n") + 5) };
+}
+
+function projectRule(id: string, extra = ""): string {
+  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
+}
+
+/** The frontmatter a package stamps. */
+function stamped(store: Store, path: string): Record<string, unknown> {
+  const document = readDocument(store, `${ROOT}/${path}`);
+  return document !== undefined && "data" in document ? document.data : {};
+}
+
+/** The rule ids a package stamps. */
+function stampedRules(store: Store, path: string): string[] {
+  return stamped(store, path).rules as string[];
 }
 
 function headings(body: string): string[] {
@@ -223,8 +239,65 @@ describe("dispatch build", () => {
     h.store.write(skill, `${original}\nOne more rule.\n`);
     const changed = (await built(h)).report.templateHash;
     expect(changed).not.toBe(first);
-    h.store.write(`${ROOT}/.bdk/prompts/rules/security.md`, "- **Project.** Our rule.\n");
+    h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, projectRule("AUTH-1"));
     expect((await built(h)).report.templateHash).not.toBe(changed);
+  });
+
+  it("stamps the selected rule ids in order", async () => {
+    const h = dispatchHarness();
+    h.store.write(
+      `${ROOT}/.bdk/rules/AUTH-1.md`,
+      projectRule("AUTH-1", "applies: [src/auth/**]\n"),
+    );
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "applies: [web/**]\n"));
+    h.store.write(`${ROOT}/.bdk/rules/PLAN-1.md`, projectRule("PLAN-1", "roles: [verifier]\n"));
+    h.store.write(`${ROOT}/.bdk/rules/NAMING-1.md`, projectRule("NAMING-1"));
+    const { report } = await built(h, "02-3", "reviewer", TICKET);
+    const rules = stampedRules(h.store, report.path);
+    expect(rules.filter((id) => !id.startsWith("BDK-"))).toStrictEqual(["NAMING-1", "AUTH-1"]);
+    // The pack's global reviewer rules come too, all of them: there is no cap.
+    expect(rules).toContain("BDK-CQ-1");
+    expect(rules.filter((id) => id.startsWith("BDK-TQ-"))).toHaveLength(11);
+    expect(stamped(h.store, report.path)).not.toHaveProperty("rules-truncated");
+  });
+
+  it("selects by the union of a part's tasks' files", async () => {
+    const h = dispatchHarness();
+    ticket(h.store, { target: "02", loop: "review-fix", id: "A-p4r7t0k2" });
+    h.store.write(
+      `${ROOT}/.bdk/rules/STORE-1.md`,
+      projectRule("STORE-1", "applies: [src/auth/store.ts]\n"),
+    );
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "applies: [web/**]\n"));
+    const { report } = await built(h, "02", "reviewer", "A-p4r7t0k2");
+    const rules = stampedRules(h.store, report.path);
+    expect(rules.filter((id) => !id.startsWith("BDK-"))).toStrictEqual(["STORE-1"]);
+  });
+
+  it("changes the hash with a selected rule's text or id, not with an unselected rule", async () => {
+    const h = dispatchHarness();
+    h.store.write(
+      `${ROOT}/.bdk/rules/AUTH-1.md`,
+      projectRule("AUTH-1", "applies: [src/auth/**]\n"),
+    );
+    const first = (await built(h)).report.templateHash;
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "applies: [web/**]\n"));
+    expect((await built(h)).report.templateHash).toBe(first);
+    h.store.write(
+      `${ROOT}/.bdk/rules/AUTH-1.md`,
+      projectRule("AUTH-1", "applies: [src/auth/**]\n").replace("Text of", "New text of"),
+    );
+    const edited = (await built(h)).report.templateHash;
+    expect(edited).not.toBe(first);
+    h.store.remove(`${ROOT}/.bdk/rules/AUTH-1.md`);
+    h.store.write(
+      `${ROOT}/.bdk/rules/AUTH-2.md`,
+      projectRule("AUTH-2", "applies: [src/auth/**]\n").replace(
+        "Text of AUTH-2",
+        "New text of AUTH-1",
+      ),
+    );
+    expect((await built(h)).report.templateHash).not.toBe(edited);
   });
 
   it("keeps one package per role of a ticket and stamps the newest as the active package", async () => {

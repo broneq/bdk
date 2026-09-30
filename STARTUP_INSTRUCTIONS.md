@@ -65,7 +65,7 @@ Match verification to what changed. Never run the full suite "just to be safe" a
 
 ## Quality Rules
 
-BDK ships language-agnostic `code-quality`, `architecture`, `design-patterns`, and `security` rule sets used by `/bdk:cr` and `/bdk:create-plan`. Override or extend them with prompt values (`.bdk/prompts/rules/<name>.md`, or `prompts.files` in `.bdk/settings.yaml`). See README "Quality Rules" for the four usage patterns.
+BDK ships rules by id (`BDK-CQ-4`), one file each; a project adds its own in `.bdk/rules/` and switches any off with `rules.disabled`. An agent reads the rules of its ticket with `bdk rules show --ticket <ticket>` and cites the id of every rule that shaped its work. See README "Quality Rules".
 
 ## Capture Conventions
 

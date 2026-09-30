@@ -50,6 +50,15 @@ describe("parseArgs", () => {
     });
   });
 
+  it("parses a patch filter for the rules-noop suite", () => {
+    expect(parseArgs(["rules-noop", "--patches", "22-a,23-b"])).toMatchObject({
+      patches: ["22-a", "23-b"],
+    });
+    expect(() => parseArgs(["rules-noop", "--patches"])).toThrow(UsageError);
+    expect(() => parseArgs(["rules-noop", "--patches", ","])).toThrow(UsageError);
+    expect(() => parseArgs(["execute-ab", "--patches", "22-a"])).toThrow(UsageError);
+  });
+
   it("defaults to 5 runs, 100 USD and a 15 USD run cap", () => {
     expect(parseArgs(["rules-noop"])).toMatchObject({
       runs: 5,
@@ -126,6 +135,17 @@ describe("run", () => {
     const d = deps();
     expect(await run(["execute-ab", "--probe"], d)).toBe(0);
     expect(d.calls).toEqual(["execute-ab:run:probe"]);
+  });
+
+  it("reports a usage error the suite raises, such as an unknown patch", async () => {
+    const d = deps();
+    const failing: SuiteRunner = {
+      ...d.suites["rules-noop"],
+      run: () => Promise.reject(new UsageError("unknown patch 99-missing")),
+    };
+    const withFailing = { ...d, suites: { ...d.suites, "rules-noop": failing } };
+    expect(await run(["rules-noop", "--patches", "99-missing"], withFailing)).toBe(2);
+    expect(d.err.join("\n")).toMatch(/unknown patch 99-missing/);
   });
 
   it("exits non-zero without credentials before the suite starts", async () => {

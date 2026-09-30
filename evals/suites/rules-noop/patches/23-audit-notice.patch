@@ -1,0 +1,21 @@
+diff --git a/src/api/auditNotice.tsx b/src/api/auditNotice.tsx
+new file mode 100644
+index 0000000..0db0a01
+--- /dev/null
++++ b/src/api/auditNotice.tsx
+@@ -0,0 +1,15 @@
++import { StateBlock } from '../ui/StateBlock'
++import { ApiRequestError } from './http'
++
++export function describeAuditFailure(error: unknown) {
++  if (error instanceof ApiRequestError && error.status === 403) {
++    return (
++      <StateBlock
++        variant="error"
++        title="Audit log unavailable"
++        message="Your account cannot read the audit log."
++      />
++    )
++  }
++  return <StateBlock variant="error" title="Audit log unavailable" />
++}

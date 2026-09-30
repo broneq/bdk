@@ -8,8 +8,18 @@ import type { MeasurementKind } from "./hooks.ts";
 import type { Violations } from "./patches.ts";
 
 const bullets: Bullet[] = [
-  { id: "security.02.bbbbbbbb", file: "rules/security.md", ordinal: 2, text: "**Inject.** No." },
-  { id: "security.03.cccccccc", file: "rules/security.md", ordinal: 3, text: "**Encode.** Yes." },
+  {
+    id: "security.02.bbbbbbbb",
+    rule: "BDK-SEC-2",
+    file: "rules/security/BDK-SEC-2.md",
+    text: "**Inject.** No.",
+  },
+  {
+    id: "security.03.cccccccc",
+    rule: "BDK-SEC-3",
+    file: "rules/security/BDK-SEC-3.md",
+    text: "**Encode.** Yes.",
+  },
 ];
 
 const violations: Violations = {

@@ -1,34 +1,29 @@
-import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
-import { bulletsOf, readBullets } from "./bullets.ts";
+import { keptMapping, readBullets } from "./bullets.ts";
 
-describe("bulletsOf", () => {
-  it("numbers the bullets of a file and hashes their text", () => {
-    const bullets = bulletsOf(
-      "rules/languages/react.md",
-      "# React\n\nIntro.\n\n- **A.** one\n- **B.** two\n",
-    );
-    const hash = createHash("sha256").update("**B.** two").digest("hex").slice(0, 8);
-    expect(bullets).toEqual([
-      expect.objectContaining({ ordinal: 1, text: "**A.** one" }),
-      {
-        id: `languages/react.02.${hash}`,
-        file: "rules/languages/react.md",
-        ordinal: 2,
-        text: "**B.** two",
-      },
-    ]);
+describe("keptMapping", () => {
+  it("maps the T40 id of each kept row to its pack id and skips removed rows", () => {
+    const report = [
+      "| T40 id | excerpt | decision |",
+      "| --- | --- | --- |",
+      "| `code-quality.01.e4ed906e` | Naming | kept as BDK-CQ-1 |",
+      "| `code-quality.07.98e318ea` | Dead code | removed: measured no-op |",
+    ].join("\n");
+    expect([...keptMapping(report)]).toStrictEqual([["code-quality.01.e4ed906e", "BDK-CQ-1"]]);
   });
 });
 
 describe("readBullets", () => {
-  it("indexes every bullet of the shipped rule files with unique, stable ids", () => {
+  it("indexes every measured pack rule once, under its T40 id, the plan rules left out", () => {
     const bullets = readBullets();
-    expect(bullets).toHaveLength(131);
+    expect(bullets).toHaveLength(85);
     expect(new Set(bullets.map((bullet) => bullet.id)).size).toBe(bullets.length);
-    expect(readBullets()).toEqual(bullets);
-    expect(bullets[0]?.id).toMatch(/^architecture\.01\.[0-9a-f]{8}$/);
-    expect(bullets.at(-1)?.id).toMatch(/^languages\/typescript\.22\.[0-9a-f]{8}$/);
+    expect(bullets.find((bullet) => bullet.rule === "BDK-CQ-1")).toMatchObject({
+      id: expect.stringMatching(/^code-quality\.01\.[0-9a-f]{8}$/) as unknown,
+      file: "rules/code-quality/BDK-CQ-1.md",
+      text: expect.stringMatching(/^\*\*Naming\.\*\*/) as unknown,
+    });
+    expect(bullets.some((bullet) => bullet.rule.startsWith("BDK-PL-"))).toBe(false);
   });
 });

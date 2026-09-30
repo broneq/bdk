@@ -7,7 +7,8 @@ import type * as z from "zod";
 import { closest } from "./hint.ts";
 import { keySteps } from "./keys.ts";
 import type { KeyNode, KeyStep } from "./keys.ts";
-import { knownReason, PLANNED_KEYS, within } from "./known.ts";
+import { knownReason, within } from "./known.ts";
+import type { PlannedKey } from "./known.ts";
 import type { Layer, LayerName } from "./layers.ts";
 import { withDefaultItems } from "./merge.ts";
 import type { Merged } from "./merge.ts";
@@ -103,20 +104,29 @@ export function unknownKeyMessage(registry: ConfigRegistry, key: string): string
   return unknownMessage(key, candidatesOf(registry));
 }
 
-function candidatesOf(registry: ConfigRegistry): string[] {
-  return [...registry.keys, ...PLANNED_KEYS.map((entry) => entry.key)];
+/** What an unknown key is compared with: the declared keys and the planned ones. */
+interface Candidates {
+  readonly keys: readonly string[];
+  readonly planned: readonly PlannedKey[];
 }
 
-function unknownMessage(key: string, candidates: readonly string[]): string {
-  const known = knownReason(key);
-  const hint = known === undefined ? closest(key, candidates) : undefined;
+function candidatesOf(registry: ConfigRegistry): Candidates {
+  return {
+    keys: [...registry.keys, ...registry.planned.map((entry) => entry.key)],
+    planned: registry.planned,
+  };
+}
+
+function unknownMessage(key: string, candidates: Candidates): string {
+  const known = knownReason(key, candidates.planned);
+  const hint = known === undefined ? closest(key, candidates.keys) : undefined;
   return known ?? (hint === undefined ? "unknown key" : `unknown key; did you mean ${hint}?`);
 }
 
 function unknown(
   key: string,
   layer: { readonly name: LayerName; readonly path?: string },
-  candidates: readonly string[],
+  candidates: Candidates,
 ): ConfigProblem {
   const message = unknownMessage(key, candidates);
   return {
@@ -132,7 +142,7 @@ function fromIssue(
   issue: z.core.$ZodIssue,
   merged: Merged,
   layers: readonly Layer[],
-  candidates: readonly string[],
+  candidates: Candidates,
 ): ConfigProblem[] {
   const key = dotted(issue.path, merged.value);
   if (issue.code === "unrecognized_keys") {

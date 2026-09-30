@@ -238,6 +238,7 @@ function work(root: string, branch: string, at: string, rule: string, capability
       "kernel-version": "3.0.0-dev",
       "template-hash": HASH,
       report,
+      rules: [],
     },
     body: "## Task 02-3\n",
   });

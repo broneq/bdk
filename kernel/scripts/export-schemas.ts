@@ -64,6 +64,15 @@ import {
   partStartOutput,
 } from "../src/part/schema/outputs.ts";
 import { settingsRegistry } from "../src/registrations.ts";
+import {
+  rulesAcceptOutput,
+  rulesCheckOutput,
+  rulesExplainOutput,
+  rulesExportOutput,
+  rulesImportOutput,
+  rulesPruneOutput,
+  rulesStatsOutput,
+} from "../src/rules/schema/outputs.ts";
 import { rulesShowOutput } from "../src/rules/schema/show.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../src/dispatch/schema/outputs.ts";
 import { doctorOutput } from "../src/service/schema/doctor.ts";
@@ -122,7 +131,14 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/attempt-close.json", attemptCloseOutput],
   ["output/attempt-list.json", attemptListOutput],
   ["output/commit.json", commitOutput],
+  ["output/rules-accept.json", rulesAcceptOutput],
+  ["output/rules-check.json", rulesCheckOutput],
+  ["output/rules-explain.json", rulesExplainOutput],
+  ["output/rules-export.json", rulesExportOutput],
+  ["output/rules-import.json", rulesImportOutput],
+  ["output/rules-prune.json", rulesPruneOutput],
   ["output/rules-show.json", rulesShowOutput],
+  ["output/rules-stats.json", rulesStatsOutput],
   ["output/dispatch-build.json", dispatchBuildOutput],
   ["output/dispatch-show.json", dispatchShowOutput],
   ["output/evidence-record.json", evidenceRecordOutput],

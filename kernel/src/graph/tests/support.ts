@@ -40,7 +40,7 @@ const REPO = join(import.meta.dirname, "../../../..");
 /** Copies the shipped plugin files a graph command reads into `store` under PLUGIN. */
 export function withPluginFiles(store: Store): Store {
   for (const dir of ["pipeline", "rules", "fragments/decision"]) {
-    for (const name of readdirSync(join(REPO, dir))) {
+    for (const name of readdirSync(join(REPO, dir), { recursive: true, encoding: "utf8" })) {
       if (!/\.(md|yaml)$/.test(name)) continue;
       store.write(`${PLUGIN}/${dir}/${name}`, readFileSync(join(REPO, dir, name), "utf8"));
     }

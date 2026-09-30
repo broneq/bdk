@@ -36,6 +36,10 @@ function run(project: Record<string, string>, { inGit = true } = {}) {
   return { store, report, startup: startupContext(deps).content };
 }
 
+function projectRule(id: string, extra = ""): string {
+  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
+}
+
 function problemLines(content: string, startup: string): string[] {
   expect(content.startsWith(startup)).toBe(true);
   return content
@@ -107,5 +111,29 @@ describe("hooks session-start", () => {
       "[BDK] v2 layout detected (.bdk/settings.json, .bdk/runs/): run bdk import.",
     ]);
     expect(report.layout).toBe("v2");
+  });
+
+  it("warns when the heaviest role reads more rules than rules.warn-above, scoped ones counted", () => {
+    const { report, startup } = run({
+      ".bdk/settings.yaml": `${MODELINE}rules:\n  warn-above: 2\n`,
+      ".bdk/rules/API-1.md": projectRule("API-1"),
+      ".bdk/rules/API-2.md": projectRule("API-2"),
+      ".bdk/rules/UI-1.md": projectRule("UI-1", "applies: [web/**]\n"),
+      ".bdk/rules/PLAN-1.md": projectRule("PLAN-1", "roles: [verifier]\n"),
+    });
+    expect(problemLines(report.content, startup)).toStrictEqual([
+      "[BDK] rules warning: verifier reads 4 rules (rules.warn-above: 2); switch rules off with rules.disabled or narrow them with applies.",
+    ]);
+    expect(report.configProblems).toBe(0);
+  });
+
+  it("stays silent at rules.warn-above and counts no disabled rule", () => {
+    const { report, startup } = run({
+      ".bdk/settings.yaml": `${MODELINE}rules:\n  warn-above: 2\n  disabled: [API-3]\n`,
+      ".bdk/rules/API-1.md": projectRule("API-1"),
+      ".bdk/rules/API-2.md": projectRule("API-2"),
+      ".bdk/rules/API-3.md": projectRule("API-3"),
+    });
+    expect(problemLines(report.content, startup)).toStrictEqual([]);
   });
 });

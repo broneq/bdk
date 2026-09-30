@@ -197,6 +197,31 @@ describe("change close", () => {
     expect(h.store.list(`${ARCHIVE}/dispatch`)).toStrictEqual(["01-1-implementer-A-00000001.md"]);
   });
 
+  it("proposes no rule: learnings keep their status and no rule file is written", async () => {
+    const h = closing();
+    const learning = {
+      type: "learning",
+      at: T0,
+      status: "proposed",
+      summary: "Scoped runs must include the negative case",
+      fingerprint: `sha256:${"b".repeat(64)}`,
+      applies: ["**/*.test.ts"],
+    };
+    const first = writeEntry(h.store, learning);
+    const second = writeEntry(h.store, learning);
+    const result = await close(h);
+    expect(result.code, result.stdout).toBe(0);
+    expect(result.json).not.toHaveProperty("learning");
+    const archived = h.store
+      .list(`${ARCHIVE}/log`)
+      .filter((name) => name.includes(first) || name.includes(second))
+      .map((name) => h.store.read(`${ARCHIVE}/log/${name}`) ?? "");
+    expect(archived).toHaveLength(2);
+    for (const text of archived) expect(text).toContain("status: proposed");
+    expect(h.store.exists(`${ROOT}/.bdk/rules`)).toBe(false);
+    expect(h.store.exists(`${ROOT}/.claude/rules`)).toBe(false);
+  });
+
   it("builds the PR summary from the live ledger; no delta is spec.unchanged", async () => {
     const h = closing({ gate: "policy" });
     h.store.write(`${ROOT}/.bdk/settings.yaml`, "policy:\n  gates:\n    review: auto\n");
@@ -221,7 +246,6 @@ describe("change close", () => {
     const report = changeCloseOutput.parse(result.json);
     expect(report.spec).toStrictEqual({ merged: [], unchanged: true });
     expect(report.gatesByPolicy).toStrictEqual(["gate:review"]);
-    expect(report.learning).toStrictEqual({ proposedRules: [], spec: [], nothing: [] });
     expect(report.summary).toMatch(/^## Users log in with a one-time link\.\n/);
     expect(report.summary).toContain("### Decisions\n\n- Links expire after 15 minutes (");
     expect(report.summary).toContain("- Mail arrives within a minute (");

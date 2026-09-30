@@ -26,7 +26,7 @@ Representative refusal:
 
 Append one ledger entry; the kernel stamps id, time, author and source. The kernel SHALL implement the command as this requirement and its output schema specify.
 
-- **Synopsis:** `bdk log add decision|finding|observation|blocker|question|assumption|risk|learning|report <summary> [--ref <ref>] [--body <text>] [--ticket <ticket>] [--category <id>] [--review] [--supersedes <id>] [--status proposed|accepted|superseded|resolved|routed]`
+- **Synopsis:** `bdk log add decision|finding|observation|blocker|question|assumption|risk|learning|report <summary> [--ref <ref>] [--body <text>] [--ticket <ticket>] [--category <id>] [--review] [--supersedes <id>] [--applies <glob>] [--status proposed|accepted|superseded|resolved]`
 - **Availability:** `agent`
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
@@ -38,9 +38,10 @@ Append one ledger entry; the kernel stamps id, time, author and source. The kern
   - `--category <id>`. The entry's category; a verifier blocker needs one from policy.verifier.blocking-categories (P8).
   - `--review`. Mark the entry to be shown at the next gate.
   - `--supersedes <id>`.
-  - `--status proposed|accepted|superseded|resolved|routed`.
+  - `--applies <glob>`. Repeatable; only with `learning`: the files the lesson is about (`kernel-state`, Ledger entry). Default: the `Files:` of the ticket's task when `--ticket` names a task ticket, none otherwise.
+  - `--status proposed|accepted|superseded|resolved`.
   - stdin: Body text when --body - is given.
-- **Behaviour:** Available to subagents: every role writes its own entries (T23-D14). `type: transition` is not accepted here and `--source` does not exist: `source` is `agent:<role>` when `--ticket` names an open ticket whose active package (`kernel-state`, Attempt record, `package`) names the role, and `kernel` for the main thread without a ticket; passing `id`, `at`, `author`, `source` or `fingerprint` as a flag in any form is `input/forbidden-field` (P1, T20 acceptance: `--source user` exits 3). A ticket without an open attempt record or without a dispatch package is `policy/no-open-ticket`. Validation: type from the list, summary 1-120 characters, >= 1 ref, the T14 entry schema; `--category` only with `finding` or `blocker`, the types that carry the field (`input/invalid-argument`); `--status` defaults to `proposed`, `superseded` is refused (`input/invalid-argument`, it is derived from `--supersedes`) and so is `routed` (only `log route` sets it). `--supersedes` must name an existing entry (`input/not-found`). A `blocker` under a ticket whose active package's role is `verifier` or `design-verifier` and whose `--category` is missing or not an `id` of the resolved `policy.verifier.blocking-categories` is written as an `observation` with `review: true` (an observation has no `category` field, so the category is named in the body) and a body that starts with `Downgraded from blocker: category <id|none> is not a blocking category (P8).` followed by the given body; the output's `downgraded` names the original type and category (P8). Nothing caps the number of entries per ticket (T23-D13). The kernel stamps `id` (retrying when the id exists in the Change), `at` from its clock, `author` from git (`user.name <user.email>`), `source`, `ticket` and, for `learning`, `fingerprint`, and writes `log/<ts>-<type>-<id>.md`. Dedupe by key (`kernel-state`, Ledger deduplication) returns the existing entry with `deduplicated: true` and writes nothing.
+- **Behaviour:** Available to subagents: every role writes its own entries (T23-D14). `type: transition` is not accepted here and `--source` does not exist: `source` is `agent:<role>` when `--ticket` names an open ticket whose active package (`kernel-state`, Attempt record, `package`) names the role, and `kernel` for the main thread without a ticket; passing `id`, `at`, `author`, `source` or `fingerprint` as a flag in any form is `input/forbidden-field` (P1, T20 acceptance: `--source user` exits 3). A ticket without an open attempt record or without a dispatch package is `policy/no-open-ticket`. Validation: type from the list, summary 1-120 characters, >= 1 ref, the T14 entry schema; `--category` only with `finding` or `blocker`, the types that carry the field (`input/invalid-argument`); `--status` defaults to `proposed`, `superseded` is refused (`input/invalid-argument`, it is derived from `--supersedes`) and `--applies` with any type but `learning` is `input/invalid-argument`. A `learning` records a lesson for the audit (`kernel-cli/rules`, bdk rules stats) and never becomes a rule by itself (T02 decision Q-6). `--supersedes` must name an existing entry (`input/not-found`). A `blocker` under a ticket whose active package's role is `verifier` or `design-verifier` and whose `--category` is missing or not an `id` of the resolved `policy.verifier.blocking-categories` is written as an `observation` with `review: true` (an observation has no `category` field, so the category is named in the body) and a body that starts with `Downgraded from blocker: category <id|none> is not a blocking category (P8).` followed by the given body; the output's `downgraded` names the original type and category (P8). Nothing caps the number of entries per ticket (T23-D13). The kernel stamps `id` (retrying when the id exists in the Change), `at` from its clock, `author` from git (`user.name <user.email>`), `source`, `ticket` and, for `learning`, `fingerprint`, and writes `log/<ts>-<type>-<id>.md`. Dedupe by key (`kernel-state`, Ledger deduplication) returns the existing entry with `deduplicated: true` and writes nothing.
 - **Writes:** `.bdk/changes/<id>/log/`
 - **Output:** `schema/cli/output/log-add.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/forbidden-field`, `input/not-found`, `policy/no-open-ticket`, `runtime/git-missing`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -133,6 +134,16 @@ Append one ledger entry; the kernel stamps id, time, author and source. The kern
 
 - **WHEN** under an `implementer` ticket `bdk log add blocker "stop-rule fired" --ref 02-3 --ticket A-7f3k9m2q` runs without `--category`
 - **THEN** the entry is a `blocker`
+
+#### Scenario: learning with applies
+
+- **WHEN** under an `implementer` ticket of task `02-3` whose `Files:` is `web/Form.tsx`, `bdk log add learning "forms lost the pending state" --ref 02-3 --ticket A-7f3k9m2q` runs
+- **THEN** the entry carries `applies: [web/Form.tsx]` and a kernel-stamped `fingerprint`, and no file under `.bdk/rules/` changes
+
+#### Scenario: applies on another type
+
+- **WHEN** `bdk log add finding "x" --ref 02-3 --applies "src/**"` runs
+- **THEN** the exit code is 3 with `rule: input/invalid-argument`
 
 ### Requirement: bdk log ingest
 
@@ -229,12 +240,12 @@ Store a role's report under its ticket. The kernel SHALL implement the command a
 
 Ledger entries as summaries, filtered by type, status, review flag or reference. The kernel SHALL implement the command as this requirement and its output schema specify.
 
-- **Synopsis:** `bdk log list [--type decision|finding|observation|blocker|question|assumption|risk|learning|report|transition] [--status proposed|accepted|superseded|resolved|routed] [--review] [--for <task|part|file>] [--since-ticket-start <ticket>] [--all]`
+- **Synopsis:** `bdk log list [--type decision|finding|observation|blocker|question|assumption|risk|learning|report|transition] [--status proposed|accepted|superseded|resolved] [--review] [--for <task|part|file>] [--since-ticket-start <ticket>] [--all]`
 - **Availability:** `read`
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
   - `--type decision|finding|observation|blocker|question|assumption|risk|learning|report|transition`.
-  - `--status proposed|accepted|superseded|resolved|routed`.
+  - `--status proposed|accepted|superseded|resolved`.
   - `--review`. Only review: true entries.
   - `--for <task|part|file>`.
   - `--since-ticket-start <ticket>`. Only entries written at or after the ticket's `opened-at`.
@@ -355,7 +366,7 @@ Set an entry's status (resolved, accepted, superseded) with a reason. The kernel
   - `accepted|resolved|superseded` (required).
   - `--by <id>`. Superseding entry; required with superseded.
   - `--reason <text>`.
-- **Behaviour:** The status change rewrites the entry's frontmatter in place and appends the reason to its body (a line `Resolved as <status> at <at>: <reason>`), one of the mutations `kernel-state` allows (Derived state and mutation) and that its two-branch merge test covers. Allowed moves: `proposed` to `accepted` or `resolved`, `accepted` to `resolved`, and `superseded` from `proposed` or `accepted`; every other move, a repeated one, a `transition` entry and a `routed` or already superseded entry are `policy/invalid-transition` naming the current status. `superseded` is never stored: the kernel writes `supersedes: <id>` into the `--by` entry (missing `--by` is `input/missing-argument`; a `--by` entry that already supersedes another is `policy/invalid-transition`), and the status is derived from it. `record` names the rewritten entry: `<id>`, or the `--by` entry for `superseded`. `source: user` cannot be produced here.
+- **Behaviour:** The status change rewrites the entry's frontmatter in place and appends the reason to its body (a line `Resolved as <status> at <at>: <reason>`), one of the mutations `kernel-state` allows (Derived state and mutation) and that its two-branch merge test covers. Allowed moves: `proposed` to `accepted` or `resolved`, `accepted` to `resolved`, and `superseded` from `proposed` or `accepted`; every other move, a repeated one, a `transition` entry and an already superseded entry are `policy/invalid-transition` naming the current status. `superseded` is never stored: the kernel writes `supersedes: <id>` into the `--by` entry (missing `--by` is `input/missing-argument`; a `--by` entry that already supersedes another is `policy/invalid-transition`), and the status is derived from it. `record` names the rewritten entry: `<id>`, or the `--by` entry for `superseded`. `source: user` cannot be produced here.
 - **Writes:** `.bdk/changes/<id>/log/`
 - **Output:** `schema/cli/output/log-resolve.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/invalid-transition`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
@@ -396,50 +407,3 @@ Set an entry's status (resolved, accepted, superseded) with a reason. The kernel
 
 - **WHEN** `bdk log resolve L-aaaaaaaa superseded --by L-bbbbbbbb` runs
 - **THEN** `L-bbbbbbbb`'s file gains `supersedes: L-aaaaaaaa`, `L-aaaaaaaa`'s file is unchanged, and `log list` shows `L-aaaaaaaa` as `superseded`
-
-### Requirement: bdk log route
-
-Route learning entries at close: rule proposal, spec, or nothing, by the T31 thresholds. The kernel SHALL implement the command as this requirement and its output schema specify.
-
-- **Synopsis:** `bdk log route [--dry-run]`
-- **Availability:** `orchestrator`
-- **Mode:** `command`; Change-scoped
-- **Arguments:**
-  - `--dry-run`.
-- **Behaviour:** Nothing under `.bdk/rules/` changes here: a proposal is a `learning` entry marked `status: routed` with the evidence; the user accepts with `rules add` (T02 decision R-3, Q-4). Called by `change close`.
-- **Writes:** `.bdk/changes/<id>/log/`
-- **Output:** `schema/cli/output/log-route.json`
-- **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: none; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object).
-- **Example:**
-
-  ```bash
-  bdk log route --dry-run --json
-  ```
-
-  ```json
-  {
-    "proposedRules": [
-      {
-        "entry": "L-z1c4h",
-        "fingerprint": "tests|scoped|missing-negative-case",
-        "signals": {
-          "recurrence": 3,
-          "authors": 2,
-          "cost": 2
-        }
-      }
-    ],
-    "spec": [],
-    "nothing": [
-      "L-q8n2m"
-    ]
-  }
-  ```
-
-- **Owner:** T31
-- **Slice:** `log`
-
-#### Scenario: example run
-
-- **WHEN** `bdk log route --dry-run --json` runs as in the example
-- **THEN** the exit code is 0 and stdout validates against `schema/cli/output/log-route.json`

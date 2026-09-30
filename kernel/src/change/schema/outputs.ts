@@ -356,16 +356,6 @@ export const changeCloseOutput = z
         .meta({ description: "The capabilities the merge wrote or confirmed, in path order." }),
       unchanged: z.boolean().meta({ description: "True when the Change has no spec delta." }),
     }),
-    learning: z
-      .strictObject({
-        proposedRules: z.array(entryId).meta({
-          description:
-            "learning entries above the T31 thresholds; nothing under .bdk/rules/ changes before the user accepts.",
-        }),
-        spec: z.array(entryId),
-        nothing: z.array(entryId),
-      })
-      .meta({ description: "Empty lists until T31 lands `log route` and the rule projection." }),
     gatesByPolicy: z
       .array(z.string().regex(/^gate:[a-z-]+$/))
       .meta({ description: "Gates passed by a `source: policy` transition." }),
@@ -383,7 +373,6 @@ export const changeCloseOutput = z
         change: CHANGE,
         archivedTo: `.bdk/changes/archive/${CHANGE}`,
         spec: { merged: ["auth/login"], unchanged: false },
-        learning: { proposedRules: [], spec: [], nothing: [] },
         gatesByPolicy: [],
         summary: "## Users log in with a link\n\n### Spec\n\n- `auth/login`\n",
       },

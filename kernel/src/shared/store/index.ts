@@ -11,12 +11,16 @@ export { rebuildChange, refreshAll, refreshChange } from "./index/refresh.ts";
 export {
   findChangeRow,
   findEntry,
+  hasAttempt,
+  listAllEntries,
+  listAttemptFindings,
   listChanges,
   listEntries,
   openAttempts,
   selectReadOnly,
 } from "./index/queries.ts";
 export type {
+  AttemptFindingRow,
   ChangeRow,
   EntryFilter,
   EntryRow,
@@ -66,7 +70,7 @@ export { taskProgress } from "./progress.ts";
 export type { TaskProgress } from "./progress.ts";
 export { rebuildChanges } from "./rebuild.ts";
 export type { RebuildResult } from "./rebuild.ts";
-export { readAttempts, readPlanParts, taskHolders } from "./work.ts";
+export { readAttempts, readPlanParts, targetFiles, taskHolders } from "./work.ts";
 export { stampRulesRead } from "./rules-read.ts";
 export {
   activePackage,

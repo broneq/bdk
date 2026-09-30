@@ -73,7 +73,8 @@ export function pipelineProblems(pipeline: Pipeline, declared: Declared): string
       problems.push(`${at}.if: features.${feature} is not a declared features key`);
     }
     for (const rule of node.rules ?? []) {
-      if (!declared.rules.has(rule)) problems.push(`${at}.rules: rules/${rule} is not declared`);
+      if (!declared.rules.has(rule))
+        problems.push(`${at}.rules: ${rule} is no rule category of the pack`);
     }
     problems.push(...gateProblems(node, at, stages, declared));
   });

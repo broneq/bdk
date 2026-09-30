@@ -17,7 +17,10 @@ export interface EntryRow extends EntryFacts {
   readonly severity?: string;
   readonly category?: string;
   readonly fingerprint?: string;
-  readonly routedTo?: string;
+  /** A learning's globs. */
+  readonly applies?: readonly string[];
+  /** A learning's supporting attempts or entries. */
+  readonly evidence?: readonly string[];
   readonly gate?: string;
   /** `input-hash` of a transition written by `done`. */
   readonly inputHash?: string;
@@ -97,6 +100,69 @@ export function findEntry(index: IndexDb, changeId: string, id: string): EntryRo
   return toEntry(
     row,
     refs.map((ref) => ref.ref),
+  );
+}
+
+/** Entries of every indexed Change, archived ones included, newest first; `types` narrows them. */
+export function listAllEntries(index: IndexDb, types?: readonly string[]): EntryRow[] {
+  const where = types === undefined ? "" : `WHERE e.type IN (${types.map(() => "?").join(", ")})`;
+  const rows = index.database
+    .prepare(`SELECT * FROM entries e ${where} ORDER BY e.at DESC, e.change_id, e.id`)
+    .all(...(types ?? [])) as Row[];
+  const refs = new Map<string, string[]>();
+  const all = index.database
+    .prepare("SELECT change_id, entry_id, ref FROM refs ORDER BY change_id, entry_id, position")
+    .all() as { change_id: string; entry_id: string; ref: string }[];
+  for (const row of all) {
+    const key = `${row.change_id}/${row.entry_id}`;
+    refs.set(key, [...(refs.get(key) ?? []), row.ref]);
+  }
+  return rows.map((row) =>
+    toEntry(row, refs.get(`${String(row.change_id)}/${String(row.id)}`) ?? []),
+  );
+}
+
+/** One finding fingerprint an attempt record keeps (`kernel-state`, Attempt record). */
+export interface AttemptFindingRow {
+  readonly changeId: string;
+  readonly ticket: string;
+  readonly fingerprint: string;
+  readonly type: string;
+  readonly file: string;
+  readonly symbol?: string;
+  /** The attempt's `closed-at`, or `opened-at` while it is open. */
+  readonly at: string;
+}
+
+/** The findings of every attempt record, archived Changes included, newest first. */
+export function listAttemptFindings(index: IndexDb): AttemptFindingRow[] {
+  const rows = index.database
+    .prepare(
+      `SELECT f.change_id, f.ticket, f.fingerprint, f.type, f.file, f.symbol,
+         COALESCE(a.closed_at, a.opened_at) AS at
+       FROM findings f JOIN attempts a ON a.change_id = f.change_id AND a.ticket = f.ticket
+       ORDER BY at DESC, f.change_id, f.ticket, f.position`,
+    )
+    .all() as Row[];
+  return rows.map((row) =>
+    omitUndefined<AttemptFindingRow>({
+      changeId: String(row.change_id),
+      ticket: String(row.ticket),
+      fingerprint: String(row.fingerprint),
+      type: String(row.type),
+      file: String(row.file),
+      symbol: typeof row.symbol === "string" ? row.symbol : undefined,
+      at: String(row.at),
+    }),
+  );
+}
+
+/** True when the Change holds an attempt record of the ticket. */
+export function hasAttempt(index: IndexDb, changeId: string, ticket: string): boolean {
+  return (
+    index.database
+      .prepare("SELECT 1 FROM attempts WHERE change_id = ? AND ticket = ?")
+      .get(changeId, ticket) !== undefined
   );
 }
 
@@ -205,7 +271,8 @@ function refsOf(index: IndexDb, changeId: string): Map<string, string[]> {
 function toEntry(row: Row, refs: readonly string[]): EntryRow {
   const optional = (value: unknown): string | undefined =>
     typeof value === "string" || typeof value === "number" ? String(value) : undefined;
-  const options = optional(row.options);
+  const listOf = (value: unknown): string[] | undefined =>
+    typeof value === "string" ? (JSON.parse(value) as string[]) : undefined;
   return omitUndefined<EntryRow>({
     changeId: String(row.change_id),
     id: String(row.id),
@@ -222,13 +289,14 @@ function toEntry(row: Row, refs: readonly string[]): EntryRow {
     severity: optional(row.severity),
     category: optional(row.category),
     fingerprint: optional(row.fingerprint),
-    routedTo: optional(row.routed_to),
+    applies: listOf(row.applies),
+    evidence: listOf(row.evidence),
     to: optional(row.to_stage),
     gate: optional(row.gate),
     inputHash: optional(row.input_hash),
     profile: optional(row.profile),
     park: row.park === 1 ? true : undefined,
-    options: options === undefined ? undefined : (JSON.parse(options) as string[]),
+    options: listOf(row.options),
     path: String(row.path),
     refs: [...refs],
   });

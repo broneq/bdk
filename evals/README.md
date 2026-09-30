@@ -9,6 +9,7 @@ Needs the Node and pnpm the repository pins, git, Claude Code, network access an
 ```bash
 pnpm eval <suite> --probe          # one run per cell: per-cell cost and the projected series
 pnpm eval <suite> [--runs N]       # the measured series (5 runs per cell by default)
+pnpm eval rules-noop --patches <name,...> [--probe]  # M2 of those patches only, no M1 (a re-seeded bullet, a new language pack)
 pnpm eval check                    # render and validate every suite's config; no credentials, no model call
 pnpm eval report <suite>           # evals/results/<suite>/report.md from the committed rows
 ```

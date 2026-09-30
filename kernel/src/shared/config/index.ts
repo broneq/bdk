@@ -46,3 +46,5 @@ export {
 } from "./modeline.ts";
 export { isRecord, valueAt } from "./values.ts";
 export type { Mapping } from "./values.ts";
+// The rule id pattern `rules.disabled` validates; config modules import only shared/config.
+export { RULE_ID } from "../vocabulary/index.ts";

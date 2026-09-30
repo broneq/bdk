@@ -24,13 +24,22 @@
     "severity": { "$ref": "common.json#/$defs/severity" },
     "origin": {
       "anyOf": [
-        { "type": "string", "enum": ["bdk", "import"] },
+        { "type": "string", "enum": ["bdk", "import", "user"] },
         {
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}-(?=[a-z0-9-]{1,40}(?:\\/|$))[a-z0-9]+(?:-[a-z0-9]+)*\\/L-[0-9a-z]{8}$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}-(?=[a-z0-9-]{1,40}(?:\\/|$))[a-z0-9]+(?:-[a-z0-9]+)*\\/[LA]-[0-9a-z]{8}$"
         }
       ],
-      "description": "The shipped pack, `rules import`, or the learning it came from."
+      "description": "The shipped pack, `rules import`, `rules accept` without `--from`, or the entry or attempt it was adopted from."
+    },
+    "evidence": {
+      "description": "Every `--from` ref of `rules accept`.",
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}-(?=[a-z0-9-]{1,40}(?:\\/|$))[a-z0-9]+(?:-[a-z0-9]+)*\\/[LA]-[0-9a-z]{8}$"
+      }
     },
     "since": { "$ref": "common.json#/$defs/date" },
     "source": {

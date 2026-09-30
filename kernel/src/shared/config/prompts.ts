@@ -8,6 +8,7 @@ import { parse } from "yaml";
 import { splitFrontmatter } from "../store/index.ts";
 import type { Store } from "../store/index.ts";
 import { closest } from "./hint.ts";
+import { retiredPromptReason } from "./known.ts";
 import type { FileLayerName, Layer, LayerName } from "./layers.ts";
 import type { ConfigProblem } from "./problems.ts";
 import type { ConfigRegistry, PromptKey } from "./registry.ts";
@@ -183,13 +184,17 @@ function unknownPrompt(
   const literal = registry.prompts
     .map((prompt: PromptKey) => prompt.key)
     .filter((k) => !k.endsWith("/*"));
-  const hint = closest(key, literal);
+  const retired = retiredPromptReason(key);
+  const hint = retired === undefined ? closest(key, literal) : undefined;
   return {
     rule: "policy/unknown-config-key",
     key: `prompts.${key}`,
     layer,
     path,
-    message: `no prompt key ${key} is registered${hint === undefined ? "" : `; did you mean ${hint}?`}`,
+    message:
+      retired === undefined
+        ? `no prompt key ${key} is registered${hint === undefined ? "" : `; did you mean ${hint}?`}`
+        : `${path}: ${retired}`,
   };
 }
 

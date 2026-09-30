@@ -40,6 +40,9 @@ export function addCommand(deps: LogDeps): Handler {
       ...optional("ticket", text(context.flags["--ticket"])),
       ...optional("supersedes", text(context.flags["--supersedes"])),
       ...optional("category", text(context.flags["--category"])),
+      ...(context.flags["--applies"] === undefined
+        ? {}
+        : { applies: list(context.flags["--applies"]) }),
     });
     return isRefusal(result) ? result : { data: result, text: renderAdd(result) };
   };

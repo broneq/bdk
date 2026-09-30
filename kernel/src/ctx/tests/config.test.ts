@@ -29,9 +29,15 @@ function keysOf(values: Record<string, unknown>): [string, string][] {
 const unit = { id: "unit", tier: "fast", command: "pnpm test:unit" };
 
 describe("defaults", () => {
-  it("resolves every T12 key of an empty configuration", () => {
+  it("resolves every T12 key and the rules keys of an empty configuration", () => {
     expect(check({}).value).toStrictEqual({
       languages: [],
+      rules: {
+        "warn-above": 100,
+        disabled: [],
+        audit: { "min-changes": 3 },
+        prune: { "uncited-changes": 20 },
+      },
       tools: { test: [], lint: [], build: [] },
       features: { lavish: true },
       execution: { concurrency: 5 },
@@ -105,8 +111,8 @@ describe("prompts", () => {
     const prompts = {
       dir: "docs/bdk-prompts",
       files: {
-        "rules/security": "docs/security.md",
-        "rules/languages/go": { path: "go.md", mode: "replace", applies: ["**/*.go"] },
+        "fragments/decision/lavish": "docs/lavish.md",
+        "fragments/decision/ask-user": { path: "ask.md", mode: "replace", applies: ["**/*.go"] },
       },
     };
     expect(keysOf({ prompts })).toStrictEqual([]);
@@ -114,11 +120,14 @@ describe("prompts", () => {
 
   it("refuses an unregistered prompt key and a bad mode", () => {
     const prompts = {
-      files: { "rules/secrity": "a.md", "rules/security": { path: "a.md", mode: "merge" } },
+      files: {
+        "fragments/decision/lavsh": "a.md",
+        "fragments/decision/lavish": { path: "a.md", mode: "merge" },
+      },
     };
     expect(keysOf({ prompts })).toStrictEqual([
-      ["prompts.files.rules/secrity", "policy/unknown-config-key"],
-      ["prompts.files.rules/security", "policy/config-invalid"],
+      ["prompts.files.fragments/decision/lavsh", "policy/unknown-config-key"],
+      ["prompts.files.fragments/decision/lavish", "policy/config-invalid"],
     ]);
   });
 
@@ -127,9 +136,9 @@ describe("prompts", () => {
     ["an absolute glob", ["/etc/*"]],
     ["an empty segment", ["a//b"]],
   ])("refuses %s in applies", (_, applies) => {
-    const prompts = { files: { "rules/security": { path: "a.md", applies } } };
+    const prompts = { files: { "fragments/decision/lavish": { path: "a.md", applies } } };
     expect(keysOf({ prompts })).toMatchObject([
-      ["prompts.files.rules/security.applies.0", "policy/config-invalid"],
+      ["prompts.files.fragments/decision/lavish.applies.0", "policy/config-invalid"],
     ]);
   });
 });

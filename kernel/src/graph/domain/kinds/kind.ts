@@ -213,7 +213,7 @@ export function partFiles(view: ChangeView, dir: string): Map<string, string> {
   return parts;
 }
 
-/** Neither resolved, routed nor superseded. */
+/** Neither resolved nor superseded. */
 export function live(entry: GraphEntry): boolean {
   return entry.status === "proposed" || entry.status === "accepted";
 }

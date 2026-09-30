@@ -37,8 +37,8 @@ describe("bdk change close", () => {
       change: change.id,
       archivedTo: `.bdk/changes/archive/${change.id}`,
       spec: { merged: [CAP], unchanged: false },
-      learning: { proposedRules: [], spec: [], nothing: [] },
     });
+    expect(report).not.toHaveProperty("learning");
     expect(report.summary).toContain("## Users log in with a link");
     const archive = join(change.root, ".bdk/changes/archive", change.id);
     expect(existsSync(change.dir)).toBe(false);
