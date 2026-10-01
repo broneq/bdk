@@ -67,6 +67,12 @@ export function addEntry(
       if ("refused" in fields) return fields;
       report = fields;
     }
+    // A blocker raised under a ticket names the ticket's target, so the verdict
+    // node of that target counts it as live (`kernel-cli/log`, bdk log add).
+    const refs =
+      input.type === "blocker" && active !== undefined
+        ? withTarget(input.refs, active.data.target)
+        : input.refs;
     let blocking: readonly string[] = [];
     if (mayDowngrade(input.type, role)) {
       const policy = verifierPolicy(deps, change, globalDir);
@@ -76,7 +82,8 @@ export function addEntry(
     const { downgraded, ...classified } = classify(input, role, blocking);
     const applies = input.applies ?? defaultApplies(deps, change, input);
     // A downgraded blocker is an observation, which carries no category field.
-    const { category, ...rest } = applies === undefined ? input : { ...input, applies };
+    const { category, ...rest } =
+      applies === undefined ? { ...input, refs } : { ...input, refs, applies };
     const base = downgraded === undefined && category !== undefined ? { ...rest, category } : rest;
     // Each verification round is its own report, so a report is never deduplicated.
     const appended = await appendEntry(
@@ -115,9 +122,13 @@ function reportFields(
     ]);
   }
   return {
-    refs: refs.includes(dispatch.target) ? refs : [...refs, dispatch.target],
+    refs: withTarget(refs, dispatch.target),
     report: relative(change.dir, path).split(sep).join("/"),
   };
+}
+
+function withTarget(refs: readonly string[], target: string): readonly string[] {
+  return refs.includes(target) ? refs : [...refs, target];
 }
 
 function validate(input: AddInput): Refusal | undefined {

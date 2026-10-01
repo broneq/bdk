@@ -37,7 +37,7 @@ The role stores its report with `bdk log ingest --ticket <ticket>` and records i
 
 ## Close the round
 
-Read the report's envelope (`Read` the file at `report`) and the live blockers of the node: `bdk log list --type blocker --for design-verify --json`, keeping those with status `proposed` or `accepted`.
+Read the report's envelope (`Read` the file at `report`) and the live blockers of the node: `bdk log list --type blocker --for design-verify --json`, keeping those with status `proposed` or `accepted`. Every blocker the role raises under the ticket names `design-verify`.
 
 - `status` is `done` or `done-with-concerns` and no live blocker names `design-verify`: run `bdk attempt close <ticket> ok --envelope <report> --json`, then `bdk done design-verify --json`.
 - Otherwise: run `bdk attempt close <ticket> fail --envelope <report> --json`, and keep its `next.action`.
@@ -57,6 +57,6 @@ Report from the kernel's output and the report only:
 - the verdict: the report's `status`, and whether `design-verify` is done;
 - every live blocker with its id, its `category` and its summary;
 - every finding and observation the role wrote under the ticket (`bdk log list --since-ticket-start <ticket> --json`), with its id and summary;
-- on `fail`, the `next.action` of `attempt close`: `retry` (fix the design and run `/bdk:verify-design` again), `escalate` (the next round opens with `--escalate`) or `parked` (the resume command the kernel prints).
+- on `fail`, the `next.action` of `attempt close`: `retry` (fix the design and run `/bdk:verify-design` again), `narrow` (the same, and the next round checks only the `scope` it names), `escalate` (the next round opens with `--escalate`) or `parked` (the resume command the kernel prints).
 
 Moving the Change on is not this skill's work: when `/bdk:design` started it, return to that skill's flow; otherwise end with the gate status of `bdk change status --json`.

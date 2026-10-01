@@ -145,3 +145,10 @@ A verdict kind reads the latest `report` entry naming its node, and the write ma
 ## Migration Plan
 
 No user state migrates. v3 is not released, so only Changes opened while building it are affected. A Change with `design` done and `gate:design` not passed gets a ready `design-verify` node on the next graph read and needs `/bdk:verify-design` before the gate. A Change already past `gate:design` loses the gate's ready time until `design-verify` is done, because the gate's requirements are no longer all done; it needs a verdict and a new pass of the gate. v2 designs under `.bdk/design/` are not read; `/bdk:setup` already deletes them.
+
+### D11 A blocker raised under a ticket names the ticket's target
+
+The probe of task 5.3 (2026-10-01) showed the `design-verifier` raising its blockers with `--ref design.md`, as its contract allows, while the verdict check and `verify-design` count only live blockers that name `design-verify`; a verdict with live blockers could then be marked done. `log add blocker --ticket` now appends the active package's `target` to the refs, as `log add report` does (D10), so every blocker of a round names the node it blocks and stays counted until it is resolved, across later rounds. `log list` summaries carry `category`, since `verify-design` and `design` sort blockers by category and read only summaries. The same probe showed `attempt close` returning `next.action: narrow`, which `verify-design` now reports as a retry whose next round checks only the scope it names.
+
+- Alternative: the verdict check counts the live blockers written under the report's ticket. Lost: a blocker of round 1 that nobody resolved stops counting once round 2 opens a new ticket.
+- Alternative: the role contract tells the verifier to add `--ref <target>`. Lost: a rule the model can forget, which the probe showed it does.

@@ -21664,6 +21664,7 @@ function entrySummary(row) {
     refs: row.refs,
     ...row.review ? { review: true } : {},
     ...row.ticket === void 0 ? {} : { ticket: row.ticket },
+    ...row.category === void 0 ? {} : { category: row.category },
     ...row.supersedes === void 0 ? {} : { supersedes: row.supersedes },
     ...row.supersededBy === void 0 ? {} : { supersededBy: row.supersededBy }
   };
@@ -21900,6 +21901,7 @@ function addEntry(deps, change, globalDir2, input) {
       if ("refused" in fields) return fields;
       report2 = fields;
     }
+    const refs = input.type === "blocker" && active10 !== void 0 ? withTarget(input.refs, active10.data.target) : input.refs;
     let blocking = [];
     if (mayDowngrade(input.type, role2)) {
       const policy = verifierPolicy(deps, change, globalDir2);
@@ -21908,7 +21910,7 @@ function addEntry(deps, change, globalDir2, input) {
     }
     const { downgraded, ...classified } = classify(input, role2, blocking);
     const applies = input.applies ?? defaultApplies(deps, change, input);
-    const { category: category2, ...rest } = applies === void 0 ? input : { ...input, applies };
+    const { category: category2, ...rest } = applies === void 0 ? { ...input, refs } : { ...input, refs, applies };
     const base = downgraded === void 0 && category2 !== void 0 ? { ...rest, category: category2 } : rest;
     const appended2 = await appendEntry(
       deps,
@@ -21928,9 +21930,12 @@ function reportFields(deps, change, refs, dispatch2) {
     ]);
   }
   return {
-    refs: refs.includes(dispatch2.target) ? refs : [...refs, dispatch2.target],
+    refs: withTarget(refs, dispatch2.target),
     report: relative6(change.dir, path).split(sep5).join("/")
   };
+}
+function withTarget(refs, target) {
+  return refs.includes(target) ? refs : [...refs, target];
 }
 function validate3(input) {
   const summary2 = input.summary.trim();

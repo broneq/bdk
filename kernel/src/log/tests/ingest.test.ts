@@ -416,3 +416,47 @@ describe("log add report", () => {
     expect(refusal(result)).toMatchObject({ rule: "policy/no-open-ticket" });
   });
 });
+
+describe("a blocker raised under a ticket", () => {
+  const addBlocker = (h: ReturnType<typeof harness>, ref: string) =>
+    h.run(
+      [
+        "log",
+        "add",
+        "blocker",
+        "the design names a class the code lacks",
+        "--ref",
+        ref,
+        "--category",
+        "false-code-claim",
+        "--ticket",
+        TICKET,
+        "--json",
+      ],
+      undefined,
+    );
+
+  it("names the ticket's target, so the verdict node of the target sees it", async () => {
+    const h = harness();
+    const result = await addBlocker(h, "design.md");
+    expect(result.code, result.stdout).toBe(0);
+    expect(result.json).toMatchObject({
+      entry: { type: "blocker", refs: ["design.md", "02"], category: "false-code-claim" },
+    });
+  });
+
+  it("keeps the target once when a ref names it", async () => {
+    const h = harness();
+    const result = await addBlocker(h, "02");
+    expect(result.json).toMatchObject({ entry: { refs: ["02"] } });
+  });
+
+  it("lists with its category", async () => {
+    const h = harness();
+    await addBlocker(h, "design.md");
+    const listed = await h.run(["log", "list", "--type", "blocker", "--json"], undefined);
+    expect(listed.json).toMatchObject({
+      items: [{ type: "blocker", category: "false-code-claim" }],
+    });
+  });
+});

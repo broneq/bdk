@@ -61,6 +61,7 @@ export const entrySummarySchema = z.strictObject({
   ...common,
   review: z.literal(true).optional().meta({ description: "Present only when true." }),
   ticket: z.string().optional(),
+  category: z.string().optional(),
   supersedes: entryId.optional(),
   supersededBy: entryId.optional(),
 });

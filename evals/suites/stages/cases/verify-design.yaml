@@ -2,8 +2,8 @@
 # Every case starts from a fresh copy of the pinned fixture on its branch
 # feat/eval with Lavish off. The design files are written and marked done in
 # prepare, so only the verifier round is under test; the clean design states
-# only what the fixture holds (src/account/languageOptions.ts and the
-# ui.language.<code> keys of src/i18n/messages.ts).
+# only what the fixture holds (formatTimestamp in src/ui/format.ts and its
+# tests), and the false claim names a module the fixture lacks.
 - id: clean
   command: /bdk:verify-design
   prepare:
@@ -14,49 +14,44 @@
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "Add Italian to the language options of the account page" >/dev/null
+      node "$BDK" change new "Add a date-only formatter next to formatTimestamp" >/dev/null
     - |-
       D=$(ls -d .bdk/changes/20*) && cat > "$D/design.md" <<'MD'
       ---
       schema: 1
-      title: Italian in the account language options
+      title: A date-only formatter
+      architecture: false
       ---
-      # Italian in the account language options
+      # A date-only formatter
 
-      The account page offers a language preference from `LANGUAGE_OPTIONS` in
-      `src/account/languageOptions.ts`, a constant list of `{ value, label }`
-      pairs with English labels. Display surfaces translate a label through the
-      `ui.language.<code>` keys of the message catalog in `src/i18n/messages.ts`.
+      `src/ui/format.ts` exports `formatTimestamp(value, fallback = 'Unknown')`,
+      which formats a parseable ISO string with a module-level
+      `Intl.DateTimeFormat` (`dateStyle: 'medium'`, `timeStyle: 'short'`),
+      returns `fallback` for a missing or empty value, and returns an
+      unparseable value verbatim. `src/ui/format.test.ts` covers those three
+      paths and builds its expected text with the same `Intl` options, so it
+      holds on any host locale.
 
-      Add `{ value: 'it', label: 'Italian' }` to `LANGUAGE_OPTIONS`, and a
-      `ui.language.it` key to every locale of `src/i18n/messages.ts`. No other
-      module changes: `formatLanguagePreference` already looks up any listed
-      code, and an unknown stored code keeps its current fallback.
+      Add `formatDate(value, fallback = 'Unknown')` to `src/ui/format.ts`, with
+      its own module-level formatter using `dateStyle: 'medium'` only and the
+      same rules for missing and unparseable values. Add its cases to
+      `src/ui/format.test.ts` in the same locale-independent form. No existing
+      caller changes, and `formatTimestamp` keeps its behaviour.
 
-      The backend stores the preference as a string and needs no change.
+      ## Not decided
+
+      Which screens switch from `formatTimestamp` to `formatDate` is left to
+      later Changes; this Change only adds the helper.
       MD
     - |-
-      D=$(ls -d .bdk/changes/20*) && cat > "$D/architecture.md" <<'MD'
-      ---
-      schema: 1
-      title: Architecture of the Italian language option
-      ---
-      # Architecture
-
-      No module boundary moves. `src/account/languageOptions.ts` stays the
-      single owner of the offered languages, and `src/i18n/messages.ts` the
-      single owner of their translated names; the account page reads both as
-      it does today.
-      MD
-    - |-
-      node "$BDK" done design >/dev/null && node "$BDK" done architecture >/dev/null
+      node "$BDK" done design >/dev/null
   expect:
     - run: explain design-verify
       json:
         state: done
-    - run: log list --type report
-      match:
-        items.0.report: "^reports/design-verify-design-verifier-"
+    - run: log list --type report --for design-verify
+      json:
+        total: 1
 
 - id: false-claim
   command: /bdk:verify-design

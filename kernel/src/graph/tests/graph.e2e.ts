@@ -308,6 +308,52 @@ describe("a verifier round through the commands", () => {
       waiting: "gate",
     });
   });
+
+  it("exit 2: a blocker the verifier raised on a design file keeps design-verify open", () => {
+    const { root, dir } = opened();
+    writeDesign(dir, "design");
+    writeDesign(dir, "architecture");
+    done(root, "design");
+    done(root, "architecture");
+    const opening = answered(
+      bdk(["attempt", "open", "verifier", "design-verify", "--json"], root),
+      "output/attempt-open.json",
+    );
+    const ticket = String(opening.ticket);
+    bdk(["dispatch", "build", "design-verify", "design-verifier", ticket, "--json"], root);
+    const blocker = answered(
+      bdk(
+        [
+          "log",
+          "add",
+          "blocker",
+          "the design names a class the code lacks",
+          "--ref",
+          "design.md",
+          "--category",
+          "false-code-claim",
+          "--ticket",
+          ticket,
+          "--json",
+        ],
+        root,
+      ),
+      "output/log-add.json",
+    );
+    expect(blocker).toMatchObject({ entry: { refs: ["design.md", "design-verify"] } });
+    const envelope =
+      "---\nstatus: done-with-concerns\nfiles: []\nentries: []\nevidence: []\n---\nFAIL\n";
+    expect(
+      bdk(["log", "ingest", "--ticket", ticket, "--json"], root, { stdin: envelope }).code,
+    ).toBe(0);
+    expect(
+      bdk(
+        ["log", "add", "report", "one blocker", "--ref", "design-verify", "--ticket", ticket],
+        root,
+      ).code,
+    ).toBe(0);
+    refused(bdk(["done", "design-verify", "--json"], root), 2, "policy/validation-failed");
+  });
 });
 
 describe("bdk done", () => {
