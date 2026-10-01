@@ -163,7 +163,7 @@ describe("bdk ctx startup", () => {
 // the host runs a skill's `!` line through a shell, so run the committed line
 // of `design` the same way, once without and once with node on PATH.
 describe("context line of a skill in a shell", () => {
-  const line = readFileSync(join(REPO_ROOT, "skills/design/SKILL.md"), "utf8")
+  const line = readFileSync(join(REPO_ROOT, "skills/stages/design/SKILL.md"), "utf8")
     .split("\n")
     .find((text) => text.startsWith("!`node "));
   const command = (line ?? "").slice(2, -1);

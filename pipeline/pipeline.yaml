@@ -45,10 +45,18 @@ nodes:
     profiles: [small, large]
     kinds: [feature]
 
+  - id: design-verify
+    kind: design-verify
+    stage: design
+    requires: [design, design-index, architecture]
+    profiles: [small, large]
+    kinds: [feature]
+    budget: verifier
+
   - id: gate:design
     kind: gate
     stage: design
-    requires: [design, design-index, architecture]
+    requires: [design, design-index, architecture, design-verify]
     profiles: [small, large]
     kinds: [feature]
     policy: design

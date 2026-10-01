@@ -8,7 +8,17 @@ import { describe, expect, it } from "vitest";
 
 import { answered, bdk } from "../../../tests/support/repo.ts";
 import { fileStore } from "../../shared/store/index.ts";
-import { designed, done, next, opened, passGate, soon, writeDesign, writePart } from "./bundle.ts";
+import {
+  designed,
+  done,
+  next,
+  opened,
+  passGate,
+  soon,
+  verifyDesign,
+  writeDesign,
+  writePart,
+} from "./bundle.ts";
 
 describe("T21 acceptance", () => {
   it("a new small Change: next returns design", () => {
@@ -33,7 +43,8 @@ describe("T21 acceptance", () => {
   });
 
   it("a loop-back (done design with a new hash) needs a newer user entry", () => {
-    const { root, dir } = designed();
+    const change = designed();
+    const { root, dir } = change;
     // Moves the first pass into the past, so the loop-back's done is strictly newer.
     for (const name of readdirSync(join(dir, "log"))) {
       const path = join(dir, "log", name);
@@ -48,6 +59,8 @@ describe("T21 acceptance", () => {
     expect(next(root)).toMatchObject({ artifact: { id: "plan" } });
     writeDesign(dir, "design", "Changed after the gate.\n");
     done(root, "design");
+    expect(next(root)).toMatchObject({ artifact: { id: "design-verify" } });
+    verifyDesign(change);
     expect(next(root)).toMatchObject({ waiting: "gate" });
     passGate(dir, "gate:design", "plan", "user", soon(2));
     expect(next(root)).toMatchObject({ artifact: { id: "plan" } });
@@ -67,6 +80,7 @@ describe("T21 acceptance", () => {
       "plan-verify",
       "plan-part:01",
       "gate:design",
+      "design-verify",
       "architecture",
       "design",
       "intent",

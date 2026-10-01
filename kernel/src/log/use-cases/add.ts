@@ -1,5 +1,7 @@
 // `bdk log add`: validates the input, then appends through `appendEntry`
 // with deduplication. Nothing is written before every check has passed.
+import { join, relative, sep } from "node:path";
+
 import { parseReference } from "../../shared/ids/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -54,10 +56,17 @@ export function addEntry(
       const missing = checkSupersedes(deps, change, index, input.supersedes);
       if (missing !== undefined) return missing;
     }
-    const role =
+    const active =
       input.ticket === undefined
         ? undefined
-        : openPackage(deps.store, change.projectRoot, change.dir, input.ticket)?.role;
+        : openPackage(deps.store, change.projectRoot, change.dir, input.ticket);
+    const role = active?.role;
+    let report: ReportFields | undefined;
+    if (input.type === "report" && active !== undefined) {
+      const fields = reportFields(deps, change, input.refs, active.data);
+      if ("refused" in fields) return fields;
+      report = fields;
+    }
     let blocking: readonly string[] = [];
     if (mayDowngrade(input.type, role)) {
       const policy = verifierPolicy(deps, change, globalDir);
@@ -69,17 +78,46 @@ export function addEntry(
     // A downgraded blocker is an observation, which carries no category field.
     const { category, ...rest } = applies === undefined ? input : { ...input, applies };
     const base = downgraded === undefined && category !== undefined ? { ...rest, category } : rest;
+    // Each verification round is its own report, so a report is never deduplicated.
     const appended = await appendEntry(
       deps,
       change,
       index,
-      { ...base, ...classified },
-      { dedupe: true },
+      { ...base, ...classified, ...report },
+      { dedupe: report === undefined },
     );
     return "refused" in appended || downgraded === undefined
       ? appended
       : { ...appended, downgraded };
   });
+}
+
+interface ReportFields {
+  readonly refs: readonly string[];
+  readonly report: string;
+}
+
+/**
+ * A `report` entry names the report `log ingest` stored at the package's
+ * `report` path, relative to the Change directory, and the ticket's target,
+ * so the verdict node of that target reads it (`kernel-pipeline`, Artifact kinds).
+ */
+function reportFields(
+  deps: LogDeps,
+  change: ActiveChange,
+  refs: readonly string[],
+  dispatch: { readonly target: string; readonly report: string },
+): ReportFields | Refusal {
+  const path = join(change.projectRoot, dispatch.report);
+  if (deps.store.read(path) === undefined) {
+    return refuse("input/not-found", `no report is stored at ${dispatch.report} yet`, [
+      "store the report first: bdk log ingest --ticket <ticket>",
+    ]);
+  }
+  return {
+    refs: refs.includes(dispatch.target) ? refs : [...refs, dispatch.target],
+    report: relative(change.dir, path).split(sep).join("/"),
+  };
 }
 
 function validate(input: AddInput): Refusal | undefined {
@@ -114,6 +152,13 @@ function validate(input: AddInput): Refusal | undefined {
         `bdk log add ${input.type} "..." --supersedes <id>`,
         "bdk log resolve <id> superseded --by <id>",
       ],
+    );
+  }
+  if (input.type === "report" && input.ticket === undefined) {
+    return refuse(
+      "input/missing-argument",
+      "log add report needs --ticket: the report is the one log ingest stored under that ticket",
+      [`bdk log add report "${input.summary}" --ref <target> --ticket <ticket>`],
     );
   }
   if (input.applies !== undefined && input.type !== "learning") {

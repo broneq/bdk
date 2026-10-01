@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { CHANGE, DIR, ROOT, writePackage } from "../../log/tests/support.ts";
 import { agentsRegistryPath } from "../../shared/store/index.ts";
-import { writeDesign, writePlanPart } from "../../graph/tests/support.ts";
+import { writeDesign, writeDesignVerdict, writePlanPart } from "../../graph/tests/support.ts";
 import {
   postToolOutput,
   stopOutput,
@@ -224,6 +224,8 @@ describe("continuation check", () => {
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"]);
     await h.run(["done", "architecture"]);
+    writeDesignVerdict(h.store, new Date().toISOString());
+    await h.run(["done", "design-verify"]);
     await h.run(["hooks", "prompt-expansion"], {
       session_id: SESSION,
       hook_event_name: "UserPromptExpansion",

@@ -45,12 +45,18 @@ export function checksOf(read: ChangeGraph, node: GraphNode): Check[] {
     return kind.validate(read.view, {
       id: node.id,
       ...(node.nn === undefined ? {} : { nn: node.nn }),
+      requires: node.requires,
     });
   }
   return instances.flatMap((instance) => {
-    const nn = read.graph.find(instance)?.nn;
+    const found = read.graph.find(instance);
+    const nn = found?.nn;
     return kind
-      .validate(read.view, { id: instance, ...(nn === undefined ? {} : { nn }) })
+      .validate(read.view, {
+        id: instance,
+        ...(nn === undefined ? {} : { nn }),
+        requires: found?.requires ?? [],
+      })
       .map((check) => ({ ...check, id: `${instance}:${check.id}` }));
   });
 }

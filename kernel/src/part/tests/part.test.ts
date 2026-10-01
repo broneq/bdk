@@ -6,6 +6,7 @@ import {
   passGate,
   setChange,
   writeDesign,
+  writeDesignVerdict,
   writeEntry,
   writePlanPart,
 } from "../../graph/tests/support.ts";
@@ -346,6 +347,8 @@ describe("part split", () => {
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"], T0);
     await h.run(["done", "architecture"], T0);
+    writeDesignVerdict(h.store, T0);
+    await h.run(["done", "design-verify"], T0);
     passGate(h.store, "gate:design", "plan", T1);
     writePlanPart(h.store, "01", { body: tasks("01", 1) });
     writePlanPart(h.store, "02", {

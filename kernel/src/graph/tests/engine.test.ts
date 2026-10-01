@@ -100,8 +100,9 @@ describe("node states", () => {
       state: "skipped",
       why: "design.md declares architecture: false (product-only Change)",
     });
-    expect(productOnly.find("gate:design")?.requires).toStrictEqual(["design"]);
-    expect(state(productOnly, "gate:design")).toBe("ready");
+    expect(productOnly.find("gate:design")?.requires).toStrictEqual(["design", "design-verify"]);
+    expect(state(productOnly, "gate:design")).toBe("blocked");
+    expect(productOnly.next?.id).toBe("design-verify");
   });
 
   it("a collection without instances is the actionable node", () => {
@@ -110,6 +111,7 @@ describe("node states", () => {
       entries: [
         done("design", "design.md@1"),
         done("architecture", "architecture.md@1"),
+        done("design-verify", "design.md@1,architecture.md@1"),
         userGate("gate:design", "2026-09-25T11:00:00.000Z"),
       ],
     });
@@ -127,6 +129,7 @@ describe("node states", () => {
     const passed = [
       done("design", "design.md@1"),
       done("architecture", "architecture.md@1"),
+      done("design-verify", "design.md@1,architecture.md@1"),
       userGate("gate:design", "2026-09-25T11:00:00.000Z"),
     ];
     const one = graph({
@@ -185,6 +188,7 @@ describe("sealing", () => {
   const entries = [
     done("design", "design.md@1"),
     done("architecture", "architecture.md@1"),
+    done("design-verify", "design.md@1,architecture.md@1"),
     userGate("gate:design", passedAt),
   ];
 
@@ -197,11 +201,18 @@ describe("sealing", () => {
 
   it("a loop-back moves the ready time past the old entry", () => {
     const loop = [...entries, done("design", "design.md@2", "2026-09-25T12:00:00.000Z")];
-    const result = graph({ ...small, entries: loop }, {}, { "design.md": "2" });
+    const unverified = graph({ ...small, entries: loop }, {}, { "design.md": "2" });
+    expect(unverified.find("gate:design")?.gate).toMatchObject({ ready: false, done: false });
+    expect(unverified.next?.id).toBe("design-verify");
+    const verified = [
+      ...loop,
+      done("design-verify", "design.md@2,architecture.md@1", "2026-09-25T12:30:00.000Z"),
+    ];
+    const result = graph({ ...small, entries: verified }, {}, { "design.md": "2" });
     expect(result.find("gate:design")?.gate).toMatchObject({
       ready: true,
       done: false,
-      readyAt: "2026-09-25T12:00:00.000Z",
+      readyAt: "2026-09-25T12:30:00.000Z",
     });
     expect(result.waitingGate?.gate).toBe("gate:design");
     expect(result.next).toBeUndefined();
@@ -209,10 +220,37 @@ describe("sealing", () => {
 });
 
 describe("next", () => {
-  it("walks pipeline order and waits at a ready gate", () => {
+  it("returns design-verify before the design gate", () => {
     const result = graph({
       ...small,
       entries: [done("design", "design.md@1"), done("architecture", "architecture.md@1")],
+    });
+    expect(result.next?.id).toBe("design-verify");
+    expect(result.find("gate:design")).toMatchObject({
+      state: "blocked",
+      requires: ["design", "architecture", "design-verify"],
+    });
+  });
+
+  it("makes design-verify stale when the design changes after the verdict", () => {
+    const entries = [
+      done("design", "design.md@1"),
+      done("architecture", "architecture.md@1"),
+      done("design-verify", "design.md@1,architecture.md@1"),
+    ];
+    const result = graph({ ...small, entries }, {}, { "design.md": "2" });
+    expect(state(result, "design-verify")).toBe("stale");
+    expect(state(result, "gate:design")).toBe("blocked");
+  });
+
+  it("walks pipeline order and waits at a ready gate", () => {
+    const result = graph({
+      ...small,
+      entries: [
+        done("design", "design.md@1"),
+        done("architecture", "architecture.md@1"),
+        done("design-verify", "design.md@1,architecture.md@1"),
+      ],
     });
     expect(result.next).toBeUndefined();
     expect(result.waitingGate).toMatchObject({ gate: "gate:design", command: "/bdk:plan" });
@@ -319,11 +357,12 @@ describe("graph variants", () => {
     expect(result.next?.id).toBe("plan");
   });
 
-  it("small: design, architecture and the design gate", () => {
+  it("small: design, architecture, design-verify and the design gate", () => {
     expect(present(graph(small))).toStrictEqual([
       "intent",
       "design",
       "architecture",
+      "design-verify",
       "gate:design",
       "plan",
       "plan-verify",
@@ -352,6 +391,7 @@ describe("graph variants", () => {
     expect(present(result)).toContain("design-part:02");
     expect(present(result)).not.toContain("design");
     expect(result.next?.id).toBe("architecture");
+    expect(result.find("design-verify")?.requires).toStrictEqual(["design-index", "architecture"]);
   });
 
   it("bug: from intent to plan", () => {
@@ -359,6 +399,7 @@ describe("graph variants", () => {
     expect(result.find("design")?.why).toBe("Change kind bug is not in kinds [feature]");
     expect(result.next).toMatchObject({ id: "plan", kind: "plan-part" });
     expect(present(result)).toContain("plan-verify");
+    expect(present(result)).not.toContain("design-verify");
   });
 
   it("spec-delta only when a plan part has spec-impact", () => {

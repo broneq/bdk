@@ -337,3 +337,82 @@ describe("log ingest refusals", () => {
     expect(refusal(result)).toMatchObject({ rule: "input/missing-argument" });
   });
 });
+
+// `log add report` (v3-t41-design D10): the entry a verdict node reads names
+// the report `log ingest` stored under the ticket.
+describe("log add report", () => {
+  const addReport = (h: ReturnType<typeof harness>, ...refs: string[]) =>
+    h.run(
+      [
+        "log",
+        "add",
+        "report",
+        "verdict stored",
+        ...refs.flatMap((ref) => ["--ref", ref]),
+        "--ticket",
+        TICKET,
+        "--json",
+      ],
+      undefined,
+    );
+
+  it("names the stored report of the ticket and the ticket's target", async () => {
+    const h = harness();
+    await h.ingest(report(ENVELOPE));
+    const result = await addReport(h, "design.md");
+    expect(result.code, result.stdout).toBe(0);
+    expect(result.json).toMatchObject({
+      entry: {
+        type: "report",
+        source: "agent:verifier",
+        ticket: TICKET,
+        refs: ["design.md", "02"],
+        report: `reports/02-verifier-${TICKET}.md`,
+      },
+    });
+  });
+
+  it("keeps the target once when a ref names it", async () => {
+    const h = harness();
+    await h.ingest(report(ENVELOPE));
+    const result = await addReport(h, "02");
+    expect(result.json).toMatchObject({ entry: { refs: ["02"] } });
+  });
+
+  it("writes a new entry for each round, never a duplicate", async () => {
+    const h = harness();
+    await h.ingest(report(ENVELOPE));
+    const first = await addReport(h, "02");
+    const second = await addReport(h, "02");
+    expect(second.json).toMatchObject({ deduplicated: false });
+    expect((second.json as { entry: { id: string } }).entry.id).not.toBe(
+      (first.json as { entry: { id: string } }).entry.id,
+    );
+  });
+
+  it("refuses before log ingest stored the report, writing nothing", async () => {
+    const h = harness();
+    const result = await addReport(h, "02");
+    expect(result.code).toBe(3);
+    expect(refusal(result)).toMatchObject({ rule: "input/not-found" });
+    expect(refusal(result).why).toContain(reportPath("verifier"));
+    expect(h.store.list(`${DIR}/log`)).toStrictEqual([]);
+  });
+
+  it("refuses without --ticket: the report comes from the ticket's package", async () => {
+    const h = harness();
+    const result = await h.run(
+      ["log", "add", "report", "verdict stored", "--ref", "02", "--json"],
+      undefined,
+    );
+    expect(result.code).toBe(3);
+    expect(refusal(result)).toMatchObject({ rule: "input/missing-argument" });
+  });
+
+  it("refuses a closed ticket with policy/no-open-ticket", async () => {
+    const h = harness({ closed: true });
+    const result = await addReport(h, "02");
+    expect(result.code).toBe(2);
+    expect(refusal(result)).toMatchObject({ rule: "policy/no-open-ticket" });
+  });
+});

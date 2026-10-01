@@ -26,6 +26,7 @@ import {
   taskBody,
   writeDesign,
   writeDesignPart,
+  writeDesignVerdict,
   writeEntry,
   writeManifest,
   writePlanPart,
@@ -48,12 +49,20 @@ function ledger(store: Store): Record<string, unknown>[] {
   });
 }
 
-/** design and architecture done at T0, gate:design passed by the user at T1. */
+/** A passing verdict on design-verify at `at`, then `done design-verify`. */
+async function verifyDesign(h: Harness, at: string): Promise<void> {
+  writeDesignVerdict(h.store, at);
+  const result = await h.run(["done", "design-verify", "--json"], at);
+  if (result.code !== 0) throw new Error(JSON.stringify(result.json));
+}
+
+/** design, architecture and design-verify done at T0, gate:design passed by the user at T1. */
 async function pastDesignGate(h: Harness): Promise<void> {
   writeDesign(h.store, "design");
   writeDesign(h.store, "architecture");
   await h.run(["done", "design"], T0);
   await h.run(["done", "architecture"], T0);
+  await verifyDesign(h, T0);
   passGate(h.store, "gate:design", "plan", T1);
 }
 
@@ -172,6 +181,7 @@ describe("bdk next", () => {
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"], T0);
     await h.run(["done", "architecture"], T0);
+    await verifyDesign(h, T0);
     writeEntry(h.store, {
       type: "question",
       at: T1,
@@ -202,6 +212,7 @@ describe("bdk next", () => {
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"], T0);
     await h.run(["done", "architecture"], T0);
+    await verifyDesign(h, T0);
     await h.run(["log", "add", "decision", "Design approved", "--ref", "gate:design"], T1);
     expect(nextOutput.parse((await h.run(["next", "--json"], T1)).json).waiting).toBe("gate");
     passGate(h.store, "gate:design", "plan", T1);
@@ -216,6 +227,15 @@ describe("bdk next", () => {
     await pastDesignGate(h);
     writeDesign(h.store, "design", "Changed.\n");
     expect((await h.run(["done", "design", "--json"], T2)).code).toBe(0);
+    expect(nextOutput.parse((await h.run(["next", "--json"], T2)).json).artifact?.id).toBe(
+      "design-verify",
+    );
+    const old = await h.run(["done", "design-verify", "--json"], T2);
+    expect(old.json).toMatchObject({
+      rule: "policy/validation-failed",
+      why: containing("is older than"),
+    });
+    await verifyDesign(h, T2);
     expect(nextOutput.parse((await h.run(["next", "--json"], T2)).json).waiting).toBe("gate");
     passGate(h.store, "gate:design", "plan", T3);
     expect(nextOutput.parse((await h.run(["next", "--json"], T3)).json).artifact?.id).toBe("plan");
@@ -227,6 +247,7 @@ describe("bdk next", () => {
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"], T0);
     await h.run(["done", "architecture"], T0);
+    await verifyDesign(h, T0);
     passGate(h.store, "gate:design", "plan", T1, "policy");
     expect(nextOutput.parse((await h.run(["next", "--json"], T1)).json).waiting).toBe("gate");
     h.store.write(`${ROOT}/.bdk/settings.yaml`, "policy:\n  gates:\n    design: auto\n");
@@ -298,6 +319,7 @@ describe("bdk explain", () => {
       ["plan-part:01", "done"],
       ["plan-part:02", "ready"],
       ["gate:design", "done"],
+      ["design-verify", "done"],
       ["architecture", "done"],
       ["design", "done"],
       ["intent", "done"],
@@ -393,6 +415,7 @@ describe("bdk validate", () => {
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"], T0);
     await h.run(["done", "architecture"], T0);
+    await verifyDesign(h, T0);
     const waiting = await h.run(["validate", "--json"], T1);
     expect(waiting.code).toBe(3);
     expect(waiting.json).toMatchObject({

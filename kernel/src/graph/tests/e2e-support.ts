@@ -77,29 +77,36 @@ export function done(root: string, id: string): Record<string, unknown> {
   return answered(bdk(["done", id, "--json"], root), "output/done.json");
 }
 
-/** design and architecture done, gate:design passed by the user. */
+/** design, architecture and design-verify done, gate:design passed by the user. */
 export function pastDesignGate(): Opened {
   const change = opened();
   writeDesign(change.dir, "design");
   writeDesign(change.dir, "architecture");
   done(change.root, "design");
   done(change.root, "architecture");
+  verdict(change.dir, [], "design-verify");
+  done(change.root, "design-verify");
   passGate(change.dir, "gate:design", "plan");
   return change;
 }
 
 /**
- * A passing `plan-verify` verdict listing `evidence`: the report file and the
- * `report` entry naming it, as `log ingest` writes them.
+ * A passing verdict on `node` (`plan-verify` by default) listing `evidence`:
+ * the report file and the `report` entry naming it, as `log ingest` writes them.
  */
-export function verdict(dir: string, evidence: readonly string[] = []): void {
+export function verdict(
+  dir: string,
+  evidence: readonly string[] = [],
+  node: "plan-verify" | "design-verify" = "plan-verify",
+): void {
   const at = soon();
-  const report = "reports/plan-verify-plan-verifier-A-00000001.md";
+  const role = node === "plan-verify" ? "plan-verifier" : "design-verifier";
+  const report = `reports/${node}-${role}-A-00000001.md`;
   writeDocument(fileStore(), join(dir, report), {
     data: {
       schema: 1,
       ticket: "A-00000001",
-      role: "plan-verifier",
+      role,
       status: "done",
       files: [],
       entries: [],
@@ -107,18 +114,19 @@ export function verdict(dir: string, evidence: readonly string[] = []): void {
     },
     body: "PASS\n",
   });
-  const id = `L-r${String(Date.now() % 10_000_000).padStart(7, "0")}`;
+  const prefix = node === "plan-verify" ? "L-r" : "L-v";
+  const id = `${prefix}${String(Date.now() % 10_000_000).padStart(7, "0")}`;
   writeDocument(fileStore(), join(dir, `log/${secondStamp(at)}-report-${id}.md`), {
     data: {
       schema: 1,
       id,
       type: "report",
-      summary: "plan-verify passed",
+      summary: `${node} passed`,
       status: "accepted",
-      source: "agent:plan-verifier",
+      source: `agent:${role}`,
       author: "BDK Test <test@example.com>",
       at,
-      refs: ["plan-verify"],
+      refs: [node],
       report,
     },
     body: "",

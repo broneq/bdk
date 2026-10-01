@@ -294,3 +294,10 @@ exports[`ctx skill output > test-driven-development is unchanged 1`] = `
   ]
 }"
 `;
+
+exports[`ctx skill output > verify-design is unchanged 1`] = `
+"{
+  "content": "## BDK context: verify-design\\n",
+  "parts": []
+}"
+`;
