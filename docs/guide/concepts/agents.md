@@ -10,17 +10,17 @@ BDK ships thirteen subagents. The reason there are that many, rather than one ca
 
 **Directly invokable** general-purpose helpers. Reach for these from any session via the Agent tool with the listed `subagent_type`:
 
-| `subagent_type`             | Model | When to pick                                              |
-| --------------------------- | ----- | --------------------------------------------------------- |
-| `bdk:explorer`              | haiku | Broad codebase search spanning more than three queries    |
-| `bdk:log-analyzer`          | haiku | Stderr, traceback, and error-log triage                   |
-| `bdk:web-researcher`        | haiku | External docs, GitHub issues, Stack Overflow lookups      |
-| `bdk:static-analyse`        | haiku | Run project lint, format, or typecheck                    |
-| `bdk:test-runner`           | haiku | Run tests and report results                              |
-| `bdk:dead-code-detector`    | haiku | Find unused or unreachable code                           |
-| `bdk:duplicate-detector`    | haiku | Find duplicated code and extractable patterns             |
-| `bdk:architecture-reviewer` | opus  | Cross-cutting architectural analysis                      |
-| `bdk:plan-verifier`         | opus  | Single-pass plan verification, used by `/bdk:verify-plan` |
+| `subagent_type`             | Model | When to pick                                                         |
+| --------------------------- | ----- | -------------------------------------------------------------------- |
+| `bdk:explorer`              | haiku | Broad codebase search spanning more than three queries               |
+| `bdk:log-analyzer`          | haiku | Stderr, traceback, and error-log triage                              |
+| `bdk:web-researcher`        | haiku | External docs, GitHub issues, Stack Overflow lookups                 |
+| `bdk:static-analyse`        | haiku | Run project lint, format, or typecheck                               |
+| `bdk:test-runner`           | haiku | Run tests and report results                                         |
+| `bdk:dead-code-detector`    | haiku | Find unused or unreachable code                                      |
+| `bdk:duplicate-detector`    | haiku | Find duplicated code and extractable patterns                        |
+| `bdk:architecture-reviewer` | opus  | Cross-cutting architectural analysis                                 |
+| `bdk:plan-verifier`         | opus  | Single-pass plan verification; BDK 2 agent, no BDK 3 skill starts it |
 
 **Used by skills internally.** Let the owning skill orchestrate these rather than calling them yourself:
 

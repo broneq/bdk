@@ -10,17 +10,17 @@ BDK ships 19 subagents: the 13 v2 agents below and the six v3 adapters. Every ag
 
 General-purpose helpers any session can call with the `Agent` tool.
 
-| `subagent_type`             | Model | When to pick                                                                                                                                  |
-| --------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bdk:explorer`              | haiku | Broad codebase search spanning more than 3 queries, with Read, Grep, Glob and Bash.                                                           |
-| `bdk:log-analyzer`          | haiku | Stderr/traceback/error-log triage.                                                                                                            |
-| `bdk:web-researcher`        | haiku | External docs, GitHub issues, Stack Overflow lookups.                                                                                         |
-| `bdk:static-analyse`        | haiku | Detect and run project-appropriate lint/format/typecheck across Python, JS, Go, Rust, and other stacks.                                       |
-| `bdk:test-runner`           | haiku | Run the test suite (or a targets/dirs subset passed in the prompt) and report results.                                                        |
-| `bdk:dead-code-detector`    | haiku | Find unused functions, methods, variables, and unreachable code blocks via reference checking.                                                |
-| `bdk:duplicate-detector`    | haiku | Find duplicated code and extractable patterns - literal duplicates, structural patterns, intra-function duplication.                          |
-| `bdk:architecture-reviewer` | opus  | Cross-cutting architectural analysis: layer boundaries, DI, design patterns, data flow, directory structure, import direction.                |
-| `bdk:plan-verifier`         | opus  | Single-pass, six-section plan verification against real code; resumable via `SendMessage` for delta iteration. Spawned by `/bdk:verify-plan`. |
+| `subagent_type`             | Model | When to pick                                                                                                                                          |
+| --------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bdk:explorer`              | haiku | Broad codebase search spanning more than 3 queries, with Read, Grep, Glob and Bash.                                                                   |
+| `bdk:log-analyzer`          | haiku | Stderr/traceback/error-log triage.                                                                                                                    |
+| `bdk:web-researcher`        | haiku | External docs, GitHub issues, Stack Overflow lookups.                                                                                                 |
+| `bdk:static-analyse`        | haiku | Detect and run project-appropriate lint/format/typecheck across Python, JS, Go, Rust, and other stacks.                                               |
+| `bdk:test-runner`           | haiku | Run the test suite (or a targets/dirs subset passed in the prompt) and report results.                                                                |
+| `bdk:dead-code-detector`    | haiku | Find unused functions, methods, variables, and unreachable code blocks via reference checking.                                                        |
+| `bdk:duplicate-detector`    | haiku | Find duplicated code and extractable patterns - literal duplicates, structural patterns, intra-function duplication.                                  |
+| `bdk:architecture-reviewer` | opus  | Cross-cutting architectural analysis: layer boundaries, DI, design patterns, data flow, directory structure, import direction.                        |
+| `bdk:plan-verifier`         | opus  | Single-pass, six-section plan verification against real code; resumable via `SendMessage` for delta iteration. BDK 2 agent; no BDK 3 skill starts it. |
 
 ## Used by skills internally
 

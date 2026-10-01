@@ -4,6 +4,12 @@
 
     This page describes BDK v2. The v3 documentation replaces it (T50).
 
+!!! note "BDK 3"
+
+    In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
+    active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
+    passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdkplan).
+
 Four skills form one chain, each stage consuming the previous stage's output:
 
 ```mermaid

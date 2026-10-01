@@ -64,33 +64,33 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **Related skills:** `/bdk:design`, which starts it and acts on its verdict.
 
-## Pipeline skills
+## /bdk:plan
 
-These four BDK 2 skills form the full-tier chain after a design: `/bdk:create-plan` -> `/bdk:verify-plan` -> `/bdk:subagent-execute-plan` -> `/bdk:cr`. Each stage's output is a file the next stage reads, so any stage can start in a fresh session - see [The full pipeline](../workflows/full-pipeline.md).
+**Purpose.** Plan the active Change as plan parts that workers build without the conversation. Each part holds at most 8 tasks and 8 KB, and parts without a dependency between them run in the same wave. Each task is a contract, not code: its goal, the exact signatures and formats other tasks consume, its `Files:`, and test cases that each name an input and the expected result, one or more for every behaviour the task states. It reads the design (a `bug` Change has none and is planned from its intent), the ledger and the code first, writes the spec delta of every capability a part changes, then runs `/bdk:verify-plan` and corrects the plan itself until the verdict passes. It asks you only about a blocker that needs a decision the design does not hold.
 
-## /bdk:create-plan
+**Arguments:** `[--review] [what to focus on]` - `--review` shows the verified plan for your acceptance before the report; any other text is a focus for the plan.
 
-**Purpose.** Create a comprehensive, TDD-driven implementation plan through structured exploration and trade-off analysis.
+**Artifact:** `.bdk/changes/<changeId>/plan/parts/<nn>-<slug>.md`, `spec-delta/<capability>.md` for the capabilities a part names in `spec-impact`, and `decision` entries under `log/`.
 
-**Arguments:** `[feature description or design doc path]`
+**When to use.** After the design gate, or right after opening a `bug` or `tiny` Change. It ends with a report of the parts, their waves, the corrections it made and each finding with its decision, naming `/bdk:execute`, which you type. Claude does not start it on its own.
 
-**Artifact:** `.bdk/plans/<timestamp>-<slug>.md`. On a filename collision it appends `-v2`, `-v3`, ... (lowest free integer). The `.bdk/plans/` directory is pre-created by the skill's own `UserPromptSubmit` hook (`mkdir -p .bdk/plans`). Phase 6 scans `.bdk/design/` for a matching design doc by slug keywords before writing.
-
-**When to use.** Any full- or standard-tier change: a clear scope with several files, or the required second stage after `/bdk:design` for ambiguous/architectural scope.
-
-**Related skills:** `/bdk:design` (optional upstream source), `/bdk:verify-plan` (downstream consumer), `/bdk:test-driven-development` (consumes the plan's test-case bullets during execution).
+**Related skills:** `/bdk:design` or `/bdk:change` before it, `/bdk:verify-plan` inside it, `/bdk:debug`, which hands a large fix to a `bug` Change.
 
 ## /bdk:verify-plan
 
-**Purpose.** Verify an implementation plan against real code before execution, using a single Opus subagent (`bdk:plan-verifier`) driven by a structured six-section checklist, returning a YAML verdict envelope.
+**Purpose.** Check the plan of the active Change against the code and the design on a fresh context: one `verifier` agent that knows only its dispatch package reads every plan part together with the design documents and the spec deltas. Besides each task's claims about the code, it checks that every stated behaviour has a test case, that the plan covers the design, and that parts declare the dependencies between them. It blocks only on the categories of `policy.verifier.blocking-categories`. A passing verdict marks the `plan-verify` node done; an edit to a plan part, a spec delta or the design afterwards makes it stale.
 
-**Arguments:** `[plan-file]`
+**Arguments:** none.
 
-**Artifact:** `.bdk/verify-plan/<plan-slug>-verification.md`, rendered from `references/verdict-template.md`. The header carries `plan_sha256`, computed via `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/bdk_run_state.py hash-plan <plan-path>` - a hash over the plan file's bytes, so it identifies exactly the plan version that was verified.
+**Artifact:** a ticket under `attempts/`, the verifier's package under `dispatch/` and report under `reports/`, and its `report`, `blocker` and `finding` entries under `log/`, all in `.bdk/changes/<changeId>/`.
 
-**When to use.** Any time there is a written plan (from `/bdk:create-plan` or written by hand) and you want it checked against the real codebase before writing code - always before a full-tier execution.
+**When to use.** `/bdk:plan` runs it after writing the plan; run it yourself after editing a plan part by hand. It refuses while a plan part is not done.
 
-**Related skills:** `/bdk:create-plan` (produces the input), `/bdk:subagent-execute-plan` (re-hashes the plan at its Step 0 and compares against this stamp; a mismatch means the plan was edited after verification).
+**Related skills:** `/bdk:plan`, which starts it and acts on its verdict.
+
+## Pipeline skills
+
+These BDK 2 skills form the rest of the full-tier chain: `/bdk:subagent-execute-plan` -> `/bdk:cr`. The BDK 2 planner `/bdk:create-plan` and its file-based `/bdk:verify-plan` are gone; the BDK 3 `/bdk:execute`, which builds the plan parts of a Change, replaces the executor in a later v3 Change - see [The full pipeline](../workflows/full-pipeline.md).
 
 ## /bdk:subagent-execute-plan
 
@@ -100,9 +100,9 @@ These four BDK 2 skills form the full-tier chain after a design: `/bdk:create-pl
 
 **Artifact:** A run manifest at `.bdk/runs/<run-id>.json` - a resume cache, not the source of truth. The durable ground truth is git commit trailers (`BDK-Run:`, `BDK-Group:`), one commit per completed group. Both are mediated exclusively by `scripts/bdk_run_state.py`; on disagreement, git wins and the manifest is corrected.
 
-**When to use.** After a plan has passed (or been deliberately run without) `/bdk:verify-plan`, to execute it task-by-task without manual supervision. Two plans that touch the same files need separate git worktrees - see [The full pipeline](../workflows/full-pipeline.md).
+**When to use.** To execute a BDK 2 plan file task-by-task without manual supervision; it does not read the plan parts of a BDK 3 Change. Two plans that touch the same files need separate git worktrees - see [The full pipeline](../workflows/full-pipeline.md).
 
-**Related skills:** `/bdk:verify-plan` (precondition), `/bdk:cr` (the step after execution finishes), `/bdk:test-driven-development` (preloaded into the `bdk:implementer` agent this skill spawns).
+**Related skills:** `/bdk:cr` (the step after execution finishes), `/bdk:test-driven-development` (preloaded into the `bdk:implementer` agent this skill spawns).
 
 ## /bdk:cr
 
@@ -144,11 +144,11 @@ These four BDK 2 skills form the full-tier chain after a design: `/bdk:create-pl
 
 **Arguments:** `[error message, traceback, or steps to reproduce]`
 
-**Artifact:** None fixed. A HIGH-risk finding (affects many call sites, introduces new architecture) routes to Phase 5b: hand off to `/bdk:create-plan`, passing the failing test paths as acceptance criteria, printing `[debug] Routing to /bdk:create-plan`. A LOW/MEDIUM-risk finding is fixed in place instead.
+**Artifact:** None fixed. A HIGH-risk finding (affects many call sites, introduces new architecture) routes to Phase 5b: a hand-off text for a `bug` Change, with the failing test paths as acceptance criteria, which you pass to `/bdk:change` before typing `/bdk:plan`. A LOW/MEDIUM-risk finding is fixed in place instead.
 
 **When to use.** The user supplies an error message, a traceback, steps to reproduce, or describes unexpected behavior.
 
-**Related skills:** `/bdk:create-plan` (hand-off target for HIGH-risk fixes).
+**Related skills:** `/bdk:change` and `/bdk:plan` (hand-off targets for HIGH-risk fixes).
 
 ## Docs and decisions
 
@@ -252,9 +252,9 @@ Two skills keep `.claude/rules/` accurate instead of letting it accrete into a c
 
 **Artifact:** None fixed - it writes the test files the task at hand requires, as part of the red-green cycle; it does not produce a separate report.
 
-**When to use.** Implementing any feature or bugfix, wherever test cases have already been broken into bullet points (typically by `/bdk:create-plan`).
+**When to use.** Implementing any feature or bugfix, wherever test cases have already been broken into bullet points (typically by `/bdk:plan`).
 
-**Related skills:** `/bdk:create-plan` (source of the test-case bullets), `/bdk:subagent-execute-plan` (its `bdk:implementer` agent preloads this skill via `skills:` frontmatter so subagents get the same red-green process).
+**Related skills:** `/bdk:plan` (source of the test cases), `/bdk:subagent-execute-plan` (its `bdk:implementer` agent preloads this skill via `skills:` frontmatter so subagents get the same red-green process).
 
 ## Meta-skills
 
@@ -268,7 +268,7 @@ Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which se
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/bdk:execute-plan`                           | `/bdk:subagent-execute-plan`                                                                                                                                                                        |
 | `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session             |
-| `/bdk:create-tasks`, `/bdk:refactor`          | `/bdk:create-plan`                                                                                                                                                                                  |
+| `/bdk:create-tasks`, `/bdk:refactor`          | `/bdk:plan`                                                                                                                                                                                         |
 | `/bdk:audit-prompt`                           | Nothing                                                                                                                                                                                             |
 | `/bdk:graphviz-docs-compiler`                 | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
 | `/bdk:brainstorming`                          | `/bdk:design`                                                                                                                                                                                       |

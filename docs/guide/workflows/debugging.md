@@ -67,7 +67,7 @@ change, one function or call site) or HIGH (many call sites, new abstractions, s
 models), and asks you to choose:
 
 1. **Fix now** - apply the inline fix and verify tests pass
-2. **Create plan** - hand off to `/bdk:create-plan` with failing tests as acceptance criteria
+2. **Create plan** - hand off to a `bug` Change (`/bdk:change`, then `/bdk:plan`) with failing tests as acceptance criteria
 3. **Something else** - redirect, reconsider, investigate more
 
 !!! warning
@@ -94,16 +94,18 @@ An e2e tier is added only if the fix touched e2e specs or changed a public contr
   Status:       all tests GREEN
 ```
 
-### Phase 5b - Hand off to a plan
+### Phase 5b - Hand off to a Change
 
 ```
-[debug] Routing to /bdk:create-plan
+[debug] Handing off to a bug Change
 ```
 
-The handoff is not just the sentence "fix this bug". `/bdk:create-plan` receives the root
-cause as the feature description, the steps to reproduce verbatim, the failing test file
-path and test names as acceptance criteria, and the architectural constraints discovered
-during investigation. The plan starts from a reproduction, not from a guess.
+The handoff is not just the sentence "fix this bug". `/bdk:debug` prints the root cause as
+the Change's intent, the steps to reproduce verbatim, the failing test file path and test
+names as acceptance criteria, and the architectural constraints discovered during
+investigation. `/bdk:change` and `/bdk:plan` start only when you type them, so you pass
+that text to `/bdk:change` and then type `/bdk:plan`. The plan starts from a
+reproduction, not from a guess.
 
 From there you are in [the standard workflow](standard.md) - or the
 [full pipeline](full-pipeline.md) if planning surfaces a design question.

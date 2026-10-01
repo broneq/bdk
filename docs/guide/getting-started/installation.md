@@ -38,7 +38,7 @@ Every other BDK skill works without it.
 
 With the `lavish-axi` binary on `PATH` **and** `features.lavish` set to `true`
 in `.bdk/settings.json`, skills that bundle several decisions into one prompt
-(`/bdk:design`, `/bdk:create-plan`) route that prompt through `lavish-axi`
+(`/bdk:design`, `/bdk:plan`) route that prompt through `lavish-axi`
 instead of the terminal `AskUserQuestion`. The question set is unchanged; only
 the surface differs. Skills check both the flag and the binary, and fall back
 to the terminal silently when either is absent.
