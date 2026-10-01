@@ -39,6 +39,6 @@
 ## 7. Acceptance
 
 - [x] 7.1 Sync the main specs (`stage-skills`, `kernel-cli/graph`, `kernel-settings`, `role-contracts`, `skill-evals`) with the deltas
-- [ ] 7.2 Full gate: `pnpm build`, lint, format, typecheck, knip, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm docs:build`, `pnpm eval check`, `pnpm lint:py`, `pytest tests/unit/`
+- [x] 7.2 Full gate: `pnpm build`, lint, format, typecheck, knip, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm docs:build`, `pnpm eval check`, `pnpm lint:py`, `pytest tests/unit/`
 - [ ] 7.3 Acceptance signal end to end: the `flat` and `tree` probe rows pass (5.4); `/bdk:execute` resolves to one skill under 200 lines with the P9 frontmatter
-- [ ] 7.4 `openspec validate v3-t41-execute --strict` and `openspec validate --specs --strict`
+- [x] 7.4 `openspec validate v3-t41-execute --strict` and `openspec validate --specs --strict`
