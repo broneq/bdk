@@ -23,7 +23,10 @@
     - run: explain plan-verify
       json:
         state: done
+    # A one-function fix is one part (the intent sets the size of the plan).
     - run: part list
+      json:
+        total: 1
       match:
         items.0.part: "^01$"
     # The command, not prose: the reply may be in any language.
