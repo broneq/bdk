@@ -44,6 +44,7 @@ describe("describeStages", () => {
     expect(Object.keys(setup.cells)).toEqual(["bdk"]);
     const cell = setup.cells.bdk;
     expect(cell?.plan.workDir).toBe("/sandbox/work/bdk");
+    expect(cell?.provider.config).toHaveProperty("ask_user_question");
     expect(cell?.plan.settings).toEqual({
       bundle: join(REPO_ROOT, "dist", "bdk.mjs"),
       configHome: "/sandbox/config-home",

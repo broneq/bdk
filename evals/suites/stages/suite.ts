@@ -113,6 +113,7 @@ export function describeStages(spec: StagesSpec): SeriesSetup {
           debugFile,
           configHome,
           maxBudgetUsd: spec.runCapUsd,
+          askUserQuestion: true,
         }),
         plan: {
           debugFile,

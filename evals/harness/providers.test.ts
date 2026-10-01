@@ -44,6 +44,18 @@ describe("providers", () => {
       maxTurns: 9,
     });
     expect(capped.config).toHaveProperty("max_turns", 9);
+    expect(entry.config).not.toHaveProperty("ask_user_question");
+    const asking = sessionProvider({
+      label: "x",
+      model: "m",
+      plugin: "/p",
+      workDir: "/w",
+      debugFile: "/d",
+      configHome: "/x",
+      maxBudgetUsd: 1,
+      askUserQuestion: true,
+    });
+    expect(asking.config).toHaveProperty("ask_user_question", { behavior: "first_option" });
   });
 
   it("gives a one-turn call no tools and no settings", () => {

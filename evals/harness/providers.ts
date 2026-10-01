@@ -27,6 +27,13 @@ export interface SessionCell {
   readonly configHome: string;
   readonly maxBudgetUsd: number;
   readonly maxTurns?: number;
+  /**
+   * Offers `AskUserQuestion`. The SDK exposes the tool only to a session with
+   * a permission callback, which promptfoo installs for `ask_user_question`;
+   * a PreToolUse hook of the working copy that allows the call with `answers`
+   * decides the reply before the callback's first option does.
+   */
+  readonly askUserQuestion?: boolean;
 }
 
 /** A full Claude Code session in a fixture copy, started like a user would start it. */
@@ -58,6 +65,7 @@ export function sessionProvider(cell: SessionCell): ProviderEntry {
       debug_file: cell.debugFile,
       max_budget_usd: cell.maxBudgetUsd,
       ...(cell.maxTurns === undefined ? {} : { max_turns: cell.maxTurns }),
+      ...(cell.askUserQuestion === true ? { ask_user_question: { behavior: "first_option" } } : {}),
     },
   };
 }

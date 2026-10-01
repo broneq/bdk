@@ -1,6 +1,8 @@
 // Scripted answers to `AskUserQuestion` (design D-8 of v3-t41-setup-change):
 // a PreToolUse hook in the run's project settings allows the call with
-// `answers` filled in, which the host takes as the user's reply. The model
+// `answers` filled in, which the host takes as the user's reply. The session
+// offers the tool only with a permission callback (`askUserQuestion` of the
+// session provider). The model
 // words its own questions, so a case keys an answer by a pattern of the header
 // or the question and picks the first option whose label matches the answer's
 // pattern; an answer no option matches is free text, as "Other" would be. A

@@ -68,7 +68,7 @@ Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml`, in one ce
     - reply: change status
 ```
 
-The model words its own questions, so `answers` matches patterns. A PreToolUse hook the suite writes into the working copy's `.claude/settings.json` (excluded from git there) answers every `AskUserQuestion`: a question whose header or text matches a key gets the first option whose label matches the value, or the value itself as free text when no option matches; any other question gets its first option. A run passes (`expect_pass`) when every expectation holds; `checks.json` among its raw records names each failed one. The report states per case the passed runs and the median questions, turns and cost.
+The model words its own questions, so `answers` matches patterns. The SDK offers `AskUserQuestion` only to a session with a permission callback, so the suite's provider sets promptfoo's `ask_user_question`. A PreToolUse hook the suite writes into the working copy's `.claude/settings.json` (excluded from git there) answers every `AskUserQuestion`: a question whose header or text matches a key gets the first option whose label matches the value, or the value itself as free text when no option matches; any other question gets its first option. A run passes (`expect_pass`) when every expectation holds; `checks.json` among its raw records names each failed one. The report states per case the passed runs and the median questions, turns and cost.
 
 ## Provider facts
 
