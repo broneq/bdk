@@ -34,6 +34,8 @@
 
 - [x] 5.5 After the second `plan` probe: scope grows only to keep correct what the Change breaks, within the existing parts; larger growth is a `finding` for a follow-up Change, and a scope question offers the intent-only option; the kernel's budget is the only limit on rounds (contract test needles)
 
+- [x] 5.6 After the third `plan` probe (`shared-bug` passed, `bug` parked after edits that followed passing verdicts): a passing verdict closes the plan and its findings go to execution
+
 ## 6. Documentation (D10)
 
 - [x] 6.1 `docs/guide/reference/skills.md`, `reference/artifacts.md`, `concepts/plan-pipeline.md`, the workflow and getting-started pages that name `/bdk:create-plan` or `/bdk:verify-plan`, README's skill table; add rewritten pages to `V3_PAGES`; `pnpm docs:build` and `pnpm test:contract` green

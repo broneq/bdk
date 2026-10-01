@@ -317,9 +317,9 @@ After `bdk done plan`, for a Change whose graph holds `plan-verify`, `/bdk:plan`
 
 - every blocker whose fix changes no decision recorded in the ledger or the design (a `false-code-claim`, a behaviour without a test case, an undeclared dependency between parts, a design requirement no task covers when the design states it) SHALL be corrected, its blocker resolved with `bdk log resolve` and a reason;
 - every blocker whose fix needs a decision the design does not hold SHALL go to the user in one question listing each such blocker with a proposed fix; the answer is recorded as a `decision`;
-- every finding of a `done-with-concerns` verdict SHALL be judged "fixed" or "goes to execution" with a reason, and the first kind fixed.
+- findings that come with a failing verdict MAY be fixed together with its blockers; a passing verdict, `done-with-concerns` included, SHALL close the plan: no part is edited after it except for a change the user requests in `--review`, and every finding goes to execution with its reason in the report.
 
-After any correction it SHALL run `bdk done plan` again and `/bdk:verify-plan` again, so the verdict is never older than the plan, and repeat until the verdict passes or the kernel's next action is `parked`; the kernel's verifier budget is the only limit on rounds, so no fix judged necessary is skipped to save a round; on `escalate` the next round opens escalated. On `parked` it SHALL stop and name the resume command the kernel printed, with the blockers that remain.
+After any correction it SHALL run `bdk done plan` again and `/bdk:verify-plan` again, so the verdict is never older than the plan, and repeat until the verdict passes or the kernel's next action is `parked`; the kernel's verifier budget is the only limit on rounds, so no blocker fix is skipped to save a round; on `escalate` the next round opens escalated. On `parked` it SHALL stop and name the resume command the kernel printed, with the blockers that remain.
 
 #### Scenario: blocker corrected without a question
 
