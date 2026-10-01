@@ -82,7 +82,7 @@ describe("doctor", () => {
     });
   });
 
-  it("finds the v2 layout with bdk import as the repair", () => {
+  it("finds the v2 layout with /bdk:setup as the repair", () => {
     const report = run({ [`${ROOT}/.bdk/settings.json`]: "{}", [`${ROOT}/.bdk/plans/`]: "" });
     expect(report.ok).toBe(false);
     expect(report.layout).toBe("v2");
@@ -91,7 +91,7 @@ describe("doctor", () => {
         id: "v2-layout",
         level: "warn",
         summary: ".bdk/settings.json and .bdk/plans/ found",
-        repair: "bdk import",
+        repair: "/bdk:setup",
       },
     ]);
   });

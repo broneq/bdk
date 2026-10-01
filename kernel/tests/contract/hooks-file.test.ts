@@ -20,6 +20,7 @@ import { describe, expect, it } from "vitest";
 
 import upeTyped from "../../../tests/fixtures/host-payloads/2.1.281/upe-typed.json" with { type: "json" };
 import { deniedPayloads, mainBash, subagentBash } from "../../src/hooks/tests/payloads.ts";
+import { pluginSkills } from "../support/plugin-skills.ts";
 import { REPO_ROOT } from "../support/run.ts";
 
 const SESSION_START =
@@ -348,13 +349,12 @@ describe("guard scripts", () => {
 
 describe("skill frontmatter hooks", () => {
   it("run no python3 command", () => {
-    const offenders = readdirSync(join(REPO_ROOT, "skills"))
-      .map((skill) => join(REPO_ROOT, "skills", skill, "SKILL.md"))
-      .filter((path) => existsSync(path))
-      .filter((path) => {
-        const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(readFileSync(path, "utf8"))?.[1] ?? "";
+    const offenders = pluginSkills(REPO_ROOT)
+      .filter(({ text }) => {
+        const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "";
         return frontmatter.split("\n").some((line) => /^\s*command:.*python3/.test(line));
-      });
+      })
+      .map(({ path }) => path);
     expect(offenders).toEqual([]);
   });
 });

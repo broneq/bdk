@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Service commands (`service`). Diagnosis, repair, migration and version: `doctor`, `rebuild`, `import`, `version`.
+Service commands (`service`). Diagnosis, repair and version: `doctor`, `rebuild`, `version`.
 
 Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules. Two exceptions in this group: `version` is standalone and emits none of the common rules, and `doctor` is exempt from the Node gate, so it reports a Node below the minimum as its `node-version` finding instead of `runtime/node-version` (`kernel-cli`, Invocation).
 
@@ -31,7 +31,7 @@ Diagnose the runtime, the layout and the state; one known repair action per find
 - **Mode:** `command`
 - **Arguments:**
   - `--fix`. Apply the repairs that need no system change (index rebuild, schema refresh, modeline); never installs software.
-- **Behaviour:** Checks: Node version (HOST-FACTS `node-sqlite-min`; a line older than 22 is not supported and does not reach `doctor`, the wrapper's STOP line names the minimum instead), the v2 layout with the `bdk import` instruction, spec `bdk-merge-hash` mismatches, index freshness, schema modeline and offline copy. It does not check `uv`, `uvx` or any MCP server: the plugin ships none (ADR-0001). `/bdk:doctor` (T02 decision R-14) runs this and asks before every system change. Exits 0 with `ok: false` when a finding has level `warn` or `fail`, and 0 with `ok: true` and an empty `findings` list when nothing is wrong; exit 5 only when the kernel itself cannot run (`runtime/not-a-repo`). `doctor` is exempt from the Node gate of `kernel-cli`, Invocation: a Node below 22.13.0 is the `node-version` finding with level `fail`, whose `repair` is an install or switch line, never exit 5. `layout` is `v2` when any of `.bdk/settings.json`, `.bdk/runs/` or `.bdk/plans/` exists, which yields the `v2-layout` finding with level `warn`, a `summary` naming the paths found and `repair: bdk import`; `v3` when `.bdk/` holds none of them; `none` without `.bdk/`. The schema checks (T12) run when `.bdk/settings.yaml` exists: `schema-modeline` (level `warn`) when a present settings file of the project or local layer has no yaml-language-server modeline or one pointing at another version than the running kernel's, and `schema-offline` (level `warn`) when `.bdk/.machine/schema/settings.json` is absent or differs from the running kernel's schema; both repair with `bdk doctor --fix`, which adds or rewrites the modeline as the file's first line (keeping the rest of the file byte for byte) and rewrites the offline copy, then reports the findings that remain. The `merge-hash` check (T30) runs when `.bdk/specs/` exists: one finding with level `fail` per `.bdk/specs/**/spec.md` whose body does not hash to its `bdk-merge-hash`, or that carries none (`kernel-state`, Living spec file); the summary names the file and says it was edited outside `spec merge`, and the repair is the command that restores the file from the last close commit that touched it, `git restore --source=$(git log -1 --format=%H --grep='^chore(bdk): close' -- <file>) -- <file>` (a wanted edit goes into a spec delta of a Change instead). It never refuses: `change close` and `spec merge` refuse on the same mismatch (`policy/merge-hash-mismatch`). The index freshness check arrives with its owner task (T14 / T20). The rule checks (T31) run when `.bdk/rules/` or `.claude/rules/` exists: `rule-without-id` (level `warn`) for each hand-written `.claude/rules/*.md` other than the generated projection, since a rule without an id cannot be selected per package or cited (T02 decision Q-6), with `repair: bdk rules import`; `rules-invalid` (level `fail`) when `bdk rules check` would refuse, naming the first problem, with `repair: bdk rules check`; `projection-outdated` (level `warn`) when `bdk rules export --claude --check` would refuse, with `repair: bdk rules export --claude`.
+- **Behaviour:** Checks: Node version (HOST-FACTS `node-sqlite-min`; a line older than 22 is not supported and does not reach `doctor`, the wrapper's STOP line names the minimum instead), the v2 layout with the `/bdk:setup` instruction, spec `bdk-merge-hash` mismatches, index freshness, schema modeline and offline copy. It does not check `uv`, `uvx` or any MCP server: the plugin ships none (ADR-0001). `/bdk:doctor` (T02 decision R-14) runs this and asks before every system change. Exits 0 with `ok: false` when a finding has level `warn` or `fail`, and 0 with `ok: true` and an empty `findings` list when nothing is wrong; exit 5 only when the kernel itself cannot run (`runtime/not-a-repo`). `doctor` is exempt from the Node gate of `kernel-cli`, Invocation: a Node below 22.13.0 is the `node-version` finding with level `fail`, whose `repair` is an install or switch line, never exit 5. `layout` is `v2` when any of `.bdk/settings.json`, `.bdk/runs/` or `.bdk/plans/` exists, which yields the `v2-layout` finding with level `warn`, a `summary` naming the paths found and `repair: /bdk:setup`; `v3` when `.bdk/` holds none of them; `none` without `.bdk/`. The schema checks (T12) run when `.bdk/settings.yaml` exists: `schema-modeline` (level `warn`) when a present settings file of the project or local layer has no yaml-language-server modeline or one pointing at another version than the running kernel's, and `schema-offline` (level `warn`) when `.bdk/.machine/schema/settings.json` is absent or differs from the running kernel's schema; both repair with `bdk doctor --fix`, which adds or rewrites the modeline as the file's first line (keeping the rest of the file byte for byte) and rewrites the offline copy, then reports the findings that remain. The `merge-hash` check (T30) runs when `.bdk/specs/` exists: one finding with level `fail` per `.bdk/specs/**/spec.md` whose body does not hash to its `bdk-merge-hash`, or that carries none (`kernel-state`, Living spec file); the summary names the file and says it was edited outside `spec merge`, and the repair is the command that restores the file from the last close commit that touched it, `git restore --source=$(git log -1 --format=%H --grep='^chore(bdk): close' -- <file>) -- <file>` (a wanted edit goes into a spec delta of a Change instead). It never refuses: `change close` and `spec merge` refuse on the same mismatch (`policy/merge-hash-mismatch`). The index freshness check arrives with its owner task (T14 / T20). The rule checks (T31) run when `.bdk/rules/` or `.claude/rules/` exists: `rule-without-id` (level `warn`) for each hand-written `.claude/rules/*.md` other than the generated projection, since a rule without an id cannot be selected per package or cited (T02 decision Q-6), with `repair: bdk rules import`; `rules-invalid` (level `fail`) when `bdk rules check` would refuse, naming the first problem, with `repair: bdk rules check`; `projection-outdated` (level `warn`) when `bdk rules export --claude --check` would refuse, with `repair: bdk rules export --claude`.
 - **Writes:** nothing in the Change directory (`writes[]` stays empty, as for every `read` command); with `--fix`, the first line of `.bdk/settings.yaml` and `.bdk/settings.local.yaml` and `.bdk/.machine/schema/settings.json`
 - **Output:** `schema/cli/output/doctor.json`
 - **Exit codes and rules:** `0, 3, 5`. No specific rule; the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -61,7 +61,7 @@ Diagnose the runtime, the layout and the state; one known repair action per find
         "id": "v2-layout",
         "level": "warn",
         "summary": ".bdk/settings.json and .bdk/plans/ found",
-        "repair": "bdk import"
+        "repair": "/bdk:setup"
       }
     ]
   }
@@ -83,7 +83,7 @@ Diagnose the runtime, the layout and the state; one known repair action per find
 #### Scenario: v2 layout
 
 - **WHEN** `bdk doctor --json` runs in a git work tree whose `.bdk/` holds `settings.json` and `plans/`
-- **THEN** the exit code is 0, `ok` is `false`, `layout` is `v2`, and `findings` holds `v2-layout` with level `warn`, a summary naming `.bdk/settings.json` and `.bdk/plans/`, and `repair: bdk import`
+- **THEN** the exit code is 0, `ok` is `false`, `layout` is `v2`, and `findings` holds `v2-layout` with level `warn`, a summary naming `.bdk/settings.json` and `.bdk/plans/`, and `repair: /bdk:setup`
 
 #### Scenario: Node below the minimum
 
@@ -183,77 +183,6 @@ Rebuild the index and the derived progress from committed files and git trailers
 
 - **WHEN** a committed document carries a `schema` one below the kernel's and a migration is registered
 - **THEN** `bdk rebuild` rewrites it at the current version, lists it in `migrated`, and the next Change-scoped command exits 0
-
-### Requirement: bdk import
-
-One-time v2 to v3 import: settings, rules, old designs as intents of new Changes. The kernel SHALL implement the command as this requirement and its output schema specify.
-
-- **Synopsis:** `bdk import [--dry-run]`
-- **Availability:** `orchestrator`
-- **Mode:** `command`
-- **Arguments:**
-  - `--dry-run`.
-- **Behaviour:** Hard cut (Q1). Converts `settings.json` to the v3 schema naming dropped keys, runs `rules import`, turns `.bdk/design/*.md` into intents of new Changes with `source: inferred`, fixes `.gitignore` to the two v3 paths, and removes the v2 directories. `hooks session-start` and `doctor` point here; the command runs without an existing v3 layout.
-- **Writes:** `.bdk/settings.yaml`, `.bdk/rules/`, `.bdk/changes/`, `.gitignore`
-- **Output:** `schema/cli/output/import.json`
-- **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `input/not-found`, `policy/config-invalid`, `policy/duplicate-rule-id`, `runtime/git-missing`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
-- **Example:**
-
-  ```bash
-  bdk import --dry-run --json
-  ```
-
-  ```json
-  {
-    "settings": {
-      "from": ".bdk/settings.json",
-      "to": ".bdk/settings.yaml",
-      "keys": 14,
-      "dropped": [
-        "features.caveman"
-      ]
-    },
-    "rules": 6,
-    "changes": [
-      {
-        "from": ".bdk/design/2026-08-01-auth.md",
-        "change": "2026-09-25-auth-imported"
-      }
-    ],
-    "removed": [
-      ".bdk/runs",
-      ".bdk/plans"
-    ]
-  }
-  ```
-
-- **Owner:** T32
-- **Slice:** `service`
-
-#### Scenario: example run
-
-- **WHEN** `bdk import --dry-run --json` runs as in the example
-- **THEN** the exit code is 0 and stdout validates against `schema/cli/output/import.json`
-
-#### Scenario: input/not-found
-
-- **WHEN** the referenced object does not exist in the active Change, the configuration or the bundle
-- **THEN** the exit code is 3 and the error object carries `rule: input/not-found`
-
-#### Scenario: policy/config-invalid
-
-- **WHEN** a value fails its module schema
-- **THEN** the exit code is 2 and the error object carries `rule: policy/config-invalid`
-
-#### Scenario: policy/duplicate-rule-id
-
-- **WHEN** two rules carry the same id, typically after a parallel close (V1-6)
-- **THEN** the exit code is 2 and the error object carries `rule: policy/duplicate-rule-id`
-
-#### Scenario: runtime/git-missing
-
-- **WHEN** no `git` executable on `PATH`
-- **THEN** the exit code is 5 and the error object carries `rule: runtime/git-missing`
 
 ### Requirement: bdk version
 

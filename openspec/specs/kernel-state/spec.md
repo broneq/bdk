@@ -512,7 +512,7 @@ Files:
 
 | Path                              | Writers                                                                                                                                                                                                   | Channel                 |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `change.md`                       | `change new`; `import` (each v2 design becomes a Change with `source: inferred`, through the code of `change new --inferred`)                                                                             | kernel                  |
+| `change.md`                       | `change new`                                                                                                                                                                                              | kernel                  |
 | `log/`                            | the commands of the entry-type table                                                                                                                                                                      | kernel                  |
 | `design.md`, `architecture.md`    | `design` skill                                                                                                                                                                                            | host file tools         |
 | `design/parts/`                   | `design` skill                                                                                                                                                                                            | host file tools         |
@@ -527,7 +527,7 @@ Files:
 | any file (migration)              | `rebuild`, `change takeover`                                                                                                                                                                              | kernel                  |
 | the Change directory (archive)    | `change close`, which writes `dispatch/pruned.md` and `reports/pruned.md` through the prune function unless `archive.keep-evidence`, then moves the directory to `.bdk/changes/archive/<changeId>/` (T30) | kernel                  |
 | `.bdk/specs/<capability>/spec.md` | `spec merge`, `change close` (through the merge); never a host file tool (V1-7; T24 guards it)                                                                                                            | kernel                  |
-| `.bdk/rules/<ruleId>.md`          | `rules accept`, `rules import`, `import`                                                                                                                                                                  | kernel                  |
+| `.bdk/rules/<ruleId>.md`          | `rules accept`, `rules import`                                                                                                                                                                            | kernel                  |
 
 Entry types (`source` values each writer stamps):
 
@@ -544,7 +544,7 @@ Entry types (`source` values each writer stamps):
 | `report`      | `log add`                                                                                                                                                                                                                                                                                         |
 | `transition`  | `hooks prompt-expansion` (`user` for a typed stage command, `policy` for an auto gate, `kernel` for a stage without a gate); `done`, `part start` (without `input-hash`), `part done`, `change takeover`, `change close` (`kernel`)                                                               |
 
-Rules without exception: `intent` lives only in `change.md`, written only by `change new` (which `import` reuses); a stage skill started without an active Change calls `change new --inferred`; `plan` and `close` never create a Change (R-12). `log add` never writes `transition`, `log ingest` writes no entry at all, and never stamp `user`, `policy` or `inferred`. `source: user` is stamped only by `hooks prompt-expansion` (T1, P1).
+Rules without exception: `intent` lives only in `change.md`, written only by `change new`; a stage skill started without an active Change calls `change new --inferred`; `plan` and `close` never create a Change (R-12). `log add` never writes `transition`, `log ingest` writes no entry at all, and never stamp `user`, `policy` or `inferred`. `source: user` is stamped only by `hooks prompt-expansion` (T1, P1).
 
 #### Scenario: every file has a writer
 

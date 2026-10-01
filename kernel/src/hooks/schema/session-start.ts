@@ -23,7 +23,7 @@ export const sessionStartOutput = z
     examples: [
       {
         content:
-          "# BDK Shared Foundation\n...\n\n[BDK] v2 layout detected (.bdk/settings.json): run bdk import.",
+          "# BDK Shared Foundation\n...\n\n[BDK] v2 layout detected (.bdk/settings.json): run /bdk:setup.",
         layout: "v2",
         configProblems: 0,
       },

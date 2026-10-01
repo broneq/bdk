@@ -1,10 +1,11 @@
 // `docs-site`, Drift guards 1-3: every user-invocable skill and every agent
 // has its reference entry, and the nav of mkdocs.yml equals the site pages.
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
+import { pluginSkills } from "../support/plugin-skills.ts";
 import { REPO_ROOT } from "../support/run.ts";
 import { readMkdocs, readPage, sitePages } from "./site.ts";
 
@@ -14,13 +15,10 @@ function frontmatter(path: string): Record<string, unknown> {
   return parse(match[1]) as Record<string, unknown>;
 }
 
-// `skills/roles/` holds the role skills, which are not user-invocable.
-const skills = readdirSync(join(REPO_ROOT, "skills"), { withFileTypes: true })
-  .filter(
-    (entry) => entry.isDirectory() && existsSync(join(REPO_ROOT, "skills", entry.name, "SKILL.md")),
-  )
+// The role skills under `skills/roles/` are not user-invocable.
+const skills = pluginSkills(REPO_ROOT)
   .map((entry) => {
-    const meta = frontmatter(join(REPO_ROOT, "skills", entry.name, "SKILL.md"));
+    const meta = frontmatter(join(REPO_ROOT, entry.path));
     return {
       name: typeof meta.name === "string" ? meta.name : entry.name,
       invocable: meta["user-invocable"] !== false,

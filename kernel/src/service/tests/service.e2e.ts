@@ -62,7 +62,7 @@ describe("bdk doctor", () => {
     expect(result.json).toMatchObject({ ok: true, layout: "v3", findings: [] });
   });
 
-  it("exit 0: the v2 layout is a warn finding repaired by bdk import", () => {
+  it("exit 0: the v2 layout is a warn finding repaired by /bdk:setup", () => {
     const root = fixture({ files: { ".bdk/settings.json": "{}", ".bdk/plans/": "" } }).root;
     const result = runBdk(["doctor", "--json"], root);
     expect(result.code).toBe(0);
@@ -75,7 +75,7 @@ describe("bdk doctor", () => {
           id: "v2-layout",
           level: "warn",
           summary: ".bdk/settings.json and .bdk/plans/ found",
-          repair: "bdk import",
+          repair: "/bdk:setup",
         },
       ],
     });
@@ -85,7 +85,7 @@ describe("bdk doctor", () => {
     const root = fixture({ files: { ".bdk/runs/": "" } }).root;
     const result = runBdk(["doctor", "--fix"], root);
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain("warn v2-layout: .bdk/runs/ found\n  repair: bdk import\n");
+    expect(result.stdout).toContain("warn v2-layout: .bdk/runs/ found\n  repair: /bdk:setup\n");
   });
 
   it("exit 0: a settings file without modeline is a schema-modeline finding", () => {

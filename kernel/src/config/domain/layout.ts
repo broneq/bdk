@@ -1,5 +1,5 @@
 // Which generation of BDK state a project holds: v2 left files under `.bdk/`
-// that v3 never writes, and `bdk import` (T32) converts them. `doctor` and
+// that v3 never writes, and `/bdk:setup` migrates them. `doctor` and
 // `hooks session-start` both report it (design D-8 of v3-t13-ctx-content-hooks).
 
 type Layout = "v3" | "v2" | "none";

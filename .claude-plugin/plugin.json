@@ -7,5 +7,5 @@
   },
   "repository": "https://github.com/broneq/bdk",
   "license": "MIT",
-  "skills": ["./skills/roles/"]
+  "skills": ["./skills/roles/", "./skills/stages/"]
 }

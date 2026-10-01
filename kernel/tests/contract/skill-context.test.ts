@@ -2,13 +2,14 @@
 // v3-t13-ctx-content-hooks): every skill asks for its context the same way.
 // The two line forms are read from the `kernel-cli` spec, so changing the
 // form there fails every skill that was not updated.
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { SKILL_CONTEXT } from "../../src/ctx/use-cases/manifest.ts";
 import type { Part } from "../../src/ctx/use-cases/manifest.ts";
 import { settingsRegistry } from "../../src/registrations.ts";
+import { pluginSkills } from "../support/plugin-skills.ts";
 import { REPO_ROOT } from "../support/run.ts";
 import { contextLineViolations, manifestViolations } from "../support/skill-context.ts";
 import type { ContextLineForms, SkillFile } from "../support/skill-context.ts";
@@ -27,14 +28,7 @@ const forms: ContextLineForms = {
   fallback: regexBlock(spec, "content-fallback"),
 };
 
-const skills: SkillFile[] = readdirSync(join(REPO_ROOT, "skills"), { withFileTypes: true })
-  .filter(
-    (entry) => entry.isDirectory() && existsSync(join(REPO_ROOT, "skills", entry.name, "SKILL.md")),
-  )
-  .map((entry) => ({
-    name: entry.name,
-    text: readFileSync(join(REPO_ROOT, "skills", entry.name, "SKILL.md"), "utf8"),
-  }));
+const skills: SkillFile[] = pluginSkills(REPO_ROOT).map(({ name, text }) => ({ name, text }));
 
 const registry = settingsRegistry();
 

@@ -23,11 +23,11 @@ describe("render", () => {
       version: VERSION,
       layout: "v2",
       findings: [
-        { id: "v2-layout", level: "warn", summary: ".bdk/runs/ found", repair: "bdk import" },
+        { id: "v2-layout", level: "warn", summary: ".bdk/runs/ found", repair: "/bdk:setup" },
       ],
     });
     expect(text).toBe(
-      "bdk 3.0.0 (contract 3, node 24.21.0)\nlayout: v2\nwarn v2-layout: .bdk/runs/ found\n  repair: bdk import\n",
+      "bdk 3.0.0 (contract 3, node 24.21.0)\nlayout: v2\nwarn v2-layout: .bdk/runs/ found\n  repair: /bdk:setup\n",
     );
   });
 });

@@ -39,6 +39,9 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   "bdk-rules-languages": [languageRules],
   "bdk-rules-security": [rules("security")],
   "bdk-test-tools": [tools("test")],
+  // A stage skill that needs no settings keeps its context lines for the
+  // `BDK STOP` line when the kernel is unavailable.
+  change: [],
   cr: [
     { kind: "file", path: "skills/cr/references/review-engine.md", title: "Review engine" },
     { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" },
@@ -67,6 +70,7 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
       title: "Reviewer prompt",
     },
   ],
+  setup: [tools("test"), tools("lint"), tools("build")],
   swarm: [{ kind: "concurrency" }],
   "test-driven-development": [rules("test-quality"), tools("test")],
 };

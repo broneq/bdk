@@ -70,7 +70,8 @@ function report(input: ConfigInput, resolved: Resolved): CheckReport {
       layer: "project",
       path: LEGACY_SETTINGS,
       code: "legacy-settings",
-      message: "the v2 settings file is not read; bdk import converts it to .bdk/settings.yaml",
+      message:
+        "the v2 settings file is not read; /bdk:setup migrates the project to .bdk/settings.yaml",
     });
   }
 

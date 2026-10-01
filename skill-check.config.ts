@@ -18,6 +18,16 @@ if (wrapper === undefined || pair === undefined) {
   );
 }
 
+// Skill directories as the host scans them: the default `skills/` plus every
+// directory of the manifest's `skills` array (plugins reference, Fields).
+const manifest = JSON.parse(
+  readFileSync(join(import.meta.dirname, ".claude-plugin", "plugin.json"), "utf8"),
+) as { skills?: string | string[] };
+const skillDirs = [
+  "skills",
+  ...[manifest.skills ?? []].flat().map((dir) => dir.replace(/^\.\//, "").replace(/\/$/, "")),
+];
+
 const LANGUAGE_MESSAGE =
   "names one stack's tooling; say what to run (\"the project's test suite\") and let the project settings name the command";
 
@@ -25,9 +35,8 @@ export default defineConfig({
   targets: [
     {
       kind: "skills",
-      // Role skills sit one level deeper (plugin.json `skills` key). The
-      // execute A/B arms are installed as `skills/execute` in eval plugin copies.
-      dirs: ["skills", "skills/roles", "evals/suites/execute-ab/variants"],
+      // The execute A/B arms are installed as `skills/execute` in eval plugin copies.
+      dirs: [...skillDirs, "evals/suites/execute-ab/variants"],
       rules: {
         "block-form": ["error", { patterns: [wrapper] }],
         // Without the pair the host drops the whole skill in default permission mode.
@@ -41,6 +50,12 @@ export default defineConfig({
                 field: "disable-model-invocation",
                 equals: true,
                 reason: "a gate is started by the user only",
+              },
+              {
+                names: ["setup", "change"],
+                field: "disable-model-invocation",
+                equals: true,
+                reason: "the skill writes project or Change state, so the user starts it",
               },
               {
                 names: ["execute", "close", "execute-thin", "execute-long"],

@@ -57,7 +57,7 @@ flowchart LR
   T40 --> T41
   T41 --> T42["T42 Remaining skills,<br/>adapters, craft, cr input"]
   T15 --> T42
-  T30 --> T32["T32 v2 -> v3 import,<br/>Python cut"]
+  T30 --> T32["T32 Python cut,<br/>cleanup"]
   T31 --> T32
   T42 --> T50["T50 E2E, documentation,<br/>release 3.0"]
   T32 --> T50
@@ -652,13 +652,13 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - Funnel: nothing is proposed at `close` and there are no `rules.propose-when.*` keys. Lessons are `log add learning` entries (with `applies`); `rules stats` is the audit view (recurrence across distinct Changes, raw entries, citations); `rules accept` is the explicit adoption; `rules add` and `log route` are removed.
 - Commands: `rules check`, `show`, `explain`, `prune`, `import` (one rule per top-level bullet, global without `paths:`), `export --claude` (two generated files, global and scoped), `stats`, `accept`; `doctor` reports `rule-without-id`, `rules-invalid` and `projection-outdated`. Role contracts cite rule ids with `--ref` (S4).
 
-### T32 v2 -> v3 import, Python cut, cleanup
+### T32 Python cut, cleanup
 
-**Goal**: hard cut (Q1): a plugin without Python, a one-off `bdk import`, the defects from the side items list removed.
+**Goal**: hard cut (Q1): a plugin without Python, the defects from the side items list removed.
 
 **Scope**:
 
-- `bdk import`: `settings.json` -> `settings.yaml` (key mapping from T12), old `.bdk/design/*.md` -> intents of new Changes (`change new` with the content), `.bdk/runs/`, `.bdk/plans/`, `.bdk/verify-plan/` -> a report of what was ignored; `hooks session-start` detects the v2 layout and prints the instruction (content, exit 0); `doctor` does the same on demand.
+- No `bdk import` command (user decision 2026-10-01, Change `v3-t41-setup-change`): the v2 to v3 migration is a step of the `/bdk:setup` stage skill (`settings.json` read as detection hints, `bdk rules import`, removal of the v2 files after asking); `hooks session-start` and `doctor` name `/bdk:setup` as the repair.
 - Deletion: `scripts/*.py`, `hooks/*/check.py` and `register.py`, `hooks/check-rules-drift/` (not ported, T02 decision Q-6), `hooks/check-bdk-config/settings.schema.json`, `hooks/is-command-exists/` (not called), `tests/unit/` (pytest), `pyproject.toml`, `uv.lock` (not needed for MCP, T03), `__pycache__` in `skills/execute-plan`, `skills/create-fixture`, `skills/refine-rules/scripts`; `tests/evals/` and `.claude/rules/skill-test-eval.md` (replaced by the promptfoo harness in `evals/`, T40; `tests/evals/README.md` says so); the 13 `bdk-*` meta-skills and the eight agent files replaced by adapters (T42).
 - Side items: `ensure_ignored()` (if not done earlier in T20), `features.caveman` (#39: a consumer or removal of the key; in v3 a key without a consumer is an error, so it must either go or work), merge or close `fix/39` (`fix/38` is closed by T04).
 - BDK repo `.gitignore`: `/.bdk/` -> the two v3 paths; `/.lavish/` unchanged (user decision).
@@ -667,7 +667,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Input**: "Migration (Q1)", Q1, D5 (consequences: porting tests), "Defects found on the way", "Side items to schedule", issues #38, #39.
 
-**Acceptance signal**: E2E "v2 import" on a v2 fixture (today's `settings.json` from BDK) -> `settings.yaml` passes `config check`, design -> Change with an intent; `grep -r python3` in `hooks/` and `skills/` empty; CI without a pytest step; issue #39 closed; `git ls-files | grep __pycache__` empty.
+**Acceptance signal**: `grep -r python3` in `hooks/` and `skills/` empty; CI without a pytest step; issue #39 closed; `git ls-files | grep __pycache__` empty.
 
 **To resolve in the spec**: what to do with `.bdk/verify-plan/` and `.bdk/runs/` (ignore / report); the fate of `docs/INJECTION-FLOWS.md`.
 
@@ -739,13 +739,14 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Fixed by T24**: `hooks prompt-expansion` passes by policy only the `auto` gates that are ready when `/bdk:run` is typed; a writer for an `auto` gate that becomes ready later in the run is T41's decision (Change `v3-t24-guard-hooks-gates`, design Open Questions).
 
-**Delivery** (user decision 2026-09-30, issue #61): T41 is a redesign for current models, not a port of the v2 skills, and runs as five OpenSpec Changes in this order:
+**Delivery** (user decision 2026-09-30, issue #61; order changed 2026-10-01): T41 is a redesign for current models, not a port of the v2 skills, and runs as six OpenSpec Changes. After the orchestration layer the skills follow the workflow, so each one is tested end to end on the real output of the one before it:
 
-1. `v3-t41-orchestration`: the layer the dispatching skills stand on. An agent registry fed by hooks with a heartbeat lease; `bdk agents list|show|wait`; a tree of agents (`main`, one `lead` per plan part, role agents, a `scout` under a worker) with a `part-lead` ticket and serialised commits; messages between agents as pointers to ledger entries, guarded; `Stop` / `SubagentStop` continuation checks; `effort` per adapter; a dev-time prompt-writing convention for Opus 5.5 in `.claude/rules/`. It supersedes the flat swarm of T23-D50.
-2. `v3-t41-execute`: `execute` on that layer, including the kernel rule that decides when a wave runs as a tree.
-3. `v3-t41-plan`: `plan` and `verify-plan`.
-4. `v3-t41-design`: `design` and `verify-design`.
-5. `v3-t41-lifecycle`: `setup`, `change`, `close` and `run`.
+1. `v3-t41-orchestration` (done, #102): the layer the dispatching skills stand on. An agent registry fed by hooks with a heartbeat lease; `bdk agents list|show|wait`; a tree of agents (`main`, one `lead` per plan part, role agents, a `scout` under a worker) with a `part-lead` ticket and serialised commits; messages between agents as pointers to ledger entries, guarded; `Stop` / `SubagentStop` continuation checks; `effort` per adapter; escalation on `policy.escalation.model`; a dev-time prompt-writing convention for Opus 5.5 in `.claude/rules/`. It supersedes the flat swarm of T23-D50.
+2. `v3-t41-setup-change`: `setup` and `change`, the entry into the workflow.
+3. `v3-t41-design`: `design` and `verify-design`.
+4. `v3-t41-plan`: `plan` and `verify-plan`.
+5. `v3-t41-execute`: `execute` on the orchestration layer, including the kernel rule that decides when a wave runs as a tree.
+6. `v3-t41-close-run`: `close` and `run`.
 
 **Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
 

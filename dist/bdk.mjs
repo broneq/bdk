@@ -9131,31 +9131,6 @@ var commands_default = {
       writes: [".bdk/.machine/", ".bdk/changes/<id>/", ".bdk/rules/"]
     },
     {
-      id: "import",
-      argv: ["import"],
-      summary: "One-time v2 to v3 import: settings, rules, old designs as intents of new Changes.",
-      availability: "orchestrator",
-      mode: "command",
-      slice: "service",
-      owner: "T32",
-      changeScoped: false,
-      args: [],
-      flags: [
-        {
-          name: "--dry-run"
-        }
-      ],
-      output: "output/import.json",
-      exits: [0, 2, 3, 5],
-      refusals: [
-        "input/not-found",
-        "policy/config-invalid",
-        "policy/duplicate-rule-id",
-        "runtime/git-missing"
-      ],
-      writes: [".bdk/settings.yaml", ".bdk/rules/", ".bdk/changes/", ".gitignore"]
-    },
-    {
       id: "version",
       argv: ["version"],
       summary: "Kernel version, contract version, Node version.",
@@ -22870,6 +22845,9 @@ var SKILL_CONTEXT = {
   "bdk-rules-languages": [languageRules],
   "bdk-rules-security": [rules("security")],
   "bdk-test-tools": [tools("test")],
+  // A stage skill that needs no settings keeps its context lines for the
+  // `BDK STOP` line when the kernel is unavailable.
+  change: [],
   cr: [
     { kind: "file", path: "skills/cr/references/review-engine.md", title: "Review engine" },
     { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" }
@@ -22898,6 +22876,7 @@ var SKILL_CONTEXT = {
       title: "Reviewer prompt"
     }
   ],
+  setup: [tools("test"), tools("lint"), tools("build")],
   swarm: [{ kind: "concurrency" }],
   "test-driven-development": [rules("test-quality"), tools("test")]
 };
@@ -28742,7 +28721,7 @@ function report(input, resolved) {
       layer: "project",
       path: LEGACY_SETTINGS,
       code: "legacy-settings",
-      message: "the v2 settings file is not read; bdk import converts it to .bdk/settings.yaml"
+      message: "the v2 settings file is not read; /bdk:setup migrates the project to .bdk/settings.yaml"
     });
   }
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
@@ -31827,7 +31806,7 @@ function renderSessionStart({ startup, project }) {
       ({ why, instead }) => `[BDK] config: ${why} Instead: ${instead.join("; ")}`
     ),
     ...project.warnings.map((warning) => `[BDK] config warning: ${warning}`),
-    ...project.v2Markers.length === 0 ? [] : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run bdk import.`],
+    ...project.v2Markers.length === 0 ? [] : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run /bdk:setup.`],
     ...project.rules === void 0 ? [] : [
       `[BDK] rules warning: ${project.rules.role} reads ${String(project.rules.rules)} rules (rules.warn-above: ${String(project.rules.limit)}); switch rules off with rules.disabled or narrow them with applies.`
     ]
@@ -32107,7 +32086,7 @@ function layoutFinding(present2) {
     id: "v2-layout",
     level: "warn",
     summary: `${enumerate(present2)} found`,
-    repair: "bdk import"
+    repair: "/bdk:setup"
   };
 }
 function enumerate(items) {

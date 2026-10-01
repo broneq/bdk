@@ -50,6 +50,12 @@ afterAll(() => {
   outside.remove();
 });
 
+// Since `import` left the index every record has a handler, so the
+// enumeration below is empty; a record added without one fails here first.
+it("has a handler for every record of the index", () => {
+  expect(stubs.map((record) => record.id)).toEqual([]);
+});
+
 describe.each(stubs.map((record) => [record.id, record] as const))("%s", (_, record) => {
   it("answers kernel/not-implemented in the shape of its mode, never exit 1", () => {
     const result = runBdk([...argv(record), "--json"], repo.root);

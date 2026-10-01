@@ -136,11 +136,6 @@
   },
   {
     "rule": "description-front-loaded",
-    "file": "skills/setup/SKILL.md",
-    "fingerprint": "d8982b38e10a6245"
-  },
-  {
-    "rule": "description-front-loaded",
     "file": "skills/subagent-execute-plan/SKILL.md",
     "fingerprint": "4a884e506305ae0c"
   },
@@ -223,11 +218,6 @@
     "rule": "line-limit",
     "file": "skills/refine-rules/SKILL.md",
     "fingerprint": "79ffbc40832be199"
-  },
-  {
-    "rule": "line-limit",
-    "file": "skills/setup/SKILL.md",
-    "fingerprint": "bf1b2dc9b7b4feb2"
   },
   {
     "rule": "line-limit",
