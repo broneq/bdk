@@ -40,6 +40,8 @@ A live question whose answer changes what a task builds is settled before `bdk d
 
 ## Write the parts
 
+Plan what the intent and the design ask, at the size they ask for: a bug Change plans the fix and the test that reproduces it, not guards in its callers or neighbouring cases nobody reported. Record anything else you notice as `bdk log add finding "<what>" --ref <file>` instead of a task. Every behaviour sentence you add is one more test case to write and verify.
+
 Split the work into parts a lead can finish and commit on its own: tasks that share files stay in one part, a part names in `depends-on` every part whose output it consumes, and parts without a dependency between them run in the same wave. On a `large` Change the design parts suggest the split, but parts follow what can be built together, not the design's grouping. Each part holds at most 8 tasks and 8 KB; split an oversized part with `bdk part split`, never by dropping test cases.
 
 Write each task as a contract, as [task shape](references/task-shape.md) shows: its goal in a few sentences, the exact signatures, types, formats and messages another task consumes, `Files:` naming every file it creates, modifies or tests, `Depends on:` for tasks of the same part it builds on, and `Stop rule:` where a worker could widen it. The worker writes the code, so a task carries no function body; a fenced block only fixes an exact external format.
