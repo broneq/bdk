@@ -25,7 +25,7 @@
   "additionalProperties": false,
   "examples": [
     {
-      "content": "# BDK Shared Foundation\n...\n\n[BDK] v2 layout detected (.bdk/settings.json): run bdk import.",
+      "content": "# BDK Shared Foundation\n...\n\n[BDK] v2 layout detected (.bdk/settings.json): run /bdk:setup.",
       "layout": "v2",
       "configProblems": 0
     }

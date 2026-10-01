@@ -4,9 +4,41 @@
 
     This page describes BDK v2. The v3 documentation replaces it (T50).
 
+!!! note "BDK 3"
+
+    [Stage skills](#stage-skills) describes BDK 3.
+
 Every skill is invoked as `/bdk:<name>`. This page lists one section per user-invocable skill - purpose, arguments, the artifact it writes, when to reach for it, and the skills it works with. Skills whose frontmatter carries `user-invocable: false` are meta-skills: they are preloaded into agents via `skills:` frontmatter and are never typed as a slash command, so they get one collective paragraph near the end instead of individual sections.
 
 For the deeper "why" behind the pipeline these skills form, see the [tier table](../index.md#how-you-work-with-it), [The full pipeline](../workflows/full-pipeline.md), and [Plan pipeline](../concepts/plan-pipeline.md).
+
+## Stage skills
+
+BDK 3 works in Changes: one unit of work on one branch, whose intent, design, plan, ledger and progress the kernel keeps. A stage skill runs one step of a Change and ends by naming the command to type next; you type it, so every stage starts from your decision. Stage skills write only through kernel commands (`bdk ...`) and follow a kernel refusal's `instead` rather than working around it.
+
+## /bdk:setup
+
+**Purpose.** Bring a project to a working BDK layout: `.bdk/settings.yaml` with the project's languages and its test, lint and build commands (detected from the project files and confirmed with you), Lavish, your hand-written `.claude/rules/` as BDK rules, and the migration of a BDK 2 project. Settings are written only with `bdk config set`, which validates every value. See [Project setup](../getting-started/setup.md).
+
+**Arguments:** `[what to change, e.g. 'add the e2e suite']` - with none, the whole setup; with a request, only that.
+
+**Artifact:** `.bdk/settings.yaml` (tracked), `.bdk/rules/` when rules were imported, `.bdk/.machine/` (ignored). A v2 project's `.bdk/settings.json`, `plans/`, `design/`, `runs/` and `verify-plan/` are deleted after you confirm.
+
+**When to use.** Once per project, after cloning, or when the session start or `bdk doctor` reports missing settings or a v2 layout. Claude does not start it on its own.
+
+**Related skills:** `/bdk:change`, the step that follows.
+
+## /bdk:change
+
+**Purpose.** Open a Change from an intent, or show where the current one stands. Opening asks whether to create a new branch (`feat/<slug>`, or `fix/<slug>` for a bug) or stay on the current one, on every branch, because a branch holds one active Change. It passes `--kind bug` for a defect, and `--profile tiny` with a reason only when the code the intent touches shows no user-visible behaviour change, no data model, schema or configuration change, no change to a specified capability and at most 2 files in 1 module.
+
+**Arguments:** `"<intent>"` opens a Change; none shows the current Change's stage and gate; `list`, `resume <id> [--option <n>]`, `park [--reason <text>]` and `takeover` run the kernel command of the same name.
+
+**Artifact:** `.bdk/changes/<changeId>/`, written by `bdk change new`; the branch binding lives in `.bdk/.machine/`.
+
+**When to use.** At the start of every feature or fix, and whenever you want to know which command comes next. When the branch already has an active Change, it shows that Change and opens nothing. Claude does not start it on its own.
+
+**Related skills:** `/bdk:setup` before it; the stage it names next, `/bdk:design` for a feature or `/bdk:plan` for a bug.
 
 ## Pipeline skills
 
@@ -186,19 +218,7 @@ Two skills keep `.claude/rules/` accurate instead of letting it accrete into a c
 
 **Related skills:** `/bdk:add-rule` (its read/write counterpart).
 
-## Setup and other
-
-## /bdk:setup
-
-**Purpose.** Initialize `.bdk/settings.json` for a project: probes project files to detect languages, test commands, lint commands, and build commands, then confirms every value with the user before writing.
-
-**Arguments:** `[--force to re-run even if settings exist]`
-
-**Artifact:** `.bdk/settings.json`, plus the `.bdk/plans/` and `.bdk/design/` directories it creates.
-
-**When to use.** Once per project, before using any other BDK skill - the SessionStart hook blocks a session until this has run.
-
-**Related skills:** None - it is the prerequisite every other skill assumes has already run.
+## Other skills
 
 ## /bdk:commit
 

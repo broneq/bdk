@@ -2,7 +2,6 @@
 // `with` cell, whose plugin copy has the skill, and a `without` cell, whose
 // copy lacks the skill directory; all else is equal. A plugin copy without the
 // directory keeps a preloaded or model-invoked skill really absent.
-import { execFileSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -18,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 import { readLedger, spent } from "../../harness/budget.ts";
 import type { RunOptions, SuiteRunner } from "../../harness/cli.ts";
-import { npmCi, prepareFixture } from "../../harness/fixture.ts";
+import { emptyBase, npmCi, prepareFixture } from "../../harness/fixture.ts";
 import {
   EVALS_DIR,
   LEDGER_FILE,
@@ -177,22 +176,6 @@ export function describeWithWithout(spec: WithWithoutSpec): SeriesSetup {
     })),
     runs: spec.runs,
   };
-}
-
-const GIT_ENV = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
-
-/** An empty repository with one commit: sessions without the fixture still run in a git tree. */
-function emptyBase(dir: string): string {
-  const git = (...args: string[]): void => {
-    execFileSync("git", args, { cwd: dir, env: GIT_ENV, stdio: "pipe" });
-  };
-  mkdirSync(dir, { recursive: true });
-  git("init", "--quiet", "--initial-branch", "main");
-  git("config", "user.name", "BDK Eval");
-  git("config", "user.email", "eval@bdk.invalid");
-  git("config", "commit.gpgsign", "false");
-  git("commit", "--quiet", "--allow-empty", "-m", "empty eval base");
-  return dir;
 }
 
 function buildCells(dir: string, skillPath: string): Record<Cell, CellBuild> {

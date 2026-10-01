@@ -19,7 +19,7 @@ Prints the shared foundation (`STARTUP_INSTRUCTIONS.md`, byte-identical to `bdk 
 ```
 [BDK] config: <why> Instead: <what to do>
 [BDK] config warning: <path>: <message>
-[BDK] v2 layout detected (<paths>): run bdk import.
+[BDK] v2 layout detected (<paths>): run /bdk:setup.
 ```
 
 It also ends, as `stale`, the agents of other sessions that have been silent for longer than `agents.ttl`, so a crashed session leaves no agent `running` in the agent registry (see [Agent hooks](#agent-hooks)).

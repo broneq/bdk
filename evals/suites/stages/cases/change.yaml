@@ -1,0 +1,58 @@
+# Cases of /bdk:change (spec stage-skills, change requirements). Every case
+# starts from a fresh copy of the pinned fixture on its branch feat/eval, after
+# a setup that writes the settings, so only the Change is under test.
+- id: new-branch
+  command: /bdk:change "Add a dark mode toggle to the settings page"
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  answers:
+    branch: new|create|feat/
+  expect:
+    - run: change status
+      json:
+        kind: feature
+        profile: small
+    - run: change list
+      json:
+        items.length: 1
+      match:
+        items.0.branch: "^feat/"
+    - reply: /bdk:design
+
+- id: existing-change
+  command: /bdk:change "Add a dark mode toggle to the settings page"
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "Translate the login page" >/dev/null
+  answers:
+    branch: stay|current|keep
+  expect:
+    - run: change list
+      json:
+        items.length: 1
+        items.0.branch: feat/eval
+    # The command, not prose: the reply may be in any language.
+    - reply: /bdk:change|change status
+
+- id: tiny-typo
+  command: /bdk:change "Fix the typo 'teh' in README.md"
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      perl -0pi -e 's/\bthe\b/teh/' README.md
+    - |-
+      git add -A && git commit -qm "bdk settings and a typo"
+  answers:
+    branch: new|create|fix/
+  expect:
+    - run: change status
+      json:
+        profile: tiny

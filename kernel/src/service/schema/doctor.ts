@@ -42,7 +42,7 @@ export const doctorOutput = z
             id: "v2-layout",
             level: "warn",
             summary: ".bdk/settings.json and .bdk/plans/ found",
-            repair: "bdk import",
+            repair: "/bdk:setup",
           },
         ],
       },

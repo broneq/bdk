@@ -108,7 +108,7 @@ describe("hooks session-start", () => {
       ".bdk/runs/one.json": "{}",
     });
     expect(problemLines(report.content, startup)).toStrictEqual([
-      "[BDK] v2 layout detected (.bdk/settings.json, .bdk/runs/): run bdk import.",
+      "[BDK] v2 layout detected (.bdk/settings.json, .bdk/runs/): run /bdk:setup.",
     ]);
     expect(report.layout).toBe("v2");
   });

@@ -14,12 +14,12 @@ describe("layoutFinding", () => {
       [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"],
       ".bdk/settings.json, .bdk/runs/ and .bdk/plans/ found",
     ],
-  ])("names %j, repaired by bdk import", (present, summary) => {
+  ])("names %j, repaired by /bdk:setup", (present, summary) => {
     expect(layoutFinding(present)).toStrictEqual({
       id: "v2-layout",
       level: "warn",
       summary,
-      repair: "bdk import",
+      repair: "/bdk:setup",
     });
   });
 });

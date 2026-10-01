@@ -230,7 +230,7 @@ describe("checkConfig", () => {
           layer: "project",
           path: ".bdk/settings.json",
           code: "legacy-settings",
-          message: expect.stringContaining("bdk import") as unknown,
+          message: expect.stringContaining("/bdk:setup") as unknown,
         },
       ],
     });

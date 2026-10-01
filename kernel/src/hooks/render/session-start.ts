@@ -11,7 +11,7 @@ export function renderSessionStart({ startup, project }: SessionFindings): Sessi
     ...project.warnings.map((warning) => `[BDK] config warning: ${warning}`),
     ...(project.v2Markers.length === 0
       ? []
-      : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run bdk import.`]),
+      : [`[BDK] v2 layout detected (${project.v2Markers.join(", ")}): run /bdk:setup.`]),
     ...(project.rules === undefined
       ? []
       : [

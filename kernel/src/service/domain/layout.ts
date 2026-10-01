@@ -5,7 +5,7 @@ export interface LayoutFinding {
   readonly id: "v2-layout";
   readonly level: "warn";
   readonly summary: string;
-  readonly repair: "bdk import";
+  readonly repair: "/bdk:setup";
 }
 
 /** `present` lists the v2 markers found; undefined when there are none. */
@@ -15,7 +15,7 @@ export function layoutFinding(present: readonly string[]): LayoutFinding | undef
     id: "v2-layout",
     level: "warn",
     summary: `${enumerate(present)} found`,
-    repair: "bdk import",
+    repair: "/bdk:setup",
   };
 }
 

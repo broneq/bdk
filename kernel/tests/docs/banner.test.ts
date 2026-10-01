@@ -15,6 +15,7 @@ const BANNER = [
 const V3_PAGES = [
   "concepts/quality-and-language-rules.md", // T31
   "workflows/rules-hygiene.md", // T31
+  "getting-started/setup.md", // T41
 ];
 
 const pages = sitePages().filter(

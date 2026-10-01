@@ -72,7 +72,7 @@ describe("role skills", () => {
     const manifest = JSON.parse(
       readFileSync(join(REPO_ROOT, ".claude-plugin", "plugin.json"), "utf8"),
     ) as { skills?: unknown };
-    expect(manifest.skills).toEqual(["./skills/roles/"]);
+    expect(manifest.skills).toContain("./skills/roles/");
   });
 
   describe.each(ROLES)("%s", (name) => {

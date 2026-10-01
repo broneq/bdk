@@ -81,7 +81,7 @@ A skill receives settings-derived content (rule sets, language rules, fragments,
 #### Scenario: no reader of the v2 file
 
 - **WHEN** `git grep -n "settings.json"` runs over `skills/`, `agents/`, `scripts/` and `hooks/`
-- **THEN** it finds no code that opens `.bdk/settings.json`; prose that names it only as the v2 file converted by `bdk import` is allowed
+- **THEN** it finds no code that opens `.bdk/settings.json`; prose that names it only as the v2 file migrated by `/bdk:setup` is allowed
 
 #### Scenario: tool list in a skill
 

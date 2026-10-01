@@ -46,7 +46,7 @@ BDK SHALL carry no rule code of its own. Each BDK convention below SHALL be enfo
 | Kernel wrapper form        | Every occurrence of a `!` block opener, in prose or in a code fence, is a whole line matching the `content-wrapper` regex of `kernel-cli`, Invocation. |
 | Wrapper permission         | A skill with a `!` block lists the `allowed-tools` pair that `kernel-cli`, Invocation names.                                                           |
 | No MCP tools               | No file names a `mcp__plugin_bdk_` tool.                                                                                                               |
-| User-only gates            | The skills `plan`, `execute`, `close` and `run` set `disable-model-invocation: true`.                                                                  |
+| User-only gates            | The skills `setup`, `change`, `plan`, `execute`, `close` and `run` set `disable-model-invocation: true`.                                               |
 | Read-only gates            | The skills `execute` and `close` list `Edit`, `Write` and `NotebookEdit` in `disallowed-tools`.                                                        |
 | Adapter shape              | An agent file in an adapter target is frontmatter plus a body of exactly one sentence.                                                                 |
 | Portable craft skills      | A skill in a portable target has no `!` block and no `${CLAUDE_PLUGIN_ROOT}` reference.                                                                |
@@ -71,6 +71,11 @@ BDK SHALL carry no rule code of its own. Each BDK convention below SHALL be enfo
 #### Scenario: gate skill invocable by the model
 
 - **WHEN** the skill `execute` omits `disable-model-invocation: true`
+- **THEN** `pnpm skill-check` reports an error
+
+#### Scenario: entry skill invocable by the model
+
+- **WHEN** the skill `change` omits `disable-model-invocation: true`
 - **THEN** `pnpm skill-check` reports an error
 
 #### Scenario: bare reference to a BDK skill
