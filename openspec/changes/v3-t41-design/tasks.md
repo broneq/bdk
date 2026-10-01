@@ -31,7 +31,7 @@
 
 - [x] 5.1 Failing harness test: `stageSkill` accepts `design` and `verify-design`, and `pnpm eval check` renders their configs
 - [x] 5.2 Case files `evals/suites/stages/cases/design.yaml` (`small-feature`, `no-change`) and `verify-design.yaml` (`clean`, `false-claim`, `not-ready`), each preparing `features.lavish false`; extend `STAGE_SKILLS`; sync the `skill-evals` main spec; `pnpm eval check` green
-- [ ] 5.3 After the user approves the cost: `pnpm eval stages --skill verify-design --probe --budget <ledger + margin>` and `--skill design --probe`; fix what fails and record the outcome in the PR
+- [x] 5.3 After the user approves the cost: `pnpm eval stages --skill verify-design --probe --budget <ledger + margin>` and `--skill design --probe`; fix what fails and record the outcome in the PR
 - [x] 5.4 Fixes from the first 5.3 probe (D11): failing tests, then `log add blocker --ticket` names the target and `log list` summaries carry `category` (`ingest.test.ts`, E2E in `graph.e2e.ts`); `verify-design` reports `narrow`; the `clean` case verifies a design that only states what the fixture holds; delta `kernel-cli/log`
 
 ## 6. Documentation (D9)
@@ -41,6 +41,6 @@
 
 ## 7. Acceptance
 
-- [ ] 7.1 The 5.3 probes show `/bdk:design` leaving `gate:design` ready with `design-verify` done, and `/bdk:verify-design` raising a `false-code-claim` blocker on a false claim
+- [x] 7.1 The 5.3 probes show `/bdk:design` leaving `gate:design` ready with `design-verify` done, and `/bdk:verify-design` raising a `false-code-claim` blocker on a false claim
 - [x] 7.2 Full gate: `pnpm build`, lint, format, typecheck, knip, `test:unit`, `test:e2e`, `test:contract`, `skill-check`, `docs:build`, `eval check`, `pytest tests/unit/`
 - [x] 7.3 `openspec validate v3-t41-design --strict`
