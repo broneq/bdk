@@ -116,7 +116,7 @@ The body is `verify-design`'s with the node `plan-verify` and the role `verifier
 `evals/suites/stages/cases/plan.yaml` and `verify-plan.yaml`; `STAGE_SKILLS` gains both; every case prepares `features.lavish false`.
 
 - `plan/bug`: prepare opens a `bug` Change on the fixture with a reproduction (a wrong fallback in `formatTimestamp`); the command is `/bdk:plan`; expects `plan` done, `plan-verify` done, and no fenced function body in the parts. A `bug` Change has no design stage, so the case needs no prepared verdict.
-- `plan/no-change`: no Change; expects no Change directory and a reply naming `/bdk:change`.
+- No `plan/no-change` case: without an active Change the prompt-expansion guard blocks the typed `/bdk:plan` before any model turn, so the run has no model to count; the kernel's hook tests cover that block.
 - `verify-plan/clean`: prepare opens a `bug` Change, writes one part that agrees with the fixture and runs `bdk done plan`; expects `plan-verify` done.
 - `verify-plan/false-claim`: the same with a task modifying a function the fixture lacks; expects a live `false-code-claim` blocker naming `plan-verify`.
 - `verify-plan/not-ready`: the part written but not done; expects no ticket and a reply naming the refusal's `instead`.
