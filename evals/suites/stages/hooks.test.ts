@@ -77,8 +77,12 @@ describe("prepareRun", () => {
   });
 });
 
+// The hook runs as `node answer-hook.ts`, like `pnpm eval` itself: it needs
+// a Node that strips types (>= 22.18), which the kernel's 22.13 floor lacks.
+const stripsTypes = Boolean((process.features as { typescript?: unknown }).typescript);
+
 describe("the answer hook command", () => {
-  it("prints the hook output for the payload on stdin", () => {
+  it.skipIf(!stripsTypes)("prints the hook output for the payload on stdin", () => {
     root = mkdtempSync(join(tmpdir(), "bdk-stages-"));
     const answers = join(root, "answers.json");
     writeFileSync(answers, '{"branch":"stay"}');
