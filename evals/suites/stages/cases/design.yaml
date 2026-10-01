@@ -1,0 +1,44 @@
+# Cases of /bdk:design (spec stage-skills, design requirements). Every case
+# starts from a fresh copy of the pinned fixture on its branch feat/eval.
+# Lavish is off, because a review page would wait for a browser the eval
+# session does not have; a question no answer matches gets its first option.
+- id: small-feature
+  command: /bdk:design
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "Add Italian to the language options of the account page" >/dev/null
+  expect:
+    - run: explain design
+      json:
+        state: done
+    - run: explain design-verify
+      json:
+        state: done
+    - run: change status
+      json:
+        gates.0.gate: gate:design
+        gates.0.ready: true
+        gates.0.done: false
+    - reply: /bdk:plan
+
+- id: no-change
+  command: /bdk:design
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: change list
+      json:
+        items.length: 0
+    # The command, not prose: the reply may be in any language.
+    - reply: /bdk:change

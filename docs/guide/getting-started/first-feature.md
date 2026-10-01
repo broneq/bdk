@@ -17,6 +17,13 @@ Work on a branch. `/bdk:subagent-execute-plan` refuses to run on `main` or
 
 ## 1. Design
 
+!!! note "BDK 3"
+
+    In BDK 3, `/bdk:design` works on the active Change: it writes `design.md` and
+    `architecture.md` into the Change, records decisions in the ledger, runs
+    `/bdk:verify-design` and ends at the design gate, where you type `/bdk:plan`.
+    See [/bdk:design](../reference/skills.md#bdkdesign).
+
 ```
 /bdk:design add a --dry-run flag to the export command
 ```

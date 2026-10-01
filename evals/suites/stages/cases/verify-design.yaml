@@ -1,0 +1,122 @@
+# Cases of /bdk:verify-design (spec stage-skills, verify-design requirement).
+# Every case starts from a fresh copy of the pinned fixture on its branch
+# feat/eval with Lavish off. The design files are written and marked done in
+# prepare, so only the verifier round is under test; the clean design states
+# only what the fixture holds (src/account/languageOptions.ts and the
+# ui.language.<code> keys of src/i18n/messages.ts).
+- id: clean
+  command: /bdk:verify-design
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "Add Italian to the language options of the account page" >/dev/null
+    - |-
+      D=$(ls -d .bdk/changes/20*) && cat > "$D/design.md" <<'MD'
+      ---
+      schema: 1
+      title: Italian in the account language options
+      ---
+      # Italian in the account language options
+
+      The account page offers a language preference from `LANGUAGE_OPTIONS` in
+      `src/account/languageOptions.ts`, a constant list of `{ value, label }`
+      pairs with English labels. Display surfaces translate a label through the
+      `ui.language.<code>` keys of the message catalog in `src/i18n/messages.ts`.
+
+      Add `{ value: 'it', label: 'Italian' }` to `LANGUAGE_OPTIONS`, and a
+      `ui.language.it` key to every locale of `src/i18n/messages.ts`. No other
+      module changes: `formatLanguagePreference` already looks up any listed
+      code, and an unknown stored code keeps its current fallback.
+
+      The backend stores the preference as a string and needs no change.
+      MD
+    - |-
+      D=$(ls -d .bdk/changes/20*) && cat > "$D/architecture.md" <<'MD'
+      ---
+      schema: 1
+      title: Architecture of the Italian language option
+      ---
+      # Architecture
+
+      No module boundary moves. `src/account/languageOptions.ts` stays the
+      single owner of the offered languages, and `src/i18n/messages.ts` the
+      single owner of their translated names; the account page reads both as
+      it does today.
+      MD
+    - |-
+      node "$BDK" done design >/dev/null && node "$BDK" done architecture >/dev/null
+  expect:
+    - run: explain design-verify
+      json:
+        state: done
+    - run: log list --type report
+      match:
+        items.0.report: "^reports/design-verify-design-verifier-"
+
+- id: false-claim
+  command: /bdk:verify-design
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "Add Italian to the language options of the account page" >/dev/null
+    - |-
+      D=$(ls -d .bdk/changes/20*) && cat > "$D/design.md" <<'MD'
+      ---
+      schema: 1
+      title: Italian in the account language options
+      ---
+      # Italian in the account language options
+
+      The offered languages come from the `LocaleRegistry` class in
+      `src/i18n/localeRegistry.ts`, which loads them from the backend at start.
+      Register Italian there with `LocaleRegistry.register('it', 'Italian')`.
+      No other module changes.
+      MD
+    - |-
+      D=$(ls -d .bdk/changes/20*) && cat > "$D/architecture.md" <<'MD'
+      ---
+      schema: 1
+      title: Architecture of the Italian language option
+      ---
+      # Architecture
+
+      `src/i18n/localeRegistry.ts` owns the offered languages; no boundary moves.
+      MD
+    - |-
+      node "$BDK" done design >/dev/null && node "$BDK" done architecture >/dev/null
+  expect:
+    - run: log list --type blocker
+      json:
+        items.0.category: false-code-claim
+      match:
+        items.0.status: "^(proposed|accepted)$"
+    - run: explain design-verify
+      match:
+        state: "^(ready|blocked)$"
+
+- id: not-ready
+  command: /bdk:verify-design
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "Add Italian to the language options of the account page" >/dev/null
+  expect:
+    - run: attempt list
+      json:
+        total: 0
+    - reply: /bdk:design

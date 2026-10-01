@@ -40,21 +40,33 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **Related skills:** `/bdk:setup` before it; the stage it names next, `/bdk:design` for a feature or `/bdk:plan` for a bug.
 
-## Pipeline skills
-
-These five skills form the full-tier chain: `/bdk:design` -> `/bdk:create-plan` -> `/bdk:verify-plan` -> `/bdk:subagent-execute-plan` -> `/bdk:cr`. Each stage's output is a file the next stage reads, so any stage can start in a fresh session - see [The full pipeline](../workflows/full-pipeline.md).
-
 ## /bdk:design
 
-**Purpose.** Design partner for any feature: classifies the request as product, architecture, or combined, then explores two or more approaches with Mermaid diagrams, self-critique, and a "what we did NOT decide" section. Per its own description, it replaces the retired `/bdk:brainstorming` and `/bdk:brainstorm-architecture` skills.
+**Purpose.** Design the active Change with you. It reads the code the intent touches and tells you what exists before asking anything, then offers at least two approaches for each real decision, each with a Mermaid diagram and a self-critique (a bottleneck, a single point of failure, a hidden cost, an assumption you did not confirm), and writes the approach you choose. It writes exactly the files the kernel names: `design.md`, or design parts for a design that spans three or more subsystems, and `architecture.md` unless the Change touches no module boundary. Every decision you take becomes a `decision` entry in the Change's ledger and every open point a `question`; a data-model change needs its own approval first. It then runs `/bdk:verify-design`, corrects false claims about the code itself, decides which findings to fix before planning, and shows you the design and the verdict in one review. Simple questions go to the terminal; comparisons and the review go to a Lavish page when Lavish is on.
 
-**Arguments:** `[feature or capability]`
+**Arguments:** `[what to focus on]` - optional; the Change's intent is the subject.
 
-**Artifact:** `.bdk/design/<ts>-<slug>-design.md` (file name format `YYYY-MM-DD-HHMM-<slug>-design.md`), written from the design template in Phase 4 - Write.
+**Artifact:** `.bdk/changes/<changeId>/design.md` (or `design/parts/<nn>-<slug>.md` and `design/index.md`), `architecture.md`, and `decision` and `question` entries under `log/`.
 
-**When to use.** A new feature, an architecture or schema change, or any request where the shape of the solution is not yet obvious - the point where getting it wrong costs weeks. Not for clear-scope, few-file changes; those start at `/bdk:create-plan` directly.
+**When to use.** When `/bdk:change` or `bdk next` names it: after opening a feature Change of profile `small` or `large`. It ends at the design gate, naming `/bdk:plan`, which you type to accept the design.
 
-**Related skills:** `/bdk:create-plan` (consumes the design doc), `/bdk:mermaid-drawer` (draws its diagrams).
+**Related skills:** `/bdk:change` before it, `/bdk:verify-design` inside it, `/bdk:plan` after the gate, `/bdk:mermaid-drawer` for its diagrams.
+
+## /bdk:verify-design
+
+**Purpose.** Check the design of the active Change against the code on a fresh context: a `design-verifier` agent that knows only its dispatch package reads `design.md`, `architecture.md` and the design parts, checks every claim about the code, and blocks only on the categories of `policy.verifier.blocking-categories` (a false claim about the code, for example). A passing verdict marks the `design-verify` node done, which the design gate requires; a design edited afterwards needs a new verdict. On blockers it lists them with their category and what the kernel allows next: another round, an escalation round on a stronger model, or parking the Change.
+
+**Arguments:** none.
+
+**Artifact:** a ticket under `attempts/`, the verifier's package under `dispatch/` and report under `reports/`, and its `report`, `blocker` and `finding` entries under `log/`, all in `.bdk/changes/<changeId>/`.
+
+**When to use.** `/bdk:design` runs it after writing the design; run it yourself after editing a design file by hand. It refuses, naming `/bdk:design`, while a design file is not done.
+
+**Related skills:** `/bdk:design`, which starts it and acts on its verdict.
+
+## Pipeline skills
+
+These four BDK 2 skills form the full-tier chain after a design: `/bdk:create-plan` -> `/bdk:verify-plan` -> `/bdk:subagent-execute-plan` -> `/bdk:cr`. Each stage's output is a file the next stage reads, so any stage can start in a fresh session - see [The full pipeline](../workflows/full-pipeline.md).
 
 ## /bdk:create-plan
 
