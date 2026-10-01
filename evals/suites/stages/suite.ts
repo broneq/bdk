@@ -39,7 +39,15 @@ const CELL = "bdk";
 /** The orchestrator of every session, as in the other session suites. */
 const ORCHESTRATOR_MODEL = "claude-opus-5-5";
 /** The stage skills with a case file. */
-const STAGE_SKILLS = ["setup", "change", "design", "verify-design", "plan", "verify-plan"] as const;
+const STAGE_SKILLS = [
+  "setup",
+  "change",
+  "design",
+  "verify-design",
+  "plan",
+  "verify-plan",
+  "execute",
+] as const;
 
 class StageSkillError extends Error {
   constructor(message: string) {

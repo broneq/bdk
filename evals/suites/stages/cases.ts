@@ -8,12 +8,15 @@ import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
+import { SEEDS, isSeed } from "./seeds.ts";
+import type { SeedName } from "./seeds.ts";
+
 /** A kernel command and what its JSON answer must hold, or a pattern the final reply must match. */
 export type Expectation =
   | {
       readonly run: string;
       readonly exit?: number;
-      /** Dotted path in the `--json` answer -> expected value. */
+      /** Dotted path in the `--json` answer -> expected value; `null` also matches an absent path. */
       readonly json?: Readonly<Record<string, unknown>>;
       /** Dotted path in the `--json` answer -> a pattern its string value matches. */
       readonly match?: Readonly<Record<string, string>>;
@@ -28,6 +31,8 @@ export interface StageCase {
   readonly base: Base;
   /** What the user types, a `/bdk:` slash command with its arguments. */
   readonly command: string;
+  /** A seed run in the fresh working copy before `prepare` (seeds.ts). */
+  readonly seed?: SeedName;
   /** Shell commands run in the fresh working copy before the session. */
   readonly prepare: readonly string[];
   /** A pattern of a question's header or text -> a pattern of the option to choose (answer.ts). */
@@ -43,7 +48,7 @@ export class CaseFileError extends Error {
 }
 
 const ID = /^[a-z0-9][a-z0-9-]*$/;
-const FIELDS = new Set(["id", "base", "command", "prepare", "answers", "expect"]);
+const FIELDS = new Set(["id", "base", "command", "seed", "prepare", "answers", "expect"]);
 
 export function caseFile(skill: string): string {
   return fileURLToPath(new URL(`./cases/${skill}.yaml`, import.meta.url));
@@ -101,6 +106,9 @@ function entryProblems(entry: Record<string, unknown>, name: string): string[] {
   if (typeof entry.command !== "string" || !entry.command.startsWith("/bdk:")) {
     problems.push(`${name}: command must be a /bdk: slash command`);
   }
+  if (entry.seed !== undefined && !isSeed(entry.seed)) {
+    problems.push(`${name}: seed must be one of ${SEEDS.join(", ")}`);
+  }
   if (entry.prepare !== undefined && !isStringList(entry.prepare)) {
     problems.push(`${name}: prepare must be a list of shell commands`);
   }
@@ -147,6 +155,7 @@ export function parseCases(text: string, file: string): StageCase[] {
         id: entry.id as string,
         base: (entry.base as Base | undefined) ?? "fixture",
         command: entry.command as string,
+        ...(isSeed(entry.seed) ? { seed: entry.seed } : {}),
         prepare: (entry.prepare as string[] | undefined) ?? [],
         answers: (entry.answers as Record<string, string> | undefined) ?? {},
         expect: entry.expect as Expectation[],

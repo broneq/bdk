@@ -52,7 +52,8 @@ export function checkExpectations(
     }
     for (const [path, expected] of Object.entries(expectation.json ?? {})) {
       const actual = valueAt(call.json, path);
-      if (!isDeepStrictEqual(actual, expected)) {
+      // `null` in a case file also stands for a path the answer does not hold.
+      if (!isDeepStrictEqual(actual ?? null, expected)) {
         failures.push(
           `${expectation.run}: ${path} is ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}`,
         );
