@@ -21,8 +21,8 @@
 
 ## 4. Removal of the v2 executor (D10)
 
-- [ ] 4.1 Failing test: no `skills/subagent-execute-plan/` remains, and `ctx skill bdk-implementer-return-contract` still prints the return contract from its new path
-- [ ] 4.2 Move `references/return-contract.md` into `skills/bdk-implementer-return-contract/references/`, point the manifest entry at it, delete `skills/subagent-execute-plan/`, `pnpm skill-check --baseline-prune`; find the generator of `STARTUP_INSTRUCTIONS.md` and regenerate it; no live skill, agent or kernel source names `/bdk:subagent-execute-plan` (the `execute-ab` suite's tagged v2 copy excepted); tests green
+- [x] 4.1 Failing test: no `skills/subagent-execute-plan/` remains, and `ctx skill bdk-implementer-return-contract` still prints the return contract from its new path
+- [x] 4.2 Move `references/return-contract.md` into `skills/bdk-implementer-return-contract/references/`, point the manifest entry at it, delete `skills/subagent-execute-plan/`, `pnpm skill-check --baseline-prune`; find the generator of `STARTUP_INSTRUCTIONS.md` and regenerate it; no live skill, agent or kernel source names `/bdk:subagent-execute-plan` (the `execute-ab` suite's tagged v2 copy excepted); tests green
 
 ## 5. `stages` eval cases (D12)
 

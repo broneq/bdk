@@ -1,6 +1,6 @@
 ---
 name: fixer
-description: Apply a specific list of findings (from a reviewer, linter, or test failure) to the codebase. Receives findings and file paths inline; never reads the plan file. Spawned by /bdk:subagent-execute-plan.
+description: Apply a specific list of findings (from a reviewer, linter, or test failure) to the codebase. Receives findings and file paths inline; never reads the plan file. BDK 2 agent; no BDK 3 skill starts it.
 model: sonnet
 skills:
   - bdk-rules-code-quality

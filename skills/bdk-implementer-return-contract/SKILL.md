@@ -14,4 +14,4 @@ If no "BDK context: bdk-implementer-return-contract" heading appears above, run 
 
 # Implementer Return Contract
 
-The schema is the `Return contract` section of the BDK context above.
+The schema is the `Return contract` section of the BDK context above, which the kernel reads from [references/return-contract.md](references/return-contract.md).

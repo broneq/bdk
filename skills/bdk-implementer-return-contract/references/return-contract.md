@@ -1,6 +1,6 @@
 # Subagent Return Contract
 
-Source of truth for the YAML envelope every implementer / fixer subagent must emit as its **final** message. The coordinator (`/bdk:subagent-execute-plan`) and the dispatch templates in `dispatch-templates.md` reference this file — do not restate the schema elsewhere; cite this one.
+Source of truth for the YAML envelope every BDK 2 implementer / fixer subagent must emit as its **final** message. Do not restate the schema elsewhere; cite this one.
 
 ## Schema
 

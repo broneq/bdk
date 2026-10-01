@@ -22925,7 +22925,7 @@ var SKILL_CONTEXT = {
   "bdk-implementer-return-contract": [
     {
       kind: "file",
-      path: "skills/subagent-execute-plan/references/return-contract.md",
+      path: "skills/bdk-implementer-return-contract/references/return-contract.md",
       title: "Return contract"
     }
   ],
