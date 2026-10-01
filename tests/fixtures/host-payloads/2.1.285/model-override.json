@@ -1,0 +1,401 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.285",
+    "check_id": "model-override",
+    "recordings": 11
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Probe haiku low effort",
+        "prompt": "go",
+        "subagent_type": "bdk-probe:probe-haiku-low",
+        "run_in_background": false
+      },
+      "tool_use_id": "<TOOL-USE-1>"
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "agent_id": "<AGENT-1>",
+      "agent_type": "bdk-probe:probe-haiku-low",
+      "hook_event_name": "SubagentStart"
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-1>",
+      "agent_type": "bdk-probe:probe-haiku-low",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "echo probe-haiku-low",
+        "description": "Run probe command"
+      },
+      "tool_use_id": "<TOOL-USE-2>"
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-1>",
+      "agent_type": "bdk-probe:probe-haiku-low",
+      "hook_event_name": "SubagentStop",
+      "stop_hook_active": false,
+      "agent_transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>/subagents/agent-<AGENT-1>.jsonl",
+      "last_assistant_message": "PROBE-HAIKU-LOW-DONE",
+      "background_tasks": [],
+      "session_crons": []
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Probe haiku low effort",
+        "prompt": "go",
+        "subagent_type": "bdk-probe:probe-haiku-low",
+        "run_in_background": false
+      },
+      "tool_response": {
+        "status": "completed",
+        "prompt": "go",
+        "agentId": "<AGENT-1>",
+        "agentType": "bdk-probe:probe-haiku-low",
+        "harnessNoteCount": 0,
+        "harnessTailCount": 0,
+        "harnessSectionHash": "5ad49072bc7b58b8",
+        "content": [
+          {
+            "type": "text",
+            "text": "PROBE-HAIKU-LOW-DONE"
+          }
+        ],
+        "resolvedModel": "claude-haiku-4-5-20251001",
+        "totalDurationMs": 3569,
+        "totalTokens": 6353,
+        "totalToolUseCount": 1,
+        "usage": {
+          "output_tokens_details": {
+            "thinking_tokens": 43
+          },
+          "input_tokens": 8,
+          "cache_creation_input_tokens": 886,
+          "cache_read_input_tokens": 5399,
+          "output_tokens": 60,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 886
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 8,
+              "output_tokens": 60,
+              "cache_read_input_tokens": 5399,
+              "cache_creation_input_tokens": 886,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 886,
+                "ephemeral_1h_input_tokens": 0
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        },
+        "toolStats": {
+          "readCount": 0,
+          "searchCount": 0,
+          "bashCount": 1,
+          "editFileCount": 0,
+          "linesAdded": 0,
+          "linesRemoved": 0,
+          "otherToolCount": 0
+        }
+      },
+      "tool_use_id": "<TOOL-USE-1>",
+      "duration_ms": 3571
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Probe haiku low effort with opus",
+        "prompt": "go",
+        "subagent_type": "bdk-probe:probe-haiku-low",
+        "model": "opus",
+        "run_in_background": false
+      },
+      "tool_use_id": "<TOOL-USE-3>"
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "agent_id": "<AGENT-2>",
+      "agent_type": "bdk-probe:probe-haiku-low",
+      "hook_event_name": "SubagentStart"
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-2>",
+      "agent_type": "bdk-probe:probe-haiku-low",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "echo probe-haiku-low",
+        "description": "Print probe string"
+      },
+      "tool_use_id": "<TOOL-USE-4>"
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-2>",
+      "agent_type": "bdk-probe:probe-haiku-low",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "SubagentStop",
+      "stop_hook_active": false,
+      "agent_transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>/subagents/agent-<AGENT-2>.jsonl",
+      "last_assistant_message": "PROBE-HAIKU-LOW-DONE",
+      "background_tasks": [],
+      "session_crons": []
+    },
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Probe haiku low effort with opus",
+        "prompt": "go",
+        "subagent_type": "bdk-probe:probe-haiku-low",
+        "model": "opus",
+        "run_in_background": false
+      },
+      "tool_response": {
+        "status": "completed",
+        "prompt": "go",
+        "agentId": "<AGENT-2>",
+        "agentType": "bdk-probe:probe-haiku-low",
+        "harnessNoteCount": 0,
+        "harnessTailCount": 0,
+        "harnessSectionHash": "5ad49072bc7b58b8",
+        "content": [
+          {
+            "type": "text",
+            "text": "PROBE-HAIKU-LOW-DONE"
+          }
+        ],
+        "resolvedModel": "claude-opus-5-5",
+        "totalDurationMs": 3825,
+        "totalTokens": 4748,
+        "totalToolUseCount": 1,
+        "usage": {
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 1032,
+          "cache_read_input_tokens": 3694,
+          "output_tokens": 20,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 1032
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 20,
+              "cache_read_input_tokens": 3694,
+              "cache_creation_input_tokens": 1032,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 1032,
+                "ephemeral_1h_input_tokens": 0
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        },
+        "toolStats": {
+          "readCount": 0,
+          "searchCount": 0,
+          "bashCount": 1,
+          "editFileCount": 0,
+          "linesAdded": 0,
+          "linesRemoved": 0,
+          "otherToolCount": 0
+        }
+      },
+      "tool_use_id": "<TOOL-USE-3>",
+      "duration_ms": 3825
+    },
+    {
+      "duration_api_ms": 18778,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-1>",
+      "total_cost_usd": 0.07415925000000001,
+      "usage": {
+        "input_tokens": 26,
+        "cache_creation_input_tokens": 13132,
+        "cache_read_input_tokens": 61553,
+        "output_tokens": 1174,
+        "output_tokens_details": {
+          "thinking_tokens": 604
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 13132,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 163,
+            "cache_read_input_tokens": 25110,
+            "cache_creation_input_tokens": 435,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 435
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 44,
+          "outputTokens": 1379,
+          "cacheReadInputTokens": 66952,
+          "cacheCreationInputTokens": 19417,
+          "webSearchRequests": 0,
+          "costUSD": 0.047754450000000004,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 712,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-opus-5-5": {
+          "inputTokens": 4,
+          "outputTokens": 101,
+          "cacheReadInputTokens": 3694,
+          "cacheCreationInputTokens": 4726,
+          "webSearchRequests": 0,
+          "costUSD": 0.0264048,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "subagent_stats": {
+        "spawned": 2,
+        "requested": {
+          "background": 0,
+          "foreground": 2,
+          "unset": 0
+        },
+        "started_in_background": 0,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 2,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "bdk-probe:probe-haiku-low": 2
+        }
+      },
+      "is_error": false,
+      "num_turns": 3,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "---\n\n**Both answers verbatim:**\n\n**First call result:**\n```\nPROBE-HAIKU-LOW-DONE\nagentId: <AGENT-1>\nsubagent_tokens: 6353\ntool_uses: 1\nduration_ms: 3569\n```\n\n**Second call result:**\n```\nPROBE-HAIKU-LOW-DONE\nagentId: <AGENT-2>\nsubagent_tokens: 4748\ntool_uses: 1\nduration_ms: 3825\n```",
+      "ttft_ms": 6359,
+      "type": "result",
+      "duration_ms": 19638,
+      "uuid": "<UUID-1>",
+      "ttft_stream_ms": 735,
+      "time_to_request_ms": 69,
+      "first_content_frame_ms": 735,
+      "queued_turn_count": 0,
+      "result_index": 0
+    }
+  ]
+}

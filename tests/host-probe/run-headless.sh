@@ -202,6 +202,11 @@ selected agent-schema && { run_check agent-schema '.' "Task Agent Bash(echo *)" 
 selected effort && { run_check effort '"agent_type":"bdk-probe:probe-effort-(low|none)"' "Task Agent Bash(echo *)" \
   "Use the subagent tool (named Task or Agent) twice, one after the other, both in the foreground: first with subagent_type bdk-probe:probe-effort-low and prompt go, then with subagent_type bdk-probe:probe-effort-none and prompt go. Reply with both answers verbatim." || status=1; }
 
+# Escalation (T41-D14): the Agent tool's model parameter against the adapter's
+# frontmatter model, and effort on a Haiku agent. PostToolUse carries resolvedModel.
+selected model-override && { run_check model-override 'bdk-probe:probe-haiku-low' "Task Agent Bash(echo *)" \
+  "Step 1: quote verbatim the description and any allowed values your tool schema gives for the model parameter of the subagent tool (named Task or Agent). Step 2: use that tool twice, one after the other, both in the foreground, both with subagent_type bdk-probe:probe-haiku-low and prompt go: first without the model parameter, then with model set to opus. Reply with the step 1 quote and both answers verbatim." || status=1; }
+
 selected subagent-stop-block && { export BDK_PROBE_BLOCK=SubagentStop; run_check subagent-stop-block 'continued-after-SubagentStop' "Task Agent Bash(echo *)" \
   "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-worker and prompt go, in the foreground. Reply with its answer verbatim." || status=1; unset BDK_PROBE_BLOCK; }
 
