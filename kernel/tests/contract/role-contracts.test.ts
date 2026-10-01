@@ -200,6 +200,18 @@ describe("verifiers record their verdict after storing the report", () => {
   });
 });
 
+describe("the verifier checks a whole plan", () => {
+  it("verifies every plan part with the design and names the plan-wide checks", () => {
+    const { body } = readRole("verifier");
+    expect(body).toContain("You verify the plan parts the package names, together");
+    expect(body).toContain("design documents");
+    expect(body).toMatch(/\*\*Test cases\.\*\*/);
+    expect(body).toMatch(/\*\*Design coverage\.\*\*/);
+    expect(body).toMatch(/\*\*Between parts\.\*\*/);
+    expect(body).toContain("`unresolved-decision`");
+  });
+});
+
 describe("S4: rule ids are cited", () => {
   const CITING = [
     "implementer",

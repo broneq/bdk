@@ -1,6 +1,6 @@
-// `stage-skills` (v3-t41-design): the two tiers of asking the user in the
-// `decision` fragments, and the content of the `design` and `verify-design`
-// stage skills. The kernel holds the order of the work; these tests check
+// `stage-skills` (v3-t41-design, v3-t41-plan): the two tiers of asking the
+// user in the `decision` fragments, and the content of the `design`,
+// `verify-design`, `plan` and `verify-plan` stage skills. The kernel holds the order of the work; these tests check
 // that each skill names the commands that carry it.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -63,7 +63,9 @@ describe("stage skill invocation", () => {
       const userOnly = ["setup", "change", "plan", "execute", "close", "run"].includes(name);
       expect(meta["disable-model-invocation"] === true, name).toBe(userOnly);
     }
-    expect(readdirSync(STAGES)).toEqual(expect.arrayContaining(["design", "verify-design"]));
+    expect(readdirSync(STAGES)).toEqual(
+      expect.arrayContaining(["design", "verify-design", "plan", "verify-plan"]),
+    );
   });
 });
 
@@ -114,6 +116,61 @@ describe("design", () => {
     const { body } = readSkill("design");
     const references = readdirSync(join(STAGES, "design", "references"));
     expect(references.sort()).toStrictEqual(["approaches.md", "schema-gate.md"]);
+    for (const file of references) expect(body).toContain(`](references/${file})`);
+  });
+});
+
+describe("verify-plan", () => {
+  it("is the only verify-plan skill and has a manifest entry for its context lines", () => {
+    expect(existsSync(join(REPO_ROOT, "skills", "verify-plan"))).toBe(false);
+    expect(SKILL_CONTEXT["verify-plan"]).toStrictEqual([]);
+  });
+
+  it("runs the verifier round through the kernel and the reader adapter", () => {
+    const { body } = readSkill("verify-plan");
+    for (const needle of [
+      "bdk attempt open verifier plan-verify",
+      "bdk dispatch build plan-verify verifier <ticket>",
+      "subagent_type: bdk:reader",
+      "bdk log add report",
+      "bdk attempt close <ticket>",
+      "bdk done plan-verify",
+      "`model`",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
+    expect(body).toMatch(/resume[^.]*once/i);
+  });
+});
+
+describe("plan", () => {
+  it("is the only planning skill of the plugin", () => {
+    expect(existsSync(join(REPO_ROOT, "skills", "create-plan"))).toBe(false);
+    expect(SKILL_CONTEXT).not.toHaveProperty("create-plan");
+    expect(SKILL_CONTEXT.plan).toBeDefined();
+  });
+
+  it("follows the kernel, verifies itself and ends with the execute command", () => {
+    const { body } = readSkill("plan");
+    for (const needle of [
+      "bdk next --json",
+      "bdk done plan",
+      "bdk spec delta check",
+      "bdk log add decision",
+      "/bdk:verify-plan",
+      "bdk part list --json",
+      "--review",
+      "/bdk:execute",
+      "`false-code-claim`",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
+  });
+
+  it("links every reference it ships", () => {
+    const { body } = readSkill("plan");
+    const references = readdirSync(join(STAGES, "plan", "references"));
+    expect(references.sort()).toStrictEqual(["task-shape.md"]);
     for (const file of references) expect(body).toContain(`](references/${file})`);
   });
 });

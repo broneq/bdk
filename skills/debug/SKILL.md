@@ -34,7 +34,7 @@ Diagnose bugs via structured investigation, reproduce with failing tests, then f
 
 Phase 4 is a hard stop: you present the proposal, then end your turn. Do not begin Phase 5, do not start editing, and do not decide the path yourself — no matter how obvious the fix looks. Only an actual user reply releases the stop; a background task completing, a hook firing, or your own reasoning does not.
 
-**After the user responds**: announce Phase 5 as the path they chose — "Fix Inline" or "Hand off to /bdk:create-plan" — then proceed.
+**After the user responds**: announce Phase 5 as the path they chose — "Fix Inline" or "Hand off to a Change" — then proceed.
 
 ---
 
@@ -50,7 +50,7 @@ digraph debug_flow {
     tests [label="Phase 3\nWrite Failing Tests"]
     decide [label="Phase 4\nPropose & ASK USER\n(HARD STOP)", fillcolor="#fff3cd", shape=octagon]
     fix [label="Phase 5a\nFix Inline + Verify"]
-    plan [label="Phase 5b\nHand off to /bdk:create-plan"]
+    plan [label="Phase 5b\nHand off to a Change"]
     done [label="Done", fillcolor="#d4edda", shape=doublecircle]
 
     start -> investigate
@@ -134,7 +134,7 @@ Confirm the new tests are RED by running the matching tier's `scoped` form on th
 **Step 2**: Assess complexity:
 
 - **LOW** (inline fix): isolated change affecting one function/call site
-- **HIGH** (route to /bdk:create-plan): affects many call sites, introduces new abstractions, changes shared data models
+- **HIGH** (hand off to a Change): affects many call sites, introduces new abstractions, changes shared data models
 
 **Step 3**: Ask user via `AskUserQuestion`:
 
@@ -147,7 +147,7 @@ Confirm the new tests are RED by running the matching tier's `scoped` form on th
 
 ## What would you like to do?
 1. **Fix now** — apply the inline fix and verify tests pass
-2. **Create plan** — hand off to `/bdk:create-plan` with failing tests as acceptance criteria
+2. **Create plan** — hand off to a `bug` Change (`/bdk:change`, then `/bdk:plan`) with failing tests as acceptance criteria
 3. **Something else** — redirect, reconsider, investigate more
 
 {recommendation}
@@ -182,14 +182,17 @@ Project tools context: the `Project commands: test` and `Project commands: lint`
 
 ---
 
-### Phase 5b: Hand Off to /bdk:create-plan
+### Phase 5b: Hand Off to a Change
 
-1. Print: `[debug] Routing to /bdk:create-plan`
-2. Invoke `/bdk:create-plan` passing:
-   - Root cause as feature description
+`/bdk:change` and `/bdk:plan` start only when the user types them, so this phase ends with the hand-off text and changes no file.
+
+1. Print: `[debug] Handing off to a bug Change`
+2. Print, ready to paste into `/bdk:change`:
+   - Root cause in one sentence, as the Change's intent
    - Steps to reproduce (verbatim)
    - Failing test file path and test names as acceptance criteria
    - Architectural constraints discovered during investigation
+3. Tell the user to run `/bdk:change` with that text, then `/bdk:plan`, and end the turn.
 
 ---
 
@@ -206,7 +209,7 @@ Project tools context: the `Project commands: test` and `Project commands: lint`
 
 - NEVER fix before writing failing test
 - NEVER proceed past Phase 4 without user confirmation
-- NEVER route to /bdk:create-plan without passing failing test paths
+- NEVER hand off to a Change without the failing test paths
 - NEVER scan entire codebase for gaps — only code already read
 - NEVER call any tool after `AskUserQuestion` in Phase 4 — turn ends there
 - NEVER mark Phase 4 task complete before user responds

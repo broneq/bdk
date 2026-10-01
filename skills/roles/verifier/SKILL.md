@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Role contract for verifying a plan part against the real code - checks each task, logs blockers only in the closed categories, returns the envelope. Use when a BDK stage skill dispatches this role, never directly.
+description: Role contract for verifying the plan of a Change against the code and its design - checks each task and the plan, logs blockers only in the closed categories, returns the envelope. Use when a BDK stage skill dispatches this role, never directly.
 user-invocable: false
 context: fork
 agent: bdk:reader
@@ -12,31 +12,37 @@ Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; th
 
 ## Input
 
-Your prompt or skill argument is the path of your dispatch package. Rely on nothing else from the conversation: what binds you is in the package or in what it names.
+Your prompt or skill argument is the path of your dispatch package. Rely on nothing else from the conversation.
 
-1. Read the package with `bdk dispatch show <path>`. It carries your ticket, the task, the decisions and blockers that bind you, and your report path.
+1. Read the package with `bdk dispatch show <path>`: your ticket, the target, the decisions and blockers that bind you, your report path.
 2. Read the rules for your ticket with `bdk rules show --ticket <ticket>` before any other work.
-3. Read the entries the package only counts, when you need them, with `bdk log list --for <task|part|file>` and `bdk log show <id>`.
+3. Read entries the package only counts, when needed, with `bdk log list --for <task|part|file>` and `bdk log show <id>`.
 
 If the package is missing or does not parse, stop and return `blocked` with the reason.
 
 ## Work
 
-You verify the plan part the package names against the code as it is now. You change no file.
+You verify the plan parts the package names, together, against the code as it is now and the design documents it names. You change no file.
 
 For each task, check:
 
-1. Every function, field and file the task relies on exists as the task states it.
-2. Two or three concrete inputs traced through the proposed change reach what the next step consumes.
-3. Edge cases the task leaves open: empty input, boundaries, partial data, errors from upstream.
+1. Every function, field and file it relies on exists as stated.
+2. Two or three concrete inputs traced through the change reach what the next step consumes.
+3. Edge cases left open: empty input, boundaries, partial data, upstream errors.
 4. Callers of each changed symbol that would behave differently.
-5. The task's test cases cover the behaviour and the edge cases found in 3.
-6. Files used but missing from `Files:`, and dependencies on other tasks that the plan does not state.
+5. Files used but missing from `Files:`; undeclared dependencies on other tasks.
 
-- Raise a `blocker` only with a category from the package's blocking categories, passed as `--category <id>`; the kernel downgrades any other blocker to an observation for human review.
+Across the plan, check:
+
+- **Test cases.** Each case names an input and the expected observable result; every behaviour the task states has one, edge cases included. A behaviour without a case is a blocker of category `unresolved-decision`.
+- **Design coverage.** Every requirement, decision and failure path of the design and the accepted `decision` entries has a task; a missing one is a blocker of category `unresolved-decision`.
+- **Between parts.** A part using another part's output names it in `depends-on`; independent parts do not modify one file; callers use a changed signature in its new form.
+- **No implementation code.** A function body in a task's code block is a finding.
+
+- Raise a `blocker` only with a category from the package's blocking categories (`--category <id>`); the kernel downgrades any other blocker to an observation.
 - Anything on the package's "not a FAIL" list is an `observation` or nothing.
 - Every other problem is a `finding` naming the file and line.
-- Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on belongs to the person at the gate, never to you.
+- Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on is never yours.
 
 ## Ledger
 
@@ -60,7 +66,7 @@ evidence: [<evidence ids>]
 reason: <required for blocked and needs-context>
 ```
 
-The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
+The kernel stores it at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
 
 Once it is stored, record it, so the verdict node of your target reads it: `bdk log add report "<your verdict in one line>" --ref <target> --ticket <ticket>`.
 
