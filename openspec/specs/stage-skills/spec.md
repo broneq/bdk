@@ -264,7 +264,7 @@ On a refusal of `attempt open` (for example `policy/not-ready` while a design ar
 
 `/bdk:plan` SHALL read `bdk next --json` and write the plan parts its instruction names, at `plan/parts/<nn>-<slug>.md` with exactly the frontmatter fields the instruction lists, then mark them with `bdk done plan`. Before it writes, it SHALL read the design files of the Change (when the Change has a design stage), the accepted decisions and live questions of the ledger, and the code the tasks will touch; a `bug` or `tiny` Change, which has no design stage, is planned from its intent and the code.
 
-Each part SHALL hold at most 8 tasks and stay within 8 KB, and SHALL group tasks so that parts without a dependency between them can run in the same wave; `depends-on` names every part whose output a part consumes. For each capability a part names in `spec-impact`, the skill SHALL write `spec-delta/<capability>.md` and check it with `bdk spec delta check` before `bdk done plan`. Before `bdk done plan` it SHALL go through the `BDK-PL` rules of the instruction by id and correct the parts until each holds.
+The intent and the design SHALL set the size of the plan: a task states only the behaviour the Change alters, and anything else the skill notices (a guard in a caller, an input nobody reported, a cleanup) is recorded as a `finding`, not planned. Each part SHALL hold at most 8 tasks and stay within 8 KB, and SHALL group tasks so that parts without a dependency between them can run in the same wave; `depends-on` names every part whose output a part consumes. For each capability a part names in `spec-impact`, the skill SHALL write `spec-delta/<capability>.md` and check it with `bdk spec delta check` before `bdk done plan`. Before `bdk done plan` it SHALL go through the `BDK-PL` rules of the instruction by id and correct the parts until each holds.
 
 A live `question` entry whose answer changes what a task builds SHALL be settled before `bdk done plan`: the skill answers it from the design or the code when they settle it, and otherwise asks the user (Asking the user in two tiers); each answer is recorded as a `decision` entry with a ref to the question's ref, and the question is resolved.
 
@@ -273,7 +273,7 @@ When `bdk next` refuses because no Change is active, the skill SHALL write nothi
 #### Scenario: bug Change planned without a design
 
 - **WHEN** `/bdk:plan` runs on a `bug` Change opened with a reproduction of a wrong fallback in `formatTimestamp`
-- **THEN** `plan/parts/` holds at least one part, `bdk part list --json` reports every part within 8 tasks and 8 KB, and `plan` is done without any design file in the Change
+- **THEN** `plan/parts/` holds exactly one part, `bdk part list --json` reports it within 8 tasks and 8 KB, and `plan` is done without any design file in the Change
 
 #### Scenario: spec delta written before done
 

@@ -24,6 +24,7 @@ A Change that passes `gate:design` now stops at `/bdk:plan`, and that command re
 - **`verifier` role contract**: verifies every part its package names, together; adds the checks a contract-style plan needs (concrete test cases covering each stated behaviour, the design's requirements and decisions covered, declared dependencies between parts, one file not edited by two parts of the same wave).
 - **Removed**: the v2 `skills/create-plan/` and `skills/verify-plan/` (decision 5); `/bdk:plan` and `/bdk:verify-plan` each resolve to one skill. The v2 agent `plan-verifier` stays until T42, as `design-verifier` did. `skills/debug` hands a large fix to the user's `/bdk:change` and `/bdk:plan` instead of invoking `/bdk:create-plan`.
 - **`ctx skill` manifest**: `plan` gets the plan rules, engineering judgment, the test-quality rules, language rules, project rules and the `decision` fragment; `verify-plan` an empty entry for its `BDK STOP` line; the `create-plan` entry goes.
+- **Guard block reason names the way out** (added after the 2026-10-01 probe): a guard's block prints `<rule>: <why>` and then `instead: ...` on stderr (and in `permissionDecisionReason`), so a user whose `/bdk:plan` is blocked for lack of a Change sees `/bdk:change`.
 - **Evals**: case files `plan.yaml` and `verify-plan.yaml` in the `stages` suite; this Change runs only `--probe`.
 - **User documentation**: `reference/skills.md`, `reference/artifacts.md`, the workflow and concept pages that name `/bdk:create-plan` or `/bdk:verify-plan`, README's skill table.
 
@@ -37,6 +38,7 @@ None. `stage-skills` exists and gains the two skills.
 
 - `stage-skills`: requirements for `plan` (writing contract-style parts with concrete test cases, spec deltas, the self-correcting verification loop, the closing report and `--review`) and `verify-plan`.
 - `kernel-pipeline`: `plan-verify` hashes the spec deltas; the plan-stage nodes (rules of `plan`, requirements of `plan-verify`) and their instructions.
+- `kernel-cli`: a guard's block reason carries the refusal's `instead` after `<rule>: <why>`.
 - `role-contracts`: the `verifier` contract verifies the whole plan and checks test cases, design coverage and dependencies between parts.
 
 `skill-evals` needs no delta: its `stages` requirement already covers every stage skill with a case file. `kernel-state` keeps the plan part grammar unchanged.
@@ -60,3 +62,4 @@ Lavish pages `.lavish/t41-plan-questions-r1.html` (analysis) and `.lavish/t41-pl
 5. **Remove both v2 skills now.** Rejected: keeping `create-plan` until `execute` lands (two planning skills with different outputs, and a closing line pointing at a `verify-plan` that no longer takes a file).
 6. **`plan` corrects itself and asks only for decisions.** The user wants as few actions as possible: the skill fixes every blocker that does not change a decision of the design, verifies again within the budget, and asks only about a blocker that needs a product decision, or when the budget is used up.
 7. **Report by default, `--review` on request.** `/bdk:plan` ends with a report and `/bdk:execute`, which the user types; `/bdk:plan --review` stops for one review of the verified plan first. Rejected: a review on every run (one more action per plan) and no review option at all.
+8. **The intent sets the size of the plan** (after the first `plan` probe turned a one-function fix into two parts): a task states only the behaviour the Change alters; guards in callers, unreported inputs and cleanups become `finding` entries. The verifier treats an edge case outside the intent and design as a finding, not a blocker.

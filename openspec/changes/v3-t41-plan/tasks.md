@@ -30,6 +30,8 @@
 - [x] 5.2 Case files `evals/suites/stages/cases/plan.yaml` (`bug`; no `no-change` case, see D9) and `verify-plan.yaml` (`clean`, `false-claim`, `not-ready`), each preparing `features.lavish false`; extend `STAGE_SKILLS`; `pnpm eval check` green
 - [ ] 5.3 After the user approves the cost: `pnpm eval stages --skill verify-plan --probe --budget <ledger + margin>` and `--skill plan --probe`; fix what fails and record the outcome in the PR
 
+- [x] 5.4 After the first `plan` probe: the guard block reason names `instead` (`kernel-cli` delta, `blockReason`, registry, pre-tool and guard e2e tests); `plan` sizes the plan to the intent and the verifier scopes edge cases to it; the `bug` case expects one part
+
 ## 6. Documentation (D10)
 
 - [x] 6.1 `docs/guide/reference/skills.md`, `reference/artifacts.md`, `concepts/plan-pipeline.md`, the workflow and getting-started pages that name `/bdk:create-plan` or `/bdk:verify-plan`, README's skill table; add rewritten pages to `V3_PAGES`; `pnpm docs:build` and `pnpm test:contract` green
