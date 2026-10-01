@@ -744,7 +744,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 1. `v3-t41-orchestration` (done, #102): the layer the dispatching skills stand on. An agent registry fed by hooks with a heartbeat lease; `bdk agents list|show|wait`; a tree of agents (`main`, one `lead` per plan part, role agents, a `scout` under a worker) with a `part-lead` ticket and serialised commits; messages between agents as pointers to ledger entries, guarded; `Stop` / `SubagentStop` continuation checks; `effort` per adapter; escalation on `policy.escalation.model`; a dev-time prompt-writing convention for Opus 5.5 in `.claude/rules/`. It supersedes the flat swarm of T23-D50.
 2. `v3-t41-setup-change` (done, #103): `setup` and `change`, the entry into the workflow.
 3. `v3-t41-design` (done, #104): `design` and `verify-design`.
-4. `v3-t41-plan`: `plan` and `verify-plan`.
+4. `v3-t41-plan` (done, #105): `plan` and `verify-plan`.
 5. `v3-t41-execute`: `execute` on the orchestration layer, including the kernel rule that decides when a wave runs as a tree.
 6. `v3-t41-close-run`: `close` and `run`.
 
