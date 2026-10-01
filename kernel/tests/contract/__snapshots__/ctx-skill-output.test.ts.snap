@@ -175,6 +175,22 @@ exports[`ctx skill output > design is unchanged 1`] = `
 }"
 `;
 
+exports[`ctx skill output > execute is unchanged 1`] = `
+"{
+  "content": "## BDK context: execute\\n\\n### Concurrency\\n\\nRun at most 5 agents at once.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "concurrency",
+      "source": "execution.concurrency"
+    },
+    {
+      "kind": "fragment",
+      "source": "fragments/decision/lavish"
+    }
+  ]
+}"
+`;
+
 exports[`ctx skill output > plan is unchanged 1`] = `
 "{
   "content": "## BDK context: plan\\n\\n### Rules: plan\\n\\n- [BDK-PL-1] Text of BDK-PL-1.\\n- [BDK-PL-2] Text of BDK-PL-2.\\n\\n### Rules: engineering-judgment\\n\\n- [BDK-EJ-1] Text of BDK-EJ-1.\\n- [BDK-EJ-2] Text of BDK-EJ-2.\\n\\n### Rules: test-quality\\n\\n- [BDK-TQ-1] Text of BDK-TQ-1.\\n- [BDK-TQ-2] Text of BDK-TQ-2.\\n\\n### Language rules: typescript\\n\\n- [BDK-TS-1] Text of BDK-TS-1.\\n- [BDK-TS-2] Text of BDK-TS-2.\\n\\n### Language rules: react\\n\\n- [BDK-REACT-1] Text of BDK-REACT-1.\\n- [BDK-REACT-2] Text of BDK-REACT-2.\\n\\n### Project rules\\n\\n- [API-1] Text of API-1. (applies: src/api/**)\\n- [NAMING-1] Text of NAMING-1.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",

@@ -22946,6 +22946,7 @@ var SKILL_CONTEXT = {
   "create-adr": [rules("architecture")],
   debug: [tools("test"), tools("lint")],
   design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  execute: [{ kind: "concurrency" }, decision],
   plan: [
     rules("plan"),
     rules("engineering-judgment"),

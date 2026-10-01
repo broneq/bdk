@@ -15,9 +15,9 @@
 
 ## 3. `execute` stage skill (D3-D5, D8, D9)
 
-- [ ] 3.1 Failing contract tests (`kernel/tests/contract/stage-skills.test.ts`, `skill-context.test.ts`): `skills/stages/execute/SKILL.md` exists with `disable-model-invocation: true` and `disallowed-tools: Edit Write NotebookEdit`; names `bdk next`, `wave`, `bdk part start`, `bdk attempt open part-lead`, `bdk dispatch build`, `bdk:lead`, `bdk attempt open task-redispatch`, `bdk:swarm`, `--escalate`, `bdk part done`, `bdk done spec-delta`, `verify-fix`, `/bdk:cr`, and the sentence that one `/bdk:execute` runs every ready part; the `ctx` manifest holds `execute`
-- [ ] 3.2 `ctx skill execute` manifest entry (`Concurrency`, `decision` fragment), ctx tests and snapshot updated
-- [ ] 3.3 Write `skills/stages/execute/SKILL.md` per `specs/stage-skills` and `.claude/rules/prompt-writing.md`, under 150 lines; review with `/bdk-skill-kit:skill-authoring`; tests of 3.1 green; `pnpm skill-check` green
+- [x] 3.1 Failing contract tests (`kernel/tests/contract/stage-skills.test.ts`, `skill-context.test.ts`): `skills/stages/execute/SKILL.md` exists with `disable-model-invocation: true` and `disallowed-tools: Edit Write NotebookEdit`; names `bdk next`, `wave`, `bdk part start`, `bdk attempt open part-lead`, `bdk dispatch build`, `bdk:lead`, `bdk attempt open task-redispatch`, `bdk:swarm`, `--escalate`, `bdk part done`, `bdk done spec-delta`, `verify-fix`, `/bdk:cr`, and the sentence that one `/bdk:execute` runs every ready part; the `ctx` manifest holds `execute`
+- [x] 3.2 `ctx skill execute` manifest entry (`Concurrency`, `decision` fragment), ctx tests and snapshot updated
+- [x] 3.3 Write `skills/stages/execute/SKILL.md` per `specs/stage-skills` and `.claude/rules/prompt-writing.md`, under 150 lines; review with `/bdk-skill-kit:skill-authoring`; tests of 3.1 green; `pnpm skill-check` green
 
 ## 4. Removal of the v2 executor (D10)
 
