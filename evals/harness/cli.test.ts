@@ -91,6 +91,15 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["with-without", "--skill", "bdk:x"])).toThrow(/--tasks/);
   });
 
+  it("requires --skill for stages", () => {
+    expect(() => parseArgs(["stages", "--probe"])).toThrow(/stages needs --skill/);
+    expect(parseArgs(["stages", "--skill", "setup", "--probe"])).toMatchObject({
+      suite: "stages",
+      skill: "setup",
+      probe: true,
+    });
+  });
+
   it("parses check and report", () => {
     expect(parseArgs(["check"])).toEqual({ command: "check" });
     expect(parseArgs(["report", "execute-ab"])).toEqual({ command: "report", suite: "execute-ab" });

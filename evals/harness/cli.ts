@@ -3,13 +3,14 @@
 // command line contract of the `skill-evals` spec.
 import { DEFAULT_BUDGET_USD, DEFAULT_RUN_CAP_USD } from "./budget.ts";
 
-export const SUITES = ["execute-ab", "rules-noop", "with-without"] as const;
+export const SUITES = ["execute-ab", "rules-noop", "stages", "with-without"] as const;
 export type SuiteName = (typeof SUITES)[number];
 
 const USAGE = [
   "usage: pnpm eval <suite> [--probe] [--runs N] [--budget USD] [--run-cap USD]",
   "       pnpm eval rules-noop --patches <name,...> [...]   (M2 of those patches only)",
   "       pnpm eval with-without --skill <plugin:name> --tasks <file> [--fixture default|none] [...]",
+  "       pnpm eval stages --skill <name> [...]",
   "       pnpm eval check",
   "       pnpm eval report <suite>",
   `suites: ${SUITES.join(", ")}`,
@@ -120,6 +121,9 @@ export function parseArgs(argv: readonly string[]): Options {
   }
   if (suite === "with-without" && (options.skill === undefined || options.tasks === undefined)) {
     throw new UsageError("with-without needs --skill <plugin:name> and --tasks <file>");
+  }
+  if (suite === "stages" && options.skill === undefined) {
+    throw new UsageError("stages needs --skill <name>");
   }
   return options;
 }

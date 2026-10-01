@@ -1,0 +1,57 @@
+# Cases of /bdk:setup (spec stage-skills, setup requirements). Every case starts
+# from a fresh copy of the pinned fixture (a Vite + TypeScript app with npm
+# scripts and no .bdk/). `prepare` runs in that copy with $BDK set to the
+# plugin copy's kernel bundle; `expect` runs kernel commands there after the
+# session.
+- id: fresh-project
+  command: /bdk:setup
+  answers:
+    lavish: decline|skip|no|disable
+  expect:
+    - run: config check
+      exit: 0
+    - run: doctor
+      json:
+        ok: true
+        layout: v3
+    - run: config show tools.test
+      json:
+        value.0.tier: fast
+      match:
+        value.0.scoped: "\\{files\\}"
+    - run: config show languages
+      match:
+        value.0: script
+
+- id: invalid-settings
+  command: /bdk:setup
+  prepare:
+    - |-
+      mkdir -p .bdk && printf 'tools:\n  test:\n    - id: vitest\n      command: npm test\n' > .bdk/settings.yaml
+  answers:
+    lavish: decline|skip|no|disable
+  expect:
+    - run: config check
+      exit: 0
+    - run: config show tools.test
+      json:
+        value.0.id: vitest
+        value.0.tier: fast
+
+- id: v2-project
+  command: /bdk:setup
+  prepare:
+    - |-
+      mkdir -p .bdk/plans .bdk/design && printf '{"languages":["typescript"],"test-tools":[{"type":"vitest","command":"npm test"}]}' > .bdk/settings.json && echo '# old design' > .bdk/design/x.md
+  answers:
+    lavish: decline|skip|no|disable
+    delet|remov|v2: delete|remove|yes
+  expect:
+    - run: config check
+      exit: 0
+    - run: doctor
+      json:
+        layout: v3
+    - run: config show tools.test
+      json:
+        value.0.command: npm test

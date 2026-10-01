@@ -22,14 +22,7 @@ Never test skills inside BDK repo — BDK meta-project, won't exercise skills na
 
 ## Skill Evals
 
-For repeatable testing, use eval format defined in `.claude/rules/skill-test-eval.md`.
-
-Evals live in `tests/evals/skills/<skill-name>/`. Each eval contains:
-
-- Prompt exercising skill
-- Assertions about expected output or behavior
-
-Run evals in test project after installing BDK locally.
+Repeatable measurements run through `pnpm eval` (`evals/README.md`). A stage skill (`skills/stages/`) keeps its cases in `evals/suites/stages/cases/<skill>.yaml`, which `pnpm eval check` validates without a model call; measure any other skill with `pnpm eval with-without`. Run `--probe` first and the full series only after its cost is approved.
 
 ## Testing STARTUP_INSTRUCTIONS.md Changes
 

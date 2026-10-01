@@ -87,6 +87,20 @@ export function prepareFixture(
   return base;
 }
 
+/**
+ * An empty repository on `main` with one commit, at `dir`: a session without
+ * the fixture still runs in a git tree.
+ */
+export function emptyBase(dir: string): string {
+  mkdirSync(dir, { recursive: true });
+  git(dir, "init", "--quiet", "--initial-branch", "main");
+  git(dir, "config", "user.name", "BDK Eval");
+  git(dir, "config", "user.email", "eval@bdk.invalid");
+  git(dir, "config", "commit.gpgsign", "false");
+  git(dir, "commit", "--quiet", "--allow-empty", "-m", "empty eval base");
+  return dir;
+}
+
 /** Replace `target` with a copy of `base`, cloned copy-on-write where the filesystem allows it. */
 export function freshCopy(base: string, target: string): void {
   rmSync(target, { recursive: true, force: true });

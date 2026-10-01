@@ -25,6 +25,7 @@ pnpm eval report <suite>           # evals/results/<suite>/report.md from the co
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | `execute-ab`   | One fixture task executed by three arms of the execute stage; acceptance and completeness decide whether T41 writes thin stage skills (`docs/V3-EVAL-EXECUTE-AB.md`)                                         | `v2`, `v3-long`, `v3-long-prime` (A/A), `v3-thin`                        |
 | `rules-noop`   | M1: every rule bullet's question answered blind; M2: seeded patches reviewed with and without the rules (`suites/rules-noop/violations.yaml`); a provisional class per bullet (`docs/V3-EVAL-RULES-NOOP.md`) | M1 `haiku`, `sonnet`, `sonnet-prime`; M2 `with`, `with-prime`, `without` |
+| `stages`       | A user-only stage skill: each case typed as its slash command, checked against the kernel state the run leaves                                                                                               | `bdk`                                                                    |
 | `with-without` | Any BDK skill: each task of a task file with the skill and without it                                                                                                                                        | `with`, `without`                                                        |
 
 ### With / without mode
@@ -44,6 +45,30 @@ The two cells differ only in the plugin copy: the `without` copy lacks the skill
 ````
 
 The report (`pnpm eval report with-without`) states per task and per metric (`assert_pass`, `assert_score`, `cost`, `turns`, `wall_s`) both cells' median and range and whether the gap is measurable: medians further apart than the larger within-cell range.
+
+### Stage skill mode
+
+```bash
+pnpm eval stages --skill <setup|change> [--probe]
+```
+
+Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml`, in one cell with the BDK plugin copy. A case is a YAML entry:
+
+```yaml
+- id: existing-change # lowercase letters, digits, dashes
+  base: fixture # or empty: a git repository with one empty commit on main
+  command: /bdk:change "Add a dark mode toggle" # what the user types
+  prepare: # shell commands in the fresh working copy; $BDK is the plugin's kernel bundle
+    - node "$BDK" change new "Translate the login page" >/dev/null
+  answers: # question pattern -> option pattern, both case-insensitive regular expressions
+    branch: stay|current
+  expect: # kernel commands run with --json after the session, and the final reply
+    - run: change list
+      json: { items.length: 1 } # dotted path -> exact value; `match` takes a pattern instead
+    - reply: change status
+```
+
+The model words its own questions, so `answers` matches patterns. A PreToolUse hook the suite writes into the working copy's `.claude/settings.json` (excluded from git there) answers every `AskUserQuestion`: a question whose header or text matches a key gets the first option whose label matches the value, or the value itself as free text when no option matches; any other question gets its first option. A run passes (`expect_pass`) when every expectation holds; `checks.json` among its raw records names each failed one. The report states per case the passed runs and the median questions, turns and cost.
 
 ## Provider facts
 
