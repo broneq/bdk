@@ -164,6 +164,7 @@ describe("plan", () => {
       "`false-code-claim`",
       "follow-up Change",
       "the only limit on rounds",
+      "grows the scope beyond the intent",
       "A passing verdict, `done-with-concerns` included, closes the plan",
     ]) {
       expect(body, needle).toContain(needle);

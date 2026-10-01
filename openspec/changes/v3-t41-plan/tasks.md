@@ -38,6 +38,8 @@
 
 - [x] 5.7 After the fourth `plan` probe (the caller regression went to a finding): a user-visible caller change no task or decision covers is an `unresolved-decision` blocker in the `verifier` contract
 
+- [x] 5.8 After the fifth `plan` probe (the verifier blocked, the planner grew the scope without asking): a blocker whose fix grows the scope goes to the user
+
 ## 6. Documentation (D10)
 
 - [x] 6.1 `docs/guide/reference/skills.md`, `reference/artifacts.md`, `concepts/plan-pipeline.md`, the workflow and getting-started pages that name `/bdk:create-plan` or `/bdk:verify-plan`, README's skill table; add rewritten pages to `V3_PAGES`; `pnpm docs:build` and `pnpm test:contract` green
