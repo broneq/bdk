@@ -40,6 +40,16 @@ The plan stage writes into the same directory:
 | `log/`                                | `/bdk:plan`, `/bdk:verify-plan`         | `decision` entries that settle open questions, the verifier's `report`, `blocker` and `finding` entries |
 | `reports/`                            | the plan verifier, through `log ingest` | The verifier's report, whose verdict the `plan-verify` node reads                                       |
 
+The execute stage writes into the same directory, and commits each task to the project:
+
+| Path under `.bdk/changes/<changeId>/` | Written by                                 | Contents                                                                                     |
+| ------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `attempts/`                           | `/bdk:execute` through `bdk attempt open`  | One ticket per dispatch round of a task, a part or its lead, with its outcome                |
+| `dispatch/`                           | `bdk dispatch build`                       | The package each role agent reads as its whole prompt                                        |
+| `reports/`                            | the role agents, through `log ingest`      | Each agent's report with its envelope                                                        |
+| `evidence/`                           | `bdk evidence record`, `bdk attempt close` | The simplify, scoped test and lint results of each task, which the post-task step nodes read |
+| `log/`                                | `/bdk:execute` and the role agents         | `finding`, `blocker`, `learning` and `decision` entries, and the stage's transitions         |
+
 `bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 file `.bdk/settings.json` is never read; `/bdk:setup` migrates a project that still has it.
 
 Everything BDK skills write to disk lives under `.bdk/` in the project root, per `.claude/rules/artifacts.md`:
@@ -52,19 +62,19 @@ This page lists every directory under `.bdk/` that appears in BDK's own sources,
 
 ## Layout
 
-| Path                         | Written by                                                    | Contents                                                                                         |
-| ---------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `.bdk/settings.json`         | BDK 2 setup                                                   | v2 project configuration; `/bdk:setup` migrates it to `.bdk/settings.yaml`                       |
-| `.bdk/plans/`                | BDK 2 `/bdk:create-plan`                                      | v2 implementation plans; BDK 3 plans live in the Change, and `/bdk:setup` deletes this directory |
-| `.bdk/design/`               | BDK 2 `/bdk:design`                                           | v2 design docs; BDK 3 designs live in the Change, and `/bdk:setup` deletes this directory        |
-| `.bdk/verify-plan/`          | BDK 2 `/bdk:verify-plan`                                      | v2 verification reports; `/bdk:setup` deletes this directory                                     |
-| `.bdk/runs/`                 | `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited                      |
-| `.bdk/cr/`                   | `/bdk:cr`                                                     | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md`                            |
-| `.bdk/explain-complex-code/` | `/bdk:explain-complex-code`                                   | Architecture docs, `.bdk/explain-complex-code/[feature-name].md`                                 |
+| Path                         | Written by                                                          | Contents                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `.bdk/settings.json`         | BDK 2 setup                                                         | v2 project configuration; `/bdk:setup` migrates it to `.bdk/settings.yaml`                           |
+| `.bdk/plans/`                | BDK 2 `/bdk:create-plan`                                            | v2 implementation plans; BDK 3 plans live in the Change, and `/bdk:setup` deletes this directory     |
+| `.bdk/design/`               | BDK 2 `/bdk:design`                                                 | v2 design docs; BDK 3 designs live in the Change, and `/bdk:setup` deletes this directory            |
+| `.bdk/verify-plan/`          | BDK 2 `/bdk:verify-plan`                                            | v2 verification reports; `/bdk:setup` deletes this directory                                         |
+| `.bdk/runs/`                 | BDK 2 `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited; BDK 3 removed the skill |
+| `.bdk/cr/`                   | `/bdk:cr`                                                           | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md`                                |
+| `.bdk/explain-complex-code/` | `/bdk:explain-complex-code`                                         | Architecture docs, `.bdk/explain-complex-code/[feature-name].md`                                     |
 
 ## Run state: the one directory no skill reads or writes directly
 
-`.bdk/runs/<run-id>.json` is **cross-skill run state**, not any single skill's artifact: `/bdk:subagent-execute-plan` advances it and `/bdk:cr` reads it. Only `scripts/bdk_run_state.py` reads or writes the file. Per its own docstring:
+`.bdk/runs/<run-id>.json` is **cross-skill run state**, not any single skill's artifact: the BDK 2 `/bdk:subagent-execute-plan` advanced it and `/bdk:cr` reads it. Only `scripts/bdk_run_state.py` reads or writes the file. Per its own docstring:
 
 ```
 This script is the ONLY reader and writer of the manifest. Do not hand-edit

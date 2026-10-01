@@ -24,12 +24,12 @@ BDK ships thirteen subagents. The reason there are that many, rather than one ca
 
 **Used by skills internally.** Let the owning skill orchestrate these rather than calling them yourself:
 
-| `subagent_type`       | Model  | Owner skill                  |
-| --------------------- | ------ | ---------------------------- |
-| `bdk:code-reviewer`   | sonnet | `/bdk:cr`                    |
-| `bdk:implementer`     | sonnet | `/bdk:subagent-execute-plan` |
-| `bdk:fixer`           | sonnet | `/bdk:subagent-execute-plan` |
-| `bdk:design-verifier` | opus   | `/bdk:design`                |
+| `subagent_type`       | Model  | Owner skill                           |
+| --------------------- | ------ | ------------------------------------- |
+| `bdk:code-reviewer`   | sonnet | `/bdk:cr`                             |
+| `bdk:implementer`     | sonnet | BDK 2 agent; no BDK 3 skill starts it |
+| `bdk:fixer`           | sonnet | BDK 2 agent; no BDK 3 skill starts it |
+| `bdk:design-verifier` | opus   | `/bdk:design`                         |
 
 Full descriptions, tool lists, and preloaded skills are in [Agents reference](../reference/agents.md).
 

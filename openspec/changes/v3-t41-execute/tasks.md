@@ -33,8 +33,8 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 `docs/guide/reference/skills.md` (`/bdk:execute` section, v2 section removed), `reference/artifacts.md` (execute stage), `reference/configuration` page for `execution.tree`, and the workflow, concept and getting-started pages that name `/bdk:subagent-execute-plan`; the v2 agent pages for `implementer` and `fixer` say "BDK 2 agent; no BDK 3 skill starts it"; `pnpm docs:build` green
-- [ ] 6.2 README skill table and pipeline section; `docs/V3-IMPLEMENTATION-PLAN.md` T41 scope: `execute` done the v3 way and `features.workflow` dropped with the reason (decision 2), and the design's open item "Workflow strategy details" closed
+- [x] 6.1 `docs/guide/reference/skills.md` (`/bdk:execute` section, v2 section removed), `reference/artifacts.md` (execute stage), `execution.tree` in the `/bdk:execute` section (the guide has no configuration page), and the workflow, concept and getting-started pages that name `/bdk:subagent-execute-plan`; the v2 agent pages for `implementer` and `fixer` say "BDK 2 agent; no BDK 3 skill starts it"; `pnpm docs:build` green
+- [x] 6.2 README skill table and pipeline section; `docs/V3-IMPLEMENTATION-PLAN.md` T41 scope: `execute` done the v3 way and `features.workflow` dropped with the reason (decision 2), and the design's open item "Workflow strategy details" closed
 
 ## 7. Acceptance
 

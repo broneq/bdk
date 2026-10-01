@@ -150,8 +150,8 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:pr-review`               | Review GitHub PRs from URLs: one subagent per PR running `/bdk:cr --inline`, templated inline comments + summary on GitHub, approve / request-changes verdict; stack-aware (diff vs stack parent); `--verify` checks whether previous review comments were implemented and resolves addressed threads |
 | `/bdk:commit`                  | Generate conventional commit message from git changes                                                                                                                                                                                                                                                 |
 | `/bdk:plan`                    | Plan the active Change as plan parts of task contracts with concrete test cases, verify and correct them, and report the waves; `--review` asks for your acceptance first                                                                                                                             |
-| `/bdk:subagent-execute-plan`   | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review                                                                                                                                                                                              |
 | `/bdk:verify-plan`             | Verify the plan of the active Change against the code and the design on a fresh context; a passing verdict marks `plan-verify` done                                                                                                                                                                   |
+| `/bdk:execute`                 | Build the verified plan of the active Change through role agents: every ready part in one run, flat or with one lead per part, one commit per task; ends naming `/bdk:cr`                                                                                                                             |
 | `/bdk:debug`                   | Structured debugging: investigate → failing tests → fix or plan                                                                                                                                                                                                                                       |
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                                                                                                                                                                                                                          |
 | `/bdk:design`                  | Design the active Change with you: grounds in the code, 2+ approaches with Mermaid and self-critique, writes the design files the kernel names, records decisions in the ledger, verifies and ends at the design gate                                                                                 |
@@ -168,52 +168,46 @@ Invoke with `/bdk:<skill-name>`:
 
 Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which several skills used as their only state mechanism. Those skills are gone rather than patched:
 
-| Removed                                       | Use instead                                                                                                                                                                                         |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/bdk:execute-plan`                           | `/bdk:subagent-execute-plan`                                                                                                                                                                        |
-| `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session             |
-| `/bdk:create-tasks`, `/bdk:refactor`          | `/bdk:plan`                                                                                                                                                                                         |
-| `/bdk:audit-prompt`                           | Nothing                                                                                                                                                                                             |
-| `/bdk:graphviz-docs-compiler`                 | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
+| Removed                                           | Use instead                                                                                                                                                                                         |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/bdk:execute-plan`, `/bdk:subagent-execute-plan` | `/bdk:execute`                                                                                                                                                                                      |
+| `/bdk:save-progress`, `/bdk:restore-progress`     | Nothing to invoke. The Change's ledger and the task commits' trailers hold the state; `/bdk:execute` resumes from `bdk next`                                                                        |
+| `/bdk:create-tasks`, `/bdk:refactor`              | `/bdk:plan`                                                                                                                                                                                         |
+| `/bdk:audit-prompt`                               | Nothing                                                                                                                                                                                             |
+| `/bdk:graphviz-docs-compiler`                     | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
 
 ---
 
 ## The plan pipeline
 
-In BDK 3, `/bdk:design` writes the design into the Change (`.bdk/changes/<changeId>/design.md`) and ends at the design gate; `/bdk:plan` writes the plan parts into the same Change (`plan/parts/`) and verifies them with `/bdk:verify-plan`. The BDK 2 planner `/bdk:create-plan` is gone, and `/bdk:execute` replaces the BDK 2 executor in a later v3 Change.
-
-The BDK 2 plan skills formed one chain, each stage consuming the previous stage's output:
+In BDK 3 every stage works on the active Change in `.bdk/changes/<changeId>/`, and the kernel (`bdk next`) says which step is ready:
 
 ```
-/bdk:create-plan  →  /bdk:verify-plan  →  /bdk:subagent-execute-plan  →  /bdk:cr
+/bdk:change  →  /bdk:design  →  /bdk:plan  →  /bdk:execute  →  /bdk:cr
 ```
+
+`/bdk:design` writes the design and ends at the design gate; `/bdk:plan` writes the plan parts (`plan/parts/`) and verifies them with `/bdk:verify-plan`; `/bdk:execute` builds every ready part through role agents, flat or with one lead per part, and ends naming `/bdk:cr`. You type each stage command, so every stage starts from your decision. The BDK 2 skills `/bdk:create-plan` and `/bdk:subagent-execute-plan` are gone.
 
 The seams are files, not conversation state, so any stage can run in a fresh session:
 
-| Seam             | Carrier                                                                       |
-| ---------------- | ----------------------------------------------------------------------------- |
-| plan → verify    | the plan file                                                                 |
-| verify → execute | `.bdk/verify-plan/<slug>-verification.md`, carrying the plan's sha256         |
-| execute → review | git commit trailers (`BDK-Run:`, `BDK-Group:`) plus `.bdk/runs/<run-id>.json` |
+| Seam             | Carrier                                                                                       |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| design → plan    | `design.md` or `design/parts/`, `architecture.md`, the design verdict and the gate transition |
+| plan → execute   | `plan/parts/`, the plan verdict                                                               |
+| execute → review | one commit per task with its `BDK-Change`, `BDK-Part` and `BDK-Task` trailers                 |
 
-**The plan file is immutable once verified.** Its sha256 is the run's identity, so edit before verifying, never after: the executor re-hashes the file and reports a post-verification edit as a stale stamp. To change course mid-run, stop, edit, re-verify, and start a new run - the already-committed groups stay committed and the new run picks up from the trailers.
+The ledger under `log/` holds every decision, finding and transition, and the kernel derives each node's state from the files' hashes: a plan part edited after its verdict makes `plan-verify` stale, and the next `bdk next` says so.
 
-Progress is recorded per group, in two places: commit trailers are the durable ground truth (they survive a crash, a new session, a deleted `.bdk/`, and a rebase), and the run manifest is a cache that makes resume cheap. On any disagreement git wins and the manifest is corrected. Everything under `.bdk/runs/` is machine-owned and gitignored - read it with `python3 scripts/bdk_run_state.py print --run <id>`, never by hand.
+### Running Changes in parallel worktrees
 
-### Running plans in parallel worktrees
-
-Two plans that touch the same files cannot run in the same checkout - the executor's clean-tree precondition and its per-group commits would interleave. Give each run its own worktree:
+A Change is bound to its branch, so two Changes run side by side in two worktrees, one Claude Code session in each:
 
 ```bash
 git worktree add ../myproject-featA -b feat/a
 git worktree add ../myproject-featB -b feat/b
 ```
 
-Then open a Claude Code session in each and run `/bdk:subagent-execute-plan` there. This works with no extra machinery because the run id is `<plan-slug>--<branch-slug>`: different branches mean different run ids, different manifests, and trailers that never match each other's `git log`. Nothing coordinates the two runs, which is the point - merge them the way you merge any two branches.
-
-One session per worktree. Two sessions in one worktree contend for the same run, and the second is refused by the session guard.
-
----
+Merge them the way you merge any two branches.
 
 ## Agents
 
@@ -222,8 +216,8 @@ Used by skills internally (invoke via `subagent_type`):
 | Agent                   | Model  | Purpose                                                                                                                                                                                    |
 | ----------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `code-reviewer`         | sonnet | Layer-group deep code review                                                                                                                                                               |
-| `implementer`           | sonnet | End-to-end task implementation (TDD, lint, commit) — used by `/bdk:subagent-execute-plan`                                                                                                  |
-| `fixer`                 | sonnet | Apply specific findings (review, lint, test failures) — used by `/bdk:subagent-execute-plan`                                                                                               |
+| `implementer`           | sonnet | End-to-end task implementation (TDD, lint, commit); BDK 2 agent, no BDK 3 skill starts it                                                                                                  |
+| `fixer`                 | sonnet | Apply specific findings (review, lint, test failures); BDK 2 agent, no BDK 3 skill starts it                                                                                               |
 | `explorer`              | haiku  | Fast read-only codebase exploration with the built-in tools                                                                                                                                |
 | `test-runner`           | haiku  | Run tests, parse and report results                                                                                                                                                        |
 | `dead-code-detector`    | haiku  | Find unreachable/unused code                                                                                                                                                               |

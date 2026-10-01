@@ -75,6 +75,13 @@ whether what it is about to run is what was verified.
 
 ## 3 - Execute
 
+!!! note "BDK 3"
+
+    In BDK 3, `/bdk:execute` replaces `/bdk:subagent-execute-plan`: it builds the
+    plan parts of the active Change through role agents, every ready part in one
+    run, flat or with one lead per part, then names `/bdk:cr`. See
+    [/bdk:execute](../reference/skills.md#bdkexecute).
+
 ```
 /bdk:subagent-execute-plan .bdk/plans/<ts>-<slug>.md
 ```
