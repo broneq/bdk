@@ -64,18 +64,12 @@ export const featuresModule = defineConfigModule({
 });
 
 export const executionModule = defineConfigModule({
-  key: "execution",
+  key: "execution.concurrency",
   consumer: "ctx",
   owner: "T23",
-  description: "How the orchestrator runs the dispatches of one wave.",
-  schema: z
-    .strictObject({
-      concurrency: z.int().min(1).max(15).default(5).meta({
-        description:
-          "The most dispatches of one wave run at once; the swarm skill's context states it (T23-D52).",
-      }),
-    })
-    .prefault({}),
+  description:
+    "The most dispatches of one wave run at once; the swarm skill's context states it (T23-D52).",
+  schema: z.int().min(1).max(15).default(5),
 });
 
 /** The two texts of the `decision` fragment; the manifest picks one (R-11). */

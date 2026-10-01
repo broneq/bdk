@@ -4,6 +4,7 @@ import type { GraphNode } from "./engine.ts";
 import type { GATE_PASSERS, NodeState } from "../../shared/vocabulary/index.ts";
 import type { GateStatus } from "./gate.ts";
 import type { Check } from "./kinds/index.ts";
+import type { WaveItem } from "./wave.ts";
 
 export const WAITING = ["gate", "user", "nothing"] as const;
 
@@ -48,6 +49,8 @@ export interface NextReport {
   readonly instruction?: string | undefined;
   readonly gates: readonly GateView[];
   readonly waiting?: Waiting | undefined;
+  /** With an `execute-part` node: every ready part and its mode (T41-D3). */
+  readonly wave?: readonly WaveItem[] | undefined;
 }
 
 /** What `next` found, with the texts its Markdown needs. */

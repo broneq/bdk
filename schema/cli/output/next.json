@@ -115,6 +115,29 @@
       "description": "Set when no artifact is actionable: what the Change waits for.",
       "type": "string",
       "enum": ["gate", "user", "nothing"]
+    },
+    "wave": {
+      "description": "With an execute-part artifact: every ready part with its tickets and mode (T41-D3).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "part": { "type": "string", "description": "The plan part's two-digit id." },
+          "started": { "type": "boolean", "description": "`bdk part start` ran for the part." },
+          "tickets": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Open tickets of the part or of its tasks, oldest first."
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["flat", "tree"],
+            "description": "flat: main dispatches the part's tasks; tree: one lead runs the part."
+          }
+        },
+        "required": ["part", "started", "tickets", "mode"],
+        "additionalProperties": false
+      }
     }
   },
   "required": ["change", "stage", "gates"],

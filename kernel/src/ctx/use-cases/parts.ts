@@ -6,7 +6,7 @@ import { stringify } from "yaml";
 
 import type * as z from "zod";
 
-import { promptContent } from "../../shared/config/index.ts";
+import { moduleValue, promptContent } from "../../shared/config/index.ts";
 import type { ConfigModule, PromptKey, Resolved } from "../../shared/config/index.ts";
 import {
   languageRules,
@@ -75,7 +75,7 @@ export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Sec
       ];
     }
     case "concurrency": {
-      const { concurrency } = read(executionModule, resolved);
+      const concurrency = read(executionModule, resolved);
       return [
         {
           title: "Concurrency",
@@ -121,7 +121,7 @@ function declared(prompts: readonly PromptKey[], key: string): string {
 
 /** A module's value, typed by its schema; the resolution already validated it. */
 function read<S extends z.ZodType>(module: ConfigModule<S>, resolved: Resolved): z.output<S> {
-  return module.schema.parse(resolved.value[module.key]);
+  return moduleValue(module, resolved.value);
 }
 
 /** R-11: Lavish only when switched on and installed, the terminal question otherwise. */

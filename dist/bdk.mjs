@@ -22806,6 +22806,20 @@ var gatesModule = defineConfigModule({
     review: gate.meta({ description: "auto lets a policy transition pass gate:review." })
   }).prefault({})
 });
+var executionTreeModule = defineConfigModule({
+  key: "execution.tree",
+  consumer: "graph",
+  owner: "T41",
+  description: "When bdk next marks a part of the execute wave tree: one lead per part.",
+  schema: strictObject({
+    enabled: boolean2().default(true).meta({
+      description: "false runs every part flat, the main thread dispatching its tasks."
+    }),
+    "min-parts": int().min(2).max(15).default(2).meta({
+      description: "Ready parts not started a large Change needs before they run as a tree."
+    })
+  }).prefault({})
+});
 var KIND_NAMES = [
   "intent",
   "design",
@@ -24308,15 +24322,11 @@ var featuresModule = defineConfigModule({
   }).prefault({})
 });
 var executionModule = defineConfigModule({
-  key: "execution",
+  key: "execution.concurrency",
   consumer: "ctx",
   owner: "T23",
-  description: "How the orchestrator runs the dispatches of one wave.",
-  schema: strictObject({
-    concurrency: int().min(1).max(15).default(5).meta({
-      description: "The most dispatches of one wave run at once; the swarm skill's context states it (T23-D52)."
-    })
-  }).prefault({})
+  description: "The most dispatches of one wave run at once; the swarm skill's context states it (T23-D52).",
+  schema: int().min(1).max(15).default(5)
 });
 var fragmentPrompts = ["lavish", "ask-user"].map(
   (name) => definePromptKey({
@@ -24377,7 +24387,7 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "concurrency": {
-      const { concurrency } = read(executionModule, resolved);
+      const concurrency = read(executionModule, resolved);
       return [
         {
           title: "Concurrency",
@@ -24413,7 +24423,7 @@ function declared(prompts2, key) {
   return key;
 }
 function read(module, resolved) {
-  return module.schema.parse(resolved.value[module.key]);
+  return moduleValue(module, resolved.value);
 }
 function lavish(input, resolved) {
   return read(featuresModule, resolved).lavish && input.which("lavish-axi") !== void 0;
@@ -25997,7 +26007,7 @@ function composeInstruction(parts) {
     `# ${node3.id} (${node3.kind})`,
     template.trimEnd(),
     "## Write to",
-    parts.paths.length === 0 ? "- nothing: the result is a ledger entry" : parts.paths.map((path) => `- ${path}`).join("\n"),
+    parts.paths.length === 0 ? "- no file of the Change: the kernel records the result" : parts.paths.map((path) => `- ${path}`).join("\n"),
     "## Rules",
     parts.rules.length === 0 ? "none" : parts.rules.map((rule2) => `### ${rule2.category}
 
@@ -26026,6 +26036,29 @@ function finish(node3, kind) {
     return `Run \`bdk done ${node3.id}\` to mark every part, or \`bdk done ${kind.name}:<nn>\` for one part.`;
   }
   return `Run \`bdk done ${node3.id}\`.`;
+}
+
+// kernel/src/graph/domain/wave.ts
+var KIND2 = "execute-part";
+function executeWave(input) {
+  const ready = input.graph.nodes.flatMap(
+    (node3) => node3.kind === KIND2 && node3.nn !== void 0 && !node3.sealed && (node3.state === "ready" || node3.state === "stale") ? [node3.nn] : []
+  );
+  const fresh = ready.filter((nn) => !input.started.has(nn)).length;
+  const tree = input.profile === "large" && input.tree.enabled && fresh >= input.tree["min-parts"];
+  return ready.map((part) => {
+    const own2 = input.tickets.filter(
+      ({ target }) => target === part || target.startsWith(`${part}-`)
+    );
+    const started = input.started.has(part);
+    const lead = own2.some(({ loop }) => loop === "part-lead");
+    return {
+      part,
+      started,
+      tickets: own2.map(({ ticket }) => ticket),
+      mode: lead || !started && tree ? "tree" : "flat"
+    };
+  });
 }
 
 // kernel/src/graph/use-cases/instruction.ts
@@ -26090,7 +26123,8 @@ function nextStep(deps, change, globalDir2) {
         report: {
           ...base,
           artifact: nodeView(next),
-          instruction: instructionOf(deps, change, read2, next)
+          instruction: instructionOf(deps, change, read2, next),
+          ...next.kind === "execute-part" ? { wave: waveOf(read2, index2, change.id) } : {}
         }
       };
     }
@@ -26109,6 +26143,20 @@ function nextStep(deps, change, globalDir2) {
       };
     }
     return { report: { ...base, waiting: "nothing" } };
+  });
+}
+function waveOf(read2, index2, changeId2) {
+  const started = new Set(
+    read2.entries.flatMap(
+      (entry) => entry.type === "transition" && entry.source === "kernel" && entry.to?.startsWith("execute-part:") === true ? [entry.to.slice("execute-part:".length)] : []
+    )
+  );
+  return executeWave({
+    graph: read2.graph,
+    profile: read2.view.profile,
+    tree: moduleValue(executionTreeModule, read2.resolved.value),
+    started,
+    tickets: openAttempts(index2, changeId2)
   });
 }
 
@@ -26283,7 +26331,7 @@ function requireGate(deps, change, globalDir2, gate2) {
 
 // kernel/src/graph/index.ts
 var graphConfig = {
-  modules: [gatesModule],
+  modules: [gatesModule, executionTreeModule],
   prompts: [...pipelinePrompts]
 };
 function graphRegistrations(deps) {
