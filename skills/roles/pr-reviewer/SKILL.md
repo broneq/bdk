@@ -32,9 +32,13 @@ You review the whole change between the base and head the package names. You cha
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`. A finding that must stop other work also goes to the orchestrator: `SendMessage` to `main` with one sentence and the entry id.
+Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`.
 
 When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-CQ-4`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
+
+## Messages
+
+A `SendMessage` carries a ledger id and one sentence, never the content; write the entry first. An entry that affects the rest of the part goes to your parent, the `BDK-PARENT` line of your start context; one that must stop other work goes to `main`; one that affects particular running agents goes to the ids `bdk agents list --affected-by <entry>` returns, your own id left out. On a message to you, read the named entry with `bdk log show <id>`, then continue, adapt your work within your package, or return `blocked` with the entry id.
 
 ## Output
 

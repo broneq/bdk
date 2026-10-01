@@ -22,27 +22,32 @@ Prints the shared foundation (`STARTUP_INSTRUCTIONS.md`, byte-identical to `bdk 
 [BDK] v2 layout detected (<paths>): run bdk import.
 ```
 
+It also ends, as `stale`, the agents of other sessions that have been silent for longer than `agents.ttl`, so a crashed session leaves no agent `running` in the agent registry (see [Agent hooks](#agent-hooks)).
+
 A configuration problem is session content, never a block: the hook always exits 0. Without Node on `PATH` the `echo` fallback prints the `BDK STOP: kernel unavailable` line instead.
 
 ## PreToolUse
 
-One guard hook fires before every `Bash`, `Edit`, `Write`, `NotebookEdit` and `Agent` tool call (matcher `^(Bash|Edit|Write|NotebookEdit|Agent)$`).
+One guard hook fires before every tool call (no matcher), because the heartbeat must see every tool of a subagent.
 
 ### `hooks/guard/pre-tool.sh`
 
 Command: `f="${CLAUDE_PLUGIN_ROOT}/hooks/guard/pre-tool.sh"; [ -r "$f" ] || { echo "guard/kernel-unavailable: $f is missing, so BDK cannot check this tool call; reinstall the BDK plugin" >&2; exit 2; }; . "$f"`
 
-The script is sourced into the host's shell. A shell prefilter drops every payload no guard can deny (no `.bdk/specs`, no `bdk.mjs ... hooks`, no BDK adapter, no subagent `git` or `bdk.mjs`), so most tool calls never start Node. The rest go to `bdk hooks pre-tool`, which reads the Bash command with a shell lexer and applies these guards in order; the first match denies:
+The script is sourced into the host's shell. For a subagent's call it first writes `open` to `.bdk/.machine/agents/<agent_id>`, the heartbeat, in the shell. A shell prefilter then drops every payload no guard can deny (no `.bdk/specs`, no `bdk.mjs ... hooks`, no BDK adapter, no subagent `git` or `bdk.mjs`, no `SendMessage`), so most tool calls never start Node. The rest go to `bdk hooks pre-tool`, which reads the Bash command with a shell lexer and applies these guards in order; the first match denies:
 
-| Rule                            | Denies                                                                                                                                                                                                               | Threads   |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| `guard/spec-dir-write`          | an edit tool or a Bash write under `.bdk/specs/`, which only `bdk spec merge` writes at close                                                                                                                        | all       |
-| `guard/hooks-from-bash`         | running a `bdk hooks ...` command from Bash                                                                                                                                                                          | all       |
-| `guard/nested-stage-command`    | `claude` with `/bdk:plan`, `/bdk:execute`, `/bdk:close` or `/bdk:run`, which would type the stage command as the user                                                                                                | all       |
-| `guard/subagent-git`            | `git stash`, `reset`, `clean`, `restore`, `commit`, `add`, `merge`, `rebase`, `cherry-pick`, `push`, a discarding `checkout` or `switch`                                                                             | subagents |
-| `guard/subagent-kernel-command` | a kernel command of the `orchestrator` class (`bdk commit`, `bdk done`, ...)                                                                                                                                         | subagents |
-| `guard/reader-write`            | a Bash write from the read-only adapters `bdk:reader`, `bdk:reviewer` and `bdk:scout`                                                                                                                                | subagents |
-| `guard/dispatch-prompt`         | an `Agent` call to a BDK adapter (`bdk:worker`, `bdk:reader`, `bdk:reviewer`, `bdk:runner`, `bdk:scout`) whose prompt is not one dispatch package path under `.bdk/changes/<id>/dispatch/` plus at most one sentence | all       |
+| Rule                            | Denies                                                                                                                                                                                                                   | Threads   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| `guard/spec-dir-write`          | an edit tool or a Bash write under `.bdk/specs/`, which only `bdk spec merge` writes at close                                                                                                                            | all       |
+| `guard/hooks-from-bash`         | running a `bdk hooks ...` command from Bash                                                                                                                                                                              | all       |
+| `guard/nested-stage-command`    | `claude` with `/bdk:plan`, `/bdk:execute`, `/bdk:close` or `/bdk:run`, which would type the stage command as the user                                                                                                    | all       |
+| `guard/subagent-git`            | `git stash`, `reset`, `clean`, `restore`, `commit`, `add`, `merge`, `rebase`, `cherry-pick`, `push`, a discarding `checkout` or `switch`                                                                                 | subagents |
+| `guard/subagent-kernel-command` | a kernel command of the `orchestrator` class (`bdk commit`, `bdk done`, ...); a `bdk:lead` may run `attempt open`, `attempt close`, `dispatch build` and `commit`                                                        | subagents |
+| `guard/lead-scope`              | one of those four lead verbs on a target outside the plan part of the lead's own package                                                                                                                                 | leads     |
+| `guard/reader-write`            | a Bash write from the read-only adapters `bdk:reader`, `bdk:reviewer`, `bdk:scout` and `bdk:lead`                                                                                                                        | subagents |
+| `guard/dispatch-prompt`         | an `Agent` call to a BDK adapter (`bdk:worker`, `bdk:reader`, `bdk:reviewer`, `bdk:runner`, `bdk:scout`, `bdk:lead`) whose prompt is not one dispatch package path plus at most one sentence; a worker's scout is exempt | all       |
+| `guard/agent-spawn`             | an agent starting a type it may not start: a lead starts workers, runners, reviewers and scouts, a worker starts scouts up to `agents.scout.max-per-ticket`                                                              | subagents |
+| `guard/agent-message`           | a `SendMessage` that names no ledger entry of the Change, is longer than `agents.message.max-chars`, or goes to an agent that is not running                                                                             | subagents |
 
 A denied call exits 2 with the host's `permissionDecision: deny` JSON on stdout and `<rule>: <reason>` on stderr; the reason tells the model what to do instead. Main-thread git and main-thread orchestrator commands always pass. The hook decides outside a git repository too, so a subagent's `git init` in an empty directory passes.
 
@@ -81,7 +86,22 @@ Command: `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks session-end 2>&1 || ec
 
 Commits a checkpoint of the active Change directory, as `bdk change checkpoint` does, when `policy.checkpoint.enabled` is on, and prints `[BDK] checkpoint <sha7> of <change>`. Without an active Change, with nothing to commit, during a rebase, merge or cherry-pick, or with a ticket still open, it skips silently. It never blocks.
 
-BDK registers no `Stop` hook.
+## Agent hooks
+
+Five hooks keep the agent registry (`.bdk/.machine/agents.sqlite`), which `bdk agents list`, `show` and `wait` read. It records who started whom, which dispatch package each agent works on, and whether it still runs.
+
+### `hooks/guard/post-tool.sh` (PostToolUse)
+
+Command: the `pre-tool.sh` form above with `post-tool.sh` and "this agent". For a subagent's call it writes `idle` to the heartbeat in the shell. It starts `bdk hooks post-tool` only in a BDK project and only for `Agent` (the parent links its child and the child's package) and `TaskStop` (an end).
+
+### `bdk hooks subagent-start`, `subagent-stop` and `stop`
+
+Command: `[ -d "${CLAUDE_PROJECT_DIR}/.bdk" ] || exit 0; node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks <verb> 2>/dev/null || exit 0`. These fire once per agent turn, not per tool call, and a missing kernel lets the event pass.
+
+- `SubagentStart` completes the agent's row and gives a `bdk:` agent its identity: `BDK-AGENT-ID`, `BDK-PARENT`, `BDK-PACKAGE` and `BDK-TICKET` lines in its context.
+- `SubagentStop` and `Stop` run the continuation check. A thread that ends its turn while its own scope holds work it can do now is sent back once more with a reason naming the work and the next command: the main thread while its stage has a ready artifact (`bdk next`), a worker while its report is not stored, a lead while a task of its part is open or not committed. An open question, a parked Change, a running background task, a non-BDK agent or a broken Change always lets the turn end. After `agents.continuation.max` sends without progress the check lets it end and writes a `finding` for review. A `SubagentStop` that passes ends the agent in the registry.
+
+An agent that is cut off without a hook (`maxTurns`, a kill) turns `suspect` once its heartbeat is older than `agents.ttl`, or its open call older than `agents.open-call-limit`.
 
 ## Skill frontmatter hooks
 

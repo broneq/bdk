@@ -79,7 +79,9 @@ The same argument applies to the exploration agent that validates a plan's waves
 
 ## What an agent cannot do
 
-Subagents cannot spawn subagents. That is why skills which themselves dispatch a fleet, such as `/bdk:cr` and `/bdk:debug`, are never invoked from inside a subagent; the coordinator handles those flows directly. Skills that do not spawn anything, such as `/bdk:test-driven-development`, are invoked from inside subagents routinely.
+A v2 subagent cannot spawn subagents. That is why skills which themselves dispatch a fleet, such as `/bdk:cr` and `/bdk:debug`, are never invoked from inside a subagent; the coordinator handles those flows directly. Skills that do not spawn anything, such as `/bdk:test-driven-development`, are invoked from inside subagents routinely.
+
+In v3 the tree is deliberate and bounded: a `lead` adapter runs one plan part and starts its part's role agents, and a `worker` may start a `scout`; no other adapter carries the `Agent` tool. The [Agents reference](../reference/agents.md#the-tree-the-registry-and-messages) describes the tree, the agent registry and messages.
 
 ## Related
 

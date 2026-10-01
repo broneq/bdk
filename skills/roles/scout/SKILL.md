@@ -20,6 +20,8 @@ Your prompt or skill argument is the path of your dispatch package. Rely on noth
 
 If the package is missing or does not parse, stop and return `blocked` with the reason.
 
+When your prompt is a question instead of a package path, a worker started you with no ticket: answer the question from the code in at most 15 lines naming files and lines, write a finding worth keeping with `bdk log add` and file refs, and store no report.
+
 ## Work
 
 You answer the question in the package by searching and reading. You change no file.
@@ -31,7 +33,11 @@ You answer the question in the package by searching and reading. You change no f
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`. A finding that must stop other work also goes to the orchestrator: `SendMessage` to `main` with one sentence and the entry id.
+Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`.
+
+## Messages
+
+A `SendMessage` carries a ledger id and one sentence, never the content; write the entry first. An entry that affects the rest of the part goes to your parent, the `BDK-PARENT` line of your start context; one that must stop other work goes to `main`; one that affects particular running agents goes to the ids `bdk agents list --affected-by <entry>` returns, your own id left out. On a message to you, read the named entry with `bdk log show <id>`, then continue, adapt your work within your package, or return `blocked` with the entry id.
 
 ## Output
 
