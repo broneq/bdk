@@ -31,3 +31,31 @@
         items.0.part: "^01$"
     # The command, not prose: the reply may be in any language.
     - reply: /bdk:execute
+
+# A defect in a shared module: parseApiProblem in src/api/http.ts takes any
+# JSON body for problem details, so a 5xx whose body is a gateway's JSON is an
+# ApiRequestError, never retried and never shown as backend-unavailable. Nine
+# API modules and the debug logging read through it; the plan stays one part
+# and leaves the pages alone.
+- id: shared-bug
+  command: /bdk:plan
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "A 5xx response whose JSON body is not problem details, such as a gateway's {\"error\":\"upstream timeout\"}, is treated as an API error: GET reads are not retried and pages show a generic failure instead of the backend-unavailable message" --kind bug >/dev/null
+  expect:
+    - run: explain plan
+      json:
+        state: done
+    - run: explain plan-verify
+      json:
+        state: done
+    - run: part list
+      json:
+        total: 1
+    - reply: /bdk:execute
