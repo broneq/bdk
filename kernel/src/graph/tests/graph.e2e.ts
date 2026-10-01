@@ -78,6 +78,11 @@ describe("bdk next", () => {
     done(root, "design");
     done(root, "architecture");
     expect(answered(bdk(["next", "--json"], root), "output/next.json")).toMatchObject({
+      artifact: { id: "design-verify" },
+    });
+    verdict(dir, [], "design-verify");
+    done(root, "design-verify");
+    expect(answered(bdk(["next", "--json"], root), "output/next.json")).toMatchObject({
       waiting: "gate",
       gates: [
         { gate: "gate:design", ready: true, done: false, command: "/bdk:plan" },
@@ -129,6 +134,7 @@ describe("bdk explain", () => {
       "plan-verify",
       "plan-part:01",
       "gate:design",
+      "design-verify",
       "architecture",
       "design",
       "intent",
@@ -210,6 +216,8 @@ describe("bdk validate", () => {
     writeDesign(dir, "architecture");
     done(root, "design");
     done(root, "architecture");
+    verdict(dir, [], "design-verify");
+    done(root, "design-verify");
     refused(bdk(["validate", "--json"], root), 3, "input/not-found");
   });
 
@@ -225,6 +233,126 @@ describe("bdk validate", () => {
 
   it("exit 5 runtime/not-a-repo", () => {
     refused(bdk(["validate", "--json"], outsideRepository()), 5, "runtime/not-a-repo");
+  });
+});
+
+describe("a verifier round through the commands", () => {
+  // The path verify-design runs: no fixture writes the report or its entry.
+  it("exit 0: design-verify is done after ingest, log add report and attempt close", () => {
+    const { root, dir } = opened();
+    writeDesign(dir, "design");
+    writeDesign(dir, "architecture");
+    done(root, "design");
+    done(root, "architecture");
+    const opening = answered(
+      bdk(["attempt", "open", "verifier", "design-verify", "--json"], root),
+      "output/attempt-open.json",
+    );
+    const ticket = String(opening.ticket);
+    const built = answered(
+      bdk(["dispatch", "build", "design-verify", "design-verifier", ticket, "--json"], root),
+      "output/dispatch-build.json",
+    );
+    refused(
+      bdk(
+        [
+          "log",
+          "add",
+          "report",
+          "design verified",
+          "--ref",
+          "design.md",
+          "--ticket",
+          ticket,
+          "--json",
+        ],
+        root,
+      ),
+      3,
+      "input/not-found",
+    );
+    const envelope = "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\nPASS\n";
+    expect(
+      bdk(["log", "ingest", "--ticket", ticket, "--json"], root, { stdin: envelope }).code,
+    ).toBe(0);
+    const added = answered(
+      bdk(
+        [
+          "log",
+          "add",
+          "report",
+          "design verified",
+          "--ref",
+          "design.md",
+          "--ticket",
+          ticket,
+          "--json",
+        ],
+        root,
+      ),
+      "output/log-add.json",
+    );
+    expect(added).toMatchObject({
+      entry: {
+        source: "agent:design-verifier",
+        refs: ["design.md", "design-verify"],
+        report: String(built.report).slice(String(built.report).indexOf("reports/")),
+      },
+    });
+    expect(
+      bdk(["attempt", "close", ticket, "ok", "--envelope", String(built.report), "--json"], root)
+        .code,
+    ).toBe(0);
+    expect(done(root, "design-verify")).toMatchObject({ state: "done" });
+    expect(answered(bdk(["next", "--json"], root), "output/next.json")).toMatchObject({
+      waiting: "gate",
+    });
+  });
+
+  it("exit 2: a blocker the verifier raised on a design file keeps design-verify open", () => {
+    const { root, dir } = opened();
+    writeDesign(dir, "design");
+    writeDesign(dir, "architecture");
+    done(root, "design");
+    done(root, "architecture");
+    const opening = answered(
+      bdk(["attempt", "open", "verifier", "design-verify", "--json"], root),
+      "output/attempt-open.json",
+    );
+    const ticket = String(opening.ticket);
+    bdk(["dispatch", "build", "design-verify", "design-verifier", ticket, "--json"], root);
+    const blocker = answered(
+      bdk(
+        [
+          "log",
+          "add",
+          "blocker",
+          "the design names a class the code lacks",
+          "--ref",
+          "design.md",
+          "--category",
+          "false-code-claim",
+          "--ticket",
+          ticket,
+          "--json",
+        ],
+        root,
+      ),
+      "output/log-add.json",
+    );
+    expect(blocker).toMatchObject({ entry: { refs: ["design.md", "design-verify"] } });
+    const envelope =
+      "---\nstatus: done-with-concerns\nfiles: []\nentries: []\nevidence: []\n---\nFAIL\n";
+    expect(
+      bdk(["log", "ingest", "--ticket", ticket, "--json"], root, { stdin: envelope }).code,
+    ).toBe(0);
+    expect(
+      bdk(
+        ["log", "add", "report", "one blocker", "--ref", "design-verify", "--ticket", ticket],
+        root,
+      ).code,
+    ).toBe(0);
+    refused(bdk(["done", "design-verify", "--json"], root), 2, "policy/validation-failed");
   });
 });
 

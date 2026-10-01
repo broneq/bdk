@@ -35,7 +35,7 @@ describe("pipeline/pipeline.yaml", () => {
 
   it("the when: fixture fails the kernel's schema naming the key", () => {
     const declared = declaredBy(settingsRegistry(), kindRegistry());
-    expect(pipelineErrors(WHEN, declared).errors).toStrictEqual(["nodes[13].when: unknown key"]);
+    expect(pipelineErrors(WHEN, declared).errors).toStrictEqual(["nodes[14].when: unknown key"]);
   });
 
   it("is accepted by the committed schema/pipeline.json", () => {
@@ -46,7 +46,7 @@ describe("pipeline/pipeline.yaml", () => {
     expect(validate(parse(WHEN))).toBe(false);
     expect(validate.errors).toContainEqual(
       expect.objectContaining({
-        instancePath: "/nodes/13",
+        instancePath: "/nodes/14",
         keyword: "additionalProperties",
         params: { additionalProperty: "when" },
       }),

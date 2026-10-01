@@ -20,6 +20,17 @@ BDK 3 keeps its state under `.bdk/` too, written only by the kernel (`bdk ...`) 
 | `.bdk/changes/<changeId>/` | `/bdk:change` through `bdk change new`, later stages | yes     | One Change: its intent, design, plan, ledger and progress                                |
 | `.bdk/.machine/`           | the kernel                                           | no      | Caches, the schema copy and the branch bindings of the Changes; rebuilt by `bdk rebuild` |
 
+The design stage writes into the Change directory:
+
+| Path under `.bdk/changes/<changeId>/` | Written by                                | Contents                                                                                                  |
+| ------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `design.md`                           | `/bdk:design`                             | The design of a `small` Change: `schema`, `title` and, for a product-only Change, `architecture: false`   |
+| `design/parts/<nn>-<slug>.md`         | `/bdk:design`                             | The design of a `large` Change, one concern per part                                                      |
+| `design/index.md`                     | `bdk done design-index`                   | Generated from the parts; never edited by hand                                                            |
+| `architecture.md`                     | `/bdk:design`                             | The modules, boundaries and data flow the design touches                                                  |
+| `log/`                                | `/bdk:design`, `/bdk:verify-design`       | `decision` and `question` entries of the design, the verifier's `report`, `blocker` and `finding` entries |
+| `reports/`                            | the design verifier, through `log ingest` | The verifier's report, whose verdict the `design-verify` node reads                                       |
+
 `bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 file `.bdk/settings.json` is never read; `/bdk:setup` migrates a project that still has it.
 
 Everything BDK skills write to disk lives under `.bdk/` in the project root, per `.claude/rules/artifacts.md`:
@@ -36,7 +47,7 @@ This page lists every directory under `.bdk/` that appears in BDK's own sources,
 | ---------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `.bdk/settings.json`         | BDK 2 setup                                                   | v2 project configuration; `/bdk:setup` migrates it to `.bdk/settings.yaml`                 |
 | `.bdk/plans/`                | `/bdk:create-plan`                                            | Implementation plans (`mkdir -p .bdk/plans` runs from the skill's `UserPromptSubmit` hook) |
-| `.bdk/design/`               | `/bdk:design`                                                 | Design docs, `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md`                                |
+| `.bdk/design/`               | BDK 2 `/bdk:design`                                           | v2 design docs; BDK 3 designs live in the Change, and `/bdk:setup` deletes this directory  |
 | `.bdk/verify-plan/`          | `/bdk:verify-plan`                                            | Verification reports, `.bdk/verify-plan/<plan-slug>-verification.md`                       |
 | `.bdk/runs/`                 | `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited                |
 | `.bdk/cr/`                   | `/bdk:cr`                                                     | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md`                      |

@@ -8,6 +8,7 @@ import {
   PLUGIN,
   withPluginFiles,
   writeDesign,
+  writeDesignVerdict,
   writeEntry as writeGraphEntry,
   writePlanPart,
 } from "../../graph/tests/support.ts";
@@ -712,6 +713,8 @@ describe("change on the artifact graph", () => {
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"], T0);
     await h.run(["done", "architecture"], T0);
+    writeDesignVerdict(h.store, T0);
+    await h.run(["done", "design-verify"], T0);
     await h.run(["change", "park"], T0);
     const result = await h.run(["change", "resume", CHANGE, "--option", "1", "--json"], T1);
     expect(changeResumeOutput.parse(result.json)).toMatchObject({
@@ -739,6 +742,7 @@ describe("change on the artifact graph", () => {
       ["design-parts", "skipped"],
       ["design-index", "skipped"],
       ["architecture", "ready"],
+      ["design-verify", "blocked"],
       ["gate:design", "blocked"],
       ["plan", "blocked"],
       ["plan-verify", "blocked"],
@@ -769,6 +773,8 @@ describe("change on the artifact graph", () => {
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"], T0);
     await h.run(["done", "architecture"], T0);
+    writeDesignVerdict(h.store, T0);
+    await h.run(["done", "design-verify"], T0);
     passGate(h.store, "gate:design", "plan", T1, "policy");
     for (let nn = 1; nn <= 8; nn++) writePlanPart(h.store, `0${String(nn)}`);
     await h.run(["done", "plan"], T1);

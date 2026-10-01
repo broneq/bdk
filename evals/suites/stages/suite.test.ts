@@ -13,6 +13,8 @@ describe("stageSkill", () => {
   it("takes the name with or without the plugin prefix", () => {
     expect(stageSkill("setup")).toBe("setup");
     expect(stageSkill("bdk:change")).toBe("change");
+    expect(stageSkill("bdk:design")).toBe("design");
+    expect(stageSkill("verify-design")).toBe("verify-design");
   });
 
   it("refuses a skill without a case file", () => {

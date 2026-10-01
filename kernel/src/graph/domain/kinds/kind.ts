@@ -150,6 +150,14 @@ export type DoneBy =
   /** The latest fresh evidence manifest covering the instance's part; `command` records it. */
   | { readonly through: "evidence"; readonly command: string };
 
+/** The node a validator checks: its id, its instance number and its expanded requirements. */
+export interface ValidateTarget {
+  readonly id: string;
+  readonly nn?: string | undefined;
+  /** Requirement ids after expansion, as the graph computed them; absent outside a graph. */
+  readonly requires?: readonly string[] | undefined;
+}
+
 export interface Kind {
   readonly name: string;
   readonly doneBy: DoneBy;
@@ -166,10 +174,7 @@ export interface Kind {
    */
   evidence?(view: ChangeView, nn: string): EvidenceFacts | undefined;
   /** Every check of the validator, passing or not. */
-  validate(
-    view: ChangeView,
-    target: { readonly id: string; readonly nn?: string | undefined },
-  ): Check[];
+  validate(view: ChangeView, target: ValidateTarget): Check[];
 }
 
 export type KindRegistry = ReadonlyMap<string, Kind>;
@@ -180,10 +185,7 @@ export abstract class BaseKind implements Kind {
   readonly doneBy: DoneBy = { through: "done" };
   abstract writes(view: ChangeView, nn?: string): readonly string[];
   abstract inputs(view: ChangeView, nn?: string): Inputs;
-  abstract validate(
-    view: ChangeView,
-    target: { readonly id: string; readonly nn?: string | undefined },
-  ): Check[];
+  abstract validate(view: ChangeView, target: ValidateTarget): Check[];
 }
 
 /** The baseline checks of one file: present, not blank, valid against its schema. */

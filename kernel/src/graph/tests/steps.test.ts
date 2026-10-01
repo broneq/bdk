@@ -70,9 +70,9 @@ function manifest(id: string, kind: string, target: string, fields: object = {})
 }
 
 describe("post-task step nodes", () => {
-  it("registers the fifteen kinds, the three steps on one base", () => {
+  it("registers the sixteen kinds, the three steps on one base", () => {
     const kinds = kindRegistry();
-    expect(kinds.size).toBe(15);
+    expect(kinds.size).toBe(16);
     for (const name of ["simplify", "tests-scoped", "lint"]) {
       expect(kinds.get(name)).toBeInstanceOf(PostTaskStepKind);
     }

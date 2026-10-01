@@ -126,11 +126,6 @@
   },
   {
     "rule": "description-front-loaded",
-    "file": "skills/design/SKILL.md",
-    "fingerprint": "0a9cf132ea0f5216"
-  },
-  {
-    "rule": "description-front-loaded",
     "file": "skills/pr-review/SKILL.md",
     "fingerprint": "67af1acd287d0b9d"
   },
@@ -170,11 +165,6 @@
     "fingerprint": "176d206c50008a32"
   },
   {
-    "rule": "field-values",
-    "file": "skills/design/SKILL.md",
-    "fingerprint": "d3f2605911d84d43"
-  },
-  {
     "rule": "forbidden-text",
     "file": "skills/create-plan/SKILL.md",
     "fingerprint": "fa1eb11aac95258f"
@@ -208,11 +198,6 @@
     "rule": "line-limit",
     "file": "skills/debug/SKILL.md",
     "fingerprint": "fc57e34fd1a7af05"
-  },
-  {
-    "rule": "line-limit",
-    "file": "skills/design/SKILL.md",
-    "fingerprint": "81f79d68c0b9e9c2"
   },
   {
     "rule": "line-limit",
@@ -263,16 +248,6 @@
     "rule": "model-names",
     "file": "skills/create-plan/SKILL.md",
     "fingerprint": "76379e4f1ef1ab77"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/design/SKILL.md",
-    "fingerprint": "a742b4332b66902f"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/design/SKILL.md",
-    "fingerprint": "a742b4332b66902f"
   },
   {
     "rule": "model-names",

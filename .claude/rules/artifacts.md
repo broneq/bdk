@@ -16,7 +16,7 @@ Skill artifacts → .bdk/<skill-name>/<output-file>
 
 Examples:
 
-- `.bdk/design/2026-04-12-1430-auth-redesign-design.md`
+- `.bdk/cr/2026-04-12-1430-feat-auth-delta.md`
 - `.bdk/debug/session-2026-04-12-0900.md`
 - `.bdk/plans/2026-04-12-1430-add-oauth.md`
 

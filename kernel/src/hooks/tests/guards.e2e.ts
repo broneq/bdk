@@ -16,7 +16,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import upeTyped from "../../../../tests/fixtures/host-payloads/2.1.281/upe-typed.json" with { type: "json" };
-import { opened, writeDesign, done, write } from "../../graph/tests/e2e-support.ts";
+import { opened, writeDesign, done, verdict, write } from "../../graph/tests/e2e-support.ts";
 import { bdk, git } from "../../../tests/support/repo.ts";
 import { REPO_ROOT } from "../../../tests/support/run.ts";
 import { agentFg, mainBash, recorded, subagentBash, preEdit } from "./payloads.ts";
@@ -123,6 +123,8 @@ function designDone(): { root: string; dir: string } {
   writeDesign(change.dir, "architecture");
   done(change.root, "design");
   done(change.root, "architecture");
+  verdict(change.dir, [], "design-verify");
+  done(change.root, "design-verify");
   return change;
 }
 

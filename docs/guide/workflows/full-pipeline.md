@@ -15,6 +15,13 @@ in one testable sentence. See the [tier table](../index.md#how-you-work-with-it)
 
 ## Stage 1 - Design
 
+!!! note "BDK 3"
+
+    In BDK 3, `/bdk:design` works on the active Change: it writes `design.md` and
+    `architecture.md` into the Change, records decisions in the ledger, runs
+    `/bdk:verify-design` and ends at the design gate, where you type `/bdk:plan`.
+    See [/bdk:design](../reference/skills.md#bdkdesign).
+
 ```
 /bdk:design <feature or capability>
 ```

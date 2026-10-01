@@ -6,7 +6,13 @@ import upeTyped from "../../../../tests/fixtures/host-payloads/2.1.281/upe-typed
 import { describe, expect, it } from "vitest";
 
 import { graphRegistrations } from "../../graph/index.ts";
-import { passGate, setChange, withPluginFiles, writeDesign } from "../../graph/tests/support.ts";
+import {
+  passGate,
+  setChange,
+  withPluginFiles,
+  writeDesign,
+  writeDesignVerdict,
+} from "../../graph/tests/support.ts";
 import { logRegistrations } from "../../log/index.ts";
 import { fakeGit, repository, ROOT, runBdk, sequentialRandom } from "../../log/tests/support.ts";
 import type { RunResult } from "../../log/tests/support.ts";
@@ -85,6 +91,8 @@ async function designDone(h: Harness): Promise<void> {
   writeDesign(h.store, "architecture");
   await h.run(["done", "design"], "", T0);
   await h.run(["done", "architecture"], "", T0);
+  writeDesignVerdict(h.store, T0);
+  await h.run(["done", "design-verify"], "", T0);
 }
 
 function transitions(store: Store): Record<string, unknown>[] {
@@ -121,7 +129,7 @@ describe("hooks prompt-expansion", () => {
         at: T1,
         session: "sess-1",
         command: "/bdk:plan",
-        refs: ["gate:design", "design", "architecture"],
+        refs: ["gate:design", "design", "architecture", "design-verify"],
       }),
     ]);
     const next = (await h.run(["next", "--json"], "", T1)).json as { gates: unknown[] };
@@ -165,7 +173,7 @@ describe("hooks prompt-expansion", () => {
     expect(result.code).toBe(2);
     expect(result.json).toMatchObject({
       rule: "policy/gate-not-ready",
-      why: "gate:design is not ready for /bdk:plan: architecture is ready",
+      why: "gate:design is not ready for /bdk:plan: architecture is ready, design-verify is blocked",
     });
     expect(transitions(h.store)).toStrictEqual([]);
   });

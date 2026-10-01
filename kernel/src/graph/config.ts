@@ -28,6 +28,7 @@ export const KIND_NAMES = [
   "architecture",
   "design-part",
   "design-index",
+  "design-verify",
   "plan-part",
   "plan-verify",
   "gate",

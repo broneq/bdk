@@ -154,7 +154,8 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:verify-plan`             | Verify a plan against real code before execution                                                                                                                                                                                                                                                      |
 | `/bdk:debug`                   | Structured debugging: investigate → failing tests → fix or plan                                                                                                                                                                                                                                       |
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                                                                                                                                                                                                                          |
-| `/bdk:design`                  | Design partner: classifies product vs architecture vs combined, 2+ approaches with Mermaid, self-critique, validation loop with warm-explorer reuse                                                                                                                                                   |
+| `/bdk:design`                  | Design the active Change with you: grounds in the code, 2+ approaches with Mermaid and self-critique, writes the design files the kernel names, records decisions in the ledger, verifies and ends at the design gate                                                                                 |
+| `/bdk:verify-design`           | Verify the design of the active Change against the code on a fresh context; a passing verdict marks `design-verify` done, which the design gate requires                                                                                                                                              |
 | `/bdk:create-adr`              | Generate Architecture Decision Records (MADR format)                                                                                                                                                                                                                                                  |
 | `/bdk:explain-complex-code`    | Generate architecture docs with Mermaid diagrams                                                                                                                                                                                                                                                      |
 | `/bdk:update-docs`             | Refresh existing architecture docs after code changes                                                                                                                                                                                                                                                 |
@@ -182,14 +183,15 @@ Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which se
 The four plan skills form one chain, each stage consuming the previous stage's output:
 
 ```
-/bdk:design  →  /bdk:create-plan  →  /bdk:verify-plan  →  /bdk:subagent-execute-plan  →  /bdk:cr
+/bdk:create-plan  →  /bdk:verify-plan  →  /bdk:subagent-execute-plan  →  /bdk:cr
 ```
+
+In BDK 3, `/bdk:design` writes the design into the Change (`.bdk/changes/<changeId>/design.md`) and ends at the design gate instead of handing a file to `/bdk:create-plan`.
 
 The seams are files, not conversation state, so any stage can run in a fresh session:
 
 | Seam             | Carrier                                                                       |
 | ---------------- | ----------------------------------------------------------------------------- |
-| design → plan    | the design doc at `.bdk/design/`                                              |
 | plan → verify    | the plan file                                                                 |
 | verify → execute | `.bdk/verify-plan/<slug>-verification.md`, carrying the plan's sha256         |
 | execute → review | git commit trailers (`BDK-Run:`, `BDK-Group:`) plus `.bdk/runs/<run-id>.json` |
@@ -217,21 +219,21 @@ One session per worktree. Two sessions in one worktree contend for the same run,
 
 Used by skills internally (invoke via `subagent_type`):
 
-| Agent                   | Model  | Purpose                                                                                                                                                                            |
-| ----------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `code-reviewer`         | sonnet | Layer-group deep code review                                                                                                                                                       |
-| `implementer`           | sonnet | End-to-end task implementation (TDD, lint, commit) — used by `/bdk:subagent-execute-plan`                                                                                          |
-| `fixer`                 | sonnet | Apply specific findings (review, lint, test failures) — used by `/bdk:subagent-execute-plan`                                                                                       |
-| `explorer`              | haiku  | Fast read-only codebase exploration with the built-in tools                                                                                                                        |
-| `test-runner`           | haiku  | Run tests, parse and report results                                                                                                                                                |
-| `dead-code-detector`    | haiku  | Find unreachable/unused code                                                                                                                                                       |
-| `duplicate-detector`    | haiku  | Find code duplication                                                                                                                                                              |
-| `architecture-reviewer` | opus   | Audit against architectural rules                                                                                                                                                  |
-| `static-analyse`        | haiku  | Detect and run project lint/format/type-check                                                                                                                                      |
-| `plan-verifier`         | opus   | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. Used by `/bdk:verify-plan`                                         |
-| `design-verifier`       | opus   | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. Used by `/bdk:design` Phase 3 |
-| `log-analyzer`          | haiku  | Parse and summarize error logs                                                                                                                                                     |
-| `web-researcher`        | haiku  | Search web for solutions and docs                                                                                                                                                  |
+| Agent                   | Model  | Purpose                                                                                                                                                                                    |
+| ----------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `code-reviewer`         | sonnet | Layer-group deep code review                                                                                                                                                               |
+| `implementer`           | sonnet | End-to-end task implementation (TDD, lint, commit) — used by `/bdk:subagent-execute-plan`                                                                                                  |
+| `fixer`                 | sonnet | Apply specific findings (review, lint, test failures) — used by `/bdk:subagent-execute-plan`                                                                                               |
+| `explorer`              | haiku  | Fast read-only codebase exploration with the built-in tools                                                                                                                                |
+| `test-runner`           | haiku  | Run tests, parse and report results                                                                                                                                                        |
+| `dead-code-detector`    | haiku  | Find unreachable/unused code                                                                                                                                                               |
+| `duplicate-detector`    | haiku  | Find code duplication                                                                                                                                                                      |
+| `architecture-reviewer` | opus   | Audit against architectural rules                                                                                                                                                          |
+| `static-analyse`        | haiku  | Detect and run project lint/format/type-check                                                                                                                                              |
+| `plan-verifier`         | opus   | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. Used by `/bdk:verify-plan`                                                 |
+| `design-verifier`       | opus   | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. BDK 2 agent; no BDK 3 skill starts it |
+| `log-analyzer`          | haiku  | Parse and summarize error logs                                                                                                                                                             |
+| `web-researcher`        | haiku  | Search web for solutions and docs                                                                                                                                                          |
 
 v3 adapters, generated by `bdk export agents --host claude` and started by the role skills under `skills/roles/` (`implementer`, `simplifier`, `verifier`, `design-verifier`, `reviewer`, `pr-reviewer`, `runner`, `scout`, `lead`), not for general tasks. A `lead` runs one plan part and starts its part's role agents; a `worker` may start a `scout`. Every agent is recorded in the agent registry, which `bdk agents list|show|wait` reads:
 

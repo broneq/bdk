@@ -172,6 +172,26 @@ export function writeEntry(
   return id;
 }
 
+let verdicts = 0;
+
+/** A passing design-verifier report naming `design-verify` at `at`; `bdk done design-verify` then passes. */
+export function writeDesignVerdict(store: Store, at: string): string {
+  verdicts += 1;
+  const ticket = `A-${String(verdicts).padStart(8, "0")}`;
+  const path = `reports/design-verify-design-verifier-${ticket}.md`;
+  store.write(
+    `${DIR}/${path}`,
+    `---\nschema: 1\nticket: ${ticket}\nrole: design-verifier\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\nPASS\n`,
+  );
+  return writeEntry(store, {
+    type: "report",
+    at,
+    source: "agent:design-verifier",
+    refs: ["design-verify"],
+    report: path,
+  });
+}
+
 /** A user transition passing `gate` at `at`. */
 export function passGate(
   store: Store,

@@ -3129,9 +3129,9 @@ var require_timestamp = __commonJS({
         const match = str.match(timestamp2.test);
         if (!match)
           throw new Error("!!timestamp expects a date, starting with yyyy-mm-dd");
-        const [, year, month, day, hour, minute, second] = match.map(Number);
+        const [, year, month, day, hour, minute, second2] = match.map(Number);
         const millisec = match[7] ? Number((match[7] + "00").substr(1, 3)) : 0;
-        let date4 = Date.UTC(year, month - 1, day, hour || 0, minute || 0, second || 0, millisec);
+        let date4 = Date.UTC(year, month - 1, day, hour || 0, minute || 0, second2 || 0, millisec);
         const tz = match[8];
         if (tz && tz !== "Z") {
           let d = parseSexagesimal(tz, false);
@@ -4002,10 +4002,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep13, value } = collItem;
+        const { start, key, sep: sep14, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep13?.[0],
+          next: key ?? sep14?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4019,7 +4019,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep13) {
+          if (!keyProps.anchor && !keyProps.tag && !sep14) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4043,7 +4043,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep13 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep14 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4059,7 +4059,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep13, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep14, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4150,7 +4150,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep13 = "";
+        let sep14 = "";
         for (const token of end) {
           const { source: source2, type } = token;
           switch (type) {
@@ -4164,13 +4164,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep13 + cb;
-              sep13 = "";
+                comment += sep14 + cb;
+              sep14 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep13 += source2;
+                sep14 += source2;
               hasSpace = true;
               break;
             default:
@@ -4213,18 +4213,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep13, value } = collItem;
+        const { start, key, sep: sep14, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep13?.[0],
+          next: key ?? sep14?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep13 && !value) {
+          if (!props.anchor && !props.tag && !sep14 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4278,8 +4278,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap3 && !sep13 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep13, null, props, onError);
+        if (!isMap3 && !sep14 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep14, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4291,7 +4291,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep13 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep14 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4302,8 +4302,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap3 && !props.found && ctx.options.strict) {
-              if (sep13)
-                for (const st of sep13) {
+              if (sep14)
+                for (const st of sep14) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4320,7 +4320,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep13, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep14, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4500,7 +4500,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep13 = "";
+      let sep14 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4517,24 +4517,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep13 + indent.slice(trimIndent) + content;
-          sep13 = "\n";
+          value += sep14 + indent.slice(trimIndent) + content;
+          sep14 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep13 === " ")
-            sep13 = "\n";
-          else if (!prevMoreIndented && sep13 === "\n")
-            sep13 = "\n\n";
-          value += sep13 + indent.slice(trimIndent) + content;
-          sep13 = "\n";
+          if (sep14 === " ")
+            sep14 = "\n";
+          else if (!prevMoreIndented && sep14 === "\n")
+            sep14 = "\n\n";
+          value += sep14 + indent.slice(trimIndent) + content;
+          sep14 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep13 === "\n")
+          if (sep14 === "\n")
             value += "\n";
           else
-            sep13 = "\n";
+            sep14 = "\n";
         } else {
-          value += sep13 + content;
-          sep13 = " ";
+          value += sep14 + content;
+          sep14 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4717,25 +4717,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd, "");
-      let sep13 = " ";
+      let sep14 = " ";
       let pos = line2.lastIndex;
       while (match = line2.exec(source2)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep13 === "\n")
-            res += sep13;
+          if (sep14 === "\n")
+            res += sep14;
           else
-            sep13 = "\n";
+            sep14 = "\n";
         } else {
-          res += sep13 + lm;
-          sep13 = " ";
+          res += sep14 + lm;
+          sep14 = " ";
         }
         pos = line2.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source2);
-      return res + sep13 + (match?.[1] ?? "");
+      return res + sep14 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source2, onError) {
       let res = "";
@@ -5545,14 +5545,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep13, value }) {
+    function stringifyItem({ start, key, sep: sep14, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep13)
-        for (const st of sep13)
+      if (sep14)
+        for (const st of sep14)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6719,18 +6719,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep13;
+          let sep14;
           if (scalar.end) {
-            sep13 = scalar.end;
-            sep13.push(this.sourceToken);
+            sep14 = scalar.end;
+            sep14.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep13 = [this.sourceToken];
+            sep14 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep13 }]
+            items: [{ start, key: scalar, sep: sep14 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6883,15 +6883,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep13 = it.sep;
-                  sep13.push(this.sourceToken);
+                  const sep14 = it.sep;
+                  sep14.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep13 }]
+                    items: [{ start: start2, key, sep: sep14 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7085,13 +7085,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep13 = fc.end.splice(1, fc.end.length);
-            sep13.push(this.sourceToken);
+            const sep14 = fc.end.splice(1, fc.end.length);
+            sep14.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep13 }]
+              items: [{ start, key: fc, sep: sep14 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -8018,7 +8018,7 @@ var commands_default = {
         {
           name: "--ticket",
           value: "<ticket>",
-          description: "The ticket the caller works under; required inside a dispatch, sets source: agent:<role>."
+          description: "The ticket the caller works under; required inside a dispatch and for `report`, sets source: agent:<role>."
         },
         {
           name: "--category",
@@ -20132,7 +20132,7 @@ function line(item4) {
 }
 
 // kernel/src/attempt/use-cases/close.ts
-import { isAbsolute as isAbsolute3, join as join43 } from "node:path";
+import { isAbsolute as isAbsolute3, join as join44 } from "node:path";
 
 // kernel/src/attempt/domain/ladder.ts
 function currentRound(records, entries2) {
@@ -20991,7 +20991,7 @@ next: ${report2.next}
 }
 
 // kernel/src/graph/use-cases/done.ts
-import { join as join41 } from "node:path";
+import { join as join42 } from "node:path";
 
 // kernel/src/graph/domain/kinds/kind.ts
 var BaseKind = class {
@@ -21425,7 +21425,8 @@ var CloseKind = class extends FilelessKind {
 
 // kernel/src/graph/domain/kinds/verdicts.ts
 var PASSING = ["done", "done-with-concerns"];
-function verdictChecks(view, id) {
+function verdictChecks(view, target) {
+  const id = target.id;
   const reports = view.entries.filter(
     (entry) => entry.type === "report" && entry.refs.includes(id)
   );
@@ -21435,7 +21436,7 @@ function verdictChecks(view, id) {
     id: "verdict",
     ok: false,
     why: `no report entry names ${id}`,
-    instead: `record the report naming ${id}: bdk log ingest --ticket <ticket>`
+    instead: `the verifier records its stored report: bdk log add report "<verdict>" --ref ${id} --ticket <ticket>`
   } : status !== void 0 && PASSING.includes(status) ? { id: "verdict", ok: true } : {
     id: "verdict",
     ok: false,
@@ -21450,7 +21451,24 @@ function verdictChecks(view, id) {
     why: `live blocker ${blockers.map((entry) => entry.id).join(", ")} names ${id}`,
     instead: "resolve the blocker: bdk log resolve <id>"
   };
-  return [verdict, blocker, ...latest2 === void 0 ? [] : [evidenceCheck(view, latest2)]];
+  return [
+    verdict,
+    blocker,
+    ...latest2 === void 0 ? [] : [freshCheck(view, id, latest2, target.requires ?? []), evidenceCheck(view, latest2)]
+  ];
+}
+var second = (at) => at.slice(0, 19);
+function freshCheck(view, id, report2, requires) {
+  const newer = view.entries.filter(
+    (entry) => entry.type === "transition" && entry.source === "kernel" && entry.gate === void 0 && entry.to !== void 0 && requires.includes(entry.to) && second(entry.at) > second(report2.at)
+  );
+  const done2 = newer.at(-1);
+  return done2 === void 0 ? { id: "fresh", ok: true } : {
+    id: "fresh",
+    ok: false,
+    why: `the latest report ${report2.id} is older than ${done2.id}, the done entry of ${done2.to ?? ""}`,
+    instead: `run the verifier of ${id} again: a newer passing report must name it`
+  };
 }
 function evidenceCheck(view, report2) {
   const manifests = new Map(view.evidence.map((manifest) => [manifest.id, manifest]));
@@ -21475,6 +21493,22 @@ function evidenceCheck(view, report2) {
   }
   return { id: "evidence", ok: true };
 }
+var DesignVerifyKind = class extends BaseKind {
+  name = "design-verify";
+  writes() {
+    return [];
+  }
+  /** Any edit to the design makes the verdict stale. */
+  inputs(view) {
+    const documents = ["design.md", "architecture.md"].filter(
+      (path) => view.file(path) !== void 0
+    );
+    return { files: [...documents, ...partFiles(view, "design/parts").values()] };
+  }
+  validate(view, target) {
+    return verdictChecks(view, target);
+  }
+};
 var PlanVerifyKind = class extends BaseKind {
   name = "plan-verify";
   writes() {
@@ -21485,7 +21519,7 @@ var PlanVerifyKind = class extends BaseKind {
     return { files: [...partFiles(view, "plan/parts").values()] };
   }
   validate(view, target) {
-    return verdictChecks(view, target.id);
+    return verdictChecks(view, target);
   }
 };
 var ReviewKind = class extends BaseKind {
@@ -21498,7 +21532,7 @@ var ReviewKind = class extends BaseKind {
     return { codeTree: true };
   }
   validate(view, target) {
-    return verdictChecks(view, target.id);
+    return verdictChecks(view, target);
   }
 };
 
@@ -21510,6 +21544,7 @@ function kindRegistry(extra = []) {
     new ArchitectureKind(),
     new DesignPartKind(),
     new DesignIndexKind(),
+    new DesignVerifyKind(),
     new PlanPartKind(),
     new PlanVerifyKind(),
     new GateKind(),
@@ -21576,6 +21611,9 @@ function renderResolve(result2) {
 `;
 }
 
+// kernel/src/log/use-cases/add.ts
+import { join as join23, relative as relative6, sep as sep5 } from "node:path";
+
 // kernel/src/log/use-cases/append.ts
 import { join as join22, relative as relative5, sep as sep4 } from "node:path";
 
@@ -21626,6 +21664,7 @@ function entrySummary(row) {
     refs: row.refs,
     ...row.review ? { review: true } : {},
     ...row.ticket === void 0 ? {} : { ticket: row.ticket },
+    ...row.category === void 0 ? {} : { category: row.category },
     ...row.supersedes === void 0 ? {} : { supersedes: row.supersedes },
     ...row.supersededBy === void 0 ? {} : { supersededBy: row.supersededBy }
   };
@@ -21721,6 +21760,7 @@ async function appendEntry(deps, change, index2, draft, options) {
       ...fingerprint2 === void 0 ? {} : { fingerprint: fingerprint2 },
       ...draft.options === void 0 ? {} : { options: [...draft.options] },
       ...draft.applies === void 0 ? {} : { applies: [...draft.applies] },
+      ...draft.report === void 0 ? {} : { report: draft.report },
       ...draft.park === true ? { park: true } : {},
       ...draft.profile === void 0 ? {} : { profile: draft.profile },
       ...draft.to === void 0 ? {} : { to: draft.to },
@@ -21853,7 +21893,15 @@ function addEntry(deps, change, globalDir2, input) {
       const missing = checkSupersedes(deps, change, index2, input.supersedes);
       if (missing !== void 0) return missing;
     }
-    const role2 = input.ticket === void 0 ? void 0 : openPackage(deps.store, change.projectRoot, change.dir, input.ticket)?.role;
+    const active10 = input.ticket === void 0 ? void 0 : openPackage(deps.store, change.projectRoot, change.dir, input.ticket);
+    const role2 = active10?.role;
+    let report2;
+    if (input.type === "report" && active10 !== void 0) {
+      const fields = reportFields(deps, change, input.refs, active10.data);
+      if ("refused" in fields) return fields;
+      report2 = fields;
+    }
+    const refs = input.type === "blocker" && active10 !== void 0 ? withTarget(input.refs, active10.data.target) : input.refs;
     let blocking = [];
     if (mayDowngrade(input.type, role2)) {
       const policy = verifierPolicy(deps, change, globalDir2);
@@ -21862,17 +21910,32 @@ function addEntry(deps, change, globalDir2, input) {
     }
     const { downgraded, ...classified } = classify(input, role2, blocking);
     const applies = input.applies ?? defaultApplies(deps, change, input);
-    const { category: category2, ...rest } = applies === void 0 ? input : { ...input, applies };
+    const { category: category2, ...rest } = applies === void 0 ? { ...input, refs } : { ...input, refs, applies };
     const base = downgraded === void 0 && category2 !== void 0 ? { ...rest, category: category2 } : rest;
     const appended2 = await appendEntry(
       deps,
       change,
       index2,
-      { ...base, ...classified },
-      { dedupe: true }
+      { ...base, ...classified, ...report2 },
+      { dedupe: report2 === void 0 }
     );
     return "refused" in appended2 || downgraded === void 0 ? appended2 : { ...appended2, downgraded };
   });
+}
+function reportFields(deps, change, refs, dispatch2) {
+  const path = join23(change.projectRoot, dispatch2.report);
+  if (deps.store.read(path) === void 0) {
+    return refuse("input/not-found", `no report is stored at ${dispatch2.report} yet`, [
+      "store the report first: bdk log ingest --ticket <ticket>"
+    ]);
+  }
+  return {
+    refs: withTarget(refs, dispatch2.target),
+    report: relative6(change.dir, path).split(sep5).join("/")
+  };
+}
+function withTarget(refs, target) {
+  return refs.includes(target) ? refs : [...refs, target];
 }
 function validate3(input) {
   const summary2 = input.summary.trim();
@@ -21906,6 +21969,13 @@ function validate3(input) {
         `bdk log add ${input.type} "..." --supersedes <id>`,
         "bdk log resolve <id> superseded --by <id>"
       ]
+    );
+  }
+  if (input.type === "report" && input.ticket === void 0) {
+    return refuse(
+      "input/missing-argument",
+      "log add report needs --ticket: the report is the one log ingest stored under that ticket",
+      [`bdk log add report "${input.summary}" --ref <target> --ticket <ticket>`]
     );
   }
   if (input.applies !== void 0 && input.type !== "learning") {
@@ -21956,7 +22026,7 @@ function checkSupersedes(deps, change, index2, value) {
 }
 
 // kernel/src/log/use-cases/ingest.ts
-import { join as join23 } from "node:path";
+import { join as join24 } from "node:path";
 
 // kernel/src/log/use-cases/envelope.ts
 var import_yaml6 = __toESM(require_dist(), 1);
@@ -22015,7 +22085,7 @@ function ingestReport(deps, change, input) {
     if ("refused" in data) return data;
     const missing = missingIds(deps, change, index2, input.ticket, data);
     if (missing !== void 0) return missing;
-    const path = join23(change.projectRoot, report2);
+    const path = join24(change.projectRoot, report2);
     const replaced = deps.store.read(path) !== void 0;
     writeDocument(deps.store, path, { data, body: envelope.body });
     return {
@@ -22080,11 +22150,11 @@ function missingIds(deps, change, index2, ticket, data) {
   );
 }
 function ticketEvidence(deps, change, ticket) {
-  const dir = join23(change.dir, "evidence");
+  const dir = join24(change.dir, "evidence");
   const ids = /* @__PURE__ */ new Set();
   for (const name of deps.store.list(dir)) {
     if (!name.endsWith(".md")) continue;
-    const document = readDocument(deps.store, join23(dir, name));
+    const document = readDocument(deps.store, join24(dir, name));
     if (document === void 0 || !("data" in document) || document.kind !== "evidence") continue;
     if (document.data.ticket === ticket) ids.add(String(document.data.id));
   }
@@ -22124,7 +22194,7 @@ function performanceClock() {
 }
 
 // kernel/src/log/use-cases/resolve.ts
-import { join as join24 } from "node:path";
+import { join as join25 } from "node:path";
 function resolveEntry(deps, change, input) {
   if (input.status === "superseded" && input.by === void 0) {
     return Promise.resolve(
@@ -22184,7 +22254,7 @@ function notFound2(change, id) {
   return refuse("input/not-found", `${id} names no entry of ${change.id}`, ["bdk log list"]);
 }
 function rewrite(deps, change, entry, update, at, input) {
-  const path = join24(change.projectRoot, entry.path);
+  const path = join25(change.projectRoot, entry.path);
   const document = readDocument(deps.store, path);
   if (document === void 0 || !("data" in document)) return false;
   writeDocument(deps.store, path, {
@@ -22204,7 +22274,7 @@ function result(input, record5) {
 }
 
 // kernel/src/log/use-cases/show.ts
-import { join as join25 } from "node:path";
+import { join as join26 } from "node:path";
 function showEntry(deps, change, id) {
   const reference = parseReference(id);
   if (!reference?.id.startsWith("L-")) {
@@ -22225,7 +22295,7 @@ function showEntry(deps, change, id) {
     }
     const row = findEntry(index2, changeId2, reference.id);
     if (row === void 0) return notFound8(`${id} names no entry of ${changeId2}`);
-    const document = readDocument(deps.store, join25(change.projectRoot, row.path));
+    const document = readDocument(deps.store, join26(change.projectRoot, row.path));
     if (document === void 0 || !("data" in document)) {
       return notFound8(`${row.path} disappeared while it was read`);
     }
@@ -22736,6 +22806,7 @@ var KIND_NAMES = [
   "architecture",
   "design-part",
   "design-index",
+  "design-verify",
   "plan-part",
   "plan-verify",
   "gate",
@@ -22759,7 +22830,7 @@ var pipelinePrompts = KIND_NAMES.map(pipelinePrompt);
 
 // kernel/src/graph/use-cases/hash.ts
 import { createHash as createHash5 } from "node:crypto";
-import { join as join26 } from "node:path";
+import { join as join27 } from "node:path";
 function inputHasher(store2, changeDir, codeTree) {
   return (inputs) => {
     if ("codeTree" in inputs) return codeTree ?? filesHash(store2, changeDir, []);
@@ -22772,7 +22843,7 @@ function filesHash(store2, changeDir, files) {
   for (const path of [...files].sort()) {
     hash2.update(path);
     hash2.update("\0");
-    hash2.update(store2.read(join26(changeDir, path)) ?? "");
+    hash2.update(store2.read(join27(changeDir, path)) ?? "");
     hash2.update("\0");
   }
   return `sha256:${hash2.digest("hex")}`;
@@ -22780,7 +22851,7 @@ function filesHash(store2, changeDir, files) {
 
 // kernel/src/graph/use-cases/pipeline.ts
 var import_yaml12 = __toESM(require_dist(), 1);
-import { join as join35 } from "node:path";
+import { join as join36 } from "node:path";
 
 // kernel/src/graph/schema/pipeline.ts
 var KEBAB = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*";
@@ -22878,12 +22949,13 @@ var SKILL_CONTEXT = {
   ],
   setup: [tools("test"), tools("lint"), tools("build")],
   swarm: [{ kind: "concurrency" }],
-  "test-driven-development": [rules("test-quality"), tools("test")]
+  "test-driven-development": [rules("test-quality"), tools("test")],
+  "verify-design": []
 };
 
 // kernel/src/ctx/use-cases/parts.ts
 var import_yaml10 = __toESM(require_dist(), 1);
-import { join as join33 } from "node:path/posix";
+import { join as join34 } from "node:path/posix";
 
 // kernel/src/rules/render/outputs.ts
 function renderCheck2(report2) {
@@ -22992,7 +23064,7 @@ function ruleTexts(body) {
 }
 
 // kernel/src/rules/use-cases/export.ts
-import { join as join29 } from "node:path";
+import { join as join30 } from "node:path";
 
 // kernel/src/rules/domain/projection.ts
 var PROJECTION_GLOBAL = ".claude/rules/bdk-generated.md";
@@ -23169,24 +23241,24 @@ function compare4(a, b) {
 
 // kernel/src/rules/use-cases/store.ts
 var import_yaml7 = __toESM(require_dist(), 1);
-import { join as join27, posix as posix3 } from "node:path";
+import { join as join28, posix as posix3 } from "node:path";
 var PROJECT_RULES_DIR = ".bdk/rules";
 function loadRules(input) {
   const problems = [];
   const rules2 = [];
   const declared2 = [];
-  const bundleRoot = join27(input.pluginRoot, "rules");
+  const bundleRoot = join28(input.pluginRoot, "rules");
   for (const [path, display, pack] of bundleFiles(input.store, bundleRoot)) {
     const loaded = readRule(input.store, path, display, "bundle", pack, problems, declared2);
     if (loaded !== void 0) rules2.push(loaded);
   }
-  const projectDir = join27(input.projectRoot, PROJECT_RULES_DIR);
+  const projectDir = join28(input.projectRoot, PROJECT_RULES_DIR);
   for (const name of input.store.list(projectDir)) {
     if (!name.endsWith(".md")) continue;
     const display = `${PROJECT_RULES_DIR}/${name}`;
     const loaded = readRule(
       input.store,
-      join27(projectDir, name),
+      join28(projectDir, name),
       display,
       "project",
       void 0,
@@ -23208,11 +23280,11 @@ function loadRules(input) {
   return { rules: rules2, problems };
 }
 function bundleFiles(store2, root, prefix = "") {
-  return store2.list(join27(root, prefix)).flatMap((name) => {
+  return store2.list(join28(root, prefix)).flatMap((name) => {
     if (name.endsWith("/")) return bundleFiles(store2, root, `${prefix}${name}`);
     if (!name.endsWith(".md") || prefix === "" && name === "README.md") return [];
     const pack = prefix.replace(/\/$/, "");
-    return [[join27(root, prefix, name), posix3.join("rules", prefix, name), pack]];
+    return [[join28(root, prefix, name), posix3.join("rules", prefix, name), pack]];
   });
 }
 function readRule(store2, path, display, scope2, pack, problems, declared2) {
@@ -23342,7 +23414,7 @@ function enabled(context) {
 }
 
 // kernel/src/rules/use-cases/check.ts
-import { join as join28, relative as relative6, resolve as resolve3, sep as sep5 } from "node:path";
+import { join as join29, relative as relative7, resolve as resolve3, sep as sep6 } from "node:path";
 
 // kernel/src/rules/use-cases/settings.ts
 function loadContext(deps, projectRoot2, globalDir2) {
@@ -23371,11 +23443,11 @@ function checkRules(deps, projectRoot2, globalDir2, cwd, path) {
   }
   const context = loadContext(deps, projectRoot2, globalDir2);
   if ("refused" in context) return context;
-  const absolute = (display) => join28(display.startsWith(".bdk/") ? projectRoot2 : deps.pluginRoot, display);
+  const absolute = (display) => join29(display.startsWith(".bdk/") ? projectRoot2 : deps.pluginRoot, display);
   const within2 = (display) => {
     if (scope2 === void 0) return true;
-    const inside = relative6(scope2, absolute(display));
-    return inside === "" || !inside.startsWith(`..${sep5}`) && inside !== "..";
+    const inside = relative7(scope2, absolute(display));
+    return inside === "" || !inside.startsWith(`..${sep6}`) && inside !== "..";
   };
   const problems = context.problems.filter(
     (problem) => problem.file === "rules.disabled" ? scope2 === void 0 : within2(problem.file)
@@ -23432,7 +23504,7 @@ function exportRules(deps, projectRoot2, globalDir2, check) {
 }
 function writeProjection(store2, projectRoot2, context, write = true) {
   const files = projectionFiles(projectRules2(context)).map((file) => {
-    const path = join29(projectRoot2, file.path);
+    const path = join30(projectRoot2, file.path);
     const current = store2.read(path);
     const changed = current !== file.content;
     if (write && changed) {
@@ -23456,7 +23528,7 @@ function regenerate2(store2, projectRoot2, context) {
 }
 
 // kernel/src/rules/use-cases/write.ts
-import { join as join30 } from "node:path";
+import { join as join31 } from "node:path";
 function numberer(store2, projectRoot2, context) {
   const highest = /* @__PURE__ */ new Map();
   const seen = (id) => {
@@ -23464,7 +23536,7 @@ function numberer(store2, projectRoot2, context) {
     highest.set(prefix, Math.max(highest.get(prefix) ?? 0, numberOf(id)));
   };
   for (const rule2 of context.rules) if (rule2.scope === "project") seen(rule2.id);
-  for (const name of store2.list(join30(projectRoot2, PROJECT_RULES_DIR))) {
+  for (const name of store2.list(join31(projectRoot2, PROJECT_RULES_DIR))) {
     const id = name.replace(/\.md$/, "");
     if (/-[1-9][0-9]*$/.test(id)) seen(id);
   }
@@ -23488,7 +23560,7 @@ function draftProblem(draft) {
 }
 function writeRule(store2, projectRoot2, draft) {
   const path = `${PROJECT_RULES_DIR}/${draft.id}.md`;
-  writeDocument(store2, join30(projectRoot2, path), { data: draft.data, body: `${draft.text}
+  writeDocument(store2, join31(projectRoot2, path), { data: draft.data, body: `${draft.text}
 ` });
   return path;
 }
@@ -23575,17 +23647,17 @@ async function acceptRule(deps, projectRoot2, globalDir2, input) {
 }
 
 // kernel/src/rules/use-cases/explain.ts
-import { relative as relative7, resolve as resolve4, sep as sep6 } from "node:path";
+import { relative as relative8, resolve as resolve4, sep as sep7 } from "node:path";
 function explainRules(deps, projectRoot2, globalDir2, cwd, file, role2) {
-  const inside = relative7(projectRoot2, resolve4(cwd, file));
-  if (inside === "" || inside === ".." || inside.startsWith(`..${sep6}`)) {
+  const inside = relative8(projectRoot2, resolve4(cwd, file));
+  if (inside === "" || inside === ".." || inside.startsWith(`..${sep7}`)) {
     return refuse("input/not-found", `${file} resolves outside the repository ${projectRoot2}`, [
       "bdk rules explain <path inside the repository>"
     ]);
   }
   const context = loadContext(deps, projectRoot2, globalDir2);
   if ("refused" in context) return context;
-  const path = inside.split(sep6).join("/");
+  const path = inside.split(sep7).join("/");
   const selection = selectFor(context, role2, [path]);
   return {
     file: path,
@@ -23601,18 +23673,18 @@ function explainRules(deps, projectRoot2, globalDir2, cwd, file, role2) {
 
 // kernel/src/rules/use-cases/import.ts
 var import_yaml9 = __toESM(require_dist(), 1);
-import { join as join32, relative as relative9, resolve as resolve5, sep as sep8 } from "node:path";
+import { join as join33, relative as relative10, resolve as resolve5, sep as sep9 } from "node:path";
 
 // kernel/src/rules/use-cases/health.ts
 var import_yaml8 = __toESM(require_dist(), 1);
-import { join as join31, relative as relative8, sep as sep7 } from "node:path";
+import { join as join32, relative as relative9, sep as sep8 } from "node:path";
 var HOST_RULES_DIR = ".claude/rules";
 function ruleHealth(deps, projectRoot2, globalDir2) {
-  const host = join31(projectRoot2, HOST_RULES_DIR);
-  if (!deps.store.exists(join31(projectRoot2, PROJECT_RULES_DIR)) && !deps.store.exists(host)) {
+  const host = join32(projectRoot2, HOST_RULES_DIR);
+  if (!deps.store.exists(join32(projectRoot2, PROJECT_RULES_DIR)) && !deps.store.exists(host)) {
     return void 0;
   }
-  const withoutId = (deps.store.isDirectory(host) ? markdownFiles(deps.store, host) : []).filter((path) => !isProjection(path.slice(path.lastIndexOf("/") + 1))).filter((path) => !carriesId(deps.store.read(path) ?? "")).map((path) => relative8(projectRoot2, path).split(sep7).join("/"));
+  const withoutId = (deps.store.isDirectory(host) ? markdownFiles(deps.store, host) : []).filter((path) => !isProjection(path.slice(path.lastIndexOf("/") + 1))).filter((path) => !carriesId(deps.store.read(path) ?? "")).map((path) => relative9(projectRoot2, path).split(sep8).join("/"));
   const context = loadContext(deps, projectRoot2, globalDir2);
   if ("refused" in context) return { withoutId, invalid: context.why, drifted: [] };
   const refusal2 = formatRefusal(context.problems);
@@ -23631,13 +23703,13 @@ function carriesId(text12) {
 }
 function markdownFiles(store2, dir) {
   return store2.list(dir).flatMap(
-    (name) => name.endsWith("/") ? markdownFiles(store2, join31(dir, name)) : name.endsWith(".md") ? [join31(dir, name)] : []
+    (name) => name.endsWith("/") ? markdownFiles(store2, join32(dir, name)) : name.endsWith(".md") ? [join32(dir, name)] : []
   ).sort();
 }
 
 // kernel/src/rules/use-cases/import.ts
 function importRules(deps, projectRoot2, globalDir2, input) {
-  const target = input.dir === void 0 ? join32(projectRoot2, ".claude/rules") : resolve5(input.cwd, input.dir);
+  const target = input.dir === void 0 ? join33(projectRoot2, ".claude/rules") : resolve5(input.cwd, input.dir);
   if (!deps.store.exists(target)) {
     return refuse("input/not-found", `${input.dir ?? ".claude/rules/"} does not exist`, [
       "bdk rules import <dir>"
@@ -23660,7 +23732,7 @@ function importRules(deps, projectRoot2, globalDir2, input) {
   if ("refused" in context) return context;
   const next = numberer(deps.store, projectRoot2, context);
   const since = deps.clock.now().slice(0, 10);
-  const display = (path) => relative9(projectRoot2, path).split(sep8).join("/");
+  const display = (path) => relative10(projectRoot2, path).split(sep9).join("/");
   const imported = [];
   const drafts = [];
   const skipped = [];
@@ -24315,7 +24387,7 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "file": {
-      const text12 = input.store.read(join33(input.pluginRoot, part.path));
+      const text12 = input.store.read(join34(input.pluginRoot, part.path));
       if (text12 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
       return [{ title: part.title, body: text12, part: { kind: "file", source: part.path } }];
     }
@@ -24420,13 +24492,13 @@ function width(text12) {
 
 // kernel/src/ctx/use-cases/startup.ts
 var import_yaml11 = __toESM(require_dist(), 1);
-import { join as join34 } from "node:path/posix";
+import { join as join35 } from "node:path/posix";
 var STARTUP_FILE = "STARTUP_INSTRUCTIONS.md";
 var AGENTS_DIR = "agents";
 var OPEN = "<!-- bdk:agents-table -->";
 var CLOSE = "<!-- /bdk:agents-table -->";
 function readStartup(deps) {
-  const text12 = deps.store.read(join34(deps.pluginRoot, STARTUP_FILE));
+  const text12 = deps.store.read(join35(deps.pluginRoot, STARTUP_FILE));
   if (text12 === void 0) throw new Error(`the plugin file ${STARTUP_FILE} is missing`);
   const lines = text12.split("\n");
   const open2 = lines.indexOf(OPEN);
@@ -24437,8 +24509,8 @@ function readStartup(deps) {
   return { before: lines.slice(0, open2 + 1), rows: agents(deps), after: lines.slice(close) };
 }
 function agents(deps) {
-  const dir = join34(deps.pluginRoot, AGENTS_DIR);
-  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow2(`${AGENTS_DIR}/${file}`, deps.store.read(join34(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
+  const dir = join35(deps.pluginRoot, AGENTS_DIR);
+  return deps.store.list(dir).filter((entry) => entry.endsWith(".md")).map((file) => agentRow2(`${AGENTS_DIR}/${file}`, deps.store.read(join35(dir, file)) ?? "")).sort((a, b) => a.name.localeCompare(b.name));
 }
 function agentRow2(path, text12) {
   const { frontmatter } = splitFrontmatter(text12);
@@ -24483,7 +24555,7 @@ function ctxRegistrations(deps) {
 var PIPELINE_FILE = "pipeline/pipeline.yaml";
 var cache2 = /* @__PURE__ */ new WeakMap();
 function loadPipeline(store2, pluginRoot, settings, kinds) {
-  const path = join35(pluginRoot, PIPELINE_FILE);
+  const path = join36(pluginRoot, PIPELINE_FILE);
   const text12 = store2.read(path);
   if (text12 === void 0) throw new Error(`the plugin file ${PIPELINE_FILE} is missing`);
   const known = cache2.get(kinds)?.get(text12);
@@ -24535,7 +24607,7 @@ function keyOf(path) {
 }
 
 // kernel/src/graph/use-cases/view.ts
-import { join as join40 } from "node:path";
+import { join as join41 } from "node:path";
 
 // kernel/src/spec/render/spec.ts
 function renderCheck3(report2) {
@@ -24571,7 +24643,7 @@ function renderDiff(report2) {
 }
 
 // kernel/src/spec/use-cases/check.ts
-import { join as join37, relative as relative11 } from "node:path";
+import { join as join38, relative as relative12 } from "node:path";
 
 // kernel/src/spec/domain/grammar.ts
 var SECTIONS = [
@@ -24929,7 +25001,7 @@ function sorted2(problems) {
 }
 
 // kernel/src/spec/use-cases/files.ts
-import { join as join36, relative as relative10 } from "node:path";
+import { join as join37, relative as relative11 } from "node:path";
 
 // kernel/src/spec/config.ts
 var specModule = defineConfigModule({
@@ -24986,15 +25058,15 @@ function renderLiving(capability2, content, change) {
 
 // kernel/src/spec/use-cases/files.ts
 function listDeltas(store2, changeDir) {
-  const root = join36(changeDir, "spec-delta");
+  const root = join37(changeDir, "spec-delta");
   const found = [];
   const visit2 = (dir) => {
     for (const name of store2.list(dir)) {
-      const path = join36(dir, name);
+      const path = join37(dir, name);
       if (name.endsWith("/")) visit2(path);
       else if (name.endsWith(".md")) {
         const text12 = store2.read(path) ?? "";
-        const capability2 = relative10(root, path).slice(0, -".md".length).replaceAll("\\", "/");
+        const capability2 = relative11(root, path).slice(0, -".md".length).replaceAll("\\", "/");
         found.push({ capability: capability2, path, text: text12, delta: parseDelta(text12) });
       }
     }
@@ -25005,10 +25077,10 @@ function listDeltas(store2, changeDir) {
   );
 }
 function specsDir(projectRoot2) {
-  return join36(projectRoot2, ".bdk", "specs");
+  return join37(projectRoot2, ".bdk", "specs");
 }
 function readCurrent(store2, projectRoot2, capability2) {
-  const path = join36(specsDir(projectRoot2), capability2, "spec.md");
+  const path = join37(specsDir(projectRoot2), capability2, "spec.md");
   const text12 = store2.read(path);
   return text12 === void 0 ? { path } : { path, text: text12, living: livingOf(text12) };
 }
@@ -25047,13 +25119,13 @@ function deltaReport(store2, change, file, word) {
   const problems = checkDelta({ delta: file.delta, current, changeId: change.id, word });
   return {
     capability: file.capability,
-    path: relative11(change.projectRoot, file.path),
+    path: relative12(change.projectRoot, file.path),
     valid: problems.length === 0,
     problems
   };
 }
 function deltaProblems(store2, change, capability2, settings) {
-  const path = join37(change.dir, "spec-delta", `${capability2}.md`);
+  const path = join38(change.dir, "spec-delta", `${capability2}.md`);
   const text12 = store2.read(path);
   if (text12 === void 0) return void 0;
   const file = { capability: capability2, path, text: text12, delta: parseDelta(text12) };
@@ -25134,7 +25206,7 @@ function diffDelta(current, delta) {
 }
 
 // kernel/src/spec/use-cases/merge.ts
-import { relative as relative12 } from "node:path";
+import { relative as relative13 } from "node:path";
 
 // kernel/src/spec/domain/merge.ts
 function mergeDelta(current, delta) {
@@ -25170,7 +25242,7 @@ function mergeDelta(current, delta) {
 }
 
 // kernel/src/spec/use-cases/conflicts.ts
-import { join as join38 } from "node:path";
+import { join as join39 } from "node:path";
 
 // kernel/src/spec/domain/conflict.ts
 function namedBlocks(delta) {
@@ -25209,14 +25281,14 @@ function conflictsOf(ours, counterparts) {
 
 // kernel/src/spec/use-cases/conflicts.ts
 function entries(store2, changeDir) {
-  const dir = join38(changeDir, "log");
+  const dir = join39(changeDir, "log");
   return store2.list(dir).filter((name) => name.endsWith(".md")).flatMap((name) => {
-    const document = readDocument(store2, join38(dir, name));
+    const document = readDocument(store2, join39(dir, name));
     return document !== void 0 && "data" in document ? [document.data] : [];
   });
 }
 function createdAt(store2, changeDir) {
-  const document = readDocument(store2, join38(changeDir, "change.md"));
+  const document = readDocument(store2, join39(changeDir, "change.md"));
   return document !== void 0 && "data" in document ? String(document.data.at) : void 0;
 }
 function closedAt(ledger) {
@@ -25239,7 +25311,7 @@ function findConflicts(store2, change, deltas) {
   return deltas.flatMap((file) => {
     const ref = `spec-delta/${file.capability}.md`;
     const counterparts = closed.flatMap((location2) => {
-      const text12 = store2.read(join38(location2.dir, ref));
+      const text12 = store2.read(join39(location2.dir, ref));
       if (text12 === void 0) return [];
       const resolved = decisions.some((refs) => refs.includes(location2.id) && refs.includes(ref));
       return [{ change: location2.id, delta: parseDelta(text12), resolved }];
@@ -25275,7 +25347,7 @@ function planMerge(store2, change, word, dryRun) {
     const living = current.living;
     if (living === void 0) continue;
     if (!hashMatches(living)) {
-      const path = relative12(change.projectRoot, current.path);
+      const path = relative13(change.projectRoot, current.path);
       return refuse(
         "policy/merge-hash-mismatch",
         living.hash === void 0 ? `${path} was not written by the merge: it has no bdk-merge-hash` : `${path} was edited by hand: content hash differs from bdk-merge-hash`,
@@ -25298,7 +25370,7 @@ function planMerge(store2, change, word, dryRun) {
     if (text12 !== current.text) writes.push({ path: current.path, text: text12 });
     return {
       capability: file.capability,
-      path: relative12(change.projectRoot, current.path),
+      path: relative13(change.projectRoot, current.path),
       mergeHash: hash2,
       ...result2.counts
     };
@@ -25357,19 +25429,19 @@ function diffCommand(deps) {
 }
 
 // kernel/src/spec/use-cases/hash.ts
-import { join as join39, relative as relative13 } from "node:path";
+import { join as join40, relative as relative14 } from "node:path";
 function mergeHashFindings(store2, projectRoot2) {
   const found = [];
   const visit2 = (dir) => {
     for (const name of store2.list(dir)) {
-      const path = join39(dir, name);
+      const path = join40(dir, name);
       if (name.endsWith("/")) {
         visit2(path);
         continue;
       }
       if (name !== "spec.md") continue;
       const living = livingOf(store2.read(path) ?? "");
-      const shown = relative13(projectRoot2, path);
+      const shown = relative14(projectRoot2, path);
       if (living.hash === void 0) {
         found.push({
           path: shown,
@@ -25407,7 +25479,7 @@ function changeView(input) {
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
   const read2 = (path) => {
     if (files.has(path)) return files.get(path);
-    const facts = readFacts(store2, join40(dir, path));
+    const facts = readFacts(store2, join41(dir, path));
     files.set(path, facts);
     return facts;
   };
@@ -25421,8 +25493,8 @@ function changeView(input) {
   const reportData = (entry) => {
     const row = byId.get(entry.id);
     if (row === void 0) return void 0;
-    const report2 = documentData(store2, join40(input.projectRoot, row.path))?.report;
-    return typeof report2 === "string" ? documentData(store2, join40(dir, report2)) : void 0;
+    const report2 = documentData(store2, join41(input.projectRoot, row.path))?.report;
+    return typeof report2 === "string" ? documentData(store2, join41(dir, report2)) : void 0;
   };
   return {
     id: input.id,
@@ -25430,7 +25502,7 @@ function changeView(input) {
     profile: input.profile,
     entries: input.entries,
     file: (path) => read2(path)?.facts,
-    list: (sub) => store2.list(join40(dir, sub)).filter((name) => !name.endsWith("/")),
+    list: (sub) => store2.list(join41(dir, sub)).filter((name) => !name.endsWith("/")),
     specDeltas: () => deltaCapabilities(store2, dir),
     specProblems: (capability2) => deltaProblems(store2, input, capability2, input.settings),
     reportStatus: (entry) => {
@@ -25702,12 +25774,18 @@ function checksOf(read2, node3) {
   if (instances.length === 0) {
     return kind.validate(read2.view, {
       id: node3.id,
-      ...node3.nn === void 0 ? {} : { nn: node3.nn }
+      ...node3.nn === void 0 ? {} : { nn: node3.nn },
+      requires: node3.requires
     });
   }
   return instances.flatMap((instance) => {
-    const nn = read2.graph.find(instance)?.nn;
-    return kind.validate(read2.view, { id: instance, ...nn === void 0 ? {} : { nn } }).map((check) => ({ ...check, id: `${instance}:${check.id}` }));
+    const found = read2.graph.find(instance);
+    const nn = found?.nn;
+    return kind.validate(read2.view, {
+      id: instance,
+      ...nn === void 0 ? {} : { nn },
+      requires: found?.requires ?? []
+    }).map((check) => ({ ...check, id: `${instance}:${check.id}` }));
   });
 }
 function nothingActionable(read2, change) {
@@ -25763,7 +25841,7 @@ function markDone(deps, change, globalDir2, id) {
       if ("refused" in written) return written;
       entry = written.entry.id;
     }
-    if (generated !== void 0) deps.store.write(join41(change.dir, generated.path), generated.text);
+    if (generated !== void 0) deps.store.write(join42(change.dir, generated.path), generated.text);
     const after = await reread(deps, change, index2, globalDir2);
     if ("refused" in after) return after;
     return {
@@ -25950,14 +26028,14 @@ function finish(node3, kind) {
 }
 
 // kernel/src/graph/use-cases/instruction.ts
-import { posix as posix4, relative as relative14, sep as sep9 } from "node:path";
+import { posix as posix4, relative as relative15, sep as sep10 } from "node:path";
 function instructionOf(deps, change, read2, node3) {
   const kind = read2.kinds.get(node3.kind);
   if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
   const key = templateKey(deps, node3.kind);
   const value = read2.resolved.prompts.values.get(key);
   if (value === void 0) throw new Error(`the prompt value ${key} has no file in any layer`);
-  const dir = relative14(change.projectRoot, change.dir).split(sep9).join("/");
+  const dir = relative15(change.projectRoot, change.dir).split(sep10).join("/");
   const writes = kind.writes(read2.view, node3.nn);
   return composeInstruction({
     node: node3,
@@ -26575,7 +26653,7 @@ function wavesOf2(parts) {
 }
 
 // kernel/src/part/use-cases/split.ts
-import { join as join42 } from "node:path";
+import { join as join43 } from "node:path";
 
 // kernel/src/part/domain/split.ts
 var TASK_HEADING = /^## (\d{2}-[1-9]\d*)(?:\s|$)/;
@@ -26655,7 +26733,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
     const first = part.tasks.find((task) => task.id === moved[0]);
     const file = `plan/parts/${newPart}-${slugOf(first?.title ?? part.data.title)}.md`;
     const original = frontmatterOf(deps, part);
-    writeDocument(deps.store, join42(change.dir, file), {
+    writeDocument(deps.store, join43(change.dir, file), {
       data: { ...original, id: newPart, title: `${part.data.title} (split from ${id})` },
       body: body.moved
     });
@@ -26681,7 +26759,7 @@ function splitPart(deps, change, globalDir2, id, taskIds) {
       title: `${part.data.title} (split from ${id})`,
       "depends-on": [...part.data["depends-on"]]
     });
-    deps.store.write(join42(change.dir, "plan/index.md"), generatePlanIndex(rows));
+    deps.store.write(join43(change.dir, "plan/index.md"), generatePlanIndex(rows));
     const written = await appendEntry(
       deps,
       change,
@@ -27145,7 +27223,7 @@ function diffReport(diff) {
   return { declared: diff.declared, touched: diff.touched, undeclared: diff.undeclared };
 }
 function missingEntries(deps, cwd, envelope, underTicket) {
-  const path = isAbsolute3(envelope) ? envelope : join43(cwd, envelope);
+  const path = isAbsolute3(envelope) ? envelope : join44(cwd, envelope);
   const document = deps.store.read(path) === void 0 ? void 0 : readDocument(deps.store, path);
   if (document === void 0 || !("data" in document) || document.kind !== "report") {
     return refuse("input/not-found", `no report envelope at ${envelope}`, [
@@ -27333,7 +27411,7 @@ function item3(record5, entries2) {
 }
 
 // kernel/src/attempt/use-cases/open.ts
-import { join as join44 } from "node:path";
+import { join as join45 } from "node:path";
 var PART_ID = /^\d{2}$/;
 var SUMMARY_MAX3 = 120;
 function openAttempt(deps, change, globalDir2, input) {
@@ -27379,7 +27457,7 @@ function openAttempt(deps, change, globalDir2, input) {
     }
     const ticket = newId("A-", deps.random);
     const openedAt = deps.clock.now();
-    const path = join44(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
+    const path = join45(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
     writeDocument(deps.store, path, {
       data: {
         schema: 1,
@@ -27767,7 +27845,7 @@ function viewOf2(result2) {
 }
 
 // kernel/src/change/use-cases/close.ts
-import { relative as relative15, sep as sep10 } from "node:path";
+import { relative as relative16, sep as sep11 } from "node:path";
 
 // kernel/src/change/config.ts
 var archiveModule = defineConfigModule({
@@ -27904,7 +27982,7 @@ function gatesByPolicy(entries2) {
   return [...new Set(gates)].sort();
 }
 function relativePath2(projectRoot2, path) {
-  return relative15(projectRoot2, path).split(sep10).join("/");
+  return relative16(projectRoot2, path).split(sep11).join("/");
 }
 
 // kernel/src/change/use-cases/facts.ts
@@ -27950,7 +28028,7 @@ function listAllChanges(deps, projectRoot2, options) {
 }
 
 // kernel/src/change/use-cases/new.ts
-import { join as join45 } from "node:path";
+import { join as join46 } from "node:path";
 
 // kernel/src/change/domain/change.ts
 var SLUG_MAX = 40;
@@ -28046,7 +28124,7 @@ async function newChange(deps, where, input) {
   await ensureIgnored(deps.store, deps.git, projectRoot2);
   const dir = liveChangeDir(projectRoot2, id);
   const profile = input.profile ?? "small";
-  writeDocument(deps.store, join45(dir, "change.md"), {
+  writeDocument(deps.store, join46(dir, "change.md"), {
     data: {
       schema: 1,
       id,
@@ -28302,14 +28380,14 @@ function done(value) {
 }
 
 // kernel/src/change/use-cases/status.ts
-import { join as join46 } from "node:path";
+import { join as join47 } from "node:path";
 function changeStatus(deps, change, globalDir2) {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index2) => {
     refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
     const read2 = await readGraph(deps, change, index2, globalDir2);
     if ("refused" in read2) return read2;
     const graph = graphSummary(read2);
-    const document = readDocument(deps.store, join46(change.dir, "change.md"));
+    const document = readDocument(deps.store, join47(change.dir, "change.md"));
     const data = document !== void 0 && "data" in document ? document.data : {};
     const facts = changeFacts(index2, change.id, stageResolver(deps));
     const tickets = openAttempts(index2, change.id);
@@ -28337,7 +28415,7 @@ function changeStatus(deps, change, globalDir2) {
 }
 
 // kernel/src/change/use-cases/takeover.ts
-import { join as join47 } from "node:path";
+import { join as join48 } from "node:path";
 function takeover(deps, change, input) {
   return withChangeIndex(deps, change, async (index2) => {
     const open2 = readAttempts(deps.store, change.dir).filter(
@@ -28401,7 +28479,7 @@ function takeover(deps, change, input) {
 function previousSession(deps, change, index2, opened) {
   const candidates = listEntries(index2, change.id, { type: "transition" }).filter((entry) => entry.at <= opened).reverse();
   for (const entry of candidates) {
-    const document = readDocument(deps.store, join47(change.projectRoot, entry.path));
+    const document = readDocument(deps.store, join48(change.projectRoot, entry.path));
     const session = document !== void 0 && "data" in document ? document.data.session : void 0;
     if (typeof session === "string" && session !== "") return session;
   }
@@ -28529,7 +28607,7 @@ function renderCommit(report2) {
 }
 
 // kernel/src/commit/use-cases/commit.ts
-import { join as join48, relative as relative16, sep as sep11 } from "node:path";
+import { join as join49, relative as relative17, sep as sep12 } from "node:path";
 
 // kernel/src/commit/domain/report.ts
 function commitMessage(subject, trailers) {
@@ -28541,7 +28619,7 @@ ${Object.entries(trailers).map(([key, value]) => `${key}: ${value}`).join("\n")}
 // kernel/src/commit/use-cases/commit.ts
 var SUMMARY_MAX4 = 120;
 async function commitTask(deps, change, input) {
-  const path = join48(change.projectRoot, ".bdk", ".machine", "commit.lock");
+  const path = join49(change.projectRoot, ".bdk", ".machine", "commit.lock");
   const result2 = await withLock(
     deps.store,
     path,
@@ -28581,7 +28659,7 @@ function commitLocked(deps, change, input) {
     }
     const diff = await diffCheck(deps, change, index2, { task: input.task });
     if ("refused" in diff) return diff;
-    const dir = `${relative16(change.projectRoot, change.dir).split(sep11).join("/")}/`;
+    const dir = `${relative17(change.projectRoot, change.dir).split(sep12).join("/")}/`;
     const code = [...diff.declared, ...diff.undeclared];
     if (code.length === 0 && (await changedPaths(deps.git, change.projectRoot, [dir])).length === 0) {
       return refuse(
@@ -28681,7 +28759,7 @@ function renderCheck4(report2) {
 }
 
 // kernel/src/config/use-cases/check.ts
-import { join as join49 } from "node:path";
+import { join as join50 } from "node:path";
 var LEGACY_SETTINGS = ".bdk/settings.json";
 function checkConfig(input) {
   const resolved = resolveOrRefuse(input);
@@ -28716,7 +28794,7 @@ function report(input, resolved) {
       });
     }
   }
-  if (input.store.exists(join49(input.projectRoot, LEGACY_SETTINGS))) {
+  if (input.store.exists(join50(input.projectRoot, LEGACY_SETTINGS))) {
     problems.push({
       layer: "project",
       path: LEGACY_SETTINGS,
@@ -28727,7 +28805,7 @@ function report(input, resolved) {
   const snapshot = writeSnapshot(input.store, input.projectRoot, resolved);
   if (snapshot !== void 0) {
     input.store.write(
-      join49(input.projectRoot, OFFLINE_SCHEMA_PATH),
+      join50(input.projectRoot, OFFLINE_SCHEMA_PATH),
       offlineSchemaText(input.settings)
     );
   }
@@ -28831,10 +28909,10 @@ function originOf(leaf, set) {
 }
 function leafKeys(value, prefix) {
   if (isMapping(value) && Object.keys(value).length > 0) {
-    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join50(prefix, key)));
+    return Object.entries(value).flatMap(([key, child]) => leafKeys(child, join51(prefix, key)));
   }
   if (Array.isArray(value) && value.length > 0 && value.every(hasId)) {
-    return value.flatMap((item4) => leafKeys(item4, join50(prefix, item4.id)));
+    return value.flatMap((item4) => leafKeys(item4, join51(prefix, item4.id)));
   }
   return [prefix];
 }
@@ -28844,7 +28922,7 @@ function isMapping(value) {
 function hasId(value) {
   return isMapping(value) && typeof value.id === "string";
 }
-function join50(prefix, key) {
+function join51(prefix, key) {
   return prefix === "" ? key : `${prefix}.${key}`;
 }
 
@@ -29083,7 +29161,7 @@ ${(0, import_yaml14.stringify)(outcome.origins)}`;
 }
 
 // kernel/src/config/use-cases/layout.ts
-import { join as join51 } from "node:path";
+import { join as join52 } from "node:path";
 
 // kernel/src/config/domain/layout.ts
 var V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"];
@@ -29096,8 +29174,8 @@ function classifyLayout(state) {
 // kernel/src/config/use-cases/layout.ts
 function detectLayout(store2, root) {
   return classifyLayout({
-    bdk: store2.isDirectory(join51(root, ".bdk")),
-    present: V2_MARKERS.filter((marker) => store2.exists(join51(root, marker)))
+    bdk: store2.isDirectory(join52(root, ".bdk")),
+    present: V2_MARKERS.filter((marker) => store2.exists(join52(root, marker)))
   });
 }
 
@@ -29124,7 +29202,7 @@ function renderShow3(report2) {
 
 // kernel/src/dispatch/use-cases/build.ts
 import { createHash as createHash7 } from "node:crypto";
-import { join as join53, posix as posix5 } from "node:path";
+import { join as join54, posix as posix5 } from "node:path";
 
 // kernel/src/export/commands/agents.ts
 import { resolve as resolve6 } from "node:path";
@@ -29141,7 +29219,7 @@ function renderAgents(report2) {
 }
 
 // kernel/src/export/use-cases/agents.ts
-import { join as join52, relative as relative17 } from "node:path";
+import { join as join53, relative as relative18 } from "node:path";
 
 // kernel/src/export/domain/adapters.ts
 var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
@@ -29253,11 +29331,11 @@ function adapterFile(adapter, host) {
 // kernel/src/export/use-cases/agents.ts
 function exportAgents(deps, request) {
   const host = HOSTS[request.host];
-  const out = request.out ?? join52(deps.pluginRoot, "agents");
+  const out = request.out ?? join53(deps.pluginRoot, "agents");
   const drift = [];
   const files = ADAPTERS.map((adapter) => {
-    const target = join52(out, `${adapter.name}.md`);
-    const path = relative17(request.root, target);
+    const target = join53(out, `${adapter.name}.md`);
+    const path = relative18(request.root, target);
     const content = adapterFile(adapter, host);
     const current = deps.store.read(target);
     const changed = current !== content;
@@ -29573,8 +29651,8 @@ ${rule2.text}`)
         ["split the task or the part so its text and entries fit", "bdk part split <nn>"]
       );
     }
-    const dir = join53(change.dir, "dispatch");
-    const path = join53(dir, name);
+    const dir = join54(change.dir, "dispatch");
+    const path = join54(dir, name);
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
     stampPackage(deps.store, change.dir, input.ticket, posix5.relative(change.projectRoot, path));
     return {
@@ -29694,7 +29772,7 @@ function doNotTouch(part) {
   return globs2.length === 0 ? "`do-not-touch`: none." : `\`do-not-touch\`: ${globs2.map((glob4) => `\`${glob4}\``).join(", ")}.`;
 }
 function intentOf(deps, change) {
-  const document = readDocument(deps.store, join53(change.dir, "change.md"));
+  const document = readDocument(deps.store, join54(change.dir, "change.md"));
   const intent = document !== void 0 && "data" in document ? document.data.intent : void 0;
   return typeof intent === "string" ? intent : `Change ${change.id}.`;
 }
@@ -29702,7 +29780,7 @@ function withPluginRoot(body, pluginRoot) {
   return body.replaceAll("${CLAUDE_PLUGIN_ROOT}", pluginRoot);
 }
 function readRoleBody(deps, role2) {
-  const path = join53(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
+  const path = join54(deps.pluginRoot, "skills", "roles", role2, "SKILL.md");
   const text12 = deps.store.read(path);
   if (text12 === void 0) throw new Error(`the plugin has no role skill at ${path}`);
   return splitFrontmatter(text12).body.trim();
@@ -29716,7 +29794,7 @@ function entriesText(deps, change, full, counted, target) {
 ${others}`;
 }
 function entryText(deps, change, entry) {
-  const document = readDocument(deps.store, join53(change.projectRoot, entry.path));
+  const document = readDocument(deps.store, join54(change.projectRoot, entry.path));
   const body = document === void 0 ? "" : document.body.trim();
   const refs = entry.refs.map((ref) => `\`${ref}\``).join(", ");
   return `### ${entry.id} ${entry.type}, ${entry.status}
@@ -29738,13 +29816,13 @@ function hashOf(texts) {
 }
 
 // kernel/src/dispatch/use-cases/show.ts
-import { isAbsolute as isAbsolute4, join as join54, posix as posix6, relative as relative18, sep as sep12 } from "node:path";
+import { isAbsolute as isAbsolute4, join as join55, posix as posix6, relative as relative19, sep as sep13 } from "node:path";
 var TICKET = /^A-[0-9a-z]{8}$/;
 function showPackage(deps, change, cwd, value) {
-  const dir = join54(change.dir, "dispatch");
-  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join54(cwd, value);
-  const inside = path === void 0 ? "" : relative18(dir, path);
-  const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep12) ? void 0 : deps.store.read(path);
+  const dir = join55(change.dir, "dispatch");
+  const path = TICKET.test(value) ? ticketPackage(deps, change, value) : isAbsolute4(value) ? value : join55(cwd, value);
+  const inside = path === void 0 ? "" : relative19(dir, path);
+  const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep13) ? void 0 : deps.store.read(path);
   const document = path === void 0 || content === void 0 ? void 0 : readDocument(deps.store, path);
   if (path === void 0 || content === void 0 || document === void 0 || !("data" in document)) {
     return refuse(
@@ -29761,7 +29839,7 @@ function showPackage(deps, change, cwd, value) {
 }
 function ticketPackage(deps, change, ticket) {
   const active10 = activePackage(deps.store, change.projectRoot, change.dir, ticket);
-  return active10 === void 0 ? void 0 : join54(change.projectRoot, active10.path);
+  return active10 === void 0 ? void 0 : join55(change.projectRoot, active10.path);
 }
 
 // kernel/src/dispatch/commands/dispatch.ts
@@ -29920,11 +29998,11 @@ function agentEventPayload(raw) {
 }
 
 // kernel/src/hooks/use-cases/agents.ts
-import { join as join55 } from "node:path";
+import { join as join56 } from "node:path";
 function bdkProject(deps, place2) {
   if (place2.workTree === void 0) return void 0;
   const root = findProjectRoot(deps.store, place2.cwd, place2.workTree);
-  return deps.store.isDirectory(join55(root, ".bdk")) ? root : void 0;
+  return deps.store.isDirectory(join56(root, ".bdk")) ? root : void 0;
 }
 function settingsOf(deps, projectRoot2, place2) {
   try {
@@ -29963,7 +30041,7 @@ async function agentFacts(deps, place2, callerId) {
     messageLimit: moduleValue(messageModule, settings)["max-chars"],
     scoutLimit: moduleValue(scoutModule, settings)["max-per-ticket"],
     ticketTarget: (ticket) => change === void 0 ? void 0 : readAttempts(deps.store, change.dir).find((record5) => record5.data.ticket === ticket)?.data.target,
-    entryExists: (id) => change !== void 0 && deps.store.list(join55(change.dir, "log")).some((name) => name.endsWith(`-${id}.md`))
+    entryExists: (id) => change !== void 0 && deps.store.list(join56(change.dir, "log")).some((name) => name.endsWith(`-${id}.md`))
   };
   if (projectRoot2 === void 0 || !registryExists(deps, projectRoot2)) {
     return { ...facts, scouts: 0, stateOf: () => void 0 };
@@ -30204,7 +30282,7 @@ function elapsedOf(deps, row) {
 }
 
 // kernel/src/hooks/use-cases/lifecycle.ts
-import { isAbsolute as isAbsolute5, join as join56, relative as relative19 } from "node:path";
+import { isAbsolute as isAbsolute5, join as join57, relative as relative20 } from "node:path";
 
 // kernel/src/hooks/domain/shell.ts
 var LEADING = /* @__PURE__ */ new Set([
@@ -30722,10 +30800,10 @@ function writesOf(command) {
   }
 }
 function leadTarget(verb, facts) {
-  const [first, second] = verb.positionals;
+  const [first, second2] = verb.positionals;
   switch (verb.command) {
     case "bdk attempt open":
-      return second;
+      return second2;
     case "bdk attempt close":
       return first === void 0 ? void 0 : facts?.ticketTarget(first);
     default:
@@ -30924,8 +31002,8 @@ function packageOf(deps, projectRoot2, prompt2) {
   const paths = dispatchPaths(prompt2);
   const [written] = paths;
   if (paths.length !== 1 || written === void 0) return {};
-  const absolute = isAbsolute5(written) ? written : join56(projectRoot2, written);
-  const path = relative19(projectRoot2, absolute);
+  const absolute = isAbsolute5(written) ? written : join57(projectRoot2, written);
+  const path = relative20(projectRoot2, absolute);
   try {
     const document = readDocument(deps.store, absolute);
     if (document?.kind !== "dispatch" || !("data" in document)) return { package: path };
@@ -31577,7 +31655,7 @@ function pendingLines(gate2) {
 }
 
 // kernel/src/hooks/use-cases/prompt-expansion.ts
-import { join as join57 } from "node:path";
+import { join as join58 } from "node:path";
 var NAMESPACE = "bdk:";
 var SKIP_VERIFY = "--skip-verify";
 async function promptExpansion(deps, input, raw) {
@@ -31711,7 +31789,7 @@ async function runGates(read2, typed, write) {
   };
 }
 function recordedSkipVerify(deps, change, path) {
-  const document = readDocument(deps.store, join57(change.projectRoot, path));
+  const document = readDocument(deps.store, join58(change.projectRoot, path));
   return document !== void 0 && "data" in document && document.data["skip-verify"] === true;
 }
 function summary(view) {
@@ -31822,12 +31900,12 @@ ${lines.join("\n")}
 }
 
 // kernel/src/hooks/use-cases/session-start.ts
-import { join as join58 } from "node:path";
+import { join as join59 } from "node:path";
 function sessionStart(input) {
   const startup = startupContext(input).content;
   if (input.workTree === void 0) return { startup };
   const projectRoot2 = findProjectRoot(input.store, input.cwd, input.workTree);
-  if (!input.store.isDirectory(join58(projectRoot2, ".bdk"))) return { startup };
+  if (!input.store.isDirectory(join59(projectRoot2, ".bdk"))) return { startup };
   const { errors, report: report2 } = inspectConfig({ ...input, projectRoot: projectRoot2 });
   const { layout, present: present2 } = detectLayout(input.store, projectRoot2);
   const warnings = (report2?.problems ?? []).filter((warning) => warning.code !== "legacy-settings").map((warning) => `${warning.path}: ${warning.message}`);
@@ -31872,11 +31950,11 @@ function renderSkillExists(name, foundIn) {
 
 // kernel/src/hooks/use-cases/skill-exists.ts
 var import_yaml15 = __toESM(require_dist(), 1);
-import { join as join59 } from "node:path";
+import { join as join60 } from "node:path";
 function findSkill(input, name) {
   for (const skills of skillDirs(input)) {
     for (const entry of subdirs(input.store, skills)) {
-      const file = join59(skills, entry, "SKILL.md");
+      const file = join60(skills, entry, "SKILL.md");
       const text12 = input.store.read(file);
       if (text12 !== void 0 && frontmatterName(text12) === name) return file;
     }
@@ -31884,21 +31962,21 @@ function findSkill(input, name) {
   return void 0;
 }
 function skillDirs({ store: store2, home, projectRoot: projectRoot2 }) {
-  const plugins = join59(home, ".claude", "plugins");
-  const marketplaces = join59(plugins, "marketplaces");
-  const cache3 = join59(plugins, "cache");
+  const plugins = join60(home, ".claude", "plugins");
+  const marketplaces = join60(plugins, "marketplaces");
+  const cache3 = join60(plugins, "cache");
   const versions = subdirs(store2, cache3).flatMap(
-    (marketplace) => subdirs(store2, join59(cache3, marketplace)).flatMap(
-      (plugin) => subdirs(store2, join59(cache3, marketplace, plugin)).map(
-        (version3) => join59(cache3, marketplace, plugin, version3)
+    (marketplace) => subdirs(store2, join60(cache3, marketplace)).flatMap(
+      (plugin) => subdirs(store2, join60(cache3, marketplace, plugin)).map(
+        (version3) => join60(cache3, marketplace, plugin, version3)
       )
     )
   );
   return [
-    join59(home, ".claude", "skills"),
-    join59(projectRoot2, ".claude", "skills"),
-    ...subdirs(store2, marketplaces).map((marketplace) => join59(marketplaces, marketplace, "skills")),
-    ...versions.map((version3) => join59(version3, "skills"))
+    join60(home, ".claude", "skills"),
+    join60(projectRoot2, ".claude", "skills"),
+    ...subdirs(store2, marketplaces).map((marketplace) => join60(marketplaces, marketplace, "skills")),
+    ...versions.map((version3) => join60(version3, "skills"))
   ];
 }
 function subdirs(store2, dir) {
@@ -32095,18 +32173,18 @@ function enumerate(items) {
 }
 
 // kernel/src/service/use-cases/schema-checks.ts
-import { join as join60 } from "node:path";
+import { join as join61 } from "node:path";
 var SETTINGS_FILES = [".bdk/settings.yaml", ".bdk/settings.local.yaml"];
 var REPAIR = "bdk doctor --fix";
 function schemaFindings(input) {
   const { store: store2, root } = input;
-  if (!store2.exists(join60(root, SETTINGS_FILES[0]))) return [];
+  if (!store2.exists(join61(root, SETTINGS_FILES[0]))) return [];
   const version3 = readKernelVersion(store2, input.pluginRoot);
   const url = settingsSchemaUrl(version3);
   const findings = [];
   const stale = [];
   for (const file of SETTINGS_FILES) {
-    const path = join60(root, file);
+    const path = join61(root, file);
     const text12 = store2.read(path);
     if (text12 === void 0 || modelineUrl(text12) === url) continue;
     if (input.fix) store2.write(path, withModeline(text12, version3));
@@ -32120,7 +32198,7 @@ function schemaFindings(input) {
       repair: REPAIR
     });
   }
-  const copy = join60(root, OFFLINE_SCHEMA_PATH);
+  const copy = join61(root, OFFLINE_SCHEMA_PATH);
   const expected = offlineSchemaText(input.settings);
   const current = store2.read(copy);
   if (current !== expected) {

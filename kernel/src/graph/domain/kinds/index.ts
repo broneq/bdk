@@ -5,7 +5,7 @@ import { ArchitectureKind, DesignKind, IntentKind, SpecDeltaKind } from "./docum
 import type { Kind, KindRegistry } from "./kind.ts";
 import { DesignIndexKind, DesignPartKind, ExecutePartKind, PlanPartKind } from "./parts.ts";
 import { CloseKind, GateKind, postTaskSteps } from "./steps.ts";
-import { PlanVerifyKind, ReviewKind } from "./verdicts.ts";
+import { DesignVerifyKind, PlanVerifyKind, ReviewKind } from "./verdicts.ts";
 
 export { DESIGN_LIMIT_BYTES } from "./documents.ts";
 export { PostTaskStepKind } from "./steps.ts";
@@ -30,6 +30,7 @@ export function kindRegistry(extra: readonly Kind[] = []): KindRegistry {
     new ArchitectureKind(),
     new DesignPartKind(),
     new DesignIndexKind(),
+    new DesignVerifyKind(),
     new PlanPartKind(),
     new PlanVerifyKind(),
     new GateKind(),

@@ -53,6 +53,7 @@ describe("the shipped pipeline", () => {
       "design-parts",
       "design-index",
       "architecture",
+      "design-verify",
       "gate:design",
       "plan",
       "plan-verify",
@@ -73,7 +74,7 @@ describe("a pipeline file is rejected", () => {
     [
       "an unknown key when:",
       (data: Data) => (node(data, "review").when = 'files.touched("src/billing/**")'),
-      "nodes[13].when: unknown key",
+      "nodes[14].when: unknown key",
     ],
     [
       "an expression in if",
@@ -113,32 +114,32 @@ describe("a pipeline file is rejected", () => {
     [
       "a gate without policy",
       (data: Data) => delete node(data, "gate:design").policy,
-      "nodes[5] (gate:design).policy: a gate needs policy",
+      "nodes[6] (gate:design).policy: a gate needs policy",
     ],
     [
       "a gate without opens",
       (data: Data) => delete node(data, "gate:design").opens,
-      "nodes[5] (gate:design).opens: a gate needs opens",
+      "nodes[6] (gate:design).opens: a gate needs opens",
     ],
     [
       "a policy that is not a policy.gates key",
       (data: Data) => (node(data, "gate:design").policy = "plan"),
-      "nodes[5] (gate:design).policy: policy.gates.plan is not declared",
+      "nodes[6] (gate:design).policy: policy.gates.plan is not declared",
     ],
     [
       "a budget outside the loop list",
       (data: Data) => (node(data, "review").budget = "forever"),
-      "nodes[13].budget",
+      "nodes[14].budget",
     ],
     [
       "a rules category the pack does not hold",
       (data: Data) => (node(data, "plan").rules = ["style"]),
-      "nodes[6] (plan).rules: style is no rule category of the pack",
+      "nodes[7] (plan).rules: style is no rule category of the pack",
     ],
     [
       "a language pack as a rules category",
       (data: Data) => (node(data, "plan").rules = ["languages/react"]),
-      "nodes[6].rules[0]: must be kebab-case",
+      "nodes[7].rules[0]: must be kebab-case",
     ],
     [
       "policy on a node that is no gate",
@@ -183,7 +184,7 @@ describe("loadPipeline", () => {
       ),
     });
     expect(() => loadPipeline(store, "/plugin", settings, kinds)).toThrow(
-      /nodes\[15\]\.when: unknown key/,
+      /nodes\[16\]\.when: unknown key/,
     );
   });
 });

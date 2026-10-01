@@ -103,6 +103,7 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 - **Messages (T41-D5).** An agent's own id, its parent and its ticket are the `BDK-AGENT-ID`, `BDK-PARENT` and `BDK-TICKET` lines of its start context. Every contract tells the agent that a message carries a ledger id and one sentence, never the content, and that the entry comes first: an entry that affects the rest of the part goes to the parent; one that must stop other work goes to `main`, as before; one that affects particular siblings goes to the ids that `bdk agents list --affected-by <entry>` returns, its own id left out. On a message, the agent reads the named entry with `bdk log show <id>`, then continues, adapts its work within its package, or returns `blocked` with the entry id.
 - **Scout without a package (T41-D4).** The `scout` contract covers a scout that a worker starts with a question instead of a package: it answers the question from the code, returns the answer in at most 15 lines naming files and lines, and writes a finding worth keeping with `bdk log add` and file refs.
 - **Output.** Every role, the `implementer` included, pipes its report (the envelope fields `status`, `files`, `entries`, `evidence` and `reason` as frontmatter, then the full report) to `bdk log ingest --ticket <ticket>`, which stamps `schema`, `ticket` and `role` and stores it at the active package's `report` path (`kernel-state`, Report envelope). The contract SHALL tell the agent to check that `log ingest` exits 0 and, when it refuses, to fix the named field and call it again before returning. The agent then returns only the envelope of at most 15 lines, plus the report path.
+- **Verdict record.** The `verifier` and `design-verifier` contracts tell the agent, after `log ingest` stored its report, to record it with `bdk log add report "<verdict in one line>" --ref <target> --ticket <ticket>`, so the verdict node of its target reads the report (`kernel-pipeline`, Artifact kinds; `kernel-cli/log`, bdk log add).
 - **No authorisation (P3).** The `verifier`, `design-verifier`, `reviewer` and `pr-reviewer` contracts state a verdict and findings only, and contain no statement that approves, signs off, or tells anyone to merge or proceed.
 - **Working tree (T3).** The `implementer` contract carries one sentence forbidding git commands that discard or rewrite work or history, with the reason: return `blocked` with the cause instead.
 - **Blocking categories (P8).** The `verifier` and `design-verifier` contracts tell the agent to raise a `blocker` only with a category from the closed list in its package and to treat everything on the package's "not a FAIL" list as an `observation` or nothing; the list itself comes from policy through the package, not from the role body.
@@ -161,6 +162,11 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 - **WHEN** the content test reads `skills/roles/lead/SKILL.md`
 - **THEN** it names `bdk agents wait`, background dispatch, `bdk attempt close`, `bdk commit` and `bdk log ingest --ticket`, and names no `Edit` or `Write`
+
+#### Scenario: verifiers record their verdict
+
+- **WHEN** the content test reads `skills/roles/verifier/SKILL.md` and `skills/roles/design-verifier/SKILL.md`
+- **THEN** each names `bdk log add report` with `--ticket` after `bdk log ingest --ticket`
 
 ### Requirement: Swarm skill
 

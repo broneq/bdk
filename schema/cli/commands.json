@@ -646,7 +646,7 @@
         {
           "name": "--ticket",
           "value": "<ticket>",
-          "description": "The ticket the caller works under; required inside a dispatch, sets source: agent:<role>."
+          "description": "The ticket the caller works under; required inside a dispatch and for `report`, sets source: agent:<role>."
         },
         {
           "name": "--category",

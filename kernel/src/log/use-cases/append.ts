@@ -37,6 +37,8 @@ export interface EntryDraft {
   readonly options?: readonly string[];
   /** A learning's globs (`log add --applies`). */
   readonly applies?: readonly string[];
+  /** A report entry's report file, relative to the Change directory (`log add report`). */
+  readonly report?: string;
   /** Kernel-only own fields (`change park`, `change new`, `change resume`, `done`). */
   readonly park?: boolean;
   readonly profile?: string;
@@ -116,6 +118,7 @@ export async function appendEntry(
       ...(fingerprint === undefined ? {} : { fingerprint }),
       ...(draft.options === undefined ? {} : { options: [...draft.options] }),
       ...(draft.applies === undefined ? {} : { applies: [...draft.applies] }),
+      ...(draft.report === undefined ? {} : { report: draft.report }),
       ...(draft.park === true ? { park: true } : {}),
       ...(draft.profile === undefined ? {} : { profile: draft.profile }),
       ...(draft.to === undefined ? {} : { to: draft.to }),

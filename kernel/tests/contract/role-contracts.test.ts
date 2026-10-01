@@ -187,6 +187,19 @@ describe("P8: verifiers block only on the package's categories", () => {
   );
 });
 
+describe("verifiers record their verdict after storing the report", () => {
+  it.each(["verifier", "design-verifier"])("%s names log add report after log ingest", (name) => {
+    const { body } = readRole(name);
+    const ingest = body.indexOf("bdk log ingest --ticket");
+    const record = body.indexOf("bdk log add report");
+    expect(ingest).toBeGreaterThan(-1);
+    expect(record).toBeGreaterThan(ingest);
+    expect(body.slice(record)).toMatch(
+      /^bdk log add report "[^"]+" --ref <target> --ticket <ticket>/,
+    );
+  });
+});
+
 describe("S4: rule ids are cited", () => {
   const CITING = [
     "implementer",

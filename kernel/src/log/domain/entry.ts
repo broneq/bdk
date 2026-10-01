@@ -13,6 +13,7 @@ export interface EntryRecord {
   readonly refs: readonly string[];
   readonly review: boolean;
   readonly ticket?: string | undefined;
+  readonly category?: string | undefined;
   readonly supersedes?: string | undefined;
   readonly supersededBy?: string | undefined;
   readonly fingerprint?: string | undefined;
@@ -58,6 +59,7 @@ export interface EntrySummary {
   readonly refs: readonly string[];
   readonly review?: true | undefined;
   readonly ticket?: string | undefined;
+  readonly category?: string | undefined;
   readonly supersedes?: string | undefined;
   readonly supersededBy?: string | undefined;
 }
@@ -113,6 +115,7 @@ export function entrySummary(row: EntryRecord): EntrySummary {
     refs: row.refs,
     ...(row.review ? { review: true as const } : {}),
     ...(row.ticket === undefined ? {} : { ticket: row.ticket }),
+    ...(row.category === undefined ? {} : { category: row.category }),
     ...(row.supersedes === undefined ? {} : { supersedes: row.supersedes }),
     ...(row.supersededBy === undefined ? {} : { supersededBy: row.supersededBy }),
   };

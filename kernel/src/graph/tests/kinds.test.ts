@@ -22,12 +22,13 @@ const planParts = {
 };
 
 describe("the kind registry", () => {
-  it("holds exactly the fifteen kinds", () => {
+  it("holds exactly the sixteen kinds", () => {
     expect([...kinds.keys()].sort()).toStrictEqual(
       [
         "architecture",
         "close",
         "design",
+        "design-verify",
         "design-index",
         "design-part",
         "execute-part",
@@ -61,6 +62,7 @@ describe("files and hash inputs", () => {
     ["plan-part", undefined, ["plan/parts/<nn>-<slug>.md"], { files: [] }],
     ["plan-verify", undefined, [], { files: ["plan/parts/01-auth.md", "plan/parts/02-mail.md"] }],
     ["review", undefined, [], { codeTree: true }],
+    ["design-verify", undefined, [], { files: [] }],
     ["gate", undefined, [], { none: true }],
     ["execute-part", "01", [], { files: ["plan/parts/01-auth.md"] }],
     ["close", undefined, [], { none: true }],
@@ -69,6 +71,21 @@ describe("files and hash inputs", () => {
   ])("%s %s", (name, nn, writes, inputs) => {
     expect(kind(name).writes(view, nn)).toStrictEqual(writes);
     expect(kind(name).inputs(view, nn)).toStrictEqual(inputs);
+  });
+
+  it("design-verify hashes the design files that exist", () => {
+    const design = fakeView({
+      files: {
+        "design.md": {},
+        "architecture.md": {},
+        "design/parts/01-auth.md": {},
+        "design/parts/02-mail.md": {},
+        "design/index.md": {},
+      },
+    });
+    expect(kind("design-verify").inputs(design)).toStrictEqual({
+      files: ["design.md", "architecture.md", "design/parts/01-auth.md", "design/parts/02-mail.md"],
+    });
   });
 
   it("spec-delta lists nested deltas and fails delta:<capability> with policy/spec-invalid", () => {
@@ -490,7 +507,7 @@ describe("verdict kinds", () => {
       reports: status === undefined ? {} : { "L-r0000001": status },
     });
 
-  it.each(["plan-verify", "review"])("%s needs a report naming it", (name) => {
+  it.each(["design-verify", "plan-verify", "review"])("%s needs a report naming it", (name) => {
     expect(kind(name).validate(fakeView(), { id: name })[0]).toMatchObject({
       id: "verdict",
       ok: false,
@@ -502,6 +519,7 @@ describe("verdict kinds", () => {
     expect(kind("plan-verify").validate(report(status), { id: "plan-verify" })).toStrictEqual([
       { id: "verdict", ok: true },
       { id: "blockers", ok: true },
+      { id: "fresh", ok: true },
       { id: "evidence", ok: true },
     ]);
   });
@@ -532,6 +550,55 @@ describe("verdict kinds", () => {
       id: "blockers",
       ok: true,
     });
+  });
+});
+
+describe("the fresh check of the verdict kinds", () => {
+  const view = (doneAt: string, to = "design", node = "design-verify") =>
+    fakeView({
+      entries: [
+        { id: "L-d0000001", type: "transition", to: "design", at: "2026-09-25T09:00:00.000Z" },
+        { id: "L-r0000001", type: "report", refs: [node], at: "2026-09-25T10:00:00.100Z" },
+        { id: "L-d0000002", type: "transition", to, at: doneAt },
+      ],
+      reports: { "L-r0000001": "done" },
+    });
+  const target = { id: "design-verify", requires: ["design", "architecture"] };
+  const fresh = (checks: { id: string }[]) => checks.find((check) => check.id === "fresh");
+
+  it.each(["design-verify", "plan-verify", "review"])(
+    "%s fails when a required node was done after the report",
+    (name) => {
+      expect(
+        fresh(
+          kind(name).validate(view("2026-09-25T10:00:05.000Z", "design", name), {
+            ...target,
+            id: name,
+          }),
+        ),
+      ).toMatchObject({
+        ok: false,
+        why: "the latest report L-r0000001 is older than L-d0000002, the done entry of design",
+        instead: `run the verifier of ${name} again: a newer passing report must name it`,
+      });
+    },
+  );
+
+  it("passes on a done entry of the report's second", () => {
+    expect(
+      fresh(kind("design-verify").validate(view("2026-09-25T10:00:00.900Z"), target)),
+    ).toStrictEqual({
+      id: "fresh",
+      ok: true,
+    });
+  });
+
+  it("ignores a later done entry of a node it does not require", () => {
+    expect(
+      fresh(
+        kind("design-verify").validate(view("2026-09-25T11:00:00.000Z", "plan-part:01"), target),
+      ),
+    ).toStrictEqual({ id: "fresh", ok: true });
   });
 });
 

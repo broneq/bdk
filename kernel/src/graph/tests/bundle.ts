@@ -108,12 +108,34 @@ export function done(root: string, id: string): Record<string, unknown> {
   return answered(bdk(["done", id, "--json"], root), "output/done.json");
 }
 
-/** design and architecture done on a new small Change. */
+let tickets = 0;
+
+/** A passing design-verifier report naming `design-verify`, then `bdk done design-verify`. */
+export function verifyDesign(change: Opened, at = new Date().toISOString()): void {
+  tickets += 1;
+  const ticket = `A-${String(tickets).padStart(8, "0")}`;
+  const report = `reports/design-verify-design-verifier-${ticket}.md`;
+  write(
+    change.dir,
+    report,
+    `---\nschema: 1\nticket: ${ticket}\nrole: design-verifier\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\nPASS\n`,
+  );
+  entry(change.dir, at, {
+    type: "report",
+    source: "agent:design-verifier",
+    refs: ["design-verify"],
+    report,
+  });
+  done(change.root, "design-verify");
+}
+
+/** design, architecture and design-verify done on a new small Change. */
 export function designed(): Opened {
   const change = opened();
   writeDesign(change.dir, "design");
   writeDesign(change.dir, "architecture");
   done(change.root, "design");
   done(change.root, "architecture");
+  verifyDesign(change);
   return change;
 }

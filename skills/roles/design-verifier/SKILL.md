@@ -61,4 +61,6 @@ reason: <required for blocked and needs-context>
 
 The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
 
+Once it is stored, record it, so the verdict node of your target reads it: `bdk log add report "<your verdict in one line>" --ref <target> --ticket <ticket>`.
+
 Then return only the envelope, at most 15 lines, and the report path as the package names it.
