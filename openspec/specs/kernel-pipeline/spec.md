@@ -76,7 +76,7 @@ The kernel SHALL implement every artifact kind as code that owns the kind's file
 | `design-part`   | `design/parts/<nn>-<slug>.md`                | one per design part | the part file                                                          | `done design-part:<nn>`                                                                  |
 | `design-index`  | `design/index.md` (generated)                | no                  | every design part                                                      | `done`, which regenerates the index                                                      |
 | `plan-part`     | `plan/parts/<nn>-<slug>.md`                  | one per plan part   | the part file                                                          | `done plan-part:<nn>`; `done plan` marks every ready part and regenerates the plan index |
-| `plan-verify`   | verdict: the latest `report` naming the node | no                  | every plan part                                                        | `done`                                                                                   |
+| `plan-verify`   | verdict: the latest `report` naming the node | no                  | every plan part and every file of `spec-delta/`                        | `done`                                                                                   |
 | `design-verify` | verdict: the latest `report` naming the node | no                  | `design.md`, `architecture.md` and every design part, those that exist | `done`                                                                                   |
 | `gate`          | none                                         | no                  | none (T1)                                                              | a qualifying `transition` entry (see Gate)                                               |
 | `execute-part`  | commits of the part's tasks                  | one per plan part   | the plan part file                                                     | `part done`                                                                              |
@@ -148,6 +148,11 @@ A hash is `sha256:` over the listed files in path order, each contributing its p
 
 - **WHEN** `design-verify` is done, `design.md` is then changed and `bdk done design` records the new hash
 - **THEN** `design-verify` is `stale`, `gate:design` is not ready, and `bdk done design-verify` is refused with `policy/validation-failed` on check `fresh` until a passing report newer than that `done` entry names `design-verify`
+
+#### Scenario: spec delta change stales the plan verdict
+
+- **WHEN** `plan-verify` is done and `spec-delta/ui-format.md`, which a plan part names in `spec-impact`, is then edited
+- **THEN** `plan-verify` is `stale`, and `explain plan-verify` names the recorded and the current hash
 
 ### Requirement: Node states
 
@@ -317,3 +322,22 @@ A new artifact kind SHALL need only a kind implementation and a node in a pipeli
 
 - **WHEN** a test registers a fake kind with its own file and validator and a test pipeline places its node after `intent`
 - **THEN** `next` returns the fake node with its instruction, `validate` runs its validator, `done` records its hash, `explain` prints its chain and `change status` lists it, with no change to the code of those commands
+
+### Requirement: Plan stage nodes
+
+The `plan` node of `pipeline/pipeline.yaml` SHALL carry `rules: [code-quality, architecture, test-quality, plan]`, so its instruction lists the `BDK-PL` rules the planner ticks by id. The `plan-verify` node SHALL require `plan`, `design`, `design-index` and `architecture`: a requirement absent or skipped in the Change's graph variant is satisfied, as for any node, so a `bug` Change still reaches `plan-verify` after `plan`; the verifier's package names the design documents that exist, because a package names the files of the node and of the nodes it requires; and the `fresh` check makes a verdict given before the design last changed fail. The instruction template of `plan-part` SHALL state the task shape (a contract with concrete test cases, no implementation code) and that the spec deltas of `spec-impact` are written before `done`; the template of `plan-verify` SHALL name `/bdk:verify-plan`.
+
+#### Scenario: plan instruction lists the plan rules
+
+- **WHEN** `bdk next --json` returns the `plan` node of a `small` feature Change after `gate:design`
+- **THEN** the instruction's "Rules" section lists `BDK-PL-1`, `BDK-PL-2` and `BDK-PL-3`
+
+#### Scenario: plan verifier reads the design
+
+- **WHEN** `design`, `architecture` and every plan part are done, and `bdk dispatch build plan-verify verifier <ticket>` runs
+- **THEN** the package names `design.md`, `architecture.md` and every plan part
+
+#### Scenario: bug Change reaches plan-verify
+
+- **WHEN** a `bug` Change of profile `small` has every plan part done
+- **THEN** `bdk next --json` returns `plan-verify`, whose instruction names `/bdk:verify-plan`
