@@ -1,4 +1,4 @@
-// `role-contracts`: the eight role skills under skills/roles/, their adapter
+// `role-contracts`: the nine role skills under skills/roles/, their adapter
 // binding (the same table `dispatch build` stamps), and the wording every role
 // contract must and must not carry.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
 import { ADAPTERS, ROLE_ADAPTERS } from "../../src/export/domain/adapters.ts";
+import { SPAWNS } from "../../src/hooks/domain/guards.ts";
 import { settingsRegistry } from "../../src/registrations.ts";
 import { REPO_ROOT } from "../support/run.ts";
 
@@ -14,6 +15,7 @@ const ROLES_DIR = join(REPO_ROOT, "skills", "roles");
 const ROLES = [
   "design-verifier",
   "implementer",
+  "lead",
   "pr-reviewer",
   "reviewer",
   "runner",
@@ -50,7 +52,7 @@ function sentences(body: string): string[] {
 }
 
 describe("role skills", () => {
-  it("are exactly the eight roles", () => {
+  it("are exactly the nine roles", () => {
     const dirs = existsSync(ROLES_DIR)
       ? readdirSync(ROLES_DIR, { withFileTypes: true })
           .filter((entry) => entry.isDirectory())
@@ -119,6 +121,14 @@ describe("role skills", () => {
       expect(body).not.toMatch(/write the (full )?report to/i);
       expect(body).toMatch(/return only the envelope/i);
       expect(body).toContain("report path as the package names it");
+    });
+
+    it("sends a ledger id and one sentence, and reads a message's entry first", () => {
+      const { body } = role();
+      expect(body).toMatch(/ledger id and one sentence, never the content/);
+      expect(body).toContain("bdk agents list --affected-by <entry>");
+      expect(body).toContain("bdk log show <id>");
+      expect(body).toMatch(/return `blocked` with the entry id/);
     });
 
     it(`keeps its body within ${BODY_BUDGET} bytes`, () => {
@@ -196,8 +206,33 @@ describe("S4: rule ids are cited", () => {
     expect(cited[0]).toMatch(/report/);
   });
 
-  it.each(["runner", "scout"])("%s carries no citation line", (name) => {
+  it.each(["runner", "scout", "lead"])("%s carries no citation line", (name) => {
     expect(citation(readRole(name).body)).toStrictEqual([]);
+  });
+});
+
+describe("T41-D11: the lead runs its part and waits instead of ending its turn", () => {
+  it("dispatches in the background, waits, closes and commits, and edits nothing", () => {
+    const { body } = readRole("lead");
+    for (const needle of [
+      "bdk agents wait",
+      "run_in_background: true",
+      "bdk attempt close",
+      "bdk commit",
+      "bdk log ingest --ticket",
+      "elapsed",
+    ]) {
+      expect(body).toContain(needle);
+    }
+    expect(body).not.toMatch(/\b(Edit|Write)\b/);
+  });
+});
+
+describe("T41-D4: a scout started by a worker has no package", () => {
+  it("answers the question in at most 15 lines and keeps a finding", () => {
+    const { body } = readRole("scout");
+    expect(body).toMatch(/question instead of a package path/);
+    expect(body).toMatch(/at most 15 lines naming files and lines/);
   });
 });
 
@@ -205,5 +240,20 @@ describe("adapters named by the roles", () => {
   it("are all produced by bdk export agents", () => {
     const produced = new Set(ADAPTERS.map((adapter) => `bdk:${adapter.name}`));
     for (const name of ROLES) expect(produced).toContain(readRole(name).meta.agent);
+  });
+});
+
+describe("T41-D4: the adapters' Agent lists and guard/agent-spawn agree", () => {
+  it("lists the same starters and types", () => {
+    const fromAdapters = Object.fromEntries(
+      ADAPTERS.filter((adapter) => adapter.starts !== undefined).map((adapter) => [
+        `bdk:${adapter.name}`,
+        (adapter.starts ?? []).map((type) => `bdk:${type}`),
+      ]),
+    );
+    const fromGuard = Object.fromEntries(
+      Object.entries(SPAWNS).map(([caller, types]) => [caller, [...types]]),
+    );
+    expect(fromGuard).toEqual(fromAdapters);
   });
 });

@@ -4,11 +4,13 @@
 // `template-hash` covers of the template (T23-D33), so a new wording is a
 // new hash.
 
+export type SectionKind = "verifier" | "runner" | "lead";
+
 interface Section {
   readonly name: string;
   readonly skeleton: string;
-  /** Only the packages of these roles carry it: the verifiers' P8 lists, the runner's checks. */
-  readonly only?: "verifier" | "runner";
+  /** Only the packages of these roles carry it: the verifiers' P8 lists, the runner's checks, the lead's tasks. */
+  readonly only?: SectionKind;
 }
 
 const SECTIONS: readonly Section[] = [
@@ -19,6 +21,12 @@ const SECTIONS: readonly Section[] = [
   },
   { name: "change", skeleton: "## Change\n\n{{intent}}" },
   { name: "target", skeleton: "## Target {{target}}\n\n{{target-body}}" },
+  {
+    name: "tasks",
+    only: "lead",
+    skeleton:
+      "## Tasks\n\nThe tasks of the part in plan order. A committed task is done; start the others as their dependencies are committed.\n\n{{tasks}}",
+  },
   { name: "entries", skeleton: "## Ledger entries\n\n{{entries}}" },
   { name: "role", skeleton: "{{role-body}}" },
   {
@@ -48,7 +56,7 @@ export interface RenderedSection {
 /** The sections a role's package carries, placeholders filled; a missing value throws. */
 export function renderSections(
   values: Readonly<Record<string, string>>,
-  kind: "verifier" | "runner" | undefined,
+  kind: SectionKind | undefined,
 ): RenderedSection[] {
   return SECTIONS.filter((section) => section.only === undefined || section.only === kind).map(
     (section) => ({

@@ -1,3 +1,4 @@
+import { memoryRegistry } from "../../shared/store/index.ts";
 import commands from "../../../../schema/cli/commands.json" with { type: "json" };
 import { describe, expect, it } from "vitest";
 
@@ -12,7 +13,7 @@ import { loadIndex } from "../../shared/registry/index.ts";
 import { preToolBlock } from "../commands/pre-tool.ts";
 import { hooksRegistrations } from "../index.ts";
 import { preToolOutput } from "../schema/pre-tool.ts";
-import { preTool } from "../use-cases/pre-tool.ts";
+import { decidePreTool } from "../use-cases/pre-tool.ts";
 import {
   agentCall,
   agentFg,
@@ -38,7 +39,7 @@ import type { Payload } from "./payloads.ts";
 const index = loadIndex(commands);
 
 function decide(payload: Payload | string) {
-  return preTool(index, typeof payload === "string" ? payload : JSON.stringify(payload));
+  return decidePreTool(index, typeof payload === "string" ? payload : JSON.stringify(payload));
 }
 
 function denied(payload: Payload): { rule: string; why: string } {
@@ -134,6 +135,17 @@ describe("hooks pre-tool: kernel commands", () => {
     );
     expect(denied(subagentBash("node --no-warnings dist/bdk.mjs commit 1")).rule).toBe(
       "guard/subagent-kernel-command",
+    );
+  });
+
+  it("reads a bdk shell function as the kernel", () => {
+    const viaFunction = 'bdk() { node /p/dist/bdk.mjs "$@"; }; bdk commit 01-1';
+    const deny = denied(subagentBash(viaFunction));
+    expect(deny.rule).toBe("guard/subagent-kernel-command");
+    expect(deny.why).toMatch(/^subagents may not run bdk commit/);
+    expect(denied(subagentBash("bdk hooks pre-tool")).rule).toBe("guard/hooks-from-bash");
+    expect(passes(subagentBash('bdk() { node /p/dist/bdk.mjs "$@"; }; bdk log show L-1'))).toBe(
+      true,
     );
   });
 });
@@ -284,6 +296,7 @@ describe("hooks pre-tool through the registry", () => {
   const registrations = hooksRegistrations({
     ...logDeps(store, git),
     commands: index,
+    openRegistry: memoryRegistry(),
   });
   const run = (payload: Payload, json = false) =>
     runBdk(

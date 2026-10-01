@@ -229,6 +229,19 @@ describe("PreToolUse guard", () => {
     );
   });
 
+  it("denies a subagent commit through a bdk shell function", () => {
+    const { root } = opened();
+    const run = hook(
+      "PreToolUse",
+      root,
+      subagentBash('bdk() { node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" "$@"; }; bdk commit 02-3'),
+    );
+    expect(run.code).toBe(2);
+    expect(run.stderr).toMatch(
+      /^guard\/subagent-kernel-command: subagents may not run bdk commit,/,
+    );
+  });
+
   it("denies an Edit under .bdk/specs/", () => {
     const { root } = opened();
     const run = hook(

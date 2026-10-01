@@ -13,7 +13,12 @@ import type { RunResult } from "../../log/tests/support.ts";
 import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import { loadIndex } from "../../shared/registry/index.ts";
-import { memoryIndex, memoryStore, readDocument } from "../../shared/store/index.ts";
+import {
+  memoryIndex,
+  memoryRegistry,
+  memoryStore,
+  readDocument,
+} from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { hooksRegistrations } from "../index.ts";
 import { promptExpansionOutput } from "../schema/prompt-expansion.ts";
@@ -40,6 +45,7 @@ function harness(store: Store = withPluginFiles(repository())): Harness {
         store,
         git,
         openIndex: memoryIndex,
+        openRegistry: memoryRegistry(),
         clock: fixedClock(at),
         random,
         pluginRoot: PLUGIN,

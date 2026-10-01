@@ -9,6 +9,11 @@ import { format, resolveConfig } from "prettier";
 import * as z from "zod";
 
 import {
+  agentsListOutput,
+  agentsShowOutput,
+  agentsWaitOutput,
+} from "../src/agents/schema/outputs.ts";
+import {
   attemptCloseOutput,
   attemptListOutput,
   attemptOpenOutput,
@@ -48,6 +53,12 @@ import { promptExpansionOutput } from "../src/hooks/schema/prompt-expansion.ts";
 import { sessionEndOutput } from "../src/hooks/schema/session-end.ts";
 import { preToolOutput } from "../src/hooks/schema/pre-tool.ts";
 import { skillExistsOutput } from "../src/hooks/schema/skill-exists.ts";
+import {
+  postToolOutput,
+  stopOutput,
+  subagentStartOutput,
+  subagentStopOutput,
+} from "../src/hooks/schema/agents.ts";
 import {
   logAddOutput,
   logIngestOutput,
@@ -101,6 +112,10 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/hooks-session-start.json", sessionStartOutput],
   ["output/hooks-skill-exists.json", skillExistsOutput],
   ["output/hooks-pre-tool.json", preToolOutput],
+  ["output/hooks-post-tool.json", postToolOutput],
+  ["output/hooks-subagent-start.json", subagentStartOutput],
+  ["output/hooks-subagent-stop.json", subagentStopOutput],
+  ["output/hooks-stop.json", stopOutput],
   ["output/hooks-session-end.json", sessionEndOutput],
   ["output/hooks-prompt-expansion.json", promptExpansionOutput],
   ["output/measure.json", measureOutput],
@@ -130,6 +145,9 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/attempt-open.json", attemptOpenOutput],
   ["output/attempt-close.json", attemptCloseOutput],
   ["output/attempt-list.json", attemptListOutput],
+  ["output/agents-list.json", agentsListOutput],
+  ["output/agents-show.json", agentsShowOutput],
+  ["output/agents-wait.json", agentsWaitOutput],
   ["output/commit.json", commitOutput],
   ["output/rules-accept.json", rulesAcceptOutput],
   ["output/rules-check.json", rulesCheckOutput],

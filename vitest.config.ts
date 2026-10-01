@@ -26,7 +26,13 @@ export default defineConfig({
         test: { name: "e2e", include: ["kernel/**/*.e2e.ts"], testTimeout: 30_000 },
       },
       {
-        test: { name: "perf", include: ["kernel/**/*.perf.ts"], testTimeout: 60_000 },
+        // One file at a time: a budget measured next to another file's child processes measures the contention.
+        test: {
+          name: "perf",
+          include: ["kernel/**/*.perf.ts"],
+          testTimeout: 60_000,
+          fileParallelism: false,
+        },
       },
       {
         test: {

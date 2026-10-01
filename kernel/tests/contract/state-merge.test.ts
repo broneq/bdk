@@ -18,6 +18,7 @@ import { createRegistry, loadIndex } from "../../src/shared/registry/index.ts";
 import {
   secondStamp,
   fileIndex,
+  fileRegistry,
   fileStore,
   readChange,
   learningFingerprint,
@@ -75,6 +76,7 @@ async function kernel(root: string, ...argv: string[]): Promise<Record<string, u
       settings: settingsRegistry(),
       git: testGit,
       openIndex: fileIndex,
+      openRegistry: fileRegistry,
       clock: systemClock,
     }),
     { activeChange: (where) => resolveActiveChange(store, testGit, where) },

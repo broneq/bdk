@@ -1,6 +1,8 @@
 // Every handler and every config module the kernel ships. A record of the
 // index without a handler here answers `kernel/not-implemented` until its
 // owner task adds one; a module is registered with its consumer (S6).
+import { agentsConfig, agentsRegistrations } from "./agents/index.ts";
+import type { AgentsDeps } from "./agents/index.ts";
 import { attemptConfig, attemptRegistrations } from "./attempt/index.ts";
 import { changeConfig, changeRegistrations } from "./change/index.ts";
 import { commitRegistrations } from "./commit/index.ts";
@@ -13,7 +15,7 @@ import { evidenceConfig, evidenceRegistrations } from "./evidence/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
 import { graphConfig, graphRegistrations, requireGate } from "./graph/index.ts";
-import { hooksRegistrations } from "./hooks/index.ts";
+import { hooksConfig, hooksRegistrations } from "./hooks/index.ts";
 import type { HooksDeps } from "./hooks/index.ts";
 import { logConfig, logRegistrations } from "./log/index.ts";
 import type { LogDeps } from "./log/index.ts";
@@ -33,6 +35,7 @@ import { checkpointModule } from "./shared/store/index.ts";
 import type { Registration } from "./shared/registry/index.ts";
 
 export type KernelDeps = ServiceDeps &
+  AgentsDeps &
   ConfigDeps &
   CtxDeps &
   HooksDeps &
@@ -60,6 +63,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...exportRegistrations(deps),
     ...rulesRegistrations(deps),
     ...dispatchRegistrations(deps),
+    ...agentsRegistrations(deps),
     ...specRegistrations({
       ...deps,
       reviewGate: (change, globalDir) => requireGate(deps, change, globalDir, "gate:review"),
@@ -79,6 +83,8 @@ export function settingsRegistry(): ConfigRegistry {
       ...evidenceConfig.modules,
       ...changeConfig.modules,
       ...specConfig.modules,
+      ...agentsConfig.modules,
+      ...hooksConfig.modules,
       checkpointModule,
       promptsModule,
     ],

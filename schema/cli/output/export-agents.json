@@ -13,7 +13,7 @@
         "properties": {
           "adapter": {
             "type": "string",
-            "enum": ["worker", "reader", "reviewer", "runner", "scout"]
+            "enum": ["worker", "reader", "reviewer", "runner", "scout", "lead"]
           },
           "path": { "type": "string", "description": "Path relative to the project root." },
           "changed": {

@@ -1,10 +1,19 @@
 // `plugin-tooling`, Settings check at session start, scenario "hooks file",
 // and `kernel-cli/hooks`, Guard hooks file and prefilter: the plugin registers
-// the SessionStart command, the two guards and the session-end hook, no Stop
-// hook, and no hook command anywhere runs Python. The guard scripts fail
-// closed without the kernel and start Node only for a payload a guard denies.
+// the SessionStart command, the three guard scripts, the three agent hooks
+// and the session-end hook, and no hook command anywhere runs Python. The
+// guard scripts fail closed without the kernel, start Node only for a payload
+// a guard denies or the registry records, and write the heartbeat in the shell.
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -20,6 +29,10 @@ const SESSION_END = SESSION_START.replace("session-start", "session-end");
 const sourced = (script: string, what: string): string =>
   `f="\${CLAUDE_PLUGIN_ROOT}/hooks/guard/${script}"; [ -r "$f" ] || { echo "guard/kernel-unavailable: $f is missing, so BDK cannot check ${what}; reinstall the BDK plugin" >&2; exit 2; }; . "$f"`;
 const PRE_TOOL = sourced("pre-tool.sh", "this tool call");
+const POST_TOOL = sourced("post-tool.sh", "this agent");
+/** An agent hook: the kernel run directly, passing when it is missing. */
+const agentHook = (verb: string): string =>
+  `[ -d "\${CLAUDE_PROJECT_DIR}/.bdk" ] || exit 0; node "\${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks ${verb} 2>/dev/null || exit 0`;
 const PROMPT_EXPANSION = sourced("prompt-expansion.sh", "the stage gate");
 
 interface HookGroup {
@@ -39,15 +52,15 @@ describe("hooks/hooks.json", () => {
     expect(commands(hooksFile.hooks.SessionStart ?? [])).toEqual([SESSION_START]);
   });
 
-  it("holds exactly the SessionStart entry and the three T24 entries", () => {
+  it("holds exactly the SessionStart entry and the seven hook entries", () => {
+    const hook = (command: string) => [{ hooks: [{ type: "command", command }] }];
     expect(hooksFile.hooks).toStrictEqual({
-      SessionStart: [{ hooks: [{ type: "command", command: SESSION_START }] }],
-      PreToolUse: [
-        {
-          matcher: "^(Bash|Edit|Write|NotebookEdit|Agent)$",
-          hooks: [{ type: "command", command: PRE_TOOL }],
-        },
-      ],
+      SessionStart: hook(SESSION_START),
+      PreToolUse: hook(PRE_TOOL),
+      PostToolUse: hook(POST_TOOL),
+      SubagentStart: hook(agentHook("subagent-start")),
+      SubagentStop: hook(agentHook("subagent-stop")),
+      Stop: hook(agentHook("stop")),
       UserPromptExpansion: [
         {
           matcher: "^bdk:(plan|execute|close|run)$",
@@ -58,8 +71,27 @@ describe("hooks/hooks.json", () => {
     });
   });
 
-  it("has no Stop entry", () => {
-    expect(Object.keys(hooksFile.hooks)).not.toContain("Stop");
+  // Scenario "agent hooks without a kernel": the turn ends, nothing blocks.
+  it.each(["Stop", "SubagentStop"])("%s passes without the bundle", (event) => {
+    const project = mkdtempSync(join(tmpdir(), "bdk-agent-hook-"));
+    try {
+      mkdirSync(join(project, ".bdk"));
+      const command = commands(hooksFile.hooks[event] ?? [])[0] ?? "";
+      const result = spawnSync("/bin/sh", ["-c", command], {
+        cwd: project,
+        input: JSON.stringify({ session_id: "s", hook_event_name: event }),
+        encoding: "utf8",
+        env: {
+          CLAUDE_PLUGIN_ROOT: project,
+          CLAUDE_PROJECT_DIR: project,
+          PATH: process.env.PATH ?? "",
+        },
+      });
+      expect(result.status).toBe(0);
+      expect(result.stdout).toBe("");
+    } finally {
+      rmSync(project, { recursive: true, force: true });
+    }
   });
 
   // Scenario "kernel unavailable at session start": the host runs the command
@@ -113,22 +145,29 @@ interface Run {
  * Runs a guard script as the host does (`sh -c` of the hooks.json command),
  * with `pluginRoot` as CLAUDE_PLUGIN_ROOT and `path` as PATH.
  */
-function guard(command: string, payload: string, pluginRoot: string, path: string): Run {
+function guard(
+  command: string,
+  payload: string,
+  pluginRoot: string,
+  path: string,
+  project = tmpdir(),
+): Run {
   const result = spawnSync(
     "/bin/sh",
     ["-c", command.replace("${CLAUDE_PLUGIN_ROOT}/hooks", `${REPO_ROOT}/hooks`)],
     {
+      cwd: project,
       input: payload,
       encoding: "utf8",
-      env: { CLAUDE_PLUGIN_ROOT: pluginRoot, PATH: path },
+      env: { CLAUDE_PLUGIN_ROOT: pluginRoot, CLAUDE_PROJECT_DIR: project, PATH: path },
     },
   );
   return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
-/** A PATH directory holding `sh` and `cat` but no node: a machine without Node. */
+/** A PATH directory holding `sh`, `cat` and `mkdir` but no node: a machine without Node. */
 function withoutNode(dir: string): string {
-  for (const tool of ["sh", "cat"]) {
+  for (const tool of ["sh", "cat", "mkdir"]) {
     const found = spawnSync("/bin/sh", ["-c", `command -v ${tool}`], { encoding: "utf8" });
     symlinkSync(found.stdout.trim(), join(dir, tool));
   }
@@ -136,7 +175,7 @@ function withoutNode(dir: string): string {
 }
 
 describe("guard scripts", () => {
-  it.each(["pre-tool.sh", "prompt-expansion.sh"])(
+  it.each(["pre-tool.sh", "post-tool.sh", "prompt-expansion.sh"])(
     "%s ends with a guard-wrapper kernel line",
     (script) => {
       expect(kernelLine(script)).toMatch(guardWrapper());
@@ -190,6 +229,7 @@ describe("guard scripts", () => {
 
   it.each([
     ["pre-tool.sh", () => PRE_TOOL],
+    ["post-tool.sh", () => POST_TOOL],
     ["prompt-expansion.sh", () => PROMPT_EXPANSION],
   ])("blocks with guard/kernel-unavailable when %s is missing", (_, command) => {
     const empty = mkdtempSync(join(tmpdir(), "bdk-no-script-"));
@@ -204,6 +244,88 @@ describe("guard scripts", () => {
     } finally {
       rmSync(empty, { recursive: true, force: true });
     }
+  });
+
+  describe("heartbeat", () => {
+    const WORKER = "a1b2c3d4e5f6a7b8c";
+    const read = (id: string) => ({
+      session_id: "s",
+      agent_id: id,
+      agent_type: "bdk:worker",
+      hook_event_name: "PreToolUse",
+      tool_name: "Read",
+      tool_input: { file_path: "/x" },
+    });
+
+    it("marks a subagent's call open, then idle, without node", () => {
+      const project = mkdtempSync(join(tmpdir(), "bdk-beat-"));
+      const bin = mkdtempSync(join(tmpdir(), "bdk-bin-"));
+      try {
+        mkdirSync(join(project, ".bdk/.machine"), { recursive: true });
+        const path = withoutNode(bin);
+        const beat = join(project, ".bdk/.machine/agents", WORKER);
+        const pre = guard(PRE_TOOL, JSON.stringify(read(WORKER)), REPO_ROOT, path, project);
+        expect(pre).toStrictEqual({ status: 0, stdout: "", stderr: "" });
+        expect(readFileSync(beat, "utf8")).toBe("open");
+        const post = { ...read(WORKER), hook_event_name: "PostToolUse", tool_response: {} };
+        expect(guard(POST_TOOL, JSON.stringify(post), REPO_ROOT, path, project).status).toBe(0);
+        expect(readFileSync(beat, "utf8")).toBe("idle");
+      } finally {
+        rmSync(project, { recursive: true, force: true });
+        rmSync(bin, { recursive: true, force: true });
+      }
+    });
+
+    it("writes nothing outside a BDK project or for an id of other characters", () => {
+      const project = mkdtempSync(join(tmpdir(), "bdk-beat-"));
+      try {
+        guard(PRE_TOOL, JSON.stringify(read(WORKER)), REPO_ROOT, process.env.PATH ?? "", project);
+        expect(readdirSync(project)).toEqual([]);
+        mkdirSync(join(project, ".bdk/.machine"), { recursive: true });
+        guard(PRE_TOOL, JSON.stringify(read("../x")), REPO_ROOT, process.env.PATH ?? "", project);
+        expect(existsSync(join(project, ".bdk/.machine/agents/../x"))).toBe(false);
+        expect(existsSync(join(project, ".bdk/.machine/x"))).toBe(false);
+      } finally {
+        rmSync(project, { recursive: true, force: true });
+      }
+    });
+
+    it("post-tool.sh starts node only for Agent and TaskStop", () => {
+      const project = mkdtempSync(join(tmpdir(), "bdk-post-"));
+      try {
+        mkdirSync(join(project, ".bdk"));
+        const payload = (tool: string) =>
+          JSON.stringify({ session_id: "s", hook_event_name: "PostToolUse", tool_name: tool });
+        // The plugin root has no bundle: reaching the kernel blocks, a dropped payload passes.
+        const run = (tool: string) =>
+          guard(POST_TOOL, payload(tool), project, process.env.PATH ?? "", project).status;
+        expect(run("Read")).toBe(0);
+        expect(run("Bash")).toBe(0);
+        expect(run("Agent")).toBe(2);
+        expect(run("TaskStop")).toBe(2);
+      } finally {
+        rmSync(project, { recursive: true, force: true });
+      }
+    });
+
+    it("pre-tool.sh hands a lead's call and a SendMessage to the kernel", () => {
+      const project = mkdtempSync(join(tmpdir(), "bdk-pre-"));
+      try {
+        const status = (payload: unknown) =>
+          guard(PRE_TOOL, JSON.stringify(payload), project, process.env.PATH ?? "", project).status;
+        expect(status({ ...read(WORKER), agent_type: "bdk:lead" })).toBe(2);
+        expect(
+          status({
+            ...read(WORKER),
+            tool_name: "SendMessage",
+            tool_input: { to: "x", message: "m" },
+          }),
+        ).toBe(2);
+        expect(status(read(WORKER))).toBe(0);
+      } finally {
+        rmSync(project, { recursive: true, force: true });
+      }
+    });
   });
 
   // No false negative: every payload the kernel denies reaches the kernel,

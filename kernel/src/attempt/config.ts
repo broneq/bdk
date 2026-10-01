@@ -19,6 +19,7 @@ export const budgetsModule = defineConfigModule({
       "verify-fix": budget(2, "Fix rounds after a failed verification of one part."),
       "review-fix": budget(2, "Fix rounds after the review of the Change."),
       verifier: budget(2, "Iterations of one verifier over one artifact."),
+      "part-lead": budget(2, "Lead tickets of one plan part."),
       "not-run": budget(3, "Consecutive not-run closes of one loop and target."),
     })
     .prefault({}),

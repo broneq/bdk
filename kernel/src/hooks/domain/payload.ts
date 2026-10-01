@@ -21,6 +21,25 @@ export interface ExpansionPayload {
   readonly prompt?: string;
 }
 
+/** A `PostToolUse` payload of the tools the agent hooks read (HOST-FACTS `agent-link`, `stop-on-taskstop`). */
+export interface PostToolPayload {
+  readonly tool: string;
+  readonly session?: string;
+  readonly agentId?: string;
+  readonly input: Readonly<Record<string, unknown>>;
+  readonly response: Readonly<Record<string, unknown>>;
+}
+
+/** `SubagentStart`, `SubagentStop` and `Stop`: the fields the agent hooks read. */
+export interface AgentEventPayload {
+  readonly session?: string;
+  readonly agentId?: string;
+  readonly agentType?: string;
+  readonly stopHookActive: boolean;
+  /** `background_tasks` entries with `status: running`, by id. */
+  readonly runningTasks: readonly string[];
+}
+
 export interface SessionEndPayload {
   readonly reason?: string;
 }
@@ -95,4 +114,43 @@ export function sessionEndPayload(raw: string): SessionEndPayload {
   if (typeof data === "string") return {};
   const reason = text(data.reason);
   return reason === undefined ? {} : { reason };
+}
+
+function record(value: unknown): Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+/** A `PostToolUse` payload; undefined when the body is not a JSON object with `tool_name`. */
+export function postToolPayload(raw: string): PostToolPayload | undefined {
+  const data = object(raw);
+  if (typeof data === "string") return undefined;
+  const tool = text(data.tool_name);
+  if (tool === undefined) return undefined;
+  return {
+    tool,
+    ...present("session", text(data.session_id)),
+    ...present("agentId", text(data.agent_id)),
+    input: record(data.tool_input),
+    response: record(data.tool_response),
+  };
+}
+
+/** An agent lifecycle payload; undefined when the body is not a JSON object. */
+export function agentEventPayload(raw: string): AgentEventPayload | undefined {
+  const data = object(raw);
+  if (typeof data === "string") return undefined;
+  const tasks = Array.isArray(data.background_tasks) ? (data.background_tasks as unknown[]) : [];
+  return {
+    ...present("session", text(data.session_id)),
+    ...present("agentId", text(data.agent_id)),
+    ...present("agentType", text(data.agent_type)),
+    stopHookActive: data.stop_hook_active === true,
+    runningTasks: tasks
+      .map(record)
+      .filter((task) => task.status === "running")
+      .map((task) => text(task.id))
+      .filter((id): id is string => id !== undefined),
+  };
 }

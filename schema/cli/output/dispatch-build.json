@@ -31,10 +31,14 @@
         "reviewer",
         "pr-reviewer",
         "runner",
-        "scout"
+        "scout",
+        "lead"
       ]
     },
-    "adapter": { "type": "string", "enum": ["worker", "reader", "reviewer", "runner", "scout"] },
+    "adapter": {
+      "type": "string",
+      "enum": ["worker", "reader", "reviewer", "runner", "scout", "lead"]
+    },
     "scope": { "type": "string", "enum": ["full", "high+", "blockers"] },
     "kernelVersion": { "type": "string", "minLength": 1 },
     "templateHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },

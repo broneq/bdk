@@ -117,6 +117,21 @@ export function closeAttempt(
       if (missing !== undefined) return missing;
     }
 
+    if (outcome === "ok" && record.loop === "part-lead") {
+      const open = records.find(
+        (found) =>
+          found.outcome === undefined &&
+          found.ticket !== record.ticket &&
+          (found.target === record.target || found.target.startsWith(`${record.target}-`)),
+      );
+      if (open !== undefined) {
+        return refuse(
+          "policy/ticket-open",
+          `ticket ${open.ticket} of ${open.target} in part ${record.target} is still open; a lead closes ok only after every task ticket of its part`,
+          [`bdk attempt close ${open.ticket} ok|fail|not-run`],
+        );
+      }
+    }
     if (outcome === "ok") {
       const unproven = await stepEvidence(deps, change, index, where.globalDir, record, resolved);
       if (unproven !== undefined) return unproven;
@@ -147,7 +162,14 @@ export function closeAttempt(
     const round = currentRound(ofKey(after, record.loop, record.target), entries);
     const state = roundState(round, policy);
     const blocked = escalationBlocked(state, policy, escalationsOf(after));
-    const rung = nextRung(outcome, record.escalation === true, state, policy, blocked);
+    const rung = nextRung(
+      outcome,
+      record.escalation === true,
+      state,
+      policy,
+      blocked,
+      record.loop === "part-lead",
+    );
     const next =
       rung.action === "parked"
         ? await park(deps, change, index, resolved.value, record, round, rung)
@@ -199,6 +221,7 @@ function diffTarget(record: KeyedRecord): DiffTarget {
     case "task-redispatch":
       return { task: record.target };
     case "verify-fix":
+    case "part-lead":
       return { part: record.target };
     case "review-fix":
       return { change: true };
@@ -328,7 +351,7 @@ async function park(
   rung: Next,
 ): Promise<AttemptCloseReport["next"] | Refusal> {
   const part =
-    record.loop === "verify-fix"
+    record.loop === "verify-fix" || record.loop === "part-lead"
       ? record.target
       : record.loop === "task-redispatch"
         ? taskHolders(readPlanParts(deps.store, change.dir)).get(record.target)?.id

@@ -20,7 +20,7 @@ export const dispatchBuildOutput = z
       description: "The ticket's target: a task id, a part id, the Change id or an artifact id.",
     }),
     role: z.enum(ROLES),
-    adapter: z.enum(["worker", "reader", "reviewer", "runner", "scout"]),
+    adapter: z.enum(["worker", "reader", "reviewer", "runner", "scout", "lead"]),
     scope: z.enum(["full", "high+", "blockers"]),
     kernelVersion: z.string().min(1),
     templateHash: z.string().regex(/^sha256:[0-9a-f]{64}$/),

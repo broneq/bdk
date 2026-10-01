@@ -4,12 +4,33 @@
 # no second shell; every `exit` here ends the hook. The prefilter starts Node
 # only for a payload a guard can deny; it only over-approximates, the kernel
 # decides from the parsed payload. Fails closed: without Node or the bundle a
-# payload that reaches the kernel is blocked.
+# payload that reaches the kernel is blocked. A subagent's call first marks
+# its heartbeat `open` in the shell (kernel-state, Agent registry), so a long
+# tool call keeps the agent `running` without starting Node.
 payload=$(cat)
+
+case $payload in
+  *'"agent_id"'*)
+    bdk_id=${payload#*\"agent_id\"}
+    bdk_id=${bdk_id#*\"}
+    bdk_id=${bdk_id%%\"*}
+    bdk_beat="${CLAUDE_PROJECT_DIR:-$PWD}/.bdk/.machine"
+    case $bdk_id in
+      '' | *[!A-Za-z0-9_-]*) ;;
+      *)
+        if [ -d "$bdk_beat" ]; then
+          { [ -d "$bdk_beat/agents" ] || mkdir "$bdk_beat/agents"; } 2>/dev/null
+          { printf open >"$bdk_beat/agents/$bdk_id"; } 2>/dev/null
+        fi
+        ;;
+    esac
+    ;;
+esac
 
 wanted() {
   case $payload in
-    *.bdk/specs* | */bdk:* | *bdk:reader* | *bdk:reviewer* | *bdk:scout*) return 0 ;;
+    *.bdk/specs* | */bdk:* | *bdk:reader* | *bdk:reviewer* | *bdk:scout* | *bdk:lead*) return 0 ;;
+    *'"tool_name":"SendMessage"'* | *'"tool_name": "SendMessage"'*) return 0 ;;
   esac
   case $payload in
     *bdk.mjs*) case $payload in *hooks*) return 0 ;; esac ;;
@@ -18,7 +39,7 @@ wanted() {
     *'"agent_id"'*) case $payload in *git* | *bdk.mjs*) return 0 ;; esac ;;
   esac
   case $payload in
-    *'"subagent_type"'*) case $payload in *bdk:worker* | *bdk:runner*) return 0 ;; esac ;;
+    *'"subagent_type"'*) case $payload in *bdk:worker* | *bdk:runner* | *bdk:lead*) return 0 ;; esac ;;
   esac
   return 1
 }

@@ -3,7 +3,7 @@
 // value and its status, and the stage a typed command names.
 import type { GraphNode } from "../domain/engine.ts";
 import type { GatePolicy, GateStatus } from "../domain/gate.ts";
-import { GATE_KIND } from "../domain/pipeline.ts";
+import { GATE_KIND, stageOfTarget } from "../domain/pipeline.ts";
 import type { GateView } from "../domain/reports.ts";
 import type { GraphDeps } from "./deps.ts";
 import { gatesOf, gateViews, kindsOf } from "./graph.ts";
@@ -47,4 +47,16 @@ export function stageGates(read: ChangeGraph): StageGate[] {
       },
     ];
   });
+}
+
+/**
+ * The actionable node of the stage a transition's `to` belongs to, for the
+ * continuation check of `hooks stop` (T41-D7): `bdk next`'s node when it is
+ * `ready` or `stale` and in that stage, else undefined.
+ */
+export function stageWork(read: ChangeGraph, to: string): GraphNode | undefined {
+  const stage = stageOfTarget(read.pipeline, to);
+  const next = read.graph.next;
+  if (read.parked !== undefined || next?.stage !== stage) return undefined;
+  return next.state === "ready" || next.state === "stale" ? next : undefined;
 }

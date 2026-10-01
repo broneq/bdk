@@ -15,7 +15,7 @@ import { refusalSchema, RULES } from "../../src/shared/refusal/index.ts";
 import { createRegistry, loadIndex } from "../../src/shared/registry/index.ts";
 import { systemClock } from "../../src/shared/clock/index.ts";
 import { systemGit } from "../../src/shared/git/index.ts";
-import { memoryIndex, memoryStore } from "../../src/shared/store/index.ts";
+import { memoryIndex, memoryRegistry, memoryStore } from "../../src/shared/store/index.ts";
 import { REPO_ROOT } from "../support/run.ts";
 import { readSchema, requiredOf, SCHEMA_FILES, validatorFor } from "../support/schemas.ts";
 import { backticked, requirement, tableFirstColumn } from "../support/specs.ts";
@@ -31,6 +31,7 @@ const registry = createRegistry(
     settings: settingsRegistry(),
     git: systemGit,
     openIndex: memoryIndex,
+    openRegistry: memoryRegistry(),
     clock: systemClock,
   }),
 );

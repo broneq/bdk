@@ -12,7 +12,7 @@
     },
     "loop": {
       "type": "string",
-      "enum": ["task-redispatch", "verify-fix", "review-fix", "verifier"],
+      "enum": ["task-redispatch", "verify-fix", "review-fix", "verifier", "part-lead"],
       "description": "The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds)."
     },
     "target": {

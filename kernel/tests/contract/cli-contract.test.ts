@@ -62,7 +62,6 @@ const MENTION_ALLOWLIST = new Map([
   ["<group> --help", "placeholder in the R-13 authoring rule"],
   ["stage enter", "fallback rejected by HOST-FACTS upe-fires; never added"],
   ["stage enter <gate>", "same fallback, with its argument"],
-  ["hooks stop", "removed by T02 decision Q-6; the Stop hook is not ported"],
   ["ctx role <class>", "removed by T13 (T02 decision Q-3): roles are skills"],
   [
     "ctx skill <name> | role <class> | startup",

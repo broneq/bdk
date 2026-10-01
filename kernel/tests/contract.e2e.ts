@@ -9,7 +9,7 @@ import { registrations, settingsRegistry } from "../src/registrations.ts";
 import { loadIndex } from "../src/shared/registry/index.ts";
 import { systemClock } from "../src/shared/clock/index.ts";
 import { systemGit } from "../src/shared/git/index.ts";
-import { memoryIndex, memoryStore } from "../src/shared/store/index.ts";
+import { memoryIndex, memoryRegistry, memoryStore } from "../src/shared/store/index.ts";
 import type { CommandRecord } from "../src/shared/registry/index.ts";
 import { createFixture } from "./support/fixture.ts";
 import type { Fixture } from "./support/fixture.ts";
@@ -25,6 +25,7 @@ const implemented = new Set(
     settings: settingsRegistry(),
     git: systemGit,
     openIndex: memoryIndex,
+    openRegistry: memoryRegistry(),
     clock: systemClock,
   }).map((registration) => registration.id),
 );

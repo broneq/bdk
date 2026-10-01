@@ -1,3 +1,4 @@
+import { memoryRegistry } from "../../shared/store/index.ts";
 // `hooks session-end` through the registry on a memory repository with a
 // scripted git (`kernel-cli/hooks`, `bdk hooks session-end`; T24 design D-14).
 // The in-progress git operations need a real `.git` and are in guards.e2e.ts.
@@ -17,7 +18,9 @@ const CHANGE_DIR = `.bdk/changes/${CHANGE}/`;
 const PAYLOAD = JSON.stringify(sessionEndClear.payloads[0]);
 
 function harness() {
-  const h = partHarness((deps) => hooksRegistrations({ ...deps, commands: loadIndex(commands) }));
+  const h = partHarness((deps) =>
+    hooksRegistrations({ ...deps, commands: loadIndex(commands), openRegistry: memoryRegistry() }),
+  );
   h.git.status = [`${CHANGE_DIR}log/e.md`];
   return h;
 }

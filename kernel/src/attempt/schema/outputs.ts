@@ -119,9 +119,9 @@ export const attemptCloseOutput = z
     }),
     notRunCount: count.meta({ description: "The round's consecutive not-run closes." }),
     next: z.strictObject({
-      action: z.enum(["commit", "retry", "narrow", "escalate", "parked"]).meta({
+      action: z.enum(["commit", "part-done", "retry", "narrow", "escalate", "parked"]).meta({
         description:
-          "commit after ok, the step evidence having passed; the ladder's rung after fail or not-run.",
+          "commit after ok, the step evidence having passed; part-done after ok of a part-lead ticket; the ladder's rung after fail or not-run.",
       }),
       scope: scope.optional(),
       entry: entryId.optional().meta({ description: "The ladder question that parks the Change." }),

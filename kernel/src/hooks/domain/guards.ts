@@ -1,7 +1,9 @@
 // The decisions of `hooks pre-tool` (`kernel-cli/hooks`, Pre-tool guards; T24
 // design D-3 to D-9). Pure: the payload and a classifier of kernel verbs in,
 // the first matching deny (or none) out. Main-thread git and main-thread
-// orchestrator commands are never denied.
+// orchestrator commands are never denied. The agent guards of T41 read the
+// registry and the Change through `AgentFacts`, which the use case gathers
+// only for the payloads that need them.
 import type { PreToolPayload } from "./payload.ts";
 import { basename, commandWords, readCommands } from "./shell.ts";
 import type { SimpleCommand } from "./shell.ts";
@@ -12,8 +14,11 @@ type GuardRule =
   | "guard/nested-stage-command"
   | "guard/subagent-git"
   | "guard/subagent-kernel-command"
+  | "guard/lead-scope"
   | "guard/reader-write"
-  | "guard/dispatch-prompt";
+  | "guard/dispatch-prompt"
+  | "guard/agent-spawn"
+  | "guard/agent-message";
 
 export interface Deny {
   readonly rule: GuardRule;
@@ -28,17 +33,58 @@ interface KernelVerb {
   /** As the user types it, e.g. `bdk commit`. */
   readonly command: string;
   readonly availability: "orchestrator" | "agent" | "read" | "hook";
+  /** The words after the verb that are not flags or flag values. */
+  readonly positionals: readonly string[];
+}
+
+/** What the agent guards know about the caller, from the registry and the active Change. */
+export interface AgentFacts {
+  /** The caller's active package: its ticket and target; absent without one. */
+  readonly caller?: { readonly ticket: string | null; readonly target: string | null };
+  /** The target of a ticket of the active Change. */
+  readonly ticketTarget: (ticket: string) => string | undefined;
+  /** Scouts started by agents holding the caller's ticket. */
+  readonly scouts: number;
+  readonly scoutLimit: number;
+  readonly messageLimit: number;
+  /** The derived state of an agent in the registry; undefined when it holds none. */
+  readonly stateOf: (id: string) => string | undefined;
+  /** Whether the active Change holds the ledger entry. */
+  readonly entryExists: (id: string) => boolean;
 }
 
 export type Classify = (argv: readonly string[]) => KernelVerb | undefined;
 
 const EDIT_TOOLS = new Set(["Edit", "Write", "NotebookEdit", "MultiEdit"]);
 
-/** The adapters whose Bash is for kernel commands and test runs only (T23-D20). */
-const READ_ONLY_ADAPTERS = new Set(["bdk:reader", "bdk:reviewer", "bdk:scout"]);
+/** The adapters whose Bash is for kernel commands and test runs only (T23-D20, T41-D11). */
+const READ_ONLY_ADAPTERS = new Set(["bdk:reader", "bdk:reviewer", "bdk:scout", "bdk:lead"]);
 
-/** The five adapters a BDK dispatch goes to (T23-D19). */
-const ADAPTERS = new Set(["bdk:worker", "bdk:reader", "bdk:reviewer", "bdk:runner", "bdk:scout"]);
+/** The adapters a BDK dispatch goes to (T23-D19, T41-D2). */
+const ADAPTERS = new Set([
+  "bdk:worker",
+  "bdk:reader",
+  "bdk:reviewer",
+  "bdk:runner",
+  "bdk:scout",
+  "bdk:lead",
+]);
+
+/** The orchestrator verbs a lead runs inside its own part (T41-D11). */
+const LEAD_VERBS = new Set([
+  "bdk attempt open",
+  "bdk attempt close",
+  "bdk dispatch build",
+  "bdk commit",
+]);
+
+/** Who starts whom (T41-D4); the `Agent(...)` lists of the lead and worker adapters say the same. */
+export const SPAWNS: Readonly<Record<string, ReadonlySet<string>>> = {
+  "bdk:lead": new Set(["bdk:worker", "bdk:runner", "bdk:reviewer", "bdk:scout"]),
+  "bdk:worker": new Set(["bdk:scout"]),
+};
+
+const ENTRY_ID = /\bL-[0-9a-z]{8}\b/g;
 
 const STAGE_COMMAND = /^\/bdk:(plan|execute|close|run)(\s|$)/;
 
@@ -65,19 +111,34 @@ const WRITE_REDIRECTS = new Set([">", ">>", ">|", "&>", "&>>", "<>", ">&"]);
 const DISPATCH_PATH =
   /(?:^|[\s"'`(/])((?:\/|\.{1,2}\/|[^\s"'`]*\/)?\.bdk\/changes\/[^/\s]+\/dispatch\/[^/\s]+\.md)/g;
 
-export function preToolDecision(payload: PreToolPayload, classify: Classify): Deny | undefined {
+/** Whether the decision needs `AgentFacts`: the agent guards of a subagent's payload. */
+export function needsAgentFacts(payload: PreToolPayload): boolean {
+  if (payload.agentId === undefined) return false;
+  if (payload.tool === "Agent" || payload.tool === "SendMessage") return true;
+  return payload.tool === "Bash" && payload.agentType === "bdk:lead";
+}
+
+export function preToolDecision(
+  payload: PreToolPayload,
+  classify: Classify,
+  facts?: AgentFacts,
+): Deny | undefined {
   const cwd = payload.cwd ?? "/";
   if (EDIT_TOOLS.has(payload.tool)) {
     const path =
       stringField(payload.input, "file_path") ?? stringField(payload.input, "notebook_path");
     return path !== undefined && underSpecs(cwd, path) ? specDeny(path) : undefined;
   }
-  if (payload.tool === "Agent") return dispatchDecision(payload.input);
+  if (payload.tool === "Agent") {
+    return dispatchDecision(payload) ?? spawnDecision(payload, facts);
+  }
+  if (payload.tool === "SendMessage") return messageDecision(payload, facts);
   if (payload.tool !== "Bash") return undefined;
   const text = stringField(payload.input, "command");
   if (text === undefined) return undefined;
   const commands = readCommands(text);
   const subagent = payload.agentId !== undefined;
+  const lead = subagent && payload.agentType === "bdk:lead";
   const readOnly = subagent && READ_ONLY_ADAPTERS.has(payload.agentType ?? "");
 
   for (const check of [
@@ -85,8 +146,9 @@ export function preToolDecision(payload: PreToolPayload, classify: Classify): De
     (command: SimpleCommand) => kernelHook(command, classify),
     nestedStage,
     ...(subagent
-      ? [subagentGit, (command: SimpleCommand) => subagentKernel(command, classify)]
+      ? [subagentGit, (command: SimpleCommand) => subagentKernel(command, classify, lead)]
       : []),
+    ...(lead ? [(command: SimpleCommand) => leadScope(command, classify, facts)] : []),
     ...(readOnly
       ? [(command: SimpleCommand) => readerWrite(command, payload.agentType ?? "")]
       : []),
@@ -132,11 +194,16 @@ function specWrite(command: SimpleCommand, cwd: string): Deny | undefined {
   return target === undefined ? undefined : specDeny(target);
 }
 
-/** The words after `bdk.mjs` when the command runs the kernel, else undefined. */
+/**
+ * The words after `bdk.mjs` when the command runs the kernel, else undefined.
+ * A command word `bdk` counts too: the role contracts write kernel commands as
+ * `bdk <command>`, so a model defines `bdk() { node .../bdk.mjs "$@"; }` and
+ * calls `bdk attempt open ...` in the same Bash command.
+ */
 function kernelArgv(command: SimpleCommand): readonly string[] | undefined {
   const words = commandWords(command);
   const name = basename(words[0] ?? "");
-  if (name === "bdk.mjs") return words.slice(1);
+  if (name === "bdk.mjs" || name === "bdk") return words.slice(1);
   if (name !== "node") return undefined;
   let at = 1;
   while ((words[at] ?? "").startsWith("-")) at += 1;
@@ -159,9 +226,14 @@ function kernelHook(command: SimpleCommand, classify: Classify): Deny | undefine
   };
 }
 
-function subagentKernel(command: SimpleCommand, classify: Classify): Deny | undefined {
+function subagentKernel(
+  command: SimpleCommand,
+  classify: Classify,
+  lead: boolean,
+): Deny | undefined {
   const verb = kernelVerb(command, classify);
   if (verb?.availability !== "orchestrator") return undefined;
+  if (lead && LEAD_VERBS.has(verb.command)) return undefined;
   return {
     rule: "guard/subagent-kernel-command",
     verb: verb.command,
@@ -274,9 +346,112 @@ function writesOf(command: SimpleCommand): string[] {
   }
 }
 
-function dispatchDecision(input: Readonly<Record<string, unknown>>): Deny | undefined {
+/** The target a lead's kernel command acts on; undefined when it names none. */
+function leadTarget(verb: KernelVerb, facts: AgentFacts | undefined): string | undefined {
+  const [first, second] = verb.positionals;
+  switch (verb.command) {
+    case "bdk attempt open":
+      return second;
+    case "bdk attempt close":
+      return first === undefined ? undefined : facts?.ticketTarget(first);
+    default:
+      return first;
+  }
+}
+
+function leadScope(
+  command: SimpleCommand,
+  classify: Classify,
+  facts: AgentFacts | undefined,
+): Deny | undefined {
+  const verb = kernelVerb(command, classify);
+  if (verb === undefined || !LEAD_VERBS.has(verb.command)) return undefined;
+  const part = facts?.caller?.target ?? null;
+  if (part === null) {
+    return {
+      rule: "guard/lead-scope",
+      verb: verb.command,
+      reason: `this lead has no package in the agent registry, so it may not run ${verb.command}: a lead started in the foreground is linked to its package only when it ends; return blocked with the cause, and the orchestrator starts the lead again with run_in_background: true (BDK T41-D11)`,
+    };
+  }
+  const target = leadTarget(verb, facts);
+  if (target !== undefined && (target === part || target.startsWith(`${part}-`))) return undefined;
+  return {
+    rule: "guard/lead-scope",
+    verb: verb.command,
+    reason: `a lead runs ${verb.command} only on targets of its own part ${part}, not ${target ?? "an unknown target"}; return blocked with the cause (BDK T41-D11)`,
+  };
+}
+
+/** A scout a worker starts carries its question, not a package (`role-contracts`). */
+function workerScout(payload: PreToolPayload): boolean {
+  return (
+    payload.agentType === "bdk:worker" &&
+    stringField(payload.input, "subagent_type") === "bdk:scout"
+  );
+}
+
+function spawnDecision(payload: PreToolPayload, facts: AgentFacts | undefined): Deny | undefined {
+  const caller = payload.agentType ?? "";
+  if (payload.agentId === undefined || !caller.startsWith("bdk:")) return undefined;
+  const type = stringField(payload.input, "subagent_type") ?? "general-purpose";
+  const allowed = SPAWNS[caller];
+  if (allowed?.has(type) !== true) {
+    return {
+      rule: "guard/agent-spawn",
+      verb: type,
+      reason: `a ${caller} may not start ${type}; ${allowed === undefined ? "it starts no agents" : `it starts only ${[...allowed].join(", ")}`} (BDK T41-D4)`,
+    };
+  }
+  if (caller === "bdk:worker") {
+    const limit = facts?.scoutLimit ?? 0;
+    const used = facts?.scouts ?? 0;
+    if (used >= limit) {
+      return {
+        rule: "guard/agent-spawn",
+        verb: type,
+        reason: `this ticket already started ${String(used)} scouts, the limit agents.scout.max-per-ticket is ${String(limit)}; search yourself or return blocked (BDK T41-D4)`,
+      };
+    }
+  }
+  return undefined;
+}
+
+/** The ledger ids a message names, in order. */
+export function messageEntries(message: string): string[] {
+  return [...message.matchAll(ENTRY_ID)].map((match) => match[0]);
+}
+
+function messageDecision(payload: PreToolPayload, facts: AgentFacts | undefined): Deny | undefined {
+  if (payload.agentId === undefined) return undefined;
+  const message = stringField(payload.input, "message") ?? "";
+  const to = stringField(payload.input, "to") ?? "";
+  const deny = (reason: string): Deny => ({ rule: "guard/agent-message", verb: to, reason });
+  const entries = messageEntries(message).filter((id) => facts?.entryExists(id) === true);
+  if (entries.length === 0) {
+    return deny(
+      "a message between agents names a ledger entry of the active Change (L-xxxxxxxx); write the substance with bdk log add first, then send its id (BDK T41-D5)",
+    );
+  }
+  const limit = facts?.messageLimit ?? 0;
+  if (message.length > limit) {
+    return deny(
+      `the message has ${String(message.length)} characters, more than agents.message.max-chars (${String(limit)}); keep the substance in the ledger entry and send its id (BDK T41-D5)`,
+    );
+  }
+  if (to === "main") return undefined;
+  const state = facts?.stateOf(to);
+  if (state === "running" || state === "starting") return undefined;
+  return deny(
+    `${to} is ${state ?? "not in the agent registry"}, so it cannot read the message; find the agents the entry affects with bdk agents list --affected-by ${entries[0] ?? ""} (BDK T41-D5)`,
+  );
+}
+
+function dispatchDecision(payload: PreToolPayload): Deny | undefined {
+  const input = payload.input;
   const adapter = stringField(input, "subagent_type");
   if (adapter === undefined || !ADAPTERS.has(adapter)) return undefined;
+  if (workerScout(payload)) return undefined;
   if (isDispatchPrompt((stringField(input, "prompt") ?? "").trim())) return undefined;
   return {
     rule: "guard/dispatch-prompt",
@@ -284,6 +459,11 @@ function dispatchDecision(input: Readonly<Record<string, unknown>>): Deny | unde
     reason:
       "a BDK dispatch prompt is the package path plus at most one sentence; put the context into the package (BDK T23-D0)",
   };
+}
+
+/** The dispatch package paths a prompt names, as written. */
+export function dispatchPaths(prompt: string): string[] {
+  return [...prompt.matchAll(DISPATCH_PATH)].map((match) => match[1] ?? "");
 }
 
 /** Exactly one package path and, besides it, one short sentence at most. */

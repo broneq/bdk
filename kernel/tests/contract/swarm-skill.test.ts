@@ -34,6 +34,8 @@ describe("swarm skill", () => {
     expect(body).toMatch(/package path/);
     expect(body).toMatch(/`SendMessage` to `main`/);
     expect(body).toContain("](references/hosts/claude-code.md)");
+    expect(body).toContain("`bdk agents wait <own id>`");
+    expect(body).toMatch(/in the background/);
     expect(existsSync(join(DIR, "references", "hosts", "claude-code.md"))).toBe(true);
   });
 
@@ -43,10 +45,22 @@ describe("swarm skill", () => {
     expect(body).toContain("bdk attempt close <ticket>");
   });
 
+  it("holds no flat-swarm sentence", () => {
+    const flat = sentences(readSkill().body).filter(
+      (sentence) => /\bflat\b/i.test(sentence) || /no adapter carries/i.test(sentence),
+    );
+    expect(flat).toEqual([]);
+  });
+
   it("resumes an agent once and closes the ticket fail after a second failure", () => {
     const resume = sentences(readSkill().body).filter((sentence) => /resume/i.test(sentence));
     expect(
-      resume.some((sentence) => sentence.includes("once") && sentence.includes("refusal")),
+      resume.some(
+        (sentence) =>
+          sentence.includes("once") &&
+          sentence.includes("refusal") &&
+          sentence.includes("`suspect`"),
+      ),
     ).toBe(true);
     expect(
       sentences(readSkill().body).some(

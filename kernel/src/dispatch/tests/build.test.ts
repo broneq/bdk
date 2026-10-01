@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { kindRegistry, PostTaskStepKind } from "../../graph/domain/kinds/index.ts";
-import { writeEntry } from "../../graph/tests/support.ts";
+import { writeEntry, writePlanPart } from "../../graph/tests/support.ts";
 import { repository, ROOT } from "../../log/tests/support.ts";
 import { activePackage, readDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
@@ -515,6 +515,70 @@ describe("the runner's Checks section (T23-D44)", () => {
   it("is absent from every other role's package", async () => {
     const { body } = await built(dispatchHarness(), "02-3", "implementer", TICKET);
     expect(body).not.toContain("## Checks");
+  });
+});
+
+describe("the lead package (T41-D11)", () => {
+  const LEAD = "A-3h5j7k9m";
+
+  /** A trailer commit of task 02-1, as `git log` prints it for `trailerCommits`. */
+  function committed(h: DispatchHarness): void {
+    const run = h.git.run.bind(h.git);
+    h.git.run = (args, cwd) =>
+      args[0] === "log"
+        ? Promise.resolve({
+            code: 0,
+            stdout: "c0ffee1\x1fstore the token\x1f2026-09-25-login\x1f02\x1f02-1\x1e",
+            stderr: "",
+          })
+        : run(args, cwd);
+  }
+
+  it("names the part and lists its tasks with files, dependencies and the committed ones", async () => {
+    const h = dispatchHarness();
+    ticket(h.store, { target: "02", loop: "part-lead", id: LEAD });
+    committed(h);
+    const { report, body } = await built(h, "02", "lead", LEAD);
+    expect(report).toMatchObject({ role: "lead", adapter: "lead", target: "02" });
+    expect(stamped(h.store, report.path)).toMatchObject({ role: "lead", adapter: "lead" });
+    expect(stampedRules(h.store, report.path)).toEqual([]);
+    expect(body).toContain("`.bdk/changes/2026-09-25-login/plan/parts/02-part.md`");
+    expect(body).toContain(
+      "- `02-1` Store the token (committed). Files: `src/auth/store.ts`. Depends on: none.",
+    );
+    expect(body).toContain(
+      "- `02-3` Verify the link (open). Files: `src/auth/verify.ts`, `src/auth/verify.test.ts`. Depends on: none.",
+    );
+    expect(body).toContain("# Role: lead");
+  });
+
+  it("stays within the package limit for a part of eight tasks", async () => {
+    const h = dispatchHarness();
+    const task = (n: number) =>
+      `## 03-${String(n)} Build the login step ${String(n)} of the flow\n\n**Files:**\n\n- Create: \`src/auth/login/step-${String(n)}.ts\`\n- Test: \`src/auth/login/step-${String(n)}.test.ts\`\n- Modify: \`src/auth/login/index.ts\`\n\n**Depends on:** ${n === 1 ? "none" : `03-${String(n - 1)}`}\n\n**Test cases:**\n\n- handles step ${String(n)}\n`;
+    writePlanPart(h.store, "03", {
+      body: [1, 2, 3, 4, 5, 6, 7, 8].map(task).join("\n"),
+      doNotTouch: ["src/billing/**"],
+    });
+    ticket(h.store, { target: "03", loop: "part-lead", id: LEAD });
+    const { report, body } = await built(h, "03", "lead", LEAD);
+    expect(body).toContain("- `03-8` Build the login step 8 of the flow (open).");
+    expect(body).toContain("Depends on: `03-7`.");
+    expect(report.bytes).toBeLessThanOrEqual(12_288);
+  });
+
+  it("gives no Tasks section to other roles", async () => {
+    const { body } = await built(dispatchHarness());
+    expect(body).not.toContain("## Tasks");
+  });
+
+  it("refuses lead on a task ticket and another role on a part-lead ticket", async () => {
+    const h = dispatchHarness();
+    expect(refusal(await build(h, "02-3", "lead", TICKET)).rule).toBe("input/invalid-argument");
+    ticket(h.store, { target: "02", loop: "part-lead", id: LEAD });
+    const other = await build(h, "02", "implementer", LEAD);
+    expect(other.code).toBe(3);
+    expect(refusal(other).why).toContain("lead");
   });
 });
 

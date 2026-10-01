@@ -5,6 +5,27 @@ export { splitFrontmatter } from "./frontmatter.ts";
 export { findExecutable } from "./which.ts";
 export type { ExecutableLookup } from "./which.ts";
 export { INDEX_SCHEMA_VERSION } from "./index/schema.ts";
+export {
+  AGENTS_SCHEMA_VERSION,
+  agentsRegistryPath,
+  fileHeartbeat,
+  fileRegistry,
+  heartbeatPath,
+  memoryRegistry,
+  openAgentRegistry,
+  withRegistry,
+} from "./agents/registry.ts";
+export type {
+  AgentFields,
+  AgentRegistry,
+  AgentRow,
+  EndedBy,
+  Heartbeat,
+  HeartbeatReader,
+  MessageRow,
+  RegistryOpener,
+  SessionRow,
+} from "./agents/registry.ts";
 export { fileIndex, indexPath, memoryIndex, openIndex, withIndex } from "./index/open.ts";
 export type { IndexDb, IndexOpener, OpenOptions } from "./index/open.ts";
 export { rebuildChange, refreshAll, refreshChange } from "./index/refresh.ts";
@@ -66,6 +87,8 @@ export type { EntryFacts, StageMap } from "./state/derived.ts";
 export { appendTelemetry, telemetryPath, TELEMETRY_LIMIT_BYTES } from "./telemetry.ts";
 export { checkpointChange } from "./checkpoint.ts";
 export type { Checkpoint, CheckpointInput } from "./checkpoint.ts";
+export { processLockWait, withLock } from "./lock.ts";
+export type { LockHolder, LockWait } from "./lock.ts";
 export { taskProgress } from "./progress.ts";
 export type { TaskProgress } from "./progress.ts";
 export { rebuildChanges } from "./rebuild.ts";

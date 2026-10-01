@@ -18,7 +18,8 @@
             "reviewer",
             "pr-reviewer",
             "runner",
-            "scout"
+            "scout",
+            "lead"
           ]
         },
         "target": { "type": "string", "minLength": 1 },
@@ -81,7 +82,8 @@
               "reviewer",
               "pr-reviewer",
               "runner",
-              "scout"
+              "scout",
+              "lead"
             ]
           }
         },

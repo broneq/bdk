@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/agents-list.json",
+  "title": "bdk agents list --json",
+  "description": "The agents of the registry with their state, parent and package.",
+  "type": "object",
+  "properties": {
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The host's agent id, or `main`."
+          },
+          "type": { "description": "The host's `agent_type`.", "type": ["string", "null"] },
+          "state": {
+            "type": "string",
+            "enum": ["starting", "running", "suspect", "ended"],
+            "description": "Derived at the time of the call (`kernel-state`, Agent registry)."
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "description": "The host's agent id, or `main`."
+              },
+              { "type": "null" }
+            ],
+            "description": "null until the parent's spawn is linked."
+          },
+          "session": { "type": ["string", "null"] },
+          "package": {
+            "description": "The dispatch package, relative to the project root.",
+            "type": ["string", "null"]
+          },
+          "ticket": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^A-[0-9a-z]{8}$",
+                "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
+              },
+              { "type": "null" }
+            ]
+          },
+          "target": { "type": ["string", "null"] },
+          "startedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}(?:Z))$",
+                "description": "ISO 8601 UTC with milliseconds."
+              },
+              { "type": "null" }
+            ]
+          },
+          "lastSeenAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}(?:Z))$",
+                "description": "ISO 8601 UTC with milliseconds."
+              },
+              { "type": "null" }
+            ],
+            "description": "The later of the last heartbeat and the start."
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "state",
+          "parent",
+          "session",
+          "package",
+          "ticket",
+          "target",
+          "startedAt",
+          "lastSeenAt"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["agents"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "agents": [
+        {
+          "id": "a1b2c3d4e5f6a7b8c",
+          "type": "bdk:worker",
+          "state": "running",
+          "parent": "a9f8e7d6c5b4a3f2e",
+          "session": "5d1c9e0a-2b7f-4c3e-9a61-0f2d8b7c4e11",
+          "package": ".bdk/changes/2026-09-25-login/dispatch/02-4-implementer-A-9k2m4n6p.md",
+          "ticket": "A-9k2m4n6p",
+          "target": "02-4",
+          "startedAt": "2026-09-30T10:14:03.120Z",
+          "lastSeenAt": "2026-09-30T10:19:44.901Z"
+        }
+      ]
+    }
+  ]
+}

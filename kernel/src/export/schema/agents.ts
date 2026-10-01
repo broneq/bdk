@@ -8,7 +8,7 @@ export const exportAgentsOutput = z
     host: z.string().meta({ description: "The host the files were generated for." }),
     files: z.array(
       z.strictObject({
-        adapter: z.enum(["worker", "reader", "reviewer", "runner", "scout"]),
+        adapter: z.enum(["worker", "reader", "reviewer", "runner", "scout", "lead"]),
         path: z.string().meta({ description: "Path relative to the project root." }),
         changed: z.boolean().meta({
           description: "Written by this run, or found different under --check.",

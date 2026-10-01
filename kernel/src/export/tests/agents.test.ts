@@ -15,7 +15,7 @@ import type { AgentsReport } from "../domain/report.ts";
 
 const PLUGIN = "/plugins/bdk";
 const ROOT = "/work/repo";
-const NAMES = ["worker", "reader", "reviewer", "runner", "scout"];
+const NAMES = ["lead", "worker", "reader", "reviewer", "runner", "scout"];
 
 function generated(): Record<string, string> {
   return Object.fromEntries(
@@ -27,40 +27,56 @@ function generated(): Record<string, string> {
 }
 
 describe("adapter definitions", () => {
-  it("define exactly the five adapters in a fixed order", () => {
+  it("define exactly the six adapters in a fixed order", () => {
     expect(ADAPTERS.map((adapter) => adapter.name)).toEqual(NAMES);
   });
 
   it("map to the Claude Code tools and models of role-contracts, Adapters", () => {
-    const rows = ADAPTERS.map((adapter) => ({
-      name: adapter.name,
-      tools: adapter.tools.flatMap((tool) => HOSTS.claude.tools[tool]),
-      model: HOSTS.claude.models[adapter.tier],
-    }));
+    const rows = ADAPTERS.map((adapter) => {
+      const tools = adapterFile(adapter, HOSTS.claude)
+        .split("\n")
+        .filter((line) => line.startsWith("  - "))
+        .map((line) => line.slice(4));
+      return {
+        name: adapter.name,
+        tools,
+        model: HOSTS.claude.models[adapter.tier],
+        effort: adapter.effort,
+      };
+    });
+    const readOnly = ["Read", "Grep", "Glob", "Bash", "SendMessage"];
     expect(rows).toEqual([
       {
+        name: "lead",
+        tools: [...readOnly, "Agent(worker, runner, reviewer, scout)"],
+        model: "sonnet",
+        effort: "medium",
+      },
+      {
         name: "worker",
-        tools: ["Read", "Edit", "Write", "Bash", "Grep", "Glob", "SendMessage"],
+        tools: ["Read", "Edit", "Write", "Bash", "Grep", "Glob", "SendMessage", "Agent(scout)"],
         model: "sonnet",
+        effort: "medium",
       },
-      {
-        name: "reader",
-        tools: ["Read", "Grep", "Glob", "Bash", "SendMessage"],
-        model: "opus",
-      },
-      {
-        name: "reviewer",
-        tools: ["Read", "Grep", "Glob", "Bash", "SendMessage"],
-        model: "sonnet",
-      },
-      { name: "runner", tools: ["Read", "Bash", "SendMessage"], model: "haiku" },
-      { name: "scout", tools: ["Read", "Grep", "Glob", "Bash", "SendMessage"], model: "haiku" },
+      { name: "reader", tools: readOnly, model: "opus", effort: "medium" },
+      { name: "reviewer", tools: readOnly, model: "sonnet", effort: "medium" },
+      { name: "runner", tools: ["Read", "Bash", "SendMessage"], model: "haiku", effort: "low" },
+      { name: "scout", tools: readOnly, model: "haiku", effort: "low" },
     ]);
+  });
+
+  it("let only the lead and the worker start agents", () => {
+    const starters = ADAPTERS.filter((adapter) => adapter.starts !== undefined);
+    expect(starters.map((adapter) => adapter.name)).toEqual(["lead", "worker"]);
   });
 
   it("give only the worker a file-writing tool", () => {
     const writers = ADAPTERS.filter((adapter) => adapter.tools.includes("edit"));
     expect(writers.map((adapter) => adapter.name)).toEqual(["worker"]);
+  });
+
+  it("keep every description a plain YAML scalar", () => {
+    for (const adapter of ADAPTERS) expect(adapter.description).not.toMatch(/: |#/);
   });
 
   it("keep every description within the 250-character listing budget", () => {
@@ -70,8 +86,8 @@ describe("adapter definitions", () => {
 
 describe("adapterFile", () => {
   it("renders frontmatter with the generated marker and a one-sentence body", () => {
-    const [worker] = ADAPTERS;
-    if (worker === undefined) throw new Error("no adapters");
+    const worker = ADAPTERS.find((adapter) => adapter.name === "worker");
+    if (worker === undefined) throw new Error("no worker adapter");
     const text = adapterFile(worker, HOSTS.claude);
     expect(text).toBe(
       [
@@ -80,6 +96,7 @@ describe("adapterFile", () => {
         "name: worker",
         `description: ${worker.description}`,
         "model: sonnet",
+        "effort: medium",
         "tools:",
         "  - Read",
         "  - Edit",
@@ -88,6 +105,7 @@ describe("adapterFile", () => {
         "  - Grep",
         "  - Glob",
         "  - SendMessage",
+        "  - Agent(scout)",
         "---",
         "",
         worker.sentence,
@@ -108,7 +126,7 @@ describe("adapterFile", () => {
 });
 
 describe("exportAgents", () => {
-  it("writes the five adapter files and reports them as changed", () => {
+  it("writes the six adapter files and reports them as changed", () => {
     const store = memoryStore();
     const report = exportAgents(
       { store, pluginRoot: PLUGIN },
@@ -117,8 +135,8 @@ describe("exportAgents", () => {
     expect(report.changed).toBe(true);
     expect(report.files.map((file) => file.adapter)).toEqual(NAMES);
     expect(report.files[0]).toEqual({
-      adapter: "worker",
-      path: "../../plugins/bdk/agents/worker.md",
+      adapter: "lead",
+      path: "../../plugins/bdk/agents/lead.md",
       changed: true,
     });
     for (const [path, content] of Object.entries(generated())) {
@@ -256,6 +274,6 @@ describe("export agents handler", () => {
 
   it("prints the text rendering without --json", async () => {
     const result = await run(["export", "agents", "--host", "claude"]);
-    expect(result.stdout).toContain("claude: 5 of 5 adapter files changed");
+    expect(result.stdout).toContain("claude: 6 of 6 adapter files changed");
   });
 });

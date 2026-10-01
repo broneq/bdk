@@ -1,4 +1,4 @@
-// `bdk export agents`: write or check the host's adapter files. Only the five
+// `bdk export agents`: write or check the host's adapter files. Only the six
 // adapter paths are read or written, so the v2 agents next to them stay
 // untouched until T42 (design T23-D3, D22 of v3-t23a-roles-adapters).
 import { join, relative } from "node:path";

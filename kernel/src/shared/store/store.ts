@@ -41,6 +41,8 @@ export interface Store {
   stat(path: string): FileStat | undefined;
   /** Removes a file; an absent file is not an error, a directory is. */
   remove(path: string): void;
+  /** Creates the file only when nothing is at `path`, creating parents; false when something is. */
+  create(path: string, content: string): boolean;
   /** Appends to a file, creating it and its parents. */
   append(path: string, content: string): void;
   /**
@@ -98,6 +100,16 @@ export function fileStore(): Store {
     },
     remove(path) {
       rmSync(path, { force: true });
+    },
+    create(path, content) {
+      mkdirSync(dirname(path), { recursive: true });
+      try {
+        writeFileSync(path, content, { flag: "wx" });
+        return true;
+      } catch (error) {
+        if (isCode(error, "EEXIST")) return false;
+        throw error;
+      }
     },
     append(path, content) {
       mkdirSync(dirname(path), { recursive: true });
@@ -207,6 +219,12 @@ export function memoryStore(initial: Readonly<Record<string, string>> = {}): Sto
       const target = resolve(path);
       if (dirs.has(target)) throw new Error(`EISDIR: ${target} is a directory`);
       if (files.delete(target)) touch(dirname(target));
+    },
+    create(path, content) {
+      const target = resolve(path);
+      if (files.has(target) || dirs.has(target)) return false;
+      put(target, Buffer.from(content));
+      return true;
     },
     append(path, content) {
       const target = resolve(path);

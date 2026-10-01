@@ -365,6 +365,28 @@ describe("bdk attempt close ok: post-task step evidence (T23-D41)", () => {
   });
 });
 
+describe("the part-lead loop (T41-D11)", () => {
+  it("opens on a started part with its budget and no post-task steps", () => {
+    const change = started();
+    const report = answered(open(change, "part-lead", "01"), "output/attempt-open.json");
+    expect(report).toMatchObject({ loop: "part-lead", target: "01", attempt: 1, of: 2 });
+    expect(report.steps).toBeUndefined();
+    refused(open(change, "part-lead", "01-1"), 3, "input/invalid-argument");
+    refused(open(change, "part-lead", "02"), 2, "policy/not-ready");
+  });
+
+  it("closes ok to part-done only after every task ticket of the part", () => {
+    const change = started();
+    const lead = opened(change, "part-lead", "01");
+    const task = opened(change, "task-redispatch", "01-1");
+    const refusal = refused(close(change, lead, "ok"), 2, "policy/ticket-open");
+    expect(refusal.why).toContain(task);
+    closed(change, task, "fail");
+    const report = closed(change, lead, "ok");
+    expect(report.next).toStrictEqual({ action: "part-done" });
+  });
+});
+
 describe("bdk attempt list", () => {
   it("exit 0: open first, budgets, and the same answer after .machine/ is rebuilt", () => {
     const change = started();
