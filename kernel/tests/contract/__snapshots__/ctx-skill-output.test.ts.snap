@@ -135,66 +135,6 @@ exports[`ctx skill output > create-adr is unchanged 1`] = `
 }"
 `;
 
-exports[`ctx skill output > create-plan is unchanged 1`] = `
-"{
-  "content": "## BDK context: create-plan\\n\\n### Rules: engineering-judgment\\n\\n- [BDK-EJ-1] Text of BDK-EJ-1.\\n- [BDK-EJ-2] Text of BDK-EJ-2.\\n\\n### Rules: plan\\n\\n- [BDK-PL-1] Text of BDK-PL-1.\\n- [BDK-PL-2] Text of BDK-PL-2.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n\\n### Project commands: lint\\n\\n- id: eslint\\n  command: pnpm lint\\n  tier: lint\\n\\n### Rules: code-quality\\n\\n- [BDK-CQ-1] Text of BDK-CQ-1.\\n- [BDK-CQ-2] Text of BDK-CQ-2.\\n\\n### Rules: architecture\\n\\n- [BDK-ARCH-1] Text of BDK-ARCH-1.\\n- [BDK-ARCH-2] Text of BDK-ARCH-2.\\n\\n### Rules: design-patterns\\n\\n- [BDK-DP-1] Text of BDK-DP-1.\\n- [BDK-DP-2] Text of BDK-DP-2.\\n\\n### Rules: security\\n\\n- [BDK-SEC-1] Text of BDK-SEC-1.\\n\\n### Rules: test-quality\\n\\n- [BDK-TQ-1] Text of BDK-TQ-1.\\n- [BDK-TQ-2] Text of BDK-TQ-2.\\n\\n### Language rules: typescript\\n\\n- [BDK-TS-1] Text of BDK-TS-1.\\n- [BDK-TS-2] Text of BDK-TS-2.\\n\\n### Language rules: react\\n\\n- [BDK-REACT-1] Text of BDK-REACT-1.\\n- [BDK-REACT-2] Text of BDK-REACT-2.\\n\\n### Project rules\\n\\n- [API-1] Text of API-1. (applies: src/api/**)\\n- [NAMING-1] Text of NAMING-1.\\n",
-  "parts": [
-    {
-      "kind": "rules",
-      "source": "rules/engineering-judgment"
-    },
-    {
-      "kind": "rules",
-      "source": "rules/plan"
-    },
-    {
-      "kind": "fragment",
-      "source": "fragments/decision/lavish"
-    },
-    {
-      "kind": "tools",
-      "source": "tools.test"
-    },
-    {
-      "kind": "tools",
-      "source": "tools.lint"
-    },
-    {
-      "kind": "rules",
-      "source": "rules/code-quality"
-    },
-    {
-      "kind": "rules",
-      "source": "rules/architecture"
-    },
-    {
-      "kind": "rules",
-      "source": "rules/design-patterns"
-    },
-    {
-      "kind": "rules",
-      "source": "rules/security"
-    },
-    {
-      "kind": "rules",
-      "source": "rules/test-quality"
-    },
-    {
-      "kind": "language-rules",
-      "source": "rules/languages/typescript"
-    },
-    {
-      "kind": "language-rules",
-      "source": "rules/languages/react"
-    },
-    {
-      "kind": "project-rules",
-      "source": ".bdk/rules"
-    }
-  ]
-}"
-`;
-
 exports[`ctx skill output > debug is unchanged 1`] = `
 "{
   "content": "## BDK context: debug\\n\\n### Project commands: test\\n\\n- id: unit\\n  command: pnpm test:unit\\n  scoped: pnpm vitest run {files}\\n  tier: fast\\n\\n### Project commands: lint\\n\\n- id: eslint\\n  command: pnpm lint\\n  tier: lint\\n",
@@ -222,6 +162,42 @@ exports[`ctx skill output > design is unchanged 1`] = `
     {
       "kind": "rules",
       "source": "rules/engineering-judgment"
+    },
+    {
+      "kind": "project-rules",
+      "source": ".bdk/rules"
+    },
+    {
+      "kind": "fragment",
+      "source": "fragments/decision/lavish"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > plan is unchanged 1`] = `
+"{
+  "content": "## BDK context: plan\\n\\n### Rules: plan\\n\\n- [BDK-PL-1] Text of BDK-PL-1.\\n- [BDK-PL-2] Text of BDK-PL-2.\\n\\n### Rules: engineering-judgment\\n\\n- [BDK-EJ-1] Text of BDK-EJ-1.\\n- [BDK-EJ-2] Text of BDK-EJ-2.\\n\\n### Rules: test-quality\\n\\n- [BDK-TQ-1] Text of BDK-TQ-1.\\n- [BDK-TQ-2] Text of BDK-TQ-2.\\n\\n### Language rules: typescript\\n\\n- [BDK-TS-1] Text of BDK-TS-1.\\n- [BDK-TS-2] Text of BDK-TS-2.\\n\\n### Language rules: react\\n\\n- [BDK-REACT-1] Text of BDK-REACT-1.\\n- [BDK-REACT-2] Text of BDK-REACT-2.\\n\\n### Project rules\\n\\n- [API-1] Text of API-1. (applies: src/api/**)\\n- [NAMING-1] Text of NAMING-1.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/plan"
+    },
+    {
+      "kind": "rules",
+      "source": "rules/engineering-judgment"
+    },
+    {
+      "kind": "rules",
+      "source": "rules/test-quality"
+    },
+    {
+      "kind": "language-rules",
+      "source": "rules/languages/typescript"
+    },
+    {
+      "kind": "language-rules",
+      "source": "rules/languages/react"
     },
     {
       "kind": "project-rules",
@@ -298,6 +274,13 @@ exports[`ctx skill output > test-driven-development is unchanged 1`] = `
 exports[`ctx skill output > verify-design is unchanged 1`] = `
 "{
   "content": "## BDK context: verify-design\\n",
+  "parts": []
+}"
+`;
+
+exports[`ctx skill output > verify-plan is unchanged 1`] = `
+"{
+  "content": "## BDK context: verify-plan\\n",
   "parts": []
 }"
 `;

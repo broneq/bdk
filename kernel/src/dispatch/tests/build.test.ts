@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { kindRegistry, PostTaskStepKind } from "../../graph/domain/kinds/index.ts";
-import { writeEntry, writePlanPart } from "../../graph/tests/support.ts";
+import { writeDesign, writeEntry, writePlanPart } from "../../graph/tests/support.ts";
 import { repository, ROOT } from "../../log/tests/support.ts";
 import { activePackage, readDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
@@ -132,11 +132,15 @@ describe("dispatch build", () => {
     expect(body).not.toContain("\n### 02-3 Verify the link\n");
   });
 
-  it("names the plan parts an artifact target requires, from the graph", async () => {
+  it("names the plan parts and the design documents an artifact target requires, from the graph", async () => {
     const h = dispatchHarness();
+    writeDesign(h.store, "design");
+    writeDesign(h.store, "architecture");
     ticket(h.store, { target: "plan-verify", loop: "verifier", id: "A-v3r1f7y2" });
     const { body } = await built(h, "plan-verify", "verifier", "A-v3r1f7y2");
     expect(body).toContain("- `.bdk/changes/2026-09-25-login/plan/parts/02-part.md`");
+    expect(body).toContain("- `.bdk/changes/2026-09-25-login/design.md`");
+    expect(body).toContain("- `.bdk/changes/2026-09-25-login/architecture.md`");
   });
 
   it("embeds accepted decisions and open blockers by target, part and Files; counts the rest", async () => {

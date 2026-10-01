@@ -88,6 +88,20 @@ describe("files and hash inputs", () => {
     });
   });
 
+  it("plan-verify hashes the plan parts and every spec delta", () => {
+    const plan = fakeView({
+      files: { ...planParts, "spec-delta/auth.md": {}, "spec-delta/mail/send.md": {} },
+    });
+    expect(kind("plan-verify").inputs(plan)).toStrictEqual({
+      files: [
+        "plan/parts/01-auth.md",
+        "plan/parts/02-mail.md",
+        "spec-delta/auth.md",
+        "spec-delta/mail/send.md",
+      ],
+    });
+  });
+
   it("spec-delta lists nested deltas and fails delta:<capability> with policy/spec-invalid", () => {
     const view = fakeView({
       files: { "spec-delta/auth/login.md": {}, "spec-delta/mail.md": {} },

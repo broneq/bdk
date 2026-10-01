@@ -47,22 +47,16 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
     { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" },
   ],
   "create-adr": [rules("architecture")],
-  "create-plan": [
-    rules("engineering-judgment"),
+  debug: [tools("test"), tools("lint")],
+  design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  plan: [
     rules("plan"),
-    decision,
-    tools("test"),
-    tools("lint"),
-    rules("code-quality"),
-    rules("architecture"),
-    rules("design-patterns"),
-    rules("security"),
+    rules("engineering-judgment"),
     rules("test-quality"),
     languageRules,
     projectRules,
+    decision,
   ],
-  debug: [tools("test"), tools("lint")],
-  design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
   "pr-review": [
     {
       kind: "file",
@@ -74,4 +68,5 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   swarm: [{ kind: "concurrency" }],
   "test-driven-development": [rules("test-quality"), tools("test")],
   "verify-design": [],
+  "verify-plan": [],
 };

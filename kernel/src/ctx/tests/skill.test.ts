@@ -145,12 +145,12 @@ describe("ctx skill", () => {
   });
 
   it("prints each pack rule with its id, and leaves a disabled one out", () => {
-    const report = compose("create-plan", {
+    const report = compose("bdk-rules-security", {
       ".bdk/settings.yaml": "rules:\n  disabled: [BDK-SEC-2]\n",
     });
     const section = report.content.split("### Rules: security\n\n")[1]?.split("\n### ")[0];
     expect(section).toBe("- [BDK-SEC-1] **Secrets.** Never logged.\n");
-    expect(report.content).toContain(
+    expect(compose("plan").content).toContain(
       "### Rules: plan\n\n- [BDK-PL-1] **Done.** Checkable in review.\n",
     );
   });
@@ -183,7 +183,7 @@ describe("ctx skill", () => {
   });
 
   it("prints the language rules of every language with a pack, in order", () => {
-    const report = compose("create-plan", {
+    const report = compose("plan", {
       ".bdk/settings.yaml": "languages: [typescript, cobol]\n",
     });
     expect(titles(report.content).filter((title) => title.startsWith("Language"))).toStrictEqual([

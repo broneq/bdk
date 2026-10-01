@@ -21514,9 +21514,11 @@ var PlanVerifyKind = class extends BaseKind {
   writes() {
     return [];
   }
-  /** P2: a verdict given for other plan parts is stale. */
+  /** P2: a verdict given for other plan parts or spec deltas is stale. */
   inputs(view) {
-    return { files: [...partFiles(view, "plan/parts").values()] };
+    return {
+      files: [...partFiles(view, "plan/parts").values(), ...view.specDeltas().map(deltaPath)]
+    };
   }
   validate(view, target) {
     return verdictChecks(view, target);
@@ -22924,22 +22926,16 @@ var SKILL_CONTEXT = {
     { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" }
   ],
   "create-adr": [rules("architecture")],
-  "create-plan": [
-    rules("engineering-judgment"),
-    rules("plan"),
-    decision,
-    tools("test"),
-    tools("lint"),
-    rules("code-quality"),
-    rules("architecture"),
-    rules("design-patterns"),
-    rules("security"),
-    rules("test-quality"),
-    languageRules,
-    projectRules
-  ],
   debug: [tools("test"), tools("lint")],
   design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  plan: [
+    rules("plan"),
+    rules("engineering-judgment"),
+    rules("test-quality"),
+    languageRules,
+    projectRules,
+    decision
+  ],
   "pr-review": [
     {
       kind: "file",
@@ -22950,7 +22946,8 @@ var SKILL_CONTEXT = {
   setup: [tools("test"), tools("lint"), tools("build")],
   swarm: [{ kind: "concurrency" }],
   "test-driven-development": [rules("test-quality"), tools("test")],
-  "verify-design": []
+  "verify-design": [],
+  "verify-plan": []
 };
 
 // kernel/src/ctx/use-cases/parts.ts

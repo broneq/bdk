@@ -3,6 +3,7 @@
 // the node must pass, be no older than the `done` of what it verifies
 // (v3-t41-design D2), and no live blocker may name it. The report is read,
 // never hashed.
+import { deltaPath } from "./documents.ts";
 import { BaseKind, live, partFiles } from "./kind.ts";
 import type { ChangeView, Check, GraphEntry, Inputs, ValidateTarget } from "./kind.ts";
 
@@ -129,9 +130,11 @@ export class PlanVerifyKind extends BaseKind {
   writes(): readonly string[] {
     return [];
   }
-  /** P2: a verdict given for other plan parts is stale. */
+  /** P2: a verdict given for other plan parts or spec deltas is stale. */
   inputs(view: ChangeView): Inputs {
-    return { files: [...partFiles(view, "plan/parts").values()] };
+    return {
+      files: [...partFiles(view, "plan/parts").values(), ...view.specDeltas().map(deltaPath)],
+    };
   }
   validate(view: ChangeView, target: ValidateTarget): Check[] {
     return verdictChecks(view, target);
