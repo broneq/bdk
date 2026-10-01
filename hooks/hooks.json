@@ -12,11 +12,50 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "^(Bash|Edit|Write|NotebookEdit|Agent)$",
         "hooks": [
           {
             "type": "command",
             "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/guard/pre-tool.sh\"; [ -r \"$f\" ] || { echo \"guard/kernel-unavailable: $f is missing, so BDK cannot check this tool call; reinstall the BDK plugin\" >&2; exit 2; }; . \"$f\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PLUGIN_ROOT}/hooks/guard/post-tool.sh\"; [ -r \"$f\" ] || { echo \"guard/kernel-unavailable: $f is missing, so BDK cannot check this agent; reinstall the BDK plugin\" >&2; exit 2; }; . \"$f\""
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/.bdk\" ] || exit 0; node \"${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs\" hooks subagent-start 2>/dev/null || exit 0"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/.bdk\" ] || exit 0; node \"${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs\" hooks subagent-stop 2>/dev/null || exit 0"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/.bdk\" ] || exit 0; node \"${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs\" hooks stop 2>/dev/null || exit 0"
           }
         ]
       }

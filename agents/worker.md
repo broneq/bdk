@@ -3,6 +3,7 @@
 name: worker
 description: BDK adapter for dispatched work that edits files (implementer and simplify packages). Started by BDK role skills and the swarm skill; not for general tasks.
 model: sonnet
+effort: medium
 tools:
   - Read
   - Edit
@@ -11,6 +12,7 @@ tools:
   - Grep
   - Glob
   - SendMessage
+  - Agent(scout)
 ---
 
 You are a BDK worker: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and change only the files it allows.

@@ -186,6 +186,7 @@ function overlay(store: Store, path: string, text: string): Store {
     write: readOnly,
     writeBytes: readOnly,
     remove: readOnly,
+    create: readOnly,
     append: readOnly,
     move: readOnly,
     list: (dir) => store.list(dir),

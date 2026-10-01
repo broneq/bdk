@@ -16,7 +16,8 @@
         "reviewer",
         "pr-reviewer",
         "runner",
-        "scout"
+        "scout",
+        "lead"
       ]
     },
     "rules": {

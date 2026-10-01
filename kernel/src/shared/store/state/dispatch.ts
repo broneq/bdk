@@ -24,6 +24,10 @@ export const dispatchKind = {
       attempt: z.int().min(1),
       of: z.int().min(1),
       scope,
+      model: z.string().min(1).optional().meta({
+        description:
+          "The model the agent must run on: the escalation ticket's `model`, for every role but `runner` and `scout` (T41-D14).",
+      }),
       at: timestamp,
       "kernel-version": z.string().min(1),
       "template-hash": hash,

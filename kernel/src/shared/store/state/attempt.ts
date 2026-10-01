@@ -35,6 +35,10 @@ export const attemptKind = {
         description:
           "The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.",
       }),
+      model: z.string().min(1).optional().meta({
+        description:
+          "The model every agent of the ticket runs on: `policy.escalation.model` when the escalation ticket opened. `dispatch build` returns it and `hooks pre-tool` holds the `Agent` call to it (T41-D14).",
+      }),
       "opened-at": timestamp,
       author,
       "closed-at": timestamp.optional().meta({ description: "Present exactly when `outcome` is." }),

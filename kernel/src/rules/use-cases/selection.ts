@@ -20,6 +20,7 @@ const ROLE_PREFIXES: Readonly<Record<Role, readonly string[]>> = {
   "design-verifier": ["ARCH", "EJ", "SEC"],
   runner: [],
   scout: [],
+  lead: [],
 };
 
 export interface SelectionInput {

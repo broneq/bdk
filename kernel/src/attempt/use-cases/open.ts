@@ -114,7 +114,7 @@ export function openAttempt(
         of: Math.max(state.of, 1),
         scope,
         ...(narrowedFrom === undefined ? {} : { "narrowed-from": narrowedFrom }),
-        ...(input.escalate ? { escalation: true } : {}),
+        ...(input.escalate ? { escalation: true, model: policy.escalation.model } : {}),
         "opened-at": openedAt,
         author: await authorIdent(deps.git, change.projectRoot),
         ...(dropped.length === 0 ? {} : { dropped: dropped.map((entry) => entry.id) }),
@@ -151,7 +151,7 @@ export function openAttempt(
       ...(dropped.length === 0 ? {} : { dropped }),
       ...(entry === undefined ? {} : { entry: entry.id }),
       ...(input.escalate ? { escalation: { model: policy.escalation.model } } : {}),
-      ...(loop === "verifier" ? {} : { steps: targets.steps }),
+      ...(loop === "verifier" || loop === "part-lead" ? {} : { steps: targets.steps }),
     };
   });
 }
@@ -172,7 +172,7 @@ function checkTarget(
     refuse("input/invalid-argument", `${loop} takes ${expected}; ${target} is not one`, [
       `bdk attempt open ${loop} <${expected}>`,
     ]);
-  if (loop === "task-redispatch" || loop === "verify-fix") {
+  if (loop === "task-redispatch" || loop === "verify-fix" || loop === "part-lead") {
     const task = loop === "task-redispatch";
     if (!(task ? TASK_ID : PART_ID).test(target)) return wrongType(task ? "task id" : "part id");
     const parts = readPlanParts(deps.store, change.dir);

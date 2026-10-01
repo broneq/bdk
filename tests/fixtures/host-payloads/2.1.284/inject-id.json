@@ -1,0 +1,220 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.284",
+    "check_id": "inject-id",
+    "recordings": 5
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-9>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-9>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-9>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Scan context for BDK-AGENT-ID lines",
+        "prompt": "Quote verbatim every line in your context that starts with BDK-AGENT-ID, or reply NONE.",
+        "subagent_type": "bdk-probe:probe-spawner",
+        "run_in_background": false
+      },
+      "tool_use_id": "<TOOL-USE-11>"
+    },
+    {
+      "session_id": "<SESSION-9>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-9>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-9>",
+      "permission_mode": "default",
+      "agent_id": "<AGENT-10>",
+      "agent_type": "bdk-probe:probe-spawner",
+      "hook_event_name": "SubagentStop",
+      "stop_hook_active": false,
+      "agent_transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-9>/subagents/agent-<AGENT-10>.jsonl",
+      "last_assistant_message": "BDK-AGENT-ID: <AGENT-10>",
+      "background_tasks": [],
+      "session_crons": []
+    },
+    {
+      "session_id": "<SESSION-9>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-9>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-9>",
+      "permission_mode": "default",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Agent",
+      "tool_input": {
+        "description": "Scan context for BDK-AGENT-ID lines",
+        "prompt": "Quote verbatim every line in your context that starts with BDK-AGENT-ID, or reply NONE.",
+        "subagent_type": "bdk-probe:probe-spawner",
+        "run_in_background": false
+      },
+      "tool_response": {
+        "status": "completed",
+        "prompt": "Quote verbatim every line in your context that starts with BDK-AGENT-ID, or reply NONE.",
+        "agentId": "<AGENT-10>",
+        "agentType": "bdk-probe:probe-spawner",
+        "harnessNoteCount": 0,
+        "harnessTailCount": 0,
+        "harnessSectionHash": "4c4b340497759e7d",
+        "content": [
+          {
+            "type": "text",
+            "text": "BDK-AGENT-ID: <AGENT-10>"
+          }
+        ],
+        "resolvedModel": "claude-haiku-4-5-20251001",
+        "totalDurationMs": 2202,
+        "totalTokens": 12010,
+        "totalToolUseCount": 0,
+        "usage": {
+          "output_tokens_details": {
+            "thinking_tokens": 128
+          },
+          "input_tokens": 10,
+          "cache_creation_input_tokens": 4057,
+          "cache_read_input_tokens": 7791,
+          "output_tokens": 152,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 4057
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 10,
+              "output_tokens": 152,
+              "cache_read_input_tokens": 7791,
+              "cache_creation_input_tokens": 4057,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 4057,
+                "ephemeral_1h_input_tokens": 0
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      },
+      "tool_use_id": "<TOOL-USE-11>",
+      "duration_ms": 2202
+    },
+    {
+      "session_id": "<SESSION-9>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-9>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-9>",
+      "permission_mode": "default",
+      "hook_event_name": "Stop",
+      "stop_hook_active": false,
+      "last_assistant_message": "BDK-AGENT-ID: <AGENT-10>",
+      "background_tasks": [],
+      "session_crons": []
+    },
+    {
+      "duration_api_ms": 8209,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-9>",
+      "total_cost_usd": 0.035679749999999996,
+      "usage": {
+        "input_tokens": 18,
+        "cache_creation_input_tokens": 11263,
+        "cache_read_input_tokens": 37204,
+        "output_tokens": 559,
+        "output_tokens_details": {
+          "thinking_tokens": 378
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 11263,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 93,
+            "cache_read_input_tokens": 23870,
+            "cache_creation_input_tokens": 727,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 727
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 28,
+          "outputTokens": 711,
+          "cacheReadInputTokens": 44995,
+          "cacheCreationInputTokens": 15320,
+          "webSearchRequests": 0,
+          "costUSD": 0.035679749999999996,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 506,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "subagent_stats": {
+        "spawned": 1,
+        "requested": {
+          "background": 0,
+          "foreground": 1,
+          "unset": 0
+        },
+        "started_in_background": 0,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 1,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "bdk-probe:probe-spawner": 1
+        }
+      },
+      "is_error": false,
+      "num_turns": 2,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "BDK-AGENT-ID: <AGENT-10>",
+      "ttft_ms": 3776,
+      "type": "result",
+      "duration_ms": 8508,
+      "uuid": "<UUID-9>",
+      "ttft_stream_ms": 691,
+      "time_to_request_ms": 71,
+      "first_content_frame_ms": 691,
+      "queued_turn_count": 0,
+      "result_index": 0
+    }
+  ]
+}

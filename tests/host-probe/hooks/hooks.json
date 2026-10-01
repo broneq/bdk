@@ -1,5 +1,5 @@
 {
-  "description": "Record every payload unchanged. Recorders print nothing and exit 0, so they never alter host behaviour.",
+  "description": "Record every payload unchanged. Recorders print nothing and exit 0, so they never alter host behaviour; block-once.sh acts only when BDK_PROBE_BLOCK names its event, inject-id.sh only when BDK_PROBE_INJECT=1.",
   "hooks": {
     "UserPromptExpansion": [
       {
@@ -37,12 +37,60 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "SendMessage",
+        "matcher": "SendMessage|Agent|TaskStop",
         "hooks": [
           {
             "type": "command",
             "command": "sh",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/record.sh", "PostToolUse"]
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/record.sh", "SubagentStart"]
+          },
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/inject-id.sh"]
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/record.sh", "SubagentStop"]
+          },
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/block-once.sh", "SubagentStop"]
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/record.sh", "Stop"]
+          },
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/block-once.sh", "Stop"]
           }
         ]
       }

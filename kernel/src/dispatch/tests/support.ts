@@ -8,7 +8,7 @@ import type { KindRegistry } from "../../graph/domain/kinds/index.ts";
 import { withPluginFiles, writePlanPart } from "../../graph/tests/support.ts";
 import { logRegistrations } from "../../log/index.ts";
 import { AUTHOR, DIR, fakeGit, repository, runBdk } from "../../log/tests/support.ts";
-import type { RunResult } from "../../log/tests/support.ts";
+import type { FakeGit, RunResult } from "../../log/tests/support.ts";
 import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import { memoryIndex, writeDocument } from "../../shared/store/index.ts";
@@ -63,6 +63,7 @@ export function ticket(
 
 export interface DispatchHarness {
   readonly store: Store;
+  readonly git: FakeGit;
   run(argv: readonly string[], at?: string): Promise<RunResult>;
 }
 
@@ -76,6 +77,7 @@ export function dispatchHarness(
   const git = fakeGit();
   return {
     store,
+    git,
     run: (argv, at = AT) => {
       const deps: DispatchDeps = {
         store,

@@ -177,7 +177,7 @@ export function escalationBlocked(
   return undefined;
 }
 
-export type NextAction = "commit" | "retry" | "narrow" | "escalate" | "parked";
+export type NextAction = "commit" | "part-done" | "retry" | "narrow" | "escalate" | "parked";
 
 export interface Next {
   readonly action: NextAction;
@@ -196,9 +196,11 @@ export function nextRung(
   after: RoundState,
   policy: LadderPolicy,
   blocked: string | undefined,
+  lead = false,
 ): Next {
   // The step evidence was checked before the close (T23-D41): what remains is the commit.
-  if (outcome === "ok") return { action: "commit" };
+  // A lead committed its part's tasks itself (T41-D11): what remains is `part done`.
+  if (outcome === "ok") return { action: lead ? "part-done" : "commit" };
   if (outcome === "not-run") {
     if (after.notRun >= policy.notRunBudget) {
       return {

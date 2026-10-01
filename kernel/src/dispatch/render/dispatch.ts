@@ -2,7 +2,8 @@
 import type { BuildReport, ShowReport } from "../domain/report.ts";
 
 export function renderBuild(report: BuildReport): string {
-  return `package for ${report.ticket} (${report.role} on ${report.adapter}, ${report.target}): ${String(report.bytes)} bytes\n${report.path}\n`;
+  const model = report.model === undefined ? "" : `, model ${report.model}`;
+  return `package for ${report.ticket} (${report.role} on ${report.adapter}${model}, ${report.target}): ${String(report.bytes)} bytes\n${report.path}\n`;
 }
 
 /** The file verbatim, so an agent reads exactly what was built. */

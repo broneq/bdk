@@ -9,7 +9,7 @@ import type { GraphDeps } from "./use-cases/deps.ts";
 export type { GraphDeps } from "./use-cases/deps.ts";
 export { changeGraph, graphSummary, stageResolver } from "./use-cases/status.ts";
 export { readGraph } from "./use-cases/graph.ts";
-export { stageGates, stageOfCommand } from "./use-cases/gates.ts";
+export { stageGates, stageOfCommand, stageWork } from "./use-cases/gates.ts";
 export type { StageGate } from "./use-cases/gates.ts";
 export { artifactPaths } from "./use-cases/paths.ts";
 export { postTaskSteps, targetSteps } from "./use-cases/steps.ts";

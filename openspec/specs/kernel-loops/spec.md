@@ -16,6 +16,7 @@ The kernel SHALL key every count by a loop and a target, derive every count from
 | `verify-fix`      | a part id      | `policy.budgets.verify-fix`      | 2       |
 | `review-fix`      | the Change id  | `policy.budgets.review-fix`      | 2       |
 | `verifier`        | an artifact id | `policy.budgets.verifier`        | 2       |
+| `part-lead`       | a part id      | `policy.budgets.part-lead`       | 2       |
 
 `not-run` is not a loop: it is a counter per loop and target with the budget `policy.budgets.not-run` (default 3). A round of a loop and target is the set of its attempt records that no answered ladder question names: the ladder question's `refs` name the tickets of the round it ends, and a `decision` entry whose `refs` name the question answers it (see "Escalation ladder"); the first round starts with the Change. Naming the tickets, not comparing times, keeps two rounds apart when a close, the answer and the next open fall in the same second. Within a round: `attempt` is one more than the number of `ok` and `fail` records that are not escalations; `of` is the loop's budget; the `not-run` counter is the number of `not-run` records since the latest `ok` or `fail` record. A budget of 0 allows no plain attempt. An answered ladder question is the only way a new round starts, so a budget never resets without a `decision` entry.
 
@@ -42,15 +43,16 @@ The kernel SHALL walk every loop through narrowed attempts, one optional escalat
 
 | Outcome and state                                                                                                           | `next.action`                                           |
 | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `ok`                                                                                                                        | `commit`                                                |
+| `ok` of a `part-lead` ticket                                                                                                | `part-done`                                             |
+| `ok` of any other ticket                                                                                                    | `commit`                                                |
 | `not-run`, `not-run` budget left                                                                                            | `retry` (same scope)                                    |
 | `fail`, budget left, no oscillation                                                                                         | `narrow` with the next scope                            |
 | `fail` with budget used up or oscillation, escalation available                                                             | `escalate`                                              |
 | `fail` of the escalation ticket, or budget used up or oscillation with no escalation available, or `not-run` budget used up | `parked` with the question entry and the resume command |
 
-An `ok` close has already run the post-task steps under its ticket (`kernel-cli/attempt`, `attempt close`; T23-D41), so the orchestrator commits the task next.
+An `ok` close has already run the post-task steps under its ticket (`kernel-cli/attempt`, `attempt close`; T23-D41), so the orchestrator commits the task next. A `part-lead` ticket is the lead of one plan part (T41-D11): its lead opens, dispatches, closes and commits the part's task tickets itself, so its `ok` close requires every task ticket of the part to be closed (`policy/ticket-open` otherwise) and runs no post-task steps of its own, and the orchestrator runs `part done` next. A `fail` or `not-run` of a `part-lead` ticket walks the same ladder; the next lead of the part finds the committed tasks through their trailers and continues with the rest.
 
-Escalation is available when `policy.escalation.enabled` is true, the round has no escalation ticket and the Change has fewer than `policy.escalation.per-change` escalation tickets. A plain `attempt open` refuses with `policy/budget-exhausted` when the round's budget is used up and with `policy/oscillation` when the round oscillates; `instead` names `attempt open <loop> <target> --escalate` when escalation is available and `change resume` when the Change is parked.
+Escalation is available when `policy.escalation.enabled` is true, the round has no escalation ticket and the Change has fewer than `policy.escalation.per-change` escalation tickets. A plain `attempt open` refuses with `policy/budget-exhausted` when the round's budget is used up and with `policy/oscillation` when the round oscillates; `instead` names `attempt open <loop> <target> --escalate` when escalation is available and `change resume` when the Change is parked. The escalation ticket's agents run on its `model` (`kernel-cli/dispatch`, bdk dispatch build), not on their adapter's tier: the escalation is a stronger model, not only one more attempt (T41-D14).
 
 #### Scenario: budget exhaustion parks the Change
 
@@ -60,7 +62,7 @@ Escalation is available when `policy.escalation.enabled` is true, the round has 
 #### Scenario: escalation before parking
 
 - **WHEN** escalation is enabled and the budget of `task-redispatch 02-3` is used up
-- **THEN** the last `attempt close` returns `next.action: escalate`, `attempt open task-redispatch 02-3 --escalate` exits 0 with `escalation.model` from `policy.escalation.model`, and a `fail` close of that ticket returns `next.action: parked`
+- **THEN** the last `attempt close` returns `next.action: escalate`, `attempt open task-redispatch 02-3 --escalate` exits 0 with `escalation.model` from `policy.escalation.model` and records it as the ticket's `model`, and a `fail` close of that ticket returns `next.action: parked`
 
 #### Scenario: ok gives commit
 
@@ -71,6 +73,16 @@ Escalation is available when `policy.escalation.enabled` is true, the round has 
 
 - **WHEN** the runner recorded `tests-scoped` with verdict `fail` and the orchestrator closes the ticket `fail` with budget left
 - **THEN** `next.action` is `narrow` and the next ticket of the task starts a new implementer package
+
+#### Scenario: lead ticket closes to part-done
+
+- **WHEN** every task ticket of part `02` is closed and the `part-lead` ticket of `02` closes `ok`
+- **THEN** `next.action` is `part-done`
+
+#### Scenario: lead ticket with an open task ticket
+
+- **WHEN** a task ticket of part `02` is open and `bdk attempt close <part-lead ticket> ok` runs
+- **THEN** the exit code is 2, the error object carries `rule: policy/ticket-open` naming the task ticket, and the lead ticket stays open
 
 ### Requirement: Not-run outcome
 

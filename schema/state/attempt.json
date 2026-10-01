@@ -9,7 +9,7 @@
     "ticket": { "$ref": "common.json#/$defs/ticketId" },
     "loop": {
       "type": "string",
-      "enum": ["task-redispatch", "verify-fix", "review-fix", "verifier"],
+      "enum": ["task-redispatch", "verify-fix", "review-fix", "verifier", "part-lead"],
       "description": "The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds)."
     },
     "target": {
@@ -24,6 +24,11 @@
     "escalation": {
       "description": "The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.",
       "type": "boolean"
+    },
+    "model": {
+      "description": "The model every agent of the ticket runs on: `policy.escalation.model` when the escalation ticket opened. `dispatch build` returns it and `hooks pre-tool` holds the `Agent` call to it (T41-D14).",
+      "type": "string",
+      "minLength": 1
     },
     "opened-at": { "$ref": "common.json#/$defs/timestamp" },
     "author": { "$ref": "common.json#/$defs/author" },

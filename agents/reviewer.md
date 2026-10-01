@@ -3,6 +3,7 @@
 name: reviewer
 description: BDK read-only adapter for code review with test runs (reviewer, pr-reviewer). Started by BDK role skills and the swarm skill; not for general tasks.
 model: sonnet
+effort: medium
 tools:
   - Read
   - Grep

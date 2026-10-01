@@ -93,3 +93,35 @@ export interface SessionEndReport {
     readonly skipped?: string | undefined;
   };
 }
+
+/** What `post-tool --json` prints: the link or end it recorded, if any. */
+export interface PostToolReport {
+  readonly tool: string;
+  readonly linked: {
+    readonly agent: string;
+    readonly parent: string;
+    readonly ticket: string | null;
+  } | null;
+  readonly ended: { readonly agent: string; readonly by: "agent-result" | "task-stop" } | null;
+}
+
+/** What `subagent-start --json` prints; `context` is null for a non-BDK agent type. */
+export interface SubagentStartReport {
+  readonly agent: string | null;
+  readonly parent: string | null;
+  readonly package: string | null;
+  readonly context: string | null;
+}
+
+/** What `stop --json` and `subagent-stop --json` print: the continuation check's answer (T41-D7). */
+export interface StopReport {
+  /** `subagent-stop` only: the agent of `agent_id`; null when the payload names none. */
+  readonly agent?: string | null;
+  readonly decision: "block" | "pass";
+  /** Set on a block: the open work and the next command. */
+  readonly reason?: string | undefined;
+  /** The thread's continuations after this call. */
+  readonly continuations: number;
+  /** The stall `finding` written when the limit was reached. */
+  readonly stalled?: string | undefined;
+}

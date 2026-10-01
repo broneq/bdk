@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-stop.json",
+  "title": "bdk hooks stop --json",
+  "description": "Stop: the continuation check of the main thread. Text mode prints the host's block object, or nothing on a pass.",
+  "type": "object",
+  "properties": {
+    "decision": { "type": "string", "enum": ["block", "pass"] },
+    "reason": {
+      "description": "On a block: the open work and the next command.",
+      "type": "string"
+    },
+    "continuations": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "stalled": {
+      "description": "The stall finding written when agents.continuation.max was reached.",
+      "type": "string"
+    }
+  },
+  "required": ["decision", "continuations"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "decision": "block",
+      "reason": "BDK: execute-part:02 is ready (bdk next). Continue it; end your turn only to ask the user a question or to report a blocker.",
+      "continuations": 1
+    }
+  ]
+}

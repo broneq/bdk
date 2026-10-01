@@ -9,7 +9,7 @@ import { registrations, settingsRegistry } from "../src/registrations.ts";
 import { createRegistry, loadIndex } from "../src/shared/registry/index.ts";
 import { systemClock } from "../src/shared/clock/index.ts";
 import { systemGit } from "../src/shared/git/index.ts";
-import { memoryIndex, memoryStore } from "../src/shared/store/index.ts";
+import { memoryIndex, memoryRegistry, memoryStore } from "../src/shared/store/index.ts";
 import { consumerViolations } from "./support/consumers.ts";
 import type { ConsumerWorld, Declared } from "./support/consumers.ts";
 import { importViolations, nodeViolations, readMatrix, readSources } from "./support/imports.ts";
@@ -230,6 +230,7 @@ describe("config consumers (S6)", async () => {
       settings,
       git: systemGit,
       openIndex: memoryIndex,
+      openRegistry: memoryRegistry(),
       clock: systemClock,
     }),
   );

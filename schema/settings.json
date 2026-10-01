@@ -311,6 +311,13 @@
               "minimum": 0,
               "maximum": 9007199254740991
             },
+            "part-lead": {
+              "default": 2,
+              "description": "Lead tickets of one plan part.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
             "not-run": {
               "default": 3,
               "description": "Consecutive not-run closes of one loop and target.",
@@ -545,6 +552,73 @@
           "description": "The word every requirement statement carries, as a whole word.",
           "type": "string",
           "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "agents": {
+      "description": "Composed of agents.ttl, agents.open-call-limit, agents.message, agents.continuation, agents.scout.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "ttl": {
+          "default": 300,
+          "description": "Seconds without a tool call after which an agent with no open call is suspect.",
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 1800
+        },
+        "open-call-limit": {
+          "default": 720,
+          "description": "Seconds after which an open tool call no longer keeps an agent running.",
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600
+        },
+        "message": {
+          "description": "Messages between agents.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "max-chars": {
+              "default": 300,
+              "description": "The longest message one agent may send another.",
+              "type": "integer",
+              "minimum": 50,
+              "maximum": 2000
+            }
+          },
+          "additionalProperties": false
+        },
+        "continuation": {
+          "description": "The continuation check of the Stop and SubagentStop hooks.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "max": {
+              "default": 3,
+              "description": "Turn ends in a row the check blocks without progress; 0 switches it off.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            }
+          },
+          "additionalProperties": false
+        },
+        "scout": {
+          "description": "The scouts a worker may start.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "max-per-ticket": {
+              "default": 2,
+              "description": "Scout agents one worker may start under one ticket; 0 forbids it.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

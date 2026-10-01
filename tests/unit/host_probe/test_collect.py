@@ -49,7 +49,12 @@ def payload(session: str = SESSION, **extra) -> dict:
     }
 
 
-def run_collect(tmp_path: Path, *pairs: str, recordings: dict[str, dict] | None = None):
+def run_collect(
+    tmp_path: Path,
+    *pairs: str,
+    recordings: dict[str, dict] | None = None,
+    extra_env: dict[str, str] | None = None,
+):
     out = tmp_path / ".probe-out"
     out.mkdir(exist_ok=True)
     for name, body in (recordings or {}).items():
@@ -61,6 +66,7 @@ def run_collect(tmp_path: Path, *pairs: str, recordings: dict[str, dict] | None 
         "PROBE_OUT": str(out),
         "PROBE_PROJECT": PROJECT,
         "BDK_FIXTURES": str(dest),
+        **(extra_env or {}),
     }
     result = subprocess.run(
         ["node", str(COLLECT), "9.9.9", *pairs],
@@ -112,6 +118,22 @@ def test_per_user_claude_temp_dir_is_replaced(tmp_path, prefix):
     assert result.returncode == 0, result.stderr
     p = read_fixture(dest, "tmp")["payloads"][0]
     assert p["scratchpad_dir"] == f"<CLAUDE_TMP>/<PROJECT>/{p['session_id']}/scratchpad"
+
+
+def test_git_identity_and_emails_are_replaced(tmp_path):
+    config = tmp_path / "gitconfig"
+    config.write_text("[user]\n\tname = Alice Example\n\temail = alice@example.org\n")
+    output = "L-1 finding | author: Alice Example <alice@example.org>, cc bob@example.com"
+    body = payload(tool_response={"stdout": output})
+    result, dest = run_collect(
+        tmp_path,
+        "git=*-PreToolUse.json",
+        recordings={"1-1-PreToolUse.json": body},
+        extra_env={"GIT_CONFIG_GLOBAL": str(config), "GIT_CONFIG_NOSYSTEM": "1"},
+    )
+    assert result.returncode == 0, result.stderr
+    p = read_fixture(dest, "git")["payloads"][0]
+    assert p["tool_response"]["stdout"] == "L-1 finding | author: <GIT_NAME> <<EMAIL>>, cc <EMAIL>"
 
 
 def test_ids_map_to_stable_placeholders(tmp_path):
@@ -169,14 +191,32 @@ def test_missing_recording_fails_and_names_the_check(tmp_path):
     assert not (dest / "absent.json").exists()
 
 
+# BDK's own role and adapter names, which fixtures hold by design (`bdk:runner`).
+BDK_NAMES = {
+    "implementer",
+    "simplifier",
+    "verifier",
+    "reviewer",
+    "runner",
+    "scout",
+    "lead",
+    "worker",
+    "reader",
+}
+
+
 def leaks(text: str, user: str) -> list[str]:
-    """Machine data found in text: home prefixes (plain or dash-encoded) and the username.
+    """Machine data found in text: home prefixes (plain or dash-encoded), e-mails and the username.
 
     The username only counts as a standalone token, so a short CI user such as
-    `runner` does not match the agent name `bdk:test-runner`.
+    `runner` does not match the agent name `bdk:test-runner`, and not at all when
+    it is a BDK role or adapter name: the GitHub runner's user is `runner`.
     """
     found = [marker for marker in ("/Users/", "/home/", "-Users-", "-home-") if marker in text]
-    if re.search(rf"(?<![A-Za-z0-9_-]){re.escape(user)}(?![A-Za-z0-9_])", text):
+    found += re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
+    if user not in BDK_NAMES and re.search(
+        rf"(?<![A-Za-z0-9_-]){re.escape(user)}(?![A-Za-z0-9_])", text
+    ):
         found.append(user)
     return found
 
@@ -188,13 +228,16 @@ def leaks(text: str, user: str) -> list[str]:
         "-Users-alice-project",
         "/tmp/alice-scratch",
         "owner: alice",
+        "author: <GIT_NAME> <alice@example.org>",
     ],
 )
 def test_leak_guard_flags_machine_data(text):
     assert leaks(text, "alice")
 
 
-@pytest.mark.parametrize("text", ["bdk:test-runner", "runners", "<USER>-scratch"])
+@pytest.mark.parametrize(
+    "text", ["bdk:test-runner", "runners", "<USER>-scratch", "subagent_type: bdk:runner"]
+)
 def test_leak_guard_ignores_username_inside_other_names(text):
     assert leaks(text, "runner") == []
 

@@ -11,6 +11,7 @@ import { findWorkTree, systemGit } from "./shared/git/index.ts";
 import { createRegistry, loadIndex } from "./shared/registry/index.ts";
 import {
   fileIndex,
+  fileRegistry,
   fileStore,
   findExecutable,
   readStdin,
@@ -29,6 +30,7 @@ const registry = createRegistry(
     settings: settingsRegistry(),
     git: systemGit,
     openIndex: fileIndex,
+    openRegistry: fileRegistry,
     clock: systemClock,
   }),
   { activeChange: (where) => resolveActiveChange(store, systemGit, where) },

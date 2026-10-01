@@ -119,6 +119,42 @@ describe("bdk attempt open", () => {
     expect(status.parked).toMatchObject({ entry: (last.next as { entry: string }).entry });
   });
 
+  it("exit 0: the escalation ticket's agents run on its model (T41-D14)", () => {
+    const change = started("policy:\n  budgets:\n    task-redispatch: 1\n");
+    closed(change, opened(change, "task-redispatch", "01-1"), "fail");
+    const ticket = opened(change, "task-redispatch", "01-1", "--escalate");
+    const build = (role: string) =>
+      answered(
+        bdk(["dispatch", "build", "01-1", role, ticket, "--json"], change.root),
+        "output/dispatch-build.json",
+      );
+    const implementer = build("implementer");
+    expect(implementer.model).toBe("opus");
+    expect(read(change.root, implementer.path as string)).toMatch(/^model: opus$/m);
+    expect(build("runner")).not.toHaveProperty("model");
+
+    const start = (model?: string) =>
+      bdk(["hooks", "pre-tool"], change.root, {
+        stdin: JSON.stringify({
+          session_id: "s",
+          cwd: change.root,
+          hook_event_name: "PreToolUse",
+          tool_name: "Agent",
+          tool_input: {
+            subagent_type: "bdk:worker",
+            prompt: implementer.path,
+            run_in_background: true,
+            ...(model === undefined ? {} : { model }),
+          },
+        }),
+      });
+    const denied = start();
+    expect(denied.code).toBe(2);
+    expect(denied.stderr).toMatch(/^guard\/escalation-model: .*model: opus/);
+    expect(start("sonnet").code).toBe(2);
+    expect(start("opus")).toMatchObject({ code: 0, stdout: "" });
+  });
+
   it("exit 0: an answer opens a new round", () => {
     const change = started(
       "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    enabled: false\n",
@@ -362,6 +398,28 @@ describe("bdk attempt close ok: post-task step evidence (T23-D41)", () => {
     recorded(change, ticket, "tests-scoped");
     recorded(change, ticket, "lint", "not-run");
     closed(change, ticket, "ok");
+  });
+});
+
+describe("the part-lead loop (T41-D11)", () => {
+  it("opens on a started part with its budget and no post-task steps", () => {
+    const change = started();
+    const report = answered(open(change, "part-lead", "01"), "output/attempt-open.json");
+    expect(report).toMatchObject({ loop: "part-lead", target: "01", attempt: 1, of: 2 });
+    expect(report.steps).toBeUndefined();
+    refused(open(change, "part-lead", "01-1"), 3, "input/invalid-argument");
+    refused(open(change, "part-lead", "02"), 2, "policy/not-ready");
+  });
+
+  it("closes ok to part-done only after every task ticket of the part", () => {
+    const change = started();
+    const lead = opened(change, "part-lead", "01");
+    const task = opened(change, "task-redispatch", "01-1");
+    const refusal = refused(close(change, lead, "ok"), 2, "policy/ticket-open");
+    expect(refusal.why).toContain(task);
+    closed(change, task, "fail");
+    const report = closed(change, lead, "ok");
+    expect(report.next).toStrictEqual({ action: "part-done" });
   });
 });
 

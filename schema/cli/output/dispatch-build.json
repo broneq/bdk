@@ -31,11 +31,20 @@
         "reviewer",
         "pr-reviewer",
         "runner",
-        "scout"
+        "scout",
+        "lead"
       ]
     },
-    "adapter": { "type": "string", "enum": ["worker", "reader", "reviewer", "runner", "scout"] },
+    "adapter": {
+      "type": "string",
+      "enum": ["worker", "reader", "reviewer", "runner", "scout", "lead"]
+    },
     "scope": { "type": "string", "enum": ["full", "high+", "blockers"] },
+    "model": {
+      "description": "The model to start the agent on: the escalation ticket's model, for every role but runner and scout. `hooks pre-tool` denies an Agent call with another model.",
+      "type": "string",
+      "minLength": 1
+    },
     "kernelVersion": { "type": "string", "minLength": 1 },
     "templateHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "report": {

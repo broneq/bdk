@@ -273,6 +273,7 @@ describe("bdk config check", () => {
           "verify-fix": 2,
           "review-fix": 2,
           verifier: 2,
+          "part-lead": 2,
           "not-run": 3,
         },
         oscillation: { threshold: 2 },
@@ -280,6 +281,26 @@ describe("bdk config check", () => {
         checkpoint: { enabled: true },
       },
     });
+  });
+
+  it("acceptance: agents defaults", () => {
+    const shown = bdk(["config", "show", "agents", "--json"], fixture({}).root);
+    expect(shown.code).toBe(0);
+    expect(JSON.parse(shown.stdout)).toMatchObject({
+      value: {
+        ttl: 300,
+        "open-call-limit": 720,
+        message: { "max-chars": 300 },
+        continuation: { max: 3 },
+        scout: { "max-per-ticket": 2 },
+      },
+    });
+  });
+
+  it("acceptance: agents ttl out of range", () => {
+    const root = fixture({ ".bdk/settings.yaml": "agents:\n  ttl: 10\n" }).root;
+    const refusal = refused(bdk(["config", "check", "--json"], root), 2, "policy/config-invalid");
+    expect(refusal.why).toContain("agents.ttl");
   });
 
   it("acceptance: evidence defaults", () => {

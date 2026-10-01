@@ -2,13 +2,15 @@
 // repositories: one case per exit code and per declared rule, the output
 // validated against `schema/cli/output/commit.json`, the trailers read back
 // with `git log`, and a file the user staged left staged.
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
   answered,
   bdk,
+  bdkAsync,
   git,
   outsideRepository,
   refused,
@@ -164,5 +166,38 @@ describe("bdk commit", () => {
 
   it("exit 5 runtime/not-a-repo", () => {
     refused(bdk(["commit", "01-1", "--json"], outsideRepository()), 5, "runtime/not-a-repo");
+  });
+});
+
+describe("bdk commit: serialised commits (T41-D12)", () => {
+  it("two commits at the same moment both succeed, each with its own paths and trailer", async () => {
+    const change = tiny();
+    write(change, "src/01-1.ts");
+    write(change, "src/01-2.ts");
+    const [first, second] = await Promise.all(
+      ["01-1", "01-2"].map((task) => bdkAsync(["commit", task, "--json"], change.root)),
+    );
+    for (const result of [first, second]) expect(result?.code, result?.stdout).toBe(0);
+    for (const [task, other] of [
+      ["01-1", "src/01-2.ts"],
+      ["01-2", "src/01-1.ts"],
+    ] as const) {
+      const commit = git(change.root, "log", "--format=%H", `--grep=BDK-Task: ${task}`).trim();
+      const files = git(change.root, "show", "--name-only", "--format=", commit);
+      expect(files).toContain(`src/${task}.ts`);
+      expect(files).not.toContain(other);
+    }
+    expect(existsSync(join(change.root, ".bdk/.machine/commit.lock"))).toBe(false);
+  });
+
+  it("takes over the lock of a process that no longer exists", () => {
+    const change = tiny();
+    write(change, "src/01-1.ts");
+    const dead = spawnSync(process.execPath, ["-e", "0"]).pid;
+    const lock = join(change.root, ".bdk/.machine/commit.lock");
+    mkdirSync(join(change.root, ".bdk/.machine"), { recursive: true });
+    writeFileSync(lock, JSON.stringify({ pid: dead, owner: "01-2", at: "2026-09-25T10:00:00Z" }));
+    answered(commit(change, "01-1"), "output/commit.json");
+    expect(existsSync(lock)).toBe(false);
   });
 });

@@ -1217,6 +1217,7 @@
       "exits": [0, 2, 3, 4, 5],
       "refusals": [
         "input/not-found",
+        "policy/commit-busy",
         "policy/do-not-touch",
         "policy/git-in-progress",
         "policy/git-hook-failed",
@@ -1593,7 +1594,7 @@
     {
       "id": "hooks-pre-tool",
       "argv": ["hooks", "pre-tool"],
-      "summary": "PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.mjs hooks` from Bash.",
+      "summary": "PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.mjs hooks` from Bash, agent spawns and agent messages.",
       "availability": "hook",
       "mode": "guard",
       "slice": "hooks",
@@ -1609,12 +1610,88 @@
         "guard/spec-dir-write",
         "guard/subagent-git",
         "guard/subagent-kernel-command",
+        "guard/lead-scope",
         "guard/hooks-from-bash",
         "guard/nested-stage-command",
         "guard/dispatch-prompt",
-        "guard/reader-write"
+        "guard/reader-write",
+        "guard/agent-spawn",
+        "guard/escalation-model",
+        "guard/agent-message"
       ],
-      "writes": []
+      "writes": [".bdk/.machine/agents.sqlite"]
+    },
+    {
+      "id": "hooks-post-tool",
+      "argv": ["hooks", "post-tool"],
+      "summary": "PostToolUse hook: link a spawned agent to its parent and record a killed agent.",
+      "availability": "hook",
+      "mode": "inject",
+      "slice": "hooks",
+      "owner": "T41",
+      "changeScoped": false,
+      "standalone": true,
+      "args": [],
+      "flags": [],
+      "stdin": "PostToolUse payload (section 8).",
+      "output": "output/hooks-post-tool.json",
+      "exits": [0],
+      "refusals": [],
+      "writes": [".bdk/.machine/agents.sqlite"]
+    },
+    {
+      "id": "hooks-subagent-start",
+      "argv": ["hooks", "subagent-start"],
+      "summary": "SubagentStart hook: record the agent and hand it its identity.",
+      "availability": "hook",
+      "mode": "inject",
+      "slice": "hooks",
+      "owner": "T41",
+      "changeScoped": false,
+      "standalone": true,
+      "args": [],
+      "flags": [],
+      "stdin": "SubagentStart payload (section 8).",
+      "output": "output/hooks-subagent-start.json",
+      "exits": [0],
+      "refusals": [],
+      "writes": [".bdk/.machine/agents.sqlite"]
+    },
+    {
+      "id": "hooks-subagent-stop",
+      "argv": ["hooks", "subagent-stop"],
+      "summary": "SubagentStop hook: the continuation check for a subagent, then its end in the registry.",
+      "availability": "hook",
+      "mode": "inject",
+      "slice": "hooks",
+      "owner": "T41",
+      "changeScoped": false,
+      "standalone": true,
+      "args": [],
+      "flags": [],
+      "stdin": "SubagentStop payload (section 8).",
+      "output": "output/hooks-subagent-stop.json",
+      "exits": [0],
+      "refusals": [],
+      "writes": [".bdk/.machine/agents.sqlite", ".bdk/changes/<id>/log/"]
+    },
+    {
+      "id": "hooks-stop",
+      "argv": ["hooks", "stop"],
+      "summary": "Stop hook: the continuation check for the main thread.",
+      "availability": "hook",
+      "mode": "inject",
+      "slice": "hooks",
+      "owner": "T41",
+      "changeScoped": false,
+      "standalone": true,
+      "args": [],
+      "flags": [],
+      "stdin": "Stop payload (section 8).",
+      "output": "output/hooks-stop.json",
+      "exits": [0],
+      "refusals": [],
+      "writes": [".bdk/.machine/agents.sqlite", ".bdk/changes/<id>/log/"]
     },
     {
       "id": "hooks-skill-exists",
@@ -1722,6 +1799,90 @@
       "exits": [0, 3],
       "refusals": ["input/unknown-flag", "input/invalid-argument"],
       "writes": []
+    },
+    {
+      "id": "agents-list",
+      "argv": ["agents", "list"],
+      "summary": "The agents of the registry with their state, parent and package.",
+      "availability": "read",
+      "mode": "command",
+      "slice": "agents",
+      "owner": "T41",
+      "changeScoped": true,
+      "args": [],
+      "flags": [
+        {
+          "name": "--children-of",
+          "value": "<agent-id>",
+          "description": "Only the agents whose parent is this agent; `main` names the main thread."
+        },
+        {
+          "name": "--affected-by",
+          "value": "<entry-id>",
+          "description": "Only the running agents whose package's target the entry names; needs the active Change."
+        },
+        {
+          "name": "--state",
+          "value": "<starting|running|suspect|ended>",
+          "description": "Only agents in this state."
+        },
+        {
+          "name": "--all",
+          "description": "Include ended agents."
+        }
+      ],
+      "output": "output/agents-list.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found"],
+      "writes": []
+    },
+    {
+      "id": "agents-show",
+      "argv": ["agents", "show"],
+      "summary": "One agent of the registry with its lifecycle signals and children.",
+      "availability": "read",
+      "mode": "command",
+      "slice": "agents",
+      "owner": "T41",
+      "changeScoped": false,
+      "args": [
+        {
+          "name": "<agent-id>",
+          "required": true
+        }
+      ],
+      "flags": [],
+      "output": "output/agents-show.json",
+      "exits": [0, 3, 5],
+      "refusals": ["input/not-found"],
+      "writes": []
+    },
+    {
+      "id": "agents-wait",
+      "argv": ["agents", "wait"],
+      "summary": "Block until a child reports, ends or turns suspect, or a message arrives.",
+      "availability": "agent",
+      "mode": "command",
+      "slice": "agents",
+      "owner": "T41",
+      "changeScoped": false,
+      "args": [
+        {
+          "name": "<agent-id>",
+          "required": true
+        }
+      ],
+      "flags": [
+        {
+          "name": "--timeout",
+          "value": "<seconds>",
+          "description": "How long to block with nothing to report; default 300, at most 540."
+        }
+      ],
+      "output": "output/agents-wait.json",
+      "exits": [0, 3, 5],
+      "refusals": ["input/not-found"],
+      "writes": [".bdk/.machine/agents.sqlite"]
     }
   ]
 }

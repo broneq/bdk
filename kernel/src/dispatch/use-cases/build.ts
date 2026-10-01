@@ -30,6 +30,7 @@ import {
   TASK_ID,
   targetFiles,
   taskHolders,
+  taskProgress,
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
@@ -99,6 +100,19 @@ export function buildPackage(
         ["bdk attempt list", `bdk attempt open <loop> ${input.target}`],
       );
     }
+    if ((role === "lead") !== (record.data.loop === "part-lead")) {
+      return refuse(
+        "input/invalid-argument",
+        role === "lead"
+          ? `lead runs a part-lead ticket; ${input.ticket} is a ${record.data.loop} ticket`
+          : `a part-lead ticket takes the lead role, not ${role}`,
+        [
+          role === "lead"
+            ? `bdk attempt open part-lead <part>`
+            : `bdk dispatch build ${input.target} lead ${input.ticket}`,
+        ],
+      );
+    }
     const resolved = resolveOrRefuse(
       {
         store: deps.store,
@@ -116,6 +130,7 @@ export function buildPackage(
     const checks =
       role === "runner" ? await runnerChecks(deps, change, index, globalDir, input, resolved) : "";
     if (typeof checks !== "string") return checks;
+    const tasks = role === "lead" ? await leadTasks(deps, change, input.target) : "";
 
     const name = `${input.target}-${role}-${input.ticket}.md`;
     const changeRel = posix.relative(change.projectRoot, change.dir);
@@ -138,8 +153,9 @@ export function buildPackage(
         blocking: categoryList(policy?.blocking ?? []),
         "not-a-fail": categoryList(policy?.notAFail ?? []),
         checks,
+        tasks,
       },
-      verifier ? "verifier" : role === "runner" ? "runner" : undefined,
+      verifier ? "verifier" : role === "runner" || role === "lead" ? role : undefined,
     );
     const rules = selectFor(
       ruleContext(
@@ -155,6 +171,7 @@ export function buildPackage(
       ...rules.selected.map(({ rule }) => `${rule.id}\n${rule.text}`),
     ]);
     const kernelVersion = readKernelVersion(deps.store, deps.pluginRoot);
+    const model = escalationModel(record.data.model, role);
     const data = {
       schema: STATE_KINDS.dispatch.version,
       ticket: input.ticket,
@@ -164,6 +181,7 @@ export function buildPackage(
       attempt: record.data.attempt,
       of: record.data.of,
       scope: record.data.scope,
+      ...(model === undefined ? {} : { model }),
       at: deps.clock.now(),
       "kernel-version": kernelVersion,
       "template-hash": templateHash,
@@ -192,12 +210,21 @@ export function buildPackage(
       role,
       adapter: ROLE_ADAPTERS[role],
       scope: record.data.scope,
+      ...(model === undefined ? {} : { model }),
       kernelVersion,
       templateHash,
       report,
       entries: { full: selection.full.map((entry) => entry.id), counted: selection.counted },
     };
   });
+}
+
+/**
+ * The model of an escalation ticket's package (T41-D14): a stronger model helps
+ * the roles that reason, not the runner running commands or the scout searching.
+ */
+function escalationModel(model: string | undefined, role: Role): string | undefined {
+  return role === "runner" || role === "scout" ? undefined : model;
 }
 
 /** The runner's `Checks` text: the runner's steps in pipeline order with the project's commands. */
@@ -213,6 +240,32 @@ async function runnerChecks(
   if (isRefusal(steps)) return steps;
   const kinds = steps.steps.filter((step) => step.role === "runner").map((step) => step.kind);
   return checksText(kinds, toolEntries(resolved), steps.files, input.ticket);
+}
+
+/**
+ * The lead's `Tasks` text (T41-D11): each task of the part in plan order with
+ * its files, its dependencies and whether a trailer commit already carries it,
+ * so a lead that replaces an earlier one continues with the rest.
+ */
+async function leadTasks(deps: DispatchDeps, change: ActiveChange, part: string): Promise<string> {
+  const parts = readPlanParts(deps.store, change.dir);
+  const progress = await taskProgress(
+    deps.git,
+    change.projectRoot,
+    change.id,
+    parts,
+    readAttempts(deps.store, change.dir),
+  );
+  const tasks = parts.find((found) => found.id === part)?.tasks ?? [];
+  return tasks
+    .map((task) => {
+      const files = task.files.map((file) => `\`${file.path}\``).join(", ");
+      const depends =
+        task.dependsOn.length === 0 ? "none" : task.dependsOn.map((id) => `\`${id}\``).join(", ");
+      const state = progress.committed.has(task.id) ? "committed" : "open";
+      return `- \`${task.id}\` ${task.title} (${state}). Files: ${files}. Depends on: ${depends}.`;
+    })
+    .join("\n");
 }
 
 function isRole(role: string): role is Role {

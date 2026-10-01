@@ -4,11 +4,11 @@
 // rebuilt once; a second failure is `state/corrupted-index`.
 import { mkdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type * as sqlite from "node:sqlite";
 import type { DatabaseSync } from "node:sqlite";
 
 import { KernelRefusal, refuse } from "../../refusal/index.ts";
 import type { Store } from "../store.ts";
+import { loadSqlite } from "../sqlite.ts";
 import { currentVersion, ensureSchema } from "./schema.ts";
 
 const BUSY_TIMEOUT_MS = 5000;
@@ -87,32 +87,6 @@ export async function openIndex(
       database.close();
     },
   };
-}
-
-/**
- * Node 22.13 to 22.x print an ExperimentalWarning when `node:sqlite` loads.
- * Inject-mode wrappers merge stderr into the model's content (`2>&1`), so
- * exactly that warning is dropped; every other warning still prints.
- */
-async function loadSqlite(): Promise<typeof sqlite> {
-  const original: unknown = Reflect.get(process, "emitWarning");
-  const emit = process.emitWarning.bind(process) as (
-    warning: string | Error,
-    ...rest: unknown[]
-  ) => void;
-  process.emitWarning = (warning: string | Error, ...rest: unknown[]) => {
-    const [options] = rest;
-    const type =
-      typeof options === "string" ? options : (options as { type?: string } | undefined)?.type;
-    const message = typeof warning === "string" ? warning : warning.message;
-    if (type === "ExperimentalWarning" && message.includes("SQLite")) return;
-    emit(warning, ...rest);
-  };
-  try {
-    return await import("node:sqlite");
-  } finally {
-    Reflect.set(process, "emitWarning", original);
-  }
 }
 
 /** How a command opens the index: `main.ts` binds `fileIndex`, unit tests `memoryIndex`. */

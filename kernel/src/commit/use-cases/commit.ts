@@ -2,7 +2,7 @@
 // of the task, then one pathspec commit of the task's touched paths and the
 // Change directory with the BDK trailers. Files the user staged elsewhere stay
 // staged and out of the commit; the user's hooks run.
-import { relative, sep } from "node:path";
+import { join, relative, sep } from "node:path";
 
 import { commitMessage } from "../domain/report.ts";
 import type { CommitReport } from "../domain/report.ts";
@@ -17,19 +17,55 @@ import {
   findChangeRow,
   isProfile,
   listEntries,
+  processLockWait,
   readAttempts,
   readPlanParts,
   taskHolders,
+  withLock,
 } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
 import type { CommitDeps } from "./deps.ts";
 
 const SUMMARY_MAX = 120;
 
-export function commitTask(
+interface CommitInput {
+  readonly task: string;
+  readonly message?: string | undefined;
+}
+
+/**
+ * One kernel commit at a time per repository (Serialised commits; T41-D12):
+ * leads of one wave commit their tasks at once, and two pathspec commits
+ * racing for git's index would fail one of them.
+ */
+export async function commitTask(
   deps: CommitDeps,
   change: ActiveChange,
-  input: { readonly task: string; readonly message?: string | undefined },
+  input: CommitInput,
+): Promise<CommitReport | Refusal> {
+  const path = join(change.projectRoot, ".bdk", ".machine", "commit.lock");
+  const result = await withLock(
+    deps.store,
+    path,
+    input.task,
+    deps.commitLock ?? processLockWait(),
+    () => commitLocked(deps, change, input),
+  );
+  if (!("busy" in result)) return result;
+  const { pid, owner, at } = result.busy;
+  return refuse(
+    "policy/commit-busy",
+    `process ${String(pid)} has held .bdk/.machine/commit.lock for task ${owner} since ${at}`,
+    [
+      `bdk commit ${input.task}${input.message === undefined ? "" : ` --message ${JSON.stringify(input.message)}`}`,
+    ],
+  );
+}
+
+function commitLocked(
+  deps: CommitDeps,
+  change: ActiveChange,
+  input: CommitInput,
 ): Promise<CommitReport | Refusal> {
   return withChangeIndex(deps, change, async (index) => {
     const holders = taskHolders(readPlanParts(deps.store, change.dir));

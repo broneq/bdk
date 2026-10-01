@@ -708,9 +708,9 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 **Dependencies**: T23 (the kernel provides `next`, `dispatch`, envelope), T02 (skill choice).
 
-### T41 Stage skills: `setup`, `change`, `design`, `plan`, `verify-plan`, `execute`, `close`, `run`
+### T41 Stage skills: `setup`, `change`, `design`, `verify-design`, `plan`, `verify-plan`, `execute`, `close`, `run`
 
-**Goal**: eight stage skills as thin "next, do, report" loops (or the B variant, if T40 decided so), each <= 200 lines, with the T1 / P9 guarantees in the frontmatter (T02 inventory, section 13.1 of `docs/V3-SKILL-INVENTORY.md`).
+**Goal**: nine stage skills as thin "next, do, report" loops (or the B variant, if T40 decided so), each <= 200 lines, with the T1 / P9 guarantees in the frontmatter (T02 inventory, section 13.1 of `docs/V3-SKILL-INVENTORY.md`).
 
 **Scope**:
 
@@ -718,6 +718,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - `change`: a skill (T02 section 13.3, user decision 2026-09-25): `new`, status, resume, park; entry into a Change; the starting profile judged by the skill against the `tiny` checklist of T20 design D-11 (all true: no new or changed behaviour visible to a user or an API, no change to a data model, schema or configuration, no `spec-impact`, at most 2 files in 1 module; any doubt is `small`) and passed as `--profile tiny --reason <why>`; `change new --inferred` when another skill (`cr`, `debugging`) opens a Change on the user's behalf, marked `source: inferred`.
 - `design`: today's `design` (Lavish when `features.lavish`, otherwise AskUserQuestion; 2+ approaches, self-critique, `design-verifier` role over the `reader` adapter with the closed P8 list) plus decision export to the ledger (absorbs `create-adr`, per the T02 disposition); for `large` it first writes `architecture.md`, then one design part per `touches` group (T21 kinds `architecture`, `design-part`, `design-index`); it decides the split itself after exploration (at least 3 subsystems with their own interfaces, or a design over the 12 KB limit; T20 design D-11) and records it as a `decision` with `profile: large`; ends with a render of the gate status (`next`: the command to type + `review: true` entries).
 - `plan`: `create-plan`; parts <= 8 KB with the P6 fields; tick list of rule IDs from `PL`; `disable-model-invocation: true`.
+- `verify-design`: a separate skill on a fresh context, like `verify-plan` (user decision 2026-09-30, issue #61), so the verification of a design does not drift with the context that wrote it; invoked by `design` and standalone.
 - `verify-plan`: a separate skill (T02 section 5, user decision 2026-09-25, overriding the merge proposal) with `context: fork` and `agent: bdk:reader`: plan-verifier loop with a budget and the P8 list; verdict bound to the part hash (P2); invoked by `plan` and standalone.
 - `execute`: `subagent-execute-plan` (661 lines today) as a per-part loop: `attempt open`, `dispatch build`, dispatch through the swarm skill of T23 (the host's Agent tool with **only the package path**, T23-D0, D6), envelope, `log ingest` storing the report of every role except the implementer (T23-D14), `attempt close`, post-task steps from the graph, `commit <task>`, `part done`; wave strategy (including `features.workflow` as an option); `disable-model-invocation: true`, `disallowed-tools: Edit Write NotebookEdit` (P9); ends with the review gate status.
 - `close`: `spec merge`, no rule proposal (T31: lessons stay `learning` entries for the audit skill, which works from `rules stats` and adopts with `rules accept`), archive per `archive.keep-evidence`, `rules export --claude` regeneration, PR summary from the ledger (intent, decisions, assumptions, open findings); `disable-model-invocation: true`, `disallowed-tools` (P9).
@@ -737,6 +738,14 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **Fixed by T22**: the `/bdk:plan` template follows the task grammar of `kernel-state`; `change resume --option <n>` answers a ladder `question`; the skills act on `attempt close` `next.action` (`post-task-steps`, `retry`, `narrow`, `escalate`, `parked`).
 
 **Fixed by T24**: `hooks prompt-expansion` passes by policy only the `auto` gates that are ready when `/bdk:run` is typed; a writer for an `auto` gate that becomes ready later in the run is T41's decision (Change `v3-t24-guard-hooks-gates`, design Open Questions).
+
+**Delivery** (user decision 2026-09-30, issue #61): T41 is a redesign for current models, not a port of the v2 skills, and runs as five OpenSpec Changes in this order:
+
+1. `v3-t41-orchestration`: the layer the dispatching skills stand on. An agent registry fed by hooks with a heartbeat lease; `bdk agents list|show|wait`; a tree of agents (`main`, one `lead` per plan part, role agents, a `scout` under a worker) with a `part-lead` ticket and serialised commits; messages between agents as pointers to ledger entries, guarded; `Stop` / `SubagentStop` continuation checks; `effort` per adapter; a dev-time prompt-writing convention for Opus 5.5 in `.claude/rules/`. It supersedes the flat swarm of T23-D50.
+2. `v3-t41-execute`: `execute` on that layer, including the kernel rule that decides when a wave runs as a tree.
+3. `v3-t41-plan`: `plan` and `verify-plan`.
+4. `v3-t41-design`: `design` and `verify-design`.
+5. `v3-t41-lifecycle`: `setup`, `change`, `close` and `run`.
 
 **Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
 

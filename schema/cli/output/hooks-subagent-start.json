@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/hooks-subagent-start.json",
+  "title": "bdk hooks subagent-start --json",
+  "description": "SubagentStart: the registry row it completed and the identity lines a BDK agent receives.",
+  "type": "object",
+  "properties": {
+    "agent": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+    "parent": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+    "package": { "description": "Relative to the project root.", "type": ["string", "null"] },
+    "context": {
+      "description": "The BDK-* lines added to a bdk: agent's context; null otherwise.",
+      "type": ["string", "null"]
+    }
+  },
+  "required": ["agent", "parent", "package", "context"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "agent": "a1b2c3d4e5f6a7b8c",
+      "parent": "a9f8e7d6c5b4a3f2e",
+      "package": ".bdk/changes/2026-09-30-login/dispatch/02-3-implementer-A-9k2m4n6p.md",
+      "context": "BDK-AGENT-ID: a1b2c3d4e5f6a7b8c\nBDK-PARENT: a9f8e7d6c5b4a3f2e\nBDK-PACKAGE: .bdk/changes/2026-09-30-login/dispatch/02-3-implementer-A-9k2m4n6p.md\nBDK-TICKET: A-9k2m4n6p"
+    }
+  ]
+}

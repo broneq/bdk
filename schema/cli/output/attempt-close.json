@@ -62,8 +62,8 @@
       "properties": {
         "action": {
           "type": "string",
-          "enum": ["commit", "retry", "narrow", "escalate", "parked"],
-          "description": "commit after ok, the step evidence having passed; the ladder's rung after fail or not-run."
+          "enum": ["commit", "part-done", "retry", "narrow", "escalate", "parked"],
+          "description": "commit after ok, the step evidence having passed; part-done after ok of a part-lead ticket; the ladder's rung after fail or not-run."
         },
         "scope": { "type": "string", "enum": ["full", "high+", "blockers"] },
         "entry": {

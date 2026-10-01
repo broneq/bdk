@@ -51,7 +51,13 @@ export const SOURCE_PATTERN = new RegExp(`^(${FIXED_SOURCES.join("|")}|${AGENT})
 export const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$/;
 
 /** The loops a ticket counts against; `not-run` is a counter of each loop, not a loop. */
-export const LOOPS = ["task-redispatch", "verify-fix", "review-fix", "verifier"] as const;
+export const LOOPS = [
+  "task-redispatch",
+  "verify-fix",
+  "review-fix",
+  "verifier",
+  "part-lead",
+] as const;
 
 export type Loop = (typeof LOOPS)[number];
 
@@ -76,6 +82,7 @@ export const ROLES = [
   "pr-reviewer",
   "runner",
   "scout",
+  "lead",
 ] as const;
 
 export type Role = (typeof ROLES)[number];
