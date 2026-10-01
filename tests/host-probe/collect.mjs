@@ -9,6 +9,7 @@
 //
 // Output: <BDK_FIXTURES>/<version>/<check-id>.json = {"_probe": {...}, "payloads": [...]}.
 // Exits 1 without writing that check when a glob matches nothing.
+import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,6 +59,16 @@ const replacements = [
     : []),
 ].sort((a, b) => b[0].length - a[0].length);
 const user = basename(home);
+// The git identity: kernel output such as `bdk log show` prints the author of an entry.
+const gitConfig = (key) => {
+  try {
+    return execFileSync("git", ["config", key], { encoding: "utf8" }).trim();
+  } catch {
+    return "";
+  }
+};
+const gitName = gitConfig("user.name");
+const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 
 const ID_KEYS = {
   session_id: "SESSION",
@@ -93,6 +104,8 @@ const scrubString = (text) => {
   let out = text;
   for (const [value, placeholder] of placeholders) out = out.split(value).join(placeholder);
   for (const [from, to] of replacements) out = out.split(from).join(to);
+  if (gitName) out = out.split(gitName).join("<GIT_NAME>");
+  out = out.replace(EMAIL, "<EMAIL>");
   if (user) out = out.split(user).join("<USER>");
   out = out.replace(CLAUDE_TMP, "<CLAUDE_TMP>");
   return out.replace(UUID, (match) => placeholderFor(match, "UUID"));

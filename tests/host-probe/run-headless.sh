@@ -11,6 +11,9 @@
 # retried once, then reported as "not triggered".
 #
 # PROBE_MODEL  model for the probe sessions (default haiku; tool shapes do not depend on it)
+#
+# The bdk-tree check also loads BDK itself from this checkout (build it first) and
+# runs in its own fixture repository, ./bdk-tree, with the permission prompts off.
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -18,6 +21,11 @@ case "$(pwd)" in "$(cd "$here/../.." && pwd)"*) echo "run-headless: run from a s
 out="$(pwd)/.probe-out"
 mkdir -p "$out"
 model="${PROBE_MODEL:-haiku}"
+repo=$(cd "$here/../.." && pwd)
+# Set by a check that needs them: BDK loaded as a second plugin, and a permission mode.
+bdk_plugin=""
+mode=default
+attempts="1 2"
 
 setup_files() {
   printf 'alpha\n' > probe-edit.txt
@@ -46,25 +54,28 @@ save_rendered() {
 }
 
 # run_check <id> <keep-regex> <allowed-tools|-> <prompt>
-# The check counts as triggered when a payload or the claude -p result matches
-# <keep-regex>; a host that refuses a tool call before PreToolUse leaves only the result.
+# The check counts as triggered when a payload, the claude -p result or the timeline
+# matches <keep-regex>; a host that refuses a tool call before PreToolUse leaves only
+# the result, and a subagent's tool output is only in the timeline.
 run_check() {
   id=$1 keep=$2 allowed=$3 prompt=$4
-  for attempt in 1 2; do
+  for attempt in $attempts; do
     setup_files
     tmp="$out/.run-$id"
     rm -rf "$tmp"; mkdir -p "$tmp"
     if [ "$allowed" = "-" ]; then
-      BDK_PROBE_OUT="$tmp" claude -p --plugin-dir "$here" --model "$model" --permission-mode default \
+      BDK_PROBE_OUT="$tmp" claude -p --plugin-dir "$here" ${bdk_plugin:+--plugin-dir "$bdk_plugin"} \
+        --model "$model" --permission-mode "$mode" \
         --output-format json "$prompt" > "$tmp/Result.json" 2> "$tmp/stderr.txt"
     else
-      BDK_PROBE_OUT="$tmp" claude -p --plugin-dir "$here" --model "$model" --permission-mode default \
+      BDK_PROBE_OUT="$tmp" claude -p --plugin-dir "$here" ${bdk_plugin:+--plugin-dir "$bdk_plugin"} \
+        --model "$model" --permission-mode "$mode" \
         --allowedTools "$allowed" --output-format json "$prompt" > "$tmp/Result.json" 2> "$tmp/stderr.txt"
     fi
     save_rendered "$tmp"
     node "$here/timeline.mjs" "$tmp" "$tmp/Timeline.json" 2>/dev/null
     hits=$(grep -lE "$keep" "$tmp"/*-*.json 2>/dev/null)
-    if [ -n "$hits" ] || grep -qE "$keep" "$tmp/Result.json"; then
+    if [ -n "$hits" ] || grep -qE "$keep" "$tmp/Result.json" "$tmp/Timeline.json" 2>/dev/null; then
       rm -f "$out/$id--"*
       for f in $hits; do cp "$f" "$out/$id--$(basename "$f")"; done
       cp "$tmp/Result.json" "$out/$id--Result.json"
@@ -101,6 +112,26 @@ tools_list() {
       });' > "$out/tools-list--Init.json"
   rm -rf "$out/.run-tools-list"
   echo "recorded      tools-list"
+}
+
+# A Change with part 01 (tasks 01-1, 01-2) started and its part-lead ticket open, in
+# a fresh repository at ./bdk-tree; prints the lead package path.
+tree_fixture() {
+  rm -rf bdk-tree && mkdir bdk-tree && cd bdk-tree || return 1
+  git init -q && printf '# app\n' > README.md && setup_files && git add -A && git commit -qm initial
+  kernel() { node "$repo/dist/bdk.mjs" "$@"; }
+  field() { node -e 'let b="";process.stdin.on("data",d=>b+=d).on("end",()=>console.log(JSON.parse(b)[process.argv[1]]))' "$1"; }
+  change=$(kernel change new "Greet the user" --profile tiny --reason probe --json | field change)
+  mkdir -p ".bdk/changes/$change/plan/parts"
+  # 01-1 asks for one message, so the lead's wait returns a message as well as the reports.
+  for task in 01-1 01-2; do
+    printf '## %s Write the %s greeting\n\n**Files:**\n\n- Create: `src/%s.ts`\n\n**Verification:** none\n\n' "$task" "$task" "$task"
+    [ "$task" = 01-1 ] && printf 'Before your report, write a finding that names `src/01-2.ts` and send its id to each agent `bdk agents list --affected-by <entry>` returns.\n\n'
+  done | { printf -- '---\nschema: 1\nid: "01"\ntitle: Greetings\ngoal: Two greeting modules\nsuccess-measure: both exist\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n---\n'; cat; } \
+    > ".bdk/changes/$change/plan/parts/01-part.md"
+  kernel done plan --json > /dev/null && kernel part start 01 --json > /dev/null || return 1
+  ticket=$(kernel attempt open part-lead 01 --json | field ticket)
+  kernel dispatch build 01 lead "$ticket" --json | field path
 }
 
 selected() { [ -z "$only" ] || echo " $only " | grep -q " $1 "; }
@@ -189,5 +220,18 @@ selected lead-detach && { run_check lead-detach '"hook_event_name":"Subagent(Sta
 
 selected lead-fg && { export BDK_PROBE_INJECT=1; run_check lead-fg 'A-DONE' "Task Agent SendMessage Bash(echo *) Bash(sleep *)" \
   "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner in the foreground and this prompt: Your own agent ID is on the line starting with BDK-AGENT-ID in your context. In ONE message make two Agent tool calls at once, both with subagent_type bdk-probe:probe-sleeper and in the foreground (no run_in_background). Prompt A, with your agent ID in place of PARENT: Run with the Bash tool: sleep 5. Then use the SendMessage tool with to set to PARENT and the message PING-FROM-A. Then run sleep 10 and reply A-DONE. Prompt B: Run with the Bash tool: sleep 20, then reply B-DONE. When both return, reply with every message you received, verbatim, both answers, and whether PING-FROM-A reached you before or after the two Agent calls returned. Reply with the subagent's answer verbatim." || status=1; unset BDK_PROBE_INJECT; }
+
+# A real BDK lead running a part through background workers (T41 acceptance 7.2).
+selected bdk-tree && (
+  lead_package=$(tree_fixture) || { echo "not triggered bdk-tree (fixture failed)"; exit 1; }
+  # One attempt: a second one would run on the part the first one committed.
+  cd bdk-tree && bdk_plugin=$repo mode=bypassPermissions attempts=1
+  run_check bdk-tree 'report of a|kind[^a-z]{0,6}report' "-" \
+    "Use the Agent tool with subagent_type bdk:lead, run_in_background true, and this prompt: Read $lead_package and work on it. Wait until it finishes, then reply with its answer verbatim."
+  rc=$?
+  node "$repo/dist/bdk.mjs" agents list --all --json > "$out/bdk-tree--Agents.json" 2>&1
+  git log --format='%s%n%(trailers)' > "$out/bdk-tree--GitLog.txt" 2>&1
+  exit $rc
+) || status=1
 
 exit $status
