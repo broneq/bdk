@@ -15892,6 +15892,10 @@ function refuse(rule2, why, instead) {
   if (first === void 0) throw new Error(`refusal ${rule2} needs at least one instead`);
   return { refused: true, rule: rule2, why, instead: [first, ...rest] };
 }
+function blockReason(refusal2) {
+  return `${refusal2.rule}: ${refusal2.why}
+instead: ${refusal2.instead.join("; ")}`;
+}
 function isRefusal(value) {
   return "refused" in value;
 }
@@ -31487,7 +31491,7 @@ function writeInject(streams, refusal2, asJson) {
 function writeBlock(streams, refusal2, asJson, blockOutput) {
   if (asJson) streams.stdout(json(refusal2));
   else if (blockOutput !== void 0) streams.stdout(ensureNewline(blockOutput(refusal2)));
-  streams.stderr(`${refusal2.rule}: ${refusal2.why}
+  streams.stderr(`${blockReason(refusal2)}
 `);
   return 2;
 }
@@ -31618,7 +31622,7 @@ function preToolBlock(refusal2) {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       permissionDecision: "deny",
-      permissionDecisionReason: `${refusal2.rule}: ${refusal2.why}`
+      permissionDecisionReason: blockReason(refusal2)
     }
   });
 }

@@ -295,17 +295,20 @@ describe("mode wrappers", () => {
     expect(stub.stderr).toContain("T24");
   });
 
-  it("guard mode: a block's stderr starts with the rule id", async () => {
+  it("guard mode: a block's stderr starts with the rule id and names what to do instead", async () => {
     const result = await run(["hooks", "pre-tool"], {
       registrations: [
         {
           id: "hooks-pre-tool",
-          handler: () => refuse("guard/subagent-git", "subagents may not run git stash", ["x"]),
+          handler: () =>
+            refuse("guard/subagent-git", "subagents may not run git stash", ["x", "y z"]),
         },
       ],
     });
     expect(result.code).toBe(2);
-    expect(result.stderr).toBe("guard/subagent-git: subagents may not run git stash\n");
+    expect(result.stderr).toBe(
+      "guard/subagent-git: subagents may not run git stash\ninstead: x; y z\n",
+    );
     expect(result.stdout).toBe("");
   });
 

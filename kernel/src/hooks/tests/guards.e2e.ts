@@ -17,7 +17,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import upeTyped from "../../../../tests/fixtures/host-payloads/2.1.281/upe-typed.json" with { type: "json" };
 import { opened, writeDesign, done, verdict, write } from "../../graph/tests/e2e-support.ts";
-import { bdk, git } from "../../../tests/support/repo.ts";
+import { bdk, git, repository } from "../../../tests/support/repo.ts";
 import { REPO_ROOT } from "../../../tests/support/run.ts";
 import { agentFg, mainBash, recorded, subagentBash, preEdit } from "./payloads.ts";
 import type { Payload } from "./payloads.ts";
@@ -148,6 +148,14 @@ describe("UserPromptExpansion guard", () => {
     expect(run.code).toBe(2);
     expect(run.stderr).toMatch(/^input\/invalid-argument: the UserPromptExpansion payload has no /);
     expect(transitions(dir)).toStrictEqual([]);
+  });
+
+  it("/bdk:plan without an active Change is blocked and names /bdk:change", () => {
+    const run = hook("UserPromptExpansion", repository(), typed("bdk:plan"));
+    expect(run.code).toBe(2);
+    expect(run.stderr).toMatch(
+      /^policy\/no-active-change: no active Change on branch .+\ninstead: \/bdk:change new "<intent>"/,
+    );
   });
 
   it("/bdk:plan before the design is ready is blocked with the reason and writes nothing", () => {

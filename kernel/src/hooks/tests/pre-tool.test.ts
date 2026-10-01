@@ -299,8 +299,7 @@ describe("hooks pre-tool: payload and output", () => {
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "deny",
-        permissionDecisionReason:
-          "guard/subagent-git: subagents may not run git stash; return blocked with the cause instead of changing the shared working tree or history (BDK T3)",
+        permissionDecisionReason: `guard/subagent-git: subagents may not run git stash; return blocked with the cause instead of changing the shared working tree or history (BDK T3)\ninstead: ${outcome.instead.join("; ")}`,
       },
     });
   });
