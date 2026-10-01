@@ -15,10 +15,12 @@ describe("stageSkill", () => {
     expect(stageSkill("bdk:change")).toBe("change");
     expect(stageSkill("bdk:design")).toBe("design");
     expect(stageSkill("verify-design")).toBe("verify-design");
+    expect(stageSkill("bdk:plan")).toBe("plan");
+    expect(stageSkill("verify-plan")).toBe("verify-plan");
   });
 
   it("refuses a skill without a case file", () => {
-    expect(() => stageSkill("bdk:plan")).toThrow(/setup, change/);
+    expect(() => stageSkill("bdk:execute")).toThrow(/setup, change/);
     expect(() => stageSkill(undefined)).toThrow(/got nothing/);
   });
 });

@@ -1,0 +1,43 @@
+# Cases of /bdk:plan (spec stage-skills, plan requirements). Every case starts
+# from a fresh copy of the pinned fixture on its branch feat/eval with Lavish
+# off. The bug Change has no design stage, so the skill plans it from the
+# intent and the code: formatTimestamp in src/ui/format.ts returns a
+# whitespace-only value verbatim, since only an empty value takes the fallback.
+- id: bug
+  command: /bdk:plan
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
+  expect:
+    - run: explain plan
+      json:
+        state: done
+    - run: explain plan-verify
+      json:
+        state: done
+    - run: part list
+      match:
+        items.0.part: "^01$"
+    # The command, not prose: the reply may be in any language.
+    - reply: /bdk:execute
+
+- id: no-change
+  command: /bdk:plan
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: change list
+      json:
+        items.length: 0
+    - reply: /bdk:change

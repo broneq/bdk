@@ -1,0 +1,158 @@
+# Cases of /bdk:verify-plan (spec stage-skills, verify-plan requirement).
+# Every case starts from a fresh copy of the pinned fixture on its branch
+# feat/eval with Lavish off. Each opens a bug Change, which has no design
+# stage, and writes its one plan part in prepare, so only the verifier round
+# is under test. The clean part states only what the fixture holds
+# (formatTimestamp in src/ui/format.ts and its tests); the false claim names a
+# function the fixture lacks.
+- id: clean
+  command: /bdk:verify-plan
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
+    - |-
+      D=$(ls -d .bdk/changes/20*) && mkdir -p "$D/plan/parts" && cat > "$D/plan/parts/01-fallback.md" <<'MD'
+      ---
+      schema: 1
+      id: "01"
+      title: Whitespace takes the fallback
+      goal: formatTimestamp returns the fallback for a whitespace-only value.
+      success-measure: The tests of src/ui/format.test.ts pass.
+      do-not-touch: []
+      depends-on: []
+      spec-impact: none
+      ---
+
+      ## 01-1 A whitespace-only value takes the fallback
+
+      `formatTimestamp(value: string | undefined, fallback = 'Unknown')` in
+      `src/ui/format.ts` returns `fallback` when `value` is missing, empty or
+      holds only whitespace. A parseable value is formatted as before, and an
+      unparseable value that is not blank is returned verbatim. No caller
+      changes.
+
+      **Files:**
+
+      - Modify: `src/ui/format.ts`
+      - Modify: `src/ui/format.test.ts`
+
+      **Test cases:**
+
+      - `formatTimestamp('   ')` returns `'Unknown'`
+      - `formatTimestamp('\t\n', 'n/a')` returns `'n/a'`
+      - `formatTimestamp(undefined)` still returns `'Unknown'`
+      - `formatTimestamp('not a date')` still returns `'not a date'`
+      - a parseable ISO value still returns the text of the module's formatter for that date
+      MD
+    - |-
+      node "$BDK" done plan >/dev/null
+  expect:
+    - run: explain plan-verify
+      json:
+        state: done
+    - run: log list --type report --for plan-verify
+      json:
+        total: 1
+
+- id: false-claim
+  command: /bdk:verify-plan
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "Relative times show 'in 0 seconds' for the current moment instead of 'now'" --kind bug >/dev/null
+    - |-
+      D=$(ls -d .bdk/changes/20*) && mkdir -p "$D/plan/parts" && cat > "$D/plan/parts/01-now.md" <<'MD'
+      ---
+      schema: 1
+      id: "01"
+      title: The current moment reads now
+      goal: formatRelative returns 'now' for a difference under one second.
+      success-measure: The tests of src/ui/format.test.ts pass.
+      do-not-touch: []
+      depends-on: []
+      spec-impact: none
+      ---
+
+      ## 01-1 Under one second reads now
+
+      Modify `formatRelative(value: string, now: Date)` in `src/ui/format.ts`
+      so it returns `'now'` when `value` is less than one second from `now`,
+      in either direction. Every other difference keeps its current text.
+
+      **Files:**
+
+      - Modify: `src/ui/format.ts`
+      - Modify: `src/ui/format.test.ts`
+
+      **Test cases:**
+
+      - a value equal to `now` returns `'now'`
+      - a value 999 ms after `now` returns `'now'`
+      - a value 2 s before `now` returns `'2 seconds ago'`
+      MD
+    - |-
+      node "$BDK" done plan >/dev/null
+  expect:
+    - run: log list --type blocker
+      json:
+        items.0.category: false-code-claim
+      match:
+        items.0.status: "^(proposed|accepted)$"
+    - run: explain plan-verify
+      match:
+        state: "^(ready|blocked)$"
+
+- id: not-ready
+  command: /bdk:verify-plan
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
+    # The part is written and not marked done.
+    - |-
+      D=$(ls -d .bdk/changes/20*) && mkdir -p "$D/plan/parts" && cat > "$D/plan/parts/01-fallback.md" <<'MD'
+      ---
+      schema: 1
+      id: "01"
+      title: Whitespace takes the fallback
+      goal: formatTimestamp returns the fallback for a whitespace-only value.
+      success-measure: The tests of src/ui/format.test.ts pass.
+      do-not-touch: []
+      depends-on: []
+      spec-impact: none
+      ---
+
+      ## 01-1 A whitespace-only value takes the fallback
+
+      `formatTimestamp` in `src/ui/format.ts` returns its fallback for a
+      whitespace-only value.
+
+      **Files:**
+
+      - Modify: `src/ui/format.ts`
+
+      **Test cases:**
+
+      - `formatTimestamp('   ')` returns `'Unknown'`
+      MD
+  expect:
+    - run: attempt list
+      json:
+        total: 0
+    - reply: /bdk:plan
