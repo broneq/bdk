@@ -191,15 +191,32 @@ def test_missing_recording_fails_and_names_the_check(tmp_path):
     assert not (dest / "absent.json").exists()
 
 
+# BDK's own role and adapter names, which fixtures hold by design (`bdk:runner`).
+BDK_NAMES = {
+    "implementer",
+    "simplifier",
+    "verifier",
+    "reviewer",
+    "runner",
+    "scout",
+    "lead",
+    "worker",
+    "reader",
+}
+
+
 def leaks(text: str, user: str) -> list[str]:
-    """Machine data found in text: home prefixes (plain or dash-encoded) and the username.
+    """Machine data found in text: home prefixes (plain or dash-encoded), e-mails and the username.
 
     The username only counts as a standalone token, so a short CI user such as
-    `runner` does not match the agent name `bdk:test-runner`.
+    `runner` does not match the agent name `bdk:test-runner`, and not at all when
+    it is a BDK role or adapter name: the GitHub runner's user is `runner`.
     """
     found = [marker for marker in ("/Users/", "/home/", "-Users-", "-home-") if marker in text]
     found += re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
-    if re.search(rf"(?<![A-Za-z0-9_-]){re.escape(user)}(?![A-Za-z0-9_])", text):
+    if user not in BDK_NAMES and re.search(
+        rf"(?<![A-Za-z0-9_-]){re.escape(user)}(?![A-Za-z0-9_])", text
+    ):
         found.append(user)
     return found
 
@@ -218,7 +235,9 @@ def test_leak_guard_flags_machine_data(text):
     assert leaks(text, "alice")
 
 
-@pytest.mark.parametrize("text", ["bdk:test-runner", "runners", "<USER>-scratch"])
+@pytest.mark.parametrize(
+    "text", ["bdk:test-runner", "runners", "<USER>-scratch", "subagent_type: bdk:runner"]
+)
 def test_leak_guard_ignores_username_inside_other_names(text):
     assert leaks(text, "runner") == []
 
