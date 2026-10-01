@@ -28,7 +28,7 @@
 
 - [x] 5.1 Failing harness test: `stageSkill` accepts `plan` and `verify-plan`, and `pnpm eval check` renders their configs
 - [x] 5.2 Case files `evals/suites/stages/cases/plan.yaml` (`bug`; no `no-change` case, see D9) and `verify-plan.yaml` (`clean`, `false-claim`, `not-ready`), each preparing `features.lavish false`; extend `STAGE_SKILLS`; `pnpm eval check` green
-- [ ] 5.3 After the user approves the cost: `pnpm eval stages --skill verify-plan --probe --budget <ledger + margin>` and `--skill plan --probe`; fix what fails and record the outcome in the PR
+- [x] 5.3 After the user approves the cost: `pnpm eval stages --skill verify-plan --probe --budget <ledger + margin>` and `--skill plan --probe`; fix what fails and record the outcome in the PR
 
 - [x] 5.4 After the first `plan` probe: the guard block reason names `instead` (`kernel-cli` delta, `blockReason`, registry, pre-tool and guard e2e tests); `plan` sizes the plan to the intent and the verifier scopes edge cases to it; the `bug` case expects one part
 
@@ -39,6 +39,6 @@
 
 ## 7. Acceptance
 
-- [ ] 7.1 The 5.3 probes show `/bdk:plan` leaving `plan` and `plan-verify` done on a `bug` Change with a report naming `/bdk:execute`, and `/bdk:verify-plan` raising a `false-code-claim` blocker on a false claim
+- [x] 7.1 The 5.3 probes show `/bdk:plan` leaving `plan` and `plan-verify` done on a `bug` Change with a report naming `/bdk:execute`, and `/bdk:verify-plan` raising a `false-code-claim` blocker on a false claim
 - [x] 7.2 Full gate: `pnpm build`, lint, format, typecheck, knip, `test:unit`, `test:e2e`, `test:contract`, `skill-check`, `docs:build`, `eval check`, `pytest tests/unit/`
 - [x] 7.3 `openspec validate v3-t41-plan --strict`
