@@ -27,7 +27,7 @@
 - [x] 4.1 Failing harness unit tests: case file parsing (base, setup commands, typed command, answers by pattern, kernel assertions) and the `AskUserQuestion` answer hook output
 - [x] 4.2 Implement the suite (`evals/suites/stages/`), `--skill <name>`, registration in `pnpm eval` and `pnpm eval check`; README section
 - [x] 4.3 Case files: `setup` (happy path on the fixture, refusal case), `change` (happy path with a new branch, `policy/change-exists` refusal, a `tiny` intent)
-- [ ] 4.4 `pnpm eval stages --skill setup --probe` and `--skill change --probe` after the cost is approved; confirm the answer hook works or switch to the D8 fallback
+- [x] 4.4 `pnpm eval stages --skill setup --probe` and `--skill change --probe` after the cost is approved; confirm the answer hook works or switch to the D8 fallback
 
 ## 5. Documentation (D9)
 

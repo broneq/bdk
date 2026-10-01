@@ -38,7 +38,8 @@
       json:
         items.length: 1
         items.0.branch: feat/eval
-    - reply: change status|change close|new branch
+    # The command, not prose: the reply may be in any language.
+    - reply: /bdk:change|change status
 
 - id: tiny-typo
   command: /bdk:change "Fix the typo 'teh' in README.md"

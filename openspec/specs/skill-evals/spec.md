@@ -163,7 +163,7 @@ The `stages` suite SHALL run user-only stage skills the way a user starts them: 
 #### Scenario: change refusal
 
 - **WHEN** the refusal case of `change` types `/bdk:change <intent>` on a branch that already has an active Change and answers "stay on the current branch"
-- **THEN** the case passes when no second Change exists and the final reply names a command from the refusal's `instead`
+- **THEN** the case passes when no second Change exists and the final reply names the command that shows the existing Change (`/bdk:change` or `bdk change status`, from the refusal's `instead`), in whatever language it is written
 
 #### Scenario: config check needs no credentials
 
