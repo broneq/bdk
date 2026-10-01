@@ -31,6 +31,15 @@ The design stage writes into the Change directory:
 | `log/`                                | `/bdk:design`, `/bdk:verify-design`       | `decision` and `question` entries of the design, the verifier's `report`, `blocker` and `finding` entries |
 | `reports/`                            | the design verifier, through `log ingest` | The verifier's report, whose verdict the `design-verify` node reads                                       |
 
+The plan stage writes into the same directory:
+
+| Path under `.bdk/changes/<changeId>/` | Written by                              | Contents                                                                                                |
+| ------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `plan/parts/<nn>-<slug>.md`           | `/bdk:plan`                             | One plan part: at most 8 tasks and 8 KB, each task a contract with its `Files:` and test cases          |
+| `spec-delta/<capability>.md`          | `/bdk:plan`                             | The spec delta of each capability a part names in `spec-impact`, checked with `bdk spec delta check`    |
+| `log/`                                | `/bdk:plan`, `/bdk:verify-plan`         | `decision` entries that settle open questions, the verifier's `report`, `blocker` and `finding` entries |
+| `reports/`                            | the plan verifier, through `log ingest` | The verifier's report, whose verdict the `plan-verify` node reads                                       |
+
 `bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 file `.bdk/settings.json` is never read; `/bdk:setup` migrates a project that still has it.
 
 Everything BDK skills write to disk lives under `.bdk/` in the project root, per `.claude/rules/artifacts.md`:
@@ -43,15 +52,15 @@ This page lists every directory under `.bdk/` that appears in BDK's own sources,
 
 ## Layout
 
-| Path                         | Written by                                                    | Contents                                                                                   |
-| ---------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `.bdk/settings.json`         | BDK 2 setup                                                   | v2 project configuration; `/bdk:setup` migrates it to `.bdk/settings.yaml`                 |
-| `.bdk/plans/`                | `/bdk:create-plan`                                            | Implementation plans (`mkdir -p .bdk/plans` runs from the skill's `UserPromptSubmit` hook) |
-| `.bdk/design/`               | BDK 2 `/bdk:design`                                           | v2 design docs; BDK 3 designs live in the Change, and `/bdk:setup` deletes this directory  |
-| `.bdk/verify-plan/`          | `/bdk:verify-plan`                                            | Verification reports, `.bdk/verify-plan/<plan-slug>-verification.md`                       |
-| `.bdk/runs/`                 | `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited                |
-| `.bdk/cr/`                   | `/bdk:cr`                                                     | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md`                      |
-| `.bdk/explain-complex-code/` | `/bdk:explain-complex-code`                                   | Architecture docs, `.bdk/explain-complex-code/[feature-name].md`                           |
+| Path                         | Written by                                                    | Contents                                                                                         |
+| ---------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `.bdk/settings.json`         | BDK 2 setup                                                   | v2 project configuration; `/bdk:setup` migrates it to `.bdk/settings.yaml`                       |
+| `.bdk/plans/`                | BDK 2 `/bdk:create-plan`                                      | v2 implementation plans; BDK 3 plans live in the Change, and `/bdk:setup` deletes this directory |
+| `.bdk/design/`               | BDK 2 `/bdk:design`                                           | v2 design docs; BDK 3 designs live in the Change, and `/bdk:setup` deletes this directory        |
+| `.bdk/verify-plan/`          | BDK 2 `/bdk:verify-plan`                                      | v2 verification reports; `/bdk:setup` deletes this directory                                     |
+| `.bdk/runs/`                 | `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited                      |
+| `.bdk/cr/`                   | `/bdk:cr`                                                     | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md`                            |
+| `.bdk/explain-complex-code/` | `/bdk:explain-complex-code`                                   | Architecture docs, `.bdk/explain-complex-code/[feature-name].md`                                 |
 
 ## Run state: the one directory no skill reads or writes directly
 

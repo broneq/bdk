@@ -1,6 +1,6 @@
 # Implementer Model Selection
 
-The plan was authored by Opus (`/bdk:create-plan`) — that is the judgment-heavy artifact. Implementation is closer to mechanical translation. The default for the implementer subagent is **Sonnet**. The question is when to step _down_ to Haiku or _up_ to Opus.
+The plan was authored by Opus — that is the judgment-heavy artifact. Implementation is closer to mechanical translation. The default for the implementer subagent is **Sonnet**. The question is when to step _down_ to Haiku or _up_ to Opus.
 
 The same matrix applies to the `fixer` agent — Sonnet by default, escalate when a finding requires architectural reasoning.
 
@@ -44,7 +44,7 @@ flowchart TD
 
 ## Why default Sonnet, not Opus
 
-A well-formed plan from `/bdk:create-plan` lists exact files, test cases, and conventions. Opus's value over Sonnet shows up when there are open design choices — and most of those should have been resolved during planning. Spending Opus tokens to redo decisions Opus already made is wasted cost.
+A well-formed plan lists exact files, test cases, and conventions. Opus's value over Sonnet shows up when there are open design choices — and most of those should have been resolved during planning. Spending Opus tokens to redo decisions Opus already made is wasted cost.
 
 Reach for Opus when:
 

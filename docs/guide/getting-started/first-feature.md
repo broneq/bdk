@@ -42,6 +42,12 @@ doc ends with its own hand-off line pointing at `/bdk:create-plan`.
 
 ## 2. Create the plan
 
+!!! note "BDK 3"
+
+    In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
+    active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
+    passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdkplan).
+
 ```
 /bdk:create-plan .bdk/design/2026-09-13-0930-dry-run-export-design.md
 ```

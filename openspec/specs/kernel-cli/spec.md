@@ -109,7 +109,7 @@ Called by the host through `hooks.json` with the hook payload on stdin. A guard 
 node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" hooks (pre-tool|post-tool|prompt-expansion) \|\| exit 2$
 ```
 
-The shell prefilter that decides whether to start Node at all (T24) precedes this fragment on the same line or in the script it calls; the regex is not anchored at the start for that reason. Within guard mode the kernel itself uses two outcomes only: **pass** is exit 0 with the host's JSON decision or plain context on stdout, **block** is exit 2 with `<rule>: <why>` on stderr, so every reason the host shows starts with its rule id (and, for `PreToolUse`, the same text in `permissionDecisionReason` on stdout). Under `--json` a pass prints the command's decision record and a block prints the error object, as in command mode. Exit codes 3, 4 and 5 never leave a guard: an unreadable payload, a corrupted state or a missing runtime all become exit 2, because "unknown" is "blocked" (T24: an unknown payload shape means no transition). The exact stdout shapes per hook are in `kernel-cli/hooks`, Hook payloads.
+The shell prefilter that decides whether to start Node at all (T24) precedes this fragment on the same line or in the script it calls; the regex is not anchored at the start for that reason. Within guard mode the kernel itself uses two outcomes only: **pass** is exit 0 with the host's JSON decision or plain context on stdout, **block** is exit 2 with `<rule>: <why>` on stderr followed by a line `instead: <command>; <command>` naming the refusal's `instead`, so every reason the host shows starts with its rule id and tells the user what to do next (and, for `PreToolUse`, the same text in `permissionDecisionReason` on stdout). Under `--json` a pass prints the command's decision record and a block prints the error object, as in command mode. Exit codes 3, 4 and 5 never leave a guard: an unreadable payload, a corrupted state or a missing runtime all become exit 2, because "unknown" is "blocked" (T24: an unknown payload shape means no transition). The exact stdout shapes per hook are in `kernel-cli/hooks`, Hook payloads.
 
 #### Scenario: inject mode never fails the block
 
@@ -129,7 +129,12 @@ The shell prefilter that decides whether to start Node at all (T24) precedes thi
 #### Scenario: block reason carries the rule
 
 - **WHEN** a guard-mode command blocks with any rule
-- **THEN** its stderr is one line `<rule>: <why>` and the exit code is 2
+- **THEN** its stderr is the line `<rule>: <why>` followed by the line `instead: ` and the refusal's `instead` joined by `; `, and the exit code is 2
+
+#### Scenario: blocked stage command names the way out
+
+- **WHEN** the user types `/bdk:plan` on a branch without an active Change
+- **THEN** the prompt-expansion guard exits 2 and its stderr names `policy/no-active-change` and, on its `instead` line, `/bdk:change`
 
 #### Scenario: guard script without a kernel
 

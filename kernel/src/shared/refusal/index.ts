@@ -107,6 +107,15 @@ export function refuse(rule: Rule, why: string, instead: readonly string[]): Ref
 }
 
 /** A use case answers a result or a refusal; the `refused` marker tells them apart. */
+/**
+ * The reason a guard shows the user on a block (`kernel-cli`, Output modes):
+ * `<rule>: <why>`, then the commands of `instead`, so a blocked user learns
+ * what to type next.
+ */
+export function blockReason(refusal: Refusal): string {
+  return `${refusal.rule}: ${refusal.why}\ninstead: ${refusal.instead.join("; ")}`;
+}
+
 export function isRefusal(value: object): value is Refusal {
   return "refused" in value;
 }

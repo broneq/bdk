@@ -1,5 +1,5 @@
 import type { Handler } from "../../shared/registry/index.ts";
-import { isRefusal } from "../../shared/refusal/index.ts";
+import { blockReason, isRefusal } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { HooksDeps } from "../use-cases/input.ts";
 import { hookPlace } from "./agent-hooks.ts";
@@ -19,7 +19,7 @@ export function preToolBlock(refusal: Refusal): string {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       permissionDecision: "deny",
-      permissionDecisionReason: `${refusal.rule}: ${refusal.why}`,
+      permissionDecisionReason: blockReason(refusal),
     },
   });
 }

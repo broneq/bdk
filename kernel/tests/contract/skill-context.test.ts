@@ -98,12 +98,12 @@ describe("skill context lines", () => {
 
     it("fails on lines that name another skill", () => {
       const seeded = contextLineViolations(
-        [skill("design", WRAPPER("create-plan"), FALLBACK("create-plan"))],
+        [skill("design", WRAPPER("plan"), FALLBACK("plan"))],
         forms,
       );
       expect(seeded.violations).toStrictEqual([
-        "design: the content wrapper names create-plan, not design",
-        "design: the fallback sentence names create-plan, not design",
+        "design: the content wrapper names plan, not design",
+        "design: the fallback sentence names plan, not design",
       ]);
     });
 

@@ -145,6 +145,21 @@ describe("bdk next", () => {
     expect(first.stdout).not.toMatch(/\{(change|node|profile|paths)\}/);
   });
 
+  it("lists the plan rules for plan and names /bdk:verify-plan for plan-verify", async () => {
+    const h = harness();
+    setChange(h.store, { kind: "bug" });
+    const plan = (await h.run(["next"])).stdout;
+    expect(plan).toContain("### plan");
+    expect(plan).toContain("[BDK-PL-1]");
+    expect(plan).toContain("no implementation code");
+    expect(plan).toContain("spec deltas");
+    writePlanPart(h.store, "01");
+    expect((await h.run(["done", "plan"], T2)).code).toBe(0);
+    const verify = nextOutput.parse((await h.run(["next", "--json"], T3)).json);
+    expect(verify.artifact).toMatchObject({ id: "plan-verify", kind: "plan-verify" });
+    expect(verify.instruction).toContain("/bdk:verify-plan");
+  });
+
   it("appends a project template with mode extends", async () => {
     const h = harness();
     h.store.write(`${ROOT}/.bdk/prompts/pipeline/design.md`, "Also name the rollback plan.\n");

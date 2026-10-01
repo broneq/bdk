@@ -1,10 +1,5 @@
 [
   {
-    "rule": "block-form",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "e30bdedd1b646f34"
-  },
-  {
     "rule": "body-shape",
     "file": "agents/architecture-reviewer.md",
     "fingerprint": "be84fd676e05e90f"
@@ -121,11 +116,6 @@
   },
   {
     "rule": "description-front-loaded",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "2ae043ef6841bae5"
-  },
-  {
-    "rule": "description-front-loaded",
     "file": "skills/pr-review/SKILL.md",
     "fingerprint": "67af1acd287d0b9d"
   },
@@ -151,23 +141,8 @@
   },
   {
     "rule": "field-values",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "2b96bda9fba211e1"
-  },
-  {
-    "rule": "field-values",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "9c3d4e10b7967a83"
-  },
-  {
-    "rule": "field-values",
     "file": "skills/debug/SKILL.md",
     "fingerprint": "176d206c50008a32"
-  },
-  {
-    "rule": "forbidden-text",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "fa1eb11aac95258f"
   },
   {
     "rule": "forbidden-text",
@@ -188,11 +163,6 @@
     "rule": "forbidden-text",
     "file": "skills/subagent-execute-plan/SKILL.md",
     "fingerprint": "b5f4785518246c75"
-  },
-  {
-    "rule": "line-limit",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "d907265c706f2f75"
   },
   {
     "rule": "line-limit",
@@ -243,11 +213,6 @@
     "rule": "model-names",
     "file": "skills/cr/SKILL.md",
     "fingerprint": "ee629fb76ed885ec"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/create-plan/SKILL.md",
-    "fingerprint": "76379e4f1ef1ab77"
   },
   {
     "rule": "model-names",
@@ -318,16 +283,6 @@
     "rule": "model-names",
     "file": "skills/subagent-execute-plan/SKILL.md",
     "fingerprint": "9ca7719aaf401bc4"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/verify-plan/SKILL.md",
-    "fingerprint": "48d203b8c6069d4c"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/verify-plan/SKILL.md",
-    "fingerprint": "ae137171d83fefd2"
   },
   {
     "rule": "namespaced-refs",

@@ -51,7 +51,7 @@ Fallback **does not halt the run** - serial mode is always correct, just slow. I
 [subagent-execute-plan] Explorer grouping rejected: {reason} - full serial mode ({N} groups)
 ```
 
-Print it, and carry the same reason into the Step 0.7 summary's `Parallel groups:` line. Without it the run reports `Parallel groups: 12` for a 12-task plan and the three cases become indistinguishable: a plan that is genuinely serial (nothing to fix), an explorer that returned garbage (a bug to fix), and a plan that declared no `Files:` (a `/bdk:create-plan` gap to fix). Same output, three different actions - so the reason is the whole signal.
+Print it, and carry the same reason into the Step 0.7 summary's `Parallel groups:` line. Without it the run reports `Parallel groups: 12` for a 12-task plan and the three cases become indistinguishable: a plan that is genuinely serial (nothing to fix), an explorer that returned garbage (a bug to fix), and a plan that declared no `Files:` (a planner gap to fix). Same output, three different actions - so the reason is the whole signal.
 
 `confidence < 0.6` is the trigger to expect in practice: per the calibration below, a plan light on path declarations lands there by construction. That reading is a verdict on the plan, and dropping it on the floor wastes the one diagnosis this step produces for free.
 

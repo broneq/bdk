@@ -149,9 +149,9 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:cr`                      | Dynamic code review (3-13 parallel agents based on change size). Reviews the delta since the last review by default; `--full` reviews the whole branch; `--inline` runs every cohort in-session with no subagents; `--base <ref>` reviews against an explicit base (stacked branches)                 |
 | `/bdk:pr-review`               | Review GitHub PRs from URLs: one subagent per PR running `/bdk:cr --inline`, templated inline comments + summary on GitHub, approve / request-changes verdict; stack-aware (diff vs stack parent); `--verify` checks whether previous review comments were implemented and resolves addressed threads |
 | `/bdk:commit`                  | Generate conventional commit message from git changes                                                                                                                                                                                                                                                 |
-| `/bdk:create-plan`             | Create TDD-driven implementation plans                                                                                                                                                                                                                                                                |
+| `/bdk:plan`                    | Plan the active Change as plan parts of task contracts with concrete test cases, verify and correct them, and report the waves; `--review` asks for your acceptance first                                                                                                                             |
 | `/bdk:subagent-execute-plan`   | Execute a plan task-by-task with a fresh implementer subagent per task and a single end-of-branch review                                                                                                                                                                                              |
-| `/bdk:verify-plan`             | Verify a plan against real code before execution                                                                                                                                                                                                                                                      |
+| `/bdk:verify-plan`             | Verify the plan of the active Change against the code and the design on a fresh context; a passing verdict marks `plan-verify` done                                                                                                                                                                   |
 | `/bdk:debug`                   | Structured debugging: investigate → failing tests → fix or plan                                                                                                                                                                                                                                       |
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                                                                                                                                                                                                                          |
 | `/bdk:design`                  | Design the active Change with you: grounds in the code, 2+ approaches with Mermaid and self-critique, writes the design files the kernel names, records decisions in the ledger, verifies and ends at the design gate                                                                                 |
@@ -172,7 +172,7 @@ Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which se
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/bdk:execute-plan`                           | `/bdk:subagent-execute-plan`                                                                                                                                                                        |
 | `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session             |
-| `/bdk:create-tasks`, `/bdk:refactor`          | `/bdk:create-plan`                                                                                                                                                                                  |
+| `/bdk:create-tasks`, `/bdk:refactor`          | `/bdk:plan`                                                                                                                                                                                         |
 | `/bdk:audit-prompt`                           | Nothing                                                                                                                                                                                             |
 | `/bdk:graphviz-docs-compiler`                 | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
 
@@ -180,13 +180,13 @@ Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which se
 
 ## The plan pipeline
 
-The four plan skills form one chain, each stage consuming the previous stage's output:
+In BDK 3, `/bdk:design` writes the design into the Change (`.bdk/changes/<changeId>/design.md`) and ends at the design gate; `/bdk:plan` writes the plan parts into the same Change (`plan/parts/`) and verifies them with `/bdk:verify-plan`. The BDK 2 planner `/bdk:create-plan` is gone, and `/bdk:execute` replaces the BDK 2 executor in a later v3 Change.
+
+The BDK 2 plan skills formed one chain, each stage consuming the previous stage's output:
 
 ```
 /bdk:create-plan  →  /bdk:verify-plan  →  /bdk:subagent-execute-plan  →  /bdk:cr
 ```
-
-In BDK 3, `/bdk:design` writes the design into the Change (`.bdk/changes/<changeId>/design.md`) and ends at the design gate instead of handing a file to `/bdk:create-plan`.
 
 The seams are files, not conversation state, so any stage can run in a fresh session:
 
@@ -230,7 +230,7 @@ Used by skills internally (invoke via `subagent_type`):
 | `duplicate-detector`    | haiku  | Find code duplication                                                                                                                                                                      |
 | `architecture-reviewer` | opus   | Audit against architectural rules                                                                                                                                                          |
 | `static-analyse`        | haiku  | Detect and run project lint/format/type-check                                                                                                                                              |
-| `plan-verifier`         | opus   | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. Used by `/bdk:verify-plan`                                                 |
+| `plan-verifier`         | opus   | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. BDK 2 agent; no BDK 3 skill starts it                                      |
 | `design-verifier`       | opus   | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. BDK 2 agent; no BDK 3 skill starts it |
 | `log-analyzer`          | haiku  | Parse and summarize error logs                                                                                                                                                             |
 | `web-researcher`        | haiku  | Search web for solutions and docs                                                                                                                                                          |

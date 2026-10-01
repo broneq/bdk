@@ -15892,6 +15892,10 @@ function refuse(rule2, why, instead) {
   if (first === void 0) throw new Error(`refusal ${rule2} needs at least one instead`);
   return { refused: true, rule: rule2, why, instead: [first, ...rest] };
 }
+function blockReason(refusal2) {
+  return `${refusal2.rule}: ${refusal2.why}
+instead: ${refusal2.instead.join("; ")}`;
+}
 function isRefusal(value) {
   return "refused" in value;
 }
@@ -21514,9 +21518,11 @@ var PlanVerifyKind = class extends BaseKind {
   writes() {
     return [];
   }
-  /** P2: a verdict given for other plan parts is stale. */
+  /** P2: a verdict given for other plan parts or spec deltas is stale. */
   inputs(view) {
-    return { files: [...partFiles(view, "plan/parts").values()] };
+    return {
+      files: [...partFiles(view, "plan/parts").values(), ...view.specDeltas().map(deltaPath)]
+    };
   }
   validate(view, target) {
     return verdictChecks(view, target);
@@ -22924,22 +22930,16 @@ var SKILL_CONTEXT = {
     { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" }
   ],
   "create-adr": [rules("architecture")],
-  "create-plan": [
-    rules("engineering-judgment"),
-    rules("plan"),
-    decision,
-    tools("test"),
-    tools("lint"),
-    rules("code-quality"),
-    rules("architecture"),
-    rules("design-patterns"),
-    rules("security"),
-    rules("test-quality"),
-    languageRules,
-    projectRules
-  ],
   debug: [tools("test"), tools("lint")],
   design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  plan: [
+    rules("plan"),
+    rules("engineering-judgment"),
+    rules("test-quality"),
+    languageRules,
+    projectRules,
+    decision
+  ],
   "pr-review": [
     {
       kind: "file",
@@ -22950,7 +22950,8 @@ var SKILL_CONTEXT = {
   setup: [tools("test"), tools("lint"), tools("build")],
   swarm: [{ kind: "concurrency" }],
   "test-driven-development": [rules("test-quality"), tools("test")],
-  "verify-design": []
+  "verify-design": [],
+  "verify-plan": []
 };
 
 // kernel/src/ctx/use-cases/parts.ts
@@ -31490,7 +31491,7 @@ function writeInject(streams, refusal2, asJson) {
 function writeBlock(streams, refusal2, asJson, blockOutput) {
   if (asJson) streams.stdout(json(refusal2));
   else if (blockOutput !== void 0) streams.stdout(ensureNewline(blockOutput(refusal2)));
-  streams.stderr(`${refusal2.rule}: ${refusal2.why}
+  streams.stderr(`${blockReason(refusal2)}
 `);
   return 2;
 }
@@ -31621,7 +31622,7 @@ function preToolBlock(refusal2) {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       permissionDecision: "deny",
-      permissionDecisionReason: `${refusal2.rule}: ${refusal2.why}`
+      permissionDecisionReason: blockReason(refusal2)
     }
   });
 }

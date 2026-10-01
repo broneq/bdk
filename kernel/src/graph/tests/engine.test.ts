@@ -142,7 +142,7 @@ describe("node states", () => {
     });
     expect(one.find("plan-verify")).toMatchObject({
       state: "blocked",
-      requires: ["plan-part:01", "plan-part:02"],
+      requires: ["plan-part:01", "plan-part:02", "design", "architecture"],
       why: "plan-part:02 is ready, not done",
     });
     expect(one.next?.id).toBe("plan-part:02");
@@ -400,6 +400,13 @@ describe("graph variants", () => {
     expect(result.next).toMatchObject({ id: "plan", kind: "plan-part" });
     expect(present(result)).toContain("plan-verify");
     expect(present(result)).not.toContain("design-verify");
+    const planned = graph({
+      kind: "bug",
+      files: { "change.md": {}, "plan/parts/01-a.md": { data: { "depends-on": [] } } },
+      entries: [done("plan-part:01", "plan/parts/01-a.md@1")],
+    });
+    expect(planned.find("plan-verify")?.requires).toStrictEqual(["plan-part:01"]);
+    expect(planned.next?.id).toBe("plan-verify");
   });
 
   it("spec-delta only when a plan part has spec-impact", () => {

@@ -3,7 +3,7 @@
 // contract shape of the record's `mode` (`kernel-cli`, Output modes).
 import { json, refusalText, stopBlock } from "../output/index.ts";
 import type { Streams } from "../output/index.ts";
-import { exitCodeFor, isRefusal, KernelRefusal, refuse } from "../refusal/index.ts";
+import { blockReason, exitCodeFor, isRefusal, KernelRefusal, refuse } from "../refusal/index.ts";
 import type { Refusal } from "../refusal/index.ts";
 import { commandHelp, globalHelp, groupHelp } from "./help.ts";
 import { meetsNodeMinimum, nodeVersionRefusal } from "./node-version.ts";
@@ -257,7 +257,7 @@ function writeBlock(
 ): number {
   if (asJson) streams.stdout(json(refusal));
   else if (blockOutput !== undefined) streams.stdout(ensureNewline(blockOutput(refusal)));
-  streams.stderr(`${refusal.rule}: ${refusal.why}\n`);
+  streams.stderr(`${blockReason(refusal)}\n`);
   return 2;
 }
 

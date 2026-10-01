@@ -66,12 +66,14 @@ nodes:
     kind: plan-part
     stage: plan
     requires: [gate:design]
-    rules: [code-quality, architecture, test-quality]
+    rules: [code-quality, architecture, test-quality, plan]
 
+  # The design nodes put the design in the verifier's package and make a
+  # verdict older than the design's last `done` fail `fresh`.
   - id: plan-verify
     kind: plan-verify
     stage: plan
-    requires: [plan]
+    requires: [plan, design, design-index, architecture]
     profiles: [small, large]
     budget: verifier
 

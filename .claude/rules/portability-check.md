@@ -60,7 +60,7 @@ Every **user-invocable workflow skill** must start with (after its two context l
 
 Referencing other BDK skills, use full namespace:
 
-- `/bdk:create-plan` not `/create-plan`
+- `/bdk:plan` not `/plan`
 - `/bdk:debug` not `/debug`
 
 ## Domain-Specific Skills Do Not Belong Here

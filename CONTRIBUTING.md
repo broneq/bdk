@@ -23,7 +23,7 @@ Every BDK skill:
 
 1. Starts with `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`
 2. Never hardcodes test runners, build tools, lint commands, or file paths
-3. References other skills with full namespace: `/bdk:create-plan`, `/bdk:debug`
+3. References other skills with full namespace: `/bdk:plan`, `/bdk:debug`
 4. Uses "run the project's test suite" — not `pytest` or `go test`
 
 ---
