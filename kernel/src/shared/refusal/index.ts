@@ -55,6 +55,7 @@ export const RULES = [
   "guard/reader-write",
   "guard/agent-message",
   "guard/agent-spawn",
+  "guard/escalation-model",
   "guard/lead-scope",
   "guard/kernel-unavailable",
   "state/corrupted-index",

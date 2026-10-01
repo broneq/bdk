@@ -8988,6 +8988,7 @@ var commands_default = {
         "guard/dispatch-prompt",
         "guard/reader-write",
         "guard/agent-spawn",
+        "guard/escalation-model",
         "guard/agent-message"
       ],
       writes: [".bdk/.machine/agents.sqlite"]
@@ -15884,6 +15885,7 @@ var RULES = [
   "guard/reader-write",
   "guard/agent-message",
   "guard/agent-spawn",
+  "guard/escalation-model",
   "guard/lead-scope",
   "guard/kernel-unavailable",
   "state/corrupted-index",
@@ -17281,6 +17283,9 @@ var attemptKind = {
     escalation: boolean2().optional().meta({
       description: "The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`."
     }),
+    model: string2().min(1).optional().meta({
+      description: "The model every agent of the ticket runs on: `policy.escalation.model` when the escalation ticket opened. `dispatch build` returns it and `hooks pre-tool` holds the `Agent` call to it (T41-D14)."
+    }),
     "opened-at": timestamp,
     author,
     "closed-at": timestamp.optional().meta({ description: "Present exactly when `outcome` is." }),
@@ -17539,6 +17544,9 @@ var dispatchKind = {
     attempt: int().min(1),
     of: int().min(1),
     scope,
+    model: string2().min(1).optional().meta({
+      description: "The model the agent must run on: the escalation ticket's `model`, for every role but `runner` and `scout` (T41-D14)."
+    }),
     at: timestamp,
     "kernel-version": string2().min(1),
     "template-hash": hash,
@@ -27404,7 +27412,7 @@ function openAttempt(deps, change, globalDir2, input) {
         of: Math.max(state.of, 1),
         scope: scope2,
         ...narrowedFrom === void 0 ? {} : { "narrowed-from": narrowedFrom },
-        ...input.escalate ? { escalation: true } : {},
+        ...input.escalate ? { escalation: true, model: policy.escalation.model } : {},
         "opened-at": openedAt,
         author: await authorIdent(deps.git, change.projectRoot),
         ...dropped.length === 0 ? {} : { dropped: dropped.map((entry2) => entry2.id) }
@@ -29126,7 +29134,8 @@ function configRegistrations(deps) {
 
 // kernel/src/dispatch/render/dispatch.ts
 function renderBuild(report2) {
-  return `package for ${report2.ticket} (${report2.role} on ${report2.adapter}, ${report2.target}): ${String(report2.bytes)} bytes
+  const model = report2.model === void 0 ? "" : `, model ${report2.model}`;
+  return `package for ${report2.ticket} (${report2.role} on ${report2.adapter}${model}, ${report2.target}): ${String(report2.bytes)} bytes
 ${report2.path}
 `;
 }
@@ -29186,7 +29195,7 @@ var ADAPTERS = [
     sentence: sentence("reader", "never change a file."),
     tools: READ_ONLY,
     tier: "deep",
-    effort: "medium"
+    effort: "high"
   },
   {
     name: "reviewer",
@@ -29236,7 +29245,9 @@ var HOSTS = {
       shell: ["Bash"],
       message: ["SendMessage"]
     },
-    models: { fast: "haiku", balanced: "sonnet", deep: "opus" }
+    models: { fast: "haiku", balanced: "sonnet", deep: "opus" },
+    // Haiku runs without the frontmatter's effort level (HOST-FACTS `model-override`).
+    effortTiers: ["balanced", "deep"]
   }
 };
 function adapterFile(adapter, host) {
@@ -29250,7 +29261,7 @@ function adapterFile(adapter, host) {
     `name: ${adapter.name}`,
     `description: ${adapter.description}`,
     `model: ${host.models[adapter.tier]}`,
-    `effort: ${adapter.effort}`,
+    ...host.effortTiers.includes(adapter.tier) ? [`effort: ${adapter.effort}`] : [],
     "tools:",
     ...tools3.map((tool) => `  - ${tool}`),
     "---",
@@ -29556,6 +29567,7 @@ function buildPackage(deps, change, globalDir2, input) {
 ${rule2.text}`)
     ]);
     const kernelVersion = readKernelVersion(deps.store, deps.pluginRoot);
+    const model = escalationModel(record5.data.model, role2);
     const data = {
       schema: STATE_KINDS.dispatch.version,
       ticket: input.ticket,
@@ -29565,6 +29577,7 @@ ${rule2.text}`)
       attempt: record5.data.attempt,
       of: record5.data.of,
       scope: record5.data.scope,
+      ...model === void 0 ? {} : { model },
       at: deps.clock.now(),
       "kernel-version": kernelVersion,
       "template-hash": templateHash,
@@ -29593,12 +29606,16 @@ ${rule2.text}`)
       role: role2,
       adapter: ROLE_ADAPTERS[role2],
       scope: record5.data.scope,
+      ...model === void 0 ? {} : { model },
       kernelVersion,
       templateHash,
       report: report2,
       entries: { full: selection.full.map((entry) => entry.id), counted: selection.counted }
     };
   });
+}
+function escalationModel(model, role2) {
+  return role2 === "runner" || role2 === "scout" ? void 0 : model;
 }
 async function runnerChecks(deps, change, index2, globalDir2, input, resolved) {
   const steps = await targetSteps(deps, change, index2, globalDir2, input.target);
@@ -30540,14 +30557,14 @@ function needsAgentFacts(payload) {
   if (payload.tool === "Agent" || payload.tool === "SendMessage") return true;
   return payload.tool === "Bash" && payload.agentType === "bdk:lead";
 }
-function preToolDecision(payload, classify2, facts) {
+function preToolDecision(payload, classify2, facts, packageModel2) {
   const cwd = payload.cwd ?? "/";
   if (EDIT_TOOLS.has(payload.tool)) {
     const path = stringField(payload.input, "file_path") ?? stringField(payload.input, "notebook_path");
     return path !== void 0 && underSpecs(cwd, path) ? specDeny(path) : void 0;
   }
   if (payload.tool === "Agent") {
-    return dispatchDecision(payload) ?? spawnDecision(payload, facts);
+    return dispatchDecision(payload) ?? spawnDecision(payload, facts) ?? escalationDecision(payload, packageModel2);
   }
   if (payload.tool === "SendMessage") return messageDecision(payload, facts);
   if (payload.tool !== "Bash") return void 0;
@@ -30822,6 +30839,15 @@ function dispatchDecision(payload) {
     reason: "a BDK dispatch prompt is the package path plus at most one sentence; put the context into the package (BDK T23-D0)"
   };
 }
+function escalationDecision(payload, model) {
+  if (model === void 0 || stringField(payload.input, "model") === model) return void 0;
+  const adapter = stringField(payload.input, "subagent_type") ?? "the agent";
+  return {
+    rule: "guard/escalation-model",
+    verb: adapter,
+    reason: `the package belongs to an escalation ticket, so start ${adapter} with model: ${model} in the Agent call (BDK T41-D14)`
+  };
+}
 function dispatchPaths(prompt2) {
   return [...prompt2.matchAll(DISPATCH_PATH)].map((match) => match[1] ?? "");
 }
@@ -30980,6 +31006,9 @@ function subagentStopCommand(deps) {
     return { data: report2, text: stopText(report2) };
   };
 }
+
+// kernel/src/hooks/use-cases/pre-tool.ts
+import { resolve as resolvePath2 } from "node:path";
 
 // kernel/src/shared/registry/record.ts
 var rule = _enum(RULES);
@@ -31433,22 +31462,37 @@ function ensureNewline(text12) {
 async function preTool(deps, place2, raw) {
   const payload = preToolPayload(raw);
   const facts = !("missing" in payload) && needsAgentFacts(payload) && payload.agentId !== void 0 ? await agentFacts(deps, place2, payload.agentId) : void 0;
-  const outcome = decidePreTool(deps.commands, raw, facts);
+  const model = "missing" in payload ? void 0 : packageModel(deps, payload);
+  const outcome = decidePreTool(deps.commands, raw, facts, model);
   if (!("missing" in payload) && !("refused" in outcome) && payload.tool === "SendMessage") {
     await recordMessage(deps, place2, payload);
   }
   return outcome;
 }
-function decidePreTool(commands, raw, facts) {
+function decidePreTool(commands, raw, facts, packageModel2) {
   const payload = preToolPayload(raw);
   if ("missing" in payload) {
     return refuse("input/invalid-argument", `the PreToolUse payload lacks ${payload.missing}`, [
       "run bdk hooks pre-tool only from the PreToolUse hook of hooks/hooks.json"
     ]);
   }
-  const deny = preToolDecision(payload, classifier(commands), facts);
+  const deny = preToolDecision(payload, classifier(commands), facts, packageModel2);
   if (deny !== void 0) return denial(deny);
   return { decision: "pass", tool: payload.tool, subagent: payload.agentId !== void 0 };
+}
+function packageModel(deps, payload) {
+  if (payload.tool !== "Agent") return void 0;
+  const prompt2 = typeof payload.input.prompt === "string" ? payload.input.prompt : "";
+  const paths = dispatchPaths(prompt2);
+  if (paths.length !== 1) return void 0;
+  const path = resolvePath2(payload.cwd ?? "/", paths[0] ?? "");
+  try {
+    const document = readDocument(deps.store, path);
+    const model = document !== void 0 && "data" in document ? document.data.model : void 0;
+    return typeof model === "string" ? model : void 0;
+  } catch {
+    return void 0;
+  }
 }
 async function recordMessage(deps, place2, payload) {
   const to = typeof payload.input.to === "string" ? payload.input.to : void 0;
@@ -31504,7 +31548,8 @@ var INSTEAD2 = {
   "guard/reader-write": "report through bdk log add or bdk log ingest",
   "guard/dispatch-prompt": "pass the dispatch package path and at most one sentence",
   "guard/agent-spawn": "do the work yourself or return blocked with the cause",
-  "guard/agent-message": "write the substance with bdk log add, then send its id to a running agent"
+  "guard/agent-message": "write the substance with bdk log add, then send its id to a running agent",
+  "guard/escalation-model": "set model in the Agent call to the package's model"
 };
 
 // kernel/src/hooks/commands/pre-tool.ts

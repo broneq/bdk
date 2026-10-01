@@ -56,3 +56,5 @@
 - [x] 7.3 Run `pnpm build`, `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm test:perf`, `pnpm skill-check` and `pnpm docs:build`; verify all pass
 - [x] 7.4 Run `openspec validate v3-t41-orchestration --strict`; verify it reports the Change valid
 - [x] 7.5 Read the command word `bdk` as a kernel command in `hooks pre-tool` (Pre-tool command reading), so a `bdk` shell function no longer hides a verb from `guard/hooks-from-bash`, `guard/subagent-kernel-command` and `guard/lead-scope`; found by the live `bdk-tree` check
+- [x] 7.6 Escalation runs on the escalation model (T41-D14): `model` in the attempt record and the package, `dispatch build` output, `guard/escalation-model`, the lead and swarm skills; live `model-override` check on Claude Code 2.1.285
+- [x] 7.7 Effort per adapter after the `model-override` check (T41-D13): `reader` at `high`, no `effort` key for the `fast` tier on Claude Code; regenerate `agents/` and the docs

@@ -3,7 +3,6 @@
 name: scout
 description: BDK read-only adapter for fast searches and log triage (scout). Started by BDK role skills and the swarm skill; not for general tasks.
 model: haiku
-effort: low
 tools:
   - Read
   - Grep

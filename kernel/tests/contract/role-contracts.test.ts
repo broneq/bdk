@@ -226,6 +226,12 @@ describe("T41-D11: the lead runs its part and waits instead of ending its turn",
     }
     expect(body).not.toMatch(/\b(Edit|Write)\b/);
   });
+
+  it("escalates its own task on the model dispatch build returns (T41-D14)", () => {
+    const { body } = readRole("lead");
+    expect(body).toContain("bdk attempt open task-redispatch <task> --escalate");
+    expect(body).toMatch(/`model` that `bdk dispatch build` returns/);
+  });
 });
 
 describe("T41-D4: a scout started by a worker has no package", () => {

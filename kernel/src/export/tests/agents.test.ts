@@ -41,7 +41,7 @@ describe("adapter definitions", () => {
         name: adapter.name,
         tools,
         model: HOSTS.claude.models[adapter.tier],
-        effort: adapter.effort,
+        effort: /^effort: (.+)$/m.exec(adapterFile(adapter, HOSTS.claude))?.[1],
       };
     });
     const readOnly = ["Read", "Grep", "Glob", "Bash", "SendMessage"];
@@ -58,10 +58,10 @@ describe("adapter definitions", () => {
         model: "sonnet",
         effort: "medium",
       },
-      { name: "reader", tools: readOnly, model: "opus", effort: "medium" },
+      { name: "reader", tools: readOnly, model: "opus", effort: "high" },
       { name: "reviewer", tools: readOnly, model: "sonnet", effort: "medium" },
-      { name: "runner", tools: ["Read", "Bash", "SendMessage"], model: "haiku", effort: "low" },
-      { name: "scout", tools: readOnly, model: "haiku", effort: "low" },
+      { name: "runner", tools: ["Read", "Bash", "SendMessage"], model: "haiku", effort: undefined },
+      { name: "scout", tools: readOnly, model: "haiku", effort: undefined },
     ]);
   });
 

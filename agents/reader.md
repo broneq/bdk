@@ -3,7 +3,7 @@
 name: reader
 description: BDK read-only adapter for deep verification (verifier, design-verifier). Started by BDK role skills; not for general tasks.
 model: opus
-effort: medium
+effort: high
 tools:
   - Read
   - Grep

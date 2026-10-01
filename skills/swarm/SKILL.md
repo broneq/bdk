@@ -34,6 +34,10 @@ Everything an agent must know is in its package, the ledger or a report; a messa
 
 `bdk attempt open` gives the ticket and its `steps`. After the implementer returns with its report stored, dispatch the ticket's `steps` in order under the same ticket, each package built only after the previous agent has returned, then run `bdk attempt close <ticket> ok|fail`. The kernel decides whether the step evidence suffices; act on its `next.action`.
 
+## Escalation
+
+On `next.action: escalate`, open the escalation ticket with `bdk attempt open <loop> <target> --escalate` and run it like any other, starting each of its agents on the `model` that its `bdk dispatch build` returns. The stronger model is the escalation; `hooks pre-tool` denies a start without it. On `parked`, stop that target and report.
+
 ## Single resume
 
 Resume an agent once, naming the cause, when it returns without a stored report, its report got a `bdk log ingest` refusal, or it turns `suspect`. After a second failure, close the ticket `fail` with the reason.

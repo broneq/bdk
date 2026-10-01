@@ -8,6 +8,8 @@ export interface HostMap {
   readonly id: string;
   readonly tools: Readonly<Record<ToolClass, readonly string[]>>;
   readonly models: Readonly<Record<Tier, string>>;
+  /** The tiers whose model takes an `effort` level; the others get no `effort` key. */
+  readonly effortTiers: readonly Tier[];
 }
 
 export const HOSTS = {
@@ -21,6 +23,8 @@ export const HOSTS = {
       message: ["SendMessage"],
     },
     models: { fast: "haiku", balanced: "sonnet", deep: "opus" },
+    // Haiku runs without the frontmatter's effort level (HOST-FACTS `model-override`).
+    effortTiers: ["balanced", "deep"],
   },
 } as const satisfies Readonly<Record<string, HostMap>>;
 
@@ -38,7 +42,7 @@ export function adapterFile(adapter: AdapterDefinition, host: HostMap): string {
     `name: ${adapter.name}`,
     `description: ${adapter.description}`,
     `model: ${host.models[adapter.tier]}`,
-    `effort: ${adapter.effort}`,
+    ...(host.effortTiers.includes(adapter.tier) ? [`effort: ${adapter.effort}`] : []),
     "tools:",
     ...tools.map((tool) => `  - ${tool}`),
     "---",

@@ -18,7 +18,8 @@ type GuardRule =
   | "guard/reader-write"
   | "guard/dispatch-prompt"
   | "guard/agent-spawn"
-  | "guard/agent-message";
+  | "guard/agent-message"
+  | "guard/escalation-model";
 
 export interface Deny {
   readonly rule: GuardRule;
@@ -118,10 +119,15 @@ export function needsAgentFacts(payload: PreToolPayload): boolean {
   return payload.tool === "Bash" && payload.agentType === "bdk:lead";
 }
 
+/**
+ * `packageModel` is the `model` of the dispatch package an `Agent` prompt names,
+ * which the use case reads from the package's frontmatter.
+ */
 export function preToolDecision(
   payload: PreToolPayload,
   classify: Classify,
   facts?: AgentFacts,
+  packageModel?: string,
 ): Deny | undefined {
   const cwd = payload.cwd ?? "/";
   if (EDIT_TOOLS.has(payload.tool)) {
@@ -130,7 +136,11 @@ export function preToolDecision(
     return path !== undefined && underSpecs(cwd, path) ? specDeny(path) : undefined;
   }
   if (payload.tool === "Agent") {
-    return dispatchDecision(payload) ?? spawnDecision(payload, facts);
+    return (
+      dispatchDecision(payload) ??
+      spawnDecision(payload, facts) ??
+      escalationDecision(payload, packageModel)
+    );
   }
   if (payload.tool === "SendMessage") return messageDecision(payload, facts);
   if (payload.tool !== "Bash") return undefined;
@@ -458,6 +468,17 @@ function dispatchDecision(payload: PreToolPayload): Deny | undefined {
     verb: adapter,
     reason:
       "a BDK dispatch prompt is the package path plus at most one sentence; put the context into the package (BDK T23-D0)",
+  };
+}
+
+/** An escalation package runs on its model, not the adapter's (T41-D14, HOST-FACTS `model-override`). */
+function escalationDecision(payload: PreToolPayload, model: string | undefined): Deny | undefined {
+  if (model === undefined || stringField(payload.input, "model") === model) return undefined;
+  const adapter = stringField(payload.input, "subagent_type") ?? "the agent";
+  return {
+    rule: "guard/escalation-model",
+    verb: adapter,
+    reason: `the package belongs to an escalation ticket, so start ${adapter} with model: ${model} in the Agent call (BDK T41-D14)`,
   };
 }
 

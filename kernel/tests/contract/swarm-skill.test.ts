@@ -45,6 +45,12 @@ describe("swarm skill", () => {
     expect(body).toContain("bdk attempt close <ticket>");
   });
 
+  it("starts an escalation ticket's agents on the model dispatch build returns", () => {
+    const { body } = readSkill();
+    expect(body).toContain("bdk attempt open <loop> <target> --escalate");
+    expect(body).toMatch(/`model` that its `bdk dispatch build` returns/);
+  });
+
   it("holds no flat-swarm sentence", () => {
     const flat = sentences(readSkill().body).filter(
       (sentence) => /\bflat\b/i.test(sentence) || /no adapter carries/i.test(sentence),

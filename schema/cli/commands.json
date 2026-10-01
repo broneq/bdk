@@ -1616,6 +1616,7 @@
         "guard/dispatch-prompt",
         "guard/reader-write",
         "guard/agent-spawn",
+        "guard/escalation-model",
         "guard/agent-message"
       ],
       "writes": [".bdk/.machine/agents.sqlite"]

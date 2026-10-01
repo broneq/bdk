@@ -119,6 +119,42 @@ describe("bdk attempt open", () => {
     expect(status.parked).toMatchObject({ entry: (last.next as { entry: string }).entry });
   });
 
+  it("exit 0: the escalation ticket's agents run on its model (T41-D14)", () => {
+    const change = started("policy:\n  budgets:\n    task-redispatch: 1\n");
+    closed(change, opened(change, "task-redispatch", "01-1"), "fail");
+    const ticket = opened(change, "task-redispatch", "01-1", "--escalate");
+    const build = (role: string) =>
+      answered(
+        bdk(["dispatch", "build", "01-1", role, ticket, "--json"], change.root),
+        "output/dispatch-build.json",
+      );
+    const implementer = build("implementer");
+    expect(implementer.model).toBe("opus");
+    expect(read(change.root, implementer.path as string)).toMatch(/^model: opus$/m);
+    expect(build("runner")).not.toHaveProperty("model");
+
+    const start = (model?: string) =>
+      bdk(["hooks", "pre-tool"], change.root, {
+        stdin: JSON.stringify({
+          session_id: "s",
+          cwd: change.root,
+          hook_event_name: "PreToolUse",
+          tool_name: "Agent",
+          tool_input: {
+            subagent_type: "bdk:worker",
+            prompt: implementer.path,
+            run_in_background: true,
+            ...(model === undefined ? {} : { model }),
+          },
+        }),
+      });
+    const denied = start();
+    expect(denied.code).toBe(2);
+    expect(denied.stderr).toMatch(/^guard\/escalation-model: .*model: opus/);
+    expect(start("sonnet").code).toBe(2);
+    expect(start("opus")).toMatchObject({ code: 0, stdout: "" });
+  });
+
   it("exit 0: an answer opens a new round", () => {
     const change = started(
       "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    enabled: false\n",

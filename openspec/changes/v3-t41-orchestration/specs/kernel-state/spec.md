@@ -4,25 +4,26 @@
 
 An attempt record SHALL be one file per ticket, created by `attempt open`, stamped with `package` by every `dispatch build` and with `rules-read` by the first `rules show --ticket` call under the implementer package, and completed by `attempt close`, with these fields.
 
-| Field           | Type                                                                   | Req. | Stamped | Meaning                                                                                                     |
-| --------------- | ---------------------------------------------------------------------- | ---- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| `schema`        | integer                                                                | yes  | kernel  |                                                                                                             |
-| `ticket`        | `A-` id                                                                | yes  | kernel  |                                                                                                             |
-| `loop`          | `task-redispatch \| verify-fix \| review-fix \| verifier \| part-lead` | yes  |         | The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds).                             |
-| `target`        | string                                                                 | yes  |         | Task, part, artifact or Change id.                                                                          |
-| `attempt`       | integer >= 1                                                           | yes  | kernel  | Derived from the records of the same loop, target and round (`kernel-loops`).                               |
-| `of`            | integer >= 1                                                           | yes  | kernel  | Budget from policy.                                                                                         |
-| `scope`         | `full \| high+ \| blockers`                                            | yes  |         |                                                                                                             |
-| `narrowed-from` | `full \| high+ \| blockers`                                            | no   |         |                                                                                                             |
-| `escalation`    | boolean                                                                | no   |         | The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.               |
-| `opened-at`     | timestamp                                                              | yes  | kernel  |                                                                                                             |
-| `author`        | string                                                                 | yes  | kernel  |                                                                                                             |
-| `closed-at`     | timestamp                                                              | no   | kernel  | Present exactly when `outcome` is.                                                                          |
-| `outcome`       | `ok \| fail \| not-run`                                                | no   |         |                                                                                                             |
-| `findings`      | array of `{fingerprint, type, file, symbol?}`                          | no   | kernel  | Fingerprints of the `finding` and `blocker` entries of a `fail` (oscillation check).                        |
-| `dropped`       | array of `L-` ids                                                      | no   |         | Findings that fell out of scope N+1.                                                                        |
-| `rules-read`    | timestamp                                                              | no   | kernel  | First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`. |
-| `package`       | relative path                                                          | no   | kernel  | The ticket's active package: the latest `dispatch build` of the ticket (T23-D42).                           |
+| Field           | Type                                                                   | Req. | Stamped | Meaning                                                                                                                              |
+| --------------- | ---------------------------------------------------------------------- | ---- | ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `schema`        | integer                                                                | yes  | kernel  |                                                                                                                                      |
+| `ticket`        | `A-` id                                                                | yes  | kernel  |                                                                                                                                      |
+| `loop`          | `task-redispatch \| verify-fix \| review-fix \| verifier \| part-lead` | yes  |         | The loop the ticket counts against (`kernel-loops`, Loops, targets and rounds).                                                      |
+| `target`        | string                                                                 | yes  |         | Task, part, artifact or Change id.                                                                                                   |
+| `attempt`       | integer >= 1                                                           | yes  | kernel  | Derived from the records of the same loop, target and round (`kernel-loops`).                                                        |
+| `of`            | integer >= 1                                                           | yes  | kernel  | Budget from policy.                                                                                                                  |
+| `scope`         | `full \| high+ \| blockers`                                            | yes  |         |                                                                                                                                      |
+| `narrowed-from` | `full \| high+ \| blockers`                                            | no   |         |                                                                                                                                      |
+| `escalation`    | boolean                                                                | no   |         | The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.                                        |
+| `model`         | string                                                                 | no   | kernel  | On the escalation ticket: `policy.escalation.model` when it opened. `dispatch build` copies it into the ticket's packages (T41-D14). |
+| `opened-at`     | timestamp                                                              | yes  | kernel  |                                                                                                                                      |
+| `author`        | string                                                                 | yes  | kernel  |                                                                                                                                      |
+| `closed-at`     | timestamp                                                              | no   | kernel  | Present exactly when `outcome` is.                                                                                                   |
+| `outcome`       | `ok \| fail \| not-run`                                                | no   |         |                                                                                                                                      |
+| `findings`      | array of `{fingerprint, type, file, symbol?}`                          | no   | kernel  | Fingerprints of the `finding` and `blocker` entries of a `fail` (oscillation check).                                                 |
+| `dropped`       | array of `L-` ids                                                      | no   |         | Findings that fell out of scope N+1.                                                                                                 |
+| `rules-read`    | timestamp                                                              | no   | kernel  | First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`.                          |
+| `package`       | relative path                                                          | no   | kernel  | The ticket's active package: the latest `dispatch build` of the ticket (T23-D42).                                                    |
 
 The body is the close reason (`--reason` of `attempt close`, `taken over` from `change takeover`). `not-run` counters and budgets are derived from the records of a loop, target and round (`kernel-loops`, Loops, targets and rounds), never stored.
 
@@ -117,6 +118,47 @@ Rules without exception: `intent` lives only in `change.md`, written only by `ch
 
 - **WHEN** a plan part's frontmatter has no `spec-impact` field
 - **THEN** it validates against the plan part schema
+
+### Requirement: Dispatch package
+
+A dispatch package SHALL be written only by `dispatch build`, with the frontmatter fields below (K3, K4, P10) and the body sections that `kernel-cli/dispatch`, `bdk dispatch build`, lists in order; the whole file is at most 12 288 bytes.
+
+| Field            | Type                        | Req. | Stamped | Meaning                                                                                                                                                      |
+| ---------------- | --------------------------- | ---- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schema`         | integer                     | yes  | kernel  |                                                                                                                                                              |
+| `ticket`         | `A-` id                     | yes  | kernel  |                                                                                                                                                              |
+| `target`         | string                      | yes  | kernel  |                                                                                                                                                              |
+| `role`           | string                      | yes  | kernel  | Role skill name (`implementer`, `verifier`, ...).                                                                                                            |
+| `adapter`        | string                      | yes  | kernel  | The role's adapter (`role-contracts`, Role-to-adapter map).                                                                                                  |
+| `attempt`        | integer >= 1                | yes  | kernel  |                                                                                                                                                              |
+| `of`             | integer >= 1                | yes  | kernel  |                                                                                                                                                              |
+| `scope`          | `full \| high+ \| blockers` | yes  | kernel  |                                                                                                                                                              |
+| `model`          | string                      | no   | kernel  | The escalation ticket's `model`, on every package of the ticket but a `runner` or `scout` one; the agent must run on it (T41-D14, `guard/escalation-model`). |
+| `at`             | timestamp                   | yes  | kernel  |                                                                                                                                                              |
+| `kernel-version` | string                      | yes  | kernel  | P10.                                                                                                                                                         |
+| `template-hash`  | hash                        | yes  | kernel  | P10.                                                                                                                                                         |
+| `report`         | path                        | yes  | kernel  | Where the role's report is written (`reports/...`).                                                                                                          |
+| `rules`          | array of rule ids           | yes  | kernel  | The rules selected for the ticket, in order (T31); may be empty.                                                                                             |
+
+#### Scenario: package without template hash
+
+- **WHEN** a dispatch package lacks `template-hash`
+- **THEN** validation fails naming `template-hash`
+
+#### Scenario: package with an unknown adapter
+
+- **WHEN** a dispatch package carries `adapter: planner`
+- **THEN** validation fails naming `adapter`
+
+#### Scenario: escalation package names its model
+
+- **WHEN** `dispatch build` builds the `implementer` and the `runner` package of an escalation ticket opened with `policy.escalation.model: opus`
+- **THEN** the implementer package holds `model: opus` and the runner package holds no `model`
+
+#### Scenario: package records its rules
+
+- **WHEN** a package is built for a `runner` ticket
+- **THEN** its frontmatter holds `rules: []`, and a package without `rules` fails validation naming `rules`
 
 ## ADDED Requirements
 

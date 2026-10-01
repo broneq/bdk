@@ -129,9 +129,15 @@ Alternative: commits only from `main` after a part - rejected, it loses the per-
 
 ### T41-D13 Effort per adapter
 
-Adapters pin `effort` (HOST-FACTS `effort-frontmatter`): `low` for `runner` and `scout`, `medium` for the others. The Opus 5.5 guide names `medium` the default and warns that higher effort lengthens every turn; evals tune these values later.
+Adapters pin `effort` (HOST-FACTS `effort-frontmatter`): `medium` for `lead`, `worker` and `reviewer`, `high` for `reader`. The Opus 5.5 guide names `medium` the default and warns that higher effort lengthens every turn; that cost matters for the agents with many turns (a lead lives through a whole part, a worker and a reviewer run tests), not for `reader`, which runs rarely, in few turns, where a missed defect costs a whole execution. `runner` and `scout` keep their intent `low`, but Haiku runs without the frontmatter's effort level (HOST-FACTS `model-override`), so the Claude Code map writes no `effort` for the `fast` tier rather than a key that does nothing. The model tiers stay those of T23 (`docs/V3-SKILL-INVENTORY.md` 13.2); `lead` takes `balanced`, because it follows the kernel's `next.action` rather than deciding the work, and its context grows with every report. Nothing here is measured: T43 measures the pairs, and a project cannot change them (adapters are plugin content, T23-D19).
 
-Alternative: host default everywhere - rejected, a runner and a scout gain nothing from `medium`.
+Alternative: host default everywhere - rejected, `reader` gains from more thinking and a `fast` agent has no effort to set. Alternative: `opus` for `lead` - rejected for now, the longest-living agent on the dearest model, for judgment the kernel mostly takes.
+
+### T41-D14 Escalation runs on the escalation model
+
+`policy.escalation.model` was printed by `attempt open --escalate` and applied by nobody, so an escalation was one more attempt on the same model. Now `attempt open --escalate` records the model in the ticket's attempt record, `dispatch build` copies it into each package of the ticket but a `runner` or `scout` one and returns it, the orchestrator (a lead for its tasks, `main` otherwise) starts the agent with the `Agent` call's `model` parameter, which overrides the adapter's model (HOST-FACTS `model-override`), and `hooks pre-tool` denies a start of such a package without that model (`guard/escalation-model`). The lead escalates its own tasks instead of returning `blocked`; `parked` still ends at the lead's `blocked`.
+
+Alternative: role text only - rejected, a skipped `model` would silently repeat the failed model. Alternative: the guard reads the ticket's attempt record - rejected, the package's frontmatter is one file the prompt already names.
 
 ## Risks / Trade-offs
 

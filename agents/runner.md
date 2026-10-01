@@ -3,7 +3,6 @@
 name: runner
 description: BDK adapter that runs the project's tests and checks for a dispatch package (runner). Started by BDK role skills and the swarm skill; not for general tasks.
 model: haiku
-effort: low
 tools:
   - Read
   - Bash

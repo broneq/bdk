@@ -9,6 +9,8 @@ export interface BuildReport {
   readonly role: string;
   readonly adapter: string;
   readonly scope: string;
+  /** The model the host must start the agent on; only on an escalation ticket. */
+  readonly model?: string | undefined;
   readonly kernelVersion: string;
   readonly templateHash: string;
   readonly report: string;

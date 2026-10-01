@@ -171,6 +171,7 @@ export function buildPackage(
       ...rules.selected.map(({ rule }) => `${rule.id}\n${rule.text}`),
     ]);
     const kernelVersion = readKernelVersion(deps.store, deps.pluginRoot);
+    const model = escalationModel(record.data.model, role);
     const data = {
       schema: STATE_KINDS.dispatch.version,
       ticket: input.ticket,
@@ -180,6 +181,7 @@ export function buildPackage(
       attempt: record.data.attempt,
       of: record.data.of,
       scope: record.data.scope,
+      ...(model === undefined ? {} : { model }),
       at: deps.clock.now(),
       "kernel-version": kernelVersion,
       "template-hash": templateHash,
@@ -208,12 +210,21 @@ export function buildPackage(
       role,
       adapter: ROLE_ADAPTERS[role],
       scope: record.data.scope,
+      ...(model === undefined ? {} : { model }),
       kernelVersion,
       templateHash,
       report,
       entries: { full: selection.full.map((entry) => entry.id), counted: selection.counted },
     };
   });
+}
+
+/**
+ * The model of an escalation ticket's package (T41-D14): a stronger model helps
+ * the roles that reason, not the runner running commands or the scout searching.
+ */
+function escalationModel(model: string | undefined, role: Role): string | undefined {
+  return role === "runner" || role === "scout" ? undefined : model;
 }
 
 /** The runner's `Checks` text: the runner's steps in pipeline order with the project's commands. */

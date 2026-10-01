@@ -10,7 +10,7 @@ export type ToolClass = "read" | "search" | "edit" | "shell" | "message";
 
 export type Tier = "fast" | "balanced" | "deep";
 
-/** How long the host lets the model think (HOST-FACTS `effort-frontmatter`, T41-D13). */
+/** How long the host lets the model think (HOST-FACTS `effort-frontmatter`, T41-D13); a host without effort on the tier's model drops it. */
 type Effort = "low" | "medium" | "high";
 
 export interface AdapterDefinition {
@@ -62,7 +62,7 @@ export const ADAPTERS: readonly AdapterDefinition[] = [
     sentence: sentence("reader", "never change a file."),
     tools: READ_ONLY,
     tier: "deep",
-    effort: "medium",
+    effort: "high",
   },
   {
     name: "reviewer",

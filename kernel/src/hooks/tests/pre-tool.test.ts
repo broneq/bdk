@@ -244,6 +244,22 @@ describe("hooks pre-tool: dispatch prompts", () => {
     });
   });
 
+  it("holds an escalation package to its model", () => {
+    const call = (model?: string) => {
+      const payload = agentCall("bdk:worker", PACKAGE);
+      const input = payload.tool_input as Payload;
+      return JSON.stringify({ ...payload, tool_input: { ...input, model } });
+    };
+    const outcome = decidePreTool(index, call(), undefined, "opus");
+    expect(isRefusal(outcome) && outcome.rule).toBe("guard/escalation-model");
+    expect(isRefusal(outcome) && outcome.why).toBe(
+      "the package belongs to an escalation ticket, so start bdk:worker with model: opus in the Agent call (BDK T41-D14)",
+    );
+    expect(isRefusal(decidePreTool(index, call("sonnet"), undefined, "opus"))).toBe(true);
+    expect(isRefusal(decidePreTool(index, call("opus"), undefined, "opus"))).toBe(false);
+    expect(isRefusal(decidePreTool(index, call()))).toBe(false);
+  });
+
   it("leaves a v2 agent and the recorded probe untouched", () => {
     expect(passes(agentCall("bdk:explorer", "Find it. ".repeat(40)))).toBe(true);
     expect(passes(recorded(agentFg))).toBe(true);

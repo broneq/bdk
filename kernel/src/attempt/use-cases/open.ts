@@ -114,7 +114,7 @@ export function openAttempt(
         of: Math.max(state.of, 1),
         scope,
         ...(narrowedFrom === undefined ? {} : { "narrowed-from": narrowedFrom }),
-        ...(input.escalate ? { escalation: true } : {}),
+        ...(input.escalate ? { escalation: true, model: policy.escalation.model } : {}),
         "opened-at": openedAt,
         author: await authorIdent(deps.git, change.projectRoot),
         ...(dropped.length === 0 ? {} : { dropped: dropped.map((entry) => entry.id) }),

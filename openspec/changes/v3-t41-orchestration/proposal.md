@@ -23,7 +23,8 @@ This Change is the first of the T41 Changes. It builds the orchestration layer t
 - **Continuation hooks.** `Stop` (for `main`, only while a stage skill runs) and `SubagentStop` (for leads and workers) block the end of a turn while the kernel reports ready work for that agent's scope, and let it end on a user question, a manual gate, running background work or after three continuations in a row without progress.
 - **Time signal.** A lead reads its elapsed time in every `bdk agents wait` answer and continuation reason, with no budget, plus one sentence in its contract that time matters.
 - **`main` waits natively.** The `execute` orchestrator starts leads in the background and relies on the host's task notifications; the `Stop` hook keeps it from ending a turn early.
-- **Effort per adapter.** Adapters pin `effort`: `low` for `runner` and `scout`, `medium` for the others.
+- **Effort per adapter.** Adapters pin `effort`: `high` for `reader`, `medium` for `lead`, `worker` and `reviewer`, and none for `runner` and `scout`, because Haiku runs without it.
+- **Escalation on its model.** An escalation ticket's agents run on `policy.escalation.model`: the package carries it, the orchestrator passes it to `Agent`, and `guard/escalation-model` denies a start without it.
 - **Prompt convention.** A new dev-time rule in `.claude/rules/` for `skills/**` and `agents/**` on writing skill and contract prose for Opus 5.5.
 - **Plan update.** The T41 section of `docs/V3-IMPLEMENTATION-PLAN.md` gains this orchestration layer and a separate `verify-design` stage skill that runs on a fresh context (user decision 2026-09-30).
 

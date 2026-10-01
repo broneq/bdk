@@ -7,7 +7,7 @@ paths:
 
 # Writing Prompts for Current Models
 
-Skills, role contracts and adapters are read by Claude Opus 5 and 5.5 (and the Sonnet and Haiku of the same generation). These models follow instructions literally and verify their own work, so text written for older models over-steers them. The same principles apply to the instructions the kernel renders (`next`, dispatch templates, hook reasons). `.claude/rules/skills.md` holds the checks `pnpm skill-check` enforces; this file holds what no check can see.
+Skills, role contracts and adapters are read by Claude Opus 5 and 5.5 and the Sonnet of the same generation; the `runner` and `scout` adapters run on Haiku 4.5, one generation older (HOST-FACTS `model-override`). These models follow instructions literally and verify their own work, so text written for older models over-steers them. The same principles apply to the instructions the kernel renders (`next`, dispatch templates, hook reasons). `.claude/rules/skills.md` holds the checks `pnpm skill-check` enforces; this file holds what no check can see.
 
 Sources: "Prompting Claude Opus 5" and "Prompting Claude Opus 5.5" (platform.claude.com, build-with-claude/prompt-engineering).
 
