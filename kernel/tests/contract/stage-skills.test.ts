@@ -162,6 +162,8 @@ describe("plan", () => {
       "--review",
       "/bdk:execute",
       "`false-code-claim`",
+      "follow-up Change",
+      "the only limit on rounds",
     ]) {
       expect(body, needle).toContain(needle);
     }

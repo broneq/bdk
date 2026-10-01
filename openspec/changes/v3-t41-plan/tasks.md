@@ -32,6 +32,8 @@
 
 - [x] 5.4 After the first `plan` probe: the guard block reason names `instead` (`kernel-cli` delta, `blockReason`, registry, pre-tool and guard e2e tests); `plan` sizes the plan to the intent and the verifier scopes edge cases to it; the `bug` case expects one part
 
+- [x] 5.5 After the second `plan` probe: scope grows only to keep correct what the Change breaks, within the existing parts; larger growth is a `finding` for a follow-up Change, and a scope question offers the intent-only option; the kernel's budget is the only limit on rounds (contract test needles)
+
 ## 6. Documentation (D10)
 
 - [x] 6.1 `docs/guide/reference/skills.md`, `reference/artifacts.md`, `concepts/plan-pipeline.md`, the workflow and getting-started pages that name `/bdk:create-plan` or `/bdk:verify-plan`, README's skill table; add rewritten pages to `V3_PAGES`; `pnpm docs:build` and `pnpm test:contract` green
