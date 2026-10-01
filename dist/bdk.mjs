@@ -27240,9 +27240,8 @@ function closeAttempt(deps, change, where, input) {
   });
 }
 async function stepEvidence(deps, change, index2, globalDir2, record5, resolved) {
-  if (!packageRoles(deps.store, change.dir, record5.ticket).includes("implementer")) {
-    return void 0;
-  }
+  const roles = packageRoles(deps.store, change.dir, record5.ticket);
+  if (!roles.includes("implementer") && !roles.includes("simplifier")) return void 0;
   const steps = await targetSteps(deps, change, index2, globalDir2, record5.target);
   if ("refused" in steps) return steps;
   return closeEvidence(deps, change, globalDir2, {

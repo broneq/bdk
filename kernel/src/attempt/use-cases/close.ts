@@ -192,8 +192,9 @@ export function closeAttempt(
 
 /**
  * The post-task step evidence of an `ok` close of a code ticket, one that
- * holds an `implementer` package (T23-D41); undefined when it holds or the
- * ticket is no code ticket.
+ * holds an `implementer` or a `simplifier` package (T23-D41; a `verify-fix`
+ * ticket rerunning a done part's steps has no implementer); undefined when it
+ * holds or the ticket is no code ticket.
  */
 async function stepEvidence(
   deps: AttemptDeps,
@@ -203,9 +204,8 @@ async function stepEvidence(
   record: KeyedRecord,
   resolved: Resolved,
 ): Promise<Refusal | undefined> {
-  if (!packageRoles(deps.store, change.dir, record.ticket).includes("implementer")) {
-    return undefined;
-  }
+  const roles = packageRoles(deps.store, change.dir, record.ticket);
+  if (!roles.includes("implementer") && !roles.includes("simplifier")) return undefined;
   const steps = await targetSteps(deps, change, index, globalDir, record.target);
   if ("refused" in steps) return steps;
   return closeEvidence(deps, change, globalDir, {
