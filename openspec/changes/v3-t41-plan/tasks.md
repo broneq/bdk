@@ -36,6 +36,8 @@
 
 - [x] 5.6 After the third `plan` probe (`shared-bug` passed, `bug` parked after edits that followed passing verdicts): a passing verdict closes the plan and its findings go to execution
 
+- [x] 5.7 After the fourth `plan` probe (the caller regression went to a finding): a user-visible caller change no task or decision covers is an `unresolved-decision` blocker in the `verifier` contract
+
 ## 6. Documentation (D10)
 
 - [x] 6.1 `docs/guide/reference/skills.md`, `reference/artifacts.md`, `concepts/plan-pipeline.md`, the workflow and getting-started pages that name `/bdk:create-plan` or `/bdk:verify-plan`, README's skill table; add rewritten pages to `V3_PAGES`; `pnpm docs:build` and `pnpm test:contract` green

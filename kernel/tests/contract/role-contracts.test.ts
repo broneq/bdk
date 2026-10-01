@@ -208,6 +208,7 @@ describe("the verifier checks a whole plan", () => {
     expect(body).toMatch(/\*\*Test cases\.\*\*/);
     expect(body).toMatch(/\*\*Design coverage\.\*\*/);
     expect(body).toMatch(/\*\*Between parts\.\*\*/);
+    expect(body).toMatch(/If users would see the change and no task or `decision` covers it/);
     expect(body).toContain("`unresolved-decision`");
   });
 });
