@@ -27,7 +27,7 @@
 ## 5. `stages` eval cases (D9)
 
 - [x] 5.1 Failing harness test: `stageSkill` accepts `plan` and `verify-plan`, and `pnpm eval check` renders their configs
-- [x] 5.2 Case files `evals/suites/stages/cases/plan.yaml` (`bug`, `no-change`) and `verify-plan.yaml` (`clean`, `false-claim`, `not-ready`), each preparing `features.lavish false`; extend `STAGE_SKILLS`; `pnpm eval check` green
+- [x] 5.2 Case files `evals/suites/stages/cases/plan.yaml` (`bug`; no `no-change` case, see D9) and `verify-plan.yaml` (`clean`, `false-claim`, `not-ready`), each preparing `features.lavish false`; extend `STAGE_SKILLS`; `pnpm eval check` green
 - [ ] 5.3 After the user approves the cost: `pnpm eval stages --skill verify-plan --probe --budget <ledger + margin>` and `--skill plan --probe`; fix what fails and record the outcome in the PR
 
 ## 6. Documentation (D10)
