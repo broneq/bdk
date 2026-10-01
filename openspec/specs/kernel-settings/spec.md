@@ -196,6 +196,7 @@ The settings SHALL declare the workflow policy keys below. Each is registered by
 | `policy.budgets.verify-fix`           | integer >= 0              | `2`                                                                                                               | T22   | `attempt`      | none      |
 | `policy.budgets.review-fix`           | integer >= 0              | `2`                                                                                                               | T22   | `attempt`      | none      |
 | `policy.budgets.verifier`             | integer >= 0              | `2`                                                                                                               | T22   | `attempt`      | none      |
+| `policy.budgets.part-lead`            | integer >= 0              | `2`                                                                                                               | T22   | `attempt`      | none      |
 | `policy.budgets.not-run`              | integer >= 0              | `3`                                                                                                               | T22   | `attempt`      | none      |
 | `policy.oscillation.threshold`        | integer >= 1              | `2`                                                                                                               | T22   | `attempt`      | none      |
 | `policy.escalation.enabled`           | boolean                   | `true`                                                                                                            | T22   | `attempt`      | none      |
@@ -215,7 +216,7 @@ The settings SHALL declare the workflow policy keys below. Each is registered by
 #### Scenario: T22 defaults
 
 - **WHEN** no layer sets a `policy` key and `bdk config show policy --json` runs
-- **THEN** the budgets are `task-redispatch: 3`, `verify-fix: 2`, `review-fix: 2`, `verifier: 2`, `not-run: 3`, `oscillation.threshold` is 2, `escalation` is `{enabled: true, model: opus, per-change: 3}` and `checkpoint.enabled` is true
+- **THEN** the budgets are `task-redispatch: 3`, `verify-fix: 2`, `review-fix: 2`, `verifier: 2`, `part-lead: 2`, `not-run: 3`, `oscillation.threshold` is 2, `escalation` is `{enabled: true, model: opus, per-change: 3}` and `checkpoint.enabled` is true
 
 #### Scenario: not-a-fail defaults
 
@@ -403,3 +404,27 @@ Globs match paths relative to the project root; `*` stays within one path segmen
 
 - **WHEN** `.bdk/settings.yaml` sets `policy.evidence.build-config: ["mkdocs.yml", "docs/**"]`
 - **THEN** the resolved `build-config` holds the defaults followed by both globs, and a change under `docs/` changes the tree hash
+
+### Requirement: Keys of agent orchestration
+
+The settings SHALL declare the agent orchestration keys below, registered below the root `agents` as one module per key, each with the slice that reads it (T41-D4, D5, D6, D7).
+
+| Key                           | Type               | Default | Owner | Consumer | v2 origin |
+| ----------------------------- | ------------------ | ------- | ----- | -------- | --------- |
+| `agents.ttl`                  | integer 60 to 1800 | `300`   | T41   | `agents` | none      |
+| `agents.open-call-limit`      | integer 60 to 3600 | `720`   | T41   | `agents` | none      |
+| `agents.message.max-chars`    | integer 50 to 2000 | `300`   | T41   | `hooks`  | none      |
+| `agents.continuation.max`     | integer 0 to 10    | `3`     | T41   | `hooks`  | none      |
+| `agents.scout.max-per-ticket` | integer 0 to 10    | `2`     | T41   | `hooks`  | none      |
+
+`agents.ttl` is the seconds without a tool call after which an agent with no open call is `suspect`; `agents.open-call-limit` is the seconds after which an open tool call no longer keeps an agent `running` (`kernel-state`, Agent registry). The open-call default stays above the host's 10-minute `Bash` limit, so a long test run never makes its agent `suspect`. `agents.message.max-chars` bounds a message between agents (`kernel-cli/hooks`, Pre-tool guards). `agents.continuation.max` is how many turn ends in a row the continuation check blocks without progress; `0` switches the check off (`kernel-cli/hooks`, bdk hooks stop, bdk hooks subagent-stop). `agents.scout.max-per-ticket` is how many `scout` agents a worker may start under one ticket; `0` forbids it.
+
+#### Scenario: agents defaults
+
+- **WHEN** no layer sets an `agents` key and `bdk config show agents --json` runs
+- **THEN** the exit code is 0 and the values are `ttl: 300`, `open-call-limit: 720`, `message.max-chars: 300`, `continuation.max: 3` and `scout.max-per-ticket: 2`
+
+#### Scenario: ttl out of range
+
+- **WHEN** `.bdk/settings.yaml` sets `agents.ttl: 10`
+- **THEN** `bdk config check` exits 2 with `rule: policy/config-invalid` naming `agents.ttl`

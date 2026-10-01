@@ -1,160 +1,4 @@
-# kernel-cli Specification
-
-## Purpose
-
-Contract version **3** (the kernel's major version). Status: **first-class document, written before the kernel exists** (design, "What We Did NOT Decide": "Exact CLI contract ... is the first plan artifact"; plan task T10). The prose half is this capability (cross-cutting rules), one spec per command group under `kernel-cli/<group>/` and the `kernel-architecture` spec; the machine-readable half lives in `schema/cli/`: `commands.json` is the command index, `output/<command-id>.json` the JSON Schema of each `--json` success output, `common/*.json` the shared shapes. `kernel/tests/contract/cli-contract.test.ts` keeps the specs and `schema/cli/` consistent, and checks that every `bdk ...` mention in the design, the plan and HOST-FACTS resolves to a command or to an allowlisted reason.
-
-Reading order for a task that implements a command group: the requirements below once, then the group's spec under `kernel-cli/<group>/`, then the `kernel-architecture` spec for where the code goes.
-
-- **What this capability fixes:** for every kernel command, the invocation, who may call it, the output mode, the arguments, the `--json` output shape, the exit codes and the refusal rules it may emit. It does not fix internals (store layout, graph semantics, budgets, heuristics); those belong to the command's owner task.
-- **The only supported invocation** is `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs <args>`. `bdk <args>` in these specs is shorthand. No PATH shim is installed, and the `hooks pre-tool` prefilter matches `bdk.mjs` for that reason.
-- **Owner tasks.** Every command carries `owner: Tnn`, the plan task that implements it (`docs/V3-IMPLEMENTATION-PLAN.md`). T11 registers every command in the index from day one; a command whose owner task has not landed is a stub that exits 2 with the rule `kernel/not-implemented` and an `instead` naming the task. Contract tests in T11 assert exactly that: handler or stub, nothing in between.
-- **Amendment rule.** A later task may change a command's arguments, output schema or rules only in the PR that implements the command, editing the command's spec (through a delta spec in its Change, synced here at archive) and `schema/cli/` together, with the reason in the PR. T12's zod export must reproduce `schema/cli/` byte for byte, so a schema drift fails CI.
-- **Living spec.** This capability, its group specs under `kernel-cli/<group>/`, the `kernel-architecture` spec and `schema/cli/` are the specification of the kernel CLI. A Change that alters kernel behaviour carries a delta spec against the affected group and edits `schema/cli/` in the same PR; `kernel/tests/contract/cli-contract.test.ts` keeps the specs and the schemas consistent. `docs/` holds no living specification.
-- **Versioning.** Additive changes (a new command, a new optional field, a new rule id, a new `since` field on an entry) stay within contract version 3. Removing or renaming a command, a field or an exit code needs a kernel major bump and a new contract version. `bdk version --json` reports both `kernel` (full semver) and `contract`. The dispatch package frontmatter keeps `kernel-version` as the full semver (P10).
-- **What is deliberately absent:** no `approve`, no `gate pass` (T1: a gate is passed by the user typing the next stage command; the only writer of `source: user` is `hooks prompt-expansion`); no `stage enter` (HOST-FACTS `upe-fires`: `UserPromptExpansion` fires for plugin skills, so the fallback is not needed); no `hooks stop` (T02 decision Q-6: the rule-drift Stop hook is not ported).
-- **Sources.** Design: "CLI contract (outline)", "Key boundaries", "UX Touchpoints", "Hooks (V1-1, V1-2)", the sequence diagram under "Selected Approach". Decisions: Q3, T1, T2, T3, P1, P2, P4, P6, P10, P11, K2-K4, R-store. Host facts: `docs/HOST-FACTS.md`. Where a host fact contradicts the design text, the spec follows the host fact and cites the row.
-
-## Requirements
-
-### Requirement: Invocation
-
-The kernel SHALL accept exactly one invocation form and resolve its project root, active Change and flags as follows.
-
-- **Form.** `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs <group> [<verb>] <positional...> [--flag [value]]`. Groups and verbs are lowercase words. A mandatory choice that changes the command's meaning is a positional literal (`attempt close A-7f3k ok`, `config set --global` being the one flag-shaped exception because the layer is a target, not a meaning); optional inputs and switches are flags. Flags never repeat a positional. Boolean flags take no value. A flag is given at most once unless its index record marks it `repeatable` (`log add --ref`, `change park --option`); a repeatable flag collects its values in order, and `--help` shows it as repeatable. `--skip-verify` is not a CLI flag anywhere: it reaches the kernel only inside the `UserPromptExpansion` payload (P2).
-- **Project root.** The kernel walks up from the working directory to the nearest directory containing `.bdk/`; without one, the git work tree root is the project root and `.bdk/` is created by the first writing command (`config set` from `/bdk:setup`, `import` on a v2 layout). Every command except the standalone ones requires the project root to be inside a git work tree (`runtime/not-a-repo` otherwise) and Node at or above the minimum (`runtime/node-version`). Four commands are standalone and need no work tree: `version`, so `doctor` and the wrapper's STOP line can always quote it; `ctx startup` and `hooks session-start`, because the host runs the SessionStart hook in any directory and a session outside a repository must get the STARTUP text, not a STOP line (outside a work tree `hooks session-start` prints STARTUP only, `kernel-cli/hooks`); `hooks pre-tool`, because the host runs the PreToolUse hook in any directory and its guards read only the payload, so a tool call outside a repository must not be blocked with `runtime/not-a-repo`. The standalone commands still require the Node minimum, except `version`. `doctor` needs the work tree but not the Node minimum: it reports a Node below the minimum as a `fail` finding and exits 0 (`kernel-cli/service`, `bdk doctor`), because diagnosing that Node is its job. The bundle is built for the minimum line and loads `node:sqlite` only when a command opens the index, so a Node below the minimum that still loads the bundle (22.x before 22.13, 23.x before 23.4) reaches the kernel's own check and gets the refusal with the install line. Older lines (20 and below) are not supported and may fail in the module loader; the wrapper forms of Output modes turn that into a STOP line in inject mode and a block in guard mode.
-- **Active Change.** Every Change-scoped command resolves the active Change from the current git branch: one active Change per branch (Key boundaries, hooks table). No command takes a `--change` flag in contract version 3; cross-Change reads use the qualified reference `<changeId>/<id>` (`kernel-cli`, Conventions). The binding is a local marker per branch (`kernel-state`, Branch binding); the current branch is read from `HEAD`, and a detached `HEAD` has no active Change. Without an active Change the command exits 2 with `policy/no-active-change` and an `instead` that names `/bdk:change new` and `bdk change resume <id>` (with the ids of the unarchived Changes when there are any); a marker naming a Change whose directory is gone is `state/change-dir-missing`.
-- **`--json`.** Every command accepts `--json` and then prints exactly one JSON object on stdout, validated by its schema under `schema/cli/output/`. Without `--json` the same data is rendered as text. Only the JSON form is a contract; skills and tests that parse output use `--json`. Inject-mode commands (`kernel-cli`, Output modes) print Markdown by default and, with `--json`, the same content as an object (`content` plus the parts it was composed from) while still exiting 0; the `!` wrapper never passes `--json`. Guard-mode commands print the host's stdout shape (`kernel-cli/hooks`, Hook payloads) by default and their own decision record with `--json`, which is how tests drive them.
-- **`--help`.** `bdk --help`, `bdk <group> --help` and `bdk <group> <verb> --help` print usage generated from the same command index these specs are built on (`schema/cli/commands.json`): synopsis, availability, arguments, flags, exit codes. `--help` is the only usage text a skill may rely on (T02 decision R-13); a skill that repeats usage documentation fails the T15 content check. The kernel generates the usage text at run time from the index bundled into `dist/bdk.mjs`, so the text cannot drift from the record; a contract test asserts the parity for every record.
-- **stdin.** Only `log ingest` (the role's report, its envelope as frontmatter), `log add --body -` (the entry body) and the `hooks` group (the host's hook payload) read stdin. Every other command ignores it.
-- **Environment.** `CLAUDE_PLUGIN_ROOT` locates the bundle (set by the host). The personal configuration layer is `~/.config/bdk/settings.yaml` (XDG; the Windows equivalent is an open design item). `${CLAUDE_PLUGIN_DATA}` is used only for caches. No other environment variable changes behaviour.
-- **Streams.** stdout carries the result (text, JSON or Markdown). stderr carries diagnostics and is never part of the contract; guard hooks are the exception, where stderr is the message the host shows the user on exit 2 (`kernel-cli`, Output modes).
-
-#### Scenario: outside a git work tree
-
-- **WHEN** any command except `version`, `ctx startup` and `hooks session-start` runs with a project root that is not inside a git work tree
-- **THEN** the exit code is 5 and the error object carries `rule: runtime/not-a-repo`
-
-#### Scenario: help parity
-
-- **WHEN** `bdk <group> <verb> --help` runs
-- **THEN** the usage text lists exactly the arguments, flags and exit codes of that command's record in `schema/cli/commands.json`
-
-#### Scenario: Node below the minimum
-
-- **WHEN** any command except `version` and `doctor` runs on a Node below 22.13.0 that loads the bundle (for example 22.12.0)
-- **THEN** the exit code is 5, the error object carries `rule: runtime/node-version`, `why` names the running and the minimum version, and `instead` carries an install line such as `nvm install 24`
-
-#### Scenario: help for a stubbed command
-
-- **WHEN** `bdk <group> <verb> --help` runs for a command whose owner task has not landed
-- **THEN** the exit code is 0 and the usage text is generated from the record exactly as for an implemented command
-
-#### Scenario: repeatable flag
-
-- **WHEN** `bdk log add finding "x" --ref a.ts --ref 02-3` runs
-- **THEN** the entry's `refs` are `a.ts` and `02-3` in that order, while a second `--ticket` is `input/invalid-argument`
-
-#### Scenario: detached HEAD
-
-- **WHEN** a Change-scoped command runs with a detached `HEAD`
-- **THEN** the exit code is 2 with `rule: policy/no-active-change` and `why` says that `HEAD` is detached
-
-### Requirement: Output modes
-
-Every command SHALL run in exactly one of three output modes, fixed per command in the index (`mode`).
-
-Three modes, fixed per command in the index (`mode`).
-
-**Inject mode (`ctx skill|startup`, `next`, `hooks session-start`, `hooks session-end`, `hooks skill-exists`).**
-
-Called from a skill's `!` block or from a content hook in `hooks.json`; the output is content the model reads. The kernel **always exits 0** in this mode, even on an internal failure, because the host silently drops the output of a `!` block that exits non-zero (decision Q3, live fact) and a content hook that exits non-zero shows only a notice. Errors become a STOP block rendered inside the content, exactly two lines and nothing after them:
-
-```
-BDK STOP: <why>
-Instead: <instead[0]>; <instead[1]>; ...
-```
-
-`<why>` and `<instead>` are the same values the error object of `kernel-cli`, Exit codes and the error object would carry. The model treats a STOP block as an instruction to stop the skill and report the two lines.
-
-A missing Node, a wrong Node version or a crash before the kernel's top-level handler still exits non-zero at shell level. Every `!` block therefore uses one wrapper form whose `||` branch runs in the same shell, so the block as a whole exits 0 and the STOP line is visible in the loaded skill (V1-5):
-
-```
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill debug 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
-```
-
-The content test (T15 `skill-check`, BDK rule plugin) accepts a `!` block only when the whole line matches this regular expression, which also restricts `!` blocks to `ctx` and `next` (Key boundaries):
-
-```regex content-wrapper
-^!`node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" (ctx skill [a-z][a-z0-9-]*|next) 2>&1 \|\| echo "BDK STOP: kernel unavailable \(exit \$\?\)\. Install Node >= 22\.13 and run /bdk:setup\."`$
-```
-
-The Node minimum `22.13` is HOST-FACTS `node-sqlite-min`. A skill with such a block SHALL carry `allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)`: HOST-FACTS `wrapper` confirms that this pair pre-approves the wrapper, and `wrapper-old-rule` shows that the unquoted rule alone does not, because the host matches the quoted path literally and asks approval for the `echo` branch with its `$?`. Without the pair the skill is lost whole in `default` permission mode (`allowed-control`). The content test checks the pair next to the wrapper. Content hooks in `hooks.json` (`hooks session-start`, `hooks session-end`) use the same `2>&1 || echo "BDK STOP: ..."` branch without the `!` and backticks.
-
-**Context lines of a skill.** A skill that needs prompt context carries exactly two context lines, as the first two non-empty lines of its body after the frontmatter: the content wrapper calling `ctx skill <name>` with the skill's own name, then the fallback sentence below with the same name. The fallback sentence is the portable base: running a command named in `SKILL.md` is how the Agent Skills standard and every other host work. The `!` line is the Claude Code accelerator, rendered by the host before the model reads the skill (HOST-FACTS `wrapper`). The sentence covers the cases where the `!` line is not rendered: the host setting `disableSkillShellExecution`, which replaces the block with a placeholder, and any host that shows the line verbatim. `bdk export --host` (T23) drops the `!` line for hosts without pre-rendering and keeps the sentence. A skill carries no other `!` line that calls `ctx`. `${CLAUDE_PLUGIN_ROOT}` resolves in skill content (plugins reference, "Where each variable resolves"), so the model runs the command with the absolute path. A content test checks every skill against both regular expressions and checks that the skills with context lines are exactly the entries of the `ctx skill` manifest (`plugin-tooling`, Skill context lines):
-
-```regex content-fallback
-^If no "BDK context: ([a-z][a-z0-9-]*)" heading appears above, run `node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" ctx skill \1` first and apply its output; on a `BDK STOP` line, stop and report it\.$
-```
-
-**Command mode (everything else).**
-
-Called from Bash by the orchestrator or a subagent, or by a test. stdout is the result, stderr is diagnostics, the exit code is the verdict (`kernel-cli`, Exit codes and the error object). A failing command prints the error object (JSON with `--json`, four labelled lines otherwise) on stdout, not stderr, so that a caller reading stdout always sees either the result or the reason.
-
-**Guard mode (`hooks pre-tool`, `hooks prompt-expansion`).**
-
-Called by the host through `hooks.json` with the hook payload on stdin. A guard must **fail closed**: when the kernel is missing or crashes, the tool call or the stage command must be blocked, not waved through. The `hooks.json` line therefore ends in `|| exit 2`, which the host treats as a blocking error for that one call and shows stderr to the user (hooks reference, exit code 2):
-
-```regex guard-wrapper
-node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" hooks (pre-tool|post-tool|prompt-expansion) \|\| exit 2$
-```
-
-The shell prefilter that decides whether to start Node at all (T24) precedes this fragment on the same line or in the script it calls; the regex is not anchored at the start for that reason. Within guard mode the kernel itself uses two outcomes only: **pass** is exit 0 with the host's JSON decision or plain context on stdout, **block** is exit 2 with `<rule>: <why>` on stderr, so every reason the host shows starts with its rule id (and, for `PreToolUse`, the same text in `permissionDecisionReason` on stdout). Under `--json` a pass prints the command's decision record and a block prints the error object, as in command mode. Exit codes 3, 4 and 5 never leave a guard: an unreadable payload, a corrupted state or a missing runtime all become exit 2, because "unknown" is "blocked" (T24: an unknown payload shape means no transition). The exact stdout shapes per hook are in `kernel-cli/hooks`, Hook payloads.
-
-#### Scenario: inject mode never fails the block
-
-- **WHEN** an inject-mode command hits an internal failure
-- **THEN** the exit code is 0 and stdout ends with a two-line STOP block (`BDK STOP: <why>` and `Instead: ...`)
-
-#### Scenario: wrapper pre-approved
-
-- **WHEN** a skill's `!` block uses the content wrapper and its `allowed-tools` carries the rule pair
-- **THEN** the skill loads in `default` permission mode with the kernel output in place of the block
-
-#### Scenario: guard mode fails closed
-
-- **WHEN** a guard-mode command cannot read its payload, finds corrupted state or a missing runtime
-- **THEN** the exit code is 2 with the reason on stderr, never 3, 4 or 5
-
-#### Scenario: block reason carries the rule
-
-- **WHEN** a guard-mode command blocks with any rule
-- **THEN** its stderr is one line `<rule>: <why>` and the exit code is 2
-
-#### Scenario: guard script without a kernel
-
-- **WHEN** a guard script of `hooks/guard/` reaches its kernel line on a machine without `node` on `PATH` or without `dist/bdk.mjs`
-- **THEN** it exits 2 and stderr starts with `guard/kernel-unavailable`
-
-#### Scenario: skill wrapper form
-
-- **WHEN** the content check reads a `!` block in a skill
-- **THEN** it accepts the block only when the whole line matches the `content-wrapper` regular expression above
-
-#### Scenario: kernel unavailable in a skill block
-
-- **WHEN** the content wrapper line of a skill runs in a shell where `node` is not on `PATH`
-- **THEN** the line's output ends with `BDK STOP: kernel unavailable (exit 127). Install Node >= 22.13 and run /bdk:setup.` and the shell exits 0
-
-#### Scenario: context lines of a skill
-
-- **WHEN** the content test reads a skill whose body calls `ctx skill`
-- **THEN** its first two non-empty body lines match `content-wrapper` and `content-fallback` in that order, both name the skill's own directory name, and no other line of the skill calls `ctx`
-
-#### Scenario: shell execution disabled
-
-- **WHEN** the host replaces the `!` line with a placeholder because `disableSkillShellExecution` is set
-- **THEN** the loaded skill has no `BDK context: <name>` heading and its fallback sentence names the exact command to run
+## MODIFIED Requirements
 
 ### Requirement: Exit codes and the error object
 
@@ -284,45 +128,6 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 - **WHEN** the repository's `pre-commit` hook exits 1 and `bdk commit 02-3` runs
 - **THEN** the exit code is 2 and the error object carries `rule: policy/git-hook-failed`
 
-### Requirement: Conventions
-
-Success output, list pages, identifiers, timestamps, idempotence and the refusal-versus-finding split SHALL follow these conventions in every command.
-
-- **Success output is a plain object.** No envelope: the `--json` output of a command is the object its schema under `schema/cli/output/` describes. Optional fields are absent when unknown, never `null`. Enumerations are lowercase words. Text mode renders the same data; only JSON is the contract.
-- **List pages.** Every `list` verb and every command that returns a collection uses `schema/cli/common/list-page.json`: `items[]`, `total` (the count before truncation), `truncated` (boolean), and `for` (the `--for` filter as given, absent when none). The default page is the first 100 items, which is the design's "<= 100 lines" rule; `--all` lifts it. A list verb's text mode prints at most 100 lines for the same reason, ending in a line that names `--all`; every other command prints its whole text, so a `show` body is never cut. `--for <ref>` narrows a list to what references a task (`02-3`), a part (`02`) or a file path; the list verbs that accept it say so in their entry.
-- **Full bodies only via `show`.** `list` returns summaries (id, type, summary, status, refs). `show <id>` returns the whole entry, package or attempt record. Dumping the whole state needs `query` with `--all`.
-- **Kernel-stamped fields.** `id`, `at`, `author` and `source` on ledger entries, tickets, attempts and manifests are stamped by the kernel from its clock, git config and the ticket's role (P1), and so is every other field `kernel-state` marks as stamped (for example a `learning` entry's `fingerprint`). They appear in outputs and never in inputs; passing one is `input/forbidden-field`. `source: user` exists only on the stage-transition path (`hooks prompt-expansion`); `source: policy` only when `policy.gates.<gate>: auto` passes a gate (T02 decision R-9); `source: inferred` only from `change new --inferred`.
-- **Identifiers.** Change ids, ledger ids (`L-`), ticket ids (`A-`), evidence ids (`E-`) and rule ids (`[PREFIX-n]`) are opaque strings to callers. Their format is fixed by `kernel-state` (Identifiers): the prefix followed by eight random characters of `[0-9a-z]`, non-sequential, with no allocator or lock; Change ids are `<yyyy-mm-dd>-<slug>`. Within the active Change an id is bare (`L-m2x9v7qa`); across Changes it is qualified (`<changeId>/L-m2x9v7qa`). Task ids are `<part>-<n>` (`02-3`), part ids two digits (`02`), artifact ids the node names of `pipeline.yaml` (`design`, `plan-verify`, `gate:design`). Ids in the examples of these specs are illustrative.
-- **Time, hashes, sizes, paths.** `at` and every other timestamp the kernel writes is ISO 8601 UTC with milliseconds at a fixed width, `2026-09-25T09:41:07.123Z`, so string order is time order; an input timestamp may leave out the milliseconds. Hashes are `sha256:<64 hex>`. Sizes are bytes. Paths in outputs are relative to the project root with `/` separators; inputs accept absolute paths inside the project.
-- **Idempotence and deduplication.** A command that would create an object identical by its dedupe key returns the existing object with `deduplicated: true` and exits 0 (`log add`, `evidence record`, `change checkpoint` when nothing changed). Commands that transition state refuse a repeated transition with `policy/invalid-transition` rather than silently succeeding, except where an entry says otherwise (`hooks prompt-expansion` on an already passed gate passes without writing, S5).
-- **Refusal versus finding.** The kernel refuses (exit 2) when proceeding would break an invariant: a forbidden path, a missing ticket, a stale manifest. It records a `finding` entry and exits 0 when the deviation is information for the human: a file outside a task's `Files:`, an uncategorised verifier blocker (downgraded to `observation` with `review: true`, P8). Each entry names which of the two it does.
-- **Clock and budgets are not arguments.** No command takes a timestamp, an author, a budget or a model name as input; budgets and the escalation model come from policy (T22), time from the kernel.
-
-#### Scenario: list page cap
-
-- **WHEN** a `list` verb runs without `--all` over more than 100 matching items
-- **THEN** `items` holds the first 100, `total` the full count and `truncated` is `true`
-
-#### Scenario: show body past 100 lines
-
-- **WHEN** `dispatch show` prints a package of more than 100 lines in text mode
-- **THEN** stdout is the whole file, byte for byte, with no truncation line
-
-#### Scenario: kernel-stamped field in input
-
-- **WHEN** `log add` or `log ingest` receives `id`, `at`, `author` or `source` as input
-- **THEN** the exit code is 3 with `rule: input/forbidden-field`
-
-#### Scenario: duplicate by dedupe key
-
-- **WHEN** `log add`, `evidence record` or `change checkpoint` would create an object identical by its dedupe key
-- **THEN** the existing object is returned with `deduplicated: true` and the exit code is 0
-
-#### Scenario: timestamp with milliseconds
-
-- **WHEN** `bdk log add finding "a" --ref src/a.ts --json` runs
-- **THEN** the output's `at` matches `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$`
-
 ### Requirement: Availability classes
 
 Each command SHALL carry exactly one availability class in the index, and the `hooks pre-tool` guard SHALL enforce the classes by exact verb.
@@ -371,3 +176,99 @@ Each command carries exactly one class in the index (`availability`). The `hooks
 
 - **WHEN** the same lead runs `bdk.mjs part done 02`
 - **THEN** `hooks pre-tool` denies with `guard/subagent-kernel-command` naming `part done`
+
+### Requirement: Output modes
+
+Every command SHALL run in exactly one of three output modes, fixed per command in the index (`mode`).
+
+Three modes, fixed per command in the index (`mode`).
+
+**Inject mode (`ctx skill|startup`, `next`, `hooks session-start`, `hooks session-end`, `hooks skill-exists`).**
+
+Called from a skill's `!` block or from a content hook in `hooks.json`; the output is content the model reads. The kernel **always exits 0** in this mode, even on an internal failure, because the host silently drops the output of a `!` block that exits non-zero (decision Q3, live fact) and a content hook that exits non-zero shows only a notice. Errors become a STOP block rendered inside the content, exactly two lines and nothing after them:
+
+```
+BDK STOP: <why>
+Instead: <instead[0]>; <instead[1]>; ...
+```
+
+`<why>` and `<instead>` are the same values the error object of `kernel-cli`, Exit codes and the error object would carry. The model treats a STOP block as an instruction to stop the skill and report the two lines.
+
+A missing Node, a wrong Node version or a crash before the kernel's top-level handler still exits non-zero at shell level. Every `!` block therefore uses one wrapper form whose `||` branch runs in the same shell, so the block as a whole exits 0 and the STOP line is visible in the loaded skill (V1-5):
+
+```
+!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill debug 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+```
+
+The content test (T15 `skill-check`, BDK rule plugin) accepts a `!` block only when the whole line matches this regular expression, which also restricts `!` blocks to `ctx` and `next` (Key boundaries):
+
+```regex content-wrapper
+^!`node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" (ctx skill [a-z][a-z0-9-]*|next) 2>&1 \|\| echo "BDK STOP: kernel unavailable \(exit \$\?\)\. Install Node >= 22\.13 and run /bdk:setup\."`$
+```
+
+The Node minimum `22.13` is HOST-FACTS `node-sqlite-min`. A skill with such a block SHALL carry `allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)`: HOST-FACTS `wrapper` confirms that this pair pre-approves the wrapper, and `wrapper-old-rule` shows that the unquoted rule alone does not, because the host matches the quoted path literally and asks approval for the `echo` branch with its `$?`. Without the pair the skill is lost whole in `default` permission mode (`allowed-control`). The content test checks the pair next to the wrapper. Content hooks in `hooks.json` (`hooks session-start`, `hooks session-end`) use the same `2>&1 || echo "BDK STOP: ..."` branch without the `!` and backticks.
+
+**Context lines of a skill.** A skill that needs prompt context carries exactly two context lines, as the first two non-empty lines of its body after the frontmatter: the content wrapper calling `ctx skill <name>` with the skill's own name, then the fallback sentence below with the same name. The fallback sentence is the portable base: running a command named in `SKILL.md` is how the Agent Skills standard and every other host work. The `!` line is the Claude Code accelerator, rendered by the host before the model reads the skill (HOST-FACTS `wrapper`). The sentence covers the cases where the `!` line is not rendered: the host setting `disableSkillShellExecution`, which replaces the block with a placeholder, and any host that shows the line verbatim. `bdk export --host` (T23) drops the `!` line for hosts without pre-rendering and keeps the sentence. A skill carries no other `!` line that calls `ctx`. `${CLAUDE_PLUGIN_ROOT}` resolves in skill content (plugins reference, "Where each variable resolves"), so the model runs the command with the absolute path. A content test checks every skill against both regular expressions and checks that the skills with context lines are exactly the entries of the `ctx skill` manifest (`plugin-tooling`, Skill context lines):
+
+```regex content-fallback
+^If no "BDK context: ([a-z][a-z0-9-]*)" heading appears above, run `node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" ctx skill \1` first and apply its output; on a `BDK STOP` line, stop and report it\.$
+```
+
+**Command mode (everything else).**
+
+Called from Bash by the orchestrator or a subagent, or by a test. stdout is the result, stderr is diagnostics, the exit code is the verdict (`kernel-cli`, Exit codes and the error object). A failing command prints the error object (JSON with `--json`, four labelled lines otherwise) on stdout, not stderr, so that a caller reading stdout always sees either the result or the reason.
+
+**Guard mode (`hooks pre-tool`, `hooks prompt-expansion`).**
+
+Called by the host through `hooks.json` with the hook payload on stdin. A guard must **fail closed**: when the kernel is missing or crashes, the tool call or the stage command must be blocked, not waved through. The `hooks.json` line therefore ends in `|| exit 2`, which the host treats as a blocking error for that one call and shows stderr to the user (hooks reference, exit code 2):
+
+```regex guard-wrapper
+node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" hooks (pre-tool|post-tool|prompt-expansion) \|\| exit 2$
+```
+
+The shell prefilter that decides whether to start Node at all (T24) precedes this fragment on the same line or in the script it calls; the regex is not anchored at the start for that reason. Within guard mode the kernel itself uses two outcomes only: **pass** is exit 0 with the host's JSON decision or plain context on stdout, **block** is exit 2 with `<rule>: <why>` on stderr, so every reason the host shows starts with its rule id (and, for `PreToolUse`, the same text in `permissionDecisionReason` on stdout). Under `--json` a pass prints the command's decision record and a block prints the error object, as in command mode. Exit codes 3, 4 and 5 never leave a guard: an unreadable payload, a corrupted state or a missing runtime all become exit 2, because "unknown" is "blocked" (T24: an unknown payload shape means no transition). The exact stdout shapes per hook are in `kernel-cli/hooks`, Hook payloads.
+
+#### Scenario: inject mode never fails the block
+
+- **WHEN** an inject-mode command hits an internal failure
+- **THEN** the exit code is 0 and stdout ends with a two-line STOP block (`BDK STOP: <why>` and `Instead: ...`)
+
+#### Scenario: wrapper pre-approved
+
+- **WHEN** a skill's `!` block uses the content wrapper and its `allowed-tools` carries the rule pair
+- **THEN** the skill loads in `default` permission mode with the kernel output in place of the block
+
+#### Scenario: guard mode fails closed
+
+- **WHEN** a guard-mode command cannot read its payload, finds corrupted state or a missing runtime
+- **THEN** the exit code is 2 with the reason on stderr, never 3, 4 or 5
+
+#### Scenario: block reason carries the rule
+
+- **WHEN** a guard-mode command blocks with any rule
+- **THEN** its stderr is one line `<rule>: <why>` and the exit code is 2
+
+#### Scenario: guard script without a kernel
+
+- **WHEN** a guard script of `hooks/guard/` reaches its kernel line on a machine without `node` on `PATH` or without `dist/bdk.mjs`
+- **THEN** it exits 2 and stderr starts with `guard/kernel-unavailable`
+
+#### Scenario: skill wrapper form
+
+- **WHEN** the content check reads a `!` block in a skill
+- **THEN** it accepts the block only when the whole line matches the `content-wrapper` regular expression above
+
+#### Scenario: kernel unavailable in a skill block
+
+- **WHEN** the content wrapper line of a skill runs in a shell where `node` is not on `PATH`
+- **THEN** the line's output ends with `BDK STOP: kernel unavailable (exit 127). Install Node >= 22.13 and run /bdk:setup.` and the shell exits 0
+
+#### Scenario: context lines of a skill
+
+- **WHEN** the content test reads a skill whose body calls `ctx skill`
+- **THEN** its first two non-empty body lines match `content-wrapper` and `content-fallback` in that order, both name the skill's own directory name, and no other line of the skill calls `ctx`
+
+#### Scenario: shell execution disabled
+
+- **WHEN** the host replaces the `!` line with a placeholder because `disableSkillShellExecution` is set
+- **THEN** the loaded skill has no `BDK context: <name>` heading and its fallback sentence names the exact command to run

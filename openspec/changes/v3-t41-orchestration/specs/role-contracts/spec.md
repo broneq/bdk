@@ -1,10 +1,4 @@
-# role-contracts Specification
-
-## Purpose
-
-Defines the role skills and host adapters that BDK ships for dispatched work: where they live, how a role binds to an adapter, what tools and model each adapter carries, and what every role contract tells the agent about its input, its ledger writes and its output.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Role skills
 

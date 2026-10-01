@@ -1,26 +1,22 @@
-# kernel-cli/commit Specification
+## ADDED Requirements
 
-## Purpose
+### Requirement: Serialised commits
 
-Task commits (`commit`). The one kernel command that creates a task commit with BDK trailers.
+`commit` SHALL serialise with every other `commit` of the same repository, so that leads of one wave can commit their tasks at the same time (T41-D12).
 
-Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
+Before it stages anything, `commit` takes an exclusive lock `.bdk/.machine/commit.lock` and holds it until its commit exists or it refuses. A call that finds the lock held waits for it up to 60 s, then refuses with `policy/commit-busy`, whose `why` names the holder's process id and task and whose `instead` is to run the same `commit` again. A lock whose holder process no longer exists is taken over at once. The lock covers only the kernel's own commits; a user committing by hand at the same moment still meets git's `index.lock`, reported as today.
 
-Representative refusal:
+#### Scenario: two leads commit at once
 
-```json refusal
-{
-  "refused": true,
-  "rule": "policy/do-not-touch",
-  "why": "diff for 02-3 touches src/billing/invoice.ts, which is under do-not-touch src/billing/** of part 02",
-  "instead": [
-    "revert the change under src/billing/",
-    "bdk log add blocker \"02-3 needs a change in billing\" --ref src/billing/invoice.ts --ref 02-3"
-  ]
-}
-```
+- **WHEN** two processes run `bdk commit 02-3 "..."` and `bdk commit 03-1 "..."` at the same moment, each task with its own changed files
+- **THEN** both exit 0, git has two commits, each holding only its own task's paths and its own `BDK-Task` trailer
 
-## Requirements
+#### Scenario: lock of a dead process
+
+- **WHEN** `.bdk/.machine/commit.lock` names a process that no longer exists
+- **THEN** `bdk commit` takes the lock and exits 0
+
+## MODIFIED Requirements
 
 ### Requirement: bdk commit
 
@@ -111,19 +107,3 @@ Commit a task: code plus Change directory, with BDK trailers, after the diff che
 
 - **WHEN** a live process holds `.bdk/.machine/commit.lock` for longer than 60 s and `bdk commit 02-3 "..."` runs
 - **THEN** the exit code is 2, the error object carries `rule: policy/commit-busy` naming the holder, and no commit is created
-
-### Requirement: Serialised commits
-
-`commit` SHALL serialise with every other `commit` of the same repository, so that leads of one wave can commit their tasks at the same time (T41-D12).
-
-Before it stages anything, `commit` takes an exclusive lock `.bdk/.machine/commit.lock` and holds it until its commit exists or it refuses. A call that finds the lock held waits for it up to 60 s, then refuses with `policy/commit-busy`, whose `why` names the holder's process id and task and whose `instead` is to run the same `commit` again. A lock whose holder process no longer exists is taken over at once. The lock covers only the kernel's own commits; a user committing by hand at the same moment still meets git's `index.lock`, reported as today.
-
-#### Scenario: two leads commit at once
-
-- **WHEN** two processes run `bdk commit 02-3 "..."` and `bdk commit 03-1 "..."` at the same moment, each task with its own changed files
-- **THEN** both exit 0, git has two commits, each holding only its own task's paths and its own `BDK-Task` trailer
-
-#### Scenario: lock of a dead process
-
-- **WHEN** `.bdk/.machine/commit.lock` names a process that no longer exists
-- **THEN** `bdk commit` takes the lock and exits 0

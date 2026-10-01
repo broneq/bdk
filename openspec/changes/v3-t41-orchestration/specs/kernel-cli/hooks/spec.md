@@ -1,26 +1,4 @@
-# kernel-cli/hooks Specification
-
-## Purpose
-
-Host hooks (`hooks`). The nine entry points the host calls (hooks table, HOST-FACTS). Content hooks, `skill-exists` and the agent hooks (`post-tool`, `subagent-start`, `subagent-stop`, `stop`) are inject mode; `prompt-expansion` and `pre-tool` are guard mode. Payloads and stdout shapes are in `kernel-cli/hooks`, Hook payloads.
-
-Common rules, not repeated per requirement: every command may emit `input/unknown-command`, `input/unknown-flag`, `input/missing-argument`, `input/invalid-argument`, `runtime/node-version`, `runtime/not-a-repo`; every Change-scoped command additionally `policy/no-active-change`, `state/corrupted-index`, `state/ledger-invalid`, `state/change-dir-missing`. Their meaning and exit codes are in `kernel-cli`, Exit codes and the error object; a command's `exits` in the index is derived from the classes of its specific and common rules.
-
-Representative refusal:
-
-```json refusal
-{
-  "refused": true,
-  "rule": "guard/subagent-kernel-command",
-  "why": "subagent <AGENT-1> invoked bdk.mjs commit 02-3; commit is an orchestrator command",
-  "instead": [
-    "return blocked with the cause; the orchestrator commits",
-    "bdk log add blocker \"...\" --ref 02-3 --ticket A-7f3k"
-  ]
-}
-```
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: bdk hooks session-start
 
@@ -101,133 +79,6 @@ SessionStart content hook: STARTUP text, configuration check, v2 layout detectio
 
 - **WHEN** the registry holds a `running` row of another session whose heartbeat is an hour old and the hook runs
 - **THEN** the row is `ended` with `ended-by: stale`, and the output is unchanged
-
-### Requirement: bdk hooks session-end
-
-SessionEnd content hook: Change checkpoint commit when enabled and safe. The kernel SHALL implement the command as this requirement and its output schema specify.
-
-- **Synopsis:** `bdk hooks session-end`
-- **Availability:** `hook`
-- **Mode:** `inject`
-- **Arguments:**
-  - stdin: SessionEnd payload (`kernel-cli/hooks`, Hook payloads).
-- **Behaviour:** Resolves the active Change of the branch and runs the `shared/store` checkpoint core that `change checkpoint` uses (`kernel-loops`, Checkpoint). Every outcome other than a commit is reported, never refused: `checkpoint.done` is false and `skipped` is `no active Change` or the reason the checkpoint core reports, as `change park` reports it (the disabled policy, nothing changed under the Change directory, the rebase, merge or cherry-pick in progress, the open tickets by id, the git hook's output), because the host ignores this event's output and exit code (hooks reference, `SessionEnd`) and implicit checkpoint callers report skips (T22). Content is empty, or one line `[BDK] checkpoint <sha7> of <change>` after a commit. Fires on `/clear`, `/exit`, SIGTERM and after every headless run (HOST-FACTS `end-clear`, `end-exit`, `end-term`, `end-headless`), never after SIGKILL (`end-kill`), so recovery never assumes it ran. The payload field is `reason` as recorded (HOST-FACTS `end-payload`), echoed in the output; an unreadable payload is ignored, since the checkpoint does not depend on it.
-- **Writes:** `git:commit`
-- **Output:** `schema/cli/output/hooks-session-end.json` for `--json`; Markdown otherwise (`kernel-cli`, Output modes).
-- **Exit codes and rules:** `0` always (inject mode). Rules rendered as a STOP block: none; a skipped checkpoint is data; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
-- **Example:**
-
-  ```bash
-  echo "$PAYLOAD" | bdk hooks session-end --json
-  ```
-
-  ```json
-  {
-    "content": "",
-    "reason": "prompt_input_exit",
-    "checkpoint": {
-      "done": false,
-      "skipped": "ticket A-7f3k9m2q is open; a subagent may still be writing"
-    }
-  }
-  ```
-
-- **Owner:** T24
-- **Slice:** `hooks`
-
-#### Scenario: example run
-
-- **WHEN** `echo "$PAYLOAD" | bdk hooks session-end` runs as in the example
-- **THEN** the exit code is 0 and stdout is the composed Markdown, or under `--json` an object that validates against `schema/cli/output/hooks-session-end.json`
-
-#### Scenario: checkpoint at session end
-
-- **WHEN** the active Change has an uncommitted ledger entry, no ticket is open and the recorded `session-end-clear.json` payload arrives
-- **THEN** the exit code is 0, a commit `chore(bdk): checkpoint <change>` holds only paths under `.bdk/changes/<id>/`, and stdout is the `[BDK] checkpoint` line
-
-#### Scenario: policy/ticket-open
-
-- **WHEN** a ticket is still open
-- **THEN** the exit code is 0, no commit is made, no `BDK STOP` line is printed and `checkpoint.skipped` names the open ticket
-
-#### Scenario: policy/git-in-progress
-
-- **WHEN** a rebase, merge or cherry-pick is in progress (V1-4)
-- **THEN** the exit code is 0, no commit is made and `checkpoint.skipped` names the operation
-
-#### Scenario: no active Change
-
-- **WHEN** the branch has no active Change
-- **THEN** the exit code is 0, stdout is empty and `checkpoint.skipped` is `no active Change`
-
-### Requirement: bdk hooks prompt-expansion
-
-UserPromptExpansion guard: the only writer of `source: user` stage transitions. The kernel SHALL implement the command as this requirement and its output schema specify.
-
-- **Synopsis:** `bdk hooks prompt-expansion`
-- **Availability:** `hook`
-- **Mode:** `guard`; Change-scoped
-- **Arguments:**
-  - stdin: UserPromptExpansion payload (`kernel-cli/hooks`, Hook payloads).
-- **Behaviour:** Parses the payload first. A `command_name` outside the `bdk:` namespace, or a BDK skill that is neither a pipeline stage command nor `run`, passes with empty stdout and no Change lookup. For a stage command it checks the user-typed marker (Prompt-expansion outcomes), resolves the Change from the branch, reads the graph once and applies the outcomes of Prompt-expansion outcomes: gate ready -> pass and write `source: user`; gate not ready -> block naming what is missing; gate already done -> pass without writing (S5); no gate in the profile -> pass with a plain stage entry, carrying `skip-verify` for `/bdk:execute` when `command_args` holds the token `--skip-verify` (P2); `/bdk:run` -> `source: policy` entries for the ready `auto` gates (T02 decision R-9); no active Change -> block with the hint; kernel missing -> the guard script blocks with `guard/kernel-unavailable`. On pass, stdout is the gate status as plain text, which the host adds to the skill's context. `command_name` arrives namespaced (`bdk:plan`, HOST-FACTS `upe-name`) and a nested `claude -p "/bdk:plan"` counts as user-typed (`upe-headless`), which `hooks pre-tool` denies from tool calls (`guard/nested-stage-command`). The record is Change-scoped, but its registration asks the registry to leave the resolution to the handler, which resolves the Change only for a stage command, so a non-stage command passes without one.
-- **Writes:** `.bdk/changes/<id>/log/`
-- **Output:** `schema/cli/output/hooks-prompt-expansion.json` for `--json` (the kernel's own decision record, used by tests); the host's stdout shape otherwise (Hook payloads below).
-- **Exit codes and rules:** `0` (pass) or `2` (block); guard mode never exits 3, 4 or 5. Rules: `policy/gate-not-ready`; plus the common rules of every command and of Change-scoped commands (`kernel-cli`, Exit codes and the error object), all reported as exit 2.
-- **Example:**
-
-  ```bash
-  echo "$PAYLOAD" | bdk hooks prompt-expansion --json
-  ```
-
-  ```json
-  {
-    "decision": "pass",
-    "command": "plan",
-    "stage": "plan",
-    "gate": "gate:design",
-    "entry": "L-g5h2j7qa",
-    "wrote": "transition:user",
-    "skipVerify": false
-  }
-  ```
-
-- **Owner:** T24
-- **Slice:** `hooks`
-
-#### Scenario: example run
-
-- **WHEN** `echo "$PAYLOAD" | bdk hooks prompt-expansion --json` runs as in the example
-- **THEN** the exit code is 0 (pass) and under `--json` stdout validates against `schema/cli/output/hooks-prompt-expansion.json`
-
-#### Scenario: policy/gate-not-ready
-
-- **WHEN** the gate node is not ready
-- **THEN** the exit code is 2 and the reason on stderr starts with `policy/gate-not-ready`
-
-#### Scenario: policy/no-active-change
-
-- **WHEN** the user types `/bdk:plan` on a branch without an active Change
-- **THEN** the exit code is 2, nothing is written and the reason on stderr starts with `policy/no-active-change` and names `/bdk:change new`
-
-#### Scenario: state/corrupted-index
-
-- **WHEN** the Change's index cannot be opened for a stage command
-- **THEN** the exit code is 2, not 4, and the reason on stderr starts with `state/corrupted-index`
-
-#### Scenario: state/ledger-invalid
-
-- **WHEN** a committed entry of the Change fails its schema and the user types a stage command
-- **THEN** the exit code is 2 and the reason on stderr starts with `state/ledger-invalid`
-
-#### Scenario: state/change-dir-missing
-
-- **WHEN** the branch marker names a Change whose directory is gone and the user types a stage command
-- **THEN** the exit code is 2 and the reason on stderr starts with `state/change-dir-missing`
-
-#### Scenario: other command passes without a Change
-
-- **WHEN** the recorded payload of `/bdk:mermaid-drawer` arrives on a branch without a Change
-- **THEN** the exit code is 0, stdout is empty and nothing is written
 
 ### Requirement: bdk hooks pre-tool
 
@@ -314,52 +165,6 @@ PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.m
 - **WHEN** a subagent's `SendMessage` names no ledger id
 - **THEN** the exit code is 2 and the reason on stderr starts with `guard/agent-message`
 
-### Requirement: bdk hooks skill-exists
-
-Skill-frontmatter UserPromptSubmit hook: warn as content when a named skill is not installed. The kernel SHALL implement the command as this requirement and its output schema specify.
-
-- **Synopsis:** `bdk hooks skill-exists <name>`
-- **Availability:** `hook`
-- **Mode:** `inject`
-- **Arguments:**
-  - `<name>` (required). Skill name as in frontmatter, e.g. caveman-commit.
-  - stdin: UserPromptSubmit payload; only the presence of a name matters.
-- **Behaviour:** Replaces `hooks/is-skill-exist/check.py`. Looks for a `SKILL.md` whose frontmatter `name` equals `<name>` in `skills/*/` under `~/.claude/`, under the project root's `.claude/`, under every marketplace directory `~/.claude/plugins/marketplaces/*/` and under every installed plugin version `~/.claude/plugins/cache/*/*/*/`. The last root is new: a plugin whose marketplace repository does not hold the skill at its root was reported missing by the v2 script. It relies only on the directory layout, never on the host's plugin bookkeeping files. Installed: stdout is empty. Missing: stdout is one line `[BDK] skill <name> is not installed; the skill that needs it falls back to its own behaviour.` Inject mode: exits 0 in both cases; a missing skill is a content line, never a block. Plugin-level and skill-level hooks are supported by the host; only agent-level hooks are stripped.
-- **Writes:** nothing
-- **Output:** `schema/cli/output/hooks-skill-exists.json` for `--json`; Markdown otherwise (`kernel-cli`, Output modes).
-- **Exit codes and rules:** `0` always (inject mode). Rules rendered as a STOP block: none; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
-- **Example:**
-
-  ```bash
-  bdk hooks skill-exists caveman-commit --json
-  ```
-
-  ```json
-  {
-    "name": "caveman-commit",
-    "installed": false,
-    "content": "[BDK] skill caveman-commit is not installed; the skill that needs it falls back to its own behaviour."
-  }
-  ```
-
-- **Owner:** T13
-- **Slice:** `hooks`
-
-#### Scenario: example run
-
-- **WHEN** `bdk hooks skill-exists caveman-commit --json` runs as in the example
-- **THEN** the exit code is 0 and stdout is the composed Markdown, or under `--json` an object that validates against `schema/cli/output/hooks-skill-exists.json`
-
-#### Scenario: skill of an installed plugin
-
-- **WHEN** `~/.claude/plugins/cache/caveman/caveman/2.7.0/skills/caveman-commit/SKILL.md` has `name: caveman-commit` and `bdk hooks skill-exists caveman-commit --json` runs
-- **THEN** `installed` is true, `foundIn` names that file and `content` is empty
-
-#### Scenario: missing skill
-
-- **WHEN** no search root holds a skill named `caveman-commit`
-- **THEN** the exit code is 0 and stdout is the one `[BDK] skill caveman-commit is not installed` line
-
 ### Requirement: Hook payloads
 
 The `hooks` group SHALL read the host's JSON payload from stdin and answer in the shape the host expects for that event.
@@ -426,59 +231,6 @@ The reason always starts with the rule id, then names the verb or path, then the
 
 - **WHEN** a `SubagentStart` payload arrives with `agent_type: Explore`
 - **THEN** the row is recorded and stdout is empty
-
-### Requirement: Prompt-expansion outcomes
-
-`hooks prompt-expansion` SHALL produce exactly the outcomes below.
-
-The command's stage is the pipeline stage whose `command` is `/<command_name>` (`/bdk:plan` -> `plan`); its gate is the gate node whose `opens` names that stage. The **user-typed marker** is the recorded shape of HOST-FACTS `upe-fields`: `hook_event_name: UserPromptExpansion`, `expansion_type: slash_command`, a non-empty `session_id` and `command_name` in the `bdk:` namespace. A stage command whose payload lacks one of them is blocked with `input/invalid-argument` and writes nothing: an unknown payload shape is "no transition" (fail-closed).
-
-| Situation                                                                                   | Exit | Writes                                                                                                                                                                                                                                                    | stdout / stderr                                                                                             |
-| ------------------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Stage command whose gate is ready (`/bdk:plan` after `design`, `/bdk:close` after `review`) | 0    | `transition` with `source: user`, `gate`, `to` = the stage, the kernel clock, `session` = `session_id`, `command` = `prompt`, and `refs` = the gate node and its requirements that are not skipped                                                        | stdout: gate status as plain text                                                                           |
-| Gate not ready                                                                              | 2    | nothing                                                                                                                                                                                                                                                   | stderr: `policy/gate-not-ready: <gate> is not ready for <command>: <requirement> is <state>, ...`           |
-| Gate already done (the user retyped the command, or resumes on another machine, S5)         | 0    | nothing                                                                                                                                                                                                                                                   | stdout: gate status noting the earlier pass                                                                 |
-| Stage command without a gate in this profile (`/bdk:execute`, or `tiny` skipping `design`)  | 0    | plain `transition` (`source: kernel`, `to` = the stage, `session`, `command`), with `skip-verify: true` for `/bdk:execute` when `command_args` holds `--skip-verify`; nothing when the latest transition to that stage already has the same `skip-verify` | stdout: the stage line                                                                                      |
-| `/bdk:run`                                                                                  | 0    | one `transition` with `source: policy`, `gate` and `to` = the stage it opens, for each gate that is ready, not done and resolves to `policy.gates.<gate>: auto` (T02 decision R-9)                                                                        | stdout: the gates passed by policy and the manual gates the user still types, so the user sees them         |
-| No active Change on the branch                                                              | 2    | nothing                                                                                                                                                                                                                                                   | stderr: `policy/no-active-change: ...; run /bdk:change new "<intent>" or bdk change resume <id>`            |
-| Payload without the user-typed marker                                                       | 2    | nothing                                                                                                                                                                                                                                                   | stderr: `input/invalid-argument: the UserPromptExpansion payload has no <field>; no transition was written` |
-
-No transition written here carries `input-hash`, so none changes a node's state (`kernel-pipeline`, Node states); only a gate reads them. A non-BDK command (`command_name` without the `bdk:` prefix) or a BDK skill that is neither a stage command nor `run` passes with empty stdout and no write. A nested `claude -p "/bdk:plan"` started from a tool call arrives as a user prompt (HOST-FACTS `upe-headless`); `hooks pre-tool` denies it (`guard/nested-stage-command`). The user's own `!` bash-mode commands do not pass through `PreToolUse` at all (HOST-FACTS `bang-pretool`), a known gap of the spec and command guards.
-
-#### Scenario: gate ready
-
-- **WHEN** the user types `/bdk:plan` and `gate:design` is ready
-- **THEN** the kernel writes one `transition` entry with `source: user` and exits 0 with the gate status on stdout
-
-#### Scenario: gate not ready
-
-- **WHEN** the user types `/bdk:plan` and `gate:design` is not ready
-- **THEN** the kernel writes nothing and exits 2 with `policy/gate-not-ready: <what is missing>` on stderr
-
-#### Scenario: gate already done
-
-- **WHEN** the user retypes a stage command whose gate is already done
-- **THEN** the kernel writes nothing and exits 0 with a gate status noting the earlier pass
-
-#### Scenario: execute with skip-verify
-
-- **WHEN** the user types `/bdk:execute --skip-verify`
-- **THEN** the kernel writes one `transition` with `to: execute`, `source: kernel` and `skip-verify: true`, and a second identical command writes nothing
-
-#### Scenario: tiny has no design gate
-
-- **WHEN** the Change is `tiny` and the user types `/bdk:plan`
-- **THEN** the kernel writes a plain `transition` with `to: plan` and `source: kernel` and exits 0
-
-#### Scenario: run passes an auto gate
-
-- **WHEN** `policy.gates.design` is `auto`, `gate:design` is ready and the user types `/bdk:run`
-- **THEN** the kernel writes one `transition` with `source: policy` and `gate: gate:design`, and `gate:design` is done with `passedBy: policy`
-
-#### Scenario: run leaves a manual gate
-
-- **WHEN** `policy.gates.design` is `manual`, `gate:design` is ready and the user types `/bdk:run`
-- **THEN** the kernel writes nothing, exits 0, and stdout names `/bdk:plan` as the command the user types
 
 ### Requirement: Guard hooks file and prefilter
 
@@ -551,43 +303,6 @@ Both guard scripts are POSIX `sh`, read the payload from stdin once, check befor
 
 - **WHEN** `CLAUDE_PLUGIN_ROOT` points to a plugin without `dist/bdk.mjs` and a `Stop` or `SubagentStop` payload arrives
 - **THEN** the hook exits 0 with no block, so the turn ends
-
-### Requirement: Pre-tool command reading
-
-`hooks pre-tool` SHALL read a Bash command as a list of simple commands, each with its words and output redirections, and apply the Bash guards to command words, never to the raw text.
-
-The reader handles single and double quotes, backslash escapes, `#` comments at a word start, heredocs (`<<EOF`, `<<-EOF`, `<<'EOF'`; the body up to the delimiter line is skipped), the separators `;`, `&&`, `||`, `|`, `&` and newlines, and `(`, `)`, `{`, `}` as grouping; `$(...)` and backticks stay inside their word. A simple command whose command word is `sh`, `bash`, `zsh` or `dash` with `-c <string>`, or `eval`, is read again from its string, three levels deep. The command word is the first word after variable assignments and the wrappers `env` (with its options and assignments), `command`, `exec`, `time`, `nice`, `nohup` and `sudo`, compared by basename.
-
-- A **git command** has the command word `git`; its verb is the first word after git's global options (`-C <path>`, `-c <k=v>`, `--git-dir[=]<d>`, `--work-tree[=]<d>`, `--no-pager`, `-P`, `--no-optional-locks`, `--literal-pathspecs`).
-- A **kernel command** has a word whose basename is `bdk.mjs` as its command word or after `node` and node's options, or the command word `bdk` (the role contracts write kernel commands as `bdk <command>`, and a model defines a `bdk` shell function in the same Bash command to run them); its verb is resolved from the following words against the bundled command index, exactly as the kernel dispatches.
-- A **write** is an output redirection (`>`, `>>`, `>|`, `&>`, `&>>`, `<n>>`) to anything but `/dev/null`, `/dev/stdout`, `/dev/stderr` or a file descriptor, or the target of a writing command: `tee` (its file arguments), `sed` and `perl` with `-i` or `--in-place` (their file arguments), `cp` and `install` (the last argument), `mv`, `rm`, `rmdir`, `touch`, `mkdir`, `ln`, `truncate`, `chmod`, `chown` (every argument that is not an option), `dd` (`of=`), `git apply`.
-
-The reader is best effort for a careless model (design NFR "Security"): an interpreter (`python -c`, `node -e`), a script file, a variable, or an alias or a function under another name than `bdk` can still hide a verb or a write.
-
-#### Scenario: quoted git verb is not a command
-
-- **WHEN** a subagent runs `git commit -m "revert with git reset"` or `echo "git stash"`
-- **THEN** the first is denied as `git commit` and the second passes, and no reason names `git reset` or `git stash`
-
-#### Scenario: heredoc body is not read
-
-- **WHEN** a `bdk:reader` payload runs `node "$P/dist/bdk.mjs" log ingest --ticket A-7f3k9m2q <<'EOF'` with a body line `a > b` and `git stash`
-- **THEN** it passes
-
-#### Scenario: nested shell is read
-
-- **WHEN** a subagent runs `bash -c 'cd x && git stash'`
-- **THEN** it is denied with `guard/subagent-git` naming `git stash`
-
-#### Scenario: git global options
-
-- **WHEN** a subagent runs `git -C ../repo -c core.pager=cat reset --hard`
-- **THEN** it is denied with `guard/subagent-git` naming `git reset`
-
-#### Scenario: a bdk shell function is the kernel
-
-- **WHEN** a `bdk:worker` payload runs `bdk() { node "$P/dist/bdk.mjs" "$@"; }; bdk commit 01-1`
-- **THEN** it is denied with `guard/subagent-kernel-command` naming `bdk commit`
 
 ### Requirement: Pre-tool guards
 
@@ -675,30 +390,6 @@ Main-thread git and main-thread orchestrator commands are never denied.
 - **WHEN** a worker sends `L-q7w2e9r4 changes the token format` to its running lead
 - **THEN** it exits 0 and the lead's next `bdk agents wait` returns a `message` event with the worker's id and `L-q7w2e9r4`
 
-### Requirement: Gate acceptance through recorded payloads
-
-The T24 acceptance signal SHALL pass end to end through `dist/bdk.mjs` on a fixture repository, driven by the recorded payloads of T01 with the placeholders replaced.
-
-#### Scenario: typed command passes the gate
-
-- **WHEN** a `small` Change has `design` and `architecture` done and the recorded `upe-typed.json` payload with `command_name: bdk:plan` arrives
-- **THEN** the exit code is 0, the ledger holds one `transition` with `source: user`, `gate: gate:design`, `session` and `command` from the payload, and `bdk next --json` no longer waits for `gate:design`
-
-#### Scenario: payload without the user marker
-
-- **WHEN** the same payload arrives without `expansion_type`
-- **THEN** the exit code is 2 and the ledger holds no new entry
-
-#### Scenario: plan typed before the design is ready
-
-- **WHEN** `design` is not done and the `/bdk:plan` payload arrives
-- **THEN** the exit code is 2, stderr starts with `policy/gate-not-ready` and names `design`, and the ledger holds no new entry
-
-#### Scenario: log entry cannot pass the gate
-
-- **WHEN** `bdk log add decision "Design approved" --ref gate:design` runs while `gate:design` is ready
-- **THEN** `gate:design` stays not done until the `/bdk:plan` payload arrives
-
 ### Requirement: Guard latency
 
 The guards SHALL stay within the NFR "Latency" budgets, measured locally through the bundle in the `perf` test project (`pnpm test:perf`), which CI does not run.
@@ -709,6 +400,45 @@ On a fixture of 750 recorded-shape `PreToolUse` payloads (main-thread and subage
 
 - **WHEN** `pnpm test:perf` runs the guard benchmarks
 - **THEN** each p95 is under its budget, and the report names every measured value
+
+### Requirement: Pre-tool command reading
+
+`hooks pre-tool` SHALL read a Bash command as a list of simple commands, each with its words and output redirections, and apply the Bash guards to command words, never to the raw text.
+
+The reader handles single and double quotes, backslash escapes, `#` comments at a word start, heredocs (`<<EOF`, `<<-EOF`, `<<'EOF'`; the body up to the delimiter line is skipped), the separators `;`, `&&`, `||`, `|`, `&` and newlines, and `(`, `)`, `{`, `}` as grouping; `$(...)` and backticks stay inside their word. A simple command whose command word is `sh`, `bash`, `zsh` or `dash` with `-c <string>`, or `eval`, is read again from its string, three levels deep. The command word is the first word after variable assignments and the wrappers `env` (with its options and assignments), `command`, `exec`, `time`, `nice`, `nohup` and `sudo`, compared by basename.
+
+- A **git command** has the command word `git`; its verb is the first word after git's global options (`-C <path>`, `-c <k=v>`, `--git-dir[=]<d>`, `--work-tree[=]<d>`, `--no-pager`, `-P`, `--no-optional-locks`, `--literal-pathspecs`).
+- A **kernel command** has a word whose basename is `bdk.mjs` as its command word or after `node` and node's options, or the command word `bdk` (the role contracts write kernel commands as `bdk <command>`, and a model defines a `bdk` shell function in the same Bash command to run them); its verb is resolved from the following words against the bundled command index, exactly as the kernel dispatches.
+- A **write** is an output redirection (`>`, `>>`, `>|`, `&>`, `&>>`, `<n>>`) to anything but `/dev/null`, `/dev/stdout`, `/dev/stderr` or a file descriptor, or the target of a writing command: `tee` (its file arguments), `sed` and `perl` with `-i` or `--in-place` (their file arguments), `cp` and `install` (the last argument), `mv`, `rm`, `rmdir`, `touch`, `mkdir`, `ln`, `truncate`, `chmod`, `chown` (every argument that is not an option), `dd` (`of=`), `git apply`.
+
+The reader is best effort for a careless model (design NFR "Security"): an interpreter (`python -c`, `node -e`), a script file, a variable, or an alias or a function under another name than `bdk` can still hide a verb or a write.
+
+#### Scenario: quoted git verb is not a command
+
+- **WHEN** a subagent runs `git commit -m "revert with git reset"` or `echo "git stash"`
+- **THEN** the first is denied as `git commit` and the second passes, and no reason names `git reset` or `git stash`
+
+#### Scenario: heredoc body is not read
+
+- **WHEN** a `bdk:reader` payload runs `node "$P/dist/bdk.mjs" log ingest --ticket A-7f3k9m2q <<'EOF'` with a body line `a > b` and `git stash`
+- **THEN** it passes
+
+#### Scenario: nested shell is read
+
+- **WHEN** a subagent runs `bash -c 'cd x && git stash'`
+- **THEN** it is denied with `guard/subagent-git` naming `git stash`
+
+#### Scenario: git global options
+
+- **WHEN** a subagent runs `git -C ../repo -c core.pager=cat reset --hard`
+- **THEN** it is denied with `guard/subagent-git` naming `git reset`
+
+#### Scenario: a bdk shell function is the kernel
+
+- **WHEN** a `bdk:worker` payload runs `bdk() { node "$P/dist/bdk.mjs" "$@"; }; bdk commit 01-1`
+- **THEN** it is denied with `guard/subagent-kernel-command` naming `bdk commit`
+
+## ADDED Requirements
 
 ### Requirement: bdk hooks subagent-start
 
