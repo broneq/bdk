@@ -10,8 +10,8 @@
 
 ## 2. Swarm skill (role-contracts delta)
 
-- [ ] 2.1 Failing contract test (`kernel/tests/contract/role-contracts.test.ts`): `skills/swarm/SKILL.md` names `wave` of `bdk next` as the source of `tree` and `flat`
-- [ ] 2.2 Reword the Tree bullet of `skills/swarm/SKILL.md`; contract test green; `pnpm skill-check` green
+- [x] 2.1 Failing contract test (`kernel/tests/contract/role-contracts.test.ts`): `skills/swarm/SKILL.md` names `wave` of `bdk next` as the source of `tree` and `flat`
+- [x] 2.2 Reword the Tree bullet of `skills/swarm/SKILL.md`; contract test green; `pnpm skill-check` green
 
 ## 3. `execute` stage skill (D3-D5, D8, D9)
 

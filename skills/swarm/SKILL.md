@@ -18,7 +18,7 @@ How an orchestrating agent, `main` or a lead, runs the role agents of its work: 
 ## Waves and the tree
 
 - **Isolation.** Dispatch together only tasks whose `Files:` are disjoint (P6); a task that shares a file with a running one waits for the next wave.
-- **Tree.** When the kernel marks a wave as a tree, `main` starts one lead per part of the wave with the part's `lead` package, and each lead runs its part's tasks; otherwise `main` runs the tasks itself. The tree is at most lead, role agent and, under a worker, a scout.
+- **Tree.** The `wave` of `bdk next` marks each part `tree` or `flat`, and the orchestrator never decides the mode itself. `main` starts one lead per `tree` part with the part's `lead` package, and that lead runs the part's tasks; `main` runs the tasks of a `flat` part itself. The tree is at most lead, role agent and, under a worker, a scout.
 - **Concurrency.** Each orchestrating agent runs at most `execution.concurrency` children at once; the `Concurrency` section of the BDK context above states the number.
 - **Prompt.** Give each agent its package path from `bdk dispatch build` and at most one further sentence.
 
