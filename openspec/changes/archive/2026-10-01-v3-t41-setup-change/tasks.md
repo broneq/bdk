@@ -36,6 +36,6 @@
 
 ## 6. Acceptance
 
-- [ ] 6.1 Manual E2E with `claude --plugin-dir`: `/bdk:setup` on a fresh copy of the fixture and on a v2 fixture, then `/bdk:change "<intent>"` with both branch answers; record the outcome in the PR
+- [x] 6.1 Manual E2E with `claude --plugin-dir`: `/bdk:setup` on a fresh copy of the fixture and on a v2 fixture, then `/bdk:change "<intent>"` with both branch answers; record the outcome in the PR (user decision 2026-10-01: not run by hand; covered by the 4.4 probes, which type both commands in fresh fixture copies, including a v2 layout and both branch answers)
 - [x] 6.2 Full gate: `pnpm build`, lint, format, typecheck, knip, `test:unit`, `test:e2e`, `test:contract`, `skill-check`, `docs:build`, `eval check`, `pytest tests/unit/`
 - [x] 6.3 `openspec validate v3-t41-setup-change --strict`
