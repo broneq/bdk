@@ -25,8 +25,8 @@
 
 ## 5. `run` stage skill (D6, D7, D10)
 
-- [ ] 5.1 Failing contract tests: `skills/stages/run/SKILL.md` exists with `disable-model-invocation: true` and `allowed-tools` `Skill`, `Read` and the kernel wrapper pair; names `bdk next`, the `Skill` tool, `/bdk:change`, `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:cr`, `/bdk:close`, `bdk log add decision` with `--review`, `guard/gate-manual`, and the stop conditions; the `ctx` manifest holds `run` with no parts
-- [ ] 5.2 `ctx skill run` manifest entry; write `skills/stages/run/SKILL.md` per `specs/stage-skills` and `.claude/rules/prompt-writing.md`, under 120 lines; review with `/bdk-skill-kit:skill-authoring`; tests of 5.1 green; `pnpm skill-check` green
+- [x] 5.1 Failing contract tests: `skills/stages/run/SKILL.md` exists with `disable-model-invocation: true` and `allowed-tools` `Skill`, `Read` and the kernel wrapper pair; names `bdk next`, the `Skill` tool, `/bdk:change`, `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:cr`, `/bdk:close`, `bdk log add decision` with `--review`, `guard/gate-manual`, and the stop conditions; the `ctx` manifest holds `run` with no parts
+- [x] 5.2 `ctx skill run` manifest entry; write `skills/stages/run/SKILL.md` per `specs/stage-skills` and `.claude/rules/prompt-writing.md`, under 120 lines; review with `/bdk-skill-kit:skill-authoring`; tests of 5.1 green; `pnpm skill-check` green
 
 ## 6. `stages` eval cases (D11)
 

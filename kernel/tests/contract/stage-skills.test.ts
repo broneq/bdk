@@ -244,3 +244,42 @@ describe("close", () => {
     }
   });
 });
+
+describe("run", () => {
+  it("is user-only, with a manifest entry with no parts and only the Skill and Read tools", () => {
+    expect(SKILL_CONTEXT.run).toStrictEqual([]);
+    const { meta } = readSkill("run");
+    expect(meta["disable-model-invocation"]).toBe(true);
+    expect(meta["allowed-tools"]).toBe(
+      'Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Skill Read',
+    );
+    expect(meta).not.toHaveProperty("disallowed-tools");
+  });
+
+  it("loops on next through the stage skills, decides instead of asking and stops at review", () => {
+    const { body } = readSkill("run");
+    for (const needle of [
+      "bdk next --json",
+      "`Skill` tool",
+      "/bdk:change",
+      "/bdk:design",
+      "/bdk:plan",
+      "/bdk:execute",
+      "/bdk:cr",
+      "/bdk:close",
+      "bdk log add decision",
+      "--review",
+      "guard/gate-manual",
+      "policy/gate-not-ready",
+      "`waiting: user`",
+      "A pending `review: true` entry is no reason to stop",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
+  });
+
+  it("stays well under the stage skill limit", () => {
+    const text = readFileSync(join(STAGES, "run", "SKILL.md"), "utf8");
+    expect(text.split("\n").length).toBeLessThanOrEqual(120);
+  });
+});
