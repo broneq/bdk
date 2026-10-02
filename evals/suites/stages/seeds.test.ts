@@ -38,7 +38,8 @@ function base(): string {
   return dir;
 }
 
-describe("runSeed", () => {
+// Each seed spawns about twenty kernel and git processes: seconds, more on a loaded CI runner.
+describe("runSeed", { timeout: 60_000 }, () => {
   it("audit-csv leaves part 01 of a tiny Change next, flat, with part 02 waiting on it", () => {
     const dir = base();
     const kernel = { bundle: BUNDLE, configHome: temp() };
