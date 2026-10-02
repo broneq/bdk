@@ -44,4 +44,4 @@
 ## 8. Acceptance
 
 - [ ] 8.1 End to end on the acceptance signal: the content tests and `pnpm skill-check` green; no stage skill over 200 lines; the probes of 6.4 pass (`close` happy path, `run-auto` to the review stage, `run-manual` stopping at `gate:design`, `run-close` ending `closed` with `source: policy` on `gate:review`); `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract` green
-- [ ] 8.2 `openspec validate v3-t41-close-run --strict` and `openspec validate --specs --strict` green
+- [x] 8.2 `openspec validate v3-t41-close-run --strict` and `openspec validate --specs --strict` green
