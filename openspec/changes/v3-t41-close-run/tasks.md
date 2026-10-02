@@ -15,8 +15,8 @@
 
 ## 3. Stage skill frontmatter (D1)
 
-- [ ] 3.1 Failing contract and content tests: `setup` and `run` set `disable-model-invocation: true`; `change`, `plan`, `execute` and `close` do not; `execute` and `close` keep `disallowed-tools: Edit Write NotebookEdit`; `pnpm skill-check` errors when `run` omits the field
-- [ ] 3.2 Remove the field from `skills/stages/{change,plan,execute}/SKILL.md`, update `skill-check.config.ts` ("User-only entries"), `pnpm skill-check --baseline-prune` if a finding disappears; tests of 3.1 green
+- [x] 3.1 Failing contract and content tests: `setup` and `run` set `disable-model-invocation: true`; `change`, `plan`, `execute` and `close` do not; `execute` and `close` keep `disallowed-tools: Edit Write NotebookEdit`; `pnpm skill-check` errors when `run` omits the field
+- [x] 3.2 Remove the field from `skills/stages/{change,plan,execute}/SKILL.md`, update `skill-check.config.ts` ("User-only entries"), `pnpm skill-check --baseline-prune` if a finding disappears; tests of 3.1 green
 
 ## 4. `close` stage skill (D8)
 

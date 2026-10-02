@@ -57,10 +57,10 @@ describe("asking the user in two tiers", () => {
 });
 
 describe("stage skill invocation", () => {
-  it("design and verify-design stay model-invocable; the user-only stages are gated", () => {
+  it("only setup and run are user-only; run starts the others, guarded by hooks pre-tool", () => {
     for (const name of readdirSync(STAGES)) {
       const { meta } = readSkill(name);
-      const userOnly = ["setup", "change", "plan", "execute", "close", "run"].includes(name);
+      const userOnly = ["setup", "run"].includes(name);
       expect(meta["disable-model-invocation"] === true, name).toBe(userOnly);
     }
     expect(readdirSync(STAGES)).toEqual(
@@ -188,9 +188,9 @@ describe("execute", () => {
     ]);
   });
 
-  it("is user-only and never edits a file itself", () => {
+  it("is started by the user or a run and never edits a file itself", () => {
     const { meta } = readSkill("execute");
-    expect(meta["disable-model-invocation"]).toBe(true);
+    expect(meta["disable-model-invocation"]).toBeUndefined();
     expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
   });
 
