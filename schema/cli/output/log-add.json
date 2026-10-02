@@ -67,7 +67,8 @@
         "gate": { "type": "string" },
         "session": { "type": "string" },
         "command": { "type": "string" },
-        "skipVerify": { "type": "boolean" }
+        "skipVerify": { "type": "boolean" },
+        "auto": { "type": "boolean" }
       },
       "required": ["id", "type", "summary", "status", "source", "at", "refs", "author", "review"],
       "additionalProperties": false

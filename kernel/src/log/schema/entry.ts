@@ -55,6 +55,7 @@ export const entryViewSchema = z.strictObject({
   session: z.string().optional(),
   command: z.string().optional(),
   skipVerify: z.boolean().optional(),
+  auto: z.boolean().optional(),
 });
 
 export const entrySummarySchema = z.strictObject({

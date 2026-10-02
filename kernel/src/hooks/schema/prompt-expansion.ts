@@ -58,11 +58,18 @@ export const promptExpansionOutput = z
       .array(gate)
       .optional()
       .meta({ description: "/bdk:run: the ready manual gates the user still types." }),
+    run: z
+      .strictObject({
+        auto: z.boolean().meta({ description: "--auto was the first argument token." }),
+        intent: z.boolean().meta({ description: "An intent followed the flags." }),
+      })
+      .optional()
+      .meta({ description: "/bdk:run: the session's run marker was written (T41)." }),
   })
   .meta({
     title: "bdk hooks prompt-expansion --json",
     description:
-      "UserPromptExpansion guard: the only writer of `source: user` stage transitions. A block is the error object under --json and <rule>: <why> on stderr otherwise.",
+      "UserPromptExpansion guard: the only writer of `source: user` stage transitions and the start of a run. A block is the error object under --json and <rule>: <why> on stderr otherwise.",
     examples: [
       {
         decision: "pass",

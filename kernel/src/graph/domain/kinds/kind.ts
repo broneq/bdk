@@ -28,6 +28,8 @@ export interface GraphEntry {
   readonly to?: string | undefined;
   readonly gate?: string | undefined;
   readonly inputHash?: string | undefined;
+  /** A policy transition written under a run's `--auto` (T41). */
+  readonly auto?: boolean | undefined;
 }
 
 /** A plan part's body as the use case parsed it with the task grammar (`kernel-loops`). */

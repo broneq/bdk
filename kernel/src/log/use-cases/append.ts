@@ -49,6 +49,8 @@ export interface EntryDraft {
   readonly session?: string;
   readonly command?: string;
   readonly skipVerify?: boolean;
+  /** A gate a run with `--auto` passes by policy at a `manual` gate (T41). */
+  readonly auto?: boolean;
   /** Who passed the gate; without it the entry is `kernel`, or `agent:<role>` under a ticket. */
   readonly source?: "user" | "policy";
 }
@@ -126,6 +128,7 @@ export async function appendEntry(
       ...(draft.session === undefined ? {} : { session: draft.session }),
       ...(draft.command === undefined ? {} : { command: draft.command }),
       ...(draft.skipVerify === true ? { "skip-verify": true } : {}),
+      ...(draft.auto === true ? { auto: true } : {}),
       ...(draft.inputHash === undefined ? {} : { "input-hash": draft.inputHash }),
     }),
     draft.body,

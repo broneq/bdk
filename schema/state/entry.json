@@ -294,6 +294,10 @@
         "session": { "type": "string", "minLength": 1 },
         "command": { "type": "string", "minLength": 1 },
         "skip-verify": { "type": "boolean" },
+        "auto": {
+          "description": "A gate passed by policy because the run had --auto; written only by the hooks (T41). Such a transition counts at a manual gate.",
+          "type": "boolean"
+        },
         "input-hash": {
           "description": "sha256 of the node's inputs; written only by `done` and `part done` (P2). A transition carrying it is the node's done marker.",
           "$ref": "common.json#/$defs/hash"

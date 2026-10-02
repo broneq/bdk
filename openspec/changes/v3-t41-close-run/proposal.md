@@ -35,7 +35,9 @@ None. `stage-skills` exists and gains the two skills.
 
 - `stage-skills`: the stage skill shape (which skills keep `disable-model-invocation`), requirements for `close` and `run`.
 - `kernel-cli/hooks`: `bdk hooks prompt-expansion` for `/bdk:run` (marker, intent without a Change, `--auto`), `bdk hooks pre-tool` with the stage-skill guard, `bdk hooks session-end` removing the marker, the prefilter and the guard catalogue.
-- `kernel-state`: the run marker under `.bdk/.machine/` and `hooks pre-tool` as a writer of `source: policy` transitions in the write map.
+- `kernel-state`: the run marker under `.bdk/.machine/`, `hooks pre-tool` as a writer of `source: policy` transitions in the write map, the `auto` field of a `transition` and the `entries.auto` index column (index schema version 6).
+- `kernel-pipeline`: the gate rule counts a `source: policy` transition with `auto: true` at a `manual` gate (D4).
+- `kernel-cli`: the refusal catalogue rows `guard/stage-skill` and `guard/gate-manual`, and the commands that emit `policy/change-exists` and `policy/gate-not-ready`.
 - `skill-content-checks`: the "User-only gates" rule.
 - `skill-evals`: the `close` and `run` cases and the reviewed-Change seed.
 

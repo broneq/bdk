@@ -1,5 +1,6 @@
 // The gate rule (`kernel-pipeline`, Gate; design D-5): a gate is done when a
-// `transition` naming it, written by the user (or by policy under `auto`), is
+// `transition` naming it, written by the user (or by policy under `auto`, or
+// by a run with `--auto`, which marks it `auto: true`), is
 // not earlier than the gate's ready time. Provenance and timing only (T1).
 // Both times are compared to the second, so a hand-written transition without
 // milliseconds still counts in the second the gate became ready.
@@ -41,7 +42,8 @@ export function gateStatus(input: GateInput): GateStatus {
     (entry) => entry.type === "transition" && entry.gate === input.id,
   );
   const accepted = (entry: GraphEntry): boolean =>
-    entry.source === "user" || (entry.source === "policy" && input.policy === "auto");
+    entry.source === "user" ||
+    (entry.source === "policy" && (input.policy === "auto" || entry.auto === true));
   const timely = (entry: GraphEntry): boolean =>
     input.readyAt === undefined || toSecond(entry.at) >= toSecond(input.readyAt);
   const passing = input.incomplete

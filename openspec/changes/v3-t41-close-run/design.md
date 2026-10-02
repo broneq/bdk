@@ -86,12 +86,15 @@ For an admitted `Skill` call to `bdk:plan`, `bdk:execute` or `bdk:close`, `hooks
 
 ### D4 `--auto` is the run's own policy
 
-`--auto` must be the first token of `command_args`. The run marker records `auto: true`, and every ready gate passes during the run: at typing time through `prompt-expansion`, later through `pre-tool`. The transition keeps `source: policy`, and the typed `/bdk:run --auto ...` line in its `command` field is the annotation that distinguishes it from a settings policy (user decision 2026-10-02). `policy.gates.<gate>: auto` in settings stays the default for every run. A new key or entry field was not needed: `command` already carries the typed line, and `change close`'s `gatesByPolicy` lists the gates in the PR summary.
+`--auto` must be the first token of `command_args`. The run marker records `auto: true`, and every ready gate passes during the run: at typing time through `prompt-expansion`, later through `pre-tool`. The transition keeps `source: policy` and the typed `/bdk:run --auto ...` line in its `command` field (user decision 2026-10-02). `policy.gates.<gate>: auto` in settings stays the default for every run, and `change close`'s `gatesByPolicy` lists the gates in the PR summary.
+
+The gate rule (`kernel-pipeline`, Gate) counted a `source: policy` transition only while the gate's policy resolves to `auto`, so a pass of a `manual` gate under `--auto` was written and never counted; the E2E test of task 2.5 found it. A transition that only `--auto` lets pass therefore carries `auto: true`, and the gate rule accepts a policy transition with it (user decision 2026-10-02). The field is in the entry schema and the index (`entries.auto`, index schema version 6). Only the hooks write it: `log add` cannot write a `transition`.
 
 **Alternatives:**
 
 - `source: user` for `--auto` passes, because the user typed the flag. Rejected by the user: a pass the user did not type at the gate is not a typed consent.
-- A new `run` field on the transition. It would duplicate `command`.
+- The gate rule parses `command` for `/bdk:run --auto`. No new field, but the graph would read free text.
+- `--auto` passes only gates whose settings policy is `auto`. The flag would then change nothing.
 
 ### D5 `/bdk:run` with an intent
 

@@ -4,6 +4,9 @@
 import type { GateSummary, PromptExpansionReport } from "../domain/report.ts";
 
 export function renderPromptExpansion(report: PromptExpansionReport): string {
+  if (report.run !== undefined && report.passed === undefined) {
+    return `[BDK] run started${report.run.auto ? " with --auto" : ""} for the intent; no Change is active yet.`;
+  }
   if (report.passed !== undefined) return runLines(report).join("\n");
   if (report.stage === undefined) return "";
   if (report.status === undefined) {

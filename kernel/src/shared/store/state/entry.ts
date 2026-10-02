@@ -80,6 +80,10 @@ export const entryKind = {
         session: z.string().min(1).optional(),
         command: z.string().min(1).optional(),
         "skip-verify": z.boolean().optional(),
+        auto: z.boolean().optional().meta({
+          description:
+            "A gate passed by policy because the run had --auto; written only by the hooks (T41). Such a transition counts at a manual gate.",
+        }),
         "input-hash": hash.optional().meta({
           description:
             "sha256 of the node's inputs; written only by `done` and `part done` (P2). A transition carrying it is the node's done marker.",
