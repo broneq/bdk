@@ -40,6 +40,7 @@ async function planned(
   profile: "tiny" | "small" | "large",
   dependsOn: Readonly<Record<string, readonly string[]>> = {},
   verified = true,
+  bodies: Readonly<Record<string, string>> = {},
 ): Promise<Harness> {
   const h = harness();
   setChange(h.store, { profile });
@@ -63,7 +64,10 @@ async function planned(
   }
   for (const nn of ["01", "02", "03"]) {
     if (nn === "03" && dependsOn["03"] === undefined) continue;
-    writePlanPart(h.store, nn, { dependsOn: dependsOn[nn] ?? [] });
+    writePlanPart(h.store, nn, {
+      dependsOn: dependsOn[nn] ?? [],
+      ...(bodies[nn] === undefined ? {} : { body: bodies[nn] }),
+    });
   }
   await ok(h, ["done", "plan"], T2);
   if (profile !== "tiny" && verified) {
@@ -199,6 +203,17 @@ describe("the execute wave of bdk next", () => {
     expect((await next(h)).wave).toStrictEqual([
       { part: "01", started: false, tickets: [], mode: "flat" },
     ]);
+  });
+
+  it("leaves out a part whose Files: overlap a part listed before it", async () => {
+    const shared = (nn: string) =>
+      `## ${nn}-1 Edit the client\n\n**Files:**\n\n- \`src/client.ts\`\n- \`src/part-${nn}.ts\`\n\n**Test cases:**\n\n- works\n`;
+    const h = await planned("large", {}, true, { "01": shared("01"), "02": shared("02") });
+    expect((await next(h)).wave).toStrictEqual([
+      { part: "01", started: false, tickets: [], mode: "flat" },
+    ]);
+    start(h, "01");
+    expect((await next(h)).wave?.map((item) => item.part)).toStrictEqual(["01"]);
   });
 
   it("has no wave while plan-verify is next", async () => {

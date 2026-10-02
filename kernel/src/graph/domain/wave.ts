@@ -18,6 +18,10 @@ export interface WaveInput {
   readonly graph: Graph;
   readonly profile: string;
   readonly tree: { readonly enabled: boolean; readonly "min-parts": number };
+  /** The `Files:` of every task of each part. */
+  readonly files: ReadonlyMap<string, readonly string[]>;
+  /** The first path of `own` that touches a path of `other`, or undefined. */
+  readonly overlap: (own: readonly string[], other: readonly string[]) => string | undefined;
   /** Parts with a kernel transition to their `execute-part` instance. */
   readonly started: ReadonlySet<string>;
   /** Open tickets, oldest first: the loop and the target, a part or a task id. */
@@ -34,9 +38,11 @@ const KIND = "execute-part";
  * A part with an open `part-lead` ticket is `tree`; another started part is
  * `flat`; a part not started is `tree` when the Change is `large`, the tree is
  * enabled and the ready parts not started number at least `min-parts`.
+ * Parts share one working tree, so a part not started whose `Files:` overlap
+ * a started part or a part listed before it waits for a later wave.
  */
 export function executeWave(input: WaveInput): WaveItem[] {
-  const ready = input.graph.nodes.flatMap((node) =>
+  const candidates = input.graph.nodes.flatMap((node) =>
     node.kind === KIND &&
     node.nn !== undefined &&
     !node.sealed &&
@@ -44,6 +50,14 @@ export function executeWave(input: WaveInput): WaveItem[] {
       ? [node.nn]
       : [],
   );
+  const filesOf = (part: string) => input.files.get(part) ?? [];
+  const claimed = candidates.filter((nn) => input.started.has(nn)).flatMap(filesOf);
+  const ready = candidates.filter((nn) => {
+    if (input.started.has(nn)) return true;
+    if (input.overlap(filesOf(nn), claimed) !== undefined) return false;
+    claimed.push(...filesOf(nn));
+    return true;
+  });
   const fresh = ready.filter((nn) => !input.started.has(nn)).length;
   const tree = input.profile === "large" && input.tree.enabled && fresh >= input.tree["min-parts"];
   return ready.map((part) => {

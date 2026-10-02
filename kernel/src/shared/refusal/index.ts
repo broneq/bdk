@@ -25,6 +25,7 @@ export const RULES = [
   "policy/oscillation",
   "policy/no-open-ticket",
   "policy/ticket-open",
+  "policy/files-busy",
   "policy/package-too-large",
   "policy/do-not-touch",
   "policy/entries-missing",

@@ -23,16 +23,18 @@ import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
   checkpointChange,
+  filesOverlap,
   readPlanParts,
   TASK_ID,
   taskHolders,
   writeDocument,
 } from "../../shared/store/index.ts";
-import type { EntryRow, IndexDb } from "../../shared/store/index.ts";
+import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import { LOOPS } from "../../shared/vocabulary/index.ts";
 import type { Loop } from "../../shared/vocabulary/index.ts";
 import type { AttemptDeps } from "./deps.ts";
 import { escalationsOf, keyedRecords, ladderPolicy, ofKey, resumeCommand } from "./records.ts";
+import type { KeyedRecord } from "./records.ts";
 
 const PART_ID = /^\d{2}$/;
 const SUMMARY_MAX = 120;
@@ -73,6 +75,9 @@ export function openAttempt(
         [`bdk attempt close ${open.ticket} ok|fail|not-run`],
       );
     }
+    const parts = readPlanParts(deps.store, change.dir);
+    const busy = filesBusy(parts, records, loop, input.target);
+    if (busy !== undefined) return busy;
     const policy = ladderPolicy(targets.settings, loop);
     const state = roundState(currentRound(key, targets.entries), policy);
     const blocked = escalationBlocked(state, policy, escalationsOf(records));
@@ -134,6 +139,18 @@ export function openAttempt(
       );
     }
 
+    // Two opens over one file can race too; each loser removes its own record.
+    const crossed = filesBusy(
+      parts,
+      keyedRecords(deps.store, change.dir).filter((record) => record.ticket !== ticket),
+      loop,
+      input.target,
+    );
+    if (crossed !== undefined) {
+      deps.store.remove(path);
+      return crossed;
+    }
+
     const entry =
       dropped.length === 0
         ? undefined
@@ -154,6 +171,48 @@ export function openAttempt(
       ...(loop === "verifier" || loop === "part-lead" ? {} : { steps: targets.steps }),
     };
   });
+}
+
+/** The loops whose tickets change the files of their target. */
+const CODE_LOOPS: readonly string[] = ["task-redispatch", "verify-fix"];
+
+/** The `Files:` of a task target, or of every task of a part target. */
+function filesOf(parts: readonly PlanPartFile[], loop: string, target: string): string[] {
+  if (loop === "task-redispatch") {
+    const task = taskHolders(parts)
+      .get(target)
+      ?.tasks.find((found) => found.id === target);
+    return task?.files.map((file) => file.path) ?? [];
+  }
+  const part = parts.find((found) => found.id === target);
+  return part?.tasks.flatMap((task) => task.files.map((file) => file.path)) ?? [];
+}
+
+/**
+ * Parts and tasks share one working tree, so two open tickets never hold one
+ * file (`policy/files-busy`): the later target waits for the earlier ticket.
+ */
+function filesBusy(
+  parts: readonly PlanPartFile[],
+  records: readonly KeyedRecord[],
+  loop: Loop,
+  target: string,
+): Refusal | undefined {
+  if (!CODE_LOOPS.includes(loop)) return undefined;
+  const own = filesOf(parts, loop, target);
+  for (const record of records) {
+    if (record.outcome !== undefined || !CODE_LOOPS.includes(record.loop)) continue;
+    if (record.loop === loop && record.target === target) continue;
+    const path = filesOverlap(own, filesOf(parts, record.loop, record.target));
+    if (path !== undefined) {
+      return refuse(
+        "policy/files-busy",
+        `${path} of ${target} is in the Files: of ticket ${record.ticket} (${record.loop} ${record.target})`,
+        [`bdk attempt list`, `bdk agents wait`],
+      );
+    }
+  }
+  return undefined;
 }
 
 function isLoop(value: string): value is Loop {

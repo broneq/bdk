@@ -78,6 +78,8 @@ A step node of a part that is already done means a later part changed one of its
 ## When the kernel refuses
 
 - Exit 2 is a refusal: read `rule`, `why` and `instead`, and do what `instead` names. Never repeat the refused command unchanged.
+- `policy/files-busy` from `attempt open` means another open ticket holds a file of the target: start it after that ticket closes. The kernel also keeps parts whose `Files:` overlap out of one `wave`.
+- Parts share one working tree, so uncommitted files may be another part's work. Never run git commands that discard or hide work (stash, reset, clean, checkout or restore of paths); report the refusal to the user instead.
 - Exit 3 is a malformed command: fix the argument it names, using `bdk <command> --help`.
 - A `BDK STOP` line or another exit code: stop and report the output.
 

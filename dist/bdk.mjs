@@ -7892,6 +7892,7 @@ var commands_default = {
         "policy/budget-exhausted",
         "policy/oscillation",
         "policy/ticket-open",
+        "policy/files-busy",
         "policy/invalid-transition"
       ],
       writes: [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit"]
@@ -15830,6 +15831,7 @@ var RULES = [
   "policy/oscillation",
   "policy/no-open-ticket",
   "policy/ticket-open",
+  "policy/files-busy",
   "policy/package-too-large",
   "policy/do-not-touch",
   "policy/entries-missing",
@@ -18588,6 +18590,11 @@ async function coveredByGit(git, projectRoot2, path) {
 var cache = /* @__PURE__ */ new Map();
 function matchesGlob(glob4, path) {
   return patternOf(glob4).test(normalize(path));
+}
+function filesOverlap(own2, other) {
+  return own2.find(
+    (path) => other.some((theirs) => matchesGlob(theirs, path) || matchesGlob(path, theirs))
+  );
 }
 function firstMatch(globs2, path) {
   return globs2.find((glob4) => matchesGlob(glob4, path));
@@ -26042,9 +26049,17 @@ function finish(node3, kind) {
 // kernel/src/graph/domain/wave.ts
 var KIND2 = "execute-part";
 function executeWave(input) {
-  const ready = input.graph.nodes.flatMap(
+  const candidates = input.graph.nodes.flatMap(
     (node3) => node3.kind === KIND2 && node3.nn !== void 0 && !node3.sealed && (node3.state === "ready" || node3.state === "stale") ? [node3.nn] : []
   );
+  const filesOf3 = (part) => input.files.get(part) ?? [];
+  const claimed = candidates.filter((nn) => input.started.has(nn)).flatMap(filesOf3);
+  const ready = candidates.filter((nn) => {
+    if (input.started.has(nn)) return true;
+    if (input.overlap(filesOf3(nn), claimed) !== void 0) return false;
+    claimed.push(...filesOf3(nn));
+    return true;
+  });
   const fresh = ready.filter((nn) => !input.started.has(nn)).length;
   const tree = input.profile === "large" && input.tree.enabled && fresh >= input.tree["min-parts"];
   return ready.map((part) => {
@@ -26125,7 +26140,7 @@ function nextStep(deps, change, globalDir2) {
           ...base,
           artifact: nodeView(next),
           instruction: instructionOf(deps, change, read2, next),
-          ...next.kind === "execute-part" ? { wave: waveOf(read2, index2, change.id) } : {}
+          ...next.kind === "execute-part" ? { wave: waveOf(deps.store, change, read2, index2) } : {}
         }
       };
     }
@@ -26146,7 +26161,7 @@ function nextStep(deps, change, globalDir2) {
     return { report: { ...base, waiting: "nothing" } };
   });
 }
-function waveOf(read2, index2, changeId2) {
+function waveOf(store2, change, read2, index2) {
   const started = new Set(
     read2.entries.flatMap(
       (entry) => entry.type === "transition" && entry.source === "kernel" && entry.to?.startsWith("execute-part:") === true ? [entry.to.slice("execute-part:".length)] : []
@@ -26156,8 +26171,15 @@ function waveOf(read2, index2, changeId2) {
     graph: read2.graph,
     profile: read2.view.profile,
     tree: moduleValue(executionTreeModule, read2.resolved.value),
+    files: new Map(
+      readPlanParts(store2, change.dir).map((part) => [
+        part.id,
+        part.tasks.flatMap((task) => task.files.map((file) => file.path))
+      ])
+    ),
+    overlap: filesOverlap,
     started,
-    tickets: openAttempts(index2, changeId2)
+    tickets: openAttempts(index2, change.id)
   });
 }
 
@@ -27488,6 +27510,9 @@ function openAttempt(deps, change, globalDir2, input) {
         [`bdk attempt close ${open2.ticket} ok|fail|not-run`]
       );
     }
+    const parts = readPlanParts(deps.store, change.dir);
+    const busy = filesBusy(parts, records, loop, input.target);
+    if (busy !== void 0) return busy;
     const policy = ladderPolicy(targets.settings, loop);
     const state = roundState(currentRound(key, targets.entries), policy);
     const blocked = escalationBlocked(state, policy, escalationsOf(records));
@@ -27537,6 +27562,16 @@ function openAttempt(deps, change, globalDir2, input) {
         [`bdk attempt close ${rival.ticket} ok|fail|not-run`]
       );
     }
+    const crossed = filesBusy(
+      parts,
+      keyedRecords(deps.store, change.dir).filter((record5) => record5.ticket !== ticket),
+      loop,
+      input.target
+    );
+    if (crossed !== void 0) {
+      deps.store.remove(path);
+      return crossed;
+    }
     const entry = dropped.length === 0 ? void 0 : await recordDropped(deps, change, index2, input.target, scope2, dropped);
     if (entry !== void 0 && "refused" in entry) return entry;
     return {
@@ -27554,6 +27589,32 @@ function openAttempt(deps, change, globalDir2, input) {
       ...loop === "verifier" || loop === "part-lead" ? {} : { steps: targets.steps }
     };
   });
+}
+var CODE_LOOPS = ["task-redispatch", "verify-fix"];
+function filesOf2(parts, loop, target) {
+  if (loop === "task-redispatch") {
+    const task = taskHolders(parts).get(target)?.tasks.find((found) => found.id === target);
+    return task?.files.map((file) => file.path) ?? [];
+  }
+  const part = parts.find((found) => found.id === target);
+  return part?.tasks.flatMap((task) => task.files.map((file) => file.path)) ?? [];
+}
+function filesBusy(parts, records, loop, target) {
+  if (!CODE_LOOPS.includes(loop)) return void 0;
+  const own2 = filesOf2(parts, loop, target);
+  for (const record5 of records) {
+    if (record5.outcome !== void 0 || !CODE_LOOPS.includes(record5.loop)) continue;
+    if (record5.loop === loop && record5.target === target) continue;
+    const path = filesOverlap(own2, filesOf2(parts, record5.loop, record5.target));
+    if (path !== void 0) {
+      return refuse(
+        "policy/files-busy",
+        `${path} of ${target} is in the Files: of ticket ${record5.ticket} (${record5.loop} ${record5.target})`,
+        [`bdk attempt list`, `bdk agents wait`]
+      );
+    }
+  }
+  return void 0;
 }
 function isLoop(value) {
   return LOOPS.includes(value);

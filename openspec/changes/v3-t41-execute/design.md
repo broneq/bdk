@@ -119,6 +119,17 @@ The `stages` requirement asks for a refusal case per skill; `not-ready` is it, s
 
 - Alternative: shell `prepare` lines only. Lost: the tree seed is about twenty kernel calls with files between them; a TypeScript seed is testable without a model (`seeds.test.ts` asserts `next` returns `wave` with two `tree` parts after it).
 
+### D13 One working tree, no file held twice (user decision 2026-10-02)
+
+The first `tree` probe deadlocked two leads: `bdk commit` checked the whole dirty tree against the part's `do-not-touch` and refused each part over the other part's uncommitted files. Parts run in one working tree, so the kernel makes collisions impossible instead of leaving agents to negotiate:
+
+- The diff check leaves a path that an uncommitted task of another started part declares to that task: not a `do-not-touch` breach, not undeclared, not committed with this task (`kernel-loops`, Diff check).
+- `attempt open` of `task-redispatch` or `verify-fix` refuses `policy/files-busy` while another open ticket of those loops holds a file of the target's `Files:`, in any part. The guarantee holds whoever dispatches, `main` or a lead.
+- `wave` leaves out a part not started whose `Files:` overlap a started part or a part listed before it, so no lead starts only to wait.
+- The `execute` skill and the lead contract forbid git commands that discard or hide work (stash, reset, clean, restore), as the role contracts already did.
+
+Overlapping `Files:` run in sequence, never in separate worktrees: a worktree only moves the conflict to the merge. Isolation for disjoint parts with hidden shared state (lockfile, codegen, whole-project build, shared test resources) is a judgment the planner makes per part; that is T45 (#107).
+
 ## Risks / Trade-offs
 
 - [A lead or `main` misreads an envelope and closes `ok` with a blocker open] → `attempt close` runs the kernel's own checks (evidence, open tickets for `part-lead`); `part done` refuses with open tickets or missing trailers.

@@ -36,6 +36,14 @@
 - [x] 6.1 `docs/guide/reference/skills.md` (`/bdk:execute` section, v2 section removed), `reference/artifacts.md` (execute stage), `execution.tree` in the `/bdk:execute` section (the guide has no configuration page), and the workflow, concept and getting-started pages that name `/bdk:subagent-execute-plan`; the v2 agent pages for `implementer` and `fixer` say "BDK 2 agent; no BDK 3 skill starts it"; `pnpm docs:build` green
 - [x] 6.2 README skill table and pipeline section; `docs/V3-IMPLEMENTATION-PLAN.md` T41 scope: `execute` done the v3 way and `features.workflow` dropped with the reason (decision 2), and the design's open item "Workflow strategy details" closed
 
+## 8. One working tree (D13, user decision 2026-10-02)
+
+- [x] 8.1 Diff check: another started part's uncommitted work is left to its task (unit and E2E tests first; delta `specs/kernel-loops`)
+- [x] 8.2 `attempt open` refuses `policy/files-busy` for overlapping `Files:` of open `task-redispatch` and `verify-fix` tickets (unit and E2E tests first; deltas `specs/kernel-cli/attempt`, `specs/kernel-cli` rule catalogue; `schema/cli/commands.json`)
+- [x] 8.3 `wave` leaves out a part not started whose `Files:` overlap an earlier one (unit test first; delta `specs/kernel-cli/graph`)
+- [x] 8.4 `execute` skill, lead contract and swarm skill: `policy/files-busy` and no git command that discards or hides work
+- [x] 8.5 Issue T45 (#107): worktree isolation per part, decided by the planner
+
 ## 7. Acceptance
 
 - [x] 7.1 Sync the main specs (`stage-skills`, `kernel-cli/graph`, `kernel-settings`, `role-contracts`, `skill-evals`) with the deltas

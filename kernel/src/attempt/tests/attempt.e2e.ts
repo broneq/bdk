@@ -71,6 +71,31 @@ describe("bdk attempt open", () => {
     opened(change, "task-redispatch", "01-2");
   });
 
+  it("exit 2 policy/files-busy for a task sharing a file with an open ticket", () => {
+    const root = repository();
+    const created = bdk(
+      ["change", "new", "Fix the login typo", "--profile", "tiny", "--reason", "r", "--json"],
+      root,
+    );
+    const id = (created.json as { change: string }).change;
+    const task = (k: string) =>
+      `## 01-${k} Task ${k}\n\n**Files:**\n\n- \`src/login.ts\`\n\n**Test cases:**\n\n- works\n`;
+    fileStore().write(
+      join(root, ".bdk/changes", id, "plan/parts/01-part.md"),
+      `---\nschema: 1\nid: "01"\ntitle: Part 01\ngoal: g\nsuccess-measure: m\ndo-not-touch: []\ndepends-on: []\nspec-impact: none\n---\n${task("1")}\n${task("2")}`,
+    );
+    answered(bdk(["done", "plan", "--json"], root), "output/done.json");
+    answered(bdk(["part", "start", "01", "--json"], root), "output/part-start.json");
+    const change = { root, dir: join(root, ".bdk/changes", id), id };
+    const first = opened(change, "task-redispatch", "01-1");
+    const busy = refused(open(change, "task-redispatch", "01-2"), 2, "policy/files-busy");
+    expect(busy.why).toBe(
+      `src/login.ts of 01-2 is in the Files: of ticket ${first} (task-redispatch 01-1)`,
+    );
+    closed(change, first, "not-run", "--reason", "r");
+    opened(change, "task-redispatch", "01-2");
+  });
+
   it("exit 2 policy/budget-exhausted", () => {
     const change = started("policy:\n  budgets:\n    task-redispatch: 1\n");
     closed(change, opened(change, "task-redispatch", "01-1"), "fail");

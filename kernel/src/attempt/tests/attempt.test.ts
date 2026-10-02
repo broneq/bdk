@@ -2,7 +2,7 @@
 // registry over a Change in memory and a scripted git (`kernel-loops`).
 import { describe, expect, it } from "vitest";
 
-import { writeEntry } from "../../graph/tests/support.ts";
+import { setChange, writeEntry, writePlanPart } from "../../graph/tests/support.ts";
 import { ROOT } from "../../log/tests/support.ts";
 import {
   readAttempts,
@@ -71,9 +71,9 @@ describe("attempt open", () => {
       { kind: "tests-scoped", role: "runner" },
       { kind: "lint", role: "runner" },
     ];
-    expect(
-      attemptOpenOutput.parse((await open(h, "task-redispatch", "01-1")).json).steps,
-    ).toStrictEqual(steps);
+    const task = attemptOpenOutput.parse((await open(h, "task-redispatch", "01-1")).json);
+    expect(task.steps).toStrictEqual(steps);
+    await close(h, task.ticket, "not-run", "--reason", "r");
     expect(attemptOpenOutput.parse((await open(h, "verify-fix", "01")).json).steps).toStrictEqual(
       steps,
     );
@@ -138,6 +138,41 @@ describe("attempt open", () => {
       rule: "policy/ticket-open",
       instead: [`bdk attempt close ${first.ticket} ok|fail|not-run`],
     });
+    expect((await open(h, "task-redispatch", "01-2")).code).toBe(0);
+  });
+
+  it("refuses a target whose Files: overlap the files of another open ticket, in any part", async () => {
+    const h = harness();
+    setChange(h.store, { profile: "tiny" });
+    const task = (id: string, files: string[]) =>
+      `## ${id} Task\n\n**Files:**\n\n${files.map((file) => `- \`${file}\``).join("\n")}\n\n**Test cases:**\n\n- works\n`;
+    writePlanPart(h.store, "01", {
+      body: [
+        task("01-1", ["src/a.ts"]),
+        task("01-2", ["src/a.ts", "src/c.ts"]),
+        task("01-3", ["src/b.ts"]),
+      ].join("\n"),
+    });
+    writePlanPart(h.store, "02", { body: task("02-1", ["src/b.ts"]) });
+    expect((await h.step(["done", "plan", "--json"])).code).toBe(0);
+    expect((await h.step(["part", "start", "01", "--json"])).code).toBe(0);
+    expect((await h.step(["part", "start", "02", "--json"])).code).toBe(0);
+
+    const first = await open(h, "task-redispatch", "01-1");
+    expect(first.code).toBe(0);
+    const sibling = await open(h, "task-redispatch", "01-2");
+    expect(sibling.code).toBe(2);
+    expect(refusal(sibling)).toMatchObject({
+      rule: "policy/files-busy",
+      why: `src/a.ts of 01-2 is in the Files: of ticket ${first.ticket} (task-redispatch 01-1)`,
+    });
+    expect(records(h.store).map((record) => record.target)).toStrictEqual(["01-1"]);
+
+    expect((await open(h, "task-redispatch", "01-3")).code).toBe(0);
+    expect(refusal(await open(h, "task-redispatch", "02-1")).rule).toBe("policy/files-busy");
+    expect(refusal(await open(h, "verify-fix", "02")).rule).toBe("policy/files-busy");
+
+    expect((await close(h, first.ticket, "not-run", "--reason", "r")).code).toBe(0);
     expect((await open(h, "task-redispatch", "01-2")).code).toBe(0);
   });
 

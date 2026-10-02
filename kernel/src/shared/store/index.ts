@@ -70,7 +70,7 @@ export {
 } from "./changes.ts";
 export type { ChangeLocation } from "./changes.ts";
 export { ensureIgnored, IGNORED_PATHS, onlyKernelIgnores } from "./ignore.ts";
-export { firstMatch, matchesGlob } from "./glob.ts";
+export { filesOverlap, firstMatch, matchesGlob } from "./glob.ts";
 export { secondStamp } from "./state/common.ts";
 export { entryPath, writeEntry } from "./state/ledger.ts";
 export type { WrittenEntry } from "./state/ledger.ts";

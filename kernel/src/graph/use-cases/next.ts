@@ -10,8 +10,8 @@ import { withChangeIndex } from "../../log/index.ts";
 import { moduleValue, promptContent } from "../../shared/config/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { openAttempts } from "../../shared/store/index.ts";
-import type { IndexDb } from "../../shared/store/index.ts";
+import { filesOverlap, openAttempts, readPlanParts } from "../../shared/store/index.ts";
+import type { IndexDb, Store } from "../../shared/store/index.ts";
 import type { GraphDeps } from "./deps.ts";
 import type { ChangeGraph } from "./graph.ts";
 import { gateViews, readGraph, stageOfChange } from "./graph.ts";
@@ -43,7 +43,9 @@ export function nextStep(
           ...base,
           artifact: nodeView(next),
           instruction: instructionOf(deps, change, read, next),
-          ...(next.kind === "execute-part" ? { wave: waveOf(read, index, change.id) } : {}),
+          ...(next.kind === "execute-part"
+            ? { wave: waveOf(deps.store, change, read, index) }
+            : {}),
         },
       };
     }
@@ -67,7 +69,7 @@ export function nextStep(
   });
 }
 
-function waveOf(read: ChangeGraph, index: IndexDb, changeId: string): WaveItem[] {
+function waveOf(store: Store, change: ActiveChange, read: ChangeGraph, index: IndexDb): WaveItem[] {
   const started = new Set(
     read.entries.flatMap((entry) =>
       entry.type === "transition" &&
@@ -81,7 +83,14 @@ function waveOf(read: ChangeGraph, index: IndexDb, changeId: string): WaveItem[]
     graph: read.graph,
     profile: read.view.profile,
     tree: moduleValue(executionTreeModule, read.resolved.value),
+    files: new Map(
+      readPlanParts(store, change.dir).map((part) => [
+        part.id,
+        part.tasks.flatMap((task) => task.files.map((file) => file.path)),
+      ]),
+    ),
+    overlap: filesOverlap,
     started,
-    tickets: openAttempts(index, changeId),
+    tickets: openAttempts(index, change.id),
   });
 }
