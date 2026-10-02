@@ -2,16 +2,17 @@
 // case starts from that shell lines in `prepare` would express badly, built
 // through the kernel the run uses, as a user's sessions would have left it.
 // `audit-csv` is the T40 execute task on a tiny Change; `two-independent-parts`
-// is a large Change whose plan has two parts without dependencies.
+// is a large Change whose plan has two parts without dependencies; `reviewed`
+// is a tiny Change executed and reviewed, waiting at `gate:review` (T41).
 import { execFileSync } from "node:child_process";
-import { cpSync, readFileSync } from "node:fs";
+import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { TASK_DIR, readTask, seedV3 } from "../execute-ab/seed.ts";
 import type { Kernel } from "../execute-ab/seed.ts";
 
-export const SEEDS = ["audit-csv", "two-independent-parts"] as const;
+export const SEEDS = ["audit-csv", "two-independent-parts", "reviewed"] as const;
 
 export type SeedName = (typeof SEEDS)[number];
 
@@ -20,6 +21,7 @@ export function isSeed(value: unknown): value is SeedName {
 }
 
 const TWO_PARTS = fileURLToPath(new URL("./seeds/two-independent-parts", import.meta.url));
+const REVIEWED = fileURLToPath(new URL("./seeds/reviewed", import.meta.url));
 
 const ENV = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
 
@@ -46,10 +48,27 @@ function field(value: unknown, name: string): string {
 
 const PASS = "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\nPASS\n";
 
-/** One passing verifier round on `node`, as `/bdk:verify-design` or `/bdk:verify-plan` records it. */
-function verified(dir: string, kernel: Kernel, node: "design-verify" | "plan-verify"): void {
+function git(dir: string, ...args: string[]): string {
+  return execFileSync("git", args, { cwd: dir, env: ENV, encoding: "utf8", stdio: "pipe" });
+}
+
+/** The kernel's own .gitignore lines from `change new`, committed as a user would. */
+function commitIgnore(dir: string): void {
+  git(dir, "add", ".gitignore");
+  if (git(dir, "diff", "--cached", "--name-only").trim() !== "") {
+    git(dir, "commit", "-q", "-m", "chore(bdk): ignore machine state");
+  }
+}
+
+/** One passing verifier round on `node`, as `/bdk:verify-design`, `/bdk:verify-plan` or `/bdk:cr` records it. */
+function verified(
+  dir: string,
+  kernel: Kernel,
+  node: "design-verify" | "plan-verify" | "review",
+): void {
+  const role = node === "review" ? "reviewer" : "verifier";
   const ticket = field(run(dir, kernel, ["attempt", "open", "verifier", node]), "ticket");
-  const report = field(run(dir, kernel, ["dispatch", "build", node, "verifier", ticket]), "report");
+  const report = field(run(dir, kernel, ["dispatch", "build", node, role, ticket]), "report");
   run(dir, kernel, ["log", "ingest", "--ticket", ticket], PASS);
   run(dir, kernel, ["log", "add", "report", `${node} passed`, "--ref", node, "--ticket", ticket]);
   run(dir, kernel, ["attempt", "close", ticket, "ok", "--envelope", report]);
@@ -98,20 +117,63 @@ function twoIndependentParts(dir: string, kernel: Kernel): void {
   run(dir, kernel, ["done", "plan"]);
   verified(dir, kernel, "plan-verify");
   run(dir, kernel, ["change", "checkpoint"]);
-  // The kernel's own .gitignore lines from `change new`, committed as a user would.
-  execFileSync("git", ["add", ".gitignore"], { cwd: dir, env: ENV, stdio: "pipe" });
-  const staged = execFileSync("git", ["diff", "--cached", "--name-only"], {
-    cwd: dir,
-    env: ENV,
-    encoding: "utf8",
-  });
-  if (staged.trim() !== "") {
-    execFileSync("git", ["commit", "-q", "-m", "chore(bdk): ignore machine state"], {
-      cwd: dir,
-      env: ENV,
-      stdio: "pipe",
-    });
+  commitIgnore(dir);
+}
+
+/** Task 01-1 delivered as `/bdk:execute` runs it: implementer, steps, ticket closed, commit. */
+function deliveredTask(dir: string, kernel: Kernel): void {
+  const ticket = field(run(dir, kernel, ["attempt", "open", "task-redispatch", "01-1"]), "ticket");
+  const report = field(
+    run(dir, kernel, ["dispatch", "build", "01-1", "implementer", ticket]),
+    "report",
+  );
+  run(dir, kernel, ["rules", "show", "--ticket", ticket]);
+  writeFileSync(join(dir, "src/app-name.ts"), 'export const APP_NAME = "Operator";\n');
+  run(
+    dir,
+    kernel,
+    ["log", "ingest", "--ticket", ticket],
+    "---\nstatus: done\nfiles: [src/app-name.ts]\nentries: []\nevidence: []\n---\nAdded.\n",
+  );
+  run(dir, kernel, ["dispatch", "build", "01-1", "simplifier", ticket]);
+  run(dir, kernel, ["log", "ingest", "--ticket", ticket], PASS);
+  run(dir, kernel, ["dispatch", "build", "01-1", "runner", ticket]);
+  for (const kind of ["tests-scoped", "lint"]) {
+    const result = `.bdk/.machine/${kind}-${ticket}.json`;
+    writeFileSync(join(dir, result), '{"failed":0}\n');
+    run(dir, kernel, [
+      "evidence",
+      "record",
+      kind,
+      result,
+      "--ticket",
+      ticket,
+      "--verdict",
+      "pass",
+      "--cite",
+      "/failed",
+    ]);
   }
+  run(dir, kernel, ["attempt", "close", ticket, "ok", "--envelope", report]);
+  run(dir, kernel, ["commit", "01-1"]);
+}
+
+/** A tiny Change with part 01 committed, its review passed and `gate:review` ready. */
+function reviewed(dir: string, kernel: Kernel): void {
+  const intent = readFileSync(join(REVIEWED, "intent.md"), "utf8").trim();
+  const change = field(
+    run(dir, kernel, ["change", "new", intent, "--profile", "tiny", "--reason", "eval seed"]),
+    "change",
+  );
+  // Before the review: the review's input is the committed code tree, .gitignore included.
+  commitIgnore(dir);
+  cpSync(join(REVIEWED, "plan"), join(dir, ".bdk", "changes", change, "plan"), { recursive: true });
+  run(dir, kernel, ["done", "plan"]);
+  run(dir, kernel, ["part", "start", "01"]);
+  deliveredTask(dir, kernel);
+  run(dir, kernel, ["part", "done", "01"]);
+  verified(dir, kernel, "review");
+  run(dir, kernel, ["change", "checkpoint"]);
 }
 
 /** Runs the seed in `dir`, before the case's `prepare` lines. */
@@ -122,6 +184,9 @@ export function runSeed(name: SeedName, dir: string, kernel: Kernel): void {
       return;
     case "two-independent-parts":
       twoIndependentParts(dir, kernel);
+      return;
+    case "reviewed":
+      reviewed(dir, kernel);
       return;
   }
 }

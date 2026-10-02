@@ -1,0 +1,40 @@
+# Cases of /bdk:close (spec stage-skills, close requirements). Every case
+# starts from a fresh copy of the pinned fixture on its branch feat/eval with
+# Lavish off. The seed `reviewed` leaves a tiny Change with part 01 committed,
+# its review passed and gate:review ready; typing /bdk:close passes the gate.
+#
+# happy: the Change is archived and the reply carries the PR summary.
+- id: happy
+  command: /bdk:close
+  seed: reviewed
+  prepare:
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: change list --all
+      json:
+        items.length: 1
+        items.0.state: archived
+    - reply: \.bdk/changes/archive/
+
+# ticket-open: a review-fix ticket is still open, so the dry run refuses
+# policy/ticket-open and nothing is archived.
+- id: ticket-open
+  command: /bdk:close
+  seed: reviewed
+  prepare:
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" attempt open review-fix "$(basename .bdk/changes/20*)" >/dev/null
+  expect:
+    - run: change list
+      json:
+        items.length: 1
+        items.0.state: active
+    # The open ticket's id, as `instead` of the refusal names it.
+    - reply: A-[0-9a-z]{8}

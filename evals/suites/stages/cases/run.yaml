@@ -1,0 +1,68 @@
+# Cases of /bdk:run (spec stage-skills, run requirements). Every case starts
+# from a fresh copy of the pinned fixture on its branch feat/eval with Lavish
+# off. A run asks nothing: the skills it starts take the recommended option.
+#
+# run-auto: from an intent to the review stage; --auto passes the manual
+# gate:design by policy, and the run stops at the review node naming /bdk:cr.
+- id: run-auto
+  command: /bdk:run --auto "Add Italian to the language options of the account page"
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: change status
+      json:
+        gates.0.gate: gate:design
+        gates.0.done: true
+        gates.0.passedBy: policy
+    - run: explain execute-part:01
+      json:
+        state: done
+    - run: next
+      json:
+        artifact.id: review
+    - reply: /bdk:cr
+
+# run-manual: without --auto the manual gate:design stops the run after the
+# design stage; no plan part exists and the reply names /bdk:plan.
+- id: run-manual
+  command: /bdk:run "Add Italian to the language options of the account page"
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: change status
+      json:
+        gates.0.gate: gate:design
+        gates.0.ready: true
+        gates.0.done: false
+    - run: explain plan
+      json:
+        state: blocked
+    - reply: /bdk:plan
+
+# run-close: a reviewed Change; --auto passes the manual gate:review by
+# policy and /bdk:close archives the Change.
+- id: run-close
+  command: /bdk:run --auto
+  seed: reviewed
+  prepare:
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: change list --all
+      json:
+        items.length: 1
+        items.0.state: archived
+    # gatesByPolicy of the close report.
+    - reply: gate:review
