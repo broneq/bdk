@@ -11,7 +11,7 @@ A Change that passed the review gate stops at `/bdk:close`, and that command res
   - Checks the rules projection with `bdk rules export --claude --check` and regenerates it on drift.
   - Ends with the PR summary from the kernel's output (intent, decisions, assumptions, risks, open findings, merged capabilities, gates passed by policy). No rule proposal: lessons stay `learning` entries for the audit skill (T31).
 - **New stage skill `run`**, `disable-model-invocation: true`, so only the user starts the YOLO mode:
-  - `/bdk:run [--auto] [<intent>]` loops on `bdk next` and invokes the stage skill that `next` names through the host's `Skill` tool: `change`, `design` (with `verify-design`), `plan` (with `verify-plan`), `execute`, `cr` for review, `close`.
+  - `/bdk:run [--auto] [<intent>]` loops on `bdk next` and invokes the stage skill that `next` names through the host's `Skill` tool: `change`, `design` (with `verify-design`), `plan` (with `verify-plan`), `execute`, `close`. At the review stage it stops and names `/bdk:cr` until T42 (HOST-FACTS `skill-tool-disallowed`: `execute`'s `disallowed-tools` still refuses `Write` to the next skill in the same turn).
   - Each stage runs with its own frontmatter and its own body; `run` holds no copy of a stage procedure.
   - While the run lasts, a question a stage skill would ask the user becomes an `assumption` entry with `review: true` (R-9); only a parked Change, a manual gate or a refusal the skill cannot resolve stops the run.
   - Prints one line per stage while it runs and the full closing render when it stops (resolves T41 "To resolve in the spec": `run` re-renders only at the stop).

@@ -31,7 +31,7 @@ It SHALL ask no question: the typed command, or a run that passed `gate:review`,
 
 ### Requirement: run drives a Change through the stages
 
-`/bdk:run [--auto] [<intent>]` SHALL loop on `bdk next` and start, through the host's `Skill` tool, the stage skill of the stage `next` names: `/bdk:change` with the intent when no Change is active, then `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:cr` for the review stage and `/bdk:close`. Each stage skill runs with its own frontmatter and body; `run` holds no copy of a stage procedure. After each stage skill it SHALL run `bdk next` again. It SHALL write no state of its own: every gate a run passes is written by the kernel's hooks (`kernel-cli/hooks`, Pre-tool guards, Stage skill), never by a command `run` calls. `run` SHALL set `disable-model-invocation: true`.
+`/bdk:run [--auto] [<intent>]` SHALL loop on `bdk next` and start, through the host's `Skill` tool, the stage skill of the stage `next` names: `/bdk:change` with the intent when no Change is active, then `/bdk:design`, `/bdk:plan`, `/bdk:execute` and `/bdk:close`. At the review stage it SHALL stop and name `/bdk:cr` for the user to type, without starting it: `disallowed-tools` of `execute` still refuses `Write` to a skill started later in the same turn (HOST-FACTS `skill-tool-disallowed`), and `cr` writes its report (user decision 2026-10-02; T42 makes `run` start `cr`). Each stage skill runs with its own frontmatter and body; `run` holds no copy of a stage procedure. After each stage skill it SHALL run `bdk next` again. It SHALL write no state of its own: every gate a run passes is written by the kernel's hooks (`kernel-cli/hooks`, Pre-tool guards, Stage skill), never by a command `run` calls. `run` SHALL set `disable-model-invocation: true`.
 
 #### Scenario: run from an intent to the review stage
 
@@ -45,7 +45,7 @@ It SHALL ask no question: the typed command, or a run that passed `gate:review`,
 
 ### Requirement: run stops only where the user is needed
 
-A run SHALL stop and end with its closing render when `next` waits on a gate the kernel refused to pass by policy (`guard/gate-manual`), when the Change is parked, when a stage skill reports a refusal it could not resolve, or when the Change is closed. It SHALL NOT stop for a pending `review: true` entry. While it runs it SHALL print one line per stage it enters or leaves, and the full closing render only when it stops (T41 "To resolve in the spec").
+A run SHALL stop and end with its closing render when `next` waits on a gate the kernel refused to pass by policy (`guard/gate-manual`), when the Change is parked, when a stage skill reports a refusal it could not resolve, when `next` returns the `review` node, or when the Change is closed. It SHALL NOT stop for a pending `review: true` entry. While it runs it SHALL print one line per stage it enters or leaves, and the full closing render only when it stops (T41 "To resolve in the spec").
 
 #### Scenario: manual design gate
 

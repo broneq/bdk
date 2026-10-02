@@ -124,7 +124,8 @@ The `run` body tells the model that, until the run stops, every "ask the user" o
   - a parked Change;
   - a refusal a stage skill reported as unresolved;
   - `waiting: nothing` after `close`.
-- A pending `review: true` entry is no stop. Neither is the review stage; until T42, `/bdk:cr` there leaves the `review` node open, the next `bdk next` returns it again, and that repeat is the stop. The render then names `/bdk:cr`.
+- A pending `review: true` entry is no stop.
+- The review stage is a stop until T42 (D10): the render names `/bdk:cr`.
 
 `run` allows `Skill`, `Read` and the kernel wrapper pair, with no `disallowed-tools`. A stage skill brings its own tools while it is active.
 
@@ -157,7 +158,7 @@ If the first or the third check contradicts this design, the work stops and the 
 
 ### D10 Review until T42 (user decision 2026-10-02)
 
-`run` starts `/bdk:cr` for the review stage. It is model-invocable today, so no guard is involved. Until T42 makes `cr` record the `review` node, the run stops at review and names `/bdk:cr`. The T41 acceptance "the same Change driven by `run` ends `closed`" is measured in two halves:
+`run` stops at the review stage and names `/bdk:cr` for the user to type; it does not start `cr`. The probe of D9 showed that `disallowed-tools` of `execute` still refuses `Write` to a skill started later in the same turn, three runs out of three, and today's `cr` writes its report with `Write(.bdk/cr/**)`. A typed `/bdk:cr` starts a new turn with every tool back. T42 makes `cr` write through kernel commands and record the `review` node, and then `run` starts it (user decision 2026-10-02, replacing the earlier decision that `run` starts `cr` now). The T41 acceptance "the same Change driven by `run` ends `closed`" is measured in two halves:
 
 - here: from the intent to the review stage, and from a reviewed Change to `closed`;
 - in T42's acceptance: the whole path.
@@ -193,7 +194,7 @@ The happy path costs the most, because it drives every stage on the fixture. The
 ## Risks / Trade-offs
 
 - [The host protection moves to our hook] A broken prefilter or kernel would let a model start a stage outside a run. → The guard fails closed: a missing kernel blocks with `guard/kernel-unavailable`. The prefilter matches `Skill` as a whole tool name. A unit test and an E2E test cover the deny path. The gates stay in the graph either way.
-- [`disallowed-tools` of `execute` may persist for the rest of the turn (`disallowed-clears`: they return on the next user message)] `/bdk:cr` started after `execute` in the same run may lose `Write`, which today's `cr` uses for `.bdk/cr/**`. → D9 measures it. T42 writes `cr`'s output through kernel commands only, which removes the dependency; the risk is noted in T42's issue.
+- [`disallowed-tools` of `execute` may persist for the rest of the turn (`disallowed-clears`: they return on the next user message)] D9 confirmed it: `/bdk:cr` started after `execute` in the same run loses `Write`, which today's `cr` uses for `.bdk/cr/**`. → `run` stops at review (D10). T42 writes `cr`'s output through kernel commands only and lets `run` start it; the finding goes into T42's issue.
 - [A run decides product questions on its own] → Every such choice is a `decision` with `review: true`, shown at the next gate and in the PR summary. With `manual` gates, the run stops for the user before `plan` and before `close`.
 - [The pre-tool hook writes before the tool runs] → Accepted, D3.
 - [Descriptions of four more skills sit in every session's context] → A few hundred tokens; accepted.
