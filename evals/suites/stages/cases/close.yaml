@@ -18,6 +18,8 @@
         items.length: 1
         items.0.state: archived
     - reply: \.bdk/changes/archive/
+    # The PR summary opens with the seed's intent as a heading.
+    - reply: APP_NAME
 
 # ticket-open: a review-fix ticket is still open, so the dry run refuses
 # policy/ticket-open and nothing is archived.
