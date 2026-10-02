@@ -34,7 +34,7 @@
 - [x] 6.1 Failing harness test (`evals/suites/stages/seeds.test.ts`): seed `reviewed` leaves a `tiny` Change whose `review` node is done, `gate:review` ready and no ticket open, with a clean work tree (no model)
 - [x] 6.2 Seed `reviewed` in `evals/suites/stages/seeds.ts`, built through the kernel: one part, one task committed with `bdk commit`, step evidence recorded, `part done`, `done spec-delta`, a passing `review` report and `done review`; test of 6.1 green
 - [x] 6.3 Case files `close.yaml` (`happy`, `ticket-open`) and `run.yaml` (`run-auto`, `run-manual`, `run-close`) with `features.lavish false`; extend `STAGE_SKILLS`; `pnpm eval check` green
-- [ ] 6.4 After the user approves the projected cost: `pnpm eval stages --skill close --probe` and `pnpm eval stages --skill run --probe`; fix what fails, each fix with its test first; record the outcome in this file and the PR
+- [x] 6.4 After the user approves the projected cost: `pnpm eval stages --skill close --probe` and `pnpm eval stages --skill run --probe`; fix what fails, each fix with its test first; record the outcome in this file and the PR. Outcome 2026-10-02 (Claude Code 2.1.287, budget raised to 195 USD with the user's approval): `close` 2/2 passed (`happy`, `ticket-open`; 0.39 USD); `run` 3/3 passed (`run-auto` 7.45 USD, `run-manual` 2.59 USD, `run-close` 0.17 USD); no fix needed
 
 ## 7. Documentation
 
@@ -43,5 +43,5 @@
 
 ## 8. Acceptance
 
-- [ ] 8.1 End to end on the acceptance signal: the content tests and `pnpm skill-check` green; no stage skill over 200 lines; the probes of 6.4 pass (`close` happy path, `run-auto` to the review stage, `run-manual` stopping at `gate:design`, `run-close` ending `closed` with `source: policy` on `gate:review`); `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract` green
+- [x] 8.1 End to end on the acceptance signal: the content tests and `pnpm skill-check` green; no stage skill over 200 lines; the probes of 6.4 pass (`close` happy path, `run-auto` to the review stage, `run-manual` stopping at `gate:design`, `run-close` ending `closed` with `source: policy` on `gate:review`); `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract` green
 - [x] 8.2 `openspec validate v3-t41-close-run --strict` and `openspec validate --specs --strict` green
