@@ -3,7 +3,7 @@
 ## 1. Host facts (D9)
 
 - [x] 1.0 Set the #61 card on the board to In progress
-- [ ] 1.1 Add the checks `skill-tool-pretool`, `skill-tool-upe` and `skill-tool-disallowed` to `tests/host-probe/` (a probe skill without `disable-model-invocation` and with `disallowed-tools: Edit Write NotebookEdit`, started by the model through `Skill`, then a second probe skill in the same turn that needs `Write`); after the user approves the small cost, run them headless on the current Claude Code version, record the payloads under `tests/fixtures/host-payloads/<version>/` (`pre-skill.json` among them, placeholders replaced) and the rows in `docs/HOST-FACTS.md`. Gate: if `skill-tool-pretool` or `skill-tool-disallowed` contradicts the design, stop and take the decision back to the user before group 2
+- [x] 1.1 Add the checks `skill-tool-pretool`, `skill-tool-upe` and `skill-tool-disallowed` to `tests/host-probe/` (a probe skill without `disable-model-invocation` and with `disallowed-tools: Edit Write NotebookEdit`, started by the model through `Skill`, then a second probe skill in the same turn that needs `Write`); after the user approves the small cost, run them headless on the current Claude Code version, record the payloads under `tests/fixtures/host-payloads/<version>/` (`pre-skill.json` among them, placeholders replaced) and the rows in `docs/HOST-FACTS.md`. Gate: if `skill-tool-pretool` or `skill-tool-disallowed` contradicts the design, stop and take the decision back to the user before group 2
 
 ## 2. Kernel: run marker and stage-skill guard (D2-D5)
 

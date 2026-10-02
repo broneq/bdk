@@ -155,6 +155,14 @@ selected agent-bg && { run_check agent-bg '"tool_name":"(Task|Agent)"|"agent_id"
   "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-worker, prompt go, and run_in_background set to true. Wait until it finishes, then reply with its answer." || status=1; }
 selected skill-tool-plan && { run_check skill-tool-plan '"tool_name":"Skill"|disable-model-invocation|PLAN-PROBE-LOADED' "Skill" \
   "Call the Skill tool with skill bdk-probe:plan and args from-model. Do not type it as a slash command and do not use any other tool. Report exactly what the tool returned." || status=1; }
+selected skill-tool-pretool && { run_check skill-tool-pretool '"tool_name":"Skill"' "Skill" \
+  "Call the Skill tool with skill bdk-probe:open-stage and args from-model. Do not type it as a slash command and do not use any other tool. Report exactly what the tool returned." || status=1; }
+selected skill-tool-upe && { run_check skill-tool-upe '"hook_event_name":"UserPromptExpansion"|OPEN-STAGE-LOADED' "Skill" \
+  "Call the Skill tool with skill bdk-probe:open-stage and args from-model. Do not type it as a slash command and do not use any other tool. Report exactly what the tool returned." || status=1; }
+selected skill-tool-disallowed && { run_check skill-tool-disallowed 'RO-NO-WRITE|WRITER-|"tool_name":"Write"' "Skill Write" \
+  "Call the Skill tool with skill bdk-probe:ro-stage and follow what it says. Do not type it as a slash command." || status=1; }
+selected skill-tool-writer && { run_check skill-tool-writer 'WRITER-|"tool_name":"Write"' "Skill Write" \
+  "Call the Skill tool with skill bdk-probe:writer and follow what it says. Do not type it as a slash command." || status=1; }
 selected allowed && { run_check allowed '.' "-" "/bdk-probe:allowed" || status=1; }
 selected allowed-control && { run_check allowed-control '.' "-" "/bdk-probe:unallowed" || status=1; }
 selected wrapper-old-rule && { run_check wrapper-old-rule '.' "-" "/bdk-probe:wrapper-old-rule" || status=1; }

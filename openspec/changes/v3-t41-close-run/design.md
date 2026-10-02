@@ -147,11 +147,11 @@ The `run` body tells the model that, until the run stops, every "ask the user" o
 
 Before the guard is built, three checks are added to `tests/host-probe/` and recorded in HOST-FACTS on the current Claude Code version:
 
-| Check                   | What it confirms                                                                                                                                                                                                        |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `skill-tool-pretool`    | A model's `Skill` call to a plugin skill without the field fires `PreToolUse` with `tool_name: Skill`, `tool_input.skill` namespaced (`bdk-probe:plan`), and `session_id`. The payload is recorded as `pre-skill.json`. |
-| `skill-tool-upe`        | No `UserPromptExpansion` fires for that call.                                                                                                                                                                           |
-| `skill-tool-disallowed` | The started skill's `disallowed-tools` removes `Edit` and `Write` while it is active. The check also records whether they come back for a second skill started in the same turn.                                        |
+| Check                   | What it confirms                                                                                                                                                                                                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `skill-tool-pretool`    | A model's `Skill` call to a plugin skill without the field fires `PreToolUse` with `tool_name: Skill`, `tool_input.skill` namespaced (`bdk-probe:plan`), and `session_id`. The payload is recorded as `pre-skill.json`; the check ran on 2.1.287 and confirmed it. |
+| `skill-tool-upe`        | No `UserPromptExpansion` fires for that call.                                                                                                                                                                                                                      |
+| `skill-tool-disallowed` | The started skill's `disallowed-tools` removes `Edit` and `Write` while it is active. The check also records whether they come back for a second skill started in the same turn.                                                                                   |
 
 If the first or the third check contradicts this design, the work stops and the decision goes back to the user: the guard and P9 depend on them.
 
