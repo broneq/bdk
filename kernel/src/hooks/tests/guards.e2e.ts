@@ -16,6 +16,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import upeTyped from "../../../../tests/fixtures/host-payloads/2.1.281/upe-typed.json" with { type: "json" };
+import preSkill from "../../../../tests/fixtures/host-payloads/2.1.287/pre-skill.json" with { type: "json" };
 import { opened, writeDesign, done, verdict, write } from "../../graph/tests/e2e-support.ts";
 import { bdk, git, repository } from "../../../tests/support/repo.ts";
 import { REPO_ROOT } from "../../../tests/support/run.ts";
@@ -304,6 +305,77 @@ describe("PreToolUse guard", () => {
       });
       expect(run).toStrictEqual({ code: 0, stdout: "", stderr: "" });
     });
+  });
+});
+
+/** The recorded `Skill` call (HOST-FACTS `skill-tool-pretool`) to `skill` in `session`. */
+function skillCall(skill: string, session = "sess-e2e"): Payload {
+  const call = preSkill.payloads.find(
+    (payload) => (payload as Payload).tool_name === "Skill",
+  ) as Payload;
+  return { ...call, session_id: session, tool_input: { skill, args: "" } };
+}
+
+describe("a run's stage skills", () => {
+  it("/bdk:run --auto, then the run's Skill call to bdk:plan passes gate:design by policy", () => {
+    const { root, dir } = designDone();
+    const typedRun = typed("bdk:run", { command_args: "--auto", prompt: "/bdk:run --auto" });
+    const start = hook("UserPromptExpansion", root, typedRun);
+    expect(start.code, start.stderr).toBe(0);
+    const marker = join(root, ".bdk/.machine/runs/sess-e2e.json");
+    expect(JSON.parse(readFileSync(marker, "utf8"))).toMatchObject({ auto: true });
+    expect(git(root, "status", "--porcelain")).not.toContain(".machine");
+    const written = transitions(dir);
+    expect(written).toHaveLength(1);
+    expect(written[0]?.text).toContain("source: policy");
+    expect(written[0]?.text).toContain("command: /bdk:run --auto");
+    const before = bdk(["next", "--json"], root).json as { gates: unknown[] };
+    expect(before.gates[0]).toMatchObject({ gate: "gate:design", done: true });
+    const plan = hook("PreToolUse", root, skillCall("bdk:plan"));
+    expect(plan.code, plan.stderr).toBe(0);
+    expect(transitions(dir)).toHaveLength(1);
+    const next = bdk(["next", "--json"], root).json as { gates: unknown[] };
+    expect(next.gates[0]).toMatchObject({ gate: "gate:design", done: true, passedBy: "policy" });
+  });
+
+  it("a gate that became ready during the run passes when the run reaches it", () => {
+    const { root, dir } = opened();
+    write(root, ".bdk/settings.yaml", "policy:\n  gates:\n    design: auto\n");
+    expect(hook("UserPromptExpansion", root, typed("bdk:run")).code).toBe(0);
+    expect(transitions(dir)).toStrictEqual([]);
+    writeDesign(dir, "design");
+    writeDesign(dir, "architecture");
+    done(root, "design");
+    done(root, "architecture");
+    verdict(dir, [], "design-verify");
+    done(root, "design-verify");
+    const plan = hook("PreToolUse", root, skillCall("bdk:plan"));
+    expect(plan.code, plan.stderr).toBe(0);
+    expect(transitions(dir)[0]?.text).toContain("source: policy");
+  });
+
+  it("denies the run's Skill call at a manual gate without --auto", () => {
+    const { root, dir } = designDone();
+    expect(hook("UserPromptExpansion", root, typed("bdk:run")).code).toBe(0);
+    const plan = hook("PreToolUse", root, skillCall("bdk:plan"));
+    expect(plan.code).toBe(2);
+    expect(plan.stdout).toContain("guard/gate-manual: gate:design is manual");
+    expect(transitions(dir)).toStrictEqual([]);
+  });
+
+  it("denies a stage skill of another session, and SessionEnd ends the run", () => {
+    const { root } = designDone();
+    expect(hook("UserPromptExpansion", root, typed("bdk:run")).code).toBe(0);
+    const close = hook("PreToolUse", root, skillCall("bdk:close", "sess-other"));
+    expect(close.code).toBe(2);
+    expect(close.stdout).toContain("guard/stage-skill: /bdk:close is started by the user");
+    const end = hook("SessionEnd", root, {
+      hook_event_name: "SessionEnd",
+      session_id: "sess-e2e",
+      reason: "clear",
+    });
+    expect(end.code).toBe(0);
+    expect(readdirSync(join(root, ".bdk/.machine/runs"))).toStrictEqual([]);
   });
 });
 

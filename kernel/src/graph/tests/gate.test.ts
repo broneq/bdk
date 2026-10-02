@@ -65,6 +65,12 @@ describe("the gate rule", () => {
     expect(gate(policy, { policy: "auto" })).toMatchObject({ done: true, passedBy: "policy" });
   });
 
+  it("a policy entry of a run with --auto counts at a manual gate", () => {
+    const status = gate([entry({ id: "L-00000001", source: "policy", auto: true })]);
+    expect(status).toMatchObject({ done: true, passedBy: "policy" });
+    expect(gate([entry({ id: "L-00000001", source: "kernel", auto: true })]).done).toBe(false);
+  });
+
   it("another source or another entry type never counts", () => {
     const status = gate([
       entry({ id: "L-00000001", source: "kernel" }),

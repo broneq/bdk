@@ -24,6 +24,9 @@ import {
   memoryRegistry,
   memoryStore,
   readDocument,
+  readRunMarker,
+  runMarkerPath,
+  writeRunMarker,
 } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { hooksRegistrations } from "../index.ts";
@@ -244,6 +247,7 @@ describe("hooks prompt-expansion", () => {
     expect(transitions(h.store)).toStrictEqual([
       expect.objectContaining({ source: "policy", gate: "gate:design", to: "plan" }),
     ]);
+    expect(transitions(h.store)[0]).not.toHaveProperty("auto");
     const next = (await h.run(["next", "--json"], "", T1)).json as { gates: unknown[] };
     expect(next.gates[0]).toMatchObject({ done: true, passedBy: "policy" });
   });
@@ -312,5 +316,138 @@ describe("hooks prompt-expansion", () => {
       command_input: "--skip-verify",
     });
     expect((await expand(h, payload)).json).toMatchObject({ skipVerify: true });
+  });
+});
+
+describe("hooks prompt-expansion: the run marker", () => {
+  const INTENT = '"Add a notification list"';
+
+  /** A BDK project without a Change: settings only. */
+  function noChange(): Harness {
+    const store = withPluginFiles(memoryStore());
+    store.write(`${ROOT}/.bdk/settings.yaml`, "policy:\n  gates:\n    design: manual\n");
+    return harness(store);
+  }
+
+  it("starts a run from an intent without a Change: the marker only", async () => {
+    const h = noChange();
+    const result = await expand(h, typed("bdk:run", `--auto ${INTENT}`));
+    expect(result.code).toBe(0);
+    expect(promptExpansionOutput.parse(result.json)).toStrictEqual({
+      decision: "pass",
+      command: "run",
+      wrote: "none",
+      run: { auto: true, intent: true },
+    });
+    expect(readRunMarker(h.store, ROOT, "sess-1")).toStrictEqual({
+      schema: 1,
+      session: "sess-1",
+      prompt: `/bdk:run --auto ${INTENT}`,
+      auto: true,
+      at: T1,
+      "change-started": false,
+    });
+    expect(h.store.list(`${ROOT}/.bdk/changes`)).toStrictEqual([]);
+    const text = await h.run(["hooks", "prompt-expansion"], typed("bdk:run", INTENT));
+    expect(text.stdout).toBe("[BDK] run started for the intent; no Change is active yet.\n");
+  });
+
+  it("refuses an intent while a Change is active, writing nothing", async () => {
+    const h = harness();
+    await designDone(h);
+    const result = await expand(h, typed("bdk:run", INTENT));
+    expect(result.code).toBe(2);
+    expect(result.json).toMatchObject({ rule: "policy/change-exists" });
+    expect((result.json as { instead: string[] }).instead).toContain("/bdk:run");
+    expect(h.store.exists(runMarkerPath(ROOT, "sess-1"))).toBe(false);
+    expect(transitions(h.store)).toStrictEqual([]);
+  });
+
+  it.each([
+    ["without an intent", noChange],
+    ["outside a BDK project", () => harness(withPluginFiles(memoryStore()))],
+  ])("refuses a run with no Change %s", async (_, make) => {
+    const h = make();
+    const result = await expand(h, typed("bdk:run", "--auto"));
+    expect(result.code).toBe(2);
+    expect(result.json).toMatchObject({ rule: "policy/no-active-change" });
+    expect(h.store.exists(runMarkerPath(ROOT, "sess-1"))).toBe(false);
+  });
+
+  it("names the run with an intent when there is no Change and no intent", async () => {
+    const result = await expand(noChange(), typed("bdk:run"));
+    expect((result.json as { instead: string[] }).instead).toContain('/bdk:run "<intent>"');
+  });
+
+  it("passes a ready manual gate by policy under --auto, the typed line as command", async () => {
+    const h = harness();
+    await designDone(h);
+    const result = await expand(h, typed("bdk:run", "--auto"));
+    expect(result.json).toMatchObject({
+      wrote: "transition:policy",
+      passed: [{ gate: "gate:design", stage: "plan" }],
+      waiting: [],
+      run: { auto: true, intent: false },
+    });
+    expect(transitions(h.store)).toStrictEqual([
+      expect.objectContaining({
+        source: "policy",
+        gate: "gate:design",
+        to: "plan",
+        command: "/bdk:run --auto",
+        auto: true,
+      }),
+    ]);
+    expect(readRunMarker(h.store, ROOT, "sess-1")).toMatchObject({ auto: true });
+    const next = (await h.run(["next", "--json"], "", T1)).json as { gates: unknown[] };
+    expect(next.gates[0]).toMatchObject({ gate: "gate:design", done: true, passedBy: "policy" });
+  });
+
+  it("reads --auto only as the first token", async () => {
+    const h = noChange();
+    await expand(h, typed("bdk:run", '"use --auto later"'));
+    expect(readRunMarker(h.store, ROOT, "sess-1")).toMatchObject({ auto: false });
+  });
+
+  it("ends the run of its session on a typed stage command, whatever the gate says", async () => {
+    const h = harness();
+    await expand(h, typed("bdk:run"));
+    await expand(h, typed("bdk:run", "", { session_id: "sess-2" }));
+    const result = await expand(h, typed("bdk:plan"));
+    expect(result.json).toMatchObject({ rule: "policy/gate-not-ready" });
+    expect(h.store.exists(runMarkerPath(ROOT, "sess-1"))).toBe(false);
+    expect(readRunMarker(h.store, ROOT, "sess-2")).toMatchObject({ session: "sess-2" });
+  });
+
+  it("replaces the session's earlier marker", async () => {
+    const h = noChange();
+    writeRunMarker(h.store, ROOT, {
+      schema: 1,
+      session: "sess-1",
+      prompt: "/bdk:run old",
+      auto: true,
+      at: T0,
+      "change-started": true,
+    });
+    await expand(h, typed("bdk:run", INTENT));
+    expect(readRunMarker(h.store, ROOT, "sess-1")).toMatchObject({
+      prompt: `/bdk:run ${INTENT}`,
+      auto: false,
+      "change-started": false,
+    });
+  });
+
+  it("refuses a session id that cannot name a file", async () => {
+    const h = noChange();
+    const result = await expand(h, typed("bdk:run", INTENT, { session_id: "../x" }));
+    expect(result.code).toBe(2);
+    expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+    expect(h.store.list(`${ROOT}/.bdk/.machine/runs`)).toStrictEqual([]);
+  });
+
+  it("reads an unparsable marker as absent", () => {
+    const store = memoryStore();
+    store.write(runMarkerPath(ROOT, "sess-1"), "{");
+    expect(readRunMarker(store, ROOT, "sess-1")).toBeUndefined();
   });
 });

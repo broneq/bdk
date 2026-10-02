@@ -1,30 +1,29 @@
 // `bdk hooks prompt-expansion` (`kernel-cli/hooks`, Prompt-expansion outcomes;
-// T24 design D-12): the only writer of `source: user` stage transitions. A
-// typed stage command passes its gate when the gate is ready; `/bdk:run`
-// passes the ready `auto` gates by policy. Anything else writes nothing.
-import { join } from "node:path";
-
-import { readGraph, stageGates, stageOfCommand } from "../../graph/index.ts";
-import type { ChangeGraph, GateView, StageGate } from "../../graph/index.ts";
-import { appendEntry, withChangeIndex } from "../../log/index.ts";
+// T24 design D-12, T41 design D2 to D5): the only writer of `source: user`
+// stage transitions and the start of a run. A typed stage command ends its
+// session's run and passes its gate when the gate is ready; `/bdk:run` writes
+// the session's run marker and passes the ready gates its policy allows.
+import { readGraph, stageOfCommand } from "../../graph/index.ts";
+import { withChangeIndex } from "../../log/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { readDocument } from "../../shared/store/index.ts";
-import type { IndexDb } from "../../shared/store/index.ts";
+import { removeRunMarker, SESSION_ID, writeRunMarker } from "../../shared/store/index.ts";
 import { expansionPayload } from "../domain/payload.ts";
 import type { ExpansionPayload } from "../domain/payload.ts";
-import type { GateSummary, PolicyPass, PromptExpansionReport } from "../domain/report.ts";
+import type { PromptExpansionReport } from "../domain/report.ts";
+import { bdkProject } from "./agents.ts";
+import type { HookPlace } from "./agents.ts";
 import type { HooksDeps } from "./input.ts";
+import { enterStage, NAMESPACE, runGates, SKIP_VERIFY, writer } from "./stage-entry.ts";
+import type { StageCall } from "./stage-entry.ts";
 
-export interface PromptExpansionInput {
-  readonly globalDir: string;
-  /** Resolves the Change bound to the branch; called only for a stage command. */
+export interface PromptExpansionInput extends HookPlace {
+  /** Resolves the Change bound to the branch; called only for a stage command or `run`. */
   readonly resolveChange: () => ActiveChange | Refusal;
 }
 
-const NAMESPACE = "bdk:";
-const SKIP_VERIFY = "--skip-verify";
+const AUTO = "--auto";
 
 export async function promptExpansion(
   deps: HooksDeps,
@@ -41,188 +40,91 @@ export async function promptExpansion(
 
   const missing = missingMarker(payload);
   if (missing !== undefined) return unmarked(missing);
-  const session = payload.session ?? "";
+  const call: StageCall = {
+    command,
+    session: payload.session ?? "",
+    prompt: payload.prompt ?? `/${payload.commandName} ${payload.args ?? ""}`.trim(),
+  };
+  if (stage === undefined) return startRun(deps, input, call, payload.args ?? "");
+
+  // A typed stage command hands the Change back to the user (T41 design D2).
+  const project = bdkProject(deps, input);
+  if (project !== undefined) removeRunMarker(deps.store, project, call.session);
   const change = input.resolveChange();
   if (isRefusal(change)) return change;
-
   return withChangeIndex(deps, change, async (index) => {
     const read = await readGraph(deps, change, index, input.globalDir);
     if (isRefusal(read)) return read;
-    const typed = {
-      command,
-      session,
-      prompt: payload.prompt ?? `/${payload.commandName} ${payload.args ?? ""}`.trim(),
-    };
-    const write = writer(deps, change, index, typed);
-    if (stage === undefined) return runGates(read, typed, write);
-    const gate = stageGates(read).find((candidate) => candidate.opens === stage);
-    if (gate?.status === undefined) {
-      const skipVerify = command === "execute" && tokens(payload.args).includes(SKIP_VERIFY);
-      return plainTransition(deps, change, read, typed, stage, skipVerify, write);
-    }
-    return typedGate(read, typed, stage, gate, write);
+    const skipVerify = command === "execute" && tokens(payload.args).includes(SKIP_VERIFY);
+    const write = writer(deps, change, index, call);
+    return enterStage(deps, change, read, call, stage, skipVerify, { by: "user" }, write);
   });
 }
 
-interface Typed {
-  readonly command: string;
-  readonly session: string;
-  /** What the user typed, stored as the transition's `command`. */
-  readonly prompt: string;
-}
-
-interface Draft {
-  readonly summary: string;
-  readonly refs: readonly string[];
-  readonly to: string;
-  readonly gate?: string;
-  readonly skipVerify?: boolean;
-  readonly source?: "user" | "policy";
-}
-
-type Write = (draft: Draft) => Promise<string | Refusal>;
-
-function writer(deps: HooksDeps, change: ActiveChange, index: IndexDb, typed: Typed): Write {
-  return async (draft) => {
-    const written = await appendEntry(
-      deps,
-      change,
-      index,
-      {
-        type: "transition",
-        status: "accepted",
-        body: "",
-        session: typed.session,
-        command: typed.prompt,
-        ...draft,
-      },
-      { dedupe: false },
-    );
-    return isRefusal(written) ? written : written.entry.id;
-  };
-}
-
-async function typedGate(
-  read: ChangeGraph,
-  typed: Typed,
-  stage: string,
-  gate: StageGate,
-  write: Write,
-): Promise<PromptExpansionReport | Refusal> {
-  const { status, view, node } = gate;
-  const base = { decision: "pass", command: typed.command, stage, gate: node.id } as const;
-  if (status === undefined || view === undefined) throw new Error(`${node.id} has no status`);
-  if (status.done) {
-    const passedAt = status.passedIn?.at;
-    return {
-      ...base,
-      wrote: "none",
-      skipVerify: false,
-      status: summary(view),
-      ...(passedAt === undefined ? {} : { passedAt }),
-    };
-  }
-  if (!status.ready) {
-    const missing = node.requires
-      .map((id) => read.graph.find(id))
-      .filter((required) => required !== undefined && required.state !== "done")
-      .map((required) => `${required?.id ?? ""} is ${required?.state ?? ""}`);
-    return refuse(
-      "policy/gate-not-ready",
-      `${node.id} is not ready for /${NAMESPACE}${typed.command}: ${missing.length > 0 ? missing.join(", ") : status.why}`,
-      ["bdk next", `bdk explain ${node.id}`],
-    );
-  }
-  const entry = await write({
-    summary: `/${NAMESPACE}${typed.command} typed: ${node.id} passed`,
-    refs: [node.id, ...node.requires],
-    to: stage,
-    gate: node.id,
-    source: "user",
-  });
-  if (typeof entry !== "string") return entry;
-  return {
-    ...base,
-    entry,
-    wrote: "transition:user",
-    skipVerify: false,
-    status: { ...summary(view), ready: true, done: true, passedBy: "user" },
-  };
-}
-
-async function plainTransition(
+/** `/bdk:run [--auto] [<intent>]` (T41 design D4, D5). */
+async function startRun(
   deps: HooksDeps,
-  change: ActiveChange,
-  read: ChangeGraph,
-  typed: Typed,
-  stage: string,
-  skipVerify: boolean,
-  write: Write,
+  input: PromptExpansionInput,
+  call: StageCall,
+  args: string,
 ): Promise<PromptExpansionReport | Refusal> {
-  const base = { decision: "pass", command: typed.command, stage, skipVerify } as const;
-  const latest = read.entries
-    .filter((entry) => entry.type === "transition" && entry.to === stage)
-    .at(-1);
-  if (latest !== undefined && recordedSkipVerify(deps, change, latest.path) === skipVerify) {
-    return { ...base, wrote: "none" };
+  if (!SESSION_ID.test(call.session)) {
+    return refuse(
+      "input/invalid-argument",
+      `session_id ${call.session} cannot name a run marker; no run was started`,
+      ["type /bdk:run again in a Claude Code session", "bdk doctor"],
+    );
   }
-  const entry = await write({
-    summary: `/${NAMESPACE}${typed.command} typed${skipVerify ? ` ${SKIP_VERIFY}` : ""}`,
-    refs: [stage],
-    to: stage,
-    ...(skipVerify ? { skipVerify } : {}),
-  });
-  if (typeof entry !== "string") return entry;
-  return { ...base, entry, wrote: "transition:stage" };
-}
-
-async function runGates(
-  read: ChangeGraph,
-  typed: Typed,
-  write: Write,
-): Promise<PromptExpansionReport | Refusal> {
-  const passed: PolicyPass[] = [];
-  const waiting: GateSummary[] = [];
-  for (const { node, opens, policy, status, view } of stageGates(read)) {
-    if (status === undefined || view === undefined || status.done || !status.ready) continue;
-    if (policy !== "auto") {
-      waiting.push(summary(view));
-      continue;
-    }
-    const entry = await write({
-      summary: `/${NAMESPACE}${typed.command}: ${node.id} passed by policy`,
-      refs: [node.id, ...node.requires],
-      to: opens,
-      gate: node.id,
-      source: "policy",
+  const words = tokens(args);
+  const auto = words[0] === AUTO;
+  const intent = (auto ? words.slice(1) : words).length > 0;
+  const mark = (projectRoot: string): void => {
+    writeRunMarker(deps.store, projectRoot, {
+      schema: 1,
+      session: call.session,
+      prompt: call.prompt,
+      auto,
+      at: deps.clock.now(),
+      "change-started": false,
     });
-    if (typeof entry !== "string") return entry;
-    passed.push({ gate: node.id, stage: opens, entry });
+  };
+
+  const change = input.resolveChange();
+  if (isRefusal(change)) {
+    if (change.rule !== "policy/no-active-change") return change;
+    if (!intent) {
+      return refuse(
+        "policy/no-active-change",
+        `${change.why}, and /${NAMESPACE}run names no intent to start one`,
+        [`/${NAMESPACE}run "<intent>"`, "bdk change list"],
+      );
+    }
+    const project = bdkProject(deps, input);
+    if (project === undefined) return change;
+    mark(project);
+    return { decision: "pass", command: call.command, wrote: "none", run: { auto, intent } };
   }
-  return {
-    decision: "pass",
-    command: typed.command,
-    wrote: passed.length > 0 ? "transition:policy" : "none",
-    passed,
-    waiting,
-  };
-}
-
-/** The `skip-verify` of a committed transition; false when the field is absent. */
-function recordedSkipVerify(deps: HooksDeps, change: ActiveChange, path: string): boolean {
-  const document = readDocument(deps.store, join(change.projectRoot, path));
-  return document !== undefined && "data" in document && document.data["skip-verify"] === true;
-}
-
-function summary(view: GateView): GateSummary {
-  return {
-    gate: view.gate,
-    ready: view.ready,
-    done: view.done,
-    ...(view.passedBy === undefined ? {} : { passedBy: view.passedBy }),
-    ...(view.command === undefined ? {} : { command: view.command }),
-    pending: view.pending.map(({ id, type, summary: text }) => ({ id, type, summary: text })),
-  };
+  if (intent) {
+    return refuse(
+      "policy/change-exists",
+      `${change.id} is active on this branch, so /${NAMESPACE}run cannot start another Change from an intent`,
+      [`/${NAMESPACE}run`, "bdk change park"],
+    );
+  }
+  return withChangeIndex(deps, change, async (index) => {
+    const read = await readGraph(deps, change, index, input.globalDir);
+    if (isRefusal(read)) return read;
+    mark(change.projectRoot);
+    const gates = await runGates(read, call, auto, writer(deps, change, index, call));
+    if (isRefusal(gates)) return gates;
+    return {
+      decision: "pass",
+      command: call.command,
+      wrote: gates.passed.length > 0 ? "transition:policy" : "none",
+      ...gates,
+      run: { auto, intent },
+    };
+  });
 }
 
 function tokens(args: string | undefined): string[] {

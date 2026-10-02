@@ -2,7 +2,6 @@
 name: change
 description: Opens a BDK Change from an intent, or shows, lists, resumes, parks or takes over one. Use when starting a feature or a fix with BDK, or to see where the current Change stands and what to type next.
 argument-hint: '"<intent>" | list | resume <id> [--option <n>] | park [--reason <text>] | takeover'
-disable-model-invocation: true
 allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(git branch --show-current) Bash(git switch -c *) Read Grep Glob AskUserQuestion
 ---
 

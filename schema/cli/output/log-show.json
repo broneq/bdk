@@ -68,6 +68,7 @@
         "session": { "type": "string" },
         "command": { "type": "string" },
         "skipVerify": { "type": "boolean" },
+        "auto": { "type": "boolean" },
         "body": { "type": "string", "description": "Markdown body." },
         "path": {
           "type": "string",

@@ -110,3 +110,11 @@ export type { EvidenceManifest } from "./state/evidence.ts";
 export type { AttemptFile, PlanPartFile, PlanPartFrontmatter } from "./work.ts";
 export type { AttemptRecord } from "./state/attempt.ts";
 export { pruneChange } from "./prune.ts";
+export {
+  readRunMarker,
+  removeRunMarker,
+  runMarkerPath,
+  SESSION_ID,
+  writeRunMarker,
+} from "./runs.ts";
+export type { RunMarker } from "./runs.ts";

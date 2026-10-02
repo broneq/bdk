@@ -47,6 +47,8 @@ const STAGE_SKILLS = [
   "plan",
   "verify-plan",
   "execute",
+  "close",
+  "run",
 ] as const;
 
 class StageSkillError extends Error {

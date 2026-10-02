@@ -58,6 +58,8 @@ export const RULES = [
   "guard/agent-spawn",
   "guard/escalation-model",
   "guard/lead-scope",
+  "guard/stage-skill",
+  "guard/gate-manual",
   "guard/kernel-unavailable",
   "state/corrupted-index",
   "state/ledger-invalid",

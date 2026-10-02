@@ -9,6 +9,7 @@ export interface PreToolPayload {
   readonly agentId?: string;
   readonly agentType?: string;
   readonly cwd?: string;
+  readonly session?: string;
 }
 
 export interface ExpansionPayload {
@@ -42,6 +43,7 @@ export interface AgentEventPayload {
 
 export interface SessionEndPayload {
   readonly reason?: string;
+  readonly session?: string;
 }
 
 /** The parsed JSON object, or the reason it is not one. */
@@ -74,13 +76,13 @@ export function preToolPayload(raw: string): PreToolPayload | { readonly missing
   }
   const agentId = text(data.agent_id);
   const agentType = text(data.agent_type);
-  const cwd = text(data.cwd);
   return {
     tool,
     input: input as Record<string, unknown>,
     ...(agentId === undefined ? {} : { agentId }),
     ...(agentType === undefined ? {} : { agentType }),
-    ...(cwd === undefined ? {} : { cwd }),
+    ...present("cwd", text(data.cwd)),
+    ...present("session", text(data.session_id)),
   };
 }
 
@@ -112,8 +114,10 @@ function present<K extends string>(key: K, value: string | undefined): Partial<R
 export function sessionEndPayload(raw: string): SessionEndPayload {
   const data = object(raw);
   if (typeof data === "string") return {};
-  const reason = text(data.reason);
-  return reason === undefined ? {} : { reason };
+  return {
+    ...present("reason", text(data.reason)),
+    ...present("session", text(data.session_id)),
+  };
 }
 
 function record(value: unknown): Readonly<Record<string, unknown>> {

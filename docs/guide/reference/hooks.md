@@ -34,7 +34,7 @@ One guard hook fires before every tool call (no matcher), because the heartbeat 
 
 Command: `f="${CLAUDE_PLUGIN_ROOT}/hooks/guard/pre-tool.sh"; [ -r "$f" ] || { echo "guard/kernel-unavailable: $f is missing, so BDK cannot check this tool call; reinstall the BDK plugin" >&2; exit 2; }; . "$f"`
 
-The script is sourced into the host's shell. For a subagent's call it first writes `open` to `.bdk/.machine/agents/<agent_id>`, the heartbeat, in the shell. A shell prefilter then drops every payload no guard can deny (no `.bdk/specs`, no `bdk.mjs ... hooks`, no BDK adapter, no subagent `git` or `bdk.mjs`, no `SendMessage`), so most tool calls never start Node. The rest go to `bdk hooks pre-tool`, which reads the Bash command with a shell lexer and applies these guards in order; the first match denies:
+The script is sourced into the host's shell. For a subagent's call it first writes `open` to `.bdk/.machine/agents/<agent_id>`, the heartbeat, in the shell. A shell prefilter then drops every payload no guard can deny (no `.bdk/specs`, no `bdk.mjs ... hooks`, no BDK adapter, no subagent `git` or `bdk.mjs`, no `SendMessage`, no `Skill` call to a stage skill), so most tool calls never start Node. The rest go to `bdk hooks pre-tool`, which reads the Bash command with a shell lexer and applies these guards in order; the first match denies:
 
 | Rule                            | Denies                                                                                                                                                                                                                   | Threads   |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
@@ -49,6 +49,10 @@ The script is sourced into the host's shell. For a subagent's call it first writ
 | `guard/agent-spawn`             | an agent starting a type it may not start: a lead starts workers, runners, reviewers and scouts, a worker starts scouts up to `agents.scout.max-per-ticket`                                                              | subagents |
 | `guard/escalation-model`        | an `Agent` call that starts the package of an escalation ticket without the `model` the package names                                                                                                                    | all       |
 | `guard/agent-message`           | a `SendMessage` that names no ledger entry of the Change, is longer than `agents.message.max-chars`, or goes to an agent that is not running                                                                             | subagents |
+| `guard/stage-skill`             | a `Skill` call to `bdk:change`, `bdk:plan`, `bdk:execute` or `bdk:close` from a subagent, from a session without a running `/bdk:run`, or a second `bdk:change` in one run                                               | all       |
+| `guard/gate-manual`             | a run's `Skill` call to the stage behind a ready `manual` gate when the run has no `--auto`; the reason names the command you type                                                                                       | main      |
+
+An admitted `Skill` call to a stage skill enters the stage as typing its command would (see [UserPromptExpansion](#userpromptexpansion)), but a gate it passes is written with `source: policy` and your typed `/bdk:run` line as the command: by its `auto` policy, or with `auto: true` when only the run's `--auto` lets it pass. A gate that is not ready denies the call with `policy/gate-not-ready`.
 
 A denied call exits 2 with the host's `permissionDecision: deny` JSON on stdout and `<rule>: <reason>` on stderr; the reason tells the model what to do instead. Main-thread git and main-thread orchestrator commands always pass. The hook decides outside a git repository too, so a subagent's `git init` in an empty directory passes.
 
@@ -72,10 +76,12 @@ Typing the command is how you pass a gate: only a payload with the host's user-t
 | a stage command whose gate is not ready              | blocks with `policy/gate-not-ready: <gate> is not ready for /bdk:<command>: <requirement> is <state>, ...` and writes nothing                                  |
 | a stage command whose gate is already passed         | writes nothing and prints when it was passed                                                                                                                   |
 | a stage command without a gate (`/bdk:execute`)      | writes a plain `transition`; `/bdk:execute --skip-verify` records `skip-verify: true`                                                                          |
-| `/bdk:run`                                           | passes each ready gate set to `auto` in `policy.gates` with a `source: policy` entry, and names the `manual` gates you still type                              |
+| `/bdk:run "<intent>"` without an active Change       | starts a run for the session (`.bdk/.machine/runs/<session>.json`) and prints `[BDK] run started for the intent; no Change is active yet.`                     |
+| `/bdk:run` with an active Change                     | starts a run and passes each ready gate set to `auto` in `policy.gates` with a `source: policy` entry; `--auto` as the first word passes every ready gate      |
+| `/bdk:run "<intent>"` with an active Change          | blocks with `policy/change-exists`: finish or park the Change first                                                                                            |
 | a stage command on a branch without an active Change | blocks with `policy/no-active-change`                                                                                                                          |
 
-Every other command, BDK or not, passes untouched. The host fires this hook only for an installed command, and the `plan`, `execute`, `close` and `run` skills are still being written (T41), so until they ship no gate passes this way.
+Every other command, BDK or not, passes untouched. Typing `/bdk:plan`, `/bdk:execute` or `/bdk:close` ends a run of the same session. To keep every gate yours, leave `policy.gates` at `manual` and run without `--auto`: the run then stops at each gate and names the command you type.
 
 ## SessionEnd
 
@@ -85,7 +91,7 @@ One hook fires when a session ends: `/clear`, `/exit`, a terminated process and 
 
 Command: `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks session-end 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-Commits a checkpoint of the active Change directory, as `bdk change checkpoint` does, when `policy.checkpoint.enabled` is on, and prints `[BDK] checkpoint <sha7> of <change>`. Without an active Change, with nothing to commit, during a rebase, merge or cherry-pick, or with a ticket still open, it skips silently. It never blocks.
+Ends the session's `/bdk:run`, if one is running, then commits a checkpoint of the active Change directory, as `bdk change checkpoint` does, when `policy.checkpoint.enabled` is on, and prints `[BDK] checkpoint <sha7> of <change>`. Without an active Change, with nothing to commit, during a rebase, merge or cherry-pick, or with a ticket still open, it skips silently. It never blocks.
 
 ## Agent hooks
 

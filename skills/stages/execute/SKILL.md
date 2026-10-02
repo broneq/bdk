@@ -1,7 +1,6 @@
 ---
 name: execute
 description: Executes the verified plan of the active BDK Change through role agents - every ready part, flat or as a tree of leads as the kernel marks it, until the Change leaves the execute stage. Use when a Change waits on /bdk:execute.
-disable-model-invocation: true
 allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Agent SendMessage Skill Read AskUserQuestion
 disallowed-tools: Edit Write NotebookEdit
 ---

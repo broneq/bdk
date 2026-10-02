@@ -26,6 +26,15 @@ function temp(): string {
 }
 
 /** A stand-in for the prepared fixture base on `feat/eval`. */
+function bdkJson(dir: string, kernel: { bundle: string; configHome: string }, args: string[]) {
+  const stdout = execFileSync("node", [kernel.bundle, ...args, "--json"], {
+    cwd: dir,
+    env: { ...GIT_ENV, XDG_CONFIG_HOME: kernel.configHome },
+    encoding: "utf8",
+  });
+  return JSON.parse(stdout) as unknown;
+}
+
 function base(): string {
   const dir = temp();
   git(dir, "init", "-q", "-b", "feat/eval");
@@ -57,12 +66,30 @@ describe("runSeed", { timeout: 60_000 }, () => {
     runSeed("two-independent-parts", dir, kernel);
     expect(bdkNext(dir, kernel)).toMatchObject({
       stage: "plan",
+      command: "/bdk:execute",
       artifact: { id: "execute-part:01", state: "ready" },
       wave: [
         { part: "01", started: false, tickets: [], mode: "tree" },
         { part: "02", started: false, tickets: [], mode: "tree" },
       ],
     });
+    expect(git(dir, "status", "--porcelain")).toBe("");
+  });
+
+  it("reviewed leaves a tiny Change with its review done and gate:review ready", () => {
+    const dir = base();
+    const kernel = { bundle: BUNDLE, configHome: temp() };
+    runSeed("reviewed", dir, kernel);
+    expect(bdkNext(dir, kernel)).toMatchObject({
+      waiting: "gate",
+      gates: [{ gate: "gate:review", ready: true, done: false, command: "/bdk:close" }],
+    });
+    expect(bdkJson(dir, kernel, ["explain", "review"])).toMatchObject({ state: "done" });
+    const { items } = bdkJson(dir, kernel, ["attempt", "list"]) as {
+      items: { outcome?: string }[];
+    };
+    expect(items.map((item) => item.outcome)).toStrictEqual(["ok", "ok"]);
+    expect(git(dir, "log", "--format=%B")).toContain("BDK-Task: 01-1");
     expect(git(dir, "status", "--porcelain")).toBe("");
   });
 });

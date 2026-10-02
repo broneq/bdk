@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { BRANCH, ROOT } from "../../log/tests/support.ts";
 import { harness as partHarness, openTicket } from "../../part/tests/support.ts";
 import { loadIndex } from "../../shared/registry/index.ts";
-import { removeMarker } from "../../shared/store/index.ts";
+import { readRunMarker, removeMarker, writeRunMarker } from "../../shared/store/index.ts";
 import { hooksRegistrations } from "../index.ts";
 import { sessionEndOutput } from "../schema/session-end.ts";
 
@@ -90,5 +90,28 @@ describe("hooks session-end", () => {
     const result = await h.run(["hooks", "session-end", "--json"], undefined, "not json");
     expect(result.json).toMatchObject({ checkpoint: { done: true } });
     expect(result.json).not.toHaveProperty("reason");
+  });
+
+  it.each([
+    ["with an active Change", false],
+    ["without an active Change", true],
+  ])("removes the session's run marker %s and keeps another session's", async (_, unbind) => {
+    const h = harness();
+    if (unbind) removeMarker(h.store, ROOT, BRANCH);
+    for (const session of ["sess-1", "sess-2"]) {
+      writeRunMarker(h.store, ROOT, {
+        schema: 1,
+        session,
+        prompt: "/bdk:run",
+        auto: false,
+        at: "2026-09-25T10:00:00.000Z",
+        "change-started": false,
+      });
+    }
+    const payload = JSON.stringify({ ...sessionEndClear.payloads[0], session_id: "sess-1" });
+    const { code } = await h.run(["hooks", "session-end", "--json"], undefined, payload);
+    expect(code).toBe(0);
+    expect(readRunMarker(h.store, ROOT, "sess-1")).toBeUndefined();
+    expect(readRunMarker(h.store, ROOT, "sess-2")).toMatchObject({ session: "sess-2" });
   });
 });

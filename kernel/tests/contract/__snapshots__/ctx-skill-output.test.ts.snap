@@ -107,6 +107,13 @@ exports[`ctx skill output > change is unchanged 1`] = `
 }"
 `;
 
+exports[`ctx skill output > close is unchanged 1`] = `
+"{
+  "content": "## BDK context: close\\n",
+  "parts": []
+}"
+`;
+
 exports[`ctx skill output > cr is unchanged 1`] = `
 "{
   "content": "## BDK context: cr\\n\\n### Review engine\\n\\n# skills/cr/references/review-engine.md\\n\\n- **Default.** Plugin text.\\n\\n### Report format\\n\\n# skills/cr/references/report-format.md\\n\\n- **Default.** Plugin text.\\n",
@@ -236,6 +243,13 @@ exports[`ctx skill output > pr-review is unchanged 1`] = `
       "source": "skills/pr-review/references/reviewer-prompt.md"
     }
   ]
+}"
+`;
+
+exports[`ctx skill output > run is unchanged 1`] = `
+"{
+  "content": "## BDK context: run\\n",
+  "parts": []
 }"
 `;
 

@@ -1561,7 +1561,7 @@
     {
       "id": "hooks-session-end",
       "argv": ["hooks", "session-end"],
-      "summary": "SessionEnd content hook: Change checkpoint commit when enabled and safe.",
+      "summary": "SessionEnd content hook: Change checkpoint commit when enabled and safe, and the end of the session's run.",
       "availability": "hook",
       "mode": "inject",
       "slice": "hooks",
@@ -1573,12 +1573,12 @@
       "output": "output/hooks-session-end.json",
       "exits": [0],
       "refusals": [],
-      "writes": ["git:commit"]
+      "writes": ["git:commit", ".bdk/.machine/runs/"]
     },
     {
       "id": "hooks-prompt-expansion",
       "argv": ["hooks", "prompt-expansion"],
-      "summary": "UserPromptExpansion guard: the only writer of `source: user` stage transitions.",
+      "summary": "UserPromptExpansion guard: the only writer of `source: user` stage transitions and the start of a run.",
       "availability": "hook",
       "mode": "guard",
       "slice": "hooks",
@@ -1589,13 +1589,13 @@
       "stdin": "UserPromptExpansion payload (section 8).",
       "output": "output/hooks-prompt-expansion.json",
       "exits": [0, 2],
-      "refusals": ["policy/gate-not-ready"],
-      "writes": [".bdk/changes/<id>/log/"]
+      "refusals": ["policy/gate-not-ready", "policy/change-exists"],
+      "writes": [".bdk/changes/<id>/log/", ".bdk/.machine/runs/"]
     },
     {
       "id": "hooks-pre-tool",
       "argv": ["hooks", "pre-tool"],
-      "summary": "PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.mjs hooks` from Bash, agent spawns and agent messages.",
+      "summary": "PreToolUse guard: spec directory, subagent git, subagent kernel commands, `bdk.mjs hooks` from Bash, agent spawns, agent messages, and stage skills a model starts.",
       "availability": "hook",
       "mode": "guard",
       "slice": "hooks",
@@ -1618,9 +1618,12 @@
         "guard/reader-write",
         "guard/agent-spawn",
         "guard/escalation-model",
-        "guard/agent-message"
+        "guard/agent-message",
+        "guard/stage-skill",
+        "guard/gate-manual",
+        "policy/gate-not-ready"
       ],
-      "writes": [".bdk/.machine/agents.sqlite"]
+      "writes": [".bdk/.machine/agents.sqlite", ".bdk/.machine/runs/", ".bdk/changes/<id>/log/"]
     },
     {
       "id": "hooks-post-tool",

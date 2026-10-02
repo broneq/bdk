@@ -128,6 +128,7 @@ describe("bdk next", () => {
     const report = nextOutput.parse(result.json);
     expect(report.artifact).toMatchObject({ id: "design", kind: "design", state: "ready" });
     expect(report.stage).toBe("intent");
+    expect(report.command).toBe("/bdk:design");
     expect(report.instruction).toContain("Run `bdk done design`.");
   });
 
@@ -209,6 +210,7 @@ describe("bdk next", () => {
     });
     const report = nextOutput.parse((await h.run(["next", "--json"], T1)).json);
     expect(report.artifact).toBeUndefined();
+    expect(report.command).toBeUndefined();
     expect(report.waiting).toBe("gate");
     expect(report.gates[0]).toMatchObject({
       gate: "gate:design",
@@ -237,6 +239,7 @@ describe("bdk next", () => {
     const report = nextOutput.parse((await h.run(["next", "--json"], T1)).json);
     expect(report.artifact?.id).toBe("plan");
     expect(report.stage).toBe("plan");
+    expect(report.command).toBe("/bdk:plan");
     expect(report.gates[0]).toMatchObject({ done: true, passedBy: "user" });
   });
 

@@ -24,6 +24,8 @@ export interface EntryRow extends EntryFacts {
   readonly gate?: string;
   /** `input-hash` of a transition written by `done`. */
   readonly inputHash?: string;
+  /** A transition that passed a gate under a run's `--auto` (T41). */
+  readonly auto?: boolean;
   /** Relative to the project root. */
   readonly path: string;
 }
@@ -298,6 +300,7 @@ function toEntry(row: Row, refs: readonly string[]): EntryRow {
     park: row.park === 1 ? true : undefined,
     options: listOf(row.options),
     path: String(row.path),
+    auto: row.auto === 1 ? true : undefined,
     refs: [...refs],
   });
 }

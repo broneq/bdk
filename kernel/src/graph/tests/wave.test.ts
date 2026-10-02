@@ -148,6 +148,9 @@ describe("the execute wave of bdk next", () => {
     const h = await planned("large");
     const report = await next(h);
     expect(report.artifact?.id).toBe("execute-part:01");
+    // The Change is still in its plan stage; the artifact belongs to execute.
+    expect(report.stage).toBe("plan");
+    expect(report.command).toBe("/bdk:execute");
     expect(report.wave).toStrictEqual([
       { part: "01", started: false, tickets: [], mode: "tree" },
       { part: "02", started: false, tickets: [], mode: "tree" },

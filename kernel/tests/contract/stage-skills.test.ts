@@ -57,10 +57,10 @@ describe("asking the user in two tiers", () => {
 });
 
 describe("stage skill invocation", () => {
-  it("design and verify-design stay model-invocable; the user-only stages are gated", () => {
+  it("only setup and run are user-only; run starts the others, guarded by hooks pre-tool", () => {
     for (const name of readdirSync(STAGES)) {
       const { meta } = readSkill(name);
-      const userOnly = ["setup", "change", "plan", "execute", "close", "run"].includes(name);
+      const userOnly = ["setup", "run"].includes(name);
       expect(meta["disable-model-invocation"] === true, name).toBe(userOnly);
     }
     expect(readdirSync(STAGES)).toEqual(
@@ -188,9 +188,9 @@ describe("execute", () => {
     ]);
   });
 
-  it("is user-only and never edits a file itself", () => {
+  it("is started by the user or a run and never edits a file itself", () => {
     const { meta } = readSkill("execute");
-    expect(meta["disable-model-invocation"]).toBe(true);
+    expect(meta["disable-model-invocation"]).toBeUndefined();
     expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
   });
 
@@ -214,5 +214,73 @@ describe("execute", () => {
     ]) {
       expect(body, needle).toContain(needle);
     }
+  });
+});
+
+describe("close", () => {
+  it("has a manifest entry with no parts and never edits a file itself", () => {
+    expect(SKILL_CONTEXT.close).toStrictEqual([]);
+    const { meta } = readSkill("close");
+    expect(meta["disable-model-invocation"]).toBeUndefined();
+    expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
+  });
+
+  it("closes through the kernel, regenerates drifted rules and leaves the PR to the user", () => {
+    const { body } = readSkill("close");
+    for (const needle of [
+      "bdk next --json",
+      "bdk change close --dry-run --json",
+      "bdk rules export --claude --check --json",
+      "bdk rules export --claude --json",
+      "policy/generated-drift",
+      "bdk change close --json",
+      "policy/git-hook-failed",
+      "`gatesByPolicy`",
+      "`summary`",
+      "`archivedTo`",
+      "You do not open the PR",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
+  });
+});
+
+describe("run", () => {
+  it("is user-only, with a manifest entry with no parts and only the Skill and Read tools", () => {
+    expect(SKILL_CONTEXT.run).toStrictEqual([]);
+    const { meta } = readSkill("run");
+    expect(meta["disable-model-invocation"]).toBe(true);
+    expect(meta["allowed-tools"]).toBe(
+      'Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Skill Read',
+    );
+    expect(meta).not.toHaveProperty("disallowed-tools");
+  });
+
+  it("loops on next through the stage skills, decides instead of asking and stops at review", () => {
+    const { body } = readSkill("run");
+    for (const needle of [
+      "bdk next --json",
+      "`Skill` tool",
+      "/bdk:change",
+      "/bdk:design",
+      "/bdk:plan",
+      "/bdk:execute",
+      "/bdk:cr",
+      "/bdk:close",
+      "an artifact whose `command` is `/bdk:cr`",
+      "bdk log add decision",
+      "--review",
+      "guard/gate-manual",
+      "policy/gate-not-ready",
+      "`waiting: user`",
+      "A pending `review: true` entry is no reason to stop",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
+  });
+
+  it("stays well under the stage skill limit", () => {
+    const text = readFileSync(join(STAGES, "run", "SKILL.md"), "utf8");
+    expect(text.split("\n").length).toBeLessThanOrEqual(120);
   });
 });

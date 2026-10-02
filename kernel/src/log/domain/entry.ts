@@ -46,6 +46,7 @@ export interface EntryView {
   readonly session?: string | undefined;
   readonly command?: string | undefined;
   readonly skipVerify?: boolean | undefined;
+  readonly auto?: boolean | undefined;
 }
 
 /** A `log list` item: summaries only, never bodies. */
@@ -84,6 +85,7 @@ const OPTIONAL: readonly (readonly [string, keyof EntryView])[] = [
   ["session", "session"],
   ["command", "command"],
   ["skip-verify", "skipVerify"],
+  ["auto", "auto"],
 ];
 
 export function entryView(data: Data, status: string): EntryView {

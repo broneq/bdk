@@ -46,6 +46,8 @@ export interface NextReport {
   readonly change: string;
   readonly stage: string;
   readonly artifact?: NodeView | undefined;
+  /** With an artifact: the command of the artifact's stage, the skill that does it. */
+  readonly command?: string | undefined;
   readonly instruction?: string | undefined;
   readonly gates: readonly GateView[];
   readonly waiting?: Waiting | undefined;

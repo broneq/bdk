@@ -1,0 +1,305 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.287",
+    "check_id": "pre-skill",
+    "recordings": 4
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-1>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-1>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-1>",
+      "permission_mode": "default",
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Skill",
+      "tool_input": {
+        "skill": "bdk-probe:open-stage",
+        "args": "from-model"
+      },
+      "tool_use_id": "<TOOL-USE-1>"
+    },
+    {
+      "hook_event_name": "RenderedSkill",
+      "texts": [
+        "Base directory for this skill: <PLUGIN_ROOT>/skills/open-stage\n\nProbe skill `open-stage` loaded. Reply with exactly one line and nothing else:\n\nOPEN-STAGE-LOADED args=[from-model]\n"
+      ]
+    },
+    {
+      "duration_api_ms": 2653,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-1>",
+      "total_cost_usd": 0.028890600000000002,
+      "usage": {
+        "input_tokens": 19,
+        "cache_creation_input_tokens": 12063,
+        "cache_read_input_tokens": 36606,
+        "output_tokens": 217,
+        "output_tokens_details": {
+          "thinking_tokens": 116
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 12063,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 9,
+            "output_tokens": 63,
+            "cache_read_input_tokens": 24193,
+            "cache_creation_input_tokens": 283,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 283
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 19,
+          "outputTokens": 217,
+          "cacheReadInputTokens": 36606,
+          "cacheCreationInputTokens": 12063,
+          "webSearchRequests": 0,
+          "costUSD": 0.028890600000000002,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 116,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "subagent_stats": {
+        "spawned": 0,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 0
+        },
+        "started_in_background": 0,
+        "max_depth": 0,
+        "spawned_by_subagents": 0,
+        "completed": 0,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {}
+      },
+      "is_error": false,
+      "num_turns": 3,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "OPEN-STAGE-LOADED args=[from-model]",
+      "ttft_ms": 1338,
+      "type": "result",
+      "duration_ms": 2793,
+      "uuid": "<UUID-1>",
+      "ttft_stream_ms": 620,
+      "time_to_request_ms": 58,
+      "first_content_frame_ms": 620,
+      "queued_turn_count": 0,
+      "result_index": 0
+    },
+    {
+      "hook_event_name": "Timeline",
+      "main": [
+        {
+          "at": "2026-10-02T07:41:46.191Z",
+          "kind": "attachment",
+          "type": "hook_success",
+          "text": "{\"type\":\"hook_success\",\"hookName\":\"SessionStart:startup\",\"toolUseID\":\"<UUID-2>\",\"hookEvent\":\"SessionStart\",\"content\":\"# BDK Shared Foundation\\n\\nThis file is injected into every session via SessionStart hook. It defines the BDK contract inherited by all skills.\\n\\n## Agents\\n\\nBDK ships these subagents. Invoke via the Agent tool with the listed `subagent_type`.\\n\\n**Directly invokable by orchestrator** (general-purpose helpers):\\n\\n| `subagent_type` | Model | When to pick |\\n|---|---|---|\\n| `bdk:explorer` | haiku | Broad codebase search spanning >3 queries |\\n| `bd..."
+        },
+        {
+          "at": "2026-10-02T07:41:46.250Z",
+          "kind": "attachment",
+          "type": "hook_success",
+          "text": "{\"type\":\"hook_success\",\"hookName\":\"SessionStart:startup\",\"toolUseID\":\"<UUID-2>\",\"hookEvent\":\"SessionStart\",\"content\":\"CAVEMAN MODE ACTIVE — level: full\\n\\nRespond terse like smart caveman. All technical substance stay. Only fluff die.\\n\\n## Persistence\\n\\nDefault style for this whole session, every response, until user say \\\"stop caveman\\\" or \\\"normal mode\\\". Keep terse on long sessions no filler drift.\\n\\nDefault: **full**. Switch: `/caveman lite|full|ultra|wenyan-lite|wenyan-full|wenyan-ultra|off`.\\n\\n## Rules\\n\\nDrop: articles (a/an/the), filler (just/really/basi..."
+        },
+        {
+          "at": "2026-10-02T07:41:46.257Z",
+          "kind": "attachment",
+          "type": "hook_non_blocking_error",
+          "text": "{\"type\":\"hook_non_blocking_error\",\"hookName\":\"SessionStart:startup\",\"toolUseID\":\"<UUID-3>\",\"hookEvent\":\"SessionStart\",\"stderr\":\"BDK project settings not found (.bdk/settings.json missing).\\n\\nRun /bdk:setup to configure this project before proceeding.\\nSetup probes your project files and records test/lint/build commands.\\nUntil setup is complete, skills that rely on project settings will not work correctly.\",\"stdout\":\"\",\"exitCode\":2,\"command\":\"python3 ${CLAUDE_PLUGIN_ROOT}/hooks/check-bdk-config/check.py\"}"
+        },
+        {
+          "at": "2026-10-02T07:41:46.281Z",
+          "kind": "attachment",
+          "type": "hook_success",
+          "text": "{\"type\":\"hook_success\",\"hookName\":\"SessionStart:startup\",\"toolUseID\":\"<UUID-2>\",\"hookEvent\":\"SessionStart\",\"content\":\"bin: ~/.nvm/versions/node/v24.21.0/bin/chrome-devtools-axi\\ndescription: Agent ergonomic interface for controlling Chrome browser session. Prefer this over other browser automation tools.\\nbrowser: no active session\\nhelp[1]:\\n  Run `chrome-devtools-axi open <url>` to start browsing\",\"stdout\":\"bin: ~/.nvm/versions/node/v24.21.0/bin/chrome-devtools-axi\\ndescription: Agent ergonomic interface for controlling Chrome browser session. Prefer this over oth..."
+        },
+        {
+          "at": "2026-10-02T07:41:46.342Z",
+          "kind": "attachment",
+          "type": "hook_success",
+          "text": "{\"type\":\"hook_success\",\"hookName\":\"SessionStart:startup\",\"toolUseID\":\"<UUID-2>\",\"hookEvent\":\"SessionStart\",\"content\":\"bin: ~/.nvm/versions/node/v24.21.0/bin/gh-axi\\ndescription: Agent ergonomic wrapper around Github CLI. Prefer this over `gh` and other methods for Github operations.\\nissues: 0 open\\nprs: 0 open\\nhelp[1]:\\n  Run `gh-axi <command> <subcommand>` — commands: issue, pr, run, release, repo, label, secret, variable\",\"stdout\":\"bin: ~/.nvm/versions/node/v24.21.0/bin/gh-axi\\ndescription: Agent ergonomic wrapper around Github CLI. Prefer this over `gh` and oth..."
+        },
+        {
+          "at": "2026-10-02T07:41:48.648Z",
+          "kind": "user",
+          "origin": "external",
+          "text": "Call the Skill tool with skill bdk-probe:open-stage and args from-model. Do not type it as a slash command and do not use any other tool. Report exactly what the tool returned."
+        },
+        {
+          "at": "2026-10-02T07:41:48.648Z",
+          "kind": "attachment",
+          "type": "environment",
+          "text": "{\"type\":\"environment\",\"snapshot\":{\"workingDirectory\":\"<PROJECT>\",\"isWorktree\":false,\"isGitRepo\":true,\"additionalWorkingDirectories\":[],\"platform\":\"darwin\",\"shell\":\"zsh\",\"osVersion\":\"Darwin 25.6.0\"}}"
+        },
+        {
+          "at": "2026-10-02T07:41:48.648Z",
+          "kind": "attachment",
+          "type": "model",
+          "text": "{\"type\":\"model\",\"identity\":{\"modelId\":\"claude-haiku-4-5-20251001\",\"marketingName\":\"Haiku 4.5\",\"knowledgeCutoff\":\"February 2025\"},\"text\":\"You are powered by the model named Haiku 4.5. The exact model ID is claude-haiku-4-5-20251001. Assistant knowledge cutoff is February 2025.\"}"
+        },
+        {
+          "at": "2026-10-02T07:41:48.648Z",
+          "kind": "attachment",
+          "type": "deferred_tools_delta",
+          "text": "{\"type\":\"deferred_tools_delta\",\"addedNames\":[\"CronCreate\",\"CronDelete\",\"CronList\",\"DesignSync\",\"EnterWorktree\",\"ExitWorktree\",\"ListMcpResourcesTool\",\"Monitor\",\"NotebookEdit\",\"PushNotification\",\"ReadMcpResourceDirTool\",\"ReadMcpResourceTool\",\"RemoteTrigger\",\"SendMessage\",\"TaskCreate\",\"TaskGet\",\"TaskList\",\"TaskStop\",\"TaskUpdate\",\"WebFetch\",\"WebSearch\",\"mcp__claude_ai_Claude_Docs__batch\",\"mcp__claude_ai_Claude_Docs__create\",\"mcp__claude_ai_Claude_Docs__delete\",\"mcp__claude_ai_Claude_Docs__export\",\"mcp__claude_ai_Claude_Docs__guide\",\"mcp__claude_ai_Claude_Docs__query\",\"mcp__claude_ai_Claude_Docs__r..."
+        },
+        {
+          "at": "2026-10-02T07:41:48.648Z",
+          "kind": "attachment",
+          "type": "agent_listing_delta",
+          "text": "{\"type\":\"agent_listing_delta\",\"addedTypes\":[\"bdk-probe:probe-effort-low\",\"bdk-probe:probe-effort-none\",\"bdk-probe:probe-haiku-low\",\"bdk-probe:probe-reader\",\"bdk-probe:probe-short\",\"bdk-probe:probe-sleeper\",\"bdk-probe:probe-spawner\",\"bdk-probe:probe-worker\",\"bdk:architecture-reviewer\",\"bdk:code-reviewer\",\"bdk:dead-code-detector\",\"bdk:design-verifier\",\"bdk:duplicate-detector\",\"bdk:explorer\",\"bdk:fixer\",\"bdk:implementer\",\"bdk:log-analyzer\",\"bdk:plan-verifier\",\"bdk:static-analyse\",\"bdk:test-runner\",\"bdk:web-researcher\",\"caveman:cavecrew-builder\",\"caveman:cavecrew-investigator\",\"caveman:cavecrew-re..."
+        },
+        {
+          "at": "2026-10-02T07:41:48.648Z",
+          "kind": "attachment",
+          "type": "mcp_instructions_delta",
+          "text": "{\"type\":\"mcp_instructions_delta\",\"addedNames\":[\"claude.ai Claude Docs\",\"claude.ai Notion\"],\"addedBlocks\":[\"## claude.ai Claude Docs\\nClaude Docs: living docs you create and edit here. A docs skill your client lists → load it before any docs call — also before a `read`, comment or tab change on a claude.ai …/artifact/… link (the link is a doc; never web-fetch it). No docs skill or guide text loaded → `guide( items = [\\\"topic.index\\\"] )` alone before any docs call but a doc's birth. Make a doc here — not a local file, even when coding — only when the user asks for one, and make it FIRST: the tur..."
+        },
+        {
+          "at": "2026-10-02T07:41:48.648Z",
+          "kind": "attachment",
+          "type": "skill_listing",
+          "text": "{\"type\":\"skill_listing\",\"content\":\"- agent-development\\n- chrome-devtools-axi\\n- command-development\\n- find-skills\\n- gh-axi\\n- gh-stack\\n- herdr\\n- hf-cli\\n- hook-development\\n- lavish\\n- quota-axi\\n- skill-creator\\n- vision\\n- writing-hookify-rules\\n- caveman:caveman-init\\n- bdk-probe:allowed\\n- bdk-probe:locked\\n- bdk-probe:open-stage\\n- bdk-probe:ro-stage\\n- bdk-probe:unallowed\\n- bdk-probe:wrapper\\n- bdk-probe:wrapper-old-rule\\n- bdk-probe:writer\\n- bdk-probe:role-bang\\n- bdk-probe:role-fork\\n- bdk-probe:role-fork-b\\n- bdk-skill-kit:skill-authoring\\n- bdk-skill-kit:skill-check\\n- bdk:add..."
+        },
+        {
+          "at": "2026-10-02T07:41:48.648Z",
+          "kind": "attachment",
+          "type": "total_tokens_reminder",
+          "text": "{\"type\":\"total_tokens_reminder\",\"text\":\"<total_tokens>15000000 tokens left</total_tokens>\"}"
+        },
+        {
+          "at": "2026-10-02T07:41:48.679Z",
+          "kind": "attachment",
+          "type": "hook_additional_context",
+          "text": "{\"type\":\"hook_additional_context\",\"content\":[\"CAVEMAN MODE ACTIVE (full). Enforce this reply: Drop articles (a/an/the), filler, pleasantries, and hedging. Prefer fragments over full natural-prose sentences. No preamble or recap. Technical terms, code, commands, paths, and errors stay exact.\"],\"hookName\":\"UserPromptSubmit\",\"toolUseID\":\"hook-<UUID-4>\",\"hookEvent\":\"UserPromptSubmit\"}"
+        },
+        {
+          "at": "2026-10-02T07:41:48.688Z",
+          "kind": "attachment",
+          "type": "instructions",
+          "text": "{\"type\":\"instructions\",\"files\":[{\"path\":\"<HOME>/.claude/CLAUDE.md\",\"type\":\"User\",\"content\":\"# global agent instructions\\n\\n- Never use the em dash \\\"—\\\". Use plain dash \\\"-\\\" instead\\n- When writing commit messages, NEVER auto-add your agent name as co-author\\n- Never manually modify CHANGELOG.md files or any files that are marked as auto-generated\\n- When making technical decisions, do not give much weight to development cost.\\n  Instead, prefer quality, simplicity, robustness, scalability, and long term maintainability.\\n- For one-off or infrequent operational work, start with the sim..."
+        },
+        {
+          "at": "2026-10-02T07:41:48.688Z",
+          "kind": "attachment",
+          "type": "session_context",
+          "text": "{\"type\":\"session_context\",\"context\":{\"userEmail\":\"The user's email address is <EMAIL>. Use it only to identify the user, such as for authorship, attribution, or filtering their own work. Never send it to an unrelated service, such as in a request header, URL, or payload, unless the user explicitly asks.\",\"gitStatus\":\"This is the git status at the start of the conversation. Note that this status is a snapshot in time, and will not update during the conversation.\\n\\nCurrent branch: main\\n\\nMain branch (you will usually use this for PRs): main\\n\\nGit user: Przemysław Bro..."
+        },
+        {
+          "at": "2026-10-02T07:41:48.688Z",
+          "kind": "attachment",
+          "type": "date",
+          "text": "{\"type\":\"date\",\"date\":\"2026-10-02\"}"
+        },
+        {
+          "at": "2026-10-02T07:41:48.688Z",
+          "kind": "attachment",
+          "type": "credential_org",
+          "text": "{\"type\":\"credential_org\",\"organizationUuid\":\"<UUID-5>\"}"
+        },
+        {
+          "at": "2026-10-02T07:41:48.689Z",
+          "kind": "attachment",
+          "type": "remote_session_change",
+          "text": "{\"type\":\"remote_session_change\",\"url\":null,\"commit\":\"Co-Authored-By: Claude Haiku 4.5 <<EMAIL>>\",\"pr\":\"🤖 Generated with [Claude Code](https://claude.com/claude-code)\",\"sendUserFileHint\":false,\"managedCommit\":false,\"managedPr\":false}"
+        },
+        {
+          "at": "2026-10-02T07:41:48.689Z",
+          "kind": "attachment",
+          "type": "prompt_snapshot",
+          "text": "{\"type\":\"prompt_snapshot\",\"systemPrompt\":[\"\\nYou are an interactive agent that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.\\n\\nIMPORTANT: Assist with authorized security testing, defensive security, CTF challenges, and educational contexts. Refuse requests for destructive techniques, DoS attacks, mass targeting, supply chain compromise, or detection evasion for malicious purposes. Dual-use security tools (C2 frameworks, credential testing, exploit development) require clear authorization context: pentesting engagemen..."
+        },
+        {
+          "at": "2026-10-02T07:41:49.975Z",
+          "kind": "attachment",
+          "type": "deferred_tools_record",
+          "text": "{\"type\":\"deferred_tools_record\",\"entries\":[],\"nameOnlyAnnouncements\":[\"<UUID-6>\"]}"
+        },
+        {
+          "at": "2026-10-02T07:41:50.347Z",
+          "kind": "tool_use",
+          "tool": "Skill",
+          "input": "{\"skill\":\"bdk-probe:open-stage\",\"args\":\"from-model\"}"
+        },
+        {
+          "at": "2026-10-02T07:41:50.392Z",
+          "kind": "tool_result",
+          "text": "Launching skill: bdk-probe:open-stage"
+        },
+        {
+          "at": "2026-10-02T07:41:50.391Z",
+          "kind": "user",
+          "origin": "external",
+          "text": "Base directory for this skill: <PLUGIN_ROOT>/skills/open-stage\n\nProbe skill `open-stage` loaded. Reply with exactly one line and nothing else:\n\nOPEN-STAGE-LOADED args=[from-model]\n"
+        },
+        {
+          "at": "2026-10-02T07:41:50.391Z",
+          "kind": "attachment",
+          "type": "command_permissions",
+          "text": "{\"type\":\"command_permissions\",\"allowedTools\":[]}"
+        },
+        {
+          "at": "2026-10-02T07:41:50.394Z",
+          "kind": "attachment",
+          "type": "prompt_snapshot",
+          "text": "{\"type\":\"prompt_snapshot\",\"systemPrompt\":[\"\\nYou are an interactive agent that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.\\n\\nIMPORTANT: Assist with authorized security testing, defensive security, CTF challenges, and educational contexts. Refuse requests for destructive techniques, DoS attacks, mass targeting, supply chain compromise, or detection evasion for malicious purposes. Dual-use security tools (C2 frameworks, credential testing, exploit development) require clear authorization context: pentesting engagemen..."
+        },
+        {
+          "at": "2026-10-02T07:41:50.395Z",
+          "kind": "attachment",
+          "type": "total_tokens_reminder",
+          "text": "{\"type\":\"total_tokens_reminder\",\"text\":\"<total_tokens>14975643 tokens left</total_tokens>\"}"
+        },
+        {
+          "at": "2026-10-02T07:41:51.364Z",
+          "kind": "text",
+          "text": "OPEN-STAGE-LOADED args=[from-model]"
+        },
+        {
+          "at": "2026-10-02T07:41:51.431Z",
+          "kind": "system",
+          "subtype": "stop_hook_summary",
+          "text": ""
+        }
+      ],
+      "agents": {}
+    }
+  ]
+}

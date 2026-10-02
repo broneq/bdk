@@ -20,7 +20,7 @@ describe("stageSkill", () => {
   });
 
   it("refuses a skill without a case file", () => {
-    expect(() => stageSkill("bdk:close")).toThrow(/setup, change/);
+    expect(() => stageSkill("bdk:cr")).toThrow(/setup, change/);
     expect(() => stageSkill(undefined)).toThrow(/got nothing/);
   });
 });

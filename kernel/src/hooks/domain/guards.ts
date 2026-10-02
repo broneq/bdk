@@ -19,7 +19,8 @@ type GuardRule =
   | "guard/dispatch-prompt"
   | "guard/agent-spawn"
   | "guard/agent-message"
-  | "guard/escalation-model";
+  | "guard/escalation-model"
+  | "guard/stage-skill";
 
 export interface Deny {
   readonly rule: GuardRule;
@@ -111,6 +112,48 @@ const WRITE_REDIRECTS = new Set([">", ">>", ">|", "&>", "&>>", "<>", ">&"]);
 
 const DISPATCH_PATH =
   /(?:^|[\s"'`(/])((?:\/|\.{1,2}\/|[^\s"'`]*\/)?\.bdk\/changes\/[^/\s]+\/dispatch\/[^/\s]+\.md)/g;
+
+/** The stage skills only the user, or a run of the session, starts (T41 design D1). */
+const STAGE_SKILLS: ReadonlySet<string> = new Set([
+  "bdk:change",
+  "bdk:plan",
+  "bdk:execute",
+  "bdk:close",
+]);
+
+/** What the stage-skill guard reads from the session's run marker. */
+export interface RunFacts {
+  readonly changeStarted: boolean;
+}
+
+/** The `Skill` call's stage skill, when it names one of `STAGE_SKILLS`. */
+export function stageSkillOf(payload: PreToolPayload): string | undefined {
+  if (payload.tool !== "Skill") return undefined;
+  const skill = stringField(payload.input, "skill");
+  return skill !== undefined && STAGE_SKILLS.has(skill) ? skill : undefined;
+}
+
+/**
+ * The stage-skill guard (`kernel-cli/hooks`, Pre-tool guards, Stage skill):
+ * a subagent never starts a stage skill, the main thread only inside its
+ * session's run, and `bdk:change` once per run.
+ */
+export function stageSkillDecision(
+  skill: string,
+  payload: PreToolPayload,
+  run?: RunFacts,
+): Deny | undefined {
+  const allowed =
+    payload.agentId === undefined &&
+    run !== undefined &&
+    !(skill === "bdk:change" && run.changeStarted);
+  if (allowed) return undefined;
+  return {
+    rule: "guard/stage-skill",
+    verb: skill,
+    reason: `/${skill} is started by the user, or by /bdk:run for its session; ask the user to type /${skill} (BDK T41)`,
+  };
+}
 
 /** Whether the decision needs `AgentFacts`: the agent guards of a subagent's payload. */
 export function needsAgentFacts(payload: PreToolPayload): boolean {

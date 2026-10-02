@@ -77,6 +77,8 @@ export interface PromptExpansionReport {
   readonly passedAt?: string | undefined;
   /** `/bdk:run`: the gates passed by policy. */
   readonly passed?: readonly PolicyPass[] | undefined;
+  /** `/bdk:run`: how the run started (T41). */
+  readonly run?: { readonly auto: boolean; readonly intent: boolean } | undefined;
   /** `/bdk:run`: the ready manual gates, which the user passes by typing their command. */
   readonly waiting?: readonly GateSummary[] | undefined;
 }

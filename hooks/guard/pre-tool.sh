@@ -33,6 +33,11 @@ wanted() {
     *'"tool_name":"SendMessage"'* | *'"tool_name": "SendMessage"'*) return 0 ;;
   esac
   case $payload in
+    *'"tool_name":"Skill"'* | *'"tool_name": "Skill"'*)
+      case $payload in *bdk:change* | *bdk:plan* | *bdk:execute* | *bdk:close*) return 0 ;; esac
+      ;;
+  esac
+  case $payload in
     *bdk.mjs*) case $payload in *hooks*) return 0 ;; esac ;;
   esac
   case $payload in

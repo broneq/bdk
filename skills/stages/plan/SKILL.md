@@ -2,7 +2,6 @@
 name: plan
 description: Plans the active BDK Change - writes the plan parts the kernel names as task contracts with concrete test cases, verifies and corrects them, and reports the waves to execute. Use when a Change waits on /bdk:plan.
 argument-hint: "[--review] [what to focus on]"
-disable-model-invocation: true
 allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(lavish-axi *) Read Grep Glob Write Edit AskUserQuestion Skill Agent
 ---
 

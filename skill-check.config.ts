@@ -46,16 +46,17 @@ export default defineConfig({
           {
             entries: [
               {
-                names: ["plan", "execute", "close", "run", "execute-thin", "execute-long"],
+                names: ["setup", "run"],
                 field: "disable-model-invocation",
                 equals: true,
-                reason: "a gate is started by the user only",
+                reason:
+                  "the user starts the entry skills; hooks pre-tool guards the stages run starts",
               },
               {
-                names: ["setup", "change"],
+                names: ["execute-thin", "execute-long"],
                 field: "disable-model-invocation",
                 equals: true,
-                reason: "the skill writes project or Change state, so the user starts it",
+                reason: "the measured copies keep the frontmatter of the execute they froze",
               },
               {
                 names: ["execute", "close", "execute-thin", "execute-long"],

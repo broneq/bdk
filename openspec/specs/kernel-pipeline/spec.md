@@ -198,7 +198,7 @@ A node is sealed while a gate that transitively requires it is done: `next` does
 
 ### Requirement: Gate
 
-A gate node SHALL be done only when the ledger holds a `transition` entry whose `gate` is the node id, whose `source` is `user` (or `policy` while the gate's `policy.gates.<gate>` resolves to `auto`), and whose `at` is not earlier than the gate's ready time (both truncated to the second, so a transition of the ready second counts, whatever its milliseconds); the kernel SHALL never mark a gate done itself.
+A gate node SHALL be done only when the ledger holds a `transition` entry whose `gate` is the node id, whose `source` is `user` (or `policy` while the gate's `policy.gates.<gate>` resolves to `auto`, or `policy` with `auto: true`, which only the hooks write for a run started with `--auto`, T41), and whose `at` is not earlier than the gate's ready time (both truncated to the second, so a transition of the ready second counts, whatever its milliseconds); the kernel SHALL never mark a gate done itself.
 
 The ready time is the latest `at` among the `done` transitions that currently make the gate's requirements done; a gate whose requirements were never all done has none and is not done. The gate checks provenance and timing only: no content, no hash, no approval record. Entries of any other type, and transitions with another `source`, never pass a gate, whatever their summary says. `bdk done gate:<stage>` refuses with `policy/gate-not-ready`. A gate's status shows `ready`, `done`, `passedBy` (`user` or `policy`), the `command` from the stage its `opens` names, and the pending entries: live entries with `review: true`, newest first.
 
@@ -224,8 +224,13 @@ The ready time is the latest `at` among the `done` transitions that currently ma
 
 #### Scenario: manual gate ignores policy entries
 
-- **WHEN** `policy.gates.design` resolves to `manual` and the only transition naming the gate has `source: policy`
+- **WHEN** `policy.gates.design` resolves to `manual` and the only transition naming the gate has `source: policy` and no `auto`
 - **THEN** `gate:design` is not done
+
+#### Scenario: run with --auto passes a manual gate
+
+- **WHEN** `policy.gates.design` resolves to `manual` and the ledger holds a `transition` with `gate: gate:design`, `source: policy` and `auto: true` after the gate became ready
+- **THEN** `gate:design` is done with `passedBy: policy`
 
 #### Scenario: early entry does not count
 

@@ -19,6 +19,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import upeTyped from "../../../tests/fixtures/host-payloads/2.1.281/upe-typed.json" with { type: "json" };
+import preSkill from "../../../tests/fixtures/host-payloads/2.1.287/pre-skill.json" with { type: "json" };
 import { deniedPayloads, mainBash, subagentBash } from "../../src/hooks/tests/payloads.ts";
 import { pluginSkills } from "../support/plugin-skills.ts";
 import { REPO_ROOT } from "../support/run.ts";
@@ -341,6 +342,28 @@ describe("guard scripts", () => {
         )
         .map(([label]) => label);
       expect(dropped).toStrictEqual([]);
+    } finally {
+      rmSync(empty, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("pre-tool.sh and the Skill tool", () => {
+  // The recorded payload of a model's Skill call (HOST-FACTS `skill-tool-pretool`).
+  const recorded = preSkill.payloads.find(
+    (payload) => (payload as { tool_name?: string }).tool_name === "Skill",
+  ) as Record<string, unknown>;
+
+  it.each([
+    ["bdk:plan", 2],
+    ["bdk:close", 2],
+    ["bdk:design", 0],
+    ["caveman:commit", 0],
+  ])("hands a Skill call to %s to the kernel only for a guarded stage skill", (skill, code) => {
+    const empty = mkdtempSync(join(tmpdir(), "bdk-prefilter-"));
+    try {
+      const payload = JSON.stringify({ ...recorded, tool_input: { skill, args: "" } });
+      expect(guard(PRE_TOOL, payload, empty, process.env.PATH ?? "").status).toBe(code);
     } finally {
       rmSync(empty, { recursive: true, force: true });
     }

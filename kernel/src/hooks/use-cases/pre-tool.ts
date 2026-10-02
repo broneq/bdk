@@ -3,27 +3,39 @@
 // kernel dispatches them, and the first guard that matches denies. The agent
 // guards read the registry only for a subagent's `Agent`, `SendMessage` and a
 // lead's Bash; an admitted message to a registered agent is recorded for its
-// `agents wait`.
+// `agents wait`. A `Skill` call to a stage skill reads the session's run
+// marker and, admitted, enters the stage as a typed command would, with the
+// run's policy at the gate (T41 design D3).
 import { resolve as resolvePath } from "node:path";
 
+import { readGraph, stageOfCommand } from "../../graph/index.ts";
+import { withChangeIndex } from "../../log/index.ts";
 import {
   dispatchPaths,
   messageEntries,
   needsAgentFacts,
   preToolDecision,
+  stageSkillDecision,
+  stageSkillOf,
 } from "../domain/guards.ts";
 import type { AgentFacts, Classify, Deny } from "../domain/guards.ts";
 import { preToolPayload } from "../domain/payload.ts";
 import type { PreToolPayload } from "../domain/payload.ts";
 import type { PreToolPass } from "../domain/report.ts";
-import { refuse } from "../../shared/refusal/index.ts";
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import { resolve } from "../../shared/registry/index.ts";
-import { readDocument } from "../../shared/store/index.ts";
+import {
+  readDocument,
+  readRunMarker,
+  resolveActiveChange,
+  writeRunMarker,
+} from "../../shared/store/index.ts";
 import type { CommandIndex } from "../../shared/registry/index.ts";
 import { agentFacts, bdkProject, onRegistry, registryExists } from "./agents.ts";
 import type { HookPlace } from "./agents.ts";
 import type { HooksDeps } from "./input.ts";
+import { enterStage, NAMESPACE, writer } from "./stage-entry.ts";
 
 export async function preTool(
   deps: HooksDeps,
@@ -37,10 +49,62 @@ export async function preTool(
       : undefined;
   const model = "missing" in payload ? undefined : packageModel(deps, payload);
   const outcome = decidePreTool(deps.commands, raw, facts, model);
-  if (!("missing" in payload) && !("refused" in outcome) && payload.tool === "SendMessage") {
-    await recordMessage(deps, place, payload);
+  if ("missing" in payload || "refused" in outcome) return outcome;
+  if (payload.tool === "SendMessage") await recordMessage(deps, place, payload);
+  const skill = stageSkillOf(payload);
+  if (skill === undefined) return outcome;
+  const entered = await enterRunStage(deps, place, payload, skill);
+  return entered ?? outcome;
+}
+
+/**
+ * The stage-skill guard and, for an admitted call, the stage entry of
+ * `prompt-expansion` with the run's policy; undefined when the call passes.
+ */
+async function enterRunStage(
+  deps: HooksDeps,
+  place: HookPlace,
+  payload: PreToolPayload,
+  skill: string,
+): Promise<Refusal | undefined> {
+  const projectRoot = bdkProject(deps, place);
+  const marker =
+    projectRoot === undefined || payload.session === undefined
+      ? undefined
+      : readRunMarker(deps.store, projectRoot, payload.session);
+  const deny = stageSkillDecision(
+    skill,
+    payload,
+    marker === undefined ? undefined : { changeStarted: marker["change-started"] },
+  );
+  if (deny !== undefined) return denial(deny);
+  if (marker === undefined || projectRoot === undefined) {
+    throw new Error(`the stage-skill guard admitted ${skill} without a run marker`);
   }
-  return outcome;
+  if (skill === `${NAMESPACE}change`) {
+    writeRunMarker(deps.store, projectRoot, { ...marker, "change-started": true });
+    return undefined;
+  }
+  const stage = stageOfCommand(deps, `/${skill}`);
+  if (stage === undefined || place.workTree === undefined) return undefined;
+  const change = resolveActiveChange(deps.store, deps.git, {
+    cwd: place.cwd,
+    workTree: place.workTree,
+  });
+  if (isRefusal(change)) return change;
+  const call = {
+    command: skill.slice(NAMESPACE.length),
+    session: marker.session,
+    prompt: marker.prompt,
+  };
+  return withChangeIndex(deps, change, async (index) => {
+    const read = await readGraph(deps, change, index, place.globalDir);
+    if (isRefusal(read)) return read;
+    const write = writer(deps, change, index, call);
+    const entrant = { by: "run", auto: marker.auto } as const;
+    const entered = await enterStage(deps, change, read, call, stage, false, entrant, write);
+    return isRefusal(entered) ? entered : undefined;
+  });
 }
 
 /** The decision alone, for a payload and the agent facts already gathered. */
@@ -146,4 +210,5 @@ const INSTEAD: Readonly<Record<Deny["rule"], string>> = {
   "guard/agent-message":
     "write the substance with bdk log add, then send its id to a running agent",
   "guard/escalation-model": "set model in the Agent call to the package's model",
+  "guard/stage-skill": "ask the user to type the stage command",
 };
