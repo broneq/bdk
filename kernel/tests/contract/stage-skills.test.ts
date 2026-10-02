@@ -216,3 +216,31 @@ describe("execute", () => {
     }
   });
 });
+
+describe("close", () => {
+  it("has a manifest entry with no parts and never edits a file itself", () => {
+    expect(SKILL_CONTEXT.close).toStrictEqual([]);
+    const { meta } = readSkill("close");
+    expect(meta["disable-model-invocation"]).toBeUndefined();
+    expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
+  });
+
+  it("closes through the kernel, regenerates drifted rules and leaves the PR to the user", () => {
+    const { body } = readSkill("close");
+    for (const needle of [
+      "bdk next --json",
+      "bdk change close --dry-run --json",
+      "bdk rules export --claude --check --json",
+      "bdk rules export --claude --json",
+      "policy/generated-drift",
+      "bdk change close --json",
+      "policy/git-hook-failed",
+      "`gatesByPolicy`",
+      "`summary`",
+      "`archivedTo`",
+      "You do not open the PR",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
+  });
+});

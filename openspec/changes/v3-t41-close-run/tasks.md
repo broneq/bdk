@@ -20,8 +20,8 @@
 
 ## 4. `close` stage skill (D8)
 
-- [ ] 4.1 Failing contract tests (`kernel/tests/contract/stage-skills.test.ts`, `skill-context.test.ts`): `skills/stages/close/SKILL.md` exists with `disallowed-tools: Edit Write NotebookEdit` and no `disable-model-invocation`; names `bdk change close --dry-run`, `bdk change close`, `bdk rules export --claude --check`, `bdk rules export --claude`, `gatesByPolicy`, and says it opens no PR; the `ctx` manifest holds `close` with no parts
-- [ ] 4.2 `ctx skill close` manifest entry; write `skills/stages/close/SKILL.md` per `specs/stage-skills` and `.claude/rules/prompt-writing.md`; review with `/bdk-skill-kit:skill-authoring`; tests of 4.1 green; `pnpm skill-check` green
+- [x] 4.1 Failing contract tests (`kernel/tests/contract/stage-skills.test.ts`, `skill-context.test.ts`): `skills/stages/close/SKILL.md` exists with `disallowed-tools: Edit Write NotebookEdit` and no `disable-model-invocation`; names `bdk change close --dry-run`, `bdk change close`, `bdk rules export --claude --check`, `bdk rules export --claude`, `gatesByPolicy`, and says it opens no PR; the `ctx` manifest holds `close` with no parts
+- [x] 4.2 `ctx skill close` manifest entry; write `skills/stages/close/SKILL.md` per `specs/stage-skills` and `.claude/rules/prompt-writing.md`; review with `/bdk-skill-kit:skill-authoring`; tests of 4.1 green; `pnpm skill-check` green
 
 ## 5. `run` stage skill (D6, D7, D10)
 

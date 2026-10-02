@@ -42,6 +42,7 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   // A stage skill that needs no settings keeps its context lines for the
   // `BDK STOP` line when the kernel is unavailable.
   change: [],
+  close: [],
   cr: [
     { kind: "file", path: "skills/cr/references/review-engine.md", title: "Review engine" },
     { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" },
