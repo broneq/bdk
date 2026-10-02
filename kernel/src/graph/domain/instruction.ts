@@ -35,7 +35,7 @@ export function composeInstruction(parts: InstructionParts): string {
     template.trimEnd(),
     "## Write to",
     parts.paths.length === 0
-      ? "- nothing: the result is a ledger entry"
+      ? "- no file of the Change: the kernel records the result"
       : parts.paths.map((path) => `- ${path}`).join("\n"),
     "## Rules",
     parts.rules.length === 0

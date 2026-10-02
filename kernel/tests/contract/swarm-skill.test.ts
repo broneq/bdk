@@ -53,9 +53,21 @@ describe("swarm skill", () => {
 
   it("holds no flat-swarm sentence", () => {
     const flat = sentences(readSkill().body).filter(
-      (sentence) => /\bflat\b/i.test(sentence) || /no adapter carries/i.test(sentence),
+      (sentence) =>
+        /\bswarm (is|stays|runs) flat\b|\bflat swarm\b/i.test(sentence) ||
+        /no adapter carries/i.test(sentence),
     );
     expect(flat).toEqual([]);
+  });
+
+  it("takes the tree or flat mode from the wave of bdk next", () => {
+    const { body } = readSkill();
+    const tree = sentences(body).filter((sentence) => sentence.includes("`tree`"));
+    expect(
+      tree.some((sentence) => sentence.includes("`wave`") && sentence.includes("`bdk next`")),
+    ).toBe(true);
+    expect(body).toContain("`flat`");
+    expect(body).not.toMatch(/`min-parts`|`large`/);
   });
 
   it("resumes an agent once and closes the ticket fail after a second failure", () => {

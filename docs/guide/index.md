@@ -26,7 +26,8 @@ There is one pipeline, and three tiers differ only in where you enter it.
 
     In BDK 3 every tier works on a Change: `/bdk:change`, then `/bdk:design` for a
     feature, then `/bdk:plan`, which replaces `/bdk:create-plan` and runs
-    `/bdk:verify-plan` itself. See [Stage skills](reference/skills.md#stage-skills).
+    `/bdk:verify-plan` itself, then `/bdk:execute`, which replaces
+    `/bdk:subagent-execute-plan`. See [Stage skills](reference/skills.md#stage-skills).
 
 ```mermaid
 flowchart LR

@@ -4,8 +4,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, refused } from "../../../tests/support/repo.ts";
-import { opened, started } from "../../attempt/tests/e2e-support.ts";
+import { answered, bdk, git, refused } from "../../../tests/support/repo.ts";
+import { closed, dispatched, opened, started, stepsDone } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 
 interface Node {
@@ -102,5 +102,51 @@ describe("post-task step nodes", () => {
     expect(result.instead).toStrictEqual([
       "bdk evidence record tests-scoped <file> --ticket <ticket>",
     ]);
+  });
+
+  it("a stale step of a done part comes back through a verify-fix ticket of the part", () => {
+    const change = started();
+    const commitTask = (part: string, task: string, file: string, content: string) => {
+      const ticket = opened(change, "task-redispatch", task);
+      dispatched(change, ticket, task);
+      put(change, file, content);
+      stepsDone(change, ticket, task);
+      closed(change, ticket, "ok");
+      git(change.root, "add", "-A");
+      git(
+        change.root,
+        "commit",
+        "--quiet",
+        "-m",
+        `Task ${task}\n\nBDK-Change: ${change.id}\nBDK-Part: ${part}\nBDK-Task: ${task}`,
+      );
+    };
+    commitTask("01", "01-1", "src/01-1.ts", "export const one = 1;\n");
+    commitTask("01", "01-2", "src/01-2.ts", "export const two = 2;\n");
+    answered(bdk(["part", "done", "01", "--json"], change.root), "output/part-done.json");
+    answered(bdk(["part", "start", "02", "--json"], change.root), "output/part-start.json");
+    // Part 02's task also edits a file of part 01, outside its own Files:.
+    put(change, "src/01-1.ts", "export const one = 11;\n");
+    commitTask("02", "02-1", "src/02-1.ts", "export const three = 3;\n");
+    answered(bdk(["part", "done", "02", "--json"], change.root), "output/part-done.json");
+
+    const stale = answered(bdk(["next", "--json"], change.root), "output/next.json");
+    expect(stale.artifact).toMatchObject({ id: "simplify:01", state: "stale" });
+    expect(stale.wave).toBeUndefined();
+    const open = answered(
+      bdk(["attempt", "open", "verify-fix", "01", "--json"], change.root),
+      "output/attempt-open.json",
+    );
+    expect((open.steps as { kind: string }[]).map((step) => step.kind)).toStrictEqual([
+      "simplify",
+      "tests-scoped",
+      "lint",
+    ]);
+    const ticket = String(open.ticket);
+    stepsDone(change, ticket, "01");
+    closed(change, ticket, "ok");
+    for (const step of ["simplify:01", "tests-scoped:01", "lint:01"]) {
+      expect(node(change, step)?.state, step).toBe("done");
+    }
   });
 });

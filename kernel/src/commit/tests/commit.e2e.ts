@@ -99,6 +99,24 @@ describe("bdk commit", () => {
     refused(commit(tiny(), "01-9"), 3, "input/not-found");
   });
 
+  it("exit 0 beside another started part's uncommitted work in its do-not-touch", () => {
+    const change = tiny();
+    fileStore().write(
+      join(change.dir, "plan/parts/02-part.md"),
+      `---\nschema: 1\nid: "02"\ntitle: Part 02\ngoal: g\nsuccess-measure: m\ndo-not-touch: ["src/01-*"]\ndepends-on: []\nspec-impact: none\n---\n## 02-1 Invoice\n\n**Files:**\n\n- \`src/billing/invoice.ts\`\n\n**Verification:** none\n`,
+    );
+    answered(bdk(["done", "plan", "--json"], change.root), "output/done.json");
+    answered(bdk(["part", "start", "02", "--json"], change.root), "output/part-start.json");
+    write(change, "src/01-1.ts");
+    write(change, "src/billing/invoice.ts");
+    answered(commit(change, "01-1"), "output/commit.json");
+    expect(git(change.root, "show", "--name-only", "--format=", "HEAD")).not.toContain(
+      "src/billing/invoice.ts",
+    );
+    answered(commit(change, "02-1"), "output/commit.json");
+    expect(git(change.root, "status", "--porcelain", "--", "src").trim()).toBe("");
+  });
+
   it("exit 2 policy/do-not-touch", () => {
     const change = tiny();
     write(change, "src/01-1.ts");

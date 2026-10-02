@@ -7892,6 +7892,7 @@ var commands_default = {
         "policy/budget-exhausted",
         "policy/oscillation",
         "policy/ticket-open",
+        "policy/files-busy",
         "policy/invalid-transition"
       ],
       writes: [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit"]
@@ -15830,6 +15831,7 @@ var RULES = [
   "policy/oscillation",
   "policy/no-open-ticket",
   "policy/ticket-open",
+  "policy/files-busy",
   "policy/package-too-large",
   "policy/do-not-touch",
   "policy/entries-missing",
@@ -18588,6 +18590,11 @@ async function coveredByGit(git, projectRoot2, path) {
 var cache = /* @__PURE__ */ new Map();
 function matchesGlob(glob4, path) {
   return patternOf(glob4).test(normalize(path));
+}
+function filesOverlap(own2, other) {
+  return own2.find(
+    (path) => other.some((theirs) => matchesGlob(theirs, path) || matchesGlob(path, theirs))
+  );
 }
 function firstMatch(globs2, path) {
   return globs2.find((glob4) => matchesGlob(glob4, path));
@@ -22806,6 +22813,20 @@ var gatesModule = defineConfigModule({
     review: gate.meta({ description: "auto lets a policy transition pass gate:review." })
   }).prefault({})
 });
+var executionTreeModule = defineConfigModule({
+  key: "execution.tree",
+  consumer: "graph",
+  owner: "T41",
+  description: "When bdk next marks a part of the execute wave tree: one lead per part.",
+  schema: strictObject({
+    enabled: boolean2().default(true).meta({
+      description: "false runs every part flat, the main thread dispatching its tasks."
+    }),
+    "min-parts": int().min(2).max(15).default(2).meta({
+      description: "Ready parts not started a large Change needs before they run as a tree."
+    })
+  }).prefault({})
+});
 var KIND_NAMES = [
   "intent",
   "design",
@@ -22911,7 +22932,7 @@ var SKILL_CONTEXT = {
   "bdk-implementer-return-contract": [
     {
       kind: "file",
-      path: "skills/subagent-execute-plan/references/return-contract.md",
+      path: "skills/bdk-implementer-return-contract/references/return-contract.md",
       title: "Return contract"
     }
   ],
@@ -22932,6 +22953,7 @@ var SKILL_CONTEXT = {
   "create-adr": [rules("architecture")],
   debug: [tools("test"), tools("lint")],
   design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  execute: [{ kind: "concurrency" }, decision],
   plan: [
     rules("plan"),
     rules("engineering-judgment"),
@@ -24308,15 +24330,11 @@ var featuresModule = defineConfigModule({
   }).prefault({})
 });
 var executionModule = defineConfigModule({
-  key: "execution",
+  key: "execution.concurrency",
   consumer: "ctx",
   owner: "T23",
-  description: "How the orchestrator runs the dispatches of one wave.",
-  schema: strictObject({
-    concurrency: int().min(1).max(15).default(5).meta({
-      description: "The most dispatches of one wave run at once; the swarm skill's context states it (T23-D52)."
-    })
-  }).prefault({})
+  description: "The most dispatches of one wave run at once; the swarm skill's context states it (T23-D52).",
+  schema: int().min(1).max(15).default(5)
 });
 var fragmentPrompts = ["lavish", "ask-user"].map(
   (name) => definePromptKey({
@@ -24377,7 +24395,7 @@ function sectionsOf(input, resolved, part) {
       ];
     }
     case "concurrency": {
-      const { concurrency } = read(executionModule, resolved);
+      const concurrency = read(executionModule, resolved);
       return [
         {
           title: "Concurrency",
@@ -24413,7 +24431,7 @@ function declared(prompts2, key) {
   return key;
 }
 function read(module, resolved) {
-  return module.schema.parse(resolved.value[module.key]);
+  return moduleValue(module, resolved.value);
 }
 function lavish(input, resolved) {
   return read(featuresModule, resolved).lavish && input.which("lavish-axi") !== void 0;
@@ -25997,7 +26015,7 @@ function composeInstruction(parts) {
     `# ${node3.id} (${node3.kind})`,
     template.trimEnd(),
     "## Write to",
-    parts.paths.length === 0 ? "- nothing: the result is a ledger entry" : parts.paths.map((path) => `- ${path}`).join("\n"),
+    parts.paths.length === 0 ? "- no file of the Change: the kernel records the result" : parts.paths.map((path) => `- ${path}`).join("\n"),
     "## Rules",
     parts.rules.length === 0 ? "none" : parts.rules.map((rule2) => `### ${rule2.category}
 
@@ -26026,6 +26044,37 @@ function finish(node3, kind) {
     return `Run \`bdk done ${node3.id}\` to mark every part, or \`bdk done ${kind.name}:<nn>\` for one part.`;
   }
   return `Run \`bdk done ${node3.id}\`.`;
+}
+
+// kernel/src/graph/domain/wave.ts
+var KIND2 = "execute-part";
+function executeWave(input) {
+  const candidates = input.graph.nodes.flatMap(
+    (node3) => node3.kind === KIND2 && node3.nn !== void 0 && !node3.sealed && (node3.state === "ready" || node3.state === "stale") ? [node3.nn] : []
+  );
+  const filesOf3 = (part) => input.files.get(part) ?? [];
+  const claimed = candidates.filter((nn) => input.started.has(nn)).flatMap(filesOf3);
+  const ready = candidates.filter((nn) => {
+    if (input.started.has(nn)) return true;
+    if (input.overlap(filesOf3(nn), claimed) !== void 0) return false;
+    claimed.push(...filesOf3(nn));
+    return true;
+  });
+  const fresh = ready.filter((nn) => !input.started.has(nn)).length;
+  const tree = input.profile === "large" && input.tree.enabled && fresh >= input.tree["min-parts"];
+  return ready.map((part) => {
+    const own2 = input.tickets.filter(
+      ({ target }) => target === part || target.startsWith(`${part}-`)
+    );
+    const started = input.started.has(part);
+    const lead = own2.some(({ loop }) => loop === "part-lead");
+    return {
+      part,
+      started,
+      tickets: own2.map(({ ticket }) => ticket),
+      mode: lead || !started && tree ? "tree" : "flat"
+    };
+  });
 }
 
 // kernel/src/graph/use-cases/instruction.ts
@@ -26090,7 +26139,8 @@ function nextStep(deps, change, globalDir2) {
         report: {
           ...base,
           artifact: nodeView(next),
-          instruction: instructionOf(deps, change, read2, next)
+          instruction: instructionOf(deps, change, read2, next),
+          ...next.kind === "execute-part" ? { wave: waveOf(deps.store, change, read2, index2) } : {}
         }
       };
     }
@@ -26109,6 +26159,27 @@ function nextStep(deps, change, globalDir2) {
       };
     }
     return { report: { ...base, waiting: "nothing" } };
+  });
+}
+function waveOf(store2, change, read2, index2) {
+  const started = new Set(
+    read2.entries.flatMap(
+      (entry) => entry.type === "transition" && entry.source === "kernel" && entry.to?.startsWith("execute-part:") === true ? [entry.to.slice("execute-part:".length)] : []
+    )
+  );
+  return executeWave({
+    graph: read2.graph,
+    profile: read2.view.profile,
+    tree: moduleValue(executionTreeModule, read2.resolved.value),
+    files: new Map(
+      readPlanParts(store2, change.dir).map((part) => [
+        part.id,
+        part.tasks.flatMap((task) => task.files.map((file) => file.path))
+      ])
+    ),
+    overlap: filesOverlap,
+    started,
+    tickets: openAttempts(index2, change.id)
   });
 }
 
@@ -26283,7 +26354,7 @@ function requireGate(deps, change, globalDir2, gate2) {
 
 // kernel/src/graph/index.ts
 var graphConfig = {
-  modules: [gatesModule],
+  modules: [gatesModule, executionTreeModule],
   prompts: [...pipelinePrompts]
 };
 function graphRegistrations(deps) {
@@ -26920,7 +26991,8 @@ function classifyDiff(target, facts) {
   const declared2 = [];
   const undeclared = [];
   for (const path of facts.touched) {
-    const forbidding = own2.forbidden.find((rule2) => matchesGlob(rule2.glob, path));
+    const elsewhere = firstMatch(own2.declared, path) === void 0 && firstMatch(others, path) !== void 0;
+    const forbidding = elsewhere ? void 0 : own2.forbidden.find((rule2) => matchesGlob(rule2.glob, path));
     if (forbidding !== void 0) {
       return refuse(
         "policy/do-not-touch",
@@ -26929,7 +27001,7 @@ function classifyDiff(target, facts) {
       );
     }
     if (firstMatch(own2.declared, path) !== void 0) declared2.push(path);
-    else if (firstMatch(others, path) === void 0) undeclared.push(path);
+    else if (!elsewhere) undeclared.push(path);
   }
   return { touched: facts.touched, declared: declared2, undeclared };
 }
@@ -27192,9 +27264,8 @@ function closeAttempt(deps, change, where, input) {
   });
 }
 async function stepEvidence(deps, change, index2, globalDir2, record5, resolved) {
-  if (!packageRoles(deps.store, change.dir, record5.ticket).includes("implementer")) {
-    return void 0;
-  }
+  const roles = packageRoles(deps.store, change.dir, record5.ticket);
+  if (!roles.includes("implementer") && !roles.includes("simplifier")) return void 0;
   const steps = await targetSteps(deps, change, index2, globalDir2, record5.target);
   if ("refused" in steps) return steps;
   return closeEvidence(deps, change, globalDir2, {
@@ -27439,6 +27510,9 @@ function openAttempt(deps, change, globalDir2, input) {
         [`bdk attempt close ${open2.ticket} ok|fail|not-run`]
       );
     }
+    const parts = readPlanParts(deps.store, change.dir);
+    const busy = filesBusy(parts, records, loop, input.target);
+    if (busy !== void 0) return busy;
     const policy = ladderPolicy(targets.settings, loop);
     const state = roundState(currentRound(key, targets.entries), policy);
     const blocked = escalationBlocked(state, policy, escalationsOf(records));
@@ -27488,6 +27562,16 @@ function openAttempt(deps, change, globalDir2, input) {
         [`bdk attempt close ${rival.ticket} ok|fail|not-run`]
       );
     }
+    const crossed = filesBusy(
+      parts,
+      keyedRecords(deps.store, change.dir).filter((record5) => record5.ticket !== ticket),
+      loop,
+      input.target
+    );
+    if (crossed !== void 0) {
+      deps.store.remove(path);
+      return crossed;
+    }
     const entry = dropped.length === 0 ? void 0 : await recordDropped(deps, change, index2, input.target, scope2, dropped);
     if (entry !== void 0 && "refused" in entry) return entry;
     return {
@@ -27505,6 +27589,32 @@ function openAttempt(deps, change, globalDir2, input) {
       ...loop === "verifier" || loop === "part-lead" ? {} : { steps: targets.steps }
     };
   });
+}
+var CODE_LOOPS = ["task-redispatch", "verify-fix"];
+function filesOf2(parts, loop, target) {
+  if (loop === "task-redispatch") {
+    const task = taskHolders(parts).get(target)?.tasks.find((found) => found.id === target);
+    return task?.files.map((file) => file.path) ?? [];
+  }
+  const part = parts.find((found) => found.id === target);
+  return part?.tasks.flatMap((task) => task.files.map((file) => file.path)) ?? [];
+}
+function filesBusy(parts, records, loop, target) {
+  if (!CODE_LOOPS.includes(loop)) return void 0;
+  const own2 = filesOf2(parts, loop, target);
+  for (const record5 of records) {
+    if (record5.outcome !== void 0 || !CODE_LOOPS.includes(record5.loop)) continue;
+    if (record5.loop === loop && record5.target === target) continue;
+    const path = filesOverlap(own2, filesOf2(parts, record5.loop, record5.target));
+    if (path !== void 0) {
+      return refuse(
+        "policy/files-busy",
+        `${path} of ${target} is in the Files: of ticket ${record5.ticket} (${record5.loop} ${record5.target})`,
+        [`bdk attempt list`, `bdk agents wait`]
+      );
+    }
+  }
+  return void 0;
 }
 function isLoop(value) {
   return LOOPS.includes(value);

@@ -6,6 +6,12 @@
 
 Symptom, cause, and fix for the messages BDK can actually show you, grouped by the hook or script that prints them. Message text is quoted verbatim from source.
 
+!!! note "BDK 3"
+
+    The run manifests and the plan stamp below belong to the BDK 2
+    `/bdk:subagent-execute-plan`, which BDK 3 removed. `/bdk:execute` keeps its state
+    in the Change's ledger and the task commits' trailers and resumes from `bdk next`.
+
 ## Run held by another session
 
 **Symptom:**

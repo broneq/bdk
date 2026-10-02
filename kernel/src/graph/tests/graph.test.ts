@@ -13,7 +13,7 @@ import {
 import type { Layer } from "../../shared/config/index.ts";
 import { readDocument, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
-import { KIND_NAMES, pipelinePrompts, gatesModule } from "../config.ts";
+import { KIND_NAMES, executionTreeModule, gatesModule, pipelinePrompts } from "../config.ts";
 import { graphConfig } from "../index.ts";
 import { doneOutput, explainOutput, nextOutput, validateOutput } from "../schema/outputs.ts";
 import {
@@ -98,7 +98,10 @@ describe("settings", () => {
     expect(pipelinePrompts.map((prompt) => [prompt.key, prompt.defaultFile])).toStrictEqual(
       KIND_NAMES.map((kind) => [`pipeline/${kind}`, `pipeline/${kind}.md`]),
     );
-    expect(graphConfig).toStrictEqual({ modules: [gatesModule], prompts: pipelinePrompts });
+    expect(graphConfig).toStrictEqual({
+      modules: [gatesModule, executionTreeModule],
+      prompts: pipelinePrompts,
+    });
   });
 
   it("a prompt file for a name that is no kind is an unknown key", () => {

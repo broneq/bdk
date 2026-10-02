@@ -1,11 +1,6 @@
 # Review Engine
 
-The single description of how a code review is scoped, dispatched, and merged. Two callers follow it:
-
-| Caller                               | Mode          | How it loads this file                                                                                                                                                  |
-| ------------------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/bdk:cr`                            | `interactive` | Inlined at skill load - every invocation is a review, so there is nothing to defer                                                                                      |
-| `/bdk:subagent-execute-plan` Step 4a | `autonomous`  | Read lazily at Step 4a via `${CLAUDE_PLUGIN_ROOT}/skills/cr/references/review-engine.md` - it runs once at the end of a long run and is protecting a 50% context budget |
+The single description of how a code review is scoped, dispatched, and merged. `/bdk:cr` follows it in `interactive` mode, inlined at skill load: every invocation is a review, so there is nothing to defer. The `autonomous` mode had one caller, the v2 `subagent-execute-plan`, which T41 removed; T42 rewrites this engine for `/bdk:cr` on the swarm.
 
 Reading this file is **not** invoking `/bdk:cr`. The executor's rule against skills-that-spawn-subagents inside subagents is about skill invocation from a subagent; the coordinator is not a subagent, and following a reference doc spawns nothing by itself.
 

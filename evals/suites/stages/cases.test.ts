@@ -3,6 +3,20 @@ import { describe, expect, it } from "vitest";
 import { CaseFileError, caseFile, parseCases, readCases } from "./cases.ts";
 
 describe("parseCases", () => {
+  it("reads a seed and refuses an unknown one, naming the case", () => {
+    const [seeded] = parseCases(
+      "- id: flat\n  command: /bdk:execute\n  seed: audit-csv\n  expect:\n    - reply: x\n",
+      "execute.yaml",
+    );
+    expect(seeded?.seed).toBe("audit-csv");
+    expect(() =>
+      parseCases(
+        "- id: flat\n  command: /bdk:execute\n  seed: nothing\n  expect:\n    - reply: x\n",
+        "execute.yaml",
+      ),
+    ).toThrow("entry 1 (flat): seed must be one of audit-csv, two-independent-parts");
+  });
+
   it("reads the command, preparation, answers and expectations", () => {
     const cases = parseCases(
       [

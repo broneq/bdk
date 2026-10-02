@@ -520,6 +520,7 @@
         "policy/budget-exhausted",
         "policy/oscillation",
         "policy/ticket-open",
+        "policy/files-busy",
         "policy/invalid-transition"
       ],
       "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit"]

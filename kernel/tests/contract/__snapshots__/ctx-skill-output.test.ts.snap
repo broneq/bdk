@@ -2,11 +2,11 @@
 
 exports[`ctx skill output > bdk-implementer-return-contract is unchanged 1`] = `
 "{
-  "content": "## BDK context: bdk-implementer-return-contract\\n\\n### Return contract\\n\\n# skills/subagent-execute-plan/references/return-contract.md\\n\\n- **Default.** Plugin text.\\n",
+  "content": "## BDK context: bdk-implementer-return-contract\\n\\n### Return contract\\n\\n# skills/bdk-implementer-return-contract/references/return-contract.md\\n\\n- **Default.** Plugin text.\\n",
   "parts": [
     {
       "kind": "file",
-      "source": "skills/subagent-execute-plan/references/return-contract.md"
+      "source": "skills/bdk-implementer-return-contract/references/return-contract.md"
     }
   ]
 }"
@@ -166,6 +166,22 @@ exports[`ctx skill output > design is unchanged 1`] = `
     {
       "kind": "project-rules",
       "source": ".bdk/rules"
+    },
+    {
+      "kind": "fragment",
+      "source": "fragments/decision/lavish"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > execute is unchanged 1`] = `
+"{
+  "content": "## BDK context: execute\\n\\n### Concurrency\\n\\nRun at most 5 agents at once.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "concurrency",
+      "source": "execution.concurrency"
     },
     {
       "kind": "fragment",

@@ -239,7 +239,7 @@
       "additionalProperties": false
     },
     "execution": {
-      "description": "How the orchestrator runs the dispatches of one wave.",
+      "description": "Composed of execution.concurrency, execution.tree.",
       "default": {},
       "type": "object",
       "properties": {
@@ -249,6 +249,26 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 15
+        },
+        "tree": {
+          "description": "When bdk next marks a part of the execute wave tree: one lead per part.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "false runs every part flat, the main thread dispatching its tasks.",
+              "type": "boolean"
+            },
+            "min-parts": {
+              "default": 2,
+              "description": "Ready parts not started a large Change needs before they run as a tree.",
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 15
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

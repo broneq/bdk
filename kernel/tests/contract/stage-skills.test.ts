@@ -1,6 +1,6 @@
-// `stage-skills` (v3-t41-design, v3-t41-plan): the two tiers of asking the
-// user in the `decision` fragments, and the content of the `design`,
-// `verify-design`, `plan` and `verify-plan` stage skills. The kernel holds the order of the work; these tests check
+// `stage-skills` (v3-t41-design, v3-t41-plan, v3-t41-execute): the two tiers
+// of asking the user in the `decision` fragments, and the content of the
+// `design`, `verify-design`, `plan`, `verify-plan` and `execute` stage skills. The kernel holds the order of the work; these tests check
 // that each skill names the commands that carry it.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -176,5 +176,43 @@ describe("plan", () => {
     const references = readdirSync(join(STAGES, "plan", "references"));
     expect(references.sort()).toStrictEqual(["task-shape.md"]);
     for (const file of references) expect(body).toContain(`](references/${file})`);
+  });
+});
+
+describe("execute", () => {
+  it("is the only skill that executes a plan, with the concurrency and decision context", () => {
+    expect(existsSync(join(REPO_ROOT, "skills", "subagent-execute-plan"))).toBe(false);
+    expect(SKILL_CONTEXT.execute).toStrictEqual([
+      { kind: "concurrency" },
+      { kind: "fragment", id: "decision" },
+    ]);
+  });
+
+  it("is user-only and never edits a file itself", () => {
+    const { meta } = readSkill("execute");
+    expect(meta["disable-model-invocation"]).toBe(true);
+    expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
+  });
+
+  it("loops on the kernel through every ready part in the mode the wave gives", () => {
+    const { body } = readSkill("execute");
+    for (const needle of [
+      "bdk next --json",
+      "`wave`",
+      "bdk part start <part>",
+      "bdk attempt open part-lead <part>",
+      "bdk dispatch build <part> lead <ticket>",
+      "bdk:lead",
+      "bdk attempt open task-redispatch <task>",
+      "bdk:swarm",
+      "--escalate",
+      "bdk part done <part>",
+      "bdk done spec-delta",
+      "verify-fix",
+      "/bdk:cr",
+      "One `/bdk:execute` runs every ready part",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
   });
 });

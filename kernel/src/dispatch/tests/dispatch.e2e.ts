@@ -105,6 +105,8 @@ describe("bdk dispatch build", () => {
     expect(text).toContain("- `accessibility`: An accessibility regression.");
     expect(text.indexOf("- `accessibility`")).toBeLessThan(text.indexOf("## Not a fail"));
     expect(text).toContain(`plan/parts/01-part.md`);
+    // The verify-fix ticket holds the part's files until it closes (policy/files-busy).
+    closed(change, ticket, "not-run", "--reason", "r");
     const implementer = opened(change, "task-redispatch", "01-1");
     expect(read(change.root, built(change, "01-1", "implementer", implementer).path)).not.toContain(
       "## Blocking categories",

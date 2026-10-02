@@ -120,11 +120,6 @@
     "fingerprint": "67af1acd287d0b9d"
   },
   {
-    "rule": "description-front-loaded",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "4a884e506305ae0c"
-  },
-  {
     "rule": "description",
     "file": "agents/design-verifier.md",
     "fingerprint": "7c6bcca4fd206399"
@@ -135,34 +130,9 @@
     "fingerprint": "e3322c2fe97fa491"
   },
   {
-    "rule": "description",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "71421b393ca5c362"
-  },
-  {
     "rule": "field-values",
     "file": "skills/debug/SKILL.md",
     "fingerprint": "176d206c50008a32"
-  },
-  {
-    "rule": "forbidden-text",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "1e0b023cbf01e5a5"
-  },
-  {
-    "rule": "forbidden-text",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "7aec6a794f1d7599"
-  },
-  {
-    "rule": "forbidden-text",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "a6f480e41d81eeeb"
-  },
-  {
-    "rule": "forbidden-text",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "b5f4785518246c75"
   },
   {
     "rule": "line-limit",
@@ -173,11 +143,6 @@
     "rule": "line-limit",
     "file": "skills/refine-rules/SKILL.md",
     "fingerprint": "79ffbc40832be199"
-  },
-  {
-    "rule": "line-limit",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "cb147be7bce843e0"
   },
   {
     "rule": "line-limit",
@@ -220,89 +185,9 @@
     "fingerprint": "f4d3f0529fc5ae8e"
   },
   {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "6dcc9edc823fec3e"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "6dcc9edc823fec3e"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "6dcc9edc823fec3e"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "6dcc9edc823fec3e"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "6dcc9edc823fec3e"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "7494b166ac8e72b4"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "7494b166ac8e72b4"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "7494b166ac8e72b4"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "9ca7719aaf401bc4"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "9ca7719aaf401bc4"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "9ca7719aaf401bc4"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "9ca7719aaf401bc4"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "9ca7719aaf401bc4"
-  },
-  {
     "rule": "namespaced-refs",
     "file": "skills/commit/SKILL.md",
     "fingerprint": "c49bbb40e44b20d3"
-  },
-  {
-    "rule": "references",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "b77aa0084f38e558"
-  },
-  {
-    "rule": "references",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "b77aa0084f38e558"
-  },
-  {
-    "rule": "references",
-    "file": "skills/subagent-execute-plan/SKILL.md",
-    "fingerprint": "b77aa0084f38e558"
   },
   {
     "rule": "unused-files",

@@ -34,6 +34,16 @@ describe("checkExpectations", () => {
     expect(result).toEqual({ pass: true, failures: [] });
   });
 
+  it("takes null as an absent path", () => {
+    const answers = kernel({ "attempt list": { code: 0, json: { items: [] } } });
+    expect(
+      checkExpectations([{ run: "attempt list", json: { budgets: null } }], answers, "").pass,
+    ).toBe(true);
+    expect(
+      checkExpectations([{ run: "attempt list", json: { items: null } }], answers, "").pass,
+    ).toBe(false);
+  });
+
   it("names each failed expectation", () => {
     const result = checkExpectations(
       [

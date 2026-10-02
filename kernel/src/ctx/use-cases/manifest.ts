@@ -28,7 +28,7 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   "bdk-implementer-return-contract": [
     {
       kind: "file",
-      path: "skills/subagent-execute-plan/references/return-contract.md",
+      path: "skills/bdk-implementer-return-contract/references/return-contract.md",
       title: "Return contract",
     },
   ],
@@ -49,6 +49,7 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   "create-adr": [rules("architecture")],
   debug: [tools("test"), tools("lint")],
   design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  execute: [{ kind: "concurrency" }, decision],
   plan: [
     rules("plan"),
     rules("engineering-judgment"),

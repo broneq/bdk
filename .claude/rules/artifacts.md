@@ -31,6 +31,6 @@ Examples:
 
 Skills writing code/config into project as code generation (e.g. scaffold creating `src/components/Foo.tsx`) exempt — output IS product, not artifact.
 
-**Cross-skill run state** lives at `.bdk/runs/`, not under any one skill's name, because no single skill owns it: `subagent-execute-plan` advances it and `cr` reads it. Only `scripts/bdk_run_state.py` reads or writes there — skills call that script, never the files. Machine state, not an artifact: gitignored, and no human is meant to open it (use the script's `print` subcommand).
+**Cross-skill run state** lives at `.bdk/runs/`, not under any one skill's name, because no single skill owns it: `cr` reads it (the v2 `subagent-execute-plan` advanced it until T41 removed it; T42 replaces `cr`). Only `scripts/bdk_run_state.py` reads or writes there — skills call that script, never the files. Machine state, not an artifact: gitignored, and no human is meant to open it (use the script's `print` subcommand).
 
 A skill must not write into another skill's `.bdk/<skill-name>/` directory. If two skills need to share something, it is run state and belongs behind the script above.

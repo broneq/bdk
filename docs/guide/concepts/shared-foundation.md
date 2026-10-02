@@ -27,7 +27,7 @@ The hook prints the file without evaluating it. Claude Code evaluates dynamic ``
 
 ## Subagents do not inherit it
 
-This is the part that surprises people. Skills are not inherited from the parent conversation, so a subagent spawned by `/bdk:cr` or `/bdk:subagent-execute-plan` starts without the foundation the orchestrator received. A reviewer that does not know the project's quality rules reviews against none, and nothing errors.
+This is the part that surprises people. Skills are not inherited from the parent conversation, so a subagent spawned by `/bdk:cr` or `/bdk:execute` starts without the foundation the orchestrator received. A reviewer that does not know the project's quality rules reviews against none, and nothing errors.
 
 Plugin subagents cannot fix this with their own hook: the `hooks`, `mcpServers`, and `permissionMode` frontmatter fields are ignored when an agent ships inside a plugin. The supported field is `skills:`, which preloads full skill content into the subagent's context at startup.
 

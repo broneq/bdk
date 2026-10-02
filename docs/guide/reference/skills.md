@@ -88,21 +88,21 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **Related skills:** `/bdk:plan`, which starts it and acts on its verdict.
 
-## Pipeline skills
+## /bdk:execute
 
-These BDK 2 skills form the rest of the full-tier chain: `/bdk:subagent-execute-plan` -> `/bdk:cr`. The BDK 2 planner `/bdk:create-plan` and its file-based `/bdk:verify-plan` are gone; the BDK 3 `/bdk:execute`, which builds the plan parts of a Change, replaces the executor in a later v3 Change - see [The full pipeline](../workflows/full-pipeline.md).
+**Purpose.** Build the verified plan of the active Change through role agents. It loops on `bdk next` and runs every ready plan part in the mode the kernel marks: `flat`, where the main session dispatches each task as one ticket (implementer, then the post-task steps simplify, scoped tests and lint), or `tree`, where one `lead` agent runs each part of a `large` Change with at least two independent parts ready. `bdk config set execution.tree.enabled false` runs every part flat, and `execution.tree.min-parts` (2 to 15) sets how many ready parts a tree needs. Each task ends as one commit with its `BDK-Change`, `BDK-Part` and `BDK-Task` trailers; the kernel decides retries, the narrower scope and escalation to a stronger model. One `/bdk:execute` runs every ready part, then marks the spec deltas done and reruns the steps of a part a later part changed. It never edits a file or runs a test itself, and asks you only about a critical finding the plan and the design do not settle.
 
-## /bdk:subagent-execute-plan
+**Arguments:** none.
 
-**Purpose.** Coordinator that executes a plan in parallel groups via background subagents: spawns implementers, then dedicated test-runner / static-analyse subagents, then routes failures back to the original implementer (via `SendMessage`) or a fresh fixer. Fully autonomous - no human-in-the-loop (`disallowed-tools: AskUserQuestion`). The coordinator itself never edits files, runs tests, or reads source code; subagents do all of that.
+**Artifact:** task commits in the project, and in `.bdk/changes/<changeId>/` the tickets under `attempts/`, the dispatch packages under `dispatch/`, the agents' reports under `reports/`, the evidence under `evidence/` and the entries under `log/`.
 
-**Arguments:** `[plan-path]`
+**When to use.** After `/bdk:plan` has verified the plan. When the plan is not done it dispatches nothing and names `/bdk:plan`. It ends with a report of the parts, the tasks committed, the open findings and the gate items, naming `/bdk:cr`, which you type. Claude does not start it on its own.
 
-**Artifact:** A run manifest at `.bdk/runs/<run-id>.json` - a resume cache, not the source of truth. The durable ground truth is git commit trailers (`BDK-Run:`, `BDK-Group:`), one commit per completed group. Both are mediated exclusively by `scripts/bdk_run_state.py`; on disagreement, git wins and the manifest is corrected.
+**Related skills:** `/bdk:plan` before it, `/bdk:cr` after it.
 
-**When to use.** To execute a BDK 2 plan file task-by-task without manual supervision; it does not read the plan parts of a BDK 3 Change. Two plans that touch the same files need separate git worktrees - see [The full pipeline](../workflows/full-pipeline.md).
+## Review
 
-**Related skills:** `/bdk:cr` (the step after execution finishes), `/bdk:test-driven-development` (preloaded into the `bdk:implementer` agent this skill spawns).
+`/bdk:cr` is still the BDK 2 reviewer; a later v3 Change moves it onto the review stage of a Change.
 
 ## /bdk:cr
 
@@ -112,9 +112,9 @@ These BDK 2 skills form the rest of the full-tier chain: `/bdk:subagent-execute-
 
 **Artifact:** `.bdk/cr/{stamp}-{branch-slug}-{delta|full}.md`, where `stamp=$(git log -1 --format=%cd --date=format:%Y-%m-%d-%H%M)` - the reviewed head's own commit date, so re-running on an unchanged head overwrites rather than accumulates.
 
-**When to use.** After `/bdk:subagent-execute-plan` finishes a plan (full-tier and standard-tier), or as the closing step of the trivial tier via `--inline`. Always run `--full` before opening a PR.
+**When to use.** After `/bdk:execute` finishes a Change, or as the closing step of the trivial tier via `--inline`. Always run `--full` before opening a PR.
 
-**Related skills:** `/bdk:subagent-execute-plan` (previous pipeline stage), `/bdk:pr-review` (each of its per-PR subagents runs `/bdk:cr --inline`).
+**Related skills:** `/bdk:execute` (previous pipeline stage), `/bdk:pr-review` (each of its per-PR subagents runs `/bdk:cr --inline`).
 
 **Safety.** `disallowed-tools: Edit NotebookEdit` in this skill's frontmatter removes those tools from the pool for the whole turn, so "review only" is enforced mechanically rather than by instruction; `Write` is scoped to `Write(.bdk/cr/**)` only.
 
@@ -254,7 +254,7 @@ Two skills keep `.claude/rules/` accurate instead of letting it accrete into a c
 
 **When to use.** Implementing any feature or bugfix, wherever test cases have already been broken into bullet points (typically by `/bdk:plan`).
 
-**Related skills:** `/bdk:plan` (source of the test cases), `/bdk:subagent-execute-plan` (its `bdk:implementer` agent preloads this skill via `skills:` frontmatter so subagents get the same red-green process).
+**Related skills:** `/bdk:plan` (source of the test cases), `/bdk:execute` (its implementer packages carry the same red-green process).
 
 ## Meta-skills
 
@@ -264,12 +264,12 @@ Eight skills carry `user-invocable: false` and are never typed as `/bdk:<name>` 
 
 Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which several skills used as their only state mechanism. Those skills are gone rather than patched:
 
-| Removed                                       | Use instead                                                                                                                                                                                         |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/bdk:execute-plan`                           | `/bdk:subagent-execute-plan`                                                                                                                                                                        |
-| `/bdk:save-progress`, `/bdk:restore-progress` | Nothing to invoke. `/bdk:subagent-execute-plan` checkpoints itself to a run manifest plus git commit trailers and resumes automatically; `--force` takes a run over from a dead session             |
-| `/bdk:create-tasks`, `/bdk:refactor`          | `/bdk:plan`                                                                                                                                                                                         |
-| `/bdk:audit-prompt`                           | Nothing                                                                                                                                                                                             |
-| `/bdk:graphviz-docs-compiler`                 | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
-| `/bdk:brainstorming`                          | `/bdk:design`                                                                                                                                                                                       |
-| `/bdk:brainstorm-architecture`                | `/bdk:design`                                                                                                                                                                                       |
+| Removed                                           | Use instead                                                                                                                                                                                         |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/bdk:execute-plan`, `/bdk:subagent-execute-plan` | `/bdk:execute`                                                                                                                                                                                      |
+| `/bdk:save-progress`, `/bdk:restore-progress`     | Nothing to invoke. The Change's ledger and the task commits' trailers hold the state; `/bdk:execute` resumes from `bdk next`                                                                        |
+| `/bdk:create-tasks`, `/bdk:refactor`              | `/bdk:plan`                                                                                                                                                                                         |
+| `/bdk:audit-prompt`                               | Nothing                                                                                                                                                                                             |
+| `/bdk:graphviz-docs-compiler`                     | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
+| `/bdk:brainstorming`                              | `/bdk:design`                                                                                                                                                                                       |
+| `/bdk:brainstorm-architecture`                    | `/bdk:design`                                                                                                                                                                                       |

@@ -175,7 +175,7 @@ The plugin SHALL ship `skills/swarm/SKILL.md`, `user-invocable: false`, which th
 - **Isolation.** A wave dispatches in parallel only tasks whose `Files:` are disjoint (P6); overlapping tasks wait for the next wave.
 - **Prompt.** Each agent gets its package path and at most one sentence (Dispatch prompt).
 - **Concurrency.** Each orchestrating agent, `main` or a lead, runs at most `execution.concurrency` children at once; the value comes from the skill's context (`Concurrency` section of `bdk ctx skill swarm`).
-- **Tree.** When the kernel marks a wave as a tree, `main` starts one lead per part of the wave and each lead runs its part's tasks; otherwise `main` runs the tasks itself. `main` never builds a deeper tree than lead, role agent and, under a worker, a scout.
+- **Tree.** `bdk next` marks each part of the execute wave `tree` or `flat` (`wave`, `kernel-cli/graph`, bdk next): `main` starts one lead per `tree` part and that lead runs the part's tasks; `main` runs the tasks of `flat` parts itself. The orchestrator never decides the mode. `main` never builds a deeper tree than lead, role agent and, under a worker, a scout.
 - **Waiting.** Every agent is started in the background. A lead waits with `bdk agents wait <own id>` between dispatches, never by ending its turn; `main` ends its turn and is woken by the host's task notification.
 - **Files carry the substance.** Everything an agent must know is in its package, the ledger or a report; a message names a ledger id and adds one sentence. Before the next wave the orchestrator reads what the finished tickets logged with `bdk log list --since-ticket-start <ticket>`, and a `SendMessage` to `main` about a critical finding stops the wave.
 - **Steps under the ticket.** After an implementer returns with its report stored, its orchestrator dispatches the ticket's `steps` from `attempt open` in order under the same ticket, then closes it; `attempt close` decides whether the evidence suffices.
@@ -193,6 +193,11 @@ Host specifics live in `skills/swarm/references/hosts/claude-code.md`, the only 
 
 - **WHEN** the content test reads `skills/swarm/SKILL.md`
 - **THEN** it tells the orchestrator to resume an agent with a missing or refused report, or a `suspect` one, once, naming the cause, and to close the ticket `fail` after a second failure
+
+#### Scenario: mode from the kernel
+
+- **WHEN** the content test reads `skills/swarm/SKILL.md`
+- **THEN** it names `wave` of `bdk next` as the source of `tree` and `flat`, and holds no rule of its own on when a wave runs as a tree
 
 #### Scenario: no flat-swarm sentence
 

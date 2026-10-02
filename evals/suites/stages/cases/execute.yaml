@@ -1,0 +1,101 @@
+# Cases of /bdk:execute (spec stage-skills, execute requirements). Every case
+# starts from a fresh copy of the pinned fixture on its branch feat/eval with
+# Lavish off. The seeds (seeds.ts) build the Change through the kernel the run
+# uses, as the user's earlier sessions would have left it.
+#
+# flat: the T40 audit CSV task on a tiny Change, part 02 depending on part 01.
+# One /bdk:execute runs both parts; main dispatches the tasks itself, so no
+# part-lead ticket exists.
+- id: flat
+  command: /bdk:execute
+  seed: audit-csv
+  prepare:
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: explain execute-part:01
+      json:
+        state: done
+    - run: explain execute-part:02
+      json:
+        state: done
+    - run: attempt list --for 01
+      json:
+        budgets.part-lead: null
+    - reply: /bdk:cr
+
+# tree: a large Change with two independent parts, src/ui/format.ts and
+# src/api/http.ts; the kernel marks both tree, so one lead runs each part.
+- id: tree
+  command: /bdk:execute
+  seed: two-independent-parts
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: explain execute-part:01
+      json:
+        state: done
+    - run: explain execute-part:02
+      json:
+        state: done
+    - run: attempt list --for 01
+      json:
+        budgets.part-lead.of: 2
+    - run: attempt list --for 02
+      json:
+        budgets.part-lead.of: 2
+    - reply: /bdk:cr
+
+# not-ready: the plan part is written and not done, so the skill dispatches
+# nothing and names the plan stage command.
+- id: not-ready
+  command: /bdk:execute
+  prepare:
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+    - |-
+      node "$BDK" change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
+    - |-
+      D=$(ls -d .bdk/changes/20*) && mkdir -p "$D/plan/parts" && cat > "$D/plan/parts/01-fallback.md" <<'MD'
+      ---
+      schema: 1
+      id: "01"
+      title: Whitespace takes the fallback
+      goal: formatTimestamp returns the fallback for a whitespace-only value.
+      success-measure: The tests of src/ui/format.test.ts pass.
+      do-not-touch: []
+      depends-on: []
+      spec-impact: none
+      ---
+
+      ## 01-1 A whitespace-only value takes the fallback
+
+      `formatTimestamp` in `src/ui/format.ts` returns `fallback` when `value`
+      holds only whitespace.
+
+      **Files:**
+
+      - `src/ui/format.ts`
+      - `src/ui/format.test.ts`
+
+      **Test cases:**
+
+      - `formatTimestamp('   ')` returns `Unknown`
+      MD
+  expect:
+    - run: explain plan
+      json:
+        state: ready
+    - run: attempt list --all
+      json:
+        items.length: 0
+    - reply: /bdk:plan

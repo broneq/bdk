@@ -11,6 +11,16 @@ export function matchesGlob(glob: string, path: string): boolean {
   return patternOf(glob).test(normalize(path));
 }
 
+/**
+ * The first path of `own` that one of `other` covers or that covers one of
+ * `other`: two `Files:` lists that touch one file.
+ */
+export function filesOverlap(own: readonly string[], other: readonly string[]): string | undefined {
+  return own.find((path) =>
+    other.some((theirs) => matchesGlob(theirs, path) || matchesGlob(path, theirs)),
+  );
+}
+
 /** The first glob of `globs` that `path` matches, or undefined. */
 export function firstMatch(globs: readonly string[], path: string): string | undefined {
   return globs.find((glob) => matchesGlob(glob, path));

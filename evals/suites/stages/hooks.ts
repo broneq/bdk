@@ -14,6 +14,7 @@ import type { EvalResult, Measurement, RunContext, SuiteHooks } from "../../harn
 import { answerHookSettings } from "./answer.ts";
 import type { StageCase } from "./cases.ts";
 import { checkExpectations } from "./checks.ts";
+import { runSeed } from "./seeds.ts";
 import type { CheckResult, KernelCall } from "./checks.ts";
 
 const ANSWER_HOOK = fileURLToPath(new URL("./answer-hook.ts", import.meta.url));
@@ -41,8 +42,9 @@ function environment(settings: StageCellSettings): NodeJS.ProcessEnv {
 }
 
 /**
- * Installs the answer hook and runs the case's preparation in `workDir`, which
- * the harness has reset to the fixture; a case on the empty base replaces it.
+ * Installs the answer hook and runs the case's seed and preparation in
+ * `workDir`, which the harness has reset to the fixture; a case on the empty
+ * base replaces it.
  * The settings file is excluded from git, so the skill sees the base's own state.
  */
 export function prepareRun(workDir: string, stage: StageCase, settings: StageCellSettings): void {
@@ -55,6 +57,9 @@ export function prepareRun(workDir: string, stage: StageCase, settings: StageCel
     `${JSON.stringify(answerHookSettings(ANSWER_HOOK, answers), null, 2)}\n`,
   );
   appendFileSync(join(workDir, ".git", "info", "exclude"), "\n/.claude/settings.json\n");
+  if (stage.seed !== undefined) {
+    runSeed(stage.seed, workDir, { bundle: settings.bundle, configHome: settings.configHome });
+  }
   for (const command of stage.prepare) {
     execFileSync("sh", ["-c", command], {
       cwd: workDir,
