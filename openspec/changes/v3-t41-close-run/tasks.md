@@ -38,8 +38,8 @@
 
 ## 7. Documentation
 
-- [ ] 7.1 `docs/guide/reference/skills.md` (`/bdk:close`, `/bdk:run` with `--auto`, which skills the model may start and the guard), the workflow pages and the guide page on gates and policy (the run marker, `source: policy`, how to keep everything manual); README skill table and pipeline section; `pnpm docs:build` green
-- [ ] 7.2 `docs/V3-IMPLEMENTATION-PLAN.md`: T41 Delivery item 6 states the YOLO mode (user decision 2026-10-02), OD-7 revised for `change`, `plan`, `execute`, `close`, and the acceptance split with T42; a comment on #62 (T42) names the `review` node, the `run` E2E to `closed` and the `disallowed-tools` finding of 1.1 for `cr`
+- [x] 7.1 `docs/guide/reference/skills.md` (`/bdk:close`, `/bdk:run` with `--auto`, which skills the model may start and the guard), the workflow pages and the guide page on gates and policy (the run marker, `source: policy`, how to keep everything manual); README skill table and pipeline section; `pnpm docs:build` green
+- [x] 7.2 `docs/V3-IMPLEMENTATION-PLAN.md`: T41 Delivery item 6 states the YOLO mode (user decision 2026-10-02), OD-7 revised for `change`, `plan`, `execute`, `close`, and the acceptance split with T42; a comment on #62 (T42) names the `review` node, the `run` E2E to `closed` and the `disallowed-tools` finding of 1.1 for `cr`
 
 ## 8. Acceptance
 

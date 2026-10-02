@@ -14,7 +14,7 @@ For the deeper "why" behind the pipeline these skills form, see the [tier table]
 
 ## Stage skills
 
-BDK 3 works in Changes: one unit of work on one branch, whose intent, design, plan, ledger and progress the kernel keeps. A stage skill runs one step of a Change and ends by naming the command to type next; you type it, so every stage starts from your decision. Stage skills write only through kernel commands (`bdk ...`) and follow a kernel refusal's `instead` rather than working around it.
+BDK 3 works in Changes: one unit of work on one branch, whose intent, design, plan, ledger and progress the kernel keeps. A stage skill runs one step of a Change and ends by naming the command to type next; you type it, so every stage starts from your decision. `/bdk:run` types them for you, one stage after another, and stops where a gate needs you. Stage skills write only through kernel commands (`bdk ...`) and follow a kernel refusal's `instead` rather than working around it.
 
 ## /bdk:setup
 
@@ -36,7 +36,7 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **Artifact:** `.bdk/changes/<changeId>/`, written by `bdk change new`; the branch binding lives in `.bdk/.machine/`.
 
-**When to use.** At the start of every feature or fix, and whenever you want to know which command comes next. When the branch already has an active Change, it shows that Change and opens nothing. Claude does not start it on its own.
+**When to use.** At the start of every feature or fix, and whenever you want to know which command comes next. When the branch already has an active Change, it shows that Change and opens nothing. Claude starts it only inside a `/bdk:run` of your session; the kernel's hooks deny any other call.
 
 **Related skills:** `/bdk:setup` before it; the stage it names next, `/bdk:design` for a feature or `/bdk:plan` for a bug.
 
@@ -72,7 +72,7 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **Artifact:** `.bdk/changes/<changeId>/plan/parts/<nn>-<slug>.md`, `spec-delta/<capability>.md` for the capabilities a part names in `spec-impact`, and `decision` entries under `log/`.
 
-**When to use.** After the design gate, or right after opening a `bug` or `tiny` Change. It ends with a report of the parts, their waves, the corrections it made and each finding with its decision, naming `/bdk:execute`, which you type. Claude does not start it on its own.
+**When to use.** After the design gate, or right after opening a `bug` or `tiny` Change. It ends with a report of the parts, their waves, the corrections it made and each finding with its decision, naming `/bdk:execute`, which you type. Claude starts it only inside a `/bdk:run` of your session.
 
 **Related skills:** `/bdk:design` or `/bdk:change` before it, `/bdk:verify-plan` inside it, `/bdk:debug`, which hands a large fix to a `bug` Change.
 
@@ -96,9 +96,33 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **Artifact:** task commits in the project, and in `.bdk/changes/<changeId>/` the tickets under `attempts/`, the dispatch packages under `dispatch/`, the agents' reports under `reports/`, the evidence under `evidence/` and the entries under `log/`.
 
-**When to use.** After `/bdk:plan` has verified the plan. When the plan is not done it dispatches nothing and names `/bdk:plan`. It ends with a report of the parts, the tasks committed, the open findings and the gate items, naming `/bdk:cr`, which you type. Claude does not start it on its own.
+**When to use.** After `/bdk:plan` has verified the plan. When the plan is not done it dispatches nothing and names `/bdk:plan`. It ends with a report of the parts, the tasks committed, the open findings and the gate items, naming `/bdk:cr`, which you type. Claude starts it only inside a `/bdk:run` of your session.
 
 **Related skills:** `/bdk:plan` before it, `/bdk:cr` after it.
+
+## /bdk:close
+
+**Purpose.** Close the reviewed Change. It checks the close with `bdk change close --dry-run` and stops on what the kernel refuses (an open ticket, a spec conflict), regenerates `.claude/rules/bdk-generated*.md` when the project's rules changed, then runs `bdk change close`: the spec deltas are merged into `.bdk/specs/`, the Change is archived under `.bdk/changes/archive/<changeId>/` and committed as `chore(bdk): close <changeId>`. It ends with the PR summary from the ledger (intent, decisions, assumptions, risks, open findings, merged capabilities), the gates passed by policy rather than by you, and the regenerated rule files for you to commit. It asks nothing, edits no file and opens no PR: publishing the PR is your step.
+
+**Arguments:** none.
+
+**Artifact:** `.bdk/changes/archive/<changeId>/`, the merged `.bdk/specs/`, the close commit, and the regenerated rule projection when the rules changed.
+
+**When to use.** After `/bdk:cr`, when the review gate is ready; typing `/bdk:close` passes it. Claude starts it only inside a `/bdk:run` of your session.
+
+**Related skills:** `/bdk:cr` before it, `/bdk:run`, which can end with it.
+
+## /bdk:run
+
+**Purpose.** Carry a Change through its stages without typing each command. It loops on `bdk next` and starts the stage skill the kernel names (`/bdk:change` with your intent, then `/bdk:design`, `/bdk:plan`, `/bdk:execute` and `/bdk:close`), each with its own instructions and tools. While it runs nobody answers questions: the skills take the option they recommend, and each choice becomes a `decision` entry with `review: true`, shown at the next gate and in the PR summary. It stops when a gate needs you, when the Change is parked, when a stage reports a refusal it could not resolve, at the review stage (it names `/bdk:cr`, which you type; a later Change lets it start the review), and after the close. It prints one line per stage and the full status only at the stop.
+
+**Arguments:** `[--auto] ["<intent>"]` - an intent opens a new Change on a branch without one; none continues the active Change. `--auto` as the first word passes every gate that is ready during this run; without it only the gates `policy.gates` sets to `auto` pass, and the run stops at each `manual` gate naming the command you type.
+
+**Artifact:** none of its own. The stage skills write theirs; the run's state is `.bdk/.machine/runs/<session>.json`, kept by the hooks and removed when you type a stage command or end the session. A gate the run passes is a `transition` with `source: policy` and your `/bdk:run` line as its command.
+
+**When to use.** For a feature or fix you want carried end to end, with `--auto` when you accept every gate without looking, without it to stop at each one. Claude never starts it on its own.
+
+**Related skills:** every stage skill, which it starts; `/bdk:cr`, which you type at the review stage.
 
 ## Review
 

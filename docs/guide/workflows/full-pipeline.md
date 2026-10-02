@@ -189,6 +189,14 @@ with `--force`, which prints exactly what it took over.
 
 ## Stage 5 - Review
 
+!!! note "BDK 3"
+
+    In BDK 3 the review gate follows `/bdk:cr`, and `/bdk:close` closes the Change:
+    it merges the spec deltas, archives the Change in one commit and reports the PR
+    summary. `/bdk:run "<intent>"` runs the stages for you and stops at each gate that
+    needs you. See [/bdk:close](../reference/skills.md#bdkclose) and
+    [/bdk:run](../reference/skills.md#bdkrun).
+
 ```
 /bdk:cr --full
 ```
