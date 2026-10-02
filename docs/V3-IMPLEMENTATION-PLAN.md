@@ -745,7 +745,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 2. `v3-t41-setup-change` (done, #103): `setup` and `change`, the entry into the workflow.
 3. `v3-t41-design` (done, #104): `design` and `verify-design`.
 4. `v3-t41-plan` (done, #105): `plan` and `verify-plan`.
-5. `v3-t41-execute`: `execute` on the orchestration layer, including the kernel rule that decides when a wave runs as a tree.
+5. `v3-t41-execute` (done, #108): `execute` on the orchestration layer, including the kernel rule that decides when a wave runs as a tree, and one working tree in which no file is held by two open tickets. Follow-ups: T45 (#107) worktree isolation per part, T46 (#109) kernel refusals agents hit, T47 (#110) run diagnostics.
 6. `v3-t41-close-run`: `close` and `run`.
 
 **Dependencies**: T02, T15, T24, T40, T30 (for `close`), T31 (ID tick list in `plan`), T03 (done: tool tiers are the built-in-tools text, agent `tools:` carry no MCP tools).
