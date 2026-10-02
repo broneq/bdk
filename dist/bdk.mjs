@@ -26969,7 +26969,8 @@ function classifyDiff(target, facts) {
   const declared2 = [];
   const undeclared = [];
   for (const path of facts.touched) {
-    const forbidding = own2.forbidden.find((rule2) => matchesGlob(rule2.glob, path));
+    const elsewhere = firstMatch(own2.declared, path) === void 0 && firstMatch(others, path) !== void 0;
+    const forbidding = elsewhere ? void 0 : own2.forbidden.find((rule2) => matchesGlob(rule2.glob, path));
     if (forbidding !== void 0) {
       return refuse(
         "policy/do-not-touch",
@@ -26978,7 +26979,7 @@ function classifyDiff(target, facts) {
       );
     }
     if (firstMatch(own2.declared, path) !== void 0) declared2.push(path);
-    else if (firstMatch(others, path) === void 0) undeclared.push(path);
+    else if (!elsewhere) undeclared.push(path);
   }
   return { touched: facts.touched, declared: declared2, undeclared };
 }

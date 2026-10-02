@@ -86,7 +86,12 @@ export function classifyDiff(target: DiffTarget, facts: DiffFacts): DiffCheck | 
   const declared: string[] = [];
   const undeclared: string[] = [];
   for (const path of facts.touched) {
-    const forbidding = own.forbidden.find((rule) => matchesGlob(rule.glob, path));
+    // Another started part's work in flight: parallel parts share one tree.
+    const elsewhere =
+      firstMatch(own.declared, path) === undefined && firstMatch(others, path) !== undefined;
+    const forbidding = elsewhere
+      ? undefined
+      : own.forbidden.find((rule) => matchesGlob(rule.glob, path));
     if (forbidding !== undefined) {
       return refuse(
         "policy/do-not-touch",
@@ -95,7 +100,7 @@ export function classifyDiff(target: DiffTarget, facts: DiffFacts): DiffCheck | 
       );
     }
     if (firstMatch(own.declared, path) !== undefined) declared.push(path);
-    else if (firstMatch(others, path) === undefined) undeclared.push(path);
+    else if (!elsewhere) undeclared.push(path);
   }
   return { touched: facts.touched, declared, undeclared };
 }

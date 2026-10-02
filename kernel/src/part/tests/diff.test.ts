@@ -74,6 +74,26 @@ describe("classifyDiff", () => {
     expect(check).toMatchObject({ undeclared: [], declared: [] });
   });
 
+  it("leaves the uncommitted work of another started part to that part, even in do-not-touch", () => {
+    const twoParts = [
+      part("01", { "01-1": ["src/ui/format.ts"] }, ["src/api/**"]),
+      part("02", { "02-1": ["src/api/http.ts"] }, ["src/ui/**"]),
+    ];
+    const both = { parts: twoParts, started: new Set(["01", "02"]) };
+    const touched = ["src/api/http.ts", "src/ui/format.ts"];
+    expect(classifyDiff({ task: "01-1" }, facts(touched, both))).toStrictEqual({
+      touched,
+      declared: ["src/ui/format.ts"],
+      undeclared: [],
+    });
+    expect(
+      classifyDiff({ task: "01-1" }, facts(touched, { ...both, committed: new Set(["02-1"]) })),
+    ).toMatchObject({
+      rule: "policy/do-not-touch",
+      why: "src/api/http.ts matches do-not-touch src/api/** of part 01",
+    });
+  });
+
   it("a committed sibling's path is flagged", () => {
     const check = classifyDiff(
       { task: "02-3" },

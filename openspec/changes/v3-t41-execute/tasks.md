@@ -29,7 +29,7 @@
 - [x] 5.1 Failing harness tests (`evals/suites/stages/*.test.ts`): a case accepts `seed`, `pnpm eval check` refuses an unknown seed naming the case; seed `audit-csv` leaves `next` at `execute-part:01` with one `flat` part; seed `two-independent-parts` leaves `next` with `wave` of two `tree` parts on a `large` Change (both without a model)
 - [x] 5.2 `evals/suites/stages/seeds.ts` with `audit-csv` (reusing `readTask` and `seedV3` of `execute-ab`) and `two-independent-parts` (design parts, architecture, design index, a recorded `design-verify` verdict, the design gate passed through `bdk hooks prompt-expansion` with a recorded `/bdk:plan` payload, plan parts for `src/ui/format.ts` and `src/api/http.ts`, a recorded `plan-verify` verdict); the `seed` field in `cases.ts` and its run in `hooks.ts`; tests of 5.1 green
 - [x] 5.3 Case file `evals/suites/stages/cases/execute.yaml` (`flat`, `tree`, `not-ready`) with `features.lavish false`; extend `STAGE_SKILLS`; `pnpm eval check` green
-- [ ] 5.4 After the user approves the cost: `pnpm eval stages --skill execute --probe --budget <ledger + margin>`; fix what fails, each fix with its test first, and record the outcome in the PR
+- [ ] 5.4 After the user approves the cost: `pnpm eval stages --skill execute --probe --budget <ledger + margin>`; fix what fails, each fix with its test first, and record the outcome in the PR (first probe 2026-10-02: 3/3 pass, 4.83 USD, but in `tree` the two leads deadlocked: `bdk commit` refused each part's task over the other part's uncommitted files in its `do-not-touch`. Fixed in the diff check, with unit and E2E tests first, delta `specs/kernel-loops`; the seed plan of part 02 now lists `src/api/debugLogging.test.ts`, whose fixture the new rule rejects)
 
 ## 6. Documentation
 
