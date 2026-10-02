@@ -2,6 +2,7 @@
 // instruction, or what the Change waits for. Never writes.
 import { executionTreeModule } from "../config.ts";
 import { fillTemplate } from "../domain/instruction.ts";
+import { stageCommand, stageOfTarget } from "../domain/pipeline.ts";
 import { nodeView } from "../domain/reports.ts";
 import type { NextOutcome } from "../domain/reports.ts";
 import { executeWave } from "../domain/wave.ts";
@@ -38,10 +39,12 @@ export function nextStep(
     }
     const { next, waitingGate } = read.graph;
     if (next !== undefined) {
+      const command = stageCommand(read.pipeline, stageOfTarget(read.pipeline, next.id));
       return {
         report: {
           ...base,
           artifact: nodeView(next),
+          ...(command === undefined ? {} : { command }),
           instruction: instructionOf(deps, change, read, next),
           ...(next.kind === "execute-part"
             ? { wave: waveOf(deps.store, change, read, index) }

@@ -267,6 +267,7 @@ describe("run", () => {
       "/bdk:execute",
       "/bdk:cr",
       "/bdk:close",
+      "an artifact whose `command` is `/bdk:cr`",
       "bdk log add decision",
       "--review",
       "guard/gate-manual",

@@ -82,8 +82,15 @@ const waveItem = z.strictObject({
 export const nextOutput = z
   .strictObject({
     change: z.string().meta({ description: "Opaque merge-safe id (`kernel-state`, Identifiers)." }),
-    stage: z.string().min(1),
+    stage: z.string().min(1).meta({
+      description:
+        "The stage the Change is in, from its latest transition; not necessarily the stage of `artifact`.",
+    }),
     artifact: node.optional(),
+    command: z.string().min(1).optional().meta({
+      description:
+        "With an artifact: the command of the artifact's stage, the skill that does it, e.g. /bdk:execute.",
+    }),
     instruction: z
       .string()
       .optional()
@@ -112,6 +119,7 @@ export const nextOutput = z
           state: "ready",
           requires: ["gate:design"],
         },
+        command: "/bdk:plan",
         instruction: "# plan-part:01 (plan-part)\n\nWrite plan part plan-part:01 ...\n",
         gates: [{ gate: "gate:design", ready: true, done: true, passedBy: "user", pending: [] }],
       },

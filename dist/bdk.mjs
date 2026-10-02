@@ -26183,10 +26183,12 @@ function nextStep(deps, change, globalDir2) {
     }
     const { next, waitingGate } = read2.graph;
     if (next !== void 0) {
+      const command = stageCommand(read2.pipeline, stageOfTarget(read2.pipeline, next.id));
       return {
         report: {
           ...base,
           artifact: nodeView(next),
+          ...command === void 0 ? {} : { command },
           instruction: instructionOf(deps, change, read2, next),
           ...next.kind === "execute-part" ? { wave: waveOf(deps.store, change, read2, index2) } : {}
         }

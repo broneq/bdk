@@ -26,14 +26,14 @@ Done when the run reaches a stop below and you have given the report of "Finish"
 
 Run `bdk next --json` and act on what it returns, then run it again after each stage skill ends:
 
-| `next` returns                                                 | What you do                                                                               |
-| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| refusal `policy/no-active-change`, before the run opened one   | start `/bdk:change` with the intent as its arguments                                      |
-| an artifact of stage `design`, `plan`, `execute` or `close`    | start the skill of that stage: `/bdk:design`, `/bdk:plan`, `/bdk:execute` or `/bdk:close` |
-| `waiting: gate`                                                | start the skill the ready gate's `command` names, such as `/bdk:plan`                     |
-| an artifact of stage `review`                                  | stop: the user types `/bdk:cr`                                                            |
-| `waiting: user`                                                | stop: the Change is parked                                                                |
-| `waiting: nothing`, or no active Change after `/bdk:close` ran | stop: the run is over                                                                     |
+| `next` returns                                                 | What you do                                                                                     |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| refusal `policy/no-active-change`, before the run opened one   | start `/bdk:change` with the intent as its arguments                                            |
+| an artifact whose `command` is `/bdk:cr`                       | stop: the user types `/bdk:cr`                                                                  |
+| any other artifact                                             | start the skill its `command` names: `/bdk:design`, `/bdk:plan`, `/bdk:execute` or `/bdk:close` |
+| `waiting: gate`                                                | start the skill the ready gate's `command` names, such as `/bdk:plan`                           |
+| `waiting: user`                                                | stop: the Change is parked                                                                      |
+| `waiting: nothing`, or no active Change after `/bdk:close` ran | stop: the run is over                                                                           |
 
 Start a stage skill with the `Skill` tool, `skill` set to the command without its slash (`bdk:plan` for `/bdk:plan`). The review stage stops the run because its skill writes a report, and the `Edit` and `Write` refusal of `/bdk:execute` lasts for the rest of the turn; the user types `/bdk:cr`, then `/bdk:run` again to close.
 

@@ -117,7 +117,7 @@ The `run` body tells the model that, until the run stops, every "ask the user" o
 
 - `run` repeats one cycle:
   - run `bdk next --json`;
-  - map the stage to its command through the pipeline's `stages` (`next` names it);
+  - take the command of the next artifact's stage from `command`, which `next` adds for this (user decision 2026-10-02): `stage` is the stage the Change is in, such as `plan` while `execute-part:01` is next, so it cannot pick the skill;
   - start the stage with `Skill`;
   - run `bdk next --json` again.
 - It prints one line when it enters a stage and one when it leaves it.

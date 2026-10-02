@@ -27,12 +27,13 @@
 
 - [x] 5.1 Failing contract tests: `skills/stages/run/SKILL.md` exists with `disable-model-invocation: true` and `allowed-tools` `Skill`, `Read` and the kernel wrapper pair; names `bdk next`, the `Skill` tool, `/bdk:change`, `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:cr`, `/bdk:close`, `bdk log add decision` with `--review`, `guard/gate-manual`, and the stop conditions; the `ctx` manifest holds `run` with no parts
 - [x] 5.2 `ctx skill run` manifest entry; write `skills/stages/run/SKILL.md` per `specs/stage-skills` and `.claude/rules/prompt-writing.md`, under 120 lines; review with `/bdk-skill-kit:skill-authoring`; tests of 5.1 green; `pnpm skill-check` green
+- [x] 5.3 Found while building the seed of 6.2: `stage` of `bdk next` is the stage the Change is in, not the next artifact's, so `run` could not pick the skill from it. `bdk next` adds `command`, the command of the artifact's stage (delta `kernel-cli/graph`; D7; user decision 2026-10-02); `run` starts the skill `command` names
 
 ## 6. `stages` eval cases (D11)
 
-- [ ] 6.1 Failing harness test (`evals/suites/stages/seeds.test.ts`): seed `reviewed` leaves a `tiny` Change whose `review` node is done, `gate:review` ready and no ticket open, with a clean work tree (no model)
-- [ ] 6.2 Seed `reviewed` in `evals/suites/stages/seeds.ts`, built through the kernel: one part, one task committed with `bdk commit`, step evidence recorded, `part done`, `done spec-delta`, a passing `review` report and `done review`; test of 6.1 green
-- [ ] 6.3 Case files `close.yaml` (`happy`, `ticket-open`) and `run.yaml` (`run-auto`, `run-manual`, `run-close`) with `features.lavish false`; extend `STAGE_SKILLS`; `pnpm eval check` green
+- [x] 6.1 Failing harness test (`evals/suites/stages/seeds.test.ts`): seed `reviewed` leaves a `tiny` Change whose `review` node is done, `gate:review` ready and no ticket open, with a clean work tree (no model)
+- [x] 6.2 Seed `reviewed` in `evals/suites/stages/seeds.ts`, built through the kernel: one part, one task committed with `bdk commit`, step evidence recorded, `part done`, `done spec-delta`, a passing `review` report and `done review`; test of 6.1 green
+- [x] 6.3 Case files `close.yaml` (`happy`, `ticket-open`) and `run.yaml` (`run-auto`, `run-manual`, `run-close`) with `features.lavish false`; extend `STAGE_SKILLS`; `pnpm eval check` green
 - [ ] 6.4 After the user approves the projected cost: `pnpm eval stages --skill close --probe` and `pnpm eval stages --skill run --probe`; fix what fails, each fix with its test first; record the outcome in this file and the PR
 
 ## 7. Documentation
