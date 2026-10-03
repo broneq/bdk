@@ -95,12 +95,12 @@
 
 ## 6. Role contracts (role-contracts delta)
 
-- [ ] 6.1 Write failing contract tests in `kernel/tests/contract/role-contracts.test.ts`:
+- [x] 6.1 Write failing contract tests in `kernel/tests/contract/role-contracts.test.ts`:
   - `pr-reviewer` names `bdk rules show --role pr-reviewer --file` and the result block fields, and names no `bdk dispatch show`, `bdk log add` or `bdk log ingest`;
   - the exceptions in the ingest, messages, `bdk log add` and rule-citation checks apply to `pr-reviewer` only;
   - the `implementer` body covers a `review-fix` package, naming fixed entry ids and resolving none;
   - P3 wording passes for every body.
-- [ ] 6.2 Rewrite the role bodies:
+- [x] 6.2 Rewrite the role bodies:
   - `skills/roles/pr-reviewer/SKILL.md`: the PR brief input, rules by file set, the review of the range against the intent and contract, the result block, no ledger;
   - add the review-fix paragraph to `skills/roles/implementer/SKILL.md`;
   - each body at most 4 096 bytes.

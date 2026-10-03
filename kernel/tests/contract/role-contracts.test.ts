@@ -31,6 +31,9 @@ const REVIEWING = [
   "integration-reviewer",
   "pr-reviewer",
 ];
+/** Started by `/bdk:pr-review` with a PR brief: no package, no ticket, no ledger (T42). */
+const STATELESS = "pr-reviewer";
+const PACKAGED = ROLES.filter((name) => name !== STATELESS);
 const AUTHORISING = /\b(approve[ds]?|approval|lgtm|sign[- ]off|ready to merge|go ahead|proceed)\b/i;
 const BODY_BUDGET = 4096;
 
@@ -85,6 +88,10 @@ describe("role skills", () => {
   describe.each(ROLES)("%s", (name) => {
     const role = (): Role => readRole(name);
 
+    it(`keeps its body within ${BODY_BUDGET} bytes`, () => {
+      expect(Buffer.byteLength(role().body, "utf8")).toBeLessThanOrEqual(BODY_BUDGET);
+    });
+
     it("has the role frontmatter", () => {
       const { meta } = role();
       expect(meta).toMatchObject({
@@ -105,6 +112,10 @@ describe("role skills", () => {
           .filter((line) => line.startsWith("!`")),
       ).toEqual([]);
     });
+  });
+
+  describe.each(PACKAGED)("%s", (name) => {
+    const role = (): Role => readRole(name);
 
     it("reads its package and rules through commands and relies on nothing else", () => {
       const { body } = role();
@@ -137,10 +148,56 @@ describe("role skills", () => {
       expect(body).toContain("bdk log show <id>");
       expect(body).toMatch(/return `blocked` with the entry id/);
     });
+  });
+});
 
-    it(`keeps its body within ${BODY_BUDGET} bytes`, () => {
-      expect(Buffer.byteLength(role().body, "utf8")).toBeLessThanOrEqual(BODY_BUDGET);
-    });
+describe("T42: the PR reviewer works from its brief alone", () => {
+  const body = (): string => readRole(STATELESS).body;
+
+  it("relies on nothing but the brief and reads its rules by file set", () => {
+    expect(body()).toMatch(/Rely on nothing but the brief/);
+    expect(body()).toContain("bdk rules show --role pr-reviewer --file <path>");
+  });
+
+  it("names neither a package, a ledger write nor a stored report", () => {
+    for (const command of ["dispatch show", "log add", "log ingest", "SendMessage"]) {
+      expect(body()).not.toContain(command);
+    }
+  });
+
+  it("reviews the range against the intent and the contract the brief names", () => {
+    expect(body()).toMatch(/range of the brief/);
+    expect(body()).toMatch(/intent/);
+    expect(body()).toMatch(/contract/);
+  });
+
+  it("returns one result block with every finding field and the blocking mark", () => {
+    const block = /```yaml\n(pr-review-result:[\s\S]*?)```/.exec(body())?.[1];
+    expect(block).toBeDefined();
+    for (const field of [
+      "file:",
+      "line:",
+      "category:",
+      "severity:",
+      "rule:",
+      "problem:",
+      "fix:",
+      "blocking:",
+    ]) {
+      expect(block).toContain(field);
+    }
+    expect(body()).toMatch(/verdict/);
+  });
+});
+
+describe("T42: the implementer fixes the blockers of a review-fix package", () => {
+  it("fixes the embedded blocking entries, names their ids and resolves none", () => {
+    const fix = sentences(readRole("implementer").body).filter((sentence) =>
+      sentence.includes("`review-fix`"),
+    );
+    expect(fix.join(" ")).toMatch(/blocking entr/);
+    expect(fix.join(" ")).toMatch(/by id in your report/);
+    expect(fix.join(" ")).toMatch(/resolve none/);
   });
 });
 
@@ -233,11 +290,21 @@ describe("S4: rule ids are cited", () => {
   const citation = (body: string): string[] =>
     sentences(body).filter((sentence) => /rule id/i.test(sentence));
 
-  it.each(CITING)("%s cites the rule id with --ref on the entry and in the report", (name) => {
-    const cited = citation(readRole(name).body);
-    expect(cited, name).toHaveLength(1);
-    expect(cited[0]).toContain("--ref <id>");
-    expect(cited[0]).toMatch(/report/);
+  it.each(CITING.filter((name) => name !== STATELESS))(
+    "%s cites the rule id with --ref on the entry and in the report",
+    (name) => {
+      const cited = citation(readRole(name).body);
+      expect(cited, name).toHaveLength(1);
+      expect(cited[0]).toContain("--ref <id>");
+      expect(cited[0]).toMatch(/report/);
+    },
+  );
+
+  it("pr-reviewer cites the rule id in each finding of its result block", () => {
+    const cited = citation(readRole(STATELESS).body);
+    expect(cited).toHaveLength(1);
+    expect(cited[0]).toMatch(/`rule`/);
+    expect(cited[0]).toMatch(/finding/);
   });
 
   it.each(["runner", "scout", "lead"])("%s carries no citation line", (name) => {

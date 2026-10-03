@@ -89,12 +89,12 @@ Only `worker` has a file-writing tool. `Bash` on the read-only adapters exists f
 
 ### Requirement: Dispatch prompt
 
-An orchestrator (`main`, or a lead for the tickets of its part) SHALL start a role with a prompt that holds the path of the role's dispatch package and at most one further sentence; everything the agent needs SHALL be in the package or in a file or command the package names. Every role contract SHALL state that the agent relies on nothing outside its package and the commands the package names. For a forked role the package path is the skill argument; for a role dispatched through the Agent tool it is the prompt. The one exception is a `scout` that a worker starts: its prompt is the worker's question (Role contract content, Scout without a package). A lead and every agent a lead starts run in the background (`run_in_background: true`), so the parent link exists from the start (HOST-FACTS `agent-link`). The continuation check sends an agent that ends its turn without a stored report back to it (`kernel-cli/hooks`, Continuation check). When an agent still returns without a stored report, or with a report `log ingest` refused, or turns `suspect`, the orchestrator SHALL resume that agent at most once with `SendMessage`, naming the refusal or the silence; a second failure closes the ticket `fail`. The orchestrator SHALL build a ticket's next package only after the agent of its active package has returned and any resume is over, because the ticket-keyed commands find the role through the active package (`kernel-state`, Attempt record, `package`). The swarm skill carries both rules out (Swarm skill).
+An orchestrator (`main`, or a lead for the tickets of its part) SHALL start a role with a prompt that holds the path of the role's dispatch package and at most one further sentence; everything the agent needs SHALL be in the package or in a file or command the package names. Every role contract SHALL state that the agent relies on nothing outside its package and the commands the package names. For a forked role the package path is the skill argument; for a role dispatched through the Agent tool it is the prompt. Two roles start without a package: a `scout` that a worker starts, whose prompt is the worker's question (Role contract content, Scout without a package), and the `pr-reviewer`, which `/bdk:pr-review` starts as a forked skill with a PR brief as its argument (Role contract content, PR reviewer without a package; T42). A lead and every agent a lead starts run in the background (`run_in_background: true`), so the parent link exists from the start (HOST-FACTS `agent-link`). The continuation check sends an agent that ends its turn without a stored report back to it (`kernel-cli/hooks`, Continuation check). When an agent still returns without a stored report, or with a report `log ingest` refused, or turns `suspect`, the orchestrator SHALL resume that agent at most once with `SendMessage`, naming the refusal or the silence; a second failure closes the ticket `fail`. The orchestrator SHALL build a ticket's next package only after the agent of its active package has returned and any resume is over, because the ticket-keyed commands find the role through the active package (`kernel-state`, Attempt record, `package`). The swarm skill carries both rules out (Swarm skill).
 
 #### Scenario: contract states the file-only input
 
-- **WHEN** the content test reads any role skill body
-- **THEN** it tells the agent to read its package first with `bdk dispatch show` and to rely on nothing else from the conversation
+- **WHEN** the content test reads any role skill body but `pr-reviewer`
+- **THEN** it tells the agent to read its package first with `bdk dispatch show` and to rely on nothing else from the conversation, and the `pr-reviewer` body tells the agent to rely on nothing but its PR brief
 
 #### Scenario: one resume for a missing report
 
@@ -107,6 +107,8 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 - **Ledger writes.** Every role writes its entries itself with `bdk log add <type> ... --ticket <ticket>` (superseding the `bdk-entries` block of T2 for role contracts). An agent reads the entries of other agents with `bdk log list --for <task|part|file>`.
 - **Messages (T41-D5).** An agent's own id, its parent and its ticket are the `BDK-AGENT-ID`, `BDK-PARENT` and `BDK-TICKET` lines of its start context. Every contract tells the agent that a message carries a ledger id and one sentence, never the content, and that the entry comes first: an entry that affects the rest of the part goes to the parent; one that must stop other work goes to `main`, as before; one that affects particular siblings goes to the ids that `bdk agents list --affected-by <entry>` returns, its own id left out. On a message, the agent reads the named entry with `bdk log show <id>`, then continues, adapts its work within its package, or returns `blocked` with the entry id.
+- **PR reviewer without a package (T42).** The `pr-reviewer` contract covers a reviewer that `/bdk:pr-review` starts as a forked skill with a PR brief as its argument (`review-skills`, pr-review reviews without state): it relies on nothing but the brief; it reads the rules of the PR's changed files with `bdk rules show --role pr-reviewer --file <path>...`; it reviews the range of the brief in its worktree against the brief's intent and, when the brief names one, the Change directory as contract; it writes no ledger entry and stores no report, because the PR has no ticket; it returns one result block holding each finding with its file, line, category, severity, rule id when a rule applies, problem and fix, and whether it blocks. The verdict is computed from that block by `/bdk:pr-review`, never by the role. The Ledger writes, Messages and Output bullets do not apply to it.
+- **Review fix (T42).** The `implementer` contract covers a package on a `review-fix` ticket: it fixes each blocking entry the package embeds, names each entry it fixed by id in its report, and resolves none, because the orchestrator resolves them after the commit.
 - **Scout without a package (T41-D4).** The `scout` contract covers a scout that a worker starts with a question instead of a package: it answers the question from the code, returns the answer in at most 15 lines naming files and lines, and writes a finding worth keeping with `bdk log add` and file refs.
 - **Output.** Every role, the `implementer` included, pipes its report (the envelope fields `status`, `files`, `entries`, `evidence` and `reason` as frontmatter, then the full report) to `bdk log ingest --ticket <ticket>`, which stamps `schema`, `ticket` and `role` and stores it at the active package's `report` path (`kernel-state`, Report envelope). The contract SHALL tell the agent to check that `log ingest` exits 0 and, when it refuses, to fix the named field and call it again before returning. The agent then returns only the envelope of at most 15 lines, plus the report path.
 - **Verdict record.** The `verifier` and `design-verifier` contracts tell the agent, after `log ingest` stored its report, to record it with `bdk log add report "<verdict in one line>" --ref <target> --ticket <ticket>`, so the verdict node of its target reads the report (`kernel-pipeline`, Artifact kinds; `kernel-cli/log`, bdk log add).
@@ -138,7 +140,7 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 #### Scenario: no bdk-entries block
 
 - **WHEN** the content test searches every role body for `bdk-entries`
-- **THEN** it finds none, and every role body names `bdk log add`
+- **THEN** it finds none, and every role body but `pr-reviewer` names `bdk log add`
 
 #### Scenario: body within budget
 
@@ -148,7 +150,7 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 #### Scenario: every role stores its report through ingest
 
 - **WHEN** the content test reads each of the ten role bodies
-- **THEN** each names `bdk log ingest --ticket`, tells the agent to fix a refused report and call again, and none tells the agent to write the report file itself
+- **THEN** each but `pr-reviewer` names `bdk log ingest --ticket` and tells the agent to fix a refused report and call again, and none tells the agent to write a report file itself
 
 #### Scenario: runner records evidence
 
@@ -163,12 +165,12 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 #### Scenario: rule ids are cited
 
 - **WHEN** the content test reads the bodies of `implementer`, `simplifier`, `reviewer`, `integration-reviewer`, `pr-reviewer`, `verifier` and `design-verifier`
-- **THEN** each tells the agent to cite the rule id with `--ref` on the entry and in the report, and the bodies of `runner`, `scout` and `lead` carry no such line
+- **THEN** each but `pr-reviewer` tells the agent to cite the rule id with `--ref` on the entry and in the report, `pr-reviewer` tells it to cite the rule id in each finding of its result block, and the bodies of `runner`, `scout` and `lead` carry no such line
 
 #### Scenario: messages in every contract
 
 - **WHEN** the content test reads each of the ten role bodies
-- **THEN** each names `BDK-AGENT-ID`, `bdk agents list --affected-by`, `bdk log show` and returning `blocked` on a message it cannot absorb
+- **THEN** each but `pr-reviewer` names `BDK-AGENT-ID`, `bdk agents list --affected-by`, `bdk log show` and returning `blocked` on a message it cannot absorb
 
 #### Scenario: lead waits instead of ending its turn
 
@@ -179,6 +181,16 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 - **WHEN** the content test reads `skills/roles/verifier/SKILL.md` and `skills/roles/design-verifier/SKILL.md`
 - **THEN** each names `bdk log add report` with `--ticket` after `bdk log ingest --ticket`
+
+#### Scenario: stateless PR reviewer
+
+- **WHEN** the content test reads `skills/roles/pr-reviewer/SKILL.md`
+- **THEN** it names `bdk rules show --role pr-reviewer --file`, the result block and its fields, and names neither `bdk dispatch show`, `bdk log add` nor `bdk log ingest`
+
+#### Scenario: implementer fixes review blockers
+
+- **WHEN** the content test reads `skills/roles/implementer/SKILL.md`
+- **THEN** it tells the agent, on a `review-fix` package, to fix the embedded blocking entries, name their ids in its report and resolve none
 
 ### Requirement: Swarm skill
 

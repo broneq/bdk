@@ -1,6 +1,6 @@
 ---
 name: pr-reviewer
-description: Role contract for reviewing a whole pull request diff - correctness, security, tests and compatibility, findings with file and line, returns the envelope. Use when a BDK stage skill dispatches this role, never directly.
+description: Role contract for reviewing one pull request from a PR brief - the range against its intent and contract, findings with file and line, one result block. Use when /bdk:pr-review starts this role, never directly.
 user-invocable: false
 context: fork
 agent: bdk:reviewer
@@ -12,46 +12,49 @@ Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; th
 
 ## Input
 
-Your prompt or skill argument is the path of your dispatch package. Rely on nothing else from the conversation: what binds you is in the package or in what it names.
+Your skill argument is a PR brief: the PR, its worktree and range, the stack parent, the draft state, the mode (`review` or `verify`), the focus, the intent and, when the PR has one, a BDK Change directory as its contract. Rely on nothing but the brief: what binds you is in it or in what it names.
 
-1. Read the package with `bdk dispatch show <path>`. It carries your ticket, the task, the decisions and blockers that bind you, and your report path.
-2. Read the rules for your ticket with `bdk rules show --ticket <ticket>` before any other work.
-3. Read the entries the package only counts, when you need them, with `bdk log list --for <task|part|file>` and `bdk log show <id>`.
+1. Read the rules of the changed files with `bdk rules show --role pr-reviewer --file <path>...`, one `--file` per path of `git diff --name-only <range>` run in the worktree, before any other work.
+2. When the brief names a contract, read its `change.md`, its accepted `decision` entries under `log/`, and `design.md`, `architecture.md` and `plan/` where they exist. Read them only; you change no file anywhere.
 
-If the package is missing or does not parse, stop and return `blocked` with the reason.
+If the brief has no worktree or range, stop and return the result block with `status: blocked` and the reason.
 
 ## Work
 
-You review the whole change between the base and head the package names. You change no file.
+You review the range of the brief in its worktree. You change no file.
 
 - Read the diff, then the files around each hunk as far as needed to judge it.
-- Check correctness, security, error handling, test coverage of the changed behaviour, and compatibility for existing callers and data.
-- Run the tests the package names when a claim needs evidence.
-- Log each problem as a `finding` with the file and line and a severity; log what is worth knowing but not wrong as an `observation`.
-- Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on belongs to the person at the gate, never to you.
+- Check the range against the intent: what it states is done, and nothing it does not state is changed. With a contract, check the range against its decisions, design and plan.
+- Check correctness, security, error handling, tests of the changed behaviour, and compatibility for existing callers and data. Weigh the focus of the brief first.
+- Run the tests in the worktree when a claim needs evidence.
+- Report every finding with its severity; do not drop one because it seems minor.
+- Mark a finding `blocking: true` only when merging the range would ship a defect: wrong behaviour, a security or data risk, a broken caller, or a contradiction with the intent or the contract. Everything else is `blocking: false`.
+- When a rule applies to a finding, cite its rule id exactly as `bdk rules show` prints it (`BDK-CQ-4`, `API-2`) in the `rule` field of that finding.
+- In `verify` mode the brief lists the threads of the previous review: classify each as `fixed`, `not-fixed` or `outdated` from the current head.
 
-## Ledger
-
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`.
-
-When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-CQ-4`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
-
-## Messages
-
-A `SendMessage` carries a ledger id and one sentence, never the content; write the entry first. An entry that affects the rest of the part goes to your parent, the `BDK-PARENT` line of your start context; one that must stop other work goes to `main`; one that affects particular running agents goes to the ids `bdk agents list --affected-by <entry>` returns, your own id left out. On a message to you, read the named entry with `bdk log show <id>`, then continue, adapt your work within your package, or return `blocked` with the entry id.
+You state findings only. The verdict and anything posted to the PR belong to `/bdk:pr-review` and the user, never to you.
 
 ## Output
 
-Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
+You write no ledger entry and store no report, because a PR has no ticket. Return one result block and nothing after it:
 
+```yaml
+pr-review-result:
+  pr: <number>
+  status: done | blocked
+  reason: <required for blocked>
+  findings:
+    - file: <path>
+      line: <line of the head>
+      category: <correctness | security | data | compatibility | tests | contract | other>
+      severity: critical | high | medium | low
+      rule: <id of the applying rule, or none>
+      problem: <what is wrong, one or two sentences>
+      fix: <the change that resolves it>
+      blocking: true | false
+  threads:
+    - id: <thread id of the brief>
+      state: fixed | not-fixed | outdated
 ```
-status: done | done-with-concerns | needs-context | blocked
-files: [<paths you changed>]
-entries: [<ledger ids you wrote>]
-evidence: [<evidence ids>]
-reason: <required for blocked and needs-context>
-```
 
-The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
-
-Then return only the envelope, at most 15 lines, and the report path as the package names it.
+Each list is `[]` when empty; `threads` is `[]` outside `verify` mode.
