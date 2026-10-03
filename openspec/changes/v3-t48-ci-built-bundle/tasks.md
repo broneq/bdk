@@ -41,7 +41,7 @@
 
 ## 6. Acceptance
 
-- [ ] 6.1 Two scratch branches that each add a settings key in different modules merge into one branch with no conflict
+- [x] 6.1 Two scratch branches that each add a settings key in different modules merge into one branch with no conflict
 - [x] 6.2 `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip && pnpm test:unit && pnpm test:e2e && pnpm test:contract` green on a fresh worktree after `pnpm install`
 - [ ] 6.3 Each Acceptance signal of #114 has its evidence in the PR description
-- [ ] 6.4 `openspec validate v3-t48-ci-built-bundle --strict`
+- [x] 6.4 `openspec validate v3-t48-ci-built-bundle --strict`
