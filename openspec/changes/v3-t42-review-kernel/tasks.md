@@ -45,7 +45,7 @@
 
 ## 9. Documentation
 
-- [ ] 9.1 `docs/guide/reference/artifacts.md`: the review stage's `tests-full`, `lint-full` and coverage, groups and the merge report, triage levels; `review.risks` and `tools.test[].coverage` where the guide documents settings; `pnpm docs:build` green
+- [x] 9.1 `docs/guide/reference/artifacts.md`: the review stage's `tests-full`, `lint-full` and coverage, groups and the merge report, triage levels; `review.risks` and `tools.test[].coverage` where the guide documents settings; `pnpm docs:build` green
 
 ## 10. Acceptance
 
