@@ -62,6 +62,8 @@ describe("the shipped pipeline", () => {
       "tests-scoped",
       "lint",
       "spec-delta",
+      "tests-full",
+      "lint-full",
       "review",
       "gate:review",
       "close",
@@ -74,7 +76,7 @@ describe("a pipeline file is rejected", () => {
     [
       "an unknown key when:",
       (data: Data) => (node(data, "review").when = 'files.touched("src/billing/**")'),
-      "nodes[14].when: unknown key",
+      "nodes[16].when: unknown key",
     ],
     [
       "an expression in if",
@@ -129,7 +131,7 @@ describe("a pipeline file is rejected", () => {
     [
       "a budget outside the loop list",
       (data: Data) => (node(data, "review").budget = "forever"),
-      "nodes[14].budget",
+      "nodes[16].budget",
     ],
     [
       "a rules category the pack does not hold",
@@ -184,7 +186,7 @@ describe("loadPipeline", () => {
       ),
     });
     expect(() => loadPipeline(store, "/plugin", settings, kinds)).toThrow(
-      /nodes\[16\]\.when: unknown key/,
+      /nodes\[18\]\.when: unknown key/,
     );
   });
 });

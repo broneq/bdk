@@ -131,3 +131,27 @@ export function stepsDone(change: Started, ticket: string, target = "01-1"): voi
   recorded(change, ticket, "tests-scoped");
   recorded(change, ticket, "lint");
 }
+
+/** One task through its ticket: the implementer's file, the steps, `attempt close ok` and `commit`. */
+function taskDone(change: Started, task: string): void {
+  const ticket = opened(change, "task-redispatch", task);
+  dispatched(change, ticket, task);
+  fileStore().write(join(change.root, `src/${task}.ts`), `export const value = "${task}";\n`);
+  stepsDone(change, ticket, task);
+  closed(change, ticket, "ok");
+  answered(bdk(["commit", task, "--json"], change.root), "output/commit.json");
+}
+
+/**
+ * The Change of `started` executed: every task of parts 01 and 02 committed
+ * and both parts done, so the review stage is next and `attempt open
+ * review-fix <change>` opens a round.
+ */
+export function executed(change: Started): Started {
+  for (const task of ["01-1", "01-2"]) taskDone(change, task);
+  answered(bdk(["part", "done", "01", "--json"], change.root), "output/part-done.json");
+  answered(bdk(["part", "start", "02", "--json"], change.root), "output/part-start.json");
+  taskDone(change, "02-1");
+  answered(bdk(["part", "done", "02", "--json"], change.root), "output/part-done.json");
+  return change;
+}

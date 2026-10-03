@@ -1,15 +1,18 @@
 // `bdk dispatch show <ticket|path>` (`kernel-cli/dispatch`): an agent reads
-// its package through the kernel, byte for byte, never touching `.bdk/`.
+// its package through the kernel, byte for byte, never touching `.bdk/`. A
+// ticket resolves to its active package (T23-D42), `<ticket>@<group>` to the
+// package of that review group (T42-A1).
 import { isAbsolute, join, posix, relative, sep } from "node:path";
 
-import { refuse } from "../../shared/refusal/index.ts";
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { activePackage, readDocument } from "../../shared/store/index.ts";
+import { readDocument, resolveTicketRef } from "../../shared/store/index.ts";
 import type { ShowReport } from "../domain/report.ts";
 import type { DispatchDeps } from "./deps.ts";
 
-const TICKET = /^A-[0-9a-z]{8}$/;
+/** A ticket id with an optional `@<group>`; the group's grammar is the resolver's. */
+const TICKET = /^A-[0-9a-z]{8}(?:@.*)?$/;
 
 export function showPackage(
   deps: DispatchDeps,
@@ -18,8 +21,14 @@ export function showPackage(
   value: string,
 ): ShowReport | Refusal {
   const dir = join(change.dir, "dispatch");
-  const path = TICKET.test(value)
-    ? ticketPackage(deps, change, value)
+  const resolved = TICKET.test(value)
+    ? resolveTicketRef(deps.store, change.projectRoot, change.dir, value)
+    : undefined;
+  if (resolved !== undefined && isRefusal(resolved)) return resolved;
+  const path = resolved
+    ? resolved.package === undefined
+      ? undefined
+      : join(change.projectRoot, resolved.package.path)
     : isAbsolute(value)
       ? value
       : join(cwd, value);
@@ -38,8 +47,8 @@ export function showPackage(
   ) {
     return refuse(
       "input/not-found",
-      TICKET.test(value)
-        ? `ticket ${value} has no dispatch package in ${change.id}`
+      resolved !== undefined
+        ? `${resolved.group === undefined ? "ticket" : "group"} ${value} has no dispatch package in ${change.id}`
         : `${value} is not a package under ${posix.relative(change.projectRoot, dir)}/`,
       ["bdk dispatch show <ticket>", "bdk attempt list"],
     );
@@ -49,14 +58,4 @@ export function showPackage(
     content,
     frontmatter: document.data,
   };
-}
-
-/** The ticket's active package (T23-D42): the one its last `dispatch build` stamped. */
-function ticketPackage(
-  deps: DispatchDeps,
-  change: ActiveChange,
-  ticket: string,
-): string | undefined {
-  const active = activePackage(deps.store, change.projectRoot, change.dir, ticket);
-  return active === undefined ? undefined : join(change.projectRoot, active.path);
 }

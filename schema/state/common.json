@@ -11,6 +11,11 @@
       "pattern": "^\\d{4}-\\d{2}-\\d{2}-(?=[a-z0-9-]{1,40}(?:\\/|$))[a-z0-9]+(?:-[a-z0-9]+)*$",
       "description": "`<yyyy-mm-dd>-<slug>`, the slug kebab-case and at most 40 characters."
     },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "A full commit id."
+    },
     "date": {
       "type": "string",
       "format": "date",
@@ -44,6 +49,12 @@
       "type": "string",
       "pattern": "^(?!\\/|\\.\\/)(?!(?:.*\\/)?\\.\\.(?:\\/|$))[^\\\\]+$",
       "description": "Relative to the project root, `/` separated, no `..` segment."
+    },
+    "reviewGroup": {
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Review group: kebab-case, at most 32 characters."
     },
     "role": {
       "type": "string",

@@ -3,7 +3,7 @@
 // are the kernel template of `dispatch` (T23).
 import * as z from "zod";
 
-import { hash, relativePath, role, scope, ticketId, timestamp } from "./common.ts";
+import { hash, relativePath, reviewGroup, role, scope, ticketId, timestamp } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
 import { RULE_ID } from "../../vocabulary/index.ts";
 
@@ -35,6 +35,17 @@ export const dispatchKind = {
       rules: z.array(z.string().regex(RULE_ID)).meta({
         description: "The rules selected for the ticket, in order (T31); may be empty.",
       }),
+      group: reviewGroup.optional().meta({
+        description: "Review group of a `dispatch build --group` package (T42-A1).",
+      }),
+      files: z.array(relativePath).optional().meta({
+        description: "The group's file set; present exactly when `group` is.",
+      }),
+    })
+    .superRefine((data, context) => {
+      if ((data.group === undefined) === (data.files === undefined)) return;
+      const missing = data.group === undefined ? "group" : "files";
+      context.addIssue({ code: "custom", path: [missing], message: "group and files go together" });
     })
     .meta({ title: "Dispatch package" }),
   migrations: [],

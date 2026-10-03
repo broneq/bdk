@@ -3,6 +3,7 @@
 // `list`, `show` and `resolve`, every output validated against its schema,
 // and the T20 acceptance cases on the ledger; `log add --category` (P8) and
 // `log ingest` (T23) with a hand-written attempt record and dispatch package.
+import { execFileSync } from "node:child_process";
 import { readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -16,6 +17,7 @@ import {
   refused,
   repository,
 } from "../../../tests/support/repo.ts";
+import { executed, opened as openedTicket, started } from "../../attempt/tests/e2e-support.ts";
 import { fileStore, stampPackage, writeDocument } from "../../shared/store/index.ts";
 
 /** A repository with an open Change; answers the root and the Change directory. */
@@ -624,5 +626,74 @@ describe("bdk log ingest", () => {
 
   it("exit 5 runtime/not-a-repo", () => {
     refused(ingest(outsideRepository(), REPORT), 5, "runtime/not-a-repo");
+  });
+});
+
+describe("a review round in the ledger (T42-A1, B1, T)", () => {
+  it("writes grouped entries and reports, the merged review with head, and triage", () => {
+    const change = executed(started());
+    const round = openedTicket(change, "review-fix", change.id);
+    const run = (args: string[], stdin?: string) =>
+      bdk([...args, "--json"], change.root, stdin === undefined ? {} : { stdin });
+    answered(
+      run([
+        "dispatch",
+        "build",
+        change.id,
+        "reviewer",
+        round,
+        "--group",
+        "p01",
+        "--range",
+        "HEAD~3..HEAD",
+        "--file",
+        "src/01-1.ts",
+      ]),
+      "output/dispatch-build.json",
+    );
+    const added = answered(
+      run([
+        "log",
+        "add",
+        "finding",
+        "value is never validated",
+        "--ref",
+        "src/01-1.ts",
+        "--ticket",
+        `${round}@p01`,
+      ]),
+      "output/log-add.json",
+    ).entry as { id: string; group: string; source: string };
+    expect(added).toMatchObject({ group: "p01", source: "agent:reviewer" });
+    const report = (entries: string[]) =>
+      `---\nstatus: done\nfiles: []\nentries: [${entries.join(", ")}]\nevidence: []\n---\n# Review\n`;
+    answered(
+      run(["log", "ingest", "--ticket", `${round}@p01`], report([added.id])),
+      "output/log-ingest.json",
+    );
+    const merged = answered(
+      run(["log", "ingest", "--ticket", `${round}@merge`], report([added.id])),
+      "output/log-ingest.json",
+    );
+    expect(merged).toMatchObject({ role: "orchestrator" });
+    expect(merged.path).toBe(
+      `.bdk/changes/${change.id}/reports/${change.id}-orchestrator-${round}-merge.md`,
+    );
+    const verdict = answered(
+      run(["log", "add", "report", "1 should-fix", "--ticket", `${round}@merge`]),
+      "output/log-add.json",
+    ).entry as { head: string; refs: string[]; source: string };
+    const head = execFileSync("git", ["rev-parse", "HEAD"], {
+      cwd: change.root,
+      encoding: "utf8",
+    }).trim();
+    expect(verdict).toMatchObject({ head, source: "kernel", refs: [change.id, "review"] });
+    expect(
+      answered(
+        run(["log", "triage", added.id, "should-fix", "--reason", "real"]),
+        "output/log-triage.json",
+      ),
+    ).toStrictEqual({ record: added.id, level: "should-fix", status: "proposed" });
+    refused(run(["log", "triage", added.id, "not-a-problem"]), 3, "input/missing-argument");
   });
 });

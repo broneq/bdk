@@ -1,5 +1,6 @@
 export { checkpointModule } from "./config.ts";
 export { fileStore, findProjectRoot, memoryStore, readStdin } from "./store.ts";
+export { addedLines, changeBase, EMPTY_TREE } from "./base.ts";
 export type { FileStat, Store } from "./store.ts";
 export { splitFrontmatter } from "./frontmatter.ts";
 export { findExecutable } from "./which.ts";
@@ -100,11 +101,14 @@ export {
   openPackage,
   packageRoles,
   partManifests,
+  MERGE_GROUP,
+  mergeReportName,
   readManifests,
+  resolveTicketRef,
   stampPackage,
   ticketManifests,
 } from "./tickets.ts";
-export type { ActivePackage, ManifestFile } from "./tickets.ts";
+export type { ActivePackage, ManifestFile, ResolvedRef } from "./tickets.ts";
 export type { DispatchPackage } from "./state/dispatch.ts";
 export type { EvidenceManifest } from "./state/evidence.ts";
 export type { AttemptFile, PlanPartFile, PlanPartFrontmatter } from "./work.ts";

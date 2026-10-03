@@ -1,7 +1,7 @@
 // What `attempt open` checks a target against: the node states of the
 // Change's graph, the started parts and the resolved settings, read once.
 // The attempt slice reaches the graph only through this function.
-import { postTaskSteps, readGraph } from "../../graph/index.ts";
+import { postTaskSteps, readGraph, reviewRoundBlocker } from "../../graph/index.ts";
 import type { PostTaskStep } from "../../graph/index.ts";
 import type { Mapping } from "../../shared/config/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -21,6 +21,9 @@ export interface WorkTargets {
   node(id: string): { readonly state: NodeState; readonly why?: string } | undefined;
   /** The post-task steps the Change's graph applies, in pipeline order (T23-D41). */
   readonly steps: readonly PostTaskStep[];
+  /** The requirement of `review` that keeps a `review-fix` round closed, or undefined (T42-D4). */
+  readonly reviewBlocker:
+    { readonly id: string; readonly state: NodeState; readonly why?: string } | undefined;
 }
 
 export async function workTargets(
@@ -37,6 +40,7 @@ export async function workTargets(
     parked: read.parked,
     started: startedParts(read.entries),
     steps: postTaskSteps(read),
+    reviewBlocker: reviewRoundBlocker(read),
     node: (id) => {
       const found = read.graph.find(id);
       if (found === undefined) return undefined;

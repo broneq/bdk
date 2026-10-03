@@ -250,7 +250,13 @@ function checkTarget(
   }
   if (loop === "review-fix") {
     if (target !== change.id) return wrongType("the Change id");
-    return notReady(targets, "review", ["blocked"]);
+    const blocker = targets.reviewBlocker;
+    if (blocker === undefined) return undefined;
+    return refuse(
+      "policy/not-ready",
+      `review waits for ${blocker.id}, which is ${blocker.state}${blocker.why ? `: ${blocker.why}` : ""}`,
+      [`bdk explain ${blocker.id}`],
+    );
   }
   if (TASK_ID.test(target) || PART_ID.test(target) || target === change.id) {
     return wrongType("artifact id");

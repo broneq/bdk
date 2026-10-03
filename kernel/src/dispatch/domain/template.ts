@@ -4,12 +4,17 @@
 // `template-hash` covers of the template (T23-D33), so a new wording is a
 // new hash.
 
-export type SectionKind = "verifier" | "runner" | "lead";
+/** A section a package carries only when the build names its kind. */
+export type SectionKind = "verifier" | "runner" | "lead" | "review" | "risks";
 
 interface Section {
   readonly name: string;
   readonly skeleton: string;
-  /** Only the packages of these roles carry it: the verifiers' P8 lists, the runner's checks, the lead's tasks. */
+  /**
+   * Only packages of this kind carry it: the verifiers' P8 lists, the runner's
+   * checks, the lead's tasks, a grouped package's review scope (T42-A1) and the
+   * integration reviewer's risks (T42-K).
+   */
   readonly only?: SectionKind;
 }
 
@@ -27,24 +32,36 @@ const SECTIONS: readonly Section[] = [
     skeleton:
       "## Tasks\n\nThe tasks of the part in plan order. A committed task is done; start the others as their dependencies are committed.\n\n{{tasks}}",
   },
+  {
+    name: "review",
+    only: "review",
+    skeleton:
+      "## Review\n\nYou review group `{{group}}` of ticket {{ticket}}. Review only this group; another agent reviews each other group in parallel.\n\n{{review}}",
+  },
   { name: "entries", skeleton: "## Ledger entries\n\n{{entries}}" },
   { name: "role", skeleton: "{{role-body}}" },
   {
     name: "rules",
     skeleton:
-      "## Rules\n\nRun `bdk rules show --ticket {{ticket}}` before you start and follow the rules it prints.",
+      "## Rules\n\nRun `bdk rules show --ticket {{ref}}` before you start and follow the rules it prints.",
   },
   {
     name: "categories",
     only: "verifier",
     skeleton:
-      "## Blocking categories (P8)\n\nA blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket {{ticket}} --category <id>`; any other blocker is stored as an observation for review.\n\n{{blocking}}\n\n## Not a fail\n\nNever block on these:\n\n{{not-a-fail}}",
+      "## Blocking categories (P8)\n\nA blocker names one of these with `bdk log add blocker <summary> --ref <ref> --ticket {{ref}} --category <id>`; any other blocker is stored as an observation for review.\n\n{{blocking}}\n\n## Not a fail\n\nNever block on these:\n\n{{not-a-fail}}",
+  },
+  {
+    name: "risks",
+    only: "risks",
+    skeleton:
+      "## Risks\n\nThe project's risky areas. Call out every change in the range that touches one, with a finding naming the risk id.\n\n{{risks}}",
   },
   { name: "checks", only: "runner", skeleton: "## Checks\n\n{{checks}}" },
   {
     name: "return",
     skeleton:
-      "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ticket}}`. Then pipe the full report to `bdk log ingest --ticket {{ticket}}`, the envelope (`status`, `files`, `entries`, `evidence`, and `reason` for `blocked` or `needs-context`) as its frontmatter. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`.",
+      "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ref}}`. Then pipe the full report to `bdk log ingest --ticket {{ref}}`, the envelope (`status`, `files`, `entries`, `evidence`, and `reason` for `blocked` or `needs-context`) as its frontmatter. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`.",
   },
 ];
 
@@ -53,21 +70,21 @@ export interface RenderedSection {
   readonly text: string;
 }
 
-/** The sections a role's package carries, placeholders filled; a missing value throws. */
+/** The sections a package of these kinds carries, placeholders filled; a missing value throws. */
 export function renderSections(
   values: Readonly<Record<string, string>>,
-  kind: SectionKind | undefined,
+  kinds: readonly SectionKind[],
 ): RenderedSection[] {
-  return SECTIONS.filter((section) => section.only === undefined || section.only === kind).map(
-    (section) => ({
-      name: section.name,
-      text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name: string) => {
-        const value = values[name];
-        if (value === undefined) throw new Error(`the package template has no value for ${name}`);
-        return value;
-      }),
+  return SECTIONS.filter(
+    (section) => section.only === undefined || kinds.includes(section.only),
+  ).map((section) => ({
+    name: section.name,
+    text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name: string) => {
+      const value = values[name];
+      if (value === undefined) throw new Error(`the package template has no value for ${name}`);
+      return value;
     }),
-  );
+  }));
 }
 
 export function packageBody(sections: readonly RenderedSection[]): string {

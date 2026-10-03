@@ -32,6 +32,7 @@ import {
   writePlanPart,
 } from "./support.ts";
 import type { Harness } from "./support.ts";
+import { CHANGE } from "../../log/tests/support.ts";
 
 /** `expect.stringContaining` typed for a `toMatchObject` literal. */
 const containing = (text: string): unknown => expect.stringContaining(text);
@@ -311,6 +312,7 @@ describe("bdk next", () => {
     });
     for (const kind of ["simplify", "tests-scoped", "lint"])
       await writeManifest(h.store, kind, "01");
+    for (const kind of ["tests-full", "lint-full"]) await writeManifest(h.store, kind, CHANGE);
     const text = (await h.run(["next"], T1)).stdout;
     // review is stale against the fake git's empty tree, so it is next
     expect(text).toContain("# review (review)");

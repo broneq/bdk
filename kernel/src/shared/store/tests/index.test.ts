@@ -188,10 +188,10 @@ function seeded(): Store {
 }
 
 describe("schema", () => {
-  it("creates schema version 6 with the public tables and the entries view", async () => {
+  it("creates schema version 7 with the public tables and the entries view", async () => {
     const index = await open(memoryStore());
-    expect(INDEX_SCHEMA_VERSION).toBe(6);
-    expect(index.schemaVersion()).toBe(6);
+    expect(INDEX_SCHEMA_VERSION).toBe(7);
+    expect(index.schemaVersion()).toBe(7);
     const names = selectReadOnly(
       index,
       "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE '\\_%' ESCAPE '\\' ORDER BY name",
@@ -204,6 +204,7 @@ describe("schema", () => {
     expect(columns).toContain("applies");
     expect(columns).toContain("evidence");
     expect(columns).toContain("auto");
+    for (const column of ["review_group", "level", "head"]) expect(columns).toContain(column);
     expect(columns).not.toContain("routed_to");
   });
 });
@@ -578,7 +579,7 @@ describe("on disk", () => {
     old.close();
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(6);
+    expect(index.schemaVersion()).toBe(7);
     expect(
       selectReadOnly(index, "SELECT count(*) FROM sqlite_master WHERE name = 'meta'").rows,
     ).toEqual([[0]]);
@@ -598,7 +599,7 @@ describe("on disk", () => {
 
     const index = await openIndex(store, root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(6);
+    expect(index.schemaVersion()).toBe(7);
     expect(refreshChange(index, location)).toBe(true);
     expect(listEntries(index, CHANGE).map((entry) => entry.at)).toEqual([
       "2026-09-25T09:01:00.000Z",
@@ -616,7 +617,7 @@ describe("on disk", () => {
 
     const index = await openIndex(store, root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(6);
+    expect(index.schemaVersion()).toBe(7);
     expect(selectReadOnly(index, "SELECT count(*) FROM findings").rows).toEqual([[0]]);
   });
 
@@ -625,7 +626,7 @@ describe("on disk", () => {
     writeFileSync(path(), "not a database, just bytes ".repeat(100));
     const index = await openIndex(fileStore(), root);
     opened.push(index);
-    expect(index.schemaVersion()).toBe(6);
+    expect(index.schemaVersion()).toBe(7);
   });
 
   it("refuses state/corrupted-index when the index path is a directory", async () => {

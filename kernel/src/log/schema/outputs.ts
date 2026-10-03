@@ -8,6 +8,7 @@ import type {
   IngestReport,
   ResolveResult,
   ShownEntry,
+  TriageResult,
 } from "../domain/entry.ts";
 import { entryId, entrySummarySchema, entryViewSchema, relativePath } from "./entry.ts";
 
@@ -165,3 +166,17 @@ export const logResolveOutput = z
       },
     ],
   }) satisfies z.ZodType<ResolveResult>;
+
+export const logTriageOutput = z
+  .strictObject({
+    record: entryId.meta({ description: "The triaged entry." }),
+    level: z.enum(["blocker", "should-fix", "nice-to-have", "not-a-problem"]),
+    status: z.enum(["proposed", "accepted", "resolved"]).meta({
+      description: "The entry's status after the write: `resolved` for `not-a-problem`.",
+    }),
+  })
+  .meta({
+    title: "bdk log triage --json",
+    description: "Set the project-level triage level of a finding, blocker or observation.",
+    examples: [{ record: "L-q2w3e4r5", level: "should-fix", status: "proposed" }],
+  }) satisfies z.ZodType<TriageResult>;

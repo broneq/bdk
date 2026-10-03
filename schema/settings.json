@@ -114,6 +114,35 @@
                 "type": "string",
                 "minLength": 1
               },
+              "coverage": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The full run that writes the coverage report."
+                  },
+                  "report": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Where the command writes the report, relative to the project root."
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": ["lcov", "cobertura"],
+                    "description": "The report format."
+                  },
+                  "min": {
+                    "description": "The least coverage, in percent, of the lines a Change adds; none only reports.",
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "required": ["command", "report", "format"],
+                "additionalProperties": false,
+                "title": "coverage"
+              },
               "tier": { "type": "string", "enum": ["fast", "e2e"] }
             },
             "required": ["id", "command", "tier"],
@@ -636,6 +665,84 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 10
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "review": {
+      "description": "Composed of review.risks, review.group.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "risks": {
+          "default": [
+            {
+              "id": "auth",
+              "instruction": "Changes to authentication, authorisation, permissions, roles or session handling, including who may call a changed endpoint.",
+              "enabled": true
+            },
+            {
+              "id": "migration",
+              "instruction": "Changes to a persistent data model: schema migrations, stored formats, data backfills, anything hard to roll back.",
+              "enabled": true
+            },
+            {
+              "id": "secrets",
+              "instruction": "Code or configuration that reads, stores, logs or transmits secrets, tokens, keys or personal data.",
+              "enabled": true
+            },
+            {
+              "id": "public-api",
+              "instruction": "Changes to a public or cross-service interface: endpoints, exported functions, CLI flags, events, file formats others consume.",
+              "enabled": true
+            },
+            {
+              "id": "dependencies",
+              "instruction": "Added, removed or upgraded third-party dependencies and changes to build or deployment configuration.",
+              "enabled": true
+            }
+          ],
+          "description": "Risky areas of this project the integration reviewer calls out, merged by id.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                "description": "The merge key."
+              },
+              "instruction": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500,
+                "description": "What a reviewer must call out, written for a model."
+              },
+              "enabled": {
+                "default": true,
+                "description": "false leaves the item out.",
+                "type": "boolean"
+              }
+            },
+            "required": ["id", "instruction"],
+            "additionalProperties": false,
+            "title": "risk"
+          }
+        },
+        "group": {
+          "description": "How bdk review plan sizes the reviewer groups.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "max-files": {
+              "default": 30,
+              "description": "A group above this many files is split by module; a plan part stays whole up to it.",
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 200
             }
           },
           "additionalProperties": false

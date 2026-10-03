@@ -79,6 +79,7 @@ export const ROLES = [
   "verifier",
   "design-verifier",
   "reviewer",
+  "integration-reviewer",
   "pr-reviewer",
   "runner",
   "scout",

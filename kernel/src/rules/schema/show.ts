@@ -12,6 +12,9 @@ const globs = z.array(z.string().min(1));
 export const ticketRulesOutput = z
   .strictObject({
     ticket: z.string().regex(/^A-[0-9a-z]{8}$/),
+    group: z.string().min(1).optional().meta({
+      description: "The review group of a `<ticket>@<group>` reference.",
+    }),
     role: z.enum(ROLES),
     target: z.string().min(1),
     rules: z

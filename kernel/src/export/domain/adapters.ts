@@ -100,6 +100,7 @@ export const ROLE_ADAPTERS: Readonly<Record<Role, string>> = {
   verifier: "reader",
   "design-verifier": "reader",
   reviewer: "reviewer",
+  "integration-reviewer": "reader",
   "pr-reviewer": "reviewer",
   runner: "runner",
   scout: "scout",

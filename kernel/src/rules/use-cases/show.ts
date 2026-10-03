@@ -2,15 +2,15 @@
 // tombstones and disabled rules included, or the rules whose ids the ticket's
 // active package records, in that order. The first `--ticket` call under the
 // implementer's package stamps `rules-read` in the attempt record (T23-D42,
-// risk R2). The ticket must be open with a dispatch package.
-import { refuse } from "../../shared/refusal/index.ts";
+// risk R2). The ticket must be open with a dispatch package; `<ticket>@<group>`
+// reads the package of that review group (T42-A1).
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
-  openPackage,
-  readAttempts,
   readPlanParts,
   refreshChange,
+  resolveTicketRef,
   stampRulesRead,
   targetFiles,
   withIndex,
@@ -61,24 +61,28 @@ export function showTicketRules(
   deps: RulesDeps,
   change: ActiveChange,
   globalDir: string,
-  ticket: string,
+  value: string,
 ): Promise<TicketRules | Refusal> {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, (index) => {
     refreshChange(index, { id: change.id, dir: change.dir, archived: false });
-    const record = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
+    const resolved = resolveTicketRef(deps.store, change.projectRoot, change.dir, value);
+    if (isRefusal(resolved)) return resolved;
+    const { ticket, group, record } = resolved;
     if (record === undefined) {
       return refuse("input/not-found", `${change.id} has no ticket ${ticket}`, [
         "bdk attempt list --all",
       ]);
     }
-    const dispatch = openPackage(deps.store, change.projectRoot, change.dir, ticket);
+    const dispatch = resolved.open ? resolved.package : undefined;
     if (dispatch === undefined) {
       const why =
-        record.data.outcome === undefined
-          ? `ticket ${ticket} has no dispatch package`
-          : `ticket ${ticket} is closed ${record.data.outcome}`;
+        record.data.outcome !== undefined
+          ? `ticket ${ticket} is closed ${record.data.outcome}`
+          : group === undefined
+            ? `ticket ${ticket} has no dispatch package`
+            : `group ${group} of ticket ${ticket} has no dispatch package`;
       return refuse("policy/no-open-ticket", why, [
-        `bdk dispatch build ${record.data.target} <role> ${ticket}`,
+        `bdk dispatch build ${record.data.target} <role> ${ticket}${group === undefined ? "" : ` --group ${group}`}`,
         "bdk attempt list",
       ]);
     }
@@ -90,10 +94,17 @@ export function showTicketRules(
       return refuse(
         "input/not-found",
         `the package of ticket ${ticket} records ${missing.join(", ")}, which no rule file holds`,
-        [`bdk dispatch build ${record.data.target} ${dispatch.role} ${ticket}`],
+        [`bdk dispatch build ${record.data.target} ${dispatch.role} ${value}`],
       );
     }
-    const files = targetFiles(readPlanParts(deps.store, change.dir), record.data.target);
+    // A group's package records its own file set (T42-A1); none means every rule applied.
+    const groupFiles = dispatch.data.files ?? [];
+    const files =
+      group === undefined
+        ? targetFiles(readPlanParts(deps.store, change.dir), record.data.target)
+        : groupFiles.length === 0
+          ? undefined
+          : groupFiles;
     const rules = dispatch.data.rules.flatMap((id) => {
       const rule = loaded.get(id);
       if (rule === undefined) return [];
@@ -114,6 +125,7 @@ export function showTicketRules(
         : record.data["rules-read"];
     return {
       ticket,
+      ...(group === undefined ? {} : { group }),
       role: dispatch.role,
       target: record.data.target,
       rules,

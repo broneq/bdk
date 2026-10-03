@@ -1,8 +1,8 @@
-// Generates `schema/cli/output/evidence-{record,check}.json`
+// Generates `schema/cli/output/evidence-{record,coverage,check}.json`
 // (kernel/scripts/export-schemas.ts), replacing the hand-written T11 shapes.
 import * as z from "zod";
 
-import type { CheckReport, RecordReport } from "../domain/reports.ts";
+import type { CheckReport, CoverageReport, RecordReport } from "../domain/reports.ts";
 
 const CHANGE_DIR = ".bdk/changes/2026-09-25-passwordless-login";
 
@@ -99,3 +99,42 @@ export const evidenceCheckOutput = z
       },
     ],
   }) satisfies z.ZodType<CheckReport>;
+
+export const evidenceCoverageOutput = z
+  .strictObject({
+    evidence: evidenceId.meta({ description: "The `coverage` manifest." }),
+    tool: z.string().min(1).meta({ description: "The `tools.test` id measured." }),
+    min: z.number().min(0).max(100).nullable().meta({
+      description: "The entry's `coverage.min`; null when it only reports.",
+    }),
+    percent: z.number().min(0).max(100).nullable().meta({
+      description:
+        "Covered added lines over instrumented added lines, rounded down to one decimal; null when none is instrumented.",
+    }),
+    covered: z.int().min(0),
+    total: z.int().min(0).meta({ description: "The added lines the report instruments." }),
+    unmeasured: z.array(path).meta({
+      description: "Changed executable files the report does not name; not in `total`.",
+    }),
+    verdict: z.enum(["pass", "fail"]).meta({
+      description:
+        "`fail` only when `min` is set, `total` is above 0 and `percent` is below `min`.",
+    }),
+  })
+  .meta({
+    title: "bdk evidence coverage --json",
+    description:
+      "Measure the coverage of the lines the Change added from a test tool's coverage report, and record it with the computed verdict.",
+    examples: [
+      {
+        evidence: "E-c8v6b4n2",
+        tool: "unit",
+        min: 90,
+        percent: 93.7,
+        covered: 118,
+        total: 126,
+        unmeasured: [],
+        verdict: "pass",
+      },
+    ],
+  }) satisfies z.ZodType<CoverageReport>;

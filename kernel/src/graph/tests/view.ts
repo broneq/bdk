@@ -34,6 +34,12 @@ export interface ViewFixture {
   readonly reportEvidence?: Readonly<Record<string, readonly string[]>>;
   /** Plan part number -> its current tree hash. */
   readonly partTrees?: Readonly<Record<string, string>>;
+  /** The current tree hash of the Change. */
+  readonly changeTree?: string;
+  /** The `tools.test` ids with `coverage.min`. */
+  readonly coverageTools?: readonly string[];
+  /** Ticket -> its loop. */
+  readonly loops?: Readonly<Record<string, string>>;
   /** Capability -> the problems of its delta; a delta file without an item has none. */
   readonly specProblems?: Readonly<Record<string, readonly string[]>>;
 }
@@ -80,6 +86,9 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
       ...manifest,
     })),
     partTree: (nn) => fixture.partTrees?.[nn],
+    changeTree: () => fixture.changeTree,
+    coverageTools: fixture.coverageTools ?? [],
+    ticketLoop: (ticket) => fixture.loops?.[ticket],
     planPart: (path) => {
       if (files[path] === undefined) return undefined;
       const nn = /(\d{2})-[^/]*\.md$/.exec(path)?.[1] ?? "01";

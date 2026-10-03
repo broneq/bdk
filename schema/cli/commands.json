@@ -281,6 +281,32 @@
       "writes": []
     },
     {
+      "id": "review-plan",
+      "argv": ["review", "plan"],
+      "summary": "Compute the range and the reviewer groups of the next review round of the active Change.",
+      "availability": "read",
+      "mode": "command",
+      "slice": "review",
+      "owner": "T42",
+      "changeScoped": true,
+      "args": [],
+      "flags": [
+        {
+          "name": "--full",
+          "description": "Review from the Change base, ignoring earlier review rounds."
+        },
+        {
+          "name": "--base",
+          "value": "<ref>",
+          "description": "Review from `git merge-base HEAD <ref>`; for a branch stacked on another one."
+        }
+      ],
+      "output": "output/review-plan.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["runtime/git-missing"],
+      "writes": []
+    },
+    {
       "id": "next",
       "argv": ["next"],
       "summary": "The next ready artifact with its instruction, plus the gate status; the skill's entry point.",
@@ -823,6 +849,40 @@
       "writes": [".bdk/changes/<id>/log/"]
     },
     {
+      "id": "log-triage",
+      "argv": ["log", "triage"],
+      "summary": "Set the project-level triage level of a finding, blocker or observation.",
+      "availability": "orchestrator",
+      "mode": "command",
+      "slice": "log",
+      "owner": "T42",
+      "changeScoped": true,
+      "args": [
+        {
+          "name": "<id>",
+          "required": true,
+          "description": "A `finding`, `blocker` or `observation` entry."
+        },
+        {
+          "name": "level",
+          "required": true,
+          "values": ["blocker", "should-fix", "nice-to-have", "not-a-problem"],
+          "description": "The level (T42-T)."
+        }
+      ],
+      "flags": [
+        {
+          "name": "--reason",
+          "value": "<text>",
+          "description": "Required for `not-a-problem`."
+        }
+      ],
+      "output": "output/log-triage.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/invalid-transition"],
+      "writes": [".bdk/changes/<id>/log/"]
+    },
+    {
       "id": "dispatch-build",
       "argv": ["dispatch", "build"],
       "summary": "Build the dispatch package file for a target, role and ticket.",
@@ -840,14 +900,41 @@
         {
           "name": "<role>",
           "required": true,
-          "description": "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, pr-reviewer, runner, scout."
+          "description": "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, pr-reviewer, runner, scout, lead."
         },
         {
           "name": "<ticket>",
           "required": true
         }
       ],
-      "flags": [],
+      "flags": [
+        {
+          "name": "--group",
+          "value": "<group>",
+          "description": "A review group of a `review-fix` ticket (`kernel-cli`, Ticket references); the package becomes that group's package."
+        },
+        {
+          "name": "--file",
+          "value": "<path>",
+          "description": "Repeatable; only with `--group`. The group's files, repository-relative, usually the `files` of a group of `bdk review plan`.",
+          "repeatable": true
+        },
+        {
+          "name": "--part",
+          "value": "<nn>",
+          "description": "Only with `--group`. The plan part the group reviews; the package names its file as the contract to review against."
+        },
+        {
+          "name": "--range",
+          "value": "<range>",
+          "description": "Only with `--group`; required for `reviewer` and `integration-reviewer`. The reviewed range `<base>..<head>` from `bdk review plan`."
+        },
+        {
+          "name": "--focus",
+          "value": "<text>",
+          "description": "Only with `--group`; at most 500 characters. The user's focus for the round, embedded as given."
+        }
+      ],
       "output": "output/dispatch-build.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": [
@@ -871,7 +958,7 @@
         {
           "name": "<ticket|path>",
           "required": true,
-          "description": "A ticket id, or a package path relative to the working directory or absolute."
+          "description": "A ticket reference (`kernel-cli`, Ticket references), or a package path relative to the working directory or absolute."
         }
       ],
       "flags": [],
@@ -893,7 +980,7 @@
         {
           "name": "<kind>",
           "required": true,
-          "description": "tests-scoped, lint, typecheck, ui-capture or a project-defined kind."
+          "description": "tests-scoped, lint, tests-full, lint-full, typecheck, ui-capture or a project-defined kind; `coverage` is recorded only by `bdk evidence coverage`."
         },
         {
           "name": "<file>",
@@ -906,7 +993,7 @@
         {
           "name": "--ticket",
           "value": "<ticket>",
-          "description": "Required; ties the evidence to the task and role."
+          "description": "Required; a ticket reference; ties the evidence to the target, the role and the group."
         },
         {
           "name": "--verdict",
@@ -922,6 +1009,39 @@
       "output": "output/evidence-record.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": ["input/not-found", "policy/no-open-ticket", "policy/missing-citation"],
+      "writes": [".bdk/changes/<id>/evidence/", ".bdk/.machine/evidence/"]
+    },
+    {
+      "id": "evidence-coverage",
+      "argv": ["evidence", "coverage"],
+      "summary": "Measure the coverage of the lines the Change added from a test tool's coverage report, and record it with the computed verdict.",
+      "availability": "agent",
+      "mode": "command",
+      "slice": "evidence",
+      "owner": "T42",
+      "changeScoped": true,
+      "args": [
+        {
+          "name": "<test-id>",
+          "required": true,
+          "description": "The `id` of a `tools.test` entry with `coverage`."
+        },
+        {
+          "name": "<report>",
+          "required": true,
+          "description": "The coverage report the entry's `coverage.command` wrote, in its `coverage.format`."
+        }
+      ],
+      "flags": [
+        {
+          "name": "--ticket",
+          "value": "<ticket>",
+          "description": "Required; a ticket reference of an open ticket whose target is the Change."
+        }
+      ],
+      "output": "output/evidence-coverage.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/no-open-ticket"],
       "writes": [".bdk/changes/<id>/evidence/", ".bdk/.machine/evidence/"]
     },
     {

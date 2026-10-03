@@ -50,6 +50,8 @@
           "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
           "review": { "description": "Present only when true.", "type": "boolean", "const": true },
           "ticket": { "type": "string" },
+          "group": { "type": "string" },
+          "level": { "type": "string" },
           "category": { "type": "string" },
           "supersedes": {
             "type": "string",
