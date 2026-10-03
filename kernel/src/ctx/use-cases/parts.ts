@@ -6,6 +6,8 @@ import { stringify } from "yaml";
 
 import type * as z from "zod";
 
+import { verifierLists } from "../../log/index.ts";
+import type { VerifierCategory } from "../../log/index.ts";
 import { moduleValue, promptContent, toolsModule } from "../../shared/config/index.ts";
 import type { ConfigModule, PromptKey, Resolved } from "../../shared/config/index.ts";
 import {
@@ -84,6 +86,16 @@ export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Sec
         },
       ];
     }
+    case "verifier-policy": {
+      const { blocking, notAFail } = verifierLists(resolved);
+      return [
+        {
+          title: "Blocking categories (P8)",
+          body: `${categoryLines(blocking)}\n#### Not a fail\n\n${categoryLines(notAFail)}`,
+          part: { kind: "verifier-policy", source: "policy.verifier" },
+        },
+      ];
+    }
     case "file": {
       const text = input.store.read(join(input.pluginRoot, part.path));
       if (text === undefined) throw new Error(`the plugin file ${part.path} is missing`);
@@ -102,6 +114,10 @@ export function categoryText(input: RulesInput, resolved: Resolved, category: st
     throw new Error(`${category} is not a rule category of the pack`);
   }
   return ruleLines(packRules(ruleContext(input, resolved), category));
+}
+
+function categoryLines(categories: readonly VerifierCategory[]): string {
+  return categories.map((category) => `- ${category.id}: ${category.description}\n`).join("");
 }
 
 function prompt(input: CtxInput, resolved: Resolved, key: string): string {

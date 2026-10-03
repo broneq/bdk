@@ -1,7 +1,9 @@
 // The resolved `policy.verifier` lists (P8): `log add` downgrades a verifier
-// blocker outside the blocking categories, and `dispatch build` puts both
-// lists in a verifier's package.
-import { resolveOrRefuse } from "../../shared/config/index.ts";
+// blocker outside the blocking categories, `dispatch build` puts both lists
+// in a verifier's package, and `ctx skill` in the context of the skills that
+// check a draft or triage against them (T42).
+import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
+import type { Resolved } from "../../shared/config/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import { verifierModule } from "../config.ts";
@@ -33,8 +35,11 @@ export function verifierPolicy(
     { removed: "ignore" },
   );
   if ("refused" in resolved) return resolved;
-  const policy = verifierModule.schema.parse(
-    (resolved.value.policy as Record<string, unknown> | undefined)?.verifier,
-  );
+  return verifierLists(resolved);
+}
+
+/** Both lists of an already resolved configuration. */
+export function verifierLists(resolved: Resolved): VerifierPolicy {
+  const policy = moduleValue(verifierModule, resolved.value);
   return { blocking: policy["blocking-categories"], notAFail: policy["not-a-fail"] };
 }

@@ -110,7 +110,7 @@ The role returns a result block of findings, each marked blocking or not. `pr-re
 
 ### D8. P8 self-check through a `ctx` part
 
-A new manifest part kind `verifier-policy` renders the resolved `policy.verifier` lists. `design`, `plan` and `cr` list it. The skills add one step before `/bdk:verify-*`: correct what fails a blocking category, and ignore the not-a-fail list. It writes nothing, so the verifier stays independent.
+A new manifest part kind `verifier-policy` renders the resolved `policy.verifier` lists. `design`, `plan` and `cr` list it. The skills add one step before `/bdk:verify-*`: correct what fails a blocking category, and ignore the not-a-fail list. It writes nothing, so the verifier stays independent. The lists are resolved by `log`, which owns `policy.verifier`, so the dependency matrix gains the edge `ctx -> log`; `log` imports only `shared`, so the edge closes no cycle.
 
 - Alternative: copy the six categories into the skill text. Lost because a project that adds a category in settings would not see it.
 

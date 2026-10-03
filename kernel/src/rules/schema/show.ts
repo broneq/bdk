@@ -61,7 +61,7 @@ export const oneRuleOutput = z
   })
   .meta({ title: "one rule" });
 
-export const roleRulesOutput = z
+const roleRulesOutput = z
   .strictObject({
     role: z.enum(ROLES),
     files: z

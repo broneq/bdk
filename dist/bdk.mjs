@@ -22834,9 +22834,10 @@ function verifierPolicy(deps, change, globalDir2) {
     { removed: "ignore" }
   );
   if ("refused" in resolved) return resolved;
-  const policy = verifierModule.schema.parse(
-    resolved.value.policy?.verifier
-  );
+  return verifierLists(resolved);
+}
+function verifierLists(resolved) {
+  const policy = moduleValue(verifierModule, resolved.value);
   return { blocking: policy["blocking-categories"], notAFail: policy["not-a-fail"] };
 }
 
@@ -23988,6 +23989,7 @@ var tools2 = (group) => ({ kind: "tools", group });
 var decision = { kind: "fragment", id: "decision" };
 var languageRules = { kind: "language-rules" };
 var projectRules = { kind: "project-rules" };
+var verifierPolicy2 = { kind: "verifier-policy" };
 var SKILL_CONTEXT = {
   "bdk-implementer-return-contract": [
     {
@@ -24009,11 +24011,18 @@ var SKILL_CONTEXT = {
   close: [],
   cr: [
     { kind: "file", path: "skills/cr/references/review-engine.md", title: "Review engine" },
-    { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" }
+    { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" },
+    verifierPolicy2
   ],
   "create-adr": [rules("architecture")],
   debug: [tools2("test"), tools2("lint")],
-  design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  design: [
+    rules("architecture"),
+    rules("engineering-judgment"),
+    projectRules,
+    verifierPolicy2,
+    decision
+  ],
   execute: [{ kind: "concurrency" }, decision],
   plan: [
     rules("plan"),
@@ -24021,6 +24030,7 @@ var SKILL_CONTEXT = {
     rules("test-quality"),
     languageRules,
     projectRules,
+    verifierPolicy2,
     decision
   ],
   "pr-review": [
@@ -25506,6 +25516,19 @@ function sectionsOf(input, resolved, part) {
         }
       ];
     }
+    case "verifier-policy": {
+      const { blocking, notAFail } = verifierLists(resolved);
+      return [
+        {
+          title: "Blocking categories (P8)",
+          body: `${categoryLines(blocking)}
+#### Not a fail
+
+${categoryLines(notAFail)}`,
+          part: { kind: "verifier-policy", source: "policy.verifier" }
+        }
+      ];
+    }
     case "file": {
       const text13 = input.store.read(join38(input.pluginRoot, part.path));
       if (text13 === void 0) throw new Error(`the plugin file ${part.path} is missing`);
@@ -25518,6 +25541,10 @@ function categoryText(input, resolved, category2) {
     throw new Error(`${category2} is not a rule category of the pack`);
   }
   return ruleLines(packRules(ruleContext(input, resolved), category2));
+}
+function categoryLines(categories) {
+  return categories.map((category2) => `- ${category2.id}: ${category2.description}
+`).join("");
 }
 function prompt(input, resolved, key) {
   const value = resolved.prompts.values.get(key);

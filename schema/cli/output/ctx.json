@@ -23,6 +23,7 @@
               "fragment",
               "tools",
               "concurrency",
+              "verifier-policy",
               "file",
               "startup",
               "agents-table"
@@ -30,7 +31,7 @@
           },
           "source": {
             "type": "string",
-            "description": "The rule directory (rules/security, .bdk/rules), prompt key (fragments/decision/lavish), tools group (tools.test), settings key (execution.concurrency) or plugin path that produced the part."
+            "description": "The rule directory (rules/security, .bdk/rules), prompt key (fragments/decision/lavish), tools group (tools.test), settings key (execution.concurrency, policy.verifier) or plugin path that produced the part."
           }
         },
         "required": ["kind", "source"],

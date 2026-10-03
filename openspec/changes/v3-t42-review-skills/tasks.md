@@ -81,14 +81,15 @@
 
 ## 5. Context part for the P8 lists (design D8)
 
-- [ ] 5.1 Write failing tests in `kernel/src/ctx/tests/`:
+- [x] 5.1 Write failing tests in `kernel/src/ctx/tests/`:
   - `ctx skill plan`, `design` and `cr` render `### Blocking categories (P8)` with the resolved categories and `#### Not a fail`;
-  - a project category added in settings appears;
-  - `ctx skill bdk-rules-security` is a STOP block with `input/not-found`.
-- [ ] 5.2 Implement:
-  - the `verifier-policy` part kind;
-  - manifest entries: `design` and `plan` gain the part; `cr` is `[verifier-policy]`; `pr-review` is the comment templates `file` part under `skills/tools/pr-review/references/`; the eight `bdk-*` entries are removed;
+  - a project category added in settings appears.
+- [x] 5.2 Implement:
+  - the `verifier-policy` part kind, with the `ctx -> log` edge of the dependency matrix (kernel-architecture delta);
+  - manifest entries: `design`, `plan` and `cr` gain the part;
   - update the `ctx-skill-output` snapshot.
+
+  The manifest edits that follow a file move land with the move, because the skill context contract keeps the manifest equal to the skill set: `cr` becomes `[verifier-policy]` in 7.2, `pr-review` points at `skills/tools/pr-review/references/` in 8.2, and the eight `bdk-*` entries go in 10.2.
 
   Verify that the tests of 5.1 and `pnpm test:contract` are green.
 
@@ -123,7 +124,7 @@
   - `next.action` handling;
   - flags, `--inline` and the final report from kernel output.
 
-  Delete `skills/cr/` with its three references. Verify that the tests of 7.1 and `pnpm skill-check` are green.
+  Delete `skills/cr/` with its three references and set the manifest entry of `cr` to `[verifier-policy]`. Verify that the tests of 7.1 and `pnpm skill-check` are green.
 
 - [ ] 7.3 Write an E2E in `kernel/src/review/tests/round.e2e.ts` or a new file. It drives the command sequence the skill names on a `review` Change: open by `change new --inferred --kind review`, one round with a blocker, a fix round with `bdk commit <change-id>`, and `done review`. Verify that it is green through the built bundle.
 
@@ -134,7 +135,7 @@
   - it starts `bdk:pr-reviewer` through `Skill` and names no `Agent` call, no `general-purpose` and no `/bdk:cr --inline`;
   - it names the brief fields, the Change contract lookup (active and archive), the confirmation before posting and the verdict policy table;
   - `references/reviewer-prompt.md` is gone.
-- [ ] 8.2 Write `skills/tools/pr-review/SKILL.md`. Move `references/comment-templates.md` to the new directory and adapt its fields to the role's result block. Delete `skills/pr-review/`. Verify that the tests of 8.1, `pnpm skill-check` and `pnpm docs:build` are green.
+- [ ] 8.2 Write `skills/tools/pr-review/SKILL.md`. Move `references/comment-templates.md` to the new directory and adapt its fields to the role's result block. Delete `skills/pr-review/`, and point the manifest entry of `pr-review` at the comment templates under `skills/tools/pr-review/references/`. Verify that the tests of 8.1, `pnpm skill-check` and `pnpm docs:build` are green.
 
 ## 9. Stage skills: run, design, plan (stage-skills delta)
 
@@ -148,11 +149,11 @@
 
 - [ ] 10.1 Write failing content tests in `kernel/tests/contract/`:
   - `agents/` holds exactly the six adapters and `web-researcher.md`;
-  - no directory under `skills/` starts with `bdk-`;
+  - no directory under `skills/` starts with `bdk-`, and `ctx skill bdk-rules-security` is a STOP block with `input/not-found` (`kernel/src/ctx/tests/`);
   - `plugin.json` `skills` lists `./skills/tools/`;
   - no `skills/cr/` or `skills/pr-review/` exists;
   - the `git grep` of removed agent names over `skills/`, `agents/`, `rules/`, `hooks/`, `STARTUP_INSTRUCTIONS.md`, `README.md` and `docs/guide/` is empty.
-- [ ] 10.2 Delete the twelve v2 agents and the eight meta-skills. Add `./skills/tools/` to `plugin.json`. Fix every reference (`.claude/rules/portability-check.md`, the docs-sync map, `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md`, `docs/guide/` agents, shared foundation and skills pages, `README.md` Skills, Agents and Removed tables, the lines in `skills/debug` and `skills/test-driven-development`). Regenerate `STARTUP_INSTRUCTIONS.md` from `bdk ctx startup`. Run `pnpm skill-check --baseline-prune`. Verify that the tests of 10.1, `pnpm skill-check`, `bdk export agents --host claude --check`, `pnpm docs:build` and `claude plugin validate .` are green.
+- [ ] 10.2 Delete the twelve v2 agents and the eight meta-skills with their manifest entries. Add `./skills/tools/` to `plugin.json`. Fix every reference (`.claude/rules/portability-check.md`, the docs-sync map, `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md`, `docs/guide/` agents, shared foundation and skills pages, `README.md` Skills, Agents and Removed tables, the lines in `skills/debug` and `skills/test-driven-development`). Regenerate `STARTUP_INSTRUCTIONS.md` from `bdk ctx startup`. Run `pnpm skill-check --baseline-prune`. Verify that the tests of 10.1, `pnpm skill-check`, `bdk export agents --host claude --check`, `pnpm docs:build` and `claude plugin validate .` are green.
 
 ## 11. Evals: review-models and stage cases (skill-evals delta, design D10)
 

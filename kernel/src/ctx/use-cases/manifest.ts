@@ -15,6 +15,8 @@ export type Part =
   | { readonly kind: "tools"; readonly group: ToolGroup }
   /** `execution.concurrency` as one sentence (T23-D52). */
   | { readonly kind: "concurrency" }
+  /** `policy.verifier`: the blocking categories and the not-a-fail list (P8, T42). */
+  | { readonly kind: "verifier-policy" }
   /** A plugin file, verbatim; `path` is relative to the plugin root. */
   | { readonly kind: "file"; readonly path: string; readonly title: string };
 
@@ -23,6 +25,7 @@ const tools = (group: ToolGroup): Part => ({ kind: "tools", group });
 const decision: Part = { kind: "fragment", id: "decision" };
 const languageRules: Part = { kind: "language-rules" };
 const projectRules: Part = { kind: "project-rules" };
+const verifierPolicy: Part = { kind: "verifier-policy" };
 
 export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   "bdk-implementer-return-contract": [
@@ -46,10 +49,17 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   cr: [
     { kind: "file", path: "skills/cr/references/review-engine.md", title: "Review engine" },
     { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" },
+    verifierPolicy,
   ],
   "create-adr": [rules("architecture")],
   debug: [tools("test"), tools("lint")],
-  design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  design: [
+    rules("architecture"),
+    rules("engineering-judgment"),
+    projectRules,
+    verifierPolicy,
+    decision,
+  ],
   execute: [{ kind: "concurrency" }, decision],
   plan: [
     rules("plan"),
@@ -57,6 +67,7 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
     rules("test-quality"),
     languageRules,
     projectRules,
+    verifierPolicy,
     decision,
   ],
   "pr-review": [

@@ -38,7 +38,8 @@ Compose the prompt context a skill's context line injects: rule sets, language r
   - `fragment`: a choice between prompt values under a fixed title. The only fragment in T13 is `decision`, titled `### Asking the user`: `fragments/decision/lavish` when `features.lavish` is true and an executable `lavish-axi` is on `PATH`, otherwise `fragments/decision/ask-user` (R-11).
   - `tools`: the entries of `tools.<group>` (`test`, `lint` or `build`) under `### Project commands: <group>`, rendered as `bdk config show tools.<group>` renders them in text mode, including `when`; an empty group renders the line `none configured`.
   - `concurrency`: the resolved `execution.concurrency` under `### Concurrency`, as the sentence `Run at most <n> agents at once.` (T23-D52); the swarm skill's only part.
-  - `file`: a file of the plugin, verbatim, under the title the manifest gives it (the former `cat` blocks of `cr`, `pr-review` and `bdk-implementer-return-contract`).
+  - `file`: a file of the plugin, verbatim, under the title the manifest gives it (`pr-review`'s comment templates).
+  - `verifier-policy`: the resolved `policy.verifier.blocking-categories` and `policy.verifier.not-a-fail` under `### Blocking categories (P8)`, one line `- <id>: <description>` per category, then the not-a-fail entries in the same line form under `#### Not a fail`, the same lists a `verifier` package carries (T42). `design` and `plan` check their own draft against them before verification, and `cr` triages against them.
   - Configuration: resolved as `config show` resolves it. An unknown key and an invalid value are STOP blocks (`policy/unknown-config-key`, `policy/config-invalid`), because context composed from a configuration the user did not mean is worse than none. A removed v2 key (`kernel-settings`, Removed v2 keys) has no effect on the output; `config check` and `hooks session-start` report it. Inject mode: exits 0 always; every error becomes a STOP block.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/ctx.json` for `--json`; Markdown otherwise (`kernel-cli`, Output modes).
@@ -136,6 +137,16 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 
 - **WHEN** the project holds `API-1` with `applies: [src/api/**]` and `bdk ctx skill create-plan` runs
 - **THEN** a `### Project rules` section holds `- [API-1] <text> (applies: src/api/**)`
+
+#### Scenario: verifier policy in the plan context
+
+- **WHEN** `policy.verifier.blocking-categories` resolves to the default list and `bdk ctx skill plan` runs
+- **THEN** the output holds `### Blocking categories (P8)` with one line per category id of that list and the `#### Not a fail` items, in the order of the resolved settings
+
+#### Scenario: no meta-skill context
+
+- **WHEN** `bdk ctx skill bdk-rules-security` runs
+- **THEN** the output is a STOP block with `input/not-found`, because the manifest holds no `bdk-*` skill
 
 ### Requirement: bdk ctx startup
 

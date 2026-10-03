@@ -8,6 +8,7 @@ type PartKind =
   | "fragment"
   | "tools"
   | "concurrency"
+  | "verifier-policy"
   | "file"
   | "startup"
   | "agents-table";

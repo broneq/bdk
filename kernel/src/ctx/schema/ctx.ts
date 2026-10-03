@@ -18,13 +18,14 @@ export const ctxOutput = z
             "fragment",
             "tools",
             "concurrency",
+            "verifier-policy",
             "file",
             "startup",
             "agents-table",
           ]),
           source: z.string().meta({
             description:
-              "The rule directory (rules/security, .bdk/rules), prompt key (fragments/decision/lavish), tools group (tools.test), settings key (execution.concurrency) or plugin path that produced the part.",
+              "The rule directory (rules/security, .bdk/rules), prompt key (fragments/decision/lavish), tools group (tools.test), settings key (execution.concurrency, policy.verifier) or plugin path that produced the part.",
           }),
         }),
       )

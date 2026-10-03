@@ -116,7 +116,7 @@ exports[`ctx skill output > close is unchanged 1`] = `
 
 exports[`ctx skill output > cr is unchanged 1`] = `
 "{
-  "content": "## BDK context: cr\\n\\n### Review engine\\n\\n# skills/cr/references/review-engine.md\\n\\n- **Default.** Plugin text.\\n\\n### Report format\\n\\n# skills/cr/references/report-format.md\\n\\n- **Default.** Plugin text.\\n",
+  "content": "## BDK context: cr\\n\\n### Review engine\\n\\n# skills/cr/references/review-engine.md\\n\\n- **Default.** Plugin text.\\n\\n### Report format\\n\\n# skills/cr/references/report-format.md\\n\\n- **Default.** Plugin text.\\n\\n### Blocking categories (P8)\\n\\n- architecture: Materially invalid architecture, or a contradiction with an accepted decision.\\n- security: A security, privacy or authentication risk.\\n- irreversible-step: An irreversible or high-cost step without justification, such as a migration or data loss.\\n- integration-failure: A critical integration, data, rollout or rollback failure.\\n- unresolved-decision: An execution-critical unresolved decision or omitted requirement.\\n- false-code-claim: A claim about the real code that is false.\\n\\n#### Not a fail\\n\\n- style: Style.\\n- template-conformance: Template conformance.\\n- files-bookkeeping: \`Files:\` bookkeeping.\\n- wording: Wording.\\n- report-length: Report length.\\n- verification-defect: A verification defect, unless it removes the only real evidence of the change's safety.\\n",
   "parts": [
     {
       "kind": "file",
@@ -125,6 +125,10 @@ exports[`ctx skill output > cr is unchanged 1`] = `
     {
       "kind": "file",
       "source": "skills/cr/references/report-format.md"
+    },
+    {
+      "kind": "verifier-policy",
+      "source": "policy.verifier"
     }
   ]
 }"
@@ -160,7 +164,7 @@ exports[`ctx skill output > debug is unchanged 1`] = `
 
 exports[`ctx skill output > design is unchanged 1`] = `
 "{
-  "content": "## BDK context: design\\n\\n### Rules: architecture\\n\\n- [BDK-ARCH-1] Text of BDK-ARCH-1.\\n- [BDK-ARCH-2] Text of BDK-ARCH-2.\\n\\n### Rules: engineering-judgment\\n\\n- [BDK-EJ-1] Text of BDK-EJ-1.\\n- [BDK-EJ-2] Text of BDK-EJ-2.\\n\\n### Project rules\\n\\n- [API-1] Text of API-1. (applies: src/api/**)\\n- [NAMING-1] Text of NAMING-1.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
+  "content": "## BDK context: design\\n\\n### Rules: architecture\\n\\n- [BDK-ARCH-1] Text of BDK-ARCH-1.\\n- [BDK-ARCH-2] Text of BDK-ARCH-2.\\n\\n### Rules: engineering-judgment\\n\\n- [BDK-EJ-1] Text of BDK-EJ-1.\\n- [BDK-EJ-2] Text of BDK-EJ-2.\\n\\n### Project rules\\n\\n- [API-1] Text of API-1. (applies: src/api/**)\\n- [NAMING-1] Text of NAMING-1.\\n\\n### Blocking categories (P8)\\n\\n- architecture: Materially invalid architecture, or a contradiction with an accepted decision.\\n- security: A security, privacy or authentication risk.\\n- irreversible-step: An irreversible or high-cost step without justification, such as a migration or data loss.\\n- integration-failure: A critical integration, data, rollout or rollback failure.\\n- unresolved-decision: An execution-critical unresolved decision or omitted requirement.\\n- false-code-claim: A claim about the real code that is false.\\n\\n#### Not a fail\\n\\n- style: Style.\\n- template-conformance: Template conformance.\\n- files-bookkeeping: \`Files:\` bookkeeping.\\n- wording: Wording.\\n- report-length: Report length.\\n- verification-defect: A verification defect, unless it removes the only real evidence of the change's safety.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
   "parts": [
     {
       "kind": "rules",
@@ -173,6 +177,10 @@ exports[`ctx skill output > design is unchanged 1`] = `
     {
       "kind": "project-rules",
       "source": ".bdk/rules"
+    },
+    {
+      "kind": "verifier-policy",
+      "source": "policy.verifier"
     },
     {
       "kind": "fragment",
@@ -200,7 +208,7 @@ exports[`ctx skill output > execute is unchanged 1`] = `
 
 exports[`ctx skill output > plan is unchanged 1`] = `
 "{
-  "content": "## BDK context: plan\\n\\n### Rules: plan\\n\\n- [BDK-PL-1] Text of BDK-PL-1.\\n- [BDK-PL-2] Text of BDK-PL-2.\\n\\n### Rules: engineering-judgment\\n\\n- [BDK-EJ-1] Text of BDK-EJ-1.\\n- [BDK-EJ-2] Text of BDK-EJ-2.\\n\\n### Rules: test-quality\\n\\n- [BDK-TQ-1] Text of BDK-TQ-1.\\n- [BDK-TQ-2] Text of BDK-TQ-2.\\n\\n### Language rules: typescript\\n\\n- [BDK-TS-1] Text of BDK-TS-1.\\n- [BDK-TS-2] Text of BDK-TS-2.\\n\\n### Language rules: react\\n\\n- [BDK-REACT-1] Text of BDK-REACT-1.\\n- [BDK-REACT-2] Text of BDK-REACT-2.\\n\\n### Project rules\\n\\n- [API-1] Text of API-1. (applies: src/api/**)\\n- [NAMING-1] Text of NAMING-1.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
+  "content": "## BDK context: plan\\n\\n### Rules: plan\\n\\n- [BDK-PL-1] Text of BDK-PL-1.\\n- [BDK-PL-2] Text of BDK-PL-2.\\n\\n### Rules: engineering-judgment\\n\\n- [BDK-EJ-1] Text of BDK-EJ-1.\\n- [BDK-EJ-2] Text of BDK-EJ-2.\\n\\n### Rules: test-quality\\n\\n- [BDK-TQ-1] Text of BDK-TQ-1.\\n- [BDK-TQ-2] Text of BDK-TQ-2.\\n\\n### Language rules: typescript\\n\\n- [BDK-TS-1] Text of BDK-TS-1.\\n- [BDK-TS-2] Text of BDK-TS-2.\\n\\n### Language rules: react\\n\\n- [BDK-REACT-1] Text of BDK-REACT-1.\\n- [BDK-REACT-2] Text of BDK-REACT-2.\\n\\n### Project rules\\n\\n- [API-1] Text of API-1. (applies: src/api/**)\\n- [NAMING-1] Text of NAMING-1.\\n\\n### Blocking categories (P8)\\n\\n- architecture: Materially invalid architecture, or a contradiction with an accepted decision.\\n- security: A security, privacy or authentication risk.\\n- irreversible-step: An irreversible or high-cost step without justification, such as a migration or data loss.\\n- integration-failure: A critical integration, data, rollout or rollback failure.\\n- unresolved-decision: An execution-critical unresolved decision or omitted requirement.\\n- false-code-claim: A claim about the real code that is false.\\n\\n#### Not a fail\\n\\n- style: Style.\\n- template-conformance: Template conformance.\\n- files-bookkeeping: \`Files:\` bookkeeping.\\n- wording: Wording.\\n- report-length: Report length.\\n- verification-defect: A verification defect, unless it removes the only real evidence of the change's safety.\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
   "parts": [
     {
       "kind": "rules",
@@ -225,6 +233,10 @@ exports[`ctx skill output > plan is unchanged 1`] = `
     {
       "kind": "project-rules",
       "source": ".bdk/rules"
+    },
+    {
+      "kind": "verifier-policy",
+      "source": "policy.verifier"
     },
     {
       "kind": "fragment",

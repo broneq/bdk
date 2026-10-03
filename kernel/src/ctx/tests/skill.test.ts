@@ -67,9 +67,15 @@ describe("ctx skill", () => {
       "BDK context: design",
       "Rules: architecture",
       "Rules: engineering-judgment",
+      "Blocking categories (P8)",
       "Asking the user",
     ]);
-    expect(report.content).toBe(
+    // The P8 section has its own tests below (verifier-policy part).
+    const withoutPolicy = report.content.replace(
+      /### Blocking categories \(P8\)\n[\s\S]*?(?=### Asking the user)/,
+      "",
+    );
+    expect(withoutPolicy).toBe(
       [
         "## BDK context: design",
         "",
@@ -90,6 +96,7 @@ describe("ctx skill", () => {
     expect(report.parts).toStrictEqual([
       { kind: "rules", source: "rules/architecture" },
       { kind: "rules", source: "rules/engineering-judgment" },
+      { kind: "verifier-policy", source: "policy.verifier" },
       { kind: "fragment", source: "fragments/decision/ask-user" },
     ]);
   });
@@ -265,5 +272,48 @@ describe("concurrency part", () => {
   it("states the value a project sets", () => {
     const [section] = concurrency({ ".bdk/settings.yaml": "execution:\n  concurrency: 3\n" });
     expect(section?.body).toBe("Run at most 3 agents at once.\n");
+  });
+});
+
+describe("verifier-policy part (P8, T42)", () => {
+  function sectionOf(name: string, project: Record<string, string> = {}): string {
+    const content = compose(name, project).content;
+    const start = content.indexOf("### Blocking categories (P8)\n");
+    expect(start, `${name} has no verifier-policy section`).toBeGreaterThanOrEqual(0);
+    const end = content.indexOf("\n### ", start + 1);
+    return content.slice(start, end === -1 ? undefined : end).trimEnd();
+  }
+
+  it("prints the resolved categories, then the not-a-fail list, in the plan context", () => {
+    const section = sectionOf("plan");
+    const lines = section.split("\n");
+    expect(lines.slice(0, 4)).toStrictEqual([
+      "### Blocking categories (P8)",
+      "",
+      "- architecture: Materially invalid architecture, or a contradiction with an accepted decision.",
+      "- security: A security, privacy or authentication risk.",
+    ]);
+    expect(section).toContain("- false-code-claim: A claim about the real code that is false.\n");
+    expect(section).toContain("\n\n#### Not a fail\n\n- style: Style.\n");
+    const notAFail = section.split("#### Not a fail\n\n")[1] ?? "";
+    expect(notAFail.split("\n").filter((line) => line.startsWith("- "))).toHaveLength(6);
+  });
+
+  it("is part of the design and cr contexts", () => {
+    expect(sectionOf("design")).toBe(sectionOf("plan"));
+    expect(sectionOf("cr")).toBe(sectionOf("plan"));
+    expect(compose("design").parts).toContainEqual({
+      kind: "verifier-policy",
+      source: "policy.verifier",
+    });
+  });
+
+  it("prints a category the project adds", () => {
+    const section = sectionOf("plan", {
+      ".bdk/settings.yaml":
+        "policy:\n  verifier:\n    blocking-categories:\n      - id: data-retention\n        description: Personal data kept past its retention.\n",
+    });
+    expect(section).toContain("- data-retention: Personal data kept past its retention.\n");
+    expect(section).toContain("- security: A security, privacy or authentication risk.\n");
   });
 });
