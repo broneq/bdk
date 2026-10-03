@@ -269,7 +269,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Scope**:
 
-- A `kernel/` structure (name to be decided) in TS, pnpm dev-only, esbuild -> one ESM `dist/bdk.mjs`, **committed** and guarded by `git diff --exit-code` on CI; Biome; `node --test` for units.
+- A `kernel/` structure (name to be decided) in TS, pnpm dev-only, esbuild -> one ESM `dist/bdk.mjs`, **committed** and guarded by `git diff --exit-code` on CI (amended by T48, #114: built on CI and published on the `release` branch, not committed); Biome; `node --test` for units.
 - Runtime dependencies: only `node:` plus bundled, pinned zod and a YAML parser; `pnpm audit` on CI (V1-8).
 - E2E harness: a repository fixture (created in `tmp`, with git), a helper that runs `bdk.mjs` and asserts exit code / JSON; contract tests that read `schema/cli/commands.json` from T10 (every command id has a handler or an explicit stub that returns `refused` with `kernel/not-implemented`; `--help` parity with the index; examples in `schema/cli/output/` validate with zod).
 - `bdk version`; `bdk doctor`: Node version (minimum from T01), detection of the v2 layout (`settings.json`, `.bdk/runs/`, `.bdk/plans/`) with a `bdk import` instruction **as content**, never exit != 0 in inject mode.
@@ -280,7 +280,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 **Input**: D5, Q3, NFR "Runtime", "Security", risk "SPOF: the kernel", "Testing and CI", "Next Steps".
 
-**Acceptance signal**: CI green with the steps build, `git diff --exit-code dist/`, lint, unit, E2E; `bdk doctor` on a v2 fixture prints the import instruction; a call from Node below the minimum ends with exit 5 and an instruction.
+**Acceptance signal**: CI green with the steps build, `git diff --exit-code dist/` (dropped by T48), lint, unit, E2E; `bdk doctor` on a v2 fixture prints the import instruction; a call from Node below the minimum ends with exit 5 and an instruction.
 
 **To resolve in the spec**: minimum Node version (based on T01); pinning policy and dependency update cadence; whether CI is GitHub Actions next to the existing release-please. The kernel's module layout is fixed by the `kernel-architecture` spec (`openspec/specs/kernel-architecture/spec.md`: vertical slices with one directory per layer, `shared/`, dependency matrix, build order): T11 builds `shared/` and the `service` slice first. CI runs the kernel suite on the Node matrix named there (the 22.13 minimum, the active LTS, the current release); the contract-test job in `.github/workflows/tests.yml` already runs on it.
 
@@ -295,7 +295,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 - Four layers: defaults in the bundle < `~/.config/bdk/settings.yaml` (XDG) < `.bdk/settings.yaml` < `.bdk/settings.local.yaml`; deep-merge, arrays merged by `id`; full override allowed (D4).
 - Schema registry per module (zod); unknown key = error naming the key (S6); key without a consumer = error; resolved configuration snapshot to `.machine/`; list of locally overridden keys (names, no values) to record in the Change (D4b; the recording in the Change itself arrives in T20).
 - `prompts/<key>.md` and `prompts.local/<key>.md` as Markdown values with `mode: extends|replace`, `applies` frontmatter.
-- JSON Schema export from the zod registry to `schema/` on CI, `git diff --exit-code`; a `# yaml-language-server: $schema=<versioned raw URL>` modeline added by setup; offline copy in `.machine/schema/`.
+- JSON Schema export from the zod registry to `schema/` on CI, `git diff --exit-code` (dropped by T48: generated, not committed); a `# yaml-language-server: $schema=<versioned raw URL>` modeline added by setup; offline copy in `.machine/schema/`.
 - Commands: `config show | check | schema | set --global | --local`.
 - Removal of `hooks/check-bdk-config/settings.schema.json` and `scripts/get_settings.py` (physical deletion can wait until T32, but nothing may read them any more).
 
@@ -347,7 +347,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 **Scope**:
 
 - zod schemas in the kernel for: `change.md` frontmatter (id, kind `feature | bug`, profile, intent, `source: user | inferred`, overridden keys), ledger entry (10 types including `transition`; `learning` gains `fingerprint` and `evidence`), attempt record, evidence manifest, dispatch package frontmatter, report envelope, `plan/index.md`, `design/index.md`, rule file frontmatter (`id`, `applies`, `roles`, `severity`, `origin`, `since`).
-- JSON Schema export to `schema/state/` by the same mechanism T12 uses for configuration; `git diff --exit-code` on CI; `schema: 1` field in every file, migrations run by `bdk rebuild`.
+- JSON Schema export to `schema/state/` by the same mechanism T12 uses for configuration; `git diff --exit-code` on CI (dropped by T48); `schema: 1` field in every file, migrations run by `bdk rebuild`.
 - Entry and ticket IDs are merge-safe, not sequential (ULID or `<timestamp>-<slug>`); cross-Change references `<changeId>/<id>`; a sequence exists only as an index view.
 - The state spec `openspec/specs/kernel-state/spec.md` (an OpenSpec main spec, like the CLI contract): the Change directory, every file's schema, and the **write map**: which skill or role writes which file and which entry types, who stamps `source`, and the rule that `intent` lives only in `change.md`, written only by `change new` (stage skills started without a Change call `change new --inferred`; `plan` and `close` never create one).
 - Contract tests: every file in a fixture `.bdk/changes/` validates against its schema; a **two-branch merge test**: two branches run a Change in parallel (entries, attempts, reports, an accepted rule, a spec delta) and merge without conflict; the only permitted conflict is the same rule edited two ways.

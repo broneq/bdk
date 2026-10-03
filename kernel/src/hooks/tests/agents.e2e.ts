@@ -1,4 +1,4 @@
-// The agent hooks of T41 through the committed bundle (`kernel-cli/hooks`):
+// The agent hooks of T41 through the built bundle (`kernel-cli/hooks`):
 // the registry link and start in the recorded 2.1.284 shapes, the stale-row
 // end of `session-start`, the continuation check of `stop` and
 // `subagent-stop`, and the agent guards of `pre-tool`.

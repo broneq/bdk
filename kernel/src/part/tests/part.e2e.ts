@@ -1,4 +1,4 @@
-// `kernel-cli/part` (T22 records) through the committed bundle in real
+// `kernel-cli/part` (T22 records) through the built bundle in real
 // repositories: one case per exit code and per declared rule of `part list`,
 // `start`, `done` and `split`, every output validated against its schema.
 // Progress comes from real commits carrying the BDK trailers.

@@ -1,4 +1,4 @@
-// `kernel-cli/change` (T20 and T22 records) through the committed bundle in
+// `kernel-cli/change` (T20 and T22 records) through the built bundle in
 // real repositories: one case per exit code and per declared rule of `change
 // new`, `status`, `list`, `resume`, `park`, `checkpoint` and `takeover`, every
 // output validated against its schema, and the acceptance cases that concern

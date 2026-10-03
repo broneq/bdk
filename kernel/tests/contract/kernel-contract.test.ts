@@ -1,8 +1,8 @@
 // The kernel against its contract (design D-8): every record answers, the
-// rule catalogue in code equals the spec's, and the committed JSON Schemas
+// rule catalogue in code equals the spec's, and the generated JSON Schemas
 // accept their examples. Files generated from zod (kernel/scripts/
-// export-schemas.ts) need no zod comparison: CI's `git diff --exit-code
-// schema/` keeps them equal to their source; `list-page.json` stays
+// export-schemas.ts) need no zod comparison: every `pnpm build` rewrites them
+// from their source and git tracks none of them; `list-page.json` stays
 // hand-written and is compared below.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

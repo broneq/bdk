@@ -36,10 +36,7 @@ Every BDK skill:
 ## Workflow
 
 1. Edit skills, agents, or hooks in this repo
-2. In a test project's Claude Code session, install locally:
-   ```
-   /plugin install ~/projects/bdk
-   ```
+2. Run `pnpm install` in this repo (its `prepare` script builds the bundle, the schemas and the adapters, which git does not track), then launch Claude Code from the test project with `claude --plugin-dir ~/projects/bdk`
 3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
 4. Measure the change when it can move behaviour: `pnpm eval with-without --skill bdk:<name> --tasks <file>` (probe first; see `evals/README.md`)
 
@@ -115,19 +112,20 @@ The v3 kernel lives in `kernel/`: sources in `kernel/src/` (one directory per sl
 Requires Node and pnpm. Use the Node version in `.nvmrc` (`nvm use`); any Node from 22.13.0 on works. pnpm comes from the `packageManager` field of `package.json` (`corepack enable`).
 
 ```bash
-pnpm install          # also installs the git hooks (husky)
-pnpm build            # rebuild dist/bdk.mjs
+pnpm install          # also installs the git hooks (husky) and builds (the `prepare` script)
+pnpm build            # rebuild dist/bdk.mjs, the generated schemas and the generated agents adapters
 pnpm lint             # ESLint, type-aware
 pnpm format           # Prettier over the whole repository (pnpm format:check to only check)
 pnpm typecheck        # tsc --noEmit
 pnpm knip             # unused files, exports and dependencies
 pnpm test:unit        # unit tests from source, with coverage thresholds
-pnpm test:e2e         # E2E tests through dist/bdk.mjs (run pnpm build first)
-pnpm test:contract    # contract, structure, bundle and dependency tests
+pnpm test:e2e         # E2E tests through dist/bdk.mjs (builds first)
+pnpm test:contract    # contract, structure, bundle and dependency tests (builds first)
 pnpm test:perf        # wall-clock budgets (*.perf.ts) through dist/bdk.mjs; CI does not run them
 ```
 
-- `dist/bdk.mjs` is committed and generated. Never edit it: change `kernel/src/`, run `pnpm build` and commit the result with the source. CI rebuilds it and fails when `git diff --exit-code dist/` shows a difference.
+- Generated files are never committed: `dist/`, the schemas `schema/settings.json`, `schema/pipeline.json`, `schema/state/`, `schema/cli/output/`, `schema/cli/common/{version,refusal}.json`, and the adapters `agents/{lead,reader,reviewer,runner,scout,worker}.md`. `pnpm build` writes them, `.gitignore` covers them, and a contract test fails when a generated file is tracked or not ignored. Change the source (`kernel/src/`), not the output. The hand-written `schema/cli/commands.json`, `commands.schema.json` and `cli/common/list-page.json` stay tracked.
+- A release publishes the generated files on the `release` branch, which the marketplace installs from, and tags that commit `dist-v<version>` (the settings schema URL of the modeline). `main` and `staging/v3` hold no bundle, so they cannot be installed from git; test an unreleased change with `claude --plugin-dir` after `pnpm install`. To publish a tag again, run the `release-please` workflow by hand with its `tag` input.
 - The pre-commit hook formats and lints staged files; the commit-msg hook enforces Conventional Commits, which release-please reads. CI runs the same checks and does not rely on the hooks.
 - Dependencies are pinned to exact versions. Runtime dependencies are limited to `zod` and `yaml`; a test fails on anything else.
 

@@ -1,5 +1,5 @@
 // The T22 acceptance signal (docs/V3-IMPLEMENTATION-PLAN.md) through the
-// committed bundle in real repositories: one case per item, from the ladder
+// built bundle in real repositories: one case per item, from the ladder
 // ending in a parked Change to a fresh clone resuming with the same budgets.
 import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

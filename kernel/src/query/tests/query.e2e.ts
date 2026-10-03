@@ -1,4 +1,4 @@
-// `bdk query` through the committed bundle in a real repository: every exit
+// `bdk query` through the built bundle in a real repository: every exit
 // code and declared rule and the output schema.
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";

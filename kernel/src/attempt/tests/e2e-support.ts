@@ -1,4 +1,4 @@
-// The attempt E2E fixtures through the committed bundle: a tiny Change in a
+// The attempt E2E fixtures through the built bundle: a tiny Change in a
 // real repository with part 01 started, the attempt commands, the dispatch
 // package from `dispatch build`, and a report envelope written by hand for
 // `attempt close --envelope`.

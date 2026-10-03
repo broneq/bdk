@@ -1,4 +1,4 @@
-// `bdk measure` through the committed bundle in a real repository: every exit
+// `bdk measure` through the built bundle in a real repository: every exit
 // code and declared rule, the output schema, and the T20 acceptance case that
 // the same range gives byte-identical output.
 import { writeFileSync } from "node:fs";

@@ -1,4 +1,4 @@
-// The T21 acceptance signal through the committed bundle in real
+// The T21 acceptance signal through the built bundle in real
 // repositories, one case per item. The `when:` pipeline fixture is rejected by
 // the content test in `kernel/tests/contract/pipeline.test.ts`, which is where
 // the shipped file is checked.

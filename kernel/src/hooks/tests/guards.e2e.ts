@@ -1,4 +1,4 @@
-// The T24 acceptance signal through the committed bundle and the guard
+// The T24 acceptance signal through the built bundle and the guard
 // scripts, run as the host runs them (`sh -c` of the hooks.json command) on a
 // real repository, driven by the recorded T01 payloads.
 import { spawnSync } from "node:child_process";

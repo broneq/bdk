@@ -1,4 +1,4 @@
-// `bdk agents list|show|wait` through the committed bundle
+// `bdk agents list|show|wait` through the built bundle
 // (`kernel-cli/agents`): the registry fed by the agent hooks with the recorded
 // 2.1.284 payload shapes, a real Change with dispatched tickets, and the
 // heartbeat files the guard scripts write.

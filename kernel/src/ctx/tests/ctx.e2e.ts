@@ -1,4 +1,4 @@
-// `kernel-cli/ctx` through the committed bundle: every exit code and rule of
+// `kernel-cli/ctx` through the built bundle: every exit code and rule of
 // `ctx skill` and `ctx startup`, and the acceptance scenarios of T13 on the
 // plugin's own rules, fragments and STARTUP file. PATH holds only what a case
 // installs, so the machine's own lavish-axi never leaks into a case.

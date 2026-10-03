@@ -19,7 +19,7 @@ The host runs no build or install step when a plugin is installed, so the file t
 #### Scenario: fresh checkout
 
 - **WHEN** `pnpm install` runs in a new worktree that has no `dist/`
-- **THEN** its `prepare` script builds `dist/bdk.mjs`, the generated schemas and the generated adapters, and `node dist/bdk.mjs --version` exits 0
+- **THEN** its `prepare` script builds `dist/bdk.mjs`, the generated schemas and the generated adapters, and `node dist/bdk.mjs version` exits 0
 
 #### Scenario: bundle missing in a test run
 
