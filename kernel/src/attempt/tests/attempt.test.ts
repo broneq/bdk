@@ -126,7 +126,11 @@ describe("attempt open", () => {
     const h = await started();
     expect((await open(h, "verify-fix", "01")).code).toBe(0);
     const review = await open(h, "review-fix", "2026-09-25-login");
-    expect(refusal(review).rule).toBe("policy/not-ready");
+    expect(refusal(review)).toMatchObject({
+      rule: "policy/not-ready",
+      why: expect.stringMatching(/^review waits for execute-part:01, which is ready/) as unknown,
+      instead: ["bdk explain execute-part:01"],
+    });
   });
 
   it("refuses a second ticket of the same key, not of a sibling", async () => {

@@ -22074,37 +22074,133 @@ var PostTaskStepKind = class extends BaseKind {
     }
     return latest2;
   }
+  evidenceState(view, nn) {
+    return stateOf(nn === void 0 ? void 0 : this.evidence(view, nn));
+  }
   validate(view, target) {
     const nn = target.nn ?? "";
-    const latest2 = this.evidence(view, nn);
-    if (latest2 === void 0) {
-      return [
-        {
-          id: "evidence",
-          ok: false,
-          why: `no ${this.name} manifest covers part ${nn}`,
-          instead: this.command
-        }
-      ];
-    }
-    return [
-      { id: "evidence", ok: true, why: `${latest2.id} of ${latest2.target}` },
-      latest2.fresh ? { id: "fresh", ok: true } : {
-        id: "fresh",
-        ok: false,
-        why: `${latest2.id} was recorded on another tree of ${latest2.target}`,
-        rule: "policy/stale-evidence",
-        instead: this.command
-      },
-      DONE_VERDICTS.includes(latest2.verdict) ? { id: "verdict", ok: true, why: latest2.verdict ?? "" } : {
-        id: "verdict",
-        ok: false,
-        why: `${latest2.id} says ${latest2.verdict ?? "no verdict"}`,
-        instead: this.command
-      }
-    ];
+    return manifestChecks(
+      this.evidence(view, nn),
+      `no ${this.name} manifest covers part ${nn}`,
+      this.command
+    );
   }
 };
+function stateOf(latest2, label = "evidence") {
+  if (latest2 === void 0) return { state: "open" };
+  if (!latest2.fresh) {
+    return {
+      state: "stale",
+      why: `${label} ${latest2.id} of ${latest2.target} was recorded on another tree`
+    };
+  }
+  return DONE_VERDICTS.includes(latest2.verdict) ? { state: "done" } : {
+    state: "open",
+    why: `${label} ${latest2.id} of ${latest2.target} says ${latest2.verdict ?? "no verdict"}`
+  };
+}
+function manifestChecks(latest2, missing, command) {
+  if (latest2 === void 0) return [{ id: "evidence", ok: false, why: missing, instead: command }];
+  return [
+    { id: "evidence", ok: true, why: `${latest2.id} of ${latest2.target}` },
+    latest2.fresh ? { id: "fresh", ok: true } : {
+      id: "fresh",
+      ok: false,
+      why: `${latest2.id} was recorded on another tree of ${latest2.target}`,
+      rule: "policy/stale-evidence",
+      instead: command
+    },
+    DONE_VERDICTS.includes(latest2.verdict) ? { id: "verdict", ok: true, why: latest2.verdict ?? "" } : {
+      id: "verdict",
+      ok: false,
+      why: `${latest2.id} says ${latest2.verdict ?? "no verdict"}`,
+      instead: command
+    }
+  ];
+}
+function latestOfChange(view, kind, tool) {
+  let latest2;
+  for (const manifest of view.evidence) {
+    if (manifest.kind !== kind || manifest.target !== view.id) continue;
+    if (tool !== void 0 && manifest.tool !== tool) continue;
+    if (latest2 === void 0 || manifest.at > latest2.at || manifest.fresh || !latest2.fresh) {
+      latest2 = manifest;
+    }
+  }
+  return latest2;
+}
+var COVERAGE2 = "coverage";
+var ChangeCheckKind = class extends BaseKind {
+  constructor(name, coverage2) {
+    super();
+    this.name = name;
+    this.coverage = coverage2;
+    this.doneBy = {
+      through: "evidence",
+      command: `bdk evidence record ${name} <file> --ticket <ticket>@<group>`
+    };
+  }
+  name;
+  coverage;
+  doneBy;
+  writes(view) {
+    return [`evidence/${view.id}-<evidenceId>.md`];
+  }
+  inputs(view) {
+    const tree = view.changeTree();
+    return tree === void 0 ? { none: true } : { tree };
+  }
+  evidenceState(view) {
+    const own2 = stateOf(latestOfChange(view, this.name));
+    if (own2.state !== "done") return own2;
+    for (const tool of this.tools(view)) {
+      const latest2 = latestOfChange(view, COVERAGE2, tool);
+      if (latest2 === void 0) return { state: "open", why: missingCoverage(tool) };
+      const state = stateOf(latest2, COVERAGE2);
+      if (state.state !== "done") {
+        return state.state === "stale" ? state : {
+          state: "open",
+          why: `coverage ${latest2.id} of ${tool} says ${latest2.verdict ?? "no verdict"}`
+        };
+      }
+    }
+    return own2;
+  }
+  validate(view) {
+    return [
+      ...manifestChecks(
+        latestOfChange(view, this.name),
+        `no ${this.name} manifest of the Change`,
+        this.doneBy.through === "evidence" ? this.doneBy.command : ""
+      ),
+      ...this.tools(view).map((tool) => {
+        const latest2 = latestOfChange(view, COVERAGE2, tool);
+        const id = `coverage:${tool}`;
+        const instead = `bdk evidence coverage ${tool} <report> --ticket <ticket>`;
+        if (latest2 === void 0) return { id, ok: false, why: missingCoverage(tool), instead };
+        if (!latest2.fresh) {
+          return {
+            id,
+            ok: false,
+            why: `${latest2.id} was recorded on another tree of ${latest2.target}`,
+            rule: "policy/stale-evidence",
+            instead
+          };
+        }
+        return latest2.verdict === "pass" ? { id, ok: true, why: `${latest2.id} passes` } : { id, ok: false, why: `${latest2.id} says ${latest2.verdict ?? "no verdict"}`, instead };
+      })
+    ];
+  }
+  tools(view) {
+    return this.coverage ? view.coverageTools : [];
+  }
+};
+function missingCoverage(tool) {
+  return `no coverage manifest of ${tool} for the Change`;
+}
+function changeChecks() {
+  return [new ChangeCheckKind("tests-full", true), new ChangeCheckKind("lint-full", false)];
+}
 function postTaskSteps() {
   return [
     new PostTaskStepKind("simplify", "bdk attempt close <ticket> ok", "simplifier"),
@@ -22123,7 +22219,7 @@ var CloseKind = class extends FilelessKind {
 
 // kernel/src/graph/domain/kinds/verdicts.ts
 var PASSING = ["done", "done-with-concerns"];
-function verdictChecks(view, target) {
+function verdictChecks(view, target, review = false) {
   const id = target.id;
   const reports = view.entries.filter(
     (entry2) => entry2.type === "report" && entry2.refs.includes(id)
@@ -22141,19 +22237,58 @@ function verdictChecks(view, target) {
     why: `the latest report ${latest2.id} has status ${status ?? "unreadable"}, not done or done-with-concerns`
   };
   const blockers = view.entries.filter(
-    (entry2) => entry2.type === "blocker" && live(entry2) && entry2.refs.includes(id)
+    (entry2) => live(entry2) && (entry2.type === "blocker" && entry2.refs.includes(id) || review && entry2.level === BLOCKER)
   );
   const blocker = blockers.length === 0 ? { id: "blockers", ok: true } : {
     id: "blockers",
     ok: false,
-    why: `live blocker ${blockers.map((entry2) => entry2.id).join(", ")} names ${id}`,
-    instead: "resolve the blocker: bdk log resolve <id>"
+    why: `live blocker ${blockers.map((entry2) => entry2.id).join(", ")} ${review ? `names ${id} or is triaged blocker` : `names ${id}`}`,
+    instead: review ? "resolve the blocker (bdk log resolve <id>) or triage it again (bdk log triage <id> <level>)" : "resolve the blocker: bdk log resolve <id>"
   };
   return [
     verdict,
+    ...review ? [mergeCheck(view, id, latest2), triagedCheck(view, latest2)] : [],
     blocker,
     ...latest2 === void 0 ? [] : [freshCheck(view, id, latest2, target.requires ?? []), evidenceCheck(view, latest2)]
   ];
+}
+var BLOCKER = "blocker";
+var MERGE_GROUP2 = "merge";
+var REVIEW_FIX = "review-fix";
+var TRIAGED_TYPES = ["finding", "blocker", "observation"];
+function mergeCheck(view, id, latest2) {
+  const instead = `bdk log ingest --ticket <ticket>@merge, then bdk log add report "<verdict>" --ticket <ticket>@merge`;
+  if (latest2 === void 0) {
+    return { id: "merge-report", ok: false, why: `no merged report names ${id}`, instead };
+  }
+  if (latest2.group !== MERGE_GROUP2 || latest2.ticket === void 0) {
+    const of = latest2.group === void 0 ? "has no group" : `is of group ${latest2.group}`;
+    return {
+      id: "merge-report",
+      ok: false,
+      why: `the latest report ${latest2.id} naming ${id} ${of}, not the merged report of a round`,
+      instead
+    };
+  }
+  const loop = view.ticketLoop(latest2.ticket);
+  return loop === REVIEW_FIX ? { id: "merge-report", ok: true } : {
+    id: "merge-report",
+    ok: false,
+    why: `the merged report ${latest2.id} is under ${latest2.ticket}, a ${loop ?? "unknown"} ticket, not a ${REVIEW_FIX} round`,
+    instead
+  };
+}
+function triagedCheck(view, latest2) {
+  const ticket = latest2?.group === MERGE_GROUP2 ? latest2.ticket : void 0;
+  const untriaged = view.entries.filter(
+    (entry2) => ticket !== void 0 && entry2.ticket === ticket && TRIAGED_TYPES.includes(entry2.type) && live(entry2) && entry2.level === void 0
+  );
+  return untriaged.length === 0 ? { id: "triaged", ok: true } : {
+    id: "triaged",
+    ok: false,
+    why: `${untriaged.map((entry2) => entry2.id).join(", ")} of ${ticket ?? ""} has no triage level`,
+    instead: "bdk log triage <id> blocker|should-fix|nice-to-have|not-a-problem"
+  };
 }
 var second = (at) => at.slice(0, 19);
 function freshCheck(view, id, report2, requires) {
@@ -22232,7 +22367,7 @@ var ReviewKind = class extends BaseKind {
     return { codeTree: true };
   }
   validate(view, target) {
-    return verdictChecks(view, target);
+    return verdictChecks(view, target, true);
   }
 };
 
@@ -22250,6 +22385,7 @@ function kindRegistry(extra = []) {
     new GateKind(),
     new ExecutePartKind(),
     ...postTaskSteps(),
+    ...changeChecks(),
     new ReviewKind(),
     new SpecDeltaKind(),
     new CloseKind(),
@@ -22937,7 +23073,7 @@ function ticketEvidence(deps, change, ticket) {
 
 // kernel/src/log/use-cases/triage.ts
 import { join as join28 } from "node:path";
-var TRIAGED_TYPES = ["finding", "blocker", "observation"];
+var TRIAGED_TYPES2 = ["finding", "blocker", "observation"];
 var LIVE = ["proposed", "accepted"];
 var NOT_A_PROBLEM = "not-a-problem";
 function triageEntry(deps, change, input) {
@@ -22958,10 +23094,10 @@ function triageEntry(deps, change, input) {
         "bdk log list"
       ]);
     }
-    if (!TRIAGED_TYPES.includes(entry2.type)) {
+    if (!TRIAGED_TYPES2.includes(entry2.type)) {
       return refuse(
         "input/invalid-argument",
-        `${entry2.id} is a ${entry2.type}; triage applies to ${TRIAGED_TYPES.join(", ")}`,
+        `${entry2.id} is a ${entry2.type}; triage applies to ${TRIAGED_TYPES2.join(", ")}`,
         ["bdk log list --type finding"]
       );
     }
@@ -23421,7 +23557,6 @@ function stageCommand(pipeline, stage2) {
 }
 
 // kernel/src/graph/domain/engine.ts
-var DONE_VERDICTS2 = ["pass", "not-run"];
 function evaluate(input) {
   const { pipeline, kinds, view } = input;
   const drafts = /* @__PURE__ */ new Map();
@@ -23509,18 +23644,19 @@ function evaluate(input) {
       return open2 === void 0 ? { ...base, requires, state: "ready", why: pending } : { ...base, requires, state: "blocked", why: open2 };
     }
     if (draft.kind.doneBy.through === "construction") return { ...base, requires, state: "done" };
-    if (evidenced !== void 0) {
-      const latest2 = draft.kind.evidence?.(view, evidenced);
-      if (latest2 !== void 0 && !latest2.fresh) {
-        const why2 = `evidence ${latest2.id} of ${latest2.target} was recorded on another tree`;
-        return { ...base, requires, state: "stale", why: why2 };
+    if (draft.kind.evidenceState !== void 0) {
+      const evidence = draft.kind.evidenceState(view, draft.nn);
+      if (evidence.state === "stale") {
+        return { ...base, requires, state: "stale", why: evidence.why };
       }
-      if (latest2 !== void 0 && DONE_VERDICTS2.includes(latest2.verdict)) {
-        return { ...base, requires, state: "done" };
-      }
-      const why = latest2 === void 0 ? void 0 : `evidence ${latest2.id} of ${latest2.target} says ${latest2.verdict ?? "no verdict"}`;
+      if (evidence.state === "done") return { ...base, requires, state: "done" };
       if (open2 !== void 0) return { ...base, requires, state: "blocked", why: open2 };
-      return { ...base, requires, state: "ready", ...why === void 0 ? {} : { why } };
+      return {
+        ...base,
+        requires,
+        state: "ready",
+        ...evidence.why === void 0 ? {} : { why: evidence.why }
+      };
     }
     const recorded2 = draft.instances === void 0 ? done2.get(draft.id) : void 0;
     if (recorded2 !== void 0) {
@@ -23666,6 +23802,8 @@ var KIND_NAMES = [
   "simplify",
   "tests-scoped",
   "lint",
+  "tests-full",
+  "lint-full",
   "review",
   "spec-delta",
   "close"
@@ -26296,6 +26434,11 @@ function changeView(input) {
   const files = /* @__PURE__ */ new Map();
   const parts = /* @__PURE__ */ new Map();
   const byId = new Map(input.entries.map((entry2) => [entry2.id, entry2]));
+  let loops;
+  const ticketLoop = (ticket) => {
+    loops ??= new Map(readAttempts(store2, dir).map(({ data }) => [data.ticket, data.loop]));
+    return loops.get(ticket);
+  };
   const read2 = (path) => {
     if (files.has(path)) return files.get(path);
     const facts = readFacts(store2, join45(dir, path));
@@ -26335,6 +26478,9 @@ function changeView(input) {
     planPart,
     evidence: input.evidence ?? [],
     partTree: (nn) => input.partTrees?.get(nn),
+    changeTree: () => input.changeTree,
+    coverageTools: moduleValue(toolsModule, input.settings).test.filter((entry2) => entry2.coverage?.min !== void 0).map((entry2) => entry2.id),
+    ticketLoop,
     ...input.work === void 0 ? {} : { work: input.work }
   };
 }
@@ -26475,6 +26621,7 @@ async function evidenceFacts(deps, change, resolved, validating) {
   const parts = readPlanParts(deps.store, change.dir);
   const trees = await currentTrees(deps, change, filePolicy(resolved.value), parts, [
     ...parts.map((part) => part.id),
+    change.id,
     ...manifests.map((manifest) => manifest.data.target)
   ]);
   return {
@@ -26485,9 +26632,11 @@ async function evidenceFacts(deps, change, resolved, validating) {
       at: data.at,
       verdict: data.verdict,
       cited: (data.citations ?? []).length > 0,
-      fresh: trees.get(data.target)?.treeHash === data["tree-hash"]
+      fresh: trees.get(data.target)?.treeHash === data["tree-hash"],
+      ...data.tool === void 0 ? {} : { tool: data.tool }
     })),
-    partTrees: new Map(parts.map((part) => [part.id, trees.get(part.id)?.treeHash ?? ""]))
+    partTrees: new Map(parts.map((part) => [part.id, trees.get(part.id)?.treeHash ?? ""])),
+    changeTree: trees.get(change.id)?.treeHash ?? ""
   };
 }
 async function workFacts(deps, change, index2) {
@@ -27127,6 +27276,15 @@ function postTaskSteps2(read2) {
     steps.set(kind.name, { kind: kind.name, role: kind.role });
   }
   return [...steps.values()];
+}
+function reviewRoundBlocker(read2) {
+  for (const id of read2.graph.find("review")?.requires ?? []) {
+    const node3 = read2.graph.find(id);
+    if (node3 === void 0 || node3.state === "done" || node3.state === "skipped") continue;
+    if (read2.kinds.get(node3.kind) instanceof ChangeCheckKind) continue;
+    return node3.why === void 0 ? { id, state: node3.state } : { id, state: node3.state, why: node3.why };
+  }
+  return void 0;
 }
 function targetFiles2(parts, target) {
   const holder = taskHolders(parts).get(target);
@@ -27843,6 +28001,7 @@ async function workTargets(deps, change, index2, globalDir2) {
     parked: read2.parked,
     started: startedParts(read2.entries),
     steps: postTaskSteps2(read2),
+    reviewBlocker: reviewRoundBlocker(read2),
     node: (id) => {
       const found = read2.graph.find(id);
       if (found === void 0) return void 0;
@@ -28444,7 +28603,13 @@ function checkTarget(deps, change, targets, loop, target) {
   }
   if (loop === "review-fix") {
     if (target !== change.id) return wrongType("the Change id");
-    return notReady(targets, "review", ["blocked"]);
+    const blocker = targets.reviewBlocker;
+    if (blocker === void 0) return void 0;
+    return refuse(
+      "policy/not-ready",
+      `review waits for ${blocker.id}, which is ${blocker.state}${blocker.why ? `: ${blocker.why}` : ""}`,
+      [`bdk explain ${blocker.id}`]
+    );
   }
   if (TASK_ID.test(target) || PART_ID.test(target) || target === change.id) {
     return wrongType("artifact id");

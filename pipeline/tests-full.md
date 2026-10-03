@@ -1,0 +1,1 @@
+Run the full test gate {node} of Change {change} in the review round: the gate runner's package (`--group gate`) names every `tools.test` command with its `bdk evidence record tests-full` line, and the coverage run with its `bdk evidence coverage` line for each entry with `coverage`.

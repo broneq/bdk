@@ -1,1 +1,1 @@
-Review the committed code of Change {change}. Record the verdict as a `report` entry whose refs name {node}; blocking findings are `blocker` entries naming {node}.
+Review Change {change} in a `review-fix` round: `bdk review plan` gives the range and the groups, one reviewer package per group and the gate runner. Triage every entry of the round with `bdk log triage`, then store the merged review with `bdk log ingest --ticket <ticket>@merge` and record it as a `report` entry with `--ticket <ticket>@merge`, which names {node}.

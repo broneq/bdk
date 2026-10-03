@@ -10,7 +10,6 @@ import type { Pipeline, PipelineNode } from "./pipeline.ts";
 import type { NodeState } from "../../shared/vocabulary/index.ts";
 
 /** The verdicts that complete a post-task step node (`kernel-pipeline`, Node states). */
-const DONE_VERDICTS: readonly (string | undefined)[] = ["pass", "not-run"];
 
 export interface GraphInput {
   readonly pipeline: Pipeline;
@@ -177,21 +176,19 @@ export function evaluate(input: GraphInput): Graph {
         : { ...base, requires, state: "blocked", why: open };
     }
     if (draft.kind.doneBy.through === "construction") return { ...base, requires, state: "done" };
-    if (evidenced !== undefined) {
-      const latest = draft.kind.evidence?.(view, evidenced);
-      if (latest !== undefined && !latest.fresh) {
-        const why = `evidence ${latest.id} of ${latest.target} was recorded on another tree`;
-        return { ...base, requires, state: "stale", why };
+    if (draft.kind.evidenceState !== undefined) {
+      const evidence = draft.kind.evidenceState(view, draft.nn);
+      if (evidence.state === "stale") {
+        return { ...base, requires, state: "stale", why: evidence.why };
       }
-      if (latest !== undefined && DONE_VERDICTS.includes(latest.verdict)) {
-        return { ...base, requires, state: "done" };
-      }
-      const why =
-        latest === undefined
-          ? undefined
-          : `evidence ${latest.id} of ${latest.target} says ${latest.verdict ?? "no verdict"}`;
+      if (evidence.state === "done") return { ...base, requires, state: "done" };
       if (open !== undefined) return { ...base, requires, state: "blocked", why: open };
-      return { ...base, requires, state: "ready", ...(why === undefined ? {} : { why }) };
+      return {
+        ...base,
+        requires,
+        state: "ready",
+        ...(evidence.why === undefined ? {} : { why: evidence.why }),
+      };
     }
 
     const recorded = draft.instances === undefined ? done.get(draft.id) : undefined;

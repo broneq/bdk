@@ -35,8 +35,8 @@
 
 ## 7. Graph: full gate and the review verdict (D2, D4, D6)
 
-- [ ] 7.1 Failing tests (`kernel/src/graph/tests/`, E2E): the registry holds eighteen kinds; `tests-full` and `lint-full` nodes exist in every graph variant before `review`, which requires them; a `fail` manifest leaves the node not done; `tests-full` with a failing or missing coverage manifest for an entry with `min` is not done and `explain` names it; a fix changing a part file stales both; `bdk done lint-full` is `policy/invalid-transition` naming `bdk evidence record`; `bdk done review` is refused on `merge-report` for a group report, on `triaged` for an untriaged entry of the round, on `blockers` for a live `level: blocker` entry from execute, and passes when all three hold
-- [ ] 7.2 The `change-check` base, both kinds, `pipeline/pipeline.yaml` nodes and their instruction templates, the three verdict checks; `pnpm build` regenerates `schema/pipeline.json`; tests of 7.1 green
+- [x] 7.1 Failing tests (`kernel/src/graph/tests/`, E2E): the registry holds eighteen kinds; `tests-full` and `lint-full` nodes exist in every graph variant before `review`, which requires them; a `fail` manifest leaves the node not done; `tests-full` with a failing or missing coverage manifest for an entry with `min` is not done and `explain` names it; a fix changing a part file stales both; `bdk done lint-full` is `policy/invalid-transition` naming `bdk evidence record`; `bdk done review` is refused on `merge-report` for a group report, on `triaged` for an untriaged entry of the round, on `blockers` for a live `level: blocker` entry from execute, and passes when all three hold
+- [x] 7.2 The `change-check` base, both kinds, `pipeline/pipeline.yaml` nodes and their instruction templates, the three verdict checks; `pnpm build` regenerates `schema/pipeline.json`; tests of 7.1 green (`schema/pipeline.json` names no kind, so it stays unchanged; `attempt open review-fix` now waits only for the requirements of `review` other than the full gate, which the round itself records, as the `kernel-cli/attempt` delta states)
 
 ## 8. `bdk review plan` (D3)
 

@@ -751,6 +751,8 @@ describe("change on the artifact graph", () => {
       ["tests-scoped", "blocked"],
       ["lint", "blocked"],
       ["spec-delta", "skipped"],
+      ["tests-full", "blocked"],
+      ["lint-full", "blocked"],
       ["review", "blocked"],
       ["gate:review", "blocked"],
       ["close", "blocked"],

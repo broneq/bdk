@@ -1,0 +1,1 @@
+Run the full lint gate {node} of Change {change} in the review round: the gate runner's package (`--group gate`) names every `tools.lint` command with its `bdk evidence record lint-full` line, with a citation for `pass`.

@@ -30,6 +30,12 @@ export interface GraphEntry {
   readonly inputHash?: string | undefined;
   /** A policy transition written under a run's `--auto` (T41). */
   readonly auto?: boolean | undefined;
+  /** The ticket the entry was written under, as its plain id. */
+  readonly ticket?: string | undefined;
+  /** The review group of a `<ticket>@<group>` write; `merge` for the merged review (T42). */
+  readonly group?: string | undefined;
+  /** The orchestrator's triage level (`kernel-cli/log`, bdk log triage). */
+  readonly level?: string | undefined;
 }
 
 /** A plan part's body as the use case parsed it with the task grammar (`kernel-loops`). */
@@ -79,7 +85,15 @@ export interface EvidenceFacts {
   /** True when the manifest carries at least one citation. */
   readonly cited: boolean;
   readonly fresh: boolean;
+  /** Only on a `coverage` manifest: the `tools.test` id it measured. */
+  readonly tool?: string | undefined;
 }
+
+/** How the evidence of a node stands: done, stale, or open with what it waits for. */
+export type EvidenceState =
+  | { readonly state: "done" }
+  | { readonly state: "stale"; readonly why: string }
+  | { readonly state: "open"; readonly why?: string | undefined };
 
 /** One Change as the kinds and the engine see it. */
 export interface ChangeView {
@@ -111,6 +125,12 @@ export interface ChangeView {
   readonly evidence: readonly EvidenceFacts[];
   /** The current tree hash of plan part `nn`, when the use case computed it. */
   partTree(nn: string): string | undefined;
+  /** The current tree hash of the Change, when the use case computed it. */
+  changeTree(): string | undefined;
+  /** The `tools.test` ids with `coverage.min`, whose coverage `tests-full` needs (T42-D5). */
+  readonly coverageTools: readonly string[];
+  /** The loop of a ticket of the Change, or undefined when it has no attempt record. */
+  ticketLoop(ticket: string): string | undefined;
   /** Loaded by the commands that validate; undefined elsewhere. */
   readonly work?: WorkFacts | undefined;
 }
@@ -171,10 +191,10 @@ export interface Kind {
   writes(view: ChangeView, nn?: string): readonly string[];
   inputs(view: ChangeView, nn?: string): Inputs;
   /**
-   * Only kinds done through evidence have it: the latest manifest of the kind
-   * covering part `nn`, or undefined when none does.
+   * Only kinds done through evidence have it: the node's state from its
+   * manifests; `nn` is the instance's part, absent on a Change-level node.
    */
-  evidence?(view: ChangeView, nn: string): EvidenceFacts | undefined;
+  evidenceState?(view: ChangeView, nn?: string): EvidenceState;
   /** Every check of the validator, passing or not. */
   validate(view: ChangeView, target: ValidateTarget): Check[];
 }

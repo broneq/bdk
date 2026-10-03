@@ -35,6 +35,7 @@ T42 is split (user decision 2026-10-02/03) into `v3-t42-review-kernel` (this Cha
 - `kernel-cli/log`: ticket references on `add` and `ingest`; the `merge` group; `head` on a merge report; the new `bdk log triage`.
 - `kernel-cli/rules`: `rules show --ticket <ticket>@<group>`; the role set of `integration-reviewer`.
 - `kernel-cli/evidence`: ticket references on `record`; the new `bdk evidence coverage`.
+- `kernel-cli/attempt`: a `review-fix` round opens while only `tests-full` and `lint-full` keep `review` blocked, since the round's gate runner records them.
 - `kernel-cli`: the ticket reference grammar and the new rules in the rule catalogue.
 - `kernel-architecture`: the `review` slice in the slice table and the dependency matrix.
 - `kernel-pipeline`: kinds `tests-full` and `lint-full`, their nodes, and the `review` verdict from the merge report.

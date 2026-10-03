@@ -60,15 +60,10 @@ function commitIgnore(dir: string): void {
   }
 }
 
-/** One passing verifier round on `node`, as `/bdk:verify-design`, `/bdk:verify-plan` or `/bdk:cr` records it. */
-function verified(
-  dir: string,
-  kernel: Kernel,
-  node: "design-verify" | "plan-verify" | "review",
-): void {
-  const role = node === "review" ? "reviewer" : "verifier";
+/** One passing verifier round on `node`, as `/bdk:verify-design` or `/bdk:verify-plan` records it. */
+function verified(dir: string, kernel: Kernel, node: "design-verify" | "plan-verify"): void {
   const ticket = field(run(dir, kernel, ["attempt", "open", "verifier", node]), "ticket");
-  const report = field(run(dir, kernel, ["dispatch", "build", node, role, ticket]), "report");
+  const report = field(run(dir, kernel, ["dispatch", "build", node, "verifier", ticket]), "report");
   run(dir, kernel, ["log", "ingest", "--ticket", ticket], PASS);
   run(dir, kernel, ["log", "add", "report", `${node} passed`, "--ref", node, "--ticket", ticket]);
   run(dir, kernel, ["attempt", "close", ticket, "ok", "--envelope", report]);
@@ -158,6 +153,36 @@ function deliveredTask(dir: string, kernel: Kernel): void {
   run(dir, kernel, ["commit", "01-1"]);
 }
 
+/**
+ * One clean `review-fix` round, as `/bdk:cr` records it (T42): the gate
+ * runner's `tests-full` and `lint-full`, the merged report under `merge`, the
+ * round closed and `review` done.
+ */
+function reviewRound(dir: string, kernel: Kernel, change: string): void {
+  const ticket = field(run(dir, kernel, ["attempt", "open", "review-fix", change]), "ticket");
+  run(dir, kernel, ["dispatch", "build", change, "runner", ticket, "--group", "gate"]);
+  for (const kind of ["tests-full", "lint-full"]) {
+    const result = `.bdk/.machine/${kind}-${ticket}.json`;
+    writeFileSync(join(dir, result), '{"failed":0}\n');
+    run(dir, kernel, [
+      "evidence",
+      "record",
+      kind,
+      result,
+      "--ticket",
+      `${ticket}@gate`,
+      "--verdict",
+      "pass",
+      "--cite",
+      "/failed",
+    ]);
+  }
+  run(dir, kernel, ["log", "ingest", "--ticket", `${ticket}@merge`], PASS);
+  run(dir, kernel, ["log", "add", "report", "review passed", "--ticket", `${ticket}@merge`]);
+  run(dir, kernel, ["attempt", "close", ticket, "ok"]);
+  run(dir, kernel, ["done", "review"]);
+}
+
 /** A tiny Change with part 01 committed, its review passed and `gate:review` ready. */
 function reviewed(dir: string, kernel: Kernel): void {
   const intent = readFileSync(join(REVIEWED, "intent.md"), "utf8").trim();
@@ -172,7 +197,7 @@ function reviewed(dir: string, kernel: Kernel): void {
   run(dir, kernel, ["part", "start", "01"]);
   deliveredTask(dir, kernel);
   run(dir, kernel, ["part", "done", "01"]);
-  verified(dir, kernel, "review");
+  reviewRound(dir, kernel, change);
   run(dir, kernel, ["change", "checkpoint"]);
 }
 

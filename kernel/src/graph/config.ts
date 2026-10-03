@@ -54,6 +54,8 @@ export const KIND_NAMES = [
   "simplify",
   "tests-scoped",
   "lint",
+  "tests-full",
+  "lint-full",
   "review",
   "spec-delta",
   "close",
