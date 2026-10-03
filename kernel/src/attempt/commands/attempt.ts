@@ -1,13 +1,14 @@
-// The three attempt handlers: arguments in, use case, `--json` object or text out.
+// The four attempt handlers: arguments in, use case, `--json` object or text out.
 import { globalDir } from "../../shared/config/index.ts";
 import { capLines, listPage } from "../../shared/output/index.ts";
 import { isRefusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange, FlagValue, Handler } from "../../shared/registry/index.ts";
-import { renderClose, renderList, renderOpen } from "../render/attempt.ts";
+import { renderClose, renderList, renderOpen, renderShow } from "../render/attempt.ts";
 import { closeAttempt } from "../use-cases/close.ts";
 import type { AttemptDeps } from "../use-cases/deps.ts";
 import { listAttempts } from "../use-cases/list.ts";
 import { openAttempt } from "../use-cases/open.ts";
+import { showAttempt } from "../use-cases/show.ts";
 
 function text(value: FlagValue | undefined): string | undefined {
   return typeof value === "string" ? value : undefined;
@@ -61,5 +62,17 @@ export function listCommand(deps: AttemptDeps): Handler {
       data: { ...page, ...(report.budgets === undefined ? {} : { budgets: report.budgets }) },
       text: capLines(renderList(report), { all }),
     };
+  };
+}
+
+export function showCommand(deps: AttemptDeps): Handler {
+  return async (context) => {
+    const report = await showAttempt(
+      deps,
+      active(context.change),
+      globalDir(context.runtime),
+      context.positionals["<ticket>"] ?? "",
+    );
+    return isRefusal(report) ? report : { data: report, text: renderShow(report) };
   };
 }

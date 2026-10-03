@@ -84,7 +84,7 @@ function order(a: KeyedRecord, b: KeyedRecord): number {
   return a.ticket < b.ticket ? -1 : 1;
 }
 
-function item(
+export function item(
   record: KeyedRecord,
   entries: readonly { readonly ticket?: string }[] | undefined,
 ): AttemptItem {

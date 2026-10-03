@@ -44,11 +44,13 @@ A `SendMessage` carries a ledger id and one sentence, never the content; write t
 Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
 
 ```
+---
 status: done | done-with-concerns | needs-context | blocked
 files: [<paths you changed>]
 entries: [<ledger ids you wrote>]
 evidence: [<evidence ids>]
-reason: <required for blocked and needs-context>
+# reason: blocked and needs-context only
+---
 ```
 
 The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.

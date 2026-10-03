@@ -8000,6 +8000,27 @@ var commands_default = {
       writes: []
     },
     {
+      id: "attempt-show",
+      argv: ["attempt", "show"],
+      summary: "One ticket's record: loop, target, state and steps.",
+      availability: "read",
+      mode: "command",
+      slice: "attempt",
+      owner: "T22",
+      changeScoped: true,
+      args: [
+        {
+          name: "<ticket>",
+          required: true
+        }
+      ],
+      flags: [],
+      output: "output/attempt-show.json",
+      exits: [0, 2, 3, 4, 5],
+      refusals: ["input/not-found"],
+      writes: []
+    },
+    {
       id: "log-add",
       argv: ["log", "add"],
       summary: "Append one ledger entry; the kernel stamps id, time, author and source.",
@@ -20590,6 +20611,13 @@ function line(item4) {
   const entries2 = item4.entries === void 0 ? "" : `, ${String(item4.entries)} entries`;
   return `${item4.ticket} ${state}: ${item4.loop} ${item4.target}, attempt ${String(item4.attempt)}/${String(item4.of)}, ${item4.scope}${escalation}${entries2}`;
 }
+function renderShow2(report2) {
+  return [
+    line(report2),
+    ...report2.steps === void 0 || report2.steps.length === 0 ? [] : [`steps: ${report2.steps.map((step2) => `${step2.kind} (${step2.role})`).join(", ")}`],
+    ""
+  ].join("\n");
+}
 
 // kernel/src/attempt/use-cases/close.ts
 import { isAbsolute as isAbsolute4, join as join48 } from "node:path";
@@ -21141,6 +21169,19 @@ function citationProblem(citation, files) {
   if (file.text === void 0) return `${where}: the file is not text, so it is not citable`;
   return "pointer" in parsed.target ? pointerProblem(where, file.text, parsed.target.pointer) : lineProblem(where, file.text, parsed.target.line, parsed.target.contains);
 }
+function citationHint(citation, files) {
+  const located2 = /^.*:\d+(?:-\d+)?=(?<text>.+)$/s.exec(citation)?.groups?.text;
+  if (located2 === void 0 && parse5(citation, files) !== void 0) return void 0;
+  const text13 = (located2 ?? citation).trim();
+  if (text13 === "") return void 0;
+  const found = files.flatMap((file) => {
+    if (file.text === void 0) return [];
+    const lines = file.text.split("\n").map((line2) => line2.replace(/\r$/, ""));
+    const at = lines.findIndex((line2) => line2.includes(text13));
+    return at < 0 ? [] : [`${file.given}:${String(at + 1)}=${text13}`];
+  });
+  return found.length === 1 ? found[0] : void 0;
+}
 function isText(bytes2) {
   if (bytes2.includes(0)) return false;
   try {
@@ -21358,7 +21399,9 @@ function checkCitations(sources, verdict, citations, kernel) {
   for (const citation of citations) {
     const problem = citationProblem(citation, files);
     if (problem !== void 0) {
+      const hint = citationHint(citation, files);
       return refuse("policy/missing-citation", problem, [
+        ...hint === void 0 ? [] : [`--cite ${hint}`],
         "cite a value the recorded files hold",
         "record the verdict fail when the evidence does not show a pass"
       ]);
@@ -22476,7 +22519,7 @@ function renderList3(items) {
   return `${lines.join("\n")}
 `;
 }
-function renderShow2(shown) {
+function renderShow3(shown) {
   const { entry: entry2 } = shown;
   const lines = [
     `${entry2.id} ${entry2.type} ${entry2.status}: ${entry2.summary}`,
@@ -23065,6 +23108,12 @@ function invalidEnvelope(why) {
     `the frontmatter holds ${FIELDS.join(", ")}; reason only for blocked and needs-context`
   ]);
 }
+function withoutEmptyReason(fields) {
+  const { reason, ...rest } = fields;
+  const empty = reason === null || reason === "";
+  const needed = fields.status === "blocked" || fields.status === "needs-context";
+  return empty && !needed ? rest : { ...fields };
+}
 function checkEnvelope(envelope, ticket, role2) {
   const at = (field4) => `line ${String(envelope.lines[field4] ?? envelope.end)}: ${field4}`;
   const names = Object.keys(envelope.fields);
@@ -23084,7 +23133,7 @@ function checkEnvelope(envelope, ticket, role2) {
     schema: STATE_KINDS.report.version,
     ticket,
     role: role2,
-    ...envelope.fields
+    ...withoutEmptyReason(envelope.fields)
   });
   if (parsed.success) return parsed.data;
   const [issue2] = parsed.error.issues;
@@ -23393,7 +23442,7 @@ function listCommand2(deps) {
 function showCommand2(deps) {
   return async (context) => {
     const shown = await showEntry(deps, active2(context.change), context.positionals["<id>"] ?? "");
-    return isRefusal(shown) ? shown : { data: shown, text: renderShow2(shown) };
+    return isRefusal(shown) ? shown : { data: shown, text: renderShow3(shown) };
   };
 }
 function resolveCommand(deps) {
@@ -28745,6 +28794,35 @@ async function recordDropped(deps, change, index2, target, scope2, dropped) {
   return "refused" in written ? written : { id: written.entry.id };
 }
 
+// kernel/src/attempt/use-cases/show.ts
+function showAttempt(deps, change, globalDir2, ticket) {
+  return withChangeIndex(deps, change, async (index2) => {
+    const record5 = keyedRecords(deps.store, change.dir).find((found) => found.ticket === ticket);
+    if (record5 === void 0) {
+      return refuse("input/not-found", `${change.id} has no ticket ${ticket}`, [
+        "bdk attempt list"
+      ]);
+    }
+    const entries2 = listEntries(index2, change.id).filter((entry2) => entry2.ticket === ticket);
+    const shown = item3(record5, entries2);
+    if (record5.loop === "verifier" || record5.loop === "part-lead") return shown;
+    const resolved = resolveOrRefuse(
+      {
+        store: deps.store,
+        settings: deps.settings,
+        globalDir: globalDir2,
+        projectRoot: change.projectRoot,
+        pluginRoot: deps.pluginRoot
+      },
+      { removed: "ignore" }
+    );
+    if ("refused" in resolved) return resolved;
+    const targets = await workTargets(deps, change, index2, globalDir2);
+    if ("refused" in targets) return targets;
+    return { ...shown, steps: targets.steps };
+  });
+}
+
 // kernel/src/attempt/commands/attempt.ts
 function text8(value) {
   return typeof value === "string" ? value : void 0;
@@ -28795,6 +28873,17 @@ function listCommand4(deps) {
     };
   };
 }
+function showCommand4(deps) {
+  return async (context) => {
+    const report2 = await showAttempt(
+      deps,
+      active6(context.change),
+      globalDir(context.runtime),
+      context.positionals["<ticket>"] ?? ""
+    );
+    return isRefusal(report2) ? report2 : { data: report2, text: renderShow2(report2) };
+  };
+}
 
 // kernel/src/attempt/index.ts
 var attemptConfig = {
@@ -28805,7 +28894,8 @@ function attemptRegistrations(deps) {
   return [
     { id: "attempt-open", handler: openCommand(deps) },
     { id: "attempt-close", handler: closeCommand(deps) },
-    { id: "attempt-list", handler: listCommand4(deps) }
+    { id: "attempt-list", handler: listCommand4(deps) },
+    { id: "attempt-show", handler: showCommand4(deps) }
   ];
 }
 
@@ -30284,7 +30374,7 @@ function setCommand(deps) {
 
 // kernel/src/config/commands/show.ts
 var import_yaml14 = __toESM(require_dist(), 1);
-function showCommand4(deps) {
+function showCommand5(deps) {
   return (context) => {
     const key = context.positionals["<key>"];
     const outcome = showConfig(configInput(deps, context), {
@@ -30320,7 +30410,7 @@ function detectLayout(store2, root) {
 // kernel/src/config/index.ts
 function configRegistrations(deps) {
   return [
-    { id: "config-show", handler: showCommand4(deps) },
+    { id: "config-show", handler: showCommand5(deps) },
     { id: "config-check", handler: checkCommand3(deps) },
     { id: "config-schema", handler: schemaCommand2(deps) },
     { id: "config-set", handler: setCommand(deps) }
@@ -30334,7 +30424,7 @@ function renderBuild(report2) {
 ${report2.path}
 `;
 }
-function renderShow3(report2) {
+function renderShow4(report2) {
   return report2.content;
 }
 
@@ -30778,7 +30868,7 @@ var SECTIONS3 = [
   { name: "checks", only: "runner", skeleton: "## Checks\n\n{{checks}}" },
   {
     name: "return",
-    skeleton: "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ref}}`. Then pipe the full report to `bdk log ingest --ticket {{ref}}`, the envelope (`status`, `files`, `entries`, `evidence`, and `reason` for `blocked` or `needs-context`) as its frontmatter. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`."
+    skeleton: "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ref}}`: the summary is 1 to 120 characters (put detail in `--body`), the type is one of decision, finding, observation, blocker, question, assumption, risk, learning, report. Then pipe the full report to `bdk log ingest --ticket {{ref}}` on stdin (`bdk log ingest --ticket {{ref}} < <report-file>`; there is no frontmatter flag), the envelope (`status`, `files`, `entries`, `evidence`) as its frontmatter between two `---` lines. `entries` lists the ids `log add` printed. Leave `reason` out, except for `blocked` or `needs-context`. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`."
   }
 ];
 function renderSections(values2, kinds) {
@@ -31217,7 +31307,7 @@ function buildCommand(deps) {
     return isRefusal(report2) ? report2 : { data: report2, text: renderBuild(report2) };
   };
 }
-function showCommand5(deps) {
+function showCommand6(deps) {
   return (context) => {
     if (context.change === void 0) throw new Error("dispatch show is Change-scoped");
     const report2 = showPackage(
@@ -31226,7 +31316,7 @@ function showCommand5(deps) {
       context.cwd,
       context.positionals["<ticket|path>"] ?? ""
     );
-    return Promise.resolve(isRefusal(report2) ? report2 : { data: report2, text: renderShow3(report2) });
+    return Promise.resolve(isRefusal(report2) ? report2 : { data: report2, text: renderShow4(report2) });
   };
 }
 function text10(value) {
@@ -31244,7 +31334,7 @@ var dispatchConfig = {
 function dispatchRegistrations(deps) {
   return [
     { id: "dispatch-build", handler: buildCommand(deps) },
-    { id: "dispatch-show", handler: showCommand5(deps) }
+    { id: "dispatch-show", handler: showCommand6(deps) }
   ];
 }
 

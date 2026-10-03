@@ -222,6 +222,65 @@ describe("evidence record", () => {
     expect(h.store.list(`${ROOT}/.bdk/.machine/evidence`)).toEqual([]);
   });
 
+  it("hints the grammar form when a pass cites a console line as bare text", async () => {
+    const h = await started();
+    const ticket = await ticketOf(h);
+    h.put("run.txt", RUN);
+    const result = await record(
+      h,
+      "tests-scoped",
+      "run.txt",
+      "--ticket",
+      ticket,
+      "--verdict",
+      "pass",
+      "--cite",
+      "12 passed, 0 failed",
+    );
+    expect(result.code).toBe(2);
+    expect(refusal(result).rule).toBe("policy/missing-citation");
+    expect(refusal(result).instead[0]).toBe("--cite run.txt:3=12 passed, 0 failed");
+    expect(h.store.list(`${DIR}/evidence`)).toEqual([]);
+  });
+
+  it("hints the right line when a citation guesses the wrong one", async () => {
+    const h = await started();
+    const ticket = await ticketOf(h);
+    h.put("run.txt", RUN);
+    const result = await record(
+      h,
+      "tests-scoped",
+      "run.txt",
+      "--ticket",
+      ticket,
+      "--verdict",
+      "pass",
+      "--cite",
+      "run.txt:1=12 passed, 0 failed",
+    );
+    expect(refusal(result).rule).toBe("policy/missing-citation");
+    expect(refusal(result).instead[0]).toBe("--cite run.txt:3=12 passed, 0 failed");
+  });
+
+  it("gives the grammar forms only when the bare text is on no line", async () => {
+    const h = await started();
+    const ticket = await ticketOf(h);
+    h.put("run.txt", RUN);
+    const result = await record(
+      h,
+      "tests-scoped",
+      "run.txt",
+      "--ticket",
+      ticket,
+      "--verdict",
+      "pass",
+      "--cite",
+      "13 passed",
+    );
+    expect(refusal(result).rule).toBe("policy/missing-citation");
+    expect(refusal(result).instead.some((line) => line.startsWith("--cite run.txt:"))).toBe(false);
+  });
+
   it("never resolves a citation into a binary file", async () => {
     const h = await started();
     const ticket = await ticketOf(h);

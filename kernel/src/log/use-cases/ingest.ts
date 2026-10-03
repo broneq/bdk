@@ -107,6 +107,18 @@ function invalidEnvelope(why: string): Refusal {
   ]);
 }
 
+/**
+ * An empty or null `reason` on a status that needs none reads as absent: agents
+ * fill the optional field in. On `blocked` and `needs-context` it stays, so the
+ * schema still refuses it.
+ */
+function withoutEmptyReason(fields: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  const { reason, ...rest } = fields;
+  const empty = reason === null || reason === "";
+  const needed = fields.status === "blocked" || fields.status === "needs-context";
+  return empty && !needed ? rest : { ...fields };
+}
+
 /** The stamped envelope, or the refusal naming its first bad field and line. */
 function checkEnvelope(envelope: Envelope, ticket: string, role: string): ReportData | Refusal {
   const at = (field: string) => `line ${String(envelope.lines[field] ?? envelope.end)}: ${field}`;
@@ -127,7 +139,7 @@ function checkEnvelope(envelope: Envelope, ticket: string, role: string): Report
     schema: STATE_KINDS.report.version,
     ticket,
     role,
-    ...envelope.fields,
+    ...withoutEmptyReason(envelope.fields),
   });
   if (parsed.success) return parsed.data;
   const [issue] = parsed.error.issues;

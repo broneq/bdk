@@ -16,6 +16,7 @@ import {
 import {
   attemptCloseOutput,
   attemptListOutput,
+  attemptShowOutput,
   attemptOpenOutput,
 } from "../src/attempt/schema/outputs.ts";
 import {
@@ -152,6 +153,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/attempt-open.json", attemptOpenOutput],
   ["output/attempt-close.json", attemptCloseOutput],
   ["output/attempt-list.json", attemptListOutput],
+  ["output/attempt-show.json", attemptShowOutput],
   ["output/agents-list.json", agentsListOutput],
   ["output/agents-show.json", agentsShowOutput],
   ["output/agents-wait.json", agentsWaitOutput],
