@@ -4,6 +4,7 @@ import type {
   EntrySummary,
   IngestReport,
   ResolveResult,
+  TriageResult,
   ShownEntry,
 } from "../domain/entry.ts";
 
@@ -59,4 +60,8 @@ export function renderResolve(result: ResolveResult): string {
   const by = result.by === undefined ? "" : ` by ${result.by}`;
   const reason = result.reason === undefined ? "" : `: ${result.reason}`;
   return `${result.entry} ${result.status}${by}${reason} (rewrote ${result.record})\n`;
+}
+
+export function renderTriage(result: TriageResult): string {
+  return `${result.record} triaged ${result.level} (${result.status})\n`;
 }

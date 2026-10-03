@@ -26,6 +26,12 @@ export interface EntryRow extends EntryFacts {
   readonly inputHash?: string;
   /** A transition that passed a gate under a run's `--auto` (T41). */
   readonly auto?: boolean;
+  /** The review group of a `<ticket>@<group>` write (T42-A1). */
+  readonly group?: string;
+  /** The orchestrator's triage level (T42-T). */
+  readonly level?: string;
+  /** The commit a `merge` report reviewed (T42-B1). */
+  readonly head?: string;
   /** Relative to the project root. */
   readonly path: string;
 }
@@ -301,6 +307,9 @@ function toEntry(row: Row, refs: readonly string[]): EntryRow {
     options: listOf(row.options),
     path: String(row.path),
     auto: row.auto === 1 ? true : undefined,
+    group: optional(row.review_group),
+    level: optional(row.level),
+    head: optional(row.head),
     refs: [...refs],
   });
 }

@@ -214,8 +214,8 @@ function insertRows(
         .prepare(
           `INSERT INTO _entries (change_id, id, type, summary, status, source, author, at, ticket,
             supersedes, review, severity, category, fingerprint, applies, evidence, to_stage, gate,
-            input_hash, profile, park, options, path, auto)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            input_hash, profile, park, options, path, auto, review_group, level, head)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           location.id,
@@ -242,6 +242,9 @@ function insertRows(
           list(data.options),
           path,
           flag(data.auto),
+          text(data.group),
+          text(data.level),
+          text(data.head),
         );
       const ref = database.prepare(
         "INSERT INTO refs (change_id, entry_id, position, ref) VALUES (?, ?, ?, ?)",

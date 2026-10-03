@@ -7,15 +7,16 @@
 import { join, relative, sep } from "node:path";
 
 import { authorIdent } from "../../shared/git/index.ts";
-import { refuse } from "../../shared/refusal/index.ts";
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
   learningFingerprint,
   listEntries,
   normalise,
+  MERGE_GROUP,
   readDocument,
-  openPackage,
+  resolveTicketRef,
   writeEntry,
 } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
@@ -30,6 +31,10 @@ export interface EntryDraft {
   readonly body: string;
   readonly status?: string;
   readonly ticket?: string;
+  /** The review group of a `<ticket>@<group>` write (T42-A1); `merge` is the orchestrator's. */
+  readonly group?: string;
+  /** The commit a `merge` report reviewed (T42-B1). */
+  readonly head?: string;
   readonly review?: boolean;
   readonly supersedes?: string;
   readonly severity?: string;
@@ -63,12 +68,15 @@ export async function appendEntry(
   options: { readonly dedupe: boolean },
 ): Promise<AppendResult | Refusal> {
   let source: string = draft.source ?? "kernel";
-  if (draft.ticket !== undefined) {
-    const role = openPackage(deps.store, change.projectRoot, change.dir, draft.ticket)?.role;
+  if (draft.ticket !== undefined && draft.group !== MERGE_GROUP) {
+    const ref = draft.group === undefined ? draft.ticket : `${draft.ticket}@${draft.group}`;
+    const resolved = resolveTicketRef(deps.store, change.projectRoot, change.dir, ref);
+    if (isRefusal(resolved)) return resolved;
+    const role = resolved.open ? resolved.package?.role : undefined;
     if (role === undefined) {
       return refuse(
         "policy/no-open-ticket",
-        `${draft.ticket} has no open attempt record with a dispatch package in ${change.id}`,
+        `${ref} has no open attempt record with a dispatch package in ${change.id}`,
         [
           "bdk log add ... without --ticket from the main thread",
           "bdk attempt open <loop> <target>",
@@ -112,6 +120,7 @@ export async function appendEntry(
       author,
       at,
       ...(draft.ticket === undefined ? {} : { ticket: draft.ticket }),
+      ...(draft.group === undefined ? {} : { group: draft.group }),
       refs: [...draft.refs],
       ...(draft.supersedes === undefined ? {} : { supersedes: draft.supersedes }),
       ...(draft.review === true ? { review: true } : {}),
@@ -121,6 +130,7 @@ export async function appendEntry(
       ...(draft.options === undefined ? {} : { options: [...draft.options] }),
       ...(draft.applies === undefined ? {} : { applies: [...draft.applies] }),
       ...(draft.report === undefined ? {} : { report: draft.report }),
+      ...(draft.head === undefined ? {} : { head: draft.head }),
       ...(draft.park === true ? { park: true } : {}),
       ...(draft.profile === undefined ? {} : { profile: draft.profile }),
       ...(draft.to === undefined ? {} : { to: draft.to }),

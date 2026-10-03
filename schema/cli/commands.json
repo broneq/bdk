@@ -823,6 +823,40 @@
       "writes": [".bdk/changes/<id>/log/"]
     },
     {
+      "id": "log-triage",
+      "argv": ["log", "triage"],
+      "summary": "Set the project-level triage level of a finding, blocker or observation.",
+      "availability": "orchestrator",
+      "mode": "command",
+      "slice": "log",
+      "owner": "T42",
+      "changeScoped": true,
+      "args": [
+        {
+          "name": "<id>",
+          "required": true,
+          "description": "A `finding`, `blocker` or `observation` entry."
+        },
+        {
+          "name": "level",
+          "required": true,
+          "values": ["blocker", "should-fix", "nice-to-have", "not-a-problem"],
+          "description": "The level (T42-T)."
+        }
+      ],
+      "flags": [
+        {
+          "name": "--reason",
+          "value": "<text>",
+          "description": "Required for `not-a-problem`."
+        }
+      ],
+      "output": "output/log-triage.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/invalid-transition"],
+      "writes": [".bdk/changes/<id>/log/"]
+    },
+    {
       "id": "dispatch-build",
       "argv": ["dispatch", "build"],
       "summary": "Build the dispatch package file for a target, role and ticket.",

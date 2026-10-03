@@ -23,6 +23,11 @@ const GROUP_MAX = 32;
 /** The group the orchestrator stores the round's merged review under; it has no package (T42-B1). */
 export const MERGE_GROUP = "merge";
 
+/** The file name of a round's merged review under `reports/` (`kernel-cli/log`, bdk log ingest). */
+export function mergeReportName(target: string, ticket: string): string {
+  return `${target}-orchestrator-${ticket}-${MERGE_GROUP}.md`;
+}
+
 /** A ticket reference resolved against the Change's attempt records and packages. */
 export interface ResolvedRef {
   readonly ticket: string;

@@ -222,6 +222,13 @@ export async function pathspecCommit(
   return { committed: true, commit: head.stdout.trim() };
 }
 
+/** The full commit id `HEAD` names; undefined in a repository without commits. */
+export async function headCommit(git: Git, workTree: string): Promise<string | undefined> {
+  const head = await git.run(["rev-parse", "--verify", "--quiet", "HEAD"], workTree);
+  const commit = head.stdout.trim();
+  return head.code === 0 && /^[0-9a-f]{40}$/.test(commit) ? commit : undefined;
+}
+
 /** A commit reachable from `HEAD` that carries `BDK-Change` of one Change. */
 export interface TrailerCommit {
   readonly commit: string;

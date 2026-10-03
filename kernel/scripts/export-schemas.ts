@@ -64,6 +64,7 @@ import {
   logIngestOutput,
   logListOutput,
   logResolveOutput,
+  logTriageOutput,
   logShowOutput,
 } from "../src/log/schema/outputs.ts";
 import { exportAgentsOutput } from "../src/export/schema/agents.ts";
@@ -125,6 +126,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/log-list.json", logListOutput],
   ["output/log-show.json", logShowOutput],
   ["output/log-resolve.json", logResolveOutput],
+  ["output/log-triage.json", logTriageOutput],
   ["output/change-new.json", changeNewOutput],
   ["output/change-status.json", changeStatusOutput],
   ["output/change-list.json", changeListOutput],

@@ -101,6 +101,7 @@ export {
   packageRoles,
   partManifests,
   MERGE_GROUP,
+  mergeReportName,
   readManifests,
   resolveTicketRef,
   stampPackage,

@@ -2,6 +2,7 @@
 // with deduplication. Nothing is written before every check has passed.
 import { join, relative, sep } from "node:path";
 
+import { headCommit } from "../../shared/git/index.ts";
 import { parseReference } from "../../shared/ids/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -9,14 +10,16 @@ import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
   findChange,
   findEntry,
-  openPackage,
+  MERGE_GROUP,
+  mergeReportName,
   readAttempts,
   readPlanParts,
   refreshChange,
+  resolveTicketRef,
   TASK_ID,
   targetFiles,
 } from "../../shared/store/index.ts";
-import type { IndexDb } from "../../shared/store/index.ts";
+import type { IndexDb, ResolvedRef } from "../../shared/store/index.ts";
 import { appendEntry } from "./append.ts";
 import type { AddResult } from "../domain/entry.ts";
 import { classify, mayDowngrade } from "../domain/p8.ts";
@@ -25,6 +28,9 @@ import { withChangeIndex } from "./deps.ts";
 import { verifierPolicy } from "./verifier.ts";
 
 const SUMMARY_MAX = 120;
+
+/** The verdict node a merged review decides (`kernel-pipeline`, Artifact kinds). */
+const REVIEW_NODE = "review";
 
 export interface AddInput {
   readonly type: string;
@@ -56,17 +62,28 @@ export function addEntry(
       const missing = checkSupersedes(deps, change, index, input.supersedes);
       if (missing !== undefined) return missing;
     }
-    const active =
+    const ref =
       input.ticket === undefined
         ? undefined
-        : openPackage(deps.store, change.projectRoot, change.dir, input.ticket);
+        : resolveTicketRef(deps.store, change.projectRoot, change.dir, input.ticket);
+    if (ref !== undefined && isRefusal(ref)) return ref;
+    const merge = ref?.group === MERGE_GROUP ? mergeTarget(change, ref, input) : undefined;
+    if (merge !== undefined && isRefusal(merge)) return merge;
+    const active = ref === undefined || merge !== undefined || !ref.open ? undefined : ref.package;
     const role = active?.role;
     let report: ReportFields | undefined;
-    if (input.type === "report" && active !== undefined) {
-      const fields = reportFields(deps, change, input.refs, active.data);
+    const reported = merge ?? active?.data;
+    if (input.type === "report" && reported !== undefined) {
+      const fields = reportFields(deps, change, input.refs, reported);
       if ("refused" in fields) return fields;
       report = fields;
     }
+    const head = merge === undefined ? undefined : await headCommit(deps.git, change.projectRoot);
+    const grouped = {
+      ...(ref === undefined ? {} : { ticket: ref.ticket }),
+      ...(ref?.group === undefined ? {} : { group: ref.group }),
+      ...(head === undefined ? {} : { head }),
+    };
     // A blocker raised under a ticket names the ticket's target, so the verdict
     // node of that target counts it as live (`kernel-cli/log`, bdk log add).
     const refs =
@@ -90,13 +107,51 @@ export function addEntry(
       deps,
       change,
       index,
-      { ...base, ...classified, ...report },
+      { ...base, ...grouped, ...classified, ...report },
       { dedupe: report === undefined },
     );
     return "refused" in appended || downgraded === undefined
       ? appended
       : { ...appended, downgraded };
   });
+}
+
+/**
+ * The merged review of a round (T42-B1): only a `report`, only under an open
+ * `review-fix` ticket, stored by `log ingest --ticket <ticket>@merge` at the
+ * merge report path and naming the Change and `review`.
+ */
+function mergeTarget(
+  change: ActiveChange,
+  ref: ResolvedRef,
+  input: AddInput,
+): MergeReport | Refusal {
+  if (input.type !== "report") {
+    return refuse(
+      "input/invalid-argument",
+      `${ref.ticket}@merge holds only the round's merged report, not a ${input.type}`,
+      [`bdk log add ${input.type} "${input.summary}" --ref <ref> --ticket ${ref.ticket}@<group>`],
+    );
+  }
+  if (ref.record === undefined || !ref.open) {
+    return refuse("policy/no-open-ticket", `${ref.ticket} is not an open review-fix ticket`, [
+      "bdk attempt list",
+      `bdk attempt open review-fix ${change.id}`,
+    ]);
+  }
+  const target = ref.record.data.target;
+  const changeRel = relative(change.projectRoot, change.dir).split(sep).join("/");
+  return {
+    target,
+    report: `${changeRel}/reports/${mergeReportName(target, ref.ticket)}`,
+    extra: [REVIEW_NODE],
+  };
+}
+
+interface MergeReport {
+  readonly target: string;
+  readonly report: string;
+  readonly extra: readonly string[];
 }
 
 interface ReportFields {
@@ -113,7 +168,11 @@ function reportFields(
   deps: LogDeps,
   change: ActiveChange,
   refs: readonly string[],
-  dispatch: { readonly target: string; readonly report: string },
+  dispatch: {
+    readonly target: string;
+    readonly report: string;
+    readonly extra?: readonly string[];
+  },
 ): ReportFields | Refusal {
   const path = join(change.projectRoot, dispatch.report);
   if (deps.store.read(path) === undefined) {
@@ -121,10 +180,8 @@ function reportFields(
       "store the report first: bdk log ingest --ticket <ticket>",
     ]);
   }
-  return {
-    refs: withTarget(refs, dispatch.target),
-    report: relative(change.dir, path).split(sep).join("/"),
-  };
+  const named = (dispatch.extra ?? []).reduce(withTarget, withTarget(refs, dispatch.target));
+  return { refs: named, report: relative(change.dir, path).split(sep).join("/") };
 }
 
 function withTarget(refs: readonly string[], target: string): readonly string[] {
@@ -140,7 +197,9 @@ function validate(input: AddInput): Refusal | undefined {
       ["move the detail into --body"],
     );
   }
-  if (input.refs.length === 0 || input.refs.some((ref) => ref.trim() === "")) {
+  // The merged report names the Change and `review` itself (T42-B1).
+  const mergeReport = input.type === "report" && input.ticket?.endsWith(`@${MERGE_GROUP}`) === true;
+  if ((input.refs.length === 0 && !mergeReport) || input.refs.some((ref) => ref.trim() === "")) {
     return refuse("input/missing-argument", "log add needs at least one non-empty --ref", [
       `bdk log add ${input.type} "${input.summary}" --ref <file|symbol|part|task|rule|entry>`,
     ]);

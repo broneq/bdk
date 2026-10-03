@@ -333,6 +333,40 @@ describe("two-branch merge", () => {
     });
   });
 
+  it("merges a triage on one branch with a resolve on the other without conflict", async () => {
+    repo = createFixture({ files: { "README.md": "# app\n" } });
+    const { root } = repo;
+    git(root, "checkout", "--quiet", "-b", "main");
+    const id = String((await kernel(root, "change", "new", "Passwordless login")).change);
+    const entryId = (result: Record<string, unknown>) => (result.entry as { id: string }).id;
+    const finding = entryId(
+      await kernel(root, "log", "add", "finding", "token compared with ==", "--ref", "src/a.ts"),
+    );
+    const observation = entryId(
+      await kernel(root, "log", "add", "observation", "naming drifts", "--ref", "src/b.ts"),
+    );
+    commit(root, "open the Change");
+    git(root, "branch", "a");
+    git(root, "branch", "b");
+
+    git(root, "checkout", "--quiet", "a");
+    await kernel(root, "change", "resume", id);
+    await kernel(root, "log", "triage", finding, "should-fix", "--reason", "real, outside auth");
+    commit(root, "triage on a");
+
+    git(root, "checkout", "--quiet", "b");
+    await kernel(root, "change", "resume", id);
+    await kernel(root, "log", "resolve", observation, "resolved", "--reason", "renamed");
+    commit(root, "resolve on b");
+
+    expect(merge(root)).toStrictEqual([]);
+    await kernel(root, "change", "resume", id);
+    const shown = async (entry: string) =>
+      (await kernel(root, "log", "show", entry)).entry as Record<string, unknown>;
+    expect(await shown(finding)).toMatchObject({ level: "should-fix", status: "proposed" });
+    expect(await shown(observation)).toMatchObject({ status: "resolved" });
+  });
+
   it("merges parallel work on documents no command writes yet without conflict", () => {
     const root = forked();
     on(root, "a", () => {
