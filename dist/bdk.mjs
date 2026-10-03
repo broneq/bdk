@@ -1023,7 +1023,7 @@ var require_foldFlowLines = __commonJS({
         else
           end = lineWidth - indentAtStart;
       }
-      let split = void 0;
+      let split2 = void 0;
       let prev = void 0;
       let overflow = false;
       let i = -1;
@@ -1056,18 +1056,18 @@ var require_foldFlowLines = __commonJS({
           if (mode === FOLD_BLOCK)
             i = consumeMoreIndentedLines(text13, i, indent.length);
           end = i + indent.length + endStep;
-          split = void 0;
+          split2 = void 0;
         } else {
           if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
             const next = text13[i + 1];
             if (next && next !== " " && next !== "\n" && next !== "	")
-              split = i;
+              split2 = i;
           }
           if (i >= end) {
-            if (split) {
-              folds.push(split);
-              end = split + endStep;
-              split = void 0;
+            if (split2) {
+              folds.push(split2);
+              end = split2 + endStep;
+              split2 = void 0;
             } else if (mode === FOLD_QUOTED) {
               while (prev === " " || prev === "	") {
                 prev = ch;
@@ -1080,7 +1080,7 @@ var require_foldFlowLines = __commonJS({
               folds.push(j);
               escapedFolds[j] = true;
               end = j + endStep;
-              split = void 0;
+              split2 = void 0;
             } else {
               overflow = true;
             }
@@ -4614,13 +4614,13 @@ var require_resolve_block_scalar = __commonJS({
       return { mode, indent, chomp, comment, length };
     }
     function splitLines(source2) {
-      const split = source2.split(/\n( *)/);
-      const first = split[0];
+      const split2 = source2.split(/\n( *)/);
+      const first = split2[0];
       const m = first.match(/^( *)/);
       const line0 = m?.[1] ? [m[1], first.slice(m[1].length)] : ["", first];
       const lines = [line0];
-      for (let i = 1; i < split.length; i += 2)
-        lines.push([split[i], split[i + 1]]);
+      for (let i = 1; i < split2.length; i += 2)
+        lines.push([split2[i], split2[i + 1]]);
       return lines;
     }
     exports.resolveBlockScalar = resolveBlockScalar;
@@ -7649,6 +7649,32 @@ var commands_default = {
       flags: [],
       output: "output/measure.json",
       exits: [0, 3, 5],
+      refusals: ["runtime/git-missing"],
+      writes: []
+    },
+    {
+      id: "review-plan",
+      argv: ["review", "plan"],
+      summary: "Compute the range and the reviewer groups of the next review round of the active Change.",
+      availability: "read",
+      mode: "command",
+      slice: "review",
+      owner: "T42",
+      changeScoped: true,
+      args: [],
+      flags: [
+        {
+          name: "--full",
+          description: "Review from the Change base, ignoring earlier review rounds."
+        },
+        {
+          name: "--base",
+          value: "<ref>",
+          description: "Review from `git merge-base HEAD <ref>`; for a branch stacked on another one."
+        }
+      ],
+      output: "output/review-plan.json",
+      exits: [0, 2, 3, 4, 5],
       refusals: ["runtime/git-missing"],
       writes: []
     },
@@ -16374,18 +16400,18 @@ function moduleValue(module, resolved) {
   const steps = module.key.split(".").map((segment) => ({ segment, id: false }));
   return module.schema.parse(valueAt(resolved, steps));
 }
-function checkModuleKeys(modules) {
+function checkModuleKeys(modules2) {
   const keys = [];
-  for (const { key } of modules) {
+  for (const { key } of modules2) {
     if (keys.includes(key)) throw new Error(`config module ${key} is declared twice`);
     const overlap = keys.find((other) => within(key, other) || within(other, key));
     if (overlap !== void 0) throw new Error(`config module ${overlap} overlaps ${key}`);
     keys.push(key);
   }
 }
-function composedShape(modules, prefix) {
+function composedShape(modules2, prefix) {
   const shape = {};
-  const below = modules.filter((module) => prefix === "" || within(module.key, prefix));
+  const below = modules2.filter((module) => prefix === "" || within(module.key, prefix));
   for (const module of below) {
     const rest = prefix === "" ? module.key : module.key.slice(prefix.length + 1);
     const [segment = ""] = rest.split(".");
@@ -16938,6 +16964,33 @@ async function parentCommit(git, workTree, commit) {
   const result2 = await git.run(["rev-parse", "--verify", "--quiet", `${commit}^`], workTree);
   const parent = result2.stdout.trim();
   return result2.code === 0 && /^[0-9a-f]{40}$/.test(parent) ? parent : void 0;
+}
+async function resolveCommit(git, workTree, ref) {
+  if (ref === "" || ref.startsWith("-")) return void 0;
+  const result2 = await git.run(["rev-parse", "--verify", "--quiet", `${ref}^{commit}`], workTree);
+  const sha = result2.stdout.trim();
+  return result2.code === 0 && /^[0-9a-f]{40}$/.test(sha) ? sha : void 0;
+}
+async function mergeBase(git, workTree, commit) {
+  const result2 = await git.run(["merge-base", "HEAD", commit], workTree);
+  const sha = result2.stdout.trim();
+  return result2.code === 0 && /^[0-9a-f]{40}$/.test(sha) ? sha : void 0;
+}
+async function diffNames(git, workTree, base, head) {
+  const result2 = await git.run(
+    ["diff", "--name-only", "-z", "-M", "--no-ext-diff", `${base}..${head}`, "--"],
+    workTree
+  );
+  if (result2.code !== 0) throw new Error(`git diff failed: ${result2.stderr.trim()}`);
+  return result2.stdout.split("\0").filter((path) => path !== "").sort();
+}
+async function dirtyTracked(git, workTree) {
+  const result2 = await git.run(
+    ["diff", "--name-only", "-z", "--no-ext-diff", "HEAD", "--"],
+    workTree
+  );
+  if (result2.code !== 0) return [];
+  return result2.stdout.split("\0").filter((path) => path !== "").sort();
 }
 var TRAILER_FORMAT = [
   "%H",
@@ -22925,20 +22978,20 @@ import { join as join27, posix as posix4 } from "node:path";
 // kernel/src/log/use-cases/envelope.ts
 var import_yaml6 = __toESM(require_dist(), 1);
 function readEnvelope(input) {
-  const split = splitFrontmatter(input);
-  if (split.frontmatter === void 0) {
+  const split2 = splitFrontmatter(input);
+  if (split2.frontmatter === void 0) {
     return {
       invalid: "the report has no frontmatter; it opens with a --- line, the envelope fields and a closing --- line"
     };
   }
   const counter2 = new import_yaml6.LineCounter();
-  const document = (0, import_yaml6.parseDocument)(split.frontmatter, {
+  const document = (0, import_yaml6.parseDocument)(split2.frontmatter, {
     lineCounter: counter2,
     uniqueKeys: true,
     prettyErrors: false
   });
   const lineAt = (offset) => counter2.linePos(offset).line + 1;
-  const end = split.frontmatter.split("\n").length + 1;
+  const end = split2.frontmatter.split("\n").length + 1;
   const [error2] = document.errors;
   if (error2 !== void 0) {
     return {
@@ -22946,7 +22999,7 @@ function readEnvelope(input) {
     };
   }
   const root = document.contents;
-  if (root === null) return { fields: {}, lines: {}, end, body: split.body };
+  if (root === null) return { fields: {}, lines: {}, end, body: split2.body };
   if (!(0, import_yaml6.isMap)(root)) {
     return { invalid: "line 2: the frontmatter is not a mapping of envelope fields" };
   }
@@ -22956,7 +23009,7 @@ function readEnvelope(input) {
     lines[key] = lineAt(pair.key.range?.[0] ?? 0);
   }
   const fields = document.toJS();
-  return { fields, lines, end, body: split.body };
+  return { fields, lines, end, body: split2.body };
 }
 
 // kernel/src/log/use-cases/ingest.ts
@@ -24282,13 +24335,13 @@ function readRule(store2, path, display, scope2, pack, problems, declared2) {
     return void 0;
   };
   const text13 = store2.read(path) ?? "";
-  const split = splitFrontmatter(text13);
-  if (split.frontmatter === void 0) {
+  const split2 = splitFrontmatter(text13);
+  if (split2.frontmatter === void 0) {
     return problem("format", `${display} has no YAML frontmatter`, 1);
   }
   let raw;
   try {
-    raw = (0, import_yaml7.parse)(split.frontmatter);
+    raw = (0, import_yaml7.parse)(split2.frontmatter);
   } catch (error2) {
     return problem("format", `${display}: ${error2.message.split("\n")[0] ?? ""}`, 1);
   }
@@ -24300,13 +24353,13 @@ function readRule(store2, path, display, scope2, pack, problems, declared2) {
     return problem(
       "format",
       `${display}: ${fields.join("; ")}`,
-      lineOf(split.frontmatter, parsed.error.issues[0]?.path[0])
+      lineOf(split2.frontmatter, parsed.error.issues[0]?.path[0])
     );
   }
   const data = parsed.data;
   declared2.push({ id: data.id, file: display });
   const name = posix5.basename(display, ".md");
-  const idLine = lineOf(split.frontmatter, "id");
+  const idLine = lineOf(split2.frontmatter, "id");
   if (data.id !== name) {
     return problem(
       "id-mismatch",
@@ -24340,7 +24393,7 @@ function readRule(store2, path, display, scope2, pack, problems, declared2) {
     scope: scope2,
     file: display,
     ...pack === void 0 ? {} : { pack },
-    text: split.body.trim()
+    text: split2.body.trim()
   };
 }
 function duplicates(declared2) {
@@ -24780,18 +24833,18 @@ function importRules(deps, projectRoot2, globalDir2, input) {
 }
 function readSource(store2, path, name) {
   if (isProjection(name)) return "generated by rules export";
-  const split = splitFrontmatter(store2.read(path) ?? "");
+  const split2 = splitFrontmatter(store2.read(path) ?? "");
   let meta2 = {};
-  if (split.frontmatter !== void 0) {
+  if (split2.frontmatter !== void 0) {
     try {
-      const parsed = (0, import_yaml9.parse)(split.frontmatter);
+      const parsed = (0, import_yaml9.parse)(split2.frontmatter);
       if (typeof parsed === "object" && parsed !== null) meta2 = parsed;
     } catch (error2) {
       return `unreadable frontmatter: ${error2.message.split("\n")[0] ?? ""}`;
     }
   }
   if (meta2.id !== void 0) return "already carries an id";
-  const texts = ruleTexts(split.body);
+  const texts = ruleTexts(split2.body);
   if (texts.length === 0) return "empty";
   const paths = meta2.paths;
   const applies = typeof paths === "string" ? [paths] : Array.isArray(paths) ? paths.filter((glob4) => typeof glob4 === "string") : void 0;
@@ -27394,10 +27447,10 @@ function startedParts(entries2) {
 
 // kernel/src/measure/render/measure.ts
 function renderMeasure(report2) {
-  const modules = report2.modules.length === 0 ? "" : `: ${report2.modules.join(", ")}`;
+  const modules2 = report2.modules.length === 0 ? "" : `: ${report2.modules.join(", ")}`;
   const files = report2.files === 1 ? "file" : "files";
   const count3 = report2.modules.length === 1 ? "module" : "modules";
-  return `${report2.range}: ${report2.files} ${files}, +${report2.added} -${report2.removed} (${report2.lines} lines), ${report2.modules.length} ${count3}${modules}
+  return `${report2.range}: ${report2.files} ${files}, +${report2.added} -${report2.removed} (${report2.lines} lines), ${report2.modules.length} ${count3}${modules2}
 `;
 }
 
@@ -27430,7 +27483,7 @@ function aggregate(range, output) {
   const stats = parseNumstat(output).filter((stat) => !isBdk(stat.path));
   const added = stats.reduce((sum, stat) => sum + stat.added, 0);
   const removed = stats.reduce((sum, stat) => sum + stat.removed, 0);
-  const modules = [...new Set(stats.map((stat) => moduleOf(stat.path)))].sort(
+  const modules2 = [...new Set(stats.map((stat) => moduleOf(stat.path)))].sort(
     (a, b) => a < b ? -1 : a > b ? 1 : 0
   );
   return {
@@ -27439,7 +27492,7 @@ function aggregate(range, output) {
     added,
     removed,
     lines: added + removed,
-    modules
+    modules: modules2
   };
 }
 function parseRange(range) {
@@ -27474,6 +27527,13 @@ async function measure(deps, workTree, range = DEFAULT_RANGE) {
       ]);
     }
   }
+  return diffSignals(deps, workTree, range, refs.join(".."));
+}
+function measureRange(deps, workTree, base, head) {
+  const range = `${base}..${head}`;
+  return diffSignals(deps, workTree, range, range);
+}
+async function diffSignals(deps, workTree, range, revisions) {
   const diff = await deps.git.run(
     [
       "diff",
@@ -27483,7 +27543,7 @@ async function measure(deps, workTree, range = DEFAULT_RANGE) {
       "--no-ext-diff",
       "--no-textconv",
       "--no-color",
-      refs.join(".."),
+      revisions,
       "--"
     ],
     workTree
@@ -27520,8 +27580,8 @@ async function tinyGuard(deps, change, index2) {
   if (first === void 0) return void 0;
   const report2 = await measure(deps, change.projectRoot, `${first.commit}^..HEAD`);
   if ("refused" in report2) return void 0;
-  const modules = report2.modules.length;
-  if (report2.files <= LIMITS.files && modules <= LIMITS.modules && report2.lines <= LIMITS.lines) {
+  const modules2 = report2.modules.length;
+  if (report2.files <= LIMITS.files && modules2 <= LIMITS.modules && report2.lines <= LIMITS.lines) {
     return void 0;
   }
   const written = await appendEntry(
@@ -27531,7 +27591,7 @@ async function tinyGuard(deps, change, index2) {
     {
       type: "finding",
       // Numbers only, no plural: the ledger dedupe normalises digits, so one open entry stays.
-      summary: `tiny Change outgrew its profile: files ${String(report2.files)}, modules ${String(modules)}, lines ${String(report2.lines)} (limits: files ${String(LIMITS.files)}, modules ${String(LIMITS.modules)}, lines ${String(LIMITS.lines)})`,
+      summary: `tiny Change outgrew its profile: files ${String(report2.files)}, modules ${String(modules2)}, lines ${String(report2.lines)} (limits: files ${String(LIMITS.files)}, modules ${String(LIMITS.modules)}, lines ${String(LIMITS.lines)})`,
       status: "proposed",
       review: true,
       refs: ["change.md"],
@@ -33591,6 +33651,25 @@ function queryRegistrations(deps) {
   return [{ id: "query", handler: queryCommand(deps) }];
 }
 
+// kernel/src/review/render/plan.ts
+function renderPlan(plan) {
+  const short = (sha) => sha.slice(0, 12);
+  const lines = [
+    `${plan.change}: ${plan.anchor.kind} review of ${short(plan.anchor.sha)}..${short(plan.head)}, ${String(plan.measure.files)} ${plan.measure.files === 1 ? "file" : "files"}, +${String(plan.measure.added)} -${String(plan.measure.removed)}`
+  ];
+  if (plan.dirty.length > 0) {
+    lines.push(`uncommitted, not reviewed: ${plan.dirty.join(", ")}`);
+  }
+  for (const group of plan.groups) {
+    lines.push(
+      `${group.id} (${group.kind}, ${String(group.files.length)}): ${group.files.join(", ")}`
+    );
+  }
+  if (plan.groups.length === 0) lines.push("nothing to review");
+  return `${lines.join("\n")}
+`;
+}
+
 // kernel/src/review/config.ts
 var reviewGroupModule = defineConfigModule({
   key: "review.group",
@@ -33604,10 +33683,173 @@ var reviewGroupModule = defineConfigModule({
   }).prefault({})
 });
 
+// kernel/src/review/domain/groups.ts
+var UNPLANNED = "unplanned";
+var INTEGRATION = "integration";
+function reviewGroups(input) {
+  const changed = sorted3(new Set(input.changed));
+  if (changed.length === 0) return [];
+  const logical = input.parts.length > 0 ? byPart(changed, input.parts) : byModule(changed, input);
+  return [
+    ...logical.flatMap((group) => split(group, input)),
+    { id: INTEGRATION, kind: "integration", files: changed }
+  ];
+}
+function byPart(changed, parts) {
+  const owned = /* @__PURE__ */ new Map();
+  const unplanned = [];
+  for (const path of changed) {
+    const owner = parts.find((part) => part.files.includes(path));
+    if (owner === void 0) unplanned.push(path);
+    else owned.set(owner.id, [...owned.get(owner.id) ?? [], path]);
+  }
+  const groups = parts.flatMap((part) => {
+    const files = owned.get(part.id);
+    return files === void 0 ? [] : [{ id: `p${part.id}`, kind: "part", part: part.id, files }];
+  });
+  return unplanned.length === 0 ? groups : [...groups, { id: UNPLANNED, kind: "unplanned", files: unplanned }];
+}
+function byModule(changed, input) {
+  return [...modules(changed, input.moduleOf).values()].map((files, at) => ({
+    id: `m${String(at + 1)}`,
+    kind: "module",
+    files
+  }));
+}
+function split(group, input) {
+  if (group.files.length <= input.maxFiles) return [group];
+  const chunks = [];
+  let current = [];
+  const flush = () => {
+    if (current.length > 0) chunks.push(current);
+    current = [];
+  };
+  for (const files of modules(group.files, input.moduleOf).values()) {
+    if (files.length > input.maxFiles) {
+      flush();
+      for (let at = 0; at < files.length; at += input.maxFiles) {
+        chunks.push(files.slice(at, at + input.maxFiles));
+      }
+    } else {
+      if (current.length + files.length > input.maxFiles) flush();
+      current = [...current, ...files];
+    }
+  }
+  flush();
+  return chunks.map((files, at) => ({ ...group, id: `${group.id}-${String(at + 1)}`, files }));
+}
+function modules(paths, moduleOf2) {
+  const byModule2 = /* @__PURE__ */ new Map();
+  for (const path of sorted3(paths)) {
+    const module = moduleOf2(path);
+    byModule2.set(module, [...byModule2.get(module) ?? [], path]);
+  }
+  return new Map(sorted3(byModule2.keys()).map((module) => [module, byModule2.get(module) ?? []]));
+}
+function sorted3(values2) {
+  return [...values2].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+}
+
+// kernel/src/review/use-cases/plan.ts
+var MERGE_GROUP3 = "merge";
+async function reviewPlan(deps, change, input) {
+  if (input.full && input.base !== void 0) {
+    return refuse(
+      "input/invalid-argument",
+      "--full reviews from the Change base and --base from a merge base; pass one",
+      ["bdk review plan --full", `bdk review plan --base ${input.base}`]
+    );
+  }
+  const resolved = resolveOrRefuse(
+    {
+      store: deps.store,
+      settings: deps.settings,
+      globalDir: input.globalDir,
+      projectRoot: change.projectRoot,
+      pluginRoot: deps.pluginRoot
+    },
+    { removed: "ignore" }
+  );
+  if (isRefusal(resolved)) return resolved;
+  const root = change.projectRoot;
+  const head = await headCommit(deps.git, root) ?? EMPTY_TREE;
+  const anchor2 = await anchorOf(deps, change, input);
+  if (isRefusal(anchor2)) return anchor2;
+  const measured = await measureRange(deps, root, anchor2.sha, head);
+  if (isRefusal(measured)) return measured;
+  const parts = readPlanParts(deps.store, change.dir).map((part) => ({
+    id: part.id,
+    files: part.tasks.flatMap((task) => task.files.map((file) => file.path))
+  }));
+  return {
+    change: change.id,
+    anchor: anchor2,
+    head,
+    range: `${anchor2.sha}..${head}`,
+    dirty: (await dirtyTracked(deps.git, root)).filter((path) => !isBdk2(path)),
+    measure: {
+      files: measured.files,
+      added: measured.added,
+      removed: measured.removed,
+      modules: measured.modules
+    },
+    groups: reviewGroups({
+      changed: (await diffNames(deps.git, root, anchor2.sha, head)).filter((path) => !isBdk2(path)),
+      parts,
+      maxFiles: moduleValue(reviewGroupModule, resolved.value)["max-files"],
+      moduleOf
+    })
+  };
+}
+async function anchorOf(deps, change, input) {
+  const root = change.projectRoot;
+  if (input.base !== void 0) {
+    const commit = await resolveCommit(deps.git, root, input.base);
+    const sha = commit === void 0 ? void 0 : await mergeBase(deps.git, root, commit);
+    if (sha === void 0) {
+      return refuse(
+        "input/invalid-argument",
+        `${input.base} names no commit sharing history with HEAD`,
+        ["git branch --list", "bdk review plan --full"]
+      );
+    }
+    return { kind: "base", sha };
+  }
+  if (!input.full) {
+    const head = await withIndex(deps.openIndex, deps.store, root, (index2) => {
+      refreshChange(index2, { id: change.id, dir: change.dir, archived: false });
+      return listEntries(index2, change.id, { type: "report" }).filter((entry2) => entry2.group === MERGE_GROUP3 && entry2.head !== void 0).at(-1)?.head;
+    });
+    const sha = head === void 0 ? void 0 : await resolveCommit(deps.git, root, head);
+    if (sha !== void 0) return { kind: "delta", sha };
+  }
+  return { kind: "full", sha: await changeBase(deps.git, root, change.dir) };
+}
+function isBdk2(path) {
+  return path.split("/").includes(".bdk");
+}
+
+// kernel/src/review/commands/plan.ts
+function planCommand(deps) {
+  return async (context) => {
+    if (context.change === void 0) throw new Error("review plan is Change-scoped");
+    const base = context.flags["--base"];
+    const plan = await reviewPlan(deps, context.change, {
+      full: context.flags["--full"] === true,
+      base: typeof base === "string" ? base : void 0,
+      globalDir: globalDir(context.runtime)
+    });
+    return isRefusal(plan) ? plan : { data: plan, text: renderPlan(plan) };
+  };
+}
+
 // kernel/src/review/index.ts
 var reviewConfig = {
   modules: [reviewGroupModule]
 };
+function reviewRegistrations(deps) {
+  return [{ id: "review-plan", handler: planCommand(deps) }];
+}
 
 // kernel/src/service/render/version.ts
 function renderVersion(output) {
@@ -33852,6 +34094,7 @@ function registrations(deps) {
     ...partRegistrations(deps),
     ...attemptRegistrations(deps),
     ...evidenceRegistrations(deps),
+    ...reviewRegistrations(deps),
     ...commitRegistrations(deps),
     ...queryRegistrations(deps),
     ...exportRegistrations(deps),

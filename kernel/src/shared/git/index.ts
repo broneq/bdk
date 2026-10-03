@@ -340,6 +340,60 @@ export async function parentCommit(
   return result.code === 0 && /^[0-9a-f]{40}$/.test(parent) ? parent : undefined;
 }
 
+/** The full id of the commit `ref` names; undefined when it names none or looks like an option. */
+export async function resolveCommit(
+  git: Git,
+  workTree: string,
+  ref: string,
+): Promise<string | undefined> {
+  if (ref === "" || ref.startsWith("-")) return undefined;
+  const result = await git.run(["rev-parse", "--verify", "--quiet", `${ref}^{commit}`], workTree);
+  const sha = result.stdout.trim();
+  return result.code === 0 && /^[0-9a-f]{40}$/.test(sha) ? sha : undefined;
+}
+
+/** `git merge-base HEAD <commit>`; undefined when the histories share no commit. */
+export async function mergeBase(
+  git: Git,
+  workTree: string,
+  commit: string,
+): Promise<string | undefined> {
+  const result = await git.run(["merge-base", "HEAD", commit], workTree);
+  const sha = result.stdout.trim();
+  return result.code === 0 && /^[0-9a-f]{40}$/.test(sha) ? sha : undefined;
+}
+
+/** The paths `<base>..<head>` changes, renames as their new path, sorted; `base` may be the empty tree. */
+export async function diffNames(
+  git: Git,
+  workTree: string,
+  base: string,
+  head: string,
+): Promise<string[]> {
+  const result = await git.run(
+    ["diff", "--name-only", "-z", "-M", "--no-ext-diff", `${base}..${head}`, "--"],
+    workTree,
+  );
+  if (result.code !== 0) throw new Error(`git diff failed: ${result.stderr.trim()}`);
+  return result.stdout
+    .split("\0")
+    .filter((path) => path !== "")
+    .sort();
+}
+
+/** The tracked paths with staged or unstaged changes against `HEAD`, sorted; none without a commit. */
+export async function dirtyTracked(git: Git, workTree: string): Promise<string[]> {
+  const result = await git.run(
+    ["diff", "--name-only", "-z", "--no-ext-diff", "HEAD", "--"],
+    workTree,
+  );
+  if (result.code !== 0) return [];
+  return result.stdout
+    .split("\0")
+    .filter((path) => path !== "")
+    .sort();
+}
+
 /** A commit reachable from `HEAD` that carries `BDK-Change` of one Change. */
 export interface TrailerCommit {
   readonly commit: string;

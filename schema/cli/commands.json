@@ -281,6 +281,32 @@
       "writes": []
     },
     {
+      "id": "review-plan",
+      "argv": ["review", "plan"],
+      "summary": "Compute the range and the reviewer groups of the next review round of the active Change.",
+      "availability": "read",
+      "mode": "command",
+      "slice": "review",
+      "owner": "T42",
+      "changeScoped": true,
+      "args": [],
+      "flags": [
+        {
+          "name": "--full",
+          "description": "Review from the Change base, ignoring earlier review rounds."
+        },
+        {
+          "name": "--base",
+          "value": "<ref>",
+          "description": "Review from `git merge-base HEAD <ref>`; for a branch stacked on another one."
+        }
+      ],
+      "output": "output/review-plan.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["runtime/git-missing"],
+      "writes": []
+    },
+    {
       "id": "next",
       "argv": ["next"],
       "summary": "The next ready artifact with its instruction, plus the gate status; the skill's entry point.",

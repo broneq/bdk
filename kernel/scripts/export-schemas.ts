@@ -73,6 +73,7 @@ import {
 } from "../src/log/schema/outputs.ts";
 import { exportAgentsOutput } from "../src/export/schema/agents.ts";
 import { measureOutput } from "../src/measure/schema/measure.ts";
+import { reviewPlanOutput } from "../src/review/schema/plan.ts";
 import {
   partDoneOutput,
   partListOutput,
@@ -167,6 +168,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/dispatch-show.json", dispatchShowOutput],
   ["output/evidence-record.json", evidenceRecordOutput],
   ["output/evidence-coverage.json", evidenceCoverageOutput],
+  ["output/review-plan.json", reviewPlanOutput],
   ["output/evidence-check.json", evidenceCheckOutput],
   ["output/spec-delta-check.json", specDeltaCheckOutput],
   ["output/spec-merge.json", specMergeOutput],

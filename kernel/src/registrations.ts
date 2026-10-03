@@ -23,7 +23,7 @@ import { measureRegistrations } from "./measure/index.ts";
 import { partRegistrations } from "./part/index.ts";
 import type { MeasureDeps } from "./measure/index.ts";
 import { queryRegistrations } from "./query/index.ts";
-import { reviewConfig } from "./review/index.ts";
+import { reviewConfig, reviewRegistrations } from "./review/index.ts";
 import { rulesConfig, rulesRegistrations } from "./rules/index.ts";
 import type { RulesDeps } from "./rules/index.ts";
 import type { QueryDeps } from "./query/index.ts";
@@ -59,6 +59,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...partRegistrations(deps),
     ...attemptRegistrations(deps),
     ...evidenceRegistrations(deps),
+    ...reviewRegistrations(deps),
     ...commitRegistrations(deps),
     ...queryRegistrations(deps),
     ...exportRegistrations(deps),

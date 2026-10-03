@@ -40,8 +40,8 @@
 
 ## 8. `bdk review plan` (D3)
 
-- [ ] 8.1 Failing tests (`kernel/src/review/tests/`, E2E in a scratch repository): the example output validates; first round anchors on the parent of the commit adding `change.md`; a `merge` report's `head` anchors the delta; `--full`, `--base`, both together refused; groups by part, `unplanned`, `integration` in order; 25 + 20 files split into `p02-1` and `p02-2`; no plan gives `m1`, `m2`; `dirty` names an unstaged file; an empty range has no groups; `runtime/git-missing`
-- [ ] 8.2 The `review` slice (`commands/`, `use-cases/`, `domain/` grouping as a pure function), its registration, the slice table and the import rule (`review` imports only `measure`); `schema/cli/output/review-plan.json`; `kernel/tests/structure.test.ts` green; tests of 8.1 green
+- [x] 8.1 Failing tests (`kernel/src/review/tests/`, E2E in a scratch repository): the example output validates; first round anchors on the parent of the commit adding `change.md`; a `merge` report's `head` anchors the delta; `--full`, `--base`, both together refused; groups by part, `unplanned`, `integration` in order; 25 + 20 files split into `p02-1` and `p02-2`; no plan gives `m1`, `m2`; `dirty` names an unstaged file; an empty range has no groups; `runtime/git-missing`
+- [x] 8.2 The `review` slice (`commands/`, `use-cases/`, `domain/` grouping as a pure function), its registration, the slice table and the import rule (`review` imports only `measure`); `schema/cli/output/review-plan.json`; `kernel/tests/structure.test.ts` green; tests of 8.1 green (`measure` exports `moduleOf` and `measureRange`, which skips the commit check so the empty tree can be a base; a merged review whose `head` the repository no longer holds falls back to the Change base, as the delta now states)
 
 ## 9. Documentation
 

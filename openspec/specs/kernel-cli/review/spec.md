@@ -1,3 +1,5 @@
+# kernel-cli/review Specification
+
 ## Purpose
 
 Review planning (`review`): the range a review round covers and the groups its reviewers get, computed by the kernel so the review skills never derive them from git themselves.
@@ -15,7 +17,7 @@ Representative refusal:
 }
 ```
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: bdk review plan
 
