@@ -116,16 +116,8 @@ exports[`ctx skill output > close is unchanged 1`] = `
 
 exports[`ctx skill output > cr is unchanged 1`] = `
 "{
-  "content": "## BDK context: cr\\n\\n### Review engine\\n\\n# skills/cr/references/review-engine.md\\n\\n- **Default.** Plugin text.\\n\\n### Report format\\n\\n# skills/cr/references/report-format.md\\n\\n- **Default.** Plugin text.\\n\\n### Blocking categories (P8)\\n\\n- architecture: Materially invalid architecture, or a contradiction with an accepted decision.\\n- security: A security, privacy or authentication risk.\\n- irreversible-step: An irreversible or high-cost step without justification, such as a migration or data loss.\\n- integration-failure: A critical integration, data, rollout or rollback failure.\\n- unresolved-decision: An execution-critical unresolved decision or omitted requirement.\\n- false-code-claim: A claim about the real code that is false.\\n\\n#### Not a fail\\n\\n- style: Style.\\n- template-conformance: Template conformance.\\n- files-bookkeeping: \`Files:\` bookkeeping.\\n- wording: Wording.\\n- report-length: Report length.\\n- verification-defect: A verification defect, unless it removes the only real evidence of the change's safety.\\n",
+  "content": "## BDK context: cr\\n\\n### Blocking categories (P8)\\n\\n- architecture: Materially invalid architecture, or a contradiction with an accepted decision.\\n- security: A security, privacy or authentication risk.\\n- irreversible-step: An irreversible or high-cost step without justification, such as a migration or data loss.\\n- integration-failure: A critical integration, data, rollout or rollback failure.\\n- unresolved-decision: An execution-critical unresolved decision or omitted requirement.\\n- false-code-claim: A claim about the real code that is false.\\n\\n#### Not a fail\\n\\n- style: Style.\\n- template-conformance: Template conformance.\\n- files-bookkeeping: \`Files:\` bookkeeping.\\n- wording: Wording.\\n- report-length: Report length.\\n- verification-defect: A verification defect, unless it removes the only real evidence of the change's safety.\\n",
   "parts": [
-    {
-      "kind": "file",
-      "source": "skills/cr/references/review-engine.md"
-    },
-    {
-      "kind": "file",
-      "source": "skills/cr/references/report-format.md"
-    },
     {
       "kind": "verifier-policy",
       "source": "policy.verifier"

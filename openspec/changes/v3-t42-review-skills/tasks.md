@@ -109,14 +109,14 @@
 
 ## 7. The cr skill (review-skills, design D1, D2, D4-D6)
 
-- [ ] 7.1 Write failing content tests in `kernel/tests/contract/`, a new review skill test:
+- [x] 7.1 Write failing content tests in `kernel/tests/contract/`, a new review skill test:
   - `skills/tools/cr/SKILL.md` exists, is at most 200 lines and has the context lines;
   - `disallowed-tools: Edit Write NotebookEdit`;
   - `allowed-tools` holds the kernel pair, `Agent`, `SendMessage`, `Skill`, `Read`, `Bash(git diff *)` and `Bash(git log *)` and no `Write(`;
   - no `disable-model-invocation`;
   - it names no `.bdk/cr/`, no `bdk_run_state.py` and no v2 agent;
   - it names `bdk review plan`, `bdk attempt open review-fix`, `--group`, `bdk log triage`, `@merge`, `bdk commit <change-id>`, `bdk done review` and `--kind review`.
-- [ ] 7.2 Write `skills/tools/cr/SKILL.md`:
+- [x] 7.2 Write `skills/tools/cr/SKILL.md`:
   - finding or opening the Change;
   - the round loop of D1, with the fix first when blocking entries exist;
   - packages per group and the gate runner through the swarm skill;
@@ -124,9 +124,9 @@
   - `next.action` handling;
   - flags, `--inline` and the final report from kernel output.
 
-  Delete `skills/cr/` with its three references and set the manifest entry of `cr` to `[verifier-policy]`. Verify that the tests of 7.1 and `pnpm skill-check` are green.
+  Delete `skills/cr/` with its three references, set the manifest entry of `cr` to `[verifier-policy]` and add `./skills/tools/` to `plugin.json`, so the moved skill stays discoverable. Verify that the tests of 7.1 and `pnpm skill-check` are green.
 
-- [ ] 7.3 Write an E2E in `kernel/src/review/tests/round.e2e.ts` or a new file. It drives the command sequence the skill names on a `review` Change: open by `change new --inferred --kind review`, one round with a blocker, a fix round with `bdk commit <change-id>`, and `done review`. Verify that it is green through the built bundle.
+- [x] 7.3 Write an E2E in `kernel/src/review/tests/round.e2e.ts` or a new file. It drives the command sequence the skill names on a `review` Change: open by `change new --inferred --kind review`, one round with a blocker, a fix round with `bdk commit <change-id>`, and `done review`. Verify that it is green through the built bundle.
 
 ## 8. The pr-review skill (review-skills, design D7)
 
@@ -153,7 +153,7 @@
   - `plugin.json` `skills` lists `./skills/tools/`;
   - no `skills/cr/` or `skills/pr-review/` exists;
   - the `git grep` of removed agent names over `skills/`, `agents/`, `rules/`, `hooks/`, `STARTUP_INSTRUCTIONS.md`, `README.md` and `docs/guide/` is empty.
-- [ ] 10.2 Delete the twelve v2 agents and the eight meta-skills with their manifest entries. Add `./skills/tools/` to `plugin.json`. Fix every reference (`.claude/rules/portability-check.md`, the docs-sync map, `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md`, `docs/guide/` agents, shared foundation and skills pages, `README.md` Skills, Agents and Removed tables, the lines in `skills/debug` and `skills/test-driven-development`). Regenerate `STARTUP_INSTRUCTIONS.md` from `bdk ctx startup`. Run `pnpm skill-check --baseline-prune`. Verify that the tests of 10.1, `pnpm skill-check`, `bdk export agents --host claude --check`, `pnpm docs:build` and `claude plugin validate .` are green.
+- [ ] 10.2 Delete the twelve v2 agents and the eight meta-skills with their manifest entries. Fix every reference (`.claude/rules/portability-check.md`, the docs-sync map, `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md`, `docs/guide/` agents, shared foundation and skills pages, `README.md` Skills, Agents and Removed tables, the lines in `skills/debug` and `skills/test-driven-development`). Regenerate `STARTUP_INSTRUCTIONS.md` from `bdk ctx startup`. Run `pnpm skill-check --baseline-prune`. Verify that the tests of 10.1, `pnpm skill-check`, `bdk export agents --host claude --check`, `pnpm docs:build` and `claude plugin validate .` are green.
 
 ## 11. Evals: review-models and stage cases (skill-evals delta, design D10)
 

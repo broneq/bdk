@@ -110,7 +110,7 @@ After the merged report, `cr` SHALL check for blocking entries. An entry is bloc
 
 - **No blocking entry.** `cr` SHALL run `bdk attempt close <ticket> ok`, then `bdk done review`.
 - **Blocking entries.** `cr` SHALL close the ticket `fail` and act on `next.action`:
-  - `retry`: start the next round;
+  - `retry` or `narrow`: start the next round; after `narrow` its ticket carries the narrower scope (`kernel-loops`, Scope narrowing), and the findings it drops stay in the ledger for the human;
   - `escalate`: open the next round with `bdk attempt open review-fix <change-id> --escalate` and start its agents on the `model` that `bdk dispatch build` returns;
   - `parked`: stop and report the kernel's question and resume command.
 

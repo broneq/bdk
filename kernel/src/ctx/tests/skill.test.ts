@@ -29,8 +29,7 @@ const PLUGIN_FILES: Record<string, string> = {
   ...pack("languages/typescript", "BDK-TS-1", "**Strict.** On.", "applies: ['**/*.ts']\n"),
   "fragments/decision/lavish.md": "**Decision tier: lavish**\n",
   "fragments/decision/ask-user.md": "**Decision tier: ask-user**\n",
-  "skills/cr/references/review-engine.md": "# Review engine\n\nSteps.\n",
-  "skills/cr/references/report-format.md": "# Report format\n",
+  "skills/demo/references/engine.md": "# Engine\n\nSteps.\n",
 };
 
 function input(project: Record<string, string> = {}, installed: readonly string[] = []): CtxInput {
@@ -242,11 +241,21 @@ describe("ctx skill", () => {
   });
 
   it("prints a plugin file verbatim under its manifest title", () => {
-    const report = compose("cr");
-    expect(report.content).toContain("### Review engine\n\n# Review engine\n\nSteps.\n");
-    expect(report.parts[0]).toStrictEqual({
+    const given = input();
+    const resolved = resolveOrRefuse(given, { removed: "ignore" });
+    if ("refused" in resolved) throw new Error(`refused: ${resolved.why}`);
+    const part = {
       kind: "file",
-      source: "skills/cr/references/review-engine.md",
+      path: "skills/demo/references/engine.md",
+      title: "Engine",
+    } as const;
+    expect(
+      renderContext({ heading: "BDK context: demo", sections: sectionsOf(given, resolved, part) })
+        .content,
+    ).toContain("### Engine\n\n# Engine\n\nSteps.\n");
+    expect(sectionsOf(given, resolved, part)[0]?.part).toStrictEqual({
+      kind: "file",
+      source: "skills/demo/references/engine.md",
     });
   });
 });

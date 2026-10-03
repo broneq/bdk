@@ -37,7 +37,7 @@ One round is one `review-fix` ticket:
 6. the `merge` report;
 7. `attempt close`.
 
-The order follows `round.e2e.ts`. The fix comes first in the next round because `attempt close fail` is what spends the budget and asks the ladder for `retry`, `escalate` or `parked`. The fix therefore always runs on a ticket the ladder admitted.
+The order follows `round.e2e.ts`. The fix comes first in the next round because `attempt close fail` is what spends the budget and asks the ladder for `retry`, `narrow`, `escalate` or `parked`. The fix therefore always runs on a ticket the ladder admitted.
 
 - Alternative: fix inside the failing round, then review again under the same ticket. Lost because the budget would never count the failed review, and the ladder's escalation and oscillation checks (`kernel-loops`) would never see a round with blockers.
 - Alternative: a separate `task-redispatch`-like loop for the fix. Lost because there is no task target. A second loop for one Change splits one budget into two.
