@@ -53,7 +53,7 @@ For each capability a part names in `spec-impact`, write `spec-delta/<capability
 
 ## Verify and correct
 
-When the next node is `plan-verify`, run `/bdk:verify-plan` and act on its verdict without asking what the plan, the design or the code settle:
+When the next node is `plan-verify`, first check the parts yourself against "Blocking categories (P8)" in the BDK context above, such as each signature a task states against the code: correct what would fail a blocking category, and leave alone what the "Not a fail" list names. This check writes no entry and no file of its own, so the verifier still reads the plan with fresh eyes. Then run `/bdk:verify-plan` and act on its verdict without asking what the plan, the design or the code settle:
 
 - **Blockers whose fix changes no recorded decision** (`false-code-claim`, a behaviour without a test case, a design requirement no task covers, an undeclared dependency between parts): correct the parts, then `bdk log resolve <id> resolved --reason "<what changed>"`.
 - **Blockers whose fix contradicts an accepted decision or a sentence of the design, or grows the scope beyond the intent** (such as a caller whose user-visible behaviour the Change alters): ask the user one question listing every such blocker with your proposed fix and, for scope, the intent-only option with a follow-up Change; record each answer as a `decision`, then correct and resolve.

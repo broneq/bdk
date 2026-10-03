@@ -2,8 +2,9 @@
 # from a fresh copy of the pinned fixture on its branch feat/eval with Lavish
 # off. A run asks nothing: the skills it starts take the recommended option.
 #
-# run-auto: from an intent to the review stage; --auto passes the manual
-# gate:design by policy, and the run stops at the review node naming /bdk:cr.
+# run-auto: from an intent to an archived Change; --auto passes the manual
+# gate:design and gate:review by policy, /bdk:cr reviews the executed Change
+# in the run (T42-B1), and /bdk:close archives it.
 - id: run-auto
   command: /bdk:run --auto "Add Italian to the language options of the account page"
   prepare:
@@ -14,18 +15,13 @@
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
-    - run: change status
+    - run: change list --all
       json:
-        gates.0.gate: gate:design
-        gates.0.done: true
-        gates.0.passedBy: policy
-    - run: explain execute-part:01
-      json:
-        state: done
-    - run: next
-      json:
-        artifact.id: review
-    - reply: /bdk:cr
+        items.length: 1
+        items.0.state: archived
+    # gatesByPolicy of the close report names both gates.
+    - reply: gate:design
+    - reply: gate:review
 
 # run-manual: without --auto the manual gate:design stops the run after the
 # design stage; no plan part exists and the reply names /bdk:plan.

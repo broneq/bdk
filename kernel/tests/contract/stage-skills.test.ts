@@ -256,7 +256,7 @@ describe("run", () => {
     expect(meta).not.toHaveProperty("disallowed-tools");
   });
 
-  it("loops on next through the stage skills, decides instead of asking and stops at review", () => {
+  it("loops on next through the stage skills and decides instead of asking", () => {
     const { body } = readSkill("run");
     for (const needle of [
       "bdk next --json",
@@ -267,7 +267,6 @@ describe("run", () => {
       "/bdk:execute",
       "/bdk:cr",
       "/bdk:close",
-      "an artifact whose `command` is `/bdk:cr`",
       "bdk log add decision",
       "--review",
       "guard/gate-manual",
@@ -279,8 +278,38 @@ describe("run", () => {
     }
   });
 
+  it("starts /bdk:cr like any other stage skill and does not stop for blockers (T42-B1)", () => {
+    const { body } = readSkill("run");
+    expect(body).toMatch(
+      /start the skill its `command` names: `\/bdk:design`, `\/bdk:plan`, `\/bdk:execute`, `\/bdk:cr` or `\/bdk:close`/,
+    );
+    expect(body).not.toContain("an artifact whose `command` is `/bdk:cr`");
+    expect(body).not.toMatch(/stop: the user types `\/bdk:cr`/);
+    expect(body).toMatch(/Blocking review entries are no reason to stop/);
+  });
+
   it("stays well under the stage skill limit", () => {
     const text = readFileSync(join(STAGES, "run", "SKILL.md"), "utf8");
     expect(text.split("\n").length).toBeLessThanOrEqual(120);
+  });
+});
+
+describe("author self-check before verification (P8, T42)", () => {
+  it.each([
+    ["design", "/bdk:verify-design"],
+    ["plan", "/bdk:verify-plan"],
+  ])("%s checks its draft against its context's P8 lists before %s", (name, verify) => {
+    const { body } = readSkill(name);
+    const check = body.indexOf("Blocking categories (P8)");
+    expect(check).toBeGreaterThan(-1);
+    expect(check).toBeLessThan(body.indexOf(verify));
+    expect(body).toContain("Not a fail");
+    expect(body).toMatch(/writes no entry and no file/);
+    expect(SKILL_CONTEXT[name]).toContainEqual({ kind: "verifier-policy" });
+  });
+
+  it("execute names /bdk:cr as the next stage in its finish", () => {
+    const { body } = readSkill("execute");
+    expect(body.slice(body.indexOf("## Finish"))).toContain("`/bdk:cr`");
   });
 });

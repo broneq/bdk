@@ -139,11 +139,11 @@
 
 ## 9. Stage skills: run, design, plan (stage-skills delta)
 
-- [ ] 9.1 Write failing content tests:
+- [x] 9.1 Write failing content tests:
   - `skills/stages/run/SKILL.md` starts `/bdk:cr` from the loop table and has no stop row for `/bdk:cr`;
   - `design` and `plan` name the self-check step before `/bdk:verify-design` and `/bdk:verify-plan`;
   - `execute`'s Finish names `/bdk:cr` as the next stage.
-- [ ] 9.2 Edit `run`, `design`, `plan` and `execute`. Update the stage skill E2E or eval seeds that expected the run to stop at review. Verify that the tests of 9.1, `pnpm skill-check` and `pnpm test:e2e` are green.
+- [x] 9.2 Edit `run`, `design`, `plan` and `execute`. Update the stage skill E2E or eval seeds that expected the run to stop at review. Verify that the tests of 9.1, `pnpm skill-check` and `pnpm test:e2e` are green.
 
 ## 10. Plugin layout and removal (plugin-tooling delta, design D9)
 
