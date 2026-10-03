@@ -92,7 +92,7 @@ When the kernel builds a dispatch package, it selects the rules for the role and
 
 Every applying rule is selected: there is no cap, because a configured rule the agent never sees fails silently. When one role would read more than `rules.warn-above` rules (100 by default), the session start prints a `[BDK] rules warning` line; switch rules off or narrow them with `applies`.
 
-The package records the selected ids. The agent reads exactly those rules with `bdk rules show --ticket <ticket>`, and cites the id of every rule that forced a decision or that a finding breaks. To see what a role would read for a file, run:
+The package records the selected ids. The agent reads exactly those rules with `bdk rules show --ticket <ticket>`, and cites the id of every rule that forced a decision or that a finding breaks. A reviewer without a package, such as the PR reviewer of `/bdk:pr-review`, reads the same selection for its file set with `bdk rules show --role pr-reviewer --file <path>...`, which needs no Change. To see what a role would read for a file, run:
 
 ```bash
 bdk rules explain src/api/users.ts --role reviewer

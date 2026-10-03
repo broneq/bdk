@@ -63,15 +63,15 @@
 
 ## 4. Fix package and stateless rules (design D3)
 
-- [ ] 4.1 Write failing tests in `kernel/src/dispatch/tests/` and `kernel/src/graph/tests/`:
+- [x] 4.1 Write failing tests in `kernel/src/dispatch/tests/` and `kernel/src/graph/tests/`:
   - an `implementer` package on a `review-fix` ticket embeds a finding triaged `blocker` and a live `blocker` in full, and not a `nice-to-have`;
   - its `rules` follow those entries' file refs;
   - the shared blocking predicate gives the same set as the `review` verdict's `blockers` check on the same ledger.
-- [ ] 4.2 Write failing tests in `kernel/src/rules/tests/`:
+- [x] 4.2 Write failing tests in `kernel/src/rules/tests/`:
   - `rules show --role pr-reviewer --file src/api/login.ts` with no Change prints `API-1` with its text and not `UI-1`, and equals `rules explain` ids;
   - `--role` without `--file`, `--file` without `--role`, and either with `--ticket` are `input/invalid-argument`;
   - an unknown role is `input/not-found`.
-- [ ] 4.3 Implement:
+- [x] 4.3 Implement:
   - move the blocking predicate to `shared/`, used by `graph` verdicts and `dispatch build`;
   - the review-fix entry selection;
   - `rules show --role --file`;

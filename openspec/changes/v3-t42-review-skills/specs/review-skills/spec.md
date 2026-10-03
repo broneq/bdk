@@ -106,7 +106,7 @@ Then `cr` SHALL store the merged review with `bdk log ingest --ticket <ticket>@m
 
 ### Requirement: cr fixes blockers on the review-fix budget
 
-After the merged report, `cr` SHALL check for blocking entries. An entry is blocking when it is a live `blocker` not triaged `not-a-problem`, or a live entry triaged `blocker`.
+After the merged report, `cr` SHALL check for blocking entries. An entry is blocking when the `review` verdict counts it (`kernel-pipeline`, Artifact kinds): a live `blocker` naming `review`, or a live entry triaged `blocker`. Triage `not-a-problem` resolves an entry, so it is never blocking.
 
 - **No blocking entry.** `cr` SHALL run `bdk attempt close <ticket> ok`, then `bdk done review`.
 - **Blocking entries.** `cr` SHALL close the ticket `fail` and act on `next.action`:

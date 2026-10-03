@@ -1,11 +1,20 @@
 // Text mode of `rules show`: one rule with its frontmatter, or one heading for
-// the ticket, then each rule as `- [<id>] <text>` as the agent reads it.
-import type { OneRule, TicketRules } from "../domain/report.ts";
+// the ticket or the role and files, then each rule as `- [<id>] <text>` as the
+// agent reads it.
+import type { OneRule, RoleRules, ShownRule, TicketRules } from "../domain/report.ts";
 
 export function renderTicketRules(rules: TicketRules): string {
-  const heading = `## BDK rules: ${rules.ticket} (${rules.role}, ${rules.target})\n`;
-  if (rules.rules.length === 0) return `${heading}\nNo rules for the role ${rules.role}.\n`;
-  const lines = rules.rules.map((rule) => {
+  return ruleList(`${rules.ticket} (${rules.role}, ${rules.target})`, rules.role, rules.rules);
+}
+
+export function renderRoleRules(rules: RoleRules): string {
+  return ruleList(`${rules.role} (${rules.files.join(", ")})`, rules.role, rules.rules);
+}
+
+function ruleList(title: string, role: string, rules: readonly ShownRule[]): string {
+  const heading = `## BDK rules: ${title}\n`;
+  if (rules.length === 0) return `${heading}\nNo rules for the role ${role}.\n`;
+  const lines = rules.map((rule) => {
     const matched = rule.matchedBy === null ? "" : ` (matched by ${rule.matchedBy})`;
     return `- [${rule.id}] ${rule.text}${matched}`;
   });

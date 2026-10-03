@@ -1386,7 +1386,7 @@
     {
       "id": "rules-show",
       "argv": ["rules", "show"],
-      "summary": "Print one rule by id, tombstones included, or the rules a ticket's active package records.",
+      "summary": "Print one rule by id, tombstones included, the rules a ticket's active package records, or the rules selected for a role and a file set.",
       "availability": "agent",
       "mode": "command",
       "slice": "rules",
@@ -1396,7 +1396,7 @@
         {
           "name": "<id>",
           "required": false,
-          "description": "A rule id, e.g. BDK-CQ-4 or API-2. Exactly one of <id> and --ticket."
+          "description": "A rule id, e.g. BDK-CQ-4 or API-2. Exactly one of <id>, --ticket and --role."
         }
       ],
       "flags": [
@@ -1404,6 +1404,17 @@
           "name": "--ticket",
           "value": "<ticket>",
           "description": "Print the rules the ticket's active package records, in its order."
+        },
+        {
+          "name": "--role",
+          "value": "<role>",
+          "description": "One of the ten roles; needs at least one --file. Prints the rules a package of that role and file set would record, with no Change (T42)."
+        },
+        {
+          "name": "--file",
+          "value": "<path>",
+          "repeatable": true,
+          "description": "A repository-relative path of the file set; it need not exist."
         }
       ],
       "output": "output/rules-show.json",

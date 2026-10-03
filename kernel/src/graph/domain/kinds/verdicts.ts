@@ -5,6 +5,7 @@
 // never hashed. The `review` verdict also needs the merged report of a
 // `review-fix` round, every entry of that round triaged and no live entry
 // triaged `blocker` (T42-D2, D6).
+import { isBlocking } from "../../../shared/vocabulary/index.ts";
 import { deltaPath } from "./documents.ts";
 import { BaseKind, live, partFiles } from "./kind.ts";
 import type { ChangeView, Check, GraphEntry, Inputs, ValidateTarget } from "./kind.ts";
@@ -33,12 +34,7 @@ function verdictChecks(view: ChangeView, target: ValidateTarget, review = false)
             ok: false,
             why: `the latest report ${latest.id} has status ${status ?? "unreadable"}, not done or done-with-concerns`,
           };
-  const blockers = view.entries.filter(
-    (entry) =>
-      live(entry) &&
-      ((entry.type === "blocker" && entry.refs.includes(id)) ||
-        (review && entry.level === BLOCKER)),
-  );
+  const blockers = view.entries.filter((entry) => isBlocking(entry, id, { triaged: review }));
   const blocker: Check =
     blockers.length === 0
       ? { id: "blockers", ok: true }
@@ -62,7 +58,6 @@ function verdictChecks(view: ChangeView, target: ValidateTarget, review = false)
   ];
 }
 
-const BLOCKER = "blocker";
 const MERGE_GROUP = "merge";
 const REVIEW_FIX = "review-fix";
 const TRIAGED_TYPES: readonly string[] = ["finding", "blocker", "observation"];

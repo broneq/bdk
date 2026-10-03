@@ -1,9 +1,9 @@
-// What `rules show` reports (`kernel-cli/rules`): one rule by id, or the rules
-// a ticket's active package records, in its order, with the truncation count
-// and the `rules-read` stamp.
+// What `rules show` reports (`kernel-cli/rules`): one rule by id, the rules
+// a ticket's active package records, in its order, with the `rules-read`
+// stamp, or the rules selected for a role and a file set (T42).
 import type { LoadedRule } from "./rule.ts";
 
-interface ShownRule {
+export interface ShownRule {
   readonly id: string;
   readonly kind: LoadedRule["kind"];
   readonly severity: LoadedRule["severity"];
@@ -42,7 +42,14 @@ export interface OneRule {
   readonly text: string;
 }
 
-export type RulesShow = TicketRules | OneRule;
+/** The Selection for a role and a file set, with no Change (T42). */
+export interface RoleRules {
+  readonly role: string;
+  readonly files: readonly string[];
+  readonly rules: readonly ShownRule[];
+}
+
+export type RulesShow = TicketRules | OneRule | RoleRules;
 
 export interface CheckReport {
   readonly valid: true;

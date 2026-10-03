@@ -88,3 +88,27 @@ export const ROLES = [
 ] as const;
 
 export type Role = (typeof ROLES)[number];
+
+/** The fields of a ledger entry the blocking predicate reads. */
+export interface BlockingFacts {
+  readonly type: string;
+  readonly status: string;
+  readonly refs: readonly string[];
+  readonly level?: string | undefined;
+}
+
+/**
+ * Whether a live entry blocks the verdict of `node`: a `blocker` naming the
+ * node, or, when the verdict counts triage (`review`, T42), any entry triaged
+ * `blocker`. The `review` verdict and the review-fix package of `dispatch
+ * build` share it, so the two never disagree (T42-D3).
+ */
+export function isBlocking(
+  entry: BlockingFacts,
+  node: string,
+  options: { readonly triaged: boolean },
+): boolean {
+  if (entry.status !== "proposed" && entry.status !== "accepted") return false;
+  if (entry.type === "blocker" && entry.refs.includes(node)) return true;
+  return options.triaged && entry.level === "blocker";
+}

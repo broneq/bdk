@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/rules-show.json",
   "title": "bdk rules show --json",
-  "description": "Print one rule by id, or the rules of a ticket.",
+  "description": "Print one rule by id, the rules of a ticket, or the rules of a role and a file set.",
   "anyOf": [
     {
       "type": "object",
@@ -127,6 +127,58 @@
       ],
       "additionalProperties": false,
       "title": "one rule"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "implementer",
+            "simplifier",
+            "verifier",
+            "design-verifier",
+            "reviewer",
+            "integration-reviewer",
+            "pr-reviewer",
+            "runner",
+            "scout",
+            "lead"
+          ]
+        },
+        "files": {
+          "minItems": 1,
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "The file set, repository-relative."
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$"
+              },
+              "kind": { "type": "string", "enum": ["house", "knowledge"] },
+              "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+              "applies": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "matchedBy": {
+                "description": "The glob that matched a file of the target; null for a rule without applies or a target without files.",
+                "type": ["string", "null"]
+              },
+              "text": { "type": "string" }
+            },
+            "required": ["id", "kind", "severity", "matchedBy", "text"],
+            "additionalProperties": false
+          },
+          "description": "The Selection a package of the role and file set would record."
+        }
+      },
+      "required": ["role", "files", "rules"],
+      "additionalProperties": false,
+      "title": "rules of a role and a file set"
     }
   ],
   "examples": [
@@ -165,6 +217,20 @@
       "since": "2026-09-27",
       "disabled": false,
       "text": "Every handler validates its input with the shared schema before it reads the body."
+    },
+    {
+      "role": "pr-reviewer",
+      "files": ["src/api/login.ts"],
+      "rules": [
+        {
+          "id": "API-2",
+          "kind": "house",
+          "severity": "high",
+          "applies": ["src/api/**"],
+          "matchedBy": "src/api/**",
+          "text": "Every handler validates its input with the shared schema before it reads the body."
+        }
+      ]
     }
   ]
 }

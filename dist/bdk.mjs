@@ -4002,10 +4002,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep16, value } = collItem;
+        const { start, key, sep: sep17, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep16?.[0],
+          next: key ?? sep17?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4019,7 +4019,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep16) {
+          if (!keyProps.anchor && !keyProps.tag && !sep17) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4043,7 +4043,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep16 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep17 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4059,7 +4059,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep16, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep17, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4150,7 +4150,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep16 = "";
+        let sep17 = "";
         for (const token of end) {
           const { source: source2, type } = token;
           switch (type) {
@@ -4164,13 +4164,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep16 + cb;
-              sep16 = "";
+                comment += sep17 + cb;
+              sep17 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep16 += source2;
+                sep17 += source2;
               hasSpace = true;
               break;
             default:
@@ -4213,18 +4213,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep16, value } = collItem;
+        const { start, key, sep: sep17, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep16?.[0],
+          next: key ?? sep17?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep16 && !value) {
+          if (!props.anchor && !props.tag && !sep17 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4278,8 +4278,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap3 && !sep16 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep16, null, props, onError);
+        if (!isMap3 && !sep17 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep17, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4291,7 +4291,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep16 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep17 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4302,8 +4302,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap3 && !props.found && ctx.options.strict) {
-              if (sep16)
-                for (const st of sep16) {
+              if (sep17)
+                for (const st of sep17) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4320,7 +4320,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep16, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep17, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4500,7 +4500,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep16 = "";
+      let sep17 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4517,24 +4517,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep16 + indent.slice(trimIndent) + content;
-          sep16 = "\n";
+          value += sep17 + indent.slice(trimIndent) + content;
+          sep17 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep16 === " ")
-            sep16 = "\n";
-          else if (!prevMoreIndented && sep16 === "\n")
-            sep16 = "\n\n";
-          value += sep16 + indent.slice(trimIndent) + content;
-          sep16 = "\n";
+          if (sep17 === " ")
+            sep17 = "\n";
+          else if (!prevMoreIndented && sep17 === "\n")
+            sep17 = "\n\n";
+          value += sep17 + indent.slice(trimIndent) + content;
+          sep17 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep16 === "\n")
+          if (sep17 === "\n")
             value += "\n";
           else
-            sep16 = "\n";
+            sep17 = "\n";
         } else {
-          value += sep16 + content;
-          sep16 = " ";
+          value += sep17 + content;
+          sep17 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4717,25 +4717,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd, "");
-      let sep16 = " ";
+      let sep17 = " ";
       let pos = line2.lastIndex;
       while (match = line2.exec(source2)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep16 === "\n")
-            res += sep16;
+          if (sep17 === "\n")
+            res += sep17;
           else
-            sep16 = "\n";
+            sep17 = "\n";
         } else {
-          res += sep16 + lm;
-          sep16 = " ";
+          res += sep17 + lm;
+          sep17 = " ";
         }
         pos = line2.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source2);
-      return res + sep16 + (match?.[1] ?? "");
+      return res + sep17 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source2, onError) {
       let res = "";
@@ -5545,14 +5545,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep16, value }) {
+    function stringifyItem({ start, key, sep: sep17, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep16)
-        for (const st of sep16)
+      if (sep17)
+        for (const st of sep17)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6719,18 +6719,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep16;
+          let sep17;
           if (scalar.end) {
-            sep16 = scalar.end;
-            sep16.push(this.sourceToken);
+            sep17 = scalar.end;
+            sep17.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep16 = [this.sourceToken];
+            sep17 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep16 }]
+            items: [{ start, key: scalar, sep: sep17 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6883,15 +6883,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep16 = it.sep;
-                  sep16.push(this.sourceToken);
+                  const sep17 = it.sep;
+                  sep17.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep16 }]
+                    items: [{ start: start2, key, sep: sep17 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7085,13 +7085,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep16 = fc.end.splice(1, fc.end.length);
-            sep16.push(this.sourceToken);
+            const sep17 = fc.end.splice(1, fc.end.length);
+            sep17.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep16 }]
+              items: [{ start, key: fc, sep: sep17 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -8758,7 +8758,7 @@ var commands_default = {
     {
       id: "rules-show",
       argv: ["rules", "show"],
-      summary: "Print one rule by id, tombstones included, or the rules a ticket's active package records.",
+      summary: "Print one rule by id, tombstones included, the rules a ticket's active package records, or the rules selected for a role and a file set.",
       availability: "agent",
       mode: "command",
       slice: "rules",
@@ -8768,7 +8768,7 @@ var commands_default = {
         {
           name: "<id>",
           required: false,
-          description: "A rule id, e.g. BDK-CQ-4 or API-2. Exactly one of <id> and --ticket."
+          description: "A rule id, e.g. BDK-CQ-4 or API-2. Exactly one of <id>, --ticket and --role."
         }
       ],
       flags: [
@@ -8776,6 +8776,17 @@ var commands_default = {
           name: "--ticket",
           value: "<ticket>",
           description: "Print the rules the ticket's active package records, in its order."
+        },
+        {
+          name: "--role",
+          value: "<role>",
+          description: "One of the ten roles; needs at least one --file. Prints the rules a package of that role and file set would record, with no Change (T42)."
+        },
+        {
+          name: "--file",
+          value: "<path>",
+          repeatable: true,
+          description: "A repository-relative path of the file set; it need not exist."
         }
       ],
       output: "output/rules-show.json",
@@ -9516,8 +9527,8 @@ function assert(_) {
 }
 function getEnumValues(entries2) {
   const numericValues = Object.values(entries2).filter((v) => typeof v === "number");
-  const values2 = Object.entries(entries2).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
-  return values2;
+  const values3 = Object.entries(entries2).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
+  return values3;
 }
 function joinValues(array2, separator = "|") {
   return array2.map((val) => stringifyPrimitive(val)).join(separator);
@@ -12041,10 +12052,10 @@ var $ZodUnion = /* @__PURE__ */ $constructor("$ZodUnion", (inst, def) => {
 function discriminatorMap(def) {
   const map = /* @__PURE__ */ new Map();
   for (const option of def.options) {
-    const values2 = option._zod.propValues?.[def.discriminator];
-    if (!values2 || values2.size === 0)
+    const values3 = option._zod.propValues?.[def.discriminator];
+    if (!values3 || values3.size === 0)
       throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(option)}"`);
-    for (const value of values2) {
+    for (const value of values3) {
       if (map.has(value)) {
         if (value !== void 0)
           throw new Error(`Duplicate discriminator value "${String(value)}"`);
@@ -12251,11 +12262,11 @@ var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
       return payload;
     }
     const proms = [];
-    const values2 = def.keyType._zod.values;
-    if (values2 && !def.partial) {
+    const values3 = def.keyType._zod.values;
+    if (values3 && !def.partial) {
       payload.value = memo2 ? memo2.alloc(inst, payload, {}, ctx) : {};
       const recordKeys = /* @__PURE__ */ new Set();
-      for (const key of values2) {
+      for (const key of values3) {
         if (typeof key === "string" || typeof key === "number" || typeof key === "symbol") {
           recordKeys.add(typeof key === "number" ? key.toString() : key);
           if (key === "__proto__")
@@ -12341,7 +12352,7 @@ var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
         if (keyResult.issues.length) {
           if (def.mode === "loose") {
             payload.value[key] = input[key];
-          } else if (values2) {
+          } else if (values3) {
             unrecognized = unrecognized ?? [];
             unrecognized.push(key);
           } else {
@@ -12392,8 +12403,8 @@ var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
 });
 var $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
   $ZodType.init(inst, def);
-  const values2 = getEnumValues(def.entries);
-  const valuesSet = new Set(values2);
+  const values3 = getEnumValues(def.entries);
+  const valuesSet = new Set(values3);
   inst._zod.values = valuesSet;
   defineLazyInternal(inst, "pattern", (zod) => {
     const patternValues = getEnumValues(zod.def.entries).filter((k) => propertyKeyTypes.has(typeof k));
@@ -12406,7 +12417,7 @@ var $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
     }
     payload.issues.push({
       code: "invalid_value",
-      values: values2,
+      values: values3,
       input,
       inst
     });
@@ -12415,15 +12426,15 @@ var $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
 });
 var $ZodLiteral = /* @__PURE__ */ $constructor("$ZodLiteral", (inst, def) => {
   $ZodType.init(inst, def);
-  const values2 = new Set(def.values);
-  inst._zod.values = values2;
+  const values3 = new Set(def.values);
+  inst._zod.values = values3;
   defineLazyInternal(inst, "pattern", (zod) => {
     const vals = zod.def.values;
     return new RegExp(vals.length ? `^(${vals.map((o) => typeof o === "string" ? escapeRegex(o) : o ? escapeRegex(o.toString()) : String(o)).join("|")})$` : "^[^\\s\\S]$");
   });
   inst._zod.parse = (payload, _ctx) => {
     const input = payload.value;
-    if (values2.has(input)) {
+    if (values3.has(input)) {
       return payload;
     }
     payload.issues.push({
@@ -12467,8 +12478,8 @@ var $ZodOptional = /* @__PURE__ */ $constructor("$ZodOptional", (inst, def) => {
   defineLazyInternal(inst, "optin", (zod) => zod.def.innerType._zod.optin === "defaulted" ? "defaulted" : "optional");
   inst._zod.optout = "optional";
   defineLazyInternal(inst, "values", (zod) => {
-    const values2 = zod.def.innerType._zod.values;
-    return values2 ? /* @__PURE__ */ new Set([...values2, void 0]) : void 0;
+    const values3 = zod.def.innerType._zod.values;
+    return values3 ? /* @__PURE__ */ new Set([...values3, void 0]) : void 0;
   });
   defineLazyInternal(inst, "pattern", (zod) => {
     const pattern = zod.def.innerType._zod.pattern;
@@ -12714,7 +12725,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve8) {
+function isRecursive(inst, stack, resolve9) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -12724,7 +12735,7 @@ function isRecursive(inst, stack, resolve8) {
   let result2 = NONE;
   const check = (child) => {
     if (result2 !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve8);
+      const answer = isRecursive(child, stack, resolve9);
       if (answer > result2)
         result2 = answer;
     }
@@ -12735,7 +12746,7 @@ function isRecursive(inst, stack, resolve8) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve8) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve9) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -12799,7 +12810,7 @@ function isRecursive(inst, stack, resolve8) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve8 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve9 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -14392,16 +14403,16 @@ var dateProcessor = (schema, ctx, json2, params) => {
 };
 var enumProcessor = (schema, _ctx, json2, _params) => {
   const def = schema._zod.def;
-  const values2 = getEnumValues(def.entries);
-  if (values2.length === 0) {
+  const values3 = getEnumValues(def.entries);
+  if (values3.length === 0) {
     json2.not = {};
     return;
   }
-  if (values2.every((v) => typeof v === "number"))
+  if (values3.every((v) => typeof v === "number"))
     json2.type = "number";
-  if (values2.every((v) => typeof v === "string"))
+  if (values3.every((v) => typeof v === "string"))
     json2.type = "string";
-  json2.enum = values2;
+  json2.enum = values3;
 };
 var literalProcessor = (schema, ctx, json2, params) => {
   const def = schema._zod.def;
@@ -14669,8 +14680,8 @@ function stringifyKeyNames(bySchema, json2, visited) {
   }
   const types = Array.isArray(json2.type) ? json2.type : [json2.type];
   const numericType = !types.includes("string") && types.some((t) => t === "number" || t === "integer");
-  const values2 = json2.enum ?? (json2.const !== void 0 ? [json2.const] : void 0);
-  if (!numericType && !values2?.some((v) => typeof v === "number"))
+  const values3 = json2.enum ?? (json2.const !== void 0 ? [json2.const] : void 0);
+  if (!numericType && !values3?.some((v) => typeof v === "number"))
     return json2;
   const { minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf, format: format2, id, ...rest } = json2;
   if (rest.enum)
@@ -14680,7 +14691,7 @@ function stringifyKeyNames(bySchema, json2, visited) {
   if (!numericType)
     return rest;
   rest.type = "string";
-  if (!values2)
+  if (!values3)
     rest.pattern = (types.includes("number") ? number : integer).source;
   return rest;
 }
@@ -15676,9 +15687,9 @@ var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
   inst.enum = def.entries;
   inst.options = [...inst._zod.values];
   const keys = new Set(Object.keys(def.entries));
-  inst.extract = (values2, params) => {
+  inst.extract = (values3, params) => {
     const newEntries = {};
-    for (const value of values2) {
+    for (const value of values3) {
       if (keys.has(value)) {
         newEntries[value] = def.entries[value];
       } else
@@ -15691,9 +15702,9 @@ var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
       entries: newEntries
     });
   };
-  inst.exclude = (values2, params) => {
+  inst.exclude = (values3, params) => {
     const newEntries = { ...def.entries };
-    for (const value of values2) {
+    for (const value of values3) {
       if (keys.has(value)) {
         delete newEntries[value];
       } else
@@ -15707,8 +15718,8 @@ var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
     });
   };
 });
-function _enum(values2, params) {
-  const entries2 = Array.isArray(values2) ? Object.fromEntries(values2.map((v) => [v, v])) : values2;
+function _enum(values3, params) {
+  const entries2 = Array.isArray(values3) ? Object.fromEntries(values3.map((v) => [v, v])) : values3;
   return new ZodEnum({
     type: "enum",
     entries: entries2,
@@ -16098,17 +16109,17 @@ function readLayers(store2, paths) {
   return layers;
 }
 function parseLayer(path, text13) {
-  let values2;
+  let values3;
   try {
-    values2 = (0, import_yaml.parse)(text13);
+    values3 = (0, import_yaml.parse)(text13);
   } catch (error2) {
     if (!(error2 instanceof import_yaml.YAMLParseError)) throw error2;
     const line2 = error2.linePos?.[0].line;
     throw invalid(path, `is not valid YAML${line2 === void 0 ? "" : ` at line ${line2}`}`);
   }
-  if (values2 === null || values2 === void 0) return {};
-  if (!isRecord(values2)) throw invalid(path, "must hold a mapping of keys at the top level");
-  return values2;
+  if (values3 === null || values3 === void 0) return {};
+  if (!isRecord(values3)) throw invalid(path, "must hold a mapping of keys at the top level");
+  return values3;
 }
 function invalid(path, problem) {
   return new KernelRefusal(
@@ -16352,20 +16363,20 @@ function retiredPromptReason(promptKey) {
   return RETIRED_PROMPTS.find((entry2) => promptKey.startsWith(entry2.key))?.reason;
 }
 function withoutRemovedKeys(layer) {
-  let values2 = layer.values;
-  for (const { key } of REMOVED_KEYS) values2 = without(values2, key.split("."));
-  return values2 === layer.values ? layer : { ...layer, values: values2 };
+  let values3 = layer.values;
+  for (const { key } of REMOVED_KEYS) values3 = without(values3, key.split("."));
+  return values3 === layer.values ? layer : { ...layer, values: values3 };
 }
-function without(values2, steps) {
+function without(values3, steps) {
   const [first, ...rest] = steps;
-  if (first === void 0 || !(first in values2)) return values2;
+  if (first === void 0 || !(first in values3)) return values3;
   if (rest.length === 0) {
-    return Object.fromEntries(Object.entries(values2).filter(([key]) => key !== first));
+    return Object.fromEntries(Object.entries(values3).filter(([key]) => key !== first));
   }
-  const child = values2[first];
-  if (!isRecord(child)) return values2;
+  const child = values3[first];
+  if (!isRecord(child)) return values3;
   const next = without(child, rest);
-  return next === child ? values2 : { ...values2, [first]: next };
+  return next === child ? values3 : { ...values3, [first]: next };
 }
 function within(key, base) {
   return key === base || key.startsWith(`${base}.`);
@@ -17151,6 +17162,11 @@ var ROLES = [
   "scout",
   "lead"
 ];
+function isBlocking(entry2, node3, options) {
+  if (entry2.status !== "proposed" && entry2.status !== "accepted") return false;
+  if (entry2.type === "blocker" && entry2.refs.includes(node3)) return true;
+  return options.triaged && entry2.level === "blocker";
+}
 
 // kernel/src/shared/store/state/common.ts
 var ID_BODY = "[0-9a-z]{8}";
@@ -19790,13 +19806,13 @@ function resolvePrompts(input) {
       add(key, contribution2);
     }
   }
-  const values2 = /* @__PURE__ */ new Map();
+  const values3 = /* @__PURE__ */ new Map();
   const keys = /* @__PURE__ */ new Set([
     ...input.registry.prompts.filter((prompt2) => !prompt2.key.endsWith("/*")).map((p) => p.key),
     ...byKey.keys()
   ]);
-  for (const key of [...keys].sort()) values2.set(key, chain(byKey.get(key) ?? []));
-  return { values: values2, problems };
+  for (const key of [...keys].sort()) values3.set(key, chain(byKey.get(key) ?? []));
+  return { values: values3, problems };
 }
 function promptContent(store2, value) {
   return value.files.map((file) => splitFrontmatter(store2.read(file.path) ?? "").body.trim()).filter((body) => body !== "").map((body) => `${body}
@@ -21052,9 +21068,9 @@ function parseCobertura(text13) {
       continue;
     }
     if (closing !== "" || file === void 0) continue;
-    const values2 = attributes(rest);
-    const number3 = values2.get("number") ?? "";
-    const hits = values2.get("hits") ?? "";
+    const values3 = attributes(rest);
+    const number3 = values3.get("number") ?? "";
+    const hits = values3.get("hits") ?? "";
     if (!/^\d+$/.test(number3) || !/^\d+$/.test(hits)) return bad(lineAt(tag.index));
     hit(file, Number(number3), Number(hits));
   }
@@ -21142,8 +21158,8 @@ function mapReportPaths(input) {
 function repositoryPath(given, projectRoot2) {
   const path = given.replaceAll("\\", "/");
   const root = projectRoot2.replaceAll("\\", "/").replace(/\/+$/, "");
-  const relative23 = path.startsWith(`${root}/`) ? path.slice(root.length + 1) : path;
-  return relative23.replace(/^(\.\/)+/, "");
+  const relative24 = path.startsWith(`${root}/`) ? path.slice(root.length + 1) : path;
+  return relative24.replace(/^(\.\/)+/, "");
 }
 function merged(a, b) {
   if (a === void 0) return b;
@@ -22320,9 +22336,7 @@ function verdictChecks(view, target, review = false) {
     ok: false,
     why: `the latest report ${latest2.id} has status ${status ?? "unreadable"}, not done or done-with-concerns`
   };
-  const blockers = view.entries.filter(
-    (entry2) => live(entry2) && (entry2.type === "blocker" && entry2.refs.includes(id) || review && entry2.level === BLOCKER)
-  );
+  const blockers = view.entries.filter((entry2) => isBlocking(entry2, id, { triaged: review }));
   const blocker = blockers.length === 0 ? { id: "blockers", ok: true } : {
     id: "blockers",
     ok: false,
@@ -22336,7 +22350,6 @@ function verdictChecks(view, target, review = false) {
     ...latest2 === void 0 ? [] : [freshCheck(view, id, latest2, target.requires ?? []), evidenceCheck(view, latest2)]
   ];
 }
-var BLOCKER = "blocker";
 var MERGE_GROUP2 = "merge";
 var REVIEW_FIX = "review-fix";
 var TRIAGED_TYPES = ["finding", "blocker", "observation"];
@@ -23678,7 +23691,7 @@ function evaluate(input) {
     const paired = nn === void 0 ? void 0 : draft.instances.find((instance) => drafts.get(instance)?.nn === nn);
     return paired === void 0 ? draft.instances : [paired];
   });
-  const resolve8 = (id) => {
+  const resolve9 = (id) => {
     const known = results.get(id);
     if (known !== void 0) return known;
     const draft = drafts.get(id);
@@ -23689,7 +23702,7 @@ function evaluate(input) {
   };
   const firstOpen = (requires) => {
     for (const id of requires) {
-      const required2 = resolve8(id);
+      const required2 = resolve9(id);
       if (required2 === void 0) return `${id} does not exist`;
       if (required2.state !== "done") return `${id} is ${required2.state}, not done`;
     }
@@ -23762,7 +23775,7 @@ function evaluate(input) {
     let readyAt;
     let incomplete = false;
     for (const id of requires) {
-      const required2 = resolve8(id);
+      const required2 = resolve9(id);
       const at = required2?.gate?.passedIn?.at ?? required2?.recorded?.at ?? (required2?.kind !== void 0 && kinds.get(required2.kind)?.doneBy.through === "construction" ? "" : void 0);
       if (at === void 0) incomplete = true;
       else if (at !== "" && (readyAt === void 0 || at > readyAt)) readyAt = at;
@@ -23779,7 +23792,7 @@ function evaluate(input) {
       entries: view.entries
     });
   };
-  for (const id of order2) resolve8(id);
+  for (const id of order2) resolve9(id);
   const sealed = sealedIds(order2, results);
   const nodes = order2.flatMap((id) => {
     const result2 = results.get(id);
@@ -25157,12 +25170,18 @@ function acceptCommand(deps) {
 
 // kernel/src/rules/render/show.ts
 function renderTicketRules(rules2) {
-  const heading = `## BDK rules: ${rules2.ticket} (${rules2.role}, ${rules2.target})
+  return ruleList(`${rules2.ticket} (${rules2.role}, ${rules2.target})`, rules2.role, rules2.rules);
+}
+function renderRoleRules(rules2) {
+  return ruleList(`${rules2.role} (${rules2.files.join(", ")})`, rules2.role, rules2.rules);
+}
+function ruleList(title, role2, rules2) {
+  const heading = `## BDK rules: ${title}
 `;
-  if (rules2.rules.length === 0) return `${heading}
-No rules for the role ${rules2.role}.
+  if (rules2.length === 0) return `${heading}
+No rules for the role ${role2}.
 `;
-  const lines = rules2.rules.map((rule2) => {
+  const lines = rules2.map((rule2) => {
     const matched = rule2.matchedBy === null ? "" : ` (matched by ${rule2.matchedBy})`;
     return `- [${rule2.id}] ${rule2.text}${matched}`;
   });
@@ -25195,6 +25214,7 @@ ${rule2.text}
 }
 
 // kernel/src/rules/use-cases/show.ts
+import { relative as relative13, resolve as resolve6, sep as sep12 } from "node:path";
 function showRule(deps, projectRoot2, globalDir2, id) {
   const context = loadContext(deps, projectRoot2, globalDir2);
   if ("refused" in context) return context;
@@ -25225,6 +25245,37 @@ function showRule(deps, projectRoot2, globalDir2, id) {
     disabled: context.disabled.includes(id),
     text: rule2.text
   };
+}
+function showRoleRules(deps, where, role2, files) {
+  const known = ROLES.find((name) => name === role2);
+  if (known === void 0) {
+    return refuse("input/not-found", `${role2} is not a role; the roles are ${ROLES.join(", ")}`, [
+      "bdk rules show --role reviewer --file <path>"
+    ]);
+  }
+  const paths = [];
+  for (const file of files) {
+    const inside = relative13(where.projectRoot, resolve6(where.cwd, file));
+    if (inside === "" || inside === ".." || inside.startsWith(`..${sep12}`)) {
+      return refuse(
+        "input/not-found",
+        `${file} resolves outside the repository ${where.projectRoot}`,
+        [`bdk rules show --role ${role2} --file <path inside the repository>`]
+      );
+    }
+    paths.push(inside.split(sep12).join("/"));
+  }
+  const context = loadContext(deps, where.projectRoot, where.globalDir);
+  if ("refused" in context) return context;
+  const rules2 = selectFor(context, known, paths).selected.map(({ rule: rule2, matchedBy }) => ({
+    id: rule2.id,
+    kind: rule2.kind,
+    severity: rule2.severity,
+    ...rule2.applies === void 0 ? {} : { applies: rule2.applies },
+    matchedBy,
+    text: rule2.text
+  }));
+  return { role: known, files: paths, rules: rules2 };
 }
 function showTicketRules(deps, change, globalDir2, value) {
   return withIndex(deps.openIndex, deps.store, change.projectRoot, (index2) => {
@@ -25285,23 +25336,48 @@ function showTicketRules(deps, change, globalDir2, value) {
 }
 
 // kernel/src/rules/commands/show.ts
+var FORMS = "rules show takes exactly one of <id>, --ticket <ticket> and --role <role> --file <path>";
+function values(value) {
+  if (value === void 0 || value === true) return [];
+  return typeof value === "string" ? [value] : [...value];
+}
 function showCommand3(deps) {
   return async (context) => {
     const id = context.positionals["<id>"];
     const ticket = context.flags["--ticket"];
-    if (id !== void 0 && ticket !== void 0) {
-      return refuse("input/invalid-argument", "rules show takes <id> or --ticket, not both", [
-        "bdk rules show --ticket <ticket>"
+    const role2 = context.flags["--role"];
+    const files = values(context.flags["--file"]);
+    const byRole = role2 !== void 0 || files.length > 0;
+    const forms = [id !== void 0, ticket !== void 0, byRole].filter(Boolean).length;
+    if (forms > 1) {
+      return refuse("input/invalid-argument", FORMS, [
+        "bdk rules show --ticket <ticket>",
+        "bdk rules show --role <role> --file <path>"
       ]);
     }
+    const projectRoot2 = () => findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd);
+    if (byRole) {
+      if (typeof role2 !== "string" || files.length === 0) {
+        return refuse("input/invalid-argument", "--role and --file go together", [
+          "bdk rules show --role <role> --file <path>"
+        ]);
+      }
+      const where = {
+        projectRoot: projectRoot2(),
+        globalDir: globalDir(context.runtime),
+        cwd: context.cwd
+      };
+      const rules3 = showRoleRules(deps, where, role2, files);
+      return isRefusal(rules3) ? rules3 : { data: rules3, text: renderRoleRules(rules3) };
+    }
     if (typeof id === "string") {
-      const projectRoot2 = findProjectRoot(deps.store, context.cwd, context.workTree ?? context.cwd);
-      const rule2 = showRule(deps, projectRoot2, globalDir(context.runtime), id);
+      const rule2 = showRule(deps, projectRoot2(), globalDir(context.runtime), id);
       return isRefusal(rule2) ? rule2 : { data: rule2, text: renderRule(rule2) };
     }
     if (typeof ticket !== "string") {
-      return refuse("input/missing-argument", "rules show needs <id> or --ticket <ticket>", [
-        "bdk rules show --ticket <ticket>"
+      return refuse("input/missing-argument", FORMS, [
+        "bdk rules show --ticket <ticket>",
+        "bdk rules show --role <role> --file <path>"
       ]);
     }
     const change = context.resolveChange?.();
@@ -25684,7 +25760,7 @@ function renderDiff(report2) {
 }
 
 // kernel/src/spec/use-cases/check.ts
-import { join as join42, relative as relative14 } from "node:path";
+import { join as join42, relative as relative15 } from "node:path";
 
 // kernel/src/spec/domain/grammar.ts
 var SECTIONS = [
@@ -26042,7 +26118,7 @@ function sorted2(problems) {
 }
 
 // kernel/src/spec/use-cases/files.ts
-import { join as join41, relative as relative13 } from "node:path";
+import { join as join41, relative as relative14 } from "node:path";
 
 // kernel/src/spec/config.ts
 var specModule = defineConfigModule({
@@ -26107,7 +26183,7 @@ function listDeltas(store2, changeDir) {
       if (name.endsWith("/")) visit2(path);
       else if (name.endsWith(".md")) {
         const text13 = store2.read(path) ?? "";
-        const capability2 = relative13(root, path).slice(0, -".md".length).replaceAll("\\", "/");
+        const capability2 = relative14(root, path).slice(0, -".md".length).replaceAll("\\", "/");
         found.push({ capability: capability2, path, text: text13, delta: parseDelta(text13) });
       }
     }
@@ -26160,7 +26236,7 @@ function deltaReport(store2, change, file, word) {
   const problems = checkDelta({ delta: file.delta, current, changeId: change.id, word });
   return {
     capability: file.capability,
-    path: relative14(change.projectRoot, file.path),
+    path: relative15(change.projectRoot, file.path),
     valid: problems.length === 0,
     problems
   };
@@ -26247,7 +26323,7 @@ function diffDelta(current, delta) {
 }
 
 // kernel/src/spec/use-cases/merge.ts
-import { relative as relative15 } from "node:path";
+import { relative as relative16 } from "node:path";
 
 // kernel/src/spec/domain/merge.ts
 function mergeDelta(current, delta) {
@@ -26388,7 +26464,7 @@ function planMerge(store2, change, word, dryRun) {
     const living = current.living;
     if (living === void 0) continue;
     if (!hashMatches(living)) {
-      const path = relative15(change.projectRoot, current.path);
+      const path = relative16(change.projectRoot, current.path);
       return refuse(
         "policy/merge-hash-mismatch",
         living.hash === void 0 ? `${path} was not written by the merge: it has no bdk-merge-hash` : `${path} was edited by hand: content hash differs from bdk-merge-hash`,
@@ -26411,7 +26487,7 @@ function planMerge(store2, change, word, dryRun) {
     if (text13 !== current.text) writes.push({ path: current.path, text: text13 });
     return {
       capability: file.capability,
-      path: relative15(change.projectRoot, current.path),
+      path: relative16(change.projectRoot, current.path),
       mergeHash: hash2,
       ...result2.counts
     };
@@ -26470,7 +26546,7 @@ function diffCommand(deps) {
 }
 
 // kernel/src/spec/use-cases/hash.ts
-import { join as join44, relative as relative16 } from "node:path";
+import { join as join44, relative as relative17 } from "node:path";
 function mergeHashFindings(store2, projectRoot2) {
   const found = [];
   const visit2 = (dir) => {
@@ -26482,7 +26558,7 @@ function mergeHashFindings(store2, projectRoot2) {
       }
       if (name !== "spec.md") continue;
       const living = livingOf(store2.read(path) ?? "");
-      const shown = relative16(projectRoot2, path);
+      const shown = relative17(projectRoot2, path);
       if (living.hash === void 0) {
         found.push({
           path: shown,
@@ -27064,8 +27140,8 @@ ${rule2.text.trimEnd()}`).join("\n\n"),
   return `${sections.join("\n\n")}
 `;
 }
-function fillTemplate(template, values2) {
-  return template.replaceAll("{change}", values2.change).replaceAll("{node}", values2.node).replaceAll("{profile}", values2.profile).replaceAll("{paths}", values2.paths.join(", "));
+function fillTemplate(template, values3) {
+  return template.replaceAll("{change}", values3.change).replaceAll("{node}", values3.node).replaceAll("{profile}", values3.profile).replaceAll("{paths}", values3.paths.join(", "));
 }
 function finish(node3, kind) {
   const { doneBy } = kind;
@@ -27111,14 +27187,14 @@ function executeWave(input) {
 }
 
 // kernel/src/graph/use-cases/instruction.ts
-import { posix as posix6, relative as relative17, sep as sep12 } from "node:path";
+import { posix as posix6, relative as relative18, sep as sep13 } from "node:path";
 function instructionOf(deps, change, read2, node3) {
   const kind = read2.kinds.get(node3.kind);
   if (kind === void 0) throw new Error(`${node3.id} has the unknown kind ${node3.kind}`);
   const key = templateKey(deps, node3.kind);
   const value = read2.resolved.prompts.values.get(key);
   if (value === void 0) throw new Error(`the prompt value ${key} has no file in any layer`);
-  const dir = relative17(change.projectRoot, change.dir).split(sep12).join("/");
+  const dir = relative18(change.projectRoot, change.dir).split(sep13).join("/");
   const writes = kind.writes(read2.view, node3.nn);
   return composeInstruction({
     node: node3,
@@ -29017,7 +29093,7 @@ function viewOf2(result2) {
 }
 
 // kernel/src/change/use-cases/close.ts
-import { relative as relative18, sep as sep13 } from "node:path";
+import { relative as relative19, sep as sep14 } from "node:path";
 
 // kernel/src/change/config.ts
 var archiveModule = defineConfigModule({
@@ -29154,7 +29230,7 @@ function gatesByPolicy(entries2) {
   return [...new Set(gates)].sort();
 }
 function relativePath2(projectRoot2, path) {
-  return relative18(projectRoot2, path).split(sep13).join("/");
+  return relative19(projectRoot2, path).split(sep14).join("/");
 }
 
 // kernel/src/change/use-cases/facts.ts
@@ -29690,7 +29766,7 @@ function previousSession(deps, change, index2, opened) {
 function text9(value) {
   return typeof value === "string" ? value : void 0;
 }
-function values(value) {
+function values2(value) {
   if (value === void 0 || value === true) return [];
   return typeof value === "string" ? [value] : [...value];
 }
@@ -29754,7 +29830,7 @@ function parkCommand(deps) {
   return async (context) => {
     const report2 = await parkChange(deps, active7(context.change), globalDir(context.runtime), {
       reason: text9(context.flags["--reason"]),
-      options: values(context.flags["--option"])
+      options: values2(context.flags["--option"])
     });
     return isRefusal(report2) ? report2 : { data: report2, text: renderPark(report2) };
   };
@@ -29812,7 +29888,7 @@ function renderCommit(report2) {
 }
 
 // kernel/src/commit/use-cases/commit.ts
-import { join as join53, relative as relative19, sep as sep14 } from "node:path";
+import { join as join53, relative as relative20, sep as sep15 } from "node:path";
 
 // kernel/src/commit/domain/report.ts
 function commitMessage(subject, trailers) {
@@ -29873,7 +29949,7 @@ async function commitOneTask(deps, change, index2, input) {
   }
   const diff = await diffCheck(deps, change, index2, { task: input.task });
   if ("refused" in diff) return diff;
-  const dir = `${relative19(change.projectRoot, change.dir).split(sep14).join("/")}/`;
+  const dir = `${relative20(change.projectRoot, change.dir).split(sep15).join("/")}/`;
   const code = [...diff.declared, ...diff.undeclared];
   if (code.length === 0 && (await changedPaths(deps.git, change.projectRoot, [dir])).length === 0) {
     return refuse(
@@ -29926,7 +30002,7 @@ async function commitReviewFix(deps, change, index2, message) {
   const ticket = open2.data.ticket;
   const diff = await diffCheck(deps, change, index2, { change: true });
   if ("refused" in diff) return diff;
-  const dir = `${relative19(change.projectRoot, change.dir).split(sep14).join("/")}/`;
+  const dir = `${relative20(change.projectRoot, change.dir).split(sep15).join("/")}/`;
   const changed = await changedPaths(deps.git, change.projectRoot, [dir]);
   if (diff.declared.length === 0 && changed.length === 0) {
     return refuse(
@@ -30465,7 +30541,7 @@ import { createHash as createHash7 } from "node:crypto";
 import { join as join58, posix as posix7 } from "node:path";
 
 // kernel/src/export/commands/agents.ts
-import { resolve as resolve6 } from "node:path";
+import { resolve as resolve7 } from "node:path";
 
 // kernel/src/export/render/agents.ts
 function renderAgents(report2) {
@@ -30479,7 +30555,7 @@ function renderAgents(report2) {
 }
 
 // kernel/src/export/use-cases/agents.ts
-import { join as join57, relative as relative20 } from "node:path";
+import { join as join57, relative as relative21 } from "node:path";
 
 // kernel/src/export/domain/adapters.ts
 var CONTRACT = "You are a BDK %s: follow the role contract you were given, in the forked role skill or in the dispatch package your prompt names, and ";
@@ -30596,7 +30672,7 @@ function exportAgents(deps, request) {
   const drift = [];
   const files = ADAPTERS.map((adapter) => {
     const target = join57(out, `${adapter.name}.md`);
-    const path = relative20(request.root, target);
+    const path = relative21(request.root, target);
     const content = adapterFile(adapter, host);
     const current = deps.store.read(target);
     const changed = current !== content;
@@ -30629,7 +30705,7 @@ function agentsCommand(deps) {
     const out = context.flags["--out"];
     const report2 = exportAgents(deps, {
       host,
-      ...typeof out === "string" ? { out: resolve6(context.cwd, out) } : {},
+      ...typeof out === "string" ? { out: resolve7(context.cwd, out) } : {},
       check: context.flags["--check"] === true,
       root: context.workTree ?? context.cwd
     });
@@ -30759,18 +30835,32 @@ ${sections.join("\n\n")}`;
 
 // kernel/src/dispatch/domain/entries.ts
 var CLOSED_BLOCKER = ["resolved", "superseded"];
-function selectEntries(entries2, names) {
+function selectEntries(entries2, names, always = () => false) {
   const wanted = new Set(names);
   const full = [];
   const counted = {};
   for (const entry2 of entries2) {
     if (entry2.type === "transition") continue;
+    if (always(entry2)) {
+      full.push(entry2);
+      continue;
+    }
     if (!entry2.refs.some((ref) => wanted.has(ref.split("#")[0] ?? ref))) continue;
     if (inFull(entry2)) full.push(entry2);
     else counted[entry2.type] = (counted[entry2.type] ?? 0) + 1;
   }
   return { full, counted };
 }
+function fileRefs(entries2) {
+  const files = /* @__PURE__ */ new Set();
+  for (const ref of entries2.flatMap((entry2) => entry2.refs)) {
+    const path = ref.split("#")[0] ?? "";
+    if (!/[./]/.test(path) || QUALIFIED_ID.test(path)) continue;
+    files.add(path);
+  }
+  return [...files];
+}
+var QUALIFIED_ID = /^(?:[^/]+\/[LAE]-[0-9a-z]{8}|(?:input|policy|state|runtime|kernel|guard)\/[a-z0-9-]+)$/;
 function inFull(entry2) {
   if (entry2.type === "decision") return entry2.status === "accepted";
   return entry2.type === "blocker" && !CLOSED_BLOCKER.includes(entry2.status);
@@ -30903,13 +30993,13 @@ var SECTIONS3 = [
     skeleton: "## Return\n\nWrite your entries with `bdk log add <type> <summary> --ref <ref> --ticket {{ref}}`. Then pipe the full report to `bdk log ingest --ticket {{ref}}`, the envelope (`status`, `files`, `entries`, `evidence`, and `reason` for `blocked` or `needs-context`) as its frontmatter. When it refuses, fix the named field and call it again. Return only the envelope and the report path `{{report}}`."
   }
 ];
-function renderSections(values2, kinds) {
+function renderSections(values3, kinds) {
   return SECTIONS3.filter(
     (section) => section.only === void 0 || kinds.includes(section.only)
   ).map((section) => ({
     name: section.name,
     text: section.skeleton.replace(/\{\{([a-z-]+)\}\}/g, (_, name) => {
-      const value = values2[name];
+      const value = values3[name];
       if (value === void 0) throw new Error(`the package template has no value for ${name}`);
       return value;
     })
@@ -31051,7 +31141,13 @@ function buildPackage(deps, change, globalDir2, input) {
       ...role2 === "integration-reviewer" ? ["risks"] : []
     ];
     const roleBody = readRoleBody(deps, role2);
-    const selection = selectEntries(listEntries(index2, change.id), target.names);
+    const reviewFix = role2 === "implementer" && record5.data.loop === "review-fix" && group === void 0;
+    const selection = selectEntries(
+      listEntries(index2, change.id),
+      target.names,
+      reviewFix ? (entry2) => isBlocking(entry2, "review", { triaged: true }) : void 0
+    );
+    const fixFiles = reviewFix ? fileRefs(selection.full) : [];
     const sections = renderSections(
       {
         ticket: input.ticket,
@@ -31082,7 +31178,7 @@ function buildPackage(deps, change, globalDir2, input) {
         resolved
       ),
       role2,
-      group === void 0 ? target.files : groupFiles(input.files, parts, input.part)
+      group !== void 0 ? groupFiles(input.files, parts, input.part) : fixFiles.length > 0 ? fixFiles : target.files
     );
     const templateHash = hashOf([
       templateSkeleton(),
@@ -31298,15 +31394,15 @@ function hashOf(texts) {
 }
 
 // kernel/src/dispatch/use-cases/show.ts
-import { isAbsolute as isAbsolute5, join as join59, posix as posix8, relative as relative21, sep as sep15 } from "node:path";
+import { isAbsolute as isAbsolute5, join as join59, posix as posix8, relative as relative22, sep as sep16 } from "node:path";
 var TICKET = /^A-[0-9a-z]{8}(?:@.*)?$/;
 function showPackage(deps, change, cwd, value) {
   const dir = join59(change.dir, "dispatch");
   const resolved = TICKET.test(value) ? resolveTicketRef(deps.store, change.projectRoot, change.dir, value) : void 0;
   if (resolved !== void 0 && isRefusal(resolved)) return resolved;
   const path = resolved ? resolved.package === void 0 ? void 0 : join59(change.projectRoot, resolved.package.path) : isAbsolute5(value) ? value : join59(cwd, value);
-  const inside = path === void 0 ? "" : relative21(dir, path);
-  const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep15) ? void 0 : deps.store.read(path);
+  const inside = path === void 0 ? "" : relative22(dir, path);
+  const content = path === void 0 || inside === "" || inside.startsWith("..") || inside.includes(sep16) ? void 0 : deps.store.read(path);
   const document = path === void 0 || content === void 0 ? void 0 : readDocument(deps.store, path);
   if (path === void 0 || content === void 0 || document === void 0 || !("data" in document)) {
     return refuse(
@@ -31779,7 +31875,7 @@ function elapsedOf(deps, row) {
 }
 
 // kernel/src/hooks/use-cases/lifecycle.ts
-import { isAbsolute as isAbsolute6, join as join61, relative as relative22 } from "node:path";
+import { isAbsolute as isAbsolute6, join as join61, relative as relative23 } from "node:path";
 
 // kernel/src/hooks/domain/shell.ts
 var LEADING = /* @__PURE__ */ new Set([
@@ -32520,7 +32616,7 @@ function packageOf(deps, projectRoot2, prompt2) {
   const [written] = paths;
   if (paths.length !== 1 || written === void 0) return {};
   const absolute = isAbsolute6(written) ? written : join61(projectRoot2, written);
-  const path = relative22(projectRoot2, absolute);
+  const path = relative23(projectRoot2, absolute);
   try {
     const document = readDocument(deps.store, absolute);
     if (document?.kind !== "dispatch" || !("data" in document)) return { package: path };
@@ -32757,10 +32853,10 @@ function commandHelp(index2, record5) {
   if (record5.args.length > 0) {
     lines.push("", "arguments:");
     for (const arg2 of record5.args) {
-      const values2 = arg2.values === void 0 ? "" : ` (${arg2.values.join("|")})`;
+      const values3 = arg2.values === void 0 ? "" : ` (${arg2.values.join("|")})`;
       const repeatable = arg2.repeatable === true ? " (repeatable)" : "";
       const detail = [arg2.required ? "required" : "optional", arg2.description].filter(Boolean).join("; ");
-      lines.push(`  ${arg2.name}${values2}${repeatable}  ${detail}`);
+      lines.push(`  ${arg2.name}${values3}${repeatable}  ${detail}`);
     }
   }
   if (record5.flags.length > 0) {
@@ -32835,7 +32931,7 @@ function nodeVersionRefusal(version3) {
 }
 
 // kernel/src/shared/registry/resolve.ts
-function resolve7(index2, argv) {
+function resolve8(index2, argv) {
   for (let length = 3; length >= 1; length--) {
     const words = argv.slice(0, length);
     if (words.length < length) continue;
@@ -32907,7 +33003,7 @@ async function run(index2, byId, options, invocation) {
   const { argv, streams } = invocation;
   const asJson = argv.includes("--json");
   const help = argv.includes("--help");
-  const resolved = resolve7(index2, argv);
+  const resolved = resolve8(index2, argv);
   if (resolved === void 0) {
     const [first] = argv;
     const usage = first === void 0 || first === "--help" ? globalHelp(index2) : help ? groupHelp(index2, first) : void 0;
@@ -33257,7 +33353,7 @@ async function recordMessage(deps, place2, payload) {
 }
 function classifier(commands) {
   return (argv) => {
-    const resolved = resolve7(commands, argv);
+    const resolved = resolve8(commands, argv);
     if (resolved === void 0) return void 0;
     const { record: record5, rest } = resolved;
     const valued = new Set(
@@ -33868,8 +33964,8 @@ function modules(paths, moduleOf2) {
   }
   return new Map(sorted3(byModule2.keys()).map((module) => [module, byModule2.get(module) ?? []]));
 }
-function sorted3(values2) {
-  return [...values2].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+function sorted3(values3) {
+  return [...values3].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
 }
 
 // kernel/src/review/use-cases/plan.ts

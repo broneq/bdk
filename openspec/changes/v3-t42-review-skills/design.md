@@ -60,7 +60,7 @@ The four gaps in Context block the acceptance signal ("`cr` on a fixture writes 
   - Alternative: `cr` runs `git commit`. Lost because the main thread would build trailers and pick paths by hand, which the commit command exists to prevent (T3, P6).
   - Alternative: the implementer commits. Lost because `hooks pre-tool` denies git and `bdk commit` to subagents (`guard/subagent-git`, `guard/subagent-kernel-command`).
 - **Blocking entries in the fix package.**
-  - The predicate "live blocker not triaged `not-a-problem`, or live entry triaged `blocker`" moves out of `graph/domain/kinds/verdicts.ts` into a pure helper under `shared/`. Both the `review` verdict and `dispatch build` call it, so the two can never disagree.
+  - The predicate "live `blocker` naming `review`, or live entry triaged `blocker`" moves out of `graph/domain/kinds/verdicts.ts` into a pure helper in `shared/vocabulary/`, the one shared module `domain/` may import. Both the `review` verdict and `dispatch build` call it, so the two can never disagree.
   - Rules are selected by the entries' file refs.
   - Alternative: the implementer reads `log list`. Lost because it breaks "files carry the substance" (T23-D0): the package would not hold what binds the agent.
 - **Review Change kind.**

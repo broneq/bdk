@@ -10,6 +10,7 @@ import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import {
   memoryIndex,
+  memoryStore,
   readAttempts,
   stampPackage,
   writeDocument,
@@ -295,6 +296,89 @@ describe("rules show --ticket", () => {
       "--json",
     ]);
     expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+  });
+});
+
+describe("rules show --role --file (T42)", () => {
+  /** The bundle and project rules in a repository with no Change. */
+  function noChange(): Store {
+    const store = memoryStore();
+    store.write(`${PLUGIN}/rules/code-quality/BDK-CQ-1.md`, rule("BDK-CQ-1"));
+    store.write(`${ROOT}/.bdk/rules/API-1.md`, rule("API-1", "applies: [src/api/**]\n", "user"));
+    store.write(`${ROOT}/.bdk/rules/UI-1.md`, rule("UI-1", "applies: [web/**]\n", "user"));
+    return store;
+  }
+
+  it("prints the selection of the role and file set without a Change, as rules explain does", async () => {
+    const store = noChange();
+    const result = await run(store, [
+      "rules",
+      "show",
+      "--role",
+      "pr-reviewer",
+      "--file",
+      "src/api/login.ts",
+      "--json",
+    ]);
+    expect(result.code, result.stdout).toBe(0);
+    const shown = rulesShowOutput.parse(result.json);
+    expect(shown).toMatchObject({ role: "pr-reviewer", files: ["src/api/login.ts"] });
+    const ids = (shown as { rules: { id: string }[] }).rules.map((item) => item.id);
+    expect(ids).toContain("API-1");
+    expect(ids).not.toContain("UI-1");
+    expect((shown as { rules: { id: string; text: string }[] }).rules).toContainEqual(
+      expect.objectContaining({ id: "API-1", text: "Text of API-1.", matchedBy: "src/api/**" }),
+    );
+    const explained = await run(store, [
+      "rules",
+      "explain",
+      "src/api/login.ts",
+      "--role",
+      "pr-reviewer",
+      "--json",
+    ]);
+    expect(ids).toStrictEqual(
+      (explained.json as { rules: { id: string }[] }).rules.map((item) => item.id),
+    );
+  });
+
+  it("prints one heading with the role and the files in text mode", async () => {
+    const result = await run(noChange(), [
+      "rules",
+      "show",
+      "--role",
+      "reviewer",
+      "--file",
+      "src/api/login.ts",
+      "--file",
+      "web/form.ts",
+    ]);
+    expect(result.stdout.split("\n")[0]).toBe(
+      "## BDK rules: reviewer (src/api/login.ts, web/form.ts)",
+    );
+  });
+
+  it.each([
+    ["--role without --file", ["--role", "reviewer"]],
+    ["--file without --role", ["--file", "src/a.ts"]],
+    [
+      "--role with --ticket",
+      ["--role", "reviewer", "--file", "src/a.ts", "--ticket", "A-7f3k9m2q"],
+    ],
+    ["--role with <id>", ["API-1", "--role", "reviewer", "--file", "src/a.ts"]],
+  ])("refuses %s with input/invalid-argument", async (_, flags) => {
+    const result = await run(noChange(), ["rules", "show", ...flags, "--json"]);
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+  });
+
+  it.each([
+    ["an unknown role", ["--role", "auditor", "--file", "src/a.ts"]],
+    ["a path outside the repository", ["--role", "reviewer", "--file", "../elsewhere/a.ts"]],
+  ])("refuses %s with input/not-found", async (_, flags) => {
+    const result = await run(noChange(), ["rules", "show", ...flags, "--json"]);
+    expect(result.code).toBe(3);
+    expect(result.json).toMatchObject({ rule: "input/not-found" });
   });
 });
 
