@@ -18,7 +18,7 @@ const PLUGIN_FILES = {
   [`${PLUGIN}/.claude-plugin/plugin.json`]: '{"version": "3.0.0"}',
 };
 const MODELINE =
-  "# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json\n";
+  "# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/dist-v3.0.0/schema/settings.json\n";
 
 function run(project: Record<string, string>, { inGit = true } = {}) {
   const files: Record<string, string> = { ...PLUGIN_FILES };
