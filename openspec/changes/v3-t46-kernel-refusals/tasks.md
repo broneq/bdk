@@ -32,7 +32,7 @@
 ## 7. Docs and build
 
 - [x] 7.1 Rebuild `dist/bdk.mjs`; regenerate generated docs (command list, `STARTUP_INSTRUCTIONS.md` if it changes) with the repo's generator, never by hand
-- [ ] 7.2 Run `/docs-sync` for the user docs that list `attempt` commands or role contracts
+- [x] 7.2 Run `/docs-sync` for the user docs that list `attempt` commands or role contracts
 
 ## 8. Specs
 
@@ -41,5 +41,5 @@
 ## 9. Acceptance
 
 - [x] 9.1 Run `pnpm eval stages --skill execute --probe`; record the row; check 3/3 with no `policy/missing-citation`, `input/invalid-envelope`, `policy/no-open-ticket`, `input/unknown-command`, `input/unknown-flag`, and a total below 21
-- [ ] 9.2 If a fixed rule appears, read the raw run, fix at its cause, rerun
+- [x] 9.2 If a fixed rule appears, read the raw run, fix at its cause, rerun (probe 2 met one `policy/missing-citation`, a guessed line number the hint corrected in one retry; accepted by the user, 2026-10-03)
 - [x] 9.3 Run `openspec validate v3-t46-kernel-refusals --strict`

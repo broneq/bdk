@@ -45,3 +45,5 @@ Resolved from the "To resolve in the spec" list of #109; rationale in design.md.
 1. **Kernel absorbs** three rows: the empty `reason`, the citation hint, `attempt show`. **Contracts fix** the rest: `missing-evidence`, `no-open-ticket`, `ticket-open`, `entries-missing`, `unknown-flag`, `invalid-argument`.
 2. **The runner's output file** is any text file the runner writes (its scratchpad); `evidence record` already copies text up to `max-committed-bytes` into the Change, so no new store and no new limit.
 3. **`attempt show` is worth a command**, next to `attempt list --for`.
+
+4. **Probe acceptance, 2026-10-03** (user decision): the second `execute` probe passed 3/3 with 6 refusals in total (T41 probe 2: 21) and none of `input/invalid-envelope`, `policy/no-open-ticket`, `input/unknown-command`, `input/unknown-flag`. One `policy/missing-citation` remained, a guessed line number that the hint corrected in one retry; the user accepted it. Rejected: the kernel taking `file:N=text` when the text is on another line (a citation then stops naming a place, T23-D47).
