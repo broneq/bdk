@@ -400,6 +400,8 @@ export interface TrailerCommit {
   readonly subject: string;
   readonly part?: string;
   readonly task?: string;
+  /** `BDK-Ticket` of a review fix (`bdk commit <change-id>`, T42). */
+  readonly ticket?: string;
 }
 
 const TRAILER_FORMAT = [
@@ -408,11 +410,12 @@ const TRAILER_FORMAT = [
   "%(trailers:key=BDK-Change,valueonly,separator=%x2c)",
   "%(trailers:key=BDK-Part,valueonly,separator=%x2c)",
   "%(trailers:key=BDK-Task,valueonly,separator=%x2c)",
+  "%(trailers:key=BDK-Ticket,valueonly,separator=%x2c)",
 ].join("%x1f");
 
 /**
  * The commits whose `BDK-Change` trailer names `change`, newest first, with
- * their `BDK-Part` and `BDK-Task` trailers (progress from git, V1-4). No
+ * their `BDK-Part`, `BDK-Task` and `BDK-Ticket` trailers (progress from git, V1-4). No
  * commits before the first one; a missing git is `runtime/git-missing`.
  */
 export async function trailerCommits(
@@ -433,7 +436,7 @@ export async function trailerCommits(
   if (result.code !== 0) return [];
   const commits: TrailerCommit[] = [];
   for (const record of result.stdout.split("\x1e")) {
-    const [commit = "", subject = "", changes = "", part = "", task = ""] = record
+    const [commit = "", subject = "", changes = "", part = "", task = "", ticket = ""] = record
       .trim()
       .split("\x1f");
     if (commit === "" || !changes.split(",").some((value) => value.trim() === change)) continue;
@@ -442,6 +445,7 @@ export async function trailerCommits(
       subject,
       ...(part.trim() === "" ? {} : { part: part.trim() }),
       ...(task.trim() === "" ? {} : { task: task.trim() }),
+      ...(ticket.trim() === "" ? {} : { ticket: ticket.trim() }),
     });
   }
   return commits;

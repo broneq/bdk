@@ -1326,7 +1326,7 @@
     {
       "id": "commit",
       "argv": ["commit"],
-      "summary": "Commit a task: code plus Change directory, with BDK trailers, after the diff check.",
+      "summary": "Commit a task, or the fix of a review round: code plus Change directory, with BDK trailers, after the diff check.",
       "availability": "orchestrator",
       "mode": "command",
       "slice": "commit",
@@ -1334,15 +1334,16 @@
       "changeScoped": true,
       "args": [
         {
-          "name": "<task>",
-          "required": true
+          "name": "<task|change-id>",
+          "required": true,
+          "description": "A task id, or the id of the active Change for a review fix."
         }
       ],
       "flags": [
         {
           "name": "--message",
           "value": "<text>",
-          "description": "Subject line; default the task title."
+          "description": "Subject line; default the task title, or `fix(review): <ticket>` for a review fix."
         }
       ],
       "output": "output/commit.json",
@@ -1353,6 +1354,7 @@
         "policy/do-not-touch",
         "policy/git-in-progress",
         "policy/git-hook-failed",
+        "policy/no-open-ticket",
         "policy/nothing-to-commit",
         "policy/ticket-open",
         "runtime/git-missing"

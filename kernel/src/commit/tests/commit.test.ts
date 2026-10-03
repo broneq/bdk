@@ -88,7 +88,7 @@ describe("commit lock (T41-D12)", () => {
     expect(result.code).toBe(2);
     expect(refusal(result)).toMatchObject({ rule: "policy/commit-busy" });
     expect(refusal(result).why).toBe(
-      "process 4242 has held .bdk/.machine/commit.lock for task 02-3 since 2026-09-25T09:59:00.000Z",
+      "process 4242 has held .bdk/.machine/commit.lock for 02-3 since 2026-09-25T09:59:00.000Z",
     );
     expect((result.json as { instead: string[] }).instead).toEqual([
       'bdk commit 01-1 --message "store it"',
@@ -152,7 +152,7 @@ describe("commit", () => {
         CHANGE_DIR,
       ],
     ]);
-    const finding = findings(h).find((entry) => entry.id === report.finding);
+    const finding = findings(h).find((entry) => "task" in report && entry.id === report.finding);
     expect(finding).toMatchObject({ source: "kernel", refs: ["01-1", "src/util.ts"] });
   });
 
@@ -243,6 +243,91 @@ describe("commit", () => {
     h.git.status = ["src/01-2.ts"];
     expect((await h.run(["commit", "01-2", "--json"])).code).toBe(0);
     expect(guard()).toHaveLength(1);
+  });
+
+  describe("review fix (T42)", () => {
+    const CHANGE = "2026-09-25-login";
+    const TICKET = "A-r2v2w3x4";
+
+    async function fixing(): Promise<Harness> {
+      const h = await started();
+      // Every task is committed: the review stage follows execute.
+      h.git.commits = [
+        ["c2".repeat(20), "01", "01-2"],
+        ["c1".repeat(20), "01", "01-1"],
+      ];
+      openTicket(h.store, TICKET, CHANGE, "review-fix");
+      return h;
+    }
+
+    it("commits every touched path and the Change directory with BDK-Ticket, the ticket open", async () => {
+      const h = await fixing();
+      h.git.status = ["src/util.ts", "src/01-1.ts", `${CHANGE_DIR}log/e.md`];
+      const result = await h.run(["commit", CHANGE, "--json"]);
+      expect(result.code, result.stdout).toBe(0);
+      const report = commitOutput.parse(result.json);
+      expect(report).toStrictEqual({
+        ticket: TICKET,
+        commit: "d8e4f21",
+        trailers: { "BDK-Change": CHANGE, "BDK-Ticket": TICKET },
+        files: ["src/01-1.ts", "src/util.ts", `${CHANGE_DIR}log/e.md`],
+      });
+      expect(h.git.committed).toStrictEqual([
+        [
+          "commit",
+          "--quiet",
+          "--only",
+          "-m",
+          `fix(review): ${TICKET}`,
+          "-m",
+          `BDK-Change: ${CHANGE}\nBDK-Ticket: ${TICKET}`,
+          "--",
+          "src/01-1.ts",
+          "src/util.ts",
+          CHANGE_DIR,
+        ],
+      ]);
+      expect(findings(h)).toStrictEqual([]);
+      const record = readDocument(h.store, `${DIR}/attempts/review-fix-${CHANGE}-${TICKET}.md`);
+      expect(record).not.toMatchObject({ data: { outcome: expect.anything() as unknown } });
+    });
+
+    it("leaves a user-staged path staged and out of the commit", async () => {
+      const h = await fixing();
+      h.git.status = ["M  README.md", " M src/util.ts"];
+      const report = commitOutput.parse(
+        (await h.run(["commit", CHANGE, "--message", "Validate the token", "--json"])).json,
+      );
+      expect(report.files).toStrictEqual(["src/util.ts"]);
+      expect(h.git.committed[0]).toContain("Validate the token");
+      expect(h.git.committed[0]).not.toContain("README.md");
+    });
+
+    it("refuses policy/no-open-ticket without an open review-fix ticket, committing nothing", async () => {
+      const h = await started();
+      openTicket(h.store, "A-00000001", "01-1");
+      h.git.status = ["src/util.ts"];
+      const result = await h.run(["commit", CHANGE, "--json"]);
+      expect(result.code).toBe(2);
+      expect(refusal(result)).toMatchObject({ rule: "policy/no-open-ticket" });
+      expect(h.git.committed).toStrictEqual([]);
+    });
+
+    it("refuses policy/do-not-touch and commits nothing", async () => {
+      const h = await fixing();
+      h.git.status = ["src/util.ts", "src/billing/a.ts"];
+      const result = await h.run(["commit", CHANGE, "--json"]);
+      expect(refusal(result)).toMatchObject({ rule: "policy/do-not-touch" });
+      expect(h.git.committed).toStrictEqual([]);
+    });
+
+    it("text output names the ticket", async () => {
+      const h = await fixing();
+      h.git.status = ["src/util.ts"];
+      expect((await h.run(["commit", CHANGE])).stdout).toBe(
+        `review fix of ${TICKET} committed as d8e4f21 (1 file)\n`,
+      );
+    });
   });
 
   it("text output names the commit", async () => {

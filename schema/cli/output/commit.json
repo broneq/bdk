@@ -2,43 +2,80 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/broneq/bdk/v3/schema/cli/output/commit.json",
   "title": "bdk commit --json",
-  "description": "Commit a task: code plus Change directory, with BDK trailers, after the diff check.",
-  "type": "object",
-  "properties": {
-    "task": { "type": "string", "pattern": "^\\d{2}-[1-9]\\d*$" },
-    "commit": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{7}$",
-      "description": "Abbreviated commit."
-    },
-    "trailers": {
+  "description": "Commit a task, or the fix of a review round: code plus Change directory, with BDK trailers, after the diff check.",
+  "anyOf": [
+    {
       "type": "object",
       "properties": {
-        "BDK-Change": { "type": "string", "minLength": 1 },
-        "BDK-Part": { "type": "string", "pattern": "^\\d{2}$" },
-        "BDK-Task": { "type": "string", "pattern": "^\\d{2}-[1-9]\\d*$" }
+        "task": { "type": "string", "pattern": "^\\d{2}-[1-9]\\d*$" },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{7}$",
+          "description": "Abbreviated commit."
+        },
+        "trailers": {
+          "type": "object",
+          "properties": {
+            "BDK-Change": { "type": "string", "minLength": 1 },
+            "BDK-Part": { "type": "string", "pattern": "^\\d{2}$" },
+            "BDK-Task": { "type": "string", "pattern": "^\\d{2}-[1-9]\\d*$" }
+          },
+          "required": ["BDK-Change", "BDK-Part", "BDK-Task"],
+          "additionalProperties": false
+        },
+        "files": {
+          "type": "array",
+          "items": { "type": "string", "description": "Path relative to the project root." },
+          "description": "Every path the commit holds."
+        },
+        "undeclared": {
+          "description": "Committed files no task declares, recorded in `finding`.",
+          "type": "array",
+          "items": { "type": "string", "description": "Path relative to the project root." }
+        },
+        "finding": {
+          "description": "Opaque merge-safe id (`kernel-state`, Identifiers).",
+          "type": "string",
+          "pattern": "^L-[0-9a-z]{8}$"
+        }
       },
-      "required": ["BDK-Change", "BDK-Part", "BDK-Task"],
-      "additionalProperties": false
+      "required": ["task", "commit", "trailers", "files"],
+      "additionalProperties": false,
+      "title": "a task commit"
     },
-    "files": {
-      "type": "array",
-      "items": { "type": "string", "description": "Path relative to the project root." },
-      "description": "Every path the commit holds."
-    },
-    "undeclared": {
-      "description": "Committed files no task declares, recorded in `finding`.",
-      "type": "array",
-      "items": { "type": "string", "description": "Path relative to the project root." }
-    },
-    "finding": {
-      "description": "Opaque merge-safe id (`kernel-state`, Identifiers).",
-      "type": "string",
-      "pattern": "^L-[0-9a-z]{8}$"
+    {
+      "type": "object",
+      "properties": {
+        "ticket": {
+          "type": "string",
+          "pattern": "^A-[0-9a-z]{8}$",
+          "description": "The open `review-fix` ticket the fix was made under (T42)."
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{7}$",
+          "description": "Abbreviated commit."
+        },
+        "trailers": {
+          "type": "object",
+          "properties": {
+            "BDK-Change": { "type": "string", "minLength": 1 },
+            "BDK-Ticket": { "type": "string", "pattern": "^A-[0-9a-z]{8}$" }
+          },
+          "required": ["BDK-Change", "BDK-Ticket"],
+          "additionalProperties": false
+        },
+        "files": {
+          "type": "array",
+          "items": { "type": "string", "description": "Path relative to the project root." },
+          "description": "Every path the commit holds."
+        }
+      },
+      "required": ["ticket", "commit", "trailers", "files"],
+      "additionalProperties": false,
+      "title": "a review fix"
     }
-  },
-  "required": ["task", "commit", "trailers", "files"],
-  "additionalProperties": false,
+  ],
   "examples": [
     {
       "task": "02-3",
@@ -53,6 +90,12 @@
         "src/auth/login.test.ts",
         ".bdk/changes/2026-09-25-passwordless-login/log/20260925T101502Z-finding-L-e8k2s5vw.md"
       ]
+    },
+    {
+      "ticket": "A-r2v2w3x4",
+      "commit": "4b1c9e0",
+      "trailers": { "BDK-Change": "2026-09-25-passwordless-login", "BDK-Ticket": "A-r2v2w3x4" },
+      "files": ["src/auth/login.ts", ".bdk/changes/2026-09-25-passwordless-login/dispatch/"]
     }
   ]
 }

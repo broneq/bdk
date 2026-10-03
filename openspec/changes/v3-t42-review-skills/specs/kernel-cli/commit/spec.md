@@ -4,11 +4,11 @@
 
 Commit a task, or the fix of a review round: code plus Change directory, with BDK trailers, after the diff check. The kernel SHALL implement the command as this requirement and its output schema specify.
 
-- **Synopsis:** `bdk commit <task>|<change-id> [--message <text>]`
+- **Synopsis:** `bdk commit <task|change-id> [--message <text>]`
 - **Availability:** `orchestrator`
 - **Mode:** `command`; Change-scoped
 - **Arguments:**
-  - `<task>|<change-id>` (required). A task id, or the id of the active Change for a review fix.
+  - `<task|change-id>` (required). A task id, or the id of the active Change for a review fix.
   - `--message <text>`. Subject line; default the task title, or `fix(review): <ticket>` for a review fix.
 - **Behaviour:** Runs under the commit lock (Serialised commits). Runs the diff check of `kernel-loops`, Diff check, for the task, exactly as `attempt close` does (P6): a forbidden path refuses, an undeclared file is committed and recorded as one kernel `finding`. Stages the task's touched declared paths, its undeclared paths and `.bdk/changes/<id>/`, and commits only those paths with a pathspec commit, so files the user staged elsewhere stay staged and uncommitted. The message is the subject followed by a trailer block `BDK-Change: <change id>`, `BDK-Part: <part id>`, `BDK-Task: <task id>`, the trailers `rebuild` and `part done` read. The user's git hooks run; a failing hook refuses with `policy/git-hook-failed` and creates no commit. Refuses during a rebase, merge or cherry-pick (`policy/git-in-progress`), while a ticket whose target is the task is open (`policy/ticket-open`), and when neither a path of the task nor the Change directory changed (`policy/nothing-to-commit`). For a `tiny` Change the tiny guard runs after the commit (`kernel-loops`, Tiny guard) and its entry is part of the next commit. Main-thread git stays the user's; this is the only kernel command that creates a task commit, which is why `hooks pre-tool` denies it to subagents (T3).
   **Review fix (T42).** With the active Change's id, the command commits the fix of a review round. It needs an open `review-fix` ticket of the Change (`policy/no-open-ticket` otherwise) and, unlike a task, commits while that ticket is open, because the round reviews the fix after it is committed. The diff check runs for the Change target (`kernel-loops`, Diff check): a forbidden path refuses and no path is reported undeclared. It stages every touched path and `.bdk/changes/<id>/` in one pathspec commit, whose trailers are `BDK-Change: <change id>` and `BDK-Ticket: <ticket>`; the output carries `ticket` in place of `task`. Every other check is the task's.

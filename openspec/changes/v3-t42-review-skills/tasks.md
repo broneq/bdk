@@ -45,7 +45,7 @@
 
 ## 3. Review fix commit (design D3)
 
-- [ ] 3.1 Write failing tests in `kernel/src/commit/tests/`, `kernel/src/attempt/tests/` and E2E:
+- [x] 3.1 Write failing tests in `kernel/src/commit/tests/`, `kernel/src/attempt/tests/` and E2E:
   - `bdk commit <change-id>` with an open `review-fix` ticket commits the touched paths and the Change directory, with trailers `BDK-Change` and `BDK-Ticket`;
   - the ticket stays open, and the output names `ticket`;
   - a fully staged user path stays staged;
@@ -53,7 +53,7 @@
   - a `do-not-touch` path is refused;
   - `attempt close` and `commit` of the Change target report no `diff.undeclared` and write no `finding`;
   - `bdk rebuild` after such a commit raises no `state/trailer-mismatch`.
-- [ ] 3.2 Implement:
+- [x] 3.2 Implement:
   - the Change-target branch of `commit`;
   - the Change-target diff check without the undeclared report;
   - trailer reading that accepts `BDK-Ticket` of a `review-fix` ticket;

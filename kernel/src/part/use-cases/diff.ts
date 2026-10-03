@@ -18,7 +18,10 @@ import {
 import type { IndexDb, PlanPartFile, Store } from "../../shared/store/index.ts";
 import { startedParts } from "./parts.ts";
 
-/** What the diff is compared with: a task, a part, the whole Change, or a verifier (not checked). */
+/**
+ * What the diff is compared with: a task, a part, the whole Change (a review
+ * fix, which declares every path it touches), or a verifier (not checked).
+ */
 export type DiffTarget =
   | { readonly task: string }
   | { readonly part: string }
@@ -100,7 +103,7 @@ export function classifyDiff(target: DiffTarget, facts: DiffFacts): DiffCheck | 
       );
     }
     if (firstMatch(own.declared, path) !== undefined) declared.push(path);
-    else if (!elsewhere) undeclared.push(path);
+    else if (!elsewhere) (own.claimsRest ? declared : undeclared).push(path);
   }
   return { touched: facts.touched, declared, undeclared };
 }
@@ -108,6 +111,8 @@ export function classifyDiff(target: DiffTarget, facts: DiffFacts): DiffCheck | 
 interface OwnSets {
   readonly tasks: ReadonlySet<string>;
   readonly declared: readonly string[];
+  /** The Change target owns every touched path no other part has in flight. */
+  readonly claimsRest: boolean;
   readonly forbidden: readonly { readonly part: string; readonly glob: string }[];
 }
 
@@ -120,6 +125,7 @@ function ownSets(target: Exclude<DiffTarget, { verifier: true }>, facts: DiffFac
     return {
       tasks: new Set([target.task]),
       declared: task?.files.map((file) => file.path) ?? [],
+      claimsRest: false,
       forbidden: part === undefined ? [] : forbiddenOf(part),
     };
   }
@@ -128,12 +134,14 @@ function ownSets(target: Exclude<DiffTarget, { verifier: true }>, facts: DiffFac
     return {
       tasks: new Set(part?.tasks.map((task) => task.id) ?? []),
       declared: part?.tasks.flatMap((task) => task.files.map((file) => file.path)) ?? [],
+      claimsRest: false,
       forbidden: part === undefined ? [] : forbiddenOf(part),
     };
   }
   return {
     tasks: new Set(),
     declared: [],
+    claimsRest: true,
     forbidden: facts.parts.filter((part) => facts.started.has(part.id)).flatMap(forbiddenOf),
   };
 }

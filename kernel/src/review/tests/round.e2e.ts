@@ -4,7 +4,7 @@
 // the full gate with coverage, triage of every entry and the merged report.
 // A triaged blocker fails the verdict; the fix is reviewed alone in a second
 // round, whose merged report passes `review`.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -93,6 +93,8 @@ function mergedReview(change: Started, round: string, entries: string[], summary
 describe("a review round end to end", () => {
   it("fails on a triaged blocker, then passes after a second round reviewing only the fix", () => {
     const change = executed(started(TOOLS));
+    // Tool output is ignored, as in a real project, so the fix commit leaves it out.
+    appendFileSync(join(change.root, ".git/info/exclude"), "coverage/\n");
     // A file no task names, for the `unplanned` group.
     put(change, "scripts/release.sh", "echo release\n");
     git(change.root, "add", "scripts/release.sh");
@@ -180,11 +182,12 @@ describe("a review round end to end", () => {
     );
     closed(change, first, "fail");
 
-    // The fix, committed as the implementer of the next round would.
+    // The implementer's fix at the start of the next round, committed by the kernel.
     const second = opened(change, "review-fix", change.id);
     put(change, "src/01-1.ts", 'export const value = "validated";\n');
-    git(change.root, "add", "src/01-1.ts");
-    git(change.root, "commit", "--quiet", "-m", "fix the blocker");
+    expect(answered(run(change, ["commit", change.id]), "output/commit.json")).toMatchObject({
+      ticket: second,
+    });
     answered(
       run(change, ["log", "resolve", blocker, "resolved", "--reason", "validated"]),
       "output/log-resolve.json",

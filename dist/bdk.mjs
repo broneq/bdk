@@ -8698,7 +8698,7 @@ var commands_default = {
     {
       id: "commit",
       argv: ["commit"],
-      summary: "Commit a task: code plus Change directory, with BDK trailers, after the diff check.",
+      summary: "Commit a task, or the fix of a review round: code plus Change directory, with BDK trailers, after the diff check.",
       availability: "orchestrator",
       mode: "command",
       slice: "commit",
@@ -8706,15 +8706,16 @@ var commands_default = {
       changeScoped: true,
       args: [
         {
-          name: "<task>",
-          required: true
+          name: "<task|change-id>",
+          required: true,
+          description: "A task id, or the id of the active Change for a review fix."
         }
       ],
       flags: [
         {
           name: "--message",
           value: "<text>",
-          description: "Subject line; default the task title."
+          description: "Subject line; default the task title, or `fix(review): <ticket>` for a review fix."
         }
       ],
       output: "output/commit.json",
@@ -8725,6 +8726,7 @@ var commands_default = {
         "policy/do-not-touch",
         "policy/git-in-progress",
         "policy/git-hook-failed",
+        "policy/no-open-ticket",
         "policy/nothing-to-commit",
         "policy/ticket-open",
         "runtime/git-missing"
@@ -17009,7 +17011,8 @@ var TRAILER_FORMAT = [
   "%s",
   "%(trailers:key=BDK-Change,valueonly,separator=%x2c)",
   "%(trailers:key=BDK-Part,valueonly,separator=%x2c)",
-  "%(trailers:key=BDK-Task,valueonly,separator=%x2c)"
+  "%(trailers:key=BDK-Task,valueonly,separator=%x2c)",
+  "%(trailers:key=BDK-Ticket,valueonly,separator=%x2c)"
 ].join("%x1f");
 async function trailerCommits(git, workTree, change) {
   const result2 = await git.run(
@@ -17025,13 +17028,14 @@ async function trailerCommits(git, workTree, change) {
   if (result2.code !== 0) return [];
   const commits = [];
   for (const record5 of result2.stdout.split("")) {
-    const [commit = "", subject = "", changes = "", part = "", task = ""] = record5.trim().split("");
+    const [commit = "", subject = "", changes = "", part = "", task = "", ticket = ""] = record5.trim().split("");
     if (commit === "" || !changes.split(",").some((value) => value.trim() === change)) continue;
     commits.push({
       commit,
       subject,
       ...part.trim() === "" ? {} : { part: part.trim() },
-      ...task.trim() === "" ? {} : { task: task.trim() }
+      ...task.trim() === "" ? {} : { task: task.trim() },
+      ...ticket.trim() === "" ? {} : { ticket: ticket.trim() }
     });
   }
   return commits;
@@ -19456,10 +19460,21 @@ function holderOf(text13) {
 async function taskProgress(git, workTree, change, parts, attempts) {
   const commits = await trailerCommits(git, workTree, change);
   const holders = taskHolders(parts);
+  const reviewFixes = new Set(
+    attempts.filter(({ data }) => data.loop === "review-fix").map(({ data }) => data.ticket)
+  );
   const committed = /* @__PURE__ */ new Map();
   const mismatches = [];
   for (const commit of commits) {
     const short = commit.commit.slice(0, 7);
+    if (commit.part === void 0 && commit.task === void 0 && commit.ticket !== void 0) {
+      if (!reviewFixes.has(commit.ticket)) {
+        mismatches.push(
+          `commit ${short} carries BDK-Ticket: ${commit.ticket}, but no review-fix ticket of ${change} is ${commit.ticket}`
+        );
+      }
+      continue;
+    }
     if (commit.part === void 0 || commit.task === void 0) {
       const missing = [
         commit.part === void 0 ? "BDK-Part" : "",
@@ -28037,7 +28052,7 @@ function classifyDiff(target, facts) {
       );
     }
     if (firstMatch(own2.declared, path) !== void 0) declared2.push(path);
-    else if (!elsewhere) undeclared.push(path);
+    else if (!elsewhere) (own2.claimsRest ? declared2 : undeclared).push(path);
   }
   return { touched: facts.touched, declared: declared2, undeclared };
 }
@@ -28049,6 +28064,7 @@ function ownSets(target, facts) {
     return {
       tasks: /* @__PURE__ */ new Set([target.task]),
       declared: task?.files.map((file) => file.path) ?? [],
+      claimsRest: false,
       forbidden: part === void 0 ? [] : forbiddenOf(part)
     };
   }
@@ -28057,12 +28073,14 @@ function ownSets(target, facts) {
     return {
       tasks: new Set(part?.tasks.map((task) => task.id) ?? []),
       declared: part?.tasks.flatMap((task) => task.files.map((file) => file.path)) ?? [],
+      claimsRest: false,
       forbidden: part === void 0 ? [] : forbiddenOf(part)
     };
   }
   return {
     tasks: /* @__PURE__ */ new Set(),
     declared: [],
+    claimsRest: true,
     forbidden: facts.parts.filter((part) => facts.started.has(part.id)).flatMap(forbiddenOf)
   };
 }
@@ -29785,9 +29803,10 @@ function changeRegistrations(deps) {
 // kernel/src/commit/render/commit.ts
 function renderCommit(report2) {
   const count3 = report2.files.length;
+  const what = "ticket" in report2 ? `review fix of ${report2.ticket}` : report2.task;
   return [
-    `${report2.task} committed as ${report2.commit} (${String(count3)} file${count3 === 1 ? "" : "s"})`,
-    ...report2.undeclared === void 0 ? [] : [`undeclared: ${report2.undeclared.join(", ")} (${report2.finding ?? "no finding"})`],
+    `${what} committed as ${report2.commit} (${String(count3)} file${count3 === 1 ? "" : "s"})`,
+    ..."ticket" in report2 || report2.undeclared === void 0 ? [] : [`undeclared: ${report2.undeclared.join(", ")} (${report2.finding ?? "no finding"})`],
     ""
   ].join("\n");
 }
@@ -29809,7 +29828,7 @@ async function commitTask(deps, change, input) {
   const result2 = await withLock(
     deps.store,
     path,
-    input.task,
+    input.target,
     deps.commitLock ?? processLockWait(),
     () => commitLocked(deps, change, input)
   );
@@ -29817,72 +29836,127 @@ async function commitTask(deps, change, input) {
   const { pid, owner, at } = result2.busy;
   return refuse(
     "policy/commit-busy",
-    `process ${String(pid)} has held .bdk/.machine/commit.lock for task ${owner} since ${at}`,
+    `process ${String(pid)} has held .bdk/.machine/commit.lock for ${owner} since ${at}`,
     [
-      `bdk commit ${input.task}${input.message === void 0 ? "" : ` --message ${JSON.stringify(input.message)}`}`
+      `bdk commit ${input.target}${input.message === void 0 ? "" : ` --message ${JSON.stringify(input.message)}`}`
     ]
   );
 }
 function commitLocked(deps, change, input) {
-  return withChangeIndex(deps, change, async (index2) => {
-    const holders = taskHolders(readPlanParts(deps.store, change.dir));
-    const part = holders.get(input.task);
-    const task = part?.tasks.find((found) => found.id === input.task);
-    if (part === void 0 || task === void 0) {
-      return refuse("input/not-found", `no plan part holds task ${input.task}`, ["bdk part list"]);
-    }
-    const inProgress = gitInProgress(change.projectRoot);
-    if (inProgress !== void 0) return inProgress;
-    const open2 = readAttempts(deps.store, change.dir).find(
-      (record5) => record5.data.outcome === void 0 && record5.data.target === input.task
+  return withChangeIndex(
+    deps,
+    change,
+    (index2) => input.target === change.id ? commitReviewFix(deps, change, index2, input.message) : commitOneTask(deps, change, index2, { task: input.target, message: input.message })
+  );
+}
+async function commitOneTask(deps, change, index2, input) {
+  const holders = taskHolders(readPlanParts(deps.store, change.dir));
+  const part = holders.get(input.task);
+  const task = part?.tasks.find((found) => found.id === input.task);
+  if (part === void 0 || task === void 0) {
+    return refuse("input/not-found", `no plan part holds task ${input.task}`, [
+      "bdk part list",
+      `bdk commit ${change.id} for a review fix`
+    ]);
+  }
+  const inProgress = gitInProgress(change.projectRoot);
+  if (inProgress !== void 0) return inProgress;
+  const open2 = readAttempts(deps.store, change.dir).find(
+    (record5) => record5.data.outcome === void 0 && record5.data.target === input.task
+  );
+  if (open2 !== void 0) {
+    return refuse(
+      "policy/ticket-open",
+      `ticket ${open2.data.ticket} of ${input.task} is still open`,
+      [`bdk attempt close ${open2.data.ticket} ok|fail|not-run`]
     );
-    if (open2 !== void 0) {
-      return refuse(
-        "policy/ticket-open",
-        `ticket ${open2.data.ticket} of ${input.task} is still open`,
-        [`bdk attempt close ${open2.data.ticket} ok|fail|not-run`]
-      );
-    }
-    const diff = await diffCheck(deps, change, index2, { task: input.task });
-    if ("refused" in diff) return diff;
-    const dir = `${relative19(change.projectRoot, change.dir).split(sep14).join("/")}/`;
-    const code = [...diff.declared, ...diff.undeclared];
-    if (code.length === 0 && (await changedPaths(deps.git, change.projectRoot, [dir])).length === 0) {
-      return refuse(
-        "policy/nothing-to-commit",
-        `neither a path of ${input.task} nor ${dir} changed since the last commit`,
-        ["bdk part list"]
-      );
-    }
-    const finding = diff.undeclared.length === 0 ? void 0 : await recordUndeclared2(deps, change, index2, input.task, diff.undeclared);
-    if (finding !== void 0 && "refused" in finding) return finding;
-    const files = [...code, ...await changedPaths(deps.git, change.projectRoot, [dir])];
-    const trailers = { "BDK-Change": change.id, "BDK-Part": part.id, "BDK-Task": input.task };
-    const message = input.message?.trim() ?? "";
-    const subject = message === "" ? task.title : message;
-    const committed = await pathspecCommit(
-      deps.git,
-      change.projectRoot,
-      [...code, dir],
-      commitMessage(subject, trailers)
+  }
+  const diff = await diffCheck(deps, change, index2, { task: input.task });
+  if ("refused" in diff) return diff;
+  const dir = `${relative19(change.projectRoot, change.dir).split(sep14).join("/")}/`;
+  const code = [...diff.declared, ...diff.undeclared];
+  if (code.length === 0 && (await changedPaths(deps.git, change.projectRoot, [dir])).length === 0) {
+    return refuse(
+      "policy/nothing-to-commit",
+      `neither a path of ${input.task} nor ${dir} changed since the last commit`,
+      ["bdk part list"]
     );
-    if (!committed.committed) {
-      return refuse(
-        "policy/git-hook-failed",
-        `a git hook rejected the commit of ${input.task}: ${committed.output}`,
-        [`fix what the hook reports, then run bdk commit ${input.task}`]
-      );
-    }
-    if (tiny(index2, change)) await tinyGuard(deps, change, index2);
-    return {
-      task: input.task,
-      commit: committed.commit.slice(0, 7),
-      trailers,
-      files,
-      ...diff.undeclared.length === 0 ? {} : { undeclared: diff.undeclared },
-      ...finding === void 0 ? {} : { finding: finding.id }
-    };
-  });
+  }
+  const finding = diff.undeclared.length === 0 ? void 0 : await recordUndeclared2(deps, change, index2, input.task, diff.undeclared);
+  if (finding !== void 0 && "refused" in finding) return finding;
+  const files = [...code, ...await changedPaths(deps.git, change.projectRoot, [dir])];
+  const trailers = { "BDK-Change": change.id, "BDK-Part": part.id, "BDK-Task": input.task };
+  const message = input.message?.trim() ?? "";
+  const subject = message === "" ? task.title : message;
+  const committed = await pathspecCommit(
+    deps.git,
+    change.projectRoot,
+    [...code, dir],
+    commitMessage(subject, trailers)
+  );
+  if (!committed.committed) {
+    return refuse(
+      "policy/git-hook-failed",
+      `a git hook rejected the commit of ${input.task}: ${committed.output}`,
+      [`fix what the hook reports, then run bdk commit ${input.task}`]
+    );
+  }
+  if (tiny(index2, change)) await tinyGuard(deps, change, index2);
+  return {
+    task: input.task,
+    commit: committed.commit.slice(0, 7),
+    trailers,
+    files,
+    ...diff.undeclared.length === 0 ? {} : { undeclared: diff.undeclared },
+    ...finding === void 0 ? {} : { finding: finding.id }
+  };
+}
+async function commitReviewFix(deps, change, index2, message) {
+  const inProgress = gitInProgress(change.projectRoot);
+  if (inProgress !== void 0) return inProgress;
+  const open2 = readAttempts(deps.store, change.dir).find(
+    ({ data }) => data.outcome === void 0 && data.loop === "review-fix" && data.target === change.id
+  );
+  if (open2 === void 0) {
+    return refuse("policy/no-open-ticket", `no review-fix ticket of ${change.id} is open`, [
+      `bdk attempt open review-fix ${change.id}`,
+      "bdk attempt list"
+    ]);
+  }
+  const ticket = open2.data.ticket;
+  const diff = await diffCheck(deps, change, index2, { change: true });
+  if ("refused" in diff) return diff;
+  const dir = `${relative19(change.projectRoot, change.dir).split(sep14).join("/")}/`;
+  const changed = await changedPaths(deps.git, change.projectRoot, [dir]);
+  if (diff.declared.length === 0 && changed.length === 0) {
+    return refuse(
+      "policy/nothing-to-commit",
+      `neither a code path nor ${dir} changed since the last commit`,
+      ["bdk attempt list"]
+    );
+  }
+  const trailers = { "BDK-Change": change.id, "BDK-Ticket": ticket };
+  const subject = message?.trim() ?? "";
+  const committed = await pathspecCommit(
+    deps.git,
+    change.projectRoot,
+    [...diff.declared, dir],
+    commitMessage(subject === "" ? `fix(review): ${ticket}` : subject, trailers)
+  );
+  if (!committed.committed) {
+    return refuse(
+      "policy/git-hook-failed",
+      `a git hook rejected the review fix of ${ticket}: ${committed.output}`,
+      [`fix what the hook reports, then run bdk commit ${change.id}`]
+    );
+  }
+  if (tiny(index2, change)) await tinyGuard(deps, change, index2);
+  return {
+    ticket,
+    commit: committed.commit.slice(0, 7),
+    trailers,
+    files: [...diff.declared, ...changed]
+  };
 }
 function tiny(index2, change) {
   const row = findChangeRow(index2, change.id);
@@ -29918,7 +29992,7 @@ function commitCommand(deps) {
   return async (context) => {
     const message = context.flags["--message"];
     const report2 = await commitTask(deps, active8(context.change), {
-      task: context.positionals["<task>"] ?? "",
+      target: context.positionals["<task|change-id>"] ?? "",
       message: typeof message === "string" ? message : void 0
     });
     return isRefusal(report2) ? report2 : { data: report2, text: renderCommit(report2) };

@@ -15,7 +15,7 @@ export function commitCommand(deps: CommitDeps): Handler {
   return async (context) => {
     const message = context.flags["--message"];
     const report = await commitTask(deps, active(context.change), {
-      task: context.positionals["<task>"] ?? "",
+      target: context.positionals["<task|change-id>"] ?? "",
       message: typeof message === "string" ? message : undefined,
     });
     return isRefusal(report) ? report : { data: report, text: renderCommit(report) };

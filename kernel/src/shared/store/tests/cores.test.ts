@@ -115,6 +115,30 @@ describe("taskProgress", () => {
     ]);
     expect(progress.committed.size).toBe(0);
   });
+
+  it("a BDK-Ticket of a review-fix ticket marks a review fix: no task, no mismatch", async () => {
+    writeFileSync(
+      join(dir, `attempts/review-fix-${ID}-A-r2v2w3x4.md`),
+      `---\nschema: 1\nticket: A-r2v2w3x4\nloop: review-fix\ntarget: ${ID}\nattempt: 2\nof: 3\n` +
+        "scope: full\nopened-at: 2026-09-25T12:00:00.000Z\nauthor: Jan Kowalski <jan@example.com>\n---\n",
+    );
+    commit(`fix(review): A-r2v2w3x4\n\nBDK-Change: ${ID}\nBDK-Ticket: A-r2v2w3x4`);
+    const verifier = commit(`fix: x\n\nBDK-Change: ${ID}\nBDK-Ticket: A-9c2dq6ra`);
+    const unknown = commit(`fix: y\n\nBDK-Change: ${ID}\nBDK-Ticket: A-00000000`);
+    const progress = await taskProgress(
+      systemGit,
+      root,
+      ID,
+      readPlanParts(store, dir),
+      readAttempts(store, dir),
+    );
+    expect(progress.mismatches).toStrictEqual([
+      `commit ${unknown} carries BDK-Ticket: A-00000000, but no review-fix ticket of ${ID} is A-00000000`,
+      `commit ${verifier} carries BDK-Ticket: A-9c2dq6ra, but no review-fix ticket of ${ID} is A-9c2dq6ra`,
+    ]);
+    expect(progress.committed.size).toBe(0);
+    expect(progress.commits).toHaveLength(3);
+  });
 });
 
 describe("checkpointChange", () => {
