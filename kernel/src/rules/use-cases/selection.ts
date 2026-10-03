@@ -15,6 +15,7 @@ const ROLE_PREFIXES: Readonly<Record<Role, readonly string[]>> = {
   implementer: WRITERS,
   simplifier: WRITERS,
   reviewer: WRITERS,
+  "integration-reviewer": ["ARCH", "SEC", "TQ"],
   "pr-reviewer": WRITERS,
   verifier: ["ARCH", "TQ", "EJ", "PL"],
   "design-verifier": ["ARCH", "EJ", "SEC"],

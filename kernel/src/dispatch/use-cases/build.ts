@@ -1,8 +1,10 @@
 // `bdk dispatch build <target> <role> <ticket>` (`kernel-cli/dispatch`;
 // T23-D31 to D33, D37, D42): the package of an open ticket from the one
 // template, stamped whole, at most 12 288 bytes. A ticket keeps one package per
-// role, and the last one built is its active package. Nothing is written
-// before every check has passed.
+// role, and the last one built is its active package. A review round's
+// `--group` builds one package per group under the same ticket and leaves the
+// active package alone (T42-A1). Nothing is written before every check has
+// passed.
 import { createHash } from "node:crypto";
 import { join, posix } from "node:path";
 
@@ -12,7 +14,7 @@ import { artifactPaths, targetSteps } from "../../graph/index.ts";
 import { verifierPolicy, withChangeIndex } from "../../log/index.ts";
 import type { VerifierCategory } from "../../log/index.ts";
 import { ruleContext, selectFor } from "../../rules/index.ts";
-import { readKernelVersion, resolveOrRefuse } from "../../shared/config/index.ts";
+import { moduleValue, readKernelVersion, resolveOrRefuse } from "../../shared/config/index.ts";
 import type { Resolved } from "../../shared/config/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -36,9 +38,12 @@ import {
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import { ROLES } from "../../shared/vocabulary/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
-import { checksText } from "../domain/checks.ts";
+import { risksModule } from "../config.ts";
+import { checksText, fullChecksText } from "../domain/checks.ts";
 import { selectEntries, taskText } from "../domain/entries.ts";
 import type { BuildReport } from "../domain/report.ts";
+import { groupFlagProblem, reviewText, risksText } from "../domain/review.ts";
+import type { GroupFlags } from "../domain/review.ts";
 import {
   bytes,
   demoteHeadings,
@@ -48,6 +53,7 @@ import {
   renderSections,
   templateSkeleton,
 } from "../domain/template.ts";
+import type { SectionKind } from "../domain/template.ts";
 import type { DispatchDeps } from "./deps.ts";
 
 /** `kernel-state`, Dispatch package. */
@@ -55,11 +61,14 @@ const PACKAGE_LIMIT = 12_288;
 
 const PART_ID = /^\d{2}$/;
 
-export interface BuildInput {
+export interface BuildInput extends GroupFlags {
   readonly target: string;
   readonly role: string;
   readonly ticket: string;
 }
+
+/** The intent and plan documents a review group reads, when the Change holds them. */
+const INTENT_FILES = ["change.md", "design.md", "architecture.md", "plan/index.md"];
 
 /** What the target section says, which names select its entries, and its file set. */
 interface TargetFacts {
@@ -83,6 +92,16 @@ export function buildPackage(
     );
   }
   const role = input.role;
+  const flagProblem = groupFlagProblem(role, input);
+  if (flagProblem !== undefined) {
+    return Promise.resolve(
+      refuse("input/invalid-argument", flagProblem, [
+        `bdk dispatch build ${input.target} ${role} ${input.ticket} --group <group> --range <base>..<head>`,
+        "bdk review plan",
+      ]),
+    );
+  }
+  const group = input.group;
   return withChangeIndex(deps, change, async (index): Promise<BuildReport | Refusal> => {
     const target = await targetFacts(deps, change, index, globalDir, input.target);
     if (isRefusal(target)) return target;
@@ -98,6 +117,23 @@ export function buildPackage(
             ? `ticket ${input.ticket} is closed`
             : `ticket ${input.ticket} targets ${record.data.target}, not ${input.target}`,
         ["bdk attempt list", `bdk attempt open <loop> ${input.target}`],
+      );
+    }
+    if (group !== undefined && record.data.loop !== "review-fix") {
+      return refuse(
+        "input/invalid-argument",
+        `${input.ticket} is a ${record.data.loop} ticket; only a review-fix ticket has review groups`,
+        [`bdk dispatch build ${input.target} ${role} ${input.ticket}`],
+      );
+    }
+    const parts = readPlanParts(deps.store, change.dir);
+    const part =
+      input.part === undefined ? undefined : parts.find((found) => found.id === input.part);
+    if (input.part !== undefined && part === undefined) {
+      return refuse(
+        "input/invalid-argument",
+        `--part ${input.part}: ${change.id} has no such plan part`,
+        ["bdk part list"],
       );
     }
     if ((role === "lead") !== (record.data.loop === "part-lead")) {
@@ -127,19 +163,48 @@ export function buildPackage(
     const verifier = role === "verifier" || role === "design-verifier";
     const policy = verifier ? verifierPolicy(deps, change, globalDir) : undefined;
     if (policy !== undefined && isRefusal(policy)) return policy;
+    const ref = group === undefined ? input.ticket : `${input.ticket}@${group}`;
     const checks =
-      role === "runner" ? await runnerChecks(deps, change, index, globalDir, input, resolved) : "";
+      role !== "runner"
+        ? ""
+        : group === undefined
+          ? await runnerChecks(deps, change, index, globalDir, input, resolved)
+          : fullChecksText(toolEntries(resolved), ref);
     if (typeof checks !== "string") return checks;
     const tasks = role === "lead" ? await leadTasks(deps, change, input.target) : "";
 
-    const name = `${input.target}-${role}-${input.ticket}.md`;
+    const name = `${input.target}-${role}-${input.ticket}${group === undefined ? "" : `-${group}`}.md`;
     const changeRel = posix.relative(change.projectRoot, change.dir);
     const report = `${changeRel}/reports/${name}`;
+    const review =
+      group === undefined
+        ? ""
+        : reviewText({
+            files: input.files,
+            range: input.range,
+            partFile: part === undefined ? undefined : `${changeRel}/${part.file}`,
+            intent: INTENT_FILES.filter((file) => deps.store.exists(join(change.dir, file))).map(
+              (file) => `${changeRel}/${file}`,
+            ),
+            focus: input.focus,
+          });
+    const risks =
+      role === "integration-reviewer" ? risksText(moduleValue(risksModule, resolved.value)) : "";
+    const kinds: SectionKind[] = [
+      ...(verifier ? (["verifier"] as const) : []),
+      ...(role === "runner" || role === "lead" ? [role] : []),
+      ...(group === undefined ? [] : (["review"] as const)),
+      ...(role === "integration-reviewer" ? (["risks"] as const) : []),
+    ];
     const roleBody = readRoleBody(deps, role);
     const selection = selectEntries(listEntries(index, change.id), target.names);
     const sections = renderSections(
       {
         ticket: input.ticket,
+        ref,
+        group: group ?? "",
+        review,
+        risks,
         role,
         attempt: String(record.data.attempt),
         of: String(record.data.of),
@@ -155,7 +220,7 @@ export function buildPackage(
         checks,
         tasks,
       },
-      verifier ? "verifier" : role === "runner" || role === "lead" ? role : undefined,
+      kinds,
     );
     const rules = selectFor(
       ruleContext(
@@ -163,7 +228,7 @@ export function buildPackage(
         resolved,
       ),
       role,
-      target.files,
+      group === undefined ? target.files : groupFiles(input.files, parts, input.part),
     );
     const templateHash = hashOf([
       templateSkeleton(),
@@ -187,6 +252,7 @@ export function buildPackage(
       "template-hash": templateHash,
       report,
       rules: rules.selected.map(({ rule }) => rule.id),
+      ...(group === undefined ? {} : { group, files: [...input.files] }),
     };
     const text = renderDocument(data, packageBody(sections));
     const size = bytes(text);
@@ -200,8 +266,18 @@ export function buildPackage(
     }
     const dir = join(change.dir, "dispatch");
     const path = join(dir, name);
+    if (group !== undefined) {
+      // One package per group, whatever its role: a rebuild under another role replaces it.
+      for (const earlier of deps.store.list(dir)) {
+        if (earlier !== name && earlier.endsWith(`-${input.ticket}-${group}.md`)) {
+          deps.store.remove(join(dir, earlier));
+        }
+      }
+    }
     writeDocument(deps.store, path, { data, body: packageBody(sections) });
-    stampPackage(deps.store, change.dir, input.ticket, posix.relative(change.projectRoot, path));
+    if (group === undefined) {
+      stampPackage(deps.store, change.dir, input.ticket, posix.relative(change.projectRoot, path));
+    }
     return {
       path: posix.relative(change.projectRoot, path),
       bytes: size,
@@ -214,6 +290,7 @@ export function buildPackage(
       kernelVersion,
       templateHash,
       report,
+      ...(group === undefined ? {} : { group, files: input.files }),
       entries: { full: selection.full.map((entry) => entry.id), counted: selection.counted },
     };
   });
@@ -266,6 +343,19 @@ async function leadTasks(deps: DispatchDeps, change: ActiveChange, part: string)
       return `- \`${task.id}\` ${task.title} (${state}). Files: ${files}. Depends on: ${depends}.`;
     })
     .join("\n");
+}
+
+/**
+ * A group's file set for rule selection: its `--file` paths, else the `Files:`
+ * of the `--part` tasks, else none, where every rule of the role applies.
+ */
+function groupFiles(
+  files: readonly string[],
+  parts: readonly PlanPartFile[],
+  part: string | undefined,
+): readonly string[] | undefined {
+  if (files.length > 0) return files;
+  return part === undefined ? undefined : targetFiles(parts, part);
 }
 
 function isRole(role: string): role is Role {

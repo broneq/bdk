@@ -8,6 +8,11 @@
       "type": "object",
       "properties": {
         "ticket": { "type": "string", "pattern": "^A-[0-9a-z]{8}$" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` reference.",
+          "type": "string",
+          "minLength": 1
+        },
         "role": {
           "type": "string",
           "enum": [
@@ -16,6 +21,7 @@
             "verifier",
             "design-verifier",
             "reviewer",
+            "integration-reviewer",
             "pr-reviewer",
             "runner",
             "scout",
@@ -80,6 +86,7 @@
               "verifier",
               "design-verifier",
               "reviewer",
+              "integration-reviewer",
               "pr-reviewer",
               "runner",
               "scout",

@@ -840,14 +840,41 @@
         {
           "name": "<role>",
           "required": true,
-          "description": "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, pr-reviewer, runner, scout."
+          "description": "Role skill under skills/roles/: implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, pr-reviewer, runner, scout, lead."
         },
         {
           "name": "<ticket>",
           "required": true
         }
       ],
-      "flags": [],
+      "flags": [
+        {
+          "name": "--group",
+          "value": "<group>",
+          "description": "A review group of a `review-fix` ticket (`kernel-cli`, Ticket references); the package becomes that group's package."
+        },
+        {
+          "name": "--file",
+          "value": "<path>",
+          "description": "Repeatable; only with `--group`. The group's files, repository-relative, usually the `files` of a group of `bdk review plan`.",
+          "repeatable": true
+        },
+        {
+          "name": "--part",
+          "value": "<nn>",
+          "description": "Only with `--group`. The plan part the group reviews; the package names its file as the contract to review against."
+        },
+        {
+          "name": "--range",
+          "value": "<range>",
+          "description": "Only with `--group`; required for `reviewer` and `integration-reviewer`. The reviewed range `<base>..<head>` from `bdk review plan`."
+        },
+        {
+          "name": "--focus",
+          "value": "<text>",
+          "description": "Only with `--group`; at most 500 characters. The user's focus for the round, embedded as given."
+        }
+      ],
       "output": "output/dispatch-build.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": [
@@ -871,7 +898,7 @@
         {
           "name": "<ticket|path>",
           "required": true,
-          "description": "A ticket id, or a package path relative to the working directory or absolute."
+          "description": "A ticket reference (`kernel-cli`, Ticket references), or a package path relative to the working directory or absolute."
         }
       ],
       "flags": [],

@@ -100,11 +100,13 @@ export {
   openPackage,
   packageRoles,
   partManifests,
+  MERGE_GROUP,
   readManifests,
+  resolveTicketRef,
   stampPackage,
   ticketManifests,
 } from "./tickets.ts";
-export type { ActivePackage, ManifestFile } from "./tickets.ts";
+export type { ActivePackage, ManifestFile, ResolvedRef } from "./tickets.ts";
 export type { DispatchPackage } from "./state/dispatch.ts";
 export type { EvidenceManifest } from "./state/evidence.ts";
 export type { AttemptFile, PlanPartFile, PlanPartFrontmatter } from "./work.ts";

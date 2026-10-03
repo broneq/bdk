@@ -97,7 +97,7 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 #### Scenario: every role stores its report through ingest
 
-- **WHEN** the content test reads each of the nine role bodies
+- **WHEN** the content test reads each of the ten role bodies
 - **THEN** each names `bdk log ingest --ticket`, tells the agent to fix a refused report and call again, and none tells the agent to write the report file itself
 
 #### Scenario: runner records evidence
@@ -112,12 +112,12 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 #### Scenario: rule ids are cited
 
-- **WHEN** the content test reads the bodies of `implementer`, `simplifier`, `reviewer`, `pr-reviewer`, `verifier` and `design-verifier`
+- **WHEN** the content test reads the bodies of `implementer`, `simplifier`, `reviewer`, `integration-reviewer`, `pr-reviewer`, `verifier` and `design-verifier`
 - **THEN** each tells the agent to cite the rule id with `--ref` on the entry and in the report, and the bodies of `runner`, `scout` and `lead` carry no such line
 
 #### Scenario: messages in every contract
 
-- **WHEN** the content test reads each of the nine role bodies
+- **WHEN** the content test reads each of the ten role bodies
 - **THEN** each names `BDK-AGENT-ID`, `bdk agents list --affected-by`, `bdk log show` and returning `blocked` on a message it cannot absorb
 
 #### Scenario: lead waits instead of ending its turn

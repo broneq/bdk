@@ -29,6 +29,7 @@
         "verifier",
         "design-verifier",
         "reviewer",
+        "integration-reviewer",
         "pr-reviewer",
         "runner",
         "scout",
@@ -51,6 +52,16 @@
       "type": "string",
       "minLength": 1,
       "description": "Path relative to the project root where `bdk log ingest --ticket` stores the report."
+    },
+    "group": {
+      "description": "The review group of a `--group` package; its reference is `<ticket>@<group>`.",
+      "type": "string",
+      "minLength": 1
+    },
+    "files": {
+      "description": "The group's files from `--file`; present exactly when `group` is.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
     },
     "entries": {
       "type": "object",
