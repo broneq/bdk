@@ -2,8 +2,8 @@
 
 ## 1. Plan record and probe
 
-- [ ] 1.1 Record the T42 split in `docs/V3-IMPLEMENTATION-PLAN.md` like T41's delivery list: `v3-t42-review-kernel`, `v3-t42-review-skills`, `v3-t42-review-report`, `v3-t42-tools`, `v3-t42-craft`, each with its scope and the Lavish decision IDs; correct "13 bdk-* meta-skills" and "eight agent files" to the repository's actual 8 meta-skills and 12 v2 agents to remove (E); verify by reading the section back
-- [ ] 1.2 Probe in a scratch repository with the built bundle: a `small` Change with two plan parts executed through `seedV3`-style kernel calls, `attempt open review-fix <change>`, `dispatch build <change> reviewer <ticket>`, `log add finding --ticket`, `bdk measure`; record the outputs and the package size of a Change-target reviewer, so the failing tests of groups 2-6 start from observed output
+- [x] 1.1 Record the T42 split in `docs/V3-IMPLEMENTATION-PLAN.md` like T41's delivery list: `v3-t42-review-kernel`, `v3-t42-review-skills`, `v3-t42-review-report`, `v3-t42-tools`, `v3-t42-craft`, each with its scope and the Lavish decision IDs; correct "13 bdk-* meta-skills" and "eight agent files" to the repository's actual 8 meta-skills and 12 v2 agents to remove (E); verify by reading the section back
+- [x] 1.2 Probe in a scratch repository with the built bundle: a `small` Change with two plan parts executed through `seedV3`-style kernel calls, `attempt open review-fix <change>`, `dispatch build <change> reviewer <ticket>`, `log add finding --ticket`, `bdk measure`; record the outputs and the package size of a Change-target reviewer, so the failing tests of groups 2-6 start from observed output (probe 2026-10-03, bundle 2.7.0: two tiny parts executed through task tickets, steps, `attempt close ok`, `commit` and `part done`; `attempt open review-fix <change>` returns `steps` simplify, tests-scoped, lint and `of: 2`; a Change-target `reviewer` package is 5 043 bytes with every role rule; `log add finding --ticket` stamps `source: agent:reviewer`; `measure HEAD~2` gives `modules: [src]`)
 
 ## 2. Settings: coverage and review keys (D5, D7)
 
