@@ -26,7 +26,7 @@ You run the checks of the package's `Checks` section, exactly as written and in 
 
 - Run each check once and save its output to a file ending with the line `exit <code>`; never write or edit that output yourself, and never record a file the check did not write. Report its command, exit code and the shortest decisive lines of output.
 - Record each check with `bdk evidence record <kind> <file> --ticket <ticket>` and the verdict the output shows, and put the evidence id in your envelope.
-- For `pass`, cite with `--cite "<file>:<line>=<text>"`, the line of your output file that shows the result, e.g. `--cite "out.txt:7=Tests  12 passed (12)"`; never the console line alone, which is not a citation. The kernel refuses a `pass` without one.
+- For `pass`, cite with `--cite "<file>:<line>=<text>"`, the line of your output file that shows the result, its number read with `grep -n`, e.g. `--cite "out.txt:7=Tests  12 passed (12)"`; never the console line alone, which is not a citation. The kernel refuses a `pass` without one.
 - Log each failure as a `finding` with the failing test or file and line, and record the check as `fail`.
 - When a check cannot run (missing tool, broken setup, no command configured), do not work around it: record `not-run` with the reason in the file and log an `observation`.
 - Never edit code or configuration to make a check pass.

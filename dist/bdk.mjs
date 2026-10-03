@@ -20592,8 +20592,10 @@ function citationProblem(citation, files) {
   return "pointer" in parsed.target ? pointerProblem(where, file.text, parsed.target.pointer) : lineProblem(where, file.text, parsed.target.line, parsed.target.contains);
 }
 function citationHint(citation, files) {
-  const text12 = citation.trim();
-  if (text12 === "" || parse5(citation, files) !== void 0) return void 0;
+  const located2 = /^.*:\d+(?:-\d+)?=(?<text>.+)$/s.exec(citation)?.groups?.text;
+  if (located2 === void 0 && parse5(citation, files) !== void 0) return void 0;
+  const text12 = (located2 ?? citation).trim();
+  if (text12 === "") return void 0;
   const found = files.flatMap((file) => {
     if (file.text === void 0) return [];
     const lines = file.text.split("\n").map((line2) => line2.replace(/\r$/, ""));

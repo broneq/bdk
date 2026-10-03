@@ -107,8 +107,22 @@ describe("citationHint", () => {
     expect(citationHint("Tests  12 passed (12)", [OUT, twin])).toBeUndefined();
   });
 
-  it("gives no hint for a citation in the grammar", () => {
-    expect(citationHint("run.txt:3=2 failed", [RUN])).toBeUndefined();
+  it("restates the line of a citation that already resolves", () => {
+    expect(citationHint("run.txt:3=0 failed", [RUN])).toBe("out/run.txt:3=0 failed");
+  });
+
+  it("names the right line when the cited line holds another text", () => {
+    expect(citationHint("run.txt:1=12 passed", [RUN])).toBe("out/run.txt:3=12 passed");
+  });
+
+  it("reads a line range as a citation to fix", () => {
+    expect(citationHint("out.txt:1-2=Tests  12 passed (12)", [OUT])).toBe(
+      "out.txt:2=Tests  12 passed (12)",
+    );
+  });
+
+  it("gives no hint for a located citation whose text is on no line", () => {
+    expect(citationHint("run.txt:1=nothing like it", [RUN])).toBeUndefined();
   });
 
   it("never reads a file that is not text", () => {
