@@ -954,7 +954,7 @@
         {
           "name": "<kind>",
           "required": true,
-          "description": "tests-scoped, lint, typecheck, ui-capture or a project-defined kind."
+          "description": "tests-scoped, lint, tests-full, lint-full, typecheck, ui-capture or a project-defined kind; `coverage` is recorded only by `bdk evidence coverage`."
         },
         {
           "name": "<file>",
@@ -967,7 +967,7 @@
         {
           "name": "--ticket",
           "value": "<ticket>",
-          "description": "Required; ties the evidence to the task and role."
+          "description": "Required; a ticket reference; ties the evidence to the target, the role and the group."
         },
         {
           "name": "--verdict",
@@ -983,6 +983,39 @@
       "output": "output/evidence-record.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": ["input/not-found", "policy/no-open-ticket", "policy/missing-citation"],
+      "writes": [".bdk/changes/<id>/evidence/", ".bdk/.machine/evidence/"]
+    },
+    {
+      "id": "evidence-coverage",
+      "argv": ["evidence", "coverage"],
+      "summary": "Measure the coverage of the lines the Change added from a test tool's coverage report, and record it with the computed verdict.",
+      "availability": "agent",
+      "mode": "command",
+      "slice": "evidence",
+      "owner": "T42",
+      "changeScoped": true,
+      "args": [
+        {
+          "name": "<test-id>",
+          "required": true,
+          "description": "The `id` of a `tools.test` entry with `coverage`."
+        },
+        {
+          "name": "<report>",
+          "required": true,
+          "description": "The coverage report the entry's `coverage.command` wrote, in its `coverage.format`."
+        }
+      ],
+      "flags": [
+        {
+          "name": "--ticket",
+          "value": "<ticket>",
+          "description": "Required; a ticket reference of an open ticket whose target is the Change."
+        }
+      ],
+      "output": "output/evidence-coverage.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/no-open-ticket"],
       "writes": [".bdk/changes/<id>/evidence/", ".bdk/.machine/evidence/"]
     },
     {

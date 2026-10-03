@@ -9,12 +9,16 @@ import { createHash } from "node:crypto";
 import { join, posix } from "node:path";
 
 import { ROLE_ADAPTERS } from "../../export/index.ts";
-import { toolEntries } from "../../ctx/index.ts";
 import { artifactPaths, targetSteps } from "../../graph/index.ts";
 import { verifierPolicy, withChangeIndex } from "../../log/index.ts";
 import type { VerifierCategory } from "../../log/index.ts";
 import { ruleContext, selectFor } from "../../rules/index.ts";
-import { moduleValue, readKernelVersion, resolveOrRefuse } from "../../shared/config/index.ts";
+import {
+  moduleValue,
+  readKernelVersion,
+  resolveOrRefuse,
+  toolsModule,
+} from "../../shared/config/index.ts";
 import type { Resolved } from "../../shared/config/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -169,7 +173,7 @@ export function buildPackage(
         ? ""
         : group === undefined
           ? await runnerChecks(deps, change, index, globalDir, input, resolved)
-          : fullChecksText(toolEntries(resolved), ref);
+          : fullChecksText(moduleValue(toolsModule, resolved.value), ref);
     if (typeof checks !== "string") return checks;
     const tasks = role === "lead" ? await leadTasks(deps, change, input.target) : "";
 
@@ -316,7 +320,7 @@ async function runnerChecks(
   const steps = await targetSteps(deps, change, index, globalDir, input.target);
   if (isRefusal(steps)) return steps;
   const kinds = steps.steps.filter((step) => step.role === "runner").map((step) => step.kind);
-  return checksText(kinds, toolEntries(resolved), steps.files, input.ticket);
+  return checksText(kinds, moduleValue(toolsModule, resolved.value), steps.files, input.ticket);
 }
 
 /**

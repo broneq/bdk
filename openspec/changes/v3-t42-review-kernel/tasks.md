@@ -30,8 +30,8 @@
 
 ## 6. Evidence: grouped records and coverage (D5)
 
-- [ ] 6.1 Failing tests (`kernel/src/evidence/tests/`): `evidence record tests-full --ticket A@gate` stamps `group` and the Change tree hash; `evidence record coverage` is `input/invalid-argument`; lcov and Cobertura fixtures parse, a Cobertura file read as lcov is refused naming `lcov`; only added lines count (200-line file, 10 added lines); the suffix match maps `SF:src/log/add.ts` to `kernel/src/log/add.ts`, a tie goes to `unmeasured`; an unlisted file goes to `unmeasured`; `percent: null` with no instrumented line; 17 of 20 lines with `min: 90` is `fail` with three `uncovered` lines; no `min` is `pass`; a task-target ticket is `policy/no-open-ticket`
-- [ ] 6.2 Implement the two parsers as pure functions, the Change base and added-line reader in `shared/store`, `bdk evidence coverage`; `schema/cli/output/evidence-coverage.json`; tests of 6.1 green
+- [x] 6.1 Failing tests (`kernel/src/evidence/tests/`): `evidence record tests-full --ticket A@gate` stamps `group` and the Change tree hash; `evidence record coverage` is `input/invalid-argument`; lcov and Cobertura fixtures parse, a Cobertura file read as lcov is refused naming `lcov`; only added lines count (200-line file, 10 added lines); the suffix match maps `SF:src/log/add.ts` to `kernel/src/log/add.ts`, a tie goes to `unmeasured`; an unlisted file goes to `unmeasured`; `percent: null` with no instrumented line; 17 of 20 lines with `min: 90` is `fail` with three `uncovered` lines; no `min` is `pass`; a task-target ticket is `policy/no-open-ticket`
+- [x] 6.2 Implement the two parsers as pure functions, the Change base and added-line reader in `shared/store`, `bdk evidence coverage`; `schema/cli/output/evidence-coverage.json`; tests of 6.1 green (the `tools` module moves to `shared/config`, since `evidence` stays a leaf and reads `tools.test[].coverage`; the measured report itself and untracked files are handled as `kernel-cli/evidence` now states)
 
 ## 7. Graph: full gate and the review verdict (D2, D4, D6)
 

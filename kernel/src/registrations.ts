@@ -30,7 +30,7 @@ import type { QueryDeps } from "./query/index.ts";
 import { serviceRegistrations } from "./service/index.ts";
 import { specConfig, specRegistrations } from "./spec/index.ts";
 import type { ServiceDeps } from "./service/index.ts";
-import { createConfigRegistry, promptsModule } from "./shared/config/index.ts";
+import { createConfigRegistry, promptsModule, toolsModule } from "./shared/config/index.ts";
 import type { ConfigRegistry } from "./shared/config/index.ts";
 import { checkpointModule } from "./shared/store/index.ts";
 import type { Registration } from "./shared/registry/index.ts";
@@ -77,6 +77,7 @@ export function settingsRegistry(): ConfigRegistry {
   return createConfigRegistry({
     modules: [
       ...rulesConfig.modules,
+      toolsModule,
       ...ctxConfig.modules,
       ...graphConfig.modules,
       ...attemptConfig.modules,

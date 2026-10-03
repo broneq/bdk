@@ -4,6 +4,7 @@ import {
   createConfigRegistry,
   mergeLayers,
   promptsModule,
+  toolsModule,
   resolveConfig,
   validateLayers,
 } from "../../shared/config/index.ts";
@@ -13,7 +14,7 @@ import { rulesConfig } from "../../rules/index.ts";
 import { ctxConfig } from "../index.ts";
 
 const registry = createConfigRegistry({
-  modules: [...rulesConfig.modules, ...ctxConfig.modules, promptsModule],
+  modules: [...rulesConfig.modules, ...ctxConfig.modules, promptsModule, toolsModule],
   prompts: [...rulesConfig.prompts, ...ctxConfig.prompts],
 });
 

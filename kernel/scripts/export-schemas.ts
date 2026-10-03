@@ -42,7 +42,11 @@ import { configSchemaOutput } from "../src/config/schema/schema.ts";
 import { configSetOutput } from "../src/config/schema/set.ts";
 import { configShowOutput } from "../src/config/schema/show.ts";
 import { ctxOutput } from "../src/ctx/schema/ctx.ts";
-import { evidenceCheckOutput, evidenceRecordOutput } from "../src/evidence/schema/outputs.ts";
+import {
+  evidenceCheckOutput,
+  evidenceCoverageOutput,
+  evidenceRecordOutput,
+} from "../src/evidence/schema/outputs.ts";
 import {
   specDeltaCheckOutput,
   specDiffOutput,
@@ -162,6 +166,7 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/dispatch-build.json", dispatchBuildOutput],
   ["output/dispatch-show.json", dispatchShowOutput],
   ["output/evidence-record.json", evidenceRecordOutput],
+  ["output/evidence-coverage.json", evidenceCoverageOutput],
   ["output/evidence-check.json", evidenceCheckOutput],
   ["output/spec-delta-check.json", specDeltaCheckOutput],
   ["output/spec-merge.json", specMergeOutput],

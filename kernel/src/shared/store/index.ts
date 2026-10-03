@@ -1,5 +1,6 @@
 export { checkpointModule } from "./config.ts";
 export { fileStore, findProjectRoot, memoryStore, readStdin } from "./store.ts";
+export { addedLines, changeBase, EMPTY_TREE } from "./base.ts";
 export type { FileStat, Store } from "./store.ts";
 export { splitFrontmatter } from "./frontmatter.ts";
 export { findExecutable } from "./which.ts";
