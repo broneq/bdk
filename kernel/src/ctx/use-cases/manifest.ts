@@ -28,20 +28,6 @@ const projectRules: Part = { kind: "project-rules" };
 const verifierPolicy: Part = { kind: "verifier-policy" };
 
 export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
-  "bdk-implementer-return-contract": [
-    {
-      kind: "file",
-      path: "skills/bdk-implementer-return-contract/references/return-contract.md",
-      title: "Return contract",
-    },
-  ],
-  "bdk-lint-tools": [tools("lint")],
-  "bdk-rules-architecture": [rules("architecture")],
-  "bdk-rules-code-quality": [rules("code-quality")],
-  "bdk-rules-design-patterns": [rules("design-patterns")],
-  "bdk-rules-languages": [languageRules],
-  "bdk-rules-security": [rules("security")],
-  "bdk-test-tools": [tools("test")],
   // A stage skill that needs no settings keeps its context lines for the
   // `BDK STOP` line when the kernel is unavailable.
   change: [],

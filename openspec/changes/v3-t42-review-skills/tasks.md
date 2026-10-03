@@ -147,13 +147,13 @@
 
 ## 10. Plugin layout and removal (plugin-tooling delta, design D9)
 
-- [ ] 10.1 Write failing content tests in `kernel/tests/contract/`:
+- [x] 10.1 Write failing content tests in `kernel/tests/contract/`:
   - `agents/` holds exactly the six adapters and `web-researcher.md`;
   - no directory under `skills/` starts with `bdk-`, and `ctx skill bdk-rules-security` is a STOP block with `input/not-found` (`kernel/src/ctx/tests/`);
   - `plugin.json` `skills` lists `./skills/tools/`;
   - no `skills/cr/` or `skills/pr-review/` exists;
   - the `git grep` of removed agent names over `skills/`, `agents/`, `rules/`, `hooks/`, `STARTUP_INSTRUCTIONS.md`, `README.md` and `docs/guide/` is empty.
-- [ ] 10.2 Delete the twelve v2 agents and the eight meta-skills with their manifest entries. Fix every reference (`.claude/rules/portability-check.md`, the docs-sync map, `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md`, `docs/guide/` agents, shared foundation and skills pages, `README.md` Skills, Agents and Removed tables, the lines in `skills/debug` and `skills/test-driven-development`). Regenerate `STARTUP_INSTRUCTIONS.md` from `bdk ctx startup`. Run `pnpm skill-check --baseline-prune`. Verify that the tests of 10.1, `pnpm skill-check`, `bdk export agents --host claude --check`, `pnpm docs:build` and `claude plugin validate .` are green.
+- [x] 10.2 Delete the twelve v2 agents and the eight meta-skills with their manifest entries. Fix every reference (`.claude/rules/portability-check.md`, the docs-sync map, `CONTRIBUTING.md`, `docs/INJECTION-FLOWS.md`, `docs/guide/` agents, shared foundation and skills pages, `README.md` Skills, Agents and Removed tables, the lines in `skills/debug` and `skills/test-driven-development`). Regenerate `STARTUP_INSTRUCTIONS.md` from `bdk ctx startup`. Run `pnpm skill-check --baseline-prune`. Verify that the tests of 10.1, `pnpm skill-check`, `bdk export agents --host claude --check`, `pnpm docs:build` and `claude plugin validate .` are green.
 
 ## 11. Evals: review-models and stage cases (skill-evals delta, design D10)
 

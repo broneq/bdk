@@ -1,127 +1,42 @@
 # Code review
 
-!!! warning "Describes BDK v2"
+Every Change ends with a review. `/bdk:cr` reviews the Change on the current branch in rounds: role agents review its groups, a runner runs the full gate, and blocking findings are fixed and reviewed again until none is left. `/bdk:pr-review` reviews pull requests on GitHub and posts the result there.
 
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+## Where the review comes from
 
-Every tier ends here. `/bdk:cr` determines what changed, dispatches specialized reviewers
-in parallel, and merges their findings into one report. `/bdk:pr-review` takes the result
-to GitHub.
+A Change reaches the review stage after `/bdk:execute`, and `/bdk:run` starts `/bdk:cr` there. You can also run `/bdk:cr` yourself:
 
-## The four modes
+- **On a branch with an active Change**, it reviews that Change.
+- **On a branch without one**, it opens a review Change of the branch first, with `bdk change new "<intent>" --inferred --kind review`. The intent comes from the branch name and its commit subjects; `--base <ref>` sets the base for a stacked branch. A review Change has no design or plan of its own: the review stage is its first stage.
 
-| Mode            | Command                | Baseline reviewed                                                                      |
-| --------------- | ---------------------- | -------------------------------------------------------------------------------------- |
-| Delta (default) | `/bdk:cr`              | Only the commits added since the last review on this branch                            |
-| Full            | `/bdk:cr --full`       | The whole branch, from its base                                                        |
-| Inline          | `/bdk:cr --inline`     | Same range rules, but every cohort runs sequentially in this session with no subagents |
-| Explicit base   | `/bdk:cr --base <ref>` | `git merge-base HEAD <ref>` - for stacked branches                                     |
+## Choosing the range
 
-Modes combine: `--full --inline` is a whole-branch review inside one session.
+| Command                | Range reviewed                                                    |
+| ---------------------- | ----------------------------------------------------------------- |
+| `/bdk:cr`              | the delta since the last merged review, or the whole Change first |
+| `/bdk:cr --full`       | the whole Change from its merge base                              |
+| `/bdk:cr --base <ref>` | from `git merge-base HEAD <ref>`, for a stacked branch            |
+| `/bdk:cr --inline`     | the same range, with no agents (see below)                        |
 
-### Delta is the default
+Any other text is the focus of the run, which every reviewer receives. `bdk review plan` resolves the range and reports the files changed outside the plan's `Files:` as `dirty`; when nothing changed since the last review it opens no round.
 
-On a branch with an execution run, `/bdk:cr` reviews only what is new since the last pass.
-That is what keeps mid-branch reviews cheap.
+## A round
 
-### Always `--full` before a pull request
+One round is one `review-fix` ticket:
 
-A delta pass cannot see a later commit breaking an earlier, already-reviewed one. Run
-`/bdk:cr --full` as the last review before you open the PR.
+1. **Plan.** `bdk review plan` splits the range into groups: one per plan part, one for files no part names, and one `integration` group over the whole range.
+2. **Dispatch.** One package per group goes to a `reviewer` agent, the `integration` group to an Opus `integration-reviewer`, and one more package to a `runner` that runs the full gate and the diff coverage on the whole Change. Each agent reads the rules of its role and files with `bdk rules show --ticket` and writes its findings to the ledger.
+3. **Triage.** The orchestrator gives every finding of the round one level: `blocker`, `should-fix`, `nice-to-have` or `not-a-problem`. A blocker must name one of the blocking categories of `policy.verifier`; a finding that repeats another is `not-a-problem`.
+4. **Merge.** The round's merged report is stored under `<ticket>@merge`, with every entry per level, the gate's verdicts and the coverage.
+5. **Close.** Without a blocking entry the ticket closes `ok` and `bdk done review` passes. With one it closes `fail`, and the kernel decides the next round: a retry, a narrower scope, an escalation to a stronger model, or parking the Change for a human.
 
-There is a second reason. The cumulative cohort - `bdk:architecture-reviewer`,
-`bdk:dead-code-detector`, `bdk:duplicate-detector` - runs **only on a full-range review**,
-because a symbol is dead only relative to the whole branch, a layer violation is
-cumulative, and a duplicate needs both copies in view. On a delta pass those are skipped
-and the report says so (`architecture_review: skipped:delta-pass`).
+A round that starts with blocking entries fixes them first: an `implementer` package embeds every blocking entry, its fix is committed under the ticket, and each entry it fixed is resolved. The round then reviews the delta, and the runner runs the full gate again.
 
-### `--base <ref>` for stacks
+`/bdk:cr` never edits a file itself: it declares `disallowed-tools: Edit Write NotebookEdit`, and every fix goes through an implementer package.
 
-`--base` exists for stacked branches, where the honest baseline is the parent branch of
-the stack, not the repo default - deriving it from `origin/HEAD` would blame this branch
-for every change below it in the stack. It also implies no run watermark applies.
+## `--inline`
 
-## What it prints
-
-On start:
-
-```
-┌─────────────────────────────────────────────────┐
-│  👁️  ORCHESTRATOR: code-review                   │
-│  📋 Task: {brief description}                   │
-│  ⚡ Model: sonnet                                │
-└─────────────────────────────────────────────────┘
-```
-
-During execution:
-
-```
-[cr] Step 1: Resolving range...
-[cr] Range: {anchor}..{head} ({delta|full}, {anchor_source}) — {N} commits
-[cr] Scope: {N} files changed, {N} lines → {tiny|small|large|massive}
-[cr] Step 2: Dispatching {N} agents ({M} deferred findings suppressed)...
-[cr] Step 3: Waiting for agents...
-[cr] Step 4: Merging results...
-[cr] ✓ Complete ({N} findings: {critical}C/{high}H/{medium}M/{low}L)
-[cr] Report: {path}
-```
-
-The range line is not decoration. A reader must be able to tell a deliberate full review
-from one that fell back to full because the watermark was lost - `anchor_source` says
-which.
-
-## Agent scaling
-
-The size class comes from the resolved range's changed lines, not the whole branch:
-
-| Class   | Lines     | Reviewers                                                                                      |
-| ------- | --------- | ---------------------------------------------------------------------------------------------- |
-| tiny    | < 50      | one `bdk:code-reviewer` covering everything, checking duplicates and dead code inline          |
-| small   | 50-1000   | one layer reviewer, plus architecture, test, duplicate, dead-code, static-analyse, test-runner |
-| large   | 1000-3000 | N layer reviewers, N = ceil(lines / 1000), capped at 5                                         |
-| massive | 3000+     | as large, N capped at 5                                                                        |
-
-That is the 3 to 13 agents the skill advertises. With `--inline`, multiple layer reviewers
-collapse into one thorough pass - inline execution has no parallelism to buy.
-
-## The report
-
-Written to:
-
-```
-.bdk/cr/{stamp}-{branch-slug}-{delta|full}.md
-```
-
-`stamp` is the reviewed head's own commit date
-(`git log -1 --format=%cd --date=format:%Y-%m-%d-%H%M`), not wall-clock time - so the
-filename identifies what was reviewed, and re-running on an unchanged head overwrites
-rather than accumulates.
-
-Thirteen sections, opening with a scope header that states the range, the file count, the
-size class, the agent count with any degraded names, and how many previously deferred
-findings were suppressed. A report that does not say it was a delta pass reads as a full
-review of the branch, which is the one misreading that turns a clean report into a false
-assurance.
-
-### Deferred findings
-
-With an execution run, the report closes with:
-
-```markdown
-## Deferred — not auto-fixed
-
-| Severity | Category | Location | Problem |
-|---|---|---|---|
-```
-
-Those are findings someone already saw and declined. They are withheld from this pass's
-reviewers on purpose - otherwise every delta pass re-reports the same debatable MEDIUMs -
-and listed at the end so the report stays honest about the branch's actual state rather
-than about what was re-detected.
-
-!!! note
-`/bdk:cr` never fixes anything. All sub-agents are read-only; findings go into the
-report, and fixing them is a separate, explicit decision by you.
+`--inline` runs the same packages in the session, one after another, with no agent. It reviews and triages, but fixes nothing: with blocking entries it closes the round `fail` and names them, and `/bdk:cr` without `--inline` fixes them.
 
 ## Reviewing GitHub pull requests
 
@@ -129,49 +44,36 @@ report, and fixing them is a separate, explicit decision by you.
 /bdk:pr-review <pr-url> [<pr-url> ...] [--verify] [focus]
 ```
 
-One reviewer subagent per PR, each running `/bdk:cr --inline` in its own detached
-worktree. The orchestrator aggregates every PR in the run and shows you a full report
-before anything reaches GitHub:
+Each PR is reviewed in a detached worktree of its head by the `pr-reviewer` role, one after another. The review keeps no state: no ticket, no ledger entry, no file under `.bdk/`. When the range adds or changes a Change directory under `.bdk/changes/`, the reviewer checks the PR against that Change's contract too.
+
+The skill shows each PR's computed verdict with every finding before anything reaches GitHub:
 
 ```
-── PR #{n}: {title} ── computed verdict: {✅ Approve | ❌ Request changes}
-Blockers ({n}):
-  - {path}:{line} [{SEVERITY}] {one-sentence problem}
-Nice to have ({n}) - review these, real issues sometimes land here:
-  - {path}:{line} [{category}] {one-sentence problem} → {one-sentence fix}
+── PR #{n}: {title} ── computed verdict: request-changes
+  {path}:{line} [{severity} · {category}] {problem}
+  ...
 ```
 
 !!! warning
-Nothing is posted to GitHub until you confirm. You confirm or override each PR's
-verdict, and only then does a single review call per PR post the inline comments,
-the summary, and the event.
+Nothing is posted to GitHub until you confirm. You confirm or override each PR's verdict, and only then does a single review call per PR post the inline comments, the summary and the event.
 
-Verdict policy: any confirmed CRITICAL or HIGH computes to request-changes; only MEDIUM or
-LOW computes to approve. Nice-to-haves never block by themselves, but the complete list
-reaches you precisely so one that actually matters can get an override. On your own PR the
-GitHub event is forced to `COMMENT`, since GitHub rejects self-approval.
+Verdict policy: any finding the reviewer marks blocking computes to request-changes; otherwise approve. Non-blocking findings never turn the verdict, but the whole list reaches you so one that matters can get an override. On your own PR the GitHub event is `COMMENT`, since GitHub rejects self-review.
 
 ### Stacked PRs
 
-When a PR's base is not the repo default branch and an open PR has that base as its head,
-`/bdk:pr-review` detects the stack and scopes the review to **this PR's own diff versus
-its parent branch** - the parent's changes get their own review in their own PR. There is
-no auto-expansion: one URL reviews one PR, so list every stack entry you want reviewed.
+When a PR's base is not the default branch and an open PR has that base as its head, `/bdk:pr-review` reviews only **this PR's own diff against its parent branch**. One URL reviews one PR, so list every stack entry you want reviewed.
 
 ### `--verify`
 
-`--verify` switches every PR in the invocation to the follow-up pass: did the author
-implement what the previous review asked for? It reads the previous review's comments
-(the templates carry hidden markers for exactly this), classifies each, and after posting
-resolves the threads that were addressed.
+`--verify` checks whether the author fixed what the previous review asked for. It reads the previous review's threads (the templates carry hidden markers for this), the reviewer classifies each as fixed, not fixed or outdated, and after posting the skill resolves the threads that were fixed.
 
 ## What you get
 
-| Artifact      | Path                                                                                           |
+| Output        | Where                                                                                          |
 | ------------- | ---------------------------------------------------------------------------------------------- |
-| Review report | `.bdk/cr/<stamp>-<branch-slug>-delta.md` or `-full.md`                                         |
+| Review report | the ledger of the Change: findings by level, and the merged report under `<ticket>@merge`      |
 | PR review     | inline comments plus one templated summary on GitHub, with an approve or request-changes event |
 
 ## Next step
 
-Ship it, then keep the rules honest: [Rules hygiene](rules-hygiene.md).
+`/bdk:close` once `gate:review` is ready. Then keep the rules honest: [Rules hygiene](rules-hygiene.md).

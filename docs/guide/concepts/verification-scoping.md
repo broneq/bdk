@@ -81,6 +81,6 @@ The one thing worth checking by hand is the tier on any end-to-end runner, becau
 
 ## Keeping the definitions in sync
 
-The `Verification: none` definition and the source versus non-executable partition are repeated in several places: the planning and execution skills, the internal tool meta-skills, and the shared foundation. No test enforces their consistency. If one copy drifts, verification is silently skipped or silently over-run, so all copies are edited together.
+The `Verification: none` definition and the source versus non-executable partition are repeated in several places: the planning and execution skills, the role contracts, and the shared foundation. No test enforces their consistency. If one copy drifts, verification is silently skipped or silently over-run, so all copies are edited together.
 
 Next: [The plan pipeline](plan-pipeline.md) for where the end-of-plan gate sits.

@@ -8,12 +8,12 @@ BDK is a Claude Code plugin that packages one complete development workflow - de
 
 ## Why BDK
 
-- **[Language-agnostic by construction](concepts/shared-foundation.md).** Skills never name a test runner; commands live in `.bdk/settings.json` and reach agents through preloaded meta-skills.
+- **[Language-agnostic by construction](concepts/shared-foundation.md).** Skills never name a test runner; commands live in `.bdk/settings.yaml` and reach agents through their dispatch packages.
 - **[Verification proportional to the change](concepts/verification-scoping.md).** Fast and e2e tiers with scoped, related, failed, and incremental forms; the full suite runs once per plan, not after every edit.
 - **[Crash-safe, resumable execution](concepts/plan-pipeline.md).** The plan is immutable once verified (sha256 stamp), git commit trailers are the ground truth, the run manifest is only a cache - resume from any session, or run plans in parallel worktrees.
 - **[Coordinator-only executor](concepts/plan-pipeline.md).** Every task gets a fresh subagent context, parallel waves are computed at plan time, and each group lands as one commit.
-- **[Independent verifiers](concepts/agents.md).** `bdk:plan-verifier` and `bdk:design-verifier` are separate Opus agents critiquing the author's draft; reviewers are read-only mechanically - by a `tools:` allowlist that grants no editing tools, and by `disallowed-tools` on the skills that spawn them - not by promise.
-- **[Delta code review](workflows/code-review.md).** Reviews only what changed since the last review by default, scales 3-13 agents to the size of the change, and remembers deferred findings.
+- **[Independent verifiers](concepts/agents.md).** The `verifier` and `design-verifier` roles run on separate Opus agents critiquing the author's draft; reviewers are read-only mechanically - by a `tools:` allowlist that grants no editing tools, and by `disallowed-tools` on the skills that spawn them - not by promise.
+- **[Delta code review](workflows/code-review.md).** Reviews only what changed since the last review by default, with a reviewer per group of the change, and fixes blocking findings in rounds until none is left.
 - **Nothing to install beyond Claude Code.** Skills and agents explore, search and trace code with the built-in tools; BDK ships no MCP server and starts no background process.
 - **[Every seam is a file](workflows/full-pipeline.md).** Design docs, plans, verification reports, and commit trailers carry the state between stages, so any stage of the pipeline runs in a fresh session.
 - **[Rules hygiene built in](workflows/rules-hygiene.md).** [`/bdk:add-rule`](reference/skills.md#bdkadd-rule) and [`/bdk:refine-rules`](reference/skills.md#bdkrefine-rules) plus a drift hook keep `.claude/rules/` from turning into a changelog.

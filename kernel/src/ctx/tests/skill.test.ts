@@ -22,10 +22,9 @@ function pack(dir: string, id: string, text: string, extra = ""): Record<string,
 const PLUGIN_FILES: Record<string, string> = {
   ...pack("code-quality", "BDK-CQ-1", "**Naming.** Plain."),
   ...pack("architecture", "BDK-ARCH-1", "**Layers.** Down only."),
-  ...pack("security", "BDK-SEC-1", "**Secrets.** Never logged."),
-  ...pack("security", "BDK-SEC-2", "**Tokens.** Short-lived."),
   ...pack("engineering-judgment", "BDK-EJ-1", "**Trade-offs.** Named."),
   ...pack("plan", "BDK-PL-1", "**Done.** Checkable in review."),
+  ...pack("plan", "BDK-PL-2", "**Small.** One concern per task."),
   ...pack("languages/typescript", "BDK-TS-1", "**Strict.** On.", "applies: ['**/*.ts']\n"),
   "fragments/decision/lavish.md": "**Decision tier: lavish**\n",
   "fragments/decision/ask-user.md": "**Decision tier: ask-user**\n",
@@ -110,6 +109,13 @@ describe("ctx skill", () => {
     });
   });
 
+  it("refuses a bdk-* meta-skill, which the plugin no longer ships (T42-E)", () => {
+    expect(composeSkill(input(), "bdk-rules-security")).toMatchObject({
+      refused: true,
+      rule: "input/not-found",
+    });
+  });
+
   it("refuses an unknown key and an invalid value", () => {
     expect(
       composeSkill(input({ ".bdk/settings.yaml": "tools:\n  tests: []\n" }), "design"),
@@ -151,14 +157,14 @@ describe("ctx skill", () => {
   });
 
   it("prints each pack rule with its id, and leaves a disabled one out", () => {
-    const report = compose("bdk-rules-security", {
-      ".bdk/settings.yaml": "rules:\n  disabled: [BDK-SEC-2]\n",
-    });
-    const section = report.content.split("### Rules: security\n\n")[1]?.split("\n### ")[0];
-    expect(section).toBe("- [BDK-SEC-1] **Secrets.** Never logged.\n");
     expect(compose("plan").content).toContain(
-      "### Rules: plan\n\n- [BDK-PL-1] **Done.** Checkable in review.\n",
+      "### Rules: plan\n\n- [BDK-PL-1] **Done.** Checkable in review.\n- [BDK-PL-2] **Small.** One concern per task.\n",
     );
+    const report = compose("plan", {
+      ".bdk/settings.yaml": "rules:\n  disabled: [BDK-PL-2]\n",
+    });
+    const section = report.content.split("### Rules: plan\n\n")[1]?.split("\n### ")[0];
+    expect(section).toBe("- [BDK-PL-1] **Done.** Checkable in review.\n");
   });
 
   it("prints the project's rules under their own title, with applies", () => {
@@ -203,9 +209,11 @@ describe("ctx skill", () => {
   });
 
   it("omits the language rules part when no language has a value", () => {
-    const report = compose("bdk-rules-languages", { ".bdk/settings.yaml": "languages: [cobol]\n" });
-    expect(report.content).toBe("## BDK context: bdk-rules-languages\n");
-    expect(report.parts).toStrictEqual([]);
+    const report = compose("plan", { ".bdk/settings.yaml": "languages: [cobol]\n" });
+    expect(titles(report.content).filter((title) => title.startsWith("Language"))).toStrictEqual(
+      [],
+    );
+    expect(report.parts.map((part) => part.kind)).not.toContain("language-rules");
   });
 
   it("prints tool entries as config show does, including when, and none configured when empty", () => {

@@ -24,27 +24,19 @@ Use generic phrasing:
 
 Env detection handled by `STARTUP_INSTRUCTIONS.md` — trust it.
 
-## Required: Dispatch Paths and Intent, Never a Command
+## Required: Dispatch Packages, Never a Command
 
-A skill dispatching a verifier subagent (`bdk:test-runner`, `bdk:static-analyse`) passes **file paths plus what scope is wanted**, never a resolved command string. The dispatching skill does not know the project's runner; the agent reads it from the `tools.*` settings through its preloaded meta-skill.
+A skill that starts a role agent passes the dispatch package path from `bdk dispatch build`, never a resolved command string. The dispatching skill does not know the project's runner; the kernel puts the configured `tools.*` entries into a runner package's `Checks` section, and the agent runs them from there.
 
-A command baked into a dispatch prompt runs correctly in the project it was written for and silently runs the wrong scope — usually the whole suite — everywhere else. Nothing errors; the plan just takes minutes longer per group.
+A command baked into a dispatch prompt runs correctly in the project it was written for and silently runs the wrong scope - usually the whole suite - everywhere else. Nothing errors; the plan just takes minutes longer per group.
 
 ## Exception: Skills That Detect the Stack
 
 A skill whose job is _discovering_ the environment names runners and frameworks by necessity — it maps a discovered runner to the command forms it writes into `.bdk/settings.yaml`. The ban above is on **consuming** a hardcoded command; naming one to derive settings is the whole function. Do not "portability-fix" such a table into generic prose: a derivation table that cannot name `vitest` cannot produce `vitest related --run`.
 
-## Required: Agents Reading Tool Commands
+## Required: Agents Reading Tool Commands and Rules
 
-Agents needing project test/lint/build commands MUST preload the matching meta-skill via `skills:` frontmatter — never embed tool tables:
-
-| Agent need                            | Meta-skill to preload |
-| ------------------------------------- | --------------------- |
-| Run tests                             | `bdk-test-tools`      |
-| Run lint/format/typecheck             | `bdk-lint-tools`      |
-| Language- or framework-specific rules | `bdk-rules-languages` |
-
-Meta-skill body resolves at agent spawn. Edits to the settings take effect on the next agent spawn, not retroactively.
+A role agent gets the project's commands from its package (`Checks` of a runner package) and its rules with `bdk rules show --ticket <ticket>`; a skill gets them from its `ctx skill` sections (`Project commands: <group>`, `Rules: <category>`). Never embed a tool table or a rule text in an agent or a role body.
 
 ## Required: Standard Skill Header
 
@@ -54,7 +46,7 @@ Every **user-invocable workflow skill** must start with (after its two context l
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 ```
 
-**Exempt:** meta-skills with `user-invocable: false` (e.g., `bdk-test-tools`, `bdk-lint-tools`, `bdk-rules-*`). They are preloaded into agents, not invoked by users, and the foundation reference adds noise to the agent's context.
+**Exempt:** skills with `user-invocable: false` (the role skills under `skills/roles/` and `swarm`). Agents and orchestrators load them, not users, and the foundation reference adds noise to the agent's context.
 
 ## Required: Skill References
 

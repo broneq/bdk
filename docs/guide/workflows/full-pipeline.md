@@ -27,13 +27,13 @@ in one testable sentence. See the [tier table](../index.md#how-you-work-with-it)
 ```
 
 `/bdk:design` is a design partner, not a generator. It grounds itself in your codebase
-first (parallel `bdk:explorer` subagents, mandatory), classifies the work as product /
+first (parallel `bdk:scout` subagents, mandatory), classifies the work as product /
 architecture / combined, then iterates with you: 2+ approaches at every branching
 decision, a Mermaid diagram per approach, tradeoffs stated concretely, and a
 devil's-advocate pass that must name a bottleneck, a single point of failure, a hidden
 cost, and an unconfirmed assumption.
 
-Before the doc is written, a separate Opus `bdk:design-verifier` subagent critiques the
+Before the doc is written, a separate Opus `design-verifier` subagent critiques the
 draft cold - the author of a design has confirmation bias against it, so the critique
 moves out of the author's head.
 
@@ -93,7 +93,7 @@ It closes with:
 /bdk:verify-plan .bdk/plans/<ts>-<slug>.md
 ```
 
-One Opus `bdk:plan-verifier` subagent runs a six-section checklist against the real code:
+One Opus `verifier` subagent runs a six-section checklist against the real code:
 signature drift, data trace, edge cases, regression flows, test coverage, plan
 completeness. On `FAIL` it iterates once via `SendMessage`; a second `FAIL` stops and
 recommends `/bdk:design`, because two failed passes mean the plan is structurally wrong.
@@ -123,7 +123,7 @@ On pass it stamps the plan's sha256 into the report and prints:
 
 The executor is a **coordinator only**: it holds plan state, builds a schedule, and
 dispatches subagents. It never edits files, never runs tests, never reads source. Each
-task gets a fresh `bdk:implementer` with clean context; groups of file-disjoint tasks run
+task gets a fresh `implementer` agent with clean context; groups of file-disjoint tasks run
 in parallel; each group ends in one commit carrying `BDK-Run:` and `BDK-Group:` trailers.
 
 Preconditions it enforces at Step 0: you are not on `main`/`master`, and the working tree

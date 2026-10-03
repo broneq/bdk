@@ -1,6 +1,6 @@
 # Verification Scoping - Shared Definitions
 
-Two definitions are repeated across the planning/execution skills, the tools meta-skills, STARTUP_INSTRUCTIONS.md and, for the file-class partition, the kernel's `policy.evidence` defaults. No test enforces their consistency; if one copy drifts, verification is silently skipped or silently over-run. When editing any copy, keep them all saying the same thing.
+Two definitions are repeated across the planning/execution skills, the role contracts, STARTUP_INSTRUCTIONS.md and, for the file-class partition, the kernel's `policy.evidence` defaults. No test enforces their consistency; if one copy drifts, verification is silently skipped or silently over-run. When editing any copy, keep them all saying the same thing.
 
 ## `Verification: none` task class
 

@@ -163,4 +163,4 @@ A fragment is a Markdown file under `fragments/<capability>/` that a skill recei
 
 No skill gets a new `!` line: every skill reads its context through its two context lines (`.claude/rules/skill-context.md`).
 
-Agents are static markdown with no shell execution at load time: they get dynamic content by preloading a `bdk-rules-*` (or other meta-) skill via `skills:` frontmatter.
+Agents are static markdown with no shell execution at load time. A role agent gets its content through the kernel instead: its dispatch package is its whole prompt, and it reads its rules with `bdk rules show --ticket <ticket>`.

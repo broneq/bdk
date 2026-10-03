@@ -1,123 +1,13 @@
 [
   {
     "rule": "body-shape",
-    "file": "agents/architecture-reviewer.md",
-    "fingerprint": "be84fd676e05e90f"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/code-reviewer.md",
-    "fingerprint": "c648a7c1ae0d5de7"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/dead-code-detector.md",
-    "fingerprint": "adf951b505919d69"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/design-verifier.md",
-    "fingerprint": "733376f43ce82276"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/duplicate-detector.md",
-    "fingerprint": "bf850d89477ff395"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/explorer.md",
-    "fingerprint": "0a760dfef5b66b7e"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/fixer.md",
-    "fingerprint": "dc377042e88d8e52"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/implementer.md",
-    "fingerprint": "ff8595ef7aa53a58"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/log-analyzer.md",
-    "fingerprint": "8d5adb0511122d0a"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/plan-verifier.md",
-    "fingerprint": "3275797fe4e56d04"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/static-analyse.md",
-    "fingerprint": "c8cbefd3387d8e58"
-  },
-  {
-    "rule": "body-shape",
-    "file": "agents/test-runner.md",
-    "fingerprint": "20238e0f76b087b2"
-  },
-  {
-    "rule": "body-shape",
     "file": "agents/web-researcher.md",
     "fingerprint": "86e56790ce7cfb9f"
   },
   {
     "rule": "description-front-loaded",
-    "file": "skills/bdk-implementer-return-contract/SKILL.md",
-    "fingerprint": "9e82187d65804c16"
-  },
-  {
-    "rule": "description-front-loaded",
-    "file": "skills/bdk-lint-tools/SKILL.md",
-    "fingerprint": "c84ca3bed3645d78"
-  },
-  {
-    "rule": "description-front-loaded",
-    "file": "skills/bdk-rules-architecture/SKILL.md",
-    "fingerprint": "8a0e3ec47eae0824"
-  },
-  {
-    "rule": "description-front-loaded",
-    "file": "skills/bdk-rules-code-quality/SKILL.md",
-    "fingerprint": "4080a6861bad09fa"
-  },
-  {
-    "rule": "description-front-loaded",
-    "file": "skills/bdk-rules-design-patterns/SKILL.md",
-    "fingerprint": "35664d79eb9ef811"
-  },
-  {
-    "rule": "description-front-loaded",
-    "file": "skills/bdk-rules-languages/SKILL.md",
-    "fingerprint": "004bc0bab9841917"
-  },
-  {
-    "rule": "description-front-loaded",
-    "file": "skills/bdk-rules-security/SKILL.md",
-    "fingerprint": "ebf0f0aad007b712"
-  },
-  {
-    "rule": "description-front-loaded",
-    "file": "skills/bdk-test-tools/SKILL.md",
-    "fingerprint": "e1a32ce67b108410"
-  },
-  {
-    "rule": "description-front-loaded",
     "file": "skills/commit/SKILL.md",
     "fingerprint": "c1ad4f39844e130d"
-  },
-  {
-    "rule": "description",
-    "file": "agents/design-verifier.md",
-    "fingerprint": "7c6bcca4fd206399"
-  },
-  {
-    "rule": "description",
-    "file": "agents/plan-verifier.md",
-    "fingerprint": "e3322c2fe97fa491"
   },
   {
     "rule": "field-values",
@@ -138,26 +28,6 @@
     "rule": "line-limit",
     "file": "skills/update-docs/SKILL.md",
     "fingerprint": "3b7d74c7e59ac90b"
-  },
-  {
-    "rule": "model-names",
-    "file": "agents/explorer.md",
-    "fingerprint": "991b3373f91b82e5"
-  },
-  {
-    "rule": "model-names",
-    "file": "agents/log-analyzer.md",
-    "fingerprint": "f22fead5be883e52"
-  },
-  {
-    "rule": "model-names",
-    "file": "agents/static-analyse.md",
-    "fingerprint": "328628b27e54b3a8"
-  },
-  {
-    "rule": "model-names",
-    "file": "agents/test-runner.md",
-    "fingerprint": "a802448ed6782a0b"
   },
   {
     "rule": "model-names",

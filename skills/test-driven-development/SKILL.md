@@ -106,7 +106,7 @@ Add an unlisted edge-case test ONLY when its absence would let a real production
 
 Test commands: the `Project commands: test` section of the BDK context above.
 
-**Run it yourself, via `Bash`. Do not spawn a `bdk:test-runner` agent for this.** One test file's worth of output is a few lines; a spawn costs a cold start, a preload, and a model round-trip — an order of magnitude more wall-clock than the run it wraps, paid twice per task (RED and GREEN) and again on every fix attempt. `bdk:test-runner` exists to keep a _large_ run's output out of a caller's context (group verification, the end-of-plan gate). This is not that.
+**Run it yourself, via `Bash`; start no agent for this.** One test file's worth of output is a few lines; a spawn costs a cold start and a model round-trip - an order of magnitude more wall-clock than the run it wraps, paid twice per task (RED and GREEN) and again on every fix attempt.
 
 Pick the command from those entries: the tier matching the test cases you just wrote, `scoped` form, substituting `{files}` with `{test_file_path}`; an entry's `when` text says when it applies. **Never the unscoped `command` form of any tier.** `none configured` means nothing is configured: detect the runner from project files and tell the user to run `/bdk:setup`.
 
@@ -144,7 +144,7 @@ Do **not** widen the scope on the way out — no full suite, no other tier, no "
 - ❌ Writing implementation before tests exist
 - ❌ Forcing negative test when no real failure mode exists
 - ❌ Hardcoding test commands — always detect project's test runner
-- ❌ Spawning `bdk:test-runner` (or any agent) for a GATE 2/4 run. The spawn costs more wall-clock than the run; use `Bash` directly
+- ❌ Spawning an agent for a GATE 2/4 run. The spawn costs more wall-clock than the run; use `Bash` directly
 - ❌ Falling back to a bare full-suite command (any tier) in GATE 2/4 because scoping "wasn't obvious" — escalate as `BLOCKED` instead; full-suite runs belong only to the coordinator's end-of-plan gate
 - ❌ Running an e2e/integration tier in GATE 2/4 for tests that are not e2e specs. Run the tier your new tests belong to, nothing else
 - ❌ Padding GATE 1 with boundary/edge tests the spec never asked for and no real bug motivates

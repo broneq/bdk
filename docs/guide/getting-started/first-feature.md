@@ -28,10 +28,10 @@ Work on a branch. `/bdk:subagent-execute-plan` refuses to run on `main` or
 /bdk:design add a --dry-run flag to the export command
 ```
 
-`/bdk:design` dispatches `bdk:explorer` subagents to ground itself in your code
+`/bdk:design` dispatches `bdk:scout` subagents to ground itself in your code
 before it proposes anything, asks you to classify the work as product,
 architecture, or combined, then offers at least two approaches with a Mermaid
-diagram each and a devil's-advocate critique. A separate Opus `bdk:design-verifier`
+diagram each and a devil's-advocate critique. A separate Opus `design-verifier`
 subagent reviews the draft before it is written.
 
 **Artifact:** `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md`
@@ -84,7 +84,7 @@ the stamp.
 /bdk:verify-plan .bdk/plans/2026-09-13-0942-dry-run-export.md
 ```
 
-One Opus `bdk:plan-verifier` subagent runs a six-section checklist against the
+One Opus `verifier` subagent runs a six-section checklist against the
 real code (signature drift, data trace, edge cases, regression flows, test
 coverage, plan completeness) and returns a YAML verdict. A `FAIL` gets one
 delta iteration; a second `FAIL` sends you back to `/bdk:design` rather than a
@@ -122,8 +122,8 @@ is running the plan that was verified.
 ```
 
 The coordinator never edits a file itself. It groups file-disjoint tasks,
-dispatches a fresh `bdk:implementer` per task, runs scoped tests and lint
-through `bdk:test-runner` and `bdk:static-analyse`, routes failures to a fixer,
+dispatches a fresh `implementer` package per task, runs scoped tests and lint
+through `runner` packages, routes failures back to an implementer,
 and commits one group at a time. It opens with:
 
 ```
