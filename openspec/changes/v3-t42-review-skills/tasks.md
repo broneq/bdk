@@ -2,7 +2,7 @@
 
 ## 1. Probe
 
-- [ ] 1.1 Probe in a scratch repository with the built bundle and record the outputs in this task:
+- [x] 1.1 Probe in a scratch repository with the built bundle and record the outputs in this task:
   - a fix after a failed round, committed with `git commit` as `round.e2e.ts` does, then `bdk rebuild`; record whether a commit with only `BDK-Change` raises `state/trailer-mismatch`;
   - `dispatch build <change> implementer <ticket>` on a `review-fix` ticket with one finding triaged `blocker`; record whether the finding is embedded;
   - `change new --inferred` on a branch with commits, then `attempt open review-fix`; record the refusal;
@@ -10,21 +10,30 @@
 
   The failing tests of groups 2-5 start from these observed outputs.
 
+  Probe 2026-10-03, bundle 2.7.0, through a throwaway E2E on `executed(started())`:
+  - a group `reviewer` package with one `--file` is 6 202 bytes;
+  - `log triage <finding> blocker` answers `level: blocker`, `status: proposed`;
+  - the round-2 `implementer` package (5 369 bytes, target the Change) does NOT embed the finding triaged `blocker`;
+  - a `git commit` carrying only `BDK-Change` makes `bdk rebuild` exit 4 with `state/trailer-mismatch` ("carries BDK-Change ... without BDK-Part and BDK-Task");
+  - `bdk commit <change-id>` exits 3 with `input/not-found` ("no plan part holds task <change-id>");
+  - `bdk rules show` without `<id>` or `--ticket` exits 3 with `input/missing-argument`;
+  - `change new --inferred` on a branch with commits opens `kind: feature`, `profile: small`, `next: /bdk:design`, so `attempt open review-fix` waits on design, plan and execute.
+
 ## 2. Review Change kind (design D3)
 
-- [ ] 2.1 Write failing tests in `kernel/src/change/tests/` and as E2E:
+- [x] 2.1 Write failing tests in `kernel/src/change/tests/` and as E2E:
   - `change new --kind review --inferred` stamps `kind: review` and `base` equal to `git merge-base HEAD origin/HEAD`, and `next` is `/bdk:cr`;
   - `--base main` uses `main`;
   - `--base` with no `--kind review` is `input/invalid-argument`;
   - an unknown ref is `input/not-found` and writes nothing;
   - `HEAD` equal to the base is `policy/empty-range` and writes nothing;
   - a `feature` Change has no `base`.
-- [ ] 2.2 Write failing tests in `kernel/src/graph/tests/` and `kernel/src/review/tests/`:
+- [x] 2.2 Write failing tests in `kernel/src/graph/tests/` and `kernel/src/review/tests/`:
   - a `review` Change lists `intent`, `tests-full`, `lint-full`, `review`, `gate:review` and `close` only;
   - `bdk next` names `/bdk:cr`;
   - `attempt open review-fix` is admitted with no `steps`;
   - `review plan` anchors `full` at the stamped `base` after `change.md` is committed, and groups by module.
-- [ ] 2.3 Implement:
+- [x] 2.3 Implement:
   - the `kind` enum and `base` in the state schema;
   - `change new --kind review --base`, using `resolveCommit` and `mergeBase`;
   - `changeBase` reading `base`;

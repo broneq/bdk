@@ -37,8 +37,8 @@
       "flags": [
         {
           "name": "--kind",
-          "values": ["feature", "bug"],
-          "description": "Graph variant; default feature (T02 decision R-8)."
+          "values": ["feature", "bug", "review"],
+          "description": "Graph variant; default feature (T02 decision R-8). `review` is a review of work already on the branch, opened by `/bdk:cr` (T42)."
         },
         {
           "name": "--profile",
@@ -53,11 +53,22 @@
         {
           "name": "--inferred",
           "description": "The Change is opened on the user's behalf by another skill; stamped source: inferred (R-12)."
+        },
+        {
+          "name": "--base",
+          "value": "<ref>",
+          "description": "Only with `--kind review`: the commit the review starts from is `git merge-base HEAD <ref>`; default `origin/HEAD`."
         }
       ],
       "output": "output/change-new.json",
       "exits": [0, 2, 3, 5],
-      "refusals": ["policy/change-exists", "policy/detached-head", "runtime/git-missing"],
+      "refusals": [
+        "input/not-found",
+        "policy/change-exists",
+        "policy/detached-head",
+        "policy/empty-range",
+        "runtime/git-missing"
+      ],
       "writes": [
         ".bdk/changes/<id>/change.md",
         ".bdk/changes/<id>/log/",

@@ -1,7 +1,7 @@
 // `change.md` (`kernel-state`, Change document): written once by `change new`.
 import * as z from "zod";
 
-import { author, changeId, timestamp } from "./common.ts";
+import { author, changeId, commitSha, timestamp } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
 import { CHANGE_KINDS, CHANGE_SOURCES, PROFILES } from "../../vocabulary/index.ts";
 
@@ -21,6 +21,10 @@ export const changeKind = {
       at: timestamp,
       author,
       overridden: z.array(z.string().min(1)),
+      base: commitSha.optional().meta({
+        description:
+          "Only for kind review: `git merge-base HEAD <ref>` at opening, where the Change's range starts (T42).",
+      }),
     })
     .meta({ title: "change.md", description: "The Change's identity and intent; never mutated." }),
   migrations: [],

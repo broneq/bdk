@@ -234,6 +234,7 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 | `policy/git-in-progress`        | 2    | `change checkpoint`, `change close`, `commit`                                                                                                   | A rebase, merge or cherry-pick is in progress (V1-4).                                                                                                                                                                                                       |
 | `policy/git-hook-failed`        | 2    | `change checkpoint`, `change close`, `commit`                                                                                                   | A git hook of the repository rejected the kernel's commit; `why` carries the hook's first output line and no commit was created.                                                                                                                            |
 | `policy/nothing-to-commit`      | 2    | `commit`                                                                                                                                        | Neither the code nor the Change directory changed since the last commit for this task.                                                                                                                                                                      |
+| `policy/empty-range`            | 2    | `change new`                                                                                                                                    | A review Change would start at `HEAD`: the branch holds no commit over its base, so there is nothing to review.                                                                                                                                             |
 | `policy/commit-busy`            | 2    | `commit`                                                                                                                                        | Another `commit` held the commit lock for longer than 60 s (T41-D12); `instead` is to run the same `commit` again.                                                                                                                                          |
 | `policy/spec-invalid`           | 2    | `change close`, `validate`, `spec delta check`, `spec merge`                                                                                    | A delta breaks the format: `Scenario:` prefix, missing WHEN / THEN, a scenario lost without `REMOVED` (D2b).                                                                                                                                                |
 | `policy/spec-conflict`          | 2    | `change close`, `spec merge`                                                                                                                    | Two deltas edit the same requirement differently; `why` names both.                                                                                                                                                                                         |
@@ -302,6 +303,11 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 
 - **WHEN** the coverage test reads the declared refusals of `review plan`, `log triage` and `evidence coverage`
 - **THEN** every declared rule is in the catalogue, and the `Emitted by` cells of `policy/no-open-ticket` and `policy/invalid-transition` name `evidence coverage` and `log triage`
+
+#### Scenario: empty review range in the catalogue
+
+- **WHEN** the coverage test reads the declared refusals of `change new`
+- **THEN** `policy/empty-range` is in the catalogue with exit 2 and `Emitted by` naming `change new`, and the `Emitted by` cell of `policy/no-open-ticket` names `commit`
 
 ### Requirement: Conventions
 

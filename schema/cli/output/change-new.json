@@ -11,7 +11,7 @@
       "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
     "branch": { "type": "string", "minLength": 1 },
-    "kind": { "type": "string", "enum": ["feature", "bug"] },
+    "kind": { "type": "string", "enum": ["feature", "bug", "review"] },
     "profile": {
       "type": "object",
       "properties": {

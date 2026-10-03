@@ -134,7 +134,7 @@ async function anchorOf(
     const sha = head === undefined ? undefined : await resolveCommit(deps.git, root, head);
     if (sha !== undefined) return { kind: "delta", sha };
   }
-  return { kind: "full", sha: await changeBase(deps.git, root, change.dir) };
+  return { kind: "full", sha: await changeBase(deps.store, deps.git, root, change.dir) };
 }
 
 /** Ledger and machine files are never reviewed: any path with a `.bdk` segment. */

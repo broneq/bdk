@@ -30,7 +30,8 @@ export const PROFILES = ["tiny", "small", "large"] as const;
 
 export type Profile = (typeof PROFILES)[number];
 
-export const CHANGE_KINDS = ["feature", "bug"] as const;
+/** `review` reviews work already on the branch (T42); its graph holds no design, plan or execute. */
+export const CHANGE_KINDS = ["feature", "bug", "review"] as const;
 
 export type ChangeKind = (typeof CHANGE_KINDS)[number];
 

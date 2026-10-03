@@ -259,6 +259,147 @@ describe("change new", () => {
     ).toMatchObject({ data: { kind: "bug", source: "inferred" } });
   });
 
+  describe("--kind review", () => {
+    const HEAD = "a".repeat(40);
+    const ORIGIN = "b".repeat(40);
+    const MAIN = "c".repeat(40);
+    const BASE = "d".repeat(40);
+    const REVIEW_ID = "2026-09-26-review-the-login-branch";
+
+    /** Git answering `rev-parse` from `refs` and `merge-base HEAD` from `bases`. */
+    function reviewing(
+      refs: Record<string, string>,
+      bases: Record<string, string>,
+    ): { h: Harness; calls: string[][] } {
+      const h = harness();
+      const calls: string[][] = [];
+      const run = h.git.run.bind(h.git);
+      h.git.run = (args, cwd) => {
+        calls.push([...args]);
+        if (args[0] === "rev-parse") {
+          const sha = refs[(args.at(-1) ?? "").replace("^{commit}", "")];
+          return Promise.resolve(
+            sha === undefined
+              ? { code: 1, stdout: "", stderr: "" }
+              : { code: 0, stdout: `${sha}\n`, stderr: "" },
+          );
+        }
+        if (args[0] === "merge-base") {
+          const sha = bases[args.at(-1) ?? ""];
+          return Promise.resolve(
+            sha === undefined
+              ? { code: 1, stdout: "", stderr: "" }
+              : { code: 0, stdout: `${sha}\n`, stderr: "" },
+          );
+        }
+        return run(args, cwd);
+      };
+      return { h, calls };
+    }
+
+    const refs = { HEAD, "origin/HEAD": ORIGIN, main: MAIN };
+
+    it("stamps kind review and the merge base with origin/HEAD; next is /bdk:cr", async () => {
+      const { h, calls } = reviewing(refs, { [ORIGIN]: BASE });
+      const result = await h.run([
+        "change",
+        "new",
+        "Review the login branch",
+        "--inferred",
+        "--kind",
+        "review",
+        "--json",
+      ]);
+
+      expect(result.code).toBe(0);
+      expect(changeNewOutput.parse(result.json)).toMatchObject({
+        change: REVIEW_ID,
+        kind: "review",
+        source: "inferred",
+        next: "/bdk:cr",
+      });
+      expect(calls).toContainEqual(["merge-base", "HEAD", ORIGIN]);
+      expect(readDocument(h.store, `${ROOT}/.bdk/changes/${REVIEW_ID}/change.md`)).toMatchObject({
+        data: { kind: "review", source: "inferred", base: BASE },
+      });
+    });
+
+    it("--base main reviews from the merge base with main", async () => {
+      const { h } = reviewing(refs, { [ORIGIN]: BASE, [MAIN]: MAIN });
+      const result = await h.run([
+        "change",
+        "new",
+        "Review the login branch",
+        "--kind",
+        "review",
+        "--base",
+        "main",
+        "--json",
+      ]);
+
+      expect(result.code).toBe(0);
+      expect(readDocument(h.store, `${ROOT}/.bdk/changes/${REVIEW_ID}/change.md`)).toMatchObject({
+        data: { base: MAIN },
+      });
+    });
+
+    it("refuses --base without --kind review and writes nothing", async () => {
+      const { h } = reviewing(refs, { [MAIN]: MAIN });
+      const result = await h.run(["change", "new", "x", "--base", "main", "--json"]);
+
+      expect(result.code).toBe(3);
+      expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+      expect(h.store.list(ROOT)).toEqual([]);
+    });
+
+    it.each([
+      ["names no commit", { HEAD }, {}],
+      ["shares no history with HEAD", refs, {}],
+    ])("refuses a ref that %s as input/not-found and writes nothing", async (_, known, bases) => {
+      const { h } = reviewing(known, bases);
+      const result = await h.run([
+        "change",
+        "new",
+        "x",
+        "--kind",
+        "review",
+        "--base",
+        "main",
+        "--json",
+      ]);
+
+      expect(result.code).toBe(3);
+      expect(result.json).toMatchObject({
+        rule: "input/not-found",
+        why: expect.stringContaining("main") as string,
+        instead: expect.arrayContaining([expect.stringContaining("--base <ref>")]) as string[],
+      });
+      expect(h.store.list(ROOT)).toEqual([]);
+    });
+
+    it("refuses a base equal to HEAD as policy/empty-range and writes nothing", async () => {
+      const { h } = reviewing(refs, { [ORIGIN]: HEAD });
+      const result = await h.run(["change", "new", "x", "--kind", "review", "--json"]);
+
+      expect(result.code).toBe(2);
+      expect(result.json).toMatchObject({ rule: "policy/empty-range" });
+      expect(h.store.list(ROOT)).toEqual([]);
+    });
+
+    it("a feature Change carries no base", async () => {
+      const { h, calls } = reviewing(refs, { [ORIGIN]: BASE });
+      await h.run(["change", "new", "Add dark mode"]);
+
+      const change = readDocument(
+        h.store,
+        `${ROOT}/.bdk/changes/2026-09-26-add-dark-mode/change.md`,
+      );
+      expect(change).toMatchObject({ data: { kind: "feature" } });
+      expect(change).not.toMatchObject({ data: { base: expect.anything() as unknown } });
+      expect(calls.filter((args) => args[0] === "merge-base")).toEqual([]);
+    });
+  });
+
   it("records the keys the local layer overrides", async () => {
     const h = harness();
     h.store.write(

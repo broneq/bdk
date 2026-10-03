@@ -283,21 +283,23 @@ The ready time is the latest `at` among the `done` transitions that currently ma
 
 The shipped pipeline SHALL give each profile and Change kind the nodes below, selected by node fields only; the profile is the effective profile from the ledger (`kernel-state`, Derived state and mutation).
 
-| Node                               | `tiny`                        | `small`             | `large`             | kind `bug`                            |
-| ---------------------------------- | ----------------------------- | ------------------- | ------------------- | ------------------------------------- |
-| `intent`                           | yes                           | yes                 | yes                 | yes (the reproduction)                |
-| `design`                           | no                            | yes                 | no                  | no                                    |
-| `design-parts`, `design-index`     | no                            | no                  | yes                 | no                                    |
-| `architecture`                     | no                            | unless product-only | unless product-only | no                                    |
-| `design-verify`                    | no                            | yes                 | yes                 | no                                    |
-| `gate:design`                      | no                            | yes                 | yes                 | no                                    |
-| `plan` (plan parts)                | yes                           | yes                 | yes                 | yes (one part: failing test plus fix) |
-| `plan-verify`                      | no                            | yes                 | yes                 | per profile                           |
-| `execute` (execute parts)          | yes                           | yes                 | yes                 | yes                                   |
-| `simplify`, `tests-scoped`, `lint` | yes                           | yes                 | yes                 | yes                                   |
-| `spec-delta`                       | when a part has `spec-impact` | same                | same                | same                                  |
-| `tests-full`, `lint-full`          | yes                           | yes                 | yes                 | yes                                   |
-| `review`, `gate:review`, `close`   | yes                           | yes                 | yes                 | yes                                   |
+| Node                               | `tiny`                        | `small`             | `large`             | kind `bug`                            | kind `review`           |
+| ---------------------------------- | ----------------------------- | ------------------- | ------------------- | ------------------------------------- | ----------------------- |
+| `intent`                           | yes                           | yes                 | yes                 | yes (the reproduction)                | yes (the review intent) |
+| `design`                           | no                            | yes                 | no                  | no                                    | no                      |
+| `design-parts`, `design-index`     | no                            | no                  | yes                 | no                                    | no                      |
+| `architecture`                     | no                            | unless product-only | unless product-only | no                                    | no                      |
+| `design-verify`                    | no                            | yes                 | yes                 | no                                    | no                      |
+| `gate:design`                      | no                            | yes                 | yes                 | no                                    | no                      |
+| `plan` (plan parts)                | yes                           | yes                 | yes                 | yes (one part: failing test plus fix) | no                      |
+| `plan-verify`                      | no                            | yes                 | yes                 | per profile                           | no                      |
+| `execute` (execute parts)          | yes                           | yes                 | yes                 | yes                                   | no                      |
+| `simplify`, `tests-scoped`, `lint` | yes                           | yes                 | yes                 | yes                                   | no                      |
+| `spec-delta`                       | when a part has `spec-impact` | same                | same                | same                                  | no                      |
+| `tests-full`, `lint-full`          | yes                           | yes                 | yes                 | yes                                   | yes                     |
+| `review`, `gate:review`, `close`   | yes                           | yes                 | yes                 | yes                                   | yes                     |
+
+A `review` Change (`kernel-cli/change`, bdk change new; T42) reviews work already on its branch: it has no design, plan or execute node, so its first actionable node is `tests-full` and `bdk next` names `/bdk:cr`; the `review` node's other requirements are absent and count as met.
 
 When `bdk done design` runs on a `small` Change whose `design/parts/` holds parts and which has no `design.md`, the kernel writes a `decision` entry with `profile: large` (`source: kernel`, `refs: [design/parts/]`), the nodes are recomputed for `large`, and the output's `next` is the first design part.
 
@@ -335,6 +337,11 @@ When `bdk done design` runs on a `small` Change whose `design/parts/` holds part
 
 - **WHEN** a `small` feature Change has `design` and `architecture` done and `bdk next --json` runs
 - **THEN** `artifact.id` is `design-verify`, and `gate:design` requires `design`, `architecture` and `design-verify`
+
+#### Scenario: review Change
+
+- **WHEN** `bdk change new "Review the login branch" --inferred --kind review` runs and then `bdk change status --json`
+- **THEN** the nodes are `intent`, `tests-full`, `lint-full`, `review`, `gate:review` and `close`, and `bdk next --json` returns a review-stage node whose `command` is `/bdk:cr`
 
 ### Requirement: Instruction
 

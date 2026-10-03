@@ -44,6 +44,7 @@ export const RULES = [
   "policy/config-invalid",
   "policy/profile-downgrade",
   "policy/detached-head",
+  "policy/empty-range",
   "policy/rule-format",
   "policy/generated-drift",
   "policy/duplicate-rule-id",

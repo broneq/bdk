@@ -63,7 +63,7 @@
             "description": "The node exists only for these Change kinds. Default all.",
             "minItems": 1,
             "type": "array",
-            "items": { "type": "string", "enum": ["feature", "bug"] }
+            "items": { "type": "string", "enum": ["feature", "bug", "review"] }
           },
           "if": {
             "description": "features.<name>: the node exists only while the switch is true.",

@@ -1,15 +1,17 @@
 // `bdk change new <intent>`: opens a Change on the current branch. Every
 // check runs before the first write; the profile is recorded as the caller
-// passed it (design D-11 of T20), `small` by default.
+// passed it (design D-11 of T20), `small` by default. A review Change (T42)
+// stamps the commit its range starts from.
 import { join } from "node:path";
 
 import { changeGraph } from "../../graph/index.ts";
 import { appendEntry } from "../../log/index.ts";
 import { globalDir, overriddenKeys, resolveConfig } from "../../shared/config/index.ts";
 import type { Environment } from "../../shared/config/index.ts";
-import { authorIdent } from "../../shared/git/index.ts";
+import { authorIdent, headCommit, mergeBase, resolveCommit } from "../../shared/git/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
+import type { ChangeKind } from "../../shared/vocabulary/index.ts";
 import {
   ensureIgnored,
   findChange,
@@ -27,7 +29,9 @@ import type { ChangeDeps } from "./deps.ts";
 
 export interface NewInput {
   readonly intent: string;
-  readonly kind: "feature" | "bug";
+  readonly kind: ChangeKind;
+  /** Only with kind `review`: the ref whose merge base with `HEAD` starts the range. */
+  readonly base?: string | undefined;
   readonly profile?: string | undefined;
   readonly reason?: string | undefined;
   readonly inferred: boolean;
@@ -57,6 +61,12 @@ export async function newChange(
       ],
     );
   }
+  if (input.base !== undefined && input.kind !== "review") {
+    return refuse("input/invalid-argument", "--base sets the range of a review Change only", [
+      `bdk change new "${input.intent}" --kind review --base ${input.base}`,
+      `bdk change new "${input.intent}"`,
+    ]);
+  }
   if (input.intent.trim() === "") {
     return refuse("input/invalid-argument", "<intent> is empty", [
       'bdk change new "<one sentence>"',
@@ -70,6 +80,8 @@ export async function newChange(
       ["git switch -c <branch>"],
     );
   }
+  const base = input.kind === "review" ? await reviewBase(deps, where, input) : undefined;
+  if (base !== undefined && typeof base !== "string") return base;
   const projectRoot = findProjectRoot(deps.store, where.cwd, where.workTree);
   const bound = readMarker(deps.store, projectRoot, branch);
   const active = bound === undefined ? undefined : findChange(deps.store, projectRoot, bound);
@@ -116,6 +128,7 @@ export async function newChange(
       at,
       author,
       overridden,
+      ...(base === undefined ? {} : { base }),
     },
     body: "",
   });
@@ -152,6 +165,34 @@ export async function newChange(
     overriddenKeys: overridden,
     ...(written.next === undefined ? {} : { next: written.next }),
   };
+}
+
+/**
+ * `git merge-base HEAD <ref>`, `origin/HEAD` by default; refused when the ref
+ * shares no history with `HEAD` or the range from it is empty.
+ */
+async function reviewBase(
+  deps: ChangeDeps,
+  where: Where,
+  input: NewInput,
+): Promise<string | Refusal> {
+  const ref = input.base ?? "origin/HEAD";
+  const commit = await resolveCommit(deps.git, where.workTree, ref);
+  const base = commit === undefined ? undefined : await mergeBase(deps.git, where.workTree, commit);
+  if (base === undefined) {
+    return refuse("input/not-found", `${ref} names no commit sharing history with HEAD`, [
+      `bdk change new "${input.intent}" --kind review --base <ref>`,
+      "git branch --all --list",
+    ]);
+  }
+  if (base === (await headCommit(deps.git, where.workTree))) {
+    return refuse(
+      "policy/empty-range",
+      `HEAD is the merge base with ${ref}: the branch has no commit to review`,
+      [`bdk change new "${input.intent}" --kind review --base <older ref>`, "git log --oneline -5"],
+    );
+  }
+  return base;
 }
 
 function reasonBody(reason: string | undefined): string {

@@ -10,7 +10,7 @@
       "pattern": "^\\d{4}-\\d{2}-\\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$",
       "description": "Opaque merge-safe id (`kernel-state`, Identifiers)."
     },
-    "kind": { "type": "string", "enum": ["feature", "bug"] },
+    "kind": { "type": "string", "enum": ["feature", "bug", "review"] },
     "profile": {
       "type": "string",
       "enum": ["tiny", "small", "large"],

@@ -67,6 +67,7 @@ nodes:
     stage: plan
     requires: [gate:design]
     rules: [code-quality, architecture, test-quality, plan]
+    kinds: [feature, bug]
 
   # The design nodes put the design in the verifier's package and make a
   # verdict older than the design's last `done` fail `fresh`.
@@ -76,12 +77,14 @@ nodes:
     requires: [plan, design, design-index, architecture]
     profiles: [small, large]
     budget: verifier
+    kinds: [feature, bug]
 
   - id: execute
     kind: execute-part
     stage: execute
     requires: [plan, plan-verify]
     budget: task-redispatch
+    kinds: [feature, bug]
 
   # The post-task steps run inside each task's ticket, in this order
   # (T23-D40, D41); each instance is done from the evidence covering its part.
@@ -89,21 +92,25 @@ nodes:
     kind: simplify
     stage: execute
     requires: [execute]
+    kinds: [feature, bug]
 
   - id: tests-scoped
     kind: tests-scoped
     stage: execute
     requires: [simplify]
+    kinds: [feature, bug]
 
   - id: lint
     kind: lint
     stage: execute
     requires: [simplify]
+    kinds: [feature, bug]
 
   - id: spec-delta
     kind: spec-delta
     stage: execute
     requires: [execute]
+    kinds: [feature, bug]
 
   # The full gate of the review round (T42-D4): the round's gate runner
   # records both against the tree of the whole Change.

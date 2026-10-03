@@ -21,7 +21,7 @@
           },
           "stage": { "type": "string", "minLength": 1 },
           "state": { "type": "string", "enum": ["active", "parked", "archived"] },
-          "kind": { "type": "string", "enum": ["feature", "bug"] },
+          "kind": { "type": "string", "enum": ["feature", "bug", "review"] },
           "profile": { "type": "string", "enum": ["tiny", "small", "large"] },
           "updatedAt": {
             "type": "string",

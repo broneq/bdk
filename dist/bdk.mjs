@@ -7409,8 +7409,8 @@ var commands_default = {
       flags: [
         {
           name: "--kind",
-          values: ["feature", "bug"],
-          description: "Graph variant; default feature (T02 decision R-8)."
+          values: ["feature", "bug", "review"],
+          description: "Graph variant; default feature (T02 decision R-8). `review` is a review of work already on the branch, opened by `/bdk:cr` (T42)."
         },
         {
           name: "--profile",
@@ -7425,11 +7425,22 @@ var commands_default = {
         {
           name: "--inferred",
           description: "The Change is opened on the user's behalf by another skill; stamped source: inferred (R-12)."
+        },
+        {
+          name: "--base",
+          value: "<ref>",
+          description: "Only with `--kind review`: the commit the review starts from is `git merge-base HEAD <ref>`; default `origin/HEAD`."
         }
       ],
       output: "output/change-new.json",
       exits: [0, 2, 3, 5],
-      refusals: ["policy/change-exists", "policy/detached-head", "runtime/git-missing"],
+      refusals: [
+        "input/not-found",
+        "policy/change-exists",
+        "policy/detached-head",
+        "policy/empty-range",
+        "runtime/git-missing"
+      ],
       writes: [
         ".bdk/changes/<id>/change.md",
         ".bdk/changes/<id>/log/",
@@ -15973,6 +15984,7 @@ var RULES = [
   "policy/config-invalid",
   "policy/profile-downgrade",
   "policy/detached-head",
+  "policy/empty-range",
   "policy/rule-format",
   "policy/generated-drift",
   "policy/duplicate-rule-id",
@@ -17055,27 +17067,8 @@ function resolveGitDir(workTree) {
   return pointer === void 0 ? dotGit : resolve2(workTree, pointer);
 }
 
-// kernel/src/shared/store/base.ts
-var EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-async function changeBase(git, projectRoot2, changeDir) {
-  const path = relative(projectRoot2, join4(changeDir, "change.md")).split(sep).join("/");
-  const added = await addingCommit(git, projectRoot2, path);
-  if (added === void 0) return await headCommit(git, projectRoot2) ?? EMPTY_TREE;
-  return await parentCommit(git, projectRoot2, added) ?? EMPTY_TREE;
-}
-async function addedLines(store2, git, projectRoot2, base) {
-  const added = await trackedAddedLines(git, projectRoot2, base);
-  for (const path of await untrackedFiles(git, projectRoot2)) {
-    const text13 = store2.read(join4(projectRoot2, path));
-    if (text13 === void 0 || text13 === "") continue;
-    const count3 = text13.endsWith("\n") ? text13.split("\n").length - 1 : text13.split("\n").length;
-    added.set(
-      path,
-      Array.from({ length: count3 }, (_, at) => at + 1)
-    );
-  }
-  return new Map([...added.entries()].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0));
-}
+// kernel/src/shared/store/state/documents.ts
+var import_yaml3 = __toESM(require_dist(), 1);
 
 // kernel/src/shared/store/frontmatter.ts
 var BLOCK = /^---\r?\n(?<yaml>(?:.*\r?\n)*?)---(?:\r?\n|$)/;
@@ -17085,444 +17078,6 @@ function splitFrontmatter(text13) {
   if (match === null || yaml === void 0) return { body: text13 };
   return { frontmatter: yaml, body: text13.slice(match[0].length) };
 }
-
-// kernel/src/shared/store/which.ts
-import { accessSync, constants, statSync as statSync3 } from "node:fs";
-import { join as join5 } from "node:path";
-function findExecutable(name, lookup) {
-  const windows = lookup.platform === "win32";
-  const path = envValue(lookup.env, "PATH", windows) ?? "";
-  const dirs = path.split(windows ? ";" : ":").filter((dir) => dir !== "");
-  const names = windows ? (envValue(lookup.env, "PATHEXT", windows) ?? ".COM;.EXE;.BAT;.CMD").split(";").filter((ext) => ext !== "").map((ext) => `${name}${ext}`) : [name];
-  for (const dir of dirs) {
-    for (const candidate of names) {
-      const file = join5(dir, candidate);
-      if (isExecutableFile(file, windows)) return file;
-    }
-  }
-  return void 0;
-}
-function envValue(env, name, windows) {
-  if (!windows) return env[name];
-  const key = Object.keys(env).find((candidate) => candidate.toUpperCase() === name);
-  return key === void 0 ? void 0 : env[key];
-}
-function isExecutableFile(file, windows) {
-  try {
-    if (!statSync3(file).isFile()) return false;
-    if (!windows) accessSync(file, constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// kernel/src/shared/store/index/schema.ts
-var INDEX_SCHEMA_VERSION = 7;
-var TABLES = `
-CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-CREATE TABLE _dirs (
-  path TEXT PRIMARY KEY, change_id TEXT NOT NULL,
-  mtime REAL NOT NULL, count INTEGER NOT NULL, trusted INTEGER NOT NULL
-);
-CREATE TABLE _files (
-  path TEXT PRIMARY KEY, change_id TEXT NOT NULL,
-  ino REAL NOT NULL, mtime REAL NOT NULL, size INTEGER NOT NULL
-);
-CREATE INDEX _files_change ON _files (change_id);
-CREATE TABLE changes (
-  id TEXT PRIMARY KEY, kind TEXT NOT NULL, profile TEXT NOT NULL, source TEXT NOT NULL,
-  intent TEXT NOT NULL, at TEXT NOT NULL, author TEXT NOT NULL,
-  archived INTEGER NOT NULL, dir TEXT NOT NULL
-);
-CREATE TABLE _entries (
-  change_id TEXT NOT NULL, id TEXT NOT NULL, type TEXT NOT NULL, summary TEXT NOT NULL,
-  status TEXT NOT NULL, source TEXT NOT NULL, author TEXT NOT NULL, at TEXT NOT NULL,
-  ticket TEXT, supersedes TEXT, review INTEGER NOT NULL, severity TEXT, category TEXT,
-  fingerprint TEXT, applies TEXT, evidence TEXT, to_stage TEXT, gate TEXT, input_hash TEXT, profile TEXT,
-  park INTEGER NOT NULL, options TEXT, path TEXT NOT NULL, auto INTEGER NOT NULL,
-  review_group TEXT, level TEXT, head TEXT,
-  PRIMARY KEY (change_id, id)
-);
-CREATE INDEX _entries_supersedes ON _entries (supersedes);
-CREATE INDEX _entries_path ON _entries (path);
-CREATE TABLE refs (
-  change_id TEXT NOT NULL, entry_id TEXT NOT NULL, position INTEGER NOT NULL, ref TEXT NOT NULL,
-  PRIMARY KEY (change_id, entry_id, position)
-);
-CREATE TABLE attempts (
-  change_id TEXT NOT NULL, ticket TEXT NOT NULL, loop TEXT NOT NULL, target TEXT NOT NULL,
-  attempt INTEGER NOT NULL, "of" INTEGER NOT NULL, scope TEXT NOT NULL,
-  opened_at TEXT NOT NULL, closed_at TEXT, outcome TEXT, path TEXT NOT NULL,
-  PRIMARY KEY (change_id, ticket)
-);
-CREATE TABLE dispatches (
-  change_id TEXT NOT NULL, ticket TEXT NOT NULL, target TEXT NOT NULL, role TEXT NOT NULL,
-  rules TEXT NOT NULL, path TEXT PRIMARY KEY
-);
-CREATE TABLE findings (
-  change_id TEXT NOT NULL, ticket TEXT NOT NULL, position INTEGER NOT NULL,
-  fingerprint TEXT NOT NULL, type TEXT NOT NULL, file TEXT NOT NULL, symbol TEXT,
-  PRIMARY KEY (change_id, ticket, position)
-);
-CREATE INDEX findings_fingerprint ON findings (fingerprint);
-CREATE VIEW entries AS
-SELECT e.change_id, e.id, e.type, e.summary,
-  CASE WHEN s.id IS NULL THEN e.status ELSE 'superseded' END AS status,
-  e.source, e.author, e.at, e.ticket, e.supersedes,
-  CASE WHEN s.id IS NULL THEN NULL
-       WHEN s.change_id = e.change_id THEN s.id
-       ELSE s.change_id || '/' || s.id END AS superseded_by,
-  e.review, e.severity, e.category, e.fingerprint, e.applies, e.evidence, e.to_stage, e.gate,
-  e.input_hash,
-  e.profile, e.park, e.options, e.path, e.auto, e.review_group, e.level, e.head
-FROM _entries e
-LEFT JOIN _entries s ON s.rowid = (
-  SELECT c.rowid FROM _entries c
-  WHERE (c.change_id = e.change_id AND c.supersedes = e.id)
-     OR c.supersedes = e.change_id || '/' || e.id
-  ORDER BY c.at, c.id LIMIT 1
-);
-`;
-function ensureSchema(database) {
-  if (currentVersion(database) === INDEX_SCHEMA_VERSION) return;
-  database.exec("BEGIN IMMEDIATE");
-  try {
-    if (currentVersion(database) !== INDEX_SCHEMA_VERSION) {
-      const objects = database.prepare(
-        "SELECT type, name FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY type = 'table'"
-      ).all();
-      for (const { type, name } of objects) {
-        database.exec(`DROP ${type === "view" ? "VIEW" : "TABLE"} IF EXISTS "${name}"`);
-      }
-      database.exec(TABLES);
-      database.prepare("INSERT INTO _meta (key, value) VALUES ('schema_version', ?)").run(String(INDEX_SCHEMA_VERSION));
-    }
-    database.exec("COMMIT");
-  } catch (error2) {
-    database.exec("ROLLBACK");
-    throw error2;
-  }
-}
-function currentVersion(database) {
-  const table = database.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '_meta'").get();
-  if (table === void 0) return void 0;
-  const row = database.prepare("SELECT value FROM _meta WHERE key = 'schema_version'").get();
-  return row === void 0 ? void 0 : Number(row.value);
-}
-
-// kernel/src/shared/store/agents/registry.ts
-import { mkdirSync as mkdirSync2, readFileSync as readFileSync3, rmSync as rmSync2, statSync as statSync4 } from "node:fs";
-import { dirname as dirname4, join as join6 } from "node:path";
-
-// kernel/src/shared/store/sqlite.ts
-async function loadSqlite() {
-  const original = Reflect.get(process, "emitWarning");
-  process.emitWarning = withoutSqliteWarning(process.emitWarning.bind(process));
-  try {
-    return await import("node:sqlite");
-  } finally {
-    Reflect.set(process, "emitWarning", original);
-  }
-}
-function withoutSqliteWarning(emit) {
-  return (warning, ...rest) => {
-    const [options] = rest;
-    const type = typeof options === "string" ? options : options?.type;
-    const message = typeof warning === "string" ? warning : warning.message;
-    if (type === "ExperimentalWarning" && message.includes("SQLite")) return;
-    emit(warning, ...rest);
-  };
-}
-
-// kernel/src/shared/store/agents/registry.ts
-var AGENTS_SCHEMA_VERSION = 1;
-var BUSY_TIMEOUT_MS = 5e3;
-function agentsRegistryPath(projectRoot2) {
-  return join6(projectRoot2, ".bdk", ".machine", "agents.sqlite");
-}
-function heartbeatPath(projectRoot2, id) {
-  return join6(projectRoot2, ".bdk", ".machine", "agents", id);
-}
-var fileRegistry = (projectRoot2) => openAgentRegistry(projectRoot2);
-async function withRegistry(opener, projectRoot2, work) {
-  const registry3 = await opener(projectRoot2);
-  try {
-    return await work(registry3);
-  } finally {
-    registry3.close();
-  }
-}
-var TABLES2 = `
-CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-CREATE TABLE agents (
-  id TEXT PRIMARY KEY, type TEXT, session TEXT, parent TEXT, package TEXT, ticket TEXT,
-  target TEXT, started_at TEXT, linked_at TEXT, ended_at TEXT, ended_by TEXT,
-  continuations INTEGER NOT NULL DEFAULT 0, progress TEXT
-);
-CREATE INDEX agents_parent ON agents (parent);
-CREATE TABLE sessions (
-  session TEXT PRIMARY KEY, continuations INTEGER NOT NULL, progress TEXT
-);
-CREATE TABLE messages (
-  seq INTEGER PRIMARY KEY AUTOINCREMENT, sender TEXT NOT NULL, recipient TEXT NOT NULL,
-  entry TEXT NOT NULL, at TEXT NOT NULL, delivered INTEGER NOT NULL DEFAULT 0
-);
-CREATE INDEX messages_recipient ON messages (recipient, delivered);
-CREATE TABLE seen (agent TEXT NOT NULL, key TEXT NOT NULL, PRIMARY KEY (agent, key));
-`;
-var COLUMNS = {
-  type: "type",
-  session: "session",
-  parent: "parent",
-  package: "package",
-  ticket: "ticket",
-  target: "target",
-  startedAt: "started_at",
-  linkedAt: "linked_at",
-  endedAt: "ended_at",
-  endedBy: "ended_by",
-  continuations: "continuations",
-  progress: "progress"
-};
-async function openAgentRegistry(projectRoot2, options = {}) {
-  const { DatabaseSync } = await loadSqlite();
-  const path = options.memory === true ? ":memory:" : agentsRegistryPath(projectRoot2);
-  const connect = () => {
-    if (path !== ":memory:") mkdirSync2(dirname4(path), { recursive: true });
-    const database2 = new DatabaseSync(path);
-    try {
-      database2.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
-      if (path !== ":memory:") database2.exec("PRAGMA journal_mode = WAL");
-      ensureSchema2(database2);
-      return database2;
-    } catch (error2) {
-      database2.close();
-      throw error2;
-    }
-  };
-  let database;
-  try {
-    database = connect();
-  } catch {
-    for (const suffix of ["", "-wal", "-shm"]) rmSync2(`${path}${suffix}`, { force: true });
-    database = connect();
-  }
-  const heartbeat = options.heartbeat ?? fileHeartbeat(projectRoot2);
-  let depth = 0;
-  const transaction2 = (work) => {
-    if (depth > 0) return work();
-    database.exec("BEGIN IMMEDIATE");
-    depth += 1;
-    try {
-      const result2 = work();
-      database.exec("COMMIT");
-      return result2;
-    } catch (error2) {
-      database.exec("ROLLBACK");
-      throw error2;
-    } finally {
-      depth -= 1;
-    }
-  };
-  return {
-    path,
-    get: (id) => {
-      const row = database.prepare("SELECT * FROM agents WHERE id = ?").get(id);
-      return row === void 0 ? void 0 : agentRow(row);
-    },
-    all: () => database.prepare(
-      "SELECT * FROM agents ORDER BY coalesce(min(started_at, linked_at), started_at, linked_at, ''), id"
-    ).all().map(agentRow),
-    put: (id, fields) => {
-      const entries2 = Object.entries(fields).filter((entry2) => entry2[1] !== void 0);
-      transaction2(() => {
-        database.prepare("INSERT OR IGNORE INTO agents (id) VALUES (?)").run(id);
-        if (entries2.length === 0) return;
-        const sets = entries2.map(([key]) => `${COLUMNS[key]} = ?`).join(", ");
-        database.prepare(`UPDATE agents SET ${sets} WHERE id = ?`).run(...entries2.map(([, value]) => value), id);
-      });
-    },
-    session: (session) => {
-      const row = database.prepare("SELECT * FROM sessions WHERE session = ?").get(session);
-      if (row === void 0) return void 0;
-      return {
-        session: String(row.session),
-        continuations: Number(row.continuations),
-        progress: nullable2(row.progress)
-      };
-    },
-    putSession: (row) => {
-      transaction2(
-        () => database.prepare(
-          "INSERT INTO sessions (session, continuations, progress) VALUES (?, ?, ?) ON CONFLICT (session) DO UPDATE SET continuations = excluded.continuations, progress = excluded.progress"
-        ).run(row.session, row.continuations, row.progress)
-      );
-    },
-    addMessage: (message) => {
-      transaction2(
-        () => database.prepare("INSERT INTO messages (sender, recipient, entry, at) VALUES (?, ?, ?, ?)").run(message.from, message.to, message.entry, message.at)
-      );
-    },
-    undelivered: (to) => database.prepare(
-      "SELECT seq, sender, recipient, entry, at FROM messages WHERE recipient = ? AND delivered = 0 ORDER BY seq"
-    ).all(to).map((row) => ({
-      seq: Number(row.seq),
-      from: String(row.sender),
-      to: String(row.recipient),
-      entry: String(row.entry),
-      at: String(row.at)
-    })),
-    markDelivered: (seqs) => {
-      if (seqs.length === 0) return;
-      transaction2(() => {
-        const statement2 = database.prepare("UPDATE messages SET delivered = 1 WHERE seq = ?");
-        for (const seq of seqs) statement2.run(seq);
-      });
-    },
-    seen: (agent) => new Set(
-      database.prepare("SELECT key FROM seen WHERE agent = ?").all(agent).map((row) => String(row.key))
-    ),
-    markSeen: (agent, keys) => {
-      if (keys.length === 0) return;
-      transaction2(() => {
-        const statement2 = database.prepare("INSERT OR IGNORE INTO seen (agent, key) VALUES (?, ?)");
-        for (const key of keys) statement2.run(agent, key);
-      });
-    },
-    heartbeat,
-    transaction: transaction2,
-    schemaVersion: () => currentVersion2(database) ?? 0,
-    close: () => {
-      database.close();
-    }
-  };
-}
-function fileHeartbeat(projectRoot2) {
-  return (id) => {
-    if (!/^[A-Za-z0-9_-]+$/.test(id)) return void 0;
-    const path = heartbeatPath(projectRoot2, id);
-    const stats = statSync4(path, { throwIfNoEntry: false });
-    if (stats === void 0) return void 0;
-    try {
-      return { open: readFileSync3(path, "utf8").trim() === "open", atMs: stats.mtimeMs };
-    } catch {
-      return void 0;
-    }
-  };
-}
-function ensureSchema2(database) {
-  if (currentVersion2(database) === AGENTS_SCHEMA_VERSION) return;
-  database.exec("BEGIN IMMEDIATE");
-  try {
-    if (currentVersion2(database) !== AGENTS_SCHEMA_VERSION) {
-      const tables = database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all();
-      for (const { name } of tables) database.exec(`DROP TABLE IF EXISTS "${name}"`);
-      database.exec(TABLES2);
-      database.prepare("INSERT INTO _meta (key, value) VALUES ('schema_version', ?)").run(String(AGENTS_SCHEMA_VERSION));
-    }
-    database.exec("COMMIT");
-  } catch (error2) {
-    database.exec("ROLLBACK");
-    throw error2;
-  }
-}
-function currentVersion2(database) {
-  const table = database.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '_meta'").get();
-  if (table === void 0) return void 0;
-  const row = database.prepare("SELECT value FROM _meta WHERE key = 'schema_version'").get();
-  return row === void 0 ? void 0 : Number(row.value);
-}
-function nullable2(value) {
-  if (typeof value === "string") return value;
-  return typeof value === "number" || typeof value === "bigint" ? String(value) : null;
-}
-function agentRow(row) {
-  return {
-    id: String(row.id),
-    type: nullable2(row.type),
-    session: nullable2(row.session),
-    parent: nullable2(row.parent),
-    package: nullable2(row.package),
-    ticket: nullable2(row.ticket),
-    target: nullable2(row.target),
-    startedAt: nullable2(row.started_at),
-    linkedAt: nullable2(row.linked_at),
-    endedAt: nullable2(row.ended_at),
-    endedBy: nullable2(row.ended_by),
-    continuations: Number(row.continuations),
-    progress: nullable2(row.progress)
-  };
-}
-
-// kernel/src/shared/store/index/open.ts
-import { mkdirSync as mkdirSync3, rmSync as rmSync3 } from "node:fs";
-import { dirname as dirname5, join as join7 } from "node:path";
-var BUSY_TIMEOUT_MS2 = 5e3;
-function indexPath(projectRoot2) {
-  return join7(projectRoot2, ".bdk", ".machine", "index.sqlite");
-}
-async function openIndex(store2, projectRoot2, options = {}) {
-  const { DatabaseSync } = await loadSqlite();
-  const path = options.memory === true ? ":memory:" : indexPath(projectRoot2);
-  const connect = () => {
-    if (path !== ":memory:") mkdirSync3(dirname5(path), { recursive: true });
-    const database2 = new DatabaseSync(path);
-    try {
-      database2.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS2}`);
-      if (path !== ":memory:") database2.exec("PRAGMA journal_mode = WAL");
-      ensureSchema(database2);
-      return database2;
-    } catch (error2) {
-      database2.close();
-      throw error2;
-    }
-  };
-  let database;
-  try {
-    database = connect();
-  } catch {
-    try {
-      for (const suffix of ["", "-wal", "-shm"]) rmSync3(`${path}${suffix}`, { force: true });
-      database = connect();
-    } catch (error2) {
-      const reason = error2 instanceof Error ? error2.message.split("\n")[0] : String(error2);
-      throw new KernelRefusal(
-        refuse(
-          "state/corrupted-index",
-          `the index ${path} cannot be opened or rebuilt (${reason ?? "unknown error"})`,
-          ["bdk rebuild", `remove ${path} by hand, then retry`]
-        )
-      );
-    }
-  }
-  return {
-    path,
-    database,
-    store: store2,
-    projectRoot: projectRoot2,
-    now: options.now ?? Date.now,
-    schemaVersion: () => currentVersion(database) ?? 0,
-    close: () => {
-      database.close();
-    }
-  };
-}
-var fileIndex = (store2, projectRoot2) => openIndex(store2, projectRoot2);
-async function withIndex(opener, store2, projectRoot2, work) {
-  const index2 = await opener(store2, projectRoot2);
-  try {
-    return await work(index2);
-  } finally {
-    index2.close();
-  }
-}
-
-// kernel/src/shared/store/index/refresh.ts
-import { join as join9, relative as relative2, sep as sep2 } from "node:path";
-
-// kernel/src/shared/store/changes.ts
-import { join as join8 } from "node:path";
 
 // kernel/src/shared/ids/index.ts
 import { randomInt } from "node:crypto";
@@ -17550,105 +17105,6 @@ function parseReference(text13) {
   return void 0;
 }
 
-// kernel/src/shared/store/changes.ts
-function changesDir(projectRoot2) {
-  return join8(projectRoot2, ".bdk", "changes");
-}
-function archiveDir(projectRoot2) {
-  return join8(changesDir(projectRoot2), "archive");
-}
-function archivedChangeDir(projectRoot2, id) {
-  return join8(archiveDir(projectRoot2), id);
-}
-function liveChangeDir(projectRoot2, id) {
-  return join8(changesDir(projectRoot2), id);
-}
-function listChangeDirs(store2, projectRoot2) {
-  const found = (parent, archived) => store2.list(parent).filter((name) => name.endsWith("/")).map((name) => name.slice(0, -1)).filter((id) => isChangeId(id) && store2.exists(join8(parent, id, "change.md"))).map((id) => ({ id, dir: join8(parent, id), archived }));
-  return [...found(changesDir(projectRoot2), false), ...found(archiveDir(projectRoot2), true)];
-}
-function findChange(store2, projectRoot2, id) {
-  if (!isChangeId(id)) return void 0;
-  for (const [dir, archived] of [
-    [liveChangeDir(projectRoot2, id), false],
-    [join8(archiveDir(projectRoot2), id), true]
-  ]) {
-    if (store2.exists(join8(dir, "change.md"))) return { id, dir, archived };
-  }
-  return void 0;
-}
-var SAFE = /[A-Za-z0-9._-]/;
-function encodeBranch(branch) {
-  let out = "";
-  for (const char of branch) {
-    if (SAFE.test(char)) out += char;
-    else
-      for (const byte of Buffer.from(char, "utf8"))
-        out += `%${byte.toString(16).toUpperCase().padStart(2, "0")}`;
-  }
-  return out;
-}
-function decodeBranch(encoded) {
-  return decodeURIComponent(encoded);
-}
-function markersDir(projectRoot2) {
-  return join8(projectRoot2, ".bdk", ".machine", "branches");
-}
-function markerPath(projectRoot2, branch) {
-  return join8(markersDir(projectRoot2), encodeBranch(branch));
-}
-function readMarker(store2, projectRoot2, branch) {
-  const text13 = store2.read(markerPath(projectRoot2, branch))?.trim();
-  return text13 === void 0 || text13 === "" ? void 0 : text13;
-}
-function writeMarker(store2, projectRoot2, branch, id) {
-  store2.write(markerPath(projectRoot2, branch), `${id}
-`);
-}
-function removeMarker(store2, projectRoot2, branch) {
-  store2.remove(markerPath(projectRoot2, branch));
-}
-function listMarkers(store2, projectRoot2) {
-  return store2.list(markersDir(projectRoot2)).filter((name) => !name.endsWith("/")).map((name) => ({
-    branch: decodeBranch(name),
-    change: store2.read(join8(markersDir(projectRoot2), name))?.trim() ?? ""
-  })).filter((marker) => marker.change !== "").sort((a, b) => a.branch < b.branch ? -1 : a.branch > b.branch ? 1 : 0);
-}
-function resolveActiveChange(store2, git, where) {
-  const projectRoot2 = findProjectRoot(store2, where.cwd, where.workTree);
-  const branch = git.currentBranch(where.workTree);
-  if (branch === void 0) {
-    return refuse(
-      "policy/no-active-change",
-      `HEAD is detached in ${where.workTree}, so no Change is bound to it`,
-      ["git switch <branch>", "bdk change list"]
-    );
-  }
-  const id = readMarker(store2, projectRoot2, branch);
-  const location2 = id === void 0 ? void 0 : findChange(store2, projectRoot2, id);
-  if (id !== void 0 && location2 === void 0) {
-    return refuse(
-      "state/change-dir-missing",
-      `branch ${branch} is bound to ${id}, whose directory .bdk/changes/${id}/ is missing`,
-      ["bdk rebuild", ...resumeLines(store2, projectRoot2)]
-    );
-  }
-  if (location2 === void 0 || location2.archived) {
-    return refuse("policy/no-active-change", `no active Change on branch ${branch}`, [
-      '/bdk:change new "<intent>"',
-      ...resumeLines(store2, projectRoot2)
-    ]);
-  }
-  return { id: location2.id, dir: location2.dir, projectRoot: projectRoot2, branch };
-}
-function resumeLines(store2, projectRoot2) {
-  const live2 = listChangeDirs(store2, projectRoot2).filter((change) => !change.archived);
-  return live2.length === 0 ? ["bdk change resume <id>"] : live2.map((change) => `bdk change resume ${change.id}`);
-}
-
-// kernel/src/shared/store/state/documents.ts
-var import_yaml3 = __toESM(require_dist(), 1);
-
 // kernel/src/shared/vocabulary/index.ts
 var ENTRY_TYPES = [
   "decision",
@@ -17664,7 +17120,7 @@ var ENTRY_TYPES = [
 ];
 var STORED_STATUSES = ["proposed", "accepted", "resolved"];
 var PROFILES = ["tiny", "small", "large"];
-var CHANGE_KINDS = ["feature", "bug"];
+var CHANGE_KINDS = ["feature", "bug", "review"];
 var CHANGE_SOURCES = ["user", "inferred"];
 var FIXED_SOURCES = ["user", "policy", "inferred", "kernel"];
 var AGENT = "agent:[a-z][a-z0-9-]*";
@@ -17794,7 +17250,10 @@ var changeKind = {
     source: _enum(CHANGE_SOURCES),
     at: timestamp,
     author,
-    overridden: array(string2().min(1))
+    overridden: array(string2().min(1)),
+    base: commitSha.optional().meta({
+      description: "Only for kind review: `git merge-base HEAD <ref>` at opening, where the Change's range starts (T42)."
+    })
   }).meta({ title: "change.md", description: "The Change's identity and intent; never mutated." }),
   migrations: []
 };
@@ -18531,6 +17990,563 @@ function validate2(located2, schema, data, rule2) {
 }
 function invalid2(rule2, why, instead) {
   return new KernelRefusal(refuse(rule2, why, instead));
+}
+
+// kernel/src/shared/store/base.ts
+var EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+async function changeBase(store2, git, projectRoot2, changeDir) {
+  const document = readDocument(store2, join4(changeDir, "change.md"));
+  const stamped = document !== void 0 && "data" in document ? document.data.base : void 0;
+  if (typeof stamped === "string") return stamped;
+  const path = relative(projectRoot2, join4(changeDir, "change.md")).split(sep).join("/");
+  const added = await addingCommit(git, projectRoot2, path);
+  if (added === void 0) return await headCommit(git, projectRoot2) ?? EMPTY_TREE;
+  return await parentCommit(git, projectRoot2, added) ?? EMPTY_TREE;
+}
+async function addedLines(store2, git, projectRoot2, base) {
+  const added = await trackedAddedLines(git, projectRoot2, base);
+  for (const path of await untrackedFiles(git, projectRoot2)) {
+    const text13 = store2.read(join4(projectRoot2, path));
+    if (text13 === void 0 || text13 === "") continue;
+    const count3 = text13.endsWith("\n") ? text13.split("\n").length - 1 : text13.split("\n").length;
+    added.set(
+      path,
+      Array.from({ length: count3 }, (_, at) => at + 1)
+    );
+  }
+  return new Map([...added.entries()].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0));
+}
+
+// kernel/src/shared/store/which.ts
+import { accessSync, constants, statSync as statSync3 } from "node:fs";
+import { join as join5 } from "node:path";
+function findExecutable(name, lookup) {
+  const windows = lookup.platform === "win32";
+  const path = envValue(lookup.env, "PATH", windows) ?? "";
+  const dirs = path.split(windows ? ";" : ":").filter((dir) => dir !== "");
+  const names = windows ? (envValue(lookup.env, "PATHEXT", windows) ?? ".COM;.EXE;.BAT;.CMD").split(";").filter((ext) => ext !== "").map((ext) => `${name}${ext}`) : [name];
+  for (const dir of dirs) {
+    for (const candidate of names) {
+      const file = join5(dir, candidate);
+      if (isExecutableFile(file, windows)) return file;
+    }
+  }
+  return void 0;
+}
+function envValue(env, name, windows) {
+  if (!windows) return env[name];
+  const key = Object.keys(env).find((candidate) => candidate.toUpperCase() === name);
+  return key === void 0 ? void 0 : env[key];
+}
+function isExecutableFile(file, windows) {
+  try {
+    if (!statSync3(file).isFile()) return false;
+    if (!windows) accessSync(file, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// kernel/src/shared/store/index/schema.ts
+var INDEX_SCHEMA_VERSION = 7;
+var TABLES = `
+CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE _dirs (
+  path TEXT PRIMARY KEY, change_id TEXT NOT NULL,
+  mtime REAL NOT NULL, count INTEGER NOT NULL, trusted INTEGER NOT NULL
+);
+CREATE TABLE _files (
+  path TEXT PRIMARY KEY, change_id TEXT NOT NULL,
+  ino REAL NOT NULL, mtime REAL NOT NULL, size INTEGER NOT NULL
+);
+CREATE INDEX _files_change ON _files (change_id);
+CREATE TABLE changes (
+  id TEXT PRIMARY KEY, kind TEXT NOT NULL, profile TEXT NOT NULL, source TEXT NOT NULL,
+  intent TEXT NOT NULL, at TEXT NOT NULL, author TEXT NOT NULL,
+  archived INTEGER NOT NULL, dir TEXT NOT NULL
+);
+CREATE TABLE _entries (
+  change_id TEXT NOT NULL, id TEXT NOT NULL, type TEXT NOT NULL, summary TEXT NOT NULL,
+  status TEXT NOT NULL, source TEXT NOT NULL, author TEXT NOT NULL, at TEXT NOT NULL,
+  ticket TEXT, supersedes TEXT, review INTEGER NOT NULL, severity TEXT, category TEXT,
+  fingerprint TEXT, applies TEXT, evidence TEXT, to_stage TEXT, gate TEXT, input_hash TEXT, profile TEXT,
+  park INTEGER NOT NULL, options TEXT, path TEXT NOT NULL, auto INTEGER NOT NULL,
+  review_group TEXT, level TEXT, head TEXT,
+  PRIMARY KEY (change_id, id)
+);
+CREATE INDEX _entries_supersedes ON _entries (supersedes);
+CREATE INDEX _entries_path ON _entries (path);
+CREATE TABLE refs (
+  change_id TEXT NOT NULL, entry_id TEXT NOT NULL, position INTEGER NOT NULL, ref TEXT NOT NULL,
+  PRIMARY KEY (change_id, entry_id, position)
+);
+CREATE TABLE attempts (
+  change_id TEXT NOT NULL, ticket TEXT NOT NULL, loop TEXT NOT NULL, target TEXT NOT NULL,
+  attempt INTEGER NOT NULL, "of" INTEGER NOT NULL, scope TEXT NOT NULL,
+  opened_at TEXT NOT NULL, closed_at TEXT, outcome TEXT, path TEXT NOT NULL,
+  PRIMARY KEY (change_id, ticket)
+);
+CREATE TABLE dispatches (
+  change_id TEXT NOT NULL, ticket TEXT NOT NULL, target TEXT NOT NULL, role TEXT NOT NULL,
+  rules TEXT NOT NULL, path TEXT PRIMARY KEY
+);
+CREATE TABLE findings (
+  change_id TEXT NOT NULL, ticket TEXT NOT NULL, position INTEGER NOT NULL,
+  fingerprint TEXT NOT NULL, type TEXT NOT NULL, file TEXT NOT NULL, symbol TEXT,
+  PRIMARY KEY (change_id, ticket, position)
+);
+CREATE INDEX findings_fingerprint ON findings (fingerprint);
+CREATE VIEW entries AS
+SELECT e.change_id, e.id, e.type, e.summary,
+  CASE WHEN s.id IS NULL THEN e.status ELSE 'superseded' END AS status,
+  e.source, e.author, e.at, e.ticket, e.supersedes,
+  CASE WHEN s.id IS NULL THEN NULL
+       WHEN s.change_id = e.change_id THEN s.id
+       ELSE s.change_id || '/' || s.id END AS superseded_by,
+  e.review, e.severity, e.category, e.fingerprint, e.applies, e.evidence, e.to_stage, e.gate,
+  e.input_hash,
+  e.profile, e.park, e.options, e.path, e.auto, e.review_group, e.level, e.head
+FROM _entries e
+LEFT JOIN _entries s ON s.rowid = (
+  SELECT c.rowid FROM _entries c
+  WHERE (c.change_id = e.change_id AND c.supersedes = e.id)
+     OR c.supersedes = e.change_id || '/' || e.id
+  ORDER BY c.at, c.id LIMIT 1
+);
+`;
+function ensureSchema(database) {
+  if (currentVersion(database) === INDEX_SCHEMA_VERSION) return;
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    if (currentVersion(database) !== INDEX_SCHEMA_VERSION) {
+      const objects = database.prepare(
+        "SELECT type, name FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY type = 'table'"
+      ).all();
+      for (const { type, name } of objects) {
+        database.exec(`DROP ${type === "view" ? "VIEW" : "TABLE"} IF EXISTS "${name}"`);
+      }
+      database.exec(TABLES);
+      database.prepare("INSERT INTO _meta (key, value) VALUES ('schema_version', ?)").run(String(INDEX_SCHEMA_VERSION));
+    }
+    database.exec("COMMIT");
+  } catch (error2) {
+    database.exec("ROLLBACK");
+    throw error2;
+  }
+}
+function currentVersion(database) {
+  const table = database.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '_meta'").get();
+  if (table === void 0) return void 0;
+  const row = database.prepare("SELECT value FROM _meta WHERE key = 'schema_version'").get();
+  return row === void 0 ? void 0 : Number(row.value);
+}
+
+// kernel/src/shared/store/agents/registry.ts
+import { mkdirSync as mkdirSync2, readFileSync as readFileSync3, rmSync as rmSync2, statSync as statSync4 } from "node:fs";
+import { dirname as dirname4, join as join6 } from "node:path";
+
+// kernel/src/shared/store/sqlite.ts
+async function loadSqlite() {
+  const original = Reflect.get(process, "emitWarning");
+  process.emitWarning = withoutSqliteWarning(process.emitWarning.bind(process));
+  try {
+    return await import("node:sqlite");
+  } finally {
+    Reflect.set(process, "emitWarning", original);
+  }
+}
+function withoutSqliteWarning(emit) {
+  return (warning, ...rest) => {
+    const [options] = rest;
+    const type = typeof options === "string" ? options : options?.type;
+    const message = typeof warning === "string" ? warning : warning.message;
+    if (type === "ExperimentalWarning" && message.includes("SQLite")) return;
+    emit(warning, ...rest);
+  };
+}
+
+// kernel/src/shared/store/agents/registry.ts
+var AGENTS_SCHEMA_VERSION = 1;
+var BUSY_TIMEOUT_MS = 5e3;
+function agentsRegistryPath(projectRoot2) {
+  return join6(projectRoot2, ".bdk", ".machine", "agents.sqlite");
+}
+function heartbeatPath(projectRoot2, id) {
+  return join6(projectRoot2, ".bdk", ".machine", "agents", id);
+}
+var fileRegistry = (projectRoot2) => openAgentRegistry(projectRoot2);
+async function withRegistry(opener, projectRoot2, work) {
+  const registry3 = await opener(projectRoot2);
+  try {
+    return await work(registry3);
+  } finally {
+    registry3.close();
+  }
+}
+var TABLES2 = `
+CREATE TABLE _meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE agents (
+  id TEXT PRIMARY KEY, type TEXT, session TEXT, parent TEXT, package TEXT, ticket TEXT,
+  target TEXT, started_at TEXT, linked_at TEXT, ended_at TEXT, ended_by TEXT,
+  continuations INTEGER NOT NULL DEFAULT 0, progress TEXT
+);
+CREATE INDEX agents_parent ON agents (parent);
+CREATE TABLE sessions (
+  session TEXT PRIMARY KEY, continuations INTEGER NOT NULL, progress TEXT
+);
+CREATE TABLE messages (
+  seq INTEGER PRIMARY KEY AUTOINCREMENT, sender TEXT NOT NULL, recipient TEXT NOT NULL,
+  entry TEXT NOT NULL, at TEXT NOT NULL, delivered INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX messages_recipient ON messages (recipient, delivered);
+CREATE TABLE seen (agent TEXT NOT NULL, key TEXT NOT NULL, PRIMARY KEY (agent, key));
+`;
+var COLUMNS = {
+  type: "type",
+  session: "session",
+  parent: "parent",
+  package: "package",
+  ticket: "ticket",
+  target: "target",
+  startedAt: "started_at",
+  linkedAt: "linked_at",
+  endedAt: "ended_at",
+  endedBy: "ended_by",
+  continuations: "continuations",
+  progress: "progress"
+};
+async function openAgentRegistry(projectRoot2, options = {}) {
+  const { DatabaseSync } = await loadSqlite();
+  const path = options.memory === true ? ":memory:" : agentsRegistryPath(projectRoot2);
+  const connect = () => {
+    if (path !== ":memory:") mkdirSync2(dirname4(path), { recursive: true });
+    const database2 = new DatabaseSync(path);
+    try {
+      database2.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+      if (path !== ":memory:") database2.exec("PRAGMA journal_mode = WAL");
+      ensureSchema2(database2);
+      return database2;
+    } catch (error2) {
+      database2.close();
+      throw error2;
+    }
+  };
+  let database;
+  try {
+    database = connect();
+  } catch {
+    for (const suffix of ["", "-wal", "-shm"]) rmSync2(`${path}${suffix}`, { force: true });
+    database = connect();
+  }
+  const heartbeat = options.heartbeat ?? fileHeartbeat(projectRoot2);
+  let depth = 0;
+  const transaction2 = (work) => {
+    if (depth > 0) return work();
+    database.exec("BEGIN IMMEDIATE");
+    depth += 1;
+    try {
+      const result2 = work();
+      database.exec("COMMIT");
+      return result2;
+    } catch (error2) {
+      database.exec("ROLLBACK");
+      throw error2;
+    } finally {
+      depth -= 1;
+    }
+  };
+  return {
+    path,
+    get: (id) => {
+      const row = database.prepare("SELECT * FROM agents WHERE id = ?").get(id);
+      return row === void 0 ? void 0 : agentRow(row);
+    },
+    all: () => database.prepare(
+      "SELECT * FROM agents ORDER BY coalesce(min(started_at, linked_at), started_at, linked_at, ''), id"
+    ).all().map(agentRow),
+    put: (id, fields) => {
+      const entries2 = Object.entries(fields).filter((entry2) => entry2[1] !== void 0);
+      transaction2(() => {
+        database.prepare("INSERT OR IGNORE INTO agents (id) VALUES (?)").run(id);
+        if (entries2.length === 0) return;
+        const sets = entries2.map(([key]) => `${COLUMNS[key]} = ?`).join(", ");
+        database.prepare(`UPDATE agents SET ${sets} WHERE id = ?`).run(...entries2.map(([, value]) => value), id);
+      });
+    },
+    session: (session) => {
+      const row = database.prepare("SELECT * FROM sessions WHERE session = ?").get(session);
+      if (row === void 0) return void 0;
+      return {
+        session: String(row.session),
+        continuations: Number(row.continuations),
+        progress: nullable2(row.progress)
+      };
+    },
+    putSession: (row) => {
+      transaction2(
+        () => database.prepare(
+          "INSERT INTO sessions (session, continuations, progress) VALUES (?, ?, ?) ON CONFLICT (session) DO UPDATE SET continuations = excluded.continuations, progress = excluded.progress"
+        ).run(row.session, row.continuations, row.progress)
+      );
+    },
+    addMessage: (message) => {
+      transaction2(
+        () => database.prepare("INSERT INTO messages (sender, recipient, entry, at) VALUES (?, ?, ?, ?)").run(message.from, message.to, message.entry, message.at)
+      );
+    },
+    undelivered: (to) => database.prepare(
+      "SELECT seq, sender, recipient, entry, at FROM messages WHERE recipient = ? AND delivered = 0 ORDER BY seq"
+    ).all(to).map((row) => ({
+      seq: Number(row.seq),
+      from: String(row.sender),
+      to: String(row.recipient),
+      entry: String(row.entry),
+      at: String(row.at)
+    })),
+    markDelivered: (seqs) => {
+      if (seqs.length === 0) return;
+      transaction2(() => {
+        const statement2 = database.prepare("UPDATE messages SET delivered = 1 WHERE seq = ?");
+        for (const seq of seqs) statement2.run(seq);
+      });
+    },
+    seen: (agent) => new Set(
+      database.prepare("SELECT key FROM seen WHERE agent = ?").all(agent).map((row) => String(row.key))
+    ),
+    markSeen: (agent, keys) => {
+      if (keys.length === 0) return;
+      transaction2(() => {
+        const statement2 = database.prepare("INSERT OR IGNORE INTO seen (agent, key) VALUES (?, ?)");
+        for (const key of keys) statement2.run(agent, key);
+      });
+    },
+    heartbeat,
+    transaction: transaction2,
+    schemaVersion: () => currentVersion2(database) ?? 0,
+    close: () => {
+      database.close();
+    }
+  };
+}
+function fileHeartbeat(projectRoot2) {
+  return (id) => {
+    if (!/^[A-Za-z0-9_-]+$/.test(id)) return void 0;
+    const path = heartbeatPath(projectRoot2, id);
+    const stats = statSync4(path, { throwIfNoEntry: false });
+    if (stats === void 0) return void 0;
+    try {
+      return { open: readFileSync3(path, "utf8").trim() === "open", atMs: stats.mtimeMs };
+    } catch {
+      return void 0;
+    }
+  };
+}
+function ensureSchema2(database) {
+  if (currentVersion2(database) === AGENTS_SCHEMA_VERSION) return;
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    if (currentVersion2(database) !== AGENTS_SCHEMA_VERSION) {
+      const tables = database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all();
+      for (const { name } of tables) database.exec(`DROP TABLE IF EXISTS "${name}"`);
+      database.exec(TABLES2);
+      database.prepare("INSERT INTO _meta (key, value) VALUES ('schema_version', ?)").run(String(AGENTS_SCHEMA_VERSION));
+    }
+    database.exec("COMMIT");
+  } catch (error2) {
+    database.exec("ROLLBACK");
+    throw error2;
+  }
+}
+function currentVersion2(database) {
+  const table = database.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '_meta'").get();
+  if (table === void 0) return void 0;
+  const row = database.prepare("SELECT value FROM _meta WHERE key = 'schema_version'").get();
+  return row === void 0 ? void 0 : Number(row.value);
+}
+function nullable2(value) {
+  if (typeof value === "string") return value;
+  return typeof value === "number" || typeof value === "bigint" ? String(value) : null;
+}
+function agentRow(row) {
+  return {
+    id: String(row.id),
+    type: nullable2(row.type),
+    session: nullable2(row.session),
+    parent: nullable2(row.parent),
+    package: nullable2(row.package),
+    ticket: nullable2(row.ticket),
+    target: nullable2(row.target),
+    startedAt: nullable2(row.started_at),
+    linkedAt: nullable2(row.linked_at),
+    endedAt: nullable2(row.ended_at),
+    endedBy: nullable2(row.ended_by),
+    continuations: Number(row.continuations),
+    progress: nullable2(row.progress)
+  };
+}
+
+// kernel/src/shared/store/index/open.ts
+import { mkdirSync as mkdirSync3, rmSync as rmSync3 } from "node:fs";
+import { dirname as dirname5, join as join7 } from "node:path";
+var BUSY_TIMEOUT_MS2 = 5e3;
+function indexPath(projectRoot2) {
+  return join7(projectRoot2, ".bdk", ".machine", "index.sqlite");
+}
+async function openIndex(store2, projectRoot2, options = {}) {
+  const { DatabaseSync } = await loadSqlite();
+  const path = options.memory === true ? ":memory:" : indexPath(projectRoot2);
+  const connect = () => {
+    if (path !== ":memory:") mkdirSync3(dirname5(path), { recursive: true });
+    const database2 = new DatabaseSync(path);
+    try {
+      database2.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS2}`);
+      if (path !== ":memory:") database2.exec("PRAGMA journal_mode = WAL");
+      ensureSchema(database2);
+      return database2;
+    } catch (error2) {
+      database2.close();
+      throw error2;
+    }
+  };
+  let database;
+  try {
+    database = connect();
+  } catch {
+    try {
+      for (const suffix of ["", "-wal", "-shm"]) rmSync3(`${path}${suffix}`, { force: true });
+      database = connect();
+    } catch (error2) {
+      const reason = error2 instanceof Error ? error2.message.split("\n")[0] : String(error2);
+      throw new KernelRefusal(
+        refuse(
+          "state/corrupted-index",
+          `the index ${path} cannot be opened or rebuilt (${reason ?? "unknown error"})`,
+          ["bdk rebuild", `remove ${path} by hand, then retry`]
+        )
+      );
+    }
+  }
+  return {
+    path,
+    database,
+    store: store2,
+    projectRoot: projectRoot2,
+    now: options.now ?? Date.now,
+    schemaVersion: () => currentVersion(database) ?? 0,
+    close: () => {
+      database.close();
+    }
+  };
+}
+var fileIndex = (store2, projectRoot2) => openIndex(store2, projectRoot2);
+async function withIndex(opener, store2, projectRoot2, work) {
+  const index2 = await opener(store2, projectRoot2);
+  try {
+    return await work(index2);
+  } finally {
+    index2.close();
+  }
+}
+
+// kernel/src/shared/store/index/refresh.ts
+import { join as join9, relative as relative2, sep as sep2 } from "node:path";
+
+// kernel/src/shared/store/changes.ts
+import { join as join8 } from "node:path";
+function changesDir(projectRoot2) {
+  return join8(projectRoot2, ".bdk", "changes");
+}
+function archiveDir(projectRoot2) {
+  return join8(changesDir(projectRoot2), "archive");
+}
+function archivedChangeDir(projectRoot2, id) {
+  return join8(archiveDir(projectRoot2), id);
+}
+function liveChangeDir(projectRoot2, id) {
+  return join8(changesDir(projectRoot2), id);
+}
+function listChangeDirs(store2, projectRoot2) {
+  const found = (parent, archived) => store2.list(parent).filter((name) => name.endsWith("/")).map((name) => name.slice(0, -1)).filter((id) => isChangeId(id) && store2.exists(join8(parent, id, "change.md"))).map((id) => ({ id, dir: join8(parent, id), archived }));
+  return [...found(changesDir(projectRoot2), false), ...found(archiveDir(projectRoot2), true)];
+}
+function findChange(store2, projectRoot2, id) {
+  if (!isChangeId(id)) return void 0;
+  for (const [dir, archived] of [
+    [liveChangeDir(projectRoot2, id), false],
+    [join8(archiveDir(projectRoot2), id), true]
+  ]) {
+    if (store2.exists(join8(dir, "change.md"))) return { id, dir, archived };
+  }
+  return void 0;
+}
+var SAFE = /[A-Za-z0-9._-]/;
+function encodeBranch(branch) {
+  let out = "";
+  for (const char of branch) {
+    if (SAFE.test(char)) out += char;
+    else
+      for (const byte of Buffer.from(char, "utf8"))
+        out += `%${byte.toString(16).toUpperCase().padStart(2, "0")}`;
+  }
+  return out;
+}
+function decodeBranch(encoded) {
+  return decodeURIComponent(encoded);
+}
+function markersDir(projectRoot2) {
+  return join8(projectRoot2, ".bdk", ".machine", "branches");
+}
+function markerPath(projectRoot2, branch) {
+  return join8(markersDir(projectRoot2), encodeBranch(branch));
+}
+function readMarker(store2, projectRoot2, branch) {
+  const text13 = store2.read(markerPath(projectRoot2, branch))?.trim();
+  return text13 === void 0 || text13 === "" ? void 0 : text13;
+}
+function writeMarker(store2, projectRoot2, branch, id) {
+  store2.write(markerPath(projectRoot2, branch), `${id}
+`);
+}
+function removeMarker(store2, projectRoot2, branch) {
+  store2.remove(markerPath(projectRoot2, branch));
+}
+function listMarkers(store2, projectRoot2) {
+  return store2.list(markersDir(projectRoot2)).filter((name) => !name.endsWith("/")).map((name) => ({
+    branch: decodeBranch(name),
+    change: store2.read(join8(markersDir(projectRoot2), name))?.trim() ?? ""
+  })).filter((marker) => marker.change !== "").sort((a, b) => a.branch < b.branch ? -1 : a.branch > b.branch ? 1 : 0);
+}
+function resolveActiveChange(store2, git, where) {
+  const projectRoot2 = findProjectRoot(store2, where.cwd, where.workTree);
+  const branch = git.currentBranch(where.workTree);
+  if (branch === void 0) {
+    return refuse(
+      "policy/no-active-change",
+      `HEAD is detached in ${where.workTree}, so no Change is bound to it`,
+      ["git switch <branch>", "bdk change list"]
+    );
+  }
+  const id = readMarker(store2, projectRoot2, branch);
+  const location2 = id === void 0 ? void 0 : findChange(store2, projectRoot2, id);
+  if (id !== void 0 && location2 === void 0) {
+    return refuse(
+      "state/change-dir-missing",
+      `branch ${branch} is bound to ${id}, whose directory .bdk/changes/${id}/ is missing`,
+      ["bdk rebuild", ...resumeLines(store2, projectRoot2)]
+    );
+  }
+  if (location2 === void 0 || location2.archived) {
+    return refuse("policy/no-active-change", `no active Change on branch ${branch}`, [
+      '/bdk:change new "<intent>"',
+      ...resumeLines(store2, projectRoot2)
+    ]);
+  }
+  return { id: location2.id, dir: location2.dir, projectRoot: projectRoot2, branch };
+}
+function resumeLines(store2, projectRoot2) {
+  const live2 = listChangeDirs(store2, projectRoot2).filter((change) => !change.archived);
+  return live2.length === 0 ? ["bdk change resume <id>"] : live2.map((change) => `bdk change resume ${change.id}`);
 }
 
 // kernel/src/shared/store/index/refresh.ts
@@ -21430,7 +21446,7 @@ async function recordCoverage(deps, change, where, input) {
       `run ${settings.command} to write a ${settings.format} report`
     ]);
   }
-  const base = await changeBase(deps.git, change.projectRoot, change.dir);
+  const base = await changeBase(deps.store, deps.git, change.projectRoot, change.dir);
   const policy = filePolicy(resolved.value);
   const reportFile = relative6(change.projectRoot, reportPath).split(sep5).join("/");
   const added = new Map(
@@ -29216,6 +29232,12 @@ async function newChange(deps, where, input) {
       ]
     );
   }
+  if (input.base !== void 0 && input.kind !== "review") {
+    return refuse("input/invalid-argument", "--base sets the range of a review Change only", [
+      `bdk change new "${input.intent}" --kind review --base ${input.base}`,
+      `bdk change new "${input.intent}"`
+    ]);
+  }
   if (input.intent.trim() === "") {
     return refuse("input/invalid-argument", "<intent> is empty", [
       'bdk change new "<one sentence>"'
@@ -29229,6 +29251,8 @@ async function newChange(deps, where, input) {
       ["git switch -c <branch>"]
     );
   }
+  const base = input.kind === "review" ? await reviewBase(deps, where, input) : void 0;
+  if (base !== void 0 && typeof base !== "string") return base;
   const projectRoot2 = findProjectRoot(deps.store, where.cwd, where.workTree);
   const bound = readMarker(deps.store, projectRoot2, branch);
   const active10 = bound === void 0 ? void 0 : findChange(deps.store, projectRoot2, bound);
@@ -29272,7 +29296,8 @@ async function newChange(deps, where, input) {
       source: input.inferred ? "inferred" : "user",
       at,
       author: author2,
-      overridden
+      overridden,
+      ...base === void 0 ? {} : { base }
     },
     body: ""
   });
@@ -29306,6 +29331,25 @@ async function newChange(deps, where, input) {
     overriddenKeys: overridden,
     ...written.next === void 0 ? {} : { next: written.next }
   };
+}
+async function reviewBase(deps, where, input) {
+  const ref = input.base ?? "origin/HEAD";
+  const commit = await resolveCommit(deps.git, where.workTree, ref);
+  const base = commit === void 0 ? void 0 : await mergeBase(deps.git, where.workTree, commit);
+  if (base === void 0) {
+    return refuse("input/not-found", `${ref} names no commit sharing history with HEAD`, [
+      `bdk change new "${input.intent}" --kind review --base <ref>`,
+      "git branch --all --list"
+    ]);
+  }
+  if (base === await headCommit(deps.git, where.workTree)) {
+    return refuse(
+      "policy/empty-range",
+      `HEAD is the merge base with ${ref}: the branch has no commit to review`,
+      [`bdk change new "${input.intent}" --kind review --base <older ref>`, "git log --oneline -5"]
+    );
+  }
+  return base;
 }
 function reasonBody(reason) {
   const text13 = (reason ?? "").trim();
@@ -29632,6 +29676,9 @@ function values(value) {
   if (value === void 0 || value === true) return [];
   return typeof value === "string" ? [value] : [...value];
 }
+function kindOf2(value) {
+  return CHANGE_KINDS.find((kind) => kind === value) ?? "feature";
+}
 function active7(change) {
   if (change === void 0) throw new Error("this change command is Change-scoped");
   return change;
@@ -29643,7 +29690,8 @@ function newCommand(deps) {
       { cwd: context.cwd, workTree: context.workTree ?? context.cwd, environment: context.runtime },
       {
         intent: context.positionals["<intent>"] ?? "",
-        kind: context.flags["--kind"] === "bug" ? "bug" : "feature",
+        kind: kindOf2(context.flags["--kind"]),
+        base: text9(context.flags["--base"]),
         profile: text9(context.flags["--profile"]),
         reason: text9(context.flags["--reason"]),
         inferred: context.flags["--inferred"] === true
@@ -33823,7 +33871,7 @@ async function anchorOf(deps, change, input) {
     const sha = head === void 0 ? void 0 : await resolveCommit(deps.git, root, head);
     if (sha !== void 0) return { kind: "delta", sha };
   }
-  return { kind: "full", sha: await changeBase(deps.git, root, change.dir) };
+  return { kind: "full", sha: await changeBase(deps.store, deps.git, root, change.dir) };
 }
 function isBdk2(path) {
   return path.split("/").includes(".bdk");
