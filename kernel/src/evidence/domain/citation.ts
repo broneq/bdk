@@ -34,6 +34,27 @@ export function citationProblem(citation: string, files: readonly CitedFile[]): 
     : lineProblem(where, file.text, parsed.target.line, parsed.target.contains);
 }
 
+/**
+ * The grammar form of `citation` when its text, though no resolving citation,
+ * is on a line of exactly one recorded text file (the first such line). The
+ * text is the whole value, or the part after `=` of a `<file>:<line>[-<line>]=<text>`
+ * citation whose line is wrong or is a range. The kernel never accepts the
+ * bare text: a citation names a place (T23-D47).
+ */
+export function citationHint(citation: string, files: readonly CitedFile[]): string | undefined {
+  const located = /^.*:\d+(?:-\d+)?=(?<text>.+)$/s.exec(citation)?.groups?.text;
+  if (located === undefined && parse(citation, files) !== undefined) return undefined;
+  const text = (located ?? citation).trim();
+  if (text === "") return undefined;
+  const found = files.flatMap((file) => {
+    if (file.text === undefined) return [];
+    const lines = file.text.split("\n").map((line) => line.replace(/\r$/, ""));
+    const at = lines.findIndex((line) => line.includes(text));
+    return at < 0 ? [] : [`${file.given}:${String(at + 1)}=${text}`];
+  });
+  return found.length === 1 ? found[0] : undefined;
+}
+
 /** UTF-8 without a NUL byte: the files a citation can resolve in and a Change can commit. */
 export function isText(bytes: Uint8Array): boolean {
   if (bytes.includes(0)) return false;

@@ -205,6 +205,33 @@ describe("log ingest", () => {
     expect(result.code, result.stdout).toBe(0);
   });
 
+  it.each([
+    ["done", '""'],
+    ["done", "null"],
+    ["done-with-concerns", '""'],
+    ["done-with-concerns", "null"],
+  ])("reads reason: %2$s on %1$s as absent", async (status, value) => {
+    const h = harness();
+    const result = await h.ingest(
+      report([`status: ${status}`, "files: []", "entries: []", "evidence: []", `reason: ${value}`]),
+    );
+    expect(result.code, result.stdout).toBe(0);
+    const stored = readDocument(h.store, `${ROOT}/${reportPath("verifier")}`);
+    expect(stored).toMatchObject({ data: { status } });
+    expect(stored).not.toMatchObject({ data: { reason: expect.anything() as unknown } });
+  });
+
+  it.each(["blocked", "needs-context"])("still refuses an empty reason on %s", async (status) => {
+    const h = harness();
+    const result = await h.ingest(
+      report([`status: ${status}`, "files: []", "entries: []", "evidence: []", 'reason: ""']),
+    );
+    expect(result.code).toBe(3);
+    expect(refusal(result)).toMatchObject({ rule: "input/invalid-envelope" });
+    expect(refusal(result).why).toMatch(/reason/);
+    expect(reports(h.store)).toStrictEqual([]);
+  });
+
   it("accepts evidence recorded under the ticket", async () => {
     const h = harness();
     manifest(h.store, "E-5hq0m2vd", TICKET);

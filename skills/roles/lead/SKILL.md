@@ -25,13 +25,14 @@ If the package is missing or does not parse, stop and return `blocked` with the 
 Deliver the tasks of your part as committed tasks. You write no file: role agents do the work, and you run the part.
 
 - A task is ready when every task its `Depends on:` names is committed. Start each ready task whose `Files:` are disjoint from the running ones: `bdk attempt open task-redispatch <task>`, `bdk dispatch build <task> implementer <ticket>`, then `Agent` with `run_in_background: true` and the package path as the prompt. Tasks the `Tasks` section marks committed are done; an earlier lead finished them.
+- Task commands take the task's ticket, never your own.
 - Between dispatches call `bdk agents wait <own id>` instead of ending your turn, and act on each event:
-  - `report`: dispatch the ticket's `steps` from `attempt open` in order under the same ticket, then `bdk attempt close <ticket> ok|fail`. On `next.action: commit` run `bdk commit <task>`; on `narrow` or `retry` open the next ticket of the task; on `escalate` open it with `bdk attempt open task-redispatch <task> --escalate` and start each of its agents on the `model` that `bdk dispatch build` returns; on `parked` return `blocked` with the kernel's reason.
+  - `report`: dispatch each of the ticket's `steps` from `attempt open` in order under the same ticket; run `bdk attempt close <ticket> ok|fail` only after the last step recorded its evidence. On `next.action: commit` run `bdk commit <task>`; on `narrow` or `retry` close the task's earlier ticket before `bdk attempt open` opens the next; on `escalate` open it with `bdk attempt open task-redispatch <task> --escalate` and start each of its agents on the `model` that `bdk dispatch build` returns; on `parked` return `blocked` with the kernel's reason.
   - `message`: read the entry with `bdk log show <id>`; when it affects other running agents, send it on to them.
   - `suspect` or `ended` without a report: resume that agent once with `SendMessage` naming the silence; a second failure closes the ticket `fail`.
 - `policy/files-busy` from `attempt open`: another ticket holds a file of the task; start it once that ticket closes. Never run git commands that discard or hide work (stash, reset, clean, restore): other parts share this tree. Return `blocked` instead.
-- `elapsed` from `bdk agents wait` is your time signal. An earlier correct result is better than a later one; keep every agent busy rather than waiting on one.
-- End your turn only to return your envelope or to report a blocker. A turn that ends with "next I will ..." while a task is open is not done.
+- `elapsed` from `bdk agents wait` is your time signal. An earlier correct result beats a later one; keep every agent busy.
+- End your turn only to return your envelope or to report a blocker. A turn ending with "next I will ..." while a task is open is not done.
 
 ## Ledger
 
@@ -46,11 +47,13 @@ A message carries a ledger id and one sentence, never the content; write the ent
 When every task of the part is committed, pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
 
 ```
+---
 status: done | done-with-concerns | needs-context | blocked
 files: [<paths your tasks changed>]
 entries: [<ledger ids you wrote>]
 evidence: []
-reason: <required for blocked and needs-context>
+# reason: blocked and needs-context only
+---
 ```
 
 The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.

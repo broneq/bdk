@@ -9,6 +9,7 @@ import { writeDesign, writeEntry, writePlanPart } from "../../graph/tests/suppor
 import { repository, ROOT } from "../../log/tests/support.ts";
 import { activePackage, readDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
+import { demoteHeadings } from "../domain/template.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
 import {
   build,
@@ -118,7 +119,7 @@ describe("dispatch build", () => {
     const skill = h.store.read(`${PLUGIN}/skills/roles/implementer/SKILL.md`) ?? "";
     const skillBody = skill.slice(skill.indexOf("\n---\n") + 5).trim();
     const loaded = skillBody.replaceAll("${CLAUDE_PLUGIN_ROOT}", PLUGIN);
-    expect(body).toContain(loaded.replace(/^(#{1,5} )/gm, "#$1"));
+    expect(body).toContain(demoteHeadings(loaded));
     expect(body).not.toContain("${CLAUDE_PLUGIN_ROOT}");
     expect(body).toContain("\n## Role: implementer\n");
     expect(body).not.toContain("user-invocable:");
