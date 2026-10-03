@@ -49,7 +49,7 @@
 
 ## 10. Acceptance
 
-- [ ] 10.1 Kernel E2E scenario of one review round end to end with the built bundle: `attempt open review-fix`, `review plan`, two group packages and an integration package, grouped findings and reports, a gate runner's `tests-full`, `lint-full` and a passing coverage record, triage of every entry, the `merge` report and `bdk done review` passing; then a second round where a triaged blocker and a fix commit make `review plan` return only the fix's files
-- [ ] 10.2 Sync the main specs with the deltas
-- [ ] 10.3 Full gate: `pnpm build`, `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm docs:build`, `pnpm eval check`, `pnpm lint:py`, `pytest tests/unit/`
-- [ ] 10.4 `openspec validate v3-t42-review-kernel --strict` and `openspec validate --specs --strict`
+- [x] 10.1 Kernel E2E scenario of one review round end to end with the built bundle: `attempt open review-fix`, `review plan`, two group packages and an integration package, grouped findings and reports, a gate runner's `tests-full`, `lint-full` and a passing coverage record, triage of every entry, the `merge` report and `bdk done review` passing; then a second round where a triaged blocker and a fix commit make `review plan` return only the fix's files
+- [x] 10.2 Sync the main specs with the deltas
+- [x] 10.3 Full gate: `pnpm build`, `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm docs:build`, `pnpm eval check`, `pnpm lint:py`, `pytest tests/unit/`
+- [x] 10.4 `openspec validate v3-t42-review-kernel --strict` and `openspec validate --specs --strict`

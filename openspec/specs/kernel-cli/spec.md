@@ -298,6 +298,11 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 - **WHEN** the catalogue is read
 - **THEN** it lists `guard/stage-skill` and `guard/gate-manual` as emitted by `hooks pre-tool`, and `policy/gate-not-ready` as emitted by `hooks pre-tool` too
 
+#### Scenario: review commands are in the catalogue
+
+- **WHEN** the coverage test reads the declared refusals of `review plan`, `log triage` and `evidence coverage`
+- **THEN** every declared rule is in the catalogue, and the `Emitted by` cells of `policy/no-open-ticket` and `policy/invalid-transition` name `evidence coverage` and `log triage`
+
 ### Requirement: Conventions
 
 Success output, list pages, identifiers, timestamps, idempotence and the refusal-versus-finding split SHALL follow these conventions in every command.
@@ -385,3 +390,24 @@ Each command carries exactly one class in the index (`availability`). The `hooks
 
 - **WHEN** the same lead runs `bdk.mjs part done 02`
 - **THEN** `hooks pre-tool` denies with `guard/subagent-kernel-command` naming `part done`
+
+### Requirement: Ticket references
+
+Every `--ticket` argument and the ticket argument of `dispatch show` SHALL accept a ticket reference: a ticket id `A-...`, or `<ticket>@<group>` naming a review group of that ticket (T42-A1).
+
+A group is kebab-case, at most 32 characters, and exists only on a ticket of loop `review-fix`; a group reference on a ticket of another loop, or one that is not kebab-case, is `input/invalid-argument`. `<ticket>@<group>` resolves to the package `dispatch build --group <group>` wrote for that ticket, so the reviewers of one round work in parallel under one ticket, one budget and one round, each with its own package, rules, report and entries. Ledger entries, reports and evidence manifests written under a group reference store the ticket id in `ticket` and the group in `group` (`kernel-state`), so ticket-level reads (`attempt close`, its fingerprints, `log list`) see every group of the ticket. The group `merge` is reserved for the orchestrator: it has no package, `log ingest` stores the round's merged review under it and `log add report` records that review as the `review` verdict (`kernel-cli/log`). A command that finds a role through the active package finds it through the group's package for a group reference; an ungrouped reference keeps the active package of the attempt record (`kernel-state`, Attempt record).
+
+#### Scenario: group on a task ticket
+
+- **WHEN** `bdk log add finding "x" --ref a.ts --ticket A-7f3k9m2q@p01` runs and `A-7f3k9m2q` is a `task-redispatch` ticket
+- **THEN** the exit code is 3 and the error object carries `rule: input/invalid-argument`
+
+#### Scenario: group without a package
+
+- **WHEN** `bdk rules show --ticket A-r1v2w3x4@p09` runs and no package of group `p09` exists
+- **THEN** the exit code is 2 and the error object carries `rule: policy/no-open-ticket`
+
+#### Scenario: malformed group
+
+- **WHEN** `bdk dispatch show A-r1v2w3x4@P_01` runs
+- **THEN** the exit code is 3 and the error object carries `rule: input/invalid-argument`
