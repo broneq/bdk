@@ -90,7 +90,9 @@ function mergedReview(change: Started, round: string, entries: string[], summary
   );
 }
 
-describe("a review round end to end", () => {
+// Two whole rounds spawn dozens of kernel and git processes: 9 s alone,
+// over the 30 s project default when the whole E2E suite loads the machine.
+describe("a review round end to end", { timeout: 120_000 }, () => {
   it("fails on a triaged blocker, then passes after a second round reviewing only the fix", () => {
     const change = executed(started(TOOLS));
     // Tool output is ignored, as in a real project, so the fix commit leaves it out.

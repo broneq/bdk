@@ -180,7 +180,7 @@
   - E2E: a `cr` round on a fixture Change writes reviewer findings through `log add --ticket <ticket>@<group>`, each with a rule id ref, and their reports through `log ingest`;
   - `bdk export agents --host claude --check` is green after the removal;
   - the `stages` probe of `run --auto` reaches an archived Change with `review` done.
-- [ ] 12.2 Run the full gate:
+- [x] 12.2 Run the full gate:
   - `pnpm build`;
   - `pnpm lint`, `pnpm format:check`, `pnpm typecheck` and `pnpm knip`;
   - `pnpm test:unit`, `pnpm test:e2e` and `pnpm test:contract`;
@@ -188,4 +188,4 @@
 
   Fix any failure, including ones this Change did not cause.
 
-- [ ] 12.3 Sync the deltas into `openspec/specs/` (the new `review-skills` main spec by hand). Run `openspec validate v3-t42-review-skills --strict` and `openspec validate --specs --strict`, and verify that both pass.
+- [x] 12.3 Sync the deltas into `openspec/specs/` (the new `review-skills` main spec by hand). Run `openspec validate v3-t42-review-skills --strict` and `openspec validate --specs --strict`, and verify that both pass.

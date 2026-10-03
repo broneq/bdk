@@ -1,9 +1,9 @@
 """Regression tests for agent `tools:` allowlists.
 
-Narrow agents stay narrow: agents with tightly scoped tool sets
-(test-runner, static-analyse, web-researcher, log-analyzer, fixer,
-implementer) keep their declared sets. Adding a tool to one of these
-requires updating the spec inline. `pnpm skill-check` (`forbidden-text`)
+Narrow agents stay narrow: web-researcher, the one hand-written agent,
+keeps its declared set. Adding a tool to it requires updating the spec
+inline. The role adapters are generated, and `bdk export agents --host
+claude --check` guards their tools. `pnpm skill-check` (`forbidden-text`)
 fails on any BDK MCP tool name in a plugin agent.
 """
 
@@ -64,43 +64,12 @@ def _tools(path: Path) -> set[str] | str | None:
     return _parse_tools_field(_extract_frontmatter(path))
 
 
-def _expect_tool_set(path: Path) -> set[str]:
-    result = _tools(path)
-    assert isinstance(result, set), (
-        f"{path.name}: expected list-form tools, got {type(result).__name__}"
-    )
-    return result
-
-
 # ---------------------------------------------------------------------------
 # Narrow-agent regression guard (Task 9)
 # ---------------------------------------------------------------------------
 
 NARROW_AGENT_TOOLS: dict[str, set[str] | str] = {
-    "test-runner": "Bash",
-    "static-analyse": "ALL",
     "web-researcher": {"WebSearch", "WebFetch", "Read", "Grep", "Glob"},
-    "log-analyzer": {
-        "Read",
-        "Grep",
-        "Glob",
-    },
-    "fixer": {
-        "Read",
-        "Edit",
-        "Write",
-        "Bash",
-        "Grep",
-        "Glob",
-    },
-    "implementer": {
-        "Read",
-        "Edit",
-        "Write",
-        "Bash",
-        "Grep",
-        "Glob",
-    },
 }
 
 
