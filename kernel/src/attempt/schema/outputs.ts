@@ -7,6 +7,7 @@ import type {
   AttemptItem,
   AttemptListReport,
   AttemptOpenReport,
+  AttemptShowReport,
 } from "../domain/reports.ts";
 import { LOOPS, TICKET_SCOPES } from "../../shared/vocabulary/index.ts";
 
@@ -166,6 +167,22 @@ const attemptItem = z.strictObject({
   }),
 }) satisfies z.ZodType<AttemptItem>;
 
+const attemptShowFields = {
+  ...attemptItem.shape,
+  steps: z
+    .array(
+      z.strictObject({
+        kind: z.string().min(1).meta({ description: "The step's evidence kind." }),
+        role: z.string().min(1).meta({ description: "The role that runs the step." }),
+      }),
+    )
+    .optional()
+    .meta({
+      description:
+        "The post-task steps of the ticket, as `attempt open` returned them; only for task-redispatch, verify-fix and review-fix.",
+    }),
+};
+
 const budget = z.strictObject({ used: count, of: count });
 
 export const attemptListOutput = z
@@ -205,3 +222,23 @@ export const attemptListOutput = z
       },
     ],
   }) satisfies z.ZodType<AttemptListReport>;
+
+export const attemptShowOutput = z.strictObject(attemptShowFields).meta({
+  title: "bdk attempt show --json",
+  description: "One ticket's record: loop, target, state and steps.",
+  examples: [
+    {
+      ticket: "A-7f3k9m2q",
+      loop: "task-redispatch",
+      target: "02-3",
+      attempt: 2,
+      of: 3,
+      scope: "high+",
+      openedAt: "2026-09-25T10:02:11.482Z",
+      steps: [
+        { kind: "simplify", role: "simplifier" },
+        { kind: "tests-scoped", role: "runner" },
+      ],
+    },
+  ],
+}) satisfies z.ZodType<AttemptShowReport>;

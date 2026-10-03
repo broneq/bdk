@@ -26,7 +26,7 @@ You run the checks of the package's `Checks` section, exactly as written and in 
 
 - Run each check once and save its output to a file ending with the line `exit <code>`; never write or edit that output yourself, and never record a file the check did not write. Report its command, exit code and the shortest decisive lines of output.
 - Record each check with `bdk evidence record <kind> <file> --ticket <ticket>` and the verdict the output shows, and put the evidence id in your envelope.
-- For `pass`, cite with `--cite` the output line or JSON value that shows the result; the kernel refuses a `pass` without a citation.
+- For `pass`, cite with `--cite "<file>:<line>=<text>"`, the line of your output file that shows the result, e.g. `--cite "out.txt:7=Tests  12 passed (12)"`; never the console line alone, which is not a citation. The kernel refuses a `pass` without one.
 - Log each failure as a `finding` with the failing test or file and line, and record the check as `fail`.
 - When a check cannot run (missing tool, broken setup, no command configured), do not work around it: record `not-run` with the reason in the file and log an `observation`.
 - Never edit code or configuration to make a check pass.
@@ -44,11 +44,13 @@ A `SendMessage` carries a ledger id and one sentence, never the content; write t
 Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
 
 ```
+---
 status: done | done-with-concerns | needs-context | blocked
 files: [<paths you changed>]
 entries: [<ledger ids you wrote>]
 evidence: [<evidence ids>]
-reason: <required for blocked and needs-context>
+# reason: blocked and needs-context only
+---
 ```
 
 The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.

@@ -602,6 +602,27 @@
       "writes": []
     },
     {
+      "id": "attempt-show",
+      "argv": ["attempt", "show"],
+      "summary": "One ticket's record: loop, target, state and steps.",
+      "availability": "read",
+      "mode": "command",
+      "slice": "attempt",
+      "owner": "T22",
+      "changeScoped": true,
+      "args": [
+        {
+          "name": "<ticket>",
+          "required": true
+        }
+      ],
+      "flags": [],
+      "output": "output/attempt-show.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found"],
+      "writes": []
+    },
+    {
       "id": "log-add",
       "argv": ["log", "add"],
       "summary": "Append one ledger entry; the kernel stamps id, time, author and source.",

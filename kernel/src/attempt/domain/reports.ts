@@ -71,3 +71,8 @@ export interface AttemptListReport {
   readonly items: readonly AttemptItem[];
   readonly budgets?: Readonly<Record<string, Budget>> | undefined;
 }
+
+/** One ticket's record (`bdk attempt show`): the list item and, for a code loop, its post-task steps. */
+export interface AttemptShowReport extends AttemptItem {
+  readonly steps?: readonly { readonly kind: string; readonly role: string }[] | undefined;
+}
