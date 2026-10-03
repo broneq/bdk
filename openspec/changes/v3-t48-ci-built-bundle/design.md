@@ -50,8 +50,8 @@ Facts checked in the repository:
 ## Migration Plan
 
 1. Land on `staging/v3`: `.gitignore`, `build.mjs`, scripts, contract test and `git rm --cached` of all generated files, in one commit so rebases see one deletion. Open PRs rebase over it; their conflicts on generated files resolve by taking the deletion.
-2. Add the publish job and run it once with `workflow_dispatch` on the latest tag to create `release` and `dist-v<version>`.
-3. Only then change the marketplace entry (step 2 must precede it, so the entry never points at a missing ref), and the modeline tag in the kernel.
+2. Add the publish job, the marketplace entry and the modeline tag in the same PR. `staging/v3` has no release-please run and no marketplace reader, so nothing is published from it.
+3. At the first release from `main` (T50), before the entry reaches `main`, run the job once with `workflow_dispatch` on an existing tag to create `release` and `dist-v<version>`, so the entry never points at a missing ref; then install from the marketplace on a clean project.
 4. Rollback: restore the tracked files and the old entry; `release` can stay.
 
 ## Open Questions

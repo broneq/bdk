@@ -22,14 +22,11 @@
 - [x] 3.2 `.github/workflows/release-please.yml`: expose `release_created` and `tag_name`; add a `publish-bundle` job (`if: release_created`, `permissions: contents: write`): checkout the tag, `pnpm install --frozen-lockfile`, `pnpm build`, `git add -f dist/ schema/ agents/`, commit `chore(release): bundle <tag>`, `git push --force origin HEAD:release`, tag `dist-v<version>` and push it
 - [x] 3.3 `workflow_dispatch` with a required `tag` input that runs the same job for an existing tag
 - [x] 3.4 `actionlint` clean on both workflows
-- [ ] 3.5 Run the dispatch job once on the latest tag; verify `release` holds the tag tree plus `dist/`, `schema/`, `agents/`, that each equals a local `pnpm build` of that tag, and that `dist-v<version>` exists
 
 ## 4. Marketplace entry
 
 - [x] 4.1 Fetch https://code.claude.com/docs/en/plugins-reference and the marketplace reference again and confirm `github` source fields and the `agents` rules before the edit
 - [x] 4.2 `.claude-plugin/marketplace.json`: the `bdk` entry becomes `{"source": "github", "repo": "broneq/bdk", "ref": "release"}`; keep the other two entries; `claude plugin validate .` passes
-- [ ] 4.3 Clean-project install from the marketplace after 3.5: the plugin dir has `dist/bdk.mjs` and the six adapters, SessionStart prints no `BDK STOP`, `/bdk:setup` writes a modeline whose URL resolves
-- [ ] 4.4 Confirm by hand that an editor with yaml-language-server completes keys from the new modeline URL (the scenario of `kernel-settings`)
 
 ## 5. Documentation
 
@@ -45,3 +42,11 @@
 - [x] 6.2 `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip && pnpm test:unit && pnpm test:e2e && pnpm test:contract` green on a fresh worktree after `pnpm install`
 - [ ] 6.3 Each Acceptance signal of #114 has its evidence in the PR description
 - [x] 6.4 `openspec validate v3-t48-ci-built-bundle --strict`
+
+## Follow-up at the first release from `main` (T50, not tracked here)
+
+The change lands on `staging/v3`, where release-please does not run and the marketplace is not read, so these cannot be done in this PR. They are listed in the T50 scope of `docs/V3-IMPLEMENTATION-PLAN.md`.
+
+- Run the `release-please` workflow by hand with `tag` set to an existing tag, to create `release` and `dist-v<version>` before the marketplace entry reaches `main`; verify they hold the tag tree plus `dist/`, `schema/`, `agents/`, each equal to a fresh `pnpm build` of the tag.
+- Install `bdk` from the marketplace on a clean project: the plugin directory has `dist/bdk.mjs` and the six adapters, SessionStart prints no `BDK STOP`, and `/bdk:setup` writes a modeline whose URL resolves.
+- Confirm by hand that an editor with yaml-language-server completes keys from that modeline URL.
