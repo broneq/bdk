@@ -157,14 +157,14 @@
 
 ## 11. Evals: review-models and stage cases (skill-evals delta, design D10)
 
-- [ ] 11.1 Write failing harness tests in `evals/suites/review-models/` and `evals/suites/stages/`:
+- [x] 11.1 Write failing harness tests in `evals/suites/review-models/` and `evals/suites/stages/`:
   - the answer key parses;
   - every key file exists in the seed after its patch;
   - the variant rewrites only the `model` line of `agents/reviewer.md`;
   - the metrics count a found defect, a miss and a false alarm from a recorded ledger listing;
   - `pnpm eval check` validates the new suite and the new stage cases;
   - an unknown seed is refused.
-- [ ] 11.2 Implement:
+- [x] 11.2 Implement:
   - the suite (seed, defect patch, answer key, cells `sonnet`, `sonnet-prime` and `opus`, judge, metrics, report);
   - the `cr` cases (happy, blocker, refusal) and the `run --auto` case of `stages`;
   - the `evals/README.md` suites table row.

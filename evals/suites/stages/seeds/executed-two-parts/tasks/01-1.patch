@@ -1,0 +1,92 @@
+diff --git a/src/api/debugLogging.test.ts b/src/api/debugLogging.test.ts
+index c9913b1..995d10d 100644
+--- a/src/api/debugLogging.test.ts
++++ b/src/api/debugLogging.test.ts
+@@ -34,6 +34,7 @@ describe('createDebugLoggingFetch', () => {
+ 
+   it('logs problem details for failed API responses without consuming the body', async () => {
+     const problem = {
++      status: 400,
+       message: 'Invalid publication year filter combination.',
+       messageKey: 'books.validation.year-filter-combination',
+     }
+diff --git a/src/api/http.test.ts b/src/api/http.test.ts
+index 56ce7e5..71aca82 100644
+--- a/src/api/http.test.ts
++++ b/src/api/http.test.ts
+@@ -4,6 +4,7 @@ import {
+   createJsonReadHeaders,
+   getActiveLanguageHeaders,
+   getActiveRequestLanguage,
++  parseApiProblem,
+   setActiveRequestLanguage,
+ } from './http'
+ 
+@@ -60,3 +61,32 @@ describe('createJsonReadHeaders', () => {
+     })
+   })
+ })
++
++describe('parseApiProblem', () => {
++  function jsonResponse(body: unknown, contentType = 'application/json') {
++    return new Response(JSON.stringify(body), {
++      headers: { 'Content-Type': contentType },
++      status: 502,
++    })
++  }
++
++  it('ignores a JSON body without problem-details fields', async () => {
++    await expect(
++      parseApiProblem(jsonResponse({ error: 'upstream timeout' })),
++    ).resolves.toBeUndefined()
++  })
++
++  it('returns a body with a title and a status as problem details', async () => {
++    const problem = { title: 'Bad Gateway', status: 502 }
++
++    await expect(parseApiProblem(jsonResponse(problem))).resolves.toEqual(
++      problem,
++    )
++  })
++
++  it('ignores a body whose content type is not JSON', async () => {
++    await expect(
++      parseApiProblem(jsonResponse({ title: 'Bad Gateway' }, 'text/plain')),
++    ).resolves.toBeUndefined()
++  })
++})
+diff --git a/src/api/http.ts b/src/api/http.ts
+index 1af4314..b7edf1e 100644
+--- a/src/api/http.ts
++++ b/src/api/http.ts
+@@ -131,11 +131,29 @@ export async function parseApiProblem(
+     return undefined
+   }
+ 
++  let body: unknown
++
+   try {
+-    return (await response.clone().json()) as ApiProblemResponse
++    body = await response.clone().json()
+   } catch {
+     return undefined
+   }
++
++  return isProblemDetails(body) ? body : undefined
++}
++
++// A gateway in front of the backend answers some 5xx with its own JSON; only
++// a body with a problem-details field counts as the backend's problem.
++function isProblemDetails(body: unknown): body is ApiProblemResponse {
++  if (typeof body !== 'object' || body === null) {
++    return false
++  }
++
++  const candidate = body as Record<string, unknown>
++
++  return (
++    typeof candidate.title === 'string' || typeof candidate.status === 'number'
++  )
+ }
+ 
+ export function getBrowserAcceptLanguage() {

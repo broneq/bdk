@@ -1,6 +1,6 @@
 // Plugin copies (design D-5, D-9): the committed tree of a ref, exported with
 // `git archive`, trimmed to the arm's skills and agents, with an optional
-// skill variant added or one skill removed. The host scans the default
+// skill variant added, one skill removed, or one agent's model changed. The host scans the default
 // `skills/` directory in addition to the manifest's `skills` array
 // (evals/README.md, Provider facts), so trimming is what keeps other skills
 // out of a session.
@@ -27,13 +27,18 @@ export interface PluginCopySpec {
   readonly variant?: { readonly name: string; readonly file: string };
   /** A skill directory under `skills/` removed, for a with / without comparison. */
   readonly withoutSkill?: string;
+  /**
+   * The `model` line of `agents/<agent>.md` set to `model`, nothing else of the
+   * file changed: the cells of `review-models` differ only in it (T42 D10).
+   */
+  readonly agentModel?: { readonly agent: string; readonly model: string };
 }
 
 export interface PluginCopy {
   readonly dir: string;
   /** The commit the ref resolved to. */
   readonly commit: string;
-  /** sha256 of the installed variant SKILL.md, or null without a variant. */
+  /** sha256 of the installed variant SKILL.md or the rewritten agent, or null without either. */
   readonly variantHash: string | null;
 }
 
@@ -45,6 +50,15 @@ function git(cwd: string, ...args: string[]): string {
 
 export function sha256File(path: string): string {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
+/** The agent file with the `model` line of its frontmatter set to `model`. */
+function withModel(text: string, model: string): string {
+  const end = text.indexOf("\n---", 4);
+  if (!text.startsWith("---\n") || end === -1) throw new Error("agent file has no frontmatter");
+  const frontmatter = text.slice(0, end);
+  if (!/^model:.*$/m.test(frontmatter)) throw new Error("agent frontmatter has no model line");
+  return frontmatter.replace(/^model:.*$/m, `model: ${model}`) + text.slice(end);
 }
 
 /** The SKILL.md text with the `name` field of its frontmatter set to `name`. */
@@ -89,6 +103,11 @@ export function buildPluginCopy(spec: PluginCopySpec): PluginCopy {
     mkdirSync(dirname(installed), { recursive: true });
     writeFileSync(installed, renamed(readFileSync(spec.variant.file, "utf8"), spec.variant.name));
     variantHash = sha256File(installed);
+  }
+  if (spec.agentModel !== undefined) {
+    const agent = join(spec.target, "agents", `${spec.agentModel.agent}.md`);
+    writeFileSync(agent, withModel(readFileSync(agent, "utf8"), spec.agentModel.model));
+    variantHash = sha256File(agent);
   }
   return { dir: spec.target, commit, variantHash };
 }

@@ -38,7 +38,7 @@ const SUITE = "stages";
 const CELL = "bdk";
 /** The orchestrator of every session, as in the other session suites. */
 const ORCHESTRATOR_MODEL = "claude-opus-5-5";
-/** The stage skills with a case file. */
+/** The stage skills with a case file, and `cr`, the review stage's skill (T42). */
 const STAGE_SKILLS = [
   "setup",
   "change",
@@ -47,9 +47,15 @@ const STAGE_SKILLS = [
   "plan",
   "verify-plan",
   "execute",
+  "cr",
   "close",
   "run",
 ] as const;
+
+/** The skill's SKILL.md in a plugin tree: `cr` is a tool skill, the others stage skills. */
+export function skillFile(plugin: string, skill: string): string {
+  return join(plugin, "skills", skill === "cr" ? "tools" : "stages", skill, "SKILL.md");
+}
 
 class StageSkillError extends Error {
   constructor(message: string) {
@@ -133,7 +139,7 @@ export function describeStages(spec: StagesSpec): SeriesSetup {
           provenance: {
             fixtureCommit: spec.versions.fixture.commit,
             bdkCommit: spec.bdkCommit,
-            variantHash: sha256File(join(spec.plugin, "skills", "stages", spec.skill, "SKILL.md")),
+            variantHash: sha256File(skillFile(spec.plugin, spec.skill)),
           },
           settings: { ...settings },
         },

@@ -3,7 +3,13 @@
 // command line contract of the `skill-evals` spec.
 import { DEFAULT_BUDGET_USD, DEFAULT_RUN_CAP_USD } from "./budget.ts";
 
-export const SUITES = ["execute-ab", "rules-noop", "stages", "with-without"] as const;
+export const SUITES = [
+  "execute-ab",
+  "review-models",
+  "rules-noop",
+  "stages",
+  "with-without",
+] as const;
 export type SuiteName = (typeof SUITES)[number];
 
 const USAGE = [

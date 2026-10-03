@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { readVersions } from "../../harness/paths.ts";
 import { caseFile, readCases } from "./cases.ts";
 import { CASE_VAR } from "./hooks.ts";
-import { describeStages, stageSkill } from "./suite.ts";
+import { describeStages, skillFile, stageSkill } from "./suite.ts";
 
 const REPO_ROOT = join(import.meta.dirname, "..", "..", "..");
 
@@ -17,11 +17,19 @@ describe("stageSkill", () => {
     expect(stageSkill("verify-design")).toBe("verify-design");
     expect(stageSkill("bdk:plan")).toBe("plan");
     expect(stageSkill("verify-plan")).toBe("verify-plan");
+    expect(stageSkill("bdk:cr")).toBe("cr");
   });
 
   it("refuses a skill without a case file", () => {
-    expect(() => stageSkill("bdk:cr")).toThrow(/setup, change/);
+    expect(() => stageSkill("bdk:pr-review")).toThrow(/setup, change/);
     expect(() => stageSkill(undefined)).toThrow(/got nothing/);
+  });
+});
+
+describe("skillFile", () => {
+  it("finds cr under the tool skills and the others under the stage skills", () => {
+    expect(skillFile("/p", "cr")).toBe("/p/skills/tools/cr/SKILL.md");
+    expect(skillFile("/p", "close")).toBe("/p/skills/stages/close/SKILL.md");
   });
 });
 

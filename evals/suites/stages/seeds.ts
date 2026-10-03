@@ -4,6 +4,11 @@
 // `audit-csv` is the T40 execute task on a tiny Change; `two-independent-parts`
 // is a large Change whose plan has two parts without dependencies; `reviewed`
 // is a tiny Change executed and reviewed, waiting at `gate:review` (T41).
+// `executed` is that Change before its review, and `executed-blocker` the same
+// with the task delivered without the export it names; `executed-two-parts` is
+// a Change with two dependent parts delivered, the base of `review-models` (T42),
+// which passes a defects patch: each task then delivers its files with the
+// defects in them, as an implementer that made those mistakes would have.
 import { execFileSync } from "node:child_process";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -12,7 +17,14 @@ import { fileURLToPath } from "node:url";
 import { TASK_DIR, readTask, seedV3 } from "../execute-ab/seed.ts";
 import type { Kernel } from "../execute-ab/seed.ts";
 
-export const SEEDS = ["audit-csv", "two-independent-parts", "reviewed"] as const;
+export const SEEDS = [
+  "audit-csv",
+  "two-independent-parts",
+  "executed",
+  "executed-blocker",
+  "reviewed",
+  "executed-two-parts",
+] as const;
 
 export type SeedName = (typeof SEEDS)[number];
 
@@ -22,6 +34,7 @@ export function isSeed(value: unknown): value is SeedName {
 
 const TWO_PARTS = fileURLToPath(new URL("./seeds/two-independent-parts", import.meta.url));
 const REVIEWED = fileURLToPath(new URL("./seeds/reviewed", import.meta.url));
+const TWO_PARTS_EXECUTED = fileURLToPath(new URL("./seeds/executed-two-parts", import.meta.url));
 
 const ENV = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
 
@@ -115,24 +128,32 @@ function twoIndependentParts(dir: string, kernel: Kernel): void {
   commitIgnore(dir);
 }
 
-/** Task 01-1 delivered as `/bdk:execute` runs it: implementer, steps, ticket closed, commit. */
-function deliveredTask(dir: string, kernel: Kernel): void {
-  const ticket = field(run(dir, kernel, ["attempt", "open", "task-redispatch", "01-1"]), "ticket");
+/**
+ * One task delivered as `/bdk:execute` runs it: implementer, steps, ticket
+ * closed, commit. `deliver` writes the task's code and returns its paths.
+ */
+function deliveredTask(
+  dir: string,
+  kernel: Kernel,
+  task: string,
+  deliver: () => readonly string[],
+): void {
+  const ticket = field(run(dir, kernel, ["attempt", "open", "task-redispatch", task]), "ticket");
   const report = field(
-    run(dir, kernel, ["dispatch", "build", "01-1", "implementer", ticket]),
+    run(dir, kernel, ["dispatch", "build", task, "implementer", ticket]),
     "report",
   );
   run(dir, kernel, ["rules", "show", "--ticket", ticket]);
-  writeFileSync(join(dir, "src/app-name.ts"), 'export const APP_NAME = "Operator";\n');
+  const files = deliver();
   run(
     dir,
     kernel,
     ["log", "ingest", "--ticket", ticket],
-    "---\nstatus: done\nfiles: [src/app-name.ts]\nentries: []\nevidence: []\n---\nAdded.\n",
+    `---\nstatus: done\nfiles: [${files.join(", ")}]\nentries: []\nevidence: []\n---\nDelivered.\n`,
   );
-  run(dir, kernel, ["dispatch", "build", "01-1", "simplifier", ticket]);
+  run(dir, kernel, ["dispatch", "build", task, "simplifier", ticket]);
   run(dir, kernel, ["log", "ingest", "--ticket", ticket], PASS);
-  run(dir, kernel, ["dispatch", "build", "01-1", "runner", ticket]);
+  run(dir, kernel, ["dispatch", "build", task, "runner", ticket]);
   for (const kind of ["tests-scoped", "lint"]) {
     const result = `.bdk/.machine/${kind}-${ticket}.json`;
     writeFileSync(join(dir, result), '{"failed":0}\n');
@@ -150,7 +171,38 @@ function deliveredTask(dir: string, kernel: Kernel): void {
     ]);
   }
   run(dir, kernel, ["attempt", "close", ticket, "ok", "--envelope", report]);
-  run(dir, kernel, ["commit", "01-1"]);
+  run(dir, kernel, ["commit", task]);
+}
+
+/** The files a unified diff changes, by their `+++ b/` lines. */
+function patchFiles(patch: string): string[] {
+  return [...patch.matchAll(/^\+\+\+ b\/(.+)$/gm)].flatMap((match) =>
+    match[1] === undefined ? [] : [match[1]],
+  );
+}
+
+/** The sections of a unified diff that change one of `files`, or "" when none does. */
+export function sectionsFor(patch: string, files: readonly string[]): string {
+  const sections = patch.split(/^(?=diff --git )/m).filter((section) => section.trim() !== "");
+  return sections
+    .filter((section) => patchFiles(section).some((file) => files.includes(file)))
+    .join("");
+}
+
+/**
+ * A task's code from a patch in the seed directory, applied to the working
+ * tree, then the sections of `defects` that change the same files.
+ */
+function patched(dir: string, patch: string, defects?: string): () => readonly string[] {
+  return () => {
+    git(dir, "apply", patch);
+    const extra =
+      defects === undefined ? "" : sectionsFor(defects, patchFiles(readFileSync(patch, "utf8")));
+    if (extra !== "") {
+      execFileSync("git", ["apply", "-"], { cwd: dir, env: ENV, input: extra, stdio: "pipe" });
+    }
+    return git(dir, "diff", "--name-only").trim().split("\n");
+  };
 }
 
 /**
@@ -183,8 +235,11 @@ function reviewRound(dir: string, kernel: Kernel, change: string): void {
   run(dir, kernel, ["done", "review"]);
 }
 
-/** A tiny Change with part 01 committed, its review passed and `gate:review` ready. */
-function reviewed(dir: string, kernel: Kernel): void {
+/**
+ * The tiny `APP_NAME` Change with part 01 committed and no review yet;
+ * `appName` is the delivered file, so a seed can deliver it wrong.
+ */
+function executedTiny(dir: string, kernel: Kernel, appName: string): string {
   const intent = readFileSync(join(REVIEWED, "intent.md"), "utf8").trim();
   const change = field(
     run(dir, kernel, ["change", "new", intent, "--profile", "tiny", "--reason", "eval seed"]),
@@ -195,14 +250,66 @@ function reviewed(dir: string, kernel: Kernel): void {
   cpSync(join(REVIEWED, "plan"), join(dir, ".bdk", "changes", change, "plan"), { recursive: true });
   run(dir, kernel, ["done", "plan"]);
   run(dir, kernel, ["part", "start", "01"]);
-  deliveredTask(dir, kernel);
+  deliveredTask(dir, kernel, "01-1", () => {
+    writeFileSync(join(dir, "src/app-name.ts"), appName);
+    return ["src/app-name.ts"];
+  });
   run(dir, kernel, ["part", "done", "01"]);
-  reviewRound(dir, kernel, change);
+  return change;
+}
+
+const APP_NAME = 'export const APP_NAME = "Operator";\n';
+
+/** A tiny Change with part 01 committed, its review passed and `gate:review` ready. */
+function reviewed(dir: string, kernel: Kernel): void {
+  reviewRound(dir, kernel, executedTiny(dir, kernel, APP_NAME));
   run(dir, kernel, ["change", "checkpoint"]);
 }
 
-/** Runs the seed in `dir`, before the case's `prepare` lines. */
-export function runSeed(name: SeedName, dir: string, kernel: Kernel): void {
+/**
+ * A Change with parts 01 (`src/api/http.ts`) and 02 (`src/ui/asyncState.ts`,
+ * depending on 01) delivered from the task patches and no review yet.
+ */
+function executedTwoParts(dir: string, kernel: Kernel, defects?: string): void {
+  const intent = readFileSync(join(TWO_PARTS_EXECUTED, "intent.md"), "utf8").trim();
+  const change = field(
+    run(dir, kernel, ["change", "new", intent, "--profile", "tiny", "--reason", "eval seed"]),
+    "change",
+  );
+  commitIgnore(dir);
+  cpSync(join(TWO_PARTS_EXECUTED, "plan"), join(dir, ".bdk", "changes", change, "plan"), {
+    recursive: true,
+  });
+  run(dir, kernel, ["done", "plan"]);
+  for (const [part, task] of [
+    ["01", "01-1"],
+    ["02", "02-1"],
+  ] as const) {
+    run(dir, kernel, ["part", "start", part]);
+    deliveredTask(dir, kernel, task, patched(dir, taskPatch(task), defects));
+    run(dir, kernel, ["part", "done", part]);
+  }
+  run(dir, kernel, ["change", "checkpoint"]);
+}
+
+function taskPatch(task: string): string {
+  return join(TWO_PARTS_EXECUTED, "tasks", `${task}.patch`);
+}
+
+/** The task patches a seed applies, in order; a seed that writes its code itself has none. */
+export function seedPatches(name: SeedName): string[] {
+  return name === "executed-two-parts" ? ["01-1", "02-1"].map(taskPatch) : [];
+}
+
+/**
+ * Runs the seed in `dir`, before the case's `prepare` lines. `defects` is a
+ * unified diff the tasks deliver with their code; only a seed with task
+ * patches takes one.
+ */
+export function runSeed(name: SeedName, dir: string, kernel: Kernel, defects?: string): void {
+  if (defects !== undefined && seedPatches(name).length === 0) {
+    throw new Error(`the seed ${name} delivers no task patch to carry defects`);
+  }
   switch (name) {
     case "audit-csv":
       seedV3(dir, readTask(TASK_DIR), kernel);
@@ -210,8 +317,20 @@ export function runSeed(name: SeedName, dir: string, kernel: Kernel): void {
     case "two-independent-parts":
       twoIndependentParts(dir, kernel);
       return;
+    case "executed":
+      executedTiny(dir, kernel, APP_NAME);
+      run(dir, kernel, ["change", "checkpoint"]);
+      return;
+    case "executed-blocker":
+      // The task names the export APP_NAME; the delivery exports another name.
+      executedTiny(dir, kernel, 'export const APP_TITLE = "Operator";\n');
+      run(dir, kernel, ["change", "checkpoint"]);
+      return;
     case "reviewed":
       reviewed(dir, kernel);
+      return;
+    case "executed-two-parts":
+      executedTwoParts(dir, kernel, defects);
       return;
   }
 }
