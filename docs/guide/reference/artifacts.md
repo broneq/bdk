@@ -50,6 +50,22 @@ The execute stage writes into the same directory, and commits each task to the p
 | `evidence/`                           | `bdk evidence record`, `bdk attempt close` | The simplify, scoped test and lint results of each task, which the post-task step nodes read |
 | `log/`                                | `/bdk:execute` and the role agents         | `finding`, `blocker`, `learning` and `decision` entries, and the stage's transitions         |
 
+The review stage runs as rounds of one `review-fix` ticket each, and writes into the same directory:
+
+| Path under `.bdk/changes/<changeId>/`             | Written by                                                              | Contents                                                                                         |
+| ------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `dispatch/<target>-<role>-<ticket>-<group>.md`    | `bdk dispatch build --group`                                            | One package per reviewer group of the round, with the group's files, range and rules             |
+| `reports/<target>-<role>-<ticket>-<group>.md`     | each reviewer, through `log ingest --ticket <ticket>@<group>`           | One report per group                                                                             |
+| `reports/<target>-orchestrator-<ticket>-merge.md` | the orchestrator, through `log ingest --ticket <ticket>@merge`          | The merged review of the round, whose verdict the `review` node reads                            |
+| `evidence/`                                       | the gate runner, through `bdk evidence record`, `bdk evidence coverage` | The `tests-full`, `lint-full` and `coverage` results of the whole Change                         |
+| `log/`                                            | the reviewers and the orchestrator                                      | The round's `finding`, `blocker` and `observation` entries, each with its group and triage level |
+
+`bdk review plan` gives the round its range and groups. The first round reviews from the Change's base, the parent of the commit that added `change.md`. A later round reviews only what was committed since the previous merged review, whose `report` entry records the reviewed commit as `head`. `--full` reviews from the Change's base again; `--base <ref>` reviews from the merge base with `<ref>`, for a branch stacked on another one. The groups are the plan parts that the range touches, then `unplanned` for files no task names, then `integration` over every changed file. A Change without a plan is grouped by module. A group above `review.group.max-files` (default 30) is split by module.
+
+Before its verdict, the round runs the full gate: `tests-full` runs every `tools.test` command and `lint-full` every `tools.lint` command, both against the whole Change. A `tools.test` entry with a `coverage` object (`command`, `report`, `format: lcov|cobertura`, `min`) also needs `bdk evidence coverage`. The kernel reads the report and counts only the lines the Change added in executable files. It decides `pass` or `fail` against `min` itself. Files the report does not list go to `unmeasured`. A fix after the gate makes both nodes stale.
+
+The orchestrator triages every entry of the round with `bdk log triage <id> blocker|should-fix|nice-to-have|not-a-problem`; `not-a-problem` needs `--reason` and resolves the entry. `review` passes only on the round's merged report, with every entry of the round triaged and no live entry triaged `blocker`. The integration reviewer also gets the project's risky areas from `review.risks`, a list of `{id, instruction, enabled}` merged by `id` over five defaults (`auth`, `migration`, `secrets`, `public-api`, `dependencies`). Set `enabled: false` on an item to turn it off.
+
 `bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 file `.bdk/settings.json` is never read; `/bdk:setup` migrates a project that still has it.
 
 Everything BDK skills write to disk lives under `.bdk/` in the project root, per `.claude/rules/artifacts.md`:

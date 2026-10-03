@@ -105,10 +105,22 @@ nodes:
     stage: execute
     requires: [execute]
 
+  # The full gate of the review round (T42-D4): the round's gate runner
+  # records both against the tree of the whole Change.
+  - id: tests-full
+    kind: tests-full
+    stage: review
+    requires: [execute, simplify, tests-scoped, lint, spec-delta]
+
+  - id: lint-full
+    kind: lint-full
+    stage: review
+    requires: [execute, simplify, tests-scoped, lint, spec-delta]
+
   - id: review
     kind: review
     stage: review
-    requires: [execute, simplify, tests-scoped, lint, spec-delta]
+    requires: [execute, simplify, tests-scoped, lint, spec-delta, tests-full, lint-full]
     budget: review-fix
 
   - id: gate:review

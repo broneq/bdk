@@ -15,6 +15,8 @@ interface ShownRule {
 
 export interface TicketRules {
   readonly ticket: string;
+  /** Only for a `<ticket>@<group>` reference. */
+  readonly group?: string | undefined;
   readonly role: string;
   readonly target: string;
   readonly rules: readonly ShownRule[];

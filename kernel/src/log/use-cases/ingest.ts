@@ -2,19 +2,24 @@
 // envelope as frontmatter, validated whole before anything is written, then
 // stored at the dispatch package's `report` path with `schema`, `ticket` and
 // `role` stamped. It writes no ledger entry: entries come only from `log add`.
-import { join } from "node:path";
+// A `<ticket>@<group>` report goes to the group package's path, and the
+// reserved group `merge` stores the orchestrator's merged review of a round
+// without a package (T42-A1, B1).
+import { join, posix } from "node:path";
 
-import { refuse } from "../../shared/refusal/index.ts";
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
   listEntries,
+  MERGE_GROUP,
+  mergeReportName,
   readDocument,
+  resolveTicketRef,
   STATE_KINDS,
-  openPackage,
   writeDocument,
 } from "../../shared/store/index.ts";
-import type { IndexDb } from "../../shared/store/index.ts";
+import type { IndexDb, ResolvedRef } from "../../shared/store/index.ts";
 import type { IngestReport } from "../domain/entry.ts";
 import type { LogDeps } from "./deps.ts";
 import { withChangeIndex } from "./deps.ts";
@@ -24,6 +29,9 @@ import type { Envelope } from "./envelope.ts";
 /** Stamped by the kernel from the ticket and its package (P1). */
 const STAMPED: readonly string[] = ["schema", "ticket", "role"];
 const FIELDS: readonly string[] = ["status", "files", "entries", "evidence", "reason"];
+
+/** The role a merged review is stored under: the main thread's, never a dispatched agent's. */
+const ORCHESTRATOR = "orchestrator";
 
 export interface IngestInput {
   readonly ticket: string;
@@ -37,27 +45,30 @@ export function ingestReport(
 ): Promise<IngestReport | Refusal> {
   // eslint-disable-next-line @typescript-eslint/require-await -- withChangeIndex takes an async body
   return withChangeIndex(deps, change, async (index): Promise<IngestReport | Refusal> => {
-    const dispatch = openPackage(deps.store, change.projectRoot, change.dir, input.ticket);
-    const report = dispatch?.data.report;
-    if (dispatch === undefined || report === undefined) {
+    const ref = resolveTicketRef(deps.store, change.projectRoot, change.dir, input.ticket);
+    if (isRefusal(ref)) return ref;
+    const target = reportTarget(change, ref);
+    if (target === undefined) {
       return refuse(
         "policy/no-open-ticket",
         `${input.ticket} has no open attempt record with a dispatch package in ${change.id}`,
         ["bdk attempt list", "bdk dispatch build <target>"],
       );
     }
+    const { role, report } = target;
     const envelope = readEnvelope(input.text);
     if ("invalid" in envelope) return invalidEnvelope(envelope.invalid);
-    const data = checkEnvelope(envelope, input.ticket, dispatch.role);
-    if ("refused" in data) return data;
-    const missing = missingIds(deps, change, index, input.ticket, data);
+    const checked = checkEnvelope(envelope, ref.ticket, role);
+    if ("refused" in checked) return checked;
+    const data = ref.group === undefined ? checked : { ...checked, group: ref.group };
+    const missing = missingIds(deps, change, index, ref, data);
     if (missing !== undefined) return missing;
     const path = join(change.projectRoot, report);
     const replaced = deps.store.read(path) !== undefined;
     writeDocument(deps.store, path, { data, body: envelope.body });
     return {
-      ticket: input.ticket,
-      role: dispatch.role,
+      ticket: ref.ticket,
+      role,
       path: report,
       status: data.status,
       entries: data.entries,
@@ -67,6 +78,27 @@ export function ingestReport(
 }
 
 type ReportData = ReturnType<typeof STATE_KINDS.report.schema.parse>;
+
+/**
+ * The role and report path of the reference: the open ticket's active
+ * package, the group's package, or for `merge` the orchestrator's merge
+ * report of an open round; undefined when there is none.
+ */
+function reportTarget(
+  change: ActiveChange,
+  ref: ResolvedRef,
+): { readonly role: string; readonly report: string } | undefined {
+  if (!ref.open || ref.record === undefined) return undefined;
+  if (ref.group === MERGE_GROUP) {
+    const changeRel = posix.relative(change.projectRoot, change.dir);
+    const name = mergeReportName(ref.record.data.target, ref.ticket);
+    return { role: ORCHESTRATOR, report: `${changeRel}/reports/${name}` };
+  }
+  const report = ref.package?.data.report;
+  return ref.package === undefined || report === undefined
+    ? undefined
+    : { role: ref.package.role, report };
+}
 
 function invalidEnvelope(why: string): Refusal {
   return refuse("input/invalid-envelope", why, [
@@ -125,15 +157,19 @@ function missingIds(
   deps: LogDeps,
   change: ActiveChange,
   index: IndexDb,
-  ticket: string,
+  ref: ResolvedRef,
   data: ReportData,
 ): Refusal | undefined {
+  const ticket = ref.group === undefined ? ref.ticket : `${ref.ticket}@${ref.group}`;
+  // A group report lists its own group's entries; the merged review lists any of the round.
+  const ofGroup = ref.group === undefined || ref.group === MERGE_GROUP ? undefined : ref.group;
   const written = new Set(
     listEntries(index, change.id)
-      .filter((entry) => entry.ticket === ticket)
+      .filter((entry) => entry.ticket === ref.ticket)
+      .filter((entry) => ofGroup === undefined || entry.group === ofGroup)
       .map((entry) => entry.id),
   );
-  const recorded = ticketEvidence(deps, change, ticket);
+  const recorded = ticketEvidence(deps, change, ref.ticket);
   const missing = [
     ...data.entries.filter((id) => !written.has(id)),
     ...data.evidence.filter((id) => !recorded.has(id)),

@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { answered, bdk, git, read, refused } from "../../../tests/support/repo.ts";
-import { opened, started } from "../../attempt/tests/e2e-support.ts";
+import { executed, opened, started } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 
 function put(change: Started, path: string, content: string): void {
@@ -216,5 +216,67 @@ describe("bdk evidence check", () => {
     const change = started();
     refused(check(change, "09", "--json"), 3, "input/not-found");
     refused(check(change, "E-zzzzzzzz", "--json"), 3, "input/not-found");
+  });
+});
+
+describe("bdk evidence coverage", () => {
+  const TOOLS =
+    "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n" +
+    "      coverage:\n        command: vitest run --coverage\n        report: coverage/lcov.info\n        format: lcov\n        min: 90\n";
+
+  it("measures the lines the Change added since its base and records the computed verdict", () => {
+    const change = executed(started(TOOLS));
+    const round = opened(change, "review-fix", change.id);
+    answered(
+      bdk(
+        ["dispatch", "build", change.id, "runner", round, "--group", "gate", "--json"],
+        change.root,
+      ),
+      "output/dispatch-build.json",
+    );
+    const report = "SF:src/01-1.ts\nDA:1,3\nend_of_record\nSF:src/01-2.ts\nDA:1,0\nend_of_record\n";
+    mkdirSync(join(change.root, "coverage"), { recursive: true });
+    writeFileSync(join(change.root, "coverage/lcov.info"), report);
+    const out = answered(
+      bdk(
+        [
+          "evidence",
+          "coverage",
+          "unit",
+          "coverage/lcov.info",
+          "--ticket",
+          `${round}@gate`,
+          "--json",
+        ],
+        change.root,
+      ),
+      "output/evidence-coverage.json",
+    );
+    expect(out).toMatchObject({
+      tool: "unit",
+      min: 90,
+      percent: 50,
+      covered: 1,
+      total: 2,
+      // The kernel's own .gitignore lines are a change the report does not name.
+      unmeasured: [".gitignore", "src/02-1.ts"],
+      verdict: "fail",
+    });
+    refused(
+      bdk(
+        [
+          "evidence",
+          "record",
+          "coverage",
+          "coverage/lcov.info",
+          "--ticket",
+          `${round}@gate`,
+          "--json",
+        ],
+        change.root,
+      ),
+      3,
+      "input/invalid-argument",
+    );
   });
 });

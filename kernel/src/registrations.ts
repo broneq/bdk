@@ -10,7 +10,7 @@ import type { ChangeDeps } from "./change/index.ts";
 import { configRegistrations } from "./config/index.ts";
 import type { ConfigDeps } from "./config/index.ts";
 import { ctxConfig, ctxRegistrations } from "./ctx/index.ts";
-import { dispatchRegistrations } from "./dispatch/index.ts";
+import { dispatchConfig, dispatchRegistrations } from "./dispatch/index.ts";
 import { evidenceConfig, evidenceRegistrations } from "./evidence/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
@@ -23,13 +23,14 @@ import { measureRegistrations } from "./measure/index.ts";
 import { partRegistrations } from "./part/index.ts";
 import type { MeasureDeps } from "./measure/index.ts";
 import { queryRegistrations } from "./query/index.ts";
+import { reviewConfig, reviewRegistrations } from "./review/index.ts";
 import { rulesConfig, rulesRegistrations } from "./rules/index.ts";
 import type { RulesDeps } from "./rules/index.ts";
 import type { QueryDeps } from "./query/index.ts";
 import { serviceRegistrations } from "./service/index.ts";
 import { specConfig, specRegistrations } from "./spec/index.ts";
 import type { ServiceDeps } from "./service/index.ts";
-import { createConfigRegistry, promptsModule } from "./shared/config/index.ts";
+import { createConfigRegistry, promptsModule, toolsModule } from "./shared/config/index.ts";
 import type { ConfigRegistry } from "./shared/config/index.ts";
 import { checkpointModule } from "./shared/store/index.ts";
 import type { Registration } from "./shared/registry/index.ts";
@@ -58,6 +59,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...partRegistrations(deps),
     ...attemptRegistrations(deps),
     ...evidenceRegistrations(deps),
+    ...reviewRegistrations(deps),
     ...commitRegistrations(deps),
     ...queryRegistrations(deps),
     ...exportRegistrations(deps),
@@ -76,6 +78,7 @@ export function settingsRegistry(): ConfigRegistry {
   return createConfigRegistry({
     modules: [
       ...rulesConfig.modules,
+      toolsModule,
       ...ctxConfig.modules,
       ...graphConfig.modules,
       ...attemptConfig.modules,
@@ -85,6 +88,8 @@ export function settingsRegistry(): ConfigRegistry {
       ...specConfig.modules,
       ...agentsConfig.modules,
       ...hooksConfig.modules,
+      ...dispatchConfig.modules,
+      ...reviewConfig.modules,
       checkpointModule,
       promptsModule,
     ],

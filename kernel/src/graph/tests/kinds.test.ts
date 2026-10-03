@@ -22,7 +22,7 @@ const planParts = {
 };
 
 describe("the kind registry", () => {
-  it("holds exactly the sixteen kinds", () => {
+  it("holds exactly the eighteen kinds", () => {
     expect([...kinds.keys()].sort()).toStrictEqual(
       [
         "architecture",
@@ -39,6 +39,8 @@ describe("the kind registry", () => {
         "simplify",
         "tests-scoped",
         "lint",
+        "tests-full",
+        "lint-full",
         "review",
         "spec-delta",
       ].sort(),
@@ -62,6 +64,7 @@ describe("files and hash inputs", () => {
     ["plan-part", undefined, ["plan/parts/<nn>-<slug>.md"], { files: [] }],
     ["plan-verify", undefined, [], { files: ["plan/parts/01-auth.md", "plan/parts/02-mail.md"] }],
     ["review", undefined, [], { codeTree: true }],
+    ["tests-full", undefined, ["evidence/2026-09-25-login-<evidenceId>.md"], { none: true }],
     ["design-verify", undefined, [], { files: [] }],
     ["gate", undefined, [], { none: true }],
     ["execute-part", "01", [], { files: ["plan/parts/01-auth.md"] }],
@@ -556,14 +559,12 @@ describe("verdict kinds", () => {
         ],
         reports: { "L-r0000001": "done" },
       });
-    expect(kind("review").validate(view("proposed"), { id: "review" })[1]).toMatchObject({
-      id: "blockers",
-      ok: false,
-    });
-    expect(kind("review").validate(view("resolved"), { id: "review" })[1]).toStrictEqual({
-      id: "blockers",
-      ok: true,
-    });
+    const blockers = (status: string) =>
+      kind("review")
+        .validate(view(status), { id: "review" })
+        .find((check) => check.id === "blockers");
+    expect(blockers("proposed")).toMatchObject({ id: "blockers", ok: false });
+    expect(blockers("resolved")).toStrictEqual({ id: "blockers", ok: true });
   });
 });
 

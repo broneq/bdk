@@ -38,6 +38,29 @@ export async function measure(
       ]);
     }
   }
+  return diffSignals(deps, workTree, range, refs.join(".."));
+}
+
+/**
+ * The signals of `<base>..<head>` for a caller that resolved both itself,
+ * `<base>` possibly the empty tree (`kernel-cli/review`, bdk review plan).
+ */
+export function measureRange(
+  deps: MeasureDeps,
+  workTree: string,
+  base: string,
+  head: string,
+): Promise<MeasureReport | Refusal> {
+  const range = `${base}..${head}`;
+  return diffSignals(deps, workTree, range, range);
+}
+
+async function diffSignals(
+  deps: MeasureDeps,
+  workTree: string,
+  range: string,
+  revisions: string,
+): Promise<MeasureReport | Refusal> {
   const diff = await deps.git.run(
     [
       "diff",
@@ -47,7 +70,7 @@ export async function measure(
       "--no-ext-diff",
       "--no-textconv",
       "--no-color",
-      refs.join(".."),
+      revisions,
       "--",
     ],
     workTree,

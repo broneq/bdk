@@ -13,6 +13,8 @@ export interface EntryRecord {
   readonly refs: readonly string[];
   readonly review: boolean;
   readonly ticket?: string | undefined;
+  readonly group?: string | undefined;
+  readonly level?: string | undefined;
   readonly category?: string | undefined;
   readonly supersedes?: string | undefined;
   readonly supersededBy?: string | undefined;
@@ -31,9 +33,12 @@ export interface EntryView {
   readonly refs: readonly string[];
   readonly review: boolean;
   readonly ticket?: string | undefined;
+  readonly group?: string | undefined;
   readonly supersedes?: string | undefined;
   readonly fingerprint?: string | undefined;
   readonly severity?: string | undefined;
+  readonly level?: string | undefined;
+  readonly head?: string | undefined;
   readonly category?: string | undefined;
   readonly options?: readonly string[] | undefined;
   readonly park?: boolean | undefined;
@@ -60,6 +65,8 @@ export interface EntrySummary {
   readonly refs: readonly string[];
   readonly review?: true | undefined;
   readonly ticket?: string | undefined;
+  readonly group?: string | undefined;
+  readonly level?: string | undefined;
   readonly category?: string | undefined;
   readonly supersedes?: string | undefined;
   readonly supersededBy?: string | undefined;
@@ -70,16 +77,19 @@ type Data = Readonly<Record<string, unknown>>;
 /** Optional frontmatter keys in output order, with their camelCase names. */
 const OPTIONAL: readonly (readonly [string, keyof EntryView])[] = [
   ["ticket", "ticket"],
+  ["group", "group"],
   ["supersedes", "supersedes"],
   ["fingerprint", "fingerprint"],
   ["severity", "severity"],
   ["category", "category"],
+  ["level", "level"],
   ["options", "options"],
   ["park", "park"],
   ["profile", "profile"],
   ["evidence", "evidence"],
   ["applies", "applies"],
   ["report", "report"],
+  ["head", "head"],
   ["to", "to"],
   ["gate", "gate"],
   ["session", "session"],
@@ -117,6 +127,8 @@ export function entrySummary(row: EntryRecord): EntrySummary {
     refs: row.refs,
     ...(row.review ? { review: true as const } : {}),
     ...(row.ticket === undefined ? {} : { ticket: row.ticket }),
+    ...(row.group === undefined ? {} : { group: row.group }),
+    ...(row.level === undefined ? {} : { level: row.level }),
     ...(row.category === undefined ? {} : { category: row.category }),
     ...(row.supersedes === undefined ? {} : { supersedes: row.supersedes }),
     ...(row.supersededBy === undefined ? {} : { supersededBy: row.supersededBy }),
@@ -131,6 +143,7 @@ export interface DedupeCandidate {
   readonly supersedes?: string | undefined;
   readonly fingerprint?: string | undefined;
   readonly ticket?: string | undefined;
+  readonly group?: string | undefined;
 }
 
 /**
@@ -157,6 +170,7 @@ export function findDuplicate<T extends EntryRecord>(
       [...new Set(entry.refs)].sort(),
       entry.supersedes ?? "",
       entry.ticket ?? "",
+      entry.group ?? "",
     ]);
   const wanted = key(draft);
   return entries.find(
@@ -185,6 +199,25 @@ export function withResolution(
   const line = `Resolved as ${status} at ${at}${reason === undefined ? "" : `: ${reason}`}\n`;
   const kept = body.replace(/\s+$/, "");
   return kept === "" ? line : `${kept}\n\n${line}`;
+}
+
+/** The body with the triage line appended (`kernel-cli/log`, bdk log triage); one line per call. */
+export function withTriage(
+  body: string,
+  level: string,
+  at: string,
+  reason: string | undefined,
+): string {
+  const line = `Triaged as ${level} at ${at}${reason === undefined ? "" : `: ${reason}`}\n`;
+  const kept = body.replace(/\s+$/, "");
+  return kept === "" ? line : `${kept}\n\n${line}`;
+}
+
+export interface TriageResult {
+  readonly record: string;
+  readonly level: string;
+  /** The entry's status after the write: `resolved` for `not-a-problem`. */
+  readonly status: string;
 }
 
 export interface AppendResult {

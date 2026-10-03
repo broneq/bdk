@@ -213,6 +213,78 @@ describe("rules show --ticket", () => {
     expect(readAttempts(store, DIR)[0]?.data["rules-read"]).toBeUndefined();
   });
 
+  describe("with a group reference", () => {
+    const ROUND = "A-r1v2w3x4";
+
+    /** A review-fix round on the Change with the packages of groups p01 and p02. */
+    function round(): Store {
+      const store = withRules(repository());
+      writeDocument(store, `${DIR}/attempts/review-fix-${CHANGE}-${ROUND}.md`, {
+        data: {
+          schema: 1,
+          ticket: ROUND,
+          loop: "review-fix",
+          target: CHANGE,
+          attempt: 1,
+          of: 2,
+          scope: "full",
+          "opened-at": "2026-09-25T10:00:00.000Z",
+          author: AUTHOR,
+        },
+        body: "",
+      });
+      for (const [group, rules, files] of [
+        ["p01", ["API-1"], ["src/api/login.ts"]],
+        ["p02", ["BDK-TS-1"], ["web/form.ts"]],
+      ] as const) {
+        writeDocument(store, `${DIR}/dispatch/${CHANGE}-reviewer-${ROUND}-${group}.md`, {
+          data: {
+            schema: 1,
+            ticket: ROUND,
+            target: CHANGE,
+            role: "reviewer",
+            adapter: "reviewer",
+            attempt: 1,
+            of: 2,
+            scope: "full",
+            at: "2026-09-25T10:00:01.000Z",
+            "kernel-version": "3.0.0-dev",
+            "template-hash": `sha256:${"a".repeat(64)}`,
+            report: `.bdk/changes/${CHANGE}/reports/${CHANGE}-reviewer-${ROUND}-${group}.md`,
+            rules: [...rules],
+            group,
+            files: [...files],
+          },
+          body: "",
+        });
+      }
+      return store;
+    }
+
+    it("prints the group's rules, matched against the group's files", async () => {
+      const result = await show(round(), `${ROUND}@p01`);
+      expect(result.code, result.stdout).toBe(0);
+      expect(ticketRulesOutput.parse(result.json)).toMatchObject({
+        ticket: ROUND,
+        group: "p01",
+        role: "reviewer",
+        rules: [{ id: "API-1", matchedBy: "src/api/**" }],
+      });
+    });
+
+    it("refuses a group without a package with policy/no-open-ticket", async () => {
+      const result = await show(round(), `${ROUND}@p09`);
+      expect(result.code).toBe(2);
+      expect(result.json).toMatchObject({ rule: "policy/no-open-ticket" });
+    });
+
+    it("refuses a malformed group with input/invalid-argument", async () => {
+      const result = await show(round(), `${ROUND}@P_01`);
+      expect(result.code).toBe(3);
+      expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
+    });
+  });
+
   it("refuses <id> together with --ticket", async () => {
     const result = await run(withRules(repository()), [
       "rules",

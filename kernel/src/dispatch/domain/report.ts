@@ -14,6 +14,9 @@ export interface BuildReport {
   readonly kernelVersion: string;
   readonly templateHash: string;
   readonly report: string;
+  /** Only on a grouped package (T42-A1). */
+  readonly group?: string | undefined;
+  readonly files?: readonly string[] | undefined;
   readonly entries: {
     readonly full: readonly string[];
     readonly counted: Readonly<Record<string, number>>;

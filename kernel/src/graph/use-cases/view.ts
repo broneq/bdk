@@ -10,12 +10,14 @@ import type {
   PlanPartFacts,
   WorkFacts,
 } from "../domain/kinds/index.ts";
+import { moduleValue, toolsModule } from "../../shared/config/index.ts";
 import type { Mapping } from "../../shared/config/index.ts";
 import { KernelRefusal } from "../../shared/refusal/index.ts";
 import {
   firstMatch,
   parsePlanTasks,
   planPlaceholders,
+  readAttempts,
   readDocument,
 } from "../../shared/store/index.ts";
 import type { EntryRow, Store } from "../../shared/store/index.ts";
@@ -35,7 +37,9 @@ export interface ViewInput {
   readonly evidence?: readonly EvidenceFacts[];
   /** Plan part number -> its current tree hash, when computed. */
   readonly partTrees?: ReadonlyMap<string, string>;
-  /** The resolved settings, for `spec.normative-word`. */
+  /** The current tree hash of the Change, when computed. */
+  readonly changeTree?: string | undefined;
+  /** The resolved settings, for `spec.normative-word` and the `tools.test` coverage thresholds. */
   readonly settings: Readonly<Mapping>;
 }
 
@@ -49,6 +53,11 @@ export function changeView(input: ViewInput): ChangeView {
   const files = new Map<string, Read | undefined>();
   const parts = new Map<string, PlanPartFacts | undefined>();
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
+  let loops: ReadonlyMap<string, string> | undefined;
+  const ticketLoop = (ticket: string): string | undefined => {
+    loops ??= new Map(readAttempts(store, dir).map(({ data }) => [data.ticket, data.loop]));
+    return loops.get(ticket);
+  };
   const read = (path: string): Read | undefined => {
     if (files.has(path)) return files.get(path);
     const facts = readFacts(store, join(dir, path));
@@ -92,6 +101,11 @@ export function changeView(input: ViewInput): ChangeView {
     planPart,
     evidence: input.evidence ?? [],
     partTree: (nn) => input.partTrees?.get(nn),
+    changeTree: () => input.changeTree,
+    coverageTools: moduleValue(toolsModule, input.settings)
+      .test.filter((entry) => entry.coverage?.min !== undefined)
+      .map((entry) => entry.id),
+    ticketLoop,
     ...(input.work === undefined ? {} : { work: input.work }),
   };
 }

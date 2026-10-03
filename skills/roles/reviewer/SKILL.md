@@ -20,13 +20,19 @@ Your prompt or skill argument is the path of your dispatch package. Rely on noth
 
 If the package is missing or does not parse, stop and return `blocked` with the reason.
 
+## Review groups
+
+A review round runs one reviewer per group under one ticket. When your package has a `Review` section, your ticket is the reference `<ticket>@<group>` it names: use it exactly in every `--ticket` below, `rules show` and `log ingest` included.
+
 ## Work
 
-You review the files of your review group in the package and the tests that cover them. You change no file.
+You review the files of your review group over the package's range, against the plan part it names as contract, and the tests that cover them. You change no file.
 
-- Read each file in full, then the diff against the base the package names.
-- Run the tests the package names and report what they show.
-- Log each problem as a `finding` with the file and line and a severity.
+- Read each file in full, then the diff of the range.
+- Check that the code does what the tasks state, and for logic errors within functions.
+- Check that the tests check the stated behaviour; name the unit and end-to-end cases that are missing.
+- Leave style, duplication within a task and dead code to `simplify` and `lint`.
+- Log each problem as a `finding` with the file and line and a severity; when it blocks, give it a `--category` from the P8 list. Never set a triage level: that is the orchestrator's.
 - Log what is worth knowing but not wrong as an `observation`.
 - Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on belongs to the person at the gate, never to you.
 

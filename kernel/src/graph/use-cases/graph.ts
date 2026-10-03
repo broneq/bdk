@@ -158,12 +158,17 @@ async function evidenceFacts(
   change: ActiveChange,
   resolved: Resolved,
   validating: boolean,
-): Promise<{ evidence?: EvidenceFacts[]; partTrees?: ReadonlyMap<string, string> }> {
+): Promise<{
+  evidence?: EvidenceFacts[];
+  partTrees?: ReadonlyMap<string, string>;
+  changeTree?: string;
+}> {
   const manifests = readManifests(deps.store, change.dir);
   if (manifests.length === 0 && !validating) return {};
   const parts = readPlanParts(deps.store, change.dir);
   const trees = await currentTrees(deps, change, filePolicy(resolved.value), parts, [
     ...parts.map((part) => part.id),
+    change.id,
     ...manifests.map((manifest) => manifest.data.target),
   ]);
   return {
@@ -175,8 +180,10 @@ async function evidenceFacts(
       verdict: data.verdict,
       cited: (data.citations ?? []).length > 0,
       fresh: trees.get(data.target)?.treeHash === data["tree-hash"],
+      ...(data.tool === undefined ? {} : { tool: data.tool }),
     })),
     partTrees: new Map(parts.map((part) => [part.id, trees.get(part.id)?.treeHash ?? ""])),
+    changeTree: trees.get(change.id)?.treeHash ?? "",
   };
 }
 

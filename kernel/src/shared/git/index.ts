@@ -222,6 +222,178 @@ export async function pathspecCommit(
   return { committed: true, commit: head.stdout.trim() };
 }
 
+/** The full commit id `HEAD` names; undefined in a repository without commits. */
+export async function headCommit(git: Git, workTree: string): Promise<string | undefined> {
+  const head = await git.run(["rev-parse", "--verify", "--quiet", "HEAD"], workTree);
+  const commit = head.stdout.trim();
+  return head.code === 0 && /^[0-9a-f]{40}$/.test(commit) ? commit : undefined;
+}
+
+/**
+ * The lines a `git diff --unified=0` adds, by repository-relative path in the
+ * new file's numbering; a deleted file is left out. A content line is read by
+ * the hunk's counts, so `+++` inside a hunk is never a file header.
+ */
+export function parseAddedLines(diff: string): Map<string, number[]> {
+  const added = new Map<string, number[]>();
+  let path: string | undefined;
+  let oldLeft = 0;
+  let newLeft = 0;
+  let next = 0;
+  for (const line of diff.split("\n")) {
+    if (oldLeft > 0 || newLeft > 0) {
+      if (line.startsWith("+")) {
+        if (path !== undefined) added.set(path, [...(added.get(path) ?? []), next]);
+        next += 1;
+        newLeft -= 1;
+      } else if (line.startsWith("-")) oldLeft -= 1;
+      else if (line.startsWith(" ")) {
+        oldLeft -= 1;
+        newLeft -= 1;
+        next += 1;
+      }
+      continue;
+    }
+    if (line.startsWith("+++ ")) {
+      path = diffPath(line.slice(4));
+      continue;
+    }
+    const hunk = /^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(line);
+    if (hunk !== null) {
+      oldLeft = Number(hunk[1] ?? "1");
+      next = Number(hunk[2]);
+      newLeft = Number(hunk[3] ?? "1");
+    }
+  }
+  return added;
+}
+
+/** The new side of a `+++` header: `b/<path>`, quoted when git escapes it; undefined for `/dev/null`. */
+function diffPath(field: string): string | undefined {
+  const unquoted = field.startsWith('"') ? (JSON.parse(field) as string) : field;
+  return unquoted.startsWith("b/") ? unquoted.slice(2) : undefined;
+}
+
+/**
+ * The lines the working tree adds to tracked files against `base`, renames
+ * followed so a moved file contributes only its edits. Untracked files are
+ * not in it (`untrackedFiles`).
+ */
+export async function trackedAddedLines(
+  git: Git,
+  workTree: string,
+  base: string,
+): Promise<Map<string, number[]>> {
+  const result = await git.run(
+    [
+      "-c",
+      "core.quotepath=off",
+      "diff",
+      "--unified=0",
+      "--no-color",
+      "--no-ext-diff",
+      "-M",
+      "--src-prefix=a/",
+      "--dst-prefix=b/",
+      base,
+      "--",
+    ],
+    workTree,
+  );
+  if (result.code !== 0) throw new Error(`git diff failed: ${result.stderr.trim()}`);
+  return parseAddedLines(result.stdout);
+}
+
+/** The untracked files git would add, ignored ones left out, sorted. */
+export async function untrackedFiles(git: Git, workTree: string): Promise<string[]> {
+  const result = await git.run(["ls-files", "-z", "-o", "--exclude-standard"], workTree);
+  if (result.code !== 0) throw new Error(`git ls-files failed: ${result.stderr.trim()}`);
+  return result.stdout
+    .split("\0")
+    .filter((path) => path !== "")
+    .sort();
+}
+
+/** The full id of the oldest commit reachable from `HEAD` that added `path`; undefined when none did. */
+export async function addingCommit(
+  git: Git,
+  workTree: string,
+  path: string,
+): Promise<string | undefined> {
+  const result = await git.run(
+    ["log", "--diff-filter=A", "--format=%H", "--reverse", "--", path],
+    workTree,
+  );
+  if (result.code !== 0) return undefined;
+  const [first] = result.stdout.split("\n").filter((line) => /^[0-9a-f]{40}$/.test(line));
+  return first;
+}
+
+/** The first parent of `commit`; undefined for a root commit. */
+export async function parentCommit(
+  git: Git,
+  workTree: string,
+  commit: string,
+): Promise<string | undefined> {
+  const result = await git.run(["rev-parse", "--verify", "--quiet", `${commit}^`], workTree);
+  const parent = result.stdout.trim();
+  return result.code === 0 && /^[0-9a-f]{40}$/.test(parent) ? parent : undefined;
+}
+
+/** The full id of the commit `ref` names; undefined when it names none or looks like an option. */
+export async function resolveCommit(
+  git: Git,
+  workTree: string,
+  ref: string,
+): Promise<string | undefined> {
+  if (ref === "" || ref.startsWith("-")) return undefined;
+  const result = await git.run(["rev-parse", "--verify", "--quiet", `${ref}^{commit}`], workTree);
+  const sha = result.stdout.trim();
+  return result.code === 0 && /^[0-9a-f]{40}$/.test(sha) ? sha : undefined;
+}
+
+/** `git merge-base HEAD <commit>`; undefined when the histories share no commit. */
+export async function mergeBase(
+  git: Git,
+  workTree: string,
+  commit: string,
+): Promise<string | undefined> {
+  const result = await git.run(["merge-base", "HEAD", commit], workTree);
+  const sha = result.stdout.trim();
+  return result.code === 0 && /^[0-9a-f]{40}$/.test(sha) ? sha : undefined;
+}
+
+/** The paths `<base>..<head>` changes, renames as their new path, sorted; `base` may be the empty tree. */
+export async function diffNames(
+  git: Git,
+  workTree: string,
+  base: string,
+  head: string,
+): Promise<string[]> {
+  const result = await git.run(
+    ["diff", "--name-only", "-z", "-M", "--no-ext-diff", `${base}..${head}`, "--"],
+    workTree,
+  );
+  if (result.code !== 0) throw new Error(`git diff failed: ${result.stderr.trim()}`);
+  return result.stdout
+    .split("\0")
+    .filter((path) => path !== "")
+    .sort();
+}
+
+/** The tracked paths with staged or unstaged changes against `HEAD`, sorted; none without a commit. */
+export async function dirtyTracked(git: Git, workTree: string): Promise<string[]> {
+  const result = await git.run(
+    ["diff", "--name-only", "-z", "--no-ext-diff", "HEAD", "--"],
+    workTree,
+  );
+  if (result.code !== 0) return [];
+  return result.stdout
+    .split("\0")
+    .filter((path) => path !== "")
+    .sort();
+}
+
 /** A commit reachable from `HEAD` that carries `BDK-Change` of one Change. */
 export interface TrailerCommit {
   readonly commit: string;

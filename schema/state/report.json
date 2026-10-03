@@ -7,6 +7,10 @@
     "schema": { "type": "number", "const": 1 },
     "ticket": { "$ref": "common.json#/$defs/ticketId" },
     "role": { "$ref": "common.json#/$defs/role" },
+    "group": {
+      "description": "Stamped by `log ingest` for a `<ticket>@<group>` report.",
+      "$ref": "common.json#/$defs/reviewGroup"
+    },
     "status": {
       "type": "string",
       "enum": ["done", "done-with-concerns", "needs-context", "blocked"]

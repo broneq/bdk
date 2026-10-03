@@ -11,6 +11,8 @@ import {
   ledgerId,
   provenance,
   relativePath,
+  reviewGroup,
+  commitSha,
   severity,
   ticketId,
   timestamp,
@@ -22,6 +24,10 @@ import type { EntryType } from "../../vocabulary/index.ts";
 const VERSION = 1;
 
 const category = z.string().min(1).meta({ description: "One of the P8 blocking categories." });
+
+const level = z.enum(["blocker", "should-fix", "nice-to-have", "not-a-problem"]).meta({
+  description: "The orchestrator's triage level (T42-T); written only by `log triage`.",
+});
 
 function variant<T extends EntryType, S extends z.ZodRawShape>(type: T, own: S) {
   return z.strictObject({
@@ -36,6 +42,9 @@ function variant<T extends EntryType, S extends z.ZodRawShape>(type: T, own: S) 
     author,
     at: timestamp,
     ticket: ticketId.optional(),
+    group: reviewGroup.optional().meta({
+      description: "The review group of a `<ticket>@<group>` write.",
+    }),
     refs: z.array(z.string().min(1)).min(1),
     supersedes: idReference.optional(),
     review: z.boolean().optional(),
@@ -60,9 +69,13 @@ export const entryKind = {
             "Written only by kernel commands that raise the profile; raises the effective profile.",
         }),
       }),
-      variant("finding", { severity: severity.optional(), category: category.optional() }),
-      variant("observation", { severity: severity.optional() }),
-      variant("blocker", { category: category.optional() }),
+      variant("finding", {
+        severity: severity.optional(),
+        category: category.optional(),
+        level: level.optional(),
+      }),
+      variant("observation", { severity: severity.optional(), level: level.optional() }),
+      variant("blocker", { category: category.optional(), level: level.optional() }),
       variant("question", {
         options: z.array(z.string().min(1)).optional(),
         park: z.boolean().optional().meta({
@@ -73,7 +86,13 @@ export const entryKind = {
       variant("assumption", {}),
       variant("risk", {}),
       learning,
-      variant("report", { report: relativePath }),
+      variant("report", {
+        report: relativePath,
+        head: commitSha.optional().meta({
+          description:
+            "The commit a `merge` report reviewed, stamped by `log add`; the next delta review starts there.",
+        }),
+      }),
       variant("transition", {
         to: z.string().min(1).meta({ description: "Stage, artifact id, gate id or `closed`." }),
         gate: z.string().min(1).optional(),
@@ -90,6 +109,10 @@ export const entryKind = {
         }),
       }),
     ])
+    .superRefine((data, context) => {
+      if (data.type !== "report" || data.head === undefined || data.group === "merge") return;
+      context.addIssue({ code: "custom", path: ["head"], message: "only on a merge report" });
+    })
     .meta({ title: "Ledger entry", description: "One file per entry; the body is free Markdown." }),
   migrations: [],
 } as const satisfies DocumentKind;

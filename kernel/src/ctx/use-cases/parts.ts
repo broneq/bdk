@@ -6,7 +6,7 @@ import { stringify } from "yaml";
 
 import type * as z from "zod";
 
-import { moduleValue, promptContent } from "../../shared/config/index.ts";
+import { moduleValue, promptContent, toolsModule } from "../../shared/config/index.ts";
 import type { ConfigModule, PromptKey, Resolved } from "../../shared/config/index.ts";
 import {
   languageRules,
@@ -21,7 +21,7 @@ import type { RulesInput } from "../../rules/index.ts";
 
 /** The BDK pack categories a `rules` part or a pipeline node may name. */
 export { RULE_CATEGORIES };
-import { executionModule, featuresModule, fragmentPrompts, toolsModule } from "../config.ts";
+import { executionModule, featuresModule, fragmentPrompts } from "../config.ts";
 import type { Section } from "../domain/report.ts";
 import type { CtxInput } from "./input.ts";
 import type { Part } from "./manifest.ts";

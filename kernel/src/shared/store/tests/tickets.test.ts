@@ -14,6 +14,7 @@ import {
   readAttempts,
   readManifests,
   rebuildChange,
+  resolveTicketRef,
   stampPackage,
   ticketManifests,
   writeDocument,
@@ -120,6 +121,95 @@ describe("stampPackage and activePackage", () => {
     const index = await openIndex(store, ROOT, { memory: true });
     rebuildChange(index, LIVE);
     expect(openAttempts(index, CHANGE).map((attempt) => attempt.ticket)).toEqual([TICKET]);
+  });
+});
+
+describe("resolveTicketRef (`kernel-cli`, Ticket references)", () => {
+  const ROUND = "A-r1v2w3x4";
+
+  function withRound(store: Store): Store {
+    writeDocument(store, `${DIR}/attempts/review-fix-${CHANGE}-${ROUND}.md`, {
+      data: {
+        schema: 1,
+        ticket: ROUND,
+        loop: "review-fix",
+        target: CHANGE,
+        attempt: 1,
+        of: 2,
+        scope: "full",
+        "opened-at": "2026-09-25T11:00:00.000Z",
+        author: "Ada <ada@example.com>",
+      },
+      body: "",
+    });
+    for (const group of ["p01", "p02"]) {
+      writeDocument(store, `${DIR}/dispatch/${CHANGE}-reviewer-${ROUND}-${group}.md`, {
+        data: {
+          ...dispatch,
+          ticket: ROUND,
+          target: CHANGE,
+          role: "reviewer",
+          group,
+          files: [],
+          report: `${REL}/reports/${CHANGE}-reviewer-${ROUND}-${group}.md`,
+        },
+        body: "",
+      });
+    }
+    return store;
+  }
+
+  it("resolves a plain ticket to its active package", () => {
+    const store = seeded();
+    stampPackage(store, DIR, TICKET, pkg("runner"));
+    expect(resolveTicketRef(store, ROOT, DIR, TICKET)).toMatchObject({
+      ticket: TICKET,
+      open: true,
+      package: { role: "runner" },
+    });
+    expect(resolveTicketRef(store, ROOT, DIR, TICKET)).not.toHaveProperty("group");
+  });
+
+  it("resolves a group reference to the group's package, never the active one", () => {
+    const store = withRound(seeded());
+    expect(resolveTicketRef(store, ROOT, DIR, `${ROUND}@p02`)).toMatchObject({
+      ticket: ROUND,
+      group: "p02",
+      package: { path: `${REL}/dispatch/${CHANGE}-reviewer-${ROUND}-p02.md` },
+    });
+    expect(resolveTicketRef(store, ROOT, DIR, `${ROUND}@p09`)).not.toHaveProperty("package");
+    expect(resolveTicketRef(store, ROOT, DIR, ROUND)).not.toHaveProperty("package");
+  });
+
+  it("resolves the merge group with no package", () => {
+    const resolved = resolveTicketRef(withRound(seeded()), ROOT, DIR, `${ROUND}@merge`);
+    expect(resolved).toMatchObject({ ticket: ROUND, group: "merge", open: true });
+    expect(resolved).not.toHaveProperty("package");
+  });
+
+  it.each([`${ROUND}@P_01`, `${ROUND}@${"g".repeat(33)}`, `${ROUND}@`, `${ROUND}@p01@p02`])(
+    "refuses %s with input/invalid-argument",
+    (value) => {
+      expect(resolveTicketRef(withRound(seeded()), ROOT, DIR, value)).toMatchObject({
+        rule: "input/invalid-argument",
+      });
+    },
+  );
+
+  it("refuses a group on a ticket of another loop", () => {
+    expect(resolveTicketRef(seeded(), ROOT, DIR, `${TICKET}@p01`)).toMatchObject({
+      rule: "input/invalid-argument",
+    });
+  });
+
+  it("answers a ticket without a record as not open and without a package", () => {
+    const resolved = resolveTicketRef(seeded(), ROOT, DIR, OTHER);
+    expect(resolved).toMatchObject({ ticket: OTHER, open: false });
+    expect(resolved).not.toHaveProperty("record");
+  });
+
+  it("leaves group packages out of the ticket's role list", () => {
+    expect(packageRoles(withRound(seeded()), DIR, ROUND)).toStrictEqual([]);
   });
 });
 

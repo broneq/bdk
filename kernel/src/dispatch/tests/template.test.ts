@@ -24,10 +24,9 @@ describe("demoteHeadings", () => {
 });
 
 describe("the return section (T46)", () => {
-  const values: Record<string, string> = { ticket: "A-1", report: "r.md" };
+  const values: Record<string, string> = { ref: "A-1", report: "r.md" };
   const filled = new Proxy(values, { get: (target, key: string) => target[key] ?? "x" });
-  const text =
-    renderSections(filled, undefined).find((section) => section.name === "return")?.text ?? "";
+  const text = renderSections(filled, []).find((section) => section.name === "return")?.text ?? "";
 
   it("names the summary limit, the entry types and the ids to list", () => {
     expect(text).toContain("1 to 120 characters");

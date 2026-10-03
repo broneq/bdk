@@ -32,6 +32,12 @@ export const dispatchBuildOutput = z
       description:
         "Path relative to the project root where `bdk log ingest --ticket` stores the report.",
     }),
+    group: z.string().min(1).optional().meta({
+      description: "The review group of a `--group` package; its reference is `<ticket>@<group>`.",
+    }),
+    files: z.array(z.string().min(1)).optional().meta({
+      description: "The group's files from `--file`; present exactly when `group` is.",
+    }),
     entries: z.strictObject({
       full: z.array(id("L")).meta({
         description: "Accepted decisions and unresolved blockers of the target, embedded in full.",

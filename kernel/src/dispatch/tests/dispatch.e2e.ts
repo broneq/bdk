@@ -14,7 +14,7 @@ import {
   refused,
   repository,
 } from "../../../tests/support/repo.ts";
-import { closed, opened, started } from "../../attempt/tests/e2e-support.ts";
+import { closed, executed, opened, started } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
 import { BUNDLE } from "../../../tests/support/run.ts";
 import { fileStore } from "../../shared/store/index.ts";
@@ -285,6 +285,82 @@ describe("bdk dispatch show", () => {
       bdk(["dispatch", "show", "A-00000000", "--json"], outsideRepository()),
       5,
       "runtime/not-a-repo",
+    );
+  });
+});
+
+describe("review groups of one round (T42-A1)", () => {
+  it("builds a package per group, shows each by its reference and reads its rules", () => {
+    const change = executed(started());
+    const round = opened(change, "review-fix", change.id);
+    const group = (name: string, file: string) =>
+      answered(
+        bdk(
+          [
+            "dispatch",
+            "build",
+            change.id,
+            "reviewer",
+            round,
+            "--group",
+            name,
+            "--range",
+            "HEAD~3..HEAD",
+            "--file",
+            file,
+            "--json",
+          ],
+          change.root,
+        ),
+        "output/dispatch-build.json",
+      ) as unknown as Built & { readonly group: string; readonly report: string };
+    const first = group("p01", "src/01-1.ts");
+    const second = group("p02", "src/02-1.ts");
+    expect(first.group).toBe("p01");
+    expect(second.report).toBe(
+      `.bdk/changes/${change.id}/reports/${change.id}-reviewer-${round}-p02.md`,
+    );
+    expect(
+      packages(change)
+        .filter((name) => name.includes(round))
+        .sort(),
+    ).toStrictEqual([
+      `${change.id}-reviewer-${round}-p01.md`,
+      `${change.id}-reviewer-${round}-p02.md`,
+    ]);
+    const shown = answered(
+      bdk(["dispatch", "show", `${round}@p02`, "--json"], change.root),
+      "output/dispatch-show.json",
+    );
+    expect(shown.path).toBe(second.path);
+    const rules = answered(
+      bdk(["rules", "show", "--ticket", `${round}@p01`, "--json"], change.root),
+      "output/rules-show.json",
+    );
+    expect(rules).toMatchObject({ ticket: round, group: "p01", role: "reviewer" });
+    refused(
+      bdk(["dispatch", "show", `${round}@P_01`, "--json"], change.root),
+      3,
+      "input/invalid-argument",
+    );
+    refused(
+      bdk(
+        [
+          "dispatch",
+          "build",
+          change.id,
+          "reviewer",
+          round,
+          "--group",
+          "merge",
+          "--range",
+          "HEAD~3..HEAD",
+          "--json",
+        ],
+        change.root,
+      ),
+      3,
+      "input/invalid-argument",
     );
   });
 });

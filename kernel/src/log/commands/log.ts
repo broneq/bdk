@@ -4,10 +4,18 @@ import type { FlagValue, Handler } from "../../shared/registry/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import { capLines, listPage } from "../../shared/output/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { renderAdd, renderIngest, renderList, renderResolve, renderShow } from "../render/log.ts";
+import {
+  renderAdd,
+  renderIngest,
+  renderList,
+  renderResolve,
+  renderShow,
+  renderTriage,
+} from "../render/log.ts";
 import { addEntry } from "../use-cases/add.ts";
 import type { LogDeps } from "../use-cases/deps.ts";
 import { ingestReport } from "../use-cases/ingest.ts";
+import { triageEntry } from "../use-cases/triage.ts";
 import { listLog } from "../use-cases/list.ts";
 import { resolveEntry } from "../use-cases/resolve.ts";
 import { showEntry } from "../use-cases/show.ts";
@@ -104,6 +112,17 @@ export function resolveCommand(deps: LogDeps): Handler {
       ...optional("reason", text(context.flags["--reason"])),
     });
     return isRefusal(result) ? result : { data: result, text: renderResolve(result) };
+  };
+}
+
+export function triageCommand(deps: LogDeps): Handler {
+  return async (context) => {
+    const result = await triageEntry(deps, active(context.change), {
+      id: context.positionals["<id>"] ?? "",
+      level: context.positionals.level ?? "",
+      ...optional("reason", text(context.flags["--reason"])),
+    });
+    return isRefusal(result) ? result : { data: result, text: renderTriage(result) };
   };
 }
 

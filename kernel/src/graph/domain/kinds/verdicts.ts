@@ -2,14 +2,16 @@
 // (`kernel-pipeline`, Artifact kinds; design D-4): the latest `report` naming
 // the node must pass, be no older than the `done` of what it verifies
 // (v3-t41-design D2), and no live blocker may name it. The report is read,
-// never hashed.
+// never hashed. The `review` verdict also needs the merged report of a
+// `review-fix` round, every entry of that round triaged and no live entry
+// triaged `blocker` (T42-D2, D6).
 import { deltaPath } from "./documents.ts";
 import { BaseKind, live, partFiles } from "./kind.ts";
 import type { ChangeView, Check, GraphEntry, Inputs, ValidateTarget } from "./kind.ts";
 
 const PASSING = ["done", "done-with-concerns"];
 
-function verdictChecks(view: ChangeView, target: ValidateTarget): Check[] {
+function verdictChecks(view: ChangeView, target: ValidateTarget, review = false): Check[] {
   const id = target.id;
   const reports = view.entries.filter(
     (entry) => entry.type === "report" && entry.refs.includes(id),
@@ -32,7 +34,10 @@ function verdictChecks(view: ChangeView, target: ValidateTarget): Check[] {
             why: `the latest report ${latest.id} has status ${status ?? "unreadable"}, not done or done-with-concerns`,
           };
   const blockers = view.entries.filter(
-    (entry) => entry.type === "blocker" && live(entry) && entry.refs.includes(id),
+    (entry) =>
+      live(entry) &&
+      ((entry.type === "blocker" && entry.refs.includes(id)) ||
+        (review && entry.level === BLOCKER)),
   );
   const blocker: Check =
     blockers.length === 0
@@ -40,16 +45,73 @@ function verdictChecks(view: ChangeView, target: ValidateTarget): Check[] {
       : {
           id: "blockers",
           ok: false,
-          why: `live blocker ${blockers.map((entry) => entry.id).join(", ")} names ${id}`,
-          instead: "resolve the blocker: bdk log resolve <id>",
+          why: `live blocker ${blockers.map((entry) => entry.id).join(", ")} ${
+            review ? `names ${id} or is triaged blocker` : `names ${id}`
+          }`,
+          instead: review
+            ? "resolve the blocker (bdk log resolve <id>) or triage it again (bdk log triage <id> <level>)"
+            : "resolve the blocker: bdk log resolve <id>",
         };
   return [
     verdict,
+    ...(review ? [mergeCheck(view, id, latest), triagedCheck(view, latest)] : []),
     blocker,
     ...(latest === undefined
       ? []
       : [freshCheck(view, id, latest, target.requires ?? []), evidenceCheck(view, latest)]),
   ];
+}
+
+const BLOCKER = "blocker";
+const MERGE_GROUP = "merge";
+const REVIEW_FIX = "review-fix";
+const TRIAGED_TYPES: readonly string[] = ["finding", "blocker", "observation"];
+
+/** The verdict is the merged report of a `review-fix` round, never one reviewer's (D2). */
+function mergeCheck(view: ChangeView, id: string, latest: GraphEntry | undefined): Check {
+  const instead = `bdk log ingest --ticket <ticket>@merge, then bdk log add report "<verdict>" --ticket <ticket>@merge`;
+  if (latest === undefined) {
+    return { id: "merge-report", ok: false, why: `no merged report names ${id}`, instead };
+  }
+  if (latest.group !== MERGE_GROUP || latest.ticket === undefined) {
+    const of = latest.group === undefined ? "has no group" : `is of group ${latest.group}`;
+    return {
+      id: "merge-report",
+      ok: false,
+      why: `the latest report ${latest.id} naming ${id} ${of}, not the merged report of a round`,
+      instead,
+    };
+  }
+  const loop = view.ticketLoop(latest.ticket);
+  return loop === REVIEW_FIX
+    ? { id: "merge-report", ok: true }
+    : {
+        id: "merge-report",
+        ok: false,
+        why: `the merged report ${latest.id} is under ${latest.ticket}, a ${loop ?? "unknown"} ticket, not a ${REVIEW_FIX} round`,
+        instead,
+      };
+}
+
+/** Every live finding, blocker and observation of the round carries a triage level (D6). */
+function triagedCheck(view: ChangeView, latest: GraphEntry | undefined): Check {
+  const ticket = latest?.group === MERGE_GROUP ? latest.ticket : undefined;
+  const untriaged = view.entries.filter(
+    (entry) =>
+      ticket !== undefined &&
+      entry.ticket === ticket &&
+      TRIAGED_TYPES.includes(entry.type) &&
+      live(entry) &&
+      entry.level === undefined,
+  );
+  return untriaged.length === 0
+    ? { id: "triaged", ok: true }
+    : {
+        id: "triaged",
+        ok: false,
+        why: `${untriaged.map((entry) => entry.id).join(", ")} of ${ticket ?? ""} has no triage level`,
+        instead: "bdk log triage <id> blocker|should-fix|nice-to-have|not-a-problem",
+      };
 }
 
 /** Compared to the second, like a gate's ready time (`kernel-pipeline`, Gate). */
@@ -151,6 +213,6 @@ export class ReviewKind extends BaseKind {
     return { codeTree: true };
   }
   validate(view: ChangeView, target: ValidateTarget): Check[] {
-    return verdictChecks(view, target);
+    return verdictChecks(view, target, true);
   }
 }

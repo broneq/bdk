@@ -91,6 +91,19 @@ export const scope = z.enum(TICKET_SCOPES);
 
 export const glob = z.string().min(1);
 
+/** A review group of a `<ticket>@<group>` reference (`kernel-cli`, Ticket references; T42-A1). */
+export const reviewGroup = z
+  .string()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  .max(32)
+  .meta({ description: "Review group: kebab-case, at most 32 characters." });
+
+/** A full git commit id. */
+export const commitSha = z
+  .string()
+  .regex(/^[0-9a-f]{40}$/)
+  .meta({ description: "A full commit id." });
+
 /** `2026-09-25T09:41:07.123Z` (or the second form) as `20260925T094107Z`: the `<ts>` of an entry file name. */
 export function secondStamp(at: string): string {
   return `${at.slice(0, 19).replaceAll("-", "").replaceAll(":", "")}Z`;

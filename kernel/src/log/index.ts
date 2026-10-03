@@ -1,4 +1,4 @@
-// The log slice (`kernel-cli/log`): `add`, `ingest`, `list`, `show` and `resolve` over
+// The log slice (`kernel-cli/log`): `add`, `ingest`, `list`, `show`, `resolve` and `triage` over
 // the Change's ledger. `appendEntry` is the one writer of entries; the
 // `change` slice calls it for its kernel entries.
 import type { Registration } from "../shared/registry/index.ts";
@@ -8,6 +8,7 @@ import {
   listCommand,
   resolveCommand,
   showCommand,
+  triageCommand,
 } from "./commands/log.ts";
 import { verifierModule } from "./config.ts";
 import type { LogDeps } from "./use-cases/deps.ts";
@@ -28,5 +29,6 @@ export function logRegistrations(deps: LogDeps): Registration[] {
     { id: "log-list", handler: listCommand(deps) },
     { id: "log-show", handler: showCommand(deps) },
     { id: "log-resolve", handler: resolveCommand(deps) },
+    { id: "log-triage", handler: triageCommand(deps) },
   ];
 }

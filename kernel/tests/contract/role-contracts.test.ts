@@ -1,4 +1,4 @@
-// `role-contracts`: the nine role skills under skills/roles/, their adapter
+// `role-contracts`: the ten role skills under skills/roles/, their adapter
 // binding (the same table `dispatch build` stamps), and the wording every role
 // contract must and must not carry.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -15,6 +15,7 @@ const ROLES_DIR = join(REPO_ROOT, "skills", "roles");
 const ROLES = [
   "design-verifier",
   "implementer",
+  "integration-reviewer",
   "lead",
   "pr-reviewer",
   "reviewer",
@@ -23,7 +24,13 @@ const ROLES = [
   "simplifier",
   "verifier",
 ];
-const REVIEWING = ["verifier", "design-verifier", "reviewer", "pr-reviewer"];
+const REVIEWING = [
+  "verifier",
+  "design-verifier",
+  "reviewer",
+  "integration-reviewer",
+  "pr-reviewer",
+];
 const AUTHORISING = /\b(approve[ds]?|approval|lgtm|sign[- ]off|ready to merge|go ahead|proceed)\b/i;
 const BODY_BUDGET = 4096;
 
@@ -67,7 +74,7 @@ describe("role skills: refusals of the execute probes (T46)", () => {
 });
 
 describe("role skills", () => {
-  it("are exactly the nine roles", () => {
+  it("are exactly the ten roles", () => {
     const dirs = existsSync(ROLES_DIR)
       ? readdirSync(ROLES_DIR, { withFileTypes: true })
           .filter((entry) => entry.isDirectory())
@@ -253,6 +260,7 @@ describe("S4: rule ids are cited", () => {
     "implementer",
     "simplifier",
     "reviewer",
+    "integration-reviewer",
     "pr-reviewer",
     "verifier",
     "design-verifier",
@@ -300,6 +308,39 @@ describe("T41-D4: a scout started by a worker has no package", () => {
     const { body } = readRole("scout");
     expect(body).toMatch(/question instead of a package path/);
     expect(body).toMatch(/at most 15 lines naming files and lines/);
+  });
+});
+
+describe("T42-A1: reviewers of a round work under their group reference", () => {
+  it("runs the integration reviewer on reader and keeps the reviewer on reviewer", () => {
+    expect(readRole("integration-reviewer").meta.agent).toBe("bdk:reader");
+    expect(readRole("reviewer").meta.agent).toBe("bdk:reviewer");
+  });
+
+  it.each(["reviewer", "integration-reviewer"])(
+    "%s uses <ticket>@<group> in every --ticket and never sets a triage level",
+    (name) => {
+      const { body } = readRole(name);
+      expect(body).toContain("<ticket>@<group>");
+      expect(body).toMatch(/in every `--ticket`/);
+      expect(body).toMatch(/Never set a triage level/);
+      expect(body).toMatch(/`--category` from the P8 list/);
+    },
+  );
+
+  it("has the integration reviewer check the range against intent, design, plan and risks", () => {
+    const { body } = readRole("integration-reviewer");
+    expect(body).toContain("`Risks` section");
+    expect(body).toMatch(/intent, the design and the plan/);
+    expect(body).toMatch(/no task's `Files:` declares/);
+    expect(body).toMatch(/Duplication across parts/);
+  });
+
+  it("has the reviewer check its group against the plan part and leave style to simplify and lint", () => {
+    const { body } = readRole("reviewer");
+    expect(body).toMatch(/against the plan part/);
+    expect(body).toMatch(/unit and end-to-end cases that are missing/);
+    expect(body).toMatch(/to `simplify` and `lint`/);
   });
 });
 

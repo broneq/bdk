@@ -1,12 +1,18 @@
 // Spec E2E fixtures through the committed bundle: a `tiny` Change walked to
 // a passed `gate:review` (one task committed with its trailers, its post-task
-// steps, the spec deltas done, a passing review verdict, the user's gate
+// steps, the spec deltas done, one clean review round, the user's gate
 // transition), so `spec merge` and `change close` run as a user runs them.
 import { join } from "node:path";
 import { expect } from "vitest";
 
 import { answered, bdk, git, repository } from "../../../tests/support/repo.ts";
-import { closed, dispatched, opened, stepsDone } from "../../attempt/tests/e2e-support.ts";
+import {
+  closed,
+  dispatched,
+  opened,
+  recorded,
+  stepsDone,
+} from "../../attempt/tests/e2e-support.ts";
 import { passGate } from "../../graph/tests/e2e-support.ts";
 import { fileStore, secondStamp, writeDocument } from "../../shared/store/index.ts";
 import { parseDelta } from "../domain/grammar.ts";
@@ -131,38 +137,36 @@ export function reviewed(options: Options = {}): Reviewed {
   return change;
 }
 
-/** A passing `review` report and the `report` entry naming it, as `log ingest` writes them. */
+/**
+ * One clean `review-fix` round through the kernel (T42): the gate runner's
+ * `tests-full` and `lint-full` on the round's `gate` group, the merged report
+ * under `merge` and its `report` entry, then the round closed.
+ */
 function reviewVerdict(change: Reviewed): void {
-  const at = new Date(Date.now() + 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
-  const report = "reports/review-reviewer-A-00000009.md";
-  writeDocument(fileStore(), join(change.dir, report), {
-    data: {
-      schema: 1,
-      ticket: "A-00000009",
-      role: "reviewer",
-      status: "done",
-      files: [],
-      entries: [],
-      evidence: [],
-    },
-    body: "PASS\n",
-  });
-  const id = `L-v${String(Date.now() % 10_000_000).padStart(7, "0")}`;
-  writeDocument(fileStore(), join(change.dir, `log/${secondStamp(at)}-report-${id}.md`), {
-    data: {
-      schema: 1,
-      id,
-      type: "report",
-      summary: "review passed",
-      status: "accepted",
-      source: "agent:reviewer",
-      author: "BDK Test <test@example.com>",
-      at,
-      refs: ["review"],
-      report,
-    },
-    body: "",
-  });
+  const round = opened(change, "review-fix", change.id);
+  answered(
+    bdk(
+      ["dispatch", "build", change.id, "runner", round, "--group", "gate", "--json"],
+      change.root,
+    ),
+    "output/dispatch-build.json",
+  );
+  recorded(change, `${round}@gate`, "tests-full");
+  recorded(change, `${round}@gate`, "lint-full");
+  answered(
+    bdk(["log", "ingest", "--ticket", `${round}@merge`, "--json"], change.root, {
+      stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\n# Review\n\nPASS\n",
+    }),
+    "output/log-ingest.json",
+  );
+  answered(
+    bdk(
+      ["log", "add", "report", "review passed", "--ticket", `${round}@merge`, "--json"],
+      change.root,
+    ),
+    "output/log-add.json",
+  );
+  closed(change, round, "ok");
 }
 
 /** A living spec as a merge by `change` writes it, from blocks of an ADDED-only delta. */

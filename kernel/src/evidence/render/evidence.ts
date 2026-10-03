@@ -1,5 +1,5 @@
 // The text mode of the evidence commands.
-import type { CheckReport, RecordReport } from "../domain/reports.ts";
+import type { CheckReport, CoverageReport, RecordReport } from "../domain/reports.ts";
 
 export function renderRecord(report: RecordReport): string {
   const head = report.deduplicated
@@ -25,4 +25,17 @@ export function staleWhy(subject: string, report: CheckReport): string {
     .filter((entry) => !entry.fresh)
     .map((entry) => `${entry.evidence} ${entry.kind} (changed: ${entry.changedSince.join(", ")})`);
   return `evidence of ${subject} is stale: ${stale.join("; ")}`;
+}
+
+export function renderCoverage(report: CoverageReport): string {
+  const percent =
+    report.percent === null ? "no instrumented added line" : `${String(report.percent)}%`;
+  const min = report.min === null ? "" : ` (min ${String(report.min)}%)`;
+  const unmeasured = report.unmeasured.map((path) => `  unmeasured: ${path}`);
+  return [
+    `${report.verdict} ${report.tool}: ${percent}${min}, ${String(report.covered)}/${String(report.total)} added lines covered`,
+    `recorded ${report.evidence}`,
+    ...unmeasured,
+    "",
+  ].join("\n");
 }

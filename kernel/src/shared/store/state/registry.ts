@@ -112,6 +112,22 @@ const CHANGE_ROWS: readonly Row[] = [
     check: same({ dir: field("dir") }),
   },
   {
+    pattern: new RegExp(`^dispatch/(?<role>.+)-(?<ticket>A-${ID})-(?<group>${SLUG})\\.md$`),
+    kind: "dispatch",
+    check: same({
+      ticket: field("ticket"),
+      group: field("group"),
+      role: (data) => `${String(data.target)}-${String(data.role)}`,
+    }),
+  },
+  {
+    pattern: new RegExp(`^reports/(?<role>.+)-(?<ticket>A-${ID})-(?<group>${SLUG})\\.md$`),
+    kind: "report",
+    check: (data, groups) =>
+      same({ ticket: field("ticket"), group: field("group") })(data, groups) ??
+      (groups.role?.endsWith(`-${String(data.role)}`) === true ? undefined : "role"),
+  },
+  {
     pattern: new RegExp(`^dispatch/(?<role>.+)-(?<ticket>A-${ID})\\.md$`),
     kind: "dispatch",
     check: same({

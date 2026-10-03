@@ -7,7 +7,12 @@ import { parse, stringify } from "yaml";
 import { changeStatusOutput } from "../../change/schema/outputs.ts";
 import { ctxConfig } from "../../ctx/index.ts";
 import { rulesConfig } from "../../rules/index.ts";
-import { createConfigRegistry, definePromptKey, promptsModule } from "../../shared/config/index.ts";
+import {
+  createConfigRegistry,
+  definePromptKey,
+  promptsModule,
+  toolsModule,
+} from "../../shared/config/index.ts";
 import { BaseKind, fileChecks, kindRegistry } from "../domain/kinds/index.ts";
 import type { ChangeView, Check, Inputs } from "../domain/kinds/index.ts";
 import { graphConfig } from "../index.ts";
@@ -34,7 +39,13 @@ interface Data {
 
 function extended() {
   const settings = createConfigRegistry({
-    modules: [...rulesConfig.modules, ...ctxConfig.modules, ...graphConfig.modules, promptsModule],
+    modules: [
+      ...rulesConfig.modules,
+      ...ctxConfig.modules,
+      ...graphConfig.modules,
+      promptsModule,
+      toolsModule,
+    ],
     prompts: [
       ...rulesConfig.prompts,
       ...ctxConfig.prompts,

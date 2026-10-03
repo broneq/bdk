@@ -3,7 +3,9 @@
 // resolve before anything is written. Small UTF-8 text is copied into the
 // Change; any other file stays under `.bdk/.machine/evidence/`. The manifest
 // carries the tree hash of the ticket's target; an equal earlier manifest is
-// returned instead of a second one.
+// returned instead of a second one. A `<ticket>@<group>` reference records
+// under the group package's role and stamps `group` (T42-A1); the kind
+// `coverage` is recorded only by `bdk evidence coverage` (T42-D5).
 import { basename, isAbsolute, join, relative } from "node:path";
 
 import { citationHint, citationProblem, isText } from "../domain/citation.ts";
@@ -12,14 +14,13 @@ import type { RecordReport, RecordedFile } from "../domain/reports.ts";
 import { moduleValue } from "../../shared/config/index.ts";
 import { authorIdent } from "../../shared/git/index.ts";
 import { newId } from "../../shared/ids/index.ts";
-import { refuse } from "../../shared/refusal/index.ts";
+import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import {
-  activePackage,
-  readAttempts,
   readManifests,
   readPlanParts,
+  resolveTicketRef,
   ticketManifests,
   writeDocument,
 } from "../../shared/store/index.ts";
@@ -32,6 +33,7 @@ import { sha256 } from "./tree.ts";
 const KIND = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const VERDICTS: readonly string[] = ["pass", "fail", "not-run"];
 const MACHINE_EVIDENCE = ".bdk/.machine/evidence/";
+const COVERAGE = "coverage";
 
 type Verdict = "pass" | "fail" | "not-run";
 
@@ -44,6 +46,8 @@ export interface RecordInput {
   readonly citations: readonly string[];
   /** Kernel evidence (`attempt close` records `simplify`, T23-D43): `source: kernel`, no citation needed. */
   readonly kernel?: boolean;
+  /** Only from `bdk evidence coverage`: the `tools.test` id a `coverage` manifest measured. */
+  readonly tool?: string;
 }
 
 export interface RecordWhere {
@@ -71,6 +75,13 @@ export async function recordEvidence(
   if (!KIND.test(input.kind)) {
     return refuse("input/invalid-argument", `kind ${input.kind} is not kebab-case`, [usage]);
   }
+  if (input.kind === COVERAGE && input.tool === undefined) {
+    return refuse(
+      "input/invalid-argument",
+      "coverage is recorded by bdk evidence coverage, which computes its verdict",
+      ["bdk evidence coverage <test-id> <report> --ticket <ticket>"],
+    );
+  }
   if (input.ticket === undefined) {
     return refuse("input/missing-argument", "evidence record needs --ticket", [usage]);
   }
@@ -82,14 +93,18 @@ export async function recordEvidence(
     );
   }
   const verdict = input.verdict as Verdict | undefined;
-  const ticket = input.ticket;
-  const record = readAttempts(deps.store, change.dir).find((file) => file.data.ticket === ticket);
-  if (record === undefined || record.data.outcome !== undefined) {
+  const ref = resolveTicketRef(deps.store, change.projectRoot, change.dir, input.ticket);
+  if (isRefusal(ref)) return ref;
+  const { ticket, group } = ref;
+  const record = ref.record;
+  if (record === undefined || !ref.open || (group !== undefined && ref.package === undefined)) {
     return refuse(
       "policy/no-open-ticket",
       record === undefined
         ? `${change.id} has no ticket ${ticket}`
-        : `ticket ${ticket} is already closed ${record.data.outcome ?? ""}`,
+        : !ref.open
+          ? `ticket ${ticket} is already closed ${record.data.outcome ?? ""}`
+          : `${input.ticket} has no dispatch package; build it with dispatch build --group`,
       ["bdk attempt list", "bdk attempt open <loop> <target>"],
     );
   }
@@ -116,6 +131,8 @@ export async function recordEvidence(
   const earlier = ticketManifests(readManifests(deps.store, change.dir), ticket).find(
     (manifest) =>
       manifest.data.kind === input.kind &&
+      manifest.data.group === group &&
+      manifest.data.tool === input.tool &&
       manifest.data["tree-hash"] === treeHash &&
       manifest.data.verdict === verdict &&
       same(manifest.data.citations ?? [], input.citations) &&
@@ -142,13 +159,15 @@ export async function recordEvidence(
     deps.store.writeBytes(join(change.projectRoot, path), source.bytes);
     return { path, hash, stored: "machine" };
   });
-  const active = activePackage(deps.store, change.projectRoot, change.dir, ticket);
+  const active = ref.package;
   const path = join(change.dir, "evidence", `${target}-${id}.md`);
   const data: EvidenceManifest = {
     schema: 1,
     id,
     kind: input.kind,
+    ...(input.tool === undefined ? {} : { tool: input.tool }),
     ticket,
+    ...(group === undefined ? {} : { group }),
     target,
     at: deps.clock.now(),
     author: await authorIdent(deps.git, change.projectRoot),
