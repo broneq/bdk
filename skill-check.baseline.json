@@ -110,11 +110,6 @@
     "fingerprint": "c1ad4f39844e130d"
   },
   {
-    "rule": "description-front-loaded",
-    "file": "skills/pr-review/SKILL.md",
-    "fingerprint": "67af1acd287d0b9d"
-  },
-  {
     "rule": "description",
     "file": "agents/design-verifier.md",
     "fingerprint": "7c6bcca4fd206399"
@@ -168,11 +163,6 @@
     "rule": "model-names",
     "file": "agents/web-researcher.md",
     "fingerprint": "55e7446010b6c6e9"
-  },
-  {
-    "rule": "model-names",
-    "file": "skills/pr-review/SKILL.md",
-    "fingerprint": "f4d3f0529fc5ae8e"
   },
   {
     "rule": "namespaced-refs",

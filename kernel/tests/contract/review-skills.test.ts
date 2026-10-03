@@ -124,3 +124,64 @@ describe("/bdk:cr", () => {
     expect(body).toMatch(/no `Agent` call/);
   });
 });
+
+describe("/bdk:pr-review", () => {
+  const skill = (): Skill => readSkill("pr-review");
+
+  it("lives under skills/tools/ and drops the v2 reviewer prompt", () => {
+    expect(existsSync(join(TOOLS, "pr-review", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(REPO_ROOT, "skills", "pr-review"))).toBe(false);
+    expect(existsSync(join(TOOLS, "pr-review", "references", "reviewer-prompt.md"))).toBe(false);
+    expect(existsSync(join(TOOLS, "pr-review", "references", "comment-templates.md"))).toBe(true);
+  });
+
+  it("stays within 200 lines, edits nothing and names no model", () => {
+    const { meta, lines } = skill();
+    expect(lines).toBeLessThanOrEqual(200);
+    expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
+    expect(meta).not.toHaveProperty("model");
+  });
+
+  it("starts the forked pr-reviewer role through Skill, never through Agent", () => {
+    const { meta, body } = skill();
+    const allowed = ` ${String(meta["allowed-tools"])} `;
+    expect(allowed).toContain(" Skill ");
+    expect(allowed).not.toContain(" Agent ");
+    expect(body).toContain("`bdk:pr-reviewer`");
+    expect(body).toMatch(/one PR after another/);
+    expect(body).not.toContain("/bdk:cr --inline");
+    for (const text of skillFiles("pr-review")) {
+      for (const agent of V2_AGENTS) expect(text).not.toContain(agent);
+    }
+  });
+
+  it("builds the PR brief with every field and the Change contract", () => {
+    const { body } = skill();
+    for (const field of [
+      "worktree",
+      "<merge-base>..<head>",
+      "stack parent",
+      "draft",
+      "mode",
+      "focus",
+      "intent",
+      ".bdk/changes/",
+      ".bdk/changes/archive/",
+      "change.md",
+      "decision",
+    ]) {
+      expect(body, field).toContain(field);
+    }
+  });
+
+  it("confirms every verdict before any GitHub call and computes it from the policy table", () => {
+    const { body } = skill();
+    const confirm = body.indexOf("AskUserQuestion");
+    const post = body.indexOf("/reviews");
+    expect(confirm).toBeGreaterThan(-1);
+    expect(post).toBeGreaterThan(confirm);
+    expect(body).toMatch(/\| Result block\s+\| Computed verdict/);
+    expect(body).toContain("`COMMENT`");
+    expect(body).toMatch(/failed/);
+  });
+});

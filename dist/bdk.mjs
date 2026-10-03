@@ -24032,8 +24032,8 @@ var SKILL_CONTEXT = {
   "pr-review": [
     {
       kind: "file",
-      path: "skills/pr-review/references/reviewer-prompt.md",
-      title: "Reviewer prompt"
+      path: "skills/tools/pr-review/references/comment-templates.md",
+      title: "Comment templates"
     }
   ],
   run: [],

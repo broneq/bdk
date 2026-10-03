@@ -130,12 +130,12 @@
 
 ## 8. The pr-review skill (review-skills, design D7)
 
-- [ ] 8.1 Write failing content tests:
+- [x] 8.1 Write failing content tests:
   - `skills/tools/pr-review/SKILL.md` is at most 200 lines with `disallowed-tools: Edit Write NotebookEdit`;
   - it starts `bdk:pr-reviewer` through `Skill` and names no `Agent` call, no `general-purpose` and no `/bdk:cr --inline`;
   - it names the brief fields, the Change contract lookup (active and archive), the confirmation before posting and the verdict policy table;
   - `references/reviewer-prompt.md` is gone.
-- [ ] 8.2 Write `skills/tools/pr-review/SKILL.md`. Move `references/comment-templates.md` to the new directory and adapt its fields to the role's result block. Delete `skills/pr-review/`, and point the manifest entry of `pr-review` at the comment templates under `skills/tools/pr-review/references/`. Verify that the tests of 8.1, `pnpm skill-check` and `pnpm docs:build` are green.
+- [x] 8.2 Write `skills/tools/pr-review/SKILL.md`. Move `references/comment-templates.md` to the new directory and adapt its fields to the role's result block. Delete `skills/pr-review/`, and point the manifest entry of `pr-review` at the comment templates under `skills/tools/pr-review/references/`. Verify that the tests of 8.1, `pnpm skill-check` and `pnpm docs:build` are green.
 
 ## 9. Stage skills: run, design, plan (stage-skills delta)
 

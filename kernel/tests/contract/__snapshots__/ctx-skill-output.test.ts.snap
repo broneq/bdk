@@ -240,11 +240,11 @@ exports[`ctx skill output > plan is unchanged 1`] = `
 
 exports[`ctx skill output > pr-review is unchanged 1`] = `
 "{
-  "content": "## BDK context: pr-review\\n\\n### Reviewer prompt\\n\\n# skills/pr-review/references/reviewer-prompt.md\\n\\n- **Default.** Plugin text.\\n",
+  "content": "## BDK context: pr-review\\n\\n### Comment templates\\n\\n# skills/tools/pr-review/references/comment-templates.md\\n\\n- **Default.** Plugin text.\\n",
   "parts": [
     {
       "kind": "file",
-      "source": "skills/pr-review/references/reviewer-prompt.md"
+      "source": "skills/tools/pr-review/references/comment-templates.md"
     }
   ]
 }"
