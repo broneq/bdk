@@ -27,9 +27,26 @@ const entryFields = {
     .meta({ description: "When this entry is the right one to run; passed to the model as is." }),
 };
 
-function tools(tier: z.ZodEnum | undefined, description: string) {
+// How one test type measures coverage (T42): its own run, report and format,
+// and the threshold `bdk evidence coverage` applies to the lines a Change adds.
+const coverage = z
+  .strictObject({
+    command: text.meta({ description: "The full run that writes the coverage report." }),
+    report: text
+      .refine((value) => !/^(\/|[A-Za-z]:[\\/])/.test(value), "must be relative, not absolute")
+      .meta({ description: "Where the command writes the report, relative to the project root." }),
+    format: z.enum(["lcov", "cobertura"]).meta({ description: "The report format." }),
+    min: z.number().min(0).max(100).optional().meta({
+      description: "The least coverage, in percent, of the lines a Change adds; none only reports.",
+    }),
+  })
+  .meta({ title: "coverage" });
+
+function tools(tier: z.ZodEnum | undefined, description: string, extra: z.ZodRawShape = {}) {
   const entry = (
-    tier === undefined ? z.strictObject(entryFields) : z.strictObject({ ...entryFields, tier })
+    tier === undefined
+      ? z.strictObject({ ...entryFields, ...extra })
+      : z.strictObject({ ...entryFields, ...extra, tier })
   ).meta({ title: "tool entry" });
   return z.array(entry).default([]).meta({ description });
 }
@@ -41,7 +58,9 @@ export const toolsModule = defineConfigModule({
   description: "The commands the project runs, one entry per command, merged by id.",
   schema: z
     .strictObject({
-      test: tools(z.enum(["fast", "e2e"]), "Test commands; tier fast or e2e."),
+      test: tools(z.enum(["fast", "e2e"]), "Test commands; tier fast or e2e.", {
+        coverage: coverage.optional(),
+      }),
       lint: tools(z.enum(["lint", "format", "typecheck"]), "Lint, format and type check commands."),
       build: tools(undefined, "Build commands; no tier."),
     })

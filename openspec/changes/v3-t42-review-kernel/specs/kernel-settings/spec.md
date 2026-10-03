@@ -41,7 +41,7 @@ The keys `tools.test`, `tools.lint` and `tools.build` SHALL hold arrays of tool 
 #### Scenario: coverage outside tools.test
 
 - **WHEN** a `tools.lint` item carries `coverage`
-- **THEN** `bdk config check` exits 2 with `rule: policy/config-invalid` naming `tools.lint.<id>.coverage`
+- **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` naming keys under `tools.lint.<id>.coverage`
 
 #### Scenario: threshold out of range
 
@@ -54,12 +54,12 @@ The keys `tools.test`, `tools.lint` and `tools.build` SHALL hold arrays of tool 
 
 The settings SHALL declare the review keys below, registered as the module `review.group` with consumer `review` and the module `review.risks` with consumer `dispatch` (T42).
 
-| Key                      | Type                                                 | Default        | Owner | Consumer   | v2 origin |
-| ------------------------ | ---------------------------------------------------- | -------------- | ----- | ---------- | --------- |
-| `review.group.max-files` | integer from 5 to 200                                | `30`           | T42   | `review`   | none      |
-| `review.risks`           | array of `{id, instruction, enabled}` merged by `id` | the five below | T42   | `dispatch` | none      |
+| Key                      | Type             | Default                                                      | Owner | Consumer   | v2 origin |
+| ------------------------ | ---------------- | ------------------------------------------------------------ | ----- | ---------- | --------- |
+| `review.group.max-files` | integer 5 to 200 | `30`                                                         | T42   | `review`   | none      |
+| `review.risks`           | array of risks   | `auth`, `migration`, `secrets`, `public-api`, `dependencies` | T42   | `dispatch` | none      |
 
-`review.group.max-files` is the size above which `bdk review plan` splits a group by module; a logical group (a plan part) stays one group up to it (T42-R1). `review.risks` describes what a reviewer must call out as risky for this project, as instructions to a model rather than paths: `id` is kebab-case, `instruction` a non-empty string of at most 500 characters, `enabled` a boolean defaulting to `true`. Items merge by `id` like tool entries, so a project replaces a default's `instruction`, turns one off with `enabled: false`, or adds its own. The defaults are:
+`review.group.max-files` is the size above which `bdk review plan` splits a group by module; a logical group (a plan part) stays one group up to it (T42-R1). `review.risks` is an array of risks `{id, instruction, enabled}` merged by `id`. It describes what a reviewer must call out as risky for this project, as instructions to a model rather than paths: `id` is kebab-case, `instruction` a non-empty string of at most 500 characters, `enabled` a boolean defaulting to `true`. Items merge by `id` like tool entries, so a project replaces a default's `instruction`, turns one off with `enabled: false`, or adds its own. The defaults are:
 
 | `id`           | `instruction`                                                                                                                  |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------ |

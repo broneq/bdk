@@ -24353,8 +24353,16 @@ var entryFields = {
   incremental: text6.optional().meta({ description: "The incremental form." }),
   when: text6.optional().meta({ description: "When this entry is the right one to run; passed to the model as is." })
 };
-function tools2(tier, description) {
-  const entry = (tier === void 0 ? strictObject(entryFields) : strictObject({ ...entryFields, tier })).meta({ title: "tool entry" });
+var coverage = strictObject({
+  command: text6.meta({ description: "The full run that writes the coverage report." }),
+  report: text6.refine((value) => !/^(\/|[A-Za-z]:[\\/])/.test(value), "must be relative, not absolute").meta({ description: "Where the command writes the report, relative to the project root." }),
+  format: _enum(["lcov", "cobertura"]).meta({ description: "The report format." }),
+  min: number2().min(0).max(100).optional().meta({
+    description: "The least coverage, in percent, of the lines a Change adds; none only reports."
+  })
+}).meta({ title: "coverage" });
+function tools2(tier, description, extra = {}) {
+  const entry = (tier === void 0 ? strictObject({ ...entryFields, ...extra }) : strictObject({ ...entryFields, ...extra, tier })).meta({ title: "tool entry" });
   return array(entry).default([]).meta({ description });
 }
 var toolsModule = defineConfigModule({
@@ -24363,7 +24371,9 @@ var toolsModule = defineConfigModule({
   owner: "T12",
   description: "The commands the project runs, one entry per command, merged by id.",
   schema: strictObject({
-    test: tools2(_enum(["fast", "e2e"]), "Test commands; tier fast or e2e."),
+    test: tools2(_enum(["fast", "e2e"]), "Test commands; tier fast or e2e.", {
+      coverage: coverage.optional()
+    }),
     lint: tools2(_enum(["lint", "format", "typecheck"]), "Lint, format and type check commands."),
     build: tools2(void 0, "Build commands; no tier.")
   }).prefault({})
@@ -30028,7 +30038,50 @@ function showCommand5(deps) {
   };
 }
 
+// kernel/src/dispatch/config.ts
+var RISKS = [
+  {
+    id: "auth",
+    instruction: "Changes to authentication, authorisation, permissions, roles or session handling, including who may call a changed endpoint."
+  },
+  {
+    id: "migration",
+    instruction: "Changes to a persistent data model: schema migrations, stored formats, data backfills, anything hard to roll back."
+  },
+  {
+    id: "secrets",
+    instruction: "Code or configuration that reads, stores, logs or transmits secrets, tokens, keys or personal data."
+  },
+  {
+    id: "public-api",
+    instruction: "Changes to a public or cross-service interface: endpoints, exported functions, CLI flags, events, file formats others consume."
+  },
+  {
+    id: "dependencies",
+    instruction: "Added, removed or upgraded third-party dependencies and changes to build or deployment configuration."
+  }
+];
+var risk = strictObject({
+  id: string2().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "must be kebab-case").meta({
+    description: "The merge key."
+  }),
+  instruction: string2().min(1).max(500).meta({
+    description: "What a reviewer must call out, written for a model."
+  }),
+  enabled: boolean2().default(true).meta({ description: "false leaves the item out." })
+}).meta({ title: "risk" });
+var risksModule = defineConfigModule({
+  key: "review.risks",
+  consumer: "dispatch",
+  owner: "T42",
+  description: "Risky areas of this project the integration reviewer calls out, merged by id.",
+  schema: array(risk).default(RISKS.map((item4) => ({ ...item4, enabled: true }))).meta({ description: "Items {id, instruction, enabled}, merged by id with the defaults." })
+});
+
 // kernel/src/dispatch/index.ts
+var dispatchConfig = {
+  modules: [risksModule]
+};
 function dispatchRegistrations(deps) {
   return [
     { id: "dispatch-build", handler: buildCommand(deps) },
@@ -32439,6 +32492,24 @@ function queryRegistrations(deps) {
   return [{ id: "query", handler: queryCommand(deps) }];
 }
 
+// kernel/src/review/config.ts
+var reviewGroupModule = defineConfigModule({
+  key: "review.group",
+  consumer: "review",
+  owner: "T42",
+  description: "How bdk review plan sizes the reviewer groups.",
+  schema: strictObject({
+    "max-files": int().min(5).max(200).default(30).meta({
+      description: "A group above this many files is split by module; a plan part stays whole up to it."
+    })
+  }).prefault({})
+});
+
+// kernel/src/review/index.ts
+var reviewConfig = {
+  modules: [reviewGroupModule]
+};
+
 // kernel/src/service/render/version.ts
 function renderVersion(output) {
   return `bdk ${output.kernel} (contract ${output.contract}, node ${output.node})
@@ -32707,6 +32778,8 @@ function settingsRegistry() {
       ...specConfig.modules,
       ...agentsConfig.modules,
       ...hooksConfig.modules,
+      ...dispatchConfig.modules,
+      ...reviewConfig.modules,
       checkpointModule,
       promptsModule
     ],

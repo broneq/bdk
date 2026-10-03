@@ -179,3 +179,60 @@ describe("prompt keys", () => {
     ]);
   });
 });
+
+describe("coverage of a test entry", () => {
+  const coverage = {
+    command: "vitest run --coverage",
+    report: "coverage/lcov.info",
+    format: "lcov",
+    min: 90,
+  };
+
+  it("accepts a coverage object per test type, with and without min", () => {
+    const e2e = {
+      id: "e2e",
+      tier: "e2e",
+      command: "playwright test",
+      coverage: {
+        command: "playwright test",
+        report: "coverage/cobertura.xml",
+        format: "cobertura",
+      },
+    };
+    const result = check({ tools: { test: [{ ...unit, coverage }, e2e] } });
+    expect(result.problems).toStrictEqual([]);
+    expect(result.value).toMatchObject({ tools: { test: [{ ...unit, coverage }, e2e] } });
+  });
+
+  it.each([
+    [{ ...coverage, min: 120 }, "tools.test.unit.coverage.min", "policy/config-invalid"],
+    [{ ...coverage, min: -1 }, "tools.test.unit.coverage.min", "policy/config-invalid"],
+    [{ ...coverage, format: "jacoco" }, "tools.test.unit.coverage.format", "policy/config-invalid"],
+    [{ ...coverage, report: "" }, "tools.test.unit.coverage.report", "policy/config-invalid"],
+    [
+      { ...coverage, report: "/tmp/lcov.info" },
+      "tools.test.unit.coverage.report",
+      "policy/config-invalid",
+    ],
+    [{ report: "a", format: "lcov" }, "tools.test.unit.coverage.command", "policy/config-invalid"],
+    [
+      { ...coverage, branches: 80 },
+      "tools.test.unit.coverage.branches",
+      "policy/unknown-config-key",
+    ],
+  ])("refuses %j at %s", (value, key, rule) => {
+    expect(keysOf({ tools: { test: [{ ...unit, coverage: value }] } })).toStrictEqual([
+      [key, rule],
+    ]);
+  });
+
+  it("refuses coverage outside tools.test", () => {
+    const lint = { id: "es", tier: "lint", command: "eslint .", coverage };
+    const problems = keysOf({ tools: { lint: [lint] } });
+    expect(problems.length).toBeGreaterThan(0);
+    for (const [key, rule] of problems) {
+      expect(key.startsWith("tools.lint.es.coverage")).toBe(true);
+      expect(rule).toBe("policy/unknown-config-key");
+    }
+  });
+});

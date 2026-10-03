@@ -7,8 +7,8 @@
 
 ## 2. Settings: coverage and review keys (D5, D7)
 
-- [ ] 2.1 Failing tests (`kernel/src/config/tests/`): `tools.test[].coverage` accepts `{command, report, format: lcov|cobertura, min}`, refuses `min: 120`, `format: jacoco`, an unknown field, and `coverage` on a `tools.lint` item, each naming the field; `review.group.max-files` defaults to 30 and refuses 2; `review.risks` defaults to the five items with `enabled: true`, merges a project item by `id` and appends a new one
-- [ ] 2.2 Tool entry schema, the `review.group` (consumer `review`) and `review.risks` (consumer `dispatch`) modules, `pnpm build` regenerates `schema/settings.json`; tests of 2.1 green
+- [x] 2.1 Failing tests (`kernel/src/config/tests/`): `tools.test[].coverage` accepts `{command, report, format: lcov|cobertura, min}`, refuses `min: 120`, `format: jacoco`, an unknown field, and `coverage` on a `tools.lint` item, each naming the field; `review.group.max-files` defaults to 30 and refuses 2; `review.risks` defaults to the five items with `enabled: true`, merges a project item by `id` and appends a new one
+- [x] 2.2 Tool entry schema, the `review.group` (consumer `review`) and `review.risks` (consumer `dispatch`) modules, `pnpm build` regenerates `schema/settings.json`; tests of 2.1 green
 
 ## 3. State: new fields (D1, D2, D6)
 
