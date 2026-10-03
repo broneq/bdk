@@ -32,6 +32,15 @@
       "type": "array",
       "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-[1-9][0-9]*$" },
       "description": "The rules selected for the ticket, in order (T31); may be empty."
+    },
+    "group": {
+      "description": "Review group of a `dispatch build --group` package (T42-A1).",
+      "$ref": "common.json#/$defs/reviewGroup"
+    },
+    "files": {
+      "description": "The group's file set; present exactly when `group` is.",
+      "type": "array",
+      "items": { "$ref": "common.json#/$defs/relativePath" }
     }
   },
   "required": [

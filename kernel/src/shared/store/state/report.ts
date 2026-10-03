@@ -2,7 +2,7 @@
 // frontmatter is the role's envelope, the body the full report.
 import * as z from "zod";
 
-import { evidenceId, ledgerId, relativePath, role, ticketId } from "./common.ts";
+import { evidenceId, ledgerId, relativePath, reviewGroup, role, ticketId } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
 
 const VERSION = 1;
@@ -15,6 +15,9 @@ export const reportKind = {
       schema: z.literal(VERSION),
       ticket: ticketId,
       role,
+      group: reviewGroup.optional().meta({
+        description: "Stamped by `log ingest` for a `<ticket>@<group>` report.",
+      }),
       status: z.enum(["done", "done-with-concerns", "needs-context", "blocked"]),
       files: z.array(relativePath),
       entries: z.array(ledgerId),

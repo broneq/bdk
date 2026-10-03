@@ -20,6 +20,10 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },
@@ -48,6 +52,10 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },
@@ -56,6 +64,11 @@
           "type": "string",
           "minLength": 1,
           "description": "One of the P8 blocking categories."
+        },
+        "level": {
+          "type": "string",
+          "enum": ["blocker", "should-fix", "nice-to-have", "not-a-problem"],
+          "description": "The orchestrator's triage level (T42-T); written only by `log triage`."
         }
       },
       "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
@@ -77,10 +90,19 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },
-        "severity": { "$ref": "common.json#/$defs/severity" }
+        "severity": { "$ref": "common.json#/$defs/severity" },
+        "level": {
+          "type": "string",
+          "enum": ["blocker", "should-fix", "nice-to-have", "not-a-problem"],
+          "description": "The orchestrator's triage level (T42-T); written only by `log triage`."
+        }
       },
       "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
       "additionalProperties": false
@@ -101,6 +123,10 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },
@@ -108,6 +134,11 @@
           "type": "string",
           "minLength": 1,
           "description": "One of the P8 blocking categories."
+        },
+        "level": {
+          "type": "string",
+          "enum": ["blocker", "should-fix", "nice-to-have", "not-a-problem"],
+          "description": "The orchestrator's triage level (T42-T); written only by `log triage`."
         }
       },
       "required": ["schema", "id", "type", "summary", "status", "source", "author", "at", "refs"],
@@ -129,6 +160,10 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },
@@ -157,6 +192,10 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" }
@@ -180,6 +219,10 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" }
@@ -203,6 +246,10 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },
@@ -247,10 +294,18 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },
-        "report": { "$ref": "common.json#/$defs/relativePath" }
+        "report": { "$ref": "common.json#/$defs/relativePath" },
+        "head": {
+          "description": "The commit a `merge` report reviewed, stamped by `log add`; the next delta review starts there.",
+          "$ref": "common.json#/$defs/commitSha"
+        }
       },
       "required": [
         "schema",
@@ -282,6 +337,10 @@
         "author": { "$ref": "common.json#/$defs/author" },
         "at": { "$ref": "common.json#/$defs/timestamp" },
         "ticket": { "$ref": "common.json#/$defs/ticketId" },
+        "group": {
+          "description": "The review group of a `<ticket>@<group>` write.",
+          "$ref": "common.json#/$defs/reviewGroup"
+        },
         "refs": { "minItems": 1, "type": "array", "items": { "type": "string", "minLength": 1 } },
         "supersedes": { "$ref": "common.json#/$defs/idReference" },
         "review": { "type": "boolean" },

@@ -9,6 +9,7 @@ import {
   evidenceId,
   hash,
   relativePath,
+  reviewGroup,
   ticketId,
   timestamp,
 } from "./common.ts";
@@ -24,9 +25,14 @@ export const evidenceKind = {
       schema: z.literal(VERSION),
       id: evidenceId,
       kind: z.string().min(1).meta({
-        description: "`tests-scoped`, `lint`, `typecheck`, `ui-capture` or a project kind.",
+        description:
+          "`tests-scoped`, `lint`, `tests-full`, `lint-full`, `coverage`, `typecheck`, `ui-capture` or a project kind.",
       }),
       ticket: ticketId,
+      group: reviewGroup.optional().meta({ description: "The review group of the record." }),
+      tool: z.string().min(1).optional().meta({
+        description: "Only on `coverage`: the `tools.test` id measured.",
+      }),
       target: z.string().min(1),
       at: timestamp,
       author,
@@ -51,6 +57,14 @@ export const evidenceKind = {
       citations: z.array(z.string().min(1)).optional().meta({
         description: "JSON pointers or snapshot lines (citation validator).",
       }),
+    })
+    .superRefine((data, context) => {
+      if ((data.kind === "coverage") === (data.tool !== undefined)) return;
+      context.addIssue({
+        code: "custom",
+        path: ["tool"],
+        message: "required on coverage, only there",
+      });
     })
     .meta({ title: "Evidence manifest" }),
   migrations: [],

@@ -212,7 +212,7 @@ describe("state write map", () => {
   });
 
   it("fails on a read command as a writer", () => {
-    const seeded = stateSpec.replace("| `evidence record`; ", "| `evidence check`; ");
+    const seeded = stateSpec.replace("| `evidence record`, ", "| `evidence check`, ");
     expect(problems(seeded, commands, writes)).toContain("evidence check is a read command");
   });
 

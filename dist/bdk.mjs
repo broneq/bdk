@@ -17243,6 +17243,8 @@ var author = string2().min(1).meta({ description: "Git `user.name <user.email>`.
 var severity = _enum(["critical", "high", "medium", "low"]);
 var scope = _enum(TICKET_SCOPES);
 var glob2 = string2().min(1);
+var reviewGroup = string2().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(32).meta({ description: "Review group: kebab-case, at most 32 characters." });
+var commitSha = string2().regex(/^[0-9a-f]{40}$/).meta({ description: "A full commit id." });
 function secondStamp(at) {
   return `${at.slice(0, 19).replaceAll("-", "").replaceAll(":", "")}Z`;
 }
@@ -17539,7 +17541,17 @@ var dispatchKind = {
     report: relativePath.meta({ description: "Where the role's report is written." }),
     rules: array(string2().regex(RULE_ID)).meta({
       description: "The rules selected for the ticket, in order (T31); may be empty."
+    }),
+    group: reviewGroup.optional().meta({
+      description: "Review group of a `dispatch build --group` package (T42-A1)."
+    }),
+    files: array(relativePath).optional().meta({
+      description: "The group's file set; present exactly when `group` is."
     })
+  }).superRefine((data, context) => {
+    if (data.group === void 0 === (data.files === void 0)) return;
+    const missing = data.group === void 0 ? "group" : "files";
+    context.addIssue({ code: "custom", path: [missing], message: "group and files go together" });
   }).meta({ title: "Dispatch package" }),
   migrations: []
 };
@@ -17547,6 +17559,9 @@ var dispatchKind = {
 // kernel/src/shared/store/state/entry.ts
 var VERSION6 = 1;
 var category = string2().min(1).meta({ description: "One of the P8 blocking categories." });
+var level = _enum(["blocker", "should-fix", "nice-to-have", "not-a-problem"]).meta({
+  description: "The orchestrator's triage level (T42-T); written only by `log triage`."
+});
 function variant(type, own2) {
   return strictObject({
     schema: literal(VERSION6),
@@ -17560,6 +17575,9 @@ function variant(type, own2) {
     author,
     at: timestamp,
     ticket: ticketId.optional(),
+    group: reviewGroup.optional().meta({
+      description: "The review group of a `<ticket>@<group>` write."
+    }),
     refs: array(string2().min(1)).min(1),
     supersedes: idReference.optional(),
     review: boolean2().optional(),
@@ -17580,9 +17598,13 @@ var entryKind = {
         description: "Written only by kernel commands that raise the profile; raises the effective profile."
       })
     }),
-    variant("finding", { severity: severity.optional(), category: category.optional() }),
-    variant("observation", { severity: severity.optional() }),
-    variant("blocker", { category: category.optional() }),
+    variant("finding", {
+      severity: severity.optional(),
+      category: category.optional(),
+      level: level.optional()
+    }),
+    variant("observation", { severity: severity.optional(), level: level.optional() }),
+    variant("blocker", { category: category.optional(), level: level.optional() }),
     variant("question", {
       options: array(string2().min(1)).optional(),
       park: boolean2().optional().meta({
@@ -17592,7 +17614,12 @@ var entryKind = {
     variant("assumption", {}),
     variant("risk", {}),
     learning,
-    variant("report", { report: relativePath }),
+    variant("report", {
+      report: relativePath,
+      head: commitSha.optional().meta({
+        description: "The commit a `merge` report reviewed, stamped by `log add`; the next delta review starts there."
+      })
+    }),
     variant("transition", {
       to: string2().min(1).meta({ description: "Stage, artifact id, gate id or `closed`." }),
       gate: string2().min(1).optional(),
@@ -17606,7 +17633,10 @@ var entryKind = {
         description: "sha256 of the node's inputs; written only by `done` and `part done` (P2). A transition carrying it is the node's done marker."
       })
     })
-  ]).meta({ title: "Ledger entry", description: "One file per entry; the body is free Markdown." }),
+  ]).superRefine((data, context) => {
+    if (data.type !== "report" || data.head === void 0 || data.group === "merge") return;
+    context.addIssue({ code: "custom", path: ["head"], message: "only on a merge report" });
+  }).meta({ title: "Ledger entry", description: "One file per entry; the body is free Markdown." }),
   migrations: []
 };
 
@@ -17619,9 +17649,13 @@ var evidenceKind = {
     schema: literal(VERSION7),
     id: evidenceId,
     kind: string2().min(1).meta({
-      description: "`tests-scoped`, `lint`, `typecheck`, `ui-capture` or a project kind."
+      description: "`tests-scoped`, `lint`, `tests-full`, `lint-full`, `coverage`, `typecheck`, `ui-capture` or a project kind."
     }),
     ticket: ticketId,
+    group: reviewGroup.optional().meta({ description: "The review group of the record." }),
+    tool: string2().min(1).optional().meta({
+      description: "Only on `coverage`: the `tools.test` id measured."
+    }),
     target: string2().min(1),
     at: timestamp,
     author,
@@ -17641,6 +17675,9 @@ var evidenceKind = {
     citations: array(string2().min(1)).optional().meta({
       description: "JSON pointers or snapshot lines (citation validator)."
     })
+  }).superRefine((data, context) => {
+    if (data.kind === "coverage" === (data.tool !== void 0)) return;
+    context.addIssue({ code: "custom", path: ["tool"], message: "required on coverage, only there" });
   }).meta({ title: "Evidence manifest" }),
   migrations: []
 };
@@ -17675,6 +17712,9 @@ var reportKind = {
     schema: literal(VERSION9),
     ticket: ticketId,
     role,
+    group: reviewGroup.optional().meta({
+      description: "Stamped by `log ingest` for a `<ticket>@<group>` report."
+    }),
     status: _enum(["done", "done-with-concerns", "needs-context", "blocked"]),
     files: array(relativePath),
     entries: array(ledgerId),
@@ -17794,6 +17834,20 @@ var CHANGE_ROWS = [
     pattern: /^(?<dir>dispatch|reports)\/pruned\.md$/,
     kind: "pruned",
     check: same({ dir: field("dir") })
+  },
+  {
+    pattern: new RegExp(`^dispatch/(?<role>.+)-(?<ticket>A-${ID2})-(?<group>${SLUG})\\.md$`),
+    kind: "dispatch",
+    check: same({
+      ticket: field("ticket"),
+      group: field("group"),
+      role: (data) => `${String(data.target)}-${String(data.role)}`
+    })
+  },
+  {
+    pattern: new RegExp(`^reports/(?<role>.+)-(?<ticket>A-${ID2})-(?<group>${SLUG})\\.md$`),
+    kind: "report",
+    check: (data, groups) => same({ ticket: field("ticket"), group: field("group") })(data, groups) ?? (groups.role?.endsWith(`-${String(data.role)}`) === true ? void 0 : "role")
   },
   {
     pattern: new RegExp(`^dispatch/(?<role>.+)-(?<ticket>A-${ID2})\\.md$`),

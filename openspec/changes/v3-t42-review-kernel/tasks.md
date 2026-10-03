@@ -12,8 +12,8 @@
 
 ## 3. State: new fields (D1, D2, D6)
 
-- [ ] 3.1 Failing tests (`kernel/src/shared/` state schemas): ledger `group`, `level` only on `finding`, `blocker`, `observation`; `head` only on a `report` with `group: merge`; package `group` with `files` both or neither; envelope `group` and `role: orchestrator`; manifest `group`, and `tool` required on kind `coverage`
-- [ ] 3.2 Schemas, `pnpm build` regenerates `schema/state/`; the two-branch merge test covers a `level` rewrite next to a `log resolve`; tests of 3.1 green
+- [x] 3.1 Failing tests (`kernel/src/shared/` state schemas): ledger `group`, `level` only on `finding`, `blocker`, `observation`; `head` only on a `report` with `group: merge`; package `group` with `files` both or neither; envelope `group` and `role: orchestrator`; manifest `group`, and `tool` required on kind `coverage`
+- [x] 3.2 Schemas and the layout rows of grouped packages and reports, `pnpm build` regenerates `schema/state/`; tests of 3.1 green (the two-branch merge case of a `level` rewrite moves to 5.3, where `log triage` exists)
 
 ## 4. Ticket references and group packages (D1, D8, D9)
 
@@ -26,7 +26,7 @@
 
 - [ ] 5.1 Failing unit and E2E tests (`kernel/src/log/tests/`): `log add --ticket A@p02` stamps `group` and `source: agent:reviewer`; `log ingest --ticket A@p01` stores at the group report path; a group report naming another group's entry is `policy/entries-missing`; `log ingest --ticket A@merge` stores `reports/<target>-merge-<ticket>.md` with `role: orchestrator`; `log add report --ticket A@merge` stamps `head`, `source: kernel` and refs `review`; `log add finding --ticket A@merge` is `input/invalid-argument`
 - [ ] 5.2 Failing tests for `bdk log triage`: the example output validates; `not-a-problem` resolves and requires `--reason`; a `decision` is `input/invalid-argument`; a resolved entry is `policy/invalid-transition`; a re-triage appends a second line; `input/not-found`
-- [ ] 5.3 Implement; command records with `refusals`, rule catalogue cells, `schema/cli/output/log-triage.json`; tests of 5.1 and 5.2 green
+- [ ] 5.3 Implement; the two-branch merge test (`kernel/tests/contract/state-merge.test.ts`) runs `log triage` on one branch next to `log resolve` on the other; command records with `refusals`, rule catalogue cells, `schema/cli/output/log-triage.json`; tests of 5.1 and 5.2 green
 
 ## 6. Evidence: grouped records and coverage (D5)
 
