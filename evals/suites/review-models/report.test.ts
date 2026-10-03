@@ -35,7 +35,12 @@ describe("criterion", () => {
   it("moves the reviewer to opus only on a measurable recall gain with no loss", () => {
     const sonnet = [row("sonnet", 1, SAME), row("sonnet", 2, SAME)];
     expect(criterion([...sonnet, row("opus", 1, BETTER), row("opus", 2, BETTER)])).toBe(
-      "opus finds more on recall_logic, recall_integration: the reviewer adapter moves to opus",
+      "opus finds more on recall_logic: the reviewer adapter moves to opus",
+    );
+    // The integration-reviewer is the same in every cell: its recall never decides.
+    const integration = { ...SAME, recall_integration: 1 };
+    expect(criterion([...sonnet, row("opus", 1, integration), row("opus", 2, integration)])).toBe(
+      "no measurable recall gain for opus: the reviewer adapter stays on sonnet",
     );
     expect(criterion([...sonnet, row("opus", 1, SAME), row("opus", 2, SAME)])).toBe(
       "no measurable recall gain for opus: the reviewer adapter stays on sonnet",

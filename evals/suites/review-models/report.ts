@@ -14,9 +14,15 @@ const COMPARISONS = [
   ["opus", "sonnet", "reviewer model"],
 ] as const;
 
-const RECALL = ["recall_logic", "recall_test-gap", "recall_integration"] as const;
+/**
+ * The recall classes the decision reads. The integration defect is reviewed by
+ * the integration-reviewer, whose adapter is the same in every cell, so its
+ * recall is tabulated but measures no difference between the cells.
+ */
+const RECALL = ["recall_logic", "recall_test-gap"] as const;
 const METRICS = [
   ...RECALL,
+  "recall_integration",
   "false_alarms",
   "alarms",
   "review_done",

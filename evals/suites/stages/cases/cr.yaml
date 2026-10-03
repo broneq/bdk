@@ -26,8 +26,9 @@
         items.0.group: merge
 
 # blocker: the task names the export APP_NAME and the delivery exports
-# APP_TITLE. The reviewers block on it, a review-fix round fixes it and
-# resolves the entry, and the review passes.
+# APP_TITLE. The reviewers flag src/app-name.ts, the coordinator triages it
+# `blocker`, a review-fix round fixes it and resolves that entry, and the
+# review passes.
 - id: blocker
   command: /bdk:cr
   seed: executed-blocker
@@ -44,9 +45,9 @@
     - run: explain review
       json:
         state: done
-    - run: log list --status resolved
+    - run: log list --status resolved --for src/app-name.ts
       json:
-        items.0.status: resolved
+        items.0.level: blocker
     - run: log list --type report --for review
       json:
         items.0.group: merge
