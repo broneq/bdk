@@ -13,7 +13,7 @@ Rule of choice (decision 1 of the proposal): the kernel absorbs a form when it i
 
 ### D1. Citation: hint, not leniency
 
-A refused bare-text citation gets an exact `--cite <file>:<n>=<text>` in `instead` when one recorded file has the text on a line.
+A refused citation gets an exact `--cite <file>:<n>=<text>` in `instead` when one recorded file has the text on a line. The text is the bare value, or the part after `=` of a `<file>:<line>=<text>` or `<file>:<from>-<to>=<text>` value: the first probe showed agents guessing the line number and writing line ranges.
 
 - Rejected: accept bare text as "some line contains it". It makes a citation mean different things by whether it parses, and breaks T23-D47's rule that a citation names a place. A passing verdict citing a phrase that occurs in an unrelated line would pass silently.
 - Rejected: the runner contract alone. The agent already had "cite the output line"; it needs the grammar and a refusal that corrects it in one retry.
