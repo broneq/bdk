@@ -19,6 +19,8 @@ A personal Claude Code plugin packaging reusable dev workflows, skills, agents, 
    /plugin install bdk@bdk
    ```
 
+The marketplace installs the latest release from the `release` branch, which carries the built kernel (`dist/bdk.mjs`). The `main` branch holds sources only.
+
 ### Code tools
 
 BDK ships no MCP server and starts no background process. Skills and agents explore, search and trace code with Claude Code's built-in tools (`Grep`, `Glob`, `Read`, `Bash`), so nothing beyond Claude Code needs installing, and BDK adds no tool-guidance layer on top of them. The reasoning is in `docs/adr/0001-remove-bundled-mcp-servers.md`.

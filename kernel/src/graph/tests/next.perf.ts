@@ -1,4 +1,4 @@
-// The T21 `next` latency budget through the committed bundle. Wall-clock
+// The T21 `next` latency budget through the built bundle. Wall-clock
 // timing depends on the machine, so this runs in the `perf` project, which CI
 // does not run: `pnpm build && pnpm test:perf` locally.
 import { spawnSync } from "node:child_process";

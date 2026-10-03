@@ -1,4 +1,4 @@
-// `kernel-cli/service` through the committed bundle: every exit code and rule
+// `kernel-cli/service` through the built bundle: every exit code and rule
 // the three records declare, the scenarios of the spec, the JSON Schemas.
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

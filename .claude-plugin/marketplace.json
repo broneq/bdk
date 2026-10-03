@@ -10,7 +10,11 @@
     {
       "name": "bdk",
       "description": "Broneq Dev Kit — reusable dev workflows, skills, agents, and hooks for any project",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "broneq/bdk",
+        "ref": "release"
+      },
       "category": "productivity"
     },
     {

@@ -1,6 +1,9 @@
 // The yaml-language-server modeline and the offline schema copy (`kernel-settings`,
-// Settings JSON Schema; design D-12). The URL names the plugin version's tag, so a
-// settings file keeps validating against the schema of the kernel that wrote it.
+// Settings JSON Schema; design D-12). The URL names the `dist-v<version>` tag the
+// release job puts on the commit that holds the generated schema (`kernel-architecture`,
+// Distribution ref), so a settings file keeps validating against the schema of the
+// kernel that wrote it. release-please's own `v<version>` tag is on `main`, which does
+// not track generated files.
 import { settingsJsonSchema } from "./json-schema.ts";
 import type { ConfigRegistry } from "./registry.ts";
 
@@ -9,7 +12,7 @@ const MODELINE_PREFIX = "# yaml-language-server: $schema=";
 export const OFFLINE_SCHEMA_PATH = ".bdk/.machine/schema/settings.json";
 
 export function settingsSchemaUrl(version: string): string {
-  return `https://raw.githubusercontent.com/broneq/bdk/v${version}/schema/settings.json`;
+  return `https://raw.githubusercontent.com/broneq/bdk/dist-v${version}/schema/settings.json`;
 }
 
 export function modeline(version: string): string {

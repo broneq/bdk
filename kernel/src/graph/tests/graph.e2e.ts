@@ -1,4 +1,4 @@
-// `kernel-cli/graph` (T21 records) through the committed bundle in real
+// `kernel-cli/graph` (T21 records) through the built bundle in real
 // repositories: one case per exit code and per declared rule of `next`,
 // `explain`, `validate` and `done`, every output validated against its schema.
 // `policy/spec-invalid` is covered with the spec fixtures in `spec/tests/spec.e2e.ts`.

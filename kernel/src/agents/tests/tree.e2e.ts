@@ -1,4 +1,4 @@
-// Acceptance of the agent tree (T41-D1 to D12) through the committed bundle,
+// Acceptance of the agent tree (T41-D1 to D12) through the built bundle,
 // driven by the recorded 2.1.284 hook payload shapes: `main` runs two parts
 // through two background leads, each lead dispatches its workers, a worker's
 // entry reaches its sibling, `agents wait` returns the reports, the leads

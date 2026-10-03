@@ -1,4 +1,4 @@
-// The `hooks session-start` latency budget through the committed bundle.
+// The `hooks session-start` latency budget through the built bundle.
 // Wall-clock timing depends on the machine, so this runs in the `perf`
 // project, which CI does not run: `pnpm build && pnpm test:perf` locally.
 import { readFileSync } from "node:fs";
@@ -14,7 +14,7 @@ const VERSION = (
     version: string;
   }
 ).version;
-const MODELINE = `# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/v${VERSION}/schema/settings.json\n`;
+const MODELINE = `# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/dist-v${VERSION}/schema/settings.json\n`;
 const PAYLOAD = JSON.stringify({ hook_event_name: "SessionStart", source: "startup" });
 
 const fixtures: Fixture[] = [];

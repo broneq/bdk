@@ -12,7 +12,7 @@ import { configRegistrations } from "../index.ts";
 const ROOT = "/work/repo";
 const HOME = "/home/dev";
 const MODELINE =
-  "# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json";
+  "# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/dist-v3.0.0/schema/settings.json";
 
 /** A git with no ignore rule: `check-ignore` answers "not ignored" for every path. */
 const git: Git = {
@@ -101,7 +101,7 @@ describe("config check", () => {
 describe("config schema", () => {
   it("prints the URL and the offline copy with --url", async () => {
     expect((await run(["config", "schema", "--url"])).stdout).toBe(
-      "https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json\noffline copy: .bdk/.machine/schema/settings.json\n",
+      "https://raw.githubusercontent.com/broneq/bdk/dist-v3.0.0/schema/settings.json\noffline copy: .bdk/.machine/schema/settings.json\n",
     );
   });
 

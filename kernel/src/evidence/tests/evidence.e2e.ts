@@ -1,4 +1,4 @@
-// `kernel-cli/evidence` through the committed bundle in real repositories:
+// `kernel-cli/evidence` through the built bundle in real repositories:
 // one case per exit code and per declared rule of `evidence record`, every
 // output validated against its schema, and the storage split seen by git.
 import { mkdirSync, writeFileSync } from "node:fs";

@@ -1,4 +1,4 @@
-// Graph E2E fixtures through the committed bundle: a `small` feature Change
+// Graph E2E fixtures through the built bundle: a `small` feature Change
 // walked to its design gate, plan parts in the task grammar, and a
 // `plan-verify` verdict written as `log ingest` and the gate skill write them.
 import { join } from "node:path";

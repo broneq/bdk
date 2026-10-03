@@ -1,4 +1,4 @@
-// `kernel-cli/config` through the committed bundle: every exit code and rule
+// `kernel-cli/config` through the built bundle: every exit code and rule
 // the four records declare, the acceptance scenarios of T12 and the JSON
 // Schemas. The global layer lives in the fixture (XDG_CONFIG_HOME), so the
 // machine's own settings never leak into a case.
@@ -24,7 +24,7 @@ const VERSION = (
     version: string;
   }
 ).version;
-const URL = `https://raw.githubusercontent.com/broneq/bdk/v${VERSION}/schema/settings.json`;
+const URL = `https://raw.githubusercontent.com/broneq/bdk/dist-v${VERSION}/schema/settings.json`;
 const MODELINE = `# yaml-language-server: $schema=${URL}`;
 const GLOBAL = "xdg/bdk/settings.yaml";
 
@@ -439,7 +439,7 @@ describe("bdk config schema", () => {
     });
   });
 
-  it("exit 0: the whole schema equals the committed schema/settings.json", () => {
+  it("exit 0: the whole schema equals the schema/settings.json of the build", () => {
     const result = bdk(["config", "schema", "--json"], fixture().root);
     expect((result.json as { schema: unknown }).schema).toStrictEqual(
       JSON.parse(readFileSync(join(REPO_ROOT, "schema/settings.json"), "utf8")),

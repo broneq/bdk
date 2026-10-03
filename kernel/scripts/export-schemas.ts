@@ -1,8 +1,8 @@
 // Writes the generated JSON Schemas (design D-10 of v3-t12-layered-config,
 // design D-6 of v3-t14-state-schema): the settings schema from the config
-// registry, the CLI output schemas whose zod exists and the state documents. `kernel/build.mjs` runs it after bundling the kernel, and
-// CI fails on `git diff --exit-code dist/ schema/`, so the output must be
-// deterministic. The CLI files not listed here stay hand-written.
+// registry, the CLI output schemas whose zod exists and the state documents. `kernel/build.mjs` runs it after bundling the kernel. Git
+// tracks none of the output (`kernel-architecture`, Generated outputs); the
+// release job publishes it, so the output must be deterministic. The CLI files not listed here stay hand-written.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 import { format, resolveConfig } from "prettier";

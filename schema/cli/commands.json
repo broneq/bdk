@@ -1201,7 +1201,7 @@
     {
       "id": "config-schema",
       "argv": ["config", "schema"],
-      "summary": "Print the JSON Schema of the settings (the file committed under `schema/`) or of one module.",
+      "summary": "Print the JSON Schema of the settings (the file `pnpm build` writes under `schema/`) or of one module.",
       "availability": "read",
       "mode": "command",
       "slice": "config",

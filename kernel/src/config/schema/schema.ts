@@ -22,10 +22,10 @@ export const configSchemaOutput = z
   .meta({
     title: "bdk config schema --json",
     description:
-      "Print the JSON Schema of the settings (the file committed under `schema/`) or of one module.",
+      "Print the JSON Schema of the settings (the file `pnpm build` writes under `schema/`) or of one module.",
     examples: [
       {
-        url: "https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json",
+        url: "https://raw.githubusercontent.com/broneq/bdk/dist-v3.0.0/schema/settings.json",
         offlineCopy: ".bdk/.machine/schema/settings.json",
       },
     ],

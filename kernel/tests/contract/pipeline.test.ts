@@ -38,7 +38,7 @@ describe("pipeline/pipeline.yaml", () => {
     expect(pipelineErrors(WHEN, declared).errors).toStrictEqual(["nodes[16].when: unknown key"]);
   });
 
-  it("is accepted by the committed schema/pipeline.json", () => {
+  it("is accepted by the generated schema/pipeline.json", () => {
     expect(validate(parse(shipped)), JSON.stringify(validate.errors)).toBe(true);
   });
 

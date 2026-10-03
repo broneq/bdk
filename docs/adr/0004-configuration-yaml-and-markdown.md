@@ -44,7 +44,7 @@ BDK v2 keeps its settings in `.bdk/settings.json`. JSON has no comments, and eve
 
 - [ ] Four layers, deep merge, arrays merged by `id`, full override allowed; unknown key is an error naming the key and the layer (T12).
 - [ ] `prompts/<key>.md` and `prompts.local/<key>.md` with `mode: extends | replace` and `applies` frontmatter (T12).
-- [ ] JSON Schema exported from the zod registry to `schema/` on CI, checked with `git diff --exit-code` (T12).
+- [ ] JSON Schema exported from the zod registry to `schema/` on CI, checked with `git diff --exit-code` (T12; dropped by T48 (#114): the schema is built, not committed).
 - [ ] Setup writes a `# yaml-language-server: $schema=<versioned raw URL>` modeline into `settings.yaml`; an offline copy of the schema lives in `.bdk/.machine/schema/` (T12).
 - [ ] An IDE with yaml-language-server suggests keys in a fixture's `settings.yaml` (manual confirmation once, T12).
 

@@ -23,7 +23,7 @@ const ROOT = "/work/repo";
 const PROJECT = `${ROOT}/.bdk/settings.yaml`;
 const LOCAL = `${ROOT}/.bdk/settings.local.yaml`;
 const GLOBAL_FILE = `${GLOBAL}/settings.yaml`;
-const URL = "https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json";
+const URL = "https://raw.githubusercontent.com/broneq/bdk/dist-v3.0.0/schema/settings.json";
 const MODELINE = `# yaml-language-server: $schema=${URL}`;
 const PLUGIN_FILES = {
   [`${PLUGIN}/.claude-plugin/plugin.json`]: '{"version":"3.0.0"}',

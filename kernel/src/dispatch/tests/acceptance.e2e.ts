@@ -1,5 +1,5 @@
 // The T23 part B acceptance (`v3-t23b-dispatch-envelope` task 7.1) through the
-// committed bundle in a real repository: one ticket per role walks the whole
+// built bundle in a real repository: one ticket per role walks the whole
 // path from `attempt open` to `attempt close --envelope`, every output
 // validated against its schema.
 import { describe, expect, it } from "vitest";
