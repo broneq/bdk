@@ -46,7 +46,7 @@ Generate a host's adapter files from the kernel's adapter definitions and the pe
 #### Scenario: committed adapters reproduced byte for byte
 
 - **WHEN** `bdk export agents --host claude --out <tmp>` runs in the BDK repository and `<tmp>` is compared with the `agents/` that `pnpm build` wrote
-- **THEN** each of the five adapter files is byte-identical to its built copy, and `files` lists exactly the five adapters
+- **THEN** each of the six adapter files is byte-identical to its built copy, and `files` lists exactly the six adapters
 
 #### Scenario: policy/generated-drift
 
