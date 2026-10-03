@@ -33,7 +33,7 @@ Generate a host's adapter files from the kernel's adapter definitions and the pe
   - `--host claude`. Required. Claude Code is the only host in 3.0; any other value is `input/invalid-argument`.
   - `--out <dir>`. Default the `agents/` directory of the plugin root, the directory that holds the running bundle's `dist/`.
   - `--check`. Compare instead of writing; exit 2 when a generated file differs or is missing; write nothing.
-- **Behaviour:** Writes exactly one file per adapter (`worker`, `reader`, `reviewer`, `runner`, `scout`, `role-contracts`, Adapters) at `<out>/<adapter>.md`: frontmatter with `name`, `description`, the host's `tools:` for the adapter's tool classes, the adapter's model tier and a generated marker, then a body of one sentence. The output is a pure function of the kernel version and the host: LF line endings, no timestamp, fixed key order. Other files in `<out>` are never read, written or compared, so the v2 agents that live next to the adapters until T42 are untouched. BDK's own `agents/` is the Claude Code output of this generator; the CI content check is `export agents --host claude --check`.
+- **Behaviour:** Writes exactly one file per adapter (`worker`, `reader`, `reviewer`, `runner`, `scout`, `role-contracts`, Adapters) at `<out>/<adapter>.md`: frontmatter with `name`, `description`, the host's `tools:` for the adapter's tool classes, the adapter's model tier and a generated marker, then a body of one sentence. The output is a pure function of the kernel version and the host: LF line endings, no timestamp, fixed key order. Other files in `<out>` are never read, written or compared, so the v2 agents that live next to the adapters until T42 are untouched. BDK's own generated adapters are the Claude Code output of this generator: `pnpm build` writes them into `agents/`, where git ignores them (`kernel-architecture`, Generated outputs), and the release ref carries them. `--check` stays for a person or a script that verifies a directory; CI does not run it, because the build step has just written the files.
 - **Writes:** `<out>/{worker,reader,reviewer,runner,scout}.md`
 - **Output:** `schema/cli/output/export-agents.json`
 - **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `policy/generated-drift`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
@@ -67,8 +67,8 @@ Generate a host's adapter files from the kernel's adapter definitions and the pe
 
 #### Scenario: committed adapters reproduced byte for byte
 
-- **WHEN** `bdk export agents --host claude --out <tmp>` runs in the BDK repository and `<tmp>` is compared with the committed `agents/`
-- **THEN** each of the five adapter files is byte-identical to its committed copy, and `files` lists exactly the five adapters
+- **WHEN** `bdk export agents --host claude --out <tmp>` runs in the BDK repository and `<tmp>` is compared with the `agents/` that `pnpm build` wrote
+- **THEN** each of the six adapter files is byte-identical to its built copy, and `files` lists exactly the six adapters
 
 #### Scenario: policy/generated-drift
 
