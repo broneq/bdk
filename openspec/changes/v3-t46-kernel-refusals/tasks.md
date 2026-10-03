@@ -40,6 +40,6 @@
 
 ## 9. Acceptance
 
-- [ ] 9.1 Run `pnpm eval stages --skill execute --probe`; record the row; check 3/3 with no `policy/missing-citation`, `input/invalid-envelope`, `policy/no-open-ticket`, `input/unknown-command`, `input/unknown-flag`, and a total below 21
+- [x] 9.1 Run `pnpm eval stages --skill execute --probe`; record the row; check 3/3 with no `policy/missing-citation`, `input/invalid-envelope`, `policy/no-open-ticket`, `input/unknown-command`, `input/unknown-flag`, and a total below 21
 - [ ] 9.2 If a fixed rule appears, read the raw run, fix at its cause, rerun
-- [ ] 9.3 Run `openspec validate v3-t46-kernel-refusals --strict`
+- [x] 9.3 Run `openspec validate v3-t46-kernel-refusals --strict`
