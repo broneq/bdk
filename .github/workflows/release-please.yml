@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - main
+  # Publishes the bundle of an existing tag again, for example after a failed
+  # publish job or to create the `release` branch before the first release
+  # that carries it.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (for example v3.0.0)
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -11,9 +20,57 @@ permissions:
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - id: release
+        uses: googleapis/release-please-action@v4
         with:
           config-file: .github/release-please-config.json
           manifest-file: .github/.release-please-manifest.json
+
+  # Git tracks no generated file (kernel-architecture, Generated outputs, and
+  # Distribution ref). The plugin installs from the `release` branch, which
+  # holds the tag's tree plus what `pnpm build` generates: the bundle, the
+  # schemas and the adapters. `dist-v<version>` pins the settings schema URL
+  # of the modeline to the commit that holds it.
+  publish-bundle:
+    needs: release-please
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release_created == 'true') }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publish-bundle
+      cancel-in-progress: false
+    env:
+      TAG: ${{ inputs.tag || needs.release-please.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # `prepare` builds once; the explicit build keeps the job independent of it.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish the release branch and the dist tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f dist schema agents
+          git commit -m "chore(release): bundle ${TAG}"
+          git tag -f "dist-${TAG}"
+          git push --force origin HEAD:refs/heads/release
+          git push --force origin "refs/tags/dist-${TAG}"
