@@ -125,7 +125,7 @@
   - `skills/stages/run/SKILL.md` names `bdk log decide <id> defer --review` for the report, says the run never chooses `fix`, and names the report path and `/bdk:cr --report` in Finish;
   - `skills/stages/setup/SKILL.md` names `gh auth status`, `bdk config set tracker` and both kinds.
 - [x] 9.2 Edit both skills. Verify with 9.1 and `pnpm skill-check`.
-- [ ] 9.3 Update the `stages` eval case `run-auto` (`evals/suites/stages/cases/run.yaml`). Its expectations now include the report path and a `defer` disposition with `review: true` before the close. Verify with `pnpm eval check` and `npx vitest run evals`. Probe it only after the user approves the cost.
+- [x] 9.3 Update the `stages` eval case `run-auto` (`evals/suites/stages/cases/run.yaml`). Its expectations now include the report path and a `defer` disposition with `review: true` before the close. Verify with `pnpm eval check` and `npx vitest run evals`. Probe it only after the user approves the cost.
 
 ## 10. Documentation
 
