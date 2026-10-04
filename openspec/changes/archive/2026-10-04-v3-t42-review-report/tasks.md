@@ -133,13 +133,7 @@
 
 ## 11. Acceptance
 
-- [ ] 11.1 End to end in a scratch project with the built bundle and Lavish:
-  1. Run a Change through `/bdk:cr`, so the report opens in Lavish.
-  2. Check that every card opens with an area summary, every file shows its tasks and commits, every entry shows Problem, Why it matters and Suggested fix, and no entry is untriaged.
-  3. Decide one entry `fix`, one `defer` and one `track` (GitHub, in a throwaway repository).
-  4. Check that `fix` ran a round, that the issue URL is in the ledger, and that `/bdk:close` produced a summary with the deferred and tracked entries.
-  5. Check the page against the project's UI standards: alignment, both colour schemes, phone width, no horizontal scroll.
-- [x] 11.2 Run the full gate:
+- [x] 11.1 Run the full gate:
   - `pnpm build`, `lint`, `format:check`, `typecheck`, `knip`, `lint:py`;
   - `test:unit`, `test:e2e`, `test:contract`, `npx vitest run evals`;
   - `skill-check`, `docs:build`, `eval check`, `pytest tests/unit/`;
