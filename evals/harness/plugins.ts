@@ -1,12 +1,22 @@
 // Plugin copies (design D-5, D-9): the committed tree of a ref, exported with
-// `git archive`, trimmed to the arm's skills and agents, with an optional
+// `git archive`, its generated outputs built by the ref's own `kernel/build.mjs`
+// (the bundle, schemas and adapters are not committed since T48), trimmed to the arm's skills and agents, with an optional
 // skill variant added, one skill removed, or one agent's model changed. The host scans the default
 // `skills/` directory in addition to the manifest's `skills` array
 // (evals/README.md, Provider facts), so trimming is what keeps other skills
 // out of a session.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -70,6 +80,34 @@ function renamed(text: string, name: string): string {
   return frontmatter + text.slice(end);
 }
 
+/**
+ * Runs the copy's `kernel/build.mjs`, as `pnpm build` does, against the
+ * repository's installed `node_modules`, linked in for the build only. The
+ * adapter export is a kernel command, which needs a git work tree, so the
+ * copy is one for the build only. A ref without the script (before T11) has
+ * nothing to build.
+ */
+function buildGenerated(repoRoot: string, target: string): void {
+  if (!existsSync(join(target, "kernel", "build.mjs"))) return;
+  const modules = join(target, "node_modules");
+  symlinkSync(join(repoRoot, "node_modules"), modules, "dir");
+  try {
+    git(target, "init", "--quiet");
+    const built = spawnSync(process.execPath, ["kernel/build.mjs"], {
+      cwd: target,
+      encoding: "utf8",
+    });
+    if (built.status !== 0) {
+      throw new Error(
+        `kernel/build.mjs of the plugin copy failed:\n${built.stdout}${built.stderr}`,
+      );
+    }
+  } finally {
+    rmSync(modules, { force: true });
+    rmSync(join(target, ".git"), { recursive: true, force: true });
+  }
+}
+
 function keepOnly(dir: string, keep: readonly string[], nameOf: (entry: string) => string): void {
   for (const entry of readdirSync(dir)) {
     if (!keep.includes(nameOf(entry))) rmSync(join(dir, entry), { recursive: true, force: true });
@@ -88,6 +126,7 @@ export function buildPluginCopy(spec: PluginCopySpec): PluginCopy {
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
+  buildGenerated(spec.repoRoot, spec.target);
 
   const skills = join(spec.target, "skills");
   if (spec.keepSkills !== undefined) keepOnly(skills, spec.keepSkills, (entry) => entry);
