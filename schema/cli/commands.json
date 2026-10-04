@@ -1367,6 +1367,29 @@
       ]
     },
     {
+      "id": "ctx-craft",
+      "argv": ["ctx", "craft"],
+      "summary": "Print an installed bdk-craft skill for an agent that cannot load skills itself.",
+      "availability": "agent",
+      "mode": "command",
+      "slice": "ctx",
+      "owner": "T42",
+      "changeScoped": false,
+      "standalone": true,
+      "args": [
+        {
+          "name": "<name>",
+          "required": true,
+          "description": "A craft skill name, e.g. tdd, debugging."
+        }
+      ],
+      "flags": [],
+      "output": "output/ctx.json",
+      "exits": [0, 3],
+      "refusals": ["input/not-found"],
+      "writes": []
+    },
+    {
       "id": "ctx-skill",
       "argv": ["ctx", "skill"],
       "summary": "Compose the prompt context a skill's context line injects: rule sets, language rules, fragments, tool entries, plugin files.",
@@ -1379,7 +1402,7 @@
         {
           "name": "<name>",
           "required": true,
-          "description": "Skill name, e.g. debug, create-plan."
+          "description": "Skill name, e.g. design, plan."
         }
       ],
       "flags": [],

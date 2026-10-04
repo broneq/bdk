@@ -1,9 +1,9 @@
 // `kernel-cli/ctx` through the built bundle: every exit code and rule of
-// `ctx skill` and `ctx startup`, and the acceptance scenarios of T13 on the
+// `ctx skill`, `ctx startup` and `ctx craft`, and the acceptance scenarios of T13 on the
 // plugin's own rules, fragments and STARTUP file. PATH holds only what a case
 // installs, so the machine's own lavish-axi never leaks into a case.
 import { spawnSync } from "node:child_process";
-import { chmodSync, readFileSync } from "node:fs";
+import { chmodSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -64,19 +64,19 @@ describe("bdk ctx skill", () => {
 
   it("input/not-found: a STOP block naming the closest skill, exit 0", () => {
     const root = fixture().root;
-    stop(bdk(["ctx", "skill", "debugg"], root), "debugg is not a skill with a BDK context");
-    const json = bdk(["ctx", "skill", "debugg", "--json"], root);
+    stop(bdk(["ctx", "skill", "setupp"], root), "setupp is not a skill with a BDK context");
+    const json = bdk(["ctx", "skill", "setupp", "--json"], root);
     expect(json.code).toBe(0);
     expect(validRefusal(json.json)).toBe(true);
     expect(json.json).toMatchObject({
       rule: "input/not-found",
-      instead: ["bdk ctx skill debug", "check the skill name in the context lines"],
+      instead: ["bdk ctx skill setup", "check the skill name in the context lines"],
     });
   });
 
   it("policy/unknown-config-key: a STOP block, exit 0", () => {
     const root = fixture({ ".bdk/settings.yaml": "tools:\n  tests: []\n" }).root;
-    stop(bdk(["ctx", "skill", "debug"], root), "tools.tests in the project layer");
+    stop(bdk(["ctx", "skill", "setup"], root), "tools.tests in the project layer");
   });
 
   it("policy/config-invalid: a STOP block, exit 0", () => {
@@ -127,11 +127,36 @@ describe("bdk ctx skill", () => {
       ".bdk/settings.yaml":
         "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: pnpm test:unit\n      when: before every commit\n",
     }).root;
-    const result = bdk(["ctx", "skill", "debug"], root);
+    const result = bdk(["ctx", "skill", "setup"], root);
     expect(result.stdout).toContain(
       "### Project commands: test\n\n- id: unit\n  command: pnpm test:unit\n  when: before every commit\n  tier: fast\n",
     );
     expect(result.stdout).toContain("### Project commands: lint\n\nnone configured\n");
+  });
+});
+
+describe("bdk ctx craft", () => {
+  // The bundle runs with CLAUDE_PLUGIN_ROOT at this repository, whose
+  // checkout holds plugins/bdk-craft; HOME is the fixture, so no cache.
+  const shipped = readdirSync(join(REPO_ROOT, "plugins", "bdk-craft", "skills")).sort();
+  const name = shipped[0] ?? "tdd";
+
+  it("prints a craft skill of the checkout, outside a git work tree, exit 0", () => {
+    const result = bdk(["ctx", "craft", name, "--json"], fixture({}, false).root);
+    expect(result.code).toBe(0);
+    expect(validCtx(result.json)).toBe(true);
+    const report = result.json as { content: string; parts: unknown };
+    expect(report.content.startsWith(`## Craft: ${name}\n\n## `)).toBe(true);
+    expect(report.parts).toStrictEqual([{ kind: "craft", source: `bdk-craft/${name}` }]);
+  });
+
+  it("input/not-found: exit 3 with the searched paths", () => {
+    const result = bdk(["ctx", "craft", "no-such-skill", "--json"], fixture().root);
+    expect(result.code).toBe(3);
+    expect(validRefusal(result.json)).toBe(true);
+    const refusal = result.json as { rule: string; why: string };
+    expect(refusal.rule).toBe("input/not-found");
+    expect(refusal.why).toContain(join(REPO_ROOT, "plugins", "bdk-craft", "skills"));
   });
 });
 
