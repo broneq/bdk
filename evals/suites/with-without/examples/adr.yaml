@@ -1,0 +1,53 @@
+# Task file for `pnpm eval with-without --skill bdk:adr` on the default fixture.
+# Each prompt describes one decision in plain words and names its status, so no
+# question is left for the run to ask. The assertions see only the final reply,
+# so every prompt asks for the written record at the end of it. They check what
+# the skill fixes: the numbered path under docs/adr/, the MADR sections, pros
+# and cons for every option, the symbol markers, and {TBD} for the people.
+- id: server-state
+  prompt: >-
+    Write an ADR: we keep server data in the existing fetch layer under src/api with
+    per-page loading state instead of adding Redux, because the app has no shared
+    client state and Redux would add boilerplate to every admin page. We also looked
+    at TanStack Query. The decision is accepted. Save it in the repository and end your
+    reply with the path of the file and its full content.
+  assert:
+    - type: javascript
+      value: "/docs\\/adr\\/0001-[a-z0-9-]+\\.md/.test(String(output))"
+    - type: javascript
+      value: "/^##\\s+Considered Options/mi.test(String(output)) && /^##\\s+Decision Outcome/mi.test(String(output)) && /^##\\s+Pros and Cons of the Options/mi.test(String(output))"
+    - type: javascript
+      value: "/✅/.test(String(output)) && /❌/.test(String(output)) && !/Good, because|Bad, because/.test(String(output))"
+    - type: javascript
+      value: "/\\{TBD\\}/.test(String(output))"
+- id: translations
+  prompt: >-
+    Record a decision for the team: translations stay bundled in src/i18n/messages.ts
+    rather than being loaded per language at runtime, since the catalogue is small and
+    a network request would delay the first render. Lazy loading per language was the
+    alternative. Status: proposed. Save it in the repository and end your reply with the
+    path of the file and its full content.
+  assert:
+    - type: javascript
+      value: "/docs\\/adr\\/0001-[a-z0-9-]+\\.md/.test(String(output))"
+    - type: javascript
+      value: "/^##\\s+Considered Options/mi.test(String(output)) && /^##\\s+Decision Outcome/mi.test(String(output)) && /^##\\s+Pros and Cons of the Options/mi.test(String(output))"
+    - type: javascript
+      value: "/✅/.test(String(output)) && /❌/.test(String(output)) && !/Good, because|Bad, because/.test(String(output))"
+    - type: javascript
+      value: "/\\{TBD\\}/.test(String(output))"
+- id: mock-api
+  prompt: >-
+    Document as an ADR why we serve the mock API from a Vite plugin (src/mock-api)
+    instead of Mock Service Worker: it runs in the dev server, needs no service worker
+    registration, and the same handler is unit-tested. Accepted. Save it in the
+    repository and end your reply with the path of the file and its full content.
+  assert:
+    - type: javascript
+      value: "/docs\\/adr\\/0001-[a-z0-9-]+\\.md/.test(String(output))"
+    - type: javascript
+      value: "/^##\\s+Considered Options/mi.test(String(output)) && /^##\\s+Decision Outcome/mi.test(String(output)) && /^##\\s+Pros and Cons of the Options/mi.test(String(output))"
+    - type: javascript
+      value: "/✅/.test(String(output)) && /❌/.test(String(output)) && !/Good, because|Bad, because/.test(String(output))"
+    - type: javascript
+      value: "/\\{TBD\\}/.test(String(output))"

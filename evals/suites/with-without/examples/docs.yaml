@@ -1,0 +1,47 @@
+# Task file for `pnpm eval with-without --skill bdk:docs` on the default fixture.
+# Each prompt asks for architecture documentation of one module in plain words.
+# The assertions see only the final reply, so every prompt asks for the written
+# document at the end of it. They check what the skill fixes: the default path
+# under docs/architecture/, nothing under .bdk/, at least one Mermaid diagram,
+# and the sections of its document shape.
+- id: i18n
+  prompt: >-
+    Write architecture documentation for src/i18n so a new developer can find their
+    way around it, and save it in the repository. End your reply with the path of the
+    file and its full content.
+  assert:
+    - type: javascript
+      value: "/docs\\/architecture\\/i18n\\.md/.test(String(output))"
+    - type: javascript
+      value: "!/\\.bdk\\//.test(String(output))"
+    - type: javascript
+      value: "/```mermaid/.test(String(output))"
+    - type: javascript
+      value: "/^##\\s+Overview/mi.test(String(output)) && /^##\\s+Critical rules/mi.test(String(output)) && /^##\\s+Tests/mi.test(String(output))"
+- id: mock-api
+  prompt: >-
+    Explain how src/mock-api works and write it up as documentation in the repository.
+    End your reply with the path of the file and its full content.
+  assert:
+    - type: javascript
+      value: "/docs\\/architecture\\/mock-api\\.md/.test(String(output))"
+    - type: javascript
+      value: "!/\\.bdk\\//.test(String(output))"
+    - type: javascript
+      value: "/```mermaid/.test(String(output))"
+    - type: javascript
+      value: "/^##\\s+Overview/mi.test(String(output)) && /^##\\s+Critical rules/mi.test(String(output)) && /^##\\s+Tests/mi.test(String(output))"
+- id: auth
+  prompt: >-
+    Document the architecture of src/auth: how routes are protected and how roles are
+    checked. Save the document in the repository and end your reply with its path and
+    its full content.
+  assert:
+    - type: javascript
+      value: "/docs\\/architecture\\/auth\\.md/.test(String(output))"
+    - type: javascript
+      value: "!/\\.bdk\\//.test(String(output))"
+    - type: javascript
+      value: "/```mermaid/.test(String(output))"
+    - type: javascript
+      value: "/^##\\s+Overview/mi.test(String(output)) && /^##\\s+Critical rules/mi.test(String(output)) && /^##\\s+Tests/mi.test(String(output))"
