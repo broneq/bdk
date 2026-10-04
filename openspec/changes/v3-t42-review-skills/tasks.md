@@ -171,7 +171,11 @@
 
   Verify that the tests of 11.1 and `pnpm eval check` are green.
 
-- [ ] 11.3 Run `pnpm eval review-models --probe` and `pnpm eval stages --skill cr --probe`, and record the per-cell cost and the projected series in this task. Stop for the user's approval before any series.
+- [x] 11.3 Run `pnpm eval review-models --probe` and `pnpm eval stages --skill cr --probe`, and record the per-cell cost and the projected series in this task. Stop for the user's approval before any series.
+
+  - `review-models` probe: stopped by the budget before its runs. After a review of what the series could show (one patch, no statistical power, a ceiling on five defects, integration recall measuring an unchanged adapter), the user chose not to run the series (2026-10-04, option A). The reviewer adapter stays on sonnet and the integration reviewer on opus.
+  - `stages --skill cr` probe 2026-10-03: 4.21 USD per run of three cases, projected series 21.04 USD; `happy` failed on a round closed before its merged report and on a seed intent that promised page titles (fixed in 11.4), and the `blocker` check read the wrong entry.
+  - `stages --skill cr` probe 2026-10-04, after 11.4: 3 of 3 cases pass, 3.56 USD per run, projected series 17.81 USD. Recovered refusals in the transcripts: the `@merge` envelope listed the seeded blocker, which no reviewer of the round wrote (`policy/entries-missing`), and one evidence id was passed to `log show`. No series is run.
 
 - [x] 11.4 Fix what the first `cr` probe showed (user decision 2026-10-04):
   - `attempt close` of a `review-fix` ticket refuses `ok` and `fail` without the `@merge` report (`policy/missing-report`), and its `ok` returns `next.action: review-done`;
