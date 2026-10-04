@@ -205,10 +205,11 @@ export function buildPackage(
     const workdir = await workRootOf(deps.git, deps.store, change, parts, input.target);
     const isolated = workdir !== change.projectRoot;
     const conflicts = record.data.conflicts;
-    const instruction =
-      conflicts === undefined ? "" : promptText(deps, resolved, mergeConflictsPrompt.key);
+    // Only the implementer resolves a merge; the steps of the ticket check the merged state.
+    const resolving = conflicts !== undefined && role === "implementer";
+    const instruction = resolving ? promptText(deps, resolved, mergeConflictsPrompt.key) : "";
     if (isolated) kinds.push("work-root");
-    if (conflicts !== undefined) kinds.push("conflict");
+    if (resolving) kinds.push("conflict");
     const roleBody = readRoleBody(deps, role);
     // A review fix carries the round's blockers whatever their refs (T42-D3).
     const reviewFix =

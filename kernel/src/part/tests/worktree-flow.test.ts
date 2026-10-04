@@ -162,13 +162,29 @@ describe("a worktree part in-process", () => {
     const opened = await ok(["attempt", "open", "verify-fix", "01"]);
     expect(opened).toMatchObject({ merge: true, conflicts: ["lock.txt"] });
     const ticket = opened.ticket as string;
-    const built = await ok(["dispatch", "build", "01", "verifier", ticket]);
+    const built = await ok(["dispatch", "build", "01", "implementer", ticket]);
     const text = readFileSync(join(root, built.path as string), "utf8");
     expect(text).toContain(`workdir: ${workdir}`);
     expect(text).toContain("## Conflict");
 
     await refusedWith(["attempt", "close", ticket, "ok"], "policy/merge-unresolved");
     write(workdir, { "lock.txt": "merged\n" });
+    // The ticket holds an implementer package, so its steps record evidence first.
+    write(root, { ".bdk/.machine/check.txt": "clean\n" });
+    for (const kind of ["simplify", "tests-scoped", "lint"]) {
+      await ok([
+        "evidence",
+        "record",
+        kind,
+        ".bdk/.machine/check.txt",
+        "--ticket",
+        ticket,
+        "--verdict",
+        "pass",
+        "--cite",
+        ".bdk/.machine/check.txt:1",
+      ]);
+    }
     const closed = await ok(["attempt", "close", ticket, "ok"]);
     expect(closed.next).toMatchObject({ action: "part-done" });
 

@@ -456,6 +456,17 @@ describe("bdk attempt open and close of a merge ticket", () => {
     expect(text).toContain("regenerate the lockfile with the project's package manager");
     expect(text).toContain("Regenerate `lock.txt` with `make lock`.");
     expect(text.indexOf("## Work root")).toBeLessThan(text.indexOf("## Ledger entries"));
+
+    // The steps of the ticket run on the merged state; only the implementer resolves.
+    for (const role of ["simplifier", "runner"]) {
+      const step = answered(
+        bdk(["dispatch", "build", "01", role, opened.ticket as string, "--json"], change.root),
+        "output/dispatch-build.json",
+      );
+      const body = readFileSync(join(change.root, step.path as string), "utf8");
+      expect(body).toContain("## Work root");
+      expect(body).not.toContain("## Conflict");
+    }
   });
 
   it("exit 0: a shared part's package has no work root", () => {
