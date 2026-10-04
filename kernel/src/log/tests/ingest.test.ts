@@ -274,6 +274,11 @@ describe("log ingest refusals", () => {
       report([...ENVELOPE, "verdict: pass"]),
       /line 6: verdict is not an envelope field/,
     ],
+    [
+      "a disposition",
+      report([...ENVELOPE, "disposition: defer"]),
+      /line 6: disposition is not an envelope field/,
+    ],
     ["a wrong type", report(["status: done", "status2: x"]), /line 3: status2/],
     [
       "a missing field",

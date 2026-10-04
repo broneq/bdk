@@ -66,4 +66,5 @@ This table is in the foundation rather than in those two skills because the deci
 - **No prompt drift between orchestrator and subagent.** Both read the same rules, resolved from the same settings.
 
 !!! warning
-The foundation occupies context in every single session. Keep additions to it short, and prefer putting detail in a skill that loads on demand.
+
+    The foundation occupies context in every single session. Keep additions to it short, and prefer putting detail in a skill that loads on demand.

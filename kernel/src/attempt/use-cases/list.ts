@@ -1,7 +1,7 @@
 // `bdk attempt list [--for <task|part>] [--all]` (`kernel-cli/attempt`): the
 // committed records, open tickets first, then newest first, with the budgets
 // of the `--for` target's current rounds.
-import { currentRound, roundState } from "../domain/ladder.ts";
+import { rounds, roundState } from "../domain/ladder.ts";
 import type { AttemptItem, AttemptListReport, Budget } from "../domain/reports.ts";
 import { withChangeIndex } from "../../log/index.ts";
 import { resolveOrRefuse } from "../../shared/config/index.ts";
@@ -48,12 +48,12 @@ export function listAttempts(
     const budgets: Record<string, Budget> = {};
     let notRun: Budget | undefined;
     for (const key of keys.values()) {
-      const round = currentRound(key, entries);
-      shown.push(...(input.all ? key : round));
+      const { current, latest } = rounds(key, entries);
+      shown.push(...(input.all ? key : latest));
       const first = key[0];
       if (first === undefined || first.target !== input.for) continue;
       const policy = ladderPolicy(resolved.value, first.loop);
-      const state = roundState(round, policy);
+      const state = roundState(current, policy);
       budgets[first.loop] = { used: state.used, of: state.of };
       if (notRun === undefined || state.notRun > notRun.used) {
         notRun = { used: state.notRun, of: policy.notRunBudget };

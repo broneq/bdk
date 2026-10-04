@@ -54,6 +54,8 @@ bdk log add decision "<choice, at most 120 characters>" --ref <node> --body "<th
 
 `<node>` is the node of the stage that asked (`intent`, `design`, `plan`, `execute`, `review`). A choice made before the Change exists, such as the branch `/bdk:change` asks for, is recorded right after `bdk change new`. A park question of the attempt ladder is not a stage skill's question: it parks the Change, and `next` returns `waiting: user`.
 
+The human report of `/bdk:cr` is the one exception: the run does not stop at it, with or without `--auto`, and records no `decision`. `/bdk:cr` asks nothing inside a run and records `bdk log decide <id> defer --review` for each entry without a disposition, so it reaches the gate and the PR summary as deferred and to be reviewed. The run never chooses `fix` for the user.
+
 ## While it runs
 
 Print one line when you start a stage skill (`run: /bdk:plan`) and one when it ends with its outcome (`run: /bdk:plan done - 3 parts in 2 waves`). Keep the stage skill's own reports short; the full report waits for the stop.
@@ -66,10 +68,11 @@ Print one line when you start a stage skill (`run: /bdk:plan`) and one when it e
 
 ## Finish
 
-At the stop, report from the kernel's output only. After `/bdk:close`, its report is the finish: add the stages and decisions of the run to it. Otherwise:
+At the stop, report from the kernel's output only. After `/bdk:close`, its report is the finish: add the stages and decisions of the run, the report path `/bdk:cr` rendered, and `/bdk:cr --report`, to it. Otherwise:
 
 - why the run stopped: the stop above, with the hook's or the kernel's reason;
 - the stages the run passed, and the gates passed by policy, each by its id (`gate:design`);
 - the decisions the run took, from `bdk log list --type decision --review --json`;
 - the gate status and the pending `review: true` entries, from `bdk change status --json`;
+- after `/bdk:cr`, the report path it rendered, and `/bdk:cr --report` as the way to change the deferred dispositions before the close;
 - the command the user types next: the gate's `command`, such as `/bdk:close` when `gate:review` waits on the user, or the resume command of a parked Change.

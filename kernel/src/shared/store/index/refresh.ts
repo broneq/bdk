@@ -214,8 +214,9 @@ function insertRows(
         .prepare(
           `INSERT INTO _entries (change_id, id, type, summary, status, source, author, at, ticket,
             supersedes, review, severity, category, fingerprint, applies, evidence, to_stage, gate,
-            input_hash, profile, park, options, path, auto, review_group, level, head)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            input_hash, profile, park, options, path, auto, review_group, level, head, disposition,
+            issue)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           location.id,
@@ -245,6 +246,8 @@ function insertRows(
           text(data.group),
           text(data.level),
           text(data.head),
+          text(data.disposition),
+          text(data.issue),
         );
       const ref = database.prepare(
         "INSERT INTO refs (change_id, entry_id, position, ref) VALUES (?, ?, ?, ?)",
@@ -258,7 +261,7 @@ function insertRows(
       database
         .prepare(
           `INSERT INTO attempts (change_id, ticket, loop, target, attempt, "of", scope, opened_at,
-            closed_at, outcome, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            closed_at, outcome, after, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           location.id,
@@ -271,6 +274,7 @@ function insertRows(
           text(data["opened-at"]),
           text(data["closed-at"]),
           text(data.outcome),
+          text(data.after),
           path,
         );
       insertFindings(index, location.id, String(data.ticket), data.findings);

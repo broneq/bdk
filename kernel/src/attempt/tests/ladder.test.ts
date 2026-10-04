@@ -9,6 +9,7 @@ import {
   ladderOptions,
   nextRung,
   refLocation,
+  rounds,
   roundState,
   scopeFor,
 } from "../domain/ladder.ts";
@@ -56,6 +57,56 @@ function question(id: string, refs: string[]): LadderEntry {
 function decision(id: string, question: string): LadderEntry {
   return { id, type: "decision", source: "user", refs: [question] };
 }
+
+describe("rounds ended by ok", () => {
+  it("an ok ends the round: nothing counts until the next open, which stamps after", () => {
+    const records = run("fail", "ok");
+    const ok = records[1]?.ticket;
+    expect(rounds(records, [])).toEqual({ current: [], latest: records, after: ok });
+    expect(currentRound(records, [])).toEqual([]);
+  });
+
+  it("records carrying after form the next round; a later fail keeps the same after", () => {
+    const first = run("fail", "ok");
+    const ok = first[1]?.ticket;
+    const next = [record("fail", { after: ok }), record(undefined, { attempt: 2, after: ok })];
+    const result = rounds([...first, ...next], []);
+    expect(result.current).toEqual(next);
+    expect(result.after).toBe(ok);
+    expect(roundState(result.current, POLICY)).toMatchObject({ used: 1, attempt: 2 });
+  });
+
+  it("a chain of ok rounds ends at the latest", () => {
+    const first = run("ok");
+    const second = record("ok", { after: first[0]?.ticket });
+    const third = record("fail", { after: second.ticket });
+    expect(rounds([...first, second, third], []).current).toEqual([third]);
+  });
+
+  it("a ladder question still cuts the records of one after", () => {
+    const first = run("ok");
+    const ok = first[0]?.ticket ?? "";
+    const failed = [record("fail", { after: ok }), record("fail", { attempt: 2, after: ok })];
+    const fresh = record(undefined, { after: ok });
+    const entries = [
+      question(
+        "L-q",
+        failed.map((item) => item.ticket),
+      ),
+      decision("L-d", "L-q"),
+    ];
+    expect(rounds([...first, ...failed, fresh], entries)).toEqual({
+      current: [fresh],
+      latest: [fresh],
+      after: ok,
+    });
+  });
+
+  it("old records without after, a fail after an ok, read as one round", () => {
+    const records = run("ok", "fail");
+    expect(currentRound(records, [])).toEqual(records);
+  });
+});
 
 describe("currentRound", () => {
   it("holds every record while no ladder question is answered", () => {

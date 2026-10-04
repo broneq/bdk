@@ -696,4 +696,32 @@ describe("a review round in the ledger (T42-A1, B1, T)", () => {
     ).toStrictEqual({ record: added.id, level: "should-fix", status: "proposed" });
     refused(run(["log", "triage", added.id, "not-a-problem"]), 3, "input/missing-argument");
   });
+
+  it("bdk log decide: track with the issue, then refusals", () => {
+    const change = started();
+    const run = (argv: string[]) => bdk([...argv, "--json"], change.root);
+    const added = answered(
+      run(["log", "add", "finding", "token compared with ==", "--ref", "src/auth/login.ts"]),
+      "output/log-add.json",
+    ).entry as { id: string };
+    answered(run(["log", "triage", added.id, "should-fix"]), "output/log-triage.json");
+    const url = "https://github.com/acme/app/issues/88";
+    expect(
+      answered(run(["log", "decide", added.id, "track", "--issue", url]), "output/log-decide.json"),
+    ).toStrictEqual({
+      record: added.id,
+      disposition: "track",
+      issue: url,
+      level: "should-fix",
+      status: "accepted",
+      review: false,
+    });
+    refused(run(["log", "decide", "L-00000099", "defer"]), 3, "input/not-found");
+    refused(run(["log", "decide", added.id, "reject"]), 3, "input/missing-argument");
+    answered(
+      run(["log", "decide", added.id, "reject", "--reason", "duplicate of #12"]),
+      "output/log-decide.json",
+    );
+    refused(run(["log", "decide", added.id, "defer"]), 2, "policy/invalid-transition");
+  });
 });

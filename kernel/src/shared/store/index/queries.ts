@@ -32,6 +32,10 @@ export interface EntryRow extends EntryFacts {
   readonly level?: string;
   /** The commit a `merge` report reviewed (T42-B1). */
   readonly head?: string;
+  /** The human's disposition (T42-H), written only by `log decide`. */
+  readonly disposition?: string;
+  /** The tracker issue of a `track` disposition. */
+  readonly issue?: string;
   /** Relative to the project root. */
   readonly path: string;
 }
@@ -310,6 +314,8 @@ function toEntry(row: Row, refs: readonly string[]): EntryRow {
     group: optional(row.review_group),
     level: optional(row.level),
     head: optional(row.head),
+    disposition: optional(row.disposition),
+    issue: optional(row.issue),
     refs: [...refs],
   });
 }

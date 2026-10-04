@@ -88,7 +88,6 @@ export function settingsRegistry(): ConfigRegistry {
       ...specConfig.modules,
       ...agentsConfig.modules,
       ...hooksConfig.modules,
-      ...dispatchConfig.modules,
       ...reviewConfig.modules,
       checkpointModule,
       promptsModule,

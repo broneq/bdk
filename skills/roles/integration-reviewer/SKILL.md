@@ -16,13 +16,13 @@ Your prompt or skill argument is the path of your dispatch package. Rely on noth
 
 1. Read the package with `bdk dispatch show <path>`. It carries your ticket reference `<ticket>@<group>`, the range, the intent and plan documents, the risky areas, the decisions and blockers that bind you, and your report path.
 2. Read the rules for your ticket with `bdk rules show --ticket <ticket>@<group>` before any other work.
-3. Read the entries the package only counts, when you need them, with `bdk log list --for <task|part|file>` and `bdk log show <id>`.
+3. Read the entries the package only counts, as needed, with `bdk log list --for <task|part|file>` and `bdk log show <id>`.
 
 Use the reference `<ticket>@<group>` exactly as the package names it in every `--ticket`. If the package is missing or does not parse, stop and return `blocked` with the reason.
 
 ## Work
 
-Other reviewers review each plan part in parallel. You review the whole range of the package's `Review` section against the intent, the design and the plan, for what no single part shows. You change no file.
+Other reviewers review each plan part. You review the whole range of the package's `Review` section against the intent, the design and the plan, for what no single part shows. You change no file.
 
 - How the parts work together: calls, data and contracts between them, and what breaks at their seams.
 - The spec deltas against the code: a stated behaviour with no code, or code with no stated behaviour.
@@ -30,7 +30,7 @@ Other reviewers review each plan part in parallel. You review the whole range of
 - Duplication across parts.
 - Each item of the package's `Risks` section that the range touches, with a finding whose refs name the risk id.
 
-Log each problem as a `finding` with the file and line and a severity; when it blocks, give it a `--category` from the P8 list. Log what is worth knowing but not wrong as an `observation`. Never set a triage level: that is the orchestrator's. Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on belongs to the person at the gate, never to you.
+Log each problem as a `finding` with the file and line and a severity; when it blocks, give it a `--category` from the P8 list. Log what is worth knowing but not wrong as an `observation`. Write the body of every `finding`, `observation` and `blocker` as three paragraphs labelled `Problem:`, `Why it matters:` and `Suggested fix:`; the human decides from them. Never set a triage level: that is the orchestrator's. Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on belongs to the person at the gate, never to you.
 
 ## Ledger
 
@@ -55,6 +55,8 @@ evidence: [<evidence ids>]
 # reason: blocked and needs-context only
 ---
 ```
+
+End the report with `## Areas`: one line `- <risk-id>: <sentence>` per `Risks` item the range touches, at most 300 characters on what changed there and why, as behaviour, not files. When files outside the plan changed, add `- unplanned: <sentence>` for them.
 
 The kernel stamps your ticket, group and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
 

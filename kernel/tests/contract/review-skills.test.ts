@@ -123,6 +123,42 @@ describe("/bdk:cr", () => {
     expect(body).toContain("--inline");
     expect(body).toMatch(/no `Agent` call/);
   });
+
+  it("grants the report tools and takes --report", () => {
+    const { meta } = skill();
+    const allowed = ` ${String(meta["allowed-tools"])} `;
+    for (const tool of ["AskUserQuestion", "Bash(lavish-axi *)", "Bash(gh issue create *)"]) {
+      expect(allowed, tool).toContain(` ${tool} `);
+    }
+    expect(String(meta["argument-hint"])).toContain("--report");
+  });
+
+  it("ends with the human report and records every answer through the kernel", () => {
+    const { body } = skill();
+    for (const needle of [
+      "bdk review render",
+      "bdk log decide",
+      "lavish-axi poll",
+      "--format md",
+      "defer --review",
+      "/bdk:run",
+      "gh issue create",
+      "{kind: instruction}",
+      "--issue",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
+    expect(body).toMatch(/`fix`[^.]*starts? a new round/);
+    expect(body).toMatch(/every (submitted )?id[^.]*accounted for/i);
+  });
+
+  it("triages every live entry of the Change without a level, whichever stage wrote it", () => {
+    const { body } = skill();
+    expect(body).toMatch(/without a level, whichever stage wrote it/);
+    // The report triages first: a ticket close can write an entry, and `--report` runs no round.
+    expect(body).toMatch(/## Report\n\n[^#]*First triage every live entry/);
+    expect(body).toMatch(/`--report` runs no round/);
+  });
 });
 
 describe("/bdk:pr-review", () => {
@@ -172,6 +208,47 @@ describe("/bdk:pr-review", () => {
     ]) {
       expect(body, field).toContain(field);
     }
+  });
+
+  it("lets the user decide each finding on a Lavish page before any GitHub call", () => {
+    const { meta, body } = skill();
+    expect(` ${String(meta["allowed-tools"])} `).toContain(" Bash(lavish-axi *) ");
+    expect(String(meta["argument-hint"])).toContain("--quick");
+    for (const needle of ["bdk review render --pr -", "lavish-axi poll", "--out"]) {
+      expect(body, needle).toContain(needle);
+    }
+    for (const choice of ["`blocker`", "`nice-to-have`", "`tracker`", "`drop`"]) {
+      expect(body, choice).toContain(choice);
+    }
+    const decide = body.indexOf("lavish-axi poll");
+    expect(body.indexOf("/reviews")).toBeGreaterThan(decide);
+    expect(body).toMatch(/every finding id[^.]*accounted for/i);
+  });
+
+  it("falls back to the AskUserQuestion confirmation on --quick or any Lavish failure", () => {
+    const { body } = skill();
+    const confirm = body.slice(body.indexOf("## Confirm"), body.indexOf("## Post"));
+    expect(confirm).toMatch(/^## Confirm\n\nWith `--quick`/);
+    expect(confirm).toContain("`AskUserQuestion`");
+    expect(body).toMatch(/`lavish-axi` exits non-zero|reply does not parse/);
+    expect(body).toContain("features.lavish");
+  });
+
+  it("files a tracker finding as the tracker setting says and lists it in the summary", () => {
+    const { body } = skill();
+    expect(body).toContain("gh issue create");
+    expect(body).toContain("{kind: instruction}");
+    expect(body).toMatch(/`drop`[^.]*not posted/);
+    const templates = readFileSync(
+      join(TOOLS, "pr-review", "references", "comment-templates.md"),
+      "utf8",
+    );
+    const review = templates.slice(
+      templates.indexOf("## 3. Review summary"),
+      templates.indexOf("## 4."),
+    );
+    const verify = templates.slice(templates.indexOf("## 4."), templates.indexOf("## Posting"));
+    for (const summary of [review, verify]) expect(summary).toContain("**Tracked issues**");
   });
 
   it("confirms every verdict before any GitHub call and computes it from the policy table", () => {

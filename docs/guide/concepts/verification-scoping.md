@@ -34,7 +34,8 @@ Such a task carries no `Test cases:` block, never enters `/bdk:test-driven-devel
 This exists because forcing a test onto a documentation task produces a test that asserts the file exists, which is a maintenance cost with no signal. Declaring the exemption in the plan makes it visible and reviewable instead of leaving the implementer to improvise.
 
 !!! warning
-`Verification: none` is a claim about every file in the task. One source file in the `Files:` list disqualifies it.
+
+    `Verification: none` is a claim about every file in the task. One source file in the `Files:` list disqualifies it.
 
 ## Tiers and command forms
 

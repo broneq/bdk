@@ -5,6 +5,7 @@ import type {
   IngestReport,
   ResolveResult,
   TriageResult,
+  DecideResult,
   ShownEntry,
 } from "../domain/entry.ts";
 
@@ -60,6 +61,12 @@ export function renderResolve(result: ResolveResult): string {
   const by = result.by === undefined ? "" : ` by ${result.by}`;
   const reason = result.reason === undefined ? "" : `: ${result.reason}`;
   return `${result.entry} ${result.status}${by}${reason} (rewrote ${result.record})\n`;
+}
+
+export function renderDecide(result: DecideResult): string {
+  const issue = result.issue === undefined ? "" : ` as ${result.issue}`;
+  const review = result.review ? ", to be reviewed" : "";
+  return `${result.record} decided ${result.disposition}${issue} (${result.status}${review})\n`;
 }
 
 export function renderTriage(result: TriageResult): string {

@@ -4,8 +4,8 @@
 import type { Git } from "../../shared/git/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
-import { aggregate, parseRange } from "../domain/measure.ts";
-import type { MeasureReport } from "../domain/measure.ts";
+import { aggregate, fileStats, parseRange } from "../domain/measure.ts";
+import type { FileStat, MeasureReport } from "../domain/measure.ts";
 
 export interface MeasureDeps {
   readonly git: Git;
@@ -55,12 +55,34 @@ export function measureRange(
   return diffSignals(deps, workTree, range, range);
 }
 
+/** The per-file lines of `<base>..<head>`, sorted by path (`kernel-cli/review`, bdk review render). */
+export async function rangeFiles(
+  deps: MeasureDeps,
+  workTree: string,
+  base: string,
+  head: string,
+): Promise<FileStat[] | Refusal> {
+  const range = `${base}..${head}`;
+  const output = await numstat(deps, workTree, range, range);
+  return typeof output === "string" ? fileStats(output) : output;
+}
+
 async function diffSignals(
   deps: MeasureDeps,
   workTree: string,
   range: string,
   revisions: string,
 ): Promise<MeasureReport | Refusal> {
+  const output = await numstat(deps, workTree, range, revisions);
+  return typeof output === "string" ? aggregate(range, output) : output;
+}
+
+async function numstat(
+  deps: MeasureDeps,
+  workTree: string,
+  range: string,
+  revisions: string,
+): Promise<string | Refusal> {
   const diff = await deps.git.run(
     [
       "diff",
@@ -80,5 +102,5 @@ async function diffSignals(
       "bdk measure HEAD",
     ]);
   }
-  return aggregate(range, diff.stdout);
+  return diff.stdout;
 }

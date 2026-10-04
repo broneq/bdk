@@ -1,12 +1,18 @@
 // The ledger of a review round (`kernel-cli/log`; T42-A1, B1, T): entries
 // and reports under `<ticket>@<group>`, the orchestrator's merged report under
-// the reserved group `merge` with the reviewed `head`, and `bdk log triage`.
+// the reserved group `merge` with the reviewed `head`, `bdk log triage`, and
+// the human's disposition through `bdk log decide` (T42-H).
 import { describe, expect, it } from "vitest";
 
 import { readDocument, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { logRegistrations } from "../index.ts";
-import { logAddOutput, logIngestOutput, logTriageOutput } from "../schema/outputs.ts";
+import {
+  logAddOutput,
+  logDecideOutput,
+  logIngestOutput,
+  logTriageOutput,
+} from "../schema/outputs.ts";
 import {
   AUTHOR,
   CHANGE,
@@ -387,5 +393,144 @@ describe("log triage", () => {
     const result = await triage(harness(), "L-00000099", "blocker");
     expect(result.code).toBe(3);
     expect(rule(result)).toBe("input/not-found");
+  });
+});
+
+describe("log decide", () => {
+  const decide = (h: ReturnType<typeof harness>, ...args: string[]) =>
+    h.run(["log", "decide", ...args]);
+
+  async function decided(h: ReturnType<typeof harness>, id: string, ...args: string[]) {
+    const result = await decide(h, id, ...args);
+    expect(result.code, result.stdout).toBe(0);
+    return logDecideOutput.parse(result.json);
+  }
+
+  function entryData(h: ReturnType<typeof harness>, id: string) {
+    const name = h.store.list(`${DIR}/log`).find((file) => file.endsWith(`-${id}.md`));
+    const document = name === undefined ? undefined : readDocument(h.store, `${DIR}/log/${name}`);
+    if (document === undefined || !("data" in document)) throw new Error(`no entry ${id}`);
+    return document;
+  }
+
+  async function triagedEntry(h: ReturnType<typeof harness>, level: string, type = "finding") {
+    const entry = await h.add(`${ROUND}@p01`, "token compared with ==", type);
+    expect((await h.run(["log", "triage", entry.id, level])).code).toBe(0);
+    return entry.id;
+  }
+
+  it("track records the issue and accepts the entry", async () => {
+    const h = harness();
+    const id = await triagedEntry(h, "should-fix");
+    const url = "https://github.com/acme/app/issues/88";
+    expect(await decided(h, id, "track", "--issue", url)).toStrictEqual({
+      record: id,
+      disposition: "track",
+      issue: url,
+      level: "should-fix",
+      status: "accepted",
+      review: false,
+    });
+    const document = entryData(h, id);
+    expect(document.data).toMatchObject({ disposition: "track", issue: url, status: "accepted" });
+    expect(document.body.trimEnd()).toMatch(/Decided track at \S+Z$/);
+  });
+
+  it("fix triages the entry blocker and keeps its status", async () => {
+    const h = harness();
+    const id = await triagedEntry(h, "should-fix");
+    expect(await decided(h, id, "fix")).toMatchObject({
+      disposition: "fix",
+      level: "blocker",
+      status: "proposed",
+    });
+    expect(entryData(h, id).data).toMatchObject({ disposition: "fix", level: "blocker" });
+  });
+
+  it("defer --review accepts the entry and marks it to be reviewed", async () => {
+    const h = harness();
+    const id = await triagedEntry(h, "nice-to-have", "observation");
+    expect(await decided(h, id, "defer", "--review")).toMatchObject({
+      disposition: "defer",
+      status: "accepted",
+      review: true,
+    });
+    expect(entryData(h, id).data).toMatchObject({ review: true, status: "accepted" });
+  });
+
+  it("reject resolves the entry and needs a reason", async () => {
+    const h = harness();
+    const id = await triagedEntry(h, "nice-to-have");
+    const bare = await decide(h, id, "reject");
+    expect(bare.code).toBe(3);
+    expect(rule(bare)).toBe("input/missing-argument");
+    expect(await decided(h, id, "reject", "--reason", "duplicate of #12")).toMatchObject({
+      disposition: "reject",
+      status: "resolved",
+    });
+    expect(entryData(h, id).body.trimEnd()).toMatch(/Decided reject at \S+Z: duplicate of #12$/);
+  });
+
+  it("track needs --issue, and --issue goes with track only", async () => {
+    const h = harness();
+    const id = await triagedEntry(h, "should-fix");
+    const bare = await decide(h, id, "track");
+    expect(bare.code).toBe(3);
+    expect(rule(bare)).toBe("input/missing-argument");
+    const wrong = await decide(h, id, "defer", "--issue", "PAY-1");
+    expect(wrong.code).toBe(3);
+    expect(rule(wrong)).toBe("input/invalid-argument");
+  });
+
+  it("a changed disposition drops the issue and appends a second line", async () => {
+    const h = harness();
+    const id = await triagedEntry(h, "should-fix");
+    await decided(h, id, "track", "--issue", "PAY-1");
+    expect(await decided(h, id, "defer")).not.toHaveProperty("issue");
+    const document = entryData(h, id);
+    expect(document.data).not.toHaveProperty("issue");
+    const lines = document.body.split("\n").filter((line) => line.startsWith("Decided"));
+    expect(lines.map((line) => line.split(" ")[1])).toStrictEqual(["track", "defer"]);
+  });
+
+  it("refuses defer on a blocker-level entry with policy/invalid-transition", async () => {
+    const h = harness();
+    const id = await triagedEntry(h, "blocker");
+    const result = await decide(h, id, "defer");
+    expect(result.code).toBe(2);
+    expect(rule(result)).toBe("policy/invalid-transition");
+    expect((result.json as { why: string }).why).toContain("blocker");
+  });
+
+  it("refuses a resolved entry, a decision and an unknown id", async () => {
+    const h = harness();
+    const id = await triagedEntry(h, "should-fix");
+    await h.run(["log", "resolve", id, "resolved", "--reason", "fixed"]);
+    const resolved = await decide(h, id, "defer");
+    expect(resolved.code).toBe(2);
+    expect(rule(resolved)).toBe("policy/invalid-transition");
+    expect((resolved.json as { why: string }).why).toContain("resolved");
+    const added = await h.run(["log", "add", "decision", "links expire", "--ref", "design.md"]);
+    const decision = await decide(h, logAddOutput.parse(added.json).entry.id, "defer");
+    expect(decision.code).toBe(3);
+    expect(rule(decision)).toBe("input/invalid-argument");
+    const unknown = await decide(h, "L-00000099", "defer");
+    expect(unknown.code).toBe(3);
+    expect(rule(unknown)).toBe("input/not-found");
+  });
+
+  it("log add cannot set a disposition", async () => {
+    const h = harness();
+    const result = await h.run([
+      "log",
+      "add",
+      "finding",
+      "x",
+      "--ref",
+      "a.ts",
+      "--disposition",
+      "defer",
+    ]);
+    expect(result.code).toBe(3);
   });
 });

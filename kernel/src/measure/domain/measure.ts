@@ -11,7 +11,7 @@ export interface MeasureReport {
   readonly modules: readonly string[];
 }
 
-interface FileStat {
+export interface FileStat {
   readonly path: string;
   readonly added: number;
   readonly removed: number;
@@ -51,8 +51,15 @@ function isBdk(path: string): boolean {
   return path.split("/").includes(".bdk");
 }
 
+/** The changed files outside `.bdk/` with their lines, sorted by path. */
+export function fileStats(output: string): FileStat[] {
+  return parseNumstat(output)
+    .filter((stat) => !isBdk(stat.path))
+    .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+}
+
 export function aggregate(range: string, output: string): MeasureReport {
-  const stats = parseNumstat(output).filter((stat) => !isBdk(stat.path));
+  const stats = fileStats(output);
   const added = stats.reduce((sum, stat) => sum + stat.added, 0);
   const removed = stats.reduce((sum, stat) => sum + stat.removed, 0);
   const modules = [...new Set(stats.map((stat) => moduleOf(stat.path)))].sort((a, b) =>

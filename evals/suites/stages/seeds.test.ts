@@ -171,6 +171,17 @@ describe("runSeed", { timeout: 60_000 }, () => {
       items: { outcome?: string }[];
     };
     expect(items.map((item) => item.outcome)).toStrictEqual(["ok", "ok"]);
+    // change close refuses a live finding, observation or blocker without a disposition (T42).
+    const ledger = bdkJson(dir, kernel, ["log", "list"]) as {
+      items: { type: string; status: string; disposition?: string }[];
+    };
+    const undecided = ledger.items.filter(
+      (entry) =>
+        ["finding", "observation", "blocker"].includes(entry.type) &&
+        entry.status !== "resolved" &&
+        entry.disposition === undefined,
+    );
+    expect(undecided).toStrictEqual([]);
     expect(git(dir, "log", "--format=%B")).toContain("BDK-Task: 01-1");
     expect(git(dir, "status", "--porcelain")).toBe("");
   });

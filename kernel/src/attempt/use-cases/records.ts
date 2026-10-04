@@ -28,6 +28,7 @@ export function keyedRecords(store: Store, changeDir: string): KeyedRecord[] {
       openedAt: data["opened-at"],
       outcome: data.outcome,
       fingerprints: (data.findings ?? []).map((finding) => finding.fingerprint),
+      after: data.after,
       file,
     };
   });

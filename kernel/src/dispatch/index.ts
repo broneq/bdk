@@ -2,13 +2,12 @@
 // package from the one template, `show` prints it to the agent.
 import type { Registration } from "../shared/registry/index.ts";
 import { buildCommand, showCommand } from "./commands/dispatch.ts";
-import { mergeConflictsPrompt, risksModule } from "./config.ts";
+import { mergeConflictsPrompt } from "./config.ts";
 import type { DispatchDeps } from "./use-cases/deps.ts";
 
 export type { DispatchDeps } from "./use-cases/deps.ts";
 
 export const dispatchConfig = {
-  modules: [risksModule],
   prompts: [mergeConflictsPrompt],
 };
 

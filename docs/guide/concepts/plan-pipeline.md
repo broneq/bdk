@@ -50,7 +50,8 @@ Progress is recorded per group in two places:
 Every read cross-checks the trailers on the branch and corrects the manifest in place when they disagree. Git always wins. After a rebase or a squash, `rebuild` throws the manifest away and re-derives it from trailers alone.
 
 !!! warning
-Never hand-edit a file under `.bdk/runs/`. `scripts/bdk_run_state.py` is the only reader and writer; an edit git does not agree with is discarded on the next read. For a human-readable view, run the script's `print` subcommand. See [Artifacts](../reference/artifacts.md).
+
+    Never hand-edit a file under `.bdk/runs/`. `scripts/bdk_run_state.py` is the only reader and writer; an edit git does not agree with is discarded on the next read. For a human-readable view, run the script's `print` subcommand. See [Artifacts](../reference/artifacts.md).
 
 ## Resume, session guard, and `--force`
 

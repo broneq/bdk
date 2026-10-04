@@ -17,6 +17,8 @@ export interface LadderRecord {
   readonly openedAt: string;
   readonly outcome?: Outcome | undefined;
   readonly fingerprints: readonly string[];
+  /** The `ok` ticket that ended the previous round; absent in the first round. */
+  readonly after?: string | undefined;
 }
 
 /** The fields of a ledger entry the ladder reads. */
@@ -42,14 +44,58 @@ export interface LadderPolicy {
   };
 }
 
+export interface Rounds<T> {
+  /** The records the next open counts against; empty when an `ok` ended the latest round. */
+  readonly current: T[];
+  /** The latest round's records, ended or not: what `attempt list` shows. */
+  readonly latest: T[];
+  /** The `after` the next open stamps. */
+  readonly after: string | undefined;
+}
+
 /**
- * The current round of one loop and target: its records not named by an
- * answered ladder question. A ladder question is a kernel `question` with
- * `park: true` whose `refs` name the round's tickets; a `decision` naming it
- * answers it. Naming the tickets, not comparing times, keeps the rounds apart
- * even when a close, the answer and the next open share one `at`.
+ * The rounds of one loop and target (`kernel-loops`, Loops, targets and
+ * rounds). An `ok` ends its round: every record opened after it carries
+ * `after: <ok ticket>`, so the records sharing one `after` form a round and the
+ * `ok` that closes it names the next. A ladder question ends a round too: its
+ * `refs` name the round's tickets and a `decision` naming it answers it.
+ * Naming tickets, not comparing times, keeps the rounds apart even when a
+ * close, the answer and the next open share one `at`.
  */
+export function rounds<T extends LadderRecord>(
+  records: readonly T[],
+  entries: readonly LadderEntry[],
+): Rounds<T> {
+  const byAfter = new Map<string | undefined, T[]>();
+  for (const record of records) {
+    byAfter.set(record.after, [...(byAfter.get(record.after) ?? []), record]);
+  }
+  let after: string | undefined;
+  for (;;) {
+    // Records an answered ladder question names belong to an earlier round of the same `after`.
+    const round = inSequence(withoutAnswered(byAfter.get(after) ?? [], entries));
+    const last = round.at(-1);
+    const ended = last?.outcome === "ok";
+    if (ended && byAfter.has(last.ticket)) {
+      after = last.ticket;
+      continue;
+    }
+    return ended
+      ? { current: [], latest: round, after: last.ticket }
+      : { current: round, latest: round, after };
+  }
+}
+
+/** The current round of one loop and target: what the next open counts against. */
 export function currentRound<T extends LadderRecord>(
+  records: readonly T[],
+  entries: readonly LadderEntry[],
+): T[] {
+  return rounds(records, entries).current;
+}
+
+/** The records of a round that no answered ladder question names. */
+function withoutAnswered<T extends LadderRecord>(
   records: readonly T[],
   entries: readonly LadderEntry[],
 ): T[] {
@@ -63,7 +109,7 @@ export function currentRound<T extends LadderRecord>(
     const named = entry.refs.filter((ref) => tickets.has(ref));
     for (const ticket of named) closed.add(ticket);
   }
-  return inSequence(records.filter((record) => !closed.has(record.ticket)));
+  return records.filter((record) => !closed.has(record.ticket));
 }
 
 function isLadderQuestion(entry: LadderEntry): boolean {
