@@ -120,7 +120,7 @@ describe("buildPluginCopy", () => {
     ).toThrow(/no frontmatter/);
   });
 
-  it("builds the generated files from the copied commit, without leaving node_modules", () => {
+  it("builds the generated files from the copied commit, leaving no node_modules or .git", () => {
     const { root } = pluginRepo();
     write(
       root,
@@ -128,7 +128,7 @@ describe("buildPluginCopy", () => {
       [
         'import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";',
         'mkdirSync("dist", { recursive: true });',
-        'const linked = existsSync("node_modules/marker") ? "linked" : "missing";',
+        'const linked = existsSync("node_modules/marker") && existsSync(".git") ? "linked" : "missing";',
         'writeFileSync("dist/bdk.mjs", `${linked} ${readFileSync("skills/old/SKILL.md", "utf8")}`);',
         "",
       ].join("\n"),
@@ -139,6 +139,7 @@ describe("buildPluginCopy", () => {
     const copy = buildPluginCopy({ repoRoot: root, ref: "HEAD", target: join(temp(), "built") });
     expect(readFileSync(join(copy.dir, "dist/bdk.mjs"), "utf8")).toBe("linked old v3 era\n");
     expect(existsSync(join(copy.dir, "node_modules"))).toBe(false);
+    expect(existsSync(join(copy.dir, ".git"))).toBe(false);
   });
 
   it("removes one skill for the without cell", () => {

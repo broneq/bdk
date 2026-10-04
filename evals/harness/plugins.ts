@@ -83,18 +83,21 @@ function renamed(text: string, name: string): string {
 
 /**
  * Runs the copy's own `kernel/build.mjs` in the copy, with the repository's
- * `node_modules` linked in for the build and removed after it, so the bundle,
- * schemas and adapters match the copied commit, not the working tree. A tree
- * without the build script has nothing to generate.
+ * `node_modules` linked in and a throwaway git repository around it for the
+ * build (`bdk export agents` runs only inside one), both removed after it. So
+ * the bundle, schemas and adapters match the copied commit, not the working
+ * tree. A tree without the build script has nothing to generate.
  */
 function buildGenerated(repoRoot: string, target: string): void {
   if (!existsSync(join(target, "kernel", "build.mjs"))) return;
   const modules = join(target, "node_modules");
   symlinkSync(join(repoRoot, "node_modules"), modules, "dir");
   try {
+    git(target, "init", "-q");
     execFileSync(process.execPath, ["kernel/build.mjs"], { cwd: target, stdio: "pipe" });
   } finally {
     rmSync(modules, { force: true });
+    rmSync(join(target, ".git"), { recursive: true, force: true });
   }
 }
 
