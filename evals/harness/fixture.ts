@@ -24,6 +24,8 @@ const STRIPPED = [".claude", ".agents", "CLAUDE.md", "AGENTS.md"] as const;
 
 const BASE_BRANCH = "feat/eval";
 const MARKER = ".bdk-eval-base";
+/** Bumped when a prepared base changes shape, so cached bases are rebuilt. */
+const BASE_FORMAT = 2;
 
 export class FixtureMismatch extends Error {
   constructor(pinned: string, fetched: string) {
@@ -41,6 +43,17 @@ function git(cwd: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd, env: GIT_ENV, encoding: "utf8", stdio: "pipe" }).trim();
 }
 
+/**
+ * No automatic maintenance in a base or any copy of it. Since git 2.52 a
+ * `commit` or `fetch` may start a detached maintenance run that repacks loose
+ * objects; one still running in a copy that `freshCopy` replaces races the
+ * copy and fails it with EACCES under `.git/objects/` (git 2.56, Node 26).
+ */
+function withoutAutoMaintenance(dir: string): void {
+  git(dir, "config", "maintenance.auto", "false");
+  git(dir, "config", "gc.auto", "0");
+}
+
 export interface PrepareOptions {
   /** Installs the fixture's dependencies into the base once (the suite passes `npm ci`). */
   readonly install?: (dir: string) => void;
@@ -54,11 +67,13 @@ export function prepareFixture(
 ): string {
   const base = join(cacheDir, "fixture", pin.commit.slice(0, 12));
   const marker = join(base, MARKER);
-  if (existsSync(marker) && readFileSync(marker, "utf8").trim() === pin.commit) return base;
+  const stamp = `${pin.commit} format ${String(BASE_FORMAT)}`;
+  if (existsSync(marker) && readFileSync(marker, "utf8").trim() === stamp) return base;
 
   rmSync(base, { recursive: true, force: true });
   mkdirSync(base, { recursive: true });
   git(base, "init", "--quiet", "--initial-branch", "upstream");
+  withoutAutoMaintenance(base);
   git(base, "fetch", "--quiet", "--depth", "1", pin.repository, pin.commit);
   git(base, "checkout", "--quiet", "FETCH_HEAD");
   const fetched = git(base, "rev-parse", "HEAD");
@@ -83,7 +98,7 @@ export function prepareFixture(
   writeFileSync(join(base, ".git/info/exclude"), `${MARKER}\n`, { flag: "a" });
 
   options.install?.(base);
-  writeFileSync(marker, `${pin.commit}\n`);
+  writeFileSync(marker, `${stamp}\n`);
   return base;
 }
 
@@ -94,6 +109,7 @@ export function prepareFixture(
 export function emptyBase(dir: string): string {
   mkdirSync(dir, { recursive: true });
   git(dir, "init", "--quiet", "--initial-branch", "main");
+  withoutAutoMaintenance(dir);
   git(dir, "config", "user.name", "BDK Eval");
   git(dir, "config", "user.email", "eval@bdk.invalid");
   git(dir, "config", "commit.gpgsign", "false");

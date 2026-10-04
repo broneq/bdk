@@ -62,6 +62,9 @@ describe("prepareFixture", () => {
     }
     expect(git(base, "show", "HEAD:src/app.ts")).toBe("export const a = 1;");
     expect(git(base, "status", "--porcelain")).toBe("");
+    // A detached auto maintenance in a copy would race freshCopy (git 2.52+).
+    expect(git(base, "config", "maintenance.auto")).toBe("false");
+    expect(git(base, "config", "gc.auto")).toBe("0");
     expect(installed).toEqual([base]);
   });
 
