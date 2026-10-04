@@ -169,6 +169,11 @@ describe("the review verdict", () => {
     );
 
     answered(run(change, ["log", "triage", finding, "nice-to-have"]), "output/log-triage.json");
+    expect(refused(run(change, ["done", "review"]), 2, "policy/validation-failed").why).toContain(
+      `round-ok: the round ${ticket}`,
+    );
+
+    answered(run(change, ["attempt", "close", ticket, "ok"]), "output/attempt-close.json");
     expect(answered(run(change, ["done", "review"]), "output/done.json")).toMatchObject({
       artifact: "review",
       state: "done",

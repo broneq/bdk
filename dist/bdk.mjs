@@ -21209,7 +21209,7 @@ function parse5(citation, files) {
   return colon < 0 ? void 0 : located(citation.slice(0, colon), citation.slice(colon));
 }
 function recordedPrefix(citation, files) {
-  return files.flatMap((file) => [file.given, file.given.split("/").at(-1) ?? file.given]).filter((name) => citation.startsWith(`${name}#`) || citation.startsWith(`${name}:`)).sort((a, b) => b.length - a.length)[0];
+  return files.flatMap((file) => [...spellings(file), file.given.split("/").at(-1) ?? file.given]).filter((name) => citation.startsWith(`${name}#`) || citation.startsWith(`${name}:`)).sort((a, b) => b.length - a.length)[0];
 }
 function located(file, rest) {
   if (rest.startsWith("#")) return { file, target: { pointer: rest.slice(1) } };
@@ -21222,7 +21222,10 @@ function only(files) {
   return files.length === 1 ? files[0] : void 0;
 }
 function named(files, name) {
-  return files.find((file) => file.given === name) ?? files.find((file) => file.given.split("/").at(-1) === name);
+  return files.find((file) => spellings(file).includes(name)) ?? files.find((file) => file.given.split("/").at(-1) === name);
+}
+function spellings(file) {
+  return [file.given, ...file.aliases ?? []];
 }
 function pointerProblem(where, text13, pointer) {
   if (pointer !== "" && !pointer.startsWith("/")) {
@@ -21304,7 +21307,13 @@ async function recordEvidence(deps, change, where, input) {
   }
   const sources = readSources(deps, change.projectRoot, where.cwd, input.files);
   if ("refused" in sources) return sources;
-  const citations = checkCitations(sources, verdict, input.citations, input.kernel === true);
+  const citations = checkCitations(
+    change.projectRoot,
+    sources,
+    verdict,
+    input.citations,
+    input.kernel === true
+  );
   if (citations !== void 0) return citations;
   const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
   if ("refused" in resolved) return resolved;
@@ -21392,9 +21401,10 @@ function readSources(deps, projectRoot2, cwd, given) {
   }
   return sources;
 }
-function checkCitations(sources, verdict, citations, kernel) {
+function checkCitations(projectRoot2, sources, verdict, citations, kernel) {
   const files = sources.map((source2) => ({
     given: source2.given,
+    aliases: [source2.path, join22(projectRoot2, source2.path)],
     text: source2.text ? new TextDecoder().decode(source2.bytes) : void 0
   }));
   if (verdict === "pass" && citations.length === 0 && !kernel) {
@@ -22347,7 +22357,7 @@ function verdictChecks(view, target, review = false) {
   };
   return [
     verdict,
-    ...review ? [mergeCheck(view, id, latest2), triagedCheck(view, latest2)] : [],
+    ...review ? [mergeCheck(view, id, latest2), roundCheck(view, latest2), triagedCheck(view, latest2)] : [],
     blocker,
     ...latest2 === void 0 ? [] : [freshCheck(view, id, latest2, target.requires ?? []), evidenceCheck(view, latest2)]
   ];
@@ -22370,11 +22380,25 @@ function mergeCheck(view, id, latest2) {
     };
   }
   const loop = view.ticketLoop(latest2.ticket);
-  return loop === REVIEW_FIX ? { id: "merge-report", ok: true } : {
-    id: "merge-report",
+  if (loop !== REVIEW_FIX) {
+    return {
+      id: "merge-report",
+      ok: false,
+      why: `the merged report ${latest2.id} is under ${latest2.ticket}, a ${loop ?? "unknown"} ticket, not a ${REVIEW_FIX} round`,
+      instead
+    };
+  }
+  return { id: "merge-report", ok: true };
+}
+function roundCheck(view, latest2) {
+  if (latest2?.group !== MERGE_GROUP2 || latest2.ticket === void 0)
+    return { id: "round-ok", ok: true };
+  const outcome = view.ticketOutcome(latest2.ticket);
+  return outcome === "ok" ? { id: "round-ok", ok: true } : {
+    id: "round-ok",
     ok: false,
-    why: `the merged report ${latest2.id} is under ${latest2.ticket}, a ${loop ?? "unknown"} ticket, not a ${REVIEW_FIX} round`,
-    instead
+    why: `the round ${latest2.ticket} of the merged report ${latest2.id} ${outcome === void 0 ? "is still open" : `closed ${outcome}`}; a review is done after its round closes ok`,
+    instead: outcome === void 0 ? `bdk attempt close ${latest2.ticket} ok|fail` : `bdk attempt open review-fix <change-id>, a new round`
   };
 }
 function triagedCheck(view, latest2) {
@@ -23156,7 +23180,10 @@ function missingIds(deps, change, index2, ref, data) {
   return refuse(
     "policy/entries-missing",
     `the envelope lists ${missing.join(", ")}, which ${missing.length === 1 ? "is" : "are"} not recorded under ${ticket}`,
-    [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`]
+    ref.group === MERGE_GROUP ? [
+      `list in entries only the entries written under ${ref.ticket}; name entries of earlier rounds in the report body`,
+      `bdk log list --since-ticket-start ${ref.ticket} --json: the items whose ticket is ${ref.ticket}`
+    ] : [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`]
   );
 }
 function ticketEvidence(deps, change, ticket) {
@@ -26605,11 +26632,13 @@ function changeView(input) {
   const files = /* @__PURE__ */ new Map();
   const parts = /* @__PURE__ */ new Map();
   const byId = new Map(input.entries.map((entry2) => [entry2.id, entry2]));
-  let loops;
-  const ticketLoop = (ticket) => {
-    loops ??= new Map(readAttempts(store2, dir).map(({ data }) => [data.ticket, data.loop]));
-    return loops.get(ticket);
+  let records;
+  const record5 = (ticket) => {
+    records ??= new Map(readAttempts(store2, dir).map(({ data }) => [data.ticket, data]));
+    return records.get(ticket);
   };
+  const ticketLoop = (ticket) => record5(ticket)?.loop;
+  const ticketOutcome = (ticket) => record5(ticket)?.outcome;
   const read2 = (path) => {
     if (files.has(path)) return files.get(path);
     const facts = readFacts(store2, join45(dir, path));
@@ -26652,6 +26681,7 @@ function changeView(input) {
     changeTree: () => input.changeTree,
     coverageTools: moduleValue(toolsModule, input.settings).test.filter((entry2) => entry2.coverage?.min !== void 0).map((entry2) => entry2.id),
     ticketLoop,
+    ticketOutcome,
     ...input.work === void 0 ? {} : { work: input.work }
   };
 }
@@ -30804,7 +30834,7 @@ function commandsOf(kind, tools3, files) {
 function withWhen(command, entry2) {
   return `- \`${command}\`${entry2.when === void 0 ? "" : `: ${entry2.when}`}`;
 }
-var INTRO = "Run the checks in this order. Save each check's output to a file under `.bdk/.machine/checks/` (git ignores it; a file elsewhere is a change in the tree) and end the file with the line `exit <code>`, so a check that prints nothing still leaves a line to cite; never write or edit the output yourself. Record each file; for `pass`, cite the output line or JSON value that shows the result.";
+var INTRO = "Run the checks in this order. Save each check's output to a file under `.bdk/.machine/checks/` (git ignores it; a file elsewhere is a change in the tree) and end the file with the line `exit <code>`, so a check that prints nothing still leaves a line to cite; never write or edit the output yourself. Record each file; for `pass`, cite the output line or JSON value that shows the result as `--cite <file>:<line>=<text>` or `--cite <file>#<json-pointer>`.";
 function recordLine(kind, ticket) {
   return `\`bdk evidence record ${kind} <file> --ticket ${ticket} --verdict pass|fail|not-run --cite <citation>\``;
 }

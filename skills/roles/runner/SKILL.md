@@ -26,14 +26,14 @@ You run the checks of the package's `Checks` section, exactly as written and in 
 
 - Run each check once and save its output to a file under `.bdk/.machine/checks/`, ending with the line `exit <code>`. Git ignores that directory; a file anywhere else is a change in the tree that the diff check and the evidence see. You never write or edit that output yourself, and never record a file the check did not write. Report its command, exit code and the shortest decisive lines of output.
 - Record each check with `bdk evidence record <kind> <file> --ticket <ticket>` and the verdict the output shows, and put the evidence id in your envelope.
-- For `pass`, cite with `--cite` the output line or JSON value that shows the result; the kernel refuses a `pass` without a citation.
+- For `pass`, cite with `--cite` the output line or JSON value that shows the result, as `<file>:<line>=<text>` or `<file>#<json-pointer>`, for example `--cite ".bdk/.machine/checks/tests.txt:12=28 passed"`; the kernel refuses a `pass` without a citation.
 - Log each failure as a `finding` with the failing test or file and line, and record the check as `fail`.
 - When a check cannot run (missing tool, broken setup, no command configured), do not work around it: record `not-run` with the reason in the file and log an `observation`.
 - Never edit code or configuration to make a check pass.
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`.
+Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
 
 ## Messages
 

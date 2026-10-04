@@ -268,6 +268,15 @@ describe("the review verdict", () => {
     expect(check(checks, "merge-report")).toMatchObject({ ok: false });
   });
 
+  it("refuses a round that is still open or closed other than ok on round-ok", () => {
+    const open = verdict({ entries: [merged()], outcomes: { [ROUND]: undefined } });
+    expect(check(open, "round-ok")).toMatchObject({ ok: false });
+    expect(check(open, "round-ok")?.why).toContain("is still open");
+    const notRun = verdict({ entries: [merged()], outcomes: { [ROUND]: "not-run" } });
+    expect(check(notRun, "round-ok")?.why).toContain("closed not-run");
+    expect(check(verdict({ entries: [merged()] }), "round-ok")).toMatchObject({ ok: true });
+  });
+
   it("refuses a live untriaged entry of the round on triaged, naming it", () => {
     const checks = verdict({
       entries: [
@@ -331,6 +340,7 @@ describe("the review verdict", () => {
     expect(checks.map((item) => [item.id, item.ok])).toStrictEqual([
       ["verdict", true],
       ["merge-report", true],
+      ["round-ok", true],
       ["triaged", true],
       ["blockers", true],
       ["fresh", true],

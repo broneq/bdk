@@ -111,7 +111,13 @@ export async function recordEvidence(
 
   const sources = readSources(deps, change.projectRoot, where.cwd, input.files);
   if ("refused" in sources) return sources;
-  const citations = checkCitations(sources, verdict, input.citations, input.kernel === true);
+  const citations = checkCitations(
+    change.projectRoot,
+    sources,
+    verdict,
+    input.citations,
+    input.kernel === true,
+  );
   if (citations !== undefined) return citations;
 
   const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
@@ -219,6 +225,7 @@ function readSources(
 
 /** A `pass` needs a citation unless the kernel records it; every citation must resolve (T4). */
 function checkCitations(
+  projectRoot: string,
   sources: readonly Source[],
   verdict: Verdict | undefined,
   citations: readonly string[],
@@ -226,6 +233,7 @@ function checkCitations(
 ): Refusal | undefined {
   const files = sources.map((source): CitedFile => ({
     given: source.given,
+    aliases: [source.path, join(projectRoot, source.path)],
     text: source.text ? new TextDecoder().decode(source.bytes) : undefined,
   }));
   if (verdict === "pass" && citations.length === 0 && !kernel) {

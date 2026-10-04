@@ -190,6 +190,17 @@
   - a `schema:` field in the `@merge` envelope;
   - a session that set `B="node ..."` in zsh and then ran `$B`, which zsh does not split into words.
 
+- [x] 11.5 Fix what the `run --auto` probe showed (probe 2026-10-04: pass, 10.85 USD per run, 139 turns, projected series 54.24 USD; user decision 2026-10-04):
+  - the `review` verdict adds check `round-ok`: the ticket of the merged report must be closed `ok`, so a round that closed `not-run` or is still open no longer passes `done review`;
+  - the `cr` merge step lists in `entries` only the entries written under the round's ticket and names earlier rounds' entries in the body; the `@merge` refusal `policy/entries-missing` says so in `instead`;
+  - the `run` and `execute` stage cases set `tools.lint` to eslint, so the lint steps do not end `not-run`;
+  - the runner contract and the `Checks` package section give the citation format with an example, the role contracts' Ledger sections give the 120-character summary limit, and `evidence record` resolves a cited file by its project-relative or absolute path as well as the path given.
+
+  Left for later tasks:
+  - three states of a tool group (configured, declared none, unset): T49 (#117);
+  - keeping the committed `.bdk/` files out of the project's own tools: T50 (#118);
+  - a plugin `bin/bdk`, so agents call `bdk <command>`: T51 (#119).
+
 ## 12. Acceptance and validation
 
 - [ ] 12.1 Check the acceptance signal end to end:

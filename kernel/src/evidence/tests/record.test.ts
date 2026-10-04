@@ -50,6 +50,24 @@ async function recordedPass(h: Harness, ticket: string): Promise<Recorded> {
 }
 
 describe("evidence record", () => {
+  it("resolves a project-relative citation of a file given by its absolute path", async () => {
+    const h = await started();
+    const ticket = await ticketOf(h);
+    h.put(".bdk/.machine/checks/tests-scoped.txt", RUN);
+    const result = await record(
+      h,
+      "tests-scoped",
+      `${ROOT}/.bdk/.machine/checks/tests-scoped.txt`,
+      "--ticket",
+      ticket,
+      "--verdict",
+      "pass",
+      "--cite",
+      ".bdk/.machine/checks/tests-scoped.txt:3=0 failed",
+    );
+    expect(result.code, result.stdout).toBe(0);
+  });
+
   it("writes a manifest with the tree hash of the ticket's part and copies the small text file into the Change", async () => {
     const h = await started();
     const ticket = await ticketOf(h);

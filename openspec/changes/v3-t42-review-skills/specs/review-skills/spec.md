@@ -97,7 +97,7 @@ When every agent of the round has returned, `cr` SHALL triage the round in the m
 - An entry that repeats another of the round is triaged `not-a-problem`, with `--reason` naming the entry it repeats.
 - `cr` SHALL NOT change an entry's text, type or refs.
 
-Then `cr` SHALL store the merged review with `bdk log ingest --ticket <ticket>@merge`, before it closes the ticket: the kernel refuses an `ok` or `fail` close of a `review-fix` ticket without it (`kernel-cli/attempt`, bdk attempt close). The report's `entries` name every entry of the round. Its body lists, per level, each entry's id and summary, then the gate's verdicts and diff coverage. `cr` SHALL then run `bdk log add report "<counts per level>" --ticket <ticket>@merge`.
+Then `cr` SHALL store the merged review with `bdk log ingest --ticket <ticket>@merge`, before it closes the ticket: the kernel refuses an `ok` or `fail` close of a `review-fix` ticket without it (`kernel-cli/attempt`, bdk attempt close). The report's `entries` name every entry written under the round's ticket; entries of earlier rounds it fixed are named in its body. Its body lists, per level, each entry's id and summary, then the gate's verdicts and diff coverage. `cr` SHALL then run `bdk log add report "<counts per level>" --ticket <ticket>@merge`.
 
 #### Scenario: every entry triaged
 

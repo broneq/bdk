@@ -49,6 +49,22 @@ describe("citationProblem", () => {
     expect(citationProblem(citation, files)).toBeUndefined();
   });
 
+  it("resolves another spelling of the same path: absolute given, project-relative cited, and back", () => {
+    const absolute = {
+      ...RUN,
+      given: "/repo/.bdk/.machine/checks/run.txt",
+      aliases: [".bdk/.machine/checks/run.txt", "/repo/.bdk/.machine/checks/run.txt"],
+    };
+    expect(citationProblem(".bdk/.machine/checks/run.txt:3=0 failed", [absolute])).toBeUndefined();
+    const relative = {
+      ...RUN,
+      given: ".bdk/.machine/checks/run.txt",
+      aliases: [".bdk/.machine/checks/run.txt", "/repo/.bdk/.machine/checks/run.txt"],
+    };
+    expect(citationProblem("/repo/.bdk/.machine/checks/run.txt:3", [relative])).toBeUndefined();
+    expect(citationProblem("elsewhere/run2.txt:3", [relative])).toContain("is not a recorded file");
+  });
+
   it("resolves a line without the file part against the only file", () => {
     expect(citationProblem(":3=0 failed", [RUN])).toBeUndefined();
   });
