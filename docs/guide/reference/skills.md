@@ -174,97 +174,97 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 ## Docs and decisions
 
-Four skills produce or refresh written documentation, all sharing the same Mermaid standard.
+Two skills produce written documentation, and `/bdk:mermaid-drawer` holds the diagram standard.
 
-## /bdk:create-adr
+## /bdk:docs
 
-**Purpose.** Create Architecture Decision Records following the MADR template.
+**Purpose.** Write architecture documentation for a code module, or refresh an existing document against the current code. Every document has the same shape: an overview, a file tree, Mermaid diagrams, critical rules with examples, examples in prototype code, the main components and the tests.
 
-**Arguments:** `[decision context, options, constraints, preferences]`
+**Arguments:** `<code path to document | existing .md document to refresh>`
 
-**Artifact:** `docs/adr/NNNN-{slugified-title}.md`. Scans `docs/adr/` for existing `NNNN-*.md` files to pick the next number.
+**Artifact:** With a code path, a new document at the path you name, or else `docs/architecture/<module>.md`; never under `.bdk/`. With an existing Markdown file, that file rewritten in place after you approve the update plan: accurate sections stay word for word, and the result reads as one document with no changelog or "updated on" note.
 
-**When to use.** The user asks to "create an ADR", "document a decision", "write an ADR", or supplies decision context that needs formalizing.
+**When to use.** The user asks to explain or document code, or to update or sync docs with the code.
 
-**Related skills:** `/bdk:mermaid-drawer` (used for any diagrams the ADR embeds).
+**Related skills:** `/bdk:adr` (records the decisions a document refers to).
 
-## /bdk:explain-complex-code
+## /bdk:adr
 
-**Purpose.** Generate comprehensive architecture documentation for a complex code module, with Mermaid diagrams and examples.
+**Purpose.** Record one architecture decision as a MADR file, from a free-form description or from a `decision` entry of a BDK Change, which it reads with `bdk log show`. It asks only for the status and for what the input leaves out.
 
-**Arguments:** `[path]`
+**Arguments:** `<decision context, options and choice | decision entry id L-... or <changeId>/L-...>`
 
-**Artifact:** `.bdk/explain-complex-code/[feature-name].md`. A `Stop` hook verifies completeness before the skill can finish: an Overview, a Core Architecture section with a file tree, at least one fenced ` ```mermaid ` block, a Critical Rules section with examples, Live Examples using prototype (not real) code, a Core Classes section, and a Testing Coverage section.
+**Artifact:** `docs/adr/NNNN-<slug>.md`, numbered one above the highest existing record. It commits nothing.
 
-**When to use.** The user asks to "explain this code", "document the architecture", or wants to understand how a module or system works.
+**When to use.** The user asks to write an ADR or to document a decision, or a decision taken in a Change needs to outlive it.
 
-**Related skills:** `/bdk:mermaid-drawer` (diagram standard), `/bdk:update-docs` (refreshes what this skill produces, later).
-
-## /bdk:update-docs
-
-**Purpose.** Refresh existing architecture documentation by comparing it against current code, merging updates while preserving accurate manual prose. The result reads as uniform text - no changelog markers, no diff markers, no "updated on" annotations.
-
-**Arguments:** `[doc_path]`
-
-**Artifact:** Saved to the same path as the input `$ARGUMENTS` (the existing `doc_path`), overwriting it. The same `Stop` hook completeness checks as `/bdk:explain-complex-code` apply, plus the uniform-text requirement.
-
-**When to use.** Existing architecture documentation needs refreshing after code changes, for periodic doc maintenance, or when the user asks to "update docs", "refresh documentation", or "sync docs with code".
-
-**Related skills:** `/bdk:explain-complex-code` (produces the doc this refreshes), `/bdk:mermaid-drawer`.
+**Related skills:** `/bdk:design` (records the `decision` entries this skill can start from).
 
 ## /bdk:mermaid-drawer
 
-**Purpose.** BDK's shared Mermaid standard: diagram type selection, a node budget, and a palette verified legible in both light and dark themes. Every BDK skill that emits a diagram goes through this standard so diagrams read the same regardless of who drew them or where they are viewed.
+**Purpose.** BDK's shared Mermaid standard: diagram type selection, a node budget, and a palette verified legible in both light and dark themes.
 
 **Arguments:** `[what to draw]`
 
-**Artifact:** None of its own - it is a drawing standard invoked by whichever skill needs a diagram; the diagram lands in that caller's own output.
+**Artifact:** None of its own; the diagram lands in the caller's output.
 
 **When to use.** Whenever writing a Mermaid block, or when asked to diagram, visualize, or map a flow, architecture, or state machine.
 
-**Related skills:** `/bdk:design`, `/bdk:create-adr`, `/bdk:explain-complex-code`, `/bdk:update-docs` (all invoke it for their diagrams).
+**Related skills:** `/bdk:design`.
 
 ## Rules hygiene
 
-Two skills keep `.claude/rules/` accurate instead of letting it accrete into a changelog - see [Rules hygiene](../workflows/rules-hygiene.md).
+One skill turns lessons into project rules through the kernel - see [Rules hygiene](../workflows/rules-hygiene.md).
 
-## /bdk:add-rule
+## /bdk:rules
 
-**Purpose.** Capture one lesson or convention as a properly-homed rule - routed to `.claude/rules/`, a doc comment, or a test signpost - deduplicating against existing rules and respecting file budgets. "Nothing is a rule here" is a frequent, correct output: the skill is designed to say so rather than write something just to have written something.
+**Purpose.** Keep the project's rules under `.bdk/rules/` small and current. `audit` (the default) reads `bdk rules stats --entries`, groups the recurring lessons by meaning, drops what is not a rule, proposes the rest and adopts the ones you accept with `bdk rules accept`, then offers the rules `bdk rules prune` lists for removal. `capture <lesson>` records one lesson as a `learning` entry of the active Change, or, without a Change, proposes it as a rule. `check` runs `bdk rules check` and the projection check of `bdk rules export --claude`. "Nothing is a rule here" is a frequent, correct output.
 
-**Arguments:** `[lesson or convention to capture]`
+**Arguments:** `[audit | capture <lesson> | check]`
 
-**Artifact:** Routes the distilled lesson, in priority order, to: the narrowest-scoped existing `.claude/rules/<file>.md` that already covers the constraint (sharpened in place, never duplicated); the narrowest new/target rule file under budget; a skill; a doc comment; or nothing. If the chosen target file is over its budget (checked via `python3 ${CLAUDE_PLUGIN_ROOT}/skills/refine-rules/scripts/lint_rules.py`), the candidate goes to `.claude/rules/_inbox.md` instead, with a recommendation to run `/bdk:refine-rules`. Content that fails admission never goes to `docs/`.
+**Artifact:** Rule files under `.bdk/rules/`, created only by `bdk rules accept`; a removed rule stays as a tombstone with `removed: <reason>`. The generated `.claude/rules/bdk-generated*.md` files are regenerated with `bdk rules export --claude`.
 
-**When to use.** "Add a rule", "capture this as a rule", "remember this convention".
+**When to use.** "Add a rule", "capture this as a rule", "clean up rules", or when repeated findings should become a rule.
 
-**Related skills:** `/bdk:refine-rules` (its write-side counterpart; also the skill `/bdk:add-rule` recommends when a target file is over budget).
-
-## /bdk:refine-rules
-
-**Purpose.** Compact and verify `.claude/rules/*.md` against real code: an admission test, relocation of stale content into doc comments, budget enforcement, and one uniform format across every file. Treats every existing sentence in a rule file as an unverified claim, not a fact, until it is checked against the code it describes.
-
-**Arguments:** `[rules-dir]` (defaults to `.claude/rules`)
-
-**Artifact:** Rewrites the target `.claude/rules/*.md` files in place - no new file is created. Uses `scripts/list_rule_files.py` for discovery (`frontmatter_paths`, `headings`, `line_count`, `char_count` per file) and `scripts/lint_rules.py` for a budget/narrative-marker baseline.
-
-**When to use.** "Clean up rules", "refine .claude/rules", or when rule files have gone stale or bloated. Also invoked standalone by `/bdk:add-rule` when its target file is over budget.
-
-**Related skills:** `/bdk:add-rule` (its read/write counterpart).
+**Related skills:** `/bdk:cr` and the stage skills (record the `learning` and `finding` entries an audit reads).
 
 ## Other skills
 
 ## /bdk:commit
 
-**Purpose.** Generate a conventional commit message from the current git changes. The skill body is a one-line delegation: `Invoke /caveman:caveman-commit $ARGUMENTS`. A `UserPromptSubmit` hook checks that the `caveman-commit` skill exists before the delegation runs.
+**Purpose.** Commit your own changes with a Conventional Commits message written from the staged diff. The convention comes from the project's commitlint configuration, then `CONTRIBUTING.md`, then the recent `git log`. It commits what is staged, stages the paths you name, or asks; it never passes `--no-verify` and adds no attribution.
 
-**Arguments:** `[scope] (e.g. 'from main', 'only src/foo.py')`
+**Arguments:** `[paths or scope to commit, e.g. 'only src/auth']`
 
-**Artifact:** None - produces a commit message, does not run `git commit` itself.
+**Artifact:** One commit. Task and review commits of a BDK Change go through `bdk commit` instead, which `/bdk:execute` and `/bdk:cr` run with the BDK trailers.
 
-**When to use.** Whenever a conventional-commit-format message is wanted for staged or unstaged changes.
+**When to use.** The user asks to commit, or for a commit message for their changes.
 
-**Related skills:** None within BDK; depends on the separate `caveman` plugin's `caveman-commit` skill being installed.
+**Related skills:** None.
+
+## /bdk:doctor
+
+**Purpose.** Diagnose the BDK installation of the project with `bdk doctor`, apply the repairs that need no system change with `bdk doctor --fix`, and walk you through the rest. A `bdk` command or a `/bdk:` skill runs on your yes; a system change (an install line, a version manager) is shown for you to run yourself.
+
+**Arguments:** None.
+
+**Artifact:** None; the last `bdk doctor` report with what is left.
+
+**When to use.** BDK misbehaves, a kernel command fails, or after an upgrade. Only you can start it.
+
+**Related skills:** `/bdk:setup` (the repair for a project BDK has not prepared).
+
+## /bdk:bdk-cli
+
+**Purpose.** Point the agent at the kernel CLI for Change state, the ledger, rules, evidence and configuration, with `bdk --help` as the only usage reference.
+
+**Arguments:** None.
+
+**Artifact:** None.
+
+**When to use.** The agent needs a fact the kernel holds outside a stage skill that already names the command.
+
+**Related skills:** None.
 
 ## /bdk:test-driven-development
 
@@ -286,12 +286,15 @@ The skills under `skills/roles/` and `swarm` carry `user-invocable: false` and a
 
 Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which several skills used as their only state mechanism. Those skills are gone rather than patched:
 
-| Removed                                           | Use instead                                                                                                                                                                                         |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/bdk:execute-plan`, `/bdk:subagent-execute-plan` | `/bdk:execute`                                                                                                                                                                                      |
-| `/bdk:save-progress`, `/bdk:restore-progress`     | Nothing to invoke. The Change's ledger and the task commits' trailers hold the state; `/bdk:execute` resumes from `bdk next`                                                                        |
-| `/bdk:create-tasks`, `/bdk:refactor`              | `/bdk:plan`                                                                                                                                                                                         |
-| `/bdk:audit-prompt`                               | Nothing                                                                                                                                                                                             |
-| `/bdk:graphviz-docs-compiler`                     | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
-| `/bdk:brainstorming`                              | `/bdk:design`                                                                                                                                                                                       |
-| `/bdk:brainstorm-architecture`                    | `/bdk:design`                                                                                                                                                                                       |
+| Removed                                           | Use instead                                                                                                                                         |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/bdk:execute-plan`, `/bdk:subagent-execute-plan` | `/bdk:execute`                                                                                                                                      |
+| `/bdk:save-progress`, `/bdk:restore-progress`     | Nothing to invoke. The Change's ledger and the task commits' trailers hold the state; `/bdk:execute` resumes from `bdk next`                        |
+| `/bdk:create-tasks`, `/bdk:refactor`              | `/bdk:plan`                                                                                                                                         |
+| `/bdk:audit-prompt`                               | Nothing                                                                                                                                             |
+| `/bdk:graphviz-docs-compiler`                     | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:docs` and `/bdk:adr` embed Mermaid directly, no compile step |
+| `/bdk:brainstorming`                              | `/bdk:design`                                                                                                                                       |
+| `/bdk:brainstorm-architecture`                    | `/bdk:design`                                                                                                                                       |
+| `/bdk:explain-complex-code`, `/bdk:update-docs`   | `/bdk:docs`                                                                                                                                         |
+| `/bdk:create-adr`                                 | `/bdk:adr`                                                                                                                                          |
+| `/bdk:add-rule`, `/bdk:refine-rules`              | `/bdk:rules`                                                                                                                                        |

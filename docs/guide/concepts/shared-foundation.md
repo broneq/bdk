@@ -55,9 +55,9 @@ The last section of the foundation is a routing table for knowledge. Before reco
 | Something a test or a linter already enforces           | one line naming the enforcer                                       |
 | Anything else                                           | nothing                                                            |
 
-A line that a rename or a file move would force you to edit is a mirror of the code, not a rule. The fourth row is the frequent and correct answer: never write something down just to have written it. `/bdk:add-rule` runs this routing properly and `/bdk:refine-rules` cleans up what accumulated anyway; see [Rules hygiene](../workflows/rules-hygiene.md).
+A line that a rename or a file move would force you to edit is a mirror of the code, not a rule. The fourth row is the frequent and correct answer: never write something down just to have written it. `/bdk:rules capture` runs this routing, and `/bdk:rules audit` turns recurring lessons into rules and prunes what no longer applies; see [Rules hygiene](../workflows/rules-hygiene.md).
 
-This table is in the foundation rather than in those two skills because the decision usually happens in the middle of other work, at the moment you notice something, and not while you are running a rules skill.
+This table is in the foundation rather than in that skill because the decision usually happens in the middle of other work, at the moment you notice something, and not while you are running a rules skill.
 
 ## What this buys you
 

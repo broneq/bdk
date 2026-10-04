@@ -22,18 +22,6 @@ explore, search, and trace code with Claude Code's built-in tools (`Grep`,
 yourself with `claude mcp add`; BDK neither depends on it nor tells its agents
 to call it.
 
-### Optional: the `caveman` plugin
-
-`/bdk:commit` is a thin delegation: its whole body is
-`Invoke /caveman:caveman-commit $ARGUMENTS`. A `UserPromptSubmit` hook checks
-for the dependency once per session and warns when the skill is not installed:
-
-```
-[BDK] Skill 'caveman-commit' not installed. Install it for full functionality. Expected location: ~/.claude/skills/ or .claude/skills/
-```
-
-Every other BDK skill works without it.
-
 ### Optional: `lavish-axi`
 
 With the `lavish-axi` binary on `PATH` **and** `features.lavish` set to `true`

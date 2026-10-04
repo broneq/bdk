@@ -51,16 +51,18 @@ bdk rules prune
 
 Files you wrote in `.claude/rules/` still load in an interactive session, but the kernel does not select them for agents and nobody can cite them. `bdk doctor` lists them; `bdk rules import` turns them into rule files, one per top-level bullet, with `applies` from their `paths:`. Then delete the originals: the generated projection carries the rules.
 
-`/bdk:add-rule` and `/bdk:refine-rules` still write `.claude/rules/` directly; run `bdk rules import` after them.
+## Let the skill run it
+
+`/bdk:rules` runs this cycle with you. `/bdk:rules audit` (the default) reads `bdk rules stats --entries`, groups the recurring lessons by meaning, drops what is not a rule and says why, proposes the rest, adopts the ones you accept with `bdk rules accept --from`, and then offers what `bdk rules prune` lists for removal. `/bdk:rules capture <lesson>` records one lesson as a `learning` entry of the active Change, or, without a Change, proposes it as a rule. `/bdk:rules check` runs `bdk rules check` and the projection check of `bdk rules export --claude`. The skill removes a project rule only as the tombstone above, and only after you approve it.
 
 ## A working rhythm
 
-| Moment                                               | Command                                               |
-| ---------------------------------------------------- | ----------------------------------------------------- |
-| You just learned something the hard way              | `bdk log add learning ...`                            |
-| Every few Changes                                    | `bdk rules stats`, then `bdk rules accept` or nothing |
-| Session start warns that a role reads too many rules | `bdk rules prune`, `rules.disabled`, `applies`        |
-| Before a big refactor                                | `bdk rules prune`                                     |
+| Moment                                               | Command                                        |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| You just learned something the hard way              | `bdk log add learning ...`                     |
+| Every few Changes                                    | `/bdk:rules audit`                             |
+| Session start warns that a role reads too many rules | `bdk rules prune`, `rules.disabled`, `applies` |
+| Before a big refactor                                | `bdk rules prune`                              |
 
 ## What you get
 

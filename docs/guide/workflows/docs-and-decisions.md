@@ -4,114 +4,81 @@
 
     This page describes BDK v2. The v3 documentation replaces it (T50).
 
-Four skills for the writing side of the work: recording a decision, explaining code that
-is hard to read, keeping an existing doc true, and drawing the diagram in all of them.
+Three skills for the writing side of the work: recording a decision, documenting code and
+keeping that documentation true, and drawing the diagrams in both.
 
-| Skill                       | Use when                                                       |
-| --------------------------- | -------------------------------------------------------------- |
-| `/bdk:create-adr`           | A decision has been made and needs to outlive the conversation |
-| `/bdk:explain-complex-code` | A module is hard to onboard onto and has no architecture doc   |
-| `/bdk:update-docs`          | An architecture doc exists and the code moved under it         |
-| `/bdk:mermaid-drawer`       | You are drawing any diagram, in any of the above or on its own |
+| Skill                 | Use when                                                                     |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `/bdk:adr`            | A decision has been made and needs to outlive the conversation or the Change |
+| `/bdk:docs`           | A module has no architecture doc, or the code moved under an existing one    |
+| `/bdk:mermaid-drawer` | You are drawing any diagram on its own                                       |
 
-## Record a decision - `/bdk:create-adr`
+## Record a decision - `/bdk:adr`
 
 ```
-/bdk:create-adr <decision context, options, constraints, preferences>
+/bdk:adr <decision context, options and choice>
+/bdk:adr L-3
+/bdk:adr 2026-09-25-passwordless-login/L-7
 ```
 
-Generates an Architecture Decision Record in MADR format. It extracts the problem
-statement, considered options, decision drivers, and stated preference from your free-form
-description, and asks only about what is genuinely unclear - always the ADR status
-(proposed / accepted / rejected / deprecated), never the decision-makers, consulted, and
-informed fields, which are left as `{TBD}` for you to fill in.
+Writes an Architecture Decision Record in MADR format. From a free-form description it
+takes the problem, the options, the drivers and the choice. From the id of a `decision`
+entry - bare for the active Change, `<changeId>/L-...` for any Change, archived ones
+included - it reads the entry with `bdk log show` and builds the record from its summary
+and body. Either way it asks only for what is missing: always the status (proposed,
+accepted, rejected, deprecated), the options or drivers only when the input names none.
+The decision-makers, consulted and informed fields stay `{TBD}` for you to fill in.
 
-It scans `docs/adr/` for existing `NNNN-*.md` files and takes the next sequential number,
-zero-padded to four digits. The file lands at `docs/adr/NNNN-{slugified-title}.md`.
-
-Consequences are marked with symbols, not prose labels: `✅` for positive, `❌` for
-negative, `🟡` for neutral.
+It takes the number one above the highest `NNNN-*.md` in `docs/adr/`. The file lands at
+`docs/adr/NNNN-<slug>.md`. Pros, cons and consequences are marked with symbols, not prose
+labels: `✅` for positive, `❌` for negative, `🟡` for neutral. Every option, the chosen one
+included, gets its pros and cons.
 
 !!! note
 
-    Diagrams in an ADR are optional and only added when they carry genuine visual value -
-    architecture options with different component layouts, or different data flows. A
-    trivially simple or abstract decision gets none.
+    A diagram is added only when the options differ in structure or data flow.
 
-`/bdk:design` ends by pointing here: a design doc explores the space, an ADR formalizes
-one decision out of it.
+`/bdk:design` records each decision it takes with you as a `decision` entry; `/bdk:adr`
+turns the one worth keeping into a record.
 
-## Explain a module - `/bdk:explain-complex-code`
+## Document code - `/bdk:docs`
 
 ```
-/bdk:explain-complex-code <path>
+/bdk:docs <code path>
+/bdk:docs <existing .md document>
 ```
 
-Analyses the code structure, maps dependencies with the built-in search tools,
-then partitions the module and launches subagents - never more than three or four - all in
-one message. File count decides the partitioning:
-
-| Files | Subagents |
-| ----- | --------- |
-| 1-2   | 1         |
-| 3-5   | 1-2       |
-| 6-10  | 2-3       |
-| 10+   | 3-4       |
-
-The synthesized doc has seven parts: overview, core architecture with a file tree,
-architecture flow, critical rules, live examples, core classes, and testing coverage.
+The argument picks the mode. A code path creates a document; an existing Markdown file is
+refreshed against the code it describes. Both write the same shape: an overview, a file
+tree, Mermaid diagrams, critical rules with a violating and a correct example, examples in
+prototype code, the main components, and the tests.
 
 !!! warning
 
-    Live examples are **prototype code, never the actual implementation**: placeholder
-    function names, clear control flow, comments on key steps, under 20 lines each, one
-    concept per example. A doc that pastes the real implementation goes stale the day the
+    Examples are **prototype code, never the actual implementation**: placeholder
+    function names, clear control flow, a comment per step, at most 20 lines, one concept
+    per example. A doc that pastes the real implementation goes stale the day the
     implementation changes.
 
-A `Stop` hook checks the result before the skill can finish - file saved in the right
-place, overview present, file tree present, at least one Mermaid block, critical rules,
-prototype examples, core classes, testing coverage. Missing sections come back as a
-failure with the list. See [Hooks](../reference/hooks.md).
+**Create.** The skill reads the module's entry points, its key components with their
+callers, and its tests, then writes every section of the shape. For a path of more than
+about 30 source files it proposes documenting one sub-module at a time. The document lands
+at the path you name, or at `docs/architecture/<module>.md`; never under `.bdk/`, which
+holds BDK state. When the file already exists, the skill refreshes it instead.
 
-Output: `.bdk/explain-complex-code/<feature-name>.md`.
+**Refresh.** The skill splits the document into sections, reads the code each one
+describes, and classifies every section and diagram as accurate, outdated or missing. You
+approve the plan before anything is written, in a single question: what to keep, update,
+add and remove, and which diagrams change.
 
-## Refresh a doc - `/bdk:update-docs`
-
-```
-/bdk:update-docs <doc_path>
-```
-
-Parses the existing doc into sections, module root, code references, file list, and every
-embedded Mermaid block. Then it explores the current code with **comparison-aware**
-subagents: each one receives the doc's claims alongside the files, and reports what is
-ACCURATE, what is OUTDATED, what is NEW, and what is GONE - diagrams included, node by
-node.
-
-You approve the plan before anything is written, in a single question:
-
-```
-Update plan for [doc_path]:
-
-  KEEP:     [list of accurate sections]
-  UPDATE:   [list of outdated sections with brief reason]
-  ADD:      [new content to add]
-  REMOVE:   [orphaned references to clean up]
-  DIAGRAMS: [list of diagrams to update/add/keep with brief reason]
-
-Approve this update plan?
-```
-
-Accurate sections are copied verbatim, which is what preserves hand-written prose,
-formatting, and wording. Orphaned references are simply omitted - no "removed" comments.
+Accurate sections are copied word for word, which is what preserves hand-written prose.
+What no longer exists is simply omitted - no "removed" comments.
 
 !!! note
 
     The result reads as one uniform document. No changelog markers, no "updated on"
     annotations, no diff markers. A diagram that is still correct but predates the current
-    standard is not outdated - it is left alone, so updates stay reviewable as content
-    changes rather than churn.
-
-Output: the same path you passed in.
+    standard is left alone, so a refresh changes content, not style.
 
 ## Draw the diagram - `/bdk:mermaid-drawer`
 
@@ -119,8 +86,8 @@ Output: the same path you passed in.
 /bdk:mermaid-drawer <what to draw>
 ```
 
-Every BDK skill that emits a diagram emits it through this standard, so diagrams read the
-same whoever drew them and wherever they are viewed. Invoke it directly to draw one.
+A standalone diagram standard, so diagrams read the same whoever drew them and wherever
+they are viewed. Invoke it directly to draw one; `/bdk:docs` carries the same rules.
 
 It fixes the parts that go wrong anyway:
 
@@ -141,12 +108,11 @@ It fixes the parts that go wrong anyway:
 
 ## What you get
 
-| Skill                       | Artifact                                                |
-| --------------------------- | ------------------------------------------------------- |
-| `/bdk:create-adr`           | `docs/adr/NNNN-<slugified-title>.md`                    |
-| `/bdk:explain-complex-code` | `.bdk/explain-complex-code/<feature-name>.md`           |
-| `/bdk:update-docs`          | the doc at the path you passed in, rewritten in place   |
-| `/bdk:mermaid-drawer`       | one Mermaid block, in whatever document you are writing |
+| Skill                 | Artifact                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `/bdk:adr`            | `docs/adr/NNNN-<slug>.md`                                                                    |
+| `/bdk:docs`           | `docs/architecture/<module>.md` or the path you named; a refreshed doc is rewritten in place |
+| `/bdk:mermaid-drawer` | one Mermaid block, in whatever document you are writing                                      |
 
 None of these commit. Files are generated; when they land in git is your call.
 
