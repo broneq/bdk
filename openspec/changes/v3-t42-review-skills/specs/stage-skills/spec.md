@@ -43,3 +43,12 @@ A run SHALL stop and end with its closing render when `next` waits on a gate the
 
 - **WHEN** the user types `/bdk:run "<intent>"` without `--auto`, `policy.gates.review` is `manual` and every stage succeeds
 - **THEN** the run ends after `/bdk:cr` with the `review` node done and `gate:review` ready and not done, and the final reply names `/bdk:close`
+
+### Requirement: close reports the PR summary
+
+`/bdk:close` SHALL end with the `summary` of `bdk change close` verbatim, the gates passed by policy (`gatesByPolicy`), each named by its id such as `gate:review`, the archive path and the commit, the regenerated rule projection files when there are any, and the next step: open the PR with that summary. It SHALL NOT open the PR itself.
+
+#### Scenario: summary shown
+
+- **WHEN** `/bdk:close` closes a Change with one live `assumption` entry
+- **THEN** the final reply holds the PR summary with that assumption and names the archive path

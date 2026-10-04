@@ -36,7 +36,7 @@ Done when `bdk change close` has archived the Change, or a refusal you cannot re
 Report from the kernel's output only:
 
 - the `summary` of `bdk change close`, verbatim: it is the PR description;
-- the gates passed by policy, from `gatesByPolicy`, or that every gate was passed by the user;
+- the gates passed by policy, from `gatesByPolicy`, each by its id (`gate:review`), or that every gate was passed by the user;
 - the archive path from `archivedTo`, and the close commit;
 - the regenerated rule files, when step 3 wrote any, for the user to commit;
 - the next step: open the PR with this summary. You do not open the PR: publishing it is the user's step.

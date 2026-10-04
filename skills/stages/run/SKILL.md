@@ -69,7 +69,7 @@ Print one line when you start a stage skill (`run: /bdk:plan`) and one when it e
 At the stop, report from the kernel's output only. After `/bdk:close`, its report is the finish: add the stages and decisions of the run to it. Otherwise:
 
 - why the run stopped: the stop above, with the hook's or the kernel's reason;
-- the stages the run passed, and the gates passed by policy;
+- the stages the run passed, and the gates passed by policy, each by its id (`gate:design`);
 - the decisions the run took, from `bdk log list --type decision --review --json`;
 - the gate status and the pending `review: true` entries, from `bdk change status --json`;
 - the command the user types next: the gate's `command`, such as `/bdk:close` when `gate:review` waits on the user, or the resume command of a parked Change.

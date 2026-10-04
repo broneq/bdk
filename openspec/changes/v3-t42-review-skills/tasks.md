@@ -196,6 +196,8 @@
   - the `run` and `execute` stage cases set `tools.lint` to eslint, so the lint steps do not end `not-run`;
   - the runner contract and the `Checks` package section give the citation format with an example, the role contracts' Ledger sections give the 120-character summary limit, and `evidence record` resolves a cited file by its project-relative or absolute path as well as the path given.
 
+  Probe after these fixes (2026-10-04, row `probe-run-2026-10-04-2`, at d5f0d87): 11.98 USD per run, 164 turns, 32 minutes, projected series 59.88 USD. The Change is archived; the review round closed `ok` with `review-done` before `done review` passed, and every lint step recorded `pass`. The case's reply checks failed: the report said "both gates (design and review)" without the ids `gate:design` and `gate:review`, which the `run` and `close` skills did not require. Both skills now name each gate passed by policy by its id. Recovered refusals: one `@merge` envelope listing an entry of another ticket, one stale `simplify:01` before `done review`. The implementer again excluded `.bdk/**` from the fixture's markdownlint (T50). No series is run.
+
   Left for later tasks:
   - three states of a tool group (configured, declared none, unset): T49 (#117);
   - keeping the committed `.bdk/` files out of the project's own tools: T50 (#118);
@@ -203,7 +205,7 @@
 
 ## 12. Acceptance and validation
 
-- [ ] 12.1 Check the acceptance signal end to end:
+- [x] 12.1 Check the acceptance signal end to end:
   - content tests and `pnpm skill-check` are green, with the baseline pruned;
   - E2E: a `cr` round on a fixture Change writes reviewer findings through `log add --ticket <ticket>@<group>`, each with a rule id ref, and their reports through `log ingest`;
   - `bdk export agents --host claude --check` is green after the removal;
