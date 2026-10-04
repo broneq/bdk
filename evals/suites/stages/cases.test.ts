@@ -14,7 +14,9 @@ describe("parseCases", () => {
         "- id: flat\n  command: /bdk:execute\n  seed: nothing\n  expect:\n    - reply: x\n",
         "execute.yaml",
       ),
-    ).toThrow("entry 1 (flat): seed must be one of audit-csv, two-independent-parts");
+    ).toThrow(
+      "entry 1 (flat): seed must be one of audit-csv, two-independent-parts, executed, executed-blocker, reviewed, executed-two-parts, shared-lockfile, shared-lockfile-unisolated",
+    );
   });
 
   it("reads the command, preparation, answers and expectations", () => {
@@ -87,7 +89,7 @@ describe("parseCases", () => {
       );
     expect(parse).toThrow(CaseFileError);
     expect(parse).toThrow(
-      /entry 1 \(Bad\): id must be lowercase.*base must be fixture or empty.*command must be a \/bdk: slash command.*expect must be a non-empty list.*entry 2 \(ok\): expect 1: unknown field shell.*entry 2 \(ok\): unknown field extra/,
+      /entry 1 \(Bad\): id must be lowercase.*base must be fixture or empty.*command must be a \/bdk: slash command.*expect must be a non-empty list.*entry 2 \(ok\): expect 1: unknown field run.*entry 2 \(ok\): unknown field extra/,
     );
   });
 
@@ -133,6 +135,22 @@ describe("parseCases", () => {
           "entry 4 \\(a\\): id is not unique",
         ].join(".*"),
       ),
+    );
+  });
+
+  it("reads a shell expectation and names its broken fields", () => {
+    const [read] = parseCases(
+      "- id: a\n  command: /bdk:execute\n  expect:\n    - shell: git log\n      exit: 1\n      stdout: x\n",
+      "e.yaml",
+    );
+    expect(read?.expect).toStrictEqual([{ shell: "git log", exit: 1, stdout: "x" }]);
+    expect(() =>
+      parseCases(
+        "- id: a\n  command: /bdk:execute\n  expect:\n    - shell: ''\n      exit: x\n      stdout: 1\n      json: {}\n",
+        "e.yaml",
+      ),
+    ).toThrow(
+      /shell must be a non-empty command.*exit must be an integer.*stdout must be a pattern.*unknown field json/,
     );
   });
 

@@ -224,7 +224,7 @@ describe("state write map", () => {
     );
     expect(problems(stateSpec, seeded, writes)).toStrictEqual([
       "attempt open declares .bdk/changes/<id>/dispatch/, which the file table does not name it for",
-      "attempt open: **Writes:** .bdk/changes/<id>/attempts/, .bdk/changes/<id>/log/, git:commit differs from writes[] .bdk/changes/<id>/attempts/, .bdk/changes/<id>/log/, git:commit, .bdk/changes/<id>/dispatch/",
+      "attempt open: **Writes:** .bdk/changes/<id>/attempts/, .bdk/changes/<id>/log/, git:commit, git:merge differs from writes[] .bdk/changes/<id>/attempts/, .bdk/changes/<id>/log/, git:commit, git:merge, .bdk/changes/<id>/dispatch/",
     ]);
   });
 

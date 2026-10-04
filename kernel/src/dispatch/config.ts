@@ -1,9 +1,22 @@
-// The settings `dispatch` reads (`kernel-settings`, Keys of review policy):
-// the risky areas the integration reviewer's package lists (T42-K). They are
-// instructions to a model, not paths; layers merge them by id.
+// The settings `dispatch` reads (`kernel-settings`, Keys of review policy,
+// Prompt values): the risky areas the integration reviewer's package lists
+// (T42-K), instructions to a model merged by id, and the merge-conflict
+// instruction of a merge ticket (T45).
 import * as z from "zod";
 
-import { defineConfigModule } from "../shared/config/index.ts";
+import { defineConfigModule, definePromptKey } from "../shared/config/index.ts";
+
+/**
+ * The project's instruction for resolving merge conflicts, copied into the
+ * `Conflict` section of a merge ticket's package (`kernel-settings`, Prompt
+ * values; T45). It names no BDK flow, so any merge can reuse it.
+ */
+export const mergeConflictsPrompt = definePromptKey({
+  key: "fragments/merge-conflicts",
+  consumer: "dispatch",
+  owner: "T45",
+  defaultFile: "fragments/merge-conflicts.md",
+});
 
 const RISKS = [
   {

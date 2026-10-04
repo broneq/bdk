@@ -5,7 +5,8 @@
 // new hash.
 
 /** A section a package carries only when the build names its kind. */
-export type SectionKind = "verifier" | "runner" | "lead" | "review" | "risks";
+export type SectionKind =
+  "verifier" | "runner" | "lead" | "review" | "risks" | "work-root" | "conflict";
 
 interface Section {
   readonly name: string;
@@ -13,7 +14,8 @@ interface Section {
   /**
    * Only packages of this kind carry it: the verifiers' P8 lists, the runner's
    * checks, the lead's tasks, a grouped package's review scope (T42-A1) and the
-   * integration reviewer's risks (T42-K).
+   * integration reviewer's risks (T42-K), a worktree target's work root and a
+   * merge ticket's conflict (T45).
    */
   readonly only?: SectionKind;
 }
@@ -26,6 +28,18 @@ const SECTIONS: readonly Section[] = [
   },
   { name: "change", skeleton: "## Change\n\n{{intent}}" },
   { name: "target", skeleton: "## Target {{target}}\n\n{{target-body}}" },
+  {
+    name: "work-root",
+    only: "work-root",
+    skeleton:
+      "## Work root\n\nYour work root is `{{workdir}}`, the worktree of part {{part}}. Every file you read or edit and every command you run, the checks included, is inside it: start each shell command with `cd {{workdir}} && `, and give each file tool an absolute path under it. The plan, the ledger and this package stay in the home checkout; reach them only through `bdk`. `hooks pre-tool` denies a file edit outside the work root (`guard/worktree-scope`).",
+  },
+  {
+    name: "conflict",
+    only: "conflict",
+    skeleton:
+      "## Conflict\n\nThe kernel merged `{{merged}}` into the work root, and git reports these paths unmerged:\n\n{{conflicts}}\n\nEdit only these paths, following the instruction below. Run no git command: the kernel stages and commits the merge at `bdk attempt close`. Return `blocked`, naming the paths, for a conflict the instruction does not settle.\n\n{{merge-instruction}}",
+  },
   {
     name: "tasks",
     only: "lead",

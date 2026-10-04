@@ -153,7 +153,7 @@ The repository SHALL hold two reports: `docs/V3-EVAL-EXECUTE-AB.md` with the A/A
 
 ### Requirement: Stage skill suite
 
-The `stages` suite SHALL run stage skills the way a user starts them: each case types the skill's slash command in a fresh copy of its base (the pinned fixture or an empty git repository, per case), answers every `AskUserQuestion` from the case's answers, which pair a pattern of the question with a pattern of the option (the first option when no pattern matches the question), and asserts on the kernel state the run leaves, read through kernel commands, not on the model's prose. A case MAY name a `seed`, a function of the suite that runs after the case's `prepare` lines in the working copy with the plugin copy's kernel and sets up state a shell line does not express well (a Change with plan parts, a verified design, a passed gate, a reviewed Change); `pnpm eval check` SHALL refuse a case that names an unknown seed. Every stage skill SHALL have at least a happy-path case and a case in which the kernel refuses a command and the skill must follow `instead`. `pnpm eval stages --skill <name>` SHALL run the cases of one skill, and `--probe` SHALL behave as for every other suite.
+The `stages` suite SHALL run stage skills the way a user starts them: each case types the skill's slash command in a fresh copy of its base (the pinned fixture or an empty git repository, per case), answers every `AskUserQuestion` from the case's answers, which pair a pattern of the question with a pattern of the option (the first option when no pattern matches the question), and asserts on the kernel state the run leaves, read through kernel commands, and on git state no kernel command reports (a merge commit, the worktree list, a file's history), read through a shell command, not on the model's prose. A case MAY name a `seed`, a function of the suite that runs after the case's `prepare` lines in the working copy with the plugin copy's kernel and sets up state a shell line does not express well (a Change with plan parts, a verified design, a passed gate, a reviewed Change, a plan whose parts share a lockfile); `pnpm eval check` SHALL refuse a case that names an unknown seed. Every stage skill SHALL have at least a happy-path case and a case in which the kernel refuses a command and the skill must follow `instead`. `pnpm eval stages --skill <name>` SHALL run the cases of one skill, and `--probe` SHALL behave as for every other suite.
 
 #### Scenario: setup happy path
 
@@ -184,6 +184,16 @@ The `stages` suite SHALL run stage skills the way a user starts them: each case 
 
 - **WHEN** the `tree` case seeds a `large` Change with a passed design gate and two verified plan parts without `depends-on`, and types `/bdk:execute`
 - **THEN** the case passes when both parts are done, each part has a `part-lead` attempt record closed `ok`, and `bdk next --json` returns a node of the `review` stage
+
+#### Scenario: execute worktree
+
+- **WHEN** the `worktree` case of `execute` uses seed `shared-lockfile`, a `large` Change with a passed design gate and two verified plan parts without `depends-on` and with disjoint `Files:`, whose tasks add different dependencies and so both regenerate the fixture's lockfile, part 02 with `isolation: worktree`, and types `/bdk:execute`
+- **THEN** the case passes when both parts are done, home `HEAD` reaches a part merge commit carrying `BDK-Part: 02` and every task's trailer commit, `bdk log list --json` holds the entries of both parts, the lockfile holds both dependencies and was regenerated, not hand-merged (no conflict marker in its history; the merge ticket's `tests-scoped` manifest is `pass`), `git worktree list` holds only the working copy itself, and the final reply names `/bdk:cr`
+
+#### Scenario: verify-plan flags a shared lockfile
+
+- **WHEN** the `isolation` case of `verify-plan` uses seed `shared-lockfile-unisolated`, the plan of `shared-lockfile` with both parts `isolation: shared`, done and not verified, and types `/bdk:verify-plan`
+- **THEN** the case passes when `bdk log list --type blocker --json` holds a live blocker of category `integration-failure` naming both parts, and `plan-verify` is not done
 
 #### Scenario: close happy path
 

@@ -92,6 +92,24 @@ export const partStartOutput = z
     doNotTouch: z.array(z.string()),
     successMeasure: z.string(),
     entry: entryId,
+    isolation: z.enum(["shared", "worktree"]).meta({
+      description: "Where the part runs: the home checkout, or its own worktree (T45).",
+    }),
+    workdir: z.string().optional().meta({
+      description: "Absolute path of the part's worktree; its work root while it is live.",
+    }),
+    setup: z
+      .strictObject({
+        command: z.string().min(1),
+        exitCode: z.literal(0),
+        durationMs: count,
+      })
+      .optional()
+      .meta({ description: "The worktree setup that ran; absent without a setup command." }),
+    downgraded: z.literal(true).optional().meta({
+      description:
+        "A worktree part started in the home checkout: execution.worktree.enabled is false.",
+    }),
   })
   .meta({
     title: "bdk part start --json",
@@ -108,6 +126,7 @@ export const partStartOutput = z
         doNotTouch: ["src/billing/**"],
         successMeasure: "POST /login returns a session for a valid magic link",
         entry: "L-r2v8k4mn",
+        isolation: "shared",
       },
     ],
   }) satisfies z.ZodType<PartStartReport>;
@@ -131,6 +150,15 @@ export const partDoneOutput = z
     entry: entryId,
     next: z.string().optional().meta({
       description: "The node `bdk next` returns afterwards; absent when none.",
+    }),
+    merge: z
+      .string()
+      .regex(/^[0-9a-f]{7}$/)
+      .optional()
+      .meta({ description: "The merge commit of a worktree part, abbreviated (T45)." }),
+    discarded: z.array(z.string()).optional().meta({
+      description:
+        "Worktree paths no task declares, dropped with the worktree and recorded in one finding.",
     }),
   })
   .meta({

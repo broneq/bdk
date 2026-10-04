@@ -26,6 +26,14 @@ export const planPartKind = {
       "success-measure": z.string().min(1).meta({ description: "What a reviewer can observe." }),
       "do-not-touch": z.array(glob),
       "depends-on": z.array(partId),
+      isolation: z.enum(["shared", "worktree"]).optional().meta({
+        description:
+          "Absent means shared: the part runs in the home checkout. worktree gives it its own git worktree (T45).",
+      }),
+      "isolation-reason": z.string().optional().meta({
+        description:
+          "The shared state outside Files: that makes the part need a worktree; required for worktree.",
+      }),
       "spec-impact": z
         .union([z.literal("none"), z.array(capability)])
         .optional()
@@ -57,6 +65,13 @@ export const planIndexKind = {
     .meta({ title: "Plan index", description: "Generated from the plan parts; never edited." }),
   migrations: [],
 } as const satisfies DocumentKind;
+
+export type Isolation = "shared" | "worktree";
+
+/** The isolation of a plan part's frontmatter; absent is `shared` (T45). */
+export function isolationOf(data: { readonly isolation?: unknown }): Isolation {
+  return data.isolation === "worktree" ? "worktree" : "shared";
+}
 
 /** One `Files:` item: a relative path and the template's optional action. */
 export interface PlanFile {
@@ -207,12 +222,18 @@ export function hasPlaceholder(text: string): boolean {
 
 /** The executable fields of a part holding a placeholder, named for a refusal. */
 export function planPlaceholders(
-  frontmatter: { readonly goal: string; readonly "success-measure": string },
+  frontmatter: {
+    readonly goal: string;
+    readonly "success-measure": string;
+    readonly "isolation-reason"?: string | undefined;
+  },
   tasks: readonly PlanTask[],
 ): string[] {
   const found: string[] = [];
   if (hasPlaceholder(frontmatter.goal)) found.push("goal");
   if (hasPlaceholder(frontmatter["success-measure"])) found.push("success-measure");
+  const reason = frontmatter["isolation-reason"];
+  if (reason !== undefined && hasPlaceholder(reason)) found.push("isolation-reason");
   for (const task of tasks) {
     if (hasPlaceholder(task.title)) found.push(`task ${task.id} title`);
     task.files.forEach((file, at) => {

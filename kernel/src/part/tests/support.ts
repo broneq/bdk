@@ -58,7 +58,7 @@ function scriptedGit(): ScriptedGit {
           git.commits
             .map(
               ([hash, part, task, ticket = ""]) =>
-                `${hash}\x1fTask ${task}\x1f2026-09-25-login\x1f${part}\x1f${task}\x1f${ticket}\x1e`,
+                `${hash}\x1fp0\x1fTask ${task}\x1f2026-09-25-login\x1f${part}\x1f${task}\x1f${ticket}\x1e`,
             )
             .join(""),
         );

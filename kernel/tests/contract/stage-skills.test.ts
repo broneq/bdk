@@ -324,3 +324,23 @@ describe("gates passed by policy are named by id (T42 run probe)", () => {
     },
   );
 });
+
+describe("worktree isolation in the stage skills (T45)", () => {
+  it("plan decides isolation and its reason", () => {
+    const { body } = readSkill("plan");
+    expect(body).toContain("`isolation`");
+    expect(body).toContain("`isolation-reason`");
+    expect(body).toMatch(/get a `depends-on`, never a worktree/);
+  });
+
+  it("execute handles the worktree refusals and starts shared parts first", () => {
+    const { body } = readSkill("execute");
+    expect(body).toMatch(
+      /`policy\/merge-conflict`[^\n]*`bdk attempt open verify-fix <part> --json`/,
+    );
+    expect(body).toContain("`policy/merge-blocked`");
+    expect(body).toContain("`runtime/worktree-setup-failed`");
+    expect(body).toMatch(/Start the `shared` parts of the wave first, then the worktree parts/);
+    expect(body).toMatch(/never set the host's own `isolation: worktree`/);
+  });
+});

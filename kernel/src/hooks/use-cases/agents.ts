@@ -14,6 +14,7 @@ import {
   agentsRegistryPath,
   findProjectRoot,
   readAttempts,
+  readDocument,
   resolveActiveChange,
   withRegistry,
 } from "../../shared/store/index.ts";
@@ -123,12 +124,25 @@ export async function agentFacts(
     const states = new Map<string, AgentView["state"]>(
       rows.map((row) => [row.id, findView(registry, row.id, now, lease)?.state ?? "ended"]),
     );
+    const workdir =
+      caller?.package == null ? undefined : packageWorkdir(deps, join(projectRoot, caller.package));
     return {
       ...facts,
       ...(caller === undefined ? {} : { caller: { ticket: caller.ticket, target: caller.target } }),
+      ...(workdir === undefined ? {} : { workdir }),
       scouts: rows.filter((row) => row.type === "bdk:scout" && holders.has(row.parent ?? ""))
         .length,
       stateOf: (id: string) => states.get(id),
     };
   });
+}
+
+/** The `workdir` of a dispatch package; undefined when it has none or does not parse. */
+function packageWorkdir(deps: HooksDeps, path: string): string | undefined {
+  const document = deps.store.read(path) === undefined ? undefined : readDocument(deps.store, path);
+  if (document === undefined || !("data" in document) || document.kind !== "dispatch") {
+    return undefined;
+  }
+  const workdir = (document.data as { workdir?: unknown }).workdir;
+  return typeof workdir === "string" ? workdir : undefined;
 }

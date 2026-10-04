@@ -22,6 +22,10 @@ export interface AttemptOpenReport {
   readonly escalation?: { readonly model: string } | undefined;
   /** The post-task steps a code loop runs under the ticket, in pipeline order (T23-D41). */
   readonly steps?: readonly { readonly kind: string; readonly role: string }[] | undefined;
+  /** A merge ticket of a worktree part (T45). */
+  readonly merge?: true | undefined;
+  /** The unmerged paths of a merge ticket. */
+  readonly conflicts?: readonly string[] | undefined;
 }
 
 export interface DiffReport {

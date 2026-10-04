@@ -10,6 +10,11 @@ export interface KernelCall {
   readonly json: unknown;
 }
 
+export interface ShellCall {
+  readonly code: number;
+  readonly stdout: string;
+}
+
 export interface CheckResult {
   readonly pass: boolean;
   readonly failures: readonly string[];
@@ -47,9 +52,25 @@ export function checkExpectations(
   expectations: readonly Expectation[],
   kernel: (args: string) => KernelCall,
   reply: string,
+  shell: (command: string) => ShellCall = () => {
+    throw new Error("this check runs no shell command");
+  },
 ): CheckResult {
   const failures: string[] = [];
   for (const expectation of expectations) {
+    if ("shell" in expectation) {
+      const call = shell(expectation.shell);
+      const exit = expectation.exit ?? 0;
+      if (call.code !== exit) {
+        failures.push(`${expectation.shell}: exit ${String(call.code)}, expected ${String(exit)}`);
+      } else if (
+        expectation.stdout !== undefined &&
+        !new RegExp(expectation.stdout).test(call.stdout)
+      ) {
+        failures.push(`${expectation.shell}: stdout does not match /${expectation.stdout}/`);
+      }
+      continue;
+    }
     if ("reply" in expectation) {
       if (!new RegExp(expectation.reply).test(reply)) {
         failures.push(`reply does not match /${expectation.reply}/`);

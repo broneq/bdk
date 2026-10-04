@@ -13,7 +13,13 @@ import {
 import type { Layer } from "../../shared/config/index.ts";
 import { readDocument, writeDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
-import { KIND_NAMES, executionTreeModule, gatesModule, pipelinePrompts } from "../config.ts";
+import {
+  KIND_NAMES,
+  executionTreeModule,
+  executionWorktreeModule,
+  gatesModule,
+  pipelinePrompts,
+} from "../config.ts";
 import { graphConfig } from "../index.ts";
 import { doneOutput, explainOutput, nextOutput, validateOutput } from "../schema/outputs.ts";
 import {
@@ -100,7 +106,7 @@ describe("settings", () => {
       KIND_NAMES.map((kind) => [`pipeline/${kind}`, `pipeline/${kind}.md`]),
     );
     expect(graphConfig).toStrictEqual({
-      modules: [gatesModule, executionTreeModule],
+      modules: [gatesModule, executionTreeModule, executionWorktreeModule],
       prompts: pipelinePrompts,
     });
   });
@@ -156,6 +162,7 @@ describe("bdk next", () => {
     const plan = (await h.run(["next"])).stdout;
     expect(plan).toContain("### plan");
     expect(plan).toContain("[BDK-PL-1]");
+    expect(plan).toContain("[BDK-PL-4]");
     expect(plan).toContain("no implementation code");
     expect(plan).toContain("spec deltas");
     writePlanPart(h.store, "01");
@@ -526,7 +533,7 @@ describe("plan part and execute-part checks", () => {
             stdout: commits
               .map(
                 ([hash, part, task]) =>
-                  `${hash}\x1fTask ${task}\x1f2026-09-25-login\x1f${part}\x1f${task}\x1e`,
+                  `${hash}\x1fp0\x1fTask ${task}\x1f2026-09-25-login\x1f${part}\x1f${task}\x1e`,
               )
               .join(""),
             stderr: "",

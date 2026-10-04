@@ -8,7 +8,7 @@ import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
 import type { Mapping, Resolved } from "../../shared/config/index.ts";
 import { workTreeFiles } from "../../shared/git/index.ts";
 import type { Git } from "../../shared/git/index.ts";
-import { taskHolders } from "../../shared/store/index.ts";
+import { taskHolders, workRoots } from "../../shared/store/index.ts";
 import type { PlanPartFile, Store } from "../../shared/store/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import { evidenceModule } from "../config.ts";
@@ -70,8 +70,9 @@ export async function scopeTree(
 }
 
 /**
- * The current tree of each target through one work-tree listing: a task's
- * part, a part, the Change; any other target (an artifact) covers the Change.
+ * The current tree of each target through one work-tree listing per work
+ * root: a task's part, a part, the Change; any other target (an artifact)
+ * covers the Change. A target of a live worktree part reads its worktree.
  */
 export async function currentTrees(
   deps: TreeDeps,
@@ -80,16 +81,20 @@ export async function currentTrees(
   parts: readonly PlanPartFile[],
   targets: Iterable<string>,
 ): Promise<Map<string, Tree>> {
-  const workTree = await workTreeFiles(deps.git, change.projectRoot);
+  const rootOf = await workRoots(deps.git, deps.store, change, parts);
+  const listings = new Map<string, readonly string[]>();
   const trees = new Map<string, Tree>();
   const byScope = new Map<string, Tree>();
   for (const target of targets) {
     if (trees.has(target)) continue;
+    const root = rootOf(target);
     const scope = scopeOf(parts, change.id, target) ?? parts;
-    const key = scope.map((part) => part.id).join(" ");
+    const key = `${root}\0${scope.map((part) => part.id).join(" ")}`;
     let tree = byScope.get(key);
     if (tree === undefined) {
-      tree = treeIn(deps.store, change.projectRoot, policy, scope, workTree);
+      const workTree = listings.get(root) ?? (await workTreeFiles(deps.git, root));
+      listings.set(root, workTree);
+      tree = treeIn(deps.store, root, policy, scope, workTree);
       byScope.set(key, tree);
     }
     trees.set(target, tree);

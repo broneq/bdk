@@ -123,14 +123,35 @@ describe("the shipped pack", () => {
     }
   });
 
-  it("holds the plan rules BDK-PL-1 to BDK-PL-3 as house rules", () => {
+  it("holds the plan rules BDK-PL-1 to BDK-PL-4 as house rules", () => {
     const plan = rules.filter((rule) => rule.dir === "plan");
     expect(plan.map((rule) => rule.data.id).sort()).toStrictEqual([
       "BDK-PL-1",
       "BDK-PL-2",
       "BDK-PL-3",
+      "BDK-PL-4",
     ]);
     for (const rule of plan) expect(rule.data.kind, rule.name).toBe("house");
+  });
+
+  it("admits BDK-CQ-9 without measurement, scoped to the lockfiles", () => {
+    const lockfiles = rules.find((rule) => rule.data.id === "BDK-CQ-9");
+    expect(lockfiles?.dir).toBe("code-quality");
+    expect(lockfiles?.data.kind).toBe("house");
+    expect(lockfiles?.data.applies).toStrictEqual(
+      expect.arrayContaining([
+        "**/pnpm-lock.yaml",
+        "**/package-lock.json",
+        "**/yarn.lock",
+        "**/Cargo.lock",
+        "**/poetry.lock",
+        "**/uv.lock",
+        "**/go.sum",
+        "**/Gemfile.lock",
+        "**/composer.lock",
+      ]),
+    );
+    expect(keptIds().has("BDK-CQ-9")).toBe(false);
   });
 
   it("every language rule has a measurement row", () => {

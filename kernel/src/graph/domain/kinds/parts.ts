@@ -114,7 +114,22 @@ function partChecks(
       ? { id: "grammar", ok: true }
       : { id: "grammar", ok: false, why: facts.problems.join("; ") },
     impact,
+    isolationCheck(path, data),
   ];
+}
+
+/** A worktree part names the shared state outside `Files:` it isolates (T45). */
+function isolationCheck(path: string, data: Readonly<Record<string, unknown>>): Check {
+  const reason = data["isolation-reason"];
+  if (data.isolation !== "worktree" || (typeof reason === "string" && reason.trim() !== "")) {
+    return { id: "isolation", ok: true };
+  }
+  return {
+    id: "isolation",
+    ok: false,
+    why: "isolation: worktree needs an isolation-reason naming the state outside Files: the part shares",
+    instead: `add isolation-reason to the frontmatter of ${path}`,
+  };
 }
 
 /**

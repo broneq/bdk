@@ -55,6 +55,49 @@
         budgets.part-lead.of: 2
     - reply: /bdk:cr
 
+# worktree: a large Change whose two disjoint parts both add a dependency with
+# npm install, part 02 with isolation: worktree (T45). Both parts run in one
+# wave; part done 02 conflicts on package.json and package-lock.json, and one
+# merge ticket settles it by regenerating the lockfile. The worktree runs
+# npm ci as its setup, since node_modules is not copied.
+- id: worktree
+  command: /bdk:execute
+  seed: shared-lockfile
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set execution.worktree.setup.command 'npm ci --prefer-offline --no-audit --no-fund' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: explain execute-part:01
+      json:
+        state: done
+    - run: explain execute-part:02
+      json:
+        state: done
+    - run: evidence check 02
+      json:
+        fresh: true
+    - shell: |-
+        git log --merges --format='%s%n%(trailers:key=BDK-Part,valueonly)' HEAD | grep -A1 '^chore(bdk): merge part 02 of ' | grep -c '^02$'
+      stdout: "^1\n$"
+    - shell: |-
+        git log --format=%B HEAD | grep -E '^BDK-Task: 0[12]-1$' | sort -u | wc -l
+      stdout: "^\\s*2\n$"
+    - shell: |-
+        node -e 'const d = require("./package-lock.json").packages[""].dependencies; process.exit(d.dayjs && d["fast-deep-equal"] ? 0 : 1)'
+    - shell: |-
+        git log -p --format= HEAD -- package-lock.json package.json | grep -c '^+<<<<<<< '
+      exit: 1
+    - shell: |-
+        git worktree list --porcelain | grep -c '^worktree '
+      stdout: "^1\n$"
+    - reply: /bdk:cr
+
 # not-ready: the plan part is written and not done, so the skill dispatches
 # nothing and names the plan stage command.
 - id: not-ready

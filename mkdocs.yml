@@ -62,6 +62,7 @@ nav:
       - Shared foundation: concepts/shared-foundation.md
       - Verification scoping: concepts/verification-scoping.md
       - Plan pipeline: concepts/plan-pipeline.md
+      - Worktree parts: concepts/worktree-parts.md
       - Agents: concepts/agents.md
       - Quality and language rules: concepts/quality-and-language-rules.md
   - Reference:

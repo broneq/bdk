@@ -5,7 +5,7 @@ import type { CheckReport } from "../domain/reports.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { readManifests, readPlanParts } from "../../shared/store/index.ts";
+import { readManifests, readPlanParts, workRootOf } from "../../shared/store/index.ts";
 import type { ManifestFile } from "../../shared/store/index.ts";
 import type { EvidenceDeps } from "./deps.ts";
 import { evidenceSettings, filePolicy, scopeOf, scopeTree } from "./scope.ts";
@@ -45,7 +45,8 @@ export async function checkEvidence(
   if ("refused" in settings) return settings;
   // An artifact target (a verifier ticket's manifest) covers the whole Change.
   const scope = scopeOf(parts, change.id, target) ?? parts;
-  const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope);
+  const root = await workRootOf(deps.git, deps.store, change, parts, target);
+  const current = await scopeTree(deps, root, filePolicy(settings.value), scope);
   const fresh = (manifest: ManifestFile) => manifest.data["tree-hash"] === current.treeHash;
   // Manifests are in `at` order; of two with one `at` the fresh one counts as the later.
   const latest = new Map<string, ManifestFile>();

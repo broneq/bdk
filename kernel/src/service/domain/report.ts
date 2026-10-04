@@ -29,4 +29,10 @@ export interface RebuildReport {
   readonly migrated: readonly string[];
   readonly durationMs: number;
   readonly warnings: readonly string[];
+  /** The kernel part worktrees `rebuild` settled (T45). */
+  readonly worktrees: readonly {
+    readonly part: string;
+    readonly path: string;
+    readonly action: "kept" | "removed" | "recreated";
+  }[];
 }

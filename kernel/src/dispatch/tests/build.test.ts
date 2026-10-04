@@ -534,7 +534,7 @@ describe("the lead package (T41-D11)", () => {
       args[0] === "log"
         ? Promise.resolve({
             code: 0,
-            stdout: "c0ffee1\x1fstore the token\x1f2026-09-25-login\x1f02\x1f02-1\x1e",
+            stdout: "c0ffee1\x1fp0\x1fstore the token\x1f2026-09-25-login\x1f02\x1f02-1\x1e",
             stderr: "",
           })
         : run(args, cwd);

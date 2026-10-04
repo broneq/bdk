@@ -1,6 +1,6 @@
 // `bdk next` (`kernel-cli/graph`): the first actionable node with its
 // instruction, or what the Change waits for. Never writes.
-import { executionTreeModule } from "../config.ts";
+import { executionTreeModule, executionWorktreeModule } from "../config.ts";
 import { fillTemplate } from "../domain/instruction.ts";
 import { stageCommand, stageOfTarget } from "../domain/pipeline.ts";
 import { nodeView } from "../domain/reports.ts";
@@ -11,8 +11,14 @@ import { withChangeIndex } from "../../log/index.ts";
 import { moduleValue, promptContent } from "../../shared/config/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { filesOverlap, openAttempts, readPlanParts } from "../../shared/store/index.ts";
-import type { IndexDb, Store } from "../../shared/store/index.ts";
+import {
+  filesOverlap,
+  isolationOf,
+  kernelWorktrees,
+  openAttempts,
+  readPlanParts,
+} from "../../shared/store/index.ts";
+import type { IndexDb } from "../../shared/store/index.ts";
 import type { GraphDeps } from "./deps.ts";
 import type { ChangeGraph } from "./graph.ts";
 import { gateViews, readGraph, stageOfChange } from "./graph.ts";
@@ -47,7 +53,7 @@ export function nextStep(
           ...(command === undefined ? {} : { command }),
           instruction: instructionOf(deps, change, read, next),
           ...(next.kind === "execute-part"
-            ? { wave: waveOf(deps.store, change, read, index) }
+            ? { wave: await waveOf(deps, change, read, index) }
             : {}),
         },
       };
@@ -72,7 +78,16 @@ export function nextStep(
   });
 }
 
-function waveOf(store: Store, change: ActiveChange, read: ChangeGraph, index: IndexDb): WaveItem[] {
+async function waveOf(
+  deps: GraphDeps,
+  change: ActiveChange,
+  read: ChangeGraph,
+  index: IndexDb,
+): Promise<WaveItem[]> {
+  const parts = readPlanParts(deps.store, change.dir);
+  const worktrees = parts.some((part) => isolationOf(part.data) === "worktree")
+    ? await kernelWorktrees(deps.git, deps.store, change.projectRoot)
+    : [];
   const started = new Set(
     read.entries.flatMap((entry) =>
       entry.type === "transition" &&
@@ -87,7 +102,7 @@ function waveOf(store: Store, change: ActiveChange, read: ChangeGraph, index: In
     profile: read.view.profile,
     tree: moduleValue(executionTreeModule, read.resolved.value),
     files: new Map(
-      readPlanParts(store, change.dir).map((part) => [
+      parts.map((part) => [
         part.id,
         part.tasks.flatMap((task) => task.files.map((file) => file.path)),
       ]),
@@ -95,5 +110,13 @@ function waveOf(store: Store, change: ActiveChange, read: ChangeGraph, index: In
     overlap: filesOverlap,
     started,
     tickets: openAttempts(index, change.id),
+    isolation: new Map(parts.map((part) => [part.id, isolationOf(part.data)])),
+    worktree: moduleValue(executionWorktreeModule, read.resolved.value),
+    live: new Map(
+      worktrees
+        .filter((found) => found.change === change.id)
+        .map((found) => [found.part, found.path]),
+    ),
+    liveCount: worktrees.length,
   });
 }

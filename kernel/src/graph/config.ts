@@ -1,6 +1,7 @@
 // The settings the graph reads (`kernel-settings`; design D-9, D-11): the
 // `policy.gates` switches, the `execution.tree` rule of the execute wave
-// (T41-D3) and one instruction template per artifact kind.
+// (T41-D3), the part worktrees of `execution.worktree` (T45) and one
+// instruction template per artifact kind.
 // config.ts imports only shared/config and zod, so the kind names are listed
 // here; a unit test keeps the list equal to the kind registry.
 import * as z from "zod";
@@ -34,6 +35,36 @@ export const executionTreeModule = defineConfigModule({
       }),
       "min-parts": z.int().min(2).max(15).default(2).meta({
         description: "Ready parts not started a large Change needs before they run as a tree.",
+      }),
+    })
+    .prefault({}),
+});
+
+export const executionWorktreeModule = defineConfigModule({
+  key: "execution.worktree",
+  consumer: "graph",
+  owner: "T45",
+  description: "Kernel-owned git worktrees of the plan parts with isolation: worktree.",
+  schema: z
+    .strictObject({
+      enabled: z.boolean().default(true).meta({
+        description: "false runs a worktree part in the home checkout, alone in its wave.",
+      }),
+      dir: z.string().min(1).default(".bdk/.machine/worktrees").meta({
+        description: "Where worktrees live, against the home project root unless absolute.",
+      }),
+      setup: z
+        .strictObject({
+          command: z.string().min(1).optional().meta({
+            description: "Shell command run in a new worktree after the .worktreeinclude copy.",
+          }),
+          timeout: z.int().min(10).max(540).default(300).meta({
+            description: "Seconds the setup may run; keeps part start inside a 600 s shell limit.",
+          }),
+        })
+        .prefault({}),
+      "max-live": z.int().min(1).max(15).default(3).meta({
+        description: "Kernel worktrees alive at once; a later worktree part waits for a wave.",
       }),
     })
     .prefault({}),

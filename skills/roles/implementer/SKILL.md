@@ -27,6 +27,8 @@ If the package is missing or does not parse, stop and return `blocked` with the 
 - When the task's `stop-rule` fires, stop and return `blocked` naming it.
 - On a `review-fix` ticket the package embeds the round's blocking entries instead of a task: fix each one, name each entry you fixed by id in your report, and resolve none, because the orchestrator resolves them after the commit.
 - Log a `decision` for a choice the package leaves open and an `assumption` for what you could not verify.
+- When the package has a `Work root` section, every file you read or edit and every command you run, its checks included, stay inside that path; `bdk` commands stay as written, since the kernel finds the home checkout itself.
+- When the package has a `Conflict` section, edit only its paths and follow its instruction, leave staging and the merge commit to the kernel, and return `blocked` naming the paths the instruction does not settle.
 - Leave your changes uncommitted; the orchestrator commits them.
 - Never run git commands that discard work or rewrite history (stash, reset, clean, checkout or restore of paths, commit, rebase and the like), because other agents share this working tree; return `blocked` with the cause instead.
 

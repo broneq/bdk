@@ -1,6 +1,6 @@
 // Change directory paths, branch markers and the active-Change resolution
 // (`kernel-state`, Branch binding). Only `shared/store` builds these paths.
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import type { Git } from "../git/index.ts";
 import { isChangeId } from "../ids/index.ts";
@@ -9,6 +9,7 @@ import type { Refusal } from "../refusal/index.ts";
 import type { ActiveChange } from "../registry/index.ts";
 import { findProjectRoot } from "./store.ts";
 import type { Store } from "./store.ts";
+import { readHomeMarker } from "./worktree.ts";
 
 export interface ChangeLocation {
   readonly id: string;
@@ -130,6 +131,8 @@ export function resolveActiveChange(
   where: { readonly cwd: string; readonly workTree: string },
 ): ActiveChange | Refusal {
   const projectRoot = findProjectRoot(store, where.cwd, where.workTree);
+  const home = readHomeMarker(store, resolve(where.workTree));
+  if (home !== undefined) return worktreeChange(store, git, projectRoot, home.change);
   const branch = git.currentBranch(where.workTree);
   if (branch === undefined) {
     return refuse(
@@ -152,6 +155,25 @@ export function resolveActiveChange(
       '/bdk:change new "<intent>"',
       ...resumeLines(store, projectRoot),
     ]);
+  }
+  return { id: location.id, dir: location.dir, projectRoot, branch };
+}
+
+/** The Change a part worktree's home marker names, on the home checkout's branch. */
+function worktreeChange(
+  store: Store,
+  git: Git,
+  projectRoot: string,
+  id: string,
+): ActiveChange | Refusal {
+  const location = findChange(store, projectRoot, id);
+  const branch = git.currentBranch(projectRoot);
+  if (location === undefined || location.archived || branch === undefined) {
+    return refuse(
+      "state/worktree-orphaned",
+      `this part worktree belongs to ${id}, which is not the active Change of ${projectRoot}`,
+      ["bdk rebuild"],
+    );
   }
   return { id: location.id, dir: location.dir, projectRoot, branch };
 }

@@ -1,3 +1,4 @@
+import { globalDir } from "../../shared/config/index.ts";
 import { isRefusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange, Handler } from "../../shared/registry/index.ts";
 import { renderRebuild } from "../render/rebuild.ts";
@@ -14,6 +15,7 @@ export function rebuildCommand(deps: RebuildDeps): Handler {
   return async (context) => {
     const report = await rebuild(deps, active(context.change), {
       all: context.flags["--all"] === true,
+      globalDir: globalDir(context.runtime),
     });
     return isRefusal(report) ? report : { data: report, text: renderRebuild(report) };
   };

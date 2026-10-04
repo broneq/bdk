@@ -40,6 +40,8 @@ Each part of `wave` carries `started`, its open `tickets` and its `mode`, `flat`
 
 **Tree.** One lead runs each tree part. For each tree part: `bdk attempt open part-lead <part> --json`, `bdk dispatch build <part> lead <ticket> --json`, then one `Agent` call in the background with `subagent_type: bdk:lead` and the package path as the whole prompt. The lead dispatches the part's tasks and commits them; you do not open task tickets of a tree part. When a lead returns, read its envelope, close its `part-lead` ticket and act on `next.action`: `part-done` means run `bdk part done <part> --json`, then `bdk next --json`.
 
+**Worktree parts.** A part with `isolation: worktree` runs in its own worktree, which `bdk part start` makes; its wave item then carries `workdir`. Start the `shared` parts of the wave first, then the worktree parts, so the setup of a worktree does not hold back the rest. Dispatch a worktree part as any other: its packages carry the work root, so pass only the package path, and never set the host's own `isolation: worktree` on an `Agent` call, which branches from the default branch instead of the Change. The kernel runs git in the worktree and merges it back at `bdk part done`.
+
 Start every agent in the background and end your turn after a dispatch round; each finished agent wakes you. On an escalation ticket, pass each agent the `model` that its `bdk dispatch build` returned.
 
 ## Envelopes
@@ -79,6 +81,9 @@ A step node of a part that is already done means a later part changed one of its
 - Exit 2 is a refusal: read `rule`, `why` and `instead`, and do what `instead` names. Never repeat the refused command unchanged.
 - `policy/files-busy` from `attempt open` means another open ticket holds a file of the target: start it after that ticket closes. The kernel also keeps parts whose `Files:` overlap out of one `wave`.
 - Parts share one working tree, so uncommitted files may be another part's work. Never run git commands that discard or hide work (stash, reset, clean, checkout or restore of paths); report the refusal to the user instead.
+- `policy/merge-conflict` from `part done`: open the merge ticket its `instead` names, `bdk attempt open verify-fix <part> --json`, dispatch the implementer and then the ticket's `steps` as for any code ticket, close it, and on `next.action: part-done` run `bdk part done <part> --json` again. A `parked` answer goes to the user like any other.
+- `policy/merge-blocked` from `part done`: the home checkout has uncommitted changes the merge would overwrite; run `part done` again after the next commit of the home checkout.
+- `runtime/worktree-setup-failed` from `part start` and `policy/worktree-dirty` from `part done`: start nothing more for that part, keep running the other parts of the wave, and name the refusal and its `instead` in your report. Run no git command in a worktree, edit nothing there yourself, and leave `execution.worktree.enabled` to the user.
 - Exit 3 is a malformed command: fix the argument it names, using `bdk <command> --help`.
 - A `BDK STOP` line or another exit code: stop and report the output.
 

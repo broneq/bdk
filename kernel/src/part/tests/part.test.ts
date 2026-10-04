@@ -156,6 +156,44 @@ describe("part start", () => {
     expect(h.store.list(`${DIR}/log`)).toStrictEqual(before);
   });
 
+  it("refuses policy/validation-failed naming isolation for a worktree part without a reason", async () => {
+    const h = await planned();
+    const path = `${DIR}/plan/parts/01-part.md`;
+    h.store.write(
+      path,
+      (h.store.read(path) ?? "").replace("schema: 1\n", "schema: 1\nisolation: worktree\n"),
+    );
+    await h.run(["done", "plan"], T1);
+    const result = await h.run(["part", "start", "01", "--json"], T1);
+    expect(result.code).toBe(2);
+    expect(result.json).toMatchObject({ rule: "policy/validation-failed" });
+    expect((result.json as { why: string }).why).toContain("fails check isolation");
+  });
+
+  it("refuses runtime/git-too-old for a worktree part on git 2.37 and writes nothing", async () => {
+    const h = await planned();
+    const path = `${DIR}/plan/parts/01-part.md`;
+    h.store.write(
+      path,
+      (h.store.read(path) ?? "").replace(
+        "schema: 1\n",
+        "schema: 1\nisolation: worktree\nisolation-reason: both regenerate the lockfile\n",
+      ),
+    );
+    await h.run(["done", "plan"], T1);
+    const run = h.git.run.bind(h.git);
+    h.git.run = (args, cwd) =>
+      args[0] === "--version"
+        ? Promise.resolve({ code: 0, stdout: "git version 2.37.1\n", stderr: "" })
+        : run(args, cwd);
+    const before = h.store.list(`${DIR}/log`);
+    const result = await h.run(["part", "start", "01", "--json"], T1);
+    expect(result.code).toBe(5);
+    expect(result.json).toMatchObject({ rule: "runtime/git-too-old" });
+    expect((result.json as { why: string }).why).toContain("2.38");
+    expect(h.store.list(`${DIR}/log`)).toStrictEqual(before);
+  });
+
   it("refuses policy/do-not-touch-overlap before readiness", async () => {
     const h = harness();
     setChange(h.store, { profile: "tiny" });
@@ -185,6 +223,7 @@ describe("part start", () => {
       doNotTouch: ["docs/**"],
       successMeasure: "m",
       entry: report.entry,
+      isolation: "shared",
     });
     const marker = h.store.list(`${DIR}/log`).find((name) => name.includes(report.entry));
     const document = readDocument(h.store, `${DIR}/log/${marker ?? ""}`);
