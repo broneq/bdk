@@ -313,3 +313,14 @@ describe("author self-check before verification (P8, T42)", () => {
     expect(body.slice(body.indexOf("## Finish"))).toContain("`/bdk:cr`");
   });
 });
+
+describe("gates passed by policy are named by id (T42 run probe)", () => {
+  it.each(["run", "close"])(
+    "%s names each gate passed by policy by its id in its finish",
+    (name) => {
+      const { body } = readSkill(name);
+      const finish = body.slice(body.indexOf("## Finish"));
+      expect(finish).toMatch(/gates passed by policy[^\n]*by its id \(`gate:(design|review)`\)/);
+    },
+  );
+});
