@@ -12,13 +12,13 @@
 
 BDK 3 keeps its state under `.bdk/` too, written only by the kernel (`bdk ...`) and the stage skills that call it:
 
-| Path                       | Written by                                           | Tracked | Contents                                                                                 |
-| -------------------------- | ---------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------- |
-| `.bdk/settings.yaml`       | `/bdk:setup` through `bdk config set`                | yes     | The project's languages, tool commands and feature flags, shared by the team             |
-| `.bdk/settings.local.yaml` | `bdk config set --local`                             | no      | Your personal overrides                                                                  |
-| `.bdk/rules/`              | `bdk rules import`, `bdk rules accept`               | yes     | The project's rules, one file per rule id                                                |
-| `.bdk/changes/<changeId>/` | `/bdk:change` through `bdk change new`, later stages | yes     | One Change: its intent, design, plan, ledger and progress                                |
-| `.bdk/.machine/`           | the kernel                                           | no      | Caches, the schema copy and the branch bindings of the Changes; rebuilt by `bdk rebuild` |
+| Path                       | Written by                                           | Tracked | Contents                                                                                                                                            |
+| -------------------------- | ---------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.bdk/settings.yaml`       | `/bdk:setup` through `bdk config set`                | yes     | The project's languages, tool commands and feature flags, shared by the team                                                                        |
+| `.bdk/settings.local.yaml` | `bdk config set --local`                             | no      | Your personal overrides                                                                                                                             |
+| `.bdk/rules/`              | `bdk rules import`, `bdk rules accept`               | yes     | The project's rules, one file per rule id                                                                                                           |
+| `.bdk/changes/<changeId>/` | `/bdk:change` through `bdk change new`, later stages | yes     | One Change: its intent, design, plan, ledger and progress                                                                                           |
+| `.bdk/.machine/`           | the kernel                                           | no      | Caches, the schema copy, the branch bindings of the Changes and, under `worktrees/`, the worktrees of the parts in flight; rebuilt by `bdk rebuild` |
 
 The design stage writes into the Change directory:
 
@@ -33,12 +33,12 @@ The design stage writes into the Change directory:
 
 The plan stage writes into the same directory:
 
-| Path under `.bdk/changes/<changeId>/` | Written by                              | Contents                                                                                                |
-| ------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `plan/parts/<nn>-<slug>.md`           | `/bdk:plan`                             | One plan part: at most 8 tasks and 8 KB, each task a contract with its `Files:` and test cases          |
-| `spec-delta/<capability>.md`          | `/bdk:plan`                             | The spec delta of each capability a part names in `spec-impact`, checked with `bdk spec delta check`    |
-| `log/`                                | `/bdk:plan`, `/bdk:verify-plan`         | `decision` entries that settle open questions, the verifier's `report`, `blocker` and `finding` entries |
-| `reports/`                            | the plan verifier, through `log ingest` | The verifier's report, whose verdict the `plan-verify` node reads                                       |
+| Path under `.bdk/changes/<changeId>/` | Written by                              | Contents                                                                                                                                                                                              |
+| ------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `plan/parts/<nn>-<slug>.md`           | `/bdk:plan`                             | One plan part: at most 8 tasks and 8 KB, each task a contract with its `Files:` and test cases; `isolation: worktree` builds it in its own worktree ([Worktree parts](../concepts/worktree-parts.md)) |
+| `spec-delta/<capability>.md`          | `/bdk:plan`                             | The spec delta of each capability a part names in `spec-impact`, checked with `bdk spec delta check`                                                                                                  |
+| `log/`                                | `/bdk:plan`, `/bdk:verify-plan`         | `decision` entries that settle open questions, the verifier's `report`, `blocker` and `finding` entries                                                                                               |
+| `reports/`                            | the plan verifier, through `log ingest` | The verifier's report, whose verdict the `plan-verify` node reads                                                                                                                                     |
 
 The execute stage writes into the same directory, and commits each task to the project:
 

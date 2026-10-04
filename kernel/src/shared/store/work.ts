@@ -21,6 +21,9 @@ export interface PlanPartFrontmatter {
   readonly "depends-on": readonly string[];
   /** Absent means `none` in `tiny` and `small` (T30). */
   readonly "spec-impact"?: "none" | readonly string[] | undefined;
+  /** Absent means `shared` (T45). */
+  readonly isolation?: "shared" | "worktree" | undefined;
+  readonly "isolation-reason"?: string | undefined;
 }
 
 export interface PlanPartFile {

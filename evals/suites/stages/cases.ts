@@ -11,7 +11,11 @@ import { parse } from "yaml";
 import { SEEDS, isSeed } from "./seeds.ts";
 import type { SeedName } from "./seeds.ts";
 
-/** A kernel command and what its JSON answer must hold, or a pattern the final reply must match. */
+/**
+ * A kernel command and what its JSON answer must hold, a shell command for
+ * the git state no kernel command reports, or a pattern the final reply must
+ * match.
+ */
 export type Expectation =
   | {
       readonly run: string;
@@ -20,6 +24,14 @@ export type Expectation =
       readonly json?: Readonly<Record<string, unknown>>;
       /** Dotted path in the `--json` answer -> a pattern its string value matches. */
       readonly match?: Readonly<Record<string, string>>;
+    }
+  | {
+      /** Run with `sh -c` in the working copy, `$BDK` set as in `prepare`. */
+      readonly shell: string;
+      /** The expected exit code; 0 when absent. */
+      readonly exit?: number;
+      /** A pattern its stdout matches. */
+      readonly stdout?: string;
     }
   | { readonly reply: string };
 
@@ -66,6 +78,21 @@ function expectationProblems(value: unknown, at: string): string[] {
   if (!isRecord(value)) return [`${at} is not a mapping`];
   const problems: string[] = [];
   const keys = Object.keys(value);
+  if ("shell" in value) {
+    if (typeof value.shell !== "string" || value.shell.trim() === "") {
+      problems.push(`${at}: shell must be a non-empty command`);
+    }
+    if (value.exit !== undefined && !Number.isInteger(value.exit)) {
+      problems.push(`${at}: exit must be an integer`);
+    }
+    if (value.stdout !== undefined && typeof value.stdout !== "string") {
+      problems.push(`${at}: stdout must be a pattern`);
+    }
+    for (const key of keys) {
+      if (!["shell", "exit", "stdout"].includes(key)) problems.push(`${at}: unknown field ${key}`);
+    }
+    return problems;
+  }
   if ("reply" in value) {
     if (typeof value.reply !== "string" || value.reply === "") {
       problems.push(`${at}: reply must be a non-empty pattern`);
@@ -74,7 +101,7 @@ function expectationProblems(value: unknown, at: string): string[] {
     return problems;
   }
   if (typeof value.run !== "string" || value.run.trim() === "") {
-    problems.push(`${at}: run must name a kernel command, or reply a pattern`);
+    problems.push(`${at}: run must name a kernel command, shell a command, or reply a pattern`);
   }
   if (value.exit !== undefined && !Number.isInteger(value.exit)) {
     problems.push(`${at}: exit must be an integer`);

@@ -130,3 +130,43 @@ describe("checkExpectations", () => {
     expect(result.pass).toBe(true);
   });
 });
+
+describe("shell expectations", () => {
+  const shell = (answers: Record<string, { code: number; stdout: string }>) => (command: string) =>
+    answers[command] ?? { code: 127, stdout: "" };
+
+  it("pass on the expected exit and a matching stdout", () => {
+    const result = checkExpectations(
+      [
+        { shell: "git log --format=%B", stdout: "BDK-Part: 02" },
+        { shell: "grep -c '<<<<<<<' package-lock.json", exit: 1 },
+      ],
+      kernel({}),
+      "",
+      shell({
+        "git log --format=%B": { code: 0, stdout: "chore(bdk): merge part 02\n\nBDK-Part: 02\n" },
+        "grep -c '<<<<<<<' package-lock.json": { code: 1, stdout: "0\n" },
+      }),
+    );
+    expect(result).toEqual({ pass: true, failures: [] });
+  });
+
+  it("fail naming the command on another exit or a stdout that does not match", () => {
+    const result = checkExpectations(
+      [
+        { shell: "false" },
+        { shell: "git worktree list", stdout: "^\\S+\\s+\\S+\\s+\\[feat/eval\\]\\n$" },
+      ],
+      kernel({}),
+      "",
+      shell({
+        false: { code: 1, stdout: "" },
+        "git worktree list": { code: 0, stdout: "/w abc [feat/eval]\n/w/x def [bdk-part/c/02]\n" },
+      }),
+    );
+    expect(result.failures).toEqual([
+      "false: exit 1, expected 0",
+      "git worktree list: stdout does not match /^\\S+\\s+\\S+\\s+\\[feat/eval\\]\\n$/",
+    ]);
+  });
+});

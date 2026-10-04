@@ -87,3 +87,11 @@ describe("swarm skill", () => {
     ).toBe(true);
   });
 });
+
+describe("the Claude Code host note on worktrees (T45)", () => {
+  it("names the missing working directory and leaves the host's isolation unused", () => {
+    const text = readFileSync(join(DIR, "references", "hosts", "claude-code.md"), "utf8");
+    expect(text).toMatch(/no working-directory parameter/);
+    expect(text).toMatch(/BDK does not use the Agent tool's own `isolation: worktree`/);
+  });
+});

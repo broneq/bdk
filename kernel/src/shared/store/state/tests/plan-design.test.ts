@@ -5,7 +5,7 @@ import { KernelRefusal } from "../../../refusal/index.ts";
 import { splitFrontmatter } from "../../frontmatter.ts";
 import { designIndexKind, designKind, designPartKind } from "../design.ts";
 import { generateDesignIndex, generatePlanIndex } from "../indexes.ts";
-import { planIndexKind, planPartKind } from "../plan.ts";
+import { isolationOf, planIndexKind, planPartKind } from "../plan.ts";
 import * as example from "./examples.ts";
 import { issues, without } from "./issues.ts";
 
@@ -35,6 +35,22 @@ describe("plan part", () => {
     expect(issues(schema, without(example.planPart, "spec-impact"))).toStrictEqual([]);
   });
 
+  it("accepts a part without isolation and a worktree part with its reason", () => {
+    expect(issues(schema, { ...example.planPart, isolation: "shared" })).toStrictEqual([]);
+    expect(
+      issues(schema, {
+        ...example.planPart,
+        isolation: "worktree",
+        "isolation-reason": "both parts regenerate pnpm-lock.yaml",
+      }),
+    ).toStrictEqual([]);
+  });
+
+  it("reads an absent isolation as shared", () => {
+    expect(isolationOf(schema.parse(example.planPart))).toBe("shared");
+    expect(isolationOf({ isolation: "worktree" })).toBe("worktree");
+  });
+
   it.each(Object.keys(example.planPart).filter((key) => key !== "spec-impact"))(
     "requires %s",
     (key) => {
@@ -48,6 +64,7 @@ describe("plan part", () => {
     ["depends-on", "01"],
     ["spec-impact", "auth-login"],
     ["success-measure", ""],
+    ["isolation", "sandbox"],
   ])("rejects %s: %j", (key, value) => {
     expect(issues(schema, { ...example.planPart, [key]: value })).toStrictEqual([key]);
   });

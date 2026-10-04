@@ -9,6 +9,8 @@ import { dirname, join, resolve } from "node:path";
 import { KernelRefusal, refuse } from "../refusal/index.ts";
 import type { Refusal } from "../refusal/index.ts";
 
+export * from "./worktree.ts";
+
 export interface GitResult {
   readonly code: number;
   readonly stdout: string;
@@ -394,7 +396,7 @@ export async function dirtyTracked(git: Git, workTree: string): Promise<string[]
     .sort();
 }
 
-/** A commit reachable from `HEAD` that carries `BDK-Change` of one Change. */
+/** A commit reachable from `HEAD` or a live part branch that carries `BDK-Change` of one Change. */
 export interface TrailerCommit {
   readonly commit: string;
   readonly subject: string;
@@ -402,10 +404,13 @@ export interface TrailerCommit {
   readonly task?: string;
   /** `BDK-Ticket` of a review fix (`bdk commit <change-id>`, T42). */
   readonly ticket?: string;
+  /** Two or more parents: the shape of a part merge commit (`kernel-loops`, Progress from git). */
+  readonly merge?: true;
 }
 
 const TRAILER_FORMAT = [
   "%H",
+  "%P",
   "%s",
   "%(trailers:key=BDK-Change,valueonly,separator=%x2c)",
   "%(trailers:key=BDK-Part,valueonly,separator=%x2c)",
@@ -415,8 +420,10 @@ const TRAILER_FORMAT = [
 
 /**
  * The commits whose `BDK-Change` trailer names `change`, newest first, with
- * their `BDK-Part`, `BDK-Task` and `BDK-Ticket` trailers (progress from git, V1-4). No
- * commits before the first one; a missing git is `runtime/git-missing`.
+ * their `BDK-Part`, `BDK-Task` and `BDK-Ticket` trailers (progress from git, V1-4),
+ * read from `HEAD` and from each live part branch `bdk-part/<change>/<part>`
+ * (T45), which exists exactly while its part runs in a worktree. No commits
+ * before the first one; a missing git is `runtime/git-missing`.
  */
 export async function trailerCommits(
   git: Git,
@@ -427,6 +434,8 @@ export async function trailerCommits(
     [
       "log",
       "HEAD",
+      // The live part branches of the Change; a glob that matches none adds nothing.
+      `--glob=refs/heads/bdk-part/${change}/*`,
       "--fixed-strings",
       `--grep=BDK-Change: ${change}`,
       `--format=${TRAILER_FORMAT}%x1e`,
@@ -436,9 +445,15 @@ export async function trailerCommits(
   if (result.code !== 0) return [];
   const commits: TrailerCommit[] = [];
   for (const record of result.stdout.split("\x1e")) {
-    const [commit = "", subject = "", changes = "", part = "", task = "", ticket = ""] = record
-      .trim()
-      .split("\x1f");
+    const [
+      commit = "",
+      parents = "",
+      subject = "",
+      changes = "",
+      part = "",
+      task = "",
+      ticket = "",
+    ] = record.trim().split("\x1f");
     if (commit === "" || !changes.split(",").some((value) => value.trim() === change)) continue;
     commits.push({
       commit,
@@ -446,6 +461,7 @@ export async function trailerCommits(
       ...(part.trim() === "" ? {} : { part: part.trim() }),
       ...(task.trim() === "" ? {} : { task: task.trim() }),
       ...(ticket.trim() === "" ? {} : { ticket: ticket.trim() }),
+      ...(parents.trim().split(" ").length >= 2 ? { merge: true as const } : {}),
     });
   }
   return commits;
@@ -477,6 +493,11 @@ export function gitInProgress(workTree: string): Refusal | undefined {
     }
   }
   return undefined;
+}
+
+/** The absolute git directory of a working tree; a linked worktree's own, not the common one. */
+export function gitDirOf(workTree: string): string {
+  return resolveGitDir(resolve(workTree));
 }
 
 function resolveGitDir(workTree: string): string {

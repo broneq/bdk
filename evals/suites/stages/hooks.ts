@@ -16,7 +16,7 @@ import type { StageCase } from "./cases.ts";
 import { checkExpectations } from "./checks.ts";
 import { countRefusals, refusalMetrics } from "./refusals.ts";
 import { runSeed } from "./seeds.ts";
-import type { CheckResult, KernelCall } from "./checks.ts";
+import type { CheckResult, KernelCall, ShellCall } from "./checks.ts";
 
 const ANSWER_HOOK = fileURLToPath(new URL("./answer-hook.ts", import.meta.url));
 
@@ -91,6 +91,18 @@ export function kernelIn(workDir: string, settings: KernelSettings) {
   };
 }
 
+/** One shell command in the run's working copy, as a case's `prepare` runs it. */
+export function shellIn(workDir: string, settings: StageCellSettings) {
+  return (command: string): ShellCall => {
+    const result = spawnSync("sh", ["-c", command], {
+      cwd: workDir,
+      env: environment(settings),
+      encoding: "utf8",
+    });
+    return { code: result.status ?? -1, stdout: result.stdout };
+  };
+}
+
 function caseOf(context: RunContext): StageCase {
   const text = context.vars[CASE_VAR];
   if (text === undefined) throw new Error(`the test carries no ${CASE_VAR} var`);
@@ -129,6 +141,7 @@ export const hooks: SuiteHooks = {
       stage.expect,
       kernelIn(context.cell.workDir, settingsOf(context)),
       typeof output === "string" ? output : JSON.stringify(output ?? ""),
+      shellIn(context.cell.workDir, settingsOf(context)),
     );
     const dir = rawDirOf(context);
     mkdirSync(dir, { recursive: true });

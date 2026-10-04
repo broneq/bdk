@@ -93,6 +93,11 @@ export function settingsRegistry(): ConfigRegistry {
       checkpointModule,
       promptsModule,
     ],
-    prompts: [...rulesConfig.prompts, ...ctxConfig.prompts, ...graphConfig.prompts],
+    prompts: [
+      ...rulesConfig.prompts,
+      ...ctxConfig.prompts,
+      ...graphConfig.prompts,
+      ...dispatchConfig.prompts,
+    ],
   });
 }

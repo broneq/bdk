@@ -4,24 +4,23 @@
 // `--all` widens it to every Change directory of the project.
 import { performance } from "node:perf_hooks";
 
-import type { Git } from "../../shared/git/index.ts";
-import { refuse } from "../../shared/refusal/index.ts";
+import { recoverWorktrees, worktreeSettings } from "../../part/index.ts";
+import type { PartDeps, RecoveredWorktree } from "../../part/index.ts";
+import { resolveOrRefuse } from "../../shared/config/index.ts";
+import { KernelRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import { listChangeDirs, rebuildChanges, withIndex } from "../../shared/store/index.ts";
-import type { IndexOpener, Store } from "../../shared/store/index.ts";
+import type { IndexDb } from "../../shared/store/index.ts";
 import type { RebuildReport } from "../domain/report.ts";
 
-export interface RebuildDeps {
-  readonly store: Store;
-  readonly git: Git;
-  readonly openIndex: IndexOpener;
-}
+/** The part slice's dependencies: worktree recovery reads the settings and runs the setup. */
+export type RebuildDeps = PartDeps;
 
 export function rebuild(
   deps: RebuildDeps,
   change: ActiveChange,
-  input: { readonly all: boolean },
+  input: { readonly all: boolean; readonly globalDir: string },
 ): Promise<RebuildReport | Refusal> {
   const locations = input.all
     ? listChangeDirs(deps.store, change.projectRoot)
@@ -34,6 +33,7 @@ export function rebuild(
         "fix the commit trailer or the plan part named, then run bdk rebuild again",
       ]);
     }
+    const recovered = await recover(deps, index, change, locations, input.globalDir);
     return {
       changes: result.changes,
       entries: result.entries,
@@ -41,7 +41,51 @@ export function rebuild(
       commits: result.commits,
       migrated: result.migrated,
       durationMs: Math.round(performance.now() - started),
-      warnings: result.warnings,
+      warnings: [...result.warnings, ...recovered.warnings],
+      worktrees: recovered.worktrees,
     };
   });
+}
+
+/**
+ * Worktree recovery of every live Change in scope (T45 design D9); settings
+ * that do not resolve skip it with a warning, since rebuild is the repair path.
+ */
+async function recover(
+  deps: RebuildDeps,
+  index: IndexDb,
+  change: ActiveChange,
+  locations: readonly { readonly id: string; readonly dir: string; readonly archived: boolean }[],
+  globalDir: string,
+): Promise<{ worktrees: RecoveredWorktree[]; warnings: string[] }> {
+  const worktrees: RecoveredWorktree[] = [];
+  const warnings: string[] = [];
+  const projectRoot = change.projectRoot;
+  let resolved;
+  try {
+    resolved = resolveOrRefuse(
+      {
+        store: deps.store,
+        settings: deps.settings,
+        globalDir,
+        projectRoot,
+        pluginRoot: deps.pluginRoot,
+      },
+      { removed: "ignore" },
+    );
+  } catch (error) {
+    if (!(error instanceof KernelRefusal)) throw error;
+    resolved = error.refusal;
+  }
+  if ("refused" in resolved) {
+    return { worktrees, warnings: [`part worktrees not settled: ${resolved.why}`] };
+  }
+  const settings = worktreeSettings(resolved.value);
+  for (const location of locations) {
+    if (location.archived) continue;
+    const found = await recoverWorktrees(deps, index, { ...location, projectRoot }, settings);
+    worktrees.push(...found.worktrees);
+    warnings.push(...found.warnings);
+  }
+  return { worktrees, warnings };
 }

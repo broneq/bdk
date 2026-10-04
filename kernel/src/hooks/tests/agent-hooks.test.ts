@@ -208,7 +208,7 @@ describe("continuation check", () => {
       args[0] === "log"
         ? Promise.resolve({
             code: 0,
-            stdout: `c0ffee1\x1fverify\x1f${CHANGE}\x1f02\x1f02-3\x1e`,
+            stdout: `c0ffee1\x1fp0\x1fverify\x1f${CHANGE}\x1f02\x1f02-3\x1e`,
             stderr: "",
           })
         : run(args, cwd);
@@ -282,6 +282,41 @@ describe("agent guards", () => {
       tool_input: { to: "main", message: `${entry} changes the token` },
     });
     expect(toMain.code).toBe(0);
+  });
+
+  it("keeps a worker's edits inside the workdir of its package (T45)", async () => {
+    const h = harness();
+    const workdir = `${ROOT}/.bdk/.machine/worktrees/${CHANGE}/02`;
+    openTicket(h.store, TICKET, "02-3");
+    writePackage(h.store, TICKET, "implementer", "02-3", { workdir });
+    await h.run(["hooks", "post-tool"], spawn(undefined, WORKER, "bdk:worker", `Read ${PACKAGE}.`));
+    const edit = (agent: string | undefined, path: string, cwd = ROOT) =>
+      preTool(h, {
+        ...(agent === undefined ? {} : { agent_id: agent, agent_type: "bdk:worker" }),
+        cwd,
+        tool_name: "Edit",
+        tool_input: { file_path: path, old_string: "a", new_string: "b" },
+      });
+    const outside = await edit(WORKER, `${ROOT}/src/api/http.ts`);
+    expect(outside.code).toBe(2);
+    expect(outside.json).toMatchObject({ rule: "guard/worktree-scope" });
+    expect(JSON.stringify(outside.json)).toContain(workdir);
+    expect((await edit(WORKER, `${workdir}/src/api/http.ts`)).code).toBe(0);
+    expect((await edit(WORKER, "src/api/http.ts", workdir)).code).toBe(0);
+    expect((await edit(WORKER, `${workdir}/../01/src/a.ts`)).code).toBe(2);
+    expect((await edit(undefined, `${ROOT}/src/api/http.ts`)).code).toBe(0);
+  });
+
+  it("leaves a worker without workdir in its package to edit anywhere", async () => {
+    const h = harness();
+    await tree(h);
+    const result = await preTool(h, {
+      agent_id: WORKER,
+      agent_type: "bdk:worker",
+      tool_name: "Write",
+      tool_input: { file_path: `${ROOT}/src/api/http.ts`, content: "x" },
+    });
+    expect(result.code).toBe(0);
   });
 
   it("scopes a lead's verbs to the part of its package", async () => {

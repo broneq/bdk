@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -122,6 +122,39 @@ describe("runSeed", { timeout: 60_000 }, () => {
     expect(tasks).toStrictEqual(["01-1", "02-1"]);
     expect(readFileSync(join(dir, "src/api/http.ts"), "utf8")).toContain("isProblemDetails");
     expect(readFileSync(join(dir, "src/ui/asyncState.ts"), "utf8")).toContain("getLoadMessage");
+    expect(git(dir, "status", "--porcelain")).toBe("");
+  });
+
+  it("shared-lockfile leaves two disjoint parts in one wave, part 02 in a worktree", () => {
+    const dir = base();
+    const kernel = { bundle: BUNDLE, configHome: temp() };
+    runSeed("shared-lockfile", dir, kernel);
+    expect(bdkNext(dir, kernel)).toMatchObject({
+      command: "/bdk:execute",
+      artifact: { id: "execute-part:01", state: "ready" },
+      wave: [
+        { part: "01", started: false, isolation: "shared" },
+        { part: "02", started: false, isolation: "worktree" },
+      ],
+    });
+    expect(git(dir, "status", "--porcelain")).toBe("");
+  });
+
+  it("shared-lockfile-unisolated leaves both parts shared and plan-verify next", () => {
+    const dir = base();
+    const kernel = { bundle: BUNDLE, configHome: temp() };
+    runSeed("shared-lockfile-unisolated", dir, kernel);
+    expect(bdkNext(dir, kernel)).toMatchObject({ artifact: { id: "plan-verify" } });
+    const { items } = bdkJson(dir, kernel, ["part", "list"]) as { items: { part: string }[] };
+    expect(items.map((item) => item.part)).toStrictEqual(["01", "02"]);
+    const [change] = readdirSync(join(dir, ".bdk", "changes")).filter((name) =>
+      name.startsWith("20"),
+    );
+    const part = readFileSync(
+      join(dir, ".bdk", "changes", change ?? "", "plan/parts/02-part.md"),
+      "utf8",
+    );
+    expect(part).not.toMatch(/^isolation/m);
     expect(git(dir, "status", "--porcelain")).toBe("");
   });
 

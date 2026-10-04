@@ -12,13 +12,13 @@ Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; th
 
 ## Input
 
-Your prompt or skill argument is the path of your dispatch package. Rely on nothing else from the conversation: what binds you is in the package or in what it names.
+Your prompt or skill argument is the path of your dispatch package. Rely on nothing else from the conversation.
 
 1. Read the package with `bdk dispatch show <path>`. It carries your ticket, the part, its `Tasks` section, the decisions and blockers that bind you, and your report path.
-2. Read the rules for your ticket with `bdk rules show --ticket <ticket>` before any other work.
+2. Read your rules with `bdk rules show --ticket <ticket>` before any other work.
 3. Your own id is the `BDK-AGENT-ID` line of your start context.
 
-If the package is missing or unparseable, return `blocked` with the reason.
+A missing or unparseable package: return `blocked` with the reason.
 
 ## Work
 
@@ -31,6 +31,7 @@ Deliver the tasks of your part as committed tasks. You write no file: role agent
   - `message`: read the entry with `bdk log show <id>`; when it affects other running agents, send it on to them.
   - `suspect` or `ended` without a report: resume that agent once with `SendMessage` naming the silence; a second failure closes the ticket `fail`.
 - `policy/files-busy` from `attempt open`: another ticket holds a file of the task; start it once that ticket closes. Never run git commands that discard or hide work (stash, reset, clean, restore): other parts share this tree. Return `blocked` instead.
+- With a `Work root` section, every command you run stays inside its path; `bdk` commands stay as written, since the kernel finds the home checkout itself.
 - `elapsed` from `bdk agents wait` is your time signal. An earlier correct result beats a later one; keep every agent busy.
 - End your turn only to return your envelope or to report a blocker. A turn ending with "next I will ..." while a task is open is not done.
 
@@ -56,6 +57,6 @@ evidence: []
 ---
 ```
 
-The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
+When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.
 
 Then return only the envelope, at most 15 lines, and the report path as the package names it.

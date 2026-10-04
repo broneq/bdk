@@ -1,7 +1,10 @@
 // The package template's pure parts (`kernel-cli/dispatch`; T23-D33):
 // normalisation for the hash and the role body's heading shift.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { REPO_ROOT } from "../../../tests/support/run.ts";
 import { demoteHeadings, normalise, renderSections } from "../domain/template.ts";
 import { ENTRY_TYPES } from "../../shared/vocabulary/index.ts";
 
@@ -40,5 +43,30 @@ describe("the return section (T46)", () => {
     expect(text).toContain("bdk log ingest --ticket A-1 < ");
     expect(text).toContain("no frontmatter flag");
     expect(text).toContain("Leave `reason` out");
+  });
+});
+
+describe("the merge-conflicts fragment (T45)", () => {
+  const text = readFileSync(join(REPO_ROOT, "fragments/merge-conflicts.md"), "utf8");
+
+  it("regenerates lockfiles instead of merging them, for every common package manager", () => {
+    expect(text).toMatch(/regenerate the lockfile with the project's package manager/);
+    for (const lockfile of [
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock",
+      "Cargo.lock",
+      "poetry.lock",
+      "uv.lock",
+      "go.sum",
+      "Gemfile.lock",
+      "composer.lock",
+    ]) {
+      expect(text).toContain(`\`${lockfile}\``);
+    }
+  });
+
+  it("names no BDK flow, so any merge can reuse it", () => {
+    expect(text).not.toMatch(/\bbdk\b|ticket|part /i);
   });
 });

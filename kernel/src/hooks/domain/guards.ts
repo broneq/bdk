@@ -15,6 +15,7 @@ type GuardRule =
   | "guard/subagent-git"
   | "guard/subagent-kernel-command"
   | "guard/lead-scope"
+  | "guard/worktree-scope"
   | "guard/reader-write"
   | "guard/dispatch-prompt"
   | "guard/agent-spawn"
@@ -43,6 +44,8 @@ interface KernelVerb {
 export interface AgentFacts {
   /** The caller's active package: its ticket and target; absent without one. */
   readonly caller?: { readonly ticket: string | null; readonly target: string | null };
+  /** The `workdir` of the caller's package: the part worktree it works in (T45). */
+  readonly workdir?: string;
   /** The target of a ticket of the active Change. */
   readonly ticketTarget: (ticket: string) => string | undefined;
   /** Scouts started by agents holding the caller's ticket. */
@@ -159,6 +162,7 @@ export function stageSkillDecision(
 export function needsAgentFacts(payload: PreToolPayload): boolean {
   if (payload.agentId === undefined) return false;
   if (payload.tool === "Agent" || payload.tool === "SendMessage") return true;
+  if (EDIT_TOOLS.has(payload.tool)) return true;
   return payload.tool === "Bash" && payload.agentType === "bdk:lead";
 }
 
@@ -176,7 +180,9 @@ export function preToolDecision(
   if (EDIT_TOOLS.has(payload.tool)) {
     const path =
       stringField(payload.input, "file_path") ?? stringField(payload.input, "notebook_path");
-    return path !== undefined && underSpecs(cwd, path) ? specDeny(path) : undefined;
+    if (path === undefined) return undefined;
+    if (underSpecs(cwd, path)) return specDeny(path);
+    return payload.agentId === undefined ? undefined : worktreeScope(cwd, path, facts?.workdir);
   }
   if (payload.tool === "Agent") {
     return (
@@ -232,6 +238,22 @@ function resolvePath(cwd: string, path: string): string {
     else if (segment !== "" && segment !== ".") segments.push(segment);
   }
   return `/${segments.join("/")}`;
+}
+
+/**
+ * A subagent whose package carries `workdir` edits only inside it (T45); a
+ * Bash command is not checked, the package's `Work root` section covers it.
+ */
+function worktreeScope(cwd: string, path: string, workdir: string | undefined): Deny | undefined {
+  if (workdir === undefined) return undefined;
+  const absolute = resolvePath(cwd, path.split("\\").join("/"));
+  const root = resolvePath("/", workdir);
+  if (absolute === root || absolute.startsWith(`${root}/`)) return undefined;
+  return {
+    rule: "guard/worktree-scope",
+    verb: path,
+    reason: `${absolute} is outside your work root ${root}, the worktree of your part; edit the same path under ${root} instead (BDK T45)`,
+  };
 }
 
 function specDeny(path: string): Deny {

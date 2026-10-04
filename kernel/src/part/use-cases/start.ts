@@ -6,11 +6,14 @@ import { checksOf, readGraph } from "../../graph/index.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal, Rule } from "../../shared/refusal/index.ts";
+import { removeWorktree } from "../../shared/git/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
+import { isolationOf } from "../../shared/store/index.ts";
 import type { PartStartReport } from "../domain/reports.ts";
 import type { PartDeps } from "./deps.ts";
 import { partState } from "./list.ts";
 import { partsWith } from "./parts.ts";
+import { createWorktree, startMarkerBody, worktreeSettings } from "./worktree.ts";
 
 export function startPart(
   deps: PartDeps,
@@ -50,6 +53,11 @@ export function startPart(
         state === "done" ? ["bdk part list", "bdk next"] : [`bdk part done ${id}`],
       );
     }
+    const worktree = isolationOf(part.data) === "worktree";
+    const settings = worktreeSettings(read.resolved.value);
+    const created =
+      worktree && settings.enabled ? await createWorktree(deps, change, id, settings) : undefined;
+    if (created !== undefined && "refused" in created) return created;
     const written = await appendEntry(
       deps,
       change,
@@ -59,12 +67,17 @@ export function startPart(
         summary: `part ${id} started`,
         status: "accepted",
         refs: [`execute-part:${id}`, part.file],
-        body: "",
+        body: created === undefined ? "" : startMarkerBody(created),
         to: `execute-part:${id}`,
       },
       { dedupe: false },
     );
-    if ("refused" in written) return written;
+    if ("refused" in written) {
+      if (created !== undefined) {
+        await removeWorktree(deps.git, change.projectRoot, created.workdir, created.branch);
+      }
+      return written;
+    }
     return {
       part: id,
       state: "started",
@@ -77,6 +90,18 @@ export function startPart(
       doNotTouch: part.data["do-not-touch"],
       successMeasure: part.data["success-measure"],
       entry: written.entry.id,
+      isolation: created === undefined ? "shared" : "worktree",
+      ...(created === undefined ? {} : { workdir: created.workdir }),
+      ...(created?.setup === undefined
+        ? {}
+        : {
+            setup: {
+              command: created.setup.command,
+              exitCode: created.setup.exitCode,
+              durationMs: created.setup.durationMs,
+            },
+          }),
+      ...(worktree && !settings.enabled ? { downgraded: true } : {}),
     };
   });
 }

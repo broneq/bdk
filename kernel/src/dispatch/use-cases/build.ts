@@ -15,6 +15,7 @@ import type { VerifierCategory } from "../../log/index.ts";
 import { ruleContext, selectFor } from "../../rules/index.ts";
 import {
   moduleValue,
+  promptContent,
   readKernelVersion,
   resolveOrRefuse,
   toolsModule,
@@ -37,12 +38,13 @@ import {
   targetFiles,
   taskHolders,
   taskProgress,
+  workRootOf,
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import { isBlocking, ROLES } from "../../shared/vocabulary/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
-import { risksModule } from "../config.ts";
+import { mergeConflictsPrompt, risksModule } from "../config.ts";
 import { checksText, fullChecksText } from "../domain/checks.ts";
 import { fileRefs, selectEntries, taskText } from "../domain/entries.ts";
 import type { BuildReport } from "../domain/report.ts";
@@ -200,6 +202,15 @@ export function buildPackage(
       ...(group === undefined ? [] : (["review"] as const)),
       ...(role === "integration-reviewer" ? (["risks"] as const) : []),
     ];
+    const workdir = await workRootOf(deps.git, deps.store, change, parts, input.target);
+    const isolated = workdir !== change.projectRoot;
+    const conflicts = record.data.conflicts;
+    // Only the implementer resolves a merge; the steps of the ticket check the merged state.
+    const resolving = conflicts !== undefined && role === "implementer";
+    const instruction = resolving ? promptText(deps, resolved, mergeConflictsPrompt.key) : "";
+    if (isolated) kinds.push("work-root");
+    if (resolving) kinds.push("conflict");
+    else if (conflicts !== undefined) kinds.push("merge");
     const roleBody = readRoleBody(deps, role);
     // A review fix carries the round's blockers whatever their refs (T42-D3).
     const reviewFix =
@@ -231,6 +242,11 @@ export function buildPackage(
         "not-a-fail": categoryList(policy?.notAFail ?? []),
         checks,
         tasks,
+        workdir,
+        part: holderOf(parts, input.target) ?? input.target,
+        merged: change.branch,
+        conflicts: (conflicts ?? []).map((path) => `- \`${path}\``).join("\n"),
+        "merge-instruction": demoteHeadings(instruction.trim()),
       },
       kinds,
     );
@@ -244,12 +260,13 @@ export function buildPackage(
         ? groupFiles(input.files, parts, input.part)
         : fixFiles.length > 0
           ? fixFiles
-          : target.files,
+          : withConflicts(target.files, conflicts),
     );
     const templateHash = hashOf([
       templateSkeleton(),
       roleBody,
       ...rules.selected.map(({ rule }) => `${rule.id}\n${rule.text}`),
+      ...(instruction === "" ? [] : [instruction]),
     ]);
     const kernelVersion = readKernelVersion(deps.store, deps.pluginRoot);
     const model = escalationModel(record.data.model, role);
@@ -269,6 +286,7 @@ export function buildPackage(
       report,
       rules: rules.selected.map(({ rule }) => rule.id),
       ...(group === undefined ? {} : { group, files: [...input.files] }),
+      ...(isolated ? { workdir } : {}),
     };
     const text = renderDocument(data, packageBody(sections));
     const size = bytes(text);
@@ -359,6 +377,27 @@ async function leadTasks(deps: DispatchDeps, change: ActiveChange, part: string)
       return `- \`${task.id}\` ${task.title} (${state}). Files: ${files}. Depends on: ${depends}.`;
     })
     .join("\n");
+}
+
+/** A merge ticket's rule selection adds its conflicted paths, so a lockfile rule applies (T45). */
+function withConflicts(
+  files: readonly string[] | undefined,
+  conflicts: readonly string[] | undefined,
+): readonly string[] | undefined {
+  if (files === undefined || conflicts === undefined) return files;
+  return [...new Set([...files, ...conflicts])];
+}
+
+/** The part of a task or part target; undefined for any other target. */
+function holderOf(parts: readonly PlanPartFile[], target: string): string | undefined {
+  if (PART_ID.test(target)) return target;
+  return taskHolders(parts).get(target)?.id;
+}
+
+function promptText(deps: DispatchDeps, resolved: Resolved, key: string): string {
+  const value = resolved.prompts.values.get(key);
+  if (value === undefined) throw new Error(`the prompt value ${key} has no file in any layer`);
+  return promptContent(deps.store, value);
 }
 
 /**

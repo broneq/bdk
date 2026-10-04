@@ -6,6 +6,7 @@ import commands from "../../../../schema/cli/commands.json" with { type: "json" 
 import { settingsRegistry } from "../../registrations.ts";
 import { createRegistry, loadIndex } from "../../shared/registry/index.ts";
 import { fakeGit } from "../../log/tests/support.ts";
+import { fixedClock } from "../../shared/clock/index.ts";
 import { memoryIndex, memoryStore } from "../../shared/store/index.ts";
 import { serviceRegistrations } from "../index.ts";
 
@@ -20,6 +21,7 @@ const registry = createRegistry(
     settings: settingsRegistry(),
     git: fakeGit(),
     openIndex: memoryIndex,
+    clock: fixedClock("2026-10-04T10:00:00.000Z"),
   }),
 );
 

@@ -16,6 +16,7 @@ import {
   readPlanParts,
   taskHolders,
   ticketManifests,
+  workRootOf,
 } from "../../shared/store/index.ts";
 import type { ManifestFile } from "../../shared/store/index.ts";
 import type { EvidenceDeps } from "./deps.ts";
@@ -70,7 +71,8 @@ export async function closeEvidence(
   if ("refused" in settings) return settings;
   const parts = readPlanParts(deps.store, change.dir);
   const scope = scopeOf(parts, change.id, target) ?? parts;
-  const current = await scopeTree(deps, change.projectRoot, filePolicy(settings.value), scope);
+  const root = await workRootOf(deps.git, deps.store, change, parts, target);
+  const current = await scopeTree(deps, root, filePolicy(settings.value), scope);
   const fresh = (manifest: ManifestFile) => manifest.data["tree-hash"] === current.treeHash;
   const manifests = readManifests(deps.store, change.dir);
   const own = ticketManifests(manifests, ticket);

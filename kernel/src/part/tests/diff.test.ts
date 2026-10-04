@@ -186,3 +186,26 @@ describe("diffCheck", () => {
     expect(await check()).toMatchObject({ undeclared: [".gitignore"] });
   });
 });
+
+describe("classifyDiff of a merge ticket (T45)", () => {
+  const merge = { ref: "feat/x", conflicts: ["pnpm-lock.yaml", "src/billing/rates.ts"] };
+
+  it("counts the conflicted paths as declared, even under do-not-touch", () => {
+    expect(
+      classifyDiff(
+        { part: "02", merge },
+        facts(["pnpm-lock.yaml", "src/billing/rates.ts", "src/auth/login.ts", "README.md"]),
+      ),
+    ).toStrictEqual({
+      touched: ["pnpm-lock.yaml", "src/billing/rates.ts", "src/auth/login.ts", "README.md"],
+      declared: ["pnpm-lock.yaml", "src/billing/rates.ts", "src/auth/login.ts"],
+      undeclared: ["README.md"],
+    });
+  });
+
+  it("still refuses another do-not-touch path", () => {
+    expect(classifyDiff({ part: "02", merge }, facts(["src/billing/tax.ts"]))).toMatchObject({
+      rule: "policy/do-not-touch",
+    });
+  });
+});

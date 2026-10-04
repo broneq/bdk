@@ -23,6 +23,7 @@ import {
   readPlanParts,
   taskHolders,
   withLock,
+  workRootOf,
 } from "../../shared/store/index.ts";
 import type { IndexDb } from "../../shared/store/index.ts";
 import type { CommitDeps } from "./deps.ts";
@@ -91,7 +92,10 @@ async function commitOneTask(
       `bdk commit ${change.id} for a review fix`,
     ]);
   }
-  const inProgress = gitInProgress(change.projectRoot);
+  // A task of a live worktree part commits on its part branch, never `.bdk/` (T45).
+  const root = await workRootOf(deps.git, deps.store, change, [part], input.task);
+  const home = root === change.projectRoot;
+  const inProgress = gitInProgress(root);
   if (inProgress !== undefined) return inProgress;
   const open = readAttempts(deps.store, change.dir).find(
     (record) => record.data.outcome === undefined && record.data.target === input.task,
@@ -108,10 +112,13 @@ async function commitOneTask(
 
   const dir = `${relative(change.projectRoot, change.dir).split(sep).join("/")}/`;
   const code = [...diff.declared, ...diff.undeclared];
-  if (code.length === 0 && (await changedPaths(deps.git, change.projectRoot, [dir])).length === 0) {
+  const ledger = home ? await changedPaths(deps.git, change.projectRoot, [dir]) : [];
+  if (code.length === 0 && ledger.length === 0) {
     return refuse(
       "policy/nothing-to-commit",
-      `neither a path of ${input.task} nor ${dir} changed since the last commit`,
+      home
+        ? `neither a path of ${input.task} nor ${dir} changed since the last commit`
+        : `no path of ${input.task} changed in ${root} since the last commit`,
       ["bdk part list"],
     );
   }
@@ -121,14 +128,14 @@ async function commitOneTask(
       : await recordUndeclared(deps, change, index, input.task, diff.undeclared);
   if (finding !== undefined && "refused" in finding) return finding;
 
-  const files = [...code, ...(await changedPaths(deps.git, change.projectRoot, [dir]))];
+  const files = [...code, ...(home ? await changedPaths(deps.git, change.projectRoot, [dir]) : [])];
   const trailers = { "BDK-Change": change.id, "BDK-Part": part.id, "BDK-Task": input.task };
   const message = input.message?.trim() ?? "";
   const subject = message === "" ? task.title : message;
   const committed = await pathspecCommit(
     deps.git,
-    change.projectRoot,
-    [...code, dir],
+    root,
+    home ? [...code, dir] : code,
     commitMessage(subject, trailers),
   );
   if (!committed.committed) {
