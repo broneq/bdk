@@ -3,10 +3,21 @@
 // skill variant added, one skill removed, or one agent's model changed. The host scans the default
 // `skills/` directory in addition to the manifest's `skills` array
 // (evals/README.md, Provider facts), so trimming is what keeps other skills
-// out of a session.
+// out of a session. The generated files (the bundle, the schemas and the
+// agent adapters) are not committed (T48), so the copy builds them from its
+// own tree, as the release job does.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -70,6 +81,23 @@ function renamed(text: string, name: string): string {
   return frontmatter + text.slice(end);
 }
 
+/**
+ * Runs the copy's own `kernel/build.mjs` in the copy, with the repository's
+ * `node_modules` linked in for the build and removed after it, so the bundle,
+ * schemas and adapters match the copied commit, not the working tree. A tree
+ * without the build script has nothing to generate.
+ */
+function buildGenerated(repoRoot: string, target: string): void {
+  if (!existsSync(join(target, "kernel", "build.mjs"))) return;
+  const modules = join(target, "node_modules");
+  symlinkSync(join(repoRoot, "node_modules"), modules, "dir");
+  try {
+    execFileSync(process.execPath, ["kernel/build.mjs"], { cwd: target, stdio: "pipe" });
+  } finally {
+    rmSync(modules, { force: true });
+  }
+}
+
 function keepOnly(dir: string, keep: readonly string[], nameOf: (entry: string) => string): void {
   for (const entry of readdirSync(dir)) {
     if (!keep.includes(nameOf(entry))) rmSync(join(dir, entry), { recursive: true, force: true });
@@ -88,6 +116,8 @@ export function buildPluginCopy(spec: PluginCopySpec): PluginCopy {
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
+
+  buildGenerated(spec.repoRoot, spec.target);
 
   const skills = join(spec.target, "skills");
   if (spec.keepSkills !== undefined) keepOnly(skills, spec.keepSkills, (entry) => entry);
