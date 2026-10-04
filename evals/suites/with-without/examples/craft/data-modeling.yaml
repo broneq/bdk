@@ -1,0 +1,68 @@
+# Task file for `pnpm eval with-without --skill bdk-craft:data-modeling` on the
+# default fixture. Each prompt asks for a PostgreSQL schema or a migration in
+# plain words; no code change is needed. The assertions see only the final reply,
+# so every prompt asks for the DDL at the end. They check the concrete choices the
+# skill makes: rules as constraints (CHECK on a status, explicit ON DELETE), an
+# index on every foreign key, money that is never a float, time-zone-aware
+# timestamps, and a live rename split into expand-and-contract phases.
+- id: shop-orders
+  prompt: >-
+    Design the PostgreSQL tables for orders in our shop: customers, products with a
+    price, orders with a status (draft, placed, paid, cancelled), and order lines
+    with a quantity. We list a customer's orders newest first and sum paid orders
+    per day. End your reply with the full DDL.
+  assert:
+    - type: javascript
+      value: >-
+        /CHECK\s*\(\s*status\s+IN/i.test(String(output))
+    - type: javascript
+      value: >-
+        /ON DELETE (RESTRICT|CASCADE|SET NULL|NO ACTION)/i.test(String(output))
+    - type: javascript
+      value: >-
+        !/\b(float|real|double precision|money)\b/i.test(String(output).split(/```/).filter((_, i) => i % 2 === 1).join("\n"))
+    - type: javascript
+      value: >-
+        /timestamptz|timestamp with time zone/i.test(String(output))
+    - type: javascript
+      value: >-
+        /CREATE INDEX[^;]*\(\s*customer_id\s*,\s*created_at\s+DESC/i.test(String(output))
+- id: rename-column
+  prompt: >-
+    Our users table has a column named name that holds the full name. We want to
+    rename it to display_name. The table has 40 million rows and the app runs
+    around the clock with several instances. Write the migration. End your reply
+    with the SQL and the order of the deployments.
+  assert:
+    - type: javascript
+      value: >-
+        !/^\s*ALTER TABLE\s+\w+\s+RENAME COLUMN\s+name\s+TO\s+display_name/im.test(String(output))
+    - type: javascript
+      value: >-
+        /(dual[- ]write|write(s)? (to )?both)/i.test(String(output))
+    - type: javascript
+      value: >-
+        /(batch|LIMIT\s+\d+|chunk)/i.test(String(output)) && /backfill/i.test(String(output))
+    - type: javascript
+      value: >-
+        /DROP COLUMN\s+(IF EXISTS\s+)?name\b/i.test(String(output))
+- id: subscriptions
+  prompt: >-
+    Model subscriptions for our SaaS in PostgreSQL: plans with a monthly price in a
+    currency, customers subscribe to one plan at a time, a subscription has a start
+    and an optional end, and invoices are issued per billing period. The price of
+    a plan can change, and old invoices must keep the price they were issued with.
+    Give me the DDL at the end of your reply.
+  assert:
+    - type: javascript
+      value: >-
+        !/\b(float|real|double precision|money)\b/i.test(String(output).split(/```/).filter((_, i) => i % 2 === 1).join("\n"))
+    - type: javascript
+      value: >-
+        /CHECK\s*\([^)]*(ends?_at|end_date|period_end)\s*>\s*\w+/i.test(String(output))
+    - type: javascript
+      value: >-
+        /(EXCLUDE USING|UNIQUE[^;]*WHERE|unique index[^;]*where)/i.test(String(output))
+    - type: javascript
+      value: >-
+        /timestamptz|timestamp with time zone/i.test(String(output))

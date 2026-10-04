@@ -1,0 +1,57 @@
+# Task file for `pnpm eval with-without --skill bdk-craft:refactoring` on the
+# default fixture. Each prompt hands over a messy function that is not in the
+# repository yet and asks for a cleanup. Every function hides one odd behaviour
+# that a refactoring must keep. The assertions see only the final reply, so every
+# prompt asks for the final code and the steps at the end. They check what the
+# skill changes: tests that pin the current behaviour before the first change,
+# the tests run after several steps, and the odd behaviour kept and reported
+# rather than silently fixed.
+- id: shipping-cost
+  prompt: >-
+    Save this as src/checkout/shippingCost.ts and then clean it up, it is hard to
+    read:
+    `export function cost(o: any) { let c = 0; if (o.country == "PL") { if (o.total > 100) { c = 0 } else { if (o.express) { c = 25 } else { c = 12 } } } else { if (o.express) { c = 60 } else { c = 35 } if (o.total > 400) { c = c / 2 } } return c }`.
+    The docs say orders of 100 PLN or more ship free. End your reply with the final
+    code and the steps you took in order.
+  assert:
+    - type: javascript
+      value: >-
+        /(characteri[sz]ation|pin(ned|s)? (down )?the (current )?behaviou?r|tests? (first|before (the first|any) change))/i.test(String(output))
+    - type: javascript
+      value: >-
+        (String(output).match(/\b\d+ (tests? )?pass(ed|ing)?\b/gi) || []).length >= 3
+    - type: javascript
+      value: >-
+        /total\s*>\s*100\b/.test(String(output)) && !/total\s*>=\s*100\b/.test(String(output).split(/```/).filter((_, i) => i % 2 === 1).join("\n"))
+- id: user-label
+  prompt: >-
+    Save this as src/account/userLabel.ts and refactor it into something readable
+    without changing what it does:
+    `export function label(u: any) { var s = ""; if (u.first && u.last) { s = u.first + " " + u.last } else if (u.first) { s = u.first } else { s = u.email.split("@")[0] } if (u.role == "admin") s = s + " (admin)"; if (u.role == "operator") s = s + " (operator)"; if (s.length > 24) s = s.substring(0, 23) + "…"; return s }`.
+    Finish with the final code and the list of steps you made.
+  assert:
+    - type: javascript
+      value: >-
+        /(characteri[sz]ation|pin(ned|s)? (down )?the (current )?behaviou?r|tests? (first|before (the first|any) change))/i.test(String(output))
+    - type: javascript
+      value: >-
+        (String(output).match(/\b\d+ (tests? )?pass(ed|ing)?\b/gi) || []).length >= 3
+    - type: javascript
+      value: >-
+        /substring\(0,\s*23\)|slice\(0,\s*23\)|\b23\b/.test(String(output).split(/```/).filter((_, i) => i % 2 === 1).join("\n"))
+- id: csv-export
+  prompt: >-
+    Save this as src/admin/exportCsv.ts. It works but nobody can maintain it,
+    please restructure it:
+    `export function csv(rows: any[]) { let out = "id;name;price\n"; for (let i = 0; i < rows.length; i++) { let r = rows[i]; let n = r.name; if (n.indexOf(";") >= 0) { n = '"' + n + '"' } let p = r.price; if (p == null) { p = "" } else { p = (Math.round(p * 100) / 100).toString().replace(".", ",") } out = out + r.id + ";" + n + ";" + p + "\n" } return out }`.
+    End your reply with the final code and the refactoring steps in order.
+  assert:
+    - type: javascript
+      value: >-
+        /(characteri[sz]ation|pin(ned|s)? (down )?the (current )?behaviou?r|tests? (first|before (the first|any) change))/i.test(String(output))
+    - type: javascript
+      value: >-
+        (String(output).match(/\b\d+ (tests? )?pass(ed|ing)?\b/gi) || []).length >= 3
+    - type: javascript
+      value: >-
+        /(quot\w*|escap\w*)[^.\n]*(not (fixed|changed)|kept|preserv\w*|separate change|left as)|(not (fixed|changed)|kept|preserv\w*|separate change|left as)[^.\n]*(quot\w*|escap\w*)/i.test(String(output))

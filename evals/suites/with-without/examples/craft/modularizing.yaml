@@ -1,0 +1,59 @@
+# Task file for `pnpm eval with-without --skill bdk-craft:modularizing` on the
+# default fixture. Each prompt describes a codebase structure in plain words; no
+# code change is needed. The assertions see only the final reply, so every prompt
+# asks for the proposal at the end. They check the concrete choices the skill
+# makes: modules by feature with one public entry, an import-boundary check that
+# fails the build, cycles fixed by a direction rather than a lazy import, and a
+# split justified by a named signal rather than size.
+- id: layered-app
+  prompt: >-
+    Our React app has top-level folders components/, hooks/, services/, utils/ and
+    types/, about 400 files, for features like catalog, cart, checkout, accounts and
+    an admin panel. Every change touches four folders and anything imports
+    anything. Propose a new structure and how to get there. End your reply with
+    the proposed structure and the migration plan.
+  assert:
+    - type: javascript
+      value: >-
+        /(checkout|catalog)\/index\.tsx?/.test(String(output))
+    - type: javascript
+      value: >-
+        /(no-restricted-imports|eslint-plugin-boundaries|boundaries\/|dependency-cruiser|import\/no-restricted-paths|import\/no-internal-modules)/.test(String(output))
+    - type: javascript
+      value: >-
+        /(one|a) (feature|module) at a time|feature by feature|module by module|incremental/i.test(String(output))
+- id: cycle
+  prompt: >-
+    In our backend, the orders module imports users to read a customer's name and
+    e-mail, and the users module imports orders to show a user's order count and to
+    block deleting a user with open orders. The bundler warns about a circular
+    import. How do we fix this? End your reply with the change you propose and the
+    resulting dependency direction.
+  assert:
+    - type: javascript
+      value: >-
+        /(interface|port|callback|event|subscribe|publish|inversion|invert)/i.test(String(output))
+    - type: javascript
+      value: >-
+        !/(lazy|dynamic) import|await import\(|require\(/.test(String(output)) || /(not|never|avoid|instead of)[^.\n]*(lazy|dynamic) import/i.test(String(output))
+    - type: javascript
+      value: >-
+        /(orders|users)\s*(-->|->|→|depends on)\s*(users|orders)/i.test(String(output))
+- id: big-module
+  prompt: >-
+    Our billing module has grown to 9000 lines. It holds invoicing, which the
+    finance team changes every sprint, and payment-provider integrations, which
+    the platform team changes a few times a year; callers use either the invoice
+    functions or the payment functions, never both. A colleague wants to split it
+    into five modules of equal size. What should we do? End your reply with your
+    recommendation and the resulting modules.
+  assert:
+    - type: javascript
+      value: >-
+        /(two|2) modules|split (it )?(in|into) two|into invoicing and payments|(invoicing|invoices?)[^.\n]*and[^.\n]*payments?/i.test(String(output))
+    - type: javascript
+      value: >-
+        /(not|never|rather than|instead of)[^.\n]*(size|line count|lines|equal)/i.test(String(output))
+    - type: javascript
+      value: >-
+        /(index\.ts|public (entry|API|surface)|entry point)/i.test(String(output))

@@ -44,7 +44,7 @@ const SUITE = "with-without";
 /** The orchestrator of every session arm (design D-6). */
 export const ORCHESTRATOR_MODEL = "claude-opus-5-5";
 export const EXAMPLE_TASKS = fileURLToPath(
-  new URL("./examples/mermaid-drawer.yaml", import.meta.url),
+  new URL("./examples/craft/mermaid-drawer.yaml", import.meta.url),
 );
 
 type Fixture = "default" | "none";
@@ -73,19 +73,34 @@ function skillFiles(dir: string): string[] {
   });
 }
 
+/** The repository directory of each plugin a `--skill` may name (T42 craft D8). */
+const PLUGIN_DIRS: Readonly<Record<string, string>> = {
+  bdk: ".",
+  "bdk-craft": "plugins/bdk-craft",
+};
+
+/** Where a skill lives: its plugin's directory in the repository and its directory under that plugin's `skills/`. */
+export interface SkillLocation {
+  readonly pluginDir: string;
+  readonly path: string;
+}
+
 /**
- * The directory under `skills/` of a BDK skill named `bdk:<name>`, found by
+ * The location of a skill named `bdk:<name>` or `bdk-craft:<name>`, found by
  * the `name` in its frontmatter, so a nested role skill resolves too.
  */
-export function skillDir(skill: string, repoRoot = REPO_ROOT): string {
+export function skillDir(skill: string, repoRoot = REPO_ROOT): SkillLocation {
   const [plugin, name, ...rest] = skill.split(":");
-  if (plugin !== "bdk" || name === undefined || name === "" || rest.length > 0) {
-    throw new SkillError(`--skill names a BDK skill as bdk:<name>, got ${skill}`);
+  const pluginDir = plugin === undefined ? undefined : PLUGIN_DIRS[plugin];
+  if (pluginDir === undefined || name === undefined || name === "" || rest.length > 0) {
+    throw new SkillError(`--skill names a skill as bdk:<name> or bdk-craft:<name>, got ${skill}`);
   }
-  const skills = join(repoRoot, "skills");
+  const skills = join(repoRoot, pluginDir, "skills");
   const file = skillFiles(skills).find((path) => frontmatterName(path) === name);
-  if (file === undefined) throw new SkillError(`no BDK skill named ${name} under skills/`);
-  return relative(skills, join(file, ".."));
+  if (file === undefined) {
+    throw new SkillError(`no skill named ${name} under ${relative(repoRoot, skills)}/`);
+  }
+  return { pluginDir, path: relative(skills, join(file, "..")) };
 }
 
 interface CellBuild {
@@ -115,7 +130,7 @@ export interface WithWithoutSpec {
   readonly resultsFile: string;
 }
 
-/** The skill part of `bdk:<name>`, which prefixes the item ids so one results directory holds many skills. */
+/** The skill part of `<plugin>:<name>`, which prefixes the item ids so one results directory holds many skills. */
 function skillSlug(skill: string): string {
   return skill.split(":")[1] ?? skill;
 }
@@ -178,15 +193,16 @@ export function describeWithWithout(spec: WithWithoutSpec): SeriesSetup {
   };
 }
 
-function buildCells(dir: string, skillPath: string): Record<Cell, CellBuild> {
+function buildCells(dir: string, skill: SkillLocation): Record<Cell, CellBuild> {
   const build = (cell: Cell): CellBuild => {
     const copy = buildPluginCopy({
       repoRoot: REPO_ROOT,
       ref: "HEAD",
       target: join(dir, "plugins", cell),
-      ...(cell === "without" ? { withoutSkill: skillPath } : {}),
+      ...(skill.pluginDir === "." ? {} : { pluginDir: skill.pluginDir }),
+      ...(cell === "without" ? { withoutSkill: skill.path } : {}),
     });
-    const skillFile = join(copy.dir, "skills", skillPath, "SKILL.md");
+    const skillFile = join(copy.dir, "skills", skill.path, "SKILL.md");
     return {
       plugin: copy.dir,
       bdkCommit: copy.commit,
@@ -194,8 +210,8 @@ function buildCells(dir: string, skillPath: string): Record<Cell, CellBuild> {
     };
   };
   const cells = { with: build("with"), without: build("without") };
-  if (existsSync(join(cells.without.plugin, "skills", skillPath))) {
-    throw new Error(`the without copy still has skills/${skillPath}`);
+  if (existsSync(join(cells.without.plugin, "skills", skill.path))) {
+    throw new Error(`the without copy still has skills/${skill.path}`);
   }
   return cells;
 }
@@ -204,10 +220,10 @@ export function withWithoutRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
   return {
     async run(options: RunOptions): Promise<number> {
       const skill = options.skill ?? "";
-      let skillPath: string;
+      let location: SkillLocation;
       let tasks: WithWithoutTask[];
       try {
-        skillPath = skillDir(skill);
+        location = skillDir(skill);
         tasks = readTasks(options.tasks ?? "");
       } catch (error) {
         io.printError(error instanceof Error ? error.message : String(error));
@@ -239,7 +255,7 @@ export function withWithoutRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
         dir,
         sandbox,
         tasks,
-        cells: buildCells(sandbox, skillPath),
+        cells: buildCells(sandbox, location),
         base,
         fixture,
         versions,
@@ -269,14 +285,14 @@ export function withWithoutRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
       ensureTools(EVALS_DIR);
       const dir = mkdtempSync(join(tmpdir(), "bdk-evals-check-"));
       try {
-        skillDir("bdk:mermaid-drawer");
+        skillDir("bdk-craft:mermaid-drawer");
         const placeholder = (cell: Cell): CellBuild => ({
           plugin: join(dir, "plugins", cell),
           bdkCommit: "0".repeat(40),
           variantHash: cell === "with" ? "0".repeat(64) : null,
         });
         const setup = describeWithWithout({
-          skill: "bdk:mermaid-drawer",
+          skill: "bdk-craft:mermaid-drawer",
           series: "check",
           dir,
           sandbox: dir,

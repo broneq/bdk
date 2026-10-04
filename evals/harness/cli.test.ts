@@ -73,7 +73,7 @@ describe("parseArgs", () => {
       parseArgs([
         "with-without",
         "--skill",
-        "bdk:mermaid-drawer",
+        "bdk-craft:tdd",
         "--tasks",
         "t.yaml",
         "--fixture",
@@ -81,7 +81,7 @@ describe("parseArgs", () => {
       ]),
     ).toMatchObject({
       suite: "with-without",
-      skill: "bdk:mermaid-drawer",
+      skill: "bdk-craft:tdd",
       tasks: "t.yaml",
       fixture: "none",
     });

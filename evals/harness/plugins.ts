@@ -1,5 +1,6 @@
 // Plugin copies (design D-5, D-9): the committed tree of a ref, exported with
-// `git archive`, its generated outputs built by the ref's own `kernel/build.mjs`
+// `git archive` (the whole repository, or one plugin directory of it), its
+// generated outputs built by the ref's own `kernel/build.mjs`
 // (the bundle, schemas and adapters are not committed since T48), trimmed to the arm's skills and agents, with an optional
 // skill variant added, one skill removed, or one agent's model changed. The host scans the default
 // `skills/` directory in addition to the manifest's `skills` array
@@ -35,6 +36,11 @@ export interface PluginCopySpec {
    * (`execute-thin`), because skill names are unique across the repository.
    */
   readonly variant?: { readonly name: string; readonly file: string };
+  /**
+   * A plugin directory inside the repository (`plugins/bdk-craft`), copied
+   * alone as the plugin's root; the repository root when absent.
+   */
+  readonly pluginDir?: string;
   /** A skill directory under `skills/` removed, for a with / without comparison. */
   readonly withoutSkill?: string;
   /**
@@ -121,7 +127,8 @@ export function buildPluginCopy(spec: PluginCopySpec): PluginCopy {
   const scratch = mkdtempSync(join(tmpdir(), "bdk-evals-archive-"));
   try {
     const archive = join(scratch, "plugin.tar");
-    git(spec.repoRoot, "archive", "--format=tar", "--output", archive, commit);
+    const tree = spec.pluginDir === undefined ? commit : `${commit}:${spec.pluginDir}`;
+    git(spec.repoRoot, "archive", "--format=tar", "--output", archive, tree);
     execFileSync("tar", ["-xf", archive, "-C", spec.target]);
   } finally {
     rmSync(scratch, { recursive: true, force: true });

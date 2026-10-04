@@ -1,0 +1,61 @@
+# Task file for `pnpm eval with-without --skill bdk-craft:oop-design` on the
+# default fixture. Each prompt asks for a TypeScript object design in plain words;
+# no code change is needed. The assertions see only the final reply, so every
+# prompt asks for the code at the end. They check the concrete choices the skill
+# makes: money as integer minor units in a value object, variants behind an
+# interface rather than subclasses, collaborators given through the constructor,
+# and one class per state for a status that decides the allowed operations.
+- id: discounts
+  prompt: >-
+    Design the TypeScript classes for pricing a cart in our shop: products have a
+    price in a currency, carts have lines with quantities, and the marketing team
+    keeps adding discount kinds (a percentage off, a fixed amount off above a
+    threshold, buy two get one free). End your reply with the code of the classes.
+  assert:
+    - type: javascript
+      value: >-
+        /class Money\b/.test(String(output)) && /(minor|cents|grosze|amountMinor|bigint|Number\.isInteger|Math\.round)/i.test(String(output))
+    - type: javascript
+      value: >-
+        /interface \w*(Discount|Policy|Rule|Promotion)\w*/.test(String(output))
+    - type: javascript
+      value: >-
+        !/class \w+ extends \w*(Discount|Promotion|Rule)\w*/.test(String(output))
+    - type: javascript
+      value: >-
+        /constructor\(\s*(private|public)?\s*readonly \w+:\s*(readonly )?\w*(Discount|Policy|Rule|Promotion)/.test(String(output))
+- id: notifications
+  prompt: >-
+    We send notifications by e-mail, SMS and push; each user picks their channels,
+    quiet hours apply to SMS and push but not to e-mail, and failed sends are
+    retried later. Sketch the TypeScript classes for this. Give the code at the end
+    of your reply.
+  assert:
+    - type: javascript
+      value: >-
+        /interface \w*(Channel|Sender|Notifier|Gateway)\w*/.test(String(output))
+    - type: javascript
+      value: >-
+        !/class \w+ extends \w*(Channel|Sender|Notifier|Notification)\w*/.test(String(output))
+    - type: javascript
+      value: >-
+        /constructor\(\s*(private|public)?\s*readonly/.test(String(output))
+    - type: javascript
+      value: >-
+        /(Clock|now: \(\) =>|clock\.now)/.test(String(output))
+- id: document-workflow
+  prompt: >-
+    Documents in our system are drafted, sent to review, then approved and
+    published, or sent back to draft; only a draft can be edited, only a document
+    in review can be approved, and a published document can only be archived.
+    Design the TypeScript classes. End your reply with the code.
+  assert:
+    - type: javascript
+      value: >-
+        (String(output).match(/class \w*(Draft|InReview|Review|Approved|Published|Archived)\w*\b/g) || []).length >= 3
+    - type: javascript
+      value: >-
+        !/switch\s*\(\s*(this\.)?(status|state)\s*\)/.test(String(output))
+    - type: javascript
+      value: >-
+        !/\bset(Status|State)\s*\(/.test(String(output))
