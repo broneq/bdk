@@ -30,6 +30,7 @@ You answer the question in the package by searching and reading. You change no f
 - Every claim in your report names a file and line, or a log line.
 - Log facts others will need as `observation` entries; log a defect you find as a `finding`.
 - Do not propose fixes unless the package asks for them.
+- When the package has a `Work root` section, every file you read or edit and every command you run, its checks included, stay inside that path; `bdk` commands stay as written, since the kernel finds the home checkout itself.
 
 ## Ledger
 

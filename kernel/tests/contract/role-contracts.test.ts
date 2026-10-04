@@ -455,3 +455,28 @@ describe("T41-D4: the adapters' Agent lists and guard/agent-spawn agree", () => 
     expect(fromGuard).toEqual(fromAdapters);
   });
 });
+
+describe("roles in a part worktree (T45)", () => {
+  it.each(["implementer", "simplifier", "runner", "scout", "lead"])(
+    "%s works inside the package's Work root",
+    (name) => {
+      const { body } = readRole(name);
+      expect(body).toMatch(/`Work root` section, every (file you read or edit and every )?command/);
+      expect(body).toMatch(/the kernel finds the home checkout itself/);
+    },
+  );
+
+  it("the implementer edits only the Conflict paths and leaves the merge to the kernel", () => {
+    const { body } = readRole("implementer");
+    expect(body).toMatch(/`Conflict` section, edit only its paths and follow its instruction/);
+    expect(body).toMatch(/leave staging and the merge commit to the kernel/);
+    expect(body).toMatch(/return `blocked` naming the paths the instruction does not settle/);
+  });
+
+  it("the verifier checks isolation as an integration-failure", () => {
+    const { body } = readRole("verifier");
+    expect(body).toMatch(/\*\*Isolation\.\*\*/);
+    expect(body).toContain("`integration-failure`");
+    expect(body).toContain("`isolation-reason`");
+  });
+});

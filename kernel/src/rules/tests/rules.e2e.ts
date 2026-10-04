@@ -190,9 +190,14 @@ describe("bdk rules prune", () => {
       bdk(["rules", "prune", "--json"], change.root),
       "output/rules-prune.json",
     );
-    expect(silent.items).toStrictEqual([
+    // Bundle rules are reported too: BDK-CQ-9 matches no lockfile in this project.
+    const project = (silent.items as { id: string }[]).filter((item) => item.id.startsWith("API-"));
+    expect(project).toStrictEqual([
       { id: "API-3", reason: "no-match", detail: 'applies: ["legacy/**"] matches 0 files' },
     ]);
+    expect(silent.items).toContainEqual(
+      expect.objectContaining({ id: "BDK-CQ-9", reason: "no-match" }),
+    );
     const cite = bdk(["log", "add", "decision", "cite", "--ref", "API-1", "--json"], change.root);
     expect(cite.code, cite.stdout).toBe(0);
     const counted = answered(

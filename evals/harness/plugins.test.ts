@@ -162,3 +162,43 @@ describe("buildPluginCopy", () => {
     expect(existsSync(join(again.dir, "skills/old/SKILL.md"))).toBe(true);
   });
 });
+
+describe("generated outputs", () => {
+  it("runs the ref's kernel/build.mjs in the copy with the repository's node_modules", () => {
+    const { root } = pluginRepo();
+    write(
+      root,
+      "kernel/build.mjs",
+      [
+        'import { mkdirSync, writeFileSync, existsSync } from "node:fs";',
+        'if (!existsSync("node_modules/marker")) throw new Error("no node_modules");',
+        'mkdirSync("dist", { recursive: true });',
+        'writeFileSync("dist/bdk.mjs", "bundle\\n");',
+        'writeFileSync("agents/worker.md", "generated adapter\\n");',
+        "",
+      ].join("\n"),
+    );
+    write(root, ".gitignore", "node_modules/\ndist/\n");
+    write(root, "node_modules/marker", "");
+    git(root, "add", "--all");
+    git(root, "commit", "-q", "-m", "build");
+    const target = join(temp(), "copy");
+    buildPluginCopy({ repoRoot: root, ref: "HEAD", target, keepAgents: ["worker"] });
+    expect(readFileSync(join(target, "dist/bdk.mjs"), "utf8")).toBe("bundle\n");
+    expect(readFileSync(join(target, "agents/worker.md"), "utf8")).toBe("generated adapter\n");
+    expect(existsSync(join(target, "node_modules"))).toBe(false);
+    expect(existsSync(join(target, ".git"))).toBe(false);
+  });
+
+  it("names the build's output when it fails", () => {
+    const { root } = pluginRepo();
+    write(root, "kernel/build.mjs", 'console.error("esbuild broke"); process.exit(1);\n');
+    write(root, "node_modules/marker", "");
+    write(root, ".gitignore", "node_modules/\n");
+    git(root, "add", "--all");
+    git(root, "commit", "-q", "-m", "broken build");
+    const target = join(temp(), "copy");
+    expect(() => buildPluginCopy({ repoRoot: root, ref: "HEAD", target })).toThrow(/esbuild broke/);
+    expect(existsSync(join(target, "node_modules"))).toBe(false);
+  });
+});

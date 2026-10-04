@@ -22,6 +22,7 @@ import {
   readPlanParts,
   resolveTicketRef,
   ticketManifests,
+  workRootOf,
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { EvidenceManifest, ManifestFile } from "../../shared/store/index.ts";
@@ -128,7 +129,7 @@ export async function recordEvidence(
   const scope = scopeOf(parts, change.id, target) ?? parts;
   const { treeHash, tree } = await scopeTree(
     deps,
-    change.projectRoot,
+    await workRootOf(deps.git, deps.store, change, parts, target),
     filePolicy(resolved.value),
     scope,
   );

@@ -122,6 +122,8 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 - **Review groups (T42-A1).** The `reviewer` and `integration-reviewer` contracts tell the agent that its ticket is the `<ticket>@<group>` reference its package names, and to use that reference in every `--ticket`. The `reviewer` reviews its group's files over the package's range against the plan part named as contract: whether the code does what the tasks state, logic errors within functions, and whether the tests check the stated behaviour, with the unit and end-to-end cases that are missing; it leaves style, duplication within a task and dead code to `simplify` and `lint`. The `integration-reviewer` reviews the whole range against the intent, the design and the plan: how the parts work together, spec deltas, files changed outside every task's `Files:`, duplication across parts, and each item of the package's `Risks` section the range touches. Both write each finding with a `category` from the P8 list when it blocks, and never write `level`, which is the orchestrator's (`kernel-cli/log`, bdk log triage).
 - **Finding body (T42-H).** The `reviewer` and `integration-reviewer` contracts tell the agent to write the body of every `finding`, `observation` and `blocker` as three labelled paragraphs, `Problem:`, `Why it matters:` and `Suggested fix:`, so the human report can show why an entry is worth fixing (`kernel-cli/review`, bdk review render). The `pr-reviewer` result block gives each finding the fields `problem`, `why` and `fix` for the same reason.
 - **Area summaries (T42-H).** The `integration-reviewer` contract tells the agent to end its report with a section `## Areas`: one line `- <risk-id>: <sentence>` for each enabled risk of its package that the range touches, saying in one sentence of at most 300 characters what changed in that area and why, in terms of behaviour rather than files. When files outside the plan changed, one more line `- unplanned: <sentence>` says the same for them.
+- **Work root (T45).** The `implementer`, `simplifier`, `runner`, `scout` and `lead` contracts carry one sentence: when the package has a `Work root` section, every file read or edit and every command, its `Checks` included, happens inside that path, and kernel commands stay as they are, since the kernel finds the home checkout itself (`kernel-cli`, Invocation).
+- **Conflict (T45).** The `implementer` contract carries one sentence: when the package has a `Conflict` section, edit only its paths and follow its instruction, leave staging and the merge commit to the kernel (the working-tree sentence already forbids `git commit`), and return `blocked` naming the paths the instruction does not settle.
 - **Size.** A role skill body, without frontmatter, SHALL be at most 4 096 bytes, so that it fits in a 12 KB package next to the task (K4).
 
 #### Scenario: P3 wording
@@ -204,6 +206,11 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 - **WHEN** the content test reads `skills/roles/integration-reviewer/SKILL.md`
 - **THEN** it names the report section `## Areas` and the line form `- <risk-id>: <sentence>`
 
+#### Scenario: work root sentence
+
+- **WHEN** the content test reads the `implementer`, `simplifier`, `runner`, `scout` and `lead` role bodies
+- **THEN** each names the `Work root` section of its package, and the `implementer` body names the `Conflict` section
+
 ### Requirement: Swarm skill
 
 The plugin SHALL ship `skills/swarm/SKILL.md`, `user-invocable: false`, which the stage skills that dispatch roles (`execute` of T41, `cr` of T42) and the `lead` role follow, holding principles only (T23-D6, D15; T41-D1 to D9, which supersede T23-D50's flat swarm) and no command usage beyond naming the commands:
@@ -248,6 +255,7 @@ The `verifier` contract SHALL verify every plan part its package names, together
 - **Design coverage.** Every requirement, decision and failure path the design documents or the accepted `decision` entries state is covered by some task; an uncovered one is a blocker of category `unresolved-decision`.
 - **Callers.** A caller of a changed symbol whose user-visible behaviour the Change alters, with no task or `decision` entry covering it, is a blocker of category `unresolved-decision`, so the user decides between repairing it in this Change and a follow-up Change; a caller change users do not see is a finding.
 - **Between parts.** A part that consumes another part's output names it in `depends-on`; two parts of the same wave do not both modify one file; a signature one part changes is used in its new form by the parts that call it.
+- **Isolation (T45).** Two parts of the same wave that both touch state outside their `Files:` (a lockfile or codegen output both regenerate, migration numbering, snapshot files, a whole-project build or typecheck that would see the other part's unfinished code, a shared port, database or fixtures) while both are `isolation: shared` are a blocker of category `integration-failure` naming the parts and the state; one of them set to `worktree` with a reason naming that state settles it. A `worktree` part whose `isolation-reason` names no state outside `Files:`, or names only files of its own `Files:`, is a finding, since a worktree costs a setup and a merge. Overlapping `Files:` stay a `depends-on` matter: a worktree does not settle them.
 - **No implementation code.** A task that carries a function body in a code block is a finding, since the plan states contracts and test cases.
 
 #### Scenario: verifier contract covers the plan checks
@@ -264,6 +272,16 @@ The `verifier` contract SHALL verify every plan part its package names, together
 
 - **WHEN** a task states that `formatDate` returns an unparseable value verbatim and none of its test cases names an unparseable value
 - **THEN** the verifier raises a blocker of category `unresolved-decision` naming the task, and `plan-verify` is not done
+
+#### Scenario: shared parts with a hidden shared lockfile
+
+- **WHEN** parts `01` and `02` have disjoint `Files:` and no `depends-on`, both add a dependency in `package.json` files of their own packages so both regenerate `pnpm-lock.yaml`, and both are `isolation: shared`
+- **THEN** the verifier raises a blocker of category `integration-failure` naming parts `01` and `02` and `pnpm-lock.yaml`, and `plan-verify` is not done
+
+#### Scenario: worktree without shared state
+
+- **WHEN** part `02` sets `isolation: worktree` with the reason "keeps it apart" and touches nothing outside its `Files:`
+- **THEN** the verifier writes a finding naming part `02` and no blocker for it
 
 ### Requirement: Contracts steer the kernel calls that repeat as refusals
 

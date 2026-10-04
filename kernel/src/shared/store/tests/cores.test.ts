@@ -141,6 +141,45 @@ describe("taskProgress", () => {
   });
 });
 
+describe("taskProgress with part worktrees (T45)", () => {
+  it("counts a task committed only on a live part branch", async () => {
+    sh("branch", `bdk-part/${ID}/01`);
+    sh("checkout", "--quiet", `bdk-part/${ID}/01`);
+    commit(`feat: store\n\nBDK-Change: ${ID}\nBDK-Part: 01\nBDK-Task: 01-1`);
+    sh("checkout", "--quiet", "-");
+    const progress = await taskProgress(systemGit, root, ID, readPlanParts(store, dir), []);
+    expect([...progress.committed.keys()]).toStrictEqual(["01-1"]);
+  });
+
+  it("accepts a part merge commit and refuses one of an unknown part", async () => {
+    const merge = (part: string): string => {
+      const branch = `side-${part}`;
+      sh("checkout", "--quiet", "-b", branch);
+      commit("side work");
+      sh("checkout", "--quiet", "-");
+      sh(
+        "merge",
+        "--quiet",
+        "--no-ff",
+        "-m",
+        `chore(bdk): merge part ${part}`,
+        "-m",
+        `BDK-Change: ${ID}\nBDK-Part: ${part}`,
+        branch,
+      );
+      return sh("rev-parse", "--short=7", "HEAD").trim();
+    };
+    merge("01");
+    const known = await taskProgress(systemGit, root, ID, readPlanParts(store, dir), []);
+    expect(known.mismatches).toStrictEqual([]);
+    const unknown = merge("07");
+    const progress = await taskProgress(systemGit, root, ID, readPlanParts(store, dir), []);
+    expect(progress.mismatches).toStrictEqual([
+      `merge commit ${unknown} carries BDK-Part: 07, but no plan part is 07`,
+    ]);
+  });
+});
+
 describe("checkpointChange", () => {
   const input = () => ({
     store,

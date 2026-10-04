@@ -140,7 +140,7 @@ describe("change close refusals, in contract order, writing nothing", () => {
 
   it("state/trailer-mismatch when a commit names a task no part holds", async () => {
     const h = closing();
-    h.log = `c0ffee00\x1fTask\x1f${CHANGE}\x1f01\x1f01-9\x1e`;
+    h.log = `c0ffee00\x1fp0\x1fTask\x1f${CHANGE}\x1f01\x1f01-9\x1e`;
     const result = await close(h);
     expect(result.code).toBe(4);
     expect(refusal(result.json)).toMatchObject({

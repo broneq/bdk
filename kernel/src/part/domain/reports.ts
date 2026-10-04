@@ -36,6 +36,14 @@ export interface PartStartReport {
   readonly doNotTouch: readonly string[];
   readonly successMeasure: string;
   readonly entry: string;
+  readonly isolation: "shared" | "worktree";
+  /** The worktree's absolute path for a part started with `isolation: worktree`. */
+  readonly workdir?: string | undefined;
+  readonly setup?:
+    | { readonly command: string; readonly exitCode: number; readonly durationMs: number }
+    | undefined;
+  /** A worktree part started in the home checkout because worktrees are disabled. */
+  readonly downgraded?: true | undefined;
 }
 
 export interface PartDoneReport {
@@ -46,6 +54,10 @@ export interface PartDoneReport {
   readonly entry: string;
   /** The id of the node `bdk next` returns afterwards; absent when none. */
   readonly next?: string | undefined;
+  /** A worktree part's merge commit, short SHA (T45). */
+  readonly merge?: string | undefined;
+  /** Leftovers of the worktree no task declares, dropped with it. */
+  readonly discarded?: readonly string[] | undefined;
 }
 
 export interface PartSplitReport {

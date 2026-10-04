@@ -9,8 +9,12 @@
 // a Change with two dependent parts delivered, the base of `review-models` (T42),
 // which passes a defects patch: each task then delivers its files with the
 // defects in them, as an implementer that made those mistakes would have.
+// `shared-lockfile` is a large Change whose two disjoint parts both add a
+// dependency with npm install, part 02 in a worktree (T45);
+// `shared-lockfile-unisolated` is its plan with both parts shared, done and
+// not yet verified.
 import { execFileSync } from "node:child_process";
-import { cpSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,6 +28,8 @@ export const SEEDS = [
   "executed-blocker",
   "reviewed",
   "executed-two-parts",
+  "shared-lockfile",
+  "shared-lockfile-unisolated",
 ] as const;
 
 export type SeedName = (typeof SEEDS)[number];
@@ -35,6 +41,7 @@ export function isSeed(value: unknown): value is SeedName {
 const TWO_PARTS = fileURLToPath(new URL("./seeds/two-independent-parts", import.meta.url));
 const REVIEWED = fileURLToPath(new URL("./seeds/reviewed", import.meta.url));
 const TWO_PARTS_EXECUTED = fileURLToPath(new URL("./seeds/executed-two-parts", import.meta.url));
+const SHARED_LOCKFILE = fileURLToPath(new URL("./seeds/shared-lockfile", import.meta.url));
 
 const ENV = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
 
@@ -103,16 +110,23 @@ function typedPlan(dir: string, kernel: Kernel): void {
   });
 }
 
-/** A large Change at the end of its plan stage, parts 01 (`src/ui/format.ts`) and 02 (`src/api/http.ts`) independent. */
-function twoIndependentParts(dir: string, kernel: Kernel): void {
-  const intent = readFileSync(join(TWO_PARTS, "intent.md"), "utf8").trim();
+interface LargeOptions {
+  /** Run the passing `plan-verify` round; without it the plan is done and not verified. */
+  readonly verifyPlan: boolean;
+  /** Rewrites a copied plan part, given its file name and text. */
+  readonly part?: (name: string, text: string) => string;
+}
+
+/** A large Change from the files of `source`, at the end of its plan stage. */
+function largeChange(dir: string, kernel: Kernel, source: string, options: LargeOptions): void {
+  const intent = readFileSync(join(source, "intent.md"), "utf8").trim();
   const change = field(
     run(dir, kernel, ["change", "new", intent, "--profile", "large", "--reason", "eval seed"]),
     "change",
   );
   const changeDir = join(dir, ".bdk", "changes", change);
   const copy = (path: string) => {
-    cpSync(join(TWO_PARTS, path), join(changeDir, path), { recursive: true });
+    cpSync(join(source, path), join(changeDir, path), { recursive: true });
   };
   copy("design");
   run(dir, kernel, ["done", "design-parts"]);
@@ -122,10 +136,23 @@ function twoIndependentParts(dir: string, kernel: Kernel): void {
   verified(dir, kernel, "design-verify");
   typedPlan(dir, kernel);
   copy("plan");
+  const rewrite = options.part;
+  if (rewrite !== undefined) {
+    const parts = join(changeDir, "plan", "parts");
+    for (const name of readdirSync(parts)) {
+      const path = join(parts, name);
+      writeFileSync(path, rewrite(name, readFileSync(path, "utf8")));
+    }
+  }
   run(dir, kernel, ["done", "plan"]);
-  verified(dir, kernel, "plan-verify");
+  if (options.verifyPlan) verified(dir, kernel, "plan-verify");
   run(dir, kernel, ["change", "checkpoint"]);
   commitIgnore(dir);
+}
+
+/** Both parts `shared`: the isolation lines of part 02 dropped. */
+function unisolated(_name: string, text: string): string {
+  return text.replace(/^isolation(?:-reason)?: .*\n/gm, "");
 }
 
 /**
@@ -315,7 +342,13 @@ export function runSeed(name: SeedName, dir: string, kernel: Kernel, defects?: s
       seedV3(dir, readTask(TASK_DIR), kernel);
       return;
     case "two-independent-parts":
-      twoIndependentParts(dir, kernel);
+      largeChange(dir, kernel, TWO_PARTS, { verifyPlan: true });
+      return;
+    case "shared-lockfile":
+      largeChange(dir, kernel, SHARED_LOCKFILE, { verifyPlan: true });
+      return;
+    case "shared-lockfile-unisolated":
+      largeChange(dir, kernel, SHARED_LOCKFILE, { verifyPlan: false, part: unisolated });
       return;
     case "executed":
       executedTiny(dir, kernel, APP_NAME);

@@ -54,8 +54,14 @@ export { renderDocument } from "./state/render.ts";
 export type { KindOverrides, MigrationResult, StateDocument } from "./state/documents.ts";
 export { findingFingerprint, learningFingerprint, normalise } from "./state/fingerprint.ts";
 export { generateDesignIndex, generatePlanIndex, planWaves } from "./state/indexes.ts";
-export { hasPlaceholder, parsePlanTasks, planPlaceholders, TASK_ID } from "./state/plan.ts";
-export type { ParsedTasks, PlanFile, PlanTask } from "./state/plan.ts";
+export {
+  hasPlaceholder,
+  isolationOf,
+  parsePlanTasks,
+  planPlaceholders,
+  TASK_ID,
+} from "./state/plan.ts";
+export type { Isolation, ParsedTasks, PlanFile, PlanTask } from "./state/plan.ts";
 export { STATE_KINDS } from "./state/registry.ts";
 export type { KindName } from "./state/registry.ts";
 export {
@@ -93,6 +99,20 @@ export type { LockHolder, LockWait } from "./lock.ts";
 export { taskProgress } from "./progress.ts";
 export type { TaskProgress } from "./progress.ts";
 export { rebuildChanges } from "./rebuild.ts";
+export {
+  gitDirIn,
+  HOME_MARKER,
+  homeIsValid,
+  homeMarkerPath,
+  kernelWorktrees,
+  partBranch,
+  partWorktree,
+  readHomeMarker,
+  workRootOf,
+  workRoots,
+  writeHomeMarker,
+} from "./worktree.ts";
+export type { HomeMarker } from "./worktree.ts";
 export type { RebuildResult } from "./rebuild.ts";
 export { readAttempts, readPlanParts, targetFiles, taskHolders } from "./work.ts";
 export { stampRulesRead } from "./rules-read.ts";

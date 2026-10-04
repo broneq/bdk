@@ -77,6 +77,13 @@ const waveItem = z.strictObject({
   mode: z.enum(["flat", "tree"]).meta({
     description: "flat: main dispatches the part's tasks; tree: one lead runs the part.",
   }),
+  isolation: z.enum(["shared", "worktree"]).meta({
+    description: "The part's isolation field; shared when the plan part omits it (T45).",
+  }),
+  workdir: z.string().optional().meta({
+    description:
+      "A live worktree part's worktree, absolute; the orchestrator passes it to the agents it starts for the part.",
+  }),
 });
 
 export const nextOutput = z

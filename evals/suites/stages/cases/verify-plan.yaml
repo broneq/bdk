@@ -113,6 +113,28 @@
       match:
         state: "^(ready|blocked)$"
 
+# isolation: the shared-lockfile plan with both parts shared (T45). The parts
+# have disjoint Files: and no depends-on, but both add a dependency with npm
+# install, so both rewrite package.json and package-lock.json in one tree.
+- id: isolation
+  command: /bdk:verify-plan
+  seed: shared-lockfile-unisolated
+  prepare:
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: log list --type blocker
+      json:
+        items.0.category: integration-failure
+      match:
+        items.0.status: "^(proposed|accepted)$"
+        items.0.summary: "01[\\s\\S]*02|02[\\s\\S]*01"
+    - run: explain plan-verify
+      match:
+        state: "^(ready|blocked)$"
+
 - id: not-ready
   command: /bdk:verify-plan
   prepare:

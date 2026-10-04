@@ -7,12 +7,19 @@ import { withChangeIndex } from "../../log/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
-import { readAttempts, refreshChange, taskProgress } from "../../shared/store/index.ts";
+import {
+  checkpointChange,
+  partWorktree,
+  readAttempts,
+  refreshChange,
+  taskProgress,
+} from "../../shared/store/index.ts";
 import type { EntryRow, PlanPartFile } from "../../shared/store/index.ts";
 import type { PartDoneReport } from "../domain/reports.ts";
 import type { PartDeps } from "./deps.ts";
 import { partsWith } from "./parts.ts";
 import { tinyGuard } from "./tiny.ts";
+import { mergeBack } from "./worktree.ts";
 
 export function donePart(
   deps: PartDeps,
@@ -77,8 +84,21 @@ export function donePart(
       );
     }
 
+    const workdir = await partWorktree(deps.git, deps.store, change, id);
+    const merged =
+      workdir === undefined ? undefined : await mergeBack(deps, change, index, part, workdir);
+    if (merged !== undefined && "refused" in merged) return merged;
     const written = await writeDoneMarker(deps, change, index, read, node);
     if ("refused" in written) return written;
+    if (merged !== undefined) {
+      await checkpointChange({
+        store: deps.store,
+        git: deps.git,
+        projectRoot: change.projectRoot,
+        change,
+        settings: read.resolved.value,
+      });
+    }
     if (read.view.profile === "tiny") await tinyGuard(deps, change, index);
     refreshChange(index, { id: change.id, dir: change.dir, archived: false });
     const after = await readGraph(deps, change, index, globalDir);
@@ -94,6 +114,7 @@ export function donePart(
       openFindings: openFindings(after.entries, part),
       entry: written.entry.id,
       ...(next === undefined ? {} : { next }),
+      ...(merged === undefined ? {} : { merge: merged.merge, discarded: merged.discarded }),
     };
   });
 }

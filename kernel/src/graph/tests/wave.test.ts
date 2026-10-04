@@ -6,7 +6,7 @@ import { settingsRegistry } from "../../registrations.ts";
 import { mergeLayers, moduleValue, validateLayers } from "../../shared/config/index.ts";
 import type { Layer } from "../../shared/config/index.ts";
 import { writeDocument } from "../../shared/store/index.ts";
-import { executionTreeModule } from "../config.ts";
+import { executionTreeModule, executionWorktreeModule } from "../config.ts";
 import { nextOutput } from "../schema/outputs.ts";
 import {
   DIR,
@@ -143,6 +143,44 @@ describe("execution.tree settings", () => {
   });
 });
 
+describe("execution.worktree settings", () => {
+  const registry = settingsRegistry();
+  const check = (values: Record<string, unknown>) => {
+    const layers: Layer[] = [{ name: "project", path: "/p.yaml", text: "", values }];
+    return validateLayers(registry, layers, mergeLayers(layers, registry.appendOnly));
+  };
+
+  it("defaults to enabled, the machine dir, a 300 s setup bound and three live worktrees", () => {
+    expect(moduleValue(executionWorktreeModule, check({}).value ?? {})).toStrictEqual({
+      enabled: true,
+      dir: ".bdk/.machine/worktrees",
+      setup: { timeout: 300 },
+      "max-live": 3,
+    });
+  });
+
+  it("keeps a setup command", () => {
+    const value = check({ execution: { worktree: { setup: { command: "pnpm install" } } } });
+    expect(moduleValue(executionWorktreeModule, value.value ?? {}).setup).toStrictEqual({
+      command: "pnpm install",
+      timeout: 300,
+    });
+  });
+
+  it.each([
+    ["setup.timeout", { setup: { timeout: 900 } }],
+    ["setup.timeout", { setup: { timeout: 5 } }],
+    ["max-live", { "max-live": 0 }],
+    ["max-live", { "max-live": 16 }],
+    ["dir", { dir: "" }],
+    ["setup.command", { setup: { command: "" } }],
+  ])("refuses %s out of range: %j", (key, worktree) => {
+    const problem = check({ execution: { worktree } }).problems[0];
+    expect(problem).toMatchObject({ rule: "policy/config-invalid" });
+    expect(JSON.stringify(problem)).toContain(`execution.worktree.${key}`);
+  });
+});
+
 describe("the execute wave of bdk next", () => {
   it("marks two independent parts of a large Change tree", async () => {
     const h = await planned("large");
@@ -152,8 +190,8 @@ describe("the execute wave of bdk next", () => {
     expect(report.stage).toBe("plan");
     expect(report.command).toBe("/bdk:execute");
     expect(report.wave).toStrictEqual([
-      { part: "01", started: false, tickets: [], mode: "tree" },
-      { part: "02", started: false, tickets: [], mode: "tree" },
+      { part: "01", started: false, tickets: [], mode: "tree", isolation: "shared" },
+      { part: "02", started: false, tickets: [], mode: "tree", isolation: "shared" },
     ]);
   });
 
@@ -184,8 +222,8 @@ describe("the execute wave of bdk next", () => {
     start(h, "01");
     openTicket(h, "A-1l1l1l1l", "part-lead", "01");
     expect((await next(h)).wave).toStrictEqual([
-      { part: "01", started: true, tickets: ["A-1l1l1l1l"], mode: "tree" },
-      { part: "02", started: false, tickets: [], mode: "flat" },
+      { part: "01", started: true, tickets: ["A-1l1l1l1l"], mode: "tree", isolation: "shared" },
+      { part: "02", started: false, tickets: [], mode: "flat", isolation: "shared" },
     ]);
   });
 
@@ -198,13 +236,14 @@ describe("the execute wave of bdk next", () => {
       started: true,
       tickets: ["A-2t2t2t2t"],
       mode: "flat",
+      isolation: "shared",
     });
   });
 
   it("leaves a dependent part out until its dependency is done", async () => {
     const h = await planned("large", { "02": ["01"] });
     expect((await next(h)).wave).toStrictEqual([
-      { part: "01", started: false, tickets: [], mode: "flat" },
+      { part: "01", started: false, tickets: [], mode: "flat", isolation: "shared" },
     ]);
   });
 
@@ -213,7 +252,7 @@ describe("the execute wave of bdk next", () => {
       `## ${nn}-1 Edit the client\n\n**Files:**\n\n- \`src/client.ts\`\n- \`src/part-${nn}.ts\`\n\n**Test cases:**\n\n- works\n`;
     const h = await planned("large", {}, true, { "01": shared("01"), "02": shared("02") });
     expect((await next(h)).wave).toStrictEqual([
-      { part: "01", started: false, tickets: [], mode: "flat" },
+      { part: "01", started: false, tickets: [], mode: "flat", isolation: "shared" },
     ]);
     start(h, "01");
     expect((await next(h)).wave?.map((item) => item.part)).toStrictEqual(["01"]);

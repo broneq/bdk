@@ -153,6 +153,8 @@ An attempt record SHALL be one file per ticket, created by `attempt open`, stamp
 | `dropped`       | array of `L-` ids                                                      | no   |         | Findings that fell out of scope N+1.                                                                                                                                        |
 | `rules-read`    | timestamp                                                              | no   | kernel  | First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`.                                                                 |
 | `package`       | relative path                                                          | no   | kernel  | The ticket's active package: the latest `dispatch build` of the ticket (T23-D42).                                                                                           |
+| `merge`         | boolean                                                                | no   | kernel  | A `verify-fix` merge ticket of a worktree part (T45; `kernel-cli/attempt`, bdk attempt open).                                                                               |
+| `conflicts`     | array of paths                                                         | no   | kernel  | The unmerged paths when the merge ticket opened; present exactly when `merge` is.                                                                                           |
 
 The body is the close reason (`--reason` of `attempt close`, `taken over` from `change takeover`). `not-run` counters and budgets are derived from the records of a loop, target and round (`kernel-loops`, Loops, targets and rounds), never stored.
 

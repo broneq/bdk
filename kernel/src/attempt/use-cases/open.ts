@@ -14,7 +14,7 @@ import {
 import type { RoundState, Scope } from "../domain/ladder.ts";
 import type { AttemptOpenReport, DroppedFinding } from "../domain/reports.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
-import { workTargets } from "../../part/index.ts";
+import { openMergeTicket, workTargets } from "../../part/index.ts";
 import type { WorkTargets } from "../../part/index.ts";
 import { authorIdent } from "../../shared/git/index.ts";
 import { newId } from "../../shared/ids/index.ts";
@@ -106,6 +106,10 @@ export function openAttempt(
         settings: targets.settings,
       });
     }
+    const merge =
+      loop === "verify-fix" ? await openMergeTicket(deps, change, input.target) : undefined;
+    const conflicts =
+      merge === undefined || merge.conflicts.length === 0 ? undefined : merge.conflicts;
     const ticket = newId("A-", deps.random);
     const openedAt = deps.clock.now();
     const path = join(change.dir, "attempts", `${loop}-${input.target}-${ticket}.md`);
@@ -125,6 +129,7 @@ export function openAttempt(
         "opened-at": openedAt,
         author: await authorIdent(deps.git, change.projectRoot),
         ...(dropped.length === 0 ? {} : { dropped: dropped.map((entry) => entry.id) }),
+        ...(conflicts === undefined ? {} : { merge: true, conflicts }),
       },
       body: "",
     });
@@ -171,6 +176,7 @@ export function openAttempt(
       ...(entry === undefined ? {} : { entry: entry.id }),
       ...(input.escalate ? { escalation: { model: policy.escalation.model } } : {}),
       ...(loop === "verifier" || loop === "part-lead" ? {} : { steps: targets.steps }),
+      ...(conflicts === undefined ? {} : { merge: true as const, conflicts }),
     };
   });
 }

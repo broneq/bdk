@@ -17,8 +17,20 @@ export const rebuildOutput = z
     durationMs: count,
     warnings: z.array(z.string().min(1)).meta({
       description:
-        "Documents left unchanged (newer than the kernel, or without a migration path) and indexes not regenerated, with the reason.",
+        "Documents left unchanged (newer than the kernel, or without a migration path), indexes not regenerated, and part worktrees or branches that need the user, with the reason.",
     }),
+    worktrees: z
+      .array(
+        z.strictObject({
+          part: z.string().regex(/^\d{2}$/),
+          path: z.string().min(1).meta({ description: "The worktree's absolute path." }),
+          action: z.enum(["kept", "removed", "recreated"]),
+        }),
+      )
+      .meta({
+        description:
+          "Each kernel part worktree rebuild settled; a worktree without the home marker is the user's and never listed (T45).",
+      }),
   })
   .meta({
     title: "bdk rebuild --json",
@@ -33,6 +45,7 @@ export const rebuildOutput = z
         migrated: [],
         durationMs: 412,
         warnings: [],
+        worktrees: [],
       },
     ],
   }) satisfies z.ZodType<RebuildReport>;

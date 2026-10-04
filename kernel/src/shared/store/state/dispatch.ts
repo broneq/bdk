@@ -1,6 +1,8 @@
 // `dispatch/<target>-<role>-<ticket>.md` (`kernel-state`, Dispatch package):
 // the frontmatter only, stamped whole by `dispatch build`; the body sections
 // are the kernel template of `dispatch` (T23).
+import { isAbsolute } from "node:path";
+
 import * as z from "zod";
 
 import { hash, relativePath, reviewGroup, role, scope, ticketId, timestamp } from "./common.ts";
@@ -41,6 +43,14 @@ export const dispatchKind = {
       files: z.array(relativePath).optional().meta({
         description: "The group's file set; present exactly when `group` is.",
       }),
+      workdir: z
+        .string()
+        .refine((path) => isAbsolute(path), "must be an absolute path")
+        .optional()
+        .meta({
+          description:
+            "The work root of the target when it is a live worktree part, or a task of one (T45); absent means the home checkout.",
+        }),
     })
     .superRefine((data, context) => {
       if ((data.group === undefined) === (data.files === undefined)) return;

@@ -19,7 +19,7 @@ import type { AttemptCloseReport, DiffReport } from "../domain/reports.ts";
 import { closeEvidence } from "../../evidence/index.ts";
 import { targetSteps } from "../../graph/index.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
-import { diffCheck } from "../../part/index.ts";
+import { commitMergeTicket, diffCheck, unresolvedMerge } from "../../part/index.ts";
 import type { DiffTarget } from "../../part/index.ts";
 import { resolveOrRefuse } from "../../shared/config/index.ts";
 import type { Mapping, Resolved } from "../../shared/config/index.ts";
@@ -35,6 +35,7 @@ import {
   readPlanParts,
   taskHolders,
   packageRoles,
+  partWorktree,
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { AttemptRecord, EntryRow, IndexDb } from "../../shared/store/index.ts";
@@ -109,7 +110,7 @@ export function closeAttempt(
     );
     if ("refused" in resolved) return resolved;
 
-    const diff = await diffCheck(deps, change, index, diffTarget(record));
+    const diff = await diffCheck(deps, change, index, diffTarget(change, record));
     if ("refused" in diff) return diff;
     const underTicket = listEntries(index, change.id).filter(
       (entry) => entry.ticket === input.ticket,
@@ -139,9 +140,21 @@ export function closeAttempt(
         );
       }
     }
+    const conflicts = record.file.data.conflicts;
+    if (outcome === "ok" && conflicts !== undefined) {
+      const unresolved = await unresolvedMerge(deps, change, record.target, conflicts);
+      if (unresolved !== undefined) return unresolved;
+    }
     if (outcome === "ok") {
       const unproven = await stepEvidence(deps, change, index, where.globalDir, record, resolved);
       if (unproven !== undefined) return unproven;
+    }
+    if (outcome === "ok" && conflicts !== undefined) {
+      const rejected = await commitMergeTicket(deps, change, record.target, [
+        ...conflicts,
+        ...diff.declared,
+      ]);
+      if (rejected !== undefined) return rejected;
     }
 
     const findings = outcome === "fail" ? fingerprints(underTicket) : [];
@@ -177,10 +190,13 @@ export function closeAttempt(
       blocked,
       okAction(record),
     );
+    // The kernel committed the merge ticket's work: nothing is left to commit.
     const next =
       rung.action === "parked"
         ? await park(deps, change, index, resolved.value, record, round, rung)
-        : rung;
+        : rung.action === "commit" && conflicts !== undefined
+          ? { ...rung, action: "part-done" as const }
+          : rung;
     if ("refused" in next) return next;
 
     const prints = [...new Set(findings.map((finding) => finding.fingerprint))];
@@ -252,11 +268,15 @@ function missingMerge(
   );
 }
 
-function diffTarget(record: KeyedRecord): DiffTarget {
+function diffTarget(change: ActiveChange, record: KeyedRecord): DiffTarget {
+  const conflicts = record.file.data.conflicts;
   switch (record.loop) {
     case "task-redispatch":
       return { task: record.target };
     case "verify-fix":
+      return conflicts === undefined
+        ? { part: record.target }
+        : { part: record.target, merge: { ref: change.branch, conflicts } };
     case "part-lead":
       return { part: record.target };
     case "review-fix":
@@ -376,6 +396,18 @@ async function unreadRules(
   return "refused" in written ? written : { id: written.entry.id };
 }
 
+/** The park question's way back from a merge ticket: the worktree, the paths, the abort. */
+async function mergeWayBack(
+  deps: AttemptDeps,
+  change: ActiveChange,
+  record: KeyedRecord,
+): Promise<string> {
+  const conflicts = record.file.data.conflicts;
+  if (conflicts === undefined) return "";
+  const workdir = await partWorktree(deps.git, deps.store, change, record.target);
+  return `\nThe merge of ${change.branch} into part ${record.target} is still in progress in ${workdir ?? "its worktree"}, conflicting in ${conflicts.join(", ")}. Resolve it there by hand, or run \`git merge --abort\` in that worktree to drop it.\n`;
+}
+
 /** The end of the ladder: the question that parks the Change, then the checkpoint. */
 async function park(
   deps: AttemptDeps,
@@ -407,7 +439,7 @@ async function park(
       park: true,
       options: ladderOptions(record.target, part),
       refs: [record.target, ...round.map((item) => item.ticket)],
-      body: `${rung.why ?? "the ladder ended"}.\n`,
+      body: `${rung.why ?? "the ladder ended"}.\n${await mergeWayBack(deps, change, record)}`,
     },
     { dedupe: false },
   );

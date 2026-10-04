@@ -163,6 +163,13 @@ describe("planPlaceholders", () => {
     ]);
   });
 
+  it("names a placeholder in isolation-reason", () => {
+    const frontmatter = { ...example.planPart, isolation: "worktree", "isolation-reason": "TBD" };
+    expect(planPlaceholders(frontmatter, parsePlanTasks(BODY).tasks)).toStrictEqual([
+      "isolation-reason",
+    ]);
+  });
+
   it("passes a clean part", () => {
     expect(planPlaceholders(example.planPart, parsePlanTasks(BODY).tasks)).toStrictEqual([]);
   });

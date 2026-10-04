@@ -494,9 +494,13 @@
         "policy/part-too-many-tasks",
         "policy/do-not-touch-overlap",
         "policy/placeholder",
-        "policy/validation-failed"
+        "policy/validation-failed",
+        "policy/config-invalid",
+        "runtime/worktree-setup-failed",
+        "runtime/git-too-old",
+        "runtime/git-missing"
       ],
-      "writes": [".bdk/changes/<id>/log/"]
+      "writes": [".bdk/changes/<id>/log/", "git:worktree"]
     },
     {
       "id": "part-done",
@@ -521,10 +525,14 @@
         "policy/invalid-transition",
         "policy/ticket-open",
         "policy/validation-failed",
+        "policy/worktree-dirty",
+        "policy/merge-conflict",
+        "policy/merge-blocked",
+        "policy/commit-busy",
         "state/trailer-mismatch",
         "runtime/git-missing"
       ],
-      "writes": [".bdk/changes/<id>/log/"]
+      "writes": [".bdk/changes/<id>/log/", "git:commit", "git:worktree"]
     },
     {
       "id": "part-split",
@@ -594,7 +602,7 @@
         "policy/files-busy",
         "policy/invalid-transition"
       ],
-      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit"]
+      "writes": [".bdk/changes/<id>/attempts/", ".bdk/changes/<id>/log/", "git:commit", "git:merge"]
     },
     {
       "id": "attempt-close",
@@ -640,6 +648,8 @@
         "policy/missing-citation",
         "policy/missing-evidence",
         "policy/missing-report",
+        "policy/merge-unresolved",
+        "policy/git-hook-failed",
         "runtime/git-missing"
       ],
       "writes": [
@@ -1855,6 +1865,7 @@
         "guard/subagent-git",
         "guard/subagent-kernel-command",
         "guard/lead-scope",
+        "guard/worktree-scope",
         "guard/hooks-from-bash",
         "guard/nested-stage-command",
         "guard/dispatch-prompt",
@@ -2003,7 +2014,7 @@
       "output": "output/rebuild.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": ["state/trailer-mismatch", "runtime/git-missing"],
-      "writes": [".bdk/.machine/", ".bdk/changes/<id>/", ".bdk/rules/"]
+      "writes": [".bdk/.machine/", ".bdk/changes/<id>/", ".bdk/rules/", "git:worktree"]
     },
     {
       "id": "version",

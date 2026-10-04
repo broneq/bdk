@@ -15,6 +15,9 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+import { KernelRefusal, refuse } from "../refusal/index.ts";
+import { homeIsValid, readHomeMarker } from "./worktree.ts";
+
 /** What freshness checks compare (`kernel-state`, Rebuildable index). */
 export interface FileStat {
   readonly mtimeMs: number;
@@ -279,9 +282,25 @@ export function readStdin(): string {
   return readFileSync(0, "utf8");
 }
 
-/** The nearest directory holding `.bdk/` from `cwd` up to the work tree root, else that root. */
+/**
+ * The nearest directory holding `.bdk/` from `cwd` up to the work tree root,
+ * else that root; inside a kernel part worktree, the home checkout its marker
+ * names (`kernel-cli`, Invocation), or `state/worktree-orphaned` when that
+ * home is no longer a work tree of the same repository.
+ */
 export function findProjectRoot(store: Store, cwd: string, workTreeRoot: string): string {
   const top = resolve(workTreeRoot);
+  const marker = readHomeMarker(store, top);
+  if (marker !== undefined) {
+    if (homeIsValid(store, top, marker)) return marker.home;
+    throw new KernelRefusal(
+      refuse(
+        "state/worktree-orphaned",
+        `the part worktree ${top} names the home checkout ${marker.home}, which is no longer a work tree of this repository`,
+        ["bdk rebuild"],
+      ),
+    );
+  }
   for (let dir = resolve(cwd); ; dir = dirname(dir)) {
     if (store.isDirectory(join(dir, ".bdk"))) return dir;
     if (dir === top || dirname(dir) === dir) return top;

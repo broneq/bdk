@@ -8,6 +8,9 @@ export function renderRebuild(report: RebuildReport): string {
   const lines = [
     `rebuilt ${count(report.changes, "Change")}: ${count(report.entries, "entry", "entries")}, ${count(report.attempts, "attempt")}, ${count(report.commits, "commit")} in ${String(report.durationMs)} ms`,
     ...report.migrated.map((path) => `migrated ${path}`),
+    ...report.worktrees.map(
+      ({ part, path, action }) => `worktree of part ${part} ${action}: ${path}`,
+    ),
     ...report.warnings.map((warning) => `warning: ${warning}`),
   ];
   return `${lines.join("\n")}\n`;

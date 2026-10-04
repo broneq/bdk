@@ -67,8 +67,23 @@ export const attemptKind = {
         description:
           "First `rules show --ticket` call under the ticket's implementer package (risk R2); read by `attempt close`.",
       }),
+      merge: z.literal(true).optional().meta({
+        description:
+          "A `verify-fix` merge ticket of a worktree part (T45; `kernel-cli/attempt`, bdk attempt open).",
+      }),
+      conflicts: z.array(relativePath).min(1).optional().meta({
+        description:
+          "The unmerged paths when the merge ticket opened; present exactly when `merge` is.",
+      }),
     })
     .superRefine((data, context) => {
+      if ((data.merge === true) !== (data.conflicts !== undefined)) {
+        context.addIssue({
+          code: "custom",
+          path: [data.merge === true ? "conflicts" : "merge"],
+          message: "merge and conflicts are present together or not at all",
+        });
+      }
       const closed = data["closed-at"] !== undefined;
       if (closed === (data.outcome !== undefined)) return;
       context.addIssue({

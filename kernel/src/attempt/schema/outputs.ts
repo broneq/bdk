@@ -68,6 +68,14 @@ export const attemptOpenOutput = z
         description:
           "The post-task steps the orchestrator dispatches under the ticket after the implementer, in pipeline order; only for task-redispatch, verify-fix and review-fix.",
       }),
+    merge: z.literal(true).optional().meta({
+      description:
+        "A merge ticket: the kernel started merging the Change branch into the part's worktree (T45).",
+    }),
+    conflicts: z.array(z.string().min(1)).min(1).optional().meta({
+      description:
+        "The paths git reports unmerged in the worktree; present exactly when `merge` is.",
+    }),
   })
   .meta({
     title: "bdk attempt open --json",

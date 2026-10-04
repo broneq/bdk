@@ -127,7 +127,13 @@ function planPartFacts(data: Readonly<Record<string, unknown>>, body: string): P
     tasks: tasks.map((task) => ({ id: task.id, files: task.files.map((file) => file.path) })),
     problems,
     placeholders: planPlaceholders(
-      { goal: text(data.goal), "success-measure": text(data["success-measure"]) },
+      {
+        goal: text(data.goal),
+        "success-measure": text(data["success-measure"]),
+        ...(data["isolation-reason"] === undefined
+          ? {}
+          : { "isolation-reason": text(data["isolation-reason"]) }),
+      },
       tasks,
     ),
     overlaps,

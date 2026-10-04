@@ -66,6 +66,8 @@ Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml` (only the 
   expect: # kernel commands run with --json after the session, and the final reply
     - run: change list
       json: { items.length: 1 } # dotted path -> exact value (`*` = any element); `match` takes a pattern instead
+    - shell: git worktree list --porcelain | grep -c '^worktree ' # git state no kernel command reports
+      stdout: "^1\n$" # a pattern; `exit` (0 when absent) is the expected exit code
     - reply: change status
 ```
 

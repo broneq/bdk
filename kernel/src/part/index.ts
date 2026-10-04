@@ -10,8 +10,12 @@ export type { PartDeps } from "./use-cases/deps.ts";
 export { diffCheck } from "./use-cases/diff.ts";
 export type { DiffTarget } from "./use-cases/diff.ts";
 export { partItems } from "./use-cases/list.ts";
+export { recoverWorktrees } from "./use-cases/recover.ts";
+export type { RecoveredWorktree } from "./use-cases/recover.ts";
 export { tinyGuard } from "./use-cases/tiny.ts";
+export { worktreeSettings } from "./use-cases/worktree.ts";
 export { workTargets } from "./use-cases/targets.ts";
+export { commitMergeTicket, openMergeTicket, unresolvedMerge } from "./use-cases/worktree.ts";
 export type { WorkTargets } from "./use-cases/targets.ts";
 
 export function partRegistrations(deps: PartDeps): Registration[] {

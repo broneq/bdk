@@ -248,6 +248,7 @@ describe("plan part checks", () => {
         "placeholder",
         "grammar",
         "spec-impact",
+        "isolation",
       ].map((id) => ({ id, ok: true })),
     );
   });
@@ -374,6 +375,20 @@ describe("plan part checks", () => {
       why: "a large Change must declare spec-impact: none or the capabilities the part changes",
       instead: "add spec-impact to the frontmatter of plan/parts/02-mail.md",
     });
+  });
+
+  it("isolation fails a worktree part without a reason", () => {
+    const worktree = { ...data, isolation: "worktree" };
+    expect(check({ files: { [PART]: { data: worktree } } }, "isolation")).toStrictEqual({
+      id: "isolation",
+      ok: false,
+      why: "isolation: worktree needs an isolation-reason naming the state outside Files: the part shares",
+      instead: `add isolation-reason to the frontmatter of ${PART}`,
+    });
+    const blank = { ...worktree, "isolation-reason": "  " };
+    expect(check({ files: { [PART]: { data: blank } } }, "isolation")?.ok).toBe(false);
+    const reasoned = { ...worktree, "isolation-reason": "both regenerate pnpm-lock.yaml" };
+    expect(check({ files: { [PART]: { data: reasoned } } }, "isolation")?.ok).toBe(true);
   });
 
   it("an invalid frontmatter keeps the baseline and the size checks only", () => {
