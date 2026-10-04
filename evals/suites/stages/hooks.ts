@@ -2,7 +2,7 @@
 // run: the case's preparation in the fresh working copy, and the project
 // settings that answer `AskUserQuestion`. After it: the case's expectations
 // against the kernel state the session left, plus turns, wall time and the
-// number of questions asked.
+// number of questions asked and of kernel refusals met.
 import { execFileSync, spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -14,6 +14,7 @@ import type { EvalResult, Measurement, RunContext, SuiteHooks } from "../../harn
 import { answerHookSettings } from "./answer.ts";
 import type { StageCase } from "./cases.ts";
 import { checkExpectations } from "./checks.ts";
+import { countRefusals, refusalMetrics } from "./refusals.ts";
 import { runSeed } from "./seeds.ts";
 import type { CheckResult, KernelCall } from "./checks.ts";
 
@@ -108,6 +109,7 @@ export function measure(result: EvalResult, checks: CheckResult): Measurement {
       questions: calls.filter((call) => call.name === "AskUserQuestion").length,
       turns: result.response?.metadata?.numTurns ?? null,
       wall_s: result.latencyMs === undefined ? null : result.latencyMs / 1000,
+      ...refusalMetrics(countRefusals(calls)),
     },
     extraCost: 0,
     templateHashes: [],

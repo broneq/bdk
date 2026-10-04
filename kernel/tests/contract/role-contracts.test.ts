@@ -61,6 +61,21 @@ function sentences(body: string): string[] {
     .map((sentence) => sentence.trim());
 }
 
+describe("role skills: refusals of the execute probes (T46)", () => {
+  it("runner: cites with the file:line=text form and says a console line is not a citation", () => {
+    const { body } = readRole("runner");
+    expect(body).toMatch(/--cite "[^"\s]+:\d+=[^"]+"/);
+    expect(body).toMatch(/not a (console|summary) line|never the console/i);
+  });
+
+  it("lead: closes a task ticket only after every step, and uses the task's own ticket", () => {
+    const { body } = readRole("lead");
+    expect(body).toMatch(/only after the last step/);
+    expect(body).toMatch(/never your own/);
+    expect(body).toMatch(/close the task's earlier ticket before `bdk attempt open/);
+  });
+});
+
 describe("role skills", () => {
   it("are exactly the ten roles", () => {
     const dirs = existsSync(ROLES_DIR)
@@ -147,6 +162,26 @@ describe("role skills", () => {
       expect(body).toContain("bdk agents list --affected-by <entry>");
       expect(body).toContain("bdk log show <id>");
       expect(body).toMatch(/return `blocked` with the entry id/);
+    });
+
+    // T46: the call forms the execute probes of T41 showed refused (`role-contracts`,
+    // Contracts steer the kernel calls that repeat as refusals).
+    it("shows the envelope as a complete frontmatter with reason left as a comment", () => {
+      const fence = /```\n(---\n[\s\S]*?\n---)\n```/.exec(role().body)?.[1];
+      expect(fence, "an envelope example between two --- lines").toBeDefined();
+      const lines = (fence ?? "").split("\n");
+      expect(lines.filter((line) => line.startsWith("reason:"))).toEqual([]);
+      expect(lines).toContain("# reason: blocked and needs-context only");
+      const frontmatter = parse((fence ?? "").replace(/^---\n|\n---$/g, "")) as Record<
+        string,
+        unknown
+      >;
+      expect(Object.keys(frontmatter)).toEqual(["status", "files", "entries", "evidence"]);
+    });
+
+    it("gives every log add its ticket", () => {
+      const adds = role().body.match(/`bdk log add [^`]*`/g) ?? [];
+      expect(adds.filter((add) => !add.includes("--ticket"))).toEqual([]);
     });
   });
 });

@@ -11,7 +11,12 @@ import {
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
-import { attemptCloseOutput, attemptListOutput, attemptOpenOutput } from "../schema/outputs.ts";
+import {
+  attemptCloseOutput,
+  attemptListOutput,
+  attemptOpenOutput,
+  attemptShowOutput,
+} from "../schema/outputs.ts";
 import {
   close,
   cycle,
@@ -588,6 +593,47 @@ describe("attempt list", () => {
     const h = harness();
     const text = await h.step(["attempt", "list"]);
     expect(text.stdout).toBe("No attempts.\n");
+  });
+});
+
+describe("attempt show", () => {
+  it("shows an open ticket with its state and its steps", async () => {
+    const h = await started();
+    const opened = await open(h, "task-redispatch", "01-1");
+    const shown = await h.step(["attempt", "show", opened.ticket, "--json"]);
+    expect(shown.code, shown.stdout).toBe(0);
+    const report = attemptShowOutput.parse(shown.json);
+    expect(report).toMatchObject({
+      ticket: opened.ticket,
+      loop: "task-redispatch",
+      target: "01-1",
+      attempt: 1,
+      scope: "full",
+    });
+    expect(report).not.toHaveProperty("outcome");
+    expect(report.steps?.length).toBeGreaterThan(0);
+    const text = await h.step(["attempt", "show", opened.ticket]);
+    expect(text.stdout).toContain(`${opened.ticket} open: task-redispatch 01-1`);
+  });
+
+  it("shows the outcome of a closed ticket and changes nothing", async () => {
+    const h = await started();
+    const closed = await cycle(h, "task-redispatch", "01-1", "fail");
+    const before = records(h.store);
+    const report = attemptShowOutput.parse(
+      (await h.step(["attempt", "show", closed.ticket, "--json"])).json,
+    );
+    expect(report.outcome).toBe("fail");
+    expect(report).toHaveProperty("closedAt");
+    expect(records(h.store)).toStrictEqual(before);
+  });
+
+  it("refuses a ticket the Change does not hold", async () => {
+    const h = await started();
+    const result = await h.step(["attempt", "show", "A-zzzzzzzz", "--json"]);
+    expect(result.code).toBe(3);
+    expect(refusal(result)).toMatchObject({ rule: "input/not-found" });
+    expect(refusal(result).instead).toContain("bdk attempt list");
   });
 });
 

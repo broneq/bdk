@@ -18,12 +18,12 @@
     "typecheck": "tsc --noEmit",
     "knip": "knip",
     "test:unit": "vitest run --project unit --coverage",
-    "test:e2e": "vitest run --project e2e",
-    "test:perf": "vitest run --project perf",
-    "test:contract": "vitest run --project contract",
+    "test:e2e": "pnpm build && vitest run --project e2e",
+    "test:perf": "pnpm build && vitest run --project perf",
+    "test:contract": "pnpm build && vitest run --project contract",
     "skill-check": "skill-check",
     "docs:build": "uv run --group docs mkdocs build --strict",
-    "prepare": "husky"
+    "prepare": "husky && node kernel/build.mjs"
   },
   "dependencies": {
     "yaml": "2.9.1",

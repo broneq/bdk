@@ -198,7 +198,11 @@ describe("measure", () => {
       response: {
         metadata: {
           numTurns: 7,
-          toolCalls: [{ name: "AskUserQuestion" }, { name: "Bash" }, { name: "AskUserQuestion" }],
+          toolCalls: [
+            { name: "AskUserQuestion" },
+            { name: "Bash", output: "Exit code 2\nrefused: policy/missing-citation\nwhy: x" },
+            { name: "AskUserQuestion" },
+          ],
         },
       },
     };
@@ -207,6 +211,8 @@ describe("measure", () => {
       questions: 2,
       turns: 7,
       wall_s: 2,
+      refusals: 1,
+      "refusal:policy/missing-citation": 1,
     });
   });
 });

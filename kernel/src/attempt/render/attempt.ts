@@ -3,6 +3,7 @@ import type {
   AttemptItem,
   AttemptListReport,
   AttemptOpenReport,
+  AttemptShowReport,
 } from "../domain/reports.ts";
 
 export function renderOpen(report: AttemptOpenReport): string {
@@ -52,4 +53,14 @@ function line(item: AttemptItem): string {
   const escalation = item.escalation === true ? ", escalation" : "";
   const entries = item.entries === undefined ? "" : `, ${String(item.entries)} entries`;
   return `${item.ticket} ${state}: ${item.loop} ${item.target}, attempt ${String(item.attempt)}/${String(item.of)}, ${item.scope}${escalation}${entries}`;
+}
+
+export function renderShow(report: AttemptShowReport): string {
+  return [
+    line(report),
+    ...(report.steps === undefined || report.steps.length === 0
+      ? []
+      : [`steps: ${report.steps.map((step) => `${step.kind} (${step.role})`).join(", ")}`]),
+    "",
+  ].join("\n");
 }

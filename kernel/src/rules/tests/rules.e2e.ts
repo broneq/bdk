@@ -1,4 +1,4 @@
-// `bdk rules show` through the committed bundle (`kernel-cli/rules`; T23-D27,
+// `bdk rules show` through the built bundle (`kernel-cli/rules`; T23-D27,
 // D28, T31): a real repository, a ticket opened by `attempt open` and built
 // by `dispatch build`, and the project's rule files.
 import { existsSync, readFileSync } from "node:fs";

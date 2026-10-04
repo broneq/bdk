@@ -1,4 +1,4 @@
-// `bdk export agents` through the committed bundle: every scenario of
+// `bdk export agents` through the built bundle: every scenario of
 // `kernel-cli/export`, including the T23 acceptance that the committed
 // `agents/` is the generator's byte-identical output.
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";

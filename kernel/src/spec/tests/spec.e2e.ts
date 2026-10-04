@@ -1,4 +1,4 @@
-// `kernel-cli/spec` through the committed bundle in real repositories: one
+// `kernel-cli/spec` through the built bundle in real repositories: one
 // case per exit code and per declared rule of `spec delta check`, `spec
 // merge` and `spec diff`, every output validated against its schema, and the
 // acceptance scenarios of T30.

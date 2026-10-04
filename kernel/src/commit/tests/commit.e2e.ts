@@ -1,4 +1,4 @@
-// `kernel-cli/commit` (T22 record) through the committed bundle in real
+// `kernel-cli/commit` (T22 record) through the built bundle in real
 // repositories: one case per exit code and per declared rule, the output
 // validated against `schema/cli/output/commit.json`, the trailers read back
 // with `git log`, and a file the user staged left staged.

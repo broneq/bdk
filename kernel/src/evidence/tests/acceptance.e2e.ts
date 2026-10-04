@@ -1,5 +1,5 @@
 // The T23 part C acceptance signal (docs/V3-IMPLEMENTATION-PLAN.md) through
-// the committed bundle in real repositories: one task ticket through the
+// the built bundle in real repositories: one task ticket through the
 // implementer, simplifier and runner packages to a close that the evidence
 // decides, the step nodes it leaves done, `plan-verify` going stale, and a
 // project evidence kind. Every output validates against its schema.

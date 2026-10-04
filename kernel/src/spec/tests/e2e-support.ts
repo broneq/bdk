@@ -1,4 +1,4 @@
-// Spec E2E fixtures through the committed bundle: a `tiny` Change walked to
+// Spec E2E fixtures through the built bundle: a `tiny` Change walked to
 // a passed `gate:review` (one task committed with its trailers, its post-task
 // steps, the spec deltas done, one clean review round, the user's gate
 // transition), so `spec merge` and `change close` run as a user runs them.

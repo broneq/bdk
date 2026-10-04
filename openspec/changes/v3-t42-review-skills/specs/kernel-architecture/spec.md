@@ -57,3 +57,29 @@ Edges not in the table are forbidden, including the reverse of every listed edge
 
 - **WHEN** the import test reads `kernel/src/review/`
 - **THEN** it imports no slice but `measure`, and no slice imports `review`
+
+### Requirement: Generated outputs
+
+Every file that `pnpm build` generates SHALL be ignored and untracked on every branch except the distribution ref, and one contract test SHALL keep the ignore list and the generators in step.
+
+Generated files: `dist/bdk.mjs`; under `schema/`, `settings.json`, `pipeline.json`, `state/`, `cli/output/` and the generated files of `cli/common/` (`version.json`, `refusal.json`); under `agents/`, the adapters of `bdk export agents --host claude` (`lead`, `reader`, `reviewer`, `runner`, `scout`, `worker`). Hand-written files stay tracked: `schema/cli/commands.json`, `schema/cli/commands.schema.json`, `schema/cli/common/list-page.json` and `agents/web-researcher.md`, the one hand-written agent next to the adapters since T42 removed the v2 agents. `.gitignore` names each generated path (a directory where the whole directory is generated); the adapters are covered by `/agents/*` with `agents/web-researcher.md` excepted. `pnpm build` runs the bundler, the schema exporter and `export agents --host claude`, in that order, from one command, so `prepare`, CI and the release job all produce the same set. The contract test runs the exporters into a temporary directory, lists every file they write, and fails when one of those paths is tracked or is not covered by `.gitignore`, and when `git ls-files` on any generated path is non-empty (it skips this second check when HEAD is the distribution ref).
+
+#### Scenario: new generated file without an ignore entry
+
+- **WHEN** the schema exporter starts writing `schema/state/new-kind.json` into a directory that `.gitignore` does not cover, or writes a file into a new directory
+- **THEN** the contract test fails naming the path
+
+#### Scenario: generated file forced into git
+
+- **WHEN** a branch other than the distribution ref tracks `schema/settings.json`
+- **THEN** the contract test fails naming it
+
+#### Scenario: hand-written schema stays tracked
+
+- **WHEN** `schema/cli/commands.json` is edited
+- **THEN** the change shows in the diff of the pull request and no generator overwrites it
+
+#### Scenario: one build command
+
+- **WHEN** `pnpm build` runs in a clean checkout
+- **THEN** it writes `dist/bdk.mjs`, every generated file under `schema/` and the six adapters under `agents/`, and a second run changes none of them

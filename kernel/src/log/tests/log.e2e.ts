@@ -1,4 +1,4 @@
-// `kernel-cli/log` (T20 records) through the committed bundle in real
+// `kernel-cli/log` (T20 records) through the built bundle in real
 // repositories: one case per exit code and per declared rule of `log add`,
 // `list`, `show` and `resolve`, every output validated against its schema,
 // and the T20 acceptance cases on the ledger; `log add --category` (P8) and

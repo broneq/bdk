@@ -67,11 +67,16 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Committed bundle and generated schemas are up to date
-        run: git diff --exit-code dist/ schema/
-
-      - name: Committed adapters are the generator's output
-        run: node dist/bdk.mjs export agents --host claude --check
+      # Git tracks no generated file (kernel-architecture, Generated outputs),
+      # so there is no copy to compare with. The release job publishes a build
+      # of the tag, so a second build must reproduce the first byte for byte.
+      - name: Build is deterministic
+        run: |
+          sums() { find dist schema agents -type f -print0 | sort -z | xargs -0 sha256sum; }
+          sums > "$RUNNER_TEMP/before"
+          pnpm build
+          sums > "$RUNNER_TEMP/after"
+          diff "$RUNNER_TEMP/before" "$RUNNER_TEMP/after"
 
       - name: Lint
         run: pnpm lint

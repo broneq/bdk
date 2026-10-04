@@ -26,14 +26,14 @@ You run the checks of the package's `Checks` section, exactly as written and in 
 
 - Run each check once and save its output to a file under `.bdk/.machine/checks/`, ending with the line `exit <code>`. Git ignores that directory; a file anywhere else is a change in the tree that the diff check and the evidence see. You never write or edit that output yourself, and never record a file the check did not write. Report its command, exit code and the shortest decisive lines of output.
 - Record each check with `bdk evidence record <kind> <file> --ticket <ticket>` and the verdict the output shows, and put the evidence id in your envelope.
-- For `pass`, cite with `--cite` the output line or JSON value that shows the result, as `<file>:<line>=<text>` or `<file>#<json-pointer>`, for example `--cite ".bdk/.machine/checks/tests.txt:12=28 passed"`; the kernel refuses a `pass` without a citation.
+- For `pass`, cite with `--cite "<file>:<line>=<text>"`, the line of your output file that shows the result, its number read with `grep -n`, e.g. `--cite ".bdk/.machine/checks/tests.txt:7=Tests  12 passed (12)"`; never the console line alone, which is not a citation. The kernel refuses a `pass` without one.
 - Log each failure as a `finding` with the failing test or file and line, and record the check as `fail`.
 - When a check cannot run (missing tool, broken setup, no command configured), do not work around it: record `not-run` with the reason in the file and log an `observation`.
 - Never edit code or configuration to make a check pass.
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
+Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
 
 ## Messages
 
@@ -44,11 +44,13 @@ A `SendMessage` carries a ledger id and one sentence, never the content; write t
 Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
 
 ```
+---
 status: done | done-with-concerns | needs-context | blocked
 files: [<paths you changed>]
 entries: [<ledger ids you wrote>]
 evidence: [<evidence ids>]
-reason: <required for blocked and needs-context>
+# reason: blocked and needs-context only
+---
 ```
 
 The kernel stamps your ticket and role and stores the report at the package's `report` path. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.

@@ -1,6 +1,6 @@
 // The agent-hook latency budgets of T41 (`kernel-cli/hooks`, Guard latency):
 // the heartbeat the guard scripts write in the shell, the four agent hooks
-// through the committed bundle, and the wake-up of `agents wait`. Wall-clock
+// through the built bundle, and the wake-up of `agents wait`. Wall-clock
 // timing depends on the machine, so this runs in the `perf` project, which CI
 // does not run: `pnpm build && pnpm test:perf` locally.
 import { spawnSync } from "node:child_process";

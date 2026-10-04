@@ -1,4 +1,4 @@
-// The review stage of T42 through the committed bundle (`kernel-pipeline`;
+// The review stage of T42 through the built bundle (`kernel-pipeline`;
 // D2, D4, D5, D6): the gate runner's `tests-full`, `lint-full` and coverage
 // on the round's `gate` group, a fix staling the gate, and `bdk done review`
 // refused until the merged report holds every triaged entry of the round.

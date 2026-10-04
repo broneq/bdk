@@ -31,7 +31,7 @@ If the package is missing or does not parse, stop and return `blocked` with the 
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
+Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
 
 When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-CQ-4`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
 
@@ -44,11 +44,13 @@ A `SendMessage` carries a ledger id and one sentence, never the content; write t
 Pipe the full report to `bdk log ingest --ticket <ticket>` with this envelope as its frontmatter, each list `[]` when empty:
 
 ```
+---
 status: done | done-with-concerns | needs-context | blocked
 files: [<paths you changed>]
 entries: [<ledger ids you wrote>]
 evidence: []
-reason: <required for blocked and needs-context>
+# reason: blocked and needs-context only
+---
 ```
 
 The kernel stamps your ticket and role, stores the report at the package's `report` path, and records the `simplify` evidence from it when the ticket closes. When `log ingest` exits non-zero, fix the field it names and call it again; never write the report file yourself.

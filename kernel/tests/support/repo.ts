@@ -72,7 +72,7 @@ export interface BdkOptions {
   readonly git?: boolean;
 }
 
-/** `bdk <args>` through the committed bundle in `root`. */
+/** `bdk <args>` through the built bundle in `root`. */
 export function bdk(args: readonly string[], root: string, options: BdkOptions = {}): RunResult {
   return runBdk(args, root, {
     env: envFor(root, options.git ?? true),

@@ -1,4 +1,4 @@
-// `kernel-cli/attempt` (T22 records) through the committed bundle in real
+// `kernel-cli/attempt` (T22 records) through the built bundle in real
 // repositories: one case per exit code and per declared rule of `attempt
 // open`, `close` and `list`, every output validated against its schema.
 // `policy/stale-evidence` and `policy/missing-citation` of `attempt close`

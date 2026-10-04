@@ -1,4 +1,4 @@
-// `kernel-cli/dispatch` through the committed bundle in real repositories: one
+// `kernel-cli/dispatch` through the built bundle in real repositories: one
 // case per exit code and per declared rule of `dispatch build` and `dispatch
 // show`, every output validated against its schema, and the T23 part B
 // acceptance cases on the package.

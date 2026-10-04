@@ -3,7 +3,7 @@
 // part optional with one recorded file, never into a file that is not text.
 import { describe, expect, it } from "vitest";
 
-import { citationProblem, isText } from "../domain/citation.ts";
+import { citationHint, citationProblem, isText } from "../domain/citation.ts";
 import type { CitedFile } from "../domain/citation.ts";
 
 const encode = (text: string) => new TextEncoder().encode(text);
@@ -93,6 +93,56 @@ describe("citationProblem", () => {
 
   it("refuses a pointer into a binary file", () => {
     expect(citationProblem("#/x", [PNG])).toContain("not text");
+  });
+});
+
+describe("citationHint", () => {
+  const OUT: CitedFile = {
+    given: "out.txt",
+    text: "start\nTests  12 passed (12)\nTests  12 passed (12)\n",
+  };
+
+  it("names the first line that holds the cited text, in the grammar form", () => {
+    expect(citationHint("Tests  12 passed (12)", [OUT, RUN])).toBe(
+      "out.txt:2=Tests  12 passed (12)",
+    );
+  });
+
+  it("matches text that is part of a line", () => {
+    expect(citationHint("12 passed, 0 failed", [SUMMARY, RUN])).toBe(
+      "out/run.txt:3=12 passed, 0 failed",
+    );
+  });
+
+  it("gives no hint when the text is on no line", () => {
+    expect(citationHint("Tests  13 passed", [OUT, RUN])).toBeUndefined();
+  });
+
+  it("gives no hint when two files hold the text", () => {
+    const twin: CitedFile = { given: "twin.txt", text: "Tests  12 passed (12)\n" };
+    expect(citationHint("Tests  12 passed (12)", [OUT, twin])).toBeUndefined();
+  });
+
+  it("restates the line of a citation that already resolves", () => {
+    expect(citationHint("run.txt:3=0 failed", [RUN])).toBe("out/run.txt:3=0 failed");
+  });
+
+  it("names the right line when the cited line holds another text", () => {
+    expect(citationHint("run.txt:1=12 passed", [RUN])).toBe("out/run.txt:3=12 passed");
+  });
+
+  it("reads a line range as a citation to fix", () => {
+    expect(citationHint("out.txt:1-2=Tests  12 passed (12)", [OUT])).toBe(
+      "out.txt:2=Tests  12 passed (12)",
+    );
+  });
+
+  it("gives no hint for a located citation whose text is on no line", () => {
+    expect(citationHint("run.txt:1=nothing like it", [RUN])).toBeUndefined();
+  });
+
+  it("never reads a file that is not text", () => {
+    expect(citationHint("suite", [PNG])).toBeUndefined();
   });
 });
 

@@ -1,4 +1,4 @@
-// T31 acceptance through the committed bundle (tasks 8.1, 8.2 of
+// T31 acceptance through the built bundle (tasks 8.1, 8.2 of
 // v3-t31-rules-ids-funnel): a scoped and a global project rule reach only the
 // packages whose task files they apply to, and a lesson recorded in three
 // Changes surfaces in the audit, is adopted with `rules accept` and lands in

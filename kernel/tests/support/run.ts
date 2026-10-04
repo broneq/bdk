@@ -1,4 +1,4 @@
-// Runs the committed bundle the way a caller does: `node dist/bdk.mjs <args>`
+// Runs the built bundle the way a caller does: `node dist/bdk.mjs <args>`
 // in a working directory, on the same Node as the test harness.
 import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";

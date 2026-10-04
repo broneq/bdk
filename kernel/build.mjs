@@ -1,8 +1,12 @@
-// Builds dist/bdk.mjs, the one file the plugin ships (design D-3 of
-// v3-t11-kernel-skeleton), then regenerates the JSON Schemas under schema/
-// from zod (design D-10 of v3-t12-layered-config). Both outputs are
-// committed; CI rebuilds them and fails on `git diff --exit-code dist/
-// schema/`, so the build must be deterministic.
+// Builds everything the plugin generates, in this order: dist/bdk.mjs, the one
+// file the plugin ships (design D-3 of v3-t11-kernel-skeleton), then the JSON
+// Schemas under schema/ from zod (design D-10 of v3-t12-layered-config), then
+// the agent adapters under agents/ with the bundle just built. None of the
+// outputs is committed (`kernel-architecture`, Generated outputs): `prepare`,
+// CI and the release job run this one command, and the release job publishes
+// the result on the `release` branch. The build must be deterministic, because
+// the published files have to equal a fresh build of the tag.
+import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -41,4 +45,15 @@ try {
   await import(pathToFileURL(exporter).href);
 } finally {
   rmSync(exporter, { force: true });
+}
+
+// The adapters come from the bundle, so the kernel is its own generator: the
+// default `--out` is the `agents/` directory next to `dist/`.
+const adapters = spawnSync(
+  process.execPath,
+  ["dist/bdk.mjs", "export", "agents", "--host", "claude"],
+  { stdio: "inherit" },
+);
+if (adapters.status !== 0) {
+  throw new Error(`export agents --host claude exited ${adapters.status ?? "without a status"}`);
 }

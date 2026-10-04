@@ -1,4 +1,4 @@
-// `kernel-cli/review`, bdk review plan, through the committed bundle in real
+// `kernel-cli/review`, bdk review plan, through the built bundle in real
 // repositories: the anchor of each kind, the groups from the plan parts, the
 // uncommitted files, an empty range and the refusals.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";

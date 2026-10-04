@@ -1,5 +1,5 @@
 // `kernel-architecture`, Tests per slice: every stubbed record of the index,
-// run through the committed bundle, answers `kernel/not-implemented` in the
+// run through the built bundle, answers `kernel/not-implemented` in the
 // shape of its mode and prints its `--help`. A record leaves this enumeration
 // when its owner task registers a handler and brings its own E2E cases.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

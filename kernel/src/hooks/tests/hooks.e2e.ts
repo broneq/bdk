@@ -1,4 +1,4 @@
-// `kernel-cli/hooks` through the committed bundle: the scenarios of
+// `kernel-cli/hooks` through the built bundle: the scenarios of
 // `hooks session-start` and `hooks skill-exists`. HOME is the fixture, so the
 // machine's own skills and plugins never leak into a case.
 import { readFileSync } from "node:fs";
@@ -19,7 +19,7 @@ const VERSION = (
     version: string;
   }
 ).version;
-const MODELINE = `# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/v${VERSION}/schema/settings.json\n`;
+const MODELINE = `# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/dist-v${VERSION}/schema/settings.json\n`;
 const PAYLOAD = JSON.stringify({ hook_event_name: "SessionStart", source: "startup" });
 
 const fixtures: Fixture[] = [];

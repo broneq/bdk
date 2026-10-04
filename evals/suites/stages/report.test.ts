@@ -33,9 +33,19 @@ describe("stagesReport", () => {
       row("setup/fresh-project", 2, 0),
       row("setup/v2-project", 1, 1, "provider error: x"),
     ]);
-    expect(lines).toContain("| setup/fresh-project | 1/2 | 2 | 10 | 0.50 |");
-    expect(lines).toContain("| setup/v2-project | 0/0 | n/a | n/a | n/a |");
+    expect(lines).toContain("| setup/fresh-project | 1/2 | 2 | 10 | n/a | 0.50 |");
+    expect(lines).toContain("| setup/v2-project | 0/0 | n/a | n/a | n/a | n/a |");
     expect(lines).toContain("- setup/v2-project run 1: provider error: x");
+  });
+
+  it("reports the median refusals and names an unmet acceptance row", () => {
+    const flat = {
+      ...row("execute/flat", 1, 1),
+      metrics: { expect_pass: 1, refusals: 2, "refusal:policy/missing-citation": 2 },
+    };
+    const lines = stagesReport([flat]);
+    expect(lines).toContain("| execute/flat | 1/1 | n/a | n/a | 2 | 0.50 |");
+    expect(lines).toContain("- execute/flat run 1: policy/missing-citation refused 2 time(s)");
   });
 
   it("states an empty series", () => {

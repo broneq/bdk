@@ -8,7 +8,7 @@
 // `coverage` is recorded only by `bdk evidence coverage` (T42-D5).
 import { basename, isAbsolute, join, relative } from "node:path";
 
-import { citationProblem, isText } from "../domain/citation.ts";
+import { citationHint, citationProblem, isText } from "../domain/citation.ts";
 import type { CitedFile } from "../domain/citation.ts";
 import type { RecordReport, RecordedFile } from "../domain/reports.ts";
 import { moduleValue } from "../../shared/config/index.ts";
@@ -246,7 +246,9 @@ function checkCitations(
   for (const citation of citations) {
     const problem = citationProblem(citation, files);
     if (problem !== undefined) {
+      const hint = citationHint(citation, files);
       return refuse("policy/missing-citation", problem, [
+        ...(hint === undefined ? [] : [`--cite ${hint}`]),
         "cite a value the recorded files hold",
         "record the verdict fail when the evidence does not show a pass",
       ]);

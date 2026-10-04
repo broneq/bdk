@@ -11,12 +11,12 @@ import {
 } from "../index.ts";
 
 const LINE =
-  "# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json";
+  "# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/dist-v3.0.0/schema/settings.json";
 
 describe("modeline", () => {
   it("points at the settings schema of the plugin version's tag", () => {
     expect(settingsSchemaUrl("3.0.0")).toBe(
-      "https://raw.githubusercontent.com/broneq/bdk/v3.0.0/schema/settings.json",
+      "https://raw.githubusercontent.com/broneq/bdk/dist-v3.0.0/schema/settings.json",
     );
     expect(modeline("3.0.0")).toBe(LINE);
   });

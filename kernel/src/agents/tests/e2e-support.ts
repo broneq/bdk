@@ -1,6 +1,6 @@
 // Agent lifecycle payloads in the recorded 2.1.284 shapes
 // (`tests/fixtures/host-payloads/2.1.284/`), fed to the agent hooks through the
-// committed bundle, plus the two things a test cannot wait for: the heartbeat
+// built bundle, plus the two things a test cannot wait for: the heartbeat
 // file the guard scripts write, and time passing.
 import { mkdirSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

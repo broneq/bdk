@@ -1,5 +1,5 @@
 // The stages table: per case, how many counted runs met every expectation,
-// and the median questions, turns and cost. A failed expectation is named in
+// and the median questions, turns, kernel refusals and cost. A failed expectation is named in
 // the run's `checks.json` among its raw records.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -7,6 +7,7 @@ import { join } from "node:path";
 import type { ResultRow } from "../../harness/results.ts";
 import type { CheckResult } from "./checks.ts";
 import { median } from "../../harness/stats.ts";
+import { acceptanceFailures } from "./refusals.ts";
 
 function number(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
@@ -27,15 +28,20 @@ export function stagesReport(allRows: readonly ResultRow[]): string[] {
     "",
     `Series: ${series.join(", ") || "none"}. A case passes a run when every expectation holds.`,
     "",
-    "| case | passed | questions | turns | cost (USD) |",
-    "|---|---|---|---|---|",
+    "| case | passed | questions | turns | refusals | cost (USD) |",
+    "|---|---|---|---|---|---|",
   ];
   for (const item of items) {
     const runs = rows.filter((row) => row.item === item);
     const passed = runs.filter((row) => row.metrics.expect_pass === 1).length;
     lines.push(
-      `| ${item} | ${String(passed)}/${String(runs.length)} | ${medianOf(runs.map((row) => row.metrics.questions))} | ${medianOf(runs.map((row) => row.metrics.turns))} | ${medianOf(runs.map((row) => row.cost))} |`,
+      `| ${item} | ${String(passed)}/${String(runs.length)} | ${medianOf(runs.map((row) => row.metrics.questions))} | ${medianOf(runs.map((row) => row.metrics.turns))} | ${medianOf(runs.map((row) => row.metrics.refusals))} | ${medianOf(runs.map((row) => row.cost))} |`,
     );
+  }
+  const unmet = acceptanceFailures(rows);
+  if (unmet.length > 0) {
+    lines.push("", "Refusal acceptance not met (#109):", "");
+    for (const failure of unmet) lines.push(`- ${failure}`);
   }
   if (discarded.length > 0) {
     lines.push("", "Discarded runs:", "");

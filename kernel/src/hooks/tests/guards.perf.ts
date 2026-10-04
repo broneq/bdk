@@ -1,5 +1,5 @@
 // The guard latency budgets (`kernel-cli/hooks`, Guard latency) through the
-// guard scripts and the committed bundle, run as the host runs them. Wall-clock
+// guard scripts and the built bundle, run as the host runs them. Wall-clock
 // timing depends on the machine, so this runs in the `perf` project, which CI
 // does not run: `pnpm build && pnpm test:perf` locally.
 import { spawnSync } from "node:child_process";

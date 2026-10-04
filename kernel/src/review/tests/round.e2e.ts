@@ -1,4 +1,4 @@
-// One review round end to end through the committed bundle (T42; tasks
+// One review round end to end through the built bundle (T42; tasks
 // 10.1): `review plan` gives the range and groups, one package per group plus
 // the integration reviewer and the gate runner, grouped findings and reports,
 // the full gate with coverage, triage of every entry and the merged report.
