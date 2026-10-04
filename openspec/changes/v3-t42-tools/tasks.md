@@ -69,7 +69,7 @@
 
   Then run `pnpm docs:build`.
 
-- [ ] 7.4 With the user's approval of the spend only, run the with-without probe for `bdk:docs` and `bdk:adr` (D13), each on a task file under `evals/`, and commit the result rows. Without approval, leave this box open and report it.
+- [x] 7.4 With the user's approval of the spend only, run the with-without probe for `bdk:docs` and `bdk:adr` (D13), each on a task file under `evals/`, and commit the result rows. Without approval, leave this box open and report it.
 
 ## 8. Acceptance
 
