@@ -50,10 +50,10 @@ The report (`pnpm eval report with-without`) states per task and per metric (`as
 ### Stage skill mode
 
 ```bash
-pnpm eval stages --skill <setup|change> [--probe]
+pnpm eval stages --skill <setup|change> [--case <id,...>] [--probe]
 ```
 
-Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml`, in one cell with the BDK plugin copy. A case is a YAML entry:
+Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml` (only the ids `--case` names, when given), in one cell with the BDK plugin copy. A case is a YAML entry:
 
 ```yaml
 - id: existing-change # lowercase letters, digits, dashes

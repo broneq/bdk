@@ -153,6 +153,21 @@ export function describeStages(spec: StagesSpec): SeriesSetup {
   };
 }
 
+/** The cases `--case` names, in the case file's order; every id must exist. */
+export function selectCases(
+  cases: readonly StageCase[],
+  ids: readonly string[] | undefined,
+): StageCase[] {
+  if (ids === undefined) return [...cases];
+  const unknown = ids.filter((id) => !cases.some((stage) => stage.id === id));
+  if (unknown.length > 0) {
+    throw new Error(
+      `--case names no case ${unknown.join(", ")}; the cases are ${cases.map((stage) => stage.id).join(", ")}`,
+    );
+  }
+  return cases.filter((stage) => ids.includes(stage.id));
+}
+
 export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
   return {
     async run(options: RunOptions): Promise<number> {
@@ -160,7 +175,7 @@ export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
       let cases: StageCase[];
       try {
         skill = stageSkill(options.skill);
-        cases = readCases(caseFile(skill));
+        cases = selectCases(readCases(caseFile(skill)), options.cases);
       } catch (error) {
         io.printError(error instanceof Error ? error.message : String(error));
         return 2;

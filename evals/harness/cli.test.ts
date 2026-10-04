@@ -91,6 +91,14 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["with-without", "--skill", "bdk:x"])).toThrow(/--tasks/);
   });
 
+  it("takes --case for stages only", () => {
+    expect(parseArgs(["stages", "--skill", "run", "--case", "run-auto,run-close"])).toMatchObject({
+      cases: ["run-auto", "run-close"],
+    });
+    expect(() => parseArgs(["stages", "--skill", "run", "--case", ""])).toThrow(/--case needs/);
+    expect(() => parseArgs(["rules-noop", "--case", "x"])).toThrow(/stages only/);
+  });
+
   it("requires --skill for stages", () => {
     expect(() => parseArgs(["stages", "--probe"])).toThrow(/stages needs --skill/);
     expect(parseArgs(["stages", "--skill", "setup", "--probe"])).toMatchObject({

@@ -16,7 +16,7 @@ const USAGE = [
   "usage: pnpm eval <suite> [--probe] [--runs N] [--budget USD] [--run-cap USD]",
   "       pnpm eval rules-noop --patches <name,...> [...]   (M2 of those patches only)",
   "       pnpm eval with-without --skill <plugin:name> --tasks <file> [--fixture default|none] [...]",
-  "       pnpm eval stages --skill <name> [...]",
+  "       pnpm eval stages --skill <name> [--case <id,...>] [...]",
   "       pnpm eval check",
   "       pnpm eval report <suite>",
   `suites: ${SUITES.join(", ")}`,
@@ -32,6 +32,8 @@ export interface RunOptions {
   readonly skill?: string;
   readonly tasks?: string;
   readonly fixture?: "default" | "none";
+  /** stages only: run these case ids of the skill's case file. */
+  readonly cases?: readonly string[];
   /** rules-noop only: measure M2 of these patches and skip M1. */
   readonly patches?: readonly string[];
 }
@@ -112,6 +114,14 @@ export function parseArgs(argv: readonly string[]): Options {
         if (text !== "default" && text !== "none")
           throw new UsageError("--fixture is default or none");
         options = { ...options, fixture: text };
+        break;
+      }
+      case "--case": {
+        const ids = (value() ?? "").split(",").filter((id) => id !== "");
+        if (ids.length === 0)
+          throw new UsageError("--case needs a comma-separated list of case ids");
+        if (suite !== "stages") throw new UsageError("--case applies to stages only");
+        options = { ...options, cases: ids };
         break;
       }
       case "--patches": {

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { readVersions } from "../../harness/paths.ts";
 import { caseFile, readCases } from "./cases.ts";
 import { CASE_VAR } from "./hooks.ts";
-import { describeStages, skillFile, stageSkill } from "./suite.ts";
+import { describeStages, selectCases, skillFile, stageSkill } from "./suite.ts";
 
 const REPO_ROOT = join(import.meta.dirname, "..", "..", "..");
 
@@ -23,6 +23,22 @@ describe("stageSkill", () => {
   it("refuses a skill without a case file", () => {
     expect(() => stageSkill("bdk:pr-review")).toThrow(/setup, change/);
     expect(() => stageSkill(undefined)).toThrow(/got nothing/);
+  });
+});
+
+describe("selectCases", () => {
+  const cases = readCases(caseFile("run"));
+
+  it("keeps every case without --case and the named ones in file order with it", () => {
+    expect(selectCases(cases, undefined)).toStrictEqual(cases);
+    expect(selectCases(cases, ["run-close", "run-auto"]).map((stage) => stage.id)).toStrictEqual([
+      "run-auto",
+      "run-close",
+    ]);
+  });
+
+  it("refuses an id the case file does not hold", () => {
+    expect(() => selectCases(cases, ["run-missing"])).toThrow(/--case names no case run-missing/);
   });
 });
 
