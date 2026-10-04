@@ -32,7 +32,7 @@ import { caseFile, readCases } from "./cases.ts";
 import type { StageCase } from "./cases.ts";
 import { CASE_VAR } from "./hooks.ts";
 import type { StageCellSettings } from "./hooks.ts";
-import { stagesReport } from "./report.ts";
+import { expectationLines, stagesReport } from "./report.ts";
 
 const SUITE = "stages";
 const CELL = "bdk";
@@ -219,9 +219,11 @@ export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
         ...io,
         evaluate: (config, output, env) => evaluate(EVALS_DIR, config, output, env),
       });
+      const rows = readRows(resultsFile(SUITE, series));
+      for (const line of expectationLines(rows, setup.plan.rawDir)) io.print(line);
       if (options.probe) {
         const lines = probeSummary(
-          readRows(resultsFile(SUITE, series)),
+          rows,
           options.runs,
           options.budget,
           spent(readLedger(LEDGER_FILE)),

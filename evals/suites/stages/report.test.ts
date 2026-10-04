@@ -1,7 +1,10 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import type { ResultRow } from "../../harness/results.ts";
-import { stagesReport } from "./report.ts";
+import { expectationLines, stagesReport } from "./report.ts";
 
 function row(item: string, run: number, pass: number, discarded: string | null = null): ResultRow {
   return {
@@ -39,5 +42,25 @@ describe("stagesReport", () => {
     const lines = stagesReport([]);
     expect(lines).toContain("Series: none. A case passes a run when every expectation holds.");
     expect(lines.some((line) => line.startsWith("Discarded"))).toBe(false);
+  });
+});
+
+describe("expectationLines", () => {
+  it("names each counted run's result and the failed expectations from its checks.json", () => {
+    const raw = mkdtempSync(join(tmpdir(), "stages-raw-"));
+    const dir = join(raw, "bdk", "run/run-auto.run-1");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "checks.json"),
+      JSON.stringify({ pass: false, failures: ["reply does not match /gate:design/"] }),
+    );
+    const lines = expectationLines(
+      [row("run/run-auto", 1, 0), row("run/run-close", 1, 1), row("run/x", 1, 0, "provider error")],
+      raw,
+    );
+    expect(lines).toStrictEqual([
+      `expectations: run/run-auto run 1 FAILED: reply does not match /gate:design/ (${join(dir, "checks.json")})`,
+      "expectations: run/run-close run 1 met every expectation",
+    ]);
   });
 });
