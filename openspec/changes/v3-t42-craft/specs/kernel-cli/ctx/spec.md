@@ -12,7 +12,7 @@ Print an installed `bdk-craft` skill for an agent that cannot load skills itself
 - **Behaviour:** Finds the `SKILL.md` of the craft skill `<name>` in this order and takes the first hit: `plugins/bdk-craft/skills/<name>/` under the plugin root of the running kernel (a checkout of this repository); then `~/.claude/plugins/cache/<marketplace>/bdk-craft/<version>/skills/<name>/` across every marketplace, the highest `<version>` by semantic version first. Only the directory layout is read, never the host's plugin bookkeeping files. The output is Markdown: the heading `## Craft: <name>`, the skill body without its frontmatter and with its headings one level down, then each file under the skill's `references/` in name order under `### references/<file>`, so the agent gets what the skill links without resolving a path. The command reads no configuration, needs no Change and no git work tree.
 - **Writes:** nothing
 - **Output:** `schema/cli/output/ctx.json` for `--json`, with one part of kind `craft` whose `source` is `bdk-craft/<name>`; Markdown otherwise (`kernel-cli`, Output modes).
-- **Exit codes and rules:** `0, 2, 3`. Specific rules: `input/not-found` when no `bdk-craft` install holds `<name>`, its `why` naming the paths searched; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
+- **Exit codes and rules:** `0, 3`. Specific rules: `input/not-found` when no `bdk-craft` install holds `<name>`, its `why` naming the paths searched; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
 - **Example:**
 
   ```bash

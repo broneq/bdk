@@ -6,7 +6,7 @@ The `with-without` suite SHALL take a skill name and a task file and run every t
 
 #### Scenario: any skill
 
-- **WHEN** `pnpm eval with-without --skill bdk:mermaid-drawer --tasks <file>` runs
+- **WHEN** `pnpm eval with-without --skill bdk:docs --tasks <file>` runs
 - **THEN** each task runs in a `with` and a `without` cell and the report states for each metric whether the difference is measurable
 
 #### Scenario: craft skill

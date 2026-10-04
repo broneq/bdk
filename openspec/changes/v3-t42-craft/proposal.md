@@ -26,6 +26,7 @@ Out of scope: the final README tables and the 3.0 release of both plugins (T32 /
 
 - `kernel-cli/dispatch`: `bdk dispatch build` adds the `Craft` section to an `implementer` package.
 - `kernel-cli/ctx`: new command `bdk ctx craft <name>` that prints an installed `bdk-craft` skill.
+- `kernel-architecture`: the `ctx` slice lists the `craft` command.
 - `skill-evals`: the with / without mode measures a `bdk-craft:<name>` skill on a copy of `bdk-craft`.
 
 ## Impact

@@ -30,6 +30,8 @@ User decisions on 2026-10-04: all nine craft skills in this Change, each with a 
 
 The plugin sits in a subdirectory of this repository, listed with `{"source": "git-subdir", "url": "broneq/bdk", "path": "plugins/bdk-craft"}`. It needs no build, so it installs from the default branch, unlike `bdk`, which installs from `release`.
 
+Release-please versions it as its own package with component tags (`bdk-craft-v0.1.0`). The publish job of a `bdk` release removes `plugins/` from the `release` branch, so the `bdk` plugin installed from that branch does not carry a second copy of the craft skills.
+
 - _Separate repository_ (like `bdk-skill-kit`): separate CI and releases, but the craft skills, their task files, the harness and the dispatch mapping change together. Rejected by the user.
 - _A relative `source`_: works only when the marketplace itself is added from git; the `bdk` entry already uses a remote source, so one style is kept.
 
