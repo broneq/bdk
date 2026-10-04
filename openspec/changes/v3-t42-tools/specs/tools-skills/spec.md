@@ -35,7 +35,7 @@ Every tools skill except `bdk-cli` SHALL start its body with the two context lin
 
 ### Requirement: The v2 tools skills are removed
 
-The plugin SHALL NOT ship `skills/commit/`, `skills/add-rule/`, `skills/refine-rules/`, `skills/update-docs/`, `skills/explain-complex-code/` or `skills/create-adr/`. Nothing in the repository outside `docs/v3/`, `docs/V3-*.md`, `CHANGELOG.md`, `openspec/changes/archive/` and the recorded host payloads under `tests/fixtures/host-payloads/` SHALL name `/bdk:add-rule`, `/bdk:refine-rules`, `/bdk:update-docs`, `/bdk:explain-complex-code` or `/bdk:create-adr`. The `skill-check` baseline SHALL hold no entry for a file of a removed skill or of `skills/tools/commit/`.
+The plugin SHALL NOT ship `skills/commit/`, `skills/add-rule/`, `skills/refine-rules/`, `skills/update-docs/`, `skills/explain-complex-code/` or `skills/create-adr/`. Nothing in the repository outside `docs/v3/`, `docs/V3-*.md`, `CHANGELOG.md`, `openspec/changes/archive/` the recorded host payloads under `tests/fixtures/host-payloads/`, and the "Removed skills" sections of `README.md` and `docs/guide/reference/skills.md`, which map each removed skill to its replacement, SHALL name `/bdk:add-rule`, `/bdk:refine-rules`, `/bdk:update-docs`, `/bdk:explain-complex-code` or `/bdk:create-adr`. The `skill-check` baseline SHALL hold no entry for a file of a removed skill or of `skills/tools/commit/`.
 
 #### Scenario: removed directories
 
@@ -44,7 +44,7 @@ The plugin SHALL NOT ship `skills/commit/`, `skills/add-rule/`, `skills/refine-r
 
 #### Scenario: no stale name
 
-- **WHEN** the content test searches the skills, agents, rules, fragments, `README.md`, `STARTUP_INSTRUCTIONS.md`, `CONTRIBUTING.md`, `CLAUDE.md`, `.claude/` and `docs/guide/` for the five removed skill names
+- **WHEN** the content test searches the skills, agents, rules, fragments, `README.md`, `STARTUP_INSTRUCTIONS.md`, `CONTRIBUTING.md`, `CLAUDE.md`, `.claude/` and `docs/guide/` for the five removed skill names, skipping the two "Removed skills" sections
 - **THEN** it finds none
 
 #### Scenario: baseline pruned

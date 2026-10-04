@@ -25,8 +25,8 @@ target-version = "py312"
 extend-exclude = [".venv", "site", "tests/evals", ".claude"]
 # Ruff formats fenced code blocks inside Markdown. Every .md in this repo is
 # either docs prose or an LLM prompt shipped to users, and reformatting a
-# prompt rewrites what the model reads - it turned three one-line tool calls
-# in skills/explain-complex-code/references/examples.md into three-line ones.
+# prompt rewrites what the model reads - it once turned three one-line tool
+# calls in a skill's examples into three-line ones.
 include = ["*.py", "*.pyi"]
 
 [tool.ruff.lint]

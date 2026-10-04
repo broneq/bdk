@@ -30,10 +30,11 @@ const verifierPolicy: Part = { kind: "verifier-policy" };
 export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   // A stage skill that needs no settings keeps its context lines for the
   // `BDK STOP` line when the kernel is unavailable.
+  adr: [rules("architecture")],
   change: [],
   close: [],
+  commit: [],
   cr: [verifierPolicy],
-  "create-adr": [rules("architecture")],
   debug: [tools("test"), tools("lint")],
   design: [
     rules("architecture"),
@@ -42,6 +43,8 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
     verifierPolicy,
     decision,
   ],
+  docs: [],
+  doctor: [],
   execute: [{ kind: "concurrency" }, decision],
   plan: [
     rules("plan"),
@@ -59,6 +62,7 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
       title: "Comment templates",
     },
   ],
+  rules: [decision],
   run: [],
   setup: [tools("test"), tools("lint"), tools("build")],
   swarm: [{ kind: "concurrency" }],
