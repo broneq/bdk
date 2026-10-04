@@ -72,9 +72,9 @@ plan file changed since this run started - the plan is meant to be immutable. Gr
 [BDK] skill <name> is not installed; the skill that needs it falls back to its own behaviour.
 ```
 
-**Cause:** `bdk hooks skill-exists <name>` runs from a skill's own `UserPromptSubmit` frontmatter hook (for example `/bdk:commit` checks for `caveman-commit` before delegating to it - see `skills/commit/SKILL.md`, which simply invokes `/caveman:caveman-commit $ARGUMENTS`). No `SKILL.md` under `~/.claude/skills/`, `.claude/skills/`, a plugin marketplace or an installed plugin version declares that `name:` in its frontmatter. See [Hooks reference](reference/hooks.md).
+**Cause:** `bdk hooks skill-exists <name>` runs from a skill's own `UserPromptSubmit` frontmatter hook, when that skill needs another skill to be installed. No BDK skill declares one today; a project or a plugin skill may. No `SKILL.md` under `~/.claude/skills/`, `.claude/skills/`, a plugin marketplace or an installed plugin version declares that `name:` in its frontmatter. See [Hooks reference](reference/hooks.md).
 
-**Fix:** Install the missing skill's plugin (for `/bdk:commit`, the `caveman` plugin providing `caveman-commit`). See [reference/skills.md](reference/skills.md).
+**Fix:** Install the plugin that provides the missing skill, or remove the hook from the skill that declares it.
 
 **Symptom (command missing, printed to stderr, exit code 2):**
 

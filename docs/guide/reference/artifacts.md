@@ -100,7 +100,7 @@ This page lists every directory under `.bdk/` that appears in BDK's own sources,
 | `.bdk/verify-plan/`          | BDK 2 `/bdk:verify-plan`                                            | v2 verification reports; `/bdk:setup` deletes this directory                                         |
 | `.bdk/runs/`                 | BDK 2 `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited; BDK 3 removed the skill |
 | `.bdk/cr/`                   | `/bdk:cr`                                                           | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md`                                |
-| `.bdk/explain-complex-code/` | `/bdk:explain-complex-code`                                         | Architecture docs, `.bdk/explain-complex-code/[feature-name].md`                                     |
+| `.bdk/explain-complex-code/` | BDK 2 `explain-complex-code` skill                                  | v2 architecture docs; BDK 3 removed the skill, and `/bdk:docs` writes to `docs/architecture/`        |
 
 ## Run state: the one directory no skill reads or writes directly
 

@@ -1,5 +1,17 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`ctx skill output > adr is unchanged 1`] = `
+"{
+  "content": "## BDK context: adr\\n\\n### Rules: architecture\\n\\n- [BDK-ARCH-1] Text of BDK-ARCH-1.\\n- [BDK-ARCH-2] Text of BDK-ARCH-2.\\n",
+  "parts": [
+    {
+      "kind": "rules",
+      "source": "rules/architecture"
+    }
+  ]
+}"
+`;
+
 exports[`ctx skill output > change is unchanged 1`] = `
 "{
   "content": "## BDK context: change\\n",
@@ -14,6 +26,13 @@ exports[`ctx skill output > close is unchanged 1`] = `
 }"
 `;
 
+exports[`ctx skill output > commit is unchanged 1`] = `
+"{
+  "content": "## BDK context: commit\\n",
+  "parts": []
+}"
+`;
+
 exports[`ctx skill output > cr is unchanged 1`] = `
 "{
   "content": "## BDK context: cr\\n\\n### Blocking categories (P8)\\n\\n- architecture: Materially invalid architecture, or a contradiction with an accepted decision.\\n- security: A security, privacy or authentication risk.\\n- irreversible-step: An irreversible or high-cost step without justification, such as a migration or data loss.\\n- integration-failure: A critical integration, data, rollout or rollback failure.\\n- unresolved-decision: An execution-critical unresolved decision or omitted requirement.\\n- false-code-claim: A claim about the real code that is false.\\n\\n#### Not a fail\\n\\n- style: Style.\\n- template-conformance: Template conformance.\\n- files-bookkeeping: \`Files:\` bookkeeping.\\n- wording: Wording.\\n- report-length: Report length.\\n- verification-defect: A verification defect, unless it removes the only real evidence of the change's safety.\\n",
@@ -21,18 +40,6 @@ exports[`ctx skill output > cr is unchanged 1`] = `
     {
       "kind": "verifier-policy",
       "source": "policy.verifier"
-    }
-  ]
-}"
-`;
-
-exports[`ctx skill output > create-adr is unchanged 1`] = `
-"{
-  "content": "## BDK context: create-adr\\n\\n### Rules: architecture\\n\\n- [BDK-ARCH-1] Text of BDK-ARCH-1.\\n- [BDK-ARCH-2] Text of BDK-ARCH-2.\\n",
-  "parts": [
-    {
-      "kind": "rules",
-      "source": "rules/architecture"
     }
   ]
 }"
@@ -79,6 +86,20 @@ exports[`ctx skill output > design is unchanged 1`] = `
       "source": "fragments/decision/lavish"
     }
   ]
+}"
+`;
+
+exports[`ctx skill output > docs is unchanged 1`] = `
+"{
+  "content": "## BDK context: docs\\n",
+  "parts": []
+}"
+`;
+
+exports[`ctx skill output > doctor is unchanged 1`] = `
+"{
+  "content": "## BDK context: doctor\\n",
+  "parts": []
 }"
 `;
 
@@ -145,6 +166,18 @@ exports[`ctx skill output > pr-review is unchanged 1`] = `
     {
       "kind": "file",
       "source": "skills/tools/pr-review/references/comment-templates.md"
+    }
+  ]
+}"
+`;
+
+exports[`ctx skill output > rules is unchanged 1`] = `
+"{
+  "content": "## BDK context: rules\\n\\n### Asking the user\\n\\n# fragments/decision/lavish.md\\n\\n- **Default.** Plugin text.\\n",
+  "parts": [
+    {
+      "kind": "fragment",
+      "source": "fragments/decision/lavish"
     }
   ]
 }"

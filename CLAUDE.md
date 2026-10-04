@@ -51,7 +51,7 @@ openspec/specs/          — living specs of BDK v3 (kernel-cli, kernel-architec
 claude --plugin-dir ~/projects/bdk
 
 # Invoke a skill in the test project
-/bdk:commit
+/bdk:docs src/auth
 /bdk:debug
 
 # Run unit tests (deterministic, fast)

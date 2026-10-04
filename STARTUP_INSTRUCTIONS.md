@@ -67,4 +67,4 @@ Before recording a convention or lesson anywhere, route it:
 | Something a test or lint already enforces               | one line naming the enforcer                                      |
 | Anything else                                           | nothing                                                           |
 
-A line that a rename or file move would force you to edit is a code mirror, not a rule. **"Nothing" is the frequent, correct answer** - never write something down just to have written it. `/bdk:add-rule` runs this routing properly; `/bdk:refine-rules` cleans up what accumulated.
+A line that a rename or file move would force you to edit is a code mirror, not a rule. **"Nothing" is the frequent, correct answer** - never write something down just to have written it. `/bdk:rules capture` runs this routing and adopts a rule through `bdk rules accept`; `/bdk:rules audit` turns recurring lessons into rules and prunes what no longer applies.

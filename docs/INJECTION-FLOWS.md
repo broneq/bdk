@@ -128,7 +128,6 @@ Recommended: **B**. Cleanest, single source of truth.
 
 - `skills/cr/SKILL.md:52` — `review.chain.json`
 - `skills/create-plan/SKILL.md:52` — `explore.chain.json`
-- `skills/explain-complex-code/SKILL.md:34` — `explore.chain.json`
 - `skills/debug/SKILL.md:84` — `search.chain.json`
 - `skills/debug/SKILL.md:95` — `impact.chain.json`
 - `skills/test-driven-development/SKILL.md:76` — `search.chain.json`
@@ -207,11 +206,7 @@ This is fragile: depends on the model following SKILL.md instructions correctly.
 
 **Skills using this:**
 
-- `skills/commit/SKILL.md:7-9`
-- `skills/update-docs/SKILL.md:8-10`
-- `skills/explain-complex-code/SKILL.md:8-10`
-
-These fire correctly when the skill is invoked.
+None since T42: `/bdk:commit` writes the message itself and no longer checks for another skill, and `/bdk:docs` dropped the `Stop` prompt hooks of `update-docs` and `explain-complex-code`. The mechanism still works and `bdk hooks skill-exists` stays for a skill that needs one.
 
 ---
 
@@ -497,15 +492,14 @@ Skills that ARE orchestrators (dispatch subagents) and skills that produce outpu
 | `cr`                      | Orchestrator    | ✅ `tier-review`                             | Keep `tier-review`                            | —                                                     | Orchestrator dispatches reviewers; itself does not enforce rules. Rules go to subagents via `skills:` preload. **Remove `<!-- INJECT: -->` template markers** (redundant once subagents preload rules). |
 | `create-plan`             | Output document | ✅ `tier-explore`                            | Keep `tier-explore`                           | Add `code-quality`, `architecture`, `design-patterns` | Plan output cites rules for the human reader. Add markers in `plan-template.md`. **Generalize hardcoded `inject-rules.py code-quality` to a marker loop like `cr` uses.**                               |
 | `debug`                   | Output document | ✅ `tier-search` + `tier-impact`             | Keep both                                     | —                                                     | Debug session is investigation; doesn't enforce rules per se.                                                                                                                                           |
-| `explain-complex-code`    | Output document | ✅ `tier-explore`                            | Keep                                          | —                                                     | Explanatory output, not enforcement.                                                                                                                                                                    |
+| `docs`                    | Output document | ✅ `tier-explore`                            | Keep                                          | —                                                     | Explanatory output, not enforcement.                                                                                                                                                                    |
 | `test-driven-development` | Procedure       | ✅ `tier-search`                             | Keep                                          | —                                                     | TDD process; tests are the enforcement, no rule injection needed.                                                                                                                                       |
 | `subagent-execute-plan`   | Orchestrator    | —                                            | Add `tier-impact` (orchestrator triages risk) | —                                                     | Dispatches `implementer`/`fixer`/reviewers. Rules go to those subagents.                                                                                                                                |
 | `design`                  | Output document | ✅ `tier-explore` (via `explore.chain.json`) | Keep                                          | Add `architecture`, `design-patterns`                 | Design exploration; should know the constraints it's designing within. Replaces `brainstorming` + `brainstorm-architecture`.                                                                            |
 | `verify-plan`             | Orchestrator    | —                                            | Add `tier-impact`                             | —                                                     | Orchestrates `plan-verifier`. Rules go to subagents.                                                                                                                                                    |
 | `commit`                  | Procedure       | —                                            | —                                             | —                                                     | Generates commit message from git diff. No code analysis.                                                                                                                                               |
 | `setup`                   | Bootstrap       | —                                            | —                                             | —                                                     | Initializes settings; no analysis.                                                                                                                                                                      |
-| `create-adr`              | Output document | —                                            | —                                             | Add `architecture`                                    | ADRs document architectural decisions; arch rules give the reviewer's lens.                                                                                                                             |
-| `update-docs`             | Output document | —                                            | Add `tier-explore`                            | —                                                     | Compares docs to code; needs exploration.                                                                                                                                                               |
+| `adr`                     | Output document | —                                            | —                                             | Add `architecture`                                    | ADRs document architectural decisions; arch rules give the reviewer's lens.                                                                                                                             |
 
 ### Cross-cutting observations from the audit
 

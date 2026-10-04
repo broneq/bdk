@@ -27,4 +27,4 @@ BDK's settings of the kit rules live in `skill-check.config.ts`:
 
 - A skill directory holds no `fragments/`: conditional content is a part of the skill's `ctx skill` manifest entry (`.claude/rules/skill-context.md`).
 - Hook scripts live in `hooks/<hook-name>/`, never in `skills/`. A skill hook must not duplicate a global hook in `hooks/hooks.json`.
-- A skill that needs another skill checks for it at start with a `UserPromptSubmit` hook running `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks skill-exists <skill-name>` with the kernel-unavailable `echo` fallback and `once: true` (see `skills/commit/SKILL.md`). The kernel prints one line when the skill is missing and nothing otherwise.
+- A skill that needs another skill checks for it at start with a `UserPromptSubmit` hook running `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks skill-exists <skill-name>` with the kernel-unavailable `echo` fallback and `once: true`. The kernel prints one line when the skill is missing and nothing otherwise.

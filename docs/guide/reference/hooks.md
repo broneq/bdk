@@ -116,7 +116,7 @@ A skill that delegates to another plugin's skill checks for it with its own `Use
 
 ### `bdk hooks skill-exists <name>`
 
-Command (from `skills/commit/SKILL.md`, which needs `caveman-commit`): `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks skill-exists caveman-commit 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`, with `once: true`.
+Command, in the frontmatter of a skill that needs another skill (no BDK skill declares one today; `<name>` is the needed skill): `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks skill-exists <name> 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`, with `once: true`.
 
 Searches `~/.claude/skills/`, `.claude/skills/`, every marketplace under `~/.claude/plugins/marketplaces/` and every installed plugin version under `~/.claude/plugins/cache/` for a `SKILL.md` whose frontmatter `name:` matches. Silent when found. When not found it prints one line and exits 0:
 
