@@ -394,6 +394,53 @@ export async function dirtyTracked(git: Git, workTree: string): Promise<string[]
     .sort();
 }
 
+/** A commit of a range with the paths it changed. */
+export interface RangeCommit {
+  readonly commit: string;
+  readonly subject: string;
+  readonly files: readonly string[];
+}
+
+/**
+ * The non-merge commits of `<base>..<head>`, oldest first, each with the paths
+ * it changed, renames under the new path (`kernel-cli/review`, bdk review
+ * render). `base` undefined lists every commit reachable from `head`.
+ */
+export async function rangeCommits(
+  git: Git,
+  workTree: string,
+  base: string | undefined,
+  head: string,
+): Promise<RangeCommit[]> {
+  const result = await git.run(
+    [
+      "log",
+      "--reverse",
+      "--no-merges",
+      "--find-renames",
+      "--name-only",
+      "-z",
+      "--format=%x1e%H%x1f%s",
+      base === undefined ? head : `${base}..${head}`,
+      "--",
+    ],
+    workTree,
+  );
+  if (result.code !== 0) return [];
+  return result.stdout
+    .split("\x1e")
+    .filter((record) => record !== "")
+    .map((record) => {
+      const [header = "", ...paths] = record.split("\0");
+      const [commit = "", subject = ""] = header.split("\x1f");
+      return {
+        commit,
+        subject,
+        files: paths.map((path) => path.replace(/^\n/, "")).filter((path) => path !== ""),
+      };
+    });
+}
+
 /** A commit reachable from `HEAD` that carries `BDK-Change` of one Change. */
 export interface TrailerCommit {
   readonly commit: string;

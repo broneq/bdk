@@ -98,6 +98,46 @@ describe("change close refusals, in contract order, writing nothing", () => {
     expect(refusal(result.json).rule, result.stdout).toBe("policy/ticket-open");
   });
 
+  it("policy/undecided-entries after the open tickets, naming the entry and /bdk:cr --report", async () => {
+    const h = closing();
+    const id = writeEntry(h.store, {
+      type: "finding",
+      at: T0,
+      status: "proposed",
+      level: "should-fix",
+      summary: "Token not hashed",
+    });
+    writeEntry(h.store, {
+      type: "observation",
+      at: T0,
+      level: "nice-to-have",
+      disposition: "defer",
+    });
+    for (const flags of [[], ["--dry-run"]]) {
+      const result = await close(h, ...flags);
+      expect(result.code, result.stdout).toBe(2);
+      const error = result.json as { rule: string; why: string; instead: string[] };
+      expect(error.rule).toBe("policy/undecided-entries");
+      expect(error.why).toContain(id);
+      expect(error.why).not.toContain("observation");
+      expect(error.instead.join(" ")).toContain("/bdk:cr --report");
+    }
+    expect(h.store.exists(ARCHIVE)).toBe(false);
+  });
+
+  it("policy/undecided-entries for an entry decided fix and not fixed yet", async () => {
+    const h = closing();
+    const id = writeEntry(h.store, {
+      type: "blocker",
+      at: T0,
+      level: "blocker",
+      disposition: "fix",
+    });
+    const result = await close(h);
+    expect(refusal(result.json).rule, result.stdout).toBe("policy/undecided-entries");
+    expect(refusal(result.json).why).toContain(id);
+  });
+
   it("state/trailer-mismatch when a commit names a task no part holds", async () => {
     const h = closing();
     h.log = `c0ffee00\x1fTask\x1f${CHANGE}\x1f01\x1f01-9\x1e`;
@@ -234,7 +274,20 @@ describe("change close", () => {
       supersedes: old,
     });
     writeEntry(h.store, { type: "risk", at: T0, summary: "Mail may be delayed" });
-    writeEntry(h.store, { type: "finding", at: T0, summary: "Token not hashed" });
+    writeEntry(h.store, {
+      type: "finding",
+      at: T0,
+      summary: "Token not hashed",
+      disposition: "defer",
+      review: true,
+    });
+    writeEntry(h.store, {
+      type: "observation",
+      at: T0,
+      summary: "Dates built by hand",
+      disposition: "track",
+      issue: "https://github.com/acme/app/issues/88",
+    });
     writeEntry(h.store, {
       type: "finding",
       at: T0,
@@ -251,7 +304,12 @@ describe("change close", () => {
     expect(report.summary).toContain("- Mail arrives within a minute (");
     expect(report.summary).not.toContain("Old assumption");
     expect(report.summary).toContain("### Risks\n\n- Mail may be delayed (");
-    expect(report.summary).toContain("### Open findings\n\n- Token not hashed (");
+    expect(report.summary).toContain(
+      "### Open findings\n\n- Token not hashed (deferred, to be reviewed) (",
+    );
+    expect(report.summary).toContain(
+      "- Dates built by hand (tracked in https://github.com/acme/app/issues/88) (",
+    );
     expect(report.summary).not.toContain("Fixed finding");
     expect(report.summary).toContain("### Spec\n\nNo spec change.");
   });

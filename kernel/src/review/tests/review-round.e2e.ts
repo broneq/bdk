@@ -3,12 +3,13 @@
 // review`, a round whose triaged blocker fails it, a next round that fixes
 // the blocker first through an implementer package, commits it with `bdk
 // commit <change-id>` and resolves it, reviews only the delta, and passes
-// `done review`.
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+// `done review`. The `ok` of that round ends it, so the next round starts
+// with the full budget.
+import { appendFileSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, git, refused, repository } from "../../../tests/support/repo.ts";
+import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
 
 const SETTINGS =
   "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n" +
@@ -23,6 +24,14 @@ interface Plan {
 interface Review {
   readonly root: string;
   readonly id: string;
+}
+
+/** The attempt record of a ticket, relative to the project root. */
+function attemptFile(review: Review, ticket: string): string {
+  const dir = `.bdk/changes/${review.id}/attempts`;
+  const name = readdirSync(join(review.root, dir)).find((file) => file.includes(ticket));
+  if (name === undefined) throw new Error(`no attempt record of ${ticket}`);
+  return `${dir}/${name}`;
 }
 
 function run(review: Review, argv: string[], stdin?: string) {
@@ -240,5 +249,18 @@ describe("a cr round on a review Change", () => {
       artifact: "review",
       state: "done",
     });
+
+    // The ok of round 2 ended the round (kernel-loops): a third round starts with the full budget.
+    const third = answered(
+      run(review, ["attempt", "open", "review-fix", review.id]),
+      "output/attempt-open.json",
+    );
+    expect(third).toMatchObject({ attempt: 1, scope: "full" });
+    expect(read(review.root, attemptFile(review, third.ticket as string))).toContain(
+      `after: ${second}`,
+    );
+    expect(
+      answered(run(review, ["attempt", "list", "--for", review.id]), "output/attempt-list.json"),
+    ).toMatchObject({ budgets: { "review-fix": { used: 0, of: 2 } } });
   });
 });

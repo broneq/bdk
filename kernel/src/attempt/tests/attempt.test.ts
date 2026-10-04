@@ -241,27 +241,29 @@ describe("attempt open", () => {
       "commit --quiet --only -m chore(bdk): checkpoint 2026-09-25-login -- .bdk/changes/2026-09-25-login/",
     ]);
     expect(records(h.store).at(-1)).toMatchObject({ escalation: true });
-    await close(h, opened.ticket, "ok");
-    const again = await open(h, "task-redispatch", "01-1", "--escalate");
-    expect(refusal(again)).toMatchObject({
-      rule: "policy/invalid-transition",
-      why: "no escalation ticket: this round already used its escalation ticket",
+    expect(refusal(await open(h, "task-redispatch", "01-1", "--escalate"))).toMatchObject({
+      rule: "policy/ticket-open",
     });
+    await close(h, opened.ticket, "ok");
+    // The escalation ticket's `ok` ends the round: the next one starts with the full budget.
+    const again = await open(h, "task-redispatch", "01-1");
+    expect(attemptOpenOutput.parse(again.json)).toMatchObject({ attempt: 1, scope: "full" });
+    expect(records(h.store).at(-1)).toMatchObject({ after: opened.ticket });
   });
 
   it("--escalate is refused when disabled or over per-change", async () => {
     const disabled = await started(
       "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    enabled: false\n",
     );
-    await cycle(disabled, "task-redispatch", "01-1", "ok");
+    await cycle(disabled, "task-redispatch", "01-1", "fail");
     expect(refusal(await open(disabled, "task-redispatch", "01-1", "--escalate")).why).toContain(
       "policy.escalation.enabled is false",
     );
     const capped = await started(
       "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    per-change: 1\n",
     );
-    await cycle(capped, "task-redispatch", "01-1", "ok");
-    await cycle(capped, "task-redispatch", "01-2", "ok");
+    await cycle(capped, "task-redispatch", "01-1", "fail");
+    await cycle(capped, "task-redispatch", "01-2", "fail");
     expect((await open(capped, "task-redispatch", "01-1", "--escalate")).code).toBe(0);
     expect(refusal(await open(capped, "task-redispatch", "01-2", "--escalate")).why).toContain(
       "policy.escalation.per-change",
@@ -564,8 +566,9 @@ describe("attempt list", () => {
       (await h.step(["attempt", "list", "--for", "01", "--json"])).json,
     );
     expect(part.items.map((item) => item.target).sort()).toStrictEqual(["01", "01-1"]);
+    // The `ok` ended the round, so it no longer counts; the list still shows it.
     expect(part.budgets).toStrictEqual({
-      "verify-fix": { used: 1, of: 2 },
+      "verify-fix": { used: 0, of: 2 },
       "not-run": { used: 0, of: 3 },
     });
     expect(part.items[0]).not.toHaveProperty("entries");

@@ -4,8 +4,10 @@ import type { FlagValue, Handler } from "../../shared/registry/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import { capLines, listPage } from "../../shared/output/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
+import type { Disposition } from "../../shared/vocabulary/index.ts";
 import {
   renderAdd,
+  renderDecide,
   renderIngest,
   renderList,
   renderResolve,
@@ -13,6 +15,7 @@ import {
   renderTriage,
 } from "../render/log.ts";
 import { addEntry } from "../use-cases/add.ts";
+import { decideEntry } from "../use-cases/decide.ts";
 import type { LogDeps } from "../use-cases/deps.ts";
 import { ingestReport } from "../use-cases/ingest.ts";
 import { triageEntry } from "../use-cases/triage.ts";
@@ -123,6 +126,20 @@ export function triageCommand(deps: LogDeps): Handler {
       ...optional("reason", text(context.flags["--reason"])),
     });
     return isRefusal(result) ? result : { data: result, text: renderTriage(result) };
+  };
+}
+
+export function decideCommand(deps: LogDeps): Handler {
+  return async (context) => {
+    const result = await decideEntry(deps, active(context.change), {
+      id: context.positionals["<id>"] ?? "",
+      // The registry checks the value against the record's `values` before the handler runs.
+      disposition: (context.positionals.disposition ?? "defer") as Disposition,
+      ...optional("reason", text(context.flags["--reason"])),
+      ...optional("issue", text(context.flags["--issue"])),
+      review: context.flags["--review"] === true,
+    });
+    return isRefusal(result) ? result : { data: result, text: renderDecide(result) };
   };
 }
 

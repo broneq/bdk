@@ -18,16 +18,27 @@ import {
   timestamp,
 } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
-import { STORED_STATUSES } from "../../vocabulary/index.ts";
+import { DISPOSITIONS, LEVELS, STORED_STATUSES } from "../../vocabulary/index.ts";
 import type { EntryType } from "../../vocabulary/index.ts";
 
 const VERSION = 1;
 
 const category = z.string().min(1).meta({ description: "One of the P8 blocking categories." });
 
-const level = z.enum(["blocker", "should-fix", "nice-to-have", "not-a-problem"]).meta({
-  description: "The orchestrator's triage level (T42-T); written only by `log triage`.",
+const level = z.enum(LEVELS).meta({
+  description:
+    "The orchestrator's triage level (T42-T); written only by `log triage`, and by `log decide` with `fix`.",
 });
+
+/** The human's decision on an entry the review left open (T42-H); written only by `log decide`. */
+const decided = {
+  disposition: z.enum(DISPOSITIONS).optional().meta({
+    description: "The human's decision (T42-H); written only by `log decide`.",
+  }),
+  issue: z.string().min(1).optional().meta({
+    description: "The tracker issue of a `track` disposition; written only by `log decide`.",
+  }),
+};
 
 function variant<T extends EntryType, S extends z.ZodRawShape>(type: T, own: S) {
   return z.strictObject({
@@ -73,9 +84,14 @@ export const entryKind = {
         severity: severity.optional(),
         category: category.optional(),
         level: level.optional(),
+        ...decided,
       }),
-      variant("observation", { severity: severity.optional(), level: level.optional() }),
-      variant("blocker", { category: category.optional(), level: level.optional() }),
+      variant("observation", {
+        severity: severity.optional(),
+        level: level.optional(),
+        ...decided,
+      }),
+      variant("blocker", { category: category.optional(), level: level.optional(), ...decided }),
       variant("question", {
         options: z.array(z.string().min(1)).optional(),
         park: z.boolean().optional().meta({

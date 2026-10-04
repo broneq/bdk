@@ -213,6 +213,29 @@ export function withTriage(
   return kept === "" ? line : `${kept}\n\n${line}`;
 }
 
+/** The body with the decision line of `log decide` appended. */
+export function withDecision(
+  body: string,
+  disposition: string,
+  at: string,
+  reason: string | undefined,
+): string {
+  const line = `Decided ${disposition} at ${at}${reason === undefined ? "" : `: ${reason}`}\n`;
+  const kept = body.replace(/\s+$/, "");
+  return kept === "" ? line : `${kept}\n\n${line}`;
+}
+
+export interface DecideResult {
+  readonly record: string;
+  readonly disposition: string;
+  /** The tracker issue of a `track` disposition. */
+  readonly issue?: string | undefined;
+  /** The entry's level after the write: `blocker` for `fix`; absent while untriaged. */
+  readonly level?: string | undefined;
+  readonly status: string;
+  readonly review: boolean;
+}
+
 export interface TriageResult {
   readonly record: string;
   readonly level: string;

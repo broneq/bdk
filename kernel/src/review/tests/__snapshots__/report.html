@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review: 2026-09-25-passwordless-login</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f7f7f5; --surface: #ffffff; --fg: #1d1f21; --muted: #5f6368; --border: #d9dbde;
+  --accent: #2557c9; --accent-fg: #ffffff; --ok: #1e7b34; --bad: #b3261e; --warn: #8a5a00;
+  --heat-1: #eaf1fd; --heat-2: #d6e4fa; --heat-3: #bed3f6; --heat-4: #a3c0f1;
+  --tag: #eef0f3; --code: #f0f1f3;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a; --surface: #1d2024; --fg: #e6e7e9; --muted: #9aa0a6; --border: #33373d;
+    --accent: #8ab4f8; --accent-fg: #0b1a33; --ok: #7dd38f; --bad: #f28b82; --warn: #f3c46b;
+    --heat-1: #1c2533; --heat-2: #213049; --heat-3: #283d60; --heat-4: #2f4b78;
+    --tag: #2a2e34; --code: #262a2f;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.5rem; margin: 0 0 4px; overflow-wrap: anywhere; }
+h2 { font-size: 1.15rem; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1rem; margin: 0 0 8px; }
+p { margin: 0 0 8px; }
+code, .mono { font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+code { background: var(--code); padding: 1px 4px; border-radius: 4px; }
+a { color: var(--accent); }
+.muted { color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin: 0 0 12px; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 8px 0 0; padding: 0; list-style: none; }
+.stats b { font-variant-numeric: tabular-nums; }
+.add { color: var(--ok); } .del { color: var(--bad); }
+.scroll { overflow-x: auto; }
+table.grid { border-collapse: separate; border-spacing: 4px; min-width: 100%; }
+.grid th { text-align: left; font-weight: 600; font-size: 13px; padding: 4px 6px; vertical-align: bottom; }
+.grid th.row { white-space: nowrap; vertical-align: top; }
+.grid td { vertical-align: top; padding: 6px; border-radius: 6px; font-size: 12px; min-width: 120px; }
+.grid td.empty { background: transparent; border: 1px dashed var(--border); }
+.w1 { background: var(--heat-1); } .w2 { background: var(--heat-2); } .w3 { background: var(--heat-3); } .w4 { background: var(--heat-4); }
+.grid ul { margin: 4px 0 0; padding: 0; list-style: none; }
+.files { margin: 8px 0 0; padding: 0; list-style: none; }
+.files > li { border-top: 1px solid var(--border); padding: 6px 0; }
+summary { cursor: pointer; }
+.files details > summary { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.files details > summary::-webkit-details-marker { display: none; }
+.files details > summary::before { content: "\25B8"; color: var(--muted); width: 1em; }
+.files details[open] > summary::before { content: "\25BE"; }
+.why { margin: 6px 0 0 16px; padding: 0; list-style: none; font-size: 13px; }
+.tag { display: inline-block; background: var(--tag); border-radius: 999px; padding: 0 8px; font-size: 12px; text-decoration: none; color: var(--fg); }
+.tag.should-fix { box-shadow: inset 0 0 0 1px var(--warn); }
+.tag.blocker { box-shadow: inset 0 0 0 1px var(--bad); }
+.verdict { font-weight: 600; }
+.verdict.pass, .verdict.approve { color: var(--ok); }
+.verdict.fail, .verdict.request-changes { color: var(--bad); }
+dl.legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
+dl.legend dt { font-weight: 600; }
+dl.legend dd { margin: 0; }
+.entry header { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.entry .meta { font-size: 13px; color: var(--muted); margin: 4px 0; }
+.entry details { margin: 6px 0; }
+.entry details > summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.entry dl { margin: 6px 0 0; }
+.entry dt { font-weight: 600; font-size: 13px; }
+.entry dd { margin: 0 0 6px; }
+.choices { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 6px; border: 0; padding: 0; }
+.choices label { border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; background: var(--bg); }
+.choices input { margin: 0 6px 0 0; }
+.choices label:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.reason { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit; }
+fieldset.form { border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.form:disabled .choices label { cursor: not-allowed; opacity: 0.7; }
+.submit { position: sticky; bottom: 0; background: var(--bg); padding: 12px 0; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+button { background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 6px; padding: 8px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.notice { background: var(--surface); border: 1px solid var(--warn); border-radius: 8px; padding: 8px 12px; margin: 0 0 12px; }
+</style>
+</head>
+<body>
+<main>
+<h1>2026-09-25-passwordless-login</h1>
+<p>Users log in with a one-time link.</p>
+<ul class="stats">
+<li>Kind: <b>feature</b></li>
+<li>Range: <code>aaaaaaaaaaaa..bbbbbbbbbbbb</code></li>
+<li>Files: <b>4</b></li>
+<li>Lines: <span class="add">+84</span> <span class="del">-5</span></li>
+<li>Open entries by level: <b>blocker 1, should-fix 1, nice-to-have 1, untriaged 1</b></li>
+<li>By disposition: <b>defer 1, none 3</b></li>
+</ul>
+<h2>Parts and areas</h2>
+<div class="scroll"><table class="grid">
+<thead><tr><th></th><th><code>README.md</code></th><th><code>src/auth</code></th><th><code>src/mail</code></th></tr></thead>
+<tbody>
+<tr><th class="row" scope="row">01 Magic link</th><td class="empty"></td><td class="w4"><span class="add">+70</span> <span class="del">-4</span><ul><li class="mono">login.test.ts</li><li class="mono">login.ts</li></ul></td><td class="empty"></td></tr>
+<tr><th class="row" scope="row">02 Mail</th><td class="empty"></td><td class="empty"></td><td class="w1"><span class="add">+12</span> <span class="del">-1</span><ul><li class="mono">send.ts</li></ul></td></tr>
+<tr><th class="row" scope="row">outside the plan</th><td class="w1"><span class="add">+2</span> <span class="del">-0</span><ul><li class="mono">README.md</li></ul></td><td class="empty"></td><td class="empty"></td></tr>
+</tbody>
+</table></div>
+<h2>Change map</h2>
+<div class="card">
+<h3>auth</h3>
+<p>Login gains a magic link path; password login is unchanged.</p>
+<ul class="files"><li><details><summary><code>src/auth/login.test.ts</code> <span class="add">+40</span> <span class="del">-0</span> <a class="tag nice-to-have" href="#entry-L-00000003">L-00000003 · nice-to-have · defer</a></summary>
+<ul class="why"><li>Task <code>01-1</code> Issue the link</li></ul>
+</details></li>
+<li><details><summary><code>src/auth/login.ts</code> <span class="add">+30</span> <span class="del">-4</span> <a class="tag should-fix" href="#entry-L-00000002">L-00000002 · should-fix</a> <a class="tag nice-to-have" href="#entry-L-00000003">L-00000003 · nice-to-have · defer</a></summary>
+<ul class="why"><li>Task <code>01-1</code> Issue the link</li><li><code>1111111</code> feat: issue the link</li><li><code>2222222</code> fix: hash the token</li></ul>
+</details></li></ul>
+</div>
+<div class="card">
+<h3>public-api</h3>
+<p>The login endpoint accepts a link token.</p>
+<p class="muted">No changed file matches its paths.</p>
+</div>
+<div class="card">
+<h3>Outside the plan</h3>
+<p>The README documents the new flow.</p>
+<ul class="files"><li><details><summary><code>README.md</code> <span class="add">+2</span> <span class="del">-0</span> <a class="tag untriaged" href="#entry-L-00000005">L-00000005 · untriaged</a></summary>
+<ul class="why"><li class="muted">No task declares it and no commit of the range names it.</li></ul>
+</details></li></ul>
+</div>
+<h2>Gate</h2>
+<ul class="stats">
+<li>Tests: <span class="verdict pass">pass</span></li>
+<li>Lint: <span class="verdict pass">pass</span></li>
+<li>Coverage <code>unit</code>: 91.5% (min 80%) <span class="verdict pass">pass</span></li>
+</ul>
+<h2>Decisions</h2>
+<div class="card"><dl class="legend"><dt>fix</dt><dd>A new review round fixes it before the Change closes.</dd><dt>defer</dt><dd>Accept it for now: it stays open in the ledger and the PR summary as deferred.</dd><dt>reject</dt><dd>Not worth fixing: it is resolved with your reason, and the reviewers stop raising it.</dd></dl></div>
+<form id="decide" data-prompt="Review decisions for 2026-09-25-passwordless-login">
+<fieldset class="form" disabled>
+<h3>should-fix (1)</h3>
+<article class="card entry" id="entry-L-00000002" data-entry="L-00000002">
+<header><code>L-00000002</code><b>finding L-00000002</b></header>
+<p class="meta">finding · high · security · by agent:reviewer · undecided</p>
+<p class="meta">Refs: <code>src/auth/login.ts#verify</code></p>
+<details><summary>Details</summary><dl><dt>Problem</dt><dd>The token is compared with ==.</dd><dt>Why it matters</dt><dd>A timing attack reveals it.</dd><dt>Suggested fix</dt><dd>Use timingSafeEqual.</dd></dl><ul class="why"><li class="muted">Triaged as should-fix at 2026-09-25T10:00:00Z: real</li></ul></details>
+<div class="choices" role="radiogroup" aria-label="Decision for L-00000002"><label><input type="radio" name="d-L-00000002" value="fix">fix</label><label><input type="radio" name="d-L-00000002" value="defer">defer</label><label><input type="radio" name="d-L-00000002" value="reject">reject</label></div>
+<input class="reason" type="text" name="r-L-00000002" placeholder="Reason (required for reject)" aria-label="Reason for L-00000002">
+</article>
+<h3>nice-to-have (1)</h3>
+<article class="card entry" id="entry-L-00000003" data-entry="L-00000003">
+<header><code>L-00000003</code><b>observation L-00000003</b></header>
+<p class="meta">observation · by agent:reviewer · decided defer</p>
+<p class="meta">Refs: <code>auth</code></p>
+<details><summary>Details</summary><p>Dates are built by hand.</p></details>
+<div class="choices" role="radiogroup" aria-label="Decision for L-00000003"><label><input type="radio" name="d-L-00000003" value="fix">fix</label><label><input type="radio" name="d-L-00000003" value="defer" checked>defer</label><label><input type="radio" name="d-L-00000003" value="reject">reject</label></div>
+<input class="reason" type="text" name="r-L-00000003" placeholder="Reason (required for reject)" aria-label="Reason for L-00000003">
+</article>
+<h3>untriaged (1)</h3>
+<article class="card entry" id="entry-L-00000005" data-entry="L-00000005">
+<header><code>L-00000005</code><b>finding L-00000005</b></header>
+<p class="meta">finding · by agent:reviewer · undecided</p>
+<p class="meta">Refs: <code>README.md</code></p>
+<details><summary>Details</summary><p class="muted">No details.</p></details>
+<div class="choices" role="radiogroup" aria-label="Decision for L-00000005"><label><input type="radio" name="d-L-00000005" value="fix">fix</label><label><input type="radio" name="d-L-00000005" value="defer">defer</label><label><input type="radio" name="d-L-00000005" value="reject">reject</label></div>
+<input class="reason" type="text" name="r-L-00000005" placeholder="Reason (required for reject)" aria-label="Reason for L-00000005">
+</article>
+<div class="submit">
+<button type="submit">Send decisions</button>
+<span id="offline" class="muted">Open this page in Lavish to send the decisions, or decide in the terminal with <code>/bdk:cr --report</code>.</span>
+</div>
+</fieldset>
+</form>
+<h2>Settled</h2>
+<details class="card"><summary>1 resolved</summary><ul class="files"><li><code>L-00000006</code> finding L-00000006 <span class="muted">(fixed in 01-1)</span></li></ul></details>
+<h2>Context</h2>
+<div class="card"><ul class="files"><li><code>L-00000001</code> decision: Links expire</li><li><code>L-00000007</code> assumption: Mail arrives in a minute</li></ul></div>
+</main>
+<script>
+(function () {
+  var form = document.getElementById("decide");
+  if (!form) return;
+  var fields = form.querySelector("fieldset");
+  var notice = document.getElementById("offline");
+  function ready() {
+    if (!window.lavish) return;
+    fields.disabled = false;
+    notice.hidden = true;
+  }
+  ready();
+  window.addEventListener("load", ready);
+  function choice(id) {
+    var checked = form.querySelector('input[name="d-' + id + '"]:checked');
+    return checked ? checked.value : null;
+  }
+  form.addEventListener("change", function () {
+    var verdicts = form.querySelectorAll("[data-pr]");
+    for (var i = 0; i < verdicts.length; i++) {
+      var pr = verdicts[i].getAttribute("data-pr");
+      var ids = form.querySelectorAll('[data-entry^="' + pr + '-"]');
+      var blocked = false;
+      for (var j = 0; j < ids.length; j++) {
+        if (choice(ids[j].getAttribute("data-entry")) === "blocker") blocked = true;
+      }
+      verdicts[i].textContent = blocked ? "request-changes" : "approve";
+      verdicts[i].className = "verdict " + (blocked ? "request-changes" : "approve");
+    }
+  });
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    if (!window.lavish) return;
+    var entries = form.querySelectorAll("[data-entry]");
+    var items = [];
+    for (var i = 0; i < entries.length; i++) {
+      var id = entries[i].getAttribute("data-entry");
+      var item = { id: id, disposition: choice(id) };
+      var reason = form.querySelector('[name="r-' + id + '"]');
+      if (reason) item.reason = reason.value.trim() || null;
+      items.push(item);
+    }
+    window.lavish.queuePrompt(form.getAttribute("data-prompt"), {
+      tag: "decisions",
+      text: items.length + " decisions",
+      element: form,
+      data: { items: items },
+    });
+  });
+})();
+</script>
+</body>
+</html>

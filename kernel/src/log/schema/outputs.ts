@@ -9,7 +9,9 @@ import type {
   ResolveResult,
   ShownEntry,
   TriageResult,
+  DecideResult,
 } from "../domain/entry.ts";
+import { DISPOSITIONS, LEVELS } from "../../shared/vocabulary/index.ts";
 import { entryId, entrySummarySchema, entryViewSchema, relativePath } from "./entry.ts";
 
 const CHANGE_DIR = ".bdk/changes/2026-09-25-passwordless-login";
@@ -167,10 +169,42 @@ export const logResolveOutput = z
     ],
   }) satisfies z.ZodType<ResolveResult>;
 
+export const logDecideOutput = z
+  .strictObject({
+    record: entryId.meta({ description: "The decided entry." }),
+    disposition: z.enum(DISPOSITIONS),
+    issue: z.string().min(1).optional().meta({
+      description: "The tracker issue of a `track` disposition.",
+    }),
+    level: z.enum(LEVELS).optional().meta({
+      description:
+        "The entry's level after the write: `blocker` for `fix`; absent while untriaged.",
+    }),
+    status: z.enum(["proposed", "accepted", "resolved"]).meta({
+      description:
+        "The entry's status after the write: `accepted` for `defer` and `track` of a proposed entry, `resolved` for `reject`.",
+    }),
+    review: z.boolean().meta({ description: "Whether the entry is to be reviewed at a gate." }),
+  })
+  .meta({
+    title: "bdk log decide --json",
+    description: "Record the human's disposition of a finding, observation or blocker.",
+    examples: [
+      {
+        record: "L-q2w3e4r5",
+        disposition: "track",
+        issue: "https://github.com/acme/app/issues/88",
+        level: "should-fix",
+        status: "accepted",
+        review: false,
+      },
+    ],
+  }) satisfies z.ZodType<DecideResult>;
+
 export const logTriageOutput = z
   .strictObject({
     record: entryId.meta({ description: "The triaged entry." }),
-    level: z.enum(["blocker", "should-fix", "nice-to-have", "not-a-problem"]),
+    level: z.enum(LEVELS),
     status: z.enum(["proposed", "accepted", "resolved"]).meta({
       description: "The entry's status after the write: `resolved` for `not-a-problem`.",
     }),

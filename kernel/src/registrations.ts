@@ -10,7 +10,7 @@ import type { ChangeDeps } from "./change/index.ts";
 import { configRegistrations } from "./config/index.ts";
 import type { ConfigDeps } from "./config/index.ts";
 import { ctxConfig, ctxRegistrations } from "./ctx/index.ts";
-import { dispatchConfig, dispatchRegistrations } from "./dispatch/index.ts";
+import { dispatchRegistrations } from "./dispatch/index.ts";
 import { evidenceConfig, evidenceRegistrations } from "./evidence/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
@@ -88,7 +88,6 @@ export function settingsRegistry(): ConfigRegistry {
       ...specConfig.modules,
       ...agentsConfig.modules,
       ...hooksConfig.modules,
-      ...dispatchConfig.modules,
       ...reviewConfig.modules,
       checkpointModule,
       promptsModule,

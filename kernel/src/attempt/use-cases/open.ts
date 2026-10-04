@@ -5,9 +5,9 @@ import { join } from "node:path";
 
 import {
   budgetUsed,
-  currentRound,
   escalationBlocked,
   inScope,
+  rounds,
   roundState,
   scopeFor,
 } from "../domain/ladder.ts";
@@ -79,7 +79,8 @@ export function openAttempt(
     const busy = filesBusy(parts, records, loop, input.target);
     if (busy !== undefined) return busy;
     const policy = ladderPolicy(targets.settings, loop);
-    const state = roundState(currentRound(key, targets.entries), policy);
+    const round = rounds(key, targets.entries);
+    const state = roundState(round.current, policy);
     const blocked = escalationBlocked(state, policy, escalationsOf(records));
     const refusal = input.escalate
       ? checkEscalation(state, blocked)
@@ -119,6 +120,7 @@ export function openAttempt(
         of: Math.max(state.of, 1),
         scope,
         ...(narrowedFrom === undefined ? {} : { "narrowed-from": narrowedFrom }),
+        ...(round.after === undefined ? {} : { after: round.after }),
         ...(input.escalate ? { escalation: true, model: policy.escalation.model } : {}),
         "opened-at": openedAt,
         author: await authorIdent(deps.git, change.projectRoot),

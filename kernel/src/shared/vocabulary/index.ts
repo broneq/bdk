@@ -22,6 +22,14 @@ export type EntryType = (typeof ENTRY_TYPES)[number];
 /** The statuses an entry file stores; `superseded` is derived, never stored. */
 export const STORED_STATUSES = ["proposed", "accepted", "resolved"] as const;
 
+/** The orchestrator's triage levels of a finding, observation or blocker (T42-T). */
+export const LEVELS = ["blocker", "should-fix", "nice-to-have", "not-a-problem"] as const;
+
+/** The human's dispositions of an entry the review left open (T42-H), set by `log decide`. */
+export const DISPOSITIONS = ["fix", "defer", "reject", "track"] as const;
+
+export type Disposition = (typeof DISPOSITIONS)[number];
+
 /** The statuses the kernel reports: the stored ones plus the derived `superseded`. */
 export const ENTRY_STATUSES = ["proposed", "accepted", "superseded", "resolved"] as const;
 

@@ -70,11 +70,13 @@ import {
   logListOutput,
   logResolveOutput,
   logTriageOutput,
+  logDecideOutput,
   logShowOutput,
 } from "../src/log/schema/outputs.ts";
 import { exportAgentsOutput } from "../src/export/schema/agents.ts";
 import { measureOutput } from "../src/measure/schema/measure.ts";
 import { reviewPlanOutput } from "../src/review/schema/plan.ts";
+import { reviewRenderOutput } from "../src/review/schema/render.ts";
 import {
   partDoneOutput,
   partListOutput,
@@ -133,6 +135,8 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/log-show.json", logShowOutput],
   ["output/log-resolve.json", logResolveOutput],
   ["output/log-triage.json", logTriageOutput],
+  ["output/log-decide.json", logDecideOutput],
+  ["output/review-render.json", reviewRenderOutput],
   ["output/change-new.json", changeNewOutput],
   ["output/change-status.json", changeStatusOutput],
   ["output/change-list.json", changeListOutput],

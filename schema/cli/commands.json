@@ -254,6 +254,7 @@
       "refusals": [
         "policy/gate-not-ready",
         "policy/ticket-open",
+        "policy/undecided-entries",
         "policy/spec-conflict",
         "policy/spec-invalid",
         "policy/merge-hash-mismatch",
@@ -316,6 +317,39 @@
       "exits": [0, 2, 3, 4, 5],
       "refusals": ["runtime/git-missing"],
       "writes": []
+    },
+    {
+      "id": "review-render",
+      "argv": ["review", "render"],
+      "summary": "Render the human review report of the active Change, or the decision page of a pull request review.",
+      "availability": "orchestrator",
+      "mode": "command",
+      "slice": "review",
+      "owner": "T42",
+      "changeScoped": true,
+      "args": [],
+      "flags": [
+        {
+          "name": "--format",
+          "values": ["html", "md"],
+          "description": "Default `html`. `md` is the Markdown fallback: the same sections without the form."
+        },
+        {
+          "name": "--out",
+          "value": "<path>",
+          "description": "The file to write. Default `.bdk/.machine/review/<change-id>.<format>`. Required with `--pr`."
+        },
+        {
+          "name": "--pr",
+          "value": "<file|->",
+          "description": "Render the pull request decision page from the JSON in the file, or from stdin for `-`, instead of the Change report."
+        }
+      ],
+      "stdin": "The pull request results when `--pr -` is given.",
+      "output": "output/review-render.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["runtime/git-missing"],
+      "writes": ["<out>", ".bdk/.machine/review/"]
     },
     {
       "id": "next",
@@ -911,6 +945,49 @@
         }
       ],
       "output": "output/log-triage.json",
+      "exits": [0, 2, 3, 4, 5],
+      "refusals": ["input/not-found", "policy/invalid-transition"],
+      "writes": [".bdk/changes/<id>/log/"]
+    },
+    {
+      "id": "log-decide",
+      "argv": ["log", "decide"],
+      "summary": "Record the human's disposition of a finding, observation or blocker.",
+      "availability": "orchestrator",
+      "mode": "command",
+      "slice": "log",
+      "owner": "T42",
+      "changeScoped": true,
+      "args": [
+        {
+          "name": "<id>",
+          "required": true,
+          "description": "A `finding`, `observation` or `blocker` entry."
+        },
+        {
+          "name": "disposition",
+          "required": true,
+          "values": ["fix", "defer", "reject", "track"],
+          "description": "The disposition (T42-H)."
+        }
+      ],
+      "flags": [
+        {
+          "name": "--reason",
+          "value": "<text>",
+          "description": "Required for `reject`."
+        },
+        {
+          "name": "--issue",
+          "value": "<ref>",
+          "description": "The tracker issue: a URL or a key such as `PAY-123`. Required for `track`, refused with any other disposition."
+        },
+        {
+          "name": "--review",
+          "description": "Also set `review: true`, so the entry is shown at the next gate and in the PR summary as a decision someone still has to look at."
+        }
+      ],
+      "output": "output/log-decide.json",
       "exits": [0, 2, 3, 4, 5],
       "refusals": ["input/not-found", "policy/invalid-transition"],
       "writes": [".bdk/changes/<id>/log/"]

@@ -41,8 +41,8 @@ import {
 } from "../../shared/store/index.ts";
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
 import { isBlocking, ROLES } from "../../shared/vocabulary/index.ts";
+import { risksModule } from "../../review/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
-import { risksModule } from "../config.ts";
 import { checksText, fullChecksText } from "../domain/checks.ts";
 import { fileRefs, selectEntries, taskText } from "../domain/entries.ts";
 import type { BuildReport } from "../domain/report.ts";

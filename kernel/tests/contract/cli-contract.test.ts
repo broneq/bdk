@@ -78,7 +78,6 @@ const MENTION_ALLOWLIST = new Map([
     "the group of the stage enter fallback, in the design's pre-tool deny wording; never added",
   ],
   ["close", "design shorthand for change close in the V1-7 merge-hash paragraph"],
-  ["review render", "lands with v3-t42-review-report (T42 delivery 3); remove the entry then"],
 ]);
 
 function read(path: string): string {

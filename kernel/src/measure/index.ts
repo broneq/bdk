@@ -7,7 +7,7 @@ import type { MeasureDeps } from "./use-cases/measure.ts";
 
 export type { MeasureDeps } from "./use-cases/measure.ts";
 export { moduleOf } from "./domain/measure.ts";
-export { measure, measureRange } from "./use-cases/measure.ts";
+export { measure, measureRange, rangeFiles } from "./use-cases/measure.ts";
 
 export function measureRegistrations(deps: MeasureDeps): Registration[] {
   return [{ id: "measure", handler: measureCommand(deps) }];

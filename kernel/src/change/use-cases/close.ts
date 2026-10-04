@@ -1,6 +1,6 @@
-// `bdk change close [--dry-run]` (`kernel-cli/change`; T30-D11, D12): every
-// check before the first write (the review gate, open tickets, trailers, git
-// state, then the merge's own checks), then the merge, the `close`
+// `bdk change close [--dry-run]` (`kernel-cli/change`; T30-D11, D12, T42-H):
+// every check before the first write (the review gate, open tickets,
+// undecided entries, trailers, git state, then the merge's own checks), then the merge, the `close`
 // transition, the prune, the move into the archive, the marker removal and
 // one pathspec commit of exactly the paths it touched.
 import { relative, sep } from "node:path";
@@ -34,6 +34,7 @@ import { resolvedSettings } from "./checkpoint.ts";
 import type { ChangeDeps } from "./deps.ts";
 
 const DONE = new Set(["superseded", "resolved"]);
+const DECIDED_TYPES = new Set(["finding", "observation", "blocker"]);
 
 export function closeChange(
   deps: ChangeDeps,
@@ -108,6 +109,24 @@ async function checks(
     return refuse("policy/ticket-open", `${list} still open in ${change.id}`, [
       "bdk attempt close <ticket> <outcome>",
       "bdk change takeover --close-tickets",
+    ]);
+  }
+  const undecided = listEntries(index, change.id).filter(
+    (entry) =>
+      DECIDED_TYPES.has(entry.type) &&
+      !DONE.has(entry.status) &&
+      (entry.disposition === undefined || entry.disposition === "fix"),
+  );
+  if (undecided.length > 0) {
+    const list = undecided
+      .map(
+        (entry) =>
+          `${entry.id} (${entry.disposition === "fix" ? "fix not made" : "no disposition"})`,
+      )
+      .join(", ");
+    return refuse("policy/undecided-entries", `${list} in ${change.id} need a decision`, [
+      "/bdk:cr --report",
+      "bdk log decide <id> fix|defer|reject|track",
     ]);
   }
   const progress = await taskProgress(

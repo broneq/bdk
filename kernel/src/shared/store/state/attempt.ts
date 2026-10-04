@@ -31,6 +31,10 @@ export const attemptKind = {
       of: counter,
       scope,
       "narrowed-from": scope.optional(),
+      after: ticketId.optional().meta({
+        description:
+          "The `ok` record whose close ended the previous round of the same loop and target; absent in the first round (`kernel-loops`).",
+      }),
       escalation: z.boolean().optional().meta({
         description:
           "The round's one-shot escalation ticket (`attempt open --escalate`); not counted against `of`.",
