@@ -7977,6 +7977,7 @@ var commands_default = {
         "policy/stale-evidence",
         "policy/missing-citation",
         "policy/missing-evidence",
+        "policy/missing-report",
         "runtime/git-missing"
       ],
       writes: [
@@ -15985,6 +15986,7 @@ var RULES = [
   "policy/stale-evidence",
   "policy/missing-citation",
   "policy/missing-evidence",
+  "policy/missing-report",
   "policy/invalid-transition",
   "policy/git-in-progress",
   "policy/git-hook-failed",
@@ -20720,8 +20722,8 @@ function escalationBlocked(state, policy, changeEscalations) {
   }
   return void 0;
 }
-function nextRung(outcome, escalation, after, policy, blocked, lead = false) {
-  if (outcome === "ok") return { action: lead ? "part-done" : "commit" };
+function nextRung(outcome, escalation, after, policy, blocked, ok = "commit") {
+  if (outcome === "ok") return { action: ok };
   if (outcome === "not-run") {
     if (after.notRun >= policy.notRunBudget) {
       return {
@@ -28339,6 +28341,10 @@ function closeAttempt(deps, change, where, input) {
       const missing = missingEntries(deps, where.cwd, input.envelope, underTicket);
       if (missing !== void 0) return missing;
     }
+    if (outcome !== "not-run" && record5.loop === "review-fix") {
+      const unmerged = missingMerge(deps, change, record5);
+      if (unmerged !== void 0) return unmerged;
+    }
     if (outcome === "ok" && record5.loop === "part-lead") {
       const open2 = records.find(
         (found) => found.outcome === void 0 && found.ticket !== record5.ticket && (found.target === record5.target || found.target.startsWith(`${record5.target}-`))
@@ -28386,7 +28392,7 @@ function closeAttempt(deps, change, where, input) {
       state,
       policy,
       blocked,
-      record5.loop === "part-lead"
+      okAction(record5)
     );
     const next = rung.action === "parked" ? await park(deps, change, index2, resolved.value, record5, round, rung) : rung;
     if ("refused" in next) return next;
@@ -28414,6 +28420,23 @@ async function stepEvidence(deps, change, index2, globalDir2, record5, resolved)
     steps: steps.steps,
     notRunBudget: ladderPolicy(resolved.value, record5.loop).notRunBudget
   });
+}
+function okAction(record5) {
+  if (record5.loop === "part-lead") return "part-done";
+  return record5.loop === "review-fix" ? "review-done" : "commit";
+}
+function missingMerge(deps, change, record5) {
+  const report2 = join48(change.dir, "reports", mergeReportName(record5.target, record5.ticket));
+  if (deps.store.read(report2) !== void 0) return void 0;
+  return refuse(
+    "policy/missing-report",
+    `${record5.ticket} has no merged review; a review round closes ok or fail after it`,
+    [
+      `bdk log ingest --ticket ${record5.ticket}@merge`,
+      `bdk log add report "<counts per level>" --ticket ${record5.ticket}@merge`,
+      `bdk attempt close ${record5.ticket} not-run --reason "<why the round reviewed nothing>"`
+    ]
+  );
 }
 function diffTarget(record5) {
   switch (record5.loop) {
@@ -30781,7 +30804,7 @@ function commandsOf(kind, tools3, files) {
 function withWhen(command, entry2) {
   return `- \`${command}\`${entry2.when === void 0 ? "" : `: ${entry2.when}`}`;
 }
-var INTRO = "Run the checks in this order. Save each check's output to a file and end the file with the line `exit <code>`, so a check that prints nothing still leaves a line to cite; never write or edit the output yourself. Record each file; for `pass`, cite the output line or JSON value that shows the result.";
+var INTRO = "Run the checks in this order. Save each check's output to a file under `.bdk/.machine/checks/` (git ignores it; a file elsewhere is a change in the tree) and end the file with the line `exit <code>`, so a check that prints nothing still leaves a line to cite; never write or edit the output yourself. Record each file; for `pass`, cite the output line or JSON value that shows the result.";
 function recordLine(kind, ticket) {
   return `\`bdk evidence record ${kind} <file> --ticket ${ticket} --verdict pass|fail|not-run --cite <citation>\``;
 }

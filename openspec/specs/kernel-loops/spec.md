@@ -44,13 +44,14 @@ The kernel SHALL walk every loop through narrowed attempts, one optional escalat
 | Outcome and state                                                                                                           | `next.action`                                           |
 | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `ok` of a `part-lead` ticket                                                                                                | `part-done`                                             |
+| `ok` of a `review-fix` ticket                                                                                               | `review-done`                                           |
 | `ok` of any other ticket                                                                                                    | `commit`                                                |
 | `not-run`, `not-run` budget left                                                                                            | `retry` (same scope)                                    |
 | `fail`, budget left, no oscillation                                                                                         | `narrow` with the next scope                            |
 | `fail` with budget used up or oscillation, escalation available                                                             | `escalate`                                              |
 | `fail` of the escalation ticket, or budget used up or oscillation with no escalation available, or `not-run` budget used up | `parked` with the question entry and the resume command |
 
-An `ok` close has already run the post-task steps under its ticket (`kernel-cli/attempt`, `attempt close`; T23-D41), so the orchestrator commits the task next. A `part-lead` ticket is the lead of one plan part (T41-D11): its lead opens, dispatches, closes and commits the part's task tickets itself, so its `ok` close requires every task ticket of the part to be closed (`policy/ticket-open` otherwise) and runs no post-task steps of its own, and the orchestrator runs `part done` next. A `fail` or `not-run` of a `part-lead` ticket walks the same ladder; the next lead of the part finds the committed tasks through their trailers and continues with the rest.
+An `ok` close has already run the post-task steps under its ticket (`kernel-cli/attempt`, `attempt close`; T23-D41), so the orchestrator commits the task next. A `part-lead` ticket is the lead of one plan part (T41-D11): its lead opens, dispatches, closes and commits the part's task tickets itself, so its `ok` close requires every task ticket of the part to be closed (`policy/ticket-open` otherwise) and runs no post-task steps of its own, and the orchestrator runs `part done` next. A `review-fix` ticket is one review round of the Change (T42): its `ok` close requires the round's merged report (`policy/missing-report` otherwise; a `fail` close needs it too) and means no blocking entry is left, so the orchestrator runs `done review` next; its fixes were committed under the ticket while it was open. A `fail` or `not-run` of a `part-lead` ticket walks the same ladder; the next lead of the part finds the committed tasks through their trailers and continues with the rest.
 
 Escalation is available when `policy.escalation.enabled` is true, the round has no escalation ticket and the Change has fewer than `policy.escalation.per-change` escalation tickets. A plain `attempt open` refuses with `policy/budget-exhausted` when the round's budget is used up and with `policy/oscillation` when the round oscillates; `instead` names `attempt open <loop> <target> --escalate` when escalation is available and `change resume` when the Change is parked. The escalation ticket's agents run on its `model` (`kernel-cli/dispatch`, bdk dispatch build), not on their adapter's tier: the escalation is a stronger model, not only one more attempt (T41-D14).
 
@@ -78,6 +79,11 @@ Escalation is available when `policy.escalation.enabled` is true, the round has 
 
 - **WHEN** every task ticket of part `02` is closed and the `part-lead` ticket of `02` closes `ok`
 - **THEN** `next.action` is `part-done`
+
+#### Scenario: review round closes to review-done
+
+- **WHEN** the merged report of a `review-fix` ticket is stored under `<ticket>@merge` and the ticket closes `ok`
+- **THEN** `next.action` is `review-done`
 
 #### Scenario: lead ticket with an open task ticket
 

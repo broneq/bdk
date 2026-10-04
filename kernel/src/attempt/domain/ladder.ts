@@ -177,7 +177,11 @@ export function escalationBlocked(
   return undefined;
 }
 
-export type NextAction = "commit" | "part-done" | "retry" | "narrow" | "escalate" | "parked";
+export type NextAction =
+  "commit" | "part-done" | "review-done" | "retry" | "narrow" | "escalate" | "parked";
+
+/** What an `ok` close leaves to the orchestrator, by the loop of the ticket. */
+export type OkAction = Extract<NextAction, "commit" | "part-done" | "review-done">;
 
 export interface Next {
   readonly action: NextAction;
@@ -196,11 +200,12 @@ export function nextRung(
   after: RoundState,
   policy: LadderPolicy,
   blocked: string | undefined,
-  lead = false,
+  ok: OkAction = "commit",
 ): Next {
   // The step evidence was checked before the close (T23-D41): what remains is the commit.
   // A lead committed its part's tasks itself (T41-D11): what remains is `part done`.
-  if (outcome === "ok") return { action: lead ? "part-done" : "commit" };
+  // A review round committed its fix under the open ticket (T42): what remains is `done review`.
+  if (outcome === "ok") return { action: ok };
   if (outcome === "not-run") {
     if (after.notRun >= policy.notRunBudget) {
       return {

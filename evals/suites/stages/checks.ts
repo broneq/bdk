@@ -15,19 +15,32 @@ export interface CheckResult {
   readonly failures: readonly string[];
 }
 
-/** The value at a dotted path: object keys, array indexes and `length`. */
-export function valueAt(value: unknown, path: string): unknown {
-  let current: unknown = value;
+/**
+ * The values at a dotted path: object keys, array indexes, `length`, and `*`
+ * for every element of an array, so `items.*.level` holds one value per item.
+ */
+export function valuesAt(value: unknown, path: string): unknown[] {
+  let current: unknown[] = [value];
   for (const key of path.split(".")) {
-    if (Array.isArray(current)) {
-      current = key === "length" ? current.length : current[Number(key)];
-    } else if (typeof current === "object" && current !== null) {
-      current = (current as Record<string, unknown>)[key];
-    } else {
-      return undefined;
-    }
+    current = current.flatMap((item) => step(item, key));
   }
   return current;
+}
+
+function step(value: unknown, key: string): unknown[] {
+  if (Array.isArray(value)) {
+    if (key === "*") return value;
+    return [key === "length" ? value.length : value[Number(key)]];
+  }
+  if (typeof value === "object" && value !== null) {
+    return [(value as Record<string, unknown>)[key]];
+  }
+  return [undefined];
+}
+
+/** How a check names what it found: the one value, or every value of a `*` path. */
+function shown(values: readonly unknown[], path: string): string {
+  return JSON.stringify(path.split(".").includes("*") ? values : values[0]);
 }
 
 export function checkExpectations(
@@ -51,19 +64,22 @@ export function checkExpectations(
       continue;
     }
     for (const [path, expected] of Object.entries(expectation.json ?? {})) {
-      const actual = valueAt(call.json, path);
-      // `null` in a case file also stands for a path the answer does not hold.
-      if (!isDeepStrictEqual(actual ?? null, expected)) {
+      const values = valuesAt(call.json, path);
+      // `null` in a case file also stands for a path the answer does not hold;
+      // a `*` path holds when any of its values does.
+      if (!values.some((actual) => isDeepStrictEqual(actual ?? null, expected))) {
         failures.push(
-          `${expectation.run}: ${path} is ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}`,
+          `${expectation.run}: ${path} is ${shown(values, path)}, expected ${JSON.stringify(expected)}`,
         );
       }
     }
     for (const [path, pattern] of Object.entries(expectation.match ?? {})) {
-      const actual = valueAt(call.json, path);
-      if (typeof actual !== "string" || !new RegExp(pattern).test(actual)) {
+      const values = valuesAt(call.json, path);
+      if (
+        !values.some((actual) => typeof actual === "string" && new RegExp(pattern).test(actual))
+      ) {
         failures.push(
-          `${expectation.run}: ${path} is ${JSON.stringify(actual)}, expected to match ${pattern}`,
+          `${expectation.run}: ${path} is ${shown(values, path)}, expected to match ${pattern}`,
         );
       }
     }

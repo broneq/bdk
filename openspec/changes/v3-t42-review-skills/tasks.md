@@ -173,6 +173,19 @@
 
 - [ ] 11.3 Run `pnpm eval review-models --probe` and `pnpm eval stages --skill cr --probe`, and record the per-cell cost and the projected series in this task. Stop for the user's approval before any series.
 
+- [x] 11.4 Fix what the first `cr` probe showed (user decision 2026-10-04):
+  - `attempt close` of a `review-fix` ticket refuses `ok` and `fail` without the `@merge` report (`policy/missing-report`), and its `ok` returns `next.action: review-done`;
+  - the `cr` skill stores the merged report before the close, acts on `review-done` and runs `bdk change checkpoint` before its report;
+  - the `reviewed` seed's intent no longer names page titles, which the reviewers rightly flagged as unmet;
+  - a stage case path takes `*` for any element, and the `blocker` case checks `items.*.level`;
+  - the runner saves its check output under `.bdk/.machine/checks/`, out of the diff and the evidence tree.
+
+  Friction seen and left as is, for the audit:
+  - an envelope written with `reason: null`;
+  - a ledger summary longer than 120 characters;
+  - a `schema:` field in the `@merge` envelope;
+  - a session that set `B="node ..."` in zsh and then ran `$B`, which zsh does not split into words.
+
 ## 12. Acceptance and validation
 
 - [ ] 12.1 Check the acceptance signal end to end:

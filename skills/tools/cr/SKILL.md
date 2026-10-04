@@ -47,7 +47,7 @@ One round is one ticket of the `review-fix` loop. A round starts with a fix when
    - always one more: role `runner` with `--group gate`, which runs the full gate and the coverage of its `Checks` section on the whole Change.
 5. **Dispatch.** Load the `bdk:swarm` skill with the Skill tool before the first dispatch and follow it. Start every package's agent in the background in one dispatch round, with `subagent_type` set to `bdk:` plus the package's `adapter` and the package path as the whole prompt, at most `execution.concurrency` at once. Each reviewer writes its entries and stores its report under its `<ticket>@<group>` reference itself.
 6. **Triage.** When every agent of the round has returned, triage the round (see "Triage").
-7. **Merge.** Store the merged review with `bdk log ingest --ticket <ticket>@merge --json`, its `entries` naming every entry of the round, its body listing per level each entry's id and summary, then the gate's verdicts and the diff coverage. Then run `bdk log add report "<counts per level>" --ticket <ticket>@merge --json`.
+7. **Merge.** Store the merged review with `bdk log ingest --ticket <ticket>@merge --json` before any close: the kernel refuses an `ok` or `fail` close of the ticket without it (`policy/missing-report`). Its envelope holds `status`, `files`, `entries`, `evidence` and `reason` only, its `entries` naming every entry of the round, its body listing per level each entry's id and summary, then the gate's verdicts and the diff coverage. Then run `bdk log add report "<counts per level>" --ticket <ticket>@merge --json`.
 8. **Close.** See "After the round".
 
 ## Triage
@@ -67,7 +67,7 @@ Judge each entry against the intent, the accepted decisions, the risks the integ
 
 An entry is blocking when it is a live `blocker` naming `review` or a live entry triaged `blocker`; `not-a-problem` resolves an entry, so it never blocks.
 
-- **No blocking entry.** Run `bdk attempt close <ticket> ok --json`, then `bdk done review --json`, and go to "Finish".
+- **No blocking entry.** Run `bdk attempt close <ticket> ok --json`; its `next.action` is `review-done`. Run `bdk done review --json` and go to "Finish".
 - **Blocking entries.** Run `bdk attempt close <ticket> fail --json` and act on its `next.action`:
 
 | `next.action`       | What you do                                                                                                                                               |
@@ -93,7 +93,7 @@ With `--inline` you make no `Agent` call. Build the same packages under the same
 
 ## Finish
 
-Report briefly, from kernel output only:
+Run `bdk change checkpoint --json`, so the run leaves no uncommitted ledger. Then report briefly, from kernel output only:
 
 - the Change and its kind, the rounds run and each one's outcome;
 - the anchor kind (`delta`, `full` or `base`), the range and the `dirty` files `review plan` reported;

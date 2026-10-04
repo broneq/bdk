@@ -97,7 +97,7 @@ When every agent of the round has returned, `cr` SHALL triage the round in the m
 - An entry that repeats another of the round is triaged `not-a-problem`, with `--reason` naming the entry it repeats.
 - `cr` SHALL NOT change an entry's text, type or refs.
 
-Then `cr` SHALL store the merged review with `bdk log ingest --ticket <ticket>@merge`. The report's `entries` name every entry of the round. Its body lists, per level, each entry's id and summary, then the gate's verdicts and diff coverage. `cr` SHALL then run `bdk log add report "<counts per level>" --ticket <ticket>@merge`.
+Then `cr` SHALL store the merged review with `bdk log ingest --ticket <ticket>@merge`, before it closes the ticket: the kernel refuses an `ok` or `fail` close of a `review-fix` ticket without it (`kernel-cli/attempt`, bdk attempt close). The report's `entries` name every entry of the round. Its body lists, per level, each entry's id and summary, then the gate's verdicts and diff coverage. `cr` SHALL then run `bdk log add report "<counts per level>" --ticket <ticket>@merge`.
 
 #### Scenario: every entry triaged
 
@@ -108,7 +108,7 @@ Then `cr` SHALL store the merged review with `bdk log ingest --ticket <ticket>@m
 
 After the merged report, `cr` SHALL check for blocking entries. An entry is blocking when the `review` verdict counts it (`kernel-pipeline`, Artifact kinds): a live `blocker` naming `review`, or a live entry triaged `blocker`. Triage `not-a-problem` resolves an entry, so it is never blocking.
 
-- **No blocking entry.** `cr` SHALL run `bdk attempt close <ticket> ok`, then `bdk done review`.
+- **No blocking entry.** `cr` SHALL run `bdk attempt close <ticket> ok`, whose `next.action` is `review-done`, then `bdk done review`.
 - **Blocking entries.** `cr` SHALL close the ticket `fail` and act on `next.action`:
   - `retry` or `narrow`: start the next round; after `narrow` its ticket carries the narrower scope (`kernel-loops`, Scope narrowing), and the findings it drops stay in the ledger for the human;
   - `escalate`: open the next round with `bdk attempt open review-fix <change-id> --escalate` and start its agents on the `model` that `bdk dispatch build` returns;
@@ -158,7 +158,7 @@ With `--inline`, `cr` SHALL start no agent. It SHALL build the same packages und
 
 ### Requirement: cr reports from the kernel
 
-`cr` SHALL end with a short report built from kernel output only:
+`cr` SHALL run `bdk change checkpoint` before it reports, so no run leaves an uncommitted ledger. It SHALL end with a short report built from kernel output only:
 
 - the Change and its kind, the rounds run and each one's outcome;
 - the anchor kind and range;

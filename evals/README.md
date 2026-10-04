@@ -65,7 +65,7 @@ Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml`, in one ce
     branch: stay|current
   expect: # kernel commands run with --json after the session, and the final reply
     - run: change list
-      json: { items.length: 1 } # dotted path -> exact value; `match` takes a pattern instead
+      json: { items.length: 1 } # dotted path -> exact value (`*` = any element); `match` takes a pattern instead
     - reply: change status
 ```
 

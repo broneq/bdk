@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkExpectations, valueAt } from "./checks.ts";
+import { checkExpectations, valuesAt } from "./checks.ts";
 import type { KernelCall } from "./checks.ts";
 
 const kernel =
@@ -8,12 +8,50 @@ const kernel =
   (args: string): KernelCall =>
     answers[args] ?? { code: 3, json: undefined };
 
-describe("valueAt", () => {
+describe("valuesAt", () => {
   it("follows dotted keys, array indexes and length", () => {
     const value = { changes: [{ branch: "feat/x" }], ok: true };
-    expect(valueAt(value, "changes.0.branch")).toBe("feat/x");
-    expect(valueAt(value, "changes.length")).toBe(1);
-    expect(valueAt(value, "missing.key")).toBeUndefined();
+    expect(valuesAt(value, "changes.0.branch")).toStrictEqual(["feat/x"]);
+    expect(valuesAt(value, "changes.length")).toStrictEqual([1]);
+    expect(valuesAt(value, "missing.key")).toStrictEqual([undefined]);
+  });
+
+  it("gives one value per element for *", () => {
+    const value = { items: [{ level: "not-a-problem" }, { level: "blocker" }] };
+    expect(valuesAt(value, "items.*.level")).toStrictEqual(["not-a-problem", "blocker"]);
+    expect(valuesAt({ items: [] }, "items.*.level")).toStrictEqual([]);
+  });
+});
+
+describe("checkExpectations with *", () => {
+  const list = {
+    "log list": { code: 0, json: { items: [{ level: "not-a-problem" }, { level: "blocker" }] } },
+  };
+
+  it("passes when any element holds the value or matches the pattern", () => {
+    const result = checkExpectations(
+      [
+        {
+          run: "log list",
+          json: { "items.*.level": "blocker" },
+          match: { "items.*.level": "^not-" },
+        },
+      ],
+      kernel(list),
+      "",
+    );
+    expect(result).toStrictEqual({ pass: true, failures: [] });
+  });
+
+  it("names every value when none holds", () => {
+    const result = checkExpectations(
+      [{ run: "log list", json: { "items.*.level": "should-fix" } }],
+      kernel(list),
+      "",
+    );
+    expect(result.failures).toStrictEqual([
+      'log list: items.*.level is ["not-a-problem","blocker"], expected "should-fix"',
+    ]);
   });
 });
 

@@ -458,6 +458,7 @@ describe("the runner's Checks section (T23-D44)", () => {
     h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOLS);
     const section = checks((await built(h, "02-3", "runner", TICKET)).body);
     expect(section).toContain("end the file with the line `exit <code>`");
+    expect(section).toContain("under `.bdk/.machine/checks/`");
     expect(section).toMatch(/never write or edit the output yourself/);
   });
 

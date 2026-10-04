@@ -51,3 +51,58 @@ A task is committed when a commit reachable from `HEAD` carries `BDK-Change: <ch
 
 - **WHEN** the Change has a commit with trailers `BDK-Change` and `BDK-Ticket` naming its closed `review-fix` ticket, and `bdk rebuild` runs
 - **THEN** no `state/trailer-mismatch` is raised and no task counts as committed by that commit
+
+### Requirement: Escalation ladder
+
+The kernel SHALL walk every loop through narrowed attempts, one optional escalation and the end of the ladder, and SHALL tell the orchestrator the next rung at every `attempt close`.
+
+`attempt close` returns `next.action`:
+
+| Outcome and state                                                                                                           | `next.action`                                           |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `ok` of a `part-lead` ticket                                                                                                | `part-done`                                             |
+| `ok` of a `review-fix` ticket                                                                                               | `review-done`                                           |
+| `ok` of any other ticket                                                                                                    | `commit`                                                |
+| `not-run`, `not-run` budget left                                                                                            | `retry` (same scope)                                    |
+| `fail`, budget left, no oscillation                                                                                         | `narrow` with the next scope                            |
+| `fail` with budget used up or oscillation, escalation available                                                             | `escalate`                                              |
+| `fail` of the escalation ticket, or budget used up or oscillation with no escalation available, or `not-run` budget used up | `parked` with the question entry and the resume command |
+
+An `ok` close has already run the post-task steps under its ticket (`kernel-cli/attempt`, `attempt close`; T23-D41), so the orchestrator commits the task next. A `part-lead` ticket is the lead of one plan part (T41-D11): its lead opens, dispatches, closes and commits the part's task tickets itself, so its `ok` close requires every task ticket of the part to be closed (`policy/ticket-open` otherwise) and runs no post-task steps of its own, and the orchestrator runs `part done` next. A `review-fix` ticket is one review round of the Change (T42): its `ok` close requires the round's merged report (`policy/missing-report` otherwise; a `fail` close needs it too) and means no blocking entry is left, so the orchestrator runs `done review` next; its fixes were committed under the ticket while it was open. A `fail` or `not-run` of a `part-lead` ticket walks the same ladder; the next lead of the part finds the committed tasks through their trailers and continues with the rest.
+
+Escalation is available when `policy.escalation.enabled` is true, the round has no escalation ticket and the Change has fewer than `policy.escalation.per-change` escalation tickets. A plain `attempt open` refuses with `policy/budget-exhausted` when the round's budget is used up and with `policy/oscillation` when the round oscillates; `instead` names `attempt open <loop> <target> --escalate` when escalation is available and `change resume` when the Change is parked. The escalation ticket's agents run on its `model` (`kernel-cli/dispatch`, bdk dispatch build), not on their adapter's tier: the escalation is a stronger model, not only one more attempt (T41-D14).
+
+#### Scenario: budget exhaustion parks the Change
+
+- **WHEN** `policy.budgets.task-redispatch` is 2, `policy.escalation.enabled` is false, and two tickets of `task-redispatch 02-3` close `fail`
+- **THEN** the second `attempt close` returns `next.action: parked`, the ledger holds one `question` entry with `park: true`, `review: true`, `source: kernel`, at least two `options` and `refs` naming `02-3`, `change status` shows the Change parked with the single resume command, and `bdk attempt open task-redispatch 02-3` exits 2 with `rule: policy/budget-exhausted`
+
+#### Scenario: escalation before parking
+
+- **WHEN** escalation is enabled and the budget of `task-redispatch 02-3` is used up
+- **THEN** the last `attempt close` returns `next.action: escalate`, `attempt open task-redispatch 02-3 --escalate` exits 0 with `escalation.model` from `policy.escalation.model` and records it as the ticket's `model`, and a `fail` close of that ticket returns `next.action: parked`
+
+#### Scenario: ok gives commit
+
+- **WHEN** a code ticket with fresh cited step evidence closes `ok`
+- **THEN** `next.action` is `commit`
+
+#### Scenario: failing tests walk the ladder
+
+- **WHEN** the runner recorded `tests-scoped` with verdict `fail` and the orchestrator closes the ticket `fail` with budget left
+- **THEN** `next.action` is `narrow` and the next ticket of the task starts a new implementer package
+
+#### Scenario: lead ticket closes to part-done
+
+- **WHEN** every task ticket of part `02` is closed and the `part-lead` ticket of `02` closes `ok`
+- **THEN** `next.action` is `part-done`
+
+#### Scenario: review round closes to review-done
+
+- **WHEN** the merged report of a `review-fix` ticket is stored under `<ticket>@merge` and the ticket closes `ok`
+- **THEN** `next.action` is `review-done`
+
+#### Scenario: lead ticket with an open task ticket
+
+- **WHEN** a task ticket of part `02` is open and `bdk attempt close <part-lead ticket> ok` runs
+- **THEN** the exit code is 2, the error object carries `rule: policy/ticket-open` naming the task ticket, and the lead ticket stays open

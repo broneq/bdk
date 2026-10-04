@@ -233,7 +233,9 @@ describe("a cr round on a review Change", () => {
     ingest(review, `${second}@integration`, []);
     gate(review, second);
     merged(review, second, [], "no entries");
-    answered(run(review, ["attempt", "close", second, "ok"]), "output/attempt-close.json");
+    expect(
+      answered(run(review, ["attempt", "close", second, "ok"]), "output/attempt-close.json"),
+    ).toMatchObject({ next: { action: "review-done" } });
     expect(answered(run(review, ["done", "review"]), "output/done.json")).toMatchObject({
       artifact: "review",
       state: "done",

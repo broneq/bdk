@@ -605,6 +605,7 @@
         "policy/stale-evidence",
         "policy/missing-citation",
         "policy/missing-evidence",
+        "policy/missing-report",
         "runtime/git-missing"
       ],
       "writes": [

@@ -245,6 +245,18 @@ describe("bdk commit <change-id>: a review fix (T42)", () => {
     expect(git(change.root, "diff", "--cached", "--name-only").trim()).toBe("README.md");
 
     write(change, "src/other.ts");
+    // A round closes only after its merged review (T42).
+    refused(
+      bdk(["attempt", "close", ticket, "fail", "--json"], change.root),
+      2,
+      "policy/missing-report",
+    );
+    answered(
+      bdk(["log", "ingest", "--ticket", `${ticket}@merge`, "--json"], change.root, {
+        stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\nNo entries.\n",
+      }),
+      "output/log-ingest.json",
+    );
     const close = answered(
       bdk(["attempt", "close", ticket, "fail", "--json"], change.root),
       "output/attempt-close.json",

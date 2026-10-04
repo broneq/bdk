@@ -47,7 +47,7 @@
         state: done
     - run: log list --status resolved --for src/app-name.ts
       json:
-        items.0.level: blocker
+        items.*.level: blocker
     - run: log list --type report --for review
       json:
         items.0.group: merge

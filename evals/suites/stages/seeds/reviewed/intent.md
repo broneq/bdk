@@ -1,1 +1,1 @@
-Add an APP_NAME constant in src/app-name.ts for the page titles
+Add an APP_NAME constant in src/app-name.ts
