@@ -210,6 +210,7 @@ export function buildPackage(
     const instruction = resolving ? promptText(deps, resolved, mergeConflictsPrompt.key) : "";
     if (isolated) kinds.push("work-root");
     if (resolving) kinds.push("conflict");
+    else if (conflicts !== undefined) kinds.push("merge");
     const roleBody = readRoleBody(deps, role);
     // A review fix carries the round's blockers whatever their refs (T42-D3).
     const reviewFix =

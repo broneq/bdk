@@ -6,7 +6,7 @@
 
 /** A section a package carries only when the build names its kind. */
 export type SectionKind =
-  "verifier" | "runner" | "lead" | "review" | "risks" | "work-root" | "conflict";
+  "verifier" | "runner" | "lead" | "review" | "risks" | "work-root" | "conflict" | "merge";
 
 interface Section {
   readonly name: string;
@@ -15,7 +15,7 @@ interface Section {
    * Only packages of this kind carry it: the verifiers' P8 lists, the runner's
    * checks, the lead's tasks, a grouped package's review scope (T42-A1) and the
    * integration reviewer's risks (T42-K), a worktree target's work root and a
-   * merge ticket's conflict (T45).
+   * merge ticket's conflict for its implementer and the merge note for its steps (T45).
    */
   readonly only?: SectionKind;
 }
@@ -39,6 +39,12 @@ const SECTIONS: readonly Section[] = [
     only: "conflict",
     skeleton:
       "## Conflict\n\nThe kernel merged `{{merged}}` into the work root, and git reports these paths unmerged:\n\n{{conflicts}}\n\nEdit only these paths, following the instruction below. Run no git command: the kernel stages and commits the merge at `bdk attempt close`. Return `blocked`, naming the paths, for a conflict the instruction does not settle.\n\n{{merge-instruction}}",
+  },
+  {
+    name: "merge",
+    only: "merge",
+    skeleton:
+      "## Merge\n\nThe kernel merged `{{merged}}` into the work root, the implementer resolved the conflicts, and the kernel commits the merge at `bdk attempt close`: until then a merge in progress and unmerged paths are expected; do not report them.",
   },
   {
     name: "tasks",

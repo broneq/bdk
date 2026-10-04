@@ -466,6 +466,10 @@ describe("bdk attempt open and close of a merge ticket", () => {
       const body = readFileSync(join(change.root, step.path as string), "utf8");
       expect(body).toContain("## Work root");
       expect(body).not.toContain("## Conflict");
+      expect(body).toContain("## Merge\n\nThe kernel merged");
+      expect(body).toMatch(
+        /a merge in progress and unmerged paths are expected; do not report them/,
+      );
     }
   });
 
