@@ -1,16 +1,12 @@
 ---
 name: mermaid-drawer
-description: BDK's shared Mermaid standard - diagram type selection, node budget, and a palette verified legible in light and dark themes. Use whenever writing a mermaid block, or when asked to diagram, visualise, or map a flow, architecture, or state machine.
-model: sonnet
-user-invocable: true
-argument-hint: "[what to draw]"
+description: Mermaid diagram standard - type chosen by the relationship, a node budget, labelled edges, and a palette legible in light and dark themes. Use whenever writing a mermaid block or asked to diagram a flow, architecture, data model or state machine.
+license: MIT
 ---
 
 # Mermaid Drawer
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
-
-Every BDK skill that emits a diagram emits it through this standard, so diagrams read the same whoever drew them and wherever they are viewed.
+One standard for every diagram, so diagrams read the same whoever drew them and wherever they are viewed.
 
 You already know Mermaid syntax. What this skill fixes is the part that goes wrong anyway: picking a type that cannot express the thing, packing in more nodes than a reader can hold, and colouring in a way that becomes unreadable the moment someone opens the doc in dark mode.
 

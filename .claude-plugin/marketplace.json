@@ -18,6 +18,16 @@
       "category": "productivity"
     },
     {
+      "name": "bdk-craft",
+      "description": "Portable engineering craft skills: test-driven development, debugging, refactoring, design and modelling choices, and Mermaid diagrams. Installs alone; bdk is not needed.",
+      "source": {
+        "source": "git-subdir",
+        "url": "broneq/bdk",
+        "path": "plugins/bdk-craft"
+      },
+      "category": "development"
+    },
+    {
       "name": "git-identity",
       "description": "Bind a project to a GitHub account and a git commit identity. Every gh call and every commit in it then uses the right one - carried by the environment, not by a prompt a subagent can miss.",
       "source": {

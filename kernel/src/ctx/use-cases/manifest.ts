@@ -35,7 +35,6 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   close: [],
   commit: [],
   cr: [verifierPolicy],
-  debug: [tools("test"), tools("lint")],
   design: [
     rules("architecture"),
     rules("engineering-judgment"),
@@ -66,7 +65,6 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
   run: [],
   setup: [tools("test"), tools("lint"), tools("build")],
   swarm: [{ kind: "concurrency" }],
-  "test-driven-development": [rules("test-quality"), tools("test")],
   "verify-design": [],
   "verify-plan": [],
 };

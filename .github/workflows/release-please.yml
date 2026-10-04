@@ -32,6 +32,8 @@ jobs:
           config-file: .github/release-please-config.json
           manifest-file: .github/.release-please-manifest.json
 
+  # Runs for a `bdk` release only: `release_created` and `tag_name` are the
+  # outputs of the root package; a `bdk-craft` release needs no build.
   # Git tracks no generated file (kernel-architecture, Generated outputs, and
   # Distribution ref). The plugin installs from the `release` branch, which
   # holds the tag's tree plus what `pnpm build` generates: the bundle, the
@@ -70,6 +72,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f dist schema agents
+          # bdk-craft is its own plugin (plugins/bdk-craft, git-subdir source).
+          # The bdk copy must not carry it, or `bdk ctx craft` would find it
+          # where the user never installed it.
+          git rm -r -q plugins
           git commit -m "chore(release): bundle ${TAG}"
           git tag -f "dist-${TAG}"
           git push --force origin HEAD:refs/heads/release
