@@ -70,8 +70,9 @@ Skip it when the plan is small, mechanical, and you have read every task. Run it
 plan touches code you have not read recently.
 
 !!! note
-Verification also stamps the plan's sha256, which is what lets the executor tell you
-whether what it is about to run is what was verified.
+
+    Verification also stamps the plan's sha256, which is what lets the executor tell you
+    whether what it is about to run is what was verified.
 
 ## 3 - Execute
 

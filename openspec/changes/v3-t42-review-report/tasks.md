@@ -88,15 +88,15 @@
 
 ## 6. `cr` report step and `--report` (design R5, R8)
 
-- [ ] 6.1 Write failing contract tests in `kernel/tests/contract/` for `skills/tools/cr/SKILL.md`:
+- [x] 6.1 Write failing contract tests in `kernel/tests/contract/` for `skills/tools/cr/SKILL.md`:
   - `allowed-tools` holds `AskUserQuestion`, `Bash(lavish-axi *)` and `Bash(gh issue create *)`, and still no `Write(`;
   - `argument-hint` names `--report`;
   - the body names `bdk review render`, `bdk log decide`, `lavish-axi poll`, `--format md`, `defer --review` inside `/bdk:run`, `gh issue create` and the `tracker` instruction kind;
   - the body says that `fix` starts a new round and that every submitted id is accounted for;
   - the body says that the round, and `--report`, triage every live entry of the Change without a level, whichever stage wrote it;
   - the file is at most 200 lines.
-- [ ] 6.2 Write the report section of `skills/tools/cr/SKILL.md` and the `--report` argument, and extend Finish with the report path and the dispositions. Run `/bdk-skill-kit:skill-authoring` on it. Verify with 6.1 and `pnpm skill-check`; the baseline does not grow.
-- [ ] 6.3 Extend `kernel/src/review/tests/review-round.e2e.ts` with the sequence `cr` names after `done review`:
+- [x] 6.2 Write the report section of `skills/tools/cr/SKILL.md` and the `--report` argument, and extend Finish with the report path and the dispositions. Run `/bdk-skill-kit:skill-authoring` on it. Verify with 6.1 and `pnpm skill-check`; the baseline does not grow.
+- [x] 6.3 Extend `kernel/src/review/tests/review-round.e2e.ts` with the sequence `cr` names after `done review`:
   - `log triage` of an execute-stage observation the round did not write;
   - `review render`, with that observation under its level and no `untriaged` group;
   - `log decide` with `fix` on a `should-fix` entry;
@@ -107,29 +107,29 @@
 
 ## 7. Role contracts: finding body and area summaries (design R9, R10)
 
-- [ ] 7.1 Write failing content tests in `kernel/tests/contract/` for the scenarios of `role-contracts`, Role contract content: `reviewer` and `integration-reviewer` name `Problem:`, `Why it matters:` and `Suggested fix:`; `pr-reviewer` names the result block field `why`; `integration-reviewer` names `## Areas` and `- <risk-id>: <sentence>`.
-- [ ] 7.2 Edit `skills/roles/reviewer/SKILL.md`, `skills/roles/integration-reviewer/SKILL.md` and `skills/roles/pr-reviewer/SKILL.md`, and the parsing of the result block in `skills/tools/pr-review/SKILL.md`. Run `/bdk-skill-kit:skill-authoring` on each. Verify with 7.1, the body size test (4 096 bytes), `pnpm build` (agents adapters) and `node dist/bdk.mjs export agents --host claude --check`.
+- [x] 7.1 Write failing content tests in `kernel/tests/contract/` for the scenarios of `role-contracts`, Role contract content: `reviewer` and `integration-reviewer` name `Problem:`, `Why it matters:` and `Suggested fix:`; `pr-reviewer` names the result block field `why`; `integration-reviewer` names `## Areas` and `- <risk-id>: <sentence>`.
+- [x] 7.2 Edit `skills/roles/reviewer/SKILL.md`, `skills/roles/integration-reviewer/SKILL.md` and `skills/roles/pr-reviewer/SKILL.md`, and the parsing of the result block in `skills/tools/pr-review/SKILL.md`. Run `/bdk-skill-kit:skill-authoring` on each. Verify with 7.1, the body size test (4 096 bytes), `pnpm build` (agents adapters) and `node dist/bdk.mjs export agents --host claude --check`.
 
 ## 8. `pr-review` decision step (design R7, R8)
 
-- [ ] 8.1 Write failing contract tests:
+- [x] 8.1 Write failing contract tests:
   - `pr-review` allows `Bash(lavish-axi *)` and names `--quick`, `bdk review render --pr -`, `lavish-axi poll` and the four choices;
   - it falls back to the `AskUserQuestion` confirmation on `--quick` or any Lavish failure;
   - a `tracker` finding is filed and listed;
   - `references/comment-templates.md` has a tracked-issues section in both summaries.
-- [ ] 8.2 Rewrite "Confirm" in `skills/tools/pr-review/SKILL.md` as the decision step plus the `--quick` fallback, and add the tracked section to `references/comment-templates.md`. Verify with 8.1, `pnpm skill-check` and the 200-line limit.
+- [x] 8.2 Rewrite "Confirm" in `skills/tools/pr-review/SKILL.md` as the decision step plus the `--quick` fallback, and add the tracked section to `references/comment-templates.md`. Verify with 8.1, `pnpm skill-check` and the 200-line limit.
 
 ## 9. `run` and `setup` (design R5, R8)
 
-- [ ] 9.1 Write failing contract tests:
+- [x] 9.1 Write failing contract tests:
   - `skills/stages/run/SKILL.md` names `bdk log decide <id> defer --review` for the report, says the run never chooses `fix`, and names the report path and `/bdk:cr --report` in Finish;
   - `skills/stages/setup/SKILL.md` names `gh auth status`, `bdk config set tracker` and both kinds.
-- [ ] 9.2 Edit both skills. Verify with 9.1 and `pnpm skill-check`.
+- [x] 9.2 Edit both skills. Verify with 9.1 and `pnpm skill-check`.
 - [ ] 9.3 Update the `stages` eval case `run-auto` (`evals/suites/stages/cases/run.yaml`). Its expectations now include the report path and a `defer` disposition with `review: true` before the close. Verify with `pnpm eval check` and `npx vitest run evals`. Probe it only after the user approves the cost.
 
 ## 10. Documentation
 
-- [ ] 10.1 Update `docs/guide/workflows/code-review.md`, `docs/guide/reference/artifacts.md` (dispositions, `log decide`, risk `paths`, `configuration`, `tracker`), `docs/guide/workflows/full-pipeline.md` (the report in a run) and the README skills table row of `cr` and `pr-review`. Verify with `pnpm docs:build` and the docs drift guards in `pnpm test:contract`.
+- [x] 10.1 Update `docs/guide/workflows/code-review.md`, `docs/guide/reference/artifacts.md` (dispositions, `log decide`, risk `paths`, `configuration`, `tracker`), `docs/guide/workflows/full-pipeline.md` (the report in a run) and the README skills table row of `cr` and `pr-review`. Verify with `pnpm docs:build` and the docs drift guards in `pnpm test:contract`.
 
 ## 11. Acceptance
 
@@ -139,7 +139,7 @@
   3. Decide one entry `fix`, one `defer` and one `track` (GitHub, in a throwaway repository).
   4. Check that `fix` ran a round, that the issue URL is in the ledger, and that `/bdk:close` produced a summary with the deferred and tracked entries.
   5. Check the page against the project's UI standards: alignment, both colour schemes, phone width, no horizontal scroll.
-- [ ] 11.2 Run the full gate:
+- [x] 11.2 Run the full gate:
   - `pnpm build`, `lint`, `format:check`, `typecheck`, `knip`, `lint:py`;
   - `test:unit`, `test:e2e`, `test:contract`, `npx vitest run evals`;
   - `skill-check`, `docs:build`, `eval check`, `pytest tests/unit/`;

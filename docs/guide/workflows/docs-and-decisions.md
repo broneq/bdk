@@ -33,9 +33,10 @@ Consequences are marked with symbols, not prose labels: `✅` for positive, `❌
 negative, `🟡` for neutral.
 
 !!! note
-Diagrams in an ADR are optional and only added when they carry genuine visual value -
-architecture options with different component layouts, or different data flows. A
-trivially simple or abstract decision gets none.
+
+    Diagrams in an ADR are optional and only added when they carry genuine visual value -
+    architecture options with different component layouts, or different data flows. A
+    trivially simple or abstract decision gets none.
 
 `/bdk:design` ends by pointing here: a design doc explores the space, an ADR formalizes
 one decision out of it.
@@ -61,10 +62,11 @@ The synthesized doc has seven parts: overview, core architecture with a file tre
 architecture flow, critical rules, live examples, core classes, and testing coverage.
 
 !!! warning
-Live examples are **prototype code, never the actual implementation**: placeholder
-function names, clear control flow, comments on key steps, under 20 lines each, one
-concept per example. A doc that pastes the real implementation goes stale the day the
-implementation changes.
+
+    Live examples are **prototype code, never the actual implementation**: placeholder
+    function names, clear control flow, comments on key steps, under 20 lines each, one
+    concept per example. A doc that pastes the real implementation goes stale the day the
+    implementation changes.
 
 A `Stop` hook checks the result before the skill can finish - file saved in the right
 place, overview present, file tree present, at least one Mermaid block, critical rules,
@@ -103,10 +105,11 @@ Accurate sections are copied verbatim, which is what preserves hand-written pros
 formatting, and wording. Orphaned references are simply omitted - no "removed" comments.
 
 !!! note
-The result reads as one uniform document. No changelog markers, no "updated on"
-annotations, no diff markers. A diagram that is still correct but predates the current
-standard is not outdated - it is left alone, so updates stay reviewable as content
-changes rather than churn.
+
+    The result reads as one uniform document. No changelog markers, no "updated on"
+    annotations, no diff markers. A diagram that is still correct but predates the current
+    standard is not outdated - it is left alone, so updates stay reviewable as content
+    changes rather than churn.
 
 Output: the same path you passed in.
 

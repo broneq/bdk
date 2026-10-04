@@ -117,7 +117,7 @@ Then `cr` SHALL store the merged review with `bdk log ingest --ticket <ticket>@m
 
 ### Requirement: cr ends with the human report
 
-After `bdk done review` passes, `cr` SHALL run `bdk review render` and present the report. With `--report`, `cr` SHALL first triage every live entry of the Change that has no level, as a round does (Requirement: cr triages every entry of the round).
+After `bdk done review` passes, `cr` SHALL run `bdk review render` and present the report. Before it renders, `cr` SHALL triage every live entry of the Change that has no level, as a round does (Requirement: cr triages every entry of the round): the kernel can write an entry when a ticket closes, after the round's triage, and `--report` runs no round.
 
 - **Lavish path.** With `features.lavish` on and `lavish-axi` available, `cr` SHALL open the HTML file with `lavish-axi` and wait for the reply. The reply's `items` give one disposition per entry, and every submitted id SHALL be accounted for.
 - **Fallback path.** Otherwise `cr` SHALL render `--format md`, print its summary, change map and gate, and ask the dispositions with `AskUserQuestion`. Each question covers one entry, at most four per call. The current disposition, or `defer` when there is none, is the first option, marked `(Recommended)`.

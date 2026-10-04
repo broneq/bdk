@@ -3,13 +3,16 @@
 // review`, a round whose triaged blocker fails it, a next round that fixes
 // the blocker first through an implementer package, commits it with `bdk
 // commit <change-id>` and resolves it, reviews only the delta, and passes
-// `done review`. The `ok` of that round ends it, so the next round starts
-// with the full budget.
+// `done review`. Then the report step: an earlier entry is triaged, the
+// report rendered, a `fix` decision runs a round that starts with the full
+// budget (the `ok` before it ended its round), the rest is deferred, and the
+// Change closes.
 import { appendFileSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
+import { passGate } from "../../graph/tests/e2e-support.ts";
 
 const SETTINGS =
   "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n" +
@@ -133,6 +136,17 @@ function gate(review: Review, ticket: string): void {
   }
 }
 
+/** The live findings the kernel wrote, which no reviewer triaged. */
+function kernelFindings(review: Review): string[] {
+  const listed = answered(run(review, ["log", "list"]), "output/log-list.json") as {
+    items: { id: string; type: string; status: string; level?: string }[];
+  };
+  return listed.items
+    .filter((entry) => entry.type === "finding" && entry.status !== "resolved")
+    .filter((entry) => entry.level === undefined)
+    .map((entry) => entry.id);
+}
+
 function ingest(review: Review, reference: string, entries: string[]): void {
   answered(
     run(review, ["log", "ingest", "--ticket", reference], report(entries)),
@@ -250,17 +264,95 @@ describe("a cr round on a review Change", () => {
       state: "done",
     });
 
-    // The ok of round 2 ended the round (kernel-loops): a third round starts with the full budget.
+    // The report step after `done review` (R5): an entry of an earlier stage
+    // the rounds did not write is triaged, so nothing is left untriaged.
+    const earlier = (
+      answered(
+        run(review, [
+          "log",
+          "add",
+          "observation",
+          "dates built by hand",
+          "--ref",
+          "web/forms/form.ts",
+        ]),
+        "output/log-add.json",
+      ).entry as { id: string }
+    ).id;
+    answered(run(review, ["log", "triage", earlier, "should-fix"]), "output/log-triage.json");
+    // The kernel's own findings of the rounds (a narrowed scope, a package
+    // closed without its rules) carry no level either.
+    const untriaged = kernelFindings(review);
+    expect(untriaged).toHaveLength(2);
+    for (const id of untriaged) {
+      answered(run(review, ["log", "triage", id, "nice-to-have"]), "output/log-triage.json");
+    }
+    const rendered = answered(run(review, ["review", "render"]), "output/review-render.json");
+    expect(rendered).toMatchObject({ decided: [] });
+    expect([...(rendered.undecided as string[])].sort()).toStrictEqual(
+      [earlier, minor, ...untriaged].sort(),
+    );
+    const page = read(review.root, rendered.path as string);
+    expect(page).toContain(`id="entry-${earlier}"`);
+    expect(page).toContain("<h3>should-fix");
+    expect(page).toContain("<h3>untriaged (0)</h3>");
+
+    // The user decides `fix`: an `ok` record ended round 2 (kernel-loops), so
+    // the fixing round starts with the full budget and fixes the entry first.
+    answered(run(review, ["log", "decide", earlier, "fix"]), "output/log-decide.json");
     const third = answered(
       run(review, ["attempt", "open", "review-fix", review.id]),
       "output/attempt-open.json",
     );
     expect(third).toMatchObject({ attempt: 1, scope: "full" });
-    expect(read(review.root, attemptFile(review, third.ticket as string))).toContain(
-      `after: ${second}`,
-    );
+    const fixing = third.ticket as string;
+    expect(read(review.root, attemptFile(review, fixing))).toContain(`after: ${second}`);
     expect(
       answered(run(review, ["attempt", "list", "--for", review.id]), "output/attempt-list.json"),
     ).toMatchObject({ budgets: { "review-fix": { used: 0, of: 2 } } });
+    const embedded = answered(
+      run(review, ["dispatch", "build", review.id, "implementer", fixing]),
+      "output/dispatch-build.json",
+    );
+    expect(bdk(["dispatch", "show", embedded.path as string], review.root).stdout).toContain(
+      earlier,
+    );
+    put(review.root, "web/forms/form.ts", 'export const at = "dates by Intl";\n');
+    answered(run(review, ["commit", review.id]), "output/commit.json");
+    answered(
+      run(review, ["log", "resolve", earlier, "resolved", "--reason", "dates by Intl"]),
+      "output/log-resolve.json",
+    );
+    const last = answered(
+      run(review, ["review", "plan"]),
+      "output/review-plan.json",
+    ) as unknown as Plan;
+    packages(review, fixing, last);
+    for (const group of last.groups) ingest(review, `${fixing}@${group.id}`, []);
+    gate(review, fixing);
+    merged(review, fixing, [], "no entries");
+    answered(run(review, ["attempt", "close", fixing, "ok"]), "output/attempt-close.json");
+    answered(run(review, ["done", "review"]), "output/done.json");
+
+    // The report again: the fixed entry left Decisions; the rest is deferred.
+    // Closing the ticket can write a kernel finding; the report triages it first.
+    const fixRound = kernelFindings(review);
+    for (const id of fixRound) {
+      answered(run(review, ["log", "triage", id, "nice-to-have"]), "output/log-triage.json");
+    }
+    const again = answered(run(review, ["review", "render"]), "output/review-render.json");
+    const rest = [minor, ...untriaged, ...fixRound].sort();
+    expect([...(again.undecided as string[])].sort()).toStrictEqual(rest);
+    expect(read(review.root, again.path as string)).not.toContain(`id="entry-${earlier}"`);
+    for (const id of rest) {
+      answered(run(review, ["log", "decide", id, "defer"]), "output/log-decide.json");
+    }
+    const final = answered(run(review, ["review", "render"]), "output/review-render.json");
+    expect(final.undecided).toStrictEqual([]);
+    expect([...(final.decided as string[])].sort()).toStrictEqual(rest);
+    passGate(join(review.root, ".bdk/changes", review.id), "gate:review", "close");
+    expect(answered(run(review, ["change", "close"]), "output/change-close.json")).toMatchObject({
+      change: review.id,
+    });
   });
 });

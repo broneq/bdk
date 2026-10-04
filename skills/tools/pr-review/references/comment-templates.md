@@ -2,16 +2,18 @@
 
 Every comment `/bdk:pr-review` posts uses one of these templates verbatim: fill the placeholders, change nothing else. A review whose comments always look the same is skimmable, and the hidden markers are what `--verify` reads later. Write every comment in English.
 
-The placeholders are the fields of a finding in the role's `pr-review-result` block: `{path}` and `{line}` are its `file` and `line`, `{severity}` its `severity` in capitals, `{category}` its `category`, `{rule}` its `rule` (left out with its separator when it is `none`), `{problem}` and `{fix}` its `problem` and `fix`.
+The placeholders are the fields of a finding in the role's `pr-review-result` block: `{path}` and `{line}` are its `file` and `line`, `{severity}` its `severity` in capitals, `{category}` its `category`, `{rule}` its `rule` (left out with its separator when it is `none`), `{problem}`, `{why}` and `{fix}` its `problem`, `why` and `fix`, and `{issue}` the URL or key of the issue a `tracker` finding was filed as.
 
 ## Hidden markers
 
 Each template ends with an HTML comment that the rendered view hides. Never omit or reformat it: `--verify` searches for `bdk-pr-review v1` to find our own comments and parses the `key=value` pairs. `reviewed_sha` in a summary is where the next `--verify` knows the reviewed range ended.
 
-## 1. Inline finding (a finding with `blocking: true`)
+## 1. Inline finding (a finding kept as `blocker`)
 
 ````markdown
 **[{severity} · {category} · {rule}]** {problem}
+
+{optional: "Why it matters: {why}", only when the finding has a `why`}
 
 Suggested fix: {fix}
 
@@ -21,7 +23,7 @@ Suggested fix: {fix}
 
 ## 2. Non-blocking findings: summary only, never inline
 
-A finding with `blocking: false` is never an inline comment. An inline comment opens a review thread, and on GitHub a thread means "must be addressed": with required conversation resolution it even blocks the merge our own approval allowed. Each one becomes a bullet of the summary's "Nice to have (non-blocking)" section:
+A finding the user did not keep as `blocker` (by default one with `blocking: false`) is never an inline comment. An inline comment opens a review thread, and on GitHub a thread means "must be addressed": with required conversation resolution it even blocks the merge our own approval allowed. Each one becomes a bullet of the summary's "Nice to have (non-blocking)" section:
 
 ```markdown
 - `{path}:{line}` - [{category}] {problem} {fix}
@@ -31,7 +33,7 @@ So the set of unresolved threads on a PR is exactly the set of open blockers, an
 
 ## 3. Review summary
 
-Rendered after the user has confirmed or overridden the computed verdict, never by the role, because the verdict it renders may not be the computed one. Used as the review `body`.
+Rendered after the user has decided the findings or confirmed the verdict, never by the role, because the verdict it renders may not be the computed one. Used as the review `body`.
 
 ```markdown
 ## PR Review Summary
@@ -48,6 +50,9 @@ Reviewed `{merge_base_short}..{head_sha_short}` ({N} files).{stack note: " Stack
 
 **Context findings (outside the diff)**{omit the section when empty}
 - `{path}:{line}` - [{category}] {problem} {fix}
+
+**Tracked issues**{omit the section when empty}
+- `{path}:{line}` - [{category}] {problem} {issue}
 
 <!-- bdk-pr-review v1 kind=summary verdict={approve|request-changes} reviewed_sha={full head sha} -->
 ```
@@ -71,6 +76,9 @@ Checked the previous review ({link to its summary}) against `{head_sha_short}`.
 
 **Nice to have (non-blocking)**{omit the section when empty}
 - `{path}:{line}` - [{category}] {problem} {fix}
+
+**Tracked issues**{omit the section when empty}
+- `{path}:{line}` - [{category}] {problem} {issue}
 
 **Verdict: {✅ Approve / ❌ Request changes}**{override note as in template 3}
 

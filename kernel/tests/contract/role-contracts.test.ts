@@ -412,6 +412,28 @@ describe("T42-A1: reviewers of a round work under their group reference", () => 
   });
 });
 
+describe("T42-H: findings explain why they matter, and areas are summarised", () => {
+  it.each(["reviewer", "integration-reviewer"])("%s labels the body of every entry", (name) => {
+    const { body } = readRole(name);
+    for (const label of ["`Problem:`", "`Why it matters:`", "`Suggested fix:`"]) {
+      expect(body, label).toContain(label);
+    }
+  });
+
+  it("gives every pr-reviewer finding the fields problem, why and fix", () => {
+    const block = /```yaml\n(pr-review-result:[\s\S]*?)```/.exec(readRole(STATELESS).body)?.[1];
+    for (const field of ["problem:", "why:", "fix:"]) expect(block, field).toContain(field);
+  });
+
+  it("ends the integration report with one line per touched risk under ## Areas", () => {
+    const { body } = readRole("integration-reviewer");
+    expect(body).toContain("## Areas");
+    expect(body).toContain("- <risk-id>: <sentence>");
+    expect(body).toContain("- unplanned: <sentence>");
+    expect(body).toMatch(/300 characters/);
+  });
+});
+
 describe("adapters named by the roles", () => {
   it("are all produced by bdk export agents", () => {
     const produced = new Set(ADAPTERS.map((adapter) => `bdk:${adapter.name}`));

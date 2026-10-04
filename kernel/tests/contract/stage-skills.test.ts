@@ -288,6 +288,16 @@ describe("run", () => {
     expect(body).toMatch(/Blocking review entries are no reason to stop/);
   });
 
+  it("defers the undecided entries of the cr report, never chooses fix, and names --report (T42)", () => {
+    const { body } = readSkill("run");
+    expect(body).toContain("bdk log decide <id> defer --review");
+    expect(body).toMatch(/never (chooses?|records?) `fix`/);
+    expect(body).toContain("/bdk:cr --report");
+    const finish = body.slice(body.indexOf("## Finish"));
+    expect(finish).toContain("the report path");
+    expect(finish).toContain("/bdk:cr --report");
+  });
+
   it("stays well under the stage skill limit", () => {
     const text = readFileSync(join(STAGES, "run", "SKILL.md"), "utf8");
     expect(text.split("\n").length).toBeLessThanOrEqual(120);
@@ -323,4 +333,19 @@ describe("gates passed by policy are named by id (T42 run probe)", () => {
       expect(finish).toMatch(/gates passed by policy[^\n]*by its id \(`gate:(design|review)`\)/);
     },
   );
+});
+
+describe("setup proposes the tracker (T42)", () => {
+  it("detects GitHub with gh auth status and writes either kind with config set", () => {
+    const { meta, body } = readSkill("setup");
+    expect(String(meta["allowed-tools"])).toContain("Bash(gh auth status)");
+    for (const needle of [
+      "gh auth status",
+      "bdk config set tracker",
+      "{kind: github}",
+      "{kind: instruction",
+    ]) {
+      expect(body, needle).toContain(needle);
+    }
+  });
 });

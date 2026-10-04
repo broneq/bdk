@@ -50,6 +50,7 @@ pr-review-result:
       severity: critical | high | medium | low
       rule: <id of the applying rule, or none>
       problem: <what is wrong, one or two sentences>
+      why: <why it matters: what breaks or costs if it ships>
       fix: <the change that resolves it>
       blocking: true | false
   threads:

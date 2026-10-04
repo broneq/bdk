@@ -32,9 +32,10 @@ coordinator, a review fan-out - not the standards. See
 [The shared foundation](../concepts/shared-foundation.md).
 
 !!! note
-If the session did not start with BDK's foundation, you are not in this tier - you are
-in an unconfigured session. The first session in a project is blocked until
-`/bdk:setup` has run; see [Setup](../getting-started/setup.md).
+
+    If the session did not start with BDK's foundation, you are not in this tier - you are
+    in an unconfigured session. The first session in a project is blocked until
+    `/bdk:setup` has run; see [Setup](../getting-started/setup.md).
 
 ## Step 1 - Built-in plan mode
 
@@ -75,9 +76,10 @@ The review is still read-only by construction, not by promise: `/bdk:cr` declare
 is active, and `Write` is bounded to `.bdk/cr/**`.
 
 !!! warning
-`--inline` trades wall-clock and reviewer independence for the ability to run inside a
-single session. Use it for a trivial change, or inside a subagent that cannot spawn
-agents. Do not pick it just to save tokens when the fan-out is available.
+
+    `--inline` trades wall-clock and reviewer independence for the ability to run inside a
+    single session. Use it for a trivial change, or inside a subagent that cannot spawn
+    agents. Do not pick it just to save tokens when the fan-out is available.
 
 ## When trivial stops being trivial
 

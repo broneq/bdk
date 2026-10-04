@@ -38,10 +38,11 @@ draft cold - the author of a design has confirmation bias against it, so the cri
 moves out of the author's head.
 
 !!! warning
-If the chosen approach changes the database schema, the Schema-Change Gate is
-non-skippable. `/bdk:design` shows the current schema, presents 2+ proposals with
-migration and rollback implications, and requires explicit approval. A thumbs-up on
-the broader design is not schema approval.
+
+    If the chosen approach changes the database schema, the Schema-Change Gate is
+    non-skippable. `/bdk:design` shows the current schema, presents 2+ proposals with
+    migration and rollback implications, and requires explicit approval. A thumbs-up on
+    the broader design is not schema approval.
 
 Output: `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md`, including a "What we did NOT
 decide" section listing every open question.
@@ -183,9 +184,10 @@ match each other's `git log`. Nothing coordinates the two runs, which is the poi
 merge them the way you merge any two branches.
 
 !!! warning
-One session per worktree. Two sessions in one worktree contend for the same run, and
-the second is refused by the session guard. Take over a run held by a dead session
-with `--force`, which prints exactly what it took over.
+
+    One session per worktree. Two sessions in one worktree contend for the same run, and
+    the second is refused by the session guard. Take over a run held by a dead session
+    with `--force`, which prints exactly what it took over.
 
 ## Stage 5 - Review
 
@@ -196,6 +198,14 @@ with `--force`, which prints exactly what it took over.
     summary. `/bdk:run "<intent>"` runs the stages for you and stops at each gate that
     needs you. See [/bdk:close](../reference/skills.md#bdkclose) and
     [/bdk:run](../reference/skills.md#bdkrun).
+
+    `/bdk:cr` ends with a human report (`.bdk/.machine/review/<changeId>.html`) in
+    which you decide every open entry: fix, defer, reject or track. A run does not
+    stop there, even without `--auto`: it defers each undecided entry with
+    `review: true`, so the PR summary lists it as deferred and to be reviewed, and
+    its finish names the report and `/bdk:cr --report` for changing those decisions
+    before the close. A run never chooses fix for you. See
+    [Code review](code-review.md#the-report).
 
 ```
 /bdk:cr --full

@@ -120,6 +120,8 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 - **Rule citations (S4).** The `implementer`, `simplifier`, `reviewer`, `integration-reviewer`, `pr-reviewer`, `verifier` and `design-verifier` contracts tell the agent to cite the id of every rule that forced a decision or that a finding violates, as a `--ref <id>` of the entry it writes (`BDK-CQ-4`, `API-2`) and by id in its report; a rule id is written exactly as `rules show --ticket` prints it. The kernel counts those refs as citations (`kernel-cli/rules`, bdk rules stats).
 - **Lead (T41-D2, D11).** The `lead` contract tells the agent that it runs one plan part and writes no file: from its package's `Tasks` section it starts, in the background, every task whose `Depends on:` tasks are committed and whose `Files:` are disjoint from the running ones, through `bdk attempt open task-redispatch <task>`, `bdk dispatch build` and `Agent` with the package path; between dispatches it calls `bdk agents wait <own id>` instead of ending its turn, and acts on each event: a report leads to the ticket's steps, `bdk attempt close` and `bdk commit`; `next.action: escalate` leads to `bdk attempt open task-redispatch <task> --escalate`, whose agents it starts on the `model` that `bdk dispatch build` returns, and `parked` to a `blocked` return; a message leads to the named entry and, when it affects other running agents, a message to them; a `suspect` child gets one resume. When every task is committed it stores its report with `bdk log ingest --ticket <own ticket>` and returns the envelope. It names `elapsed` from `wait` as its time signal and states that an earlier correct result is better.
 - **Review groups (T42-A1).** The `reviewer` and `integration-reviewer` contracts tell the agent that its ticket is the `<ticket>@<group>` reference its package names, and to use that reference in every `--ticket`. The `reviewer` reviews its group's files over the package's range against the plan part named as contract: whether the code does what the tasks state, logic errors within functions, and whether the tests check the stated behaviour, with the unit and end-to-end cases that are missing; it leaves style, duplication within a task and dead code to `simplify` and `lint`. The `integration-reviewer` reviews the whole range against the intent, the design and the plan: how the parts work together, spec deltas, files changed outside every task's `Files:`, duplication across parts, and each item of the package's `Risks` section the range touches. Both write each finding with a `category` from the P8 list when it blocks, and never write `level`, which is the orchestrator's (`kernel-cli/log`, bdk log triage).
+- **Finding body (T42-H).** The `reviewer` and `integration-reviewer` contracts tell the agent to write the body of every `finding`, `observation` and `blocker` as three labelled paragraphs, `Problem:`, `Why it matters:` and `Suggested fix:`, so the human report can show why an entry is worth fixing (`kernel-cli/review`, bdk review render). The `pr-reviewer` result block gives each finding the fields `problem`, `why` and `fix` for the same reason.
+- **Area summaries (T42-H).** The `integration-reviewer` contract tells the agent to end its report with a section `## Areas`: one line `- <risk-id>: <sentence>` for each enabled risk of its package that the range touches, saying in one sentence of at most 300 characters what changed in that area and why, in terms of behaviour rather than files. When files outside the plan changed, one more line `- unplanned: <sentence>` says the same for them.
 - **Size.** A role skill body, without frontmatter, SHALL be at most 4 096 bytes, so that it fits in a 12 KB package next to the task (K4).
 
 #### Scenario: P3 wording
@@ -191,6 +193,16 @@ Every role skill body SHALL be the role contract only, in this order: input (rea
 
 - **WHEN** the content test reads `skills/roles/implementer/SKILL.md`
 - **THEN** it tells the agent, on a `review-fix` package, to fix the embedded blocking entries, name their ids in its report and resolve none
+
+#### Scenario: findings explain why they matter
+
+- **WHEN** the content test reads `skills/roles/reviewer/SKILL.md`, `skills/roles/integration-reviewer/SKILL.md` and `skills/roles/pr-reviewer/SKILL.md`
+- **THEN** the first two name `Problem:`, `Why it matters:` and `Suggested fix:` for the entry body, and the third names the result block fields `problem`, `why` and `fix`
+
+#### Scenario: integration reviewer summarises the areas
+
+- **WHEN** the content test reads `skills/roles/integration-reviewer/SKILL.md`
+- **THEN** it names the report section `## Areas` and the line form `- <risk-id>: <sentence>`
 
 ### Requirement: Swarm skill
 

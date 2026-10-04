@@ -19,6 +19,7 @@ BDK 3 keeps its state under `.bdk/` too, written only by the kernel (`bdk ...`) 
 | `.bdk/rules/`              | `bdk rules import`, `bdk rules accept`               | yes     | The project's rules, one file per rule id                                                |
 | `.bdk/changes/<changeId>/` | `/bdk:change` through `bdk change new`, later stages | yes     | One Change: its intent, design, plan, ledger and progress                                |
 | `.bdk/.machine/`           | the kernel                                           | no      | Caches, the schema copy and the branch bindings of the Changes; rebuilt by `bdk rebuild` |
+| `.bdk/.machine/review/`    | `bdk review render`                                  | no      | The human review report of a Change, `<changeId>.html` or `.md`                          |
 
 The design stage writes into the Change directory:
 
@@ -64,7 +65,20 @@ The review stage runs as rounds of one `review-fix` ticket each, and writes into
 
 Before its verdict, the round runs the full gate: `tests-full` runs every `tools.test` command and `lint-full` every `tools.lint` command, both against the whole Change. A `tools.test` entry with a `coverage` object (`command`, `report`, `format: lcov|cobertura`, `min`) also needs `bdk evidence coverage`. The kernel reads the report and counts only the lines the Change added in executable files. It decides `pass` or `fail` against `min` itself. Files the report does not list go to `unmeasured`. A fix after the gate makes both nodes stale.
 
-The orchestrator triages every entry of the round with `bdk log triage <id> blocker|should-fix|nice-to-have|not-a-problem`; `not-a-problem` needs `--reason` and resolves the entry. `review` passes only on the round's merged report, with every entry of the round triaged and no live entry triaged `blocker`. The integration reviewer also gets the project's risky areas from `review.risks`, a list of `{id, instruction, enabled}` merged by `id` over five defaults (`auth`, `migration`, `secrets`, `public-api`, `dependencies`). Set `enabled: false` on an item to turn it off.
+The orchestrator triages every entry of the round, and every other live entry of the Change without a level, with `bdk log triage <id> blocker|should-fix|nice-to-have|not-a-problem`; `not-a-problem` needs `--reason` and resolves the entry. `review` passes only on the round's merged report, with every entry of the round triaged and no live entry triaged `blocker`. An `ok` close ends its round: the next `review-fix` ticket starts at attempt 1 with the full budget, and its record names the round it follows as `after`.
+
+The integration reviewer also gets the project's risky areas from `review.risks`, a list of `{id, instruction, paths, enabled}` merged by `id` over six defaults (`auth`, `migration`, `secrets`, `public-api`, `dependencies`, `configuration`). `paths` are globs: the report opens a card for a risk whose paths match a changed file, and for any risk the integration reviewer summarises under `## Areas` in its report. Set `enabled: false` on an item to turn it off.
+
+After the review, the human decides each open entry with `bdk log decide <id> fix|defer|reject|track`, through the report of `/bdk:cr`:
+
+| Disposition | Effect on the entry                                                                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| `fix`       | Its level becomes `blocker`, so the next round fixes it first                                          |
+| `defer`     | It stays open, accepted; the PR summary lists it as deferred                                           |
+| `reject`    | It is resolved; `--reason` is required                                                                 |
+| `track`     | It stays open, accepted, with `--issue <url or key>`; the PR summary lists it as tracked in that issue |
+
+`--review` marks a `defer` or `track` made without the user, as `/bdk:run` does, to be reviewed. `bdk change close` refuses with `policy/undecided-entries` while a live `finding`, `observation` or `blocker` has no disposition, or a `fix` is not made. The `tracker` setting says where `track` files an issue: `{kind: github}` for GitHub issues through `gh`, or `{kind: instruction, instruction: "<how to file one>"}` for any other tracker. While it is unset, the report offers no `track`.
 
 `bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 file `.bdk/settings.json` is never read; `/bdk:setup` migrates a project that still has it.
 

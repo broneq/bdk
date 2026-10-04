@@ -71,9 +71,10 @@ models), and asks you to choose:
 3. **Something else** - redirect, reconsider, investigate more
 
 !!! warning
-Phase 4 is a hard stop. After the question the turn ends: no text, no tools, no
-action. Only an actual user reply releases it - a background task completing, a hook
-firing, or the model's own reasoning does not, no matter how obvious the fix looks.
+
+    Phase 4 is a hard stop. After the question the turn ends: no text, no tools, no
+    action. Only an actual user reply releases it - a background task completing, a hook
+    firing, or the model's own reasoning does not, no matter how obvious the fix looks.
 
 That stop is the whole point. A root cause found in one file very often has a second,
 structural cause, and the cheapest moment to notice is before the first edit.
