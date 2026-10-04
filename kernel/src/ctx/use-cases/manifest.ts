@@ -15,6 +15,8 @@ export type Part =
   | { readonly kind: "tools"; readonly group: ToolGroup }
   /** `execution.concurrency` as one sentence (T23-D52). */
   | { readonly kind: "concurrency" }
+  /** `policy.verifier`: the blocking categories and the not-a-fail list (P8, T42). */
+  | { readonly kind: "verifier-policy" }
   /** A plugin file, verbatim; `path` is relative to the plugin root. */
   | { readonly kind: "file"; readonly path: string; readonly title: string };
 
@@ -23,33 +25,23 @@ const tools = (group: ToolGroup): Part => ({ kind: "tools", group });
 const decision: Part = { kind: "fragment", id: "decision" };
 const languageRules: Part = { kind: "language-rules" };
 const projectRules: Part = { kind: "project-rules" };
+const verifierPolicy: Part = { kind: "verifier-policy" };
 
 export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
-  "bdk-implementer-return-contract": [
-    {
-      kind: "file",
-      path: "skills/bdk-implementer-return-contract/references/return-contract.md",
-      title: "Return contract",
-    },
-  ],
-  "bdk-lint-tools": [tools("lint")],
-  "bdk-rules-architecture": [rules("architecture")],
-  "bdk-rules-code-quality": [rules("code-quality")],
-  "bdk-rules-design-patterns": [rules("design-patterns")],
-  "bdk-rules-languages": [languageRules],
-  "bdk-rules-security": [rules("security")],
-  "bdk-test-tools": [tools("test")],
   // A stage skill that needs no settings keeps its context lines for the
   // `BDK STOP` line when the kernel is unavailable.
   change: [],
   close: [],
-  cr: [
-    { kind: "file", path: "skills/cr/references/review-engine.md", title: "Review engine" },
-    { kind: "file", path: "skills/cr/references/report-format.md", title: "Report format" },
-  ],
+  cr: [verifierPolicy],
   "create-adr": [rules("architecture")],
   debug: [tools("test"), tools("lint")],
-  design: [rules("architecture"), rules("engineering-judgment"), projectRules, decision],
+  design: [
+    rules("architecture"),
+    rules("engineering-judgment"),
+    projectRules,
+    verifierPolicy,
+    decision,
+  ],
   execute: [{ kind: "concurrency" }, decision],
   plan: [
     rules("plan"),
@@ -57,13 +49,14 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
     rules("test-quality"),
     languageRules,
     projectRules,
+    verifierPolicy,
     decision,
   ],
   "pr-review": [
     {
       kind: "file",
-      path: "skills/pr-review/references/reviewer-prompt.md",
-      title: "Reviewer prompt",
+      path: "skills/tools/pr-review/references/comment-templates.md",
+      title: "Comment templates",
     },
   ],
   run: [],

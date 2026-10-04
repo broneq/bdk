@@ -422,6 +422,21 @@ describe("graph variants", () => {
     expect(planned.next?.id).toBe("plan-verify");
   });
 
+  it("review: intent, the full gate, review, its gate and close; next is the gate runner", () => {
+    const result = graph({ kind: "review" });
+    expect(present(result)).toStrictEqual([
+      "intent",
+      "tests-full",
+      "lint-full",
+      "review",
+      "gate:review",
+      "close",
+    ]);
+    expect(result.find("plan")?.why).toBe("Change kind review is not in kinds [feature, bug]");
+    expect(result.find("review")?.requires).toStrictEqual(["tests-full", "lint-full"]);
+    expect(result.next).toMatchObject({ id: "tests-full", stage: "review" });
+  });
+
   it("spec-delta only when a plan part has spec-impact", () => {
     expect(state(graph({}), "spec-delta")).toBe("skipped");
     const withImpact = graph({

@@ -55,7 +55,7 @@ Write the artifact `next` names, at its paths and with exactly the frontmatter f
 
 ## Verify, then review with the user
 
-When `next` names `design-verify`, run `/bdk:verify-design` and act on its verdict before showing the user anything:
+When `next` names `design-verify`, first check the draft yourself against "Blocking categories (P8)" in the BDK context above: correct in the design what would fail a blocking category, and leave alone what the "Not a fail" list names. This check writes no entry and no file of its own, so the verifier still reads the design with fresh eyes. Then run `/bdk:verify-design` and act on its verdict before showing the user anything:
 
 - **`false-code-claim` blockers**: correct the claim to what the code holds, without asking, then `bdk log resolve <id> resolved --reason "<what changed>"`. A correction that would change a recorded decision is not a fact fix; it goes to the user with the other blockers.
 - **Blockers of any other category**: ask the user one question listing every blocker with your proposed fix; write the answers, resolve the blockers the same way, and record any new decision.

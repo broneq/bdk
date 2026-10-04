@@ -12,21 +12,26 @@ import {
   untrackedFiles,
 } from "../git/index.ts";
 import type { Git } from "../git/index.ts";
+import { readDocument } from "./state/documents.ts";
 import type { Store } from "./store.ts";
 
 /** The id git gives the empty tree, the base of a Change its repository's root commit opened. */
 export const EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 /**
- * The parent of the first commit that added the Change's `change.md`, `HEAD`
- * while it is not committed, and the empty tree when that commit is the root
- * or the repository has none.
+ * The `base` a review Change stamps in its `change.md`; else the parent of the
+ * first commit that added `change.md`, `HEAD` while it is not committed, and
+ * the empty tree when that commit is the root or the repository has none.
  */
 export async function changeBase(
+  store: Store,
   git: Git,
   projectRoot: string,
   changeDir: string,
 ): Promise<string> {
+  const document = readDocument(store, join(changeDir, "change.md"));
+  const stamped = document !== undefined && "data" in document ? document.data.base : undefined;
+  if (typeof stamped === "string") return stamped;
   const path = relative(projectRoot, join(changeDir, "change.md")).split(sep).join("/");
   const added = await addingCommit(git, projectRoot, path);
   if (added === undefined) return (await headCommit(git, projectRoot)) ?? EMPTY_TREE;

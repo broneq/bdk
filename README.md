@@ -149,14 +149,14 @@ Invoke with `/bdk:<skill-name>`:
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/bdk:setup`                   | Prepare a project for BDK: `.bdk/settings.yaml` with its test, lint and build commands, Lavish, hand-written rules, migration from BDK 2. Run once per project or after cloning                                                                                                                       |
 | `/bdk:change`                  | Open a Change from an intent (asks whether to create a `feat/` or `fix/` branch or stay on the current one), or show, list, resume, park or take over one, and name the command to type next                                                                                                          |
-| `/bdk:cr`                      | Dynamic code review (3-13 parallel agents based on change size). Reviews the delta since the last review by default; `--full` reviews the whole branch; `--inline` runs every cohort in-session with no subagents; `--base <ref>` reviews against an explicit base (stacked branches)                 |
-| `/bdk:pr-review`               | Review GitHub PRs from URLs: one subagent per PR running `/bdk:cr --inline`, templated inline comments + summary on GitHub, approve / request-changes verdict; stack-aware (diff vs stack parent); `--verify` checks whether previous review comments were implemented and resolves addressed threads |
+| `/bdk:cr`                      | Review the Change on the branch in rounds: a reviewer per group, an integration reviewer and a gate runner; triages every finding and fixes the blocking ones through implementer packages until none is left. Opens a review Change on a branch without one; `--full`, `--base <ref>`, `--inline`    |
+| `/bdk:pr-review`               | Review GitHub PRs from URLs through the stateless `pr-reviewer` role, against the PR's intent and its BDK Change when it has one; you confirm each verdict before one templated review per PR posts; stack-aware; `--verify` checks the previous review's blocker threads and resolves the fixed ones |
 | `/bdk:commit`                  | Generate conventional commit message from git changes                                                                                                                                                                                                                                                 |
 | `/bdk:plan`                    | Plan the active Change as plan parts of task contracts with concrete test cases, verify and correct them, and report the waves; `--review` asks for your acceptance first                                                                                                                             |
 | `/bdk:verify-plan`             | Verify the plan of the active Change against the code and the design on a fresh context; a passing verdict marks `plan-verify` done                                                                                                                                                                   |
 | `/bdk:execute`                 | Build the verified plan of the active Change through role agents: every ready part in one run, flat or with one lead per part, one commit per task; ends naming `/bdk:cr`                                                                                                                             |
 | `/bdk:close`                   | Close the reviewed Change: merge its spec deltas, archive it in one commit, regenerate drifted rule files, and report the PR summary; it opens no PR                                                                                                                                                  |
-| `/bdk:run`                     | Carry a Change through the stages for you: opens it from an intent, then design, plan and execute, stops at the review stage, closes after review; asks nothing and records each choice for the next gate; `--auto` passes every ready gate                                                           |
+| `/bdk:run`                     | Carry a Change through the stages for you: opens it from an intent, then design, plan, execute, review and close; asks nothing and records each choice for the next gate; `--auto` passes every ready gate                                                                                            |
 | `/bdk:debug`                   | Structured debugging: investigate → failing tests → fix or plan                                                                                                                                                                                                                                       |
 | `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                                                                                                                                                                                                                          |
 | `/bdk:design`                  | Design the active Change with you: grounds in the code, 2+ approaches with Mermaid and self-critique, writes the design files the kernel names, records decisions in the ledger, verifies and ends at the design gate                                                                                 |
@@ -181,6 +181,17 @@ Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which se
 | `/bdk:audit-prompt`                               | Nothing                                                                                                                                                                                             |
 | `/bdk:graphviz-docs-compiler`                     | Nothing to invoke. Mermaid diagrams render natively wherever the doc is viewed - `/bdk:explain-complex-code`, `/bdk:update-docs`, and `/bdk:create-adr` now embed Mermaid directly, no compile step |
 
+BDK 3 also removed the internal skills and agents its role skills replace:
+
+| Removed                                                                                                        | Use instead                                                                                                               |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| The `bdk-*` meta-skills (`bdk-rules-*`, `bdk-lint-tools`, `bdk-test-tools`, `bdk-implementer-return-contract`) | Nothing to invoke. A role agent reads its rules with `bdk rules show --ticket` and its commands from its dispatch package |
+| Agents `implementer`, `fixer`                                                                                  | `worker` running the `implementer` role                                                                                   |
+| Agents `plan-verifier`, `design-verifier`                                                                      | `reader` running the `verifier` and `design-verifier` roles                                                               |
+| Agents `code-reviewer`, `architecture-reviewer`, `dead-code-detector`, `duplicate-detector`                    | `reviewer` and the Opus `integration-reviewer` of `/bdk:cr`                                                               |
+| Agents `test-runner`, `static-analyse`                                                                         | `runner`                                                                                                                  |
+| Agents `explorer`, `log-analyzer`                                                                              | `scout`                                                                                                                   |
+
 ---
 
 ## The plan pipeline
@@ -191,7 +202,7 @@ In BDK 3 every stage works on the active Change in `.bdk/changes/<changeId>/`, a
 /bdk:change  →  /bdk:design  →  /bdk:plan  →  /bdk:execute  →  /bdk:cr  →  /bdk:close
 ```
 
-`/bdk:design` writes the design and ends at the design gate; `/bdk:plan` writes the plan parts (`plan/parts/`) and verifies them with `/bdk:verify-plan`; `/bdk:execute` builds every ready part through role agents, flat or with one lead per part, and ends naming `/bdk:cr`. `/bdk:close` merges the spec deltas, archives the Change and hands you the PR summary. You type each stage command, so every stage starts from your decision, or let `/bdk:run "<intent>"` type them for you: it stops at every `manual` gate (the default for the design and review gates) and names the command you type, and with `--auto` it passes those gates too, recording that it did. Until review joins the run, it also stops at the review stage for you to type `/bdk:cr`. The BDK 2 skills `/bdk:create-plan` and `/bdk:subagent-execute-plan` are gone.
+`/bdk:design` writes the design and ends at the design gate; `/bdk:plan` writes the plan parts (`plan/parts/`) and verifies them with `/bdk:verify-plan`; `/bdk:execute` builds every ready part through role agents, flat or with one lead per part, and ends naming `/bdk:cr`. `/bdk:close` merges the spec deltas, archives the Change and hands you the PR summary. You type each stage command, so every stage starts from your decision, or let `/bdk:run "<intent>"` type them for you: it stops at every `manual` gate (the default for the design and review gates) and names the command you type, and with `--auto` it passes those gates too, recording that it did. The BDK 2 skills `/bdk:create-plan` and `/bdk:subagent-execute-plan` are gone.
 
 The seams are files, not conversation state, so any stage can run in a fresh session:
 
@@ -216,34 +227,22 @@ Merge them the way you merge any two branches.
 
 ## Agents
 
-Used by skills internally (invoke via `subagent_type`):
+Six adapters, generated by `bdk export agents --host claude` and started with a dispatch package by the stage skills, `/bdk:cr` and the `swarm` skill; the role itself lives in a role skill under `skills/roles/`. They are not for general tasks. A `lead` runs one plan part and starts its part's role agents; a `worker` may start a `scout`. Every agent is recorded in the agent registry, which `bdk agents list|show|wait` reads:
 
-| Agent                   | Model  | Purpose                                                                                                                                                                                    |
-| ----------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `code-reviewer`         | sonnet | Layer-group deep code review                                                                                                                                                               |
-| `implementer`           | sonnet | End-to-end task implementation (TDD, lint, commit); BDK 2 agent, no BDK 3 skill starts it                                                                                                  |
-| `fixer`                 | sonnet | Apply specific findings (review, lint, test failures); BDK 2 agent, no BDK 3 skill starts it                                                                                               |
-| `explorer`              | haiku  | Fast read-only codebase exploration with the built-in tools                                                                                                                                |
-| `test-runner`           | haiku  | Run tests, parse and report results                                                                                                                                                        |
-| `dead-code-detector`    | haiku  | Find unreachable/unused code                                                                                                                                                               |
-| `duplicate-detector`    | haiku  | Find code duplication                                                                                                                                                                      |
-| `architecture-reviewer` | opus   | Audit against architectural rules                                                                                                                                                          |
-| `static-analyse`        | haiku  | Detect and run project lint/format/type-check                                                                                                                                              |
-| `plan-verifier`         | opus   | One-pass plan verification — six-section structured checklist, resumable via `SendMessage` for delta iteration. BDK 2 agent; no BDK 3 skill starts it                                      |
-| `design-verifier`       | opus   | One-pass design verification — five-section checklist with gap-type routing (codebase / requirement / shape / honesty), resumable via `SendMessage`. BDK 2 agent; no BDK 3 skill starts it |
-| `log-analyzer`          | haiku  | Parse and summarize error logs                                                                                                                                                             |
-| `web-researcher`        | haiku  | Search web for solutions and docs                                                                                                                                                          |
+| Adapter    | Model  | Roles                                                 |
+| ---------- | ------ | ----------------------------------------------------- |
+| `lead`     | sonnet | `lead`                                                |
+| `worker`   | sonnet | `implementer`, `simplifier`                           |
+| `reader`   | opus   | `verifier`, `design-verifier`, `integration-reviewer` |
+| `reviewer` | sonnet | `reviewer`, `pr-reviewer`                             |
+| `runner`   | haiku  | `runner`                                              |
+| `scout`    | haiku  | `scout`                                               |
 
-v3 adapters, generated by `bdk export agents --host claude` and started by the role skills under `skills/roles/` (`implementer`, `simplifier`, `verifier`, `design-verifier`, `reviewer`, `pr-reviewer`, `runner`, `scout`, `lead`), not for general tasks. A `lead` runs one plan part and starts its part's role agents; a `worker` may start a `scout`. Every agent is recorded in the agent registry, which `bdk agents list|show|wait` reads:
+One more agent is for any session:
 
-| Adapter    | Model  | Roles                         |
-| ---------- | ------ | ----------------------------- |
-| `lead`     | sonnet | `lead`                        |
-| `worker`   | sonnet | `implementer`, `simplifier`   |
-| `reader`   | opus   | `verifier`, `design-verifier` |
-| `reviewer` | sonnet | `reviewer`, `pr-reviewer`     |
-| `runner`   | haiku  | `runner`                      |
-| `scout`    | haiku  | `scout`                       |
+| Agent            | Model | Purpose                               |
+| ---------------- | ----- | ------------------------------------- |
+| `web-researcher` | haiku | Search the web for solutions and docs |
 
 ---
 

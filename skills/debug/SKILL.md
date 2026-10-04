@@ -168,9 +168,9 @@ Project tools context: the `Project commands: test` and `Project commands: lint`
 1. Apply minimal fix
 2. Re-run the same scoped command from Phase 3 via `Bash` — only the tests you wrote
 3. Confirm those tests GREEN
-4. Delegate to `static-analyse`, passing **the files you changed** — it resolves the scoped lint/format and incremental typecheck forms itself. Do not ask for a project-wide sweep
+4. Run the scoped lint/format and incremental typecheck forms of the `Project commands: lint` entries via `Bash`, over **the files you changed**. Never a project-wide sweep
 5. Fix any issues
-6. Regression check: delegate to `bdk:test-runner` with the changed source files, asking for the fast tier's `related`/`scoped` form. This is the one dispatch worth its spawn here — the output is large and the mapping from changed files to affected tests is exactly what the runner computes for you. Add an e2e tier only if the fix touched e2e specs or changed a public contract
+6. Regression check: run the fast tier's `related`/`scoped` form of the `Project commands: test` entries via `Bash` over the changed source files, so the runner maps them to the affected tests. Add an e2e tier only if the fix touched e2e specs or changed a public contract
 7. Print final summary:
    ```
    [debug] Done.

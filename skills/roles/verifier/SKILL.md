@@ -29,24 +29,24 @@ For each task, check:
 1. Every function, field and file it relies on exists as stated.
 2. Two or three inputs traced through the change reach what the next step reads.
 3. Edge cases the intent or design implies that the task left open.
-4. Callers of a changed symbol that would behave differently. If users would see the change and no task or `decision` covers it, raise an `unresolved-decision` blocker.
+4. Callers of a changed symbol that would behave differently. If users would see the change and no task or `decision` covers it, it is an `unresolved-decision` blocker.
 5. Files used but not in `Files:`; undeclared task dependencies.
 
 Across the plan, check:
 
-- **Test cases.** Each case names an input and its expected observable result; each stated behaviour has one. An edge case outside the intent and design is a finding. A behaviour without a case is a blocker of category `unresolved-decision`.
-- **Design coverage.** Every requirement, decision and failure path of the design and the accepted `decision` entries has a task; a missing one is a blocker of category `unresolved-decision`.
+- **Test cases.** Each case names an input and its expected observable result. An edge case outside the intent and design is a finding. A behaviour without a case is an `unresolved-decision` blocker.
+- **Design coverage.** Every requirement, decision and failure path of the design and the accepted `decision` entries has a task; a missing one is an `unresolved-decision` blocker.
 - **Between parts.** A part using another part's output names it in `depends-on`; independent parts do not modify one file; callers use a changed signature in its new form.
 - **No implementation code.** A function body in a task's code block is a finding.
 
 - Raise a `blocker` only with a category from the package's blocking categories (`--category <id>`); the kernel downgrades any other.
 - Anything on the package's "not a FAIL" list is an `observation` or nothing.
 - Every other problem is a `finding` naming the file and line.
-- Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on is never yours.
+- Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. You never move the Change on.
 
 ## Ledger
 
-Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`.
+Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
 
 When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-CQ-4`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
 

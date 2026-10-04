@@ -34,7 +34,7 @@ Log each problem as a `finding` with the file and line and a severity; when it b
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>@<group>`.
+Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>@<group>`; summary at most 120 characters, details via `--body -`.
 
 When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-ARCH-2`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
 

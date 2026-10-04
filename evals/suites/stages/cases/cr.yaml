@@ -1,0 +1,73 @@
+# Cases of /bdk:cr (spec skill-evals, Review stage cases). Every case starts
+# from a fresh copy of the pinned fixture on its branch feat/eval with Lavish
+# off. The gate runner runs the fixture's vitest and eslint on the whole
+# Change; a round's merged report is a `report` entry of the group `merge`
+# that refs `review`.
+#
+# happy: the executed tiny Change passes its review in one round.
+- id: happy
+  command: /bdk:cr
+  seed: executed
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npx vitest run}' >/dev/null
+    - |-
+      node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: explain review
+      json:
+        state: done
+    - run: log list --type report --for review
+      json:
+        items.0.group: merge
+
+# blocker: the task names the export APP_NAME and the delivery exports
+# APP_TITLE. The reviewers flag src/app-name.ts, the coordinator triages it
+# `blocker`, a review-fix round fixes it and resolves that entry, and the
+# review passes.
+- id: blocker
+  command: /bdk:cr
+  seed: executed-blocker
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npx vitest run}' >/dev/null
+    - |-
+      node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: explain review
+      json:
+        state: done
+    - run: log list --status resolved --for src/app-name.ts
+      json:
+        items.*.level: blocker
+    - run: log list --type report --for review
+      json:
+        items.0.group: merge
+
+# not-executed: both parts of the Change are planned and none is built, so
+# `attempt open review-fix` refuses: no ticket beyond the seed's two verifier
+# rounds, and the reply names /bdk:execute.
+- id: not-executed
+  command: /bdk:cr
+  seed: two-independent-parts
+  prepare:
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: attempt list
+      json:
+        items.length: 2
+    - run: explain review
+      json:
+        state: blocked
+    - reply: /bdk:execute

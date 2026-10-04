@@ -40,11 +40,11 @@ import {
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
-import { ROLES } from "../../shared/vocabulary/index.ts";
+import { isBlocking, ROLES } from "../../shared/vocabulary/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import { risksModule } from "../config.ts";
 import { checksText, fullChecksText } from "../domain/checks.ts";
-import { selectEntries, taskText } from "../domain/entries.ts";
+import { fileRefs, selectEntries, taskText } from "../domain/entries.ts";
 import type { BuildReport } from "../domain/report.ts";
 import { groupFlagProblem, reviewText, risksText } from "../domain/review.ts";
 import type { GroupFlags } from "../domain/review.ts";
@@ -201,7 +201,15 @@ export function buildPackage(
       ...(role === "integration-reviewer" ? (["risks"] as const) : []),
     ];
     const roleBody = readRoleBody(deps, role);
-    const selection = selectEntries(listEntries(index, change.id), target.names);
+    // A review fix carries the round's blockers whatever their refs (T42-D3).
+    const reviewFix =
+      role === "implementer" && record.data.loop === "review-fix" && group === undefined;
+    const selection = selectEntries(
+      listEntries(index, change.id),
+      target.names,
+      reviewFix ? (entry) => isBlocking(entry, "review", { triaged: true }) : undefined,
+    );
+    const fixFiles = reviewFix ? fileRefs(selection.full) : [];
     const sections = renderSections(
       {
         ticket: input.ticket,
@@ -232,7 +240,11 @@ export function buildPackage(
         resolved,
       ),
       role,
-      group === undefined ? target.files : groupFiles(input.files, parts, input.part),
+      group !== undefined
+        ? groupFiles(input.files, parts, input.part)
+        : fixFiles.length > 0
+          ? fixFiles
+          : target.files,
     );
     const templateHash = hashOf([
       templateSkeleton(),

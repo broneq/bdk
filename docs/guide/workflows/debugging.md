@@ -81,9 +81,9 @@ structural cause, and the cheapest moment to notice is before the first edit.
 ### Phase 5a - Fix inline
 
 Applies the minimal fix, re-runs the same scoped command from Phase 3 to confirm those
-tests are GREEN, delegates lint and incremental typecheck to `bdk:static-analyse` with the
-changed files (not a project-wide sweep), then runs one regression dispatch to
-`bdk:test-runner` for the fast tier's `related`/`scoped` form over the changed source.
+tests are GREEN, runs the scoped lint and incremental typecheck forms over the changed files (not a
+project-wide sweep), then runs the fast tier's `related`/`scoped` form over the changed
+source as the regression check.
 An e2e tier is added only if the fix touched e2e specs or changed a public contract.
 
 ```

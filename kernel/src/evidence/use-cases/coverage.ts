@@ -81,7 +81,7 @@ export async function recordCoverage(
     ]);
   }
 
-  const base = await changeBase(deps.git, change.projectRoot, change.dir);
+  const base = await changeBase(deps.store, deps.git, change.projectRoot, change.dir);
   const policy = filePolicy(resolved.value);
   // The report is written by the run it measures, so it is never a changed file of its own.
   const reportFile = relative(change.projectRoot, reportPath).split(sep).join("/");

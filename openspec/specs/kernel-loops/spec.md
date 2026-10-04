@@ -44,13 +44,14 @@ The kernel SHALL walk every loop through narrowed attempts, one optional escalat
 | Outcome and state                                                                                                           | `next.action`                                           |
 | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `ok` of a `part-lead` ticket                                                                                                | `part-done`                                             |
+| `ok` of a `review-fix` ticket                                                                                               | `review-done`                                           |
 | `ok` of any other ticket                                                                                                    | `commit`                                                |
 | `not-run`, `not-run` budget left                                                                                            | `retry` (same scope)                                    |
 | `fail`, budget left, no oscillation                                                                                         | `narrow` with the next scope                            |
 | `fail` with budget used up or oscillation, escalation available                                                             | `escalate`                                              |
 | `fail` of the escalation ticket, or budget used up or oscillation with no escalation available, or `not-run` budget used up | `parked` with the question entry and the resume command |
 
-An `ok` close has already run the post-task steps under its ticket (`kernel-cli/attempt`, `attempt close`; T23-D41), so the orchestrator commits the task next. A `part-lead` ticket is the lead of one plan part (T41-D11): its lead opens, dispatches, closes and commits the part's task tickets itself, so its `ok` close requires every task ticket of the part to be closed (`policy/ticket-open` otherwise) and runs no post-task steps of its own, and the orchestrator runs `part done` next. A `fail` or `not-run` of a `part-lead` ticket walks the same ladder; the next lead of the part finds the committed tasks through their trailers and continues with the rest.
+An `ok` close has already run the post-task steps under its ticket (`kernel-cli/attempt`, `attempt close`; T23-D41), so the orchestrator commits the task next. A `part-lead` ticket is the lead of one plan part (T41-D11): its lead opens, dispatches, closes and commits the part's task tickets itself, so its `ok` close requires every task ticket of the part to be closed (`policy/ticket-open` otherwise) and runs no post-task steps of its own, and the orchestrator runs `part done` next. A `review-fix` ticket is one review round of the Change (T42): its `ok` close requires the round's merged report (`policy/missing-report` otherwise; a `fail` close needs it too) and means no blocking entry is left, so the orchestrator runs `done review` next; its fixes were committed under the ticket while it was open. A `fail` or `not-run` of a `part-lead` ticket walks the same ladder; the next lead of the part finds the committed tasks through their trailers and continues with the rest.
 
 Escalation is available when `policy.escalation.enabled` is true, the round has no escalation ticket and the Change has fewer than `policy.escalation.per-change` escalation tickets. A plain `attempt open` refuses with `policy/budget-exhausted` when the round's budget is used up and with `policy/oscillation` when the round oscillates; `instead` names `attempt open <loop> <target> --escalate` when escalation is available and `change resume` when the Change is parked. The escalation ticket's agents run on its `model` (`kernel-cli/dispatch`, bdk dispatch build), not on their adapter's tier: the escalation is a stronger model, not only one more attempt (T41-D14).
 
@@ -78,6 +79,11 @@ Escalation is available when `policy.escalation.enabled` is true, the round has 
 
 - **WHEN** every task ticket of part `02` is closed and the `part-lead` ticket of `02` closes `ok`
 - **THEN** `next.action` is `part-done`
+
+#### Scenario: review round closes to review-done
+
+- **WHEN** the merged report of a `review-fix` ticket is stored under `<ticket>@merge` and the ticket closes `ok`
+- **THEN** `next.action` is `review-done`
 
 #### Scenario: lead ticket with an open task ticket
 
@@ -129,7 +135,7 @@ Attempt 1 runs `full`, attempt 2 `high+` (blockers and findings of severity `cri
 
 The kernel SHALL compare the real working-tree diff with the plan at `attempt close` and `commit`, never with the envelope's file list (P6).
 
-The touched paths are the working tree's changes, untracked files included; a path whose whole change is staged is the user's (main-thread git, T3) and left out, so neither check nor commit sweeps it in; `.bdk/` is excluded, and `.gitignore` excluded while it differs from `HEAD` only by the lines of `kernel-state`, Ignored paths (the kernel's own edit at `change new`). For a task target the declared paths are the task's `Files:` and the forbidden globs the part's `do-not-touch`; for a part target the union of its tasks' `Files:` and its `do-not-touch`; for the Change target no declared paths and the `do-not-touch` of every started part; a `verifier` target is not checked. A touched path that the target does not declare and another task of a started part without a trailer commit does declare is that task's work in flight: parts run in parallel in one working tree, so it is neither checked against the forbidden globs nor reported, and `commit` leaves it to its task. Any other touched path matching a forbidden glob refuses with `policy/do-not-touch` naming the path and the glob. A touched path that is not declared by the target and not declared by another task of a started part without a trailer commit is undeclared: it is reported in `diff.undeclared` and recorded as one kernel `finding` naming the paths.
+The touched paths are the working tree's changes, untracked files included; a path whose whole change is staged is the user's (main-thread git, T3) and left out, so neither check nor commit sweeps it in; `.bdk/` is excluded, and `.gitignore` excluded while it differs from `HEAD` only by the lines of `kernel-state`, Ignored paths (the kernel's own edit at `change new`). For a task target the declared paths are the task's `Files:` and the forbidden globs the part's `do-not-touch`; for a part target the union of its tasks' `Files:` and its `do-not-touch`; for the Change target (a `review-fix` ticket) every touched path as declared and the `do-not-touch` of every started part, so nothing is reported undeclared, because a review fix may touch any path the review names (T42); a `verifier` target is not checked. A touched path that the target does not declare and another task of a started part without a trailer commit does declare is that task's work in flight: parts run in parallel in one working tree, so it is neither checked against the forbidden globs nor reported, and `commit` leaves it to its task. Any other touched path matching a forbidden glob refuses with `policy/do-not-touch` naming the path and the glob. A touched path that is not declared by the target and not declared by another task of a started part without a trailer commit is undeclared: it is reported in `diff.undeclared` and recorded as one kernel `finding` naming the paths.
 
 #### Scenario: do-not-touch at attempt close
 
@@ -151,11 +157,16 @@ The touched paths are the working tree's changes, untracked files included; a pa
 - **WHEN** parts `01` and `02` are started, part `01` declares `do-not-touch: [src/api/**]`, task `02-1` declares `src/api/http.ts` and has no trailer commit, and the working tree changes `src/ui/format.ts` of task `01-1` and `src/api/http.ts`
 - **THEN** `commit 01-1` exits 0 and commits `src/ui/format.ts` only, and `src/api/http.ts` stays in the working tree for `02-1`
 
+#### Scenario: review fix touches a file no task declares
+
+- **WHEN** a `review-fix` ticket of the Change is open and the working tree changes `src/util.ts`, which no task declares and no `do-not-touch` matches
+- **THEN** `attempt close` and `commit <change-id>` report no `diff.undeclared` and write no kernel `finding`
+
 ### Requirement: Progress from git
 
 The kernel SHALL derive task progress from commit trailers and attempt state from committed attempt records, so that a killed session loses at most the uncommitted records (V1-4, S5).
 
-A task is committed when a commit reachable from `HEAD` carries `BDK-Change: <change id>`, `BDK-Part: <part id>` and `BDK-Task: <task id>`. Trailers and records disagree (`state/trailer-mismatch`, naming both sides) when a `BDK-Task` names a task no part holds, when `BDK-Part` differs from the part holding the task, when a commit carries `BDK-Change` of the Change without the other two trailers, or when an attempt record's task target is held by no part.
+A task is committed when a commit reachable from `HEAD` carries `BDK-Change: <change id>`, `BDK-Part: <part id>` and `BDK-Task: <task id>`. A commit carrying `BDK-Change` and `BDK-Ticket` of a `review-fix` ticket of the Change is a review fix (`kernel-cli/commit`, bdk commit) and commits no task. Trailers and records disagree (`state/trailer-mismatch`, naming both sides) when a `BDK-Task` names a task no part holds, when `BDK-Part` differs from the part holding the task, when a commit carries `BDK-Change` of the Change without the other two trailers and without a `BDK-Ticket` naming a `review-fix` ticket of the Change, or when an attempt record's task target is held by no part.
 
 #### Scenario: killed session and rebuild
 
@@ -166,6 +177,11 @@ A task is committed when a commit reachable from `HEAD` carries `BDK-Change: <ch
 
 - **WHEN** a commit carries `BDK-Task: 02-9` and no part holds `02-9`
 - **THEN** `bdk rebuild` exits 4 with `rule: state/trailer-mismatch` naming the commit and the plan
+
+#### Scenario: review fix commit agrees with the records
+
+- **WHEN** the Change has a commit with trailers `BDK-Change` and `BDK-Ticket` naming its closed `review-fix` ticket, and `bdk rebuild` runs
+- **THEN** no `state/trailer-mismatch` is raised and no task counts as committed by that commit
 
 ### Requirement: Checkpoint
 

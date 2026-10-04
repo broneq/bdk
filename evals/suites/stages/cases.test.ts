@@ -145,4 +145,20 @@ describe("the case files", () => {
   it.each(["setup", "change"])("%s parses", (skill) => {
     expect(readCases(caseFile(skill)).length).toBeGreaterThanOrEqual(2);
   });
+
+  it("cr covers the happy path, a blocker and the refusal before execution", () => {
+    const cases = readCases(caseFile("cr"));
+    expect(cases.map((stage) => [stage.id, stage.seed])).toStrictEqual([
+      ["happy", "executed"],
+      ["blocker", "executed-blocker"],
+      ["not-executed", "two-independent-parts"],
+    ]);
+    expect(cases.every((stage) => stage.command === "/bdk:cr")).toBe(true);
+  });
+
+  it("run --auto crosses the review stage to an archived Change", () => {
+    const auto = readCases(caseFile("run")).find((stage) => stage.id === "run-auto");
+    expect(auto?.command).toMatch(/^\/bdk:run --auto /);
+    expect(auto?.expect).toContainEqual({ reply: "gate:review" });
+  });
 });

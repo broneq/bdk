@@ -90,4 +90,4 @@ Report to the user in a few lines, from kernel output only:
 - the tasks committed in this run;
 - the open `blocker` and `finding` entries of the Change (`bdk log list --type blocker --json`, `bdk log list --type finding --json`);
 - the pending `review: true` entries, from `bdk change status --json`;
-- the next command: `/bdk:cr` when the review stage is next, which the user types, or the question and the `bdk change resume` command of a parked Change.
+- the next command: `/bdk:cr` when the review stage is next, or the question and the `bdk change resume` command of a parked Change.

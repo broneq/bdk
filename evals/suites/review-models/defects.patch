@@ -1,0 +1,80 @@
+diff --git a/src/api/http.test.ts b/src/api/http.test.ts
+index 71aca82..04a22dc 100644
+--- a/src/api/http.test.ts
++++ b/src/api/http.test.ts
+@@ -76,14 +76,6 @@ describe('parseApiProblem', () => {
+     ).resolves.toBeUndefined()
+   })
+ 
+-  it('returns a body with a title and a status as problem details', async () => {
+-    const problem = { title: 'Bad Gateway', status: 502 }
+-
+-    await expect(parseApiProblem(jsonResponse(problem))).resolves.toEqual(
+-      problem,
+-    )
+-  })
+-
+   it('ignores a body whose content type is not JSON', async () => {
+     await expect(
+       parseApiProblem(jsonResponse({ title: 'Bad Gateway' }, 'text/plain')),
+diff --git a/src/api/http.ts b/src/api/http.ts
+index b7edf1e..f8b911b 100644
+--- a/src/api/http.ts
++++ b/src/api/http.ts
+@@ -145,7 +145,7 @@ export async function parseApiProblem(
+ // A gateway in front of the backend answers some 5xx with its own JSON; only
+ // a body with a problem-details field counts as the backend's problem.
+ function isProblemDetails(body: unknown): body is ApiProblemResponse {
+-  if (typeof body !== 'object' || body === null) {
++  if (typeof body !== 'object') {
+     return false
+   }
+ 
+diff --git a/src/ui/asyncState.test.ts b/src/ui/asyncState.test.ts
+index 3c94ecf..cf19c64 100644
+--- a/src/ui/asyncState.test.ts
++++ b/src/ui/asyncState.test.ts
+@@ -22,18 +22,6 @@ describe('createLoadError', () => {
+     expect(createLoadError(error, 'Load failed').message).toBe('Not allowed')
+   })
+ 
+-  it('keeps the message of a problem with a blank title', () => {
+-    const error = new ApiRequestError('GET', '/api/books', 403, 'Forbidden', {
+-      title: '  ',
+-      status: 403,
+-      message: 'You may not list books.',
+-    })
+-
+-    expect(createLoadError(error, 'Load failed').message).toBe(
+-      'You may not list books.',
+-    )
+-  })
+-
+   it('keeps the message of an API error without a problem', () => {
+     const error = new ApiRequestError('GET', '/api/books', 404, 'Not Found')
+ 
+diff --git a/src/ui/asyncState.ts b/src/ui/asyncState.ts
+index 0278679..a4c052d 100644
+--- a/src/ui/asyncState.ts
++++ b/src/ui/asyncState.ts
+@@ -39,13 +39,16 @@ export function createLoadError(
+ }
+ 
+ // A problem's title is the backend's short, localized statement of what
+-// failed; without a title that says something the error's message stays.
++// failed. A 5xx never reaches here with problem details: http.ts classifies
++// it as backend-unavailable, so only a 4xx title is shown.
+ function getLoadMessage(error: unknown, fallback: string) {
+   const title =
+-    error instanceof ApiRequestError ? error.problem?.title?.trim() : undefined
++    error instanceof ApiRequestError && error.status < 500
++      ? error.problem?.title
++      : undefined
+ 
+-  if (title) {
+-    return title
++  if (title !== undefined) {
++    return title.trim()
+   }
+ 
+   return getDisplayMessage(error, fallback)

@@ -2,7 +2,8 @@
 // design D-3, D-4, D-9; T23-D41): the diff check, the envelope's entries,
 // the post-task step evidence of an `ok` code ticket, the fingerprints of a
 // `fail`, then the record is closed in place and the next rung returned. At the end of the ladder the kernel writes the ladder
-// question, which parks the Change, and runs the checkpoint.
+// question, which parks the Change, and runs the checkpoint. A `review-fix` round closes
+// `ok` or `fail` only once its merged review is stored (T42).
 import { isAbsolute, join } from "node:path";
 
 import {
@@ -13,7 +14,7 @@ import {
   refLocation,
   roundState,
 } from "../domain/ladder.ts";
-import type { Next, Outcome } from "../domain/ladder.ts";
+import type { Next, OkAction, Outcome } from "../domain/ladder.ts";
 import type { AttemptCloseReport, DiffReport } from "../domain/reports.ts";
 import { closeEvidence } from "../../evidence/index.ts";
 import { targetSteps } from "../../graph/index.ts";
@@ -29,6 +30,7 @@ import {
   checkpointChange,
   findingFingerprint,
   listEntries,
+  mergeReportName,
   readDocument,
   readPlanParts,
   taskHolders,
@@ -117,6 +119,11 @@ export function closeAttempt(
       if (missing !== undefined) return missing;
     }
 
+    if (outcome !== "not-run" && record.loop === "review-fix") {
+      const unmerged = missingMerge(deps, change, record);
+      if (unmerged !== undefined) return unmerged;
+    }
+
     if (outcome === "ok" && record.loop === "part-lead") {
       const open = records.find(
         (found) =>
@@ -168,7 +175,7 @@ export function closeAttempt(
       state,
       policy,
       blocked,
-      record.loop === "part-lead",
+      okAction(record),
     );
     const next =
       rung.action === "parked"
@@ -214,6 +221,35 @@ async function stepEvidence(
     steps: steps.steps,
     notRunBudget: ladderPolicy(resolved.value, record.loop).notRunBudget,
   });
+}
+
+/** What remains after an `ok` close: the task's commit, the lead's `part done`, the round's `done review`. */
+function okAction(record: KeyedRecord): OkAction {
+  if (record.loop === "part-lead") return "part-done";
+  return record.loop === "review-fix" ? "review-done" : "commit";
+}
+
+/**
+ * A review round is judged by its merged review (T42-B1): closed without it,
+ * the round's triage would reach no report, and the closed ticket refuses the
+ * merge afterwards. A `not-run` round reviewed nothing and needs none.
+ */
+function missingMerge(
+  deps: AttemptDeps,
+  change: ActiveChange,
+  record: KeyedRecord,
+): Refusal | undefined {
+  const report = join(change.dir, "reports", mergeReportName(record.target, record.ticket));
+  if (deps.store.read(report) !== undefined) return undefined;
+  return refuse(
+    "policy/missing-report",
+    `${record.ticket} has no merged review; a review round closes ok or fail after it`,
+    [
+      `bdk log ingest --ticket ${record.ticket}@merge`,
+      `bdk log add report "<counts per level>" --ticket ${record.ticket}@merge`,
+      `bdk attempt close ${record.ticket} not-run --reason "<why the round reviewed nothing>"`,
+    ],
+  );
 }
 
 function diffTarget(record: KeyedRecord): DiffTarget {

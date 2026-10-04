@@ -223,6 +223,23 @@ describe("log ingest under a group reference", () => {
       group: "merge",
     });
   });
+
+  it("refuses a merged review naming an entry of no round, and says where it belongs", async () => {
+    const h = harness();
+    const earlier = await h.run([
+      "log",
+      "add",
+      "finding",
+      "an earlier round's blocker",
+      "--ref",
+      "review",
+    ]);
+    expect(earlier.code, earlier.stdout).toBe(0);
+    const id = (earlier.json as { entry: { id: string } }).entry.id;
+    const result = await h.ingest(`${ROUND}@merge`, [id]);
+    expect(rule(result)).toBe("policy/entries-missing");
+    expect((result.json as { instead: string[] }).instead[0]).toContain("report body");
+  });
 });
 
 describe("log add report under merge", () => {

@@ -178,7 +178,12 @@ function missingIds(
   return refuse(
     "policy/entries-missing",
     `the envelope lists ${missing.join(", ")}, which ${missing.length === 1 ? "is" : "are"} not recorded under ${ticket}`,
-    [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`],
+    ref.group === MERGE_GROUP
+      ? [
+          `list in entries only the entries written under ${ref.ticket}; name entries of earlier rounds in the report body`,
+          `bdk log list --since-ticket-start ${ref.ticket} --json: the items whose ticket is ${ref.ticket}`,
+        ]
+      : [`bdk log list`, `bdk log add <type> <summary> --ref <ref> --ticket ${ticket}`],
   );
 }
 

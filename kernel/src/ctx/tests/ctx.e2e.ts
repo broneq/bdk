@@ -56,6 +56,7 @@ describe("bdk ctx skill", () => {
       parts: [
         { kind: "rules", source: "rules/architecture" },
         { kind: "rules", source: "rules/engineering-judgment" },
+        { kind: "verifier-policy", source: "policy.verifier" },
         { kind: "fragment", source: "fragments/decision/ask-user" },
       ],
     });

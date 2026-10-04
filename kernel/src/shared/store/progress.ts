@@ -1,6 +1,7 @@
 // Task progress from git (`kernel-loops`, Progress from git): a task is
 // committed when a commit reachable from `HEAD` carries the three BDK
-// trailers. Trailers that disagree with the plan or the attempt records are
+// trailers; `BDK-Change` with the `BDK-Ticket` of a `review-fix` ticket is a
+// review fix and commits no task (T42). Trailers that disagree with the plan or the attempt records are
 // reported naming both sides, never repaired.
 import type { Git, TrailerCommit } from "../git/index.ts";
 import { trailerCommits } from "../git/index.ts";
@@ -25,10 +26,21 @@ export async function taskProgress(
 ): Promise<TaskProgress> {
   const commits = await trailerCommits(git, workTree, change);
   const holders = taskHolders(parts);
+  const reviewFixes = new Set(
+    attempts.filter(({ data }) => data.loop === "review-fix").map(({ data }) => data.ticket),
+  );
   const committed = new Map<string, string>();
   const mismatches: string[] = [];
   for (const commit of commits) {
     const short = commit.commit.slice(0, 7);
+    if (commit.part === undefined && commit.task === undefined && commit.ticket !== undefined) {
+      if (!reviewFixes.has(commit.ticket)) {
+        mismatches.push(
+          `commit ${short} carries BDK-Ticket: ${commit.ticket}, but no review-fix ticket of ${change} is ${commit.ticket}`,
+        );
+      }
+      continue;
+    }
     if (commit.part === undefined || commit.task === undefined) {
       const missing = [
         commit.part === undefined ? "BDK-Part" : "",

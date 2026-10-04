@@ -40,6 +40,8 @@ export interface ViewFixture {
   readonly coverageTools?: readonly string[];
   /** Ticket -> its loop. */
   readonly loops?: Readonly<Record<string, string>>;
+  /** Ticket -> the outcome it closed with; a ticket of `loops` missing here closed `ok`. */
+  readonly outcomes?: Readonly<Record<string, string | undefined>>;
   /** Capability -> the problems of its delta; a delta file without an item has none. */
   readonly specProblems?: Readonly<Record<string, readonly string[]>>;
 }
@@ -89,6 +91,12 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
     changeTree: () => fixture.changeTree,
     coverageTools: fixture.coverageTools ?? [],
     ticketLoop: (ticket) => fixture.loops?.[ticket],
+    ticketOutcome: (ticket) =>
+      fixture.outcomes !== undefined && ticket in fixture.outcomes
+        ? fixture.outcomes[ticket]
+        : fixture.loops?.[ticket] === undefined
+          ? undefined
+          : "ok",
     planPart: (path) => {
       if (files[path] === undefined) return undefined;
       const nn = /(\d{2})-[^/]*\.md$/.exec(path)?.[1] ?? "01";

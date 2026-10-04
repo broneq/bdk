@@ -5,6 +5,8 @@ import { capLines, listPage } from "../../shared/output/index.ts";
 import { isRefusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange, FlagValue, Handler } from "../../shared/registry/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
+import { CHANGE_KINDS } from "../../shared/vocabulary/index.ts";
+import type { ChangeKind } from "../../shared/vocabulary/index.ts";
 import {
   renderCheckpoint,
   renderClose,
@@ -34,6 +36,11 @@ function values(value: FlagValue | undefined): string[] {
   return typeof value === "string" ? [value] : [...value];
 }
 
+/** The registry checks the value against the record's `--kind` values; feature by default. */
+function kindOf(value: FlagValue | undefined): ChangeKind {
+  return CHANGE_KINDS.find((kind) => kind === value) ?? "feature";
+}
+
 /** The registry sets `change` for every Change-scoped record before the handler runs. */
 function active(change: ActiveChange | undefined): ActiveChange {
   if (change === undefined) throw new Error("this change command is Change-scoped");
@@ -47,7 +54,8 @@ export function newCommand(deps: ChangeDeps): Handler {
       { cwd: context.cwd, workTree: context.workTree ?? context.cwd, environment: context.runtime },
       {
         intent: context.positionals["<intent>"] ?? "",
-        kind: context.flags["--kind"] === "bug" ? "bug" : "feature",
+        kind: kindOf(context.flags["--kind"]),
+        base: text(context.flags["--base"]),
         profile: text(context.flags["--profile"]),
         reason: text(context.flags["--reason"]),
         inferred: context.flags["--inferred"] === true,

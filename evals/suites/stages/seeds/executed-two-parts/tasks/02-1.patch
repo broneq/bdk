@@ -1,0 +1,97 @@
+diff --git a/src/ui/asyncState.test.ts b/src/ui/asyncState.test.ts
+index 368f91a..3c94ecf 100644
+--- a/src/ui/asyncState.test.ts
++++ b/src/ui/asyncState.test.ts
+@@ -1,7 +1,9 @@
+ import { renderHook } from '@testing-library/react'
+ import { describe, expect, it, vi } from 'vitest'
+ 
++import { ApiRequestError } from '../api/http'
+ import {
++  createLoadError,
+   isUnreachableLoadError,
+   requestConnectionRecovery,
+   subscribeToConnectionRecovery,
+@@ -9,6 +11,51 @@ import {
+   usePageConnectionSurface,
+ } from './asyncState'
+ 
++describe('createLoadError', () => {
++  it('uses the trimmed problem title of an API error as the message', () => {
++    const error = new ApiRequestError('GET', '/api/books', 403, 'Forbidden', {
++      title: ' Not allowed ',
++      status: 403,
++      message: 'You may not list books.',
++    })
++
++    expect(createLoadError(error, 'Load failed').message).toBe('Not allowed')
++  })
++
++  it('keeps the message of a problem with a blank title', () => {
++    const error = new ApiRequestError('GET', '/api/books', 403, 'Forbidden', {
++      title: '  ',
++      status: 403,
++      message: 'You may not list books.',
++    })
++
++    expect(createLoadError(error, 'Load failed').message).toBe(
++      'You may not list books.',
++    )
++  })
++
++  it('keeps the message of an API error without a problem', () => {
++    const error = new ApiRequestError('GET', '/api/books', 404, 'Not Found')
++
++    expect(createLoadError(error, 'Load failed').message).toBe(error.message)
++  })
++
++  it('keeps the message of a problem with only a status', () => {
++    const error = new ApiRequestError('GET', '/api/books', 409, 'Conflict', {
++      status: 409,
++      message: 'The book changed meanwhile.',
++    })
++
++    expect(createLoadError(error, 'Load failed').message).toBe(
++      'The book changed meanwhile.',
++    )
++  })
++
++  it('uses the fallback for a value that is not an error', () => {
++    expect(createLoadError('boom', 'Load failed').message).toBe('Load failed')
++  })
++})
++
+ describe('isUnreachableLoadError', () => {
+   it('matches only error states flagged unreachable', () => {
+     expect(
+diff --git a/src/ui/asyncState.ts b/src/ui/asyncState.ts
+index 5a3705e..0278679 100644
+--- a/src/ui/asyncState.ts
++++ b/src/ui/asyncState.ts
+@@ -32,12 +32,25 @@ export function createLoadError(
+ } {
+   return {
+     status: 'error',
+-    message: getDisplayMessage(error, fallback),
++    message: getLoadMessage(error, fallback),
+     unreachable: isBackendUnavailableError(error),
+     httpStatus: error instanceof ApiRequestError ? error.status : undefined,
+   }
+ }
+ 
++// A problem's title is the backend's short, localized statement of what
++// failed; without a title that says something the error's message stays.
++function getLoadMessage(error: unknown, fallback: string) {
++  const title =
++    error instanceof ApiRequestError ? error.problem?.title?.trim() : undefined
++
++  if (title) {
++    return title
++  }
++
++  return getDisplayMessage(error, fallback)
++}
++
+ export function getLoadErrorMessage(
+   t: UiTranslate,
+   state: { message: string; unreachable?: boolean },

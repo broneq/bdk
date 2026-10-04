@@ -22,15 +22,13 @@ function pack(dir: string, id: string, text: string, extra = ""): Record<string,
 const PLUGIN_FILES: Record<string, string> = {
   ...pack("code-quality", "BDK-CQ-1", "**Naming.** Plain."),
   ...pack("architecture", "BDK-ARCH-1", "**Layers.** Down only."),
-  ...pack("security", "BDK-SEC-1", "**Secrets.** Never logged."),
-  ...pack("security", "BDK-SEC-2", "**Tokens.** Short-lived."),
   ...pack("engineering-judgment", "BDK-EJ-1", "**Trade-offs.** Named."),
   ...pack("plan", "BDK-PL-1", "**Done.** Checkable in review."),
+  ...pack("plan", "BDK-PL-2", "**Small.** One concern per task."),
   ...pack("languages/typescript", "BDK-TS-1", "**Strict.** On.", "applies: ['**/*.ts']\n"),
   "fragments/decision/lavish.md": "**Decision tier: lavish**\n",
   "fragments/decision/ask-user.md": "**Decision tier: ask-user**\n",
-  "skills/cr/references/review-engine.md": "# Review engine\n\nSteps.\n",
-  "skills/cr/references/report-format.md": "# Report format\n",
+  "skills/demo/references/engine.md": "# Engine\n\nSteps.\n",
 };
 
 function input(project: Record<string, string> = {}, installed: readonly string[] = []): CtxInput {
@@ -67,9 +65,15 @@ describe("ctx skill", () => {
       "BDK context: design",
       "Rules: architecture",
       "Rules: engineering-judgment",
+      "Blocking categories (P8)",
       "Asking the user",
     ]);
-    expect(report.content).toBe(
+    // The P8 section has its own tests below (verifier-policy part).
+    const withoutPolicy = report.content.replace(
+      /### Blocking categories \(P8\)\n[\s\S]*?(?=### Asking the user)/,
+      "",
+    );
+    expect(withoutPolicy).toBe(
       [
         "## BDK context: design",
         "",
@@ -90,6 +94,7 @@ describe("ctx skill", () => {
     expect(report.parts).toStrictEqual([
       { kind: "rules", source: "rules/architecture" },
       { kind: "rules", source: "rules/engineering-judgment" },
+      { kind: "verifier-policy", source: "policy.verifier" },
       { kind: "fragment", source: "fragments/decision/ask-user" },
     ]);
   });
@@ -101,6 +106,13 @@ describe("ctx skill", () => {
       rule: "input/not-found",
       why: "debugg is not a skill with a BDK context",
       instead: ["bdk ctx skill debug", "check the skill name in the context lines"],
+    });
+  });
+
+  it("refuses a bdk-* meta-skill, which the plugin no longer ships (T42-E)", () => {
+    expect(composeSkill(input(), "bdk-rules-security")).toMatchObject({
+      refused: true,
+      rule: "input/not-found",
     });
   });
 
@@ -145,14 +157,14 @@ describe("ctx skill", () => {
   });
 
   it("prints each pack rule with its id, and leaves a disabled one out", () => {
-    const report = compose("bdk-rules-security", {
-      ".bdk/settings.yaml": "rules:\n  disabled: [BDK-SEC-2]\n",
-    });
-    const section = report.content.split("### Rules: security\n\n")[1]?.split("\n### ")[0];
-    expect(section).toBe("- [BDK-SEC-1] **Secrets.** Never logged.\n");
     expect(compose("plan").content).toContain(
-      "### Rules: plan\n\n- [BDK-PL-1] **Done.** Checkable in review.\n",
+      "### Rules: plan\n\n- [BDK-PL-1] **Done.** Checkable in review.\n- [BDK-PL-2] **Small.** One concern per task.\n",
     );
+    const report = compose("plan", {
+      ".bdk/settings.yaml": "rules:\n  disabled: [BDK-PL-2]\n",
+    });
+    const section = report.content.split("### Rules: plan\n\n")[1]?.split("\n### ")[0];
+    expect(section).toBe("- [BDK-PL-1] **Done.** Checkable in review.\n");
   });
 
   it("prints the project's rules under their own title, with applies", () => {
@@ -197,9 +209,11 @@ describe("ctx skill", () => {
   });
 
   it("omits the language rules part when no language has a value", () => {
-    const report = compose("bdk-rules-languages", { ".bdk/settings.yaml": "languages: [cobol]\n" });
-    expect(report.content).toBe("## BDK context: bdk-rules-languages\n");
-    expect(report.parts).toStrictEqual([]);
+    const report = compose("plan", { ".bdk/settings.yaml": "languages: [cobol]\n" });
+    expect(titles(report.content).filter((title) => title.startsWith("Language"))).toStrictEqual(
+      [],
+    );
+    expect(report.parts.map((part) => part.kind)).not.toContain("language-rules");
   });
 
   it("prints tool entries as config show does, including when, and none configured when empty", () => {
@@ -235,11 +249,21 @@ describe("ctx skill", () => {
   });
 
   it("prints a plugin file verbatim under its manifest title", () => {
-    const report = compose("cr");
-    expect(report.content).toContain("### Review engine\n\n# Review engine\n\nSteps.\n");
-    expect(report.parts[0]).toStrictEqual({
+    const given = input();
+    const resolved = resolveOrRefuse(given, { removed: "ignore" });
+    if ("refused" in resolved) throw new Error(`refused: ${resolved.why}`);
+    const part = {
       kind: "file",
-      source: "skills/cr/references/review-engine.md",
+      path: "skills/demo/references/engine.md",
+      title: "Engine",
+    } as const;
+    expect(
+      renderContext({ heading: "BDK context: demo", sections: sectionsOf(given, resolved, part) })
+        .content,
+    ).toContain("### Engine\n\n# Engine\n\nSteps.\n");
+    expect(sectionsOf(given, resolved, part)[0]?.part).toStrictEqual({
+      kind: "file",
+      source: "skills/demo/references/engine.md",
     });
   });
 });
@@ -265,5 +289,48 @@ describe("concurrency part", () => {
   it("states the value a project sets", () => {
     const [section] = concurrency({ ".bdk/settings.yaml": "execution:\n  concurrency: 3\n" });
     expect(section?.body).toBe("Run at most 3 agents at once.\n");
+  });
+});
+
+describe("verifier-policy part (P8, T42)", () => {
+  function sectionOf(name: string, project: Record<string, string> = {}): string {
+    const content = compose(name, project).content;
+    const start = content.indexOf("### Blocking categories (P8)\n");
+    expect(start, `${name} has no verifier-policy section`).toBeGreaterThanOrEqual(0);
+    const end = content.indexOf("\n### ", start + 1);
+    return content.slice(start, end === -1 ? undefined : end).trimEnd();
+  }
+
+  it("prints the resolved categories, then the not-a-fail list, in the plan context", () => {
+    const section = sectionOf("plan");
+    const lines = section.split("\n");
+    expect(lines.slice(0, 4)).toStrictEqual([
+      "### Blocking categories (P8)",
+      "",
+      "- architecture: Materially invalid architecture, or a contradiction with an accepted decision.",
+      "- security: A security, privacy or authentication risk.",
+    ]);
+    expect(section).toContain("- false-code-claim: A claim about the real code that is false.\n");
+    expect(section).toContain("\n\n#### Not a fail\n\n- style: Style.\n");
+    const notAFail = section.split("#### Not a fail\n\n")[1] ?? "";
+    expect(notAFail.split("\n").filter((line) => line.startsWith("- "))).toHaveLength(6);
+  });
+
+  it("is part of the design and cr contexts", () => {
+    expect(sectionOf("design")).toBe(sectionOf("plan"));
+    expect(sectionOf("cr")).toBe(sectionOf("plan"));
+    expect(compose("design").parts).toContainEqual({
+      kind: "verifier-policy",
+      source: "policy.verifier",
+    });
+  });
+
+  it("prints a category the project adds", () => {
+    const section = sectionOf("plan", {
+      ".bdk/settings.yaml":
+        "policy:\n  verifier:\n    blocking-categories:\n      - id: data-retention\n        description: Personal data kept past its retention.\n",
+    });
+    expect(section).toContain("- data-retention: Personal data kept past its retention.\n");
+    expect(section).toContain("- security: A security, privacy or authentication risk.\n");
   });
 });

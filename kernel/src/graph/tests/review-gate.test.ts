@@ -14,6 +14,7 @@ import type { Graph } from "../domain/engine.ts";
 import { ChangeCheckKind, kindRegistry } from "../domain/kinds/index.ts";
 import type { Check, Kind } from "../domain/kinds/index.ts";
 import type { Pipeline } from "../domain/pipeline.ts";
+import { isBlocking } from "../../shared/vocabulary/index.ts";
 import { fakeHash, fakeView } from "./view.ts";
 import type { ViewFixture } from "./view.ts";
 
@@ -267,6 +268,15 @@ describe("the review verdict", () => {
     expect(check(checks, "merge-report")).toMatchObject({ ok: false });
   });
 
+  it("refuses a round that is still open or closed other than ok on round-ok", () => {
+    const open = verdict({ entries: [merged()], outcomes: { [ROUND]: undefined } });
+    expect(check(open, "round-ok")).toMatchObject({ ok: false });
+    expect(check(open, "round-ok")?.why).toContain("is still open");
+    const notRun = verdict({ entries: [merged()], outcomes: { [ROUND]: "not-run" } });
+    expect(check(notRun, "round-ok")?.why).toContain("closed not-run");
+    expect(check(verdict({ entries: [merged()] }), "round-ok")).toMatchObject({ ok: true });
+  });
+
   it("refuses a live untriaged entry of the round on triaged, naming it", () => {
     const checks = verdict({
       entries: [
@@ -297,6 +307,29 @@ describe("the review verdict", () => {
     expect(resolved.every((item) => item.ok)).toBe(true);
   });
 
+  it("counts exactly the entries the shared blocking predicate names (T42-D3)", () => {
+    const entries = [
+      { id: "L-f0000001", type: "finding", refs: ["src/a.ts"], level: "blocker" },
+      { id: "L-f0000002", type: "finding", refs: ["src/b.ts"], level: "should-fix" },
+      { id: "L-b0000001", type: "blocker", refs: ["src/c.ts", "review"], level: "nice-to-have" },
+      { id: "L-b0000002", type: "blocker", refs: ["src/d.ts", CHANGE] },
+      { id: "L-b0000003", type: "blocker", refs: ["review"], status: "resolved" },
+      {
+        id: "L-f0000003",
+        type: "finding",
+        refs: ["src/e.ts"],
+        level: "blocker",
+        status: "resolved",
+      },
+    ];
+    const named = entries
+      .filter((entry) => isBlocking({ status: "proposed", ...entry }, "review", { triaged: true }))
+      .map((entry) => entry.id);
+    expect(named).toStrictEqual(["L-f0000001", "L-b0000001"]);
+    const why = check(verdict({ entries: [...entries, merged()] }), "blockers")?.why ?? "";
+    expect(why.match(/L-[a-z0-9]{8}/g)).toStrictEqual(named);
+  });
+
   it("passes on a merged report with every entry of the round triaged", () => {
     const checks = verdict({
       entries: [
@@ -307,6 +340,7 @@ describe("the review verdict", () => {
     expect(checks.map((item) => [item.id, item.ok])).toStrictEqual([
       ["verdict", true],
       ["merge-report", true],
+      ["round-ok", true],
       ["triaged", true],
       ["blockers", true],
       ["fresh", true],

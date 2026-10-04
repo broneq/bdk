@@ -20,7 +20,7 @@ import {
   readAttempts,
   readDocument,
 } from "../../shared/store/index.ts";
-import type { EntryRow, Store } from "../../shared/store/index.ts";
+import type { AttemptRecord, EntryRow, Store } from "../../shared/store/index.ts";
 import type { Profile } from "../../shared/vocabulary/index.ts";
 import { deltaCapabilities, deltaProblems } from "../../spec/index.ts";
 
@@ -53,11 +53,13 @@ export function changeView(input: ViewInput): ChangeView {
   const files = new Map<string, Read | undefined>();
   const parts = new Map<string, PlanPartFacts | undefined>();
   const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
-  let loops: ReadonlyMap<string, string> | undefined;
-  const ticketLoop = (ticket: string): string | undefined => {
-    loops ??= new Map(readAttempts(store, dir).map(({ data }) => [data.ticket, data.loop]));
-    return loops.get(ticket);
+  let records: ReadonlyMap<string, AttemptRecord> | undefined;
+  const record = (ticket: string): AttemptRecord | undefined => {
+    records ??= new Map(readAttempts(store, dir).map(({ data }) => [data.ticket, data]));
+    return records.get(ticket);
   };
+  const ticketLoop = (ticket: string): string | undefined => record(ticket)?.loop;
+  const ticketOutcome = (ticket: string): string | undefined => record(ticket)?.outcome;
   const read = (path: string): Read | undefined => {
     if (files.has(path)) return files.get(path);
     const facts = readFacts(store, join(dir, path));
@@ -106,6 +108,7 @@ export function changeView(input: ViewInput): ChangeView {
       .test.filter((entry) => entry.coverage?.min !== undefined)
       .map((entry) => entry.id),
     ticketLoop,
+    ticketOutcome,
     ...(input.work === undefined ? {} : { work: input.work }),
   };
 }

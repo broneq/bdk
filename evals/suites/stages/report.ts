@@ -1,7 +1,11 @@
 // The stages table: per case, how many counted runs met every expectation,
 // and the median questions, turns, kernel refusals and cost. A failed expectation is named in
 // the run's `checks.json` among its raw records.
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import type { ResultRow } from "../../harness/results.ts";
+import type { CheckResult } from "./checks.ts";
 import { median } from "../../harness/stats.ts";
 import { acceptanceFailures } from "./refusals.ts";
 
@@ -46,4 +50,23 @@ export function stagesReport(allRows: readonly ResultRow[]): string[] {
     }
   }
   return lines;
+}
+
+/**
+ * One line per counted run of a series: whether it met every expectation,
+ * and the failed ones from its `checks.json`. promptfoo's own pass count
+ * carries no stage expectation, so the series prints these after it.
+ */
+export function expectationLines(rows: readonly ResultRow[], rawDir: string): string[] {
+  return rows
+    .filter((row) => row.discarded === null)
+    .map((row) => {
+      const label = `${row.item} run ${String(row.run)}`;
+      if (row.metrics.expect_pass === 1) return `expectations: ${label} met every expectation`;
+      const file = join(rawDir, row.cell, `${row.item}.run-${String(row.run)}`, "checks.json");
+      const failures = existsSync(file)
+        ? (JSON.parse(readFileSync(file, "utf8")) as CheckResult).failures
+        : [];
+      return `expectations: ${label} FAILED: ${failures.join("; ") || "see its checks.json"} (${file})`;
+    });
 }

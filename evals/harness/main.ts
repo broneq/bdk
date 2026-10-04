@@ -2,6 +2,7 @@
 import { execFileSync } from "node:child_process";
 
 import { executeAbRunner } from "../suites/execute-ab/suite.ts";
+import { reviewModelsRunner } from "../suites/review-models/suite.ts";
 import { rulesNoopRunner } from "../suites/rules-noop/suite.ts";
 import { stagesRunner } from "../suites/stages/suite.ts";
 import { withWithoutRunner } from "../suites/with-without/suite.ts";
@@ -29,6 +30,7 @@ const printError = (line: string): void => {
 
 const suites: Record<SuiteName, SuiteRunner> = {
   "execute-ab": executeAbRunner({ print, printError }),
+  "review-models": reviewModelsRunner({ print, printError }),
   "rules-noop": rulesNoopRunner({ print, printError }),
   stages: stagesRunner({ print, printError }),
   "with-without": withWithoutRunner({ print, printError }),

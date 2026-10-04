@@ -21,12 +21,13 @@ pnpm eval report <suite>           # evals/results/<suite>/report.md from the co
 
 ## Suites
 
-| Suite          | What it measures                                                                                                                                                                                             | Cells                                                                    |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `execute-ab`   | One fixture task executed by three arms of the execute stage; acceptance and completeness decide whether T41 writes thin stage skills (`docs/V3-EVAL-EXECUTE-AB.md`)                                         | `v2`, `v3-long`, `v3-long-prime` (A/A), `v3-thin`                        |
-| `rules-noop`   | M1: every rule bullet's question answered blind; M2: seeded patches reviewed with and without the rules (`suites/rules-noop/violations.yaml`); a provisional class per bullet (`docs/V3-EVAL-RULES-NOOP.md`) | M1 `haiku`, `sonnet`, `sonnet-prime`; M2 `with`, `with-prime`, `without` |
-| `stages`       | A user-only stage skill: each case typed as its slash command, checked against the kernel state the run leaves                                                                                               | `bdk`                                                                    |
-| `with-without` | Any BDK skill: each task of a task file with the skill and without it                                                                                                                                        | `with`, `without`                                                        |
+| Suite           | What it measures                                                                                                                                                                                             | Cells                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `execute-ab`    | One fixture task executed by three arms of the execute stage; acceptance and completeness decide whether T41 writes thin stage skills (`docs/V3-EVAL-EXECUTE-AB.md`)                                         | `v2`, `v3-long`, `v3-long-prime` (A/A), `v3-thin`                        |
+| `review-models` | `/bdk:cr` on an executed Change whose tasks delivered seeded defects (`suites/review-models/key.yaml`): recall per defect class and false alarms after triage decide the model of the `reviewer` adapter     | `sonnet`, `sonnet-prime` (A/A), `opus`                                   |
+| `rules-noop`    | M1: every rule bullet's question answered blind; M2: seeded patches reviewed with and without the rules (`suites/rules-noop/violations.yaml`); a provisional class per bullet (`docs/V3-EVAL-RULES-NOOP.md`) | M1 `haiku`, `sonnet`, `sonnet-prime`; M2 `with`, `with-prime`, `without` |
+| `stages`        | A user-only stage skill or `cr`: each case typed as its slash command, checked against the kernel state the run leaves                                                                                       | `bdk`                                                                    |
+| `with-without`  | Any BDK skill: each task of a task file with the skill and without it                                                                                                                                        | `with`, `without`                                                        |
 
 ### With / without mode
 
@@ -49,10 +50,10 @@ The report (`pnpm eval report with-without`) states per task and per metric (`as
 ### Stage skill mode
 
 ```bash
-pnpm eval stages --skill <setup|change> [--probe]
+pnpm eval stages --skill <setup|change> [--case <id,...>] [--probe]
 ```
 
-Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml`, in one cell with the BDK plugin copy. A case is a YAML entry:
+Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml` (only the ids `--case` names, when given), in one cell with the BDK plugin copy. A case is a YAML entry:
 
 ```yaml
 - id: existing-change # lowercase letters, digits, dashes
@@ -64,11 +65,11 @@ Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml`, in one ce
     branch: stay|current
   expect: # kernel commands run with --json after the session, and the final reply
     - run: change list
-      json: { items.length: 1 } # dotted path -> exact value; `match` takes a pattern instead
+      json: { items.length: 1 } # dotted path -> exact value (`*` = any element); `match` takes a pattern instead
     - reply: change status
 ```
 
-The model words its own questions, so `answers` matches patterns. The SDK offers `AskUserQuestion` only to a session with a permission callback, so the suite's provider sets promptfoo's `ask_user_question`. A PreToolUse hook the suite writes into the working copy's `.claude/settings.json` (excluded from git there) answers every `AskUserQuestion`: a question whose header or text matches a key gets the first option whose label matches the value, or the value itself as free text when no option matches; any other question gets its first option. A run passes (`expect_pass`) when every expectation holds; `checks.json` among its raw records names each failed one. The report states per case the passed runs and the median questions, turns and cost.
+The model words its own questions, so `answers` matches patterns. The SDK offers `AskUserQuestion` only to a session with a permission callback, so the suite's provider sets promptfoo's `ask_user_question`. A PreToolUse hook the suite writes into the working copy's `.claude/settings.json` (excluded from git there) answers every `AskUserQuestion`: a question whose header or text matches a key gets the first option whose label matches the value, or the value itself as free text when no option matches; any other question gets its first option. A run passes (`expect_pass`) when every expectation holds; `checks.json` among its raw records names each failed one. promptfoo's own pass count holds no stage expectation, so after a series or probe the suite prints one `expectations:` line per run with the failed ones. The report states per case the passed runs and the median questions, turns and cost.
 
 ## Provider facts
 

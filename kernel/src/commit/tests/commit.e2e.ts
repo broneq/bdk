@@ -3,7 +3,7 @@
 // validated against `schema/cli/output/commit.json`, the trailers read back
 // with `git log`, and a file the user staged left staged.
 import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -16,6 +16,7 @@ import {
   refused,
   repository,
 } from "../../../tests/support/repo.ts";
+import { executed, opened, started } from "../../attempt/tests/e2e-support.ts";
 import { fileStore } from "../../shared/store/index.ts";
 
 interface Started {
@@ -217,5 +218,58 @@ describe("bdk commit: serialised commits (T41-D12)", () => {
     writeFileSync(lock, JSON.stringify({ pid: dead, owner: "01-2", at: "2026-09-25T10:00:00Z" }));
     answered(commit(change, "01-1"), "output/commit.json");
     expect(existsSync(lock)).toBe(false);
+  });
+});
+
+describe("bdk commit <change-id>: a review fix (T42)", () => {
+  it("commits under the open review-fix ticket, reports nothing undeclared and rebuilds cleanly", () => {
+    const change = executed(started());
+    const ticket = opened(change, "review-fix", change.id);
+    const findings = () =>
+      readdirSync(join(change.dir, "log")).filter((name) => name.includes("-finding-"));
+    const before = findings();
+    write(change, "src/util.ts", "export const fixed = true;\n");
+    write(change, "README.md", "# app, edited by the user\n");
+    git(change.root, "add", "README.md");
+
+    const report = answered(commit(change, change.id), "output/commit.json");
+    expect(report).toMatchObject({
+      ticket,
+      trailers: { "BDK-Change": change.id, "BDK-Ticket": ticket },
+    });
+    expect(report).not.toHaveProperty("undeclared");
+    expect(
+      git(change.root, "log", "-1", "--format=%(trailers:key=BDK-Ticket,valueonly)").trim(),
+    ).toBe(ticket);
+    expect(git(change.root, "show", "--name-only", "--format=", "HEAD")).toContain("src/util.ts");
+    expect(git(change.root, "diff", "--cached", "--name-only").trim()).toBe("README.md");
+
+    write(change, "src/other.ts");
+    // A round closes only after its merged review (T42).
+    refused(
+      bdk(["attempt", "close", ticket, "fail", "--json"], change.root),
+      2,
+      "policy/missing-report",
+    );
+    answered(
+      bdk(["log", "ingest", "--ticket", `${ticket}@merge`, "--json"], change.root, {
+        stdin: "---\nstatus: done\nfiles: []\nentries: []\nevidence: []\n---\nNo entries.\n",
+      }),
+      "output/log-ingest.json",
+    );
+    const close = answered(
+      bdk(["attempt", "close", ticket, "fail", "--json"], change.root),
+      "output/attempt-close.json",
+    );
+    expect(close).toMatchObject({ diff: { undeclared: [] } });
+    expect(findings()).toStrictEqual(before);
+    answered(bdk(["rebuild", "--json"], change.root), "output/rebuild.json");
+  });
+
+  it("refuses policy/no-open-ticket without an open review-fix ticket", () => {
+    const change = executed(started());
+    write(change, "src/util.ts");
+    refused(commit(change, change.id), 2, "policy/no-open-ticket");
+    expect(git(change.root, "status", "--porcelain")).toContain("src/util.ts");
   });
 });

@@ -14,6 +14,6 @@ A skill gets settings-derived content from exactly one place: `bdk ctx skill <na
 
 What a skill receives is its entry in the typed manifest `kernel/src/ctx/use-cases/manifest.ts`. To give a skill more context, add a part there, not a `!` line. A fragment is a prompt key declared in `kernel/src/ctx/config.ts` with its default under `fragments/`, so a project can extend or replace it like a rule set.
 
-A subagent gets the same content through a preloaded meta-skill (`skills:` in the agent frontmatter) whose body is its own context lines; agent files cannot run `!` lines, and plugin agents lose `hooks:`.
+A role agent gets no `ctx skill` context: agent files cannot run `!` lines, and BDK ships no preloaded meta-skill (T42-E). Its rules come from `bdk rules show --ticket <ticket>` and its commands from its dispatch package.
 
 Enforced by `kernel/tests/contract/skill-context.test.ts` (line form read from the spec, own skill name, no other kernel, inject or `cat` `!` line, manifest set equals the skill set, every part resolves) and by `pnpm skill-check` (wrapper form and the `allowed-tools` pair).

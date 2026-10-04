@@ -94,6 +94,32 @@ describe("buildPluginCopy", () => {
     expect(copy.variantHash).toBe(createHash("sha256").update(installed).digest("hex"));
   });
 
+  it("sets only the model line of one agent and hashes the rewritten file", () => {
+    const { root } = pluginRepo();
+    const adapter =
+      "---\nname: worker\nmodel: sonnet\neffort: medium\n---\n\nAdapter body; model: stays.\n";
+    write(root, "agents/worker.md", adapter);
+    git(root, "commit", "-qam", "adapter");
+    const target = join(temp(), "copy");
+    const copy = buildPluginCopy({
+      repoRoot: root,
+      ref: "HEAD",
+      target,
+      agentModel: { agent: "worker", model: "opus" },
+    });
+    const rewritten = readFileSync(join(target, "agents/worker.md"), "utf8");
+    expect(rewritten).toBe(adapter.replace("model: sonnet", "model: opus"));
+    expect(copy.variantHash).toBe(createHash("sha256").update(rewritten).digest("hex"));
+    expect(() =>
+      buildPluginCopy({
+        repoRoot: root,
+        ref: "HEAD",
+        target,
+        agentModel: { agent: "implementer", model: "opus" },
+      }),
+    ).toThrow(/no frontmatter/);
+  });
+
   it("removes one skill for the without cell", () => {
     const repo = pluginRepo();
     const copy = buildPluginCopy({

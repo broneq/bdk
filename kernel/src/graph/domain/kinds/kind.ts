@@ -131,6 +131,8 @@ export interface ChangeView {
   readonly coverageTools: readonly string[];
   /** The loop of a ticket of the Change, or undefined when it has no attempt record. */
   ticketLoop(ticket: string): string | undefined;
+  /** The outcome a ticket of the Change closed with; undefined while it is open or unknown. */
+  ticketOutcome(ticket: string): string | undefined;
   /** Loaded by the commands that validate; undefined elsewhere. */
   readonly work?: WorkFacts | undefined;
 }

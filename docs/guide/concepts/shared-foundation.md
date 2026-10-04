@@ -27,32 +27,22 @@ The hook prints the file without evaluating it. Claude Code evaluates dynamic ``
 
 ## Subagents do not inherit it
 
-This is the part that surprises people. Skills are not inherited from the parent conversation, so a subagent spawned by `/bdk:cr` or `/bdk:execute` starts without the foundation the orchestrator received. A reviewer that does not know the project's quality rules reviews against none, and nothing errors.
+This is the part that surprises people. A subagent spawned by `/bdk:execute` or `/bdk:cr` starts without the foundation the orchestrator received, and an agent file is static markdown: it cannot run the `!` context lines a skill has, and plugin agents ignore the `hooks`, `mcpServers` and `permissionMode` frontmatter fields. A reviewer that does not know the project's quality rules reviews against none, and nothing errors.
 
-Plugin subagents cannot fix this with their own hook: the `hooks`, `mcpServers`, and `permissionMode` frontmatter fields are ignored when an agent ships inside a plugin. The supported field is `skills:`, which preloads full skill content into the subagent's context at startup.
-
-So BDK ships a set of internal meta-skills whose only job is to be preloaded. Each is a frontmatter block plus the two context lines every skill with settings-derived content carries, for example:
-
-```markdown
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill bdk-rules-code-quality 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
-
-If no "BDK context: bdk-rules-code-quality" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill bdk-rules-code-quality` first and apply its output; on a `BDK STOP` line, stop and report it.
-```
-
-The first line resolves at preload time, so the subagent receives the same rules the orchestrator works by, under a `## BDK context: <name>` heading with one `###` section per rule set, fragment or command group. The second line is the fallback: when the host did not run the first line, the model runs the same command itself.
+So a role agent reads its context through the kernel instead. Its whole prompt is a dispatch package from `bdk dispatch build`, and the package names the commands that give it the rest:
 
 ```mermaid
 flowchart TB
     hook["SessionStart hook<br/>prints STARTUP_INSTRUCTIONS.md"] --> orch["Orchestrator session<br/>has the foundation"]
-    orch -->|"Agent tool dispatch"| fm["agents/&lt;name&gt;.md frontmatter"]
-    fm -->|"skills: list"| meta["Meta-skills<br/>bdk-rules-*,<br/>bdk-lint-tools, bdk-test-tools"]
-    meta -->|"! blocks resolve at preload"| sub["Subagent context<br/>same rules"]
-    fm -->|"static markdown"| body["Agent body<br/>system prompt"]
-    body --> sub
-    settings[("BDK settings")] --> meta
+    orch -->|"bdk dispatch build"| pkg["Dispatch package<br/>task, decisions, blockers, checks"]
+    pkg -->|"Agent tool, package as prompt"| sub["Role agent"]
+    sub -->|"bdk rules show --ticket"| rules["Rules of its ticket"]
+    sub -->|"bdk log list --for"| ledger["Ledger entries"]
+    settings[("BDK settings")] --> pkg
+    settings --> rules
 ```
 
-The meta-skills are marked `user-invocable: false`. They are listed in [Skills](../reference/skills.md) as a group rather than individually, because you never call them.
+The rules an agent reads are those of its role and of the files its ticket touches, resolved from the same settings the orchestrator works by. A runner's package carries the project's commands in its `Checks` section. No preloaded skill is involved: BDK 3 removed the `bdk-*` meta-skills that carried this content in BDK 2.
 
 ## Capture conventions
 

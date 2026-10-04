@@ -5,6 +5,7 @@
 // `dispatch show` and `rules show`.
 import { describe, expect, it } from "vitest";
 
+import { writeEntry } from "../../graph/tests/support.ts";
 import { CHANGE, ROOT } from "../../log/tests/support.ts";
 import { readAttempts, readDocument } from "../../shared/store/index.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
@@ -342,5 +343,68 @@ describe("ticket references", () => {
     const result = await round().run(["dispatch", "show", `${ROUND}@p09`, "--json"]);
     expect(result.code, result.stdout).toBe(3);
     expect(rule(result)).toBe("input/not-found");
+  });
+});
+
+describe("dispatch build implementer on a review-fix ticket (T42-D3)", () => {
+  it("embeds every blocking entry in full, whatever its refs, and selects rules by their files", async () => {
+    const h = round();
+    h.store.write(`${ROOT}/.bdk/rules/API-1.md`, projectRule("API-1", "src/api/**"));
+    h.store.write(`${ROOT}/.bdk/rules/WEB-1.md`, projectRule("WEB-1", "web/**"));
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "src/ui/**"));
+    const at = "2026-09-25T10:01:00.000Z";
+    const triaged = writeEntry(h.store, {
+      type: "finding",
+      at,
+      status: "proposed",
+      refs: ["src/api/login.ts#verify"],
+      ticket: ROUND,
+      level: "blocker",
+    });
+    const live = writeEntry(h.store, {
+      type: "blocker",
+      at,
+      status: "proposed",
+      refs: ["web/forms/form.ts", CHANGE],
+      ticket: ROUND,
+      level: "should-fix",
+    });
+    const minor = writeEntry(h.store, {
+      type: "finding",
+      at,
+      status: "proposed",
+      refs: ["src/ui/button.ts"],
+      ticket: ROUND,
+      level: "nice-to-have",
+    });
+
+    const result = await build(h, CHANGE, "implementer", ROUND);
+    expect(result.code, result.stdout).toBe(0);
+    const report = dispatchBuildOutput.parse(result.json);
+    const text = h.store.read(`${ROOT}/${report.path}`) ?? "";
+    const entries = section(text, "Ledger entries");
+    expect(entries).toContain(`### ${triaged} finding, proposed`);
+    expect(entries).toContain(`### ${live} blocker, proposed`);
+    expect(entries).not.toContain(minor);
+    const document = readDocument(h.store, `${ROOT}/${report.path}`);
+    const rules = document !== undefined && "data" in document ? document.data.rules : [];
+    expect(rules).toEqual(expect.arrayContaining(["API-1", "WEB-1"]));
+    expect(rules).not.toContain("UI-1");
+  });
+
+  it("embeds no resolved entry triaged blocker", async () => {
+    const h = round();
+    writeEntry(h.store, {
+      type: "finding",
+      at: "2026-09-25T10:01:00.000Z",
+      status: "resolved",
+      refs: ["src/api/login.ts"],
+      level: "blocker",
+    });
+    const fix = await build(h, CHANGE, "implementer", ROUND);
+    const path = dispatchBuildOutput.parse(fix.json).path;
+    expect(section(h.store.read(`${ROOT}/${path}`) ?? "", "Ledger entries")).toContain(
+      "No accepted decision or open blocker names this target.",
+    );
   });
 });

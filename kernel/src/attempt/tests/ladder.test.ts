@@ -221,6 +221,15 @@ describe("nextRung", () => {
     });
   });
 
+  it("ok: the action the loop of the ticket names, part-done or review-done", () => {
+    expect(nextRung("ok", false, state("ok"), POLICY, undefined, "part-done")).toStrictEqual({
+      action: "part-done",
+    });
+    expect(nextRung("ok", false, state("ok"), POLICY, undefined, "review-done")).toStrictEqual({
+      action: "review-done",
+    });
+  });
+
   it("not-run with budget left: retry in the same scope", () => {
     expect(nextRung("not-run", false, state("fail", "not-run"), POLICY, undefined)).toStrictEqual({
       action: "retry",

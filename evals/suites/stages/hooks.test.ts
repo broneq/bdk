@@ -182,12 +182,10 @@ describe("hooks", () => {
   });
 
   it("answers an unparsable kernel output with no JSON", () => {
-    const { workDir, configHome, emptyBase: empty } = repo();
-    const call = kernelIn(workDir, {
-      bundle: join(root ?? "", "missing.mjs"),
-      configHome,
-      emptyBase: empty,
-    })("doctor");
+    const { workDir, configHome } = repo();
+    const call = kernelIn(workDir, { bundle: join(root ?? "", "missing.mjs"), configHome })(
+      "doctor",
+    );
     expect(call.json).toBeUndefined();
     expect(call.code).not.toBe(0);
   });

@@ -1,7 +1,8 @@
 // The citation validator of T4 (`kernel-cli/evidence`, `evidence record`;
 // T23-D8, D47). A citation names a value inside a recorded file:
 // `<file>#<json-pointer>`, `<file>:<line>` or `<file>:<line>=<text>`. The file
-// part is the path as given or the file name, and may be left out when one
+// part is the path as given, another spelling of the same path (relative to
+// the project or absolute) or the file name, and may be left out when one
 // file is recorded; a bare `/pointer` is `#/pointer` unless it starts with a
 // recorded file's path, so an absolute path cites its file.
 
@@ -9,6 +10,8 @@
 export interface CitedFile {
   /** The path as the caller gave it. */
   readonly given: string;
+  /** Other spellings of the same path a citation may use, such as project-relative and absolute. */
+  readonly aliases?: readonly string[];
   /** The UTF-8 text, or undefined for a file that is not text (never citable). */
   readonly text: string | undefined;
 }
@@ -82,7 +85,7 @@ function parse(
 /** The longest path or name of a recorded file that `citation` starts with, then `#` or `:`. */
 function recordedPrefix(citation: string, files: readonly CitedFile[]): string | undefined {
   return files
-    .flatMap((file) => [file.given, file.given.split("/").at(-1) ?? file.given])
+    .flatMap((file) => [...spellings(file), file.given.split("/").at(-1) ?? file.given])
     .filter((name) => citation.startsWith(`${name}#`) || citation.startsWith(`${name}:`))
     .sort((a, b) => b.length - a.length)[0];
 }
@@ -105,9 +108,13 @@ function only(files: readonly CitedFile[]): CitedFile | undefined {
 
 function named(files: readonly CitedFile[], name: string): CitedFile | undefined {
   return (
-    files.find((file) => file.given === name) ??
+    files.find((file) => spellings(file).includes(name)) ??
     files.find((file) => file.given.split("/").at(-1) === name)
   );
+}
+
+function spellings(file: CitedFile): string[] {
+  return [file.given, ...(file.aliases ?? [])];
 }
 
 function pointerProblem(where: string, text: string, pointer: string): string | undefined {

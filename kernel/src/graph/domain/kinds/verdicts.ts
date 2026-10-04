@@ -3,8 +3,9 @@
 // the node must pass, be no older than the `done` of what it verifies
 // (v3-t41-design D2), and no live blocker may name it. The report is read,
 // never hashed. The `review` verdict also needs the merged report of a
-// `review-fix` round, every entry of that round triaged and no live entry
-// triaged `blocker` (T42-D2, D6).
+// `review-fix` round closed `ok`, every entry of that round triaged and no
+// live entry triaged `blocker` (T42-D2, D6).
+import { isBlocking } from "../../../shared/vocabulary/index.ts";
 import { deltaPath } from "./documents.ts";
 import { BaseKind, live, partFiles } from "./kind.ts";
 import type { ChangeView, Check, GraphEntry, Inputs, ValidateTarget } from "./kind.ts";
@@ -33,12 +34,7 @@ function verdictChecks(view: ChangeView, target: ValidateTarget, review = false)
             ok: false,
             why: `the latest report ${latest.id} has status ${status ?? "unreadable"}, not done or done-with-concerns`,
           };
-  const blockers = view.entries.filter(
-    (entry) =>
-      live(entry) &&
-      ((entry.type === "blocker" && entry.refs.includes(id)) ||
-        (review && entry.level === BLOCKER)),
-  );
+  const blockers = view.entries.filter((entry) => isBlocking(entry, id, { triaged: review }));
   const blocker: Check =
     blockers.length === 0
       ? { id: "blockers", ok: true }
@@ -54,7 +50,9 @@ function verdictChecks(view: ChangeView, target: ValidateTarget, review = false)
         };
   return [
     verdict,
-    ...(review ? [mergeCheck(view, id, latest), triagedCheck(view, latest)] : []),
+    ...(review
+      ? [mergeCheck(view, id, latest), roundCheck(view, latest), triagedCheck(view, latest)]
+      : []),
     blocker,
     ...(latest === undefined
       ? []
@@ -62,7 +60,6 @@ function verdictChecks(view: ChangeView, target: ValidateTarget, review = false)
   ];
 }
 
-const BLOCKER = "blocker";
 const MERGE_GROUP = "merge";
 const REVIEW_FIX = "review-fix";
 const TRIAGED_TYPES: readonly string[] = ["finding", "blocker", "observation"];
@@ -83,13 +80,32 @@ function mergeCheck(view: ChangeView, id: string, latest: GraphEntry | undefined
     };
   }
   const loop = view.ticketLoop(latest.ticket);
-  return loop === REVIEW_FIX
-    ? { id: "merge-report", ok: true }
+  if (loop !== REVIEW_FIX) {
+    return {
+      id: "merge-report",
+      ok: false,
+      why: `the merged report ${latest.id} is under ${latest.ticket}, a ${loop ?? "unknown"} ticket, not a ${REVIEW_FIX} round`,
+      instead,
+    };
+  }
+  return { id: "merge-report", ok: true };
+}
+
+/** The round of the merged report closed `ok`: an open, failed or not-run round decides nothing. */
+function roundCheck(view: ChangeView, latest: GraphEntry | undefined): Check {
+  if (latest?.group !== MERGE_GROUP || latest.ticket === undefined)
+    return { id: "round-ok", ok: true };
+  const outcome = view.ticketOutcome(latest.ticket);
+  return outcome === "ok"
+    ? { id: "round-ok", ok: true }
     : {
-        id: "merge-report",
+        id: "round-ok",
         ok: false,
-        why: `the merged report ${latest.id} is under ${latest.ticket}, a ${loop ?? "unknown"} ticket, not a ${REVIEW_FIX} round`,
-        instead,
+        why: `the round ${latest.ticket} of the merged report ${latest.id} ${outcome === undefined ? "is still open" : `closed ${outcome}`}; a review is done after its round closes ok`,
+        instead:
+          outcome === undefined
+            ? `bdk attempt close ${latest.ticket} ok|fail`
+            : `bdk attempt open review-fix <change-id>, a new round`,
       };
 }
 

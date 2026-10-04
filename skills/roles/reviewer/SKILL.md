@@ -38,7 +38,7 @@ You review the files of your review group over the package's range, against the 
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`.
+Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
 
 When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-CQ-4`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
 

@@ -8,7 +8,7 @@
 
     [Stage skills](#stage-skills) describes BDK 3.
 
-Every skill is invoked as `/bdk:<name>`. This page lists one section per user-invocable skill - purpose, arguments, the artifact it writes, when to reach for it, and the skills it works with. Skills whose frontmatter carries `user-invocable: false` are meta-skills: they are preloaded into agents via `skills:` frontmatter and are never typed as a slash command, so they get one collective paragraph near the end instead of individual sections.
+Every skill is invoked as `/bdk:<name>`. This page lists one section per user-invocable skill - purpose, arguments, the artifact it writes, when to reach for it, and the skills it works with. Skills whose frontmatter carries `user-invocable: false` (the role skills and `swarm`) are loaded by agents and orchestrators, never typed as a slash command, so they get one collective paragraph near the end instead of individual sections.
 
 For the deeper "why" behind the pipeline these skills form, see the [tier table](../index.md#how-you-work-with-it), [The full pipeline](../workflows/full-pipeline.md), and [Plan pipeline](../concepts/plan-pipeline.md).
 
@@ -114,7 +114,7 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 ## /bdk:run
 
-**Purpose.** Carry a Change through its stages without typing each command. It loops on `bdk next` and starts the stage skill the kernel names (`/bdk:change` with your intent, then `/bdk:design`, `/bdk:plan`, `/bdk:execute` and `/bdk:close`), each with its own instructions and tools. While it runs nobody answers questions: the skills take the option they recommend, and each choice becomes a `decision` entry with `review: true`, shown at the next gate and in the PR summary. It stops when a gate needs you, when the Change is parked, when a stage reports a refusal it could not resolve, at the review stage (it names `/bdk:cr`, which you type; a later Change lets it start the review), and after the close. It prints one line per stage and the full status only at the stop.
+**Purpose.** Carry a Change through its stages without typing each command. It loops on `bdk next` and starts the stage skill the kernel names (`/bdk:change` with your intent, then `/bdk:design`, `/bdk:plan`, `/bdk:execute`, `/bdk:cr` and `/bdk:close`), each with its own instructions and tools. While it runs nobody answers questions: the skills take the option they recommend, and each choice becomes a `decision` entry with `review: true`, shown at the next gate and in the PR summary. It stops when a gate needs you, when the Change is parked, when a stage reports a refusal it could not resolve, and after the close. Blocking review entries do not stop it: `/bdk:cr` fixes them in its own rounds. It prints one line per stage and the full status only at the stop.
 
 **Arguments:** `[--auto] ["<intent>"]` - an intent opens a new Change on a branch without one; none continues the active Change. `--auto` as the first word passes every gate that is ready during this run; without it only the gates `policy.gates` sets to `auto` pass, and the run stops at each `manual` gate naming the command you type.
 
@@ -122,43 +122,41 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **When to use.** For a feature or fix you want carried end to end, with `--auto` when you accept every gate without looking, without it to stop at each one. Claude never starts it on its own.
 
-**Related skills:** every stage skill, which it starts; `/bdk:cr`, which you type at the review stage.
+**Related skills:** every stage skill and `/bdk:cr`, which it starts.
 
 ## Review
 
-`/bdk:cr` is still the BDK 2 reviewer; a later v3 Change moves it onto the review stage of a Change.
-
 ## /bdk:cr
 
-**Purpose.** Dynamic code review orchestrator: determines what changed, dispatches specialized `bdk:code-reviewer` subagents in parallel (3-13, scaled to change size), and merges their findings into one report. Delta (only commits since the last review) by default.
+**Purpose.** Review the Change on the current branch in rounds on the v3 kernel: one `reviewer` package per group of the range, an Opus `integration-reviewer` over the whole range and a `runner` for the full gate and diff coverage. It triages every finding to `blocker`, `should-fix`, `nice-to-have` or `not-a-problem`, merges the round's report, and fixes blocking entries in the next round through an `implementer` package until none is left or the Change is parked. Without an active Change it opens a review Change of the branch (`bdk change new --inferred --kind review`).
 
-**Arguments:** `[--full] [--inline] [--base <ref>] [focus]` - `--full` reviews the whole branch (always do this before opening a PR, since a delta pass cannot see a later commit breaking an earlier, already-reviewed one); `--inline` runs every cohort in-session with no subagents; `--base <ref>` reviews against an explicit base, for stacked branches.
+**Arguments:** `[--full] [--base <ref>] [--inline] [focus]` - the delta since the last merged review by default; `--full` reviews the whole Change; `--base <ref>` reviews from an explicit base, for stacked branches; `--inline` runs the packages in the session with no agents and fixes nothing.
 
-**Artifact:** `.bdk/cr/{stamp}-{branch-slug}-{delta|full}.md`, where `stamp=$(git log -1 --format=%cd --date=format:%Y-%m-%d-%H%M)` - the reviewed head's own commit date, so re-running on an unchanged head overwrites rather than accumulates.
+**Artifact:** none of its own. Findings, triage levels and the merged report `<ticket>@merge` live in the Change's ledger.
 
-**When to use.** After `/bdk:execute` finishes a Change, or as the closing step of the trivial tier via `--inline`. Always run `--full` before opening a PR.
+**When to use.** At the review stage after `/bdk:execute` (`/bdk:run` starts it there), or on any branch you want reviewed.
 
-**Related skills:** `/bdk:execute` (previous pipeline stage), `/bdk:pr-review` (each of its per-PR subagents runs `/bdk:cr --inline`).
+**Related skills:** `/bdk:execute` before it, `/bdk:close` after it, `/bdk:run`, which starts it.
 
-**Safety.** `disallowed-tools: Edit NotebookEdit` in this skill's frontmatter removes those tools from the pool for the whole turn, so "review only" is enforced mechanically rather than by instruction; `Write` is scoped to `Write(.bdk/cr/**)` only.
+**Safety.** `disallowed-tools: Edit Write NotebookEdit` removes those tools for the whole turn; every fix goes through an implementer package.
 
 ## Code review beyond your own branch
 
-`/bdk:pr-review` extends the same reviewing logic to GitHub PRs, and is stack-aware.
+`/bdk:pr-review` reviews GitHub PRs, and is stack-aware.
 
 ## /bdk:pr-review
 
-**Purpose.** Review GitHub PRs from URLs: one subagent per PR runs `/bdk:cr --inline`, and the orchestrator lands the result as templated inline comments plus a summary ending in an explicit verdict, which you confirm or override before anything posts. `--verify` runs a follow-up pass instead, checking whether a previous review's comments were implemented.
+**Purpose.** Review GitHub PRs from URLs: the `pr-reviewer` role reviews each PR in a detached worktree, against its intent and, when the range adds or changes a Change under `.bdk/changes/`, that Change's contract. You confirm or override each computed verdict before anything posts; the result lands as templated inline comments plus a summary. `--verify` checks instead whether a previous review's blocker threads were fixed.
 
 **Arguments:** `<pr-url> [<pr-url> ...] [--verify] [focus]`
 
-**Artifact:** No local documentation file. Each PR gets a scratch working directory via `mktemp -d -t "bdk-pr-{number}"`; the durable output is what gets posted to GitHub (inline comments, one summary comment, one review event per PR), rendered only from `references/comment-templates.md`.
+**Artifact:** none local; it keeps no ticket, ledger entry or file under `.bdk/`. The durable output is the review posted to GitHub (inline comments, one summary, one review event per PR), rendered only from `references/comment-templates.md`.
 
 **When to use.** Reviewing one or more open GitHub PRs (your own or someone else's) before merge, or re-checking with `--verify` that requested changes were made.
 
-**Related skills:** `/bdk:cr` (invoked in `--inline` mode by each per-PR subagent).
+**Related skills:** `/bdk:cr`, which reviews your own branch with the full process.
 
-**Safety.** `disallowed-tools: Edit Write NotebookEdit` in this skill's frontmatter removes those tools mechanically; nothing is posted to GitHub until the user confirms each PR's verdict in the terminal report.
+**Safety.** `disallowed-tools: Edit Write NotebookEdit` removes those tools mechanically; nothing is posted to GitHub until the user confirms each PR's verdict.
 
 ## Debugging
 
@@ -280,9 +278,9 @@ Two skills keep `.claude/rules/` accurate instead of letting it accrete into a c
 
 **Related skills:** `/bdk:plan` (source of the test cases), `/bdk:execute` (its implementer packages carry the same red-green process).
 
-## Meta-skills
+## Role skills
 
-Eight skills carry `user-invocable: false` and are never typed as `/bdk:<name>` - they exist to be preloaded into agents via `skills:` frontmatter, resolving at preload time through their `bdk ctx skill` context line so a fresh subagent gets the same rule guidance the orchestrator gets. `bdk-implementer-return-contract` carries the shared YAML return-contract schema used by the `bdk:implementer` and `bdk:fixer` agents. `bdk-lint-tools` and `bdk-test-tools` surface this project's configured lint/format/typecheck and test commands from `.bdk/settings.yaml`, falling back to on-the-fly detection with a warning when none are configured. `bdk-rules-architecture`, `bdk-rules-code-quality`, `bdk-rules-design-patterns`, and `bdk-rules-security` each carry one language-agnostic quality-rule category; `bdk-rules-languages` carries the project's language-specific rule sheets. See [Shared foundation](../concepts/shared-foundation.md) for how this injection fits into a session.
+The skills under `skills/roles/` and `swarm` carry `user-invocable: false` and are never typed as `/bdk:<name>`. A role skill is the contract of one role (implementer, simplifier, verifier, design-verifier, reviewer, integration-reviewer, pr-reviewer, runner, scout, lead): what the agent reads, does, writes and returns. A dispatch package embeds its role's section, and the [agents](agents.md) run it. `swarm` holds how an orchestrator dispatches packages and waits for their agents. BDK 3 removed the eight `bdk-*` meta-skills that BDK 2 preloaded into agents; see [Shared foundation](../concepts/shared-foundation.md) for how an agent gets its context now.
 
 ## Removed skills
 

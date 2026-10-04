@@ -9,6 +9,18 @@ const kind = z.enum(["house", "knowledge"]);
 const severity = z.enum(["critical", "high", "medium", "low"]);
 const globs = z.array(z.string().min(1));
 
+const shownRule = z.strictObject({
+  id: ruleId,
+  kind,
+  severity,
+  applies: globs.optional(),
+  matchedBy: z.string().nullable().meta({
+    description:
+      "The glob that matched a file of the target; null for a rule without applies or a target without files.",
+  }),
+  text: z.string(),
+});
+
 export const ticketRulesOutput = z
   .strictObject({
     ticket: z.string().regex(/^A-[0-9a-z]{8}$/),
@@ -18,19 +30,7 @@ export const ticketRulesOutput = z
     role: z.enum(ROLES),
     target: z.string().min(1),
     rules: z
-      .array(
-        z.strictObject({
-          id: ruleId,
-          kind,
-          severity,
-          applies: globs.optional(),
-          matchedBy: z.string().nullable().meta({
-            description:
-              "The glob that matched a file of the target; null for a rule without applies or a target without files.",
-          }),
-          text: z.string(),
-        }),
-      )
+      .array(shownRule)
       .meta({ description: "The rules the active package records, in its order." }),
     rulesRead: z.iso.datetime({ precision: 3 }).optional().meta({
       description:
@@ -61,9 +61,23 @@ export const oneRuleOutput = z
   })
   .meta({ title: "one rule" });
 
-export const rulesShowOutput = z.union([ticketRulesOutput, oneRuleOutput]).meta({
+const roleRulesOutput = z
+  .strictObject({
+    role: z.enum(ROLES),
+    files: z
+      .array(z.string().min(1))
+      .min(1)
+      .meta({ description: "The file set, repository-relative." }),
+    rules: z
+      .array(shownRule)
+      .meta({ description: "The Selection a package of the role and file set would record." }),
+  })
+  .meta({ title: "rules of a role and a file set" });
+
+export const rulesShowOutput = z.union([ticketRulesOutput, oneRuleOutput, roleRulesOutput]).meta({
   title: "bdk rules show --json",
-  description: "Print one rule by id, or the rules of a ticket.",
+  description:
+    "Print one rule by id, the rules of a ticket, or the rules of a role and a file set.",
   examples: [
     {
       ticket: "A-7f3k9m2q",
@@ -100,6 +114,20 @@ export const rulesShowOutput = z.union([ticketRulesOutput, oneRuleOutput]).meta(
       since: "2026-09-27",
       disabled: false,
       text: "Every handler validates its input with the shared schema before it reads the body.",
+    },
+    {
+      role: "pr-reviewer",
+      files: ["src/api/login.ts"],
+      rules: [
+        {
+          id: "API-2",
+          kind: "house",
+          severity: "high",
+          applies: ["src/api/**"],
+          matchedBy: "src/api/**",
+          text: "Every handler validates its input with the shared schema before it reads the body.",
+        },
+      ],
     },
   ],
 }) satisfies z.ZodType<RulesShow>;

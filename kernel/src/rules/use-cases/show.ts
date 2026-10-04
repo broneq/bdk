@@ -3,7 +3,10 @@
 // active package records, in that order. The first `--ticket` call under the
 // implementer's package stamps `rules-read` in the attempt record (T23-D42,
 // risk R2). The ticket must be open with a dispatch package; `<ticket>@<group>`
-// reads the package of that review group (T42-A1).
+// reads the package of that review group (T42-A1). `--role` with `--file`
+// prints the Selection for that role and file set, with no Change (T42).
+import { relative, resolve, sep } from "node:path";
+
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -15,7 +18,9 @@ import {
   targetFiles,
   withIndex,
 } from "../../shared/store/index.ts";
-import type { OneRule, TicketRules } from "../domain/report.ts";
+import { ROLES } from "../../shared/vocabulary/index.ts";
+import type { OneRule, RoleRules, TicketRules } from "../domain/report.ts";
+import { selectFor } from "./context.ts";
 import type { RulesDeps } from "./deps.ts";
 import { matchedGlob } from "./selection.ts";
 import { loadContext } from "./settings.ts";
@@ -55,6 +60,43 @@ export function showRule(
     disabled: context.disabled.includes(id),
     text: rule.text,
   };
+}
+
+export function showRoleRules(
+  deps: RulesDeps,
+  where: { readonly projectRoot: string; readonly globalDir: string; readonly cwd: string },
+  role: string,
+  files: readonly string[],
+): RoleRules | Refusal {
+  const known = ROLES.find((name) => name === role);
+  if (known === undefined) {
+    return refuse("input/not-found", `${role} is not a role; the roles are ${ROLES.join(", ")}`, [
+      "bdk rules show --role reviewer --file <path>",
+    ]);
+  }
+  const paths: string[] = [];
+  for (const file of files) {
+    const inside = relative(where.projectRoot, resolve(where.cwd, file));
+    if (inside === "" || inside === ".." || inside.startsWith(`..${sep}`)) {
+      return refuse(
+        "input/not-found",
+        `${file} resolves outside the repository ${where.projectRoot}`,
+        [`bdk rules show --role ${role} --file <path inside the repository>`],
+      );
+    }
+    paths.push(inside.split(sep).join("/"));
+  }
+  const context = loadContext(deps, where.projectRoot, where.globalDir);
+  if ("refused" in context) return context;
+  const rules = selectFor(context, known, paths).selected.map(({ rule, matchedBy }) => ({
+    id: rule.id,
+    kind: rule.kind,
+    severity: rule.severity,
+    ...(rule.applies === undefined ? {} : { applies: rule.applies }),
+    matchedBy,
+    text: rule.text,
+  }));
+  return { role: known, files: paths, rules };
 }
 
 export function showTicketRules(

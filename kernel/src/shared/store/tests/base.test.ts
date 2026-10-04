@@ -1,7 +1,8 @@
 // The Change base (`kernel-cli/review`, bdk review plan; `kernel-cli/evidence`,
 // bdk evidence coverage): the parent of the first commit that added the
 // Change's `change.md`, `HEAD` before it is committed, the empty tree when that
-// commit is the root; and the lines added against it, untracked files whole.
+// commit is the root, and the stamped `base` of a review Change; and the lines
+// added against it, untracked files whole.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +10,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { systemGit } from "../../git/index.ts";
-import { addedLines, changeBase, EMPTY_TREE, fileStore } from "../index.ts";
+import { addedLines, changeBase, EMPTY_TREE, fileStore, writeDocument } from "../index.ts";
 
 let root: string;
 const CHANGE = ".bdk/changes/2026-09-25-login";
@@ -18,6 +19,25 @@ const write = (path: string, text: string) => {
   mkdirSync(join(root, path, ".."), { recursive: true });
   writeFileSync(join(root, path), text);
 };
+/** A valid `change.md`; `base` only for a review Change. */
+const openChange = (edit = "", reviewBase?: string) => {
+  writeDocument(fileStore(), join(root, CHANGE, "change.md"), {
+    data: {
+      schema: 1,
+      id: "2026-09-25-login",
+      kind: reviewBase === undefined ? "feature" : "review",
+      profile: "small",
+      intent: `Users log in with a one-time link.${edit}`,
+      source: "user",
+      at: "2026-09-25T09:00:00.000Z",
+      author: "BDK Test <test@example.com>",
+      overridden: [],
+      ...(reviewBase === undefined ? {} : { base: reviewBase }),
+    },
+    body: "",
+  });
+};
+const baseOf = (dir = join(root, CHANGE)) => changeBase(fileStore(), systemGit, root, dir);
 const commit = (message: string) => {
   sh("add", "-A");
   sh("commit", "--quiet", "-m", message);
@@ -38,29 +58,40 @@ describe("changeBase", () => {
   it("is the parent of the commit that added change.md, later edits aside", async () => {
     write("README.md", "# app\n");
     const before = commit("initial");
-    write(`${CHANGE}/change.md`, "---\nid: 2026-09-25-login\n---\n");
+    openChange();
     commit("open the Change");
-    write(`${CHANGE}/change.md`, "---\nid: 2026-09-25-login\n---\nedited\n");
+    openChange(" Edited.");
     write("src/a.ts", "a\n");
     commit("work");
-    expect(await changeBase(systemGit, root, join(root, CHANGE))).toBe(before);
+    expect(await baseOf()).toBe(before);
   });
 
   it("is HEAD while change.md is not committed", async () => {
     write("README.md", "# app\n");
     const head = commit("initial");
-    write(`${CHANGE}/change.md`, "---\n---\n");
-    expect(await changeBase(systemGit, root, join(root, CHANGE))).toBe(head);
+    openChange();
+    expect(await baseOf()).toBe(head);
   });
 
   it("is the empty tree when the root commit added change.md", async () => {
-    write(`${CHANGE}/change.md`, "---\n---\n");
+    openChange();
     commit("initial");
-    expect(await changeBase(systemGit, root, join(root, CHANGE))).toBe(EMPTY_TREE);
+    expect(await baseOf()).toBe(EMPTY_TREE);
+  });
+
+  it("is the stamped base of a review Change, before and after change.md is committed", async () => {
+    write("README.md", "# app\n");
+    const first = commit("initial");
+    write("src/a.ts", "a\n");
+    commit("work under review");
+    openChange("", first);
+    expect(await baseOf()).toBe(first);
+    commit("open the review Change");
+    expect(await baseOf()).toBe(first);
   });
 
   it("is the empty tree in a repository without commits", async () => {
-    expect(await changeBase(systemGit, root, join(root, CHANGE))).toBe(EMPTY_TREE);
+    expect(await baseOf()).toBe(EMPTY_TREE);
   });
 });
 

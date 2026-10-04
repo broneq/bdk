@@ -1,0 +1,52 @@
+# The answer key of review-models (spec skill-evals, Review models
+# measurement). `seed` is a stages seed (evals/suites/stages/seeds.ts) that
+# leaves an executed Change; its tasks deliver `patch` with their code, each
+# task the sections of the files it changes, so the defects are committed
+# code with fresh evidence. Each defect names its file, the line range in the
+# delivered file and its class; `summary` is what the judge matches an entry
+# against. Every defect passes the fixture's tests and lint, so only a review
+# finds it.
+seed: executed-two-parts
+patch: defects.patch
+defects:
+  - id: null-body
+    class: logic
+    file: src/api/http.ts
+    lines: [146, 156]
+    summary: >-
+      isProblemDetails no longer rejects null: a JSON body `null` passes the
+      object check, `candidate.title` throws a TypeError out of
+      parseApiProblem, and a 5xx with a `null` body fails with that TypeError
+      instead of becoming a backend-unavailable error.
+  - id: problem-details-case
+    class: test-gap
+    file: src/api/http.test.ts
+    lines: [65, 84]
+    summary: >-
+      The parseApiProblem tests lack the task's case that a body with `title`
+      and `status` is returned as problem details; only the undefined cases
+      are tested.
+  - id: blank-title
+    class: logic
+    file: src/ui/asyncState.ts
+    lines: [50, 52]
+    summary: >-
+      getLoadMessage uses any defined title: a blank title gives an empty
+      message instead of keeping the error's message, as task 02-1 requires.
+  - id: no-5xx-title
+    class: integration
+    file: src/ui/asyncState.ts
+    lines: [41, 48]
+    summary: >-
+      getLoadMessage shows a title only below status 500, on the stated
+      assumption that http.ts turns every 5xx into a backend-unavailable
+      error; part 01 does so only for a 5xx without problem details, so the
+      title of a 5xx problem (a 503 with a title) is dropped, against task
+      02-1's "whatever the response status".
+  - id: blank-title-case
+    class: test-gap
+    file: src/ui/asyncState.test.ts
+    lines: [14, 45]
+    summary: >-
+      The createLoadError tests lack the task's case that a blank title keeps
+      the error's message, so the blank-title defect passes the tests.

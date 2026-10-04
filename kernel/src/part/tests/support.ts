@@ -26,8 +26,8 @@ export { DIR };
 const PLUGIN = "/plugins/bdk";
 
 interface ScriptedGit extends FakeGit {
-  /** Trailer commits, newest first: hash, part, task (either may be empty). */
-  commits: (readonly [string, string, string])[];
+  /** Trailer commits, newest first: hash, part, task (either may be empty), and a BDK-Ticket. */
+  commits: (readonly [string, string, string, string?])[];
   /**
    * Changed paths `git status` reports, relative to the work tree: untracked
    * unless the entry starts with its two status letters and a space (`M  a.ts`).
@@ -57,8 +57,8 @@ function scriptedGit(): ScriptedGit {
         return ok(
           git.commits
             .map(
-              ([hash, part, task]) =>
-                `${hash}\x1fTask ${task}\x1f2026-09-25-login\x1f${part}\x1f${task}\x1e`,
+              ([hash, part, task, ticket = ""]) =>
+                `${hash}\x1fTask ${task}\x1f2026-09-25-login\x1f${part}\x1f${task}\x1f${ticket}\x1e`,
             )
             .join(""),
         );
@@ -131,13 +131,18 @@ export function harness(extra: (deps: PartDeps) => Registration[] = () => []): H
   };
 }
 
-/** An open attempt record of `target`. */
-export function openTicket(store: Store, ticket: string, target: string): void {
-  writeDocument(store, `${DIR}/attempts/task-redispatch-${target}-${ticket}.md`, {
+/** An open attempt record of `target` in `loop`. */
+export function openTicket(
+  store: Store,
+  ticket: string,
+  target: string,
+  loop = "task-redispatch",
+): void {
+  writeDocument(store, `${DIR}/attempts/${loop}-${target}-${ticket}.md`, {
     data: {
       schema: 1,
       ticket,
-      loop: "task-redispatch",
+      loop,
       target,
       attempt: 1,
       of: 3,

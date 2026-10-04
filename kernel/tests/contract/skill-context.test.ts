@@ -47,6 +47,7 @@ function partFiles(part: Part): (string | undefined)[] {
       return [part.path];
     case "tools":
     case "concurrency":
+    case "verifier-policy":
     case "project-rules":
       return [];
   }

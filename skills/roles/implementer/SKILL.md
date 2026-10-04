@@ -25,13 +25,14 @@ If the package is missing or does not parse, stop and return `blocked` with the 
 - Build the task test-first: a failing test for each behaviour the task names, then the code, then the scoped checks the package lists.
 - Change only the task's `Files:` and never a `do-not-touch` path. When another file must change, log a `finding` and name it in the report.
 - When the task's `stop-rule` fires, stop and return `blocked` naming it.
+- On a `review-fix` ticket the package embeds the round's blocking entries instead of a task: fix each one, name each entry you fixed by id in your report, and resolve none, because the orchestrator resolves them after the commit.
 - Log a `decision` for a choice the package leaves open and an `assumption` for what you could not verify.
 - Leave your changes uncommitted; the orchestrator commits them.
 - Never run git commands that discard work or rewrite history (stash, reset, clean, checkout or restore of paths, commit, rebase and the like), because other agents share this working tree; return `blocked` with the cause instead.
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`.
+Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
 
 When a rule forced a decision or a finding breaks one, cite its rule id exactly as `bdk rules show --ticket` prints it (`BDK-CQ-4`, `API-2`): as a `--ref <id>` of the entry and by id in your report.
 

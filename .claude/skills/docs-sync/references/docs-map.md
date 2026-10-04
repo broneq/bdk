@@ -37,14 +37,14 @@ them until T50.
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `skills/<name>/SKILL.md` frontmatter (name, `argument-hint`, `user-invocable`, `model`, `allowed-tools`, `disallowed-tools`)                                                            | `reference/skills.md` (the skill's own section), plus the workflow page that narrates it                                                                                                             |
 | A skill added, renamed, or retired under `skills/`                                                                                                                                      | `reference/skills.md`, `index.md` (pipeline diagram + tier table), `README.md` skills table, the owning workflow page                                                                                |
-| `skills/design/`, `create-plan/`, `verify-plan/`, `subagent-execute-plan/`, `cr/` bodies                                                                                                | `workflows/full-pipeline.md`, `workflows/standard.md`, `getting-started/first-feature.md`, `concepts/plan-pipeline.md`                                                                               |
-| `skills/cr/`, `skills/pr-review/` (modes, flags, agent scaling, `disallowed-tools`)                                                                                                     | `workflows/code-review.md`, `reference/skills.md`, `reference/agents.md` (read-only enforcement section)                                                                                             |
+| `skills/design/`, `create-plan/`, `verify-plan/`, `subagent-execute-plan/`, `tools/cr/` bodies                                                                                          | `workflows/full-pipeline.md`, `workflows/standard.md`, `getting-started/first-feature.md`, `concepts/plan-pipeline.md`                                                                               |
+| `skills/tools/cr/`, `skills/tools/pr-review/` (modes, flags, rounds, `disallowed-tools`)                                                                                                | `workflows/code-review.md`, `reference/skills.md`, `reference/agents.md` (read-only enforcement section)                                                                                             |
 | `skills/debug/`                                                                                                                                                                         | `workflows/debugging.md`                                                                                                                                                                             |
 | `skills/create-adr/`, `explain-complex-code/`, `update-docs/`, `mermaid-drawer/`                                                                                                        | `workflows/docs-and-decisions.md`, `reference/skills.md`                                                                                                                                             |
 | `skills/add-rule/`, `skills/refine-rules/`                                                                                                                                              | `workflows/rules-hygiene.md`, `reference/skills.md`                                                                                                                                                  |
 | `skills/setup/`                                                                                                                                                                         | `getting-started/setup.md`, `getting-started/installation.md`                                                                                                                                        |
-| `skills/bdk-*` meta-skills (the `user-invocable: false` set)                                                                                                                            | `reference/skills.md` (collective meta-skill paragraph and its count), `concepts/agents.md` ("pre-briefed"), `concepts/shared-foundation.md`                                                         |
-| `agents/*.md` added, retired, or model/`tools:`/`skills:` changed                                                                                                                       | `reference/agents.md` (both tables + the agent count), `concepts/agents.md`, `STARTUP_INSTRUCTIONS.md` agent tables                                                                                  |
+| `skills/roles/` and `swarm` (the `user-invocable: false` set)                                                                                                                           | `reference/skills.md` (collective role-skill paragraph), `concepts/agents.md` (roles and adapters)                                                                                                   |
+| `agents/*.md` added, retired, or model/`tools:` changed                                                                                                                                 | `reference/agents.md` (the tables + the agent count), `concepts/agents.md`, `STARTUP_INSTRUCTIONS.md` agents table (regenerated by `bdk ctx startup`)                                                |
 | `STARTUP_INSTRUCTIONS.md`                                                                                                                                                               | `concepts/shared-foundation.md`, `concepts/verification-scoping.md`, `concepts/agents.md`, `workflows/trivial.md`                                                                                    |
 | `kernel/src/ctx/` (manifest, sections), `kernel/src/rules/`, `rules/<category>/`, `rules/languages/`, `fragments/`                                                                      | `concepts/quality-and-language-rules.md`, `concepts/shared-foundation.md` (the meta-skill example), `README.md` Settings section                                                                     |
 | `scripts/bdk_run_state.py` (trailers, manifest, session guard, waves, worktrees)                                                                                                        | `concepts/plan-pipeline.md`, `reference/artifacts.md`, `troubleshooting.md`                                                                                                                          |
@@ -91,13 +91,13 @@ Format: page - what it is for - the files that decide whether it is true.
   parallel worktrees.
   Truth: the five pipeline skills, `scripts/bdk_run_state.py`.
 - **`workflows/standard.md`** - the standard tier, plus "when a standard run goes sideways".
-  Truth: `skills/create-plan/`, `verify-plan/`, `subagent-execute-plan/`, `cr/`.
+  Truth: `skills/create-plan/`, `verify-plan/`, `subagent-execute-plan/`, `tools/cr/`.
 - **`workflows/trivial.md`** - why the trivial tier needs no skill.
-  Truth: `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json`, `skills/cr/SKILL.md` (`--inline`).
+  Truth: `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json`, `skills/tools/cr/SKILL.md` (`--inline`).
 - **`workflows/debugging.md`** - the five phases, choosing between 5a and 5b.
   Truth: `skills/debug/SKILL.md`.
-- **`workflows/code-review.md`** - the four modes, agent scaling, the report, deferred findings, PR review.
-  Truth: `skills/cr/SKILL.md`, `skills/pr-review/SKILL.md`, `agents/code-reviewer.md`.
+- **`workflows/code-review.md`** - the review Change, the range, a round, triage and the fix loop, `--inline`, PR review.
+  Truth: `skills/tools/cr/SKILL.md`, `skills/tools/pr-review/SKILL.md`, `kernel/src/review/`.
 - **`workflows/docs-and-decisions.md`** - ADRs, module explanations, doc refresh, diagrams.
   Truth: `skills/create-adr/`, `explain-complex-code/`, `update-docs/`, `mermaid-drawer/`.
 - **`workflows/rules-hygiene.md`** - learnings, the audit with `rules stats`, `rules accept`, `rules prune`,
@@ -109,19 +109,19 @@ Format: page - what it is for - the files that decide whether it is true.
 
 - **`concepts/shared-foundation.md`** - what SessionStart injects, why it is static, why subagents
   do not inherit it.
-  Truth: `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json`, `kernel/src/ctx/`, `skills/bdk-rules-*/`.
+  Truth: `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json`, `kernel/src/ctx/`, `kernel/src/dispatch/`.
 - **`concepts/verification-scoping.md`** - proportionality, the `Verification: none` class, tiers and
   command forms, anti-patterns.
   Truth: `.claude/rules/verification-scoping.md`, `STARTUP_INSTRUCTIONS.md`,
-  `skills/bdk-test-tools/`, `skills/create-plan/`, `skills/subagent-execute-plan/`.
+  `skills/stages/plan/`, `skills/stages/execute/`, `skills/roles/runner/`.
   Note: the rule file warns that these definitions are duplicated in several places with no test
   enforcing consistency. This page is one of those places.
 - **`concepts/plan-pipeline.md`** - immutability stamp, commit trailers vs manifest, resume and
   session guard, parallel worktrees, waves, one commit per group.
   Truth: `scripts/bdk_run_state.py`, `skills/verify-plan/`, `skills/subagent-execute-plan/`.
-- **`concepts/agents.md`** - the fleet, model-as-cost, read-only enforcement, pre-briefing,
-  `SendMessage` vs respawn, structured returns.
-  Truth: `agents/*.md`, `STARTUP_INSTRUCTIONS.md`, `skills/bdk-implementer-return-contract/`.
+- **`concepts/agents.md`** - roles and adapters, model-as-cost, read-only enforcement, how an agent
+  reads its context, structured returns, `SendMessage` vs respawn, the tree.
+  Truth: `agents/*.md`, `skills/roles/`, `kernel/src/export/domain/adapters.ts`, `STARTUP_INSTRUCTIONS.md`.
 - **`concepts/quality-and-language-rules.md`** - the definition of a rule, rule files and ids, the shipped
   pack, project rules, `rules.disabled`, selection per role and file, `rules check` and the projection.
   Truth: `rules/`, `kernel/src/rules/` (`domain/rule.ts`, `use-cases/selection.ts`),
@@ -130,13 +130,13 @@ Format: page - what it is for - the files that decide whether it is true.
 ### Reference (the lookup tables - highest drift rate)
 
 - **`reference/skills.md`** - one section per user-invocable skill: purpose, arguments, artifact,
-  when to use, related skills. Meta-skills get one collective paragraph with their count.
+  when to use, related skills. Role skills get one collective paragraph.
   Truth: every `skills/*/SKILL.md` frontmatter and body. The most drift-prone page in the site: a new
   skill that is never added here is invisible to users (the coverage guard catches a missing section,
   not a wrong one).
-- **`reference/agents.md`** - the agent count, both tables, read-only enforcement.
-  Truth: `agents/*.md` frontmatter, `skills/cr/SKILL.md` and `skills/pr-review/SKILL.md`
-  `disallowed-tools`. Contains an explicit count - count the files.
+- **`reference/agents.md`** - the agent count, the adapters and other agents tables, read-only enforcement.
+  Truth: `agents/*.md` frontmatter, the `disallowed-tools` of `skills/stages/execute/`, `skills/stages/close/`,
+  `skills/tools/cr/` and `skills/tools/pr-review/`. Contains an explicit count - count the files.
 - **`reference/hooks.md`** - the SessionStart, PreToolUse, UserPromptExpansion and SessionEnd entries
   in order, the guard rules and gate outcomes, plus hook scripts not wired in.
   Truth: `hooks/hooks.json` (order matters and the page reproduces it), `hooks/*/`, the guard and
@@ -179,7 +179,7 @@ under `docs/guide/`.
 | The `.bdk/` tracked-vs-untracked block                                                                         | `getting-started/setup.md`, `reference/artifacts.md`                                                                                       | `.gitignore`                                                                                                        |
 | The two BDK paths kept out of git (`/.bdk/.machine/`, `/.bdk/settings.local.yaml`)                             | `README.md` (Change state section, `config set` row)                                                                                       | `kernel/src/shared/store/ignore.ts`                                                                                 |
 | The feature flag names                                                                                         | `getting-started/setup.md`, `README.md`                                                                                                    | `kernel/src/ctx/config.ts`                                                                                          |
-| The agent-scaling range for `/bdk:cr`                                                                          | `README.md`, `index.md`, `workflows/code-review.md`, `reference/skills.md`                                                                 | the sizing table in `skills/cr/`                                                                                    |
+| The groups of a `/bdk:cr` round                                                                                | `README.md`, `workflows/code-review.md`, `reference/skills.md`                                                                             | `kernel/src/review/domain/groups.ts`                                                                                |
 
 Two of these have already drifted at least once, which is why the index exists:
 the read-only mechanism row (`index.md` and `README.md` attributed it to

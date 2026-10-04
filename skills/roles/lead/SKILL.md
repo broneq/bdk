@@ -18,7 +18,7 @@ Your prompt or skill argument is the path of your dispatch package. Rely on noth
 2. Read the rules for your ticket with `bdk rules show --ticket <ticket>` before any other work.
 3. Your own id is the `BDK-AGENT-ID` line of your start context.
 
-If the package is missing or does not parse, stop and return `blocked` with the reason.
+If the package is missing or unparseable, return `blocked` with the reason.
 
 ## Work
 
@@ -36,7 +36,7 @@ Deliver the tasks of your part as committed tasks. You write no file: role agent
 
 ## Ledger
 
-Record what others need as soon as you know it, each entry with at least one ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`.
+Record what others need when you know it, each entry with a ref: `bdk log add <type> "<summary>" --ref <file|task|id> --ticket <ticket>`; summary at most 120 characters, details via `--body -`.
 
 ## Messages
 

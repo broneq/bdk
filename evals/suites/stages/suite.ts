@@ -32,13 +32,13 @@ import { caseFile, readCases } from "./cases.ts";
 import type { StageCase } from "./cases.ts";
 import { CASE_VAR } from "./hooks.ts";
 import type { StageCellSettings } from "./hooks.ts";
-import { stagesReport } from "./report.ts";
+import { expectationLines, stagesReport } from "./report.ts";
 
 const SUITE = "stages";
 const CELL = "bdk";
 /** The orchestrator of every session, as in the other session suites. */
 const ORCHESTRATOR_MODEL = "claude-opus-5-5";
-/** The stage skills with a case file. */
+/** The stage skills with a case file, and `cr`, the review stage's skill (T42). */
 const STAGE_SKILLS = [
   "setup",
   "change",
@@ -47,9 +47,15 @@ const STAGE_SKILLS = [
   "plan",
   "verify-plan",
   "execute",
+  "cr",
   "close",
   "run",
 ] as const;
+
+/** The skill's SKILL.md in a plugin tree: `cr` is a tool skill, the others stage skills. */
+export function skillFile(plugin: string, skill: string): string {
+  return join(plugin, "skills", skill === "cr" ? "tools" : "stages", skill, "SKILL.md");
+}
 
 class StageSkillError extends Error {
   constructor(message: string) {
@@ -133,7 +139,7 @@ export function describeStages(spec: StagesSpec): SeriesSetup {
           provenance: {
             fixtureCommit: spec.versions.fixture.commit,
             bdkCommit: spec.bdkCommit,
-            variantHash: sha256File(join(spec.plugin, "skills", "stages", spec.skill, "SKILL.md")),
+            variantHash: sha256File(skillFile(spec.plugin, spec.skill)),
           },
           settings: { ...settings },
         },
@@ -147,6 +153,21 @@ export function describeStages(spec: StagesSpec): SeriesSetup {
   };
 }
 
+/** The cases `--case` names, in the case file's order; every id must exist. */
+export function selectCases(
+  cases: readonly StageCase[],
+  ids: readonly string[] | undefined,
+): StageCase[] {
+  if (ids === undefined) return [...cases];
+  const unknown = ids.filter((id) => !cases.some((stage) => stage.id === id));
+  if (unknown.length > 0) {
+    throw new Error(
+      `--case names no case ${unknown.join(", ")}; the cases are ${cases.map((stage) => stage.id).join(", ")}`,
+    );
+  }
+  return cases.filter((stage) => ids.includes(stage.id));
+}
+
 export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
   return {
     async run(options: RunOptions): Promise<number> {
@@ -154,7 +175,7 @@ export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
       let cases: StageCase[];
       try {
         skill = stageSkill(options.skill);
-        cases = readCases(caseFile(skill));
+        cases = selectCases(readCases(caseFile(skill)), options.cases);
       } catch (error) {
         io.printError(error instanceof Error ? error.message : String(error));
         return 2;
@@ -198,9 +219,11 @@ export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
         ...io,
         evaluate: (config, output, env) => evaluate(EVALS_DIR, config, output, env),
       });
+      const rows = readRows(resultsFile(SUITE, series));
+      for (const line of expectationLines(rows, setup.plan.rawDir)) io.print(line);
       if (options.probe) {
         const lines = probeSummary(
-          readRows(resultsFile(SUITE, series)),
+          rows,
           options.runs,
           options.budget,
           spent(readLedger(LEDGER_FILE)),

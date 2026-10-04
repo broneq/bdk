@@ -87,7 +87,9 @@ describe("v2Plan", () => {
   });
 });
 
-describe("seedV3", () => {
+// Each seed runs the kernel bundle several times: about 2 s alone, over 5 s
+// beside another test run.
+describe("seedV3", { timeout: 60_000 }, () => {
   it("leaves a committed Change whose next step is part 01 of the execute stage, the same on every seed", () => {
     const first = base();
     const second = base();

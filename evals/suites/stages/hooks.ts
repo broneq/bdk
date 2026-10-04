@@ -32,7 +32,10 @@ export interface StageCellSettings {
   readonly emptyBase: string;
 }
 
-function environment(settings: StageCellSettings): NodeJS.ProcessEnv {
+/** What a kernel call in a working copy needs of the cell's settings. */
+export type KernelSettings = Pick<StageCellSettings, "bundle" | "configHome">;
+
+function environment(settings: KernelSettings): NodeJS.ProcessEnv {
   return {
     ...process.env,
     BDK: settings.bundle,
@@ -71,7 +74,7 @@ export function prepareRun(workDir: string, stage: StageCase, settings: StageCel
 }
 
 /** One kernel command with `--json` in the run's working copy. */
-export function kernelIn(workDir: string, settings: StageCellSettings) {
+export function kernelIn(workDir: string, settings: KernelSettings) {
   return (args: string): KernelCall => {
     const result = spawnSync(
       process.execPath,

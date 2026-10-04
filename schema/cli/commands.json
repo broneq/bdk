@@ -37,8 +37,8 @@
       "flags": [
         {
           "name": "--kind",
-          "values": ["feature", "bug"],
-          "description": "Graph variant; default feature (T02 decision R-8)."
+          "values": ["feature", "bug", "review"],
+          "description": "Graph variant; default feature (T02 decision R-8). `review` is a review of work already on the branch, opened by `/bdk:cr` (T42)."
         },
         {
           "name": "--profile",
@@ -53,11 +53,22 @@
         {
           "name": "--inferred",
           "description": "The Change is opened on the user's behalf by another skill; stamped source: inferred (R-12)."
+        },
+        {
+          "name": "--base",
+          "value": "<ref>",
+          "description": "Only with `--kind review`: the commit the review starts from is `git merge-base HEAD <ref>`; default `origin/HEAD`."
         }
       ],
       "output": "output/change-new.json",
       "exits": [0, 2, 3, 5],
-      "refusals": ["policy/change-exists", "policy/detached-head", "runtime/git-missing"],
+      "refusals": [
+        "input/not-found",
+        "policy/change-exists",
+        "policy/detached-head",
+        "policy/empty-range",
+        "runtime/git-missing"
+      ],
       "writes": [
         ".bdk/changes/<id>/change.md",
         ".bdk/changes/<id>/log/",
@@ -594,6 +605,7 @@
         "policy/stale-evidence",
         "policy/missing-citation",
         "policy/missing-evidence",
+        "policy/missing-report",
         "runtime/git-missing"
       ],
       "writes": [
@@ -1336,7 +1348,7 @@
     {
       "id": "commit",
       "argv": ["commit"],
-      "summary": "Commit a task: code plus Change directory, with BDK trailers, after the diff check.",
+      "summary": "Commit a task, or the fix of a review round: code plus Change directory, with BDK trailers, after the diff check.",
       "availability": "orchestrator",
       "mode": "command",
       "slice": "commit",
@@ -1344,15 +1356,16 @@
       "changeScoped": true,
       "args": [
         {
-          "name": "<task>",
-          "required": true
+          "name": "<task|change-id>",
+          "required": true,
+          "description": "A task id, or the id of the active Change for a review fix."
         }
       ],
       "flags": [
         {
           "name": "--message",
           "value": "<text>",
-          "description": "Subject line; default the task title."
+          "description": "Subject line; default the task title, or `fix(review): <ticket>` for a review fix."
         }
       ],
       "output": "output/commit.json",
@@ -1363,6 +1376,7 @@
         "policy/do-not-touch",
         "policy/git-in-progress",
         "policy/git-hook-failed",
+        "policy/no-open-ticket",
         "policy/nothing-to-commit",
         "policy/ticket-open",
         "runtime/git-missing"
@@ -1394,7 +1408,7 @@
     {
       "id": "rules-show",
       "argv": ["rules", "show"],
-      "summary": "Print one rule by id, tombstones included, or the rules a ticket's active package records.",
+      "summary": "Print one rule by id, tombstones included, the rules a ticket's active package records, or the rules selected for a role and a file set.",
       "availability": "agent",
       "mode": "command",
       "slice": "rules",
@@ -1404,7 +1418,7 @@
         {
           "name": "<id>",
           "required": false,
-          "description": "A rule id, e.g. BDK-CQ-4 or API-2. Exactly one of <id> and --ticket."
+          "description": "A rule id, e.g. BDK-CQ-4 or API-2. Exactly one of <id>, --ticket and --role."
         }
       ],
       "flags": [
@@ -1412,6 +1426,17 @@
           "name": "--ticket",
           "value": "<ticket>",
           "description": "Print the rules the ticket's active package records, in its order."
+        },
+        {
+          "name": "--role",
+          "value": "<role>",
+          "description": "One of the ten roles; needs at least one --file. Prints the rules a package of that role and file set would record, with no Change (T42)."
+        },
+        {
+          "name": "--file",
+          "value": "<path>",
+          "repeatable": true,
+          "description": "A repository-relative path of the file set; it need not exist."
         }
       ],
       "output": "output/rules-show.json",
