@@ -280,7 +280,7 @@ describe("bdk log list", () => {
     );
   });
 
-  it("acceptance: under 200 ms at 1 000 entries on the second run, with its telemetry line [NFR-LAT-1] [R-1]", () => {
+  it("acceptance: under 200 ms at 1 000 entries on the second run, with its telemetry line [NFR-LAT-1] [R-1] [R-11]", () => {
     const { root, dir } = opened();
     const store = fileStore();
     for (let n = 0; n < 1000; n++) {

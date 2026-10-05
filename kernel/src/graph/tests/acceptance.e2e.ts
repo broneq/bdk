@@ -87,6 +87,48 @@ describe("T21 acceptance", () => {
     ]);
   });
 
+  it("explain on a task's part prints part, plan, design and intent; decisions carry their reasons [S3]", () => {
+    const { root, dir } = designed();
+    passGate(dir, "gate:design", "plan");
+    writePart(dir, "plan", "01");
+    done(root, "plan");
+    const explained = answered(
+      bdk(["explain", "execute-part:01", "--json"], root),
+      "output/explain.json",
+    ) as { chain: { id: string }[] };
+    const chain = explained.chain.map((item) => item.id);
+    for (const id of ["execute-part:01", "plan-part:01", "gate:design", "design", "intent"]) {
+      expect(chain).toContain(id);
+    }
+    expect(chain.indexOf("plan-part:01")).toBeLessThan(chain.indexOf("design"));
+    expect(chain.indexOf("design")).toBeLessThan(chain.indexOf("intent"));
+
+    const add = (summary: string, ...flags: string[]) =>
+      (
+        answered(
+          bdk(["log", "add", "decision", summary, "--ref", "design.md", ...flags, "--json"], root),
+          "output/log-add.json",
+        ).entry as { id: string }
+      ).id;
+    const first = add("Links last 10 minutes", "--body", "Short enough to limit replay.");
+    const second = add("Links last 15 minutes", "--supersedes", first, "--body", "Mail is slow.");
+    const shown = (id: string) =>
+      answered(bdk(["log", "show", id, "--json"], root), "output/log-show.json").entry;
+    expect(shown(first)).toMatchObject({
+      id: first,
+      // The orchestrator writes without a ticket, so the kernel stamps its own source.
+      source: "kernel",
+      status: "superseded",
+      body: "Short enough to limit replay.",
+    });
+    expect(shown(second)).toMatchObject({
+      id: second,
+      status: "proposed",
+      supersedes: first,
+      body: "Mail is slow.",
+    });
+  });
+
   it("tiny has no design node [S7]", () => {
     const { root } = opened("--profile", "tiny", "--reason", "a typo");
     expect(
