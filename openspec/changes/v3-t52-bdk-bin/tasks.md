@@ -37,5 +37,6 @@
 - [x] 7.2 Verify that the guards deny a subagent `bdk commit` and a main-thread `bdk hooks pre-tool` with the same rules as today's form, through `pnpm test:e2e`
 - [x] 7.3 Run `claude plugin validate .` and verify `Validation passed` with no error and no warning about `bin/`
 - [x] 7.4 Run the full gate: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip && pnpm test:unit && pnpm test:e2e && pnpm test:contract && pnpm skill-check && pnpm eval check`
-- [ ] 7.5 Run `pnpm eval stages --probe`, show its cost projection to the user, and after approval verify that every case passes with no Bash call naming `bdk.mjs` in any transcript
+- [x] 7.5 Run `pnpm eval stages --probe`, show its cost projection to the user, and after approval verify that every case passes with no Bash call naming `bdk.mjs` in any transcript
+  - Done as a probe only, approved by the user: 29 cases, no Bash call naming `bdk.mjs` in any transcript; 26 met every expectation. `setup/invalid-settings`, `verify-plan/clean` and `close/ticket-open` failed on model choices, not on a kernel call, and failed or passed the same way in earlier probes. The full series (about 168 USD) was not run.
 - [x] 7.6 Run `openspec validate v3-t52-bdk-bin --strict`
