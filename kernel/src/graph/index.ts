@@ -22,6 +22,7 @@ export type { PostTaskStep } from "./use-cases/steps.ts";
 export type { ChangeGraph } from "./use-cases/graph.ts";
 export type { GateView } from "./domain/reports.ts";
 export { checksOf } from "./use-cases/validate.ts";
+export { unsetToolsForKind, unsetToolsOf } from "./use-cases/tools.ts";
 export { executionWorktreeModule } from "./config.ts";
 export { writeDoneMarker } from "./use-cases/done.ts";
 export { gateRefusal, requireGate } from "./use-cases/gate.ts";

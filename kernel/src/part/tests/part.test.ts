@@ -10,6 +10,7 @@ import {
   writeEntry,
   writePlanPart,
 } from "../../graph/tests/support.ts";
+import { ROOT } from "../../log/tests/support.ts";
 import { readDocument } from "../../shared/store/index.ts";
 import {
   partDoneOutput,
@@ -124,6 +125,26 @@ describe("part start", () => {
       rule: "policy/not-ready",
       why: "execute-part:02 is blocked: execute-part:01 is ready, not done",
     });
+  });
+
+  it("refuses policy/tools-unset when a group was removed after change new (T49)", async () => {
+    const h = await planned();
+    h.store.write(`${ROOT}/.bdk/settings.yaml`, "tools:\n  lint: none\n");
+    const before = h.store.list(`${DIR}/log`);
+    const result = await h.run(["part", "start", "01", "--json"], T1);
+    expect(result.code).toBe(2);
+    expect(result.json).toMatchObject({
+      rule: "policy/tools-unset",
+      why: "tools.test is unset: the Change runs tests-scoped and tests-full; configure the project's test commands or declare that it has none",
+    });
+    expect(h.store.list(`${DIR}/log`)).toStrictEqual(before);
+  });
+
+  it("starts a part when its groups are declared none (T49)", async () => {
+    const h = await planned();
+    h.store.write(`${ROOT}/.bdk/settings.yaml`, "tools:\n  test: none\n  lint: none\n");
+    const result = await h.run(["part", "start", "01", "--json"], T1);
+    expect(result.code, result.stdout).toBe(0);
   });
 
   it("refuses input/not-found for an unknown part", async () => {

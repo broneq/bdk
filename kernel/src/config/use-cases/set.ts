@@ -105,7 +105,8 @@ interface Edit {
 
 /**
  * Sets `value` at `steps`. An id step picks the sequence item with that id; a
- * missing item is appended, as the whole value when the id is the last step.
+ * missing item is appended, as the whole value when the id is the last step,
+ * and an existing one is replaced whole, keeping its id.
  */
 function editDocument(
   document: Document,
@@ -123,6 +124,13 @@ function editDocument(
     const sequence = document.getIn(path, true);
     const items = isSeq(sequence) ? sequence.items : [];
     const found = items.findIndex((item) => isMap(item) && item.get("id") === step.segment);
+    if (found !== -1 && last) {
+      const item = withId(document, value, step.segment);
+      if (isRefusal(item)) return item;
+      const previous: unknown = (items[found] as Node).toJSON();
+      document.setIn([...path, found], item);
+      return { previous };
+    }
     if (found !== -1) {
       path.push(found);
       continue;

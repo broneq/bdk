@@ -145,6 +145,12 @@ function fromIssue(
   candidates: Candidates,
 ): ConfigProblem[] {
   const key = dotted(issue.path, merged.value);
+  const branch = issue.code === "invalid_union" ? deeperBranch(issue.errors) : undefined;
+  if (branch !== undefined) {
+    return branch.flatMap((inner) =>
+      fromIssue({ ...inner, path: [...issue.path, ...inner.path] }, merged, layers, candidates),
+    );
+  }
   if (issue.code === "unrecognized_keys") {
     return issue.keys.map((name) => {
       const path = joinKey(key, name);
@@ -161,6 +167,20 @@ function fromIssue(
       message: issue.message,
     },
   ];
+}
+
+/**
+ * The issues of the one union option that failed inside its list items, e.g.
+ * a tool entry without `tier` in a `none | [entry]` group (T49): they name the
+ * field. Undefined otherwise, so the union's own message stands.
+ */
+function deeperBranch(
+  branches: readonly (readonly z.core.$ZodIssue[])[],
+): readonly z.core.$ZodIssue[] | undefined {
+  const deeper = branches.filter(
+    (branch) => branch.length > 0 && branch.every((inner) => typeof inner.path[0] === "number"),
+  );
+  return deeper.length === 1 ? deeper[0] : undefined;
 }
 
 /** A zod issue path as a dotted key, array indexes replaced by the item's id. */

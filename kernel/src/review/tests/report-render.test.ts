@@ -88,6 +88,19 @@ describe("review report templates", () => {
     for (const id of ["L-00000002", "L-00000003", "L-00000005"]) expect(md).toContain(id);
   });
 
+  it("shows a tool group declared none as not used, tests as a warning (T49)", () => {
+    const base = fixture();
+    const notUsed = changeReport({ ...base, gate: { ...base.gate, notUsed: ["lint", "test"] } });
+    const md = changeReportMd(notUsed);
+    expect(md).toContain("- Tests: not used (tools.test is none): this Change ran no test\n");
+    expect(md).toContain("- Lint: not used (tools.lint is none)\n");
+    const page = changeReportHtml(notUsed);
+    expect(page).toContain(
+      '<li class="warn">Tests: not used (tools.test is none): this Change ran no test</li>',
+    );
+    expect(page).toContain("<li>Lint: not used (tools.lint is none)</li>");
+  });
+
   it("keeps the sections in order", () => {
     const page = changeReportHtml(report);
     const order = ["Parts and areas", "Change map", "Gate", "Decisions", "Settled", "Context"].map(

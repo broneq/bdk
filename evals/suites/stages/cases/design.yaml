@@ -8,6 +8,8 @@
     - |-
       node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
+      node "$BDK" config set tools.lint none >/dev/null
+    - |-
       node "$BDK" config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
@@ -32,6 +34,8 @@
   prepare:
     - |-
       node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set tools.lint none >/dev/null
     - |-
       node "$BDK" config set features.lavish false >/dev/null
     - |-

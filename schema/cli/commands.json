@@ -67,6 +67,7 @@
         "policy/change-exists",
         "policy/detached-head",
         "policy/empty-range",
+        "policy/tools-unset",
         "runtime/git-missing"
       ],
       "writes": [
@@ -496,6 +497,7 @@
         "policy/placeholder",
         "policy/validation-failed",
         "policy/config-invalid",
+        "policy/tools-unset",
         "runtime/worktree-setup-failed",
         "runtime/git-too-old",
         "runtime/git-missing"

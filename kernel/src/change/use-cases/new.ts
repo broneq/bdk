@@ -1,10 +1,11 @@
 // `bdk change new <intent>`: opens a Change on the current branch. Every
 // check runs before the first write; the profile is recorded as the caller
 // passed it (design D-11 of T20), `small` by default. A review Change (T42)
-// stamps the commit its range starts from.
+// stamps the commit its range starts from. An unset tool group the Change
+// would run is refused here, before design and plan (T49).
 import { join } from "node:path";
 
-import { changeGraph } from "../../graph/index.ts";
+import { changeGraph, unsetToolsForKind } from "../../graph/index.ts";
 import { appendEntry } from "../../log/index.ts";
 import { globalDir, overriddenKeys, resolveConfig } from "../../shared/config/index.ts";
 import type { Environment } from "../../shared/config/index.ts";
@@ -112,6 +113,12 @@ export async function newChange(
     projectRoot,
     pluginRoot: deps.pluginRoot,
   });
+  // Settings that do not validate leave the check to `bdk next`, which refuses them.
+  const unset =
+    resolution.value === undefined
+      ? undefined
+      : unsetToolsForKind(deps, resolution.value, input.kind);
+  if (unset !== undefined) return unset;
   const overridden = overriddenKeys(resolution);
   await ensureIgnored(deps.store, deps.git, projectRoot);
 

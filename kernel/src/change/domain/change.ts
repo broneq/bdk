@@ -1,7 +1,12 @@
 // Change ids, profile ranks and the shapes the change commands answer
 // (`kernel-cli/change`; `kernel-state`, Identifiers, Derived state and
 // mutation). Pure: the use cases read the files and the index.
-import type { GATE_PASSERS, NodeState } from "../../shared/vocabulary/index.ts";
+import type {
+  GATE_PASSERS,
+  NodeState,
+  ToolGroupName,
+  ToolGroupState,
+} from "../../shared/vocabulary/index.ts";
 
 const SLUG_MAX = 40;
 
@@ -153,6 +158,8 @@ export interface StatusReport {
   readonly parts: readonly PartView[];
   readonly openTickets: readonly OpenTicketView[];
   readonly overriddenKeys: readonly string[];
+  /** The state of each tool group the pipeline runs (T49). */
+  readonly tools: Readonly<Record<ToolGroupName, ToolGroupState>>;
 }
 
 export interface ListItem {
@@ -208,5 +215,7 @@ export interface CloseReport {
   readonly archivedTo: string;
   readonly spec: { readonly merged: readonly string[]; readonly unchanged: boolean };
   readonly gatesByPolicy: readonly string[];
+  /** The tool groups declared none, sorted (T49). */
+  readonly toolsNotUsed: readonly ToolGroupName[];
   readonly summary: string;
 }

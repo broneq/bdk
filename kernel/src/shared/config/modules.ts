@@ -4,6 +4,8 @@
 // `evidence` and `graph` all read, so no one slice owns them.
 import * as z from "zod";
 
+import type { ToolGroupName, ToolGroupState } from "../vocabulary/index.ts";
+
 import { defineConfigModule } from "./registry.ts";
 
 const glob = z
@@ -84,6 +86,23 @@ function tools<T extends z.ZodType>(item: T, description: string) {
   return z.array(item).default([]).meta({ description });
 }
 
+/** The scalar that declares a tool group not used (T49). */
+export const NONE = "none";
+
+const GROUP_MESSAGE = `must be ${NONE} or a list of at least one entry; set ${NONE} when the project has no tool of this group`;
+
+/**
+ * A tool group the pipeline runs (`kernel-settings`, Tool entries; T49): a list
+ * of one or more entries, or `none`, without a default, so an unset group stays
+ * distinguishable from a declared-none one.
+ */
+function group<T extends z.ZodType>(item: T, description: string) {
+  return z
+    .union([z.literal(NONE), z.array(item).min(1, GROUP_MESSAGE)], { error: GROUP_MESSAGE })
+    .optional()
+    .meta({ description });
+}
+
 export const toolsModule = defineConfigModule({
   key: "tools",
   consumer: "shared/config",
@@ -91,13 +110,13 @@ export const toolsModule = defineConfigModule({
   description: "The commands the project runs, one entry per command, merged by id.",
   schema: z
     .strictObject({
-      test: tools(
+      test: group(
         entry({ coverage: coverage.optional(), tier: z.enum(["fast", "e2e"]) }),
-        "Test commands; tier fast or e2e.",
+        "Test commands, tier fast or e2e; none when the project has no test tool.",
       ),
-      lint: tools(
+      lint: group(
         entry({ tier: z.enum(["lint", "format", "typecheck"]) }),
-        "Lint, format and type check commands.",
+        "Lint, format and type check commands; none when the project has no lint tool.",
       ),
       build: tools(entry({}), "Build commands; no tier."),
     })
@@ -106,3 +125,24 @@ export const toolsModule = defineConfigModule({
 
 /** The resolved `tools` entries (`kernel-settings`, Tool entries). */
 export type ToolEntries = z.output<typeof toolsModule.schema>;
+
+export type ToolEntry<G extends ToolGroupName> = Exclude<
+  ToolEntries[G],
+  typeof NONE | undefined
+>[number];
+
+/** A tool group's state and its entries, empty unless configured. */
+export function toolGroup<G extends ToolGroupName>(
+  tools: ToolEntries,
+  name: G,
+): { readonly state: ToolGroupState; readonly entries: readonly ToolEntry<G>[] } {
+  const value = tools[name];
+  if (value === undefined) return { state: "unset", entries: [] };
+  if (value === NONE) return { state: "none", entries: [] };
+  return { state: "configured", entries: value };
+}
+
+/** The state of every tool group (T49). */
+export function toolGroupStates(tools: ToolEntries): Record<ToolGroupName, ToolGroupState> {
+  return { test: toolGroup(tools, "test").state, lint: toolGroup(tools, "lint").state };
+}

@@ -120,6 +120,9 @@ function fixtureFiles(): Record<string, string> {
 
 let repo: Fixture | undefined;
 
+/** Both tool groups declared none, so `change new` opens the Change (T49). */
+const TOOLS = "tools:\n  test: none\n  lint: none\n";
+
 afterEach(() => {
   repo?.remove();
   repo = undefined;
@@ -287,7 +290,7 @@ function validateTree(root: string): number {
 
 describe("two-branch merge", () => {
   it("merges the output of the real commands on two branches without conflict", async () => {
-    repo = createFixture({ files: { "README.md": "# app\n" } });
+    repo = createFixture({ files: { "README.md": "# app\n", ".bdk/settings.yaml": TOOLS } });
     const { root } = repo;
     git(root, "checkout", "--quiet", "-b", "main");
     const opened = await kernel(root, "change", "new", "Passwordless login");
@@ -334,7 +337,7 @@ describe("two-branch merge", () => {
   });
 
   it("merges a triage on one branch with a resolve on the other without conflict", async () => {
-    repo = createFixture({ files: { "README.md": "# app\n" } });
+    repo = createFixture({ files: { "README.md": "# app\n", ".bdk/settings.yaml": TOOLS } });
     const { root } = repo;
     git(root, "checkout", "--quiet", "-b", "main");
     const id = String((await kernel(root, "change", "new", "Passwordless login")).change);

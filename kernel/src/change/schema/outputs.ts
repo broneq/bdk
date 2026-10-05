@@ -23,6 +23,8 @@ import {
   PROFILES,
   SOURCE_PATTERN,
   TICKET_SCOPES,
+  TOOL_GROUP_STATES,
+  TOOL_GROUPS,
 } from "../../shared/vocabulary/index.ts";
 
 const CHANGE = "2026-09-25-passwordless-login";
@@ -165,6 +167,12 @@ export const changeStatusOutput = z
       }),
     ),
     overriddenKeys,
+    tools: z
+      .strictObject({ test: z.enum(TOOL_GROUP_STATES), lint: z.enum(TOOL_GROUP_STATES) })
+      .meta({
+        description:
+          "The state of each tool group the pipeline runs: configured, none (declared not used) or unset (T49).",
+      }),
   })
   .meta({
     title: "bdk change status --json",
@@ -205,6 +213,7 @@ export const changeStatusOutput = z
         parts: [],
         openTickets: [],
         overriddenKeys: ["policy.escalation.enabled"],
+        tools: { test: "configured", lint: "none" },
       },
     ],
   }) satisfies z.ZodType<StatusReport>;
@@ -359,9 +368,12 @@ export const changeCloseOutput = z
     gatesByPolicy: z
       .array(z.string().regex(/^gate:[a-z-]+$/))
       .meta({ description: "Gates passed by a `source: policy` transition." }),
+    toolsNotUsed: z
+      .array(z.enum(TOOL_GROUPS))
+      .meta({ description: "The tool groups declared none, sorted (T49)." }),
     summary: z.string().min(1).meta({
       description:
-        "PR summary in Markdown from the ledger: intent, decisions, assumptions, risks, open findings, merged capabilities.",
+        "PR summary in Markdown from the ledger: intent, decisions, assumptions, risks, open findings, merged capabilities, the tool groups not used.",
     }),
   })
   .meta({
@@ -374,6 +386,7 @@ export const changeCloseOutput = z
         archivedTo: `.bdk/changes/archive/${CHANGE}`,
         spec: { merged: ["auth/login"], unchanged: false },
         gatesByPolicy: [],
+        toolsNotUsed: [],
         summary: "## Users log in with a link\n\n### Spec\n\n- `auth/login`\n",
       },
     ],

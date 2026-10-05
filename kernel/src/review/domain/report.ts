@@ -4,6 +4,7 @@
 // in a fixed order, so the same inputs give the same report.
 
 import { DISPOSITIONS, LEVELS } from "../../shared/vocabulary/index.ts";
+import type { ToolGroupName } from "../../shared/vocabulary/index.ts";
 
 const DECIDED_TYPES = new Set(["finding", "observation", "blocker"]);
 const CONTEXT_TYPES = new Set(["decision", "assumption", "risk"]);
@@ -91,11 +92,25 @@ export interface ReportInput {
     readonly tests: string | undefined;
     readonly lint: string | undefined;
     readonly coverage: readonly CoverageInput[];
+    /** The tool groups declared none: shown as not used in place of a verdict (T49). */
+    readonly notUsed: readonly ToolGroupName[];
   };
   readonly tracker: Tracker | undefined;
   readonly moduleOf: (path: string) => string;
   readonly matches: (glob: string, path: string) => boolean;
 }
+
+/** The Gate text of a tool group declared none; `warn` for tests (T49). */
+export const NOT_USED_GATE: Readonly<
+  Record<ToolGroupName, { readonly label: string; readonly text: string; readonly warn: boolean }>
+> = {
+  test: {
+    label: "Tests",
+    text: "not used (tools.test is none): this Change ran no test",
+    warn: true,
+  },
+  lint: { label: "Lint", text: "not used (tools.lint is none)", warn: false },
+};
 
 interface GridCell extends Lines {
   readonly files: readonly string[];

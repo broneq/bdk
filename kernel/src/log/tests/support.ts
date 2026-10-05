@@ -79,6 +79,22 @@ export function repository(): Store {
   return store;
 }
 
+/**
+ * Project settings that configure both tool groups a Change runs (T49), so
+ * `change new` and `part start` do not refuse `policy/tools-unset`. A test
+ * that writes its own `.bdk/settings.yaml` starts it with this text.
+ */
+export const TOOL_SETTINGS =
+  "tools:\n" +
+  "  test:\n    - { id: unit, tier: fast, command: vitest run }\n" +
+  "  lint:\n    - { id: eslint, tier: lint, command: eslint . }\n";
+
+/** `store` with TOOL_SETTINGS as its project settings. */
+export function withTools(store: Store): Store {
+  store.write(`${ROOT}/.bdk/settings.yaml`, TOOL_SETTINGS);
+  return store;
+}
+
 /** Draws the ids `L-00000001`, `L-00000002`, ... in order. */
 export function sequentialRandom(): () => number {
   let digit = 0;

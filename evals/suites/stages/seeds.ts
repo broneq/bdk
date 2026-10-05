@@ -80,6 +80,18 @@ function commitIgnore(dir: string): void {
   }
 }
 
+/**
+ * The fixture's test and lint commands, committed before `change new`
+ * refuses an unset tool group (T49); a case's own `config set` lines replace
+ * them by id.
+ */
+function projectTools(dir: string, kernel: Kernel): void {
+  run(dir, kernel, ["config", "set", "tools.test.vitest", "{tier: fast, command: npx vitest run}"]);
+  run(dir, kernel, ["config", "set", "tools.lint.eslint", "{tier: lint, command: npx eslint .}"]);
+  git(dir, "add", ".bdk/settings.yaml");
+  git(dir, "commit", "-q", "-m", "chore(bdk): project settings");
+}
+
 /** One passing verifier round on `node`, as `/bdk:verify-design` or `/bdk:verify-plan` records it. */
 function verified(dir: string, kernel: Kernel, node: "design-verify" | "plan-verify"): void {
   const ticket = field(run(dir, kernel, ["attempt", "open", "verifier", node]), "ticket");
@@ -120,6 +132,7 @@ interface LargeOptions {
 /** A large Change from the files of `source`, at the end of its plan stage. */
 function largeChange(dir: string, kernel: Kernel, source: string, options: LargeOptions): void {
   const intent = readFileSync(join(source, "intent.md"), "utf8").trim();
+  projectTools(dir, kernel);
   const change = field(
     run(dir, kernel, ["change", "new", intent, "--profile", "large", "--reason", "eval seed"]),
     "change",
@@ -268,6 +281,7 @@ function reviewRound(dir: string, kernel: Kernel, change: string): void {
  */
 function executedTiny(dir: string, kernel: Kernel, appName: string): string {
   const intent = readFileSync(join(REVIEWED, "intent.md"), "utf8").trim();
+  projectTools(dir, kernel);
   const change = field(
     run(dir, kernel, ["change", "new", intent, "--profile", "tiny", "--reason", "eval seed"]),
     "change",
@@ -299,6 +313,7 @@ function reviewed(dir: string, kernel: Kernel): void {
  */
 function executedTwoParts(dir: string, kernel: Kernel, defects?: string): void {
   const intent = readFileSync(join(TWO_PARTS_EXECUTED, "intent.md"), "utf8").trim();
+  projectTools(dir, kernel);
   const change = field(
     run(dir, kernel, ["change", "new", intent, "--profile", "tiny", "--reason", "eval seed"]),
     "change",

@@ -5,12 +5,19 @@
 // results. Writes only the output file.
 import { isAbsolute, join, relative, sep } from "node:path";
 
-import { moduleValue, resolveOrRefuse, toolsModule } from "../../shared/config/index.ts";
+import {
+  moduleValue,
+  resolveOrRefuse,
+  toolGroup,
+  toolGroupStates,
+  toolsModule,
+} from "../../shared/config/index.ts";
 import type { Mapping } from "../../shared/config/index.ts";
 import { headCommit, rangeCommits } from "../../shared/git/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
+import { groupsNotUsed } from "../../shared/vocabulary/index.ts";
 import {
   changeBase,
   EMPTY_TREE,
@@ -235,8 +242,9 @@ function areasOf(deps: ReviewDeps, change: ActiveChange): Map<string, string> {
 function gateOf(deps: ReviewDeps, change: ActiveChange, settings: Mapping) {
   const manifests = readManifests(deps.store, change.dir);
   const latest = (match: (manifest: ManifestFile) => boolean) => manifests.filter(match).at(-1);
-  const coverage: CoverageInput[] = moduleValue(toolsModule, settings)
-    .test.filter((entry) => entry.coverage !== undefined)
+  const tools = moduleValue(toolsModule, settings);
+  const coverage: CoverageInput[] = toolGroup(tools, "test")
+    .entries.filter((entry) => entry.coverage !== undefined)
     .map((entry) => {
       const manifest = latest(
         (item) => item.data.kind === "coverage" && item.data.tool === entry.id,
@@ -252,6 +260,7 @@ function gateOf(deps: ReviewDeps, change: ActiveChange, settings: Mapping) {
     tests: latest((item) => item.data.kind === "tests-full")?.data.verdict,
     lint: latest((item) => item.data.kind === "lint-full")?.data.verdict,
     coverage,
+    notUsed: groupsNotUsed(toolGroupStates(tools)),
   };
 }
 

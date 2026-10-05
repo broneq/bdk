@@ -319,6 +319,19 @@ describe("the gate runner's Checks section (D9)", () => {
     expect(checks).not.toContain("### tests-scoped");
   });
 
+  it("leaves out the full check of a group declared none (T49)", async () => {
+    const h = round();
+    h.store.write(
+      `${ROOT}/.bdk/settings.yaml`,
+      GATE_TOOLS.replace(/ {2}lint:\n[\s\S]*$/, "  lint: none\n"),
+    );
+    const { text } = await groupBuilt(h, "runner", "gate");
+    const checks = section(text, "Checks");
+    expect(checks).toContain("### tests-full");
+    expect(checks).not.toContain("### lint-full");
+    expect(checks).not.toContain("eslint");
+  });
+
   it("keeps the post-fix steps for an ungrouped runner on the same ticket", async () => {
     const h = round();
     h.store.write(`${ROOT}/.bdk/settings.yaml`, GATE_TOOLS);

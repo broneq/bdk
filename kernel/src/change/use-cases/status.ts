@@ -48,6 +48,7 @@ export function changeStatus(
       parts: await partItems(deps, change, read),
       openTickets: tickets,
       overriddenKeys: Array.isArray(data.overridden) ? data.overridden.map(String) : [],
+      tools: read.view.toolGroups,
     };
   });
 }

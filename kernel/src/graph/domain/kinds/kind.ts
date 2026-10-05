@@ -2,7 +2,7 @@
 // kinds; design D-2). A kind owns its files, its hash inputs, whether it
 // applies, its instances, its validator and how it becomes done. Kinds are
 // pure: the use cases read the Change into a `ChangeView` and hash the inputs.
-import type { Profile } from "../../../shared/vocabulary/index.ts";
+import type { Profile, ToolGroupName, ToolGroupState } from "../../../shared/vocabulary/index.ts";
 
 /** A file of the Change directory as the use case read it. */
 export interface FileFacts {
@@ -129,6 +129,8 @@ export interface ChangeView {
   changeTree(): string | undefined;
   /** The `tools.test` ids with `coverage.min`, whose coverage `tests-full` needs (T42-D5). */
   readonly coverageTools: readonly string[];
+  /** The state of each tool group (`kernel-settings`, Tool entries; T49). */
+  readonly toolGroups: Readonly<Record<ToolGroupName, ToolGroupState>>;
   /** The loop of a ticket of the Change, or undefined when it has no attempt record. */
   ticketLoop(ticket: string): string | undefined;
   /** The outcome a ticket of the Change closed with; undefined while it is open or unknown. */
@@ -189,6 +191,8 @@ export interface Kind {
   instances?(view: ChangeView): readonly Instance[];
   /** Only kinds with a content rule have it: why the kind does not apply to this Change, or undefined when it does. */
   skip?(view: ChangeView): string | undefined;
+  /** Only the kinds that run a tool group's commands have it; skipped while the group is `none` (T49). */
+  readonly toolGroup?: ToolGroupName | undefined;
   /** The paths the kind writes, relative to the Change directory; patterns before an instance exists. */
   writes(view: ChangeView, nn?: string): readonly string[];
   inputs(view: ChangeView, nn?: string): Inputs;

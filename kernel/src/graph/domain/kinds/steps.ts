@@ -4,7 +4,7 @@
 // (T30). A step or check is done through evidence: the latest manifest of its
 // kind covering the part or the Change, fresh against its own target and
 // saying `pass` or `not-run`.
-import type { Role } from "../../../shared/vocabulary/index.ts";
+import type { Role, ToolGroupName } from "../../../shared/vocabulary/index.ts";
 import { BaseKind, partFiles } from "./kind.ts";
 import type {
   ChangeView,
@@ -44,14 +44,22 @@ const DONE_VERDICTS: readonly (string | undefined)[] = ["pass", "not-run"];
 export class PostTaskStepKind extends BaseKind {
   override readonly doneBy: DoneBy;
 
-  /** `command` records the kind's evidence; `bdk done` refused names it; `role` runs the step. */
+  /**
+   * `command` records the kind's evidence; `bdk done` refused names it; `role`
+   * runs the step; `toolGroup` is the tool group whose commands it runs.
+   */
   constructor(
     readonly name: string,
     readonly command: string,
     readonly role: Role,
+    readonly toolGroup?: ToolGroupName,
   ) {
     super();
     this.doneBy = { through: "evidence", command };
+  }
+
+  skip(view: ChangeView): string | undefined {
+    return declaredNone(view, this.toolGroup);
   }
 
   instances(view: ChangeView): readonly Instance[] {
@@ -101,6 +109,13 @@ export class PostTaskStepKind extends BaseKind {
       this.command,
     );
   }
+}
+
+/** Why a kind of a declared-none tool group does not apply (`kernel-pipeline`, Tool group nodes). */
+function declaredNone(view: ChangeView, group: ToolGroupName | undefined): string | undefined {
+  return group !== undefined && view.toolGroups[group] === "none"
+    ? `tools.${group} is none`
+    : undefined;
 }
 
 /** A node's state from its latest manifest: stale before not passing, absent as open. */
@@ -177,12 +192,17 @@ export class ChangeCheckKind extends BaseKind {
   constructor(
     readonly name: string,
     readonly coverage: boolean,
+    readonly toolGroup: ToolGroupName,
   ) {
     super();
     this.doneBy = {
       through: "evidence",
       command: `bdk evidence record ${name} <file> --ticket <ticket>@<group>`,
     };
+  }
+
+  skip(view: ChangeView): string | undefined {
+    return declaredNone(view, this.toolGroup);
   }
 
   writes(view: ChangeView): readonly string[] {
@@ -252,7 +272,10 @@ function missingCoverage(tool: string): string {
 
 /** The shipped change-level checks, in pipeline order. */
 export function changeChecks(): ChangeCheckKind[] {
-  return [new ChangeCheckKind("tests-full", true), new ChangeCheckKind("lint-full", false)];
+  return [
+    new ChangeCheckKind("tests-full", true, "test"),
+    new ChangeCheckKind("lint-full", false, "lint"),
+  ];
 }
 
 /** The shipped steps, in pipeline order; `simplify`'s manifest is recorded by `attempt close ok` (T23-D43). */
@@ -263,8 +286,14 @@ export function postTaskSteps(): PostTaskStepKind[] {
       "tests-scoped",
       "bdk evidence record tests-scoped <file> --ticket <ticket>",
       "runner",
+      "test",
     ),
-    new PostTaskStepKind("lint", "bdk evidence record lint <file> --ticket <ticket>", "runner"),
+    new PostTaskStepKind(
+      "lint",
+      "bdk evidence record lint <file> --ticket <ticket>",
+      "runner",
+      "lint",
+    ),
   ];
 }
 

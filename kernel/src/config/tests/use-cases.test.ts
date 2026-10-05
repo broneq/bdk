@@ -68,7 +68,7 @@ describe("showConfig", () => {
       value: {
         languages: ["go"],
         features: { lavish: true },
-        tools: { test: [], lint: [], build: [] },
+        tools: { build: [] },
         prompts: {
           "fragments/decision/lavish": { mode: "extends", files: [{ layer: "default" }] },
         },
@@ -111,7 +111,6 @@ describe("showConfig", () => {
         "tools.test.unit.command": "project",
         "tools.test.unit.when": "project",
         "tools.test.unit.scoped": "local",
-        "tools.lint": "default",
         "tools.build": "default",
       },
     });
@@ -352,6 +351,50 @@ describe("setConfig", () => {
       },
       { id: "e2e", tier: "e2e", command: "pnpm e2e" },
     ]);
+  });
+
+  it("replaces the whole item an id segment names, keeping its id", async () => {
+    const { input, store } = setup({ [PROJECT]: TOOLS });
+    expect(
+      await setConfig(input, {
+        key: "tools.test.unit",
+        value: "{tier: fast, command: vitest run}",
+      }),
+    ).toMatchObject({
+      value: { tier: "fast", command: "vitest run" },
+      previous: {
+        id: "unit",
+        tier: "fast",
+        command: "pnpm test:unit",
+        when: "before every commit",
+      },
+    });
+    const tools = parse(store.read(PROJECT) ?? "") as { tools: { test: unknown[] } };
+    expect(tools.tools.test).toStrictEqual([{ id: "unit", tier: "fast", command: "vitest run" }]);
+  });
+
+  it("declares a tool group none and replaces none with an entry (T49)", async () => {
+    const { input, store } = setup({ [PROJECT]: TOOLS });
+    expect(await setConfig(input, { key: "tools.lint", value: "none" })).toMatchObject({
+      key: "tools.lint",
+      value: "none",
+    });
+    expect(parse(store.read(PROJECT) ?? "")).toMatchObject({ tools: { lint: "none" } });
+    await setConfig(input, {
+      key: "tools.lint.eslint",
+      value: "{tier: lint, command: eslint .}",
+    });
+    expect(parse(store.read(PROJECT) ?? "")).toMatchObject({
+      tools: { lint: [{ id: "eslint", tier: "lint", command: "eslint ." }] },
+    });
+  });
+
+  it("refuses an empty tool group, naming none (T49)", async () => {
+    const { input, store } = setup({ [PROJECT]: TOOLS });
+    const outcome = refusal(await setConfig(input, { key: "tools.lint", value: "[]" }));
+    expect(outcome.rule).toBe("policy/config-invalid");
+    expect(outcome.why).toContain("none");
+    expect(store.read(PROJECT)).toBe(TOOLS);
   });
 
   it("keeps comments, flow sequences and key order", async () => {

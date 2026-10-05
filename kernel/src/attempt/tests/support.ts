@@ -4,7 +4,7 @@
 import { expect } from "vitest";
 
 import { setChange, writeEntry, writePlanPart } from "../../graph/tests/support.ts";
-import { ROOT } from "../../log/tests/support.ts";
+import { ROOT, TOOL_SETTINGS } from "../../log/tests/support.ts";
 import { harness as partHarness, tasks } from "../../part/tests/support.ts";
 import type { Harness as PartHarness } from "../../part/tests/support.ts";
 import type { RunResult } from "../../log/tests/support.ts";
@@ -38,7 +38,7 @@ export function harness(): Harness {
  */
 export async function started(settings?: string): Promise<Harness> {
   const h = harness();
-  if (settings !== undefined) h.store.write(`${ROOT}/.bdk/settings.yaml`, settings);
+  if (settings !== undefined) h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOL_SETTINGS + settings);
   setChange(h.store, { profile: "tiny" });
   writePlanPart(h.store, "01", { body: tasks("01", 2), doNotTouch: ["src/billing/**"] });
   writePlanPart(h.store, "02", { body: tasks("02", 1), dependsOn: ["01"] });

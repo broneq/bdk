@@ -207,8 +207,8 @@ The `stages` suite SHALL run stage skills the way a user starts them: each case 
 
 #### Scenario: run to the review stage
 
-- **WHEN** the case `run-auto` types `/bdk:run --auto "<intent>"` on the fixture without a Change
-- **THEN** the case passes when every `execute-part` instance is done, `bdk next --json` returns the `review` node and the final reply names `/bdk:cr`
+- **WHEN** the case `run-auto` types `/bdk:run --auto "<intent>"` on the fixture without a Change, with `tools.test` configured and `tools.lint` declared `none`
+- **THEN** the case passes when the Change is archived, its archived evidence holds no `lint` or `lint-full` manifest, and the final reply names both gates passed by policy, the review report and the entries deferred to be reviewed
 
 #### Scenario: run stops at a manual gate
 

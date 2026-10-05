@@ -36,6 +36,27 @@ them and changes only what you ask for. To change one thing, name it:
 On Claude Code the agents ship with the plugin, so setup does not export them
 into the project.
 
+### A project without tests or a linter
+
+`tools.test` and `tools.lint` each have three states, and BDK treats them
+differently:
+
+| State         | In `.bdk/settings.yaml`          | What a Change does                                                                                                                                              |
+| ------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Configured    | one or more entries              | Runs the group's scoped checks after each task and its full check before the review.                                                                            |
+| Declared none | `lint: none` under `tools`       | Skips the group's steps. `bdk change status`, the review report and the PR summary say the group was not used; for tests they warn that the Change ran no test. |
+| Unset         | the key is absent in every layer | `bdk change new` and `bdk part start` refuse with `policy/tools-unset`, naming the commands that fix it, so a run never stops late for a missing setting.       |
+
+When setup finds no test runner or no linter, it asks whether the project runs
+without one and, on a yes, writes the declared-none state:
+
+```
+bdk config set tools.lint none
+```
+
+Adding an entry later replaces `none`. An empty list (`lint: []`) is refused by
+`bdk config check`, so the two states never look alike.
+
 ### Why tiers matter
 
 BDK runs scoped checks while a Change is executed and the full suite once, at
@@ -96,6 +117,7 @@ Setup ends with a few lines you should read before moving on:
 
 - each tool entry as `<tier> <id>: <command>` with its scoped forms, so a wrong
   derivation is caught now by the person who knows the project;
+- each tool group declared none, and for tests that no Change will run a test;
 - what was imported, deleted, or not carried over from v2;
 - the tools kept off `.bdk/`, and each one you declined;
 - every remaining `doctor` finding with its repair;

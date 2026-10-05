@@ -1,7 +1,9 @@
 // The Markdown fallback of `bdk review render --format md` (`kernel-cli/review`;
 // T42-H): the sections of the HTML report in the same order, without the form.
 import type { PrPage } from "../domain/pr.ts";
+import { NOT_USED_GATE } from "../domain/report.ts";
 import type { ChangeReport, DecisionEntry, Lines } from "../domain/report.ts";
+import type { ToolGroupName } from "../../shared/vocabulary/index.ts";
 import { markdown } from "./escape.ts";
 import { shortRange } from "./report-html.ts";
 
@@ -45,8 +47,8 @@ export function changeReportMd(report: ChangeReport): string {
         ])),
     "## Gate",
     [
-      `- Tests: ${report.gate.tests ?? "not recorded"}`,
-      `- Lint: ${report.gate.lint ?? "not recorded"}`,
+      gateLine(report, "test", report.gate.tests),
+      gateLine(report, "lint", report.gate.lint),
       ...report.gate.coverage.map(
         (item) =>
           `- Coverage ${markdown(item.tool)}: ${item.percent === null ? "n/a" : `${String(item.percent)}%`}${
@@ -149,4 +151,11 @@ function counted(values: Readonly<Record<string, number>>): string {
 
 function lines(value: Lines): string {
   return `+${String(value.added)} -${String(value.removed)}`;
+}
+
+/** A tool group's Gate line: its verdict, or not used when declared none (T49). */
+function gateLine(report: ChangeReport, group: ToolGroupName, verdict: string | undefined): string {
+  const { label, text } = NOT_USED_GATE[group];
+  if (report.gate.notUsed.includes(group)) return `- ${label}: ${text}`;
+  return `- ${label}: ${verdict ?? "not recorded"}`;
 }

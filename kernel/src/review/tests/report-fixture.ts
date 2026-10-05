@@ -102,6 +102,7 @@ export function fixture(overrides: Partial<ReportInput> = {}): ReportInput {
       tests: "pass",
       lint: "pass",
       coverage: [{ tool: "unit", min: 80, percent: 91.5, verdict: "pass" }],
+      notUsed: [],
     },
     tracker: undefined,
     moduleOf,

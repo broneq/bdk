@@ -19,6 +19,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { REPO_ROOT } from "../../../tests/support/run.ts";
+import { TOOL_SETTINGS } from "../../log/tests/support.ts";
 import { registrations, settingsRegistry } from "../../registrations.ts";
 import { systemClock } from "../../shared/clock/index.ts";
 import { findWorkTree, systemGit } from "../../shared/git/index.ts";
@@ -36,6 +37,8 @@ beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), "bdk-worktree-flow-")));
   home = join(root, "user");
   mkdirSync(home);
+  // Both tool groups a Change runs, in the user's global layer (T49).
+  write(join(home, ".config", "bdk"), { "settings.yaml": TOOL_SETTINGS });
   root = join(root, "repo");
   mkdirSync(root);
   sh(root, "init", "--quiet", "-b", "main");

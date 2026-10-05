@@ -10,7 +10,7 @@ import type {
   PlanPartFacts,
   WorkFacts,
 } from "../domain/kinds/index.ts";
-import { moduleValue, toolsModule } from "../../shared/config/index.ts";
+import { moduleValue, toolGroup, toolGroupStates, toolsModule } from "../../shared/config/index.ts";
 import type { Mapping } from "../../shared/config/index.ts";
 import { KernelRefusal } from "../../shared/refusal/index.ts";
 import {
@@ -83,6 +83,7 @@ export function changeView(input: ViewInput): ChangeView {
     const report = documentData(store, join(input.projectRoot, row.path))?.report;
     return typeof report === "string" ? documentData(store, join(dir, report)) : undefined;
   };
+  const tools = moduleValue(toolsModule, input.settings);
   return {
     id: input.id,
     kind: input.kind,
@@ -104,9 +105,10 @@ export function changeView(input: ViewInput): ChangeView {
     evidence: input.evidence ?? [],
     partTree: (nn) => input.partTrees?.get(nn),
     changeTree: () => input.changeTree,
-    coverageTools: moduleValue(toolsModule, input.settings)
-      .test.filter((entry) => entry.coverage?.min !== undefined)
+    coverageTools: toolGroup(tools, "test")
+      .entries.filter((entry) => entry.coverage?.min !== undefined)
       .map((entry) => entry.id),
+    toolGroups: toolGroupStates(tools),
     ticketLoop,
     ticketOutcome,
     ...(input.work === undefined ? {} : { work: input.work }),
