@@ -33,9 +33,9 @@
 
 ## 7. Acceptance
 
-- [ ] 7.1 In a clean scratch project with the plugin loaded by `--plugin-dir`, run `bdk --version` through the Bash tool of a `claude -p` session and verify the version line
-- [ ] 7.2 Verify that the guards deny a subagent `bdk commit` and a main-thread `bdk hooks pre-tool` with the same rules as today's form, through `pnpm test:e2e`
-- [ ] 7.3 Run `claude plugin validate .` and verify `Validation passed` with no error and no warning about `bin/`
-- [ ] 7.4 Run the full gate: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip && pnpm test:unit && pnpm test:e2e && pnpm test:contract && pnpm skill-check && pnpm eval check`
+- [x] 7.1 In a clean scratch project with the plugin loaded by `--plugin-dir`, run `bdk --version` through the Bash tool of a `claude -p` session and verify the version line
+- [x] 7.2 Verify that the guards deny a subagent `bdk commit` and a main-thread `bdk hooks pre-tool` with the same rules as today's form, through `pnpm test:e2e`
+- [x] 7.3 Run `claude plugin validate .` and verify `Validation passed` with no error and no warning about `bin/`
+- [x] 7.4 Run the full gate: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip && pnpm test:unit && pnpm test:e2e && pnpm test:contract && pnpm skill-check && pnpm eval check`
 - [ ] 7.5 Run `pnpm eval stages --probe`, show its cost projection to the user, and after approval verify that every case passes with no Bash call naming `bdk.mjs` in any transcript
-- [ ] 7.6 Run `openspec validate v3-t52-bdk-bin --strict`
+- [x] 7.6 Run `openspec validate v3-t52-bdk-bin --strict`
