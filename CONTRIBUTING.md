@@ -76,9 +76,25 @@ Every BDK skill:
 
 ## Running Tests
 
-The repository's tests are vitest projects: `unit`, `e2e` and `contract` (the commands are in the Kernel section below). The repository needs no Python.
+The repository's tests are vitest projects: `unit`, `e2e`, `contract` and `perf` (the commands are in the Kernel section below). The repository needs no Python.
 
 Tests mirror the layout of what they cover. A slice's tests sit in its `tests/` directory (`kernel/src/<slice>/tests/`); kernel-wide tests sit in `kernel/tests/`: the E2E harness, the contract tests (`kernel/tests/contract/`) that check the plugin's files (hooks, skills, agents, the host probe and its recorded payloads), and the documentation site guards (`kernel/tests/docs/`).
+
+### Acceptance catalogue
+
+The v3 design's test list lives as a table in the `acceptance-catalogue` spec (`openspec/specs/acceptance-catalogue/spec.md`): one row per item, with an ID (`S3`, `AC-1`, `TSH-7`, `NFR-LAT-2`, `R-15`) and its evidence (`test`, `perf`, `report <path>`, `accepted: <reason>` or `open #<issue>`). A test answers an item by carrying its ID in brackets in its own title or in an enclosing `describe` title, for example `it("a killed session resumes [AC-2] [TSH-7]", ...)`; one title may carry several IDs. A `test` item needs a title in `unit`, `e2e` or `contract`, a `perf` item one in `perf`.
+
+- To add an item, add a row with the next free number of its section and title the tests that answer it. A dropped item stays as a row with `accepted` and the reason.
+- `pnpm acceptance:report` writes `docs/V3-ACCEPTANCE.md`, the table with each item's tests. Rerun it and commit the file after retitling a test or editing the catalogue.
+- `kernel/tests/contract/acceptance-catalogue.test.ts` fails on an item without its evidence, on a bracketed ID of a catalogue prefix that is not in the table, and on a report that differs from what the command writes now.
+
+### Perf budgets
+
+`pnpm test:perf` times the hooks and the kernel through the bundle. CI does not run it, and an endpoint security agent that intercepts every process start (common on work laptops) adds several milliseconds per exec, so measure in a Linux container:
+
+```bash
+docker run --rm -v "$PWD":/src:ro node:24-bookworm bash -c 'mkdir /work && cd /src && tar --exclude=./node_modules --exclude=./dist -cf - . | tar -C /work -xf - && cd /work && corepack enable && pnpm install --frozen-lockfile && pnpm test:perf'
+```
 
 `.git-blame-ignore-revs` lists the formatting commits; GitHub's blame reads it, and local `git blame` does after a one-time `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
