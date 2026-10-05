@@ -13,8 +13,8 @@
 
 ## 3. Guards
 
-- [ ] 3.1 Write the failing tests in `kernel/src/hooks/tests/`: `pre-tool.sh` starts the kernel for a subagent `bdk commit 01-1` and for a main-thread `cd app && bdk hooks pre-tool`, and the kernel denies them with the same rules as the `node .../bdk.mjs` form; a contract test asserts that no command in `hooks/hooks.json` or `hooks/guard/*.sh` runs `bdk` as a command word; verify that the prefilter tests fail
-- [ ] 3.2 Extend the prefilter of `hooks/guard/pre-tool.sh` with `bdk ` next to `bdk.mjs` (design D5) and update its header comment; verify with the tests of 3.1, `pnpm test:e2e` for the guard E2E and `pnpm test:perf` for the guard latency budget
+- [x] 3.1 Write the failing tests in `kernel/src/hooks/tests/`: `pre-tool.sh` starts the kernel for a subagent `bdk commit 01-1` and for a main-thread `cd app && bdk hooks pre-tool`, and the kernel denies them with the same rules as the `node .../bdk.mjs` form; a contract test asserts that no command in `hooks/hooks.json` or `hooks/guard/*.sh` runs `bdk` as a command word; verify that the prefilter tests fail
+- [x] 3.2 Extend the prefilter of `hooks/guard/pre-tool.sh` with `bdk ` next to `bdk.mjs` (design D5) and update its header comment; verify with the tests of 3.1, `pnpm test:e2e` for the guard E2E and `pnpm test:perf` for the guard latency budget
 
 ## 4. Skills and role contracts
 
