@@ -26,7 +26,7 @@ Convention (confirmed in T00; project context and artifact rules live in `opensp
 
 Status across tasks is tracked on GitHub, not in this file: every `Tnn` has one issue in the [`v3.0` milestone](https://github.com/broneq/bdk/milestone/1), labelled `v3:phase-N`, with native "blocked by" links that mirror the **Dependencies** line of each task. The [BDK v3 project board](https://github.com/users/broneq/projects/1) shows every issue with its `Status` (Todo / In progress / Done) and `Phase`. The issue holds status only; scope stays here and detail stays in the OpenSpec Change, whose `proposal.md` links the issue. The task's work happens on a branch `v3/Tnn-<slug>`; the PR that lands the archived Change targets `staging/v3`, and because closing keywords only fire on the default branch, the issue is closed by hand after the merge. When a task's dependencies change, update this file and the issue links together.
 
-Note on the seam: BDK v3 itself introduces a living spec in OpenSpec format under `.bdk/specs/` (D2). Until the v2 -> v3 cut, the BDK project is run with the OpenSpec tool (`openspec/`), and after T50 the BDK spec may be migrated to BDK's own mechanism (`bdk import` or by hand). Whether and when is a decision outside this plan, recorded in T50 as a question.
+Note on the seam: BDK v3 itself introduces a living spec in OpenSpec format under `.bdk/specs/` (D2). Until the v2 -> v3 cut, the BDK project is run with the OpenSpec tool (`openspec/`), and it stays run with OpenSpec after the 3.0 release (T50 decision). Migrating the BDK spec to BDK's own mechanism is left to the spec migration skill (T55).
 
 ## Dependency graph
 
@@ -59,7 +59,11 @@ flowchart LR
   T15 --> T42
   T30 --> T32["T32 Python cut,<br/>cleanup"]
   T31 --> T32
-  T42 --> T50["T50 E2E, documentation,<br/>release 3.0"]
+  T42 --> T50["T50 E2E and<br/>documentation"]
+  T50 --> T54["T54 Release 3.0"]
+  T30 --> T55["T55 Spec<br/>migration skill"]
+  T42 --> T55
+  T55 --> T54
   T32 --> T50
   T01 --> T10
   T01 --> T24
@@ -76,7 +80,7 @@ flowchart LR
   class T00,T01,T02,T03,T04,T10,T15 prep
   class T11,T12,T13,T14,T20,T21,T22,T23,T24,T30,T31,T32 primary
   class T40,T41,T42 warn
-  class T50 ok
+  class T50,T54,T55 ok
   classDef prep    fill:#5a6472,stroke:#98a2b3,color:#ffffff
   classDef primary fill:#3b6ea5,stroke:#7fa8d0,color:#ffffff
   classDef warn    fill:#8a6116,stroke:#c9a24d,color:#ffffff
@@ -112,7 +116,7 @@ Colours: grey = preparation without kernel code; blue = kernel and data; amber =
 
 - Schema: `spec-driven`, the only schema OpenSpec 1.13.2 ships. Test-first work is enforced by a `tasks` rule in `openspec/config.yaml`, not by a separate schema.
 - The v3 design and decision register are in git under `docs/v3/` (commit 389557d). The `.md` files are authoritative; the Polish `.html` pages are background material.
-- Whether `openspec/specs/` stays after v3 or migrates to `.bdk/specs/` stays open until T50, as that task already records.
+- Whether `openspec/specs/` stays after v3 or migrates to `.bdk/specs/` stayed open until T50, which decided it stays (migration left to T55).
 - Workflow profile: `custom` with `propose, explore, new, continue, apply, update, ff, verify, sync, archive`; the default `core` profile lacks `ff` and `verify`, which this plan relies on.
 - The second half of the acceptance signal (the first Change links this document) is checked when T01 starts.
 
@@ -785,29 +789,45 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 
 ## Phase 5 - Closing
 
-### T50 Acceptance E2E, NFRs, v3 documentation, 3.0 release
+### T50 Acceptance E2E, NFRs, v3 documentation
 
-**Goal**: all scenarios from the design's "Testing Strategy" pass as one suite; release 3.0 with migration instructions.
+**Goal**: every scenario from the design's "Testing Strategy" has a test that passes and is traceable to the scenario; v3 is documented for users and for developers. The release itself is T54.
 
 **Scope**:
 
-- E2E consolidation: the full list of acceptance and TSH scenarios from the design as one suite named after the scenarios; NFR measurements (`log list` at 1 000 entries, hook p95, ~200 kernel calls per Change) in the `perf` test project, run locally with `pnpm test:perf`; CI does not run timing assertions because its runners are too noisy.
+- Acceptance traceability: the acceptance and TSH scenarios stay in the E2E tests of their modules (no single consolidated suite); each scenario gets a stable ID carried in the test name, a contract test fails when a scenario listed in the design has no test with its ID, and the coverage report is generated from that mapping, not ticked by hand. NFR measurements (`log list` at 1 000 entries, hook p95, ~200 kernel calls per Change) in the `perf` test project, run locally with `pnpm test:perf`; CI does not run timing assertions because its runners are too noisy.
 - User edge cases: no kernel (fail-closed with an instruction), corrupted state (`rebuild` mandatory), two Changes on two branches in parallel (the T14 merge contract on a real fixture), a local override disabling escalation visible in D4b, a removed rule as a tombstone, a stage command with no kernel, a report envelope refused by `log ingest` -> resumed once -> `blocker` (T23-D35), `bdk-craft` installed without `bdk`.
-- Multi-host acceptance (T02 decision Q-3): one Change executed through the swarm skill (T23-D6) on at least one non-Claude host, with that host's notes added to the skill's `references/hosts/` and its tool map added to `bdk export agents --host` (T23-D21); the ledger from that run passes `doctor`.
 - User documentation: README v3 (installation with Node, two plugins, Change pipeline, gates and `run`, profiles, layered configuration, rules and the learning funnel, migration from v2), the `kernel-cli` and `kernel-state` specs under `openspec/specs/` synchronised with the code (contract tests); the kernel architecture stays the `kernel-architecture` spec (written in T10, with Mermaid per the standard) and is checked against the code by T11's import scan, so no separate architecture document is written. `docs/` keeps only temporary material, task artifacts, user documentation and ADRs; every living spec lives under `openspec/specs/`.
-- BDK's own repository: `.claude/rules/` reduced to what the T31 admission test keeps, the rest imported with `rules import` into `.bdk/rules/` or deleted; `.claude/rules/bdk-generated.md` produced by `rules export --claude`.
-- Release: release-please 3.0.0 for both plugins, marketplace entry with `bdk` and `bdk-craft`, step-by-step migration instructions; breaking change announcement.
-- Publish the built bundle (T48, #114): before the marketplace entry with `ref: release` reaches `main`, run the `release-please` workflow by hand with an existing tag as `tag` to create the `release` branch and the `dist-v<version>` tag; install `bdk` from the marketplace on a clean project and check that `/bdk:setup` writes a modeline whose URL resolves (the editor completion by hand once).
-- Decision on the BDK living spec after v3: whether `openspec/specs/` (from this implementation) migrates to `.bdk/specs/` with the mechanism from T30 and whether the BDK repo keeps being run with OpenSpec or with its own `/bdk:change` (a question for the user, not for this task).
+- Developer documentation of the evals: why they exist (A/A noise floor, the A/B and rules no-op measurements, the regression eval of T43), which suites there are and what each measures, how to run one and read its report, what a run costs and why none runs in CI; it gathers what is today spread over `evals/README.md` and `docs/V3-EVAL-*`.
+- BDK's own repository: every file in `.claude/rules/` goes through the content admission test of T31 (durability / decision / visibility / derivability); a rule that passes is imported with `rules import` into `.bdk/rules/`, the rest is deleted (including rules that describe v2 mechanisms, such as `inject-rules.py`); `.claude/rules/` then holds only the files `rules export --claude` generates.
 - Launch of the first Change after v3 with BDK's own tool: `ui-verify` on the primitives from T23 (outside the scope of this plan, here only `change new`).
+
+**Decisions** (user, 2026-10-05):
+
+- `openspec/` stays after the release and the BDK repo keeps being run with OpenSpec; migrating `openspec/specs/` to `.bdk/specs/` is left to the spec migration skill (T55) and is not part of this task.
+- promptfoo does not run in CI.
+- v2 support policy: none, a hard cut.
+- No multi-host acceptance: there is no non-Claude host to run it on. This revises T02 decision Q-3; the swarm skill's `references/hosts/` and `bdk export agents --host` stay as they are, without a recorded run.
 
 **Input**: "Testing Strategy" (Acceptance, Edge cases), "Constraints & NFRs", "Risk Register" (every risk must have an E2E or a measurement), S1-S8.
 
-**Acceptance signal**: every item S1-S8 from the design has a ticked test or measurement in the report; CI green; both `plugin.json` at 3.0.0; installation from the marketplace on a clean project -> `/bdk:setup` -> `change new` works; `bdk-craft` alone installs and `tdd` runs; the multi-host run report is in `docs/`.
+**Acceptance signal**: the generated coverage report shows a test or measurement for every item S1-S8 and every acceptance and edge case scenario of the design, and the contract test fails when one is removed; CI green; `bdk-craft` alone installs and `tdd` runs; README v3 and the eval documentation are published in the docs site; `.claude/rules/` holds only generated files.
 
-**To resolve in the spec**: what happens to `openspec/` after the release; whether promptfoo is in CI; v2 support policy (none, hard cut); which non-Claude host is the acceptance target.
+**To resolve in the spec**: the scenario ID scheme and where the scenario list lives (the design or a spec under `openspec/specs/`); whether the coverage report is committed or generated in CI only; which NFR measurement exists already and which is new.
 
 **Dependencies**: T32, T42.
+
+### T54 Release 3.0
+
+**Goal**: BDK 3.0 published on the marketplace with both plugins and step-by-step migration instructions from v2. Scope in issue #137.
+
+**Dependencies**: T50, T55.
+
+### T55 Spec migration skill
+
+**Goal**: a skill that migrates an existing specification into the BDK living spec under `.bdk/specs/`, whatever its source format (OpenSpec, other spec tools, free-form Markdown, ADRs). Scope in issue #136.
+
+**Dependencies**: T30, T42.
 
 ---
 
@@ -832,6 +852,6 @@ Things that must be settled but belong to no single spec; to be closed at T00 or
 1. ~~Where the v3 design lives during implementation~~ - resolved in T00: `docs/v3/`.
 2. Whether the A/B result (T40) can change the scope of T41 to variant B - yes, and this is the only planned decision gate in the middle of the plan.
 3. Order of T31 relative to T41: `plan` needs `PL` rules with IDs for the tick list; if the rule measurement drags on, `plan` can start with rules by file and get IDs later (temporary mode in `ctx`).
-4. Whether the BDK repo keeps being run with OpenSpec after v3 or with its own `/bdk:change` - see T50.
+4. ~~Whether the BDK repo keeps being run with OpenSpec after v3 or with its own `/bdk:change`~~ - resolved in T50: OpenSpec stays; migration through T55.
 5. ~~Whether `change` is a skill or only CLI commands called by other skills~~ - resolved in T02 (R-13): a skill, with `change new --inferred` for skills that open a Change on the user's behalf.
 6. ~~Whether OpenSpec becomes a runtime dependency of the kernel~~ - resolved in T02 (Q-1): no; format compatibility proven by a contract test in T30.
