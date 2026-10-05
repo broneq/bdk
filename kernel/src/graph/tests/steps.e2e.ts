@@ -104,6 +104,8 @@ describe("post-task step nodes", () => {
     ]);
   });
 
+  // A whole executed Change spawns dozens of kernel and git processes: about 10 s
+  // alone, over the 30 s project default when the whole E2E suite loads the machine.
   it("a stale step of a done part comes back through a verify-fix ticket of the part", () => {
     const change = started();
     const commitTask = (part: string, task: string, file: string, content: string) => {
@@ -148,5 +150,5 @@ describe("post-task step nodes", () => {
     for (const step of ["simplify:01", "tests-scoped:01", "lint:01"]) {
       expect(node(change, step)?.state, step).toBe("done");
     }
-  });
+  }, 120_000);
 });

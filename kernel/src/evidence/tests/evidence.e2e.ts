@@ -224,6 +224,8 @@ describe("bdk evidence coverage", () => {
     "tools:\n  test:\n    - id: unit\n      tier: fast\n      command: vitest run\n" +
     "      coverage:\n        command: vitest run --coverage\n        report: coverage/lcov.info\n        format: lcov\n        min: 90\n";
 
+  // A whole executed Change spawns dozens of kernel and git processes: about 10 s
+  // alone, over the 30 s project default when the whole E2E suite loads the machine.
   it("measures the lines the Change added since its base and records the computed verdict", () => {
     const change = executed(started(TOOLS));
     const round = opened(change, "review-fix", change.id);
@@ -278,5 +280,5 @@ describe("bdk evidence coverage", () => {
       3,
       "input/invalid-argument",
     );
-  });
+  }, 120_000);
 });
