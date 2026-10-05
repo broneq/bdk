@@ -402,7 +402,7 @@ describe("agent guards", () => {
         tool_input: { to, message: text, summary: "s" },
       });
     expect(denied(message(LEAD, "the token format changes"), "guard/agent-message")).toContain(
-      "bdk log add",
+      "the message names no ledger entry of the active Change; a message between agents must name one",
     );
     expect(denied(message(LEAD, `${entry} ${"x".repeat(400)}`), "guard/agent-message")).toContain(
       "agents.message.max-chars",

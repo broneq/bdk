@@ -48,7 +48,8 @@ export function bashUses(agents: readonly AgentTranscript[]): BashUse[] {
 
 /**
  * Attributes every command line. `verbOf` gives a record id's argv words;
- * each tool use matches one line at most, the latest line first.
+ * each simple command of a tool use matches one line at most, the latest line
+ * first, so one Bash use that calls the kernel twice serves two lines.
  */
 export function attribute(
   lines: readonly CommandLine[],
@@ -57,7 +58,7 @@ export function attribute(
   verbOf: (command: string) => readonly string[] | undefined,
 ): Map<number, Attribution> {
   const result = new Map<number, Attribution>();
-  const taken = new Set<BashUse>();
+  const taken = new Set<readonly string[]>();
   for (const line of [...lines].reverse()) {
     if (line.kind === "guard") {
       result.set(line.n, { agent: line.agent, use: null });
@@ -67,8 +68,9 @@ export function attribute(
       result.set(line.n, { agent: HOST_AGENT, use: null });
       continue;
     }
-    const use = matchUse(line, uses, taken, verbOf);
-    if (use !== null) taken.add(use);
+    const match = matchUse(line, uses, taken, verbOf);
+    if (match !== null) taken.add(match.words);
+    const use = match?.use ?? null;
     const holders = line.ticket === null ? [] : agents.filter((row) => row.ticket === line.ticket);
     const holder =
       holders.find((row) => row.id === use?.agent) ??
@@ -85,19 +87,27 @@ function byStart(a: AgentFacts, b: AgentFacts): number {
 function matchUse(
   line: CommandLine,
   uses: readonly BashUse[],
-  taken: ReadonlySet<BashUse>,
+  taken: ReadonlySet<readonly string[]>,
   verbOf: (command: string) => readonly string[] | undefined,
-): BashUse | null {
+): { readonly use: BashUse; readonly words: readonly string[] } | null {
   const verb = line.command === "unknown" ? [] : verbOf(line.command);
   if (verb === undefined) return null;
   const at = Date.parse(line.at);
-  let best: BashUse | null = null;
+  let best: { readonly use: BashUse; readonly words: readonly string[] } | null = null;
   for (const use of uses) {
-    if (taken.has(use) || use.at > at || use.at < at - MATCH_WINDOW_MS) continue;
-    if (!use.commands.some((words) => invokes(words, verb, line.args))) continue;
-    if (best === null || use.at > best.at) best = use;
+    if (use.at > at || use.at < at - MATCH_WINDOW_MS) continue;
+    const words = use.commands.findLast(
+      (each) => !taken.has(each) && invokes(each, verb, line.args),
+    );
+    if (words === undefined) continue;
+    if (best === null || use.at > best.use.at) best = { use, words };
   }
   return best;
+}
+
+/** True when one simple command of the Bash command calls the kernel. */
+export function callsKernel(command: string): boolean {
+  return shellCommands(command).some((words) => words.some((word) => KERNEL_WORD.test(word)));
 }
 
 /** True when the words call the kernel with this verb and these (journal-cut) arguments. */
@@ -129,10 +139,38 @@ function argsMatch(words: readonly string[], args: readonly string[]): boolean {
 
 /**
  * The simple commands of a Bash command as words: quotes and backslashes
- * resolved, split at `|`, `;`, `&`, `&&`, `||` and newlines. Expansions stay
- * literal, as no shell runs here.
+ * resolved, split at `|`, `;`, `&`, `&&`, `||` and newlines. A variable an
+ * earlier command assigned (`B=.../bdk.mjs; node $B next`, also with
+ * `export`) is expanded, as agents often call the kernel through one; other
+ * expansions stay literal, as no shell runs here.
  */
 export function shellCommands(command: string): string[][] {
+  const variables = new Map<string, string>();
+  return splitCommands(command).map((words) => {
+    const expanded = words.map((word) => expand(word, variables));
+    const assignments = expanded[0] === "export" ? expanded.slice(1) : expanded;
+    if (assignments.every((word) => ASSIGNMENT.test(word))) {
+      for (const word of assignments) {
+        const at = word.indexOf("=");
+        variables.set(word.slice(0, at), word.slice(at + 1));
+      }
+    }
+    return expanded;
+  });
+}
+
+const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+const REFERENCE = /\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))/g;
+
+function expand(word: string, variables: ReadonlyMap<string, string>): string {
+  return word.replace(
+    REFERENCE,
+    (whole, braced: string | undefined, plain: string | undefined) =>
+      variables.get(braced ?? plain ?? "") ?? whole,
+  );
+}
+
+function splitCommands(command: string): string[][] {
   const commands: string[][] = [[]];
   let word: string | null = null;
   let quote: "'" | '"' | null = null;

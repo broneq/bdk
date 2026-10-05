@@ -2,6 +2,7 @@
 // checks over one session's journal lines and transcript events. A finding
 // cites a journal line, a transcript line or a ledger id, and its summary
 // never quotes tool output.
+import { callsKernel } from "./attribution.ts";
 import type { Attribution } from "./attribution.ts";
 import type { AttemptFacts, CommandLine, ParkFacts, Thresholds } from "./facts.ts";
 import type { Finding } from "./report.ts";
@@ -65,7 +66,11 @@ export function detect(input: DetectorInput): Finding[] {
   ].sort((a, b) => a.at.localeCompare(b.at) || a.cite.localeCompare(b.cite));
 }
 
-/** D1: the same Bash command again with no write of that agent in between. */
+/**
+ * D1: the same Bash command again with no write of that agent in between. A
+ * command that calls the kernel is left out: `agents wait` and `next` poll by
+ * design, and D2 and D3 count a refused call from the journal.
+ */
 function repeatedBash(transcripts: readonly AgentTranscript[]): Finding[] {
   const findings: Finding[] = [];
   for (const transcript of transcripts) {
@@ -77,7 +82,7 @@ function repeatedBash(transcripts: readonly AgentTranscript[]): Finding[] {
         continue;
       }
       const command = event.name === "Bash" ? commandOf(event) : undefined;
-      if (command === undefined) continue;
+      if (command === undefined || callsKernel(command)) continue;
       const runs = (seen.get(command) ?? 0) + 1;
       seen.set(command, runs);
       if (runs < 2) continue;

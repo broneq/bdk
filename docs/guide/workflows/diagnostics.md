@@ -51,7 +51,7 @@ bdk diagnostics log --session <session-id>
 
 | Detector | Reports                                                                                                        |
 | -------- | -------------------------------------------------------------------------------------------------------------- |
-| D1       | The same Bash command run again by one agent with no edit in between                                           |
+| D1       | The same Bash command run again by one agent with no edit in between; kernel calls are left to D2 and D3       |
 | D2       | A refused kernel command repeated with the same arguments                                                      |
 | D3       | One refusal rule seen `diagnostics.repeat-refusal` times or more                                               |
 | D4       | A whole-suite test command run by an agent that holds a task                                                   |

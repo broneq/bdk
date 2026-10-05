@@ -505,7 +505,7 @@ function messageDecision(payload: PreToolPayload, facts: AgentFacts | undefined)
   const entries = messageEntries(message).filter((id) => facts?.entryExists(id) === true);
   if (entries.length === 0) {
     return deny(
-      "a message between agents names a ledger entry of the active Change (L-xxxxxxxx); write the substance with bdk log add first, then send its id (BDK T41-D5)",
+      "the message names no ledger entry of the active Change; a message between agents must name one (L-xxxxxxxx): write the substance with bdk log add first, then send its id (BDK T41-D5)",
     );
   }
   const limit = facts?.messageLimit ?? 0;

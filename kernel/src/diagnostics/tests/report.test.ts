@@ -144,6 +144,8 @@ function attempt(
 const VERBS: Record<string, string[]> = {
   "ctx-skill": ["ctx", "skill"],
   "attempt-close": ["attempt", "close"],
+  "attempt-open": ["attempt", "open"],
+  "attempt-show": ["attempt", "show"],
   "evidence-record": ["evidence", "record"],
   "dispatch-build": ["dispatch", "build"],
   "log-add": ["log", "add"],
@@ -340,6 +342,31 @@ describe("attribution", () => {
     expect(result.refusals.byRole).toStrictEqual({ lead: 1, unknown: 1 });
   });
 
+  it("joins two kernel calls of one Bash use to their own lines, through a variable", () => {
+    const lines = journal(
+      sessionLine(0),
+      command(20, "attempt-open", ["task-redispatch", "01-1"], { rule: "policy/ticket-open" }),
+      command(21, "attempt-show", ["A-s189"]),
+    );
+    const lead = transcript("a1", [
+      bash(
+        19,
+        "B=/p/bdk.mjs; node $B attempt open task-redispatch 01-1 | head; node $B attempt show A-s189",
+      ),
+    ]);
+    const result = report({
+      journal: lines,
+      agents: [agent("a1", { role: "lead" })],
+      transcripts: {
+        state: "ok",
+        unknownLines: 0,
+        agents: [transcript("main", []), lead],
+        cost: null,
+      },
+    });
+    expect(result.refusals.byRole).toStrictEqual({ lead: 1 });
+  });
+
   it("matches cut arguments, quotes and the journal's dropped-arguments marker", () => {
     const long = "x".repeat(250);
     expect(
@@ -358,6 +385,27 @@ describe("attribution", () => {
       ["bdk", "next", "2>&1"],
       ["head"],
     ]);
+  });
+
+  it("expands a variable the same command assigned earlier, as agents call the kernel through one", () => {
+    expect(
+      shellCommands(
+        'B=/p/dist/bdk.mjs; node $B part done 02 --json; export K="/p/bdk"; node "${K}.mjs" next; echo $OTHER',
+      ),
+    ).toStrictEqual([
+      ["B=/p/dist/bdk.mjs"],
+      ["node", "/p/dist/bdk.mjs", "part", "done", "02", "--json"],
+      ["export", "K=/p/bdk"],
+      ["node", "/p/bdk.mjs", "next"],
+      ["echo", "$OTHER"],
+    ]);
+    expect(
+      invokes(
+        shellCommands("B=/p/dist/bdk.mjs; node $B attempt open task-redispatch 01-1")[1] ?? [],
+        ["attempt", "open"],
+        ["task-redispatch", "01-1"],
+      ),
+    ).toBe(true);
   });
 
   it("attributes hook lines to the host and guard lines to their agent", () => {
@@ -476,6 +524,14 @@ describe("detectors", () => {
       withMain([bash(1, "pnpm lint"), tool(2, "Edit", { file_path: "a" }), bash(3, "pnpm lint")]),
     );
     expect(detectors(miss, "D1")).toStrictEqual([]);
+  });
+
+  it("D1 leaves a repeated kernel call to D2 and D3: agents wait polls by design", () => {
+    const wait = "B=/p/bdk.mjs; node $B agents wait a1";
+    const polled = report(withMain([bash(1, wait), bash(2, wait), bash(3, "bdk next")]));
+    expect(detectors(polled, "D1")).toStrictEqual([]);
+    const polledAgain = report(withMain([bash(1, "bdk next"), bash(2, "bdk next")]));
+    expect(detectors(polledAgain, "D1")).toStrictEqual([]);
   });
 
   it("D2: a refused command repeated with the same arguments by the same agent", () => {

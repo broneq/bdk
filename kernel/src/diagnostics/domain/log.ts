@@ -3,7 +3,7 @@
 // of every transcript in time order, indented by agent depth, with the
 // journal lines and the report's findings in between. Thinking never gets
 // here: the transcript reader drops it.
-import { shellCommands } from "./attribution.ts";
+import { callsKernel } from "./attribution.ts";
 import type { NumberedLine } from "./facts.ts";
 import type { DiagnosticsReport, Finding } from "./report.ts";
 import { reportText } from "./text.ts";
@@ -12,7 +12,6 @@ import type { AgentTranscript, TranscriptEvent } from "./transcript.ts";
 /** Lines kept of a skill, a prompt, an attachment or a tool result unless `--full`. */
 const COLLAPSED_LINES = 20;
 const INPUT_CHARS = 300;
-const KERNEL_WORD = /(^|\/)bdk(\.mjs)?$/;
 
 export interface EventOptions {
   readonly full: boolean;
@@ -28,9 +27,7 @@ function kernelUses(transcripts: readonly AgentTranscript[]): Set<string> {
       if (event.kind !== "tool-use" || event.name !== "Bash") continue;
       const command = (event.input as { command?: unknown } | null)?.command;
       if (typeof command !== "string") continue;
-      if (shellCommands(command).some((words) => words.some((word) => KERNEL_WORD.test(word)))) {
-        ids.add(event.id);
-      }
+      if (callsKernel(command)) ids.add(event.id);
     }
   }
   return ids;
