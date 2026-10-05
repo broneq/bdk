@@ -56,12 +56,22 @@ The repository's tests SHALL run as the vitest projects `unit`, `e2e` and `contr
 
 ### Requirement: Plugin names no removed MCP server
 
-No file of the plugin outside its historic records SHALL name the removed servers, their tools or `uvx`. Historic records are `docs/v3/`, `docs/adr/`, `openspec/`, `docs/V3-IMPLEMENTATION-PLAN.md` and `docs/V3-SKILL-INVENTORY.md`.
+No file the plugin ships SHALL name the removed servers, their tools or `uvx`. The plugin ships `.claude-plugin/`, `skills/`, `agents/`, `rules/`, `hooks/`, `plugins/`, `STARTUP_INSTRUCTIONS.md`, `README.md`, the site pages under `docs/guide/` and the kernel sources under `kernel/src/`. Two exceptions name them on purpose: the removed-key registry `kernel/src/shared/config/known.ts`, so that `bdk config check` refuses `features.serena` and `features.code-review-graph` with the reason, and the kernel's tests, which use the old keys as input and the names as text that must not appear. The plugin layout contract test SHALL enforce this.
 
 #### Scenario: repository search
 
-- **WHEN** `git grep -E "mcp__plugin_bdk|code-review-graph|serena|uvx"` runs over the tree with the historic records excluded
+- **WHEN** `git grep -E "mcp__plugin_bdk|code-review-graph|serena|uvx"` runs over the files the plugin ships, without the removed-key registry and the kernel's tests
 - **THEN** it finds no match
+
+#### Scenario: a skill names a removed tool
+
+- **WHEN** a skill under `skills/` names `mcp__plugin_bdk_serena_find_symbol`
+- **THEN** `pnpm test:contract` fails and names the file, the line and the match
+
+#### Scenario: the removed key is refused
+
+- **WHEN** `.bdk/settings.yaml` sets `features.serena: true`
+- **THEN** `bdk config check` reports the key as a removed v2 key with its reason, and the plugin layout contract test still passes
 
 ## REMOVED Requirements
 

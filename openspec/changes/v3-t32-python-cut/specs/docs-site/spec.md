@@ -101,12 +101,12 @@ The docs workflow SHALL deploy the site to GitHub Pages only on a push to `main`
 
 ### Requirement: docs-sync dev skill
 
-The repository SHALL carry the dev-time skill `.claude/skills/docs-sync/`. It audits the site against the code, and its docs map indexes only files that exist on `staging/v3`. Its first step SHALL run the drift guards through `pnpm test:contract`. The skill SHALL NOT ship with the plugin.
+The repository SHALL carry the dev-time skill `.claude/skills/docs-sync/`. It audits the site against the code, and its docs map indexes only files that exist on `staging/v3`. Its first step SHALL run the drift guards through `pnpm test:contract`. A test in the same suite SHALL check that every repository path the skill and its docs map name exists; a path with a placeholder (`<name>`, `*`) is not checked. The skill SHALL NOT ship with the plugin.
 
 #### Scenario: docs map names a removed file
 
-- **WHEN** the docs map of `docs-sync` is checked against the repository tree
-- **THEN** every repository path it names exists
+- **WHEN** the docs map of `docs-sync` names `skills/setup/SKILL.md` after the skill moved to `skills/stages/setup/`
+- **THEN** `pnpm test:contract` fails and names the missing path
 
 ## REMOVED Requirements
 

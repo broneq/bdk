@@ -104,6 +104,41 @@ describe("plugin layout", () => {
     expect(found).toBe("");
   });
 
+  // `plugin-tooling`, Plugin names no removed MCP server. The removed-key
+  // registry names the old feature switches so that config check can refuse
+  // them; tests name them as inputs and as text that must not appear.
+  it("names no removed MCP server, its tools or uvx in what it ships", () => {
+    let found = "";
+    try {
+      found = execFileSync(
+        "git",
+        [
+          "grep",
+          "-nE",
+          "mcp__plugin_bdk|code-review-graph|serena|uvx",
+          "--",
+          ".claude-plugin/",
+          "skills/",
+          "agents/",
+          "rules/",
+          "hooks/",
+          "plugins/",
+          "STARTUP_INSTRUCTIONS.md",
+          "README.md",
+          "docs/guide/",
+          "kernel/src/",
+          ":!kernel/src/**/tests/**",
+          ":!kernel/src/shared/config/known.ts",
+        ],
+        { cwd: REPO_ROOT, encoding: "utf8" },
+      );
+    } catch (error) {
+      // git grep exits 1 when nothing matches.
+      if ((error as { status?: number }).status !== 1) throw error;
+    }
+    expect(found).toBe("");
+  });
+
   it("keeps the STARTUP agents table on the seven remaining agents", () => {
     const startup = readFileSync(join(REPO_ROOT, "STARTUP_INSTRUCTIONS.md"), "utf8");
     for (const name of REMOVED_AGENTS) expect(startup).not.toContain(`bdk:${name}\``);

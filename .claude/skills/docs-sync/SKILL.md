@@ -69,12 +69,12 @@ covers for T50.
 
 ## 2. Scope the audit
 
-| `$ARGUMENTS`                                                        | Scope                                                                                                                                    |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| A page under `docs/guide/`                                          | Audit that page in full against its ground truth.                                                                                        |
-| A source path (`skills/cr/SKILL.md`, `agents/`, `hooks/hooks.json`) | Reverse-map it to pages, then widen by the shared-facts index.                                                                           |
-| Empty                                                               | The branch's changes: `git diff --name-only $(git merge-base HEAD main)...HEAD` plus uncommitted files from `git status --porcelain`.    |
-| Empty and the branch is clean and equal to `main`                   | Nothing to reverse-map. Sweep the whole site - 23 pages is small, and the reference pages alone are not where the interesting lies live. |
+| `$ARGUMENTS`                                                              | Scope                                                                                                                                    |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| A page under `docs/guide/`                                                | Audit that page in full against its ground truth.                                                                                        |
+| A source path (`skills/tools/cr/SKILL.md`, `agents/`, `hooks/hooks.json`) | Reverse-map it to pages, then widen by the shared-facts index.                                                                           |
+| Empty                                                                     | The branch's changes: `git diff --name-only $(git merge-base HEAD main)...HEAD` plus uncommitted files from `git status --porcelain`.    |
+| Empty and the branch is clean and equal to `main`                         | Nothing to reverse-map. Sweep the whole site - 23 pages is small, and the reference pages alone are not where the interesting lies live. |
 
 Report the candidate page list before auditing, so the user can see the blast
 radius and cut it if it is wider than they want.
