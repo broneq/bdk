@@ -21,7 +21,6 @@ claude plugin install bdk-craft@bdk
 | `oop-design`       | Value objects, composition over inheritance, constructor injection, tell-don't-ask, strategy and state objects     |
 | `api-design`       | Resource naming, the status code per outcome, problem+json errors, cursor pagination, idempotency keys             |
 | `refactoring`      | Characterisation tests first, one named refactoring per step, tests green after each step                          |
-| `data-modeling`    | Constraints in the database, justified denormalisation, expand-and-contract migrations                             |
 | `testing-strategy` | One job per test level, mocks at owned boundaries, Test Data Builders, Page Objects, contract tests                |
 | `modularizing`     | Modules by feature, one public entry each, one dependency direction, the signals to split                          |
 
