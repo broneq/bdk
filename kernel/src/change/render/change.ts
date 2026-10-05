@@ -1,4 +1,5 @@
 // Text renderings of the change commands (`kernel-cli`, Output modes).
+import { groupsNotUsed } from "../../shared/vocabulary/index.ts";
 import type {
   CheckpointReport,
   CloseReport,
@@ -31,6 +32,7 @@ export function renderStatus(report: StatusReport): string {
     `${report.change} (${report.kind}, ${intent})`,
     `stage: ${report.stage}`,
     `profile: ${report.profile}`,
+    ...renderTools(report.tools),
   ];
   lines.push(...renderNodes(report.nodes), ...renderGates(report.gates));
   if (report.parts.length > 0) {
@@ -57,6 +59,15 @@ export function renderStatus(report: StatusReport): string {
     lines.push(`overridden by global or local: ${report.overriddenKeys.join(", ")}`);
   }
   return `${lines.join("\n")}\n`;
+}
+
+/** One line per tool group declared none; no test tool is a warning (T49). */
+function renderTools(tools: StatusReport["tools"]): string[] {
+  return groupsNotUsed(tools).map((group) =>
+    group === "test"
+      ? "warning: no test tool (tools.test is none): this Change runs no test"
+      : `tools: ${group} not used (tools.${group} is none)`,
+  );
 }
 
 /** Pending entries shown per gate; the rest are counted, `bdk log list` shows them. */

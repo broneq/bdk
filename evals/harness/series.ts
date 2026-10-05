@@ -131,6 +131,16 @@ export function expandTests(
   return tests;
 }
 
+/**
+ * The UTC date and time a series starts, `2026-10-05-080013`. A date alone made
+ * two branches that probe the same suite on one day write the same results file,
+ * which conflicts when both merge.
+ */
+export function seriesStamp(now: Date = new Date()): string {
+  const iso = now.toISOString();
+  return `${iso.slice(0, 10)}-${iso.slice(11, 19).replaceAll(":", "")}`;
+}
+
 /** `base`, or `base-2`, `base-3`, ... when a series of that name already has rows. */
 export function freshSeriesName(base: string, exists: (series: string) => boolean): string {
   if (!exists(base)) return base;

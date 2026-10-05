@@ -165,6 +165,11 @@ The `stages` suite SHALL run stage skills the way a user starts them: each case 
 - **WHEN** `pnpm eval stages --skill setup --probe` runs its happy-path case on the fixture
 - **THEN** the case passes when `bdk config check` exits 0 and `bdk doctor --json` reports `ok: true` in the run's working copy
 
+#### Scenario: setup without a linter or tests
+
+- **WHEN** the cases `no-linter` and `no-tests` type `/bdk:setup` in an empty repository holding a Node project with only a test script, or only eslint, and answer that the project runs without the missing tool
+- **THEN** each case passes when `bdk config check` exits 0, `bdk config show tools.lint` (or `tools.test`) answers `none`, the other group holds the detected command, and `bdk change new` afterwards exits 0; for `no-tests`, `bdk change status` holds the warning that the Change runs no test
+
 #### Scenario: change refusal
 
 - **WHEN** the refusal case of `change` types `/bdk:change <intent>` on a branch that already has an active Change and answers "stay on the current branch"
@@ -207,8 +212,8 @@ The `stages` suite SHALL run stage skills the way a user starts them: each case 
 
 #### Scenario: run to the review stage
 
-- **WHEN** the case `run-auto` types `/bdk:run --auto "<intent>"` on the fixture without a Change
-- **THEN** the case passes when every `execute-part` instance is done, `bdk next --json` returns the `review` node and the final reply names `/bdk:cr`
+- **WHEN** the case `run-auto` types `/bdk:run --auto "<intent>"` on the fixture without a Change, with `tools.test` configured and `tools.lint` declared `none`
+- **THEN** the case passes when the Change is archived, its archived evidence holds no `lint` or `lint-full` manifest, and the final reply names both gates passed by policy, the review report and the entries deferred to be reviewed
 
 #### Scenario: run stops at a manual gate
 

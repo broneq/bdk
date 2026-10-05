@@ -22,6 +22,8 @@ export interface PostTaskStep {
 export interface TargetSteps {
   /** In pipeline order; a step node the Change skips is left out. */
   readonly steps: readonly PostTaskStep[];
+  /** The change-level check kinds the Change applies, in pipeline order (T42-D4, T49). */
+  readonly checks: readonly string[];
   /** The target's `Files:` that are neither non-executable nor build config, in byte order. */
   readonly files: readonly string[];
 }
@@ -39,7 +41,16 @@ export async function targetSteps(
   const files = [...new Set(targetFiles(readPlanParts(deps.store, change.dir), target))]
     .filter((path) => fileClass(policy, path) === "executable")
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  return { steps: postTaskSteps(read), files };
+  return { steps: postTaskSteps(read), checks: changeChecks(read), files };
+}
+
+/** The change-level check kinds the Change's graph applies, a skipped one left out. */
+function changeChecks(read: ChangeGraph): string[] {
+  return read.graph.nodes
+    .filter(
+      (node) => node.state !== "skipped" && read.kinds.get(node.kind) instanceof ChangeCheckKind,
+    )
+    .map((node) => node.kind);
 }
 
 /** The post-task step kinds the Change's graph applies, in pipeline order. */

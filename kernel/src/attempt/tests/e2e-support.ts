@@ -23,11 +23,22 @@ export function tasks(nn: string, count: number): string {
 }
 
 /**
+ * Both tool groups configured, so the post-task steps and the full checks
+ * apply (T49); the fixture's global layer declares them none.
+ */
+const PROJECT_TOOLS =
+  "tools:\n" +
+  "  test:\n    - { id: unit, tier: fast, command: vitest run }\n" +
+  "  lint:\n    - { id: eslint, tier: lint, command: eslint . }\n";
+
+/**
  * A tiny Change with part 01 (tasks 01-1, 01-2; do-not-touch `src/billing/**`)
- * started and part 02 after it; `settings` is the project settings file.
+ * started and part 02 after it; `settings` is the project settings file,
+ * starting with PROJECT_TOOLS unless it sets `tools` itself.
  */
 export function started(settings = ""): Started {
-  const root = repository(settings === "" ? {} : { ".bdk/settings.yaml": settings });
+  const project = /^tools:/m.test(settings) ? settings : `${PROJECT_TOOLS}${settings}`;
+  const root = repository({ ".bdk/settings.yaml": project });
   const result = bdk(
     ["change", "new", "Fix the login typo", "--profile", "tiny", "--reason", "a typo", "--json"],
     root,

@@ -173,7 +173,7 @@ Render the human review report of the active Change, or the decision page of a p
        - **Files.** A card lists the matched files with their added and removed lines. Each file expands to why and what: the plan tasks whose `Files:` declare it, with their titles, and the commits of the range that changed it, oldest first, with their short sha and subject.
        - **Tags.** Each file is tagged with the live entries that name the risk id or the file in their `refs`. A tag shows the entry's id, level and disposition, and links to the entry in Decisions.
        - A card follows for the files outside the plan, with the `unplanned` summary line when the integration reviewer wrote one.
-    4. **Gate.** The verdicts of the latest `tests-full` and `lint-full` evidence, and the diff coverage of each `tools.test` entry with a `coverage` object, with its `min` (`kernel-cli/evidence`, bdk evidence coverage).
+    4. **Gate.** The verdicts of the latest `tests-full` and `lint-full` evidence, and the diff coverage of each `tools.test` entry with a `coverage` object, with its `min` (`kernel-cli/evidence`, bdk evidence coverage). A tool group declared none (`kernel-settings`, Tool entries) shows `not used` in place of its verdict: `Lint: not used (tools.lint is none)`, and for tests the warning `Tests: not used (tools.test is none): this Change ran no test`, marked as a warning in the HTML (T49).
     5. **Decisions.** Every live `finding`, `observation` and `blocker` whose `level` is not `blocker`. They are grouped as `should-fix`, `nice-to-have` and `untriaged`; `untriaged` is empty after `cr`, which triages every entry first. A legend above the groups says what each disposition does. Each entry shows its id, type, summary, refs, severity, category, writer, current disposition and tracker issue, and, collapsed, its body. A body whose paragraphs start with `Problem:`, `Why it matters:` and `Suggested fix:` is shown as those three fields; any other body is shown as written. In HTML, each one has a choice of `fix`, `defer`, `reject` and, only while `tracker` is set, `track`, plus a reason field. The choice is preselected with the current disposition.
     6. **Settled.** The resolved `finding`, `observation` and `blocker` entries of the Change, collapsed, each with the reason from its body.
     7. **Context.** The live `decision`, `assumption` and `risk` entries.
@@ -244,6 +244,11 @@ Render the human review report of the active Change, or the decision page of a p
 
 - **WHEN** `tracker` is unset and `bdk review render` runs
 - **THEN** no entry offers `track`, and `tracker` in the output is `null`
+
+#### Scenario: no test tool in the gate
+
+- **WHEN** `tools.test` is `none`, `tools.lint` is configured with a passing `lint-full` manifest, and `bdk review render` runs
+- **THEN** the Gate section holds `Tests: not used (tools.test is none): this Change ran no test` marked as a warning and `Lint: pass`
 
 #### Scenario: Markdown fallback
 

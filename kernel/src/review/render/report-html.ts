@@ -13,6 +13,8 @@ import type {
   GridRow,
   Lines,
 } from "../domain/report.ts";
+import { NOT_USED_GATE } from "../domain/report.ts";
+import type { ToolGroupName } from "../../shared/vocabulary/index.ts";
 import { html, safeUrl } from "./escape.ts";
 
 const STYLE = `
@@ -68,6 +70,7 @@ summary { cursor: pointer; }
 .tag.should-fix { box-shadow: inset 0 0 0 1px var(--warn); }
 .tag.blocker { box-shadow: inset 0 0 0 1px var(--bad); }
 .verdict { font-weight: 600; }
+li.warn { color: var(--warn); font-weight: 600; }
 .verdict.pass, .verdict.approve { color: var(--ok); }
 .verdict.fail, .verdict.request-changes { color: var(--bad); }
 dl.legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
@@ -325,10 +328,19 @@ function gateSection(report: ChangeReport): string {
   );
   return `<h2>Gate</h2>
 <ul class="stats">
-<li>Tests: ${verdict(report.gate.tests)}</li>
-<li>Lint: ${verdict(report.gate.lint)}</li>
+${gateItem(report, "test", verdict(report.gate.tests))}
+${gateItem(report, "lint", verdict(report.gate.lint))}
 ${coverage.join("\n")}
 </ul>`;
+}
+
+/** A tool group's Gate item: its verdict, or not used when declared none, tests as a warning (T49). */
+function gateItem(report: ChangeReport, group: ToolGroupName, verdict: string): string {
+  const { label, text, warn } = NOT_USED_GATE[group];
+  if (!report.gate.notUsed.includes(group)) return `<li>${label}: ${verdict}</li>`;
+  return warn
+    ? `<li class="warn">${label}: ${html(text)}</li>`
+    : `<li>${label}: ${html(text)}</li>`;
 }
 
 function decisionsSection(report: ChangeReport): string {

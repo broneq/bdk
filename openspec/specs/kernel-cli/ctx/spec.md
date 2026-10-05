@@ -36,7 +36,7 @@ Compose the prompt context a skill's context line injects: rule sets, language r
   - `project-rules`: the enabled, non-tombstone rules of `.bdk/rules/` in the same line form, under `### Project rules`; the part is omitted when there are none.
   - `language-rules`: for each entry of `languages` in order, the enabled rules of the bundle's pack under `rules/languages/<language>/` in the same line form, under `### Language rules: <language>`; a language without a pack is skipped, and without any the part is omitted.
   - `fragment`: a choice between prompt values under a fixed title. The only fragment in T13 is `decision`, titled `### Asking the user`: `fragments/decision/lavish` when `features.lavish` is true and an executable `lavish-axi` is on `PATH`, otherwise `fragments/decision/ask-user` (R-11).
-  - `tools`: the entries of `tools.<group>` (`test`, `lint` or `build`) under `### Project commands: <group>`, rendered as `bdk config show tools.<group>` renders them in text mode, including `when`; an empty group renders the line `none configured`.
+  - `tools`: the entries of `tools.<group>` (`test`, `lint` or `build`) under `### Project commands: <group>`, rendered as `bdk config show tools.<group>` renders them in text mode, including `when`; a group declared none renders the line `declared none (tools.<group>: none)`, a `test` or `lint` group no layer sets the line `unset: no command configured`, and an empty `tools.build` the line `none configured` (`kernel-settings`, Tool entries).
   - `concurrency`: the resolved `execution.concurrency` under `### Concurrency`, as the sentence `Run at most <n> agents at once.` (T23-D52); the swarm skill's only part.
   - `file`: a file of the plugin, verbatim, under the title the manifest gives it (`pr-review`'s comment templates).
   - `verifier-policy`: the resolved `policy.verifier.blocking-categories` and `policy.verifier.not-a-fail` under `### Blocking categories (P8)`, one line `- <id>: <description>` per category, then the not-a-fail entries in the same line form under `#### Not a fail`, the same lists a `verifier` package carries (T42). `design` and `plan` check their own draft against them before verification, and `cr` triages against them.
@@ -147,6 +147,11 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 
 - **WHEN** `bdk ctx skill bdk-rules-security` runs
 - **THEN** the output is a STOP block with `input/not-found`, because the manifest holds no `bdk-*` skill
+
+#### Scenario: tool group states in the context
+
+- **WHEN** `tools.test` is configured, `tools.lint` is `none`, `tools.build` is not set, and `bdk ctx skill setup` runs
+- **THEN** `Project commands: test` lists the entries, `Project commands: lint` holds `declared none (tools.lint: none)` and `Project commands: build` holds `none configured`
 
 ### Requirement: bdk ctx startup
 

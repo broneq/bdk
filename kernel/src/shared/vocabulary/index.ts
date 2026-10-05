@@ -43,6 +43,21 @@ export const CHANGE_KINDS = ["feature", "bug", "review"] as const;
 
 export type ChangeKind = (typeof CHANGE_KINDS)[number];
 
+/** The tool groups the pipeline runs through step kinds (`kernel-settings`, Tool entries; T49). */
+export const TOOL_GROUPS = ["test", "lint"] as const;
+export type ToolGroupName = (typeof TOOL_GROUPS)[number];
+
+/** `configured` (one or more entries), `none` (declared not used) or `unset` (no layer sets it). */
+export const TOOL_GROUP_STATES = ["configured", "none", "unset"] as const;
+export type ToolGroupState = (typeof TOOL_GROUP_STATES)[number];
+
+/** The tool groups declared none, sorted: the groups a Change does not use. */
+export function groupsNotUsed(
+  states: Readonly<Record<ToolGroupName, ToolGroupState>>,
+): ToolGroupName[] {
+  return TOOL_GROUPS.filter((group) => states[group] === "none").sort();
+}
+
 /** Who may open a Change: the user, or a skill on the user's behalf. */
 export const CHANGE_SOURCES = ["user", "inferred"] as const;
 

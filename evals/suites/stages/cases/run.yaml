@@ -1,8 +1,9 @@
 # Cases of /bdk:run (spec stage-skills, run requirements). Every case starts
 # from a fresh copy of the pinned fixture on its branch feat/eval with Lavish
 # off. A run asks nothing: the skills it starts take the recommended option.
-# A case that executes sets tools.lint: without a lint tool every task
-# records lint not-run and the not-run budget stops the run.
+# A case that opens a Change sets tools.lint, as a command or as none
+# (T49): an unset group is refused at change new, and a declared-none group
+# skips lint and lint-full, so no task records lint not-run.
 #
 # run-auto: from an intent to an archived Change; --auto passes the manual
 # gate:design and gate:review by policy, /bdk:cr reviews the executed Change
@@ -43,6 +44,34 @@
         git log --format=%H "$(git log -1 --format=%H --grep='^bdk settings$')..HEAD" -- .markdownlint-cli2.mjs eslint.config.js package.json scripts/ | wc -l
       stdout: "^\\s*0\n$"
 
+# run-auto-lint-none: run-auto on a project without a lint tool (T49):
+# tools.lint is none, so the Change archives with test manifests and no lint
+# or lint-full one.
+- id: run-auto-lint-none
+  command: /bdk:run --auto "Add Italian to the language options of the account page"
+  prepare:
+    - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set tools.lint none >/dev/null
+    - |-
+      node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      git add -A && git commit -qm "bdk settings"
+  expect:
+    - run: change list --all
+      json:
+        items.length: 1
+        items.0.state: archived
+    - shell: |-
+        grep -rqE '^kind: tests-(scoped|full)$' .bdk/changes/archive
+    - shell: |-
+        grep -rlE '^kind: lint(-full)?$' .bdk/changes/archive
+      exit: 1
+    # gatesByPolicy of the close report names both gates.
+    - reply: gate:design
+    - reply: gate:review
+
 # run-manual: without --auto the manual gate:design stops the run after the
 # design stage; no plan part exists and the reply names /bdk:plan.
 - id: run-manual
@@ -51,7 +80,7 @@
     - |-
       node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
+      node "$BDK" config set tools.lint none >/dev/null
     - |-
       node "$BDK" config set features.lavish false >/dev/null
     - |-

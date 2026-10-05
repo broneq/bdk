@@ -33,7 +33,7 @@ import { sessionProvider } from "../../harness/providers.ts";
 import { readRows, readSuiteRows } from "../../harness/results.ts";
 import { probeSummary, renderSeries, runSeries } from "../../harness/runner.ts";
 import type { CellSetup, SeriesIo, SeriesSetup } from "../../harness/runner.ts";
-import { freshSeriesName } from "../../harness/series.ts";
+import { freshSeriesName, seriesStamp } from "../../harness/series.ts";
 import { ensureTools, evaluate, validateConfig } from "../../harness/tools.ts";
 import { assertCommitted } from "../../harness/tree.ts";
 import { withWithoutReport } from "./report.ts";
@@ -233,9 +233,9 @@ export function withWithoutRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
       assertCommitted();
       const versions = readVersions();
       const fixture = options.fixture ?? "default";
-      const date = new Date().toISOString().slice(0, 10);
+      const stamp = seriesStamp();
       const series = freshSeriesName(
-        `${options.probe ? "probe" : "series"}-${skillSlug(skill)}-${date}`,
+        `${options.probe ? "probe" : "series"}-${skillSlug(skill)}-${stamp}`,
         (name) => readRows(resultsFile(SUITE, name)).length > 0,
       );
       const dir = join(RUNS_DIR, "series", SUITE, series);

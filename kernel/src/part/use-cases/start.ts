@@ -2,7 +2,7 @@
 // pass the plan part checks and be ready; the kernel then writes the start
 // marker, a transition without `input-hash` that moves the stage to `execute`
 // and never marks the node done.
-import { checksOf, readGraph } from "../../graph/index.ts";
+import { checksOf, readGraph, unsetToolsOf } from "../../graph/index.ts";
 import { appendEntry, withChangeIndex } from "../../log/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal, Rule } from "../../shared/refusal/index.ts";
@@ -53,6 +53,8 @@ export function startPart(
         state === "done" ? ["bdk part list", "bdk next"] : [`bdk part done ${id}`],
       );
     }
+    const unset = unsetToolsOf(read);
+    if (unset !== undefined) return unset;
     const worktree = isolationOf(part.data) === "worktree";
     const settings = worktreeSettings(read.resolved.value);
     const created =

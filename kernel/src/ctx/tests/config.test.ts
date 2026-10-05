@@ -39,7 +39,7 @@ describe("defaults", () => {
         audit: { "min-changes": 3 },
         prune: { "uncited-changes": 20 },
       },
-      tools: { test: [], lint: [], build: [] },
+      tools: { build: [] },
       features: { lavish: true },
       execution: { concurrency: 5 },
       prompts: {},

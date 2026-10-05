@@ -7,6 +7,8 @@
     - |-
       node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
+      node "$BDK" config set tools.lint none >/dev/null
+    - |-
       git add -A && git commit -qm "bdk settings"
   answers:
     branch: new|create|feat/
@@ -28,6 +30,8 @@
     - |-
       node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
+      node "$BDK" config set tools.lint none >/dev/null
+    - |-
       git add -A && git commit -qm "bdk settings"
     - |-
       node "$BDK" change new "Translate the login page" >/dev/null
@@ -46,6 +50,8 @@
   prepare:
     - |-
       node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set tools.lint none >/dev/null
     - |-
       perl -0pi -e 's/\bthe\b/teh/' README.md
     - |-

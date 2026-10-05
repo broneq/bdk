@@ -216,7 +216,7 @@ describe("ctx skill", () => {
     expect(report.parts.map((part) => part.kind)).not.toContain("language-rules");
   });
 
-  it("prints tool entries as config show does, including when, and none configured when empty", () => {
+  it("prints tool entries as config show does, including when, and each group's state", () => {
     const report = compose("setup", {
       ".bdk/settings.yaml": [
         "tools:",
@@ -225,6 +225,7 @@ describe("ctx skill", () => {
         "      tier: fast",
         "      command: pnpm test:unit",
         "      when: before every commit",
+        "  lint: none",
       ].join("\n"),
     });
     expect(report.content).toContain(
@@ -237,6 +238,10 @@ describe("ctx skill", () => {
         "  tier: fast",
         "",
         "### Project commands: lint",
+        "",
+        "declared none (tools.lint: none)",
+        "",
+        "### Project commands: build",
         "",
         "none configured",
         "",

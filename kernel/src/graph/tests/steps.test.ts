@@ -280,6 +280,46 @@ describe("post-task step nodes", () => {
   });
 });
 
+describe("tool group nodes (T49)", () => {
+  it("skips the lint step and lint-full when tools.lint is none", () => {
+    const result = graph({ toolGroups: { lint: "none" } });
+    for (const id of ["lint", "lint-full"]) {
+      expect(result.find(id)).toMatchObject({ state: "skipped", why: "tools.lint is none" });
+    }
+    expect(result.find("lint:01")).toBeUndefined();
+    for (const id of ["tests-scoped:01", "tests-full"]) {
+      expect(result.find(id)?.state).not.toBe("skipped");
+    }
+    expect(result.find("review")?.requires).not.toContain("lint-full");
+    expect(result.find("review")?.requires).not.toContain("lint:01");
+    expect(result.find("tests-full")?.requires).not.toContain("lint:01");
+  });
+
+  it("skips the test step and tests-full when tools.test is none", () => {
+    const result = graph({ toolGroups: { test: "none" } });
+    for (const id of ["tests-scoped", "tests-full"]) {
+      expect(result.find(id)).toMatchObject({ state: "skipped", why: "tools.test is none" });
+    }
+    expect(result.find("tests-scoped:01")).toBeUndefined();
+    expect(result.find("lint:01")?.state).not.toBe("skipped");
+  });
+
+  it("applies the nodes of an unset group", () => {
+    const result = graph({ toolGroups: { lint: "unset" } });
+    expect(result.find("lint:01")?.state).not.toBe("skipped");
+    expect(result.find("lint-full")?.state).not.toBe("skipped");
+  });
+
+  it("names the group of each grouped kind", () => {
+    const kinds = kindRegistry();
+    expect(
+      ["tests-scoped", "tests-full", "lint", "lint-full", "simplify"].map(
+        (name) => kinds.get(name)?.toolGroup,
+      ),
+    ).toStrictEqual(["test", "test", "lint", "lint", undefined]);
+  });
+});
+
 describe("verdict kinds check the evidence their report lists", () => {
   const report = { id: "L-r0000001", type: "report", refs: ["review"] };
   const view = (evidence: NonNullable<ViewFixture["evidence"]>, listed: string[]) =>

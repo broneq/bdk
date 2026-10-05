@@ -9,7 +9,7 @@ import type {
   PlanPartFacts,
   WorkFacts,
 } from "../domain/kinds/index.ts";
-import type { Profile } from "../../shared/vocabulary/index.ts";
+import type { Profile, ToolGroupName, ToolGroupState } from "../../shared/vocabulary/index.ts";
 
 export interface ViewFixture {
   readonly profile?: Profile;
@@ -38,6 +38,8 @@ export interface ViewFixture {
   readonly changeTree?: string;
   /** The `tools.test` ids with `coverage.min`. */
   readonly coverageTools?: readonly string[];
+  /** The state of each tool group; `configured` when left out. */
+  readonly toolGroups?: Partial<Record<ToolGroupName, ToolGroupState>>;
   /** Ticket -> its loop. */
   readonly loops?: Readonly<Record<string, string>>;
   /** Ticket -> the outcome it closed with; a ticket of `loops` missing here closed `ok`. */
@@ -90,6 +92,7 @@ export function fakeView(fixture: ViewFixture = {}): ChangeView {
     partTree: (nn) => fixture.partTrees?.[nn],
     changeTree: () => fixture.changeTree,
     coverageTools: fixture.coverageTools ?? [],
+    toolGroups: { test: "configured", lint: "configured", ...fixture.toolGroups },
     ticketLoop: (ticket) => fixture.loops?.[ticket],
     ticketOutcome: (ticket) =>
       fixture.outcomes !== undefined && ticket in fixture.outcomes

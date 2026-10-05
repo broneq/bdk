@@ -12,6 +12,7 @@ import {
   repository,
   runBdk,
   sequentialRandom,
+  withTools,
 } from "../../log/tests/support.ts";
 import type { FakeGit, RunResult } from "../../log/tests/support.ts";
 import type { Registration } from "../../shared/registry/index.ts";
@@ -98,7 +99,7 @@ export interface Harness {
 
 /** `extra` adds the registrations of a slice built on this one (attempt, commit). */
 export function harness(extra: (deps: PartDeps) => Registration[] = () => []): Harness {
-  const store = withPluginFiles(repository());
+  const store = withTools(withPluginFiles(repository()));
   const git = scriptedGit();
   const random = sequentialRandom();
   return {

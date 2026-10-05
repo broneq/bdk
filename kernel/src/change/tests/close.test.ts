@@ -168,6 +168,25 @@ describe("change close refusals, in contract order, writing nothing", () => {
 });
 
 describe("change close", () => {
+  it("names the tool groups declared none in toolsNotUsed and the summary (T49)", async () => {
+    const h = closing();
+    h.store.write(`${ROOT}/.bdk/settings.yaml`, "tools:\n  test: none\n  lint: none\n");
+    const result = await close(h, "--dry-run");
+    expect(result.code, result.stdout).toBe(0);
+    const report = changeCloseOutput.parse(result.json);
+    expect(report.toolsNotUsed).toStrictEqual(["lint", "test"]);
+    expect(report.summary).toContain(
+      "### Checks\n\n- Lint not used (tools.lint is none)\n- No test tool (tools.test is none): this Change ran no test\n",
+    );
+  });
+
+  it("leaves Checks out while every tool group is configured or unset", async () => {
+    const h = closing();
+    const report = changeCloseOutput.parse((await close(h, "--dry-run")).json);
+    expect(report.toolsNotUsed).toStrictEqual([]);
+    expect(report.summary).not.toContain("### Checks");
+  });
+
   it("--dry-run reports the merge and the archive path and writes nothing", async () => {
     const h = closing();
     h.store.write(`${DIR}/spec-delta/auth/login.md`, DELTA);

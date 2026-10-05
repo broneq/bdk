@@ -121,6 +121,8 @@ A module's key is a root key (`tools`) or a dotted subtree of a root (`policy.bu
 
 The keys `tools.test`, `tools.lint` and `tools.build` SHALL hold arrays of tool entries merged by `id`, one entry per command the project runs.
 
+**Tool group states (T49).** `tools.test` and `tools.lint` SHALL each be in exactly one of three states: _configured_, a list of one or more entries; _declared none_, the scalar `none`, which says the project has no tool of the group; _unset_, no layer sets the key. Neither key has a default. An empty list is `policy/config-invalid` naming the key, with a message that names `none`, so each state has one spelling. The merge treats `none` as a scalar: a higher layer's `none` replaces a lower layer's list, and a higher layer's list over a lower `none` starts from no entries. `bdk config set tools.<group> none` writes the declared-none state, and `bdk config set tools.<group>.<id> '{...}'` over a `none` replaces it with a one-entry list. An item of a configured group stays addressable by its id (`tools.test.unit.scoped`). `tools.build` keeps the list form with the default `[]`: no pipeline node runs it. What each state does to a Change is in `kernel-pipeline`, Tool group nodes.
+
 | Field         | Type                            | Required                                                                                 | Meaning                                                                                    |
 | ------------- | ------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `id`          | kebab-case string               | yes                                                                                      | Unique within the array; the merge and path segment.                                       |
@@ -160,6 +162,26 @@ The keys `tools.test`, `tools.lint` and `tools.build` SHALL hold arrays of tool 
 - **WHEN** a `tools.lint` item carries `coverage`
 - **THEN** `bdk config check` exits 2 with `rule: policy/unknown-config-key` naming keys under `tools.lint.<id>.coverage`
 
+#### Scenario: declared none
+
+- **WHEN** `bdk config set tools.lint none` runs in a project without `tools.lint`
+- **THEN** the exit code is 0, `.bdk/settings.yaml` holds `lint: none` under `tools`, and `bdk config show tools.lint --json` answers `none`
+
+#### Scenario: empty group
+
+- **WHEN** a layer sets `tools.lint: []`
+- **THEN** `bdk config check` exits 2 with `rule: policy/config-invalid` naming `tools.lint`, and `why` names `none`
+
+#### Scenario: entry over none
+
+- **WHEN** the project layer holds `tools.lint: none` and `bdk config set tools.lint.eslint '{tier: lint, command: eslint .}'` runs
+- **THEN** the exit code is 0 and `bdk config show tools.lint --json` holds the one entry `eslint`
+
+#### Scenario: local none over project entries
+
+- **WHEN** the project layer lists `tools.lint` entry `eslint` and the local layer sets `tools.lint: none`
+- **THEN** the resolved `tools.lint` is `none`
+
 #### Scenario: threshold out of range
 
 - **WHEN** a `coverage.min` is 120 or `coverage.format` is `jacoco`
@@ -172,8 +194,8 @@ The settings SHALL declare the project toolchain keys below, owned by T12.
 | Key               | Type                              | Default | Owner | Consumer        | v2 origin                           |
 | ----------------- | --------------------------------- | ------- | ----- | --------------- | ----------------------------------- |
 | `languages`       | array of unique non-empty strings | `[]`    | T12   | `rules`         | `languages`                         |
-| `tools.test`      | array of tool entries             | `[]`    | T12   | `shared/config` | `test-tools` (`type` becomes `id`)  |
-| `tools.lint`      | array of tool entries             | `[]`    | T12   | `shared/config` | `lint-tools` (`type` becomes `id`)  |
+| `tools.test`      | `none` or array of tool entries   | none    | T12   | `shared/config` | `test-tools` (`type` becomes `id`)  |
+| `tools.lint`      | `none` or array of tool entries   | none    | T12   | `shared/config` | `lint-tools` (`type` becomes `id`)  |
 | `tools.build`     | array of tool entries             | `[]`    | T12   | `shared/config` | `build-tools` (`type` becomes `id`) |
 | `features.lavish` | boolean                           | `true`  | T12   | `ctx`           | `features.lavish`                   |
 
@@ -182,7 +204,7 @@ The settings SHALL declare the project toolchain keys below, owned by T12.
 #### Scenario: empty project
 
 - **WHEN** no layer file exists and `bdk config show --json` runs
-- **THEN** the exit code is 0 and the value holds every registered key with its default
+- **THEN** the exit code is 0 and the value holds every registered key with its default; `tools.test` and `tools.lint`, which have none, are absent
 
 ### Requirement: Keys of prompt locations
 

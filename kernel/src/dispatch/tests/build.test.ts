@@ -479,6 +479,18 @@ describe("the runner's Checks section (T23-D44)", () => {
     expect(section).toMatch(/### lint\n\nNo command is configured[^\n]*`--verdict not-run`/);
   });
 
+  it("leaves out the step of a group declared none (T49)", async () => {
+    const h = dispatchHarness();
+    h.store.write(
+      `${ROOT}/.bdk/settings.yaml`,
+      TOOLS.replace(/ {2}lint:\n[\s\S]*$/, "  lint: none\n"),
+    );
+    const section = checks((await built(h, "02-3", "runner", TICKET)).body);
+    expect(section).toContain("### tests-scoped");
+    expect(section).not.toContain("### lint");
+    expect(section).not.toContain("eslint");
+  });
+
   it("tells the runner to record every check not-run when the target has no executable file", async () => {
     const h = dispatchHarness();
     h.store.write(`${ROOT}/.bdk/settings.yaml`, TOOLS);

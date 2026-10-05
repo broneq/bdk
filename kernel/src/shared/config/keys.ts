@@ -29,7 +29,7 @@ export function appendOnly<S extends z.ZodArray>(schema: S): S {
 }
 
 export function keyTree(schema: z.ZodType): KeyNode {
-  const inner = unwrap(schema);
+  const inner = structured(unwrap(schema));
   if (inner instanceof z.ZodObject) {
     const children = new Map<string, KeyNode>();
     const shape: Record<string, z.ZodType> = inner.shape;
@@ -69,6 +69,25 @@ export function unwrap(schema: z.ZodType): z.ZodType {
       return current;
     }
   }
+}
+
+/**
+ * The one option of a union that holds keys beside scalar options, so a tool
+ * group (`none` or a list of entries, T49) keeps its entries addressable by
+ * id. A union of scalars, or of several shapes (`tracker`), stays a leaf.
+ */
+function structured(schema: z.ZodType): z.ZodType {
+  if (!(schema instanceof z.ZodUnion)) return schema;
+  const shapes = (schema.options as z.ZodType[])
+    .map(unwrap)
+    .filter(
+      (option) =>
+        option instanceof z.ZodObject ||
+        option instanceof z.ZodArray ||
+        option instanceof z.ZodRecord,
+    );
+  const [only] = shapes;
+  return shapes.length === 1 && only !== undefined ? only : schema;
 }
 
 /** Every declared path below `node`, parents before children; an id array or a record ends a path. */

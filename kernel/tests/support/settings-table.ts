@@ -101,6 +101,8 @@ function renderType(schema: z.ZodType): string {
   }
   if (inner instanceof z.ZodEnum)
     return either(inner.options.map((option) => `\`${String(option)}\``));
+  if (inner instanceof z.ZodLiteral)
+    return either([...inner.values].map((value) => `\`${String(value)}\``));
   if (inner instanceof z.ZodArray) {
     const unique = z.globalRegistry.get(inner)?.uniqueItems === true ? "unique " : "";
     const append = isAppendOnly(inner) ? "append-only " : "";

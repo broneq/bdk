@@ -4,7 +4,7 @@
 // layer inside the fixture, and a PATH without git for `runtime/git-missing`.
 import { spawn } from "node:child_process";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, expect } from "vitest";
 
@@ -35,13 +35,26 @@ export function git(root: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd: root, env: GIT_ENV, encoding: "utf8" });
 }
 
-/** A repository with one commit holding `files`, checked out on BRANCH. */
+/**
+ * The global layer of every fixture: both tool groups a Change runs declared
+ * none (T49), so `change new` and `part start` do not refuse
+ * `policy/tools-unset`. A project layer's entries replace a group's `none`.
+ */
+const GLOBAL_TOOLS = "tools:\n  test: none\n  lint: none\n";
+
+/**
+ * A repository with one commit holding `files`, checked out on BRANCH, and
+ * GLOBAL_TOOLS in its global layer, which git does not see.
+ */
 export function repository(files: Record<string, string> = {}): string {
   const created = createFixture({ files: { "README.md": "# app\n", ...files } });
   fixtures.push(created);
   git(created.root, "checkout", "--quiet", "-b", BRANCH);
   git(created.root, "add", "--all");
   git(created.root, "commit", "--quiet", "-m", "initial");
+  mkdirSync(join(created.root, ".xdg", "bdk"), { recursive: true });
+  writeFileSync(join(created.root, ".xdg", "bdk", "settings.yaml"), GLOBAL_TOOLS);
+  appendFileSync(join(created.root, ".git", "info", "exclude"), "/.xdg/\n");
   return created.root;
 }
 

@@ -1,8 +1,10 @@
 # Cases of /bdk:setup (spec stage-skills, setup requirements). Every case starts
 # from a fresh copy of the pinned fixture (a Vite + TypeScript app with npm
-# scripts and no .bdk/). `prepare` runs in that copy with $BDK set to the
-# plugin copy's kernel bundle; `expect` runs kernel commands there after the
-# session.
+# scripts and no .bdk/), or from an empty repository with `base: empty`.
+# `prepare` runs in that copy with $BDK set to the plugin copy's kernel bundle;
+# `expect` runs kernel commands there after the session. Setup never leaves
+# tools.test or tools.lint unset (T49), so every case ends with a change new
+# the kernel does not refuse with policy/tools-unset.
 #
 # fresh-project also accepts keeping .bdk/ out of the fixture's markdownlint
 # (T51): its .markdownlint-cli2.mjs globs every Markdown file. The exclusion
@@ -32,9 +34,15 @@
         value.0.tier: fast
       match:
         value.0.scoped: "\\{files\\}"
+    - run: config show tools.lint
+      match:
+        value.0.tier: lint|typecheck|format
     - run: config show languages
       match:
         value.0: script
+    # Both tool groups are configured or declared none (T49): change new opens.
+    - shell: |-
+        node "$BDK" change new "Check the settings" >/dev/null
 
 # exclusions-declined: the user declines every proposed exclusion (T51,
 # stage-skills "exclusion declined"). The answer matches no option label, so
@@ -58,6 +66,9 @@
         git status --porcelain -- . ':!.bdk' ':!.gitignore'
       stdout: "^$"
     - reply: markdownlint
+    # Both tool groups are configured or declared none (T49): change new opens.
+    - shell: |-
+        node "$BDK" change new "Check the settings" >/dev/null
 
 - id: invalid-settings
   command: /bdk:setup
@@ -73,6 +84,9 @@
       json:
         value.0.id: vitest
         value.0.tier: fast
+    # Both tool groups are configured or declared none (T49): change new opens.
+    - shell: |-
+        node "$BDK" change new "Check the settings" >/dev/null
 
 - id: v2-project
   command: /bdk:setup
@@ -91,3 +105,66 @@
     - run: config show tools.test
       json:
         value.0.command: npm test
+    # Both tool groups are configured or declared none (T49): change new opens.
+    - shell: |-
+        node "$BDK" change new "Check the settings" >/dev/null
+
+# no-linter: a Node project with a test script and no linter, type checker or
+# formatter. The user answers that the project runs without a linter, so setup
+# declares tools.lint none.
+- id: no-linter
+  base: empty
+  command: /bdk:setup
+  prepare:
+    - |-
+      printf '{"name":"calc","private":true,"type":"module","scripts":{"test":"node --test"}}\n' > package.json
+    - |-
+      mkdir -p src && printf 'export const add = (a, b) => a + b;\n' > src/add.js
+    - |-
+      printf 'import test from "node:test";\nimport assert from "node:assert";\nimport { add } from "./add.js";\ntest("add", () => assert.equal(add(1, 2), 3));\n' > src/add.test.js
+    - |-
+      git add -A && git commit -qm "calc"
+  answers:
+    lavish: decline|skip|no|disable
+    "without (a |any )?lint|no lint": "^yes|none|without|no lint"
+  expect:
+    - run: config check
+      exit: 0
+    - run: config show tools.lint
+      json:
+        value: none
+    - run: config show tools.test
+      match:
+        value.0.command: node --test|npm test
+    - shell: |-
+        node "$BDK" change new "Add subtraction" >/dev/null
+
+# no-tests: a Node project with eslint and no test runner. The user answers
+# that the project runs without tests, so setup declares tools.test none, and
+# change status warns that the Change runs no test.
+- id: no-tests
+  base: empty
+  command: /bdk:setup
+  prepare:
+    - |-
+      printf '{"name":"calc","private":true,"type":"module","scripts":{"lint":"eslint ."},"devDependencies":{"eslint":"^10.4.1"}}\n' > package.json
+    - |-
+      printf 'export default [];\n' > eslint.config.js
+    - |-
+      mkdir -p src && printf 'export const add = (a, b) => a + b;\n' > src/add.js
+    - |-
+      git add -A && git commit -qm "calc"
+  answers:
+    lavish: decline|skip|no|disable
+    "without (a |any )?test|no test": "^yes|none|without|no test"
+  expect:
+    - run: config check
+      exit: 0
+    - run: config show tools.test
+      json:
+        value: none
+    - run: config show tools.lint
+      match:
+        value.0.command: eslint|npm run lint
+    - shell: |-
+        node "$BDK" change new "Add subtraction" >/dev/null && node "$BDK" change status | grep -q "warning: no test tool"

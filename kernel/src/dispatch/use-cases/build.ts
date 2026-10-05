@@ -19,6 +19,7 @@ import {
   promptContent,
   readKernelVersion,
   resolveOrRefuse,
+  toolGroup,
   toolsModule,
 } from "../../shared/config/index.ts";
 import type { Resolved } from "../../shared/config/index.ts";
@@ -48,6 +49,7 @@ import { risksModule } from "../../review/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import { mergeConflictsPrompt } from "../config.ts";
 import { checksText, fullChecksText } from "../domain/checks.ts";
+import type { ToolLists } from "../domain/checks.ts";
 import { fileRefs, selectEntries, taskText } from "../domain/entries.ts";
 import type { BuildReport } from "../domain/report.ts";
 import { groupFlagProblem, reviewText, risksText } from "../domain/review.ts";
@@ -177,7 +179,7 @@ export function buildPackage(
         ? ""
         : group === undefined
           ? await runnerChecks(deps, change, index, globalDir, input, resolved)
-          : fullChecksText(moduleValue(toolsModule, resolved.value), ref);
+          : await gateChecks(deps, change, index, globalDir, input, resolved, ref);
     if (typeof checks !== "string") return checks;
     const tasks = role === "lead" ? await leadTasks(deps, change, input.target) : "";
 
@@ -361,7 +363,28 @@ async function runnerChecks(
   const steps = await targetSteps(deps, change, index, globalDir, input.target);
   if (isRefusal(steps)) return steps;
   const kinds = steps.steps.filter((step) => step.role === "runner").map((step) => step.kind);
-  return checksText(kinds, moduleValue(toolsModule, resolved.value), steps.files, input.ticket);
+  return checksText(kinds, toolLists(resolved), steps.files, input.ticket);
+}
+
+/** The gate runner's `Checks` text: the change-level checks the Change applies (T42-D9, T49). */
+async function gateChecks(
+  deps: DispatchDeps,
+  change: ActiveChange,
+  index: IndexDb,
+  globalDir: string,
+  input: BuildInput,
+  resolved: Resolved,
+  ref: string,
+): Promise<string | Refusal> {
+  const steps = await targetSteps(deps, change, index, globalDir, input.target);
+  if (isRefusal(steps)) return steps;
+  return fullChecksText(steps.checks, toolLists(resolved), ref);
+}
+
+/** The entries of the two tool groups; an unset or declared-none group has none. */
+function toolLists(resolved: Resolved): ToolLists {
+  const tools = moduleValue(toolsModule, resolved.value);
+  return { test: toolGroup(tools, "test").entries, lint: toolGroup(tools, "lint").entries };
 }
 
 /**

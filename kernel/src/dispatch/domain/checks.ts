@@ -48,9 +48,10 @@ function recordLine(kind: string, ticket: string): string {
  * The full checks of the review stage (T42-D4, D9): `tests-full` runs every
  * test entry's `command`, then each entry's coverage run with the line that
  * hands its report to the kernel, which decides the verdict; `lint-full` runs
- * every lint entry's `command`.
+ * every lint entry's `command`. Only the `kinds` the Change's graph applies
+ * get a section: a declared-none tool group has none (T49).
  */
-export function fullChecksText(tools: ToolLists, ref: string): string {
+export function fullChecksText(kinds: readonly string[], tools: ToolLists, ref: string): string {
   const coverage = tools.test.flatMap((entry) =>
     entry.coverage === undefined
       ? []
@@ -58,11 +59,13 @@ export function fullChecksText(tools: ToolLists, ref: string): string {
           `- \`${entry.coverage.command}\`, then \`bdk evidence coverage ${entry.id} ${entry.coverage.report} --ticket ${ref}\`: the kernel reads the report and decides the coverage verdict; never record coverage yourself.`,
         ],
   );
-  const kinds: [string, string[]][] = [
+  const all: [string, string[]][] = [
     ["tests-full", [...tools.test.map((entry) => withWhen(entry.command, entry)), ...coverage]],
     ["lint-full", tools.lint.map((entry) => withWhen(entry.command, entry))],
   ];
-  const sections = kinds.map(([kind, commands]) =>
+  const applied = all.filter(([kind]) => kinds.includes(kind));
+  if (applied.length === 0) return `${INTRO}\n\nThis Change runs no full check.`;
+  const sections = applied.map(([kind, commands]) =>
     commands.length === 0
       ? `### ${kind}\n\nNo command is configured for \`${kind}\`: record it with \`--verdict not-run\` and that reason in the file.\n\n${recordLine(kind, ref)}`
       : `### ${kind}\n\n${commands.join("\n")}\n\nRecord: ${recordLine(kind, ref)}`,

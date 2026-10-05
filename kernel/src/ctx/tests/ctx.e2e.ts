@@ -131,7 +131,7 @@ describe("bdk ctx skill", () => {
     expect(result.stdout).toContain(
       "### Project commands: test\n\n- id: unit\n  command: pnpm test:unit\n  when: before every commit\n  tier: fast\n",
     );
-    expect(result.stdout).toContain("### Project commands: lint\n\nnone configured\n");
+    expect(result.stdout).toContain("### Project commands: lint\n\nunset: no command configured\n");
   });
 });
 

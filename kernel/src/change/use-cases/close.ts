@@ -7,11 +7,13 @@ import { relative, sep } from "node:path";
 
 import { gateRefusal, readGraph, writeDoneMarker } from "../../graph/index.ts";
 import { withChangeIndex } from "../../log/index.ts";
-import { moduleValue } from "../../shared/config/index.ts";
+import { moduleValue, toolGroupStates, toolsModule } from "../../shared/config/index.ts";
 import { changedPaths, gitInProgress, pathspecCommit } from "../../shared/git/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
+import { groupsNotUsed } from "../../shared/vocabulary/index.ts";
+import type { ToolGroupName } from "../../shared/vocabulary/index.ts";
 import {
   archivedChangeDir,
   findChangeRow,
@@ -51,7 +53,11 @@ export function closeChange(
     if (isRefusal(plan)) return plan;
 
     const target = archivedChangeDir(change.projectRoot, change.id);
-    const report = closeReport(change, index, plan, relativePath(change.projectRoot, target));
+    const notUsed = groupsNotUsed(toolGroupStates(moduleValue(toolsModule, settings)));
+    const report = closeReport(change, index, plan, {
+      archivedTo: relativePath(change.projectRoot, target),
+      notUsed,
+    });
     if (input.dryRun) return report;
 
     writeMerge(deps.store, plan);
@@ -148,7 +154,10 @@ function closeReport(
   change: ActiveChange,
   index: IndexDb,
   plan: MergePlan,
-  archivedTo: string,
+  {
+    archivedTo,
+    notUsed,
+  }: { readonly archivedTo: string; readonly notUsed: readonly ToolGroupName[] },
 ): CloseReport {
   const entries = listEntries(index, change.id);
   const merged = plan.report.merged.map((item) => item.capability);
@@ -158,7 +167,13 @@ function closeReport(
     archivedTo,
     spec: { merged, unchanged: merged.length === 0 },
     gatesByPolicy: gatesByPolicy(entries),
-    summary: closeSummary(findChangeRow(index, change.id)?.intent ?? change.id, live, merged),
+    toolsNotUsed: notUsed,
+    summary: closeSummary(
+      findChangeRow(index, change.id)?.intent ?? change.id,
+      live,
+      merged,
+      notUsed,
+    ),
   };
 }
 

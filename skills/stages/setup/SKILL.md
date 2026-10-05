@@ -14,7 +14,7 @@ If no "BDK context: setup" heading appears above, run `node "${CLAUDE_PLUGIN_ROO
 
 Bring this project to a working BDK layout. Done when `bdk config check` exits 0 and `bdk doctor --json` reports `ok: true`, or when every remaining `doctor` finding is reported to the user with its repair. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
 
-The "Project commands" sections above show the settings the project has now; "none configured" means that group is empty.
+The "Project commands" sections above show the settings the project has now. "declared none" means the project runs without a tool of that group; "unset: no command configured" means no layer sets the group yet, and `bdk change new` refuses until it is set; "none configured" means `build` has no entry.
 
 Arguments: $ARGUMENTS
 
@@ -23,7 +23,7 @@ When the arguments name a change ("add the e2e suite"), do only that, then go to
 ## Constraints
 
 - Write settings only with `bdk config set`, one key or tool entry per call. The kernel validates each value, keeps the schema modeline and adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`; never edit `.bdk/` files yourself. The only project files you edit are the ignore lists of its tools, after the user accepts each entry.
-- Ask the user only what the project files cannot tell you: which detected commands to keep, which tools to keep off `.bdk/`, whether to import rules, whether to delete v2 files, whether to install Lavish, where findings are tracked. Tiers, scoped forms, profiles and sizes follow from the runner or are measured by the kernel later, so they are never questions.
+- Ask the user only what the project files cannot tell you: which detected commands to keep, whether a project without a test or lint tool runs without one, which tools to keep off `.bdk/`, whether to import rules, whether to delete v2 files, whether to install Lavish, where findings are tracked. Tiers, scoped forms, profiles and sizes follow from the runner or are measured by the kernel later, so they are never questions.
 - Ask with `AskUserQuestion`, several questions in one call where they are independent. A multi-select with one option per detected command lets the user drop or add commands; the host adds "Other" for a command you did not find.
 - Do not run `bdk export agents`: on Claude Code the agents ship with the plugin, and a copy in the project would register each one twice.
 
@@ -32,12 +32,14 @@ When the arguments name a change ("add the e2e suite"), do only that, then go to
 `bdk doctor --json` decides the path:
 
 - `layout: v2`: migrate the project as [the v2 migration](references/v2-migration.md) describes, then continue with the settings.
-- `layout: v3` with settings in every group the project needs: show them and change only what the user asks for.
+- `layout: v3` with `test` and `lint` each configured or declared none: show the settings and change only what the user asks for.
 - Otherwise detect the stack.
 
 ## Settings
 
 Detect the languages and the `test`, `lint` and `build` commands from the project files with [the stack table](references/stacks.md). Confirm the full commands with the user, then write each confirmed command as one entry with its `id`, `tier` and the scoped forms the table gives for its runner, and `languages` as one list.
+
+`test` and `lint` are never left unset. When no command of one of them is found or kept, ask whether the project runs without one. On a yes, run `bdk config set tools.<group> none`: the Change skips that group's steps, and status, the review report and the PR summary say it was not used. On a no, ask for the command and write it as an entry. `build` may stay empty.
 
 A refused `config set` (exit 2 `policy/config-invalid`) names the key and the reason. When the key is one you set, correct the value and set it again. When the file already held the invalid value, every `config set` is refused until it is gone: set the enclosing key the `why` names (a whole tool group as `bdk config set tools.<group> '[{id: ..., tier: ..., command: ...}]'`) with its corrected full value. That is how this skill does the "fix .bdk/settings.yaml" of `instead`.
 
@@ -79,6 +81,7 @@ When `.claude/rules/` holds Markdown files other than the generated `bdk-generat
 Run `bdk doctor --fix --json`, which writes the schema copy and the modeline, then `bdk config check --json` and `bdk doctor --json`, and report in a few lines:
 
 - each tool entry as `<tier> <id>: <command>` with its scoped forms, so a wrong derivation is caught now by the person who knows the project;
+- each group declared none; for `test`, that no Change of the project will run a test;
 - what was imported, deleted, or not carried over from v2;
 - the exclusions committed, and each declined exclusion with its consequence: agents log a `question` naming `/bdk:setup` when that tool reports a `.bdk/` file;
 - the tracker, or that the review report offers no `track` while it is unset;

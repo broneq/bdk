@@ -5,7 +5,7 @@
 // `coverage` manifest through `evidence record`'s storage, tree hash and dedupe.
 import { isAbsolute, join, relative, sep } from "node:path";
 
-import { moduleValue, toolsModule } from "../../shared/config/index.ts";
+import { moduleValue, toolGroup, toolsModule } from "../../shared/config/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -38,7 +38,7 @@ export async function recordCoverage(
   }
   const resolved = evidenceSettings(deps, change.projectRoot, where.globalDir);
   if (isRefusal(resolved)) return resolved;
-  const tests = moduleValue(toolsModule, resolved.value).test;
+  const tests = toolGroup(moduleValue(toolsModule, resolved.value), "test").entries;
   const entry = tests.find((item) => item.id === input.test);
   if (entry === undefined) {
     return refuse("input/not-found", `tools.test has no entry ${input.test}`, [

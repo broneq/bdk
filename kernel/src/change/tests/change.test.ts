@@ -23,6 +23,8 @@ import {
   ROOT,
   runBdk,
   sequentialRandom,
+  TOOL_SETTINGS,
+  withTools,
   writeChangeDoc,
 } from "../../log/tests/support.ts";
 import type { FakeGit } from "../../log/tests/support.ts";
@@ -58,7 +60,7 @@ interface Harness {
   readonly run: (argv: readonly string[]) => ReturnType<typeof runBdk>;
 }
 
-function harness(store: Store = memoryStore()): Harness {
+function harness(store: Store = withTools(memoryStore())): Harness {
   withPluginFiles(store);
   const git = fakeGit();
   return {
@@ -238,7 +240,7 @@ describe("change new", () => {
 
     expect(result.code).toBe(3);
     expect(result.json).toMatchObject({ rule: "input/missing-argument" });
-    expect(h.store.list(ROOT)).toEqual([]);
+    expect(h.store.list(`${ROOT}/.bdk`)).toEqual(["settings.yaml"]);
   });
 
   it("stamps --kind bug and --inferred", async () => {
@@ -349,7 +351,7 @@ describe("change new", () => {
 
       expect(result.code).toBe(3);
       expect(result.json).toMatchObject({ rule: "input/invalid-argument" });
-      expect(h.store.list(ROOT)).toEqual([]);
+      expect(h.store.list(`${ROOT}/.bdk`)).toEqual(["settings.yaml"]);
     });
 
     it.each([
@@ -374,7 +376,7 @@ describe("change new", () => {
         why: expect.stringContaining("main") as string,
         instead: expect.arrayContaining([expect.stringContaining("--base <ref>")]) as string[],
       });
-      expect(h.store.list(ROOT)).toEqual([]);
+      expect(h.store.list(`${ROOT}/.bdk`)).toEqual(["settings.yaml"]);
     });
 
     it("refuses a base equal to HEAD as policy/empty-range and writes nothing", async () => {
@@ -383,7 +385,7 @@ describe("change new", () => {
 
       expect(result.code).toBe(2);
       expect(result.json).toMatchObject({ rule: "policy/empty-range" });
-      expect(h.store.list(ROOT)).toEqual([]);
+      expect(h.store.list(`${ROOT}/.bdk`)).toEqual(["settings.yaml"]);
     });
 
     it("a feature Change carries no base", async () => {
@@ -449,6 +451,71 @@ describe("change new", () => {
     });
   });
 
+  describe("tool groups (T49)", () => {
+    it("refuses an unset tools.lint as policy/tools-unset and writes nothing", async () => {
+      const store = memoryStore();
+      store.write(
+        `${ROOT}/.bdk/settings.yaml`,
+        "tools:\n  test:\n    - { id: unit, tier: fast, command: vitest run }\n",
+      );
+      const h = harness(store);
+
+      const result = await h.run(["change", "new", "Add dark mode", "--json"]);
+
+      expect(result.code).toBe(2);
+      expect(result.json).toStrictEqual({
+        refused: true,
+        rule: "policy/tools-unset",
+        why: "tools.lint is unset: the Change runs lint and lint-full; configure the project's lint commands or declare that it has none",
+        instead: [
+          "bdk config set tools.lint.<id> '{tier: lint, command: <command>}'",
+          "bdk config set tools.lint none",
+          "/bdk:setup",
+        ],
+      });
+      expect(h.store.list(`${ROOT}/.bdk`)).toEqual(["settings.yaml"]);
+    });
+
+    it("names both groups when neither is set", async () => {
+      const h = harness(memoryStore());
+      const result = await h.run(["change", "new", "Login fails", "--kind", "bug", "--json"]);
+
+      expect(result.code).toBe(2);
+      const refusal = result.json as { why: string; instead: string[] };
+      expect(refusal.why).toMatch(
+        /^tools\.test is unset: the Change runs tests-scoped and tests-full; .*; tools\.lint is unset: the Change runs lint and lint-full; /,
+      );
+      expect(refusal.instead).toStrictEqual([
+        "bdk config set tools.test.<id> '{tier: fast, command: <command>}'",
+        "bdk config set tools.test none",
+        "bdk config set tools.lint.<id> '{tier: lint, command: <command>}'",
+        "bdk config set tools.lint none",
+        "/bdk:setup",
+      ]);
+      expect(h.store.list(ROOT)).toEqual([]);
+    });
+
+    it("opens a Change when both groups are declared none", async () => {
+      const store = memoryStore();
+      store.write(`${ROOT}/.bdk/settings.yaml`, "tools:\n  test: none\n  lint: none\n");
+      const h = harness(store);
+
+      const result = await h.run(["change", "new", "Add dark mode", "--json"]);
+
+      expect(result.code).toBe(0);
+    });
+
+    it("leaves settings that do not validate to bdk next", async () => {
+      const store = memoryStore();
+      store.write(`${ROOT}/.bdk/settings.yaml`, "tools:\n  lint: []\n");
+      const h = harness(store);
+
+      const result = await h.run(["change", "new", "Add dark mode", "--json"]);
+
+      expect(result.code).toBe(0);
+    });
+  });
+
   it("refuses on a detached HEAD", async () => {
     const h = harness();
     h.git.branch = undefined;
@@ -457,7 +524,7 @@ describe("change new", () => {
 
     expect(result.code).toBe(2);
     expect(result.json).toMatchObject({ rule: "policy/detached-head" });
-    expect(h.store.list(ROOT)).toEqual([]);
+    expect(h.store.list(`${ROOT}/.bdk`)).toEqual(["settings.yaml"]);
   });
 
   it("renders the opened Change as text", async () => {
@@ -490,6 +557,36 @@ describe("change status", () => {
       openTickets: [],
       overriddenKeys: [],
     });
+  });
+
+  it("names the tool group states, lint declared none (T49)", async () => {
+    const h = harness(repository());
+    h.store.write(
+      `${ROOT}/.bdk/settings.yaml`,
+      "tools:\n  test:\n    - { id: unit, tier: fast, command: vitest run }\n  lint: none\n",
+    );
+
+    const json = await h.run(["change", "status", "--json"]);
+    expect(changeStatusOutput.parse(json.json).tools).toStrictEqual({
+      test: "configured",
+      lint: "none",
+    });
+    const text = await h.run(["change", "status"]);
+    expect(text.stdout).toContain("tools: lint not used (tools.lint is none)\n");
+    expect(text.stdout).not.toContain("no test tool");
+  });
+
+  it("warns when the Change runs no test (T49)", async () => {
+    const h = harness(repository());
+    h.store.write(`${ROOT}/.bdk/settings.yaml`, "tools:\n  test: none\n");
+
+    const json = await h.run(["change", "status", "--json"]);
+    expect(json.json).toMatchObject({ tools: { test: "none", lint: "unset" } });
+    const text = await h.run(["change", "status"]);
+    expect(text.stdout).toContain(
+      "warning: no test tool (tools.test is none): this Change runs no test\n",
+    );
+    expect(text.stdout).not.toContain("tools: lint");
   });
 
   it("answers the intent stage for a Change without transitions", async () => {
@@ -911,7 +1008,10 @@ describe("change on the artifact graph", () => {
 
   it("change status text stays within 100 lines on 8 parts and 1 000 entries", async () => {
     const h = graphHarness();
-    h.store.write(`${ROOT}/.bdk/settings.yaml`, "policy:\n  gates:\n    design: auto\n");
+    h.store.write(
+      `${ROOT}/.bdk/settings.yaml`,
+      `${TOOL_SETTINGS}policy:\n  gates:\n    design: auto\n`,
+    );
     writeDesign(h.store, "design");
     writeDesign(h.store, "architecture");
     await h.run(["done", "design"], T0);

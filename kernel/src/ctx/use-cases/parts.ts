@@ -8,7 +8,7 @@ import type * as z from "zod";
 
 import { verifierLists } from "../../log/index.ts";
 import type { VerifierCategory } from "../../log/index.ts";
-import { moduleValue, promptContent, toolsModule } from "../../shared/config/index.ts";
+import { moduleValue, NONE, promptContent, toolsModule } from "../../shared/config/index.ts";
 import type { ConfigModule, PromptKey, Resolved } from "../../shared/config/index.ts";
 import {
   languageRules,
@@ -71,7 +71,14 @@ export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Sec
       return [
         {
           title: `Project commands: ${part.group}`,
-          body: entries.length === 0 ? "none configured\n" : stringify(entries),
+          body:
+            entries === NONE
+              ? `declared none (tools.${part.group}: none)\n`
+              : entries === undefined
+                ? "unset: no command configured\n"
+                : entries.length === 0
+                  ? "none configured\n"
+                  : stringify(entries),
           part: { kind: "tools", source: `tools.${part.group}` },
         },
       ];
