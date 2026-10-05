@@ -101,6 +101,16 @@ describe("review report templates", () => {
     expect(page).toContain("<li>Lint: not used (tools.lint is none)</li>");
   });
 
+  it("shows no test tool beside a lint verdict (T49)", () => {
+    const base = fixture();
+    const md = changeReportMd(
+      changeReport({ ...base, gate: { ...base.gate, tests: undefined, notUsed: ["test"] } }),
+    );
+    expect(md).toContain(
+      "- Tests: not used (tools.test is none): this Change ran no test\n- Lint: pass\n",
+    );
+  });
+
   it("keeps the sections in order", () => {
     const page = changeReportHtml(report);
     const order = ["Parts and areas", "Change map", "Gate", "Decisions", "Settled", "Context"].map(
