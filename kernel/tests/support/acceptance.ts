@@ -150,7 +150,7 @@ export function renderReport(
     "",
     "# V3 acceptance report",
     "",
-    "Every item of the v3 design's test list (`acceptance-catalogue` spec) and the tests that answer it. Perf tests run locally with `pnpm test:perf`, never in CI.",
+    "Every item of the v3 design's test list (`acceptance-catalogue` spec) and the tests that answer it. Perf tests never run in CI: the release measurement runs `pnpm test:perf` in a Linux container, as `CONTRIBUTING.md` shows.",
     "",
     "| ID | Item | Evidence | Tests |",
     "| --- | --- | --- | --- |",

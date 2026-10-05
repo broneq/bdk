@@ -27,8 +27,8 @@
 
 ## 4. Catalogue guard on
 
-- [ ] 4.1 Write the contract test that runs the reader, collector and matcher on the real catalogue and the real tests and fails naming every unanswered item and unknown ID; verify it passes on the branch and fails after removing the `[TSH-7]` title (then restore it).
-- [ ] 4.2 Add the report equality check to the contract test, run `pnpm acceptance:report`, commit `docs/V3-ACCEPTANCE.md`; verify the test passes, and fails with the rerun hint after retitling one test without regenerating (then restore).
+- [x] 4.1 Write the contract test that runs the reader, collector and matcher on the real catalogue and the real tests and fails naming every unanswered item and unknown ID; verify it passes on the branch and fails after removing the `[TSH-7]` title (then restore it).
+- [x] 4.2 Add the report equality check to the contract test, run `pnpm acceptance:report`, commit `docs/V3-ACCEPTANCE.md`; verify the test passes, and fails with the rerun hint after retitling one test without regenerating (then restore).
 - [ ] 4.3 Document the catalogue in `CONTRIBUTING.md` (how to add an item, title a test with its ID, regenerate the report) and verify the docs drift guards pass.
 
 ## 5. BDK's own rules
