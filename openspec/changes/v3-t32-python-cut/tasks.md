@@ -2,8 +2,8 @@
 
 ## 1. Port the live pytest guards to vitest (D-2)
 
-- [ ] 1.1 Write `kernel/tests/contract/host-probe.test.ts`: the eight collector cases of `tests/unit/host_probe/test_collect.py` (paths and encoded forms, plugin root, per-user temp dir, git identity and e-mails, stable id placeholders, keys and nesting kept, probe metadata, missing recording names the check), the leak guard's positive and negative texts, and one case per committed fixture. Verify: `pnpm test:contract` green, and a temporary `/Users/x/` written into one fixture makes it fail with the file and the match (then reverted)
-- [ ] 1.2 Add the `web-researcher` tool allowlist (`WebSearch`, `WebFetch`, `Read`, `Grep`, `Glob`) to `kernel/tests/contract/plugin-layout.test.ts`, parsing the frontmatter with `yaml`. Verify: green, and `Bash` added to the agent's `tools:` temporarily fails it with the added tool named
+- [x] 1.1 Write `kernel/tests/contract/host-probe.test.ts`: the eight collector cases of `tests/unit/host_probe/test_collect.py` (paths and encoded forms, plugin root, per-user temp dir, git identity and e-mails, stable id placeholders, keys and nesting kept, probe metadata, missing recording names the check), the leak guard's positive and negative texts, and one case per committed fixture. Verify: `pnpm test:contract` green, and a temporary `/Users/x/` written into one fixture makes it fail with the file and the match (then reverted)
+- [x] 1.2 Add the `web-researcher` tool allowlist (`WebSearch`, `WebFetch`, `Read`, `Grep`, `Glob`) to `kernel/tests/contract/plugin-layout.test.ts`, parsing the frontmatter with `yaml`. Verify: green, and `Bash` added to the agent's `tools:` temporarily fails it with the added tool named
 
 ## 2. Documentation site on VitePress (D-3 to D-8)
 
