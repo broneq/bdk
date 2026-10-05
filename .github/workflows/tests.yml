@@ -60,9 +60,9 @@ jobs:
       matrix:
         # The minimum (HOST-FACTS node-sqlite-min), the active LTS and the
         # current release; every line runs the same steps. Only steps that
-        # execute kernel code run here; checks whose result depends only on the
-        # source and the lockfile run once in the static job
-        # (kernel-architecture, Continuous integration).
+        # execute kernel code run here and in the e2e job; checks whose result
+        # depends only on the source and the lockfile run once in the static
+        # job (kernel-architecture, Continuous integration).
         node: ["22.13", "24", "26"]
     steps:
       - uses: actions/checkout@v7
@@ -83,9 +83,6 @@ jobs:
       - name: Unit tests with coverage
         run: pnpm test:unit
 
-      - name: E2E tests
-        run: pnpm test:e2e
-
       # The OpenSpec compatibility contract test (T30-D14) validates the
       # merged .bdk/specs/ with the version CLAUDE.md pins; it fails in CI
       # when openspec is missing.
@@ -94,6 +91,35 @@ jobs:
 
       - name: Contract and structural tests
         run: pnpm test:contract
+
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The Node lines of the kernel job. E2E is the longest suite, so each
+        # line splits its files over two runners; vitest assigns every file
+        # to exactly one shard.
+        node: ["22.13", "24", "26"]
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: E2E tests
+        run: pnpm test:e2e --shard=${{ matrix.shard }}/2
 
   lint-repo:
     runs-on: ubuntu-latest
