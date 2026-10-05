@@ -82,49 +82,27 @@ After the review, the human decides each open entry with `bdk log decide <id> fi
 
 `bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 file `.bdk/settings.json` is never read; `/bdk:setup` migrates a project that still has it.
 
-Everything BDK skills write to disk lives under `.bdk/` in the project root, per `.claude/rules/artifacts.md`:
+## The BDK 2 layout
 
-```
-Skill artifacts → .bdk/<skill-name>/<output-file>
-```
+BDK 2 skills wrote their output under `.bdk/<skill-name>/`. A project upgraded from BDK 2 can still hold these paths. `bdk doctor` reports the first five as `layout: v2`, and `/bdk:setup` migrates the project:
 
-This page lists every directory under `.bdk/` that appears in BDK's own sources, which skill writes to it, and whether any of it is tracked by git.
+| Path                         | Written by                         | Contents                                                                                                      |
+| ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `.bdk/settings.json`         | BDK 2 setup                        | v2 project configuration; `/bdk:setup` migrates it to `.bdk/settings.yaml`                                    |
+| `.bdk/plans/`                | BDK 2 `/bdk:create-plan`           | v2 implementation plans; BDK 3 plans live in the Change, and `/bdk:setup` deletes this directory              |
+| `.bdk/design/`               | BDK 2 `/bdk:design`                | v2 design docs; BDK 3 designs live in the Change, and `/bdk:setup` deletes this directory                     |
+| `.bdk/verify-plan/`          | BDK 2 `/bdk:verify-plan`           | v2 verification reports; `/bdk:setup` deletes this directory                                                  |
+| `.bdk/runs/`                 | BDK 2 `/bdk:subagent-execute-plan` | Run manifests; BDK 3 removed the skill and keeps progress in the Change and the task commits' trailers        |
+| `.bdk/cr/`                   | BDK 2 `/bdk:cr`                    | v2 code review reports; the BDK 3 review lives in the Change, and its human report in `.bdk/.machine/review/` |
+| `.bdk/explain-complex-code/` | BDK 2 `explain-complex-code` skill | v2 architecture docs; BDK 3 removed the skill, and `/bdk:docs` writes to `docs/architecture/`                 |
 
-## Layout
+## The BDK 2 ignore rule
 
-| Path                         | Written by                                                          | Contents                                                                                             |
-| ---------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `.bdk/settings.json`         | BDK 2 setup                                                         | v2 project configuration; `/bdk:setup` migrates it to `.bdk/settings.yaml`                           |
-| `.bdk/plans/`                | BDK 2 `/bdk:create-plan`                                            | v2 implementation plans; BDK 3 plans live in the Change, and `/bdk:setup` deletes this directory     |
-| `.bdk/design/`               | BDK 2 `/bdk:design`                                                 | v2 design docs; BDK 3 designs live in the Change, and `/bdk:setup` deletes this directory            |
-| `.bdk/verify-plan/`          | BDK 2 `/bdk:verify-plan`                                            | v2 verification reports; `/bdk:setup` deletes this directory                                         |
-| `.bdk/runs/`                 | BDK 2 `/bdk:subagent-execute-plan` (via `scripts/bdk_run_state.py`) | Run manifests, `.bdk/runs/<run-id>.json` - machine state, never hand-edited; BDK 3 removed the skill |
-| `.bdk/cr/`                   | `/bdk:cr`                                                           | Code review reports, `.bdk/cr/{stamp}-{branch-slug}-{delta\|full}.md`                                |
-| `.bdk/explain-complex-code/` | BDK 2 `explain-complex-code` skill                                  | v2 architecture docs; BDK 3 removed the skill, and `/bdk:docs` writes to `docs/architecture/`        |
+Nothing in the BDK 2 layout was tracked. The first time a plan ran, BDK 2 appended this block to the project's `.gitignore`, unless a rule already covered the path:
 
-## Run state: the one directory no skill reads or writes directly
-
-`.bdk/runs/<run-id>.json` is **cross-skill run state**, not any single skill's artifact: the BDK 2 `/bdk:subagent-execute-plan` advanced it and `/bdk:cr` reads it. Only `scripts/bdk_run_state.py` reads or writes the file. Per its own docstring:
-
-```
-This script is the ONLY reader and writer of the manifest. Do not hand-edit
-the JSON - an edit that git does not agree with is discarded on next read.
-Use `print` for a human-readable view.
-```
-
-Git commit trailers (`BDK-Run:`, `BDK-Group:`) are the durable ground truth behind the manifest; the manifest is a cache that makes resume cheap. When the two disagree, git wins and the script corrects the manifest in place (a `reconcile` step run on every read). See [The plan pipeline](../concepts/plan-pipeline.md).
-
-## What gets tracked
-
-Nothing in the v2 layout above. Every path in its table is local to your clone - `.bdk/settings.json` included.
-
-`scripts/bdk_run_state.py` enforces this: on every run-manifest write it probes `git check-ignore` for the manifest path, and when no existing rule already covers it (wherever that rule lives, including `.git/info/exclude`) it appends this block to the project's `.gitignore`:
-
-```
+```gitignore
 # BDK run state - machine-owned, never committed
 /.bdk/
 ```
 
-That happens the first time a plan is executed in a project that had no equivalent rule, and it happens once: the script scans the existing `.gitignore` first and never appends a duplicate. `/.bdk/` covers the whole directory, so settings, plans, designs, verification reports, review reports, architecture docs and run state are all ignored by the same line.
-
-In BDK 3, `.bdk/settings.yaml` is tracked so the team shares the commands; see [Settings and Changes](#settings-and-changes) and [Setup](../getting-started/setup.md).
+That rule also hides the files BDK 3 commits: `.bdk/settings.yaml`, `.bdk/rules/` and the Changes. `bdk doctor` reports it as `bdk-ignored`. `/bdk:setup` shows the rule and the file that holds it, removes it after you confirm, and adds the two paths BDK 3 keeps out of git (`/.bdk/.machine/`, `/.bdk/settings.local.yaml`). See [Settings and Changes](#settings-and-changes) and [Setup](../getting-started/setup.md).

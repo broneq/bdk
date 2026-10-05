@@ -35,4 +35,4 @@ node $REPO/tests/host-probe/collect.mjs "$(claude --version | cut -d' ' -f1)" \
   session-end-kill9='session-end-kill9--*'
 ```
 
-A step that produced no recording fails `collect.mjs` for that check ID only; the other checks are still written. `pytest tests/unit/host_probe/` then checks that no fixture leaks machine data.
+A step that produced no recording fails `collect.mjs` for that check ID only; the other checks are still written. `pnpm test:contract kernel/tests/contract/host-probe.test.ts` then checks that no fixture leaks machine data.

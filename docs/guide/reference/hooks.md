@@ -125,17 +125,3 @@ Searches `~/.claude/skills/`, `.claude/skills/`, every marketplace under `~/.cla
 ```
 
 See [Troubleshooting](../troubleshooting.md).
-
-## Other hook scripts (not wired into `hooks.json`)
-
-One more script lives under `hooks/` but is not wired into `hooks.json` or any skill:
-
-### `hooks/is-command-exists/check.py`
-
-Usage: `check.py <command> [install-hint]`. Checks `shutil.which(command)`. Warning message (to stderr, exit code 2) when missing:
-
-```
-[BDK] Command '<command>' not found in PATH. This skill requires it to be installed.
-```
-
-with `" Install: <install-hint>"` appended when an install hint argument was given. Silent, exit 0, when the command is found.

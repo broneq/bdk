@@ -51,12 +51,13 @@ A page absent from the map is a page this skill will never audit again.
 pnpm test:contract          # includes the site guards in kernel/tests/docs/
 ```
 
-The guards in `kernel/tests/docs/` already enforce six invariants: every
+The guards in `kernel/tests/docs/` already enforce seven invariants: every
 user-invocable skill is in `README.md` and has a `## /bdk:<name>` heading in
 `reference/skills.md`; every `agents/*.md` is named in `reference/agents.md`;
 the sidebar in `docs/guide/.vitepress/sidebar.ts` lists exactly the pages under
 `docs/guide/`; every page opens with the v2 banner; every `hooks/...` path named
-in prose exists; every in-site link with an anchor names a heading of its target. Run
+in prose exists; every in-site link with an anchor names a heading of its target; no page names a removed
+mechanism (the tool tiers, the v2 settings hook, a Python script or hook of BDK). Run
 them, read the failures, and do not re-derive those checks by hand - spending attention
 where a test already holds the line is attention not spent on the prose, which
 nothing checks.

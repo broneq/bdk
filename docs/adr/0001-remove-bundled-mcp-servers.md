@@ -46,7 +46,7 @@ BDK v2 ships two MCP servers in its plugin `.mcp.json`, serena and code-review-g
 - [ ] T13 `ctx` and content hooks: no `uvx` lines in `hooks.json`; `hooks session-start` drops graph repo registration; `ctx skill` tier chains carry only the built-in-tools tier, and the acceptance test "`features.code-review-graph` gives the graph tier" becomes "tier text is the same with or without the flag"; `features.code-review-graph` and `features.serena` become unknown keys that `config check` reports as removed.
 - [ ] T11 `doctor`: no `uv` / `uvx` check.
 - [ ] T04 remove the bundled MCP servers from the shipping v2 plugin: `.mcp.json` servers, the `uvx` hook lines (including the `Stop` graph update), `hooks/register-graph-repo/`, `.serena/`, the graph and serena tool tiers, MCP tools in agent `tools:` and skill `allowed-tools`, the `features.code-review-graph` / `features.serena` keys, and the tests and docs that name them.
-- [ ] T32 import and cleanup: drop `uv.lock` (not needed for MCP); the v2 -> v3 import reports the dropped `features` keys.
+- [x] T32 import and cleanup: drop `uv.lock` (not needed for MCP); the v2 -> v3 import reports the dropped `features` keys.
 - [ ] T41 stage skills: tool-tier guidance is the built-in-tools text; the CI content test "`mcp__plugin_bdk_` in tool names" becomes "no `mcp__plugin_bdk_` names".
 - [ ] T42 roles and adapters: adapter `tools:` without MCP tools; the `scout` adapter keeps the four former agents merged, with `Read`, `Grep`, `Glob`, `Bash` (T02 decision R-7).
 - [ ] Retire `.claude/rules/mcp-tool-naming.md` and the MCP parts of `.claude/rules/fragment-system.md` (T04).

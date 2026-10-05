@@ -106,7 +106,7 @@ node $REPO/tests/host-probe/collect.mjs "$VERSION" \
       session-end-clear session-end-term session-end-kill9 skill-tool-upe skill-tool-disallowed skill-tool-writer \
       plugin-bin-bash plugin-bin-subagent plugin-bin-skill plugin-bin-hook; do printf '%s=%s--* ' $c $c; done) \
   pre-skill='skill-tool-pretool--*'
-(cd $REPO && uv run pytest tests/unit/host_probe/)
+(cd $REPO && pnpm test:contract kernel/tests/contract/host-probe.test.ts)
 
 # 4. Compare with the previous version and update the table above.
 diff -r $REPO/tests/fixtures/host-payloads/2.1.281 $REPO/tests/fixtures/host-payloads/$VERSION

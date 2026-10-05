@@ -29,6 +29,8 @@ None.
 - `docs-site`: Site location, Strict build, Drift guards, v2 banner and Deploy move from MkDocs Material to VitePress; the docs-sync skill runs no pytest.
 - `kernel-cli/service`: `bdk doctor` reports five v2 markers and the new `bdk-ignored` finding.
 - `stage-skills`: "setup migrates a v2 project" replaces the v2 `.bdk/` ignore rule.
+- `skill-evals`: "Retirement of tests/evals" is removed with the directory.
+- `craft-skills`: "The v2 craft skills leave bdk" no longer exempts `tests/evals/`, which is gone.
 
 ## Impact
 
@@ -36,7 +38,7 @@ None.
 - Kernel: `kernel/src/config/domain/layout.ts` (markers), `kernel/src/service/` (doctor check, schema example), tests; `kernel/tests/docs/` (site reader, nav, anchors, banner syntax), `kernel/tests/contract/` (host probe, agent tools).
 - Content: `skills/stages/setup/references/v2-migration.md`, `skills/stages/setup/SKILL.md` where it lists the migration steps; `docs/guide/**` (syntax and stale paths), `docs/guide/.vitepress/`.
 - Tooling: `package.json` (VitePress devDependencies, `docs:build`, no `lint:py`), `pnpm-lock.yaml`, `.github/workflows/tests.yml`, `.github/workflows/docs.yml`, `knip.json`, `tsconfig.json`/`eslint.config.mjs` (the site config), `.gitignore`, `.prettierignore`, `.claude/skills/docs-sync/references/docs-map.md`.
-- Docs: `README.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `docs/adr/0001-remove-bundled-mcp-servers.md` (the T32 checklist item).
+- Docs: `README.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `docs/adr/0001-remove-bundled-mcp-servers.md` (the T32 checklist item), `docs/HOST-FACTS.md` and `tests/host-probe/CHECKLIST.md` (the leak check command), `.claude/rules/artifacts.md` (the kernel owns `.bdk/`; the v2 run state paragraph goes).
 - Repository setting: GitHub Pages source must be "GitHub Actions" before the first deploy from `main`; T32 notes it and does not change it, since the first deploy is the 3.0 release (T50).
 - Out of scope: the v3 rewrite of the site pages and of `README.md` (T50); the 3.0.0 release itself and `bdk-craft`'s version (T50); `.claude/rules/` reduced by the T31 admission test (T50).
 
