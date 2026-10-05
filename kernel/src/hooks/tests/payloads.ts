@@ -122,6 +122,11 @@ export function deniedPayloads(): (readonly [string, Payload])[] {
     [`subagent ${kernel("commit 02-3")}`, subagentBash(kernel("commit 02-3"))],
     ["subagent ./dist/bdk.mjs hooks pre-tool", subagentBash("./dist/bdk.mjs hooks pre-tool")],
     ["main bdk.mjs hooks", mainBash(kernel("hooks prompt-expansion"))],
+    // The plugin's bin/bdk, the form the skills and role contracts use (T52).
+    ["subagent bdk commit", subagentBash("bdk commit 02-3")],
+    ["subagent bdk commit after cd", subagentBash("cd app && bdk commit 02-3")],
+    ["main bdk hooks", mainBash("bdk hooks prompt-expansion")],
+    ["main bdk hooks in a subshell", mainBash("(bdk hooks pre-tool)")],
     ...NESTED_DENIED.map(([command]) => [`main ${command}`, mainBash(command)] as const),
     ["Edit under .bdk/specs", recorded(preEdit, { file_path: SPEC })],
     ["Write under .bdk/specs", recorded(preWrite, { file_path: SPEC })],

@@ -191,25 +191,35 @@ describe("bdk ctx startup", () => {
 describe("context line of a skill in a shell", () => {
   const line = readFileSync(join(REPO_ROOT, "skills/stages/design/SKILL.md"), "utf8")
     .split("\n")
-    .find((text) => text.startsWith("!`node "));
+    .find((text) => text.startsWith("!`bdk "));
   const command = (line ?? "").slice(2, -1);
+  const launcherDir = join(REPO_ROOT, "bin");
   const run = (path: string) =>
     spawnSync("/bin/sh", ["-c", command], {
       cwd: fixture().root,
       encoding: "utf8",
-      env: { CLAUDE_PLUGIN_ROOT: REPO_ROOT, PATH: path },
+      env: { PATH: path },
     });
 
-  it("ends with the kernel-unavailable STOP line and exits 0 without node", () => {
-    const result = run(fixture({}, false).root);
+  it("ends with the kernel-unavailable STOP line and exits 0 without bdk on PATH", () => {
+    const result = run(dirname(process.execPath));
     expect(result.status).toBe(0);
     expect(result.stdout).toMatch(
       /BDK STOP: kernel unavailable \(exit 127\)\. Install Node >= 22\.13 and run \/bdk:setup\.\n$/,
     );
   });
 
-  it("prints the skill's BDK context with node on PATH", () => {
-    const result = run(dirname(process.execPath));
+  it("ends with the launcher's line and the STOP line with exit 5 without node", () => {
+    const result = run(`${launcherDir}:${fixture({}, false).root}`);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("bdk: kernel unavailable: node is not on PATH");
+    expect(result.stdout).toMatch(
+      /BDK STOP: kernel unavailable \(exit 5\)\. Install Node >= 22\.13 and run \/bdk:setup\.\n$/,
+    );
+  });
+
+  it("prints the skill's BDK context with bdk and node on PATH", () => {
+    const result = run(`${launcherDir}:${dirname(process.execPath)}`);
     expect(result.status).toBe(0);
     expect(result.stdout).toMatch(/^## BDK context: design\n/);
   });

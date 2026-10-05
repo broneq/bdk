@@ -1,8 +1,8 @@
 # Installation
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 BDK installs as a Claude Code plugin. Two commands add it, one skill configures
 the project, and everything else is a slash command in your normal session.
@@ -13,6 +13,20 @@ the project, and everything else is a slash command in your normal session.
 
 BDK is a Claude Code plugin: skills, agents, and hooks are loaded by the Claude
 Code plugin loader. There is nothing to run outside it.
+
+### Node
+
+The kernel is a Node program: install Node >= 22.13 and keep it on `PATH`.
+The plugin's `bin/bdk` launcher runs it, and Claude Code puts the plugin's
+`bin/` on the Bash tool's `PATH`, so skills and agents call the kernel as
+`bdk <command>`. Hooks run the bundle by its path, because a hook's `PATH`
+does not hold the plugin's `bin/`.
+
+### Not claude.ai or Cowork
+
+BDK needs Claude Code: the CLI, the desktop app or an IDE extension. claude.ai
+and Cowork do not install a plugin that has a `bin/` directory, and BDK has no
+other way to start its kernel there.
 
 ### Nothing else for code tools
 

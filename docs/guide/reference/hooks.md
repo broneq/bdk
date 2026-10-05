@@ -1,8 +1,8 @@
 # Hooks reference
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 BDK registers hooks via `hooks/hooks.json`. This page lists every entry: the event it fires on, what it runs, what it prints, and when it blocks the session.
 
@@ -34,7 +34,7 @@ One guard hook fires before every tool call (no matcher), because the heartbeat 
 
 Command: `f="${CLAUDE_PLUGIN_ROOT}/hooks/guard/pre-tool.sh"; [ -r "$f" ] || { echo "guard/kernel-unavailable: $f is missing, so BDK cannot check this tool call; reinstall the BDK plugin" >&2; exit 2; }; . "$f"`
 
-The script is sourced into the host's shell. For a subagent's call it first writes `open` to `.bdk/.machine/agents/<agent_id>`, the heartbeat, in the shell. A shell prefilter then drops every payload no guard can deny (no `.bdk/specs`, no `bdk.mjs ... hooks`, no BDK adapter, no subagent `git` or `bdk.mjs`, no `SendMessage`, no `Skill` call to a stage skill), so most tool calls never start Node. The rest go to `bdk hooks pre-tool`, which reads the Bash command with a shell lexer and applies these guards in order; the first match denies:
+The script is sourced into the host's shell. For a subagent's call it first writes `open` to `.bdk/.machine/agents/<agent_id>`, the heartbeat, in the shell. A shell prefilter then drops every payload no guard can deny (no `.bdk/specs`, no `bdk.mjs ... hooks` or `bdk ... hooks`, no BDK adapter, no subagent `git`, `bdk.mjs` or `bdk `, no `SendMessage`, no `Skill` call to a stage skill), so most tool calls never start Node. The rest go to `bdk hooks pre-tool`, which reads the Bash command with a shell lexer and applies these guards in order; the first match denies:
 
 | Rule                            | Denies                                                                                                                                                                                                                   | Threads   |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
@@ -125,17 +125,3 @@ Searches `~/.claude/skills/`, `.claude/skills/`, every marketplace under `~/.cla
 ```
 
 See [Troubleshooting](../troubleshooting.md).
-
-## Other hook scripts (not wired into `hooks.json`)
-
-One more script lives under `hooks/` but is not wired into `hooks.json` or any skill:
-
-### `hooks/is-command-exists/check.py`
-
-Usage: `check.py <command> [install-hint]`. Checks `shutil.which(command)`. Warning message (to stderr, exit code 2) when missing:
-
-```
-[BDK] Command '<command>' not found in PATH. This skill requires it to be installed.
-```
-
-with `" Install: <install-hint>"` appended when an install hint argument was given. Silent, exit 0, when the command is found.

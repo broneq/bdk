@@ -263,6 +263,22 @@ describe("PreToolUse guard", () => {
     );
   });
 
+  it("denies a subagent bdk commit through the plugin's bin/bdk", () => {
+    const { root } = opened();
+    const run = hook("PreToolUse", root, subagentBash("bdk commit 02-3"));
+    expect(run.code).toBe(2);
+    expect(run.stderr).toMatch(
+      /^guard\/subagent-kernel-command: subagents may not run bdk commit,/,
+    );
+  });
+
+  it("denies a main-thread bdk hooks behind another command", () => {
+    const { root } = opened();
+    const run = hook("PreToolUse", root, mainBash("cd . && bdk hooks prompt-expansion"));
+    expect(run.code).toBe(2);
+    expect(run.stderr).toMatch(/^guard\/hooks-from-bash: /);
+  });
+
   it("denies an Edit under .bdk/specs/", () => {
     const { root } = opened();
     const run = hook(
@@ -303,6 +319,24 @@ describe("PreToolUse guard", () => {
         mainBash('node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks prompt-expansion'),
         { pluginRoot: withoutBundle() },
       );
+      expect(run.code).toBe(2);
+      expect(run.stderr).toMatch(/^guard\/kernel-unavailable: /);
+    });
+
+    it("blocks a main-thread bdk hooks: the prefilter lets the bdk form through", () => {
+      const { root } = opened();
+      const run = hook("PreToolUse", root, mainBash("bdk hooks pre-tool"), {
+        pluginRoot: withoutBundle(),
+      });
+      expect(run.code).toBe(2);
+      expect(run.stderr).toMatch(/^guard\/kernel-unavailable: /);
+    });
+
+    it("blocks a subagent bdk call: the prefilter lets the bdk form through", () => {
+      const { root } = opened();
+      const run = hook("PreToolUse", root, subagentBash("bdk attempt list --json"), {
+        pluginRoot: withoutBundle(),
+      });
       expect(run.code).toBe(2);
       expect(run.stderr).toMatch(/^guard\/kernel-unavailable: /);
     });

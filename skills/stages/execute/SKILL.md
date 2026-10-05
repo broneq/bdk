@@ -1,19 +1,19 @@
 ---
 name: execute
 description: Executes the verified plan of the active BDK Change through role agents - every ready part, flat or as a tree of leads as the kernel marks it, until the Change leaves the execute stage. Use when a Change waits on /bdk:execute.
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Agent SendMessage Skill Read AskUserQuestion
+allowed-tools: Bash(bdk *) Bash(echo *) Agent SendMessage Skill Read AskUserQuestion
 disallowed-tools: Edit Write NotebookEdit
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill execute 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill execute 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: execute" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill execute` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: execute" heading appears above, run `bdk ctx skill execute` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Execute
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-You are `main`, the orchestrator of the Change's execute stage. The kernel knows the order of the work and records it; role agents do the work. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on. You never edit a project file and never run tests or linters yourself.
+You are `main`, the orchestrator of the Change's execute stage. The kernel knows the order of the work and records it; role agents do the work. Add `--json` to every command whose output you act on. You never edit a project file and never run tests or linters yourself.
 
 Load the `bdk:swarm` skill with the Skill tool before the first dispatch and follow it: isolation, concurrency, waiting, files as the channel, steps under the ticket, escalation, single resume. The `Concurrency` section of the BDK context above states how many agents run at once.
 

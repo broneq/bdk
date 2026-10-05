@@ -10,7 +10,7 @@ import { parse } from "yaml";
 import { REPO_ROOT } from "../support/run.ts";
 
 const TOOLS = join(REPO_ROOT, "skills", "tools");
-const KERNEL_PAIR = 'Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)';
+const KERNEL_PAIR = "Bash(bdk *) Bash(echo *)";
 const V2_AGENTS = [
   "bdk:code-reviewer",
   "bdk:architecture-reviewer",
@@ -56,9 +56,7 @@ describe("/bdk:cr", () => {
 
   it("stays within 200 lines and opens with its context lines", () => {
     expect(skill().lines).toBeLessThanOrEqual(200);
-    expect(skill().body.trimStart()).toMatch(
-      /^!`node "\$\{CLAUDE_PLUGIN_ROOT\}\/dist\/bdk\.mjs" ctx skill cr /,
-    );
+    expect(skill().body.trimStart()).toMatch(/^!`bdk ctx skill cr /);
   });
 
   it("edits nothing and writes only through the kernel", () => {

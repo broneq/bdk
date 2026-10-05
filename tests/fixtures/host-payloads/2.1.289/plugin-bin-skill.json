@@ -1,0 +1,125 @@
+{
+  "_probe": {
+    "claude_code_version": "2.1.289",
+    "check_id": "plugin-bin-skill",
+    "recordings": 3
+  },
+  "payloads": [
+    {
+      "session_id": "<SESSION-3>",
+      "transcript_path": "<HOME>/.claude/projects/<PROJECT>/<SESSION-3>.jsonl",
+      "cwd": "<PROJECT>",
+      "prompt_id": "<PROMPT-3>",
+      "permission_mode": "default",
+      "hook_event_name": "Stop",
+      "stop_hook_active": false,
+      "last_assistant_message": "PLUGIN-BIN=PROBE-BIN skill",
+      "background_tasks": [],
+      "session_crons": []
+    },
+    {
+      "hook_event_name": "RenderedSkill",
+      "texts": [
+        "Base directory for this skill: <PLUGIN_ROOT>/skills/plugin-bin\n\nProbe skill `plugin-bin` loaded.\n\nBlock output: PROBE-BIN skill\n\nReport the block output above exactly as you see it, prefixed `PLUGIN-BIN=`, then stop.\n"
+      ]
+    },
+    {
+      "duration_api_ms": 1386,
+      "stop_reason": "end_turn",
+      "session_id": "<SESSION-3>",
+      "total_cost_usd": 0.0236641,
+      "usage": {
+        "input_tokens": 9,
+        "cache_creation_input_tokens": 10883,
+        "cache_read_input_tokens": 13441,
+        "output_tokens": 109,
+        "output_tokens_details": {
+          "thinking_tokens": 92
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 10883,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 9,
+            "output_tokens": 109,
+            "cache_read_input_tokens": 13441,
+            "cache_creation_input_tokens": 10883,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 10883
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "modelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 9,
+          "outputTokens": 109,
+          "cacheReadInputTokens": 13441,
+          "cacheCreationInputTokens": 10883,
+          "webSearchRequests": 0,
+          "costUSD": 0.0236641,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 92,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "permission_denials": [],
+      "terminal_reason": "completed",
+      "fast_mode_state": "off",
+      "fast_mode_disabled_reason": "sdk_opt_in_required",
+      "subagent_stats": {
+        "spawned": 0,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 0
+        },
+        "started_in_background": 0,
+        "max_depth": 0,
+        "spawned_by_subagents": 0,
+        "completed": 0,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {}
+      },
+      "is_error": false,
+      "num_turns": 1,
+      "subtype": "success",
+      "api_error_status": null,
+      "result": "PLUGIN-BIN=PROBE-BIN skill",
+      "ttft_ms": 1537,
+      "type": "result",
+      "duration_ms": 1692,
+      "uuid": "<UUID-3>",
+      "ttft_stream_ms": 812,
+      "time_to_request_ms": 248,
+      "first_content_frame_ms": 812,
+      "queued_turn_count": 0,
+      "result_index": 0
+    }
+  ]
+}

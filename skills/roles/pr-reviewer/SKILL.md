@@ -8,8 +8,6 @@ agent: bdk:reviewer
 
 # Role: pr-reviewer
 
-Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this contract writes them as `bdk <command>`.
-
 ## Input
 
 Your skill argument is a PR brief: the PR, its worktree and range, the stack parent, the draft state, the mode (`review` or `verify`), the focus, the intent and, when the PR has one, a BDK Change directory as its contract. Rely on nothing but the brief: what binds you is in it or in what it names.

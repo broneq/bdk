@@ -8,9 +8,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { emptyBase } from "../../harness/fixture.ts";
 import type { CellPlan, SeriesPlan } from "../../harness/series.ts";
 import { answerHookOutput } from "./answer.ts";
-import { CASE_VAR, hooks, kernelIn, measure, prepareRun } from "./hooks.ts";
+import { CASE_VAR, hooks, kernelIn, measure, prepareRun, shellIn } from "./hooks.ts";
 
-const BUNDLE = join(import.meta.dirname, "..", "..", "..", "dist", "bdk.mjs");
+const PLUGIN = join(import.meta.dirname, "..", "..", "..");
+const BUNDLE = join(PLUGIN, "dist", "bdk.mjs");
 
 let root: string | undefined;
 afterEach(() => {
@@ -30,7 +31,7 @@ function repo(): { workDir: string; configHome: string; emptyBase: string } {
 }
 
 describe("prepareRun", () => {
-  it("installs the answer hook, hides it from git and runs the preparation with $BDK", () => {
+  it("installs the answer hook, hides it from git and runs the preparation with bdk", () => {
     const { workDir, configHome, emptyBase: empty } = repo();
     const settings = { bundle: BUNDLE, configHome, emptyBase: empty };
     prepareRun(
@@ -39,7 +40,7 @@ describe("prepareRun", () => {
         id: "seeded",
         base: "fixture",
         command: "/bdk:setup",
-        prepare: ['node "$BDK" config set languages "[typescript]" >/dev/null'],
+        prepare: ['bdk config set languages "[typescript]" >/dev/null'],
         answers: { branch: "stay" },
         expect: [{ reply: "x" }],
       },
@@ -61,6 +62,14 @@ describe("prepareRun", () => {
 
     const call = kernelIn(workDir, settings)("config show languages");
     expect(call).toMatchObject({ code: 0, json: { value: ["typescript"] } });
+  });
+
+  it("puts the plugin copy's bin/ first on PATH", () => {
+    const { workDir, configHome, emptyBase: empty } = repo();
+    const call = shellIn(workDir, { bundle: BUNDLE, configHome, emptyBase: empty })(
+      "command -v bdk",
+    );
+    expect(call).toStrictEqual({ code: 0, stdout: `${join(PLUGIN, "bin", "bdk")}\n` });
   });
 
   it("starts a case on the empty base from the empty repository", () => {
@@ -135,7 +144,7 @@ describe("hooks", () => {
       id: "seeded",
       base: "fixture",
       command: "/bdk:setup",
-      prepare: ['node "$BDK" config set languages "[go]" >/dev/null'],
+      prepare: ['bdk config set languages "[go]" >/dev/null'],
       answers: {},
       expect: [{ run: "config show languages", json: { value: ["go"] } }, { reply: "^done" }],
     };
@@ -150,6 +159,42 @@ describe("hooks", () => {
       "utf8",
     );
     expect(JSON.parse(checks)).toEqual({ pass: true, failures: [] });
+  });
+
+  it("fails a run whose transcript calls the kernel by its bundle path", async () => {
+    const { workDir, configHome, emptyBase: empty } = repo();
+    const stage = {
+      id: "path",
+      base: "fixture",
+      command: "/bdk:setup",
+      prepare: [],
+      answers: {},
+      expect: [{ reply: "^done" }],
+    };
+    const run = context(workDir, { bundle: BUNDLE, configHome, emptyBase: empty }, stage);
+    await hooks.beforeRun?.(run);
+    const command = 'node "/plugin/dist/bdk.mjs" next --json';
+    const measured = await hooks.measure(run, {
+      response: {
+        output: "done",
+        metadata: {
+          toolCalls: [
+            { name: "Bash", input: { command: "bdk next --json" }, output: "{}" },
+            { name: "Bash", input: { command }, output: "{}", parentToolUseId: "toolu_1" },
+            { name: "Read", input: { file_path: "/plugin/dist/bdk.mjs" }, output: "x" },
+          ],
+        },
+      },
+    });
+    expect(measured.metrics.expect_pass).toBe(0);
+    const checks = readFileSync(
+      join(root ?? "", "raw", "bdk", "change/x.run-1", "checks.json"),
+      "utf8",
+    );
+    expect(JSON.parse(checks)).toEqual({
+      pass: false,
+      failures: [`a Bash call runs the kernel by its bundle path, not as bdk: ${command}`],
+    });
   });
 
   it("reads a structured reply as JSON text", async () => {

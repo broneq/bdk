@@ -250,9 +250,7 @@ describe("run", () => {
     expect(SKILL_CONTEXT.run).toStrictEqual([]);
     const { meta } = readSkill("run");
     expect(meta["disable-model-invocation"]).toBe(true);
-    expect(meta["allowed-tools"]).toBe(
-      'Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Skill Read',
-    );
+    expect(meta["allowed-tools"]).toBe("Bash(bdk *) Bash(echo *) Skill Read");
     expect(meta).not.toHaveProperty("disallowed-tools");
   });
 
@@ -367,6 +365,42 @@ describe("worktree isolation in the stage skills (T45)", () => {
     expect(body).toContain("`runtime/worktree-setup-failed`");
     expect(body).toMatch(/Start the `shared` parts of the wave first, then the worktree parts/);
     expect(body).toMatch(/never set the host's own `isolation: worktree`/);
+  });
+});
+
+describe("setup replaces the v2 ignore rule (T32)", () => {
+  const migration = () =>
+    readFileSync(join(STAGES, "setup", "references", "v2-migration.md"), "utf8");
+
+  it("runs the step on bdk-ignored with any layout, before any setting", () => {
+    const { body } = readSkill("setup");
+    const diagnosis = body.slice(
+      body.indexOf("## Start from the diagnosis"),
+      body.indexOf("## Settings"),
+    );
+    expect(diagnosis).toMatch(
+      /`bdk-ignored` finding, with any layout[^\n]*before you write any setting/,
+    );
+    expect(diagnosis).toContain("references/v2-migration.md#the-v2-ignore-rule");
+    expect(body.slice(body.indexOf("## Finish"))).toMatch(
+      /whether the v2 ignore rule was replaced/,
+    );
+  });
+
+  it("asks once, swaps the rule for the two v3 paths and commits .gitignore alone", () => {
+    const text = migration();
+    const section = text.slice(
+      text.indexOf("## The v2 ignore rule"),
+      text.indexOf("## Settings as hints"),
+    );
+    expect(section).toMatch(/before the first `bdk config set`/);
+    expect(section).toMatch(/ask once/);
+    expect(section).toContain("`/.bdk/.machine/` and `/.bdk/settings.local.yaml`");
+    expect(section).toMatch(/remove only that line/);
+    expect(section).toContain(
+      'git commit -m "chore(bdk): replace the v2 .bdk/ ignore rule" -- .gitignore',
+    );
+    expect(section).toMatch(/declines[^\n]*keeps reporting `bdk-ignored`/);
   });
 });
 

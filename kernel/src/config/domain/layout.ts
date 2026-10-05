@@ -4,7 +4,14 @@
 
 type Layout = "v3" | "v2" | "none";
 
-export const V2_MARKERS = [".bdk/settings.json", ".bdk/runs/", ".bdk/plans/"] as const;
+/** The five paths v2 left, in the order `/bdk:setup` deletes them (`stage-skills`). */
+export const V2_MARKERS = [
+  ".bdk/settings.json",
+  ".bdk/runs/",
+  ".bdk/plans/",
+  ".bdk/design/",
+  ".bdk/verify-plan/",
+] as const;
 
 export interface LayoutState {
   readonly layout: Layout;

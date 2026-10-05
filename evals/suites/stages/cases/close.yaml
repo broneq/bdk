@@ -9,7 +9,7 @@
   seed: reviewed
   prepare:
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -28,11 +28,11 @@
   seed: reviewed
   prepare:
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" attempt open review-fix "$(basename .bdk/changes/20*)" >/dev/null
+      bdk attempt open review-fix "$(basename .bdk/changes/20*)" >/dev/null
   expect:
     - run: change list
       json:

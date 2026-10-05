@@ -8,15 +8,15 @@
   command: /bdk:verify-design
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "Add a date-only formatter next to formatTimestamp" >/dev/null
+      bdk change new "Add a date-only formatter next to formatTimestamp" >/dev/null
     - |-
       D=$(ls -d .bdk/changes/20*) && cat > "$D/design.md" <<'MD'
       ---
@@ -46,7 +46,7 @@
       later Changes; this Change only adds the helper.
       MD
     - |-
-      node "$BDK" done design >/dev/null
+      bdk done design >/dev/null
   expect:
     - run: explain design-verify
       json:
@@ -59,15 +59,15 @@
   command: /bdk:verify-design
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "Add Italian to the language options of the account page" >/dev/null
+      bdk change new "Add Italian to the language options of the account page" >/dev/null
     - |-
       D=$(ls -d .bdk/changes/20*) && cat > "$D/design.md" <<'MD'
       ---
@@ -92,7 +92,7 @@
       `src/i18n/localeRegistry.ts` owns the offered languages; no boundary moves.
       MD
     - |-
-      node "$BDK" done design >/dev/null && node "$BDK" done architecture >/dev/null
+      bdk done design >/dev/null && bdk done architecture >/dev/null
   expect:
     - run: log list --type blocker
       json:
@@ -107,15 +107,15 @@
   command: /bdk:verify-design
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "Add Italian to the language options of the account page" >/dev/null
+      bdk change new "Add Italian to the language options of the account page" >/dev/null
   expect:
     - run: attempt list
       json:

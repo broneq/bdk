@@ -147,7 +147,9 @@ async function planned(isolation: string): Promise<{ id: string; dir: string }> 
   return { id, dir };
 }
 
-describe("a worktree part in-process", () => {
+// Real git repositories and worktrees: 1.6 s alone, over the 5 s unit default
+// when the whole unit suite loads the machine.
+describe("a worktree part in-process", { timeout: 30_000 }, () => {
   it("starts, conflicts, resolves through the merge ticket and merges back", async () => {
     const { id } = await planned("worktree");
     const started = await ok(["part", "start", "01"]);
@@ -226,7 +228,7 @@ describe("a worktree part in-process", () => {
   });
 });
 
-describe("bdk rebuild in-process", () => {
+describe("bdk rebuild in-process", { timeout: 30_000 }, () => {
   async function started(): Promise<{ id: string; workdir: string; branch: string }> {
     const { id } = await planned("worktree");
     const workdir = (await ok(["part", "start", "01"])).workdir as string;

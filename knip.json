@@ -7,8 +7,17 @@
     "skill-check.config.ts",
     "evals/suites/*/hooks.ts"
   ],
-  "project": ["kernel/**/*.ts", "kernel/**/*.mjs", "evals/**/*.ts"],
+  "project": [
+    "kernel/**/*.ts",
+    "kernel/**/*.mjs",
+    "evals/**/*.ts",
+    "docs/guide/.vitepress/**/*.{ts,vue}"
+  ],
   "ignore": ["evals/suites/*/hidden/**"],
   "tags": ["-public"],
-  "ignoreBinaries": ["uv", "openspec"]
+  "ignoreBinaries": ["openspec"],
+  "vitepress": {
+    "config": ["docs/guide/.vitepress/config.ts"],
+    "entry": ["docs/guide/.vitepress/theme/index.ts"]
+  }
 }

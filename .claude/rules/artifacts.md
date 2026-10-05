@@ -4,33 +4,16 @@ paths:
   - "agents/**/*.md"
 ---
 
-# Skill Artifacts — Output Directory Convention
+# Skill Artifacts - State Under `.bdk/`
 
-Skills producing file output (reports, designs, generated docs, analysis) write to `.bdk/` in project root.
-
-## Rule
-
-```
-Skill artifacts → .bdk/<skill-name>/<output-file>
-```
-
-Examples:
-
-- `.bdk/cr/2026-04-12-1430-feat-auth-delta.md`
-- `.bdk/debug/session-2026-04-12-0900.md`
-- `.bdk/plans/2026-04-12-1430-add-oauth.md`
+The kernel owns `.bdk/`: Change state (`.bdk/changes/`), project rules (`.bdk/rules/`) and settings. A skill writes there only through `bdk` commands, and never creates a directory of its own under `.bdk/`.
 
 ## Why
 
-- Single discoverable location for all skill output
-- Never pollutes `docs/`, `src/`, or project dirs
-- Easy `.gitignore` or bulk inspect
-- Portable — works any project structure
+- One writer keeps the Change ledger, its index and its markers consistent; a hand-written file there is state the kernel cannot check or rebuild.
+- `.bdk/<skill-name>/` directories are the v2 layout. `bdk doctor` reports them as `layout: v2`, and `/bdk:setup` migrates them.
 
 ## Exceptions
 
-Skills writing code/config into project as code generation (e.g. scaffold creating `src/components/Foo.tsx`) exempt — output IS product, not artifact.
-
-**Cross-skill run state** lives at `.bdk/runs/`, not under any one skill's name, because no single skill owns it: `cr` reads it (the v2 `subagent-execute-plan` advanced it until T41 removed it; T42 replaces `cr`). Only `scripts/bdk_run_state.py` reads or writes there — skills call that script, never the files. Machine state, not an artifact: gitignored, and no human is meant to open it (use the script's `print` subcommand).
-
-A skill must not write into another skill's `.bdk/<skill-name>/` directory. If two skills need to share something, it is run state and belongs behind the script above.
+- Skills writing code or config into the project as code generation (a scaffold creating `src/components/Foo.tsx`) are exempt: the output is the product, not state.
+- `/bdk:rules` sets `removed:` in a project rule file under `.bdk/rules/` by hand after the user approves the removal (`skills/tools/rules/SKILL.md`); no `bdk` command removes a rule.

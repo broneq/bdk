@@ -149,13 +149,19 @@ export function createRegistry(
   };
 }
 
+/** `bdk --version` is `bdk version` (`kernel-cli`, Invocation): an implicit spelling of the first argument, like `--help`. */
+function withVersionSpelling(argv: readonly string[]): readonly string[] {
+  return argv[0] === "--version" ? ["version", ...argv.slice(1)] : argv;
+}
+
 async function run(
   index: CommandIndex,
   byId: ReadonlyMap<string, Registration>,
   options: RegistryOptions,
   invocation: Invocation,
 ): Promise<number> {
-  const { argv, streams } = invocation;
+  const { streams } = invocation;
+  const argv = withVersionSpelling(invocation.argv);
   const asJson = argv.includes("--json");
   const help = argv.includes("--help");
   const resolved = resolve(index, argv);

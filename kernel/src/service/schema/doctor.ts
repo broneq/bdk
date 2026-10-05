@@ -12,7 +12,8 @@ export const doctorOutput = z
     findings: z.array(
       z.object({
         id: z.string().meta({
-          description: "Stable check id, e.g. node-version, v2-layout, merge-hash, index-stale.",
+          description:
+            "Stable check id, e.g. node-version, v2-layout, bdk-ignored, merge-hash, index-stale.",
         }),
         level: z.enum(["ok", "warn", "fail"]),
         summary: z.string(),

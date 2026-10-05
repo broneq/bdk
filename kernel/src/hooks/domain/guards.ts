@@ -271,9 +271,9 @@ function specWrite(command: SimpleCommand, cwd: string): Deny | undefined {
 
 /**
  * The words after `bdk.mjs` when the command runs the kernel, else undefined.
- * A command word `bdk` counts too: the role contracts write kernel commands as
- * `bdk <command>`, so a model defines `bdk() { node .../bdk.mjs "$@"; }` and
- * calls `bdk attempt open ...` in the same Bash command.
+ * A command word `bdk` counts too: agents run the kernel as `bdk <command>`
+ * through the plugin's `bin/bdk`, or through a `bdk` shell function they define
+ * in the same Bash command.
  */
 function kernelArgv(command: SimpleCommand): readonly string[] | undefined {
   const words = commandWords(command);

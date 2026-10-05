@@ -37,11 +37,13 @@ wanted() {
       case $payload in *bdk:change* | *bdk:plan* | *bdk:execute* | *bdk:close*) return 0 ;; esac
       ;;
   esac
+  # A kernel call: by the bundle's path, or as `bdk <command>` through the
+  # plugin's bin/bdk, matched anywhere so no shell construct hides it.
   case $payload in
-    *bdk.mjs*) case $payload in *hooks*) return 0 ;; esac ;;
+    *bdk.mjs* | *'bdk '*) case $payload in *hooks*) return 0 ;; esac ;;
   esac
   case $payload in
-    *'"agent_id"'*) case $payload in *git* | *bdk.mjs*) return 0 ;; esac ;;
+    *'"agent_id"'*) case $payload in *git* | *bdk.mjs* | *'bdk '*) return 0 ;; esac ;;
   esac
   case $payload in
     *'"subagent_type"'*) case $payload in *bdk:worker* | *bdk:runner* | *bdk:lead*) return 0 ;; esac ;;

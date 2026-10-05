@@ -2,21 +2,21 @@
 name: diagnose
 description: Analyzes one BDK session from its run journal, report and transcript slices into a cited analysis with a section safe for a BDK issue. Use when a run failed, looped or cost too much; for a broken install use /bdk:doctor.
 argument-hint: "[session-id]"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Read Grep
+allowed-tools: Bash(bdk *) Bash(echo *) Read Grep
 context: fork
 agent: bdk:reader
 disable-model-invocation: true
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill diagnose 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill diagnose 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: diagnose" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill diagnose` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: diagnose" heading appears above, run `bdk ctx skill diagnose` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Diagnose
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-Explain what went wrong in one BDK session, why, and where each fix belongs, with a citation for every claim. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Done when `bdk diagnostics write` has stored the analysis and its path and top three problems are shown.
+Explain what went wrong in one BDK session, why, and where each fix belongs, with a citation for every claim. Done when `bdk diagnostics write` has stored the analysis and its path and top three problems are shown.
 
 The session is `$ARGUMENTS` when it is given; pass it as `--session <session-id>` to every `bdk diagnostics` command. Without it, the kernel picks the latest session of the active Change, or the latest session.
 
@@ -67,7 +67,7 @@ The first four sections are local: they may quote project code and paths. `## Fo
 Store it with a quoted heredoc, so the shell changes nothing in it:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" diagnostics write --json <<'ANALYSIS'
+bdk diagnostics write --json <<'ANALYSIS'
 ## Summary
 ...
 ANALYSIS

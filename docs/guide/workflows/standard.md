@@ -1,14 +1,14 @@
 # Standard workflow
 
-!!! warning "Describes BDK v2"
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
-    This page describes BDK v2. The v3 documentation replaces it (T50).
-
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
-    active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
-    passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdkplan).
+::: info BDK 3
+In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
+active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
+passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdk-plan).
+:::
 
 The standard tier drops the design stage and keeps everything else:
 
@@ -69,19 +69,19 @@ traces, missing edge cases - before any subagent acts on it.
 Skip it when the plan is small, mechanical, and you have read every task. Run it when the
 plan touches code you have not read recently.
 
-!!! note
-
-    Verification also stamps the plan's sha256, which is what lets the executor tell you
-    whether what it is about to run is what was verified.
+::: info
+Verification also stamps the plan's sha256, which is what lets the executor tell you
+whether what it is about to run is what was verified.
+:::
 
 ## 3 - Execute
 
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:execute` replaces `/bdk:subagent-execute-plan`: it builds the
-    plan parts of the active Change through role agents, every ready part in one
-    run, flat or with one lead per part, then names `/bdk:cr`. See
-    [/bdk:execute](../reference/skills.md#bdkexecute).
+::: info BDK 3
+In BDK 3, `/bdk:execute` replaces `/bdk:subagent-execute-plan`: it builds the
+plan parts of the active Change through role agents, every ready part in one
+run, flat or with one lead per part, then names `/bdk:cr`. See
+[/bdk:execute](../reference/skills.md#bdk-execute).
+:::
 
 ```
 /bdk:subagent-execute-plan .bdk/plans/<ts>-<slug>.md

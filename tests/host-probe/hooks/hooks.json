@@ -1,5 +1,5 @@
 {
-  "description": "Record every payload unchanged. Recorders print nothing and exit 0, so they never alter host behaviour; block-once.sh acts only when BDK_PROBE_BLOCK names its event, inject-id.sh only when BDK_PROBE_INJECT=1.",
+  "description": "Record every payload unchanged. Recorders print nothing and exit 0, so they never alter host behaviour; block-once.sh acts only when BDK_PROBE_BLOCK names its event, inject-id.sh only when BDK_PROBE_INJECT=1; bin-path.sh records whether the plugin's bin/ is on a hook's PATH.",
   "hooks": {
     "UserPromptExpansion": [
       {
@@ -103,6 +103,17 @@
             "type": "command",
             "command": "sh",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/record.sh", "PostToolUseFailure"]
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/bin-path.sh", "UserPromptSubmit"]
           }
         ]
       }

@@ -59,8 +59,8 @@ Runs the cases of one stage skill, `suites/stages/cases/<skill>.yaml` (only the 
 - id: existing-change # lowercase letters, digits, dashes
   base: fixture # or empty: a git repository with one empty commit on main
   command: /bdk:change "Add a dark mode toggle" # what the user types
-  prepare: # shell commands in the fresh working copy; $BDK is the plugin's kernel bundle
-    - node "$BDK" change new "Translate the login page" >/dev/null
+  prepare: # shell commands in the fresh working copy; bdk is the plugin copy's bin/bdk
+    - bdk change new "Translate the login page" >/dev/null
   answers: # question pattern -> option pattern, both case-insensitive regular expressions
     branch: stay|current
   expect: # kernel commands run with --json after the session, and the final reply

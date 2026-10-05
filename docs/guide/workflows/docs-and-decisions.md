@@ -1,8 +1,8 @@
 # Docs and decisions
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 Three skills for the writing side of the work: recording a decision, documenting code and
 keeping that documentation true, and drawing the diagrams in both.
@@ -34,9 +34,9 @@ It takes the number one above the highest `NNNN-*.md` in `docs/adr/`. The file l
 labels: `✅` for positive, `❌` for negative, `🟡` for neutral. Every option, the chosen one
 included, gets its pros and cons.
 
-!!! note
-
-    A diagram is added only when the options differ in structure or data flow.
+::: info
+A diagram is added only when the options differ in structure or data flow.
+:::
 
 `/bdk:design` records each decision it takes with you as a `decision` entry; `/bdk:adr`
 turns the one worth keeping into a record.
@@ -53,12 +53,12 @@ refreshed against the code it describes. Both write the same shape: an overview,
 tree, Mermaid diagrams, critical rules with a violating and a correct example, examples in
 prototype code, the main components, and the tests.
 
-!!! warning
-
-    Examples are **prototype code, never the actual implementation**: placeholder
-    function names, clear control flow, a comment per step, at most 20 lines, one concept
-    per example. A doc that pastes the real implementation goes stale the day the
-    implementation changes.
+::: warning
+Examples are **prototype code, never the actual implementation**: placeholder
+function names, clear control flow, a comment per step, at most 20 lines, one concept
+per example. A doc that pastes the real implementation goes stale the day the
+implementation changes.
+:::
 
 **Create.** The skill reads the module's entry points, its key components with their
 callers, and its tests, then writes every section of the shape. For a path of more than
@@ -74,11 +74,11 @@ add and remove, and which diagrams change.
 Accurate sections are copied word for word, which is what preserves hand-written prose.
 What no longer exists is simply omitted - no "removed" comments.
 
-!!! note
-
-    The result reads as one uniform document. No changelog markers, no "updated on"
-    annotations, no diff markers. A diagram that is still correct but predates the current
-    standard is left alone, so a refresh changes content, not style.
+::: info
+The result reads as one uniform document. No changelog markers, no "updated on"
+annotations, no diff markers. A diagram that is still correct but predates the current
+standard is left alone, so a refresh changes content, not style.
+:::
 
 ## Draw the diagram - `/bdk-craft:mermaid-drawer`
 

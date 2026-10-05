@@ -3,16 +3,16 @@ name: setup
 description: Prepares a project for BDK - settings with its test, lint and build commands, Lavish, the tracker, hand-written rules, migration from BDK 2. Use when starting BDK in a project or after cloning, or when BDK reports missing settings or a v2 layout.
 argument-hint: "[what to change, e.g. 'add the e2e suite']"
 disable-model-invocation: true
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(npx -y lavish-axi --help) Bash(gh auth status) Bash(git remote get-url origin) Bash(git add *) Bash(git commit *) Read Edit Write Grep Glob AskUserQuestion
+allowed-tools: Bash(bdk *) Bash(echo *) Bash(npx -y lavish-axi --help) Bash(gh auth status) Bash(git remote get-url origin) Bash(git add *) Bash(git commit *) Read Edit Write Grep Glob AskUserQuestion
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill setup 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill setup 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: setup" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill setup` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: setup" heading appears above, run `bdk ctx skill setup` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Setup
 
-Bring this project to a working BDK layout. Done when `bdk config check` exits 0 and `bdk doctor --json` reports `ok: true`, or when every remaining `doctor` finding is reported to the user with its repair. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+Bring this project to a working BDK layout. Done when `bdk config check` exits 0 and `bdk doctor --json` reports `ok: true`, or when every remaining `doctor` finding is reported to the user with its repair. Add `--json` to every command whose output you act on.
 
 The "Project commands" sections above show the settings the project has now. "declared none" means the project runs without a tool of that group; "unset: no command configured" means no layer sets the group yet, and `bdk change new` refuses until it is set; "none configured" means `build` has no entry.
 
@@ -22,8 +22,8 @@ When the arguments name a change ("add the e2e suite"), do only that, then go to
 
 ## Constraints
 
-- Write settings only with `bdk config set`, one key or tool entry per call. The kernel validates each value, keeps the schema modeline and adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`; never edit `.bdk/` files yourself. The only project files you edit are the ignore lists of its tools, after the user accepts each entry.
-- Ask the user only what the project files cannot tell you: which detected commands to keep, whether a project without a test or lint tool runs without one, which tools to keep off `.bdk/`, whether to import rules, whether to delete v2 files, whether to install Lavish, where findings are tracked. Tiers, scoped forms, profiles and sizes follow from the runner or are measured by the kernel later, so they are never questions.
+- Write settings only with `bdk config set`, one key or tool entry per call. The kernel validates each value, keeps the schema modeline and adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`; never edit `.bdk/` files yourself. The only project files you edit are the ignore lists of its tools and a v2 rule that ignores `.bdk/`, each after the user accepts it.
+- Ask the user only what the project files cannot tell you: which detected commands to keep, whether a project without a test or lint tool runs without one, which tools to keep off `.bdk/`, whether to import rules, whether to delete v2 files, whether to replace the v2 ignore rule, whether to install Lavish, where findings are tracked. Tiers, scoped forms, profiles and sizes follow from the runner or are measured by the kernel later, so they are never questions.
 - Ask with `AskUserQuestion`, several questions in one call where they are independent. A multi-select with one option per detected command lets the user drop or add commands; the host adds "Other" for a command you did not find.
 - Do not run `bdk export agents`: on Claude Code the agents ship with the plugin, and a copy in the project would register each one twice.
 
@@ -31,6 +31,7 @@ When the arguments name a change ("add the e2e suite"), do only that, then go to
 
 `bdk doctor --json` decides the path:
 
+- A `bdk-ignored` finding, with any layout: replace the rule as [the v2 ignore rule](references/v2-migration.md#the-v2-ignore-rule) describes before you write any setting.
 - `layout: v2`: migrate the project as [the v2 migration](references/v2-migration.md) describes, then continue with the settings.
 - `layout: v3` with `test` and `lint` each configured or declared none: show the settings and change only what the user asks for.
 - Otherwise detect the stack.
@@ -82,7 +83,7 @@ Run `bdk doctor --fix --json`, which writes the schema copy and the modeline, th
 
 - each tool entry as `<tier> <id>: <command>` with its scoped forms, so a wrong derivation is caught now by the person who knows the project;
 - each group declared none; for `test`, that no Change of the project will run a test;
-- what was imported, deleted, or not carried over from v2;
+- what was imported, deleted, or not carried over from v2, and whether the v2 ignore rule was replaced;
 - the exclusions committed, and each declined exclusion with its consequence: agents log a `question` naming `/bdk:setup` when that tool reports a `.bdk/` file;
 - the tracker, or that the review report offers no `track` while it is unset;
 - every remaining `doctor` finding with its repair;

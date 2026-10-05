@@ -407,3 +407,24 @@ describe("skill frontmatter hooks", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+// A plugin's bin/ is not on a hook's PATH (HOST-FACTS `plugin-bin-hook`), so
+// the hooks run the bundle by its path and never the `bdk` launcher.
+describe("hooks and the bdk launcher", () => {
+  const scripts = ["pre-tool.sh", "post-tool.sh", "prompt-expansion.sh"].map((script) =>
+    readFileSync(join(REPO_ROOT, "hooks/guard", script), "utf8")
+      .split("\n")
+      .filter((line) => !line.trimStart().startsWith("#"))
+      .join("\n"),
+  );
+  const BDK_WORD = /(^|[\s;&|(`])bdk(\s|$)/m;
+
+  it("no hooks.json command runs bdk as a command word", () => {
+    const all = Object.values(hooksFile.hooks).flatMap(commands);
+    expect(all.filter((command) => BDK_WORD.test(command))).toEqual([]);
+  });
+
+  it("no guard script runs bdk as a command word", () => {
+    expect(scripts.filter((text) => BDK_WORD.test(text))).toEqual([]);
+  });
+});

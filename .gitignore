@@ -1,11 +1,10 @@
-__pycache__/
-*.pyc
-*.pyo
-tmp_*.py
 .idea/
-# mkdocs build output (`mkdocs build`, `mkdocs gh-deploy`)
-/site/
-/.bdk/
+# VitePress build output and cache (`pnpm docs:build`, `pnpm docs:dev`)
+/docs/guide/.vitepress/dist/
+/docs/guide/.vitepress/cache/
+# BDK keeps machine-local state and personal settings out of git (bdk setup)
+/.bdk/.machine/
+/.bdk/settings.local.yaml
 /.lavish/
 node_modules/
 coverage/

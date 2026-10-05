@@ -26,7 +26,7 @@ export type Expectation =
       readonly match?: Readonly<Record<string, string>>;
     }
   | {
-      /** Run with `sh -c` in the working copy, `$BDK` set as in `prepare`. */
+      /** Run with `sh -c` in the working copy, the plugin copy's `bdk` on PATH as in `prepare`. */
       readonly shell: string;
       /** The expected exit code; 0 when absent. */
       readonly exit?: number;

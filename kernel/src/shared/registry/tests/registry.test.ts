@@ -82,6 +82,32 @@ describe("--help", () => {
     expect(result.code).toBe(0);
     for (const command of INDEX.commands) expect(result.stdout).toContain(command.argv.join(" "));
   });
+
+  it("names --version in the usage of bdk --help", async () => {
+    const result = await run(["--help"]);
+    expect(result.stdout).toContain("bdk --version");
+  });
+});
+
+describe("--version", () => {
+  const registrations = [{ id: "version", handler: ok }];
+
+  it("runs the version command", async () => {
+    const result = await run(["--version"], { registrations });
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe((await run(["version"], { registrations })).stdout);
+  });
+
+  it("keeps the arguments that follow it", async () => {
+    const result = await run(["--version", "--json"], { registrations });
+    expect(result.json).toMatchObject({ id: "version" });
+  });
+
+  it("is a spelling of the first argument only", async () => {
+    const result = await run(["doctor", "--version"], { registrations });
+    expect(result.json).toBeUndefined();
+    expect(result.stdout).toContain("refused: input/unknown-flag");
+  });
 });
 
 describe("argument parsing", () => {

@@ -1,8 +1,8 @@
 # Verification scoping
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 Running the whole test suite after every edit feels safe and is the main reason agent-driven development is slow. BDK's position is that verification should be proportional to what changed, and that the decision must be mechanical rather than a judgement call made fresh each time.
 
@@ -33,9 +33,9 @@ Such a task carries no `Test cases:` block, never runs a test-first loop, and is
 
 This exists because forcing a test onto a documentation task produces a test that asserts the file exists, which is a maintenance cost with no signal. Declaring the exemption in the plan makes it visible and reviewable instead of leaving the implementer to improvise.
 
-!!! warning
-
-    `Verification: none` is a claim about every file in the task. One source file in the `Files:` list disqualifies it.
+::: warning
+`Verification: none` is a claim about every file in the task. One source file in the `Files:` list disqualifies it.
+:::
 
 ## Tiers and command forms
 

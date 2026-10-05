@@ -1,19 +1,19 @@
 ---
 name: swarm
 description: Principles for running BDK role agents in waves and trees - isolation, concurrency, leads per part, waiting, files as the channel, steps under the ticket, single resume. Use when a BDK stage skill or a lead dispatches role agents; not user-facing.
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)
+allowed-tools: Bash(bdk *) Bash(echo *)
 user-invocable: false
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill swarm 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill swarm 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: swarm" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill swarm` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: swarm" heading appears above, run `bdk ctx skill swarm` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Swarm
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-How an orchestrating agent, `main` or a lead, runs the role agents of its work: deliver every ticket closed through `bdk attempt close`, with as many agents busy as the limits allow. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. How the host starts, runs and resumes agents: [Claude Code](references/hosts/claude-code.md), the only host in 3.0.
+How an orchestrating agent, `main` or a lead, runs the role agents of its work: deliver every ticket closed through `bdk attempt close`, with as many agents busy as the limits allow. How the host starts, runs and resumes agents: [Claude Code](references/hosts/claude-code.md), the only host in 3.0.
 
 ## Waves and the tree
 

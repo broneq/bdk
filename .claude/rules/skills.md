@@ -14,7 +14,7 @@ Write or review a skill or an agent with `/bdk-skill-kit:skill-authoring`. It ho
 
 BDK's settings of the kit rules live in `skill-check.config.ts`:
 
-- **`!` blocks call only the kernel.** A `!` block is a whole line in the content-wrapper form of the kernel-cli spec (Invocation), and the skill lists `Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)` in `allowed-tools`. Without the pair the host drops the whole skill in default permission mode. The config reads both from the spec.
+- **`!` blocks call only the kernel.** A `!` block is a whole line in the content-wrapper form of the kernel-cli spec (Invocation), and the skill lists `Bash(bdk *) Bash(echo *)` in `allowed-tools`; `bdk` is the plugin's `bin/bdk`, and only hooks run the bundle by its path. Without the pair the host drops the whole skill in default permission mode. The config reads both from the spec.
 - **No MCP tools.** BDK ships no MCP server (ADR-0001), so a `mcp__plugin_bdk_` name fails silently at user runtime.
 - **Gates.** `setup` and `run` are user-only (`disable-model-invocation`). `change`, `plan`, `execute` and `close` stay model-invocable so `/bdk:run` can start them; `hooks pre-tool` denies a model's call to them outside a run. `execute` and `close` delegate edits, so they disallow `Edit`, `Write` and `NotebookEdit`.
 - **Namespaced references.** `/bdk:<name>` and `subagent_type: bdk:<name>`; another plugin's skill is a warning, because BDK cannot rely on it being installed.

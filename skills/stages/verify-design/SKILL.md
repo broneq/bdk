@@ -1,18 +1,18 @@
 ---
 name: verify-design
 description: Verifies the design of the active BDK Change against the code on a fresh context and records the verdict. Use when the design artifacts are done and the design gate waits on design-verify.
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Read Agent SendMessage
+allowed-tools: Bash(bdk *) Bash(echo *) Read Agent SendMessage
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill verify-design 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill verify-design 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: verify-design" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill verify-design` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: verify-design" heading appears above, run `bdk ctx skill verify-design` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Verify design
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-The design of the active Change is checked by a `design-verifier` that knows only its dispatch package, never this conversation, so it reads the design the way the planner will. This skill runs one verifier round in the main thread: it opens the ticket, starts the role, closes the ticket and marks `design-verify` done when the verdict passes. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+The design of the active Change is checked by a `design-verifier` that knows only its dispatch package, never this conversation, so it reads the design the way the planner will. This skill runs one verifier round in the main thread: it opens the ticket, starts the role, closes the ticket and marks `design-verify` done when the verdict passes. Add `--json` to every command whose output you act on.
 
 Done when the ticket is closed and either `design-verify` is done or the blockers and the kernel's next action are reported.
 

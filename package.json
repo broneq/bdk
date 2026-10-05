@@ -10,9 +10,8 @@
   "packageManager": "pnpm@10.22.0",
   "scripts": {
     "build": "node kernel/build.mjs",
-    "lint": "eslint --max-warnings 0 kernel evals",
+    "lint": "eslint --max-warnings 0 kernel evals docs/guide/.vitepress",
     "eval": "node evals/harness/main.ts",
-    "lint:py": "uv run --group lint ruff check && uv run --group lint ruff format --check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
@@ -22,7 +21,9 @@
     "test:perf": "pnpm build && vitest run --project perf",
     "test:contract": "pnpm build && vitest run --project contract",
     "skill-check": "skill-check",
-    "docs:build": "uv run --group docs mkdocs build --strict",
+    "docs:build": "vitepress build docs/guide",
+    "docs:dev": "vitepress dev docs/guide",
+    "docs:preview": "vitepress preview docs/guide",
     "prepare": "husky && node kernel/build.mjs"
   },
   "dependencies": {
@@ -44,10 +45,13 @@
     "husky": "9.1.7",
     "knip": "6.38.0",
     "lint-staged": "17.5.1",
+    "mermaid": "12.1.0",
     "prettier": "3.9.9",
     "typescript": "6.0.3",
     "typescript-eslint": "8.70.1",
-    "vitest": "5.0.2"
+    "vitepress": "1.6.4",
+    "vitest": "5.0.2",
+    "vue": "3.5.43"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

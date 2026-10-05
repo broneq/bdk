@@ -51,11 +51,13 @@ A page absent from the map is a page this skill will never audit again.
 pnpm test:contract          # includes the site guards in kernel/tests/docs/
 ```
 
-The guards in `kernel/tests/docs/` already enforce five invariants: every
+The guards in `kernel/tests/docs/` already enforce seven invariants: every
 user-invocable skill is in `README.md` and has a `## /bdk:<name>` heading in
 `reference/skills.md`; every `agents/*.md` is named in `reference/agents.md`;
-the `mkdocs.yml` `nav` lists exactly the pages under `docs/guide/`; every page
-opens with the v2 banner; every `hooks/...` path named in prose exists. Run
+the sidebar in `docs/guide/.vitepress/sidebar.ts` lists exactly the pages under
+`docs/guide/`; every page opens with the v2 banner; every `hooks/...` path named
+in prose exists; every in-site link with an anchor names a heading of its target; no page names a removed
+mechanism (the tool tiers, the v2 settings hook, a Python script or hook of BDK). Run
 them, read the failures, and do not re-derive those checks by hand - spending attention
 where a test already holds the line is attention not spent on the prose, which
 nothing checks.
@@ -67,12 +69,12 @@ covers for T50.
 
 ## 2. Scope the audit
 
-| `$ARGUMENTS`                                                        | Scope                                                                                                                                    |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| A page under `docs/guide/`                                          | Audit that page in full against its ground truth.                                                                                        |
-| A source path (`skills/cr/SKILL.md`, `agents/`, `hooks/hooks.json`) | Reverse-map it to pages, then widen by the shared-facts index.                                                                           |
-| Empty                                                               | The branch's changes: `git diff --name-only $(git merge-base HEAD main)...HEAD` plus uncommitted files from `git status --porcelain`.    |
-| Empty and the branch is clean and equal to `main`                   | Nothing to reverse-map. Sweep the whole site - 23 pages is small, and the reference pages alone are not where the interesting lies live. |
+| `$ARGUMENTS`                                                              | Scope                                                                                                                                    |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| A page under `docs/guide/`                                                | Audit that page in full against its ground truth.                                                                                        |
+| A source path (`skills/tools/cr/SKILL.md`, `agents/`, `hooks/hooks.json`) | Reverse-map it to pages, then widen by the shared-facts index.                                                                           |
+| Empty                                                                     | The branch's changes: `git diff --name-only $(git merge-base HEAD main)...HEAD` plus uncommitted files from `git status --porcelain`.    |
+| Empty and the branch is clean and equal to `main`                         | Nothing to reverse-map. Sweep the whole site - 23 pages is small, and the reference pages alone are not where the interesting lies live. |
 
 Report the candidate page list before auditing, so the user can see the blast
 radius and cut it if it is wider than they want.
@@ -161,12 +163,12 @@ mismatch visible.
 - **Fix every copy.** When a corrected fact is in the shared-facts index, fixing
   one copy and leaving the other is how the contradiction was born in the first
   place.
-- **New page** - write it, add it to `mkdocs.yml` `nav` in the right section,
+- **New page** - write it, add it to `docs/guide/.vitepress/sidebar.ts` in the right section,
   link it from the pages that should point at it, add it to the map.
-- **Moved or retired page** - fix `nav`, fix every inbound link (grep the old
+- **Moved or retired page** - fix the sidebar, fix every inbound link (grep the old
   path across `docs/guide/` and `README.md`), update the map.
 - **Never hand-edit** `docs/guide/changelog.md` or `docs/guide/contributing/index.md`. They
-  are `--8<--` snippet includes; the content lives in `CHANGELOG.md` (which is
+  are `<!--@include: ...-->` includes; the content lives in `CHANGELOG.md` (which is
   release-please output and off-limits entirely) and `CONTRIBUTING.md`.
 
 ## 6. Prove the site still builds
@@ -176,8 +178,8 @@ pnpm docs:build
 pnpm test:contract
 ```
 
-CI runs the build on every pull request, and `--strict` promotes warnings - an orphan page, a broken
-snippet path, an unresolvable link - into failures.
+CI runs the build on every pull request. A dead link or a missing include fails the build; an
+orphan page or a broken anchor fails `pnpm test:contract`.
 
 Then report: pages changed, claims fixed, contradictions resolved and which copy
 you believed, and everything deliberately left alone with the reason. If a

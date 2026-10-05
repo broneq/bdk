@@ -23,11 +23,11 @@
     - |-
       git add -A && git commit -qm "chore(bdk): keep .bdk/ out of the project's tools"
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint.lint '{tier: lint, command: npm run lint}' >/dev/null
+      bdk config set tools.lint.lint '{tier: lint, command: npm run lint}' >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -51,11 +51,11 @@
   command: /bdk:run --auto "Add Italian to the language options of the account page"
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -78,11 +78,11 @@
   command: /bdk:run "Add Italian to the language options of the account page"
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -103,7 +103,7 @@
   seed: reviewed
   prepare:
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
