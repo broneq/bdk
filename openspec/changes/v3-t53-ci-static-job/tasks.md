@@ -22,6 +22,6 @@
 ## 5. Acceptance
 
 - [x] 5.1 Run `pnpm lint && pnpm typecheck && pnpm knip` and `pnpm test:contract` locally; verify all pass
-- [ ] 5.2 Push the branch and open the PR into `staging/v3`; verify on the CI run that lint, format check, typecheck, knip and the determinism check appear once in `static`, unit and contract run on Node 22.13, 24 and 26, E2E runs in two shards on each of those lines, and the run is green
+- [x] 5.2 Push the branch and open the PR into `staging/v3`; verify on the CI run that lint, format check, typecheck, knip and the determinism check appear once in `static`, unit and contract run on Node 22.13, 24 and 26, E2E runs in two shards on each of those lines, and the run is green
 - [x] 5.3 Check whether branch protection of `staging/v3` and `main` lists required checks by name (`gh api repos/broneq/bdk/branches/<branch>/protection`); if it does, name the `static` check to add in the PR description
-- [ ] 5.4 Run `openspec validate v3-t53-ci-static-job --strict` and verify it passes
+- [x] 5.4 Run `openspec validate v3-t53-ci-static-job --strict` and verify it passes
