@@ -1,0 +1,4 @@
+#!/bin/sh
+# Stand-in for BDK's bin/bdk: the plugin-bin checks look for its output to see
+# where the host puts a plugin's bin/ on PATH.
+echo "PROBE-BIN $*"
