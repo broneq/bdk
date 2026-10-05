@@ -62,4 +62,4 @@
 - [x] 10.2 In the fixture of one probe run, check four things. The journal is under 1 MiB. `.bdk/.machine/logs/` holds the live log and the render. `/bdk:diagnose` wrote an analysis that names the report's top refusal with a cause and a citation. `## For a BDK issue` passed `bdk diagnostics write`. Record the result in the probe notes.
 - [x] 10.3 Run a probe with `diagnostics.verbose` unset and confirm that no `.bdk/.machine/verbose`, no live log and no model start for diagnostics appear. The journal is still written.
 - [x] 10.4 Run `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check` and `pnpm docs:build`, then `openspec validate v3-t47-run-diagnostics --strict`. Verify: all pass.
-- [ ] 10.5 After the user approves the proposal, update the body of #110 to the revised scope (design D1), keeping the original decisions as a dated note.
+- [x] 10.5 After the user approves the proposal, update the body of #110 to the revised scope (design D1), keeping the original decisions as a dated note.
