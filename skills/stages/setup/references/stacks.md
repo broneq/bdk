@@ -72,3 +72,25 @@ bdk config set languages '[typescript, react]'
 ```
 
 Quote any value holding `{files}`, `:` or `#`.
+
+## Ignore lists
+
+Where each tool reads the paths it skips, and the entry that keeps it off `.bdk/`. A tool belongs here when it reads Markdown, YAML or JSON, the file types BDK commits. Its `.gitignore` support never covers `.bdk/`: the files are committed, so `.gitignore` does not list them.
+
+| Tool                              | Where its ignore list lives                                                                                                        | Entry                                         |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| markdownlint-cli2                 | `ignores` in `.markdownlint-cli2.{jsonc,yaml,cjs,mjs}`; a `globs` list there or on the command line still reads `.bdk/` without it | `".bdk/**"`                                   |
+| markdownlint-cli                  | `.markdownlintignore`, or `--ignore` in the script                                                                                 | `.bdk/`                                       |
+| prettier                          | `.prettierignore` (created when missing); prettier reads it only at the project root                                               | `.bdk/`                                       |
+| eslint (flat config)              | `ignores` of a config object that has no other key, in `eslint.config.{js,mjs,cjs,ts}`; only when it lints Markdown, JSON or YAML  | `".bdk/**"`                                   |
+| eslint (legacy)                   | `.eslintignore` or `ignorePatterns` in `.eslintrc.*`, under the same condition                                                     | `.bdk/`                                       |
+| biome                             | `files.includes` in `biome.json(c)` (v2, a negated pattern) or `files.ignore` (v1)                                                 | `"!.bdk"` (v2), `".bdk/**"` (v1)              |
+| dprint                            | `excludes` in `dprint.json`                                                                                                        | `".bdk/**"`                                   |
+| remark-cli                        | `.remarkignore`                                                                                                                    | `.bdk/`                                       |
+| yamllint                          | `ignore` in `.yamllint(.yaml)`                                                                                                     | `.bdk/`                                       |
+| cspell                            | `ignorePaths` in `cspell.json` or `.cspell.json`                                                                                   | `".bdk/**"`                                   |
+| vale                              | the `--glob` of the script that runs it                                                                                            | `--glob='!.bdk/**'`                           |
+| ruff                              | `extend-exclude` in `[tool.ruff]` of `pyproject.toml` or in `ruff.toml`; only when it reads Markdown code blocks                   | `".bdk"`                                      |
+| a project script that lists files | its own file list: `git ls-files` takes a pathspec, a glob an ignore option                                                        | `':(exclude).bdk'`, or an ignore of `.bdk/**` |
+
+A wrapper such as lint-staged runs the tool with the tool's own ignore list, so the entry above covers it too.

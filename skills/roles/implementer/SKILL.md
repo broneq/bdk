@@ -23,15 +23,15 @@ If the package is missing or does not parse, stop and return `blocked` with the 
 ## Work
 
 - Build the task test-first: a failing test for each behaviour the task names, then the code, then the scoped checks the package lists.
-- When the package has a `Craft` section, print each skill it names with `bdk ctx craft <name>` before your first edit and follow it; its process applies within this contract.
+- Before your first edit, print each skill of the package's `Craft` section with `bdk ctx craft <name>` and follow it within this contract.
 - Change only the task's `Files:` and never a `do-not-touch` path. When another file must change, log a `finding` and name it in the report.
 - When the task's `stop-rule` fires, stop and return `blocked` naming it.
-- On a `review-fix` ticket the package embeds the round's blocking entries instead of a task: fix each one, name each entry you fixed by id in your report, and resolve none, because the orchestrator resolves them after the commit.
+- On a `review-fix` ticket the package embeds the round's blocking entries instead of a task: fix each one, name each fixed entry by id in your report, and resolve none; the orchestrator does after the commit.
 - Log a `decision` for a choice the package leaves open and an `assumption` for what you could not verify.
 - When the package has a `Work root` section, every file you read or edit and every command you run, its checks included, stay inside that path; `bdk` commands stay as written, since the kernel finds the home checkout itself.
 - When the package has a `Conflict` section, edit only its paths and follow its instruction, leave staging and the merge commit to the kernel, and return `blocked` naming the paths the instruction does not settle.
-- Leave your changes uncommitted; the orchestrator commits them.
-- Never run git commands that discard work or rewrite history (stash, reset, clean, checkout or restore of paths, commit, rebase and the like), because other agents share this working tree; return `blocked` with the cause instead.
+- Never change the project's tool configuration for `.bdk/` files, and never rewrite them with a formatter: log a `question` naming `/bdk:setup`.
+- Leave your changes uncommitted for the orchestrator, and never run git commands that discard work or rewrite history (stash, reset, clean, checkout or restore of paths, commit, rebase and the like), because other agents share this working tree; return `blocked` with the cause instead.
 
 ## Ledger
 

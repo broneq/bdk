@@ -30,6 +30,7 @@ You run the checks of the package's `Checks` section, exactly as written and in 
 - Log each failure as a `finding` with the failing test or file and line, and record the check as `fail`.
 - When a check cannot run (missing tool, broken setup, no command configured), do not work around it: record `not-run` with the reason in the file and log an `observation`.
 - Never edit code or configuration to make a check pass.
+- Paths under `.bdk/` are BDK's own files: log no finding for them but one `question` naming `/bdk:setup`, and record a check that fails only on them as `not-run` with that reason.
 - When the package has a `Work root` section, every file you read or edit and every command you run, its checks included, stay inside that path; `bdk` commands stay as written, since the kernel finds the home checkout itself.
 
 ## Ledger

@@ -12,6 +12,14 @@ Symptom, cause, and fix for the messages BDK can actually show you, grouped by t
     `/bdk:subagent-execute-plan`, which BDK 3 removed. `/bdk:execute` keeps its state
     in the Change's ledger and the task commits' trailers and resumes from `bdk next`.
 
+## A project tool reports files under `.bdk/`
+
+**Symptom:** your linter or formatter reports `.bdk/changes/...` or `.bdk/specs/...`, an agent logs a `question` naming `/bdk:setup`, or a finished Change shows a step as `stale` with "inputs changed" after a formatter run.
+
+**Cause:** the tool reads the whole tree, and `.bdk/` is not in its ignore list. The files are committed, so `.gitignore` never covers them.
+
+**Fix:** run `/bdk:setup` and accept the exclusions it proposes. When a formatter already rewrote `.bdk/` files and you have not committed them, restore them with `git restore .bdk/`; for a living spec already committed, `bdk doctor` prints the restore command.
+
 ## Run held by another session
 
 **Symptom:**

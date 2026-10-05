@@ -22,15 +22,16 @@ them and changes only what you ask for. To change one thing, name it:
 
 ## What it does
 
-| Step               | What happens                                                                                                                                                                                                                                                                                        |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Diagnosis          | `bdk doctor` decides the path: a v2 layout is migrated first, a v3 project with settings is shown, anything else is detected.                                                                                                                                                                       |
-| Detection          | Reads the project files (`package.json` and its lockfile, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, `Gemfile`, `composer.json`, `*.csproj`, `pubspec.yaml`) for the languages and the test, lint and build commands. A lockfile decides the package manager.             |
-| Confirmation       | Asks you, in one `AskUserQuestion` call, which detected commands to keep; "Other" adds one it did not find. Tiers and scoped forms follow from the runner and are never questions.                                                                                                                  |
-| Settings           | Writes every confirmed command with `bdk config set`, one tool entry per call, with its `id`, `tier` and scoped forms. The kernel validates each value, keeps the schema modeline and adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The skill never edits `.bdk/` itself. |
-| Lavish             | Checks `lavish-axi`. When it is missing, offers `npm install -g lavish-axi`; if you decline, sets `features.lavish` to `false`.                                                                                                                                                                     |
-| Hand-written rules | When `.claude/rules/` holds your own Markdown rules, shows what `bdk rules import` would make of them and imports them if you agree, then offers to delete the source files the generated projection now carries.                                                                                   |
-| Finish             | Runs `bdk doctor --fix`, `bdk config check` and `bdk doctor`, and reports.                                                                                                                                                                                                                          |
+| Step               | What happens                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Diagnosis          | `bdk doctor` decides the path: a v2 layout is migrated first, a v3 project with settings is shown, anything else is detected.                                                                                                                                                                                                                                                                                                                                 |
+| Detection          | Reads the project files (`package.json` and its lockfile, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, `Gemfile`, `composer.json`, `*.csproj`, `pubspec.yaml`) for the languages and the test, lint and build commands. A lockfile decides the package manager.                                                                                                                                                                       |
+| Confirmation       | Asks you, in one `AskUserQuestion` call, which detected commands to keep; "Other" adds one it did not find. Tiers and scoped forms follow from the runner and are never questions.                                                                                                                                                                                                                                                                            |
+| Settings           | Writes every confirmed command with `bdk config set`, one tool entry per call, with its `id`, `tier` and scoped forms. The kernel validates each value, keeps the schema modeline and adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The skill never edits `.bdk/` itself.                                                                                                                                                           |
+| Tool isolation     | Finds the project's tools that read Markdown, YAML or JSON (markdownlint, prettier, ESLint with a Markdown plugin and others) and the scripts that list files themselves, and asks in one multi-select which of them get `.bdk/` in their ignore list. It writes the entries you accept, runs your lint commands once to show any path under `.bdk/` they still report, and commits only those files, as `chore(bdk): keep .bdk/ out of the project's tools`. |
+| Lavish             | Checks `lavish-axi`. When it is missing, offers `npm install -g lavish-axi`; if you decline, sets `features.lavish` to `false`.                                                                                                                                                                                                                                                                                                                               |
+| Hand-written rules | When `.claude/rules/` holds your own Markdown rules, shows what `bdk rules import` would make of them and imports them if you agree, then offers to delete the source files the generated projection now carries.                                                                                                                                                                                                                                             |
+| Finish             | Runs `bdk doctor --fix`, `bdk config check` and `bdk doctor`, and reports.                                                                                                                                                                                                                                                                                                                                                                                    |
 
 On Claude Code the agents ship with the plugin, so setup does not export them
 into the project.
@@ -62,6 +63,18 @@ the session start says so. `/bdk:setup` migrates it:
   `.bdk/plans/`, `.bdk/design/`, `.bdk/runs/` and `.bdk/verify-plan/`; if you
   decline, they stay and `bdk doctor` keeps reporting the v2 layout.
 
+### Why `.bdk/` stays out of your tools
+
+Everything BDK commits under `.bdk/` is written by the kernel, and parts of it
+are hashed byte for byte: the inputs of each finished pipeline step and every
+living spec. A linter that reads those files fails on Markdown it did not
+write, and a formatter that rewrites them makes finished work stale (a reviewed
+Change goes back to its plan) and makes `bdk doctor` report the living spec as
+edited by hand. Excluding `.bdk/` in each tool's own ignore list also covers
+pre-commit wrappers such as lint-staged. If you decline, BDK's agents never
+"fix" your tool configuration: they log a `question` that points back to
+`/bdk:setup`.
+
 ## What gets written
 
 ```
@@ -84,6 +97,7 @@ Setup ends with a few lines you should read before moving on:
 - each tool entry as `<tier> <id>: <command>` with its scoped forms, so a wrong
   derivation is caught now by the person who knows the project;
 - what was imported, deleted, or not carried over from v2;
+- the tools kept off `.bdk/`, and each one you declined;
 - every remaining `doctor` finding with its repair;
 - the next step, `/bdk:change "<what you want to build>"`.
 

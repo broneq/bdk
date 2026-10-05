@@ -1,22 +1,30 @@
 # Cases of /bdk:run (spec stage-skills, run requirements). Every case starts
 # from a fresh copy of the pinned fixture on its branch feat/eval with Lavish
 # off. A run asks nothing: the skills it starts take the recommended option.
-# A case that executes sets tools.lint to eslint: without a lint tool every
-# task records lint not-run and the not-run budget stops the run. eslint, not
-# npm run lint, whose markdownlint also reads the committed .bdk/ files.
+# A case that executes sets tools.lint: without a lint tool every task
+# records lint not-run and the not-run budget stops the run.
 #
 # run-auto: from an intent to an archived Change; --auto passes the manual
 # gate:design and gate:review by policy, /bdk:cr reviews the executed Change
 # in the run (T42-B1), and /bdk:close archives it. The run does not stop at
 # the human report: /bdk:cr records defer --review for each undecided entry,
 # so the close summary lists them as deferred, and the reply names the report.
+# Its lint is the project's own npm run lint, on the fixture as /bdk:setup
+# leaves it (T51): markdownlint and the two Markdown check scripts keep off
+# .bdk/, and no role edits the project's tool configuration.
 - id: run-auto
   command: /bdk:run --auto "Add Italian to the language options of the account page"
   prepare:
     - |-
+      perl -0pi -e "s/  gitignore: true,/  gitignore: true,\n  ignores: ['.bdk\/**'],/" .markdownlint-cli2.mjs
+    - |-
+      perl -pi -e "s/\['ls-files', '--', '\*\.md'\]/['ls-files', '--', '*.md', ':(exclude).bdk']/" scripts/check-markdown-line-endings.mjs scripts/check-mermaid-markdown.mjs
+    - |-
+      git add -A && git commit -qm "chore(bdk): keep .bdk/ out of the project's tools"
+    - |-
       node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
+      node "$BDK" config set tools.lint.lint '{tier: lint, command: npm run lint}' >/dev/null
     - |-
       node "$BDK" config set features.lavish false >/dev/null
     - |-
@@ -31,6 +39,9 @@
     - reply: gate:review
     - reply: \.bdk/\.machine/review/
     - reply: deferred, to be reviewed
+    - shell: |-
+        git log --format=%H "$(git log -1 --format=%H --grep='^bdk settings$')..HEAD" -- .markdownlint-cli2.mjs eslint.config.js package.json scripts/ | wc -l
+      stdout: "^\\s*0\n$"
 
 # run-manual: without --auto the manual gate:design stops the run after the
 # design stage; no plan part exists and the reply names /bdk:plan.

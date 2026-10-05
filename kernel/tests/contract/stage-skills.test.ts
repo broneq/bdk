@@ -369,3 +369,38 @@ describe("worktree isolation in the stage skills (T45)", () => {
     expect(body).toMatch(/never set the host's own `isolation: worktree`/);
   });
 });
+
+describe("setup keeps .bdk/ out of the project's tools (T51)", () => {
+  it("asks once, runs the lint commands and commits only the edited files", () => {
+    const { meta, body } = readSkill("setup");
+    const tools = String(meta["allowed-tools"]);
+    for (const tool of ["Edit", "Write", "Bash(git add *)", "Bash(git commit *)"]) {
+      expect(tools, tool).toContain(tool);
+    }
+    const start = body.indexOf("## Keep `.bdk/` out of the project's tools");
+    expect(start).toBeGreaterThan(body.indexOf("## Settings"));
+    expect(start).toBeLessThan(body.indexOf("## Lavish"));
+    const section = body.slice(start, body.indexOf("## Lavish"));
+    expect(section).toMatch(/one multi-select/);
+    expect(section).toContain("`tools.lint`");
+    expect(section).toMatch(/never a formatter's write mode/);
+    expect(section).toMatch(/every path under `\.bdk\/`/);
+    expect(section).toMatch(/commit[^\n]*only the files you edited/);
+    expect(body.slice(body.indexOf("## Finish"))).toMatch(/declined exclusion/);
+  });
+
+  it("stacks.md says where each tool reads its ignore list", () => {
+    const text = readFileSync(join(STAGES, "setup", "references", "stacks.md"), "utf8");
+    const section = text.slice(text.indexOf("## Ignore lists"));
+    for (const needle of [
+      ".markdownlint-cli2",
+      ".prettierignore",
+      "eslint.config",
+      "`ignores`",
+      "`extend-exclude`",
+      "git ls-files",
+    ]) {
+      expect(section, needle).toContain(needle);
+    }
+  });
+});
