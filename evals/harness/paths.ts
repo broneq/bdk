@@ -1,9 +1,10 @@
 // Fixed locations of the harness (design D-1): configs, raw outputs and the
 // ledger live under `evals/.runs/` (gitignored), what a session sees lives in
 // a sandbox outside the repository; only result rows are committed.
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, isAbsolute, join, relative } from "node:path";
+import { basename, dirname, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { FixturePin } from "./fixture.ts";
@@ -23,14 +24,19 @@ export const SANDBOX_DIR = join(
   "bdk-evals",
 );
 
-/** A series' sandbox directory; refused when it would lie inside the repository. */
+/**
+ * A series' sandbox directory, one per checkout: two worktrees name a series
+ * alike from their own results, and a shared sandbox lets one run reset the
+ * other's working copy. Refused when it would lie inside the repository.
+ */
 export function sandboxOf(
   suite: string,
   series: string,
   root = SANDBOX_DIR,
   repoRoot = REPO_ROOT,
 ): string {
-  const dir = join(root, suite, series);
+  const checkout = `${basename(repoRoot)}-${createHash("sha256").update(repoRoot).digest("hex").slice(0, 8)}`;
+  const dir = join(root, checkout, suite, series);
   const path = relative(repoRoot, dir);
   if (!path.startsWith("..") && !isAbsolute(path)) {
     throw new Error(
