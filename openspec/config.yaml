@@ -4,7 +4,8 @@ context: |
   BDK (Broneq Dev Kit) is a Claude Code plugin that ships reusable dev workflows
   (skills, agents, hooks, rules) into user projects. v2 is Markdown skills plus
   Python helper scripts. v3 rewrites it around a Node / TypeScript kernel
-  (`node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs`) and a change-centric pipeline.
+  (`bdk <command>` through the plugin's bin/bdk; hooks run
+  `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs`) and a change-centric pipeline.
 
   Sources of truth for v3 work:
   - Roadmap and task index: docs/V3-IMPLEMENTATION-PLAN.md. Every task Tnn has

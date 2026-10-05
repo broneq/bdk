@@ -8,6 +8,7 @@ Claude Code plugin packaging reusable dev workflows (skills, agents, hooks) that
 skills/                  — thin workflow definitions (language-agnostic)
 agents/                  — subagent definitions used internally by skills
 hooks/                   — hooks.json + shell scripts
+bin/                     - bdk launcher (POSIX sh) the host puts on the Bash tool PATH; agents and skills call the kernel as `bdk <command>`
 rules/                   — convention docs distributed WITH the plugin to end-users
 STARTUP_INSTRUCTIONS.md  — injected into user sessions at SessionStart via hook
 tests/evals/             — legacy v2 skill evals; replaced by evals/, removed in T32

@@ -29,7 +29,7 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 Update README (installation: `bin/bdk`, Node, the unsupported claude.ai / Cowork hosts, the shadowing cause next to the STOP line), CONTRIBUTING.md, CLAUDE.md, `.claude/rules/skills.md`, `openspec/config.yaml` context, `evals/README.md` and `docs/guide/`; verify with `pnpm docs:build`, `pnpm format:check` and `pnpm test:contract` (docs drift guards)
+- [x] 6.1 Update README (installation: `bin/bdk`, Node, the unsupported claude.ai / Cowork hosts, the shadowing cause next to the STOP line), CONTRIBUTING.md, CLAUDE.md, `.claude/rules/skills.md`, `openspec/config.yaml` context, `evals/README.md` and `docs/guide/`; verify with `pnpm docs:build`, `pnpm format:check` and `pnpm test:contract` (docs drift guards)
 
 ## 7. Acceptance
 

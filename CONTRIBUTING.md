@@ -107,7 +107,7 @@ The guards check that every user-invocable skill has a section in `reference/ski
 
 ## Kernel (Node / TypeScript)
 
-The v3 kernel lives in `kernel/`: sources in `kernel/src/` (one directory per slice plus `shared/`, see `openspec/specs/kernel-architecture/spec.md`), kernel-wide tests in `kernel/tests/`. esbuild bundles it into `dist/bdk.mjs`, the one file the plugin runs.
+The v3 kernel lives in `kernel/`: sources in `kernel/src/` (one directory per slice plus `shared/`, see `openspec/specs/kernel-architecture/spec.md`), kernel-wide tests in `kernel/tests/`. esbuild bundles it into `dist/bdk.mjs`, the one file the plugin runs. Agents and skills start it through `bin/bdk`, a POSIX `sh` launcher that Claude Code puts on the Bash tool's `PATH`; hooks run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs"` because a hook's `PATH` lacks the plugin's `bin/` (`docs/HOST-FACTS.md`, `plugin-bin-*`).
 
 Requires Node and pnpm. Use the Node version in `.nvmrc` (`nvm use`); any Node from 22.13.0 on works. pnpm comes from the `packageManager` field of `package.json` (`corepack enable`).
 

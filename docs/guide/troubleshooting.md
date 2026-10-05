@@ -118,6 +118,16 @@ policy/gate-not-ready: gate:design is not ready for /bdk:plan: architecture is r
 
 **Fix:** Finish the named artifacts (`bdk next` prints the instruction), then type the command again.
 
+**Symptom (a skill stops at its first line):**
+
+```
+BDK STOP: kernel unavailable (exit 5). Install Node >= 22.13 and run /bdk:setup.
+```
+
+**Cause:** the skill's context line runs `bdk ctx skill <name>` and it failed. Exit 5: the plugin's `bin/bdk` found no `node` on `PATH` or no `dist/bdk.mjs`, and the `bdk: kernel unavailable: ...` line above says which. Exit 127: no `bdk` on the Bash tool's `PATH`, so the plugin is disabled or the host does not install its `bin/`. Another code: an executable named `bdk` earlier on your `PATH` than the plugin's `bin/` ran instead.
+
+**Fix:** Install Node >= 22.13, reinstall the BDK plugin when a file is missing, or rename the other `bdk` executable. Run `bdk --version` in a `!` command to see which one answers.
+
 **Symptom (every guarded call is blocked):**
 
 ```
