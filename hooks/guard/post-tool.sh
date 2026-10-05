@@ -6,7 +6,14 @@
 # tools the kernel records, `Agent` (the parent's link), `TaskStop` (an end)
 # and `AskUserQuestion` (the run journal's question line), and, while the
 # verbose marker exists, for every call (the live log).
-payload=$(cat)
+# The payload is read with the `read` builtin, not `$(cat)`, which forks and
+# execs on every call (see pre-tool.sh).
+payload=
+bdk_nl='
+'
+while IFS= read -r bdk_line || [ -n "$bdk_line" ]; do
+  payload="${payload:+$payload$bdk_nl}$bdk_line"
+done
 bdk_beat="${CLAUDE_PROJECT_DIR:-$PWD}/.bdk/.machine"
 
 case $payload in

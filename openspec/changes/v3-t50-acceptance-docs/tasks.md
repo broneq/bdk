@@ -23,6 +23,8 @@
 - [ ] 3.6 Check whether `attempt close` refuses an envelope claiming entry ids that do not exist; if it does, write the `[R-16]` test and verify it passes; if not, open a follow-up issue in the v3.0 milestone and set the row to `open #<n>`.
 - [ ] 3.7 Write `kernel/src/<slice>/tests/change-scale.perf.ts` titled `[NFR-SCALE-1]`: one scripted Change of about 200 kernel calls on a fixture with 8 plan parts, p95 per call under 150 ms, total printed (D6); verify `pnpm test:perf` passes locally.
 
+- [x] 3.8 Read the hook payload with the `read` builtin instead of `$(cat)` in `hooks/guard/pre-tool.sh`, `post-tool.sh` and `prompt-expansion.sh` (one fork and one exec less per tool call), pinned by E2E tests for a pretty-printed payload and a payload with and without a final newline; verify the hook E2E and contract tests pass and record the guard p95 before and after.
+
 ## 4. Catalogue guard on
 
 - [ ] 4.1 Write the contract test that runs the reader, collector and matcher on the real catalogue and the real tests and fails naming every unanswered item and unknown ID; verify it passes on the branch and fails after removing the `[TSH-7]` title (then restore it).
@@ -64,7 +66,7 @@
 
 ## 10. Acceptance
 
-- [ ] 10.1 Run `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm lint`, `pnpm skill-check` and `pnpm docs:build`; verify all pass, then run `pnpm test:perf` locally and record its result in the PR description.
+- [ ] 10.1 Run `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm lint`, `pnpm skill-check` and `pnpm docs:build`; verify all pass, then run `pnpm test:perf` in a Linux container (design D11) and record its result in the PR description.
 - [ ] 10.2 Read `docs/V3-ACCEPTANCE.md` and verify every item `S1`-`S8`, `S-DISPATCH` and `S-EVALS` and every `AC`, `TSH` and `EC` item has evidence, and every `open` row names an issue.
 - [ ] 10.3 On a clean project, install `bdk-craft` alone and run its `tdd` skill once; verify it runs without `bdk` and record the result in the PR description.
 - [ ] 10.4 Open the PR into `staging/v3` and verify CI is green; then run `openspec validate v3-t50-acceptance-docs --strict` and verify it passes.

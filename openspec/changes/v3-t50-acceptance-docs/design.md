@@ -125,6 +125,17 @@ The survivors are written as one-sentence top-level bullets into new source file
 - Rejected: importing the files as they are. Three files would become one rule each with their headings, and the definitions would become `house` rules, which `rule-pack` says they are not.
 - Rejected: `--prefix` per original file. It keeps the old file boundaries, which mixed rules, definitions and procedures.
 
+### D11 Perf budgets are measured on a machine without an exec-intercepting agent
+
+On the author's work laptop two endpoint security agents (CrowdStrike Falcon and Microsoft Defender for Endpoint, both active Endpoint Security extensions) intercept every process start: `/usr/bin/true` takes 5 ms, `sh -c true` 10 ms and `node -e 0` 29 ms. There the guard prefilter added +12.7 ms at p95 (budget 5 ms) and prompt expansion took 158 ms (budget 150 ms), on the current scripts and on the oldest version of `pre-tool.sh` alike. In a Linux container on the same machine (`node:24-bookworm`, `/bin/sh` is dash) the same suite gives +0.2 ms, 55 ms and 92 ms. The budgets stay as the design set them; the release measurement runs in such a container, and the contributor guide gives the command:
+
+    docker run --rm -v "$PWD":/src:ro node:24-bookworm bash -c 'mkdir /work && cd /src && tar --exclude=./node_modules --exclude=./dist -cf - . | tar -C /work -xf - && cd /work && corepack enable && pnpm install --frozen-lockfile && pnpm test:perf'
+
+The hook scripts still read their payload with the `read` builtin instead of `$(cat)` (task 3.8): it saves a fork and an exec on every tool call, which brought the prefilter from +12.7 ms to +6.8 ms on that laptop, and such machines are common among users.
+
+- Rejected: budgets relative to a measured baseline of the machine. It changes what the design's NFR means and hides a real cost users on such machines pay.
+- Rejected: looser budgets. Same objection, and the Linux numbers show the budgets hold with a wide margin where process start is normal.
+
 ## Risks / Trade-offs
 
 - [`vitest list` on the `e2e` project imports helpers that expect a build] → the report command runs `pnpm build` first, like `test:e2e`; the contract project already depends on the build.

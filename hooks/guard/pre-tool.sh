@@ -7,7 +7,16 @@
 # payload that reaches the kernel is blocked. A subagent's call first marks
 # its heartbeat `open` in the shell (kernel-state, Agent registry), so a long
 # tool call keeps the agent `running` without starting Node.
-payload=$(cat)
+# The payload is read with the `read` builtin, not `$(cat)`: a command
+# substitution forks a subshell and execs cat on every tool call, which is most
+# of the prefilter's cost where process start is slow. Lines are joined with
+# their newlines, and a last line without one is kept.
+payload=
+bdk_nl='
+'
+while IFS= read -r bdk_line || [ -n "$bdk_line" ]; do
+  payload="${payload:+$payload$bdk_nl}$bdk_line"
+done
 
 case $payload in
   *'"agent_id"'*)

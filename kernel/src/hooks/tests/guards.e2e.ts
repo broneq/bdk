@@ -53,6 +53,8 @@ interface HookOptions {
   readonly pluginRoot?: string;
   /** PATH; the harness's by default. */
   readonly path?: string;
+  /** How the payload is written to stdin; one line of JSON without a newline by default. */
+  readonly encode?: (payload: Payload) => string;
 }
 
 /** The hooks.json command of `event` through `sh -c` in `cwd`, `payload` on stdin. */
@@ -60,7 +62,7 @@ function hook(event: string, cwd: string, payload: Payload, options: HookOptions
   const result = spawnSync("/bin/sh", ["-c", command(event)], {
     cwd,
     encoding: "utf8",
-    input: JSON.stringify({ ...payload, cwd }),
+    input: (options.encode ?? JSON.stringify)({ ...payload, cwd }),
     env: {
       ...process.env,
       GIT_CONFIG_GLOBAL: "/dev/null",
@@ -225,6 +227,20 @@ describe("PreToolUse guard", () => {
       stdout: "",
       stderr: "",
     });
+  });
+
+  it.each([
+    ["pretty-printed over several lines", (p: Payload) => JSON.stringify(p, null, 2)],
+    ["ending in a newline", (p: Payload) => `${JSON.stringify(p)}\n`],
+    [
+      "pretty-printed without a final newline",
+      (p: Payload) => JSON.stringify(p, null, 2).trimEnd(),
+    ],
+  ])("reads the whole payload %s: a subagent git stash is denied", (_, encode) => {
+    const { root } = opened();
+    const run = hook("PreToolUse", root, subagentBash("git stash"), { encode });
+    expect(run.code).toBe(2);
+    expect(run.stderr).toMatch(/^guard\/subagent-git: subagents may not run git stash;/);
   });
 
   it("denies a subagent bdk.mjs commit [TSH-5]", () => {
