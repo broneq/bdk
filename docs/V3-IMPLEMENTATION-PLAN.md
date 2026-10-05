@@ -800,7 +800,6 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - User documentation: README v3 (installation with Node, two plugins, Change pipeline, gates and `run`, profiles, layered configuration, rules and the learning funnel, migration from v2), the `kernel-cli` and `kernel-state` specs under `openspec/specs/` synchronised with the code (contract tests); the kernel architecture stays the `kernel-architecture` spec (written in T10, with Mermaid per the standard) and is checked against the code by T11's import scan, so no separate architecture document is written. `docs/` keeps only temporary material, task artifacts, user documentation and ADRs; every living spec lives under `openspec/specs/`.
 - Developer documentation of the evals: why they exist (A/A noise floor, the A/B and rules no-op measurements, the regression eval of T43), which suites there are and what each measures, how to run one and read its report, what a run costs and why none runs in CI; it gathers what is today spread over `evals/README.md` and `docs/V3-EVAL-*`.
 - BDK's own repository: every file in `.claude/rules/` goes through the content admission test of T31 (durability / decision / visibility / derivability); a rule that passes is imported with `rules import` into `.bdk/rules/`, the rest is deleted (including rules that describe v2 mechanisms, such as `inject-rules.py`); `.claude/rules/` then holds only the files `rules export --claude` generates.
-- Launch of the first Change after v3 with BDK's own tool: `ui-verify` on the primitives from T23 (outside the scope of this plan, here only `change new`).
 
 **Decisions** (user, 2026-10-05):
 
@@ -808,6 +807,7 @@ Keys added by the T02 decisions (each with a consumer in the named task): `featu
 - promptfoo does not run in CI.
 - v2 support policy: none, a hard cut.
 - No multi-host acceptance: there is no non-Claude host to run it on. This revises T02 decision Q-3; the swarm skill's `references/hosts/` and `bdk export agents --host` stay as they are, without a recorded run.
+- The launch of the first Change after v3 (`change new` for `ui-verify`) is dropped from T50; `ui-verify` stays under "After v3.0".
 
 **Input**: "Testing Strategy" (Acceptance, Edge cases), "Constraints & NFRs", "Risk Register" (every risk must have an E2E or a measurement), S1-S8.
 

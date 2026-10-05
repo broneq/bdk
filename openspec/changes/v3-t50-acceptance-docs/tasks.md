@@ -62,7 +62,7 @@
 
 ## 9. Plan
 
-- [ ] 9.1 Remove the launch of the first Change after v3 (`change new` for `ui-verify`) from the T50 entry of `docs/V3-IMPLEMENTATION-PLAN.md`, citing the user decision of 2026-10-05; verify `ui-verify` is still listed under "After v3.0".
+- [x] 9.1 Remove the launch of the first Change after v3 (`change new` for `ui-verify`) from the T50 entry of `docs/V3-IMPLEMENTATION-PLAN.md`, citing the user decision of 2026-10-05; verify `ui-verify` is still listed under "After v3.0".
 
 ## 10. Acceptance
 
