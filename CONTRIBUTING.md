@@ -2,29 +2,17 @@
 
 ## Architecture
 
-### Convention-Driven with Shared Foundation
+### A kernel and thin skills
 
-Skills are thin workflow definitions. Environment discovery is handled by `STARTUP_INSTRUCTIONS.md`, injected at session start via the `SessionStart` hook.
-
-**Benefits:**
-
-- Single source of truth for BDK conventions
-- Skills stay clean — workflow logic only, no environment assumptions
-- New skills automatically inherit all rules
-- Changes to conventions require editing one file, not 13
+The kernel (`kernel/`, bundled into `dist/bdk.mjs`) holds the order of the work, the state of every Change and every check; the skills say what to do at each step and call it as `bdk <command>`. A skill gets settings-derived content (rules, language rules, fragments, project commands) only through its two context lines, `bdk ctx skill <name>`; a role agent gets its whole prompt from its dispatch package and its rules from `bdk rules show --ticket <ticket>`. `STARTUP_INSTRUCTIONS.md` is printed into each session at `SessionStart` as it is.
 
 ### Built-in Tools Only
 
 BDK ships no MCP server (see `docs/adr/0001-remove-bundled-mcp-servers.md`). Skills and agents run on the host's built-in tools, and the host already tells the model how to use them. So BDK adds no tool guidance: a skill or agent step says what to find or check, not which tool to use for it.
 
-### Skill Authoring Convention
+### Development rules
 
-Every BDK skill:
-
-1. Starts with `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`
-2. Never hardcodes test runners, build tools, lint commands, or file paths
-3. References other skills with full namespace: `/bdk:plan`, `/bdk:cr`
-4. Uses "run the project's test suite" — not `pytest` or `go test`
+BDK's own development rules live in `.bdk/rules/`, one file per rule, as in any project that uses BDK; `.claude/rules/` holds only the projection `bdk rules export --claude` writes, and a contract test fails on any other file there. Adopt a new rule with `bdk rules accept "<rule>" --prefix <PREFIX> [--applies <glob>]` once it passes the admission test: it survives a refactor that changes no decision, an agent would make a wrong change without it, the trap is invisible where the mistake is made, and no code, type or failing test tells it. A definition of how BDK works belongs in the spec that owns it, and a procedure in this file.
 
 ---
 
@@ -38,7 +26,7 @@ Every BDK skill:
 1. Edit skills, agents, or hooks in this repo
 2. Run `pnpm install` in this repo (its `prepare` script builds the bundle, the schemas and the adapters, which git does not track), then launch Claude Code from the test project with `claude --plugin-dir ~/projects/bdk`
 3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
-4. Measure the change when it can move behaviour: `pnpm eval with-without --skill bdk:<name> --tasks <file>` (probe first; see `evals/README.md`)
+4. Measure the change when it can move behaviour: `pnpm eval with-without --skill bdk:<name> --tasks <file>` (probe first; see `docs/guide/contributing/evals.md`)
 
 Try skills in the test project, never in this repository: BDK's own repository does not exercise them the way a user project does. After a change to `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json` or a hook script, start a new session in the test project, so `SessionStart` runs again, and check that its output or side effects reflect the change; then run a skill that relies on the changed part.
 
@@ -46,19 +34,18 @@ Try skills in the test project, never in this repository: BDK's own repository d
 
 ## Adding a Skill
 
-1. Create `skills/<name>/SKILL.md`
-2. Keep it language-agnostic — no hardcoded tool names, paths, or commands
-3. Start with the standard header (see `.claude/rules/portability-check.md`)
-4. Add an entry to the Skills table in `README.md`
-5. Measure it against its absence: a task file and `pnpm eval with-without --skill bdk:<name> --tasks <file>` (`evals/README.md`)
-6. Review it with `/bdk-skill-kit:skill-authoring` and run `pnpm skill-check` (conventions: `.claude/rules/skills.md`)
+1. Create `skills/<group>/<name>/SKILL.md` (`stages`, `roles` or `tools`) with its two context lines, and add its entry to `kernel/src/ctx/use-cases/manifest.ts`
+2. Keep it language-agnostic: no hardcoded tool names, paths or commands
+3. Add its section to `docs/guide/reference/skills.md` and its entry to `README.md`
+4. Measure it against its absence: a task file and `pnpm eval with-without --skill bdk:<name> --tasks <file>` (`docs/guide/contributing/evals.md`)
+5. Review it with `/bdk-skill-kit:skill-authoring` and run `pnpm skill-check`
 
 ## Adding an Agent
 
-1. Create `agents/<name>.md`
+1. Add the adapter to `bdk export agents` (`kernel/src/export/`); write it by hand only when it runs without the kernel, as `agents/web-researcher.md` does
 2. Assign a model (`haiku` / `sonnet` / `opus`) based on task complexity
-3. Add an entry to the Agents table in `README.md`
-4. Review it with `/bdk-skill-kit:skill-authoring` and run `pnpm skill-check`
+3. Name it in `docs/guide/reference/agents.md`
+4. Run `pnpm skill-check`
 
 ## Skill Content Checks
 
@@ -70,9 +57,8 @@ Try skills in the test project, never in this repository: BDK's own repository d
 
 ## Hooks
 
-- `hooks/hooks.json` — registers all hooks (currently: `SessionStart`)
-- Hook scripts live in `hooks/` alongside the JSON
-- New hooks: add a script, register it in `hooks.json`
+- `hooks/hooks.json` registers every hook; each command runs the kernel as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks <event>`, or sources a script of `hooks/guard/` into `/bin/sh` first, so a tool call the guard lets through never starts Node.
+- `kernel/tests/contract/hooks-file.test.ts` checks the file against the recorded host payloads; `pnpm test:perf` holds the guards to their latency budgets.
 
 ---
 
@@ -171,6 +157,6 @@ A fragment is a Markdown file under `fragments/<capability>/` that a skill recei
 2. Declare its prompt key `fragments/<capability>/<name>` in `kernel/src/ctx/config.ts`.
 3. Add or extend the `fragment` part of the consuming skills in `kernel/src/ctx/use-cases/manifest.ts`, with the condition that picks it, and point the skill body to the section title.
 
-No skill gets a new `!` line: every skill reads its context through its two context lines (`.claude/rules/skill-context.md`).
+No skill gets a new `!` line: every skill reads its context through its two context lines, which `kernel/tests/contract/skill-context.test.ts` checks.
 
 Agents are static markdown with no shell execution at load time. A role agent gets its content through the kernel instead: its dispatch package is its whole prompt, and it reads its rules with `bdk rules show --ticket <ticket>`.

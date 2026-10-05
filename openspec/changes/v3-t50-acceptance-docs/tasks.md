@@ -37,7 +37,7 @@
 - [x] 5.2 Run the four-test admission on every bullet of the eight files and record the verdict per bullet in the PR description (D10); verify every bullet has a verdict.
 - [x] 5.3 Move the definitions: point `kernel/src/evidence/config.ts` at `kernel-settings` (Keys of evidence policy), point `kernel/tests/contract/rule-pack.test.ts` at `rules/README.md` and make sure that file states the phrases the test needs, move the testing procedure into `CONTRIBUTING.md`; verify `pnpm test:contract` passes except the test of 5.1.
 - [x] 5.4 Write the surviving rules as one-sentence top-level bullets in the thematic source files (D10), run `bdk rules import --dry-run`, then `bdk rules import`, delete the source files and run `bdk rules export --claude`; verify `bdk rules check` passes and the test of 5.1 passes.
-- [ ] 5.5 Update `CLAUDE.md` (v3 layout, no pointers to deleted files, v3 steps for adding a skill), `CONTRIBUTING.md`, the `skill-check.config.ts` comment and `.claude/skills/docs-sync/references/docs-map.md`; verify `bdk doctor --json` in the repository reports no rule finding, a fresh session in the repository starts without a hook error, and `pnpm test:contract` and `pnpm skill-check` pass.
+- [x] 5.5 Update `CLAUDE.md` (v3 layout, no pointers to deleted files, v3 steps for adding a skill), `CONTRIBUTING.md`, the `skill-check.config.ts` comment and `.claude/skills/docs-sync/references/docs-map.md`; verify `bdk doctor --json` in the repository reports no rule finding, a fresh session in the repository starts without a hook error, and `pnpm test:contract` and `pnpm skill-check` pass.
 
 ## 6. Guide v3
 
