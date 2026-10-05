@@ -1,7 +1,8 @@
 // One `small` feature Change from `change new` to `close` through the built
 // bundle in a real repository (T50, AC-1): every artifact, verdict, ticket,
 // commit and gate driven by the kernel commands the stage skills run, and each
-// gate passed by the typed stage command through `hooks prompt-expansion`.
+// gate passed by the typed stage command through `hooks prompt-expansion`;
+// and two Changes advanced on two branches whose state merges (EC-3).
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -205,5 +206,74 @@ describe("a small Change end to end [AC-1]", () => {
       `BDK-Change: ${id}\nBDK-Part: 01\nBDK-Task: 01-1`,
     );
     refused(bdk(["change", "status", "--json"], root), 2, "policy/no-active-change");
+  });
+});
+
+/** `/bdk:change` on the checked-out branch. */
+function start(root: string, intent: string): Change {
+  const id = run({ root, dir: root, id: "" }, ["change", "new", intent], "output/change-new.json")
+    .change as string;
+  return { root, dir: join(root, ".bdk/changes", id), id };
+}
+
+describe("two Changes on two branches [EC-3]", () => {
+  it("progress side by side, merge without conflict and rebuild into both states", () => {
+    const root = repository();
+    git(root, "branch", "feat/mail");
+
+    const login = start(root, "Users log in with a one-time link");
+    fileStore().write(join(login.dir, "design.md"), "---\nschema: 1\ntitle: design\n---\nLinks.\n");
+    done(login, "design");
+    run(
+      login,
+      ["log", "add", "decision", "Links expire after 10 minutes", "--ref", "design.md"],
+      "output/log-add.json",
+    );
+    git(root, "add", "--all");
+    git(root, "commit", "--quiet", "-m", "login design");
+
+    git(root, "checkout", "--quiet", "feat/mail");
+    const mail = start(root, "Mail digests go out weekly");
+    expect(next(mail)).toMatchObject({ artifact: { id: "design" } });
+    run(
+      mail,
+      ["log", "add", "question", "Which day of the week?", "--ref", "change.md"],
+      "output/log-add.json",
+    );
+    git(root, "add", "--all");
+    git(root, "commit", "--quiet", "-m", "mail intent");
+
+    git(root, "checkout", "--quiet", "-b", "main", "feat/login~1");
+    git(root, "merge", "--quiet", "--no-edit", "feat/login");
+    git(root, "merge", "--quiet", "--no-edit", "feat/mail");
+    expect(git(root, "status", "--porcelain")).toBe("");
+
+    git(root, "checkout", "--quiet", "feat/login");
+    git(root, "merge", "--quiet", "--ff-only", "main");
+    expect(run(login, ["rebuild", "--all"], "output/rebuild.json")).toMatchObject({ changes: 2 });
+    const listed = run(login, ["change", "list"], "output/change-list.json") as {
+      items: { change: string; branch: string }[];
+    };
+    expect(listed.items.map((item) => [item.change, item.branch]).sort()).toEqual(
+      [
+        [login.id, "feat/login"],
+        [mail.id, "feat/mail"],
+      ].sort(),
+    );
+
+    expect(run(login, ["change", "status"], "output/change-status.json")).toMatchObject({
+      change: login.id,
+    });
+    expect(next(login)).toMatchObject({ artifact: { id: "architecture" } });
+
+    git(root, "checkout", "--quiet", "feat/mail");
+    git(root, "merge", "--quiet", "--ff-only", "main");
+    expect(run(mail, ["change", "status"], "output/change-status.json")).toMatchObject({
+      change: mail.id,
+    });
+    expect(next(mail)).toMatchObject({ artifact: { id: "design" } });
+    const questions = run(mail, ["log", "list", "--type", "question"], "output/log-list.json");
+    expect(JSON.stringify(questions)).toContain("Which day of the week?");
+    expect(JSON.stringify(questions)).not.toContain("Links expire");
   });
 });
