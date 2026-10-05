@@ -165,6 +165,11 @@ The `stages` suite SHALL run stage skills the way a user starts them: each case 
 - **WHEN** `pnpm eval stages --skill setup --probe` runs its happy-path case on the fixture
 - **THEN** the case passes when `bdk config check` exits 0 and `bdk doctor --json` reports `ok: true` in the run's working copy
 
+#### Scenario: setup without a linter or tests
+
+- **WHEN** the cases `no-linter` and `no-tests` type `/bdk:setup` in an empty repository holding a Node project with only a test script, or only eslint, and answer that the project runs without the missing tool
+- **THEN** each case passes when `bdk config check` exits 0, `bdk config show tools.lint` (or `tools.test`) answers `none`, the other group holds the detected command, and `bdk change new` afterwards exits 0; for `no-tests`, `bdk change status` holds the warning that the Change runs no test
+
 #### Scenario: change refusal
 
 - **WHEN** the refusal case of `change` types `/bdk:change <intent>` on a branch that already has an active Change and answers "stay on the current branch"
