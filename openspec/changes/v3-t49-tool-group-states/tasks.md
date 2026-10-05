@@ -36,5 +36,5 @@
 ## 7. Acceptance
 
 - [x] 7.1 End to end through `dist/bdk.mjs`: a project with `tools.lint` unset is refused at `change new` with the hint; with `tools.lint: none` a Change runs through `attempt close` with no `lint` manifest and `change status` names lint as not used
-- [ ] 7.2 `run-auto` stage probe with lint declared none archives the Change (`pnpm eval stages --probe`, case `run-auto`)
-- [ ] 7.3 `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`; `openspec validate v3-t49-tool-group-states --strict`
+- [x] 7.2 `run-auto` stage probe with lint declared none archives the Change (`pnpm eval stages --probe`, case `run-auto`)
+- [x] 7.3 `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`; `openspec validate v3-t49-tool-group-states --strict`
