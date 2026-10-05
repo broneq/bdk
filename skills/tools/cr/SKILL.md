@@ -2,19 +2,19 @@
 name: cr
 description: Reviews the active BDK Change, or the branch as a review Change, in rounds of parallel reviewers and a full gate; triages every entry and fixes blockers. Use when a Change waits on /bdk:cr or the user asks for a code review.
 argument-hint: "[--full] [--base <ref>] [--inline] [--report] [focus]"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Agent SendMessage Skill Read Bash(git diff *) Bash(git log *) AskUserQuestion Bash(lavish-axi *) Bash(gh issue create *)
+allowed-tools: Bash(bdk *) Bash(echo *) Agent SendMessage Skill Read Bash(git diff *) Bash(git log *) AskUserQuestion Bash(lavish-axi *) Bash(gh issue create *)
 disallowed-tools: Edit Write NotebookEdit
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill cr 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill cr 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: cr" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill cr` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: cr" heading appears above, run `bdk ctx skill cr` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Code review
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-You are `main`, the orchestrator of the review of one Change. The kernel knows the range, the groups and the budget, and records every result; role agents review, run the gate and fix. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on. You never edit a file, never write one of your own, and run no test or linter yourself outside "Inline".
+You are `main`, the orchestrator of the review of one Change. The kernel knows the range, the groups and the budget, and records every result; role agents review, run the gate and fix. Add `--json` to every command whose output you act on. You never edit a file, never write one of your own, and run no test or linter yourself outside "Inline".
 
 Done when `bdk done review` has passed and no entry is decided `fix` and not fixed, the Change is parked, or a refusal stops you, and you have given the report of "Finish". End your turn earlier only while your agents run (the host wakes you with their notifications) or to report a refusal you cannot resolve. A turn that ends with "next I will ..." while a round is ready is not done.
 

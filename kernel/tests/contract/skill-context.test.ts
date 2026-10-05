@@ -54,9 +54,9 @@ function partFiles(part: Part): (string | undefined)[] {
 }
 
 const WRAPPER = (name: string) =>
-  `!\`node "\${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill ${name} 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."\``;
+  `!\`bdk ctx skill ${name} 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."\``;
 const FALLBACK = (name: string) =>
-  `If no "BDK context: ${name}" heading appears above, run \`node "\${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill ${name}\` first and apply its output; on a \`BDK STOP\` line, stop and report it.`;
+  `If no "BDK context: ${name}" heading appears above, run \`bdk ctx skill ${name}\` first and apply its output; on a \`BDK STOP\` line, stop and report it.`;
 const skill = (name: string, ...body: string[]): SkillFile => ({
   name,
   text: `---\nname: ${name}\ndescription: x\n---\n\n${body.join("\n\n")}\n`,

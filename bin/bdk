@@ -1,0 +1,21 @@
+#!/bin/sh
+# BDK kernel launcher (`kernel-architecture`, Plugin launcher). The host puts
+# the plugin's bin/ on the Bash tool's PATH, so agents and skills run the
+# kernel as `bdk <command>`. Hooks do not get bin/ on PATH and run
+# `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs"` instead. The Node version check
+# stays in the kernel; this script only turns a missing node or bundle into a
+# repair line with exit 5, the exit code of the kernel's runtime refusals.
+case $0 in
+  */*) bdk_bin=${0%/*} ;;
+  *) bdk_bin=. ;;
+esac
+bdk_bundle="$(cd -- "$bdk_bin/.." && pwd)/dist/bdk.mjs"
+if ! command -v node >/dev/null 2>&1; then
+  echo "bdk: kernel unavailable: node is not on PATH; install Node >= 22.13 and run /bdk:setup" >&2
+  exit 5
+fi
+if [ ! -f "$bdk_bundle" ]; then
+  echo "bdk: kernel unavailable: $bdk_bundle is missing; reinstall the BDK plugin" >&2
+  exit 5
+fi
+exec node "$bdk_bundle" "$@"

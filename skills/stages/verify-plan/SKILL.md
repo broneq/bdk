@@ -1,18 +1,18 @@
 ---
 name: verify-plan
 description: Verifies the plan of the active BDK Change against the code and its design on a fresh context and records the verdict. Use when the plan parts are done and the Change waits on plan-verify.
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Read Agent SendMessage
+allowed-tools: Bash(bdk *) Bash(echo *) Read Agent SendMessage
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill verify-plan 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill verify-plan 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: verify-plan" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill verify-plan` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: verify-plan" heading appears above, run `bdk ctx skill verify-plan` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Verify plan
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-The plan of the active Change is checked by one `verifier` that knows only its dispatch package, never this conversation, so it reads every plan part, with the design and the spec deltas, the way the workers will. This skill runs one verifier round in the main thread: it opens the ticket, starts the role, closes the ticket and marks `plan-verify` done when the verdict passes. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+The plan of the active Change is checked by one `verifier` that knows only its dispatch package, never this conversation, so it reads every plan part, with the design and the spec deltas, the way the workers will. This skill runs one verifier round in the main thread: it opens the ticket, starts the role, closes the ticket and marks `plan-verify` done when the verdict passes. Add `--json` to every command whose output you act on.
 
 Done when the ticket is closed and either `plan-verify` is done or the blockers and the kernel's next action are reported.
 

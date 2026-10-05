@@ -16,7 +16,6 @@ import {
 } from "../../../tests/support/repo.ts";
 import { closed, executed, opened, started } from "../../attempt/tests/e2e-support.ts";
 import type { Started } from "../../attempt/tests/e2e-support.ts";
-import { BUNDLE } from "../../../tests/support/run.ts";
 import { fileStore } from "../../shared/store/index.ts";
 
 interface Built {
@@ -59,7 +58,7 @@ describe("bdk dispatch build", () => {
     // A subagent reads the package with Read, which substitutes nothing, and its
     // Bash has no CLAUDE_PLUGIN_ROOT: the package names the bundle by its path.
     expect(text).not.toContain("${CLAUDE_PLUGIN_ROOT}");
-    expect(text).toContain(`node "${BUNDLE}" <command>`);
+    expect(text).not.toContain("bdk.mjs");
     expect(text).toContain(`bdk rules show --ticket ${ticket}`);
     expect(text).toContain(`bdk log ingest --ticket ${ticket}`);
     // The package size of the tiny fixture, recorded for the 12 288-byte budget.

@@ -2,13 +2,13 @@
 name: pr-review
 description: Reviews GitHub PRs from their URLs against their intent and, for a BDK branch, its Change; lets you decide each finding, then posts one templated review per PR. Use when the user asks to review or re-verify a pull request.
 argument-hint: "<pr-url> [<pr-url> ...] [--verify] [--quick] [focus]"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(git *) Bash(gh *) Bash(mktemp *) Bash(lavish-axi *) Skill Read AskUserQuestion
+allowed-tools: Bash(bdk *) Bash(echo *) Bash(git *) Bash(gh *) Bash(mktemp *) Bash(lavish-axi *) Skill Read AskUserQuestion
 disallowed-tools: Edit Write NotebookEdit
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill pr-review 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill pr-review 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: pr-review" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill pr-review` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: pr-review" heading appears above, run `bdk ctx skill pr-review` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # PR review
 

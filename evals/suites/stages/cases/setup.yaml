@@ -1,7 +1,7 @@
 # Cases of /bdk:setup (spec stage-skills, setup requirements). Every case starts
 # from a fresh copy of the pinned fixture (a Vite + TypeScript app with npm
 # scripts and no .bdk/), or from an empty repository with `base: empty`.
-# `prepare` runs in that copy with $BDK set to the plugin copy's kernel bundle;
+# `prepare` runs in that copy with the plugin copy's `bin/` first on PATH;
 # `expect` runs kernel commands there after the session. Setup never leaves
 # tools.test or tools.lint unset (T49), so every case ends with a change new
 # the kernel does not refuse with policy/tools-unset.
@@ -42,7 +42,7 @@
         value.0: script
     # Both tool groups are configured or declared none (T49): change new opens.
     - shell: |-
-        node "$BDK" change new "Check the settings" >/dev/null
+        bdk change new "Check the settings" >/dev/null
 
 # exclusions-declined: the user declines every proposed exclusion (T51,
 # stage-skills "exclusion declined"). The answer matches no option label, so
@@ -68,7 +68,7 @@
     - reply: markdownlint
     # Both tool groups are configured or declared none (T49): change new opens.
     - shell: |-
-        node "$BDK" change new "Check the settings" >/dev/null
+        bdk change new "Check the settings" >/dev/null
 
 - id: invalid-settings
   command: /bdk:setup
@@ -86,7 +86,7 @@
         value.0.tier: fast
     # Both tool groups are configured or declared none (T49): change new opens.
     - shell: |-
-        node "$BDK" change new "Check the settings" >/dev/null
+        bdk change new "Check the settings" >/dev/null
 
 - id: v2-project
   command: /bdk:setup
@@ -107,7 +107,7 @@
         value.0.command: npm test
     # Both tool groups are configured or declared none (T49): change new opens.
     - shell: |-
-        node "$BDK" change new "Check the settings" >/dev/null
+        bdk change new "Check the settings" >/dev/null
 
 # no-linter: a Node project with a test script and no linter, type checker or
 # formatter. The user answers that the project runs without a linter, so setup
@@ -137,7 +137,7 @@
       match:
         value.0.command: node --test|npm test
     - shell: |-
-        node "$BDK" change new "Add subtraction" >/dev/null
+        bdk change new "Add subtraction" >/dev/null
 
 # no-tests: a Node project with eslint and no test runner. The user answers
 # that the project runs without tests, so setup declares tools.test none, and
@@ -167,4 +167,4 @@
       match:
         value.0.command: eslint|npm run lint
     - shell: |-
-        node "$BDK" change new "Add subtraction" >/dev/null && node "$BDK" change status | grep -q "warning: no test tool"
+        bdk change new "Add subtraction" >/dev/null && bdk change status | grep -q "warning: no test tool"

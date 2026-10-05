@@ -9,15 +9,15 @@
   command: /bdk:verify-plan
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
+      bdk change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
     - |-
       D=$(ls -d .bdk/changes/20*) && mkdir -p "$D/plan/parts" && cat > "$D/plan/parts/01-fallback.md" <<'MD'
       ---
@@ -53,7 +53,7 @@
       - a parseable ISO value still returns the text of the module's formatter for that date
       MD
     - |-
-      node "$BDK" done plan >/dev/null
+      bdk done plan >/dev/null
   expect:
     - run: explain plan-verify
       json:
@@ -66,15 +66,15 @@
   command: /bdk:verify-plan
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "Relative times show 'in 0 seconds' for the current moment instead of 'now'" --kind bug >/dev/null
+      bdk change new "Relative times show 'in 0 seconds' for the current moment instead of 'now'" --kind bug >/dev/null
     - |-
       D=$(ls -d .bdk/changes/20*) && mkdir -p "$D/plan/parts" && cat > "$D/plan/parts/01-now.md" <<'MD'
       ---
@@ -106,7 +106,7 @@
       - a value 2 s before `now` returns `'2 seconds ago'`
       MD
     - |-
-      node "$BDK" done plan >/dev/null
+      bdk done plan >/dev/null
   expect:
     - run: log list --type blocker
       json:
@@ -125,7 +125,7 @@
   seed: shared-lockfile-unisolated
   prepare:
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -143,15 +143,15 @@
   command: /bdk:verify-plan
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
+      bdk change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
     # The part is written and not marked done.
     - |-
       D=$(ls -d .bdk/changes/20*) && mkdir -p "$D/plan/parts" && cat > "$D/plan/parts/01-fallback.md" <<'MD'

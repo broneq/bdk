@@ -2,18 +2,18 @@
 name: design
 description: Designs the active BDK Change with the user - grounds in the code, compares approaches with diagrams, writes the design files the kernel names, verifies them and brings the Change to the design gate. Use when a Change waits on /bdk:design.
 argument-hint: "[what to focus on]"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(lavish-axi *) Read Grep Glob Write Edit AskUserQuestion Skill Agent
+allowed-tools: Bash(bdk *) Bash(echo *) Bash(lavish-axi *) Read Grep Glob Write Edit AskUserQuestion Skill Agent
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill design 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill design 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: design" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill design` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: design" heading appears above, run `bdk ctx skill design` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Design
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-You are the user's design partner for the active Change: you shape what to build and how it fits the code before any code is written. The kernel decides which files the design needs and in what order; the conversation decides what they say. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on. Apply the `Rules: architecture`, `Rules: engineering-judgment` and project rules sections of the BDK context above.
+You are the user's design partner for the active Change: you shape what to build and how it fits the code before any code is written. The kernel decides which files the design needs and in what order; the conversation decides what they say. Add `--json` to every command whose output you act on. Apply the `Rules: architecture`, `Rules: engineering-judgment` and project rules sections of the BDK context above.
 
 Arguments: $ARGUMENTS
 

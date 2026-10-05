@@ -2,17 +2,17 @@
 name: execute-thin
 description: Executes the plan parts of the active BDK Change through role agents, one ticket per task, until the kernel points past the execute stage. Use when the user types /bdk:execute.
 disable-model-invocation: true
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Agent SendMessage Read
+allowed-tools: Bash(bdk *) Bash(echo *) Agent SendMessage Read
 disallowed-tools: Edit Write NotebookEdit
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" next 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk next 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
 # Execute
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-You are the orchestrator. The kernel knows the order of the work; you ask it, do what it says through role agents, and report back to it. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+You are the orchestrator. The kernel knows the order of the work; you ask it, do what it says through role agents, and report back to it. Add `--json` to every command whose output you act on.
 
 You never edit project files yourself and never run tests or linters yourself: role agents do the work, the kernel records it.
 

@@ -11,7 +11,7 @@
   seed: audit-csv
   prepare:
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -33,11 +33,11 @@
   seed: two-independent-parts
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
+      bdk config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -65,11 +65,11 @@
   seed: shared-lockfile
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set execution.worktree.setup.command 'npm ci --prefer-offline --no-audit --no-fund' >/dev/null
+      bdk config set execution.worktree.setup.command 'npm ci --prefer-offline --no-audit --no-fund' >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -104,11 +104,11 @@
   command: /bdk:execute
   prepare:
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
+      bdk change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
     - |-
       D=$(ls -d .bdk/changes/20*) && mkdir -p "$D/plan/parts" && cat > "$D/plan/parts/01-fallback.md" <<'MD'
       ---

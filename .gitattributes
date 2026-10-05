@@ -1,2 +1,4 @@
 # Seeded patches apply to the fixture byte for byte; keep their line endings.
 evals/suites/*/patches/*.patch text eol=lf
+# The plugin launcher runs as a bare command; a CRLF shebang line would break it.
+/bin/bdk text eol=lf

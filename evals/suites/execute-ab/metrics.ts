@@ -112,10 +112,18 @@ export interface KernelCalls {
   readonly exit2: number;
 }
 
+/** `bdk` as a command word: at the start or after a shell operator, as the plugin's launcher runs. */
+const BDK_COMMAND = /(?:^|[;&|(`])\s*bdk(?:\s|$)/m;
+
+/** A Bash command that runs the kernel, through the launcher or by the bundle path. */
+function runsKernel(command: string): boolean {
+  return BDK_COMMAND.test(command) || command.includes("dist/bdk.mjs");
+}
+
 /** Kernel calls by the orchestrator and its subagents, with the input errors (3) and refusals (2) among them. */
 export function kernelCalls(toolCalls: readonly ToolCall[]): KernelCalls {
   const exits = toolCalls
-    .filter((call) => call.name === "Bash" && inputField(call, "command").includes("dist/bdk.mjs"))
+    .filter((call) => call.name === "Bash" && runsKernel(inputField(call, "command")))
     .map((call) => kernelExit(textOf(call.output)));
   return {
     calls: exits.length,

@@ -5,9 +5,9 @@
   command: /bdk:change "Add a dark mode toggle to the settings page"
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   answers:
@@ -28,13 +28,13 @@
   command: /bdk:change "Add a dark mode toggle to the settings page"
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "Translate the login page" >/dev/null
+      bdk change new "Translate the login page" >/dev/null
   answers:
     branch: stay|current|keep
   expect:
@@ -49,9 +49,9 @@
   command: /bdk:change "Fix the typo 'teh' in README.md"
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
       perl -0pi -e 's/\bthe\b/teh/' README.md
     - |-

@@ -168,6 +168,15 @@ selected allowed-control && { run_check allowed-control '.' "-" "/bdk-probe:unal
 selected wrapper-old-rule && { run_check wrapper-old-rule '.' "-" "/bdk-probe:wrapper-old-rule" || status=1; }
 selected wrapper && { run_check wrapper '.' "-" "/bdk-probe:wrapper" || status=1; }
 
+# Where the host puts the plugin's bin/ on PATH (T52, bin/bdk): the Bash tool of
+# the main thread and of a subagent, a skill's ! block, and a hook command.
+selected plugin-bin-bash && { run_check plugin-bin-bash 'PROBE-BIN main' "Bash(probe-bin *)" \
+  "Use the Bash tool to run exactly: probe-bin main. Then reply with its output verbatim." || status=1; }
+selected plugin-bin-subagent && { run_check plugin-bin-subagent 'PROBE-BIN sub' "Task Agent Bash(probe-bin *)" \
+  "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner in the foreground and this prompt: Use the Bash tool to run exactly: probe-bin sub. Reply with its one output line and nothing else. Reply with the subagent's answer verbatim." || status=1; }
+selected plugin-bin-skill && { run_check plugin-bin-skill 'PROBE-BIN skill|BDK STOP|requires approval' "-" "/bdk-probe:plugin-bin" || status=1; }
+selected plugin-bin-hook && { run_check plugin-bin-hook '"hook_event_name":"BinPath"' "-" "Reply OK." || status=1; }
+
 selected fork-agent && { run_check fork-agent 'role-fork-ran|ROLE-FORK' "Skill Bash(echo *) Bash(sleep *)" \
   "Call the Skill tool with skill bdk-probe:role-fork. Do not use any other tool. Reply with exactly what it returned." || status=1; }
 selected fork-concurrency && { run_check fork-concurrency '.' "Skill Bash(echo *) Bash(sleep *)" \

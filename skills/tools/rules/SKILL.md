@@ -2,18 +2,18 @@
 name: rules
 description: Audits the project's lessons into rules, captures one lesson, or checks the rule files, always through the bdk rules commands. Use when the user asks to add, capture or clean up rules, or to turn repeated findings into a rule.
 argument-hint: "[audit | capture <lesson> | check]"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Read Grep Glob Edit AskUserQuestion Bash(lavish-axi *)
+allowed-tools: Bash(bdk *) Bash(echo *) Read Grep Glob Edit AskUserQuestion Bash(lavish-axi *)
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill rules 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill rules 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: rules" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill rules` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: rules" heading appears above, run `bdk ctx skill rules` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Rules
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-The project's rules are the files under `.bdk/rules/`, read with the rule pack of the plugin, selected per package by `applies` and cited by id. The kernel owns them: you create a rule only with `bdk rules accept`, and the generated `.claude/rules/bdk-generated*.md` files come from `bdk rules export --claude`; never write either by hand. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+The project's rules are the files under `.bdk/rules/`, read with the rule pack of the plugin, selected per package by `applies` and cited by id. The kernel owns them: you create a rule only with `bdk rules accept`, and the generated `.claude/rules/bdk-generated*.md` files come from `bdk rules export --claude`; never write either by hand. Add `--json` to every command whose output you act on.
 
 The first argument picks the mode: `audit` (also with no argument), `capture <lesson>` or `check`. Done when the mode's report is given.
 

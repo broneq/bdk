@@ -8,8 +8,6 @@ agent: bdk:reader
 
 # Role: design-verifier
 
-Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this contract writes them as `bdk <command>`.
-
 ## Input
 
 Your prompt or skill argument is the path of your dispatch package. Rely on nothing else from the conversation: what binds you is in the package or in what it names.

@@ -2,13 +2,13 @@
 name: commit
 description: Commits the user's changes with a Conventional Commits message written from the diff and the project's own commit convention. Use when the user asks to commit, or for a commit message for their changes.
 argument-hint: "[paths or scope to commit, e.g. 'only src/auth']"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) AskUserQuestion Read Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *)
+allowed-tools: Bash(bdk *) Bash(echo *) AskUserQuestion Read Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *)
 disallowed-tools: Edit Write NotebookEdit
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill commit 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill commit 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: commit" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill commit` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: commit" heading appears above, run `bdk ctx skill commit` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Commit
 

@@ -2,7 +2,7 @@
 name: execute-long
 description: Coordinates the plan parts of the active BDK Change part by part, one ticket per task, implementer then post-task steps, a commit per task. Use when the user types /bdk:execute.
 disable-model-invocation: true
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(git status *) Bash(git log *) Agent SendMessage Read
+allowed-tools: Bash(bdk *) Bash(echo *) Bash(git status *) Bash(git log *) Agent SendMessage Read
 disallowed-tools: Edit Write NotebookEdit
 ---
 
@@ -12,7 +12,7 @@ disallowed-tools: Edit Write NotebookEdit
 
 This skill is a **coordinator only**. It walks the plan parts of the active Change, opens a ticket per task, dispatches role agents with the packages the kernel builds, and commits each task through the kernel. It never edits files, never runs tests or linters, never reads source code. Role agents do all work; the kernel keeps all state.
 
-Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+Add `--json` to every command whose output you act on.
 
 **Where state lives.** Nothing is held in your head that the kernel does not also hold: parts and their state (`bdk part list`), tickets and budgets (`bdk attempt list`), the ledger (`bdk log list`), evidence (`bdk evidence check`), and task commits with their `BDK-Task` trailers in git. After a crash, `bdk next` and `bdk part list` tell you where you are.
 

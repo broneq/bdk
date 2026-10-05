@@ -1,19 +1,19 @@
 ---
 name: doctor
 description: Diagnoses the BDK installation of this project with bdk doctor and walks the user through each repair. Use when BDK misbehaves, a kernel command fails, or after an upgrade.
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) AskUserQuestion Skill
+allowed-tools: Bash(bdk *) Bash(echo *) AskUserQuestion Skill
 disable-model-invocation: true
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill doctor 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill doctor 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: doctor" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill doctor` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: doctor" heading appears above, run `bdk ctx skill doctor` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Doctor
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-Bring the project's BDK installation to a clean `bdk doctor` report, or to a list of what is left and why. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Done when the last `bdk doctor --json` report is shown to the user with every remaining finding and its repair.
+Bring the project's BDK installation to a clean `bdk doctor` report, or to a list of what is left and why. Done when the last `bdk doctor --json` report is shown to the user with every remaining finding and its repair.
 
 When the kernel itself does not start (a `BDK STOP` line above), the context lines already name the repair: report it and stop.
 

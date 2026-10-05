@@ -1,19 +1,19 @@
 ---
 name: close
 description: Closes the reviewed BDK Change - merges its spec deltas, archives it in one commit, regenerates drifted rule files and reports the PR summary. Use when a Change waits on /bdk:close after review.
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(git log -1 --oneline) Read
+allowed-tools: Bash(bdk *) Bash(echo *) Bash(git log -1 --oneline) Read
 disallowed-tools: Edit Write NotebookEdit
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill close 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill close 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: close" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill close` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: close" heading appears above, run `bdk ctx skill close` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Close
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-Closing ends a Change: the kernel merges its spec deltas into the living specs, routes its lessons, archives it and commits the archive. The kernel does all of it in one command; this skill checks that the close can go through, keeps the rule files current and hands the user the PR summary. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+Closing ends a Change: the kernel merges its spec deltas into the living specs, routes its lessons, archives it and commits the archive. The kernel does all of it in one command; this skill checks that the close can go through, keeps the rule files current and hands the user the PR summary. Add `--json` to every command whose output you act on.
 
 Done when `bdk change close` has archived the Change, or a refusal you cannot resolve is reported, and you have given the report of "Finish". Ask the user nothing: the typed `/bdk:close`, or the run that passed `gate:review`, is the consent. You never edit a file, and you propose no rule: the lessons stay in the archived ledger.
 

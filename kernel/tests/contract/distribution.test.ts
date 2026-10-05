@@ -71,3 +71,19 @@ describe("marketplace entry", () => {
     expect(entry?.source).toEqual({ source: "github", repo: "broneq/bdk", ref: "release" });
   });
 });
+
+// `kernel-architecture`, Plugin launcher: the host runs `bin/bdk` as a bare
+// command, so it must stay executable and keep its LF shebang on Windows checkouts.
+describe("plugin launcher", () => {
+  it("is tracked with the executable bit", () => {
+    expect(git("ls-files", "-s", "--", "bin/bdk")).toMatch(/^100755 /);
+  });
+
+  it("keeps LF line endings in every checkout", () => {
+    expect(git("check-attr", "eol", "--", "bin/bdk")).toBe("bin/bdk: eol: lf");
+  });
+
+  it("is the only file in bin/", () => {
+    expect(git("ls-files", "--", "bin")).toBe("bin/bdk");
+  });
+});
