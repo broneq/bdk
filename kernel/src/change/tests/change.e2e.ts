@@ -88,6 +88,30 @@ describe("bdk change new", () => {
     expect(git(root, "status", "--porcelain", "--ignored", ".bdk/.machine")).toContain("!!");
   });
 
+  it("acceptance: a local override disabling escalation is in the Change's list [EC-4]", () => {
+    const root = repository();
+    fileStore().write(
+      join(root, ".bdk/settings.local.yaml"),
+      "policy:\n  escalation:\n    enabled: false\n",
+    );
+    const result = answered(
+      bdk(["change", "new", INTENT, "--json"], root),
+      "output/change-new.json",
+    );
+    // The fixture's global layer sets the tool groups; the local file adds the escalation key.
+    expect(result.overriddenKeys).toContain("policy.escalation.enabled");
+    const id = String(result.change);
+    expect(read(root, `.bdk/changes/${id}/change.md`)).toMatch(
+      /overridden:\n(?: {2}- .*\n)* {2}- policy\.escalation\.enabled\n/,
+    );
+    expect(
+      answered(bdk(["change", "status", "--json"], root), "output/change-status.json"),
+    ).toMatchObject({ overriddenKeys: result.overriddenKeys });
+    expect(bdk(["change", "status"], root).stdout).toMatch(
+      /^overridden by global or local: .*policy\.escalation\.enabled/m,
+    );
+  });
+
   it("exit 2 policy/change-exists: the branch already has an active Change", () => {
     const { root, id } = opened();
     const why = refused(
