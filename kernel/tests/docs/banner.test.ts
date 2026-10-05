@@ -21,6 +21,7 @@ const V3_PAGES = [
   "workflows/code-review.md", // T42
   "workflows/debugging.md", // T42
   "concepts/worktree-parts.md", // T45
+  "workflows/diagnostics.md", // T47
 ];
 
 const pages = sitePages().filter(

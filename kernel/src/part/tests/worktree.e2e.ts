@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSyn
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { answered, bdk, git, refused, repository } from "../../../tests/support/repo.ts";
+import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
 import { fileStore } from "../../shared/store/index.ts";
 
 export interface Opened {
@@ -130,6 +130,10 @@ describe("bdk part start of a worktree part", () => {
     expect(added.code, added.stdout).toBe(0);
     expect(readdirNames(join(change.dir, "log"))).toHaveLength(before.length + 1);
     expect(git(workdir, "status", "--porcelain")).toBe("");
+    // The run journal goes to the home checkout too (`kernel-state`, Run journal).
+    const journal = read(change.root, ".bdk/.machine/telemetry/journal.jsonl").trim().split("\n");
+    expect(JSON.parse(journal.at(-1) ?? "{}")).toMatchObject({ command: "log-add", exit: 0 });
+    expect(existsSync(join(workdir, ".bdk/.machine/telemetry/journal.jsonl"))).toBe(false);
   });
 
   it("exit 5 runtime/worktree-setup-failed: no worktree, branch or entry is left", () => {

@@ -1,8 +1,9 @@
 // The stages suite's run hooks (design D-8 of v3-t41-setup-change). Before a
 // run: the case's preparation in the fresh working copy, and the project
 // settings that answer `AskUserQuestion`. After it: the case's expectations
-// against the kernel state the session left, plus turns, wall time and the
-// number of questions asked and of kernel refusals met.
+// against the kernel state the session left, plus turns, wall time, the
+// number of questions asked, and the kernel refusals met from the run's
+// `bdk diagnostics report` (T47).
 import { execFileSync, spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -14,7 +15,7 @@ import type { EvalResult, Measurement, RunContext, SuiteHooks } from "../../harn
 import { answerHookSettings } from "./answer.ts";
 import type { StageCase } from "./cases.ts";
 import { checkExpectations } from "./checks.ts";
-import { countRefusals, refusalMetrics } from "./refusals.ts";
+import { countRefusals, refusalMetrics, reportRefusals } from "./refusals.ts";
 import { runSeed } from "./seeds.ts";
 import type { CheckResult, KernelCall, ShellCall } from "./checks.ts";
 
@@ -113,15 +114,26 @@ function settingsOf(context: RunContext): StageCellSettings {
   return context.cell.settings as unknown as StageCellSettings;
 }
 
-export function measure(result: EvalResult, checks: CheckResult): Measurement {
+/**
+ * The run's metrics. `journal` is the refusals per rule of the run's report;
+ * without it the transcript count stands in and the row is marked.
+ */
+export function measure(
+  result: EvalResult,
+  checks: CheckResult,
+  journal?: Readonly<Record<string, number>>,
+): Measurement {
   const calls = result.response?.metadata?.toolCalls ?? [];
+  const transcript = countRefusals(calls);
   return {
     metrics: {
       expect_pass: checks.pass ? 1 : 0,
       questions: calls.filter((call) => call.name === "AskUserQuestion").length,
       turns: result.response?.metadata?.numTurns ?? null,
       wall_s: result.latencyMs === undefined ? null : result.latencyMs / 1000,
-      ...refusalMetrics(countRefusals(calls)),
+      ...refusalMetrics(journal ?? transcript),
+      "refusals-transcript": Object.values(transcript).reduce((sum, count) => sum + count, 0),
+      ...(journal === undefined ? { "journal-missing": 1 } : {}),
     },
     extraCost: 0,
     templateHashes: [],
@@ -137,15 +149,20 @@ export const hooks: SuiteHooks = {
     if (context.cell.workDir === null) throw new Error("a stages run needs a working copy");
     const stage = caseOf(context);
     const output = result.response?.output;
+    const kernel = kernelIn(context.cell.workDir, settingsOf(context));
     const checks = checkExpectations(
       stage.expect,
-      kernelIn(context.cell.workDir, settingsOf(context)),
+      kernel,
       typeof output === "string" ? output : JSON.stringify(output ?? ""),
       shellIn(context.cell.workDir, settingsOf(context)),
     );
     const dir = rawDirOf(context);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "checks.json"), `${JSON.stringify(checks, null, 2)}\n`);
-    return Promise.resolve(measure(result, checks));
+    const session = result.response?.sessionId;
+    const report = kernel(
+      session === undefined ? "diagnostics report" : `diagnostics report --session ${session}`,
+    );
+    return Promise.resolve(measure(result, checks, reportRefusals(report)));
   },
 };

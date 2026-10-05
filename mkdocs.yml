@@ -58,6 +58,7 @@ nav:
       - Code review: workflows/code-review.md
       - Docs and decisions: workflows/docs-and-decisions.md
       - Rules hygiene: workflows/rules-hygiene.md
+      - Diagnostics: workflows/diagnostics.md
   - Concepts:
       - Shared foundation: concepts/shared-foundation.md
       - Verification scoping: concepts/verification-scoping.md

@@ -253,6 +253,7 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 | `policy/rule-format`            | 2    | `rules check`, `rules accept`, `rules import`, `rules export`                                                                                                 | A rule lacks its `[PREFIX-n]`, or a `knowledge` rule with a fact lacks `source` / `verified` (T5).                                                                                                                                                           |
 | `policy/generated-drift`        | 2    | `export agents`, `rules export`                                                                                                                               | A `--check` run (`export agents`, `rules export`) found a committed generated file that differs from the generator output, or one that is missing; `why` names the files.                                                                                    |
 | `policy/duplicate-rule-id`      | 2    | `rules check`, `rules accept`, `rules import`                                                                                                                 | Two rules carry the same id, typically after a parallel close (V1-6).                                                                                                                                                                                        |
+| `policy/project-code`           | 2    | `diagnostics write`                                                                                                                                           | The `## For a BDK issue` section of an analysis holds a fenced code block, a code span outside the allowed kinds, or a line equal to a line of a tracked file; `why` names the section line and the check (T47-D9).                                          |
 | `guard/subagent-git`            | 2    | `hooks pre-tool`                                                                                                                                              | A subagent ran a destructive or history-writing git command (T3).                                                                                                                                                                                            |
 | `guard/subagent-kernel-command` | 2    | `hooks pre-tool`                                                                                                                                              | A subagent invoked an `orchestrator` or `hook` class command (`kernel-cli`, Availability classes), other than a lead's own verbs.                                                                                                                            |
 | `guard/hooks-from-bash`         | 2    | `hooks pre-tool`                                                                                                                                              | Any thread invoked `bdk.mjs hooks` through Bash (T1 defence in depth).                                                                                                                                                                                       |
@@ -324,6 +325,11 @@ There is no second error shape. Input errors, corrupted state and missing runtim
 
 - **WHEN** the coverage test reads the declared refusals of `change new` and `part start`
 - **THEN** `policy/tools-unset` is in the catalogue with exit 2 and `Emitted by` naming both
+
+#### Scenario: diagnostics write in the catalogue
+
+- **WHEN** the coverage test reads the declared refusals of `diagnostics write`
+- **THEN** `policy/project-code` is in the catalogue with exit 2 and `Emitted by` naming `diagnostics write`
 
 ### Requirement: Conventions
 
@@ -433,3 +439,29 @@ A group is kebab-case, at most 32 characters, and exists only on a ticket of loo
 
 - **WHEN** `bdk dispatch show A-r1v2w3x4@P_01` runs
 - **THEN** the exit code is 3 and the error object carries `rule: input/invalid-argument`
+
+### Requirement: Run journal
+
+Every kernel command SHALL append one `command` line to the run journal (`kernel-state`, Run journal) after it decides its outcome, in every mode, and a failure to write the line SHALL NOT change the command's output or exit code.
+
+The line holds: `v` (1), `kind: command`, `at` (the start time, ISO 8601 UTC), `command` (the record id from the index, or `unknown` for an unresolved argv), `args` (the arguments after the verb, each cut to 200 characters), `exit`, `rule` (the refusal rule, `kernel/crash` when the handler threw, or `null`), `ticket` (the `--ticket` flag or a ticket positional, or `null`), `change` (the active Change id when the record is Change-scoped and resolved, else `null`) and `ms` (wall time). A `--help` call and a call outside a git work tree write no line. Hook-mode commands write a `command` line only when they refuse or block; their other journal lines are the hooks' own (`kernel-cli/hooks`, Run journal and verbose lines). The kernel writes nothing else into the journal and never a transcript's content.
+
+#### Scenario: refusal journaled
+
+- **WHEN** `bdk attempt close A-k2m4 ok --json` refuses with `policy/missing-evidence`
+- **THEN** the journal's last line has `kind: command`, `command: attempt-close`, `exit: 2`, `rule: policy/missing-evidence`, `ticket: A-k2m4` and the active Change id
+
+#### Scenario: success journaled
+
+- **WHEN** `bdk part list --json` exits 0
+- **THEN** the journal's last line has `command: part-list`, `exit: 0` and `rule: null`
+
+#### Scenario: journal write fails
+
+- **WHEN** `.bdk/.machine/telemetry/` is not writable and `bdk next --json` runs
+- **THEN** its stdout and exit code are the same as with a writable journal
+
+#### Scenario: allowed hook call not journaled
+
+- **WHEN** `bdk hooks pre-tool` allows a tool call
+- **THEN** no `command` line is appended

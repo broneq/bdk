@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { ResultRow } from "../../harness/results.ts";
-import { ACCEPTANCE, acceptanceFailures, countRefusals, refusalMetrics } from "./refusals.ts";
+import {
+  ACCEPTANCE,
+  acceptanceFailures,
+  countRefusals,
+  refusalMetrics,
+  reportRefusals,
+} from "./refusals.ts";
 
 const TEXT = (rule: string) => `Exit code 2\nrefused: ${rule}\nwhy: x\ninstead: y\ninstead: z`;
 const JSON_REFUSAL = (rule: string) =>
@@ -87,5 +93,23 @@ describe("acceptanceFailures", () => {
 
   it("ignores cases of other stages", () => {
     expect(acceptanceFailures([row("setup/fresh-project", { refusals: 99 })])).toEqual([]);
+  });
+});
+
+describe("reportRefusals", () => {
+  it("takes the counts per rule of a stubbed bdk diagnostics report", () => {
+    const report = {
+      code: 0,
+      json: { refusals: { total: 3, byRule: { "policy/missing-evidence": 3 }, byRole: {} } },
+    };
+    expect(reportRefusals(report)).toEqual({ "policy/missing-evidence": 3 });
+  });
+
+  it("gives undefined for a refused report or a shape it does not know", () => {
+    expect(reportRefusals({ code: 3, json: { refused: true, rule: "input/not-found" } })).toBe(
+      undefined,
+    );
+    expect(reportRefusals({ code: 0, json: { refusals: { byRule: { x: "3" } } } })).toBe(undefined);
+    expect(reportRefusals({ code: 0, json: undefined })).toBe(undefined);
   });
 });

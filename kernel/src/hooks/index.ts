@@ -12,13 +12,13 @@ import { promptExpansionCommand } from "./commands/prompt-expansion.ts";
 import { sessionEndCommand } from "./commands/session-end.ts";
 import { sessionStartCommand } from "./commands/session-start.ts";
 import { skillExistsCommand } from "./commands/skill-exists.ts";
-import { continuationModule, messageModule, scoutModule } from "./config.ts";
+import { continuationModule, messageModule, scoutModule, verboseModule } from "./config.ts";
 import type { HooksDeps } from "./use-cases/input.ts";
 
 export type { HooksDeps } from "./use-cases/input.ts";
 
 export const hooksConfig = {
-  modules: [messageModule, continuationModule, scoutModule],
+  modules: [messageModule, continuationModule, scoutModule, verboseModule],
   prompts: [],
 };
 

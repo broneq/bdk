@@ -43,6 +43,7 @@ export const SKILL_CONTEXT: Readonly<Record<string, readonly Part[]>> = {
     decision,
   ],
   docs: [],
+  diagnose: [],
   doctor: [],
   execute: [{ kind: "concurrency" }, decision],
   plan: [

@@ -23,6 +23,11 @@ export function appendTelemetry(
   store.append(path, `${JSON.stringify(record)}\n`);
   const size = store.stat(path)?.size ?? 0;
   if (size < limit) return;
+  halveTelemetry(store, path);
+}
+
+/** Keeps only the newest half of the file's lines, replacing it in one step. */
+export function halveTelemetry(store: Store, path: string): void {
   const lines = (store.read(path) ?? "").split("\n").filter((line) => line !== "");
   store.write(path, `${lines.slice(Math.ceil(lines.length / 2)).join("\n")}\n`);
 }

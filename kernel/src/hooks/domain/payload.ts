@@ -22,11 +22,18 @@ export interface ExpansionPayload {
   readonly prompt?: string;
 }
 
-/** A `PostToolUse` payload of the tools the agent hooks read (HOST-FACTS `agent-link`, `stop-on-taskstop`). */
+/**
+ * A `PostToolUse` or `PostToolUseFailure` payload (HOST-FACTS `agent-link`,
+ * `stop-on-taskstop`, `post-tool-failure`): a failure has `error` and no
+ * `tool_response`.
+ */
 export interface PostToolPayload {
   readonly tool: string;
   readonly session?: string;
   readonly agentId?: string;
+  readonly agentType?: string;
+  readonly failed: boolean;
+  readonly error?: string;
   readonly input: Readonly<Record<string, unknown>>;
   readonly response: Readonly<Record<string, unknown>>;
 }
@@ -39,6 +46,16 @@ export interface AgentEventPayload {
   readonly stopHookActive: boolean;
   /** `background_tasks` entries with `status: running`, by id. */
   readonly runningTasks: readonly string[];
+  /** `SubagentStop`'s `agent_transcript_path`. */
+  readonly agentTranscript?: string;
+}
+
+/** `SessionStart`: what the run journal's `session` line takes from it. */
+export interface SessionStartPayload {
+  readonly session?: string;
+  readonly transcript?: string;
+  readonly source?: string;
+  readonly host?: string;
 }
 
 export interface SessionEndPayload {
@@ -132,13 +149,34 @@ export function postToolPayload(raw: string): PostToolPayload | undefined {
   if (typeof data === "string") return undefined;
   const tool = text(data.tool_name);
   if (tool === undefined) return undefined;
+  const error = typeof data.error === "string" ? data.error : undefined;
   return {
     tool,
     ...present("session", text(data.session_id)),
     ...present("agentId", text(data.agent_id)),
+    ...present("agentType", text(data.agent_type)),
+    failed: data.hook_event_name === "PostToolUseFailure",
+    ...present("error", error),
     input: record(data.tool_input),
     response: record(data.tool_response),
   };
+}
+
+/** A `SessionStart` payload; empty when the body is not a JSON object. */
+export function sessionStartPayload(raw: string): SessionStartPayload {
+  const data = object(raw);
+  if (typeof data === "string") return {};
+  return {
+    ...present("session", text(data.session_id)),
+    ...present("transcript", text(data.transcript_path)),
+    ...present("source", text(data.source)),
+    ...present("host", text(data.version)),
+  };
+}
+
+/** The number of questions of an `AskUserQuestion` input; 0 without a list. */
+export function questionCount(input: Readonly<Record<string, unknown>>): number {
+  return Array.isArray(input.questions) ? input.questions.length : 0;
 }
 
 /** An agent lifecycle payload; undefined when the body is not a JSON object. */
@@ -156,5 +194,6 @@ export function agentEventPayload(raw: string): AgentEventPayload | undefined {
       .filter((task) => task.status === "running")
       .map((task) => text(task.id))
       .filter((id): id is string => id !== undefined),
+    ...present("agentTranscript", text(data.agent_transcript_path)),
   };
 }

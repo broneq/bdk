@@ -228,6 +228,18 @@ One skill turns lessons into project rules through the kernel - see [Rules hygie
 
 **Related skills:** `/bdk:setup` (the repair for a project BDK has not prepared).
 
+## /bdk:diagnose
+
+**Purpose.** Analyze one session from `bdk diagnostics report`, the run journal, the ledger and bounded transcript slices, and store a cited analysis under `.bdk/.machine/diagnostics/`. It sorts each problem by where its fix belongs, records a project problem as a `learning` entry, and ends with a `## For a BDK issue` section the kernel checks for project code. It runs in a separate read-only agent.
+
+**Arguments:** `[session-id]`; without one, the latest session of the active Change, or the latest session.
+
+**Artifact:** `.bdk/.machine/diagnostics/<change>-<session>.md`, never committed.
+
+**When to use.** A run failed, looped or cost more than expected. Only you can start it. See [Diagnostics](../workflows/diagnostics.md).
+
+**Related skills:** `/bdk:doctor` (for a broken installation rather than a bad run).
+
 ## /bdk:bdk-cli
 
 **Purpose.** Point the agent at the kernel CLI for Change state, the ledger, rules, evidence and configuration, with `bdk --help` as the only usage reference.

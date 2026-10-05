@@ -55,6 +55,7 @@ export const RULES = [
   "policy/rule-format",
   "policy/generated-drift",
   "policy/duplicate-rule-id",
+  "policy/project-code",
   "guard/subagent-git",
   "guard/subagent-kernel-command",
   "guard/hooks-from-bash",

@@ -1,6 +1,6 @@
 // The settings `hooks` reads (`kernel-settings`, Keys of agent orchestration;
-// T41-D4, D5, D7): the message guard, the continuation check and the scout
-// limit of a worker.
+// T41-D4, D5, D7, and Keys of run diagnostics; T47-D4): the message guard, the
+// continuation check, the scout limit of a worker and the verbose log.
 import * as z from "zod";
 
 import { defineConfigModule } from "../shared/config/index.ts";
@@ -45,4 +45,13 @@ export const scoutModule = defineConfigModule({
       }),
     })
     .prefault({}),
+});
+
+export const verboseModule = defineConfigModule({
+  key: "diagnostics.verbose",
+  consumer: "hooks",
+  owner: "T47",
+  description: "Write the verbose log of each session under .bdk/.machine/logs/.",
+  schema: z.boolean().default(false),
+  appliesFrom: "next-session",
 });

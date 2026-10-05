@@ -48,6 +48,24 @@ describe("stagesReport", () => {
     expect(lines).toContain("- execute/flat run 1: policy/missing-citation refused 2 time(s)");
   });
 
+  it("lists the runs whose journal and transcript refusal totals differ", () => {
+    const metrics = (journal: number, transcript: number) => ({
+      expect_pass: 1,
+      refusals: journal,
+      "refusals-transcript": transcript,
+    });
+    const lines = stagesReport([
+      { ...row("execute/a", 1, 1), metrics: metrics(4, 3) },
+      { ...row("execute/a", 2, 1), metrics: metrics(2, 2) },
+      { ...row("execute/b", 1, 1), metrics: { ...metrics(3, 3), "journal-missing": 1 } },
+    ]);
+    const at = lines.indexOf("Refusal totals differ (journal, transcript):");
+    expect(at).toBeGreaterThan(0);
+    expect(lines.slice(at + 2)).toContain("- execute/a run 1: journal 4, transcript 3");
+    expect(lines.join("\n")).not.toContain("execute/a run 2: journal");
+    expect(lines).toContain("Runs without a journal report (transcript counts): execute/b run 1.");
+  });
+
   it("states an empty series", () => {
     const lines = stagesReport([]);
     expect(lines).toContain("Series: none. A case passes a run when every expectation holds.");

@@ -99,6 +99,13 @@ function renderType(schema: z.ZodType): string {
     if (bounded(minValue)) return `integer >= ${minValue}`;
     return "integer";
   }
+  if (inner instanceof z.ZodNumber) {
+    const { minValue, maxValue } = inner;
+    const finite = (value: number | null): value is number =>
+      value !== null && Number.isFinite(value);
+    if (finite(minValue) && finite(maxValue)) return `number ${minValue} to ${maxValue}`;
+    return "number";
+  }
   if (inner instanceof z.ZodEnum)
     return either(inner.options.map((option) => `\`${String(option)}\``));
   if (inner instanceof z.ZodLiteral)

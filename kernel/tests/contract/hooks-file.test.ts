@@ -1,7 +1,8 @@
 // `plugin-tooling`, Settings check at session start, scenario "hooks file",
 // and `kernel-cli/hooks`, Guard hooks file and prefilter: the plugin registers
-// the SessionStart command, the three guard scripts, the three agent hooks
-// and the session-end hook, and no hook command anywhere runs Python. The
+// the SessionStart command, the guard scripts (post-tool.sh for both
+// PostToolUse and PostToolUseFailure), the three agent hooks and the
+// session-end hook, and no hook command anywhere runs Python. The
 // guard scripts fail closed without the kernel, start Node only for a payload
 // a guard denies or the registry records, and write the heartbeat in the shell.
 import { spawnSync } from "node:child_process";
@@ -13,6 +14,7 @@ import {
   readFileSync,
   rmSync,
   symlinkSync,
+  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -54,12 +56,13 @@ describe("hooks/hooks.json", () => {
     expect(commands(hooksFile.hooks.SessionStart ?? [])).toEqual([SESSION_START]);
   });
 
-  it("holds exactly the SessionStart entry and the seven hook entries", () => {
+  it("holds exactly the SessionStart entry and the eight hook entries", () => {
     const hook = (command: string) => [{ hooks: [{ type: "command", command }] }];
     expect(hooksFile.hooks).toStrictEqual({
       SessionStart: hook(SESSION_START),
       PreToolUse: hook(PRE_TOOL),
       PostToolUse: hook(POST_TOOL),
+      PostToolUseFailure: hook(POST_TOOL),
       SubagentStart: hook(agentHook("subagent-start")),
       SubagentStop: hook(agentHook("subagent-stop")),
       Stop: hook(agentHook("stop")),
@@ -292,19 +295,42 @@ describe("guard scripts", () => {
       }
     });
 
-    it("post-tool.sh starts node only for Agent and TaskStop", () => {
+    it("post-tool.sh starts node only for Agent, TaskStop and AskUserQuestion without the verbose marker", () => {
       const project = mkdtempSync(join(tmpdir(), "bdk-post-"));
+      const bin = mkdtempSync(join(tmpdir(), "bdk-bin-"));
       try {
         mkdirSync(join(project, ".bdk"));
-        const payload = (tool: string) =>
-          JSON.stringify({ session_id: "s", hook_event_name: "PostToolUse", tool_name: tool });
+        const payload = (tool: string, event = "PostToolUse") =>
+          JSON.stringify({ session_id: "s", hook_event_name: event, tool_name: tool });
         // The plugin root has no bundle: reaching the kernel blocks, a dropped payload passes.
-        const run = (tool: string) =>
-          guard(POST_TOOL, payload(tool), project, process.env.PATH ?? "", project).status;
-        expect(run("Read")).toBe(0);
+        const run = (tool: string, path = process.env.PATH ?? "") =>
+          guard(POST_TOOL, payload(tool), project, path, project).status;
+        expect(run("Read", withoutNode(bin))).toBe(0);
         expect(run("Bash")).toBe(0);
         expect(run("Agent")).toBe(2);
         expect(run("TaskStop")).toBe(2);
+        expect(run("AskUserQuestion")).toBe(2);
+      } finally {
+        rmSync(project, { recursive: true, force: true });
+        rmSync(bin, { recursive: true, force: true });
+      }
+    });
+
+    it("post-tool.sh hands every payload to the kernel while the verbose marker exists", () => {
+      const project = mkdtempSync(join(tmpdir(), "bdk-post-"));
+      try {
+        mkdirSync(join(project, ".bdk/.machine"), { recursive: true });
+        writeFileSync(join(project, ".bdk/.machine/verbose"), "");
+        for (const event of ["PostToolUse", "PostToolUseFailure"]) {
+          const payload = JSON.stringify({
+            session_id: "s",
+            hook_event_name: event,
+            tool_name: "Read",
+          });
+          const result = guard(POST_TOOL, payload, project, process.env.PATH ?? "", project);
+          expect(result.status).toBe(2);
+          expect(result.stderr).toMatch(/^guard\/kernel-unavailable: .*bdk\.mjs is missing/);
+        }
       } finally {
         rmSync(project, { recursive: true, force: true });
       }

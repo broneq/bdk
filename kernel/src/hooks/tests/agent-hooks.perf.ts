@@ -1,10 +1,11 @@
 // The agent-hook latency budgets of T41 (`kernel-cli/hooks`, Guard latency):
 // the heartbeat the guard scripts write in the shell, the four agent hooks
-// through the built bundle, and the wake-up of `agents wait`. Wall-clock
+// through the built bundle, `post-tool.sh` with the verbose marker of T47,
+// and the wake-up of `agents wait`. Wall-clock
 // timing depends on the machine, so this runs in the `perf` project, which CI
 // does not run: `pnpm build && pnpm test:perf` locally.
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -119,6 +120,17 @@ describe("agent hook latency", () => {
       ),
     };
 
+    // Verbose (T47): with the marker, post-tool.sh hands every call to the kernel for the live line.
+    writeFileSync(join(root, ".bdk/.machine/verbose"), "");
+    const verbose: number[] = [];
+    for (let i = -1; i < RUNS; i++) {
+      const ms = timed("/bin/sh", ["-c", POST_TOOL], root, read("PostToolUse"));
+      if (i >= 0) verbose.push(ms);
+    }
+    expect(readFileSync(join(root, `.bdk/.machine/logs/${SESSION}.live.log`), "utf8")).toContain(
+      `${WORKER} bdk:worker Read /app/src/login.ts ok`,
+    );
+
     // `agents wait`: from the stored report to the return.
     const waiting = bdkAsync(["agents", "wait", LEAD, "--timeout", "30", "--json"], root);
     await new Promise((done) => setTimeout(done, 1500));
@@ -135,11 +147,12 @@ describe("agent hook latency", () => {
     const wake = performance.now() - at;
 
     console.info(
-      `agent hook latency p95: heartbeat pre-tool.sh +${p95(beat.pre).toFixed(1)} ms, post-tool.sh +${p95(beat.post).toFixed(1)} ms (${String(beat.pre.length)} runs each); subagent-start ${kernel.subagentStart.toFixed(1)} ms, subagent-stop ${kernel.subagentStop.toFixed(1)} ms, stop ${kernel.stop.toFixed(1)} ms, post-tool ${kernel.postTool.toFixed(1)} ms (${String(RUNS)} runs each); agents wait returned ${wake.toFixed(0)} ms after the ingest began (ingest took ${(ingested - at).toFixed(0)} ms)`,
+      `agent hook latency p95: heartbeat pre-tool.sh +${p95(beat.pre).toFixed(1)} ms, post-tool.sh +${p95(beat.post).toFixed(1)} ms (${String(beat.pre.length)} runs each); subagent-start ${kernel.subagentStart.toFixed(1)} ms, subagent-stop ${kernel.subagentStop.toFixed(1)} ms, stop ${kernel.stop.toFixed(1)} ms, post-tool ${kernel.postTool.toFixed(1)} ms, post-tool.sh with the verbose marker ${p95(verbose).toFixed(1)} ms (${String(RUNS)} runs each); agents wait returned ${wake.toFixed(0)} ms after the ingest began (ingest took ${(ingested - at).toFixed(0)} ms)`,
     );
     expect(p95(beat.pre)).toBeLessThan(5);
     expect(p95(beat.post)).toBeLessThan(5);
     for (const value of Object.values(kernel)) expect(value).toBeLessThan(150);
+    expect(p95(verbose)).toBeLessThan(150);
     expect(wake).toBeLessThan(1500);
   }, 300_000);
 });

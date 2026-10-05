@@ -135,3 +135,6 @@ export function isBlocking(
   if (entry.type === "blocker" && entry.refs.includes(node)) return true;
   return options.triaged && entry.level === "blocker";
 }
+
+/** Each command argument a run journal line keeps is cut to this many characters (`kernel-state`, Run journal). */
+export const JOURNAL_VALUE_CHARS = 200;

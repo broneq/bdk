@@ -73,6 +73,12 @@ import {
   logDecideOutput,
   logShowOutput,
 } from "../src/log/schema/outputs.ts";
+import {
+  diagnosticsLogOutput,
+  diagnosticsReportOutput,
+  diagnosticsSliceOutput,
+  diagnosticsWriteOutput,
+} from "../src/diagnostics/schema/outputs.ts";
 import { exportAgentsOutput } from "../src/export/schema/agents.ts";
 import { measureOutput } from "../src/measure/schema/measure.ts";
 import { reviewPlanOutput } from "../src/review/schema/plan.ts";
@@ -100,6 +106,7 @@ import { rebuildOutput } from "../src/service/schema/rebuild.ts";
 import { versionOutput } from "../src/service/schema/version.ts";
 import { settingsJsonSchema } from "../src/shared/config/index.ts";
 import { refusalSchema } from "../src/shared/refusal/index.ts";
+import { journalLine } from "../src/shared/store/journal.ts";
 import * as common from "../src/shared/store/state/common.ts";
 import { STATE_KINDS } from "../src/shared/store/state/registry.ts";
 
@@ -179,6 +186,10 @@ const CLI_FILES: readonly (readonly [string, z.ZodType])[] = [
   ["output/spec-delta-check.json", specDeltaCheckOutput],
   ["output/spec-merge.json", specMergeOutput],
   ["output/spec-diff.json", specDiffOutput],
+  ["output/diagnostics-report.json", diagnosticsReportOutput],
+  ["output/diagnostics-log.json", diagnosticsLogOutput],
+  ["output/diagnostics-slice.json", diagnosticsSliceOutput],
+  ["output/diagnostics-write.json", diagnosticsWriteOutput],
 ];
 
 function cliSchemas(): Record<string, Record<string, unknown>> {
@@ -207,6 +218,8 @@ function stateSchemas(): Record<string, Record<string, unknown>> {
   for (const [name, kind] of Object.entries(STATE_KINDS)) {
     files.add(kind.schema, { id: `${name}.json` });
   }
+  // Not a document kind: the lines of `.bdk/.machine/telemetry/journal.jsonl` (`kernel-state`, Run journal).
+  files.add(journalLine, { id: "journal-line.json" });
   const { schemas } = z.toJSONSchema(files, {
     target: "draft-2020-12",
     io: "output",

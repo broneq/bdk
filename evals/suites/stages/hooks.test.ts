@@ -146,7 +146,7 @@ describe("hooks", () => {
     const measured = await hooks.measure(run, {
       response: { output: "done", metadata: { numTurns: 3, toolCalls: [] } },
     });
-    expect(measured.metrics.expect_pass).toBe(1);
+    expect(measured.metrics).toMatchObject({ expect_pass: 1, "journal-missing": 1 });
     const checks = readFileSync(
       join(root ?? "", "raw", "bdk", "change/x.run-1", "checks.json"),
       "utf8",
@@ -213,6 +213,29 @@ describe("measure", () => {
       wall_s: 2,
       refusals: 1,
       "refusal:policy/missing-citation": 1,
+      "refusals-transcript": 1,
+      "journal-missing": 1,
+    });
+  });
+
+  it("takes the refusals from the journal report and keeps the transcript count beside them", () => {
+    const result = {
+      response: {
+        metadata: {
+          toolCalls: [{ name: "Bash", output: "refused: policy/missing-citation\nwhy: x" }],
+        },
+      },
+    };
+    const journal = { "policy/missing-evidence": 3, "input/not-found": 1 };
+    expect(measure(result, { pass: true, failures: [] }, journal).metrics).toEqual({
+      expect_pass: 1,
+      questions: 0,
+      turns: null,
+      wall_s: null,
+      refusals: 4,
+      "refusal:policy/missing-evidence": 3,
+      "refusal:input/not-found": 1,
+      "refusals-transcript": 1,
     });
   });
 });

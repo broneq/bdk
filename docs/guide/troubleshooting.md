@@ -6,6 +6,8 @@
 
 Symptom, cause, and fix for the messages BDK can actually show you, grouped by the hook or script that prints them. Message text is quoted verbatim from source.
 
+When a run went wrong and no message explains why, analyze the session: see [Diagnostics](workflows/diagnostics.md).
+
 !!! note "BDK 3"
 
     The run manifests and the plan stamp below belong to the BDK 2

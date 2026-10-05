@@ -38,6 +38,8 @@ export interface EvalResult {
     readonly output?: unknown;
     readonly error?: string;
     readonly cost?: number;
+    /** The host session of the run, which `bdk diagnostics report --session` takes. */
+    readonly sessionId?: string;
     readonly metadata?: {
       readonly modelUsage?: Record<string, { readonly costUSD?: number }>;
       readonly toolCalls?: readonly ToolCall[];

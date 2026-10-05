@@ -2,8 +2,9 @@
 // T41-D6): the parent's `PostToolUse` on `Agent` links a child with its
 // package (HOST-FACTS `agent-link`), a foreground result or a `TaskStop` ends
 // it, and `SubagentStart` completes the row and hands a BDK agent its
-// identity (HOST-FACTS `start-context`). Outside a BDK project nothing is
-// written; a hook never fails the host's event.
+// identity (HOST-FACTS `start-context`). Both write their run journal lines
+// (T47). Outside a BDK project nothing is written; a hook never fails the
+// host's event.
 import { isAbsolute, join, relative } from "node:path";
 
 import {
@@ -16,10 +17,12 @@ import {
 import { readDocument } from "../../shared/store/index.ts";
 import { dispatchPaths } from "../domain/guards.ts";
 import { agentEventPayload, postToolPayload } from "../domain/payload.ts";
+import type { PostToolPayload } from "../domain/payload.ts";
 import type { PostToolReport, SubagentStartReport } from "../domain/report.ts";
 import { bdkProject, onRegistry, registryExists, settingsOf } from "./agents.ts";
 import type { HookPlace } from "./agents.ts";
 import type { HooksDeps } from "./input.ts";
+import { journalAgentStart, journalPostTool } from "./journal.ts";
 
 export async function postTool(
   deps: HooksDeps,
@@ -27,8 +30,20 @@ export async function postTool(
   raw: string,
 ): Promise<PostToolReport> {
   const payload = postToolPayload(raw);
-  const none = { tool: payload?.tool ?? "", linked: null, ended: null };
   const projectRoot = bdkProject(deps, place);
+  const report = await recordPostTool(deps, projectRoot, payload);
+  if (payload !== undefined && projectRoot !== undefined) {
+    await journalPostTool(deps, projectRoot, payload, report);
+  }
+  return report;
+}
+
+async function recordPostTool(
+  deps: HooksDeps,
+  projectRoot: string | undefined,
+  payload: PostToolPayload | undefined,
+): Promise<PostToolReport> {
+  const none = { tool: payload?.tool ?? "", linked: null, ended: null };
   if (payload === undefined || projectRoot === undefined) return none;
   const at = deps.clock.now();
 
@@ -85,6 +100,17 @@ export async function subagentStart(
       ...(payload.agentType === undefined ? {} : { type: payload.agentType }),
       ...(payload.session === undefined ? {} : { session: payload.session }),
     }),
+  );
+  await journalAgentStart(
+    deps,
+    projectRoot,
+    {
+      id,
+      type: payload.agentType ?? row.type ?? "unknown",
+      parent: row.parent,
+      ticket: row.ticket,
+    },
+    payload.session,
   );
   if (!(payload.agentType ?? "").startsWith("bdk:")) return none;
   const lines = [

@@ -43,8 +43,37 @@ export type ActiveChangeResolver = (where: {
   readonly workTree: string;
 }) => ActiveChange | Refusal;
 
+/**
+ * One `command` or `guard` line of the run journal (`kernel-cli`, Run journal);
+ * `shared/store`'s `journalLine` is its schema.
+ */
+export type CommandJournalLine = {
+  readonly v: 1;
+  readonly at: string;
+  readonly command: string;
+  readonly args: readonly string[];
+  readonly exit: number;
+  readonly rule: string | null;
+  readonly ticket: string | null;
+  readonly change: string | null;
+  readonly ms: number;
+} & ({ readonly kind: "command" } | { readonly kind: "guard"; readonly agent: string });
+
+/** Where the line was produced: the sink finds the project root from it. */
+export interface JournalEntry {
+  readonly cwd: string;
+  readonly workTree: string;
+  readonly line: CommandJournalLine;
+}
+
+/** Appends a journal line; `main.ts` binds `shared/store`'s journal. */
+export type JournalSink = (entry: JournalEntry) => Promise<void>;
+
 export interface RegistryOptions {
   readonly activeChange?: ActiveChangeResolver;
+  readonly journal?: JournalSink;
+  /** Milliseconds since the epoch; tests fix it. */
+  readonly now?: () => number;
 }
 
 interface Invocation {
@@ -69,6 +98,8 @@ interface CommandContext {
   /** Present exactly when the registration has `resolvesChange: "handler"`. */
   readonly resolveChange?: () => ActiveChange | Refusal;
   readonly runtime: Runtime;
+  /** A guard handler names the payload's agent for the journal line of its block. */
+  readonly noteAgent?: (agent: string) => void;
 }
 
 /** A handler's success: `data` is the `--json` object, `text` its rendering. */
@@ -128,6 +159,8 @@ async function run(
   const asJson = argv.includes("--json");
   const help = argv.includes("--help");
   const resolved = resolve(index, argv);
+  const now = options.now ?? Date.now;
+  const start = now();
 
   if (resolved === undefined) {
     const [first] = argv;
@@ -141,7 +174,23 @@ async function run(
       streams.stdout(usage);
       return 0;
     }
-    return writeCommand(streams, unknownCommand(index, argv), asJson);
+    const refusal = unknownCommand(index, argv);
+    const exit = writeCommand(streams, refusal, asJson);
+    await journal(
+      options,
+      invocation,
+      {},
+      {
+        kind: "command",
+        command: "unknown",
+        args: argv,
+        exit,
+        rule: refusal.rule,
+        start,
+        ms: now() - start,
+      },
+    );
+    return exit;
   }
 
   const { record, rest } = resolved;
@@ -150,27 +199,103 @@ async function run(
     return 0;
   }
 
+  const facts: Facts = {};
+  const finish = async (exit: number, rule: string | null): Promise<number> => {
+    // A hook-mode call that neither refuses nor blocks leaves no line: the hooks journal their own events.
+    if (record.mode === "command" || rule !== null) {
+      await journal(options, invocation, facts, {
+        kind: record.mode === "guard" ? "guard" : "command",
+        command: record.id,
+        args: rest,
+        exit,
+        rule,
+        start,
+        ms: now() - start,
+      });
+    }
+    return exit;
+  };
+
   let outcome: Answer | Refusal;
   try {
-    outcome = await dispatch(record, byId.get(record.id), options, rest, asJson, invocation);
+    outcome = await dispatch(record, byId.get(record.id), options, rest, asJson, invocation, facts);
   } catch (error) {
     if (error instanceof KernelRefusal) outcome = error.refusal;
-    else if (record.mode === "command") throw error;
-    else return writeCrash(streams, record, error);
+    else if (record.mode === "command") {
+      await finish(1, CRASH);
+      throw error;
+    } else return finish(writeCrash(streams, record, error), CRASH);
   }
 
   if (isRefusal(outcome)) {
-    if (record.mode === "inject") return writeInject(streams, outcome, asJson);
+    if (record.mode === "inject")
+      return finish(writeInject(streams, outcome, asJson), outcome.rule);
     if (record.mode === "guard") {
-      return writeBlock(streams, outcome, asJson, byId.get(record.id)?.blockOutput);
+      return finish(
+        writeBlock(streams, outcome, asJson, byId.get(record.id)?.blockOutput),
+        outcome.rule,
+      );
     }
-    return writeCommand(streams, outcome, asJson);
+    return finish(writeCommand(streams, outcome, asJson), outcome.rule);
   }
   if (asJson) streams.stdout(json(outcome.data));
   // Only list verbs cap their text at 100 lines, in their handlers, behind their
   // own `--all`; any other text, a `show` body included, is printed whole.
   else if (outcome.text !== "") streams.stdout(ensureNewline(outcome.text));
-  return 0;
+  return finish(0, null);
+}
+
+/** The journal's `rule` of a handler that threw: a kernel bug, not a refusal. */
+const CRASH = "kernel/crash";
+
+/** What dispatch learns on the way, for the journal line. */
+interface Facts {
+  workTree?: string | undefined;
+  change?: string;
+  ticket?: string;
+  agent?: string;
+}
+
+async function journal(
+  options: RegistryOptions,
+  { cwd, runtime }: Invocation,
+  facts: Facts,
+  line: {
+    readonly kind: "command" | "guard";
+    readonly command: string;
+    readonly args: readonly string[];
+    readonly exit: number;
+    readonly rule: string | null;
+    readonly start: number;
+    readonly ms: number;
+  },
+): Promise<void> {
+  if (options.journal === undefined) return;
+  try {
+    // A standalone record (the hooks, `version`) never looked for its work tree; outside one there is no line.
+    const workTree = facts.workTree ?? runtime.workTree(cwd);
+    if (workTree === undefined) return;
+    await options.journal({
+      cwd,
+      workTree,
+      line: {
+        v: 1,
+        at: new Date(line.start).toISOString(),
+        command: line.command,
+        args: line.args,
+        exit: line.exit,
+        rule: line.rule,
+        ticket: facts.ticket ?? null,
+        change: facts.change ?? null,
+        ms: line.ms,
+        ...(line.kind === "guard"
+          ? { kind: "guard", agent: facts.agent ?? "main" }
+          : { kind: "command" }),
+      },
+    });
+  } catch {
+    // The journal is diagnostics: it never changes a command's output or exit code.
+  }
 }
 
 async function dispatch(
@@ -180,16 +305,20 @@ async function dispatch(
   rest: readonly string[],
   asJson: boolean,
   { cwd, runtime }: Invocation,
+  facts: Facts,
 ): Promise<Answer | Refusal> {
+  if (record.standalone !== true) facts.workTree = runtime.workTree(cwd);
   const parsed = parse(record, rest);
   if (isRefusal(parsed)) return parsed;
+  const ticket = parsed.flags["--ticket"] ?? parsed.positionals["<ticket>"];
+  if (typeof ticket === "string") facts.ticket = ticket;
 
   let workTree: string | undefined;
   if (record.standalone !== true) {
     if (registration?.nodeGate !== false && !meetsNodeMinimum(runtime.nodeVersion)) {
       return nodeVersionRefusal(runtime.nodeVersion);
     }
-    workTree = runtime.workTree(cwd);
+    workTree = facts.workTree;
     if (workTree === undefined) {
       return refuse("runtime/not-a-repo", `${cwd} is not inside a git work tree`, [
         "run bdk inside a git repository",
@@ -214,6 +343,7 @@ async function dispatch(
       const resolved = resolver({ cwd, workTree });
       if (isRefusal(resolved)) return resolved;
       change = resolved;
+      facts.change = resolved.id;
     }
   }
   const context: CommandContext = {
@@ -224,6 +354,9 @@ async function dispatch(
     json: asJson,
     cwd,
     runtime,
+    noteAgent: (agent) => {
+      facts.agent = agent;
+    },
     ...(workTree === undefined ? {} : { workTree }),
     ...(change === undefined ? {} : { change }),
     ...(resolveChange === undefined ? {} : { resolveChange }),

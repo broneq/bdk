@@ -1,0 +1,1 @@
+{"agentType":"bdk-probe:probe-sleeper","description":"Probe sleeper background task","toolUseId":"toolu_000000000000000000000005","spawnDepth":1,"requestShape":"background","requestNonInteractive":true}

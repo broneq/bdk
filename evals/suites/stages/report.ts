@@ -1,6 +1,7 @@
 // The stages table: per case, how many counted runs met every expectation,
-// and the median questions, turns, kernel refusals and cost. A failed expectation is named in
-// the run's `checks.json` among its raw records.
+// and the median questions, turns, kernel refusals and cost, then the runs
+// whose journal and transcript refusal totals differ. A failed expectation is
+// named in the run's `checks.json` among its raw records.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -43,11 +44,44 @@ export function stagesReport(allRows: readonly ResultRow[]): string[] {
     lines.push("", "Refusal acceptance not met (#109):", "");
     for (const failure of unmet) lines.push(`- ${failure}`);
   }
+  lines.push(...refusalDifferences(rows));
   if (discarded.length > 0) {
     lines.push("", "Discarded runs:", "");
     for (const row of discarded) {
       lines.push(`- ${row.item} run ${String(row.run)}: ${row.discarded ?? ""}`);
     }
+  }
+  return lines;
+}
+
+/** The runs whose journal and transcript refusal totals differ, and those without a report. */
+function refusalDifferences(rows: readonly ResultRow[]): string[] {
+  const label = (row: ResultRow) => `${row.item} run ${String(row.run)}`;
+  const missing = rows.filter((row) => row.metrics["journal-missing"] === 1);
+  const differ = rows.filter((row) => {
+    const { refusals } = row.metrics;
+    const transcript = row.metrics["refusals-transcript"];
+    return (
+      row.metrics["journal-missing"] !== 1 &&
+      typeof refusals === "number" &&
+      typeof transcript === "number" &&
+      refusals !== transcript
+    );
+  });
+  const lines: string[] = [];
+  if (differ.length > 0) {
+    lines.push("", "Refusal totals differ (journal, transcript):", "");
+    for (const row of differ) {
+      lines.push(
+        `- ${label(row)}: journal ${String(row.metrics.refusals)}, transcript ${String(row.metrics["refusals-transcript"])}`,
+      );
+    }
+  }
+  if (missing.length > 0) {
+    lines.push(
+      "",
+      `Runs without a journal report (transcript counts): ${missing.map(label).join(", ")}.`,
+    );
   }
   return lines;
 }

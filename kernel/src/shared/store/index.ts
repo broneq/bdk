@@ -91,7 +91,14 @@ export {
   supersededBy,
 } from "./state/derived.ts";
 export type { EntryFacts, StageMap } from "./state/derived.ts";
-export { appendTelemetry, telemetryPath, TELEMETRY_LIMIT_BYTES } from "./telemetry.ts";
+export {
+  appendTelemetry,
+  halveTelemetry,
+  telemetryPath,
+  TELEMETRY_LIMIT_BYTES,
+} from "./telemetry.ts";
+export { appendJournal, JOURNAL_LIMIT_BYTES, journalLine, journalPath } from "./journal.ts";
+export type { JournalLine, JournalOptions } from "./journal.ts";
 export { checkpointChange } from "./checkpoint.ts";
 export type { Checkpoint, CheckpointInput } from "./checkpoint.ts";
 export { processLockWait, withLock } from "./lock.ts";
