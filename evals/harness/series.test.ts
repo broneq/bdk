@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   expandTests,
   freshSeriesName,
+  seriesStamp,
   literalVar,
   readPlan,
   varValue,
@@ -91,6 +92,12 @@ describe("series plan", () => {
   it("refuses a missing plan, naming the variable", () => {
     expect(() => readPlan(undefined)).toThrow(/BDK_EVAL_SERIES/);
     expect(() => readPlan("/nonexistent/plan.json")).toThrow(/pnpm eval/);
+  });
+});
+
+describe("seriesStamp", () => {
+  it("names the UTC date and time to the second", () => {
+    expect(seriesStamp(new Date("2026-10-05T08:00:13.512Z"))).toBe("2026-10-05-080013");
   });
 });
 
