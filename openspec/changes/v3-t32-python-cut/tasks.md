@@ -25,8 +25,8 @@
 
 ## 4. `bdk doctor`: v2 markers and `bdk-ignored` (D-9)
 
-- [ ] 4.1 Failing tests first: `classifyLayout` and doctor E2E with only `.bdk/design/` and `.bdk/verify-plan/` (layout `v2`, summary names both); doctor E2E in a repository whose `.gitignore` holds `/.bdk/` and has `.bdk/settings.yaml` (`bdk-ignored`, level `fail`, summary names `.gitignore` and `/.bdk/`, `repair: /bdk:setup`, exit 0, `ok: false`); no `bdk-ignored` with only the two v3 paths ignored; `hooks session-start` names the two new markers. Verify: they fail
-- [ ] 4.2 Implement: two markers in `kernel/src/config/domain/layout.ts`, the ignore check in the service slice through the git port (skipped without git or without `.bdk/`), the doctor schema description lists `bdk-ignored`. `pnpm build` regenerates `schema/cli/output/doctor.json`. Verify: tests of 4.1 green, `pnpm test:unit` with coverage thresholds green
+- [x] 4.1 Failing tests first: `classifyLayout` and doctor E2E with only `.bdk/design/` and `.bdk/verify-plan/` (layout `v2`, summary names both); doctor E2E in a repository whose `.gitignore` holds `/.bdk/` and has `.bdk/settings.yaml` (`bdk-ignored`, level `fail`, summary names `.gitignore` and `/.bdk/`, `repair: /bdk:setup`, exit 0, `ok: false`); no `bdk-ignored` with only the two v3 paths ignored; `hooks session-start` names the two new markers. Verify: they fail
+- [x] 4.2 Implement: two markers in `kernel/src/config/domain/layout.ts`, the ignore check in the service slice through the git port (skipped without git or without `.bdk/`), the doctor schema description lists `bdk-ignored`. `pnpm build` regenerates `schema/cli/output/doctor.json`. Verify: tests of 4.1 green, `pnpm test:unit` with coverage thresholds green
 
 ## 5. `/bdk:setup` replaces the v2 ignore rule (D-10)
 

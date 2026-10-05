@@ -113,6 +113,17 @@ describe("hooks session-start", () => {
     expect(report.layout).toBe("v2");
   });
 
+  it("names the v2 design and plan verification directories", () => {
+    const { report, startup } = run({
+      ".bdk/settings.yaml": `${MODELINE}languages: [go]\n`,
+      ".bdk/design/a.md": "",
+      ".bdk/verify-plan/a-verification.md": "",
+    });
+    expect(problemLines(report.content, startup)).toStrictEqual([
+      "[BDK] v2 layout detected (.bdk/design/, .bdk/verify-plan/): run /bdk:setup.",
+    ]);
+  });
+
   it("warns when the heaviest role reads more rules than rules.warn-above, scoped ones counted", () => {
     const { report, startup } = run({
       ".bdk/settings.yaml": `${MODELINE}rules:\n  warn-above: 2\n`,
