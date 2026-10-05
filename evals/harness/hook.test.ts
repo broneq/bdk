@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { BudgetReached, readLedger, record } from "./budget.ts";
 import { afterRun, beforeRun, extensionHook, recordJudgement, runContext } from "./hook.ts";
 import type { EvalResult, SuiteHooks } from "./hook.ts";
 import { readRows } from "./results.ts";
@@ -26,8 +25,6 @@ function setup(cell: (dir: string) => Partial<CellPlan> = () => ({})): {
   const plan: SeriesPlan = {
     suite: "execute-ab",
     series: "s1",
-    ledgerFile: join(dir, "budget.json"),
-    budgetUsd: 10,
     runCapUsd: 3,
     resultsFile: join(dir, "results/s1.jsonl"),
     rawDir: join(dir, "raw"),
@@ -106,16 +103,10 @@ describe("beforeRun", () => {
     expect(existsSync(join(dir, "a.log"))).toBe(false);
     expect(seen).toEqual(["task"]);
   });
-
-  it("stops at the budget", async () => {
-    const { plan } = setup();
-    record(plan.ledgerFile, { suite: "x", cell: "a", run: 1, cost: 10 });
-    await expect(beforeRun(runContext(plan, VARS), MEASURE)).rejects.toThrow(BudgetReached);
-  });
 });
 
 describe("afterRun", () => {
-  it("measures an isolated run, charges session and judge cost, and appends the row", async () => {
+  it("measures an isolated run, counts session and judge cost, and appends the row", async () => {
     const { plan } = setup();
     writeFileSync(join(plan.rawDir, "..", "a.log"), CLEAN_LOG);
     const row = await afterRun(runContext(plan, VARS), RESULT, MEASURE);
@@ -129,7 +120,6 @@ describe("afterRun", () => {
       provenance: { models: ["claude-opus-5-5", "claude-sonnet-5"], templateHashes: ["sha256:t"] },
     });
     expect(readRows(plan.resultsFile)).toEqual([row]);
-    expect(readLedger(plan.ledgerFile).entries.map((entry) => entry.cost)).toEqual([1.75]);
     expect(existsSync(join(plan.rawDir, "a/task.run-2/debug.log"))).toBe(true);
   });
 

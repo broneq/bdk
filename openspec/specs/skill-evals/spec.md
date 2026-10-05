@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines BDK's skill measurement harness: repeatable, budget-capped runs of real Claude Code sessions with the BDK plugin on a pinned fixture repository, compared against an A/A noise floor, so decisions about skill style, rules and craft skills rest on measured differences.
+Defines BDK's skill measurement harness: repeatable, cost-capped runs of real Claude Code sessions with the BDK plugin on a pinned fixture repository, compared against an A/A noise floor, so decisions about skill style, rules and craft skills rest on measured differences.
 
 ## Requirements
 

@@ -58,9 +58,7 @@ function spec(fixture: "default" | "none"): WithWithoutSpec {
     fixture,
     versions: readVersions(),
     runs: 5,
-    budgetUsd: 100,
     runCapUsd: 15,
-    ledgerFile: "/tmp/budget.json",
     resultsFile: "/tmp/rows.jsonl",
   };
 }

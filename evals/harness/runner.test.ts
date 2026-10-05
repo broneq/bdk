@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { record } from "./budget.ts";
 import { oneTurnProvider } from "./providers.ts";
 import type { ResultRow } from "./results.ts";
 import { probeSummary, renderSeries, runSeries } from "./runner.ts";
@@ -44,8 +43,6 @@ function series(): { dir: string; setup: SeriesSetup } {
       plan: {
         suite: "rules-noop",
         series: "m1",
-        ledgerFile: join(dir, "budget.json"),
-        budgetUsd: 5,
         runCapUsd: 1,
         resultsFile: join(dir, "m1.jsonl"),
         rawDir: join(dir, "raw"),
@@ -99,16 +96,12 @@ describe("runSeries", () => {
     expect(calls).toEqual([rendered.planFile]);
   });
 
-  it("reports the budget stop and other promptfoo failures", async () => {
+  it("reports a promptfoo failure", async () => {
     const { dir, setup } = series();
     const rendered = renderSeries(setup, join(dir, "render"));
     const crash: string[] = [];
     await expect(runSeries(setup, rendered, io(2, crash))).resolves.toBe(2);
     expect(crash[1]).toMatch(/promptfoo exited with 2/);
-    record(setup.plan.ledgerFile, { suite: "rules-noop", cell: "haiku", run: 1, cost: 5 });
-    const stop: string[] = [];
-    await expect(runSeries(setup, rendered, io(1, stop))).resolves.toBe(1);
-    expect(stop[1]).toMatch(/budget reached: 5.00 USD spent of 5 USD/);
   });
 });
 
@@ -131,14 +124,9 @@ describe("probeSummary", () => {
         templateHashes: [],
       },
     });
-    const lines = probeSummary(
-      [row("v2", 4), row("v3-thin", 2, "MCP tool call mcp__x")],
-      5,
-      100,
-      6,
-    );
+    const lines = probeSummary([row("v2", 4), row("v3-thin", 2, "MCP tool call mcp__x")], 5);
     expect(lines).toContain("  v2: 4.00 USD per run, 20.00 USD for 5 runs");
-    expect(lines).toContain("projected series: 30.00 USD; budget left: 94.00 USD of 100 USD");
+    expect(lines).toContain("projected series: 30.00 USD");
     expect(lines).toContain("  discarded v3-thin task: MCP tool call mcp__x");
   });
 
@@ -160,7 +148,7 @@ describe("probeSummary", () => {
         templateHashes: [],
       },
     };
-    const lines = probeSummary([row, { ...row, item: "security.02.bbbbbbbb" }], 5, 100, 0, {
+    const lines = probeSummary([row, { ...row, item: "security.02.bbbbbbbb" }], 5, {
       probed: 2,
       total: 8,
     });

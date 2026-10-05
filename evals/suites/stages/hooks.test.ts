@@ -113,8 +113,6 @@ describe("hooks", () => {
     const plan: SeriesPlan = {
       suite: "stages",
       series: "s",
-      ledgerFile: "",
-      budgetUsd: 1,
       runCapUsd: 1,
       resultsFile: "",
       rawDir: join(root ?? "", "raw"),

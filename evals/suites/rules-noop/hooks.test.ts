@@ -53,8 +53,6 @@ function context(
     plan: {
       suite: "rules-noop",
       series: "s",
-      ledgerFile: "",
-      budgetUsd: 1,
       runCapUsd: 1,
       resultsFile: "",
       rawDir: "",

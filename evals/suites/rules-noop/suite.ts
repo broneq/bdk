@@ -7,16 +7,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { readLedger, spent } from "../../harness/budget.ts";
 import { UsageError } from "../../harness/cli.ts";
 import type { RunOptions, SuiteRunner } from "../../harness/cli.ts";
-import {
-  EVALS_DIR,
-  LEDGER_FILE,
-  RUNS_DIR,
-  readVersions,
-  resultsFile,
-} from "../../harness/paths.ts";
+import { EVALS_DIR, RUNS_DIR, readVersions, resultsFile } from "../../harness/paths.ts";
 import type { Versions } from "../../harness/paths.ts";
 import { oneTurnProvider } from "../../harness/providers.ts";
 import { readRows, readSuiteRows } from "../../harness/results.ts";
@@ -65,9 +58,7 @@ export interface MeasurementSpec {
   readonly bdkCommit: string;
   readonly versions: Versions;
   readonly runs: number;
-  readonly budgetUsd: number;
   readonly runCapUsd: number;
-  readonly ledgerFile: string;
   readonly resultsFile: string;
 }
 
@@ -163,8 +154,6 @@ export function describeMeasurement(spec: MeasurementSpec): SeriesSetup {
     plan: {
       suite: SUITE,
       series: spec.series,
-      ledgerFile: spec.ledgerFile,
-      budgetUsd: spec.budgetUsd,
       runCapUsd: Math.min(ONE_TURN_CAP_USD, spec.runCapUsd),
       resultsFile: spec.resultsFile,
       rawDir: join(spec.dir, "raw"),
@@ -210,9 +199,7 @@ export function rulesNoopRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
           bdkCommit,
           versions,
           runs: options.probe ? 1 : options.runs,
-          budgetUsd: options.budget,
           runCapUsd: options.runCap,
-          ledgerFile: LEDGER_FILE,
           resultsFile: resultsFile(SUITE, series),
         });
         const code = await runSeries(setup, renderSeries(setup, dir), {
@@ -220,13 +207,10 @@ export function rulesNoopRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
           evaluate: (config, output, env) => evaluate(EVALS_DIR, config, output, env),
         });
         if (options.probe) {
-          const lines = probeSummary(
-            readRows(resultsFile(SUITE, series)),
-            options.runs,
-            options.budget,
-            spent(readLedger(LEDGER_FILE)),
-            { probed: items.length, total: all.length },
-          );
+          const lines = probeSummary(readRows(resultsFile(SUITE, series)), options.runs, {
+            probed: items.length,
+            total: all.length,
+          });
           for (const line of lines) io.print(`${kind} ${line}`);
         }
         if (code !== 0) return code;
@@ -247,9 +231,7 @@ export function rulesNoopRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
             bdkCommit: "0".repeat(40),
             versions: readVersions(),
             runs: 5,
-            budgetUsd: 100,
             runCapUsd: 15,
-            ledgerFile: join(dir, "budget.json"),
             resultsFile: join(dir, `${kind}.jsonl`),
           });
           validateConfig(EVALS_DIR, renderSeries(setup, join(dir, kind)).configFile);

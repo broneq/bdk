@@ -54,6 +54,8 @@
 - [x] 9.1 Write failing tests in `evals/suites/stages/`. The row takes `refusals` and `refusal:<rule>` from a stubbed `bdk diagnostics report`, keeps `refusals-transcript`, falls back with `journal-missing: 1`, and `report.ts` lists runs whose totals differ. Verify: the tests fail.
 - [x] 9.2 Implement the report call in `evals/suites/stages/hooks.ts` and the comparison in `report.ts`. Verify: 9.1 passes and `pnpm eval check` passes.
 
+- [x] 9.3 Remove the cumulative budget ledger of the eval harness (`evals/.runs/budget.json`, `--budget`): each session keeps its `--run-cap`, a probe keeps its projection. Verify: `pnpm eval check` passes and no harness code reads the ledger.
+
 ## 10. Acceptance
 
 - [ ] 10.1 Run `pnpm eval stages --skill execute --probe` on the fixture with `diagnostics.verbose: true` in the fixture settings. Check that each row's journal-based refusal counts equal `refusals-transcript` for the rule classes the regex covers, without reading a transcript. Commit the probe rows.

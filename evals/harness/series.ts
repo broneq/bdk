@@ -29,9 +29,7 @@ export interface CellPlan {
 export interface SeriesPlan {
   readonly suite: string;
   readonly series: string;
-  readonly ledgerFile: string;
-  readonly budgetUsd: number;
-  /** Charged when a run reports no cost, the most it could have spent. */
+  /** Counted when a run reports no cost, the most it could have spent. */
   readonly runCapUsd: number;
   readonly resultsFile: string;
   /** Raw per-run outputs, kept out of the tree. */

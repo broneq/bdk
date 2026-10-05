@@ -8,12 +8,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { readLedger, spent } from "../../harness/budget.ts";
 import type { RunOptions, SuiteRunner } from "../../harness/cli.ts";
 import { freshCopy, npmCi, prepareFixture } from "../../harness/fixture.ts";
 import {
   EVALS_DIR,
-  LEDGER_FILE,
   REPO_ROOT,
   RUNS_DIR,
   readVersions,
@@ -102,9 +100,7 @@ interface SeriesSpec {
   readonly base: string;
   readonly versions: Versions;
   readonly runs: number;
-  readonly budgetUsd: number;
   readonly runCapUsd: number;
-  readonly ledgerFile: string;
   readonly resultsFile: string;
 }
 
@@ -156,8 +152,6 @@ export function describeSeries(spec: SeriesSpec): SeriesSetup {
     plan: {
       suite: SUITE,
       series: spec.series,
-      ledgerFile: spec.ledgerFile,
-      budgetUsd: spec.budgetUsd,
       runCapUsd: spec.runCapUsd,
       resultsFile: spec.resultsFile,
       rawDir: join(spec.dir, "raw"),
@@ -224,9 +218,7 @@ export function reviewModelsRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner 
         base,
         versions,
         runs: options.probe ? 1 : options.runs,
-        budgetUsd: options.budget,
         runCapUsd: options.runCap,
-        ledgerFile: LEDGER_FILE,
         resultsFile: resultsFile(SUITE, series),
       });
       const code = await runSeries(setup, renderSeries(setup, dir), {
@@ -234,12 +226,7 @@ export function reviewModelsRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner 
         evaluate: (config, output, env) => evaluate(EVALS_DIR, config, output, env),
       });
       if (options.probe) {
-        const lines = probeSummary(
-          readRows(resultsFile(SUITE, series)),
-          options.runs,
-          options.budget,
-          spent(readLedger(LEDGER_FILE)),
-        );
+        const lines = probeSummary(readRows(resultsFile(SUITE, series)), options.runs);
         for (const line of lines) io.print(line);
       }
       return code;
@@ -263,9 +250,7 @@ export function reviewModelsRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner 
           base: join(dir, "base"),
           versions: readVersions(),
           runs: 5,
-          budgetUsd: 100,
           runCapUsd: 15,
-          ledgerFile: join(dir, "budget.json"),
           resultsFile: join(dir, "rows.jsonl"),
         });
         validateConfig(EVALS_DIR, renderSeries(setup, dir).configFile);

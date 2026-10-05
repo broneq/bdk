@@ -1,7 +1,7 @@
 // `pnpm eval`: argument parsing, the credentials check and dispatch to the
 // suites (design D-1). The suites own their runs; this module owns only the
 // command line contract of the `skill-evals` spec.
-import { DEFAULT_BUDGET_USD, DEFAULT_RUN_CAP_USD } from "./budget.ts";
+import { DEFAULT_RUN_CAP_USD } from "./cost.ts";
 
 export const SUITES = [
   "execute-ab",
@@ -13,7 +13,7 @@ export const SUITES = [
 export type SuiteName = (typeof SUITES)[number];
 
 const USAGE = [
-  "usage: pnpm eval <suite> [--probe] [--runs N] [--budget USD] [--run-cap USD]",
+  "usage: pnpm eval <suite> [--probe] [--runs N] [--run-cap USD]",
   "       pnpm eval rules-noop --patches <name,...> [...]   (M2 of those patches only)",
   "       pnpm eval with-without --skill <plugin:name> --tasks <file> [--fixture default|none] [...]",
   "       pnpm eval stages --skill <name> [--case <id,...>] [...]",
@@ -27,7 +27,6 @@ export interface RunOptions {
   readonly suite: SuiteName;
   readonly probe: boolean;
   readonly runs: number;
-  readonly budget: number;
   readonly runCap: number;
   readonly skill?: string;
   readonly tasks?: string;
@@ -76,7 +75,6 @@ export function parseArgs(argv: readonly string[]): Options {
     suite,
     probe: false,
     runs: 5,
-    budget: DEFAULT_BUDGET_USD,
     runCap: DEFAULT_RUN_CAP_USD,
   };
   const queue = [...rest];
@@ -96,9 +94,6 @@ export function parseArgs(argv: readonly string[]): Options {
         options = { ...options, runs };
         break;
       }
-      case "--budget":
-        options = { ...options, budget: number(flag, value()) };
-        break;
       case "--run-cap":
         options = { ...options, runCap: number(flag, value()) };
         break;

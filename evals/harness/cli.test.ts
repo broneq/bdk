@@ -38,14 +38,11 @@ function deps(
 
 describe("parseArgs", () => {
   it("parses a suite run with its flags", () => {
-    expect(
-      parseArgs(["execute-ab", "--probe", "--runs", "3", "--budget", "40", "--run-cap", "8"]),
-    ).toEqual({
+    expect(parseArgs(["execute-ab", "--probe", "--runs", "3", "--run-cap", "8"])).toEqual({
       command: "run",
       suite: "execute-ab",
       probe: true,
       runs: 3,
-      budget: 40,
       runCap: 8,
     });
   });
@@ -59,10 +56,9 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["execute-ab", "--patches", "22-a"])).toThrow(UsageError);
   });
 
-  it("defaults to 5 runs, 100 USD and a 15 USD run cap", () => {
+  it("defaults to 5 runs and a 15 USD run cap", () => {
     expect(parseArgs(["rules-noop"])).toMatchObject({
       runs: 5,
-      budget: 100,
       runCap: 15,
       probe: false,
     });

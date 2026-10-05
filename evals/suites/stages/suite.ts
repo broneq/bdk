@@ -7,12 +7,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { readLedger, spent } from "../../harness/budget.ts";
 import type { RunOptions, SuiteRunner } from "../../harness/cli.ts";
 import { emptyBase, npmCi, prepareFixture } from "../../harness/fixture.ts";
 import {
   EVALS_DIR,
-  LEDGER_FILE,
   REPO_ROOT,
   RUNS_DIR,
   readVersions,
@@ -91,9 +89,7 @@ export interface StagesSpec {
   readonly emptyBase: string;
   readonly versions: Versions;
   readonly runs: number;
-  readonly budgetUsd: number;
   readonly runCapUsd: number;
-  readonly ledgerFile: string;
   readonly resultsFile: string;
 }
 
@@ -111,8 +107,6 @@ export function describeStages(spec: StagesSpec): SeriesSetup {
     plan: {
       suite: SUITE,
       series: spec.series,
-      ledgerFile: spec.ledgerFile,
-      budgetUsd: spec.budgetUsd,
       runCapUsd: spec.runCapUsd,
       resultsFile: spec.resultsFile,
       rawDir: join(spec.dir, "raw"),
@@ -210,9 +204,7 @@ export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
         emptyBase: emptyBase(join(sandbox, "empty-base")),
         versions,
         runs: options.probe ? 1 : options.runs,
-        budgetUsd: options.budget,
         runCapUsd: options.runCap,
-        ledgerFile: LEDGER_FILE,
         resultsFile: resultsFile(SUITE, series),
       });
       const code = await runSeries(setup, renderSeries(setup, dir), {
@@ -222,12 +214,7 @@ export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
       const rows = readRows(resultsFile(SUITE, series));
       for (const line of expectationLines(rows, setup.plan.rawDir)) io.print(line);
       if (options.probe) {
-        const lines = probeSummary(
-          rows,
-          options.runs,
-          options.budget,
-          spent(readLedger(LEDGER_FILE)),
-        );
+        const lines = probeSummary(rows, options.runs);
         for (const line of lines) io.print(line);
       }
       return code;
@@ -252,9 +239,7 @@ export function stagesRunner(io: Omit<SeriesIo, "evaluate">): SuiteRunner {
             emptyBase: join(dir, "empty"),
             versions: readVersions(),
             runs: 5,
-            budgetUsd: 100,
             runCapUsd: 15,
-            ledgerFile: join(dir, "budget.json"),
             resultsFile: join(dir, "rows.jsonl"),
           });
           validateConfig(EVALS_DIR, renderSeries(setup, join(dir, skill)).configFile);
