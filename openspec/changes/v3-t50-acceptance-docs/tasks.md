@@ -15,7 +15,7 @@
 
 ## 3. Missing evidence
 
-- [ ] 3.1 Write the `AC-1` E2E: one `small` Change on the fixture from `change new` through design, one plan part, execute of one task, review and `close`, driven by kernel commands as the skills call them; verify it passes on the built bundle.
+- [x] 3.1 Write the `AC-1` E2E: one `small` Change on the fixture from `change new` through design, one plan part, execute of one task, review and `close`, driven by kernel commands as the skills call them; verify it passes on the built bundle.
 - [ ] 3.2 Write the `EC-3` E2E: two Changes on two branches advanced with `next` and `log add`, both branches merged, `rebuild` gives both states and `status` lists both; verify it passes.
 - [ ] 3.3 Write the `EC-4` E2E: `settings.local.yaml` disables model escalation and the Change's local-override list names that key; verify it passes.
 - [ ] 3.4 Write the `S3` E2E (`explain` on a task prints part, plan, design and intent) and the `R-11` E2E (a call after an unchanged ledger records no index refresh in telemetry); verify both pass.
