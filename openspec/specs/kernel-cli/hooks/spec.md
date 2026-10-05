@@ -565,7 +565,7 @@ The agent form runs the kernel directly, because these events fire once per agen
 
 Both guard scripts are POSIX `sh`, read the payload from stdin once, check before starting the kernel (in `pre-tool.sh` after the prefilter) that `node` is on `PATH` and `dist/bdk.mjs` exists (otherwise `guard/kernel-unavailable: ...` on stderr and exit 2), and end with one kernel line that matches the `guard-wrapper` regex of `kernel-cli`, Output modes, feeding the payload on stdin. **Heartbeat.** Before its prefilter, when the payload has `"agent_id"` and `${CLAUDE_PROJECT_DIR}/.bdk/.machine/` exists, `pre-tool.sh` writes `open` to `.bdk/.machine/agents/<agent_id>` and `post-tool.sh` writes `idle` to it, creating the directory when absent and taking the id from the payload only when it matches `^[A-Za-z0-9_-]+$`; a failed write never blocks the tool. Neither starts Node for it.
 
-`pre-tool.sh` calls the kernel only when the raw payload contains one of: `.bdk/specs`; `bdk.mjs` and `hooks`; `/bdk:`; `"agent_id"` and either `git` or `bdk.mjs`; `bdk:reader`, `bdk:reviewer`, `bdk:scout` or `bdk:lead`; `"subagent_type"` and either `bdk:worker`, `bdk:runner` or `bdk:lead`; `SendMessage` or `Skill` as `tool_name`. Otherwise it exits 0 without starting Node. `post-tool.sh` calls the kernel only when `.bdk/` exists and `tool_name` is `Agent` or `TaskStop`. The prefilter only over-approximates: whatever it lets through, the kernel decides from the parsed payload.
+`pre-tool.sh` calls the kernel only when the raw payload contains one of: `.bdk/specs`; `bdk.mjs` or `bdk ` (the word followed by a space), and `hooks`; `/bdk:`; `"agent_id"` and either `git`, `bdk.mjs` or `bdk `; `bdk:reader`, `bdk:reviewer`, `bdk:scout` or `bdk:lead`; `"subagent_type"` and either `bdk:worker`, `bdk:runner` or `bdk:lead`; `SendMessage` or `Skill` as `tool_name`. Otherwise it exits 0 without starting Node. `post-tool.sh` calls the kernel only when `.bdk/` exists and `tool_name` is `Agent` or `TaskStop`. The prefilter only over-approximates: whatever it lets through, the kernel decides from the parsed payload. `bdk ` is matched anywhere in the payload, not at the positions a shell command word can take, so no shell construct (`&&`, `;`, `|`, `$(...)`, a subshell) can hide a `bdk <command>` call from the guards. The hook commands themselves run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs"`, never `bdk`, because a plugin's `bin/` is not on a hook's `PATH` (HOST-FACTS `plugin-bin-hook`).
 
 #### Scenario: hooks file entries
 
@@ -611,6 +611,21 @@ Both guard scripts are POSIX `sh`, read the payload from stdin once, check befor
 
 - **WHEN** `pre-tool.sh` receives the recorded `pre-skill.json` payload
 - **THEN** it starts the kernel, which decides the call
+
+#### Scenario: subagent bdk call reaches the kernel
+
+- **WHEN** `pre-tool.sh` receives a subagent Bash payload (`agent_type: bdk:worker`) with the command `bdk commit 01-1`
+- **THEN** it starts the kernel, which denies the call with `guard/subagent-kernel-command` exactly as for `node "$P/dist/bdk.mjs" commit 01-1`
+
+#### Scenario: bdk hooks from Bash reaches the kernel
+
+- **WHEN** `pre-tool.sh` receives a main-thread Bash payload with the command `cd app && bdk hooks pre-tool`
+- **THEN** it starts the kernel, which denies the call with `guard/hooks-from-bash`
+
+#### Scenario: hook commands do not rely on the launcher
+
+- **WHEN** `hooks/hooks.json` and `hooks/guard/*.sh` are inspected
+- **THEN** every kernel call in them runs `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs"`, and none runs `bdk` as a command word
 
 ### Requirement: Pre-tool command reading
 

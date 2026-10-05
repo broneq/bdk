@@ -2,19 +2,19 @@
 name: run
 description: Runs a BDK Change through its stages without stopping at each one - opens it from an intent, then designs, plans, executes, reviews and closes it. Use when the user wants a feature or fix carried end to end.
 argument-hint: '[--auto] ["<intent>"]'
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Skill Read
+allowed-tools: Bash(bdk *) Bash(echo *) Skill Read
 disable-model-invocation: true
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill run 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill run 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: run" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill run` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: run" heading appears above, run `bdk ctx skill run` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Run
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-A run carries one Change through the stages the user would otherwise type one by one. You start each stage skill with the `Skill` tool and let it do its stage with its own instructions and tools; you hold no copy of any stage's procedure. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+A run carries one Change through the stages the user would otherwise type one by one. You start each stage skill with the `Skill` tool and let it do its stage with its own instructions and tools; you hold no copy of any stage's procedure. Add `--json` to every command whose output you act on.
 
 Arguments: $ARGUMENTS
 

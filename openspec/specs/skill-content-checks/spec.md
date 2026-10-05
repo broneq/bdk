@@ -65,8 +65,13 @@ BDK SHALL carry no rule code of its own. Each BDK convention below SHALL be enfo
 
 #### Scenario: unquoted kernel rule
 
-- **WHEN** a skill with the wrapper lists `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *) Bash(echo *)`, without the quotes around the path
-- **THEN** `pnpm skill-check` reports a permission error naming the quoted rule
+- **WHEN** a skill with the wrapper lists the kernel rule by its bundle path, `Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs *)` or `Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *)`, instead of `Bash(bdk *)`
+- **THEN** `pnpm skill-check` reports a permission error naming `Bash(bdk *)`
+
+#### Scenario: wrapper by bundle path
+
+- **WHEN** a skill contains the line ``!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill commit 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."` ``
+- **THEN** `pnpm skill-check` reports a wrapper form error for that line
 
 #### Scenario: gate skill invocable by the model
 

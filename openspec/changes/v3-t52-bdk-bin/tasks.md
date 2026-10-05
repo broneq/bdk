@@ -18,9 +18,9 @@
 
 ## 4. Skills and role contracts
 
-- [ ] 4.1 Point the failing content checks at the new form: `skill-check.config.ts` reads the pair from the spec unchanged, the contract tests (`skill-context`, `stage-skills`, `tools-skills`, `review-skills`, `craft-skills`, `startup`, `openspec-compat`) assert `bdk` in place of the bundle path where they pin it; run `pnpm skill-check` and `pnpm test:contract` and verify that they fail on every skill
-- [ ] 4.2 Rewrite every `SKILL.md` under `skills/` and `evals/suites/execute-ab/variants/`: the `!` wrapper, the fallback sentence, `allowed-tools: Bash(bdk *) Bash(echo *)`, and the removal of the "Run kernel commands as `node ...`" sentence; `/bdk:bdk-cli` names `bdk <group> <verb> --json` and lists `Bash(bdk *)`; verify with `pnpm skill-check` and `pnpm test:contract`, and that `grep -rn 'bdk\.mjs\|CLAUDE_PLUGIN_ROOT}/dist' skills/` is empty
-- [ ] 4.3 Check the other kernel-facing texts for the path form (`STARTUP_INSTRUCTIONS.md`, `fragments/`, the dispatch package rendering in `kernel/src/dispatch/`, `rules/`); keep the `${CLAUDE_PLUGIN_ROOT}` substitution of role bodies for references; verify with `pnpm test:unit` and a `bdk dispatch build` output that names no bundle path
+- [x] 4.1 Point the failing content checks at the new form: `skill-check.config.ts` reads the pair from the spec unchanged, the contract tests (`skill-context`, `stage-skills`, `tools-skills`, `review-skills`, `craft-skills`, `startup`, `openspec-compat`) assert `bdk` in place of the bundle path where they pin it; run `pnpm skill-check` and `pnpm test:contract` and verify that they fail on every skill
+- [x] 4.2 Rewrite every `SKILL.md` under `skills/` and `evals/suites/execute-ab/variants/`: the `!` wrapper, the fallback sentence, `allowed-tools: Bash(bdk *) Bash(echo *)`, and the removal of the "Run kernel commands as `node ...`" sentence; `/bdk:bdk-cli` names `bdk <group> <verb> --json` and lists `Bash(bdk *)`; verify with `pnpm skill-check` and `pnpm test:contract`, and that `grep -rn 'bdk\.mjs\|CLAUDE_PLUGIN_ROOT}/dist' skills/` is empty
+- [x] 4.3 Check the other kernel-facing texts for the path form (`STARTUP_INSTRUCTIONS.md`, `fragments/`, the dispatch package rendering in `kernel/src/dispatch/`, `rules/`); keep the `${CLAUDE_PLUGIN_ROOT}` substitution of role bodies for references; verify with `pnpm test:unit` and a `bdk dispatch build` output that names no bundle path
 
 ## 5. Evals
 

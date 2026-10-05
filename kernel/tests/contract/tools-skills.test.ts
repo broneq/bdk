@@ -11,7 +11,7 @@ import { REPO_ROOT } from "../support/run.ts";
 import { userFacingFiles, withoutRemovedSection } from "../support/user-facing.ts";
 
 const TOOLS = join(REPO_ROOT, "skills", "tools");
-const KERNEL_PAIR = 'Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)';
+const KERNEL_PAIR = "Bash(bdk *) Bash(echo *)";
 const SKILLS = ["commit", "docs", "rules", "adr", "doctor", "bdk-cli"] as const;
 const WITH_CONTEXT = ["commit", "docs", "rules", "adr", "doctor"] as const;
 const REMOVED = ["add-rule", "refine-rules", "update-docs", "explain-complex-code", "create-adr"];
@@ -55,9 +55,7 @@ describe("tools skill shape", () => {
   it("opens with the context lines and grants the kernel pair", () => {
     for (const name of WITH_CONTEXT) {
       const skill = readSkill(name);
-      expect(skill.body.trimStart(), name).toMatch(
-        new RegExp(`^!\`node "\\$\\{CLAUDE_PLUGIN_ROOT\\}/dist/bdk\\.mjs" ctx skill ${name} `),
-      );
+      expect(skill.body.trimStart(), name).toMatch(new RegExp(`^!\`bdk ctx skill ${name} `));
       expect(String(skill.meta["allowed-tools"]).startsWith(KERNEL_PAIR), name).toBe(true);
       expect(Object.keys(SKILL_CONTEXT), name).toContain(name);
     }
@@ -279,5 +277,13 @@ describe("bdk-cli points to the kernel help", () => {
     expect(lines).toBeLessThanOrEqual(30);
     expect(body).toContain("--help");
     expect(body).not.toContain("ctx skill");
+  });
+
+  it("names bdk <group> <verb> and no path to the bundle", () => {
+    const { meta, body } = readSkill("bdk-cli");
+    expect(meta["allowed-tools"]).toBe("Bash(bdk *)");
+    expect(body).toContain("bdk <group> <verb>");
+    expect(body).not.toContain("bdk.mjs");
+    expect(body).not.toContain("CLAUDE_PLUGIN_ROOT");
   });
 });

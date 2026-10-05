@@ -2,18 +2,18 @@
 name: plan
 description: Plans the active BDK Change - writes the plan parts the kernel names as task contracts with concrete test cases, verifies and corrects them, and reports the waves to execute. Use when a Change waits on /bdk:plan.
 argument-hint: "[--review] [what to focus on]"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(lavish-axi *) Read Grep Glob Write Edit AskUserQuestion Skill Agent
+allowed-tools: Bash(bdk *) Bash(echo *) Bash(lavish-axi *) Read Grep Glob Write Edit AskUserQuestion Skill Agent
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill plan 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill plan 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: plan" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill plan` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: plan" heading appears above, run `bdk ctx skill plan` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Plan
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
 
-You turn the active Change into plan parts that workers build without you: each task is a contract with test cases, and each part is a unit a lead finishes and commits on its own. The kernel decides what the plan needs and checks its size; you decide what it says and how it splits. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on. Apply the `Rules: plan`, `Rules: engineering-judgment`, `Rules: test-quality`, language and project rules sections of the BDK context above.
+You turn the active Change into plan parts that workers build without you: each task is a contract with test cases, and each part is a unit a lead finishes and commits on its own. The kernel decides what the plan needs and checks its size; you decide what it says and how it splits. Add `--json` to every command whose output you act on. Apply the `Rules: plan`, `Rules: engineering-judgment`, `Rules: test-quality`, language and project rules sections of the BDK context above.
 
 Arguments: $ARGUMENTS. `--review` asks for one review of the verified plan before the report; any other text is a focus the user gives the plan.
 

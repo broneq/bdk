@@ -250,9 +250,7 @@ describe("run", () => {
     expect(SKILL_CONTEXT.run).toStrictEqual([]);
     const { meta } = readSkill("run");
     expect(meta["disable-model-invocation"]).toBe(true);
-    expect(meta["allowed-tools"]).toBe(
-      'Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Skill Read',
-    );
+    expect(meta["allowed-tools"]).toBe("Bash(bdk *) Bash(echo *) Skill Read");
     expect(meta).not.toHaveProperty("disallowed-tools");
   });
 

@@ -25,7 +25,7 @@ export interface ContextLineCheck {
 
 const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
 const FORBIDDEN = [
-  { re: /!`[^`]*bdk\.mjs/, what: "a kernel `!` block" },
+  { re: /!`(bdk |[^`]*bdk\.mjs)/, what: "a kernel `!` block" },
   { re: /!`[^`]*inject(-rules|-language-rules)?\.py/, what: "an inject script `!` block" },
   { re: /!`cat /, what: "a `cat` `!` block" },
 ];

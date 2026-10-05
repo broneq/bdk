@@ -3,16 +3,16 @@ name: setup
 description: Prepares a project for BDK - settings with its test, lint and build commands, Lavish, the tracker, hand-written rules, migration from BDK 2. Use when starting BDK in a project or after cloning, or when BDK reports missing settings or a v2 layout.
 argument-hint: "[what to change, e.g. 'add the e2e suite']"
 disable-model-invocation: true
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(npx -y lavish-axi --help) Bash(gh auth status) Bash(git remote get-url origin) Bash(git add *) Bash(git commit *) Read Edit Write Grep Glob AskUserQuestion
+allowed-tools: Bash(bdk *) Bash(echo *) Bash(npx -y lavish-axi --help) Bash(gh auth status) Bash(git remote get-url origin) Bash(git add *) Bash(git commit *) Read Edit Write Grep Glob AskUserQuestion
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill setup 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill setup 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: setup" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill setup` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: setup" heading appears above, run `bdk ctx skill setup` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Setup
 
-Bring this project to a working BDK layout. Done when `bdk config check` exits 0 and `bdk doctor --json` reports `ok: true`, or when every remaining `doctor` finding is reported to the user with its repair. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+Bring this project to a working BDK layout. Done when `bdk config check` exits 0 and `bdk doctor --json` reports `ok: true`, or when every remaining `doctor` finding is reported to the user with its repair. Add `--json` to every command whose output you act on.
 
 The "Project commands" sections above show the settings the project has now. "declared none" means the project runs without a tool of that group; "unset: no command configured" means no layer sets the group yet, and `bdk change new` refuses until it is set; "none configured" means `build` has no entry.
 

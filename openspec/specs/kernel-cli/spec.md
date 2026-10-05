@@ -19,15 +19,17 @@ Reading order for a task that implements a command group: the requirements below
 
 ### Requirement: Invocation
 
-The kernel SHALL accept exactly one invocation form and resolve its project root, active Change and flags as follows.
+The kernel SHALL accept exactly one argument form, reached through two entry points, and resolve its project root, active Change and flags as follows.
 
-- **Form.** `node ${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs <group> [<verb>] <positional...> [--flag [value]]`. Groups and verbs are lowercase words. A mandatory choice that changes the command's meaning is a positional literal (`attempt close A-7f3k ok`, `config set --global` being the one flag-shaped exception because the layer is a target, not a meaning); optional inputs and switches are flags. Flags never repeat a positional. Boolean flags take no value. A flag is given at most once unless its index record marks it `repeatable` (`log add --ref`, `change park --option`); a repeatable flag collects its values in order, and `--help` shows it as repeatable. `--skip-verify` is not a CLI flag anywhere: it reaches the kernel only inside the `UserPromptExpansion` payload (P2).
+- **Entry points.** Agents and skills run the kernel as `bdk <args>`: the plugin's `bin/bdk` launcher (`kernel-architecture`, Plugin launcher) is on the `PATH` of the Bash tool in the main thread and in a subagent, and of a skill's `!` block (HOST-FACTS `plugin-bin-bash`, `plugin-bin-subagent`, `plugin-bin-skill`). Hooks run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <args>`, because a plugin's `bin/` is not on a hook's `PATH` (HOST-FACTS `plugin-bin-hook`); tests and the eval harness run the bundle by its path as well. Both entry points run the same bundle with the same arguments, and the kernel's behaviour does not depend on which one started it. Every `bdk ...` command the kernel prints (`instead`, the `doneBy.command` of a graph kind, `--help`) is runnable as written by an agent. A host that does not install a plugin's `bin/` (claude.ai, Cowork) is not supported.
+- **Form.** `bdk <group> [<verb>] <positional...> [--flag [value]]`. Groups and verbs are lowercase words. A mandatory choice that changes the command's meaning is a positional literal (`attempt close A-7f3k ok`, `config set --global` being the one flag-shaped exception because the layer is a target, not a meaning); optional inputs and switches are flags. Flags never repeat a positional. Boolean flags take no value. A flag is given at most once unless its index record marks it `repeatable` (`log add --ref`, `change park --option`); a repeatable flag collects its values in order, and `--help` shows it as repeatable. `--skip-verify` is not a CLI flag anywhere: it reaches the kernel only inside the `UserPromptExpansion` payload (P2).
 - **Project root.** The kernel walks up from the working directory to the nearest directory containing `.bdk/`; without one, the git work tree root is the project root and `.bdk/` is created by the first writing command (`config set` from `/bdk:setup`). Inside a kernel part worktree (`kernel-state`, Part worktree), whose git directory holds the home marker `bdk-home`, the project root is the home checkout the marker names and the active Change is the one it names, so a command run from a part's worktree reads and writes the one ledger of the home checkout; a marker naming a directory that is no longer a work tree of the same repository refuses with `state/worktree-orphaned` and `instead: bdk rebuild` run from the home checkout. Every command except the standalone ones requires the project root to be inside a git work tree (`runtime/not-a-repo` otherwise) and Node at or above the minimum (`runtime/node-version`). Four commands are standalone and need no work tree: `version`, so `doctor` and the wrapper's STOP line can always quote it; `ctx startup` and `hooks session-start`, because the host runs the SessionStart hook in any directory and a session outside a repository must get the STARTUP text, not a STOP line (outside a work tree `hooks session-start` prints STARTUP only, `kernel-cli/hooks`); `hooks pre-tool`, because the host runs the PreToolUse hook in any directory and its guards read only the payload, so a tool call outside a repository must not be blocked with `runtime/not-a-repo`. The standalone commands still require the Node minimum, except `version`. `doctor` needs the work tree but not the Node minimum: it reports a Node below the minimum as a `fail` finding and exits 0 (`kernel-cli/service`, `bdk doctor`), because diagnosing that Node is its job. The bundle is built for the minimum line and loads `node:sqlite` only when a command opens the index, so a Node below the minimum that still loads the bundle (22.x before 22.13, 23.x before 23.4) reaches the kernel's own check and gets the refusal with the install line. Older lines (20 and below) are not supported and may fail in the module loader; the wrapper forms of Output modes turn that into a STOP line in inject mode and a block in guard mode.
 - **Active Change.** Every Change-scoped command resolves the active Change from the current git branch: one active Change per branch (Key boundaries, hooks table). No command takes a `--change` flag in contract version 3; cross-Change reads use the qualified reference `<changeId>/<id>` (`kernel-cli`, Conventions). The binding is a local marker per branch (`kernel-state`, Branch binding); the current branch is read from `HEAD`, and a detached `HEAD` has no active Change. Without an active Change the command exits 2 with `policy/no-active-change` and an `instead` that names `/bdk:change new` and `bdk change resume <id>` (with the ids of the unarchived Changes when there are any); a marker naming a Change whose directory is gone is `state/change-dir-missing`.
 - **`--json`.** Every command accepts `--json` and then prints exactly one JSON object on stdout, validated by its schema under `schema/cli/output/`. Without `--json` the same data is rendered as text. Only the JSON form is a contract; skills and tests that parse output use `--json`. Inject-mode commands (`kernel-cli`, Output modes) print Markdown by default and, with `--json`, the same content as an object (`content` plus the parts it was composed from) while still exiting 0; the `!` wrapper never passes `--json`. Guard-mode commands print the host's stdout shape (`kernel-cli/hooks`, Hook payloads) by default and their own decision record with `--json`, which is how tests drive them.
+- **`--version`.** `bdk --version` runs `bdk version` with the arguments that follow, so `bdk --version --json` prints the `version` output object. Like `--help`, it is an implicit spelling and has no record of its own in the index.
 - **`--help`.** `bdk --help`, `bdk <group> --help` and `bdk <group> <verb> --help` print usage generated from the same command index these specs are built on (`schema/cli/commands.json`): synopsis, availability, arguments, flags, exit codes. `--help` is the only usage text a skill may rely on (T02 decision R-13); a skill that repeats usage documentation fails the T15 content check. The kernel generates the usage text at run time from the index bundled into `dist/bdk.mjs`, so the text cannot drift from the record; a contract test asserts the parity for every record.
 - **stdin.** Only `log ingest` (the role's report, its envelope as frontmatter), `log add --body -` (the entry body) and the `hooks` group (the host's hook payload) read stdin. Every other command ignores it.
-- **Environment.** `CLAUDE_PLUGIN_ROOT` locates the bundle (set by the host). The personal configuration layer is `~/.config/bdk/settings.yaml` (XDG; the Windows equivalent is an open design item). `${CLAUDE_PLUGIN_DATA}` is used only for caches. No other environment variable changes behaviour.
+- **Environment.** The kernel finds the plugin root from the bundle's own location (`dist/bdk.mjs` under it), not from `CLAUDE_PLUGIN_ROOT`, which the host does not export to the Bash tool. The personal configuration layer is `~/.config/bdk/settings.yaml` (XDG; the Windows equivalent is an open design item). `${CLAUDE_PLUGIN_DATA}` is used only for caches. No other environment variable changes behaviour.
 - **Streams.** stdout carries the result (text, JSON or Markdown). stderr carries diagnostics and is never part of the contract; guard hooks are the exception, where stderr is the message the host shows the user on exit 2 (`kernel-cli`, Output modes).
 
 #### Scenario: outside a git work tree
@@ -60,6 +62,21 @@ The kernel SHALL accept exactly one invocation form and resolve its project root
 - **WHEN** a Change-scoped command runs with a detached `HEAD`
 - **THEN** the exit code is 2 with `rule: policy/no-active-change` and `why` says that `HEAD` is detached
 
+#### Scenario: bdk on the Bash tool's PATH
+
+- **WHEN** a clean project with the plugin installed runs `bdk --version` from the Bash tool
+- **THEN** the exit code is 0 and stdout is the output of `bdk version`, naming the kernel and contract versions
+
+#### Scenario: --version with --json
+
+- **WHEN** `bdk --version --json` runs
+- **THEN** stdout is the same JSON object as `bdk version --json`, valid against `schema/cli/common/version.json`
+
+#### Scenario: same answer through both entry points
+
+- **WHEN** `bdk change status --json` and `node "<plugin root>/dist/bdk.mjs" change status --json` run in the same project
+- **THEN** both exit with the same code and print the same object
+
 ### Requirement: Output modes
 
 Every command SHALL run in exactly one of three output modes, fixed per command in the index (`mode`).
@@ -77,24 +94,24 @@ Instead: <instead[0]>; <instead[1]>; ...
 
 `<why>` and `<instead>` are the same values the error object of `kernel-cli`, Exit codes and the error object would carry. The model treats a STOP block as an instruction to stop the skill and report the two lines.
 
-A missing Node, a wrong Node version or a crash before the kernel's top-level handler still exits non-zero at shell level. Every `!` block therefore uses one wrapper form whose `||` branch runs in the same shell, so the block as a whole exits 0 and the STOP line is visible in the loaded skill (V1-5):
+A missing launcher (`bdk: not found`, exit 127), a missing Node or bundle (the launcher's exit 5), a Node line too old to load the bundle or a crash before the kernel's top-level handler still exits non-zero at shell level. Every `!` block therefore uses one wrapper form whose `||` branch runs in the same shell, so the block as a whole exits 0 and the STOP line is visible in the loaded skill (V1-5):
 
 ```
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill debug 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill debug 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 ```
 
 The content test (T15 `skill-check`, BDK rule plugin) accepts a `!` block only when the whole line matches this regular expression, which also restricts `!` blocks to `ctx` and `next` (Key boundaries):
 
 ```regex content-wrapper
-^!`node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" (ctx skill [a-z][a-z0-9-]*|next) 2>&1 \|\| echo "BDK STOP: kernel unavailable \(exit \$\?\)\. Install Node >= 22\.13 and run /bdk:setup\."`$
+^!`bdk (ctx skill [a-z][a-z0-9-]*|next) 2>&1 \|\| echo "BDK STOP: kernel unavailable \(exit \$\?\)\. Install Node >= 22\.13 and run /bdk:setup\."`$
 ```
 
-The Node minimum `22.13` is HOST-FACTS `node-sqlite-min`. A skill with such a block SHALL carry `allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)`: HOST-FACTS `wrapper` confirms that this pair pre-approves the wrapper, and `wrapper-old-rule` shows that the unquoted rule alone does not, because the host matches the quoted path literally and asks approval for the `echo` branch with its `$?`. Without the pair the skill is lost whole in `default` permission mode (`allowed-control`). The content test checks the pair next to the wrapper. Content hooks in `hooks.json` (`hooks session-start`, `hooks session-end`) use the same `2>&1 || echo "BDK STOP: ..."` branch without the `!` and backticks.
+The Node minimum `22.13` is HOST-FACTS `node-sqlite-min`. A skill with such a block SHALL carry `allowed-tools: Bash(bdk *) Bash(echo *)`: HOST-FACTS `plugin-bin-skill` confirms that this pair pre-approves the wrapper, `echo` branch and `$?` included. Without the pair the skill is lost whole in `default` permission mode (`allowed-control`). The content test checks the pair next to the wrapper. Content hooks in `hooks.json` (`hooks session-start`, `hooks session-end`) run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs"` (Invocation, Entry points) with the same `2>&1 || echo "BDK STOP: ..."` branch, without the `!` and backticks.
 
-**Context lines of a skill.** A skill that needs prompt context carries exactly two context lines, as the first two non-empty lines of its body after the frontmatter: the content wrapper calling `ctx skill <name>` with the skill's own name, then the fallback sentence below with the same name. The fallback sentence is the portable base: running a command named in `SKILL.md` is how the Agent Skills standard and every other host work. The `!` line is the Claude Code accelerator, rendered by the host before the model reads the skill (HOST-FACTS `wrapper`). The sentence covers the cases where the `!` line is not rendered: the host setting `disableSkillShellExecution`, which replaces the block with a placeholder, and any host that shows the line verbatim. `bdk export --host` (T23) drops the `!` line for hosts without pre-rendering and keeps the sentence. A skill carries no other `!` line that calls `ctx`. `${CLAUDE_PLUGIN_ROOT}` resolves in skill content (plugins reference, "Where each variable resolves"), so the model runs the command with the absolute path. A content test checks every skill against both regular expressions and checks that the skills with context lines are exactly the entries of the `ctx skill` manifest (`plugin-tooling`, Skill context lines):
+**Context lines of a skill.** A skill that needs prompt context carries exactly two context lines, as the first two non-empty lines of its body after the frontmatter: the content wrapper calling `ctx skill <name>` with the skill's own name, then the fallback sentence below with the same name. The fallback sentence is the portable base: running a command named in `SKILL.md` is how the Agent Skills standard and every other host work. The `!` line is the Claude Code accelerator, rendered by the host before the model reads the skill (HOST-FACTS `plugin-bin-skill`). The sentence covers the cases where the `!` line is not rendered: the host setting `disableSkillShellExecution`, which replaces the block with a placeholder, and any host that shows the line verbatim. `bdk export --host` (T23) drops the `!` line for hosts without pre-rendering and keeps the sentence. A skill carries no other `!` line that calls `ctx`. The model runs the fallback command as written, because `bdk` is on its Bash tool's `PATH`. A content test checks every skill against both regular expressions and checks that the skills with context lines are exactly the entries of the `ctx skill` manifest (`plugin-tooling`, Skill context lines):
 
 ```regex content-fallback
-^If no "BDK context: ([a-z][a-z0-9-]*)" heading appears above, run `node "\$\{CLAUDE_PLUGIN_ROOT\}/dist/bdk\.mjs" ctx skill \1` first and apply its output; on a `BDK STOP` line, stop and report it\.$
+^If no "BDK context: ([a-z][a-z0-9-]*)" heading appears above, run `bdk ctx skill \1` first and apply its output; on a `BDK STOP` line, stop and report it\.$
 ```
 
 **Command mode (everything else).**
@@ -148,8 +165,13 @@ The shell prefilter that decides whether to start Node at all (T24) precedes thi
 
 #### Scenario: kernel unavailable in a skill block
 
-- **WHEN** the content wrapper line of a skill runs in a shell where `node` is not on `PATH`
+- **WHEN** the content wrapper line of a skill runs in a shell where `bdk` is not on `PATH`
 - **THEN** the line's output ends with `BDK STOP: kernel unavailable (exit 127). Install Node >= 22.13 and run /bdk:setup.` and the shell exits 0
+
+#### Scenario: Node missing behind the launcher
+
+- **WHEN** the content wrapper line of a skill runs in a shell where `bdk` is on `PATH` and `node` is not
+- **THEN** the line's output holds the launcher's `bdk: kernel unavailable` line and ends with `BDK STOP: kernel unavailable (exit 5). Install Node >= 22.13 and run /bdk:setup.`, and the shell exits 0
 
 #### Scenario: context lines of a skill
 

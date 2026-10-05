@@ -158,7 +158,7 @@ The repository SHALL hold two reports: `docs/V3-EVAL-EXECUTE-AB.md` with the A/A
 
 ### Requirement: Stage skill suite
 
-The `stages` suite SHALL run stage skills the way a user starts them: each case types the skill's slash command in a fresh copy of its base (the pinned fixture or an empty git repository, per case), answers every `AskUserQuestion` from the case's answers, which pair a pattern of the question with a pattern of the option (the first option when no pattern matches the question), and asserts on the kernel state the run leaves, read through kernel commands, and on git state no kernel command reports (a merge commit, the worktree list, a file's history), read through a shell command, not on the model's prose. A case MAY name a `seed`, a function of the suite that runs after the case's `prepare` lines in the working copy with the plugin copy's kernel and sets up state a shell line does not express well (a Change with plan parts, a verified design, a passed gate, a reviewed Change, a plan whose parts share a lockfile); `pnpm eval check` SHALL refuse a case that names an unknown seed. Every stage skill SHALL have at least a happy-path case and a case in which the kernel refuses a command and the skill must follow `instead`. `pnpm eval stages --skill <name>` SHALL run the cases of one skill, and `--probe` SHALL behave as for every other suite.
+The `stages` suite SHALL run stage skills the way a user starts them: each case types the skill's slash command in a fresh copy of its base (the pinned fixture or an empty git repository, per case), answers every `AskUserQuestion` from the case's answers, which pair a pattern of the question with a pattern of the option (the first option when no pattern matches the question), and asserts on the kernel state the run leaves, read through kernel commands, and on git state no kernel command reports (a merge commit, the worktree list, a file's history), read through a shell command, not on the model's prose. A case MAY name a `seed`, a function of the suite that runs after the case's `prepare` lines in the working copy with the plugin copy's kernel and sets up state a shell line does not express well (a Change with plan parts, a verified design, a passed gate, a reviewed Change, a plan whose parts share a lockfile); `pnpm eval check` SHALL refuse a case that names an unknown seed. A case's `prepare` lines and its seed run in the working copy with the plugin copy's `bin/` first on `PATH`, so they call the kernel as `bdk <command>`, the form the skills use. A run SHALL fail when its transcript, the orchestrator's or a subagent's, holds a Bash tool call whose command names `bdk.mjs`, with a failure that names the call: agents call the kernel as `bdk <command>` (`kernel-cli`, Invocation, Entry points). Every stage skill SHALL have at least a happy-path case and a case in which the kernel refuses a command and the skill must follow `instead`. `pnpm eval stages --skill <name>` SHALL run the cases of one skill, and `--probe` SHALL behave as for every other suite.
 
 #### Scenario: setup happy path
 
@@ -219,6 +219,16 @@ The `stages` suite SHALL run stage skills the way a user starts them: each case 
 
 - **WHEN** the case `run-manual` types `/bdk:run "<intent>"` with the default `manual` gates
 - **THEN** the case passes when `gate:design` is ready and not done, no plan part exists and the final reply names `/bdk:plan`
+
+#### Scenario: kernel called by its bundle path
+
+- **WHEN** a run's transcript holds a Bash call `node "/plugin/dist/bdk.mjs" next --json` and every expectation of the case holds
+- **THEN** the case fails and the failure names that command
+
+#### Scenario: prepare calls bdk
+
+- **WHEN** a case's `prepare` line is `bdk config set features.lavish false >/dev/null`
+- **THEN** it runs the plugin copy's kernel and the run starts with the setting written
 
 #### Scenario: unknown seed
 

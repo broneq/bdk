@@ -413,7 +413,7 @@ test("specs: wrapper regexes accept the design's form and reject broken forms", 
   const contentRe = new RegExp(content.trim());
   const guardRe = new RegExp(guard.trim());
   const good =
-    '!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill debug 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`';
+    '!`bdk ctx skill debug 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`';
   assert.ok(contentRe.test(good), "design example must match the content wrapper");
   assert.ok(
     contentRe.test(good.replace("ctx skill debug", "next")),
@@ -427,6 +427,10 @@ test("specs: wrapper regexes accept the design's form and reject broken forms", 
   assert.ok(
     !contentRe.test(good.replace("ctx skill debug", "commit 02-3")),
     "a writing command in a ! block must not match",
+  );
+  assert.ok(
+    !contentRe.test(good.replace("!`bdk ", '!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ')),
+    "the kernel by its bundle path must not match",
   );
   const goodGuard = 'node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks pre-tool || exit 2';
   assert.ok(guardRe.test(goodGuard), "guard form must match");

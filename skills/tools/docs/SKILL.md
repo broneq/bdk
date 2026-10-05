@@ -2,12 +2,12 @@
 name: docs
 description: Writes architecture documentation for a code module, or refreshes an existing document against the current code, with Mermaid diagrams and prototype examples. Use when the user asks to explain or document code, or to sync docs with the code.
 argument-hint: "<code path to document | existing .md document to refresh>"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Read Grep Glob Write Edit AskUserQuestion Bash(git ls-files *) Bash(git log *)
+allowed-tools: Bash(bdk *) Bash(echo *) Read Grep Glob Write Edit AskUserQuestion Bash(git ls-files *) Bash(git log *)
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill docs 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill docs 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: docs" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill docs` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: docs" heading appears above, run `bdk ctx skill docs` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Docs
 

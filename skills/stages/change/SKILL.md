@@ -2,16 +2,16 @@
 name: change
 description: Opens a BDK Change from an intent, or shows, lists, resumes, parks or takes over one. Use when starting a feature or a fix with BDK, or to see where the current Change stands and what to type next.
 argument-hint: '"<intent>" | list | resume <id> [--option <n>] | park [--reason <text>] | takeover'
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *) Bash(git branch --show-current) Bash(git switch -c *) Read Grep Glob AskUserQuestion
+allowed-tools: Bash(bdk *) Bash(echo *) Bash(git branch --show-current) Bash(git switch -c *) Read Grep Glob AskUserQuestion
 ---
 
-!`node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill change 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
+!`bdk ctx skill change 2>&1 || echo "BDK STOP: kernel unavailable (exit $?). Install Node >= 22.13 and run /bdk:setup."`
 
-If no "BDK context: change" heading appears above, run `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" ctx skill change` first and apply its output; on a `BDK STOP` line, stop and report it.
+If no "BDK context: change" heading appears above, run `bdk ctx skill change` first and apply its output; on a `BDK STOP` line, stop and report it.
 
 # Change
 
-A Change is one unit of work on one branch: its intent, design, plan, ledger and progress, kept by the kernel. This skill opens one or reports where one stands; the later stages are their own skills. Run kernel commands as `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" <command>`; this skill writes them as `bdk <command>`. Add `--json` to every command whose output you act on.
+A Change is one unit of work on one branch: its intent, design, plan, ledger and progress, kept by the kernel. This skill opens one or reports where one stands; the later stages are their own skills. Add `--json` to every command whose output you act on.
 
 Arguments: $ARGUMENTS
 
