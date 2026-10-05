@@ -313,7 +313,7 @@ describe("the verifier checks a whole plan", () => {
   });
 });
 
-describe("S4: rule ids are cited", () => {
+describe("rule ids are cited [S4]", () => {
   const CITING = [
     "implementer",
     "simplifier",

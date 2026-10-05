@@ -438,3 +438,23 @@ describe("setup keeps .bdk/ out of the project's tools (T51)", () => {
     }
   });
 });
+
+describe("a report log ingest refused is resumed once, then the ticket fails [EC-7]", () => {
+  const SKILLS = [
+    join(STAGES, "execute", "SKILL.md"),
+    join(STAGES, "verify-design", "SKILL.md"),
+    join(STAGES, "verify-plan", "SKILL.md"),
+    join(REPO_ROOT, "skills", "swarm", "SKILL.md"),
+  ];
+
+  it.each(SKILLS.map((path) => [path.slice(REPO_ROOT.length + 1), path]))("%s", (_name, path) => {
+    const text = readFileSync(path, "utf8");
+    const resume = text
+      .split(/(?<=[.!?])\s/)
+      .find((sentence) => sentence.includes("log ingest") && /resume/i.test(sentence));
+    expect(resume).toBeDefined();
+    expect(resume).toMatch(/refus/);
+    expect(resume).toMatch(/once/);
+    expect(text).toMatch(/second failure[^.]*`?fail`?/i);
+  });
+});

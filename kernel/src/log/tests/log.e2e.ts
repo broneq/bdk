@@ -565,7 +565,7 @@ describe("bdk log ingest", () => {
     expect(read(root, report)).toContain("# Second plan verification");
   });
 
-  it("exit 3 input/invalid-envelope: a wrong status names the field and its line; nothing written", () => {
+  it("exit 3 input/invalid-envelope: a wrong status names the field and its line; nothing written [EC-7]", () => {
     const { root, dir } = opened();
     const report = ticketed(dir);
     const result = refused(
