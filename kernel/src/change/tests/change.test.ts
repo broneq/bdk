@@ -32,6 +32,7 @@ import { settingsRegistry } from "../../registrations.ts";
 import { fixedClock } from "../../shared/clock/index.ts";
 import {
   memoryIndex,
+  memoryRegistry,
   memoryStore,
   readDocument,
   readMarker,
@@ -71,6 +72,7 @@ function harness(store: Store = withTools(memoryStore())): Harness {
         store,
         git,
         openIndex: memoryIndex,
+        openRegistry: memoryRegistry(),
         clock: fixedClock(NOW),
         random: sequentialRandom(),
         pluginRoot: PLUGIN,

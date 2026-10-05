@@ -65,7 +65,7 @@ export function addEntry(
     const ref =
       input.ticket === undefined
         ? undefined
-        : resolveTicketRef(deps.store, change.projectRoot, change.dir, input.ticket);
+        : await resolveTicketRef(deps, change.projectRoot, change.dir, input.ticket);
     if (ref !== undefined && isRefusal(ref)) return ref;
     const merge = ref?.group === MERGE_GROUP ? mergeTarget(change, ref, input) : undefined;
     if (merge !== undefined && isRefusal(merge)) return merge;

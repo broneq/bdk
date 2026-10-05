@@ -8,7 +8,6 @@ import type { AgentsDeps } from "./use-cases/deps.ts";
 
 export type { AgentsDeps } from "./use-cases/deps.ts";
 export type { AgentView } from "./use-cases/registry.ts";
-export { reportStatus } from "./use-cases/wait.ts";
 export {
   endStaleSessions,
   findView,

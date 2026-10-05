@@ -2,7 +2,15 @@
 // frontmatter is the role's envelope, the body the full report.
 import * as z from "zod";
 
-import { evidenceId, ledgerId, relativePath, reviewGroup, role, ticketId } from "./common.ts";
+import {
+  evidenceId,
+  ledgerId,
+  relativePath,
+  reviewGroup,
+  role,
+  ticketId,
+  timestamp,
+} from "./common.ts";
 import type { DocumentKind } from "./common.ts";
 
 const VERSION = 1;
@@ -15,6 +23,10 @@ export const reportKind = {
       schema: z.literal(VERSION),
       ticket: ticketId,
       role,
+      at: timestamp.optional().meta({
+        description:
+          "When `log ingest` stored the report; `agents wait` and the continuation check give an agent only a report stored after it started. Absent on reports of earlier kernels.",
+      }),
       group: reviewGroup.optional().meta({
         description: "Stamped by `log ingest` for a `<ticket>@<group>` report.",
       }),

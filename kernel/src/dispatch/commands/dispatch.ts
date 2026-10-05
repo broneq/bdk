@@ -26,15 +26,15 @@ export function buildCommand(deps: DispatchDeps): Handler {
 }
 
 export function showCommand(deps: DispatchDeps): Handler {
-  return (context) => {
+  return async (context) => {
     if (context.change === undefined) throw new Error("dispatch show is Change-scoped");
-    const report = showPackage(
+    const report = await showPackage(
       deps,
       context.change,
       context.cwd,
       context.positionals["<ticket|path>"] ?? "",
     );
-    return Promise.resolve(isRefusal(report) ? report : { data: report, text: renderShow(report) });
+    return isRefusal(report) ? report : { data: report, text: renderShow(report) };
   };
 }
 

@@ -542,7 +542,9 @@ describe("bdk log ingest", () => {
       entries: [id],
       replaced: false,
     });
-    expect(read(root, report)).toBe(
+    const stored = read(root, report);
+    expect(stored).toMatch(/^at: .+Z\n/m);
+    expect(stored.replace(/^at: .*\n/m, "")).toBe(
       `---\nschema: 1\nticket: ${TICKET}\nrole: verifier\nstatus: done-with-concerns\n` +
         `files: []\nentries: [ ${id} ]\nevidence: []\n---\n` +
         "# Plan verification\n\nPart 02 leans on a helper that does not exist.\n",

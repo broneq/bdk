@@ -94,7 +94,7 @@ export async function recordEvidence(
     );
   }
   const verdict = input.verdict as Verdict | undefined;
-  const ref = resolveTicketRef(deps.store, change.projectRoot, change.dir, input.ticket);
+  const ref = await resolveTicketRef(deps, change.projectRoot, change.dir, input.ticket);
   if (isRefusal(ref)) return ref;
   const { ticket, group } = ref;
   const record = ref.record;

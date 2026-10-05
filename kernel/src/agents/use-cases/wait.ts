@@ -2,12 +2,11 @@
 // caller has something to react to - an admitted message, a child's stored
 // report, a child that ended without one or turned suspect - or the timeout.
 // Every event is returned once: messages are marked delivered, the other
-// events enter the caller's cursor.
-import { join } from "node:path";
-
+// events enter the caller's cursor. A report stored before a child started is
+// an earlier agent's, never the child's (#133).
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
-import { agentsRegistryPath, readDocument, withRegistry } from "../../shared/store/index.ts";
+import { agentReport, agentsRegistryPath, withRegistry } from "../../shared/store/index.ts";
 import type { AgentRegistry, Store } from "../../shared/store/index.ts";
 import type { AgentsWaitReport, ChildCounts, WaitEvent } from "../domain/reports.ts";
 import type { AgentsDeps } from "./deps.ts";
@@ -94,7 +93,7 @@ function collect(
       events.push({ kind: "message", from: message.from, entry: message.entry });
     }
     for (const child of children) {
-      const report = storedReport(store, projectRoot, child);
+      const report = agentReport(store, projectRoot, child);
       if (report !== undefined && child.ticket !== null) {
         add(`report:${child.id}:${child.ticket}`, {
           kind: "report",
@@ -117,39 +116,6 @@ function collect(
     registry.markSeen(id, keys);
     return events;
   });
-}
-
-function storedReport(store: Store, projectRoot: string, child: AgentView): string | undefined {
-  return child.package === null ? undefined : reportStatus(store, projectRoot, child.package);
-}
-
-/**
- * The envelope's `status` of the report a dispatch package names, or
- * undefined before `log ingest` stores it; `packagePath` is relative to the
- * project root.
- */
-export function reportStatus(
-  store: Store,
-  projectRoot: string,
-  packagePath: string,
-): string | undefined {
-  const reportPath = field(store, join(projectRoot, packagePath), "report");
-  if (reportPath === undefined) return undefined;
-  const path = join(projectRoot, reportPath);
-  if (!store.exists(path)) return undefined;
-  return field(store, path, "status") ?? "unknown";
-}
-
-/** A string field of a state document's frontmatter; undefined when absent or unreadable. */
-function field(store: Store, path: string, name: string): string | undefined {
-  try {
-    const document = readDocument(store, path);
-    if (document === undefined || !("data" in document)) return undefined;
-    const value = (document.data as Readonly<Record<string, unknown>>)[name];
-    return typeof value === "string" ? value : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function counts(children: readonly AgentView[]): ChildCounts {

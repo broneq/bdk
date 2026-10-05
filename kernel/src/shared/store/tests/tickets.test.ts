@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   activePackage,
+  agentsRegistryPath,
+  memoryRegistry,
   memoryStore,
   openAttempts,
   openIndex,
@@ -19,7 +21,7 @@ import {
   ticketManifests,
   writeDocument,
 } from "../index.ts";
-import type { ChangeLocation, Store } from "../index.ts";
+import type { ChangeLocation, Heartbeat, RegistryOpener, Store } from "../index.ts";
 import { change, dispatch, evidence } from "../state/tests/examples.ts";
 
 const ROOT = "/repo";
@@ -62,6 +64,11 @@ function seeded(): Store {
 }
 
 const pkg = (role: string) => `${REL}/dispatch/02-3-${role}-${TICKET}.md`;
+
+/** `resolveTicketRef` over `store`, with no agent registry unless `openRegistry` is given. */
+function resolve(store: Store, value: string, openRegistry: RegistryOpener = memoryRegistry()) {
+  return resolveTicketRef({ store, openRegistry }, ROOT, DIR, value);
+}
 
 describe("stampPackage and activePackage", () => {
   it("answers no active package before any dispatch build stamps one", () => {
@@ -159,57 +166,157 @@ describe("resolveTicketRef (`kernel-cli`, Ticket references)", () => {
     return store;
   }
 
-  it("resolves a plain ticket to its active package", () => {
+  it("resolves a plain ticket to its active package", async () => {
     const store = seeded();
     stampPackage(store, DIR, TICKET, pkg("runner"));
-    expect(resolveTicketRef(store, ROOT, DIR, TICKET)).toMatchObject({
+    expect(await resolve(store, TICKET)).toMatchObject({
       ticket: TICKET,
       open: true,
       package: { role: "runner" },
     });
-    expect(resolveTicketRef(store, ROOT, DIR, TICKET)).not.toHaveProperty("group");
+    expect(await resolve(store, TICKET)).not.toHaveProperty("group");
   });
 
-  it("resolves a group reference to the group's package, never the active one", () => {
+  it("resolves a group reference to the group's package, never the active one", async () => {
     const store = withRound(seeded());
-    expect(resolveTicketRef(store, ROOT, DIR, `${ROUND}@p02`)).toMatchObject({
+    expect(await resolve(store, `${ROUND}@p02`)).toMatchObject({
       ticket: ROUND,
       group: "p02",
       package: { path: `${REL}/dispatch/${CHANGE}-reviewer-${ROUND}-p02.md` },
     });
-    expect(resolveTicketRef(store, ROOT, DIR, `${ROUND}@p09`)).not.toHaveProperty("package");
-    expect(resolveTicketRef(store, ROOT, DIR, ROUND)).not.toHaveProperty("package");
+    expect(await resolve(store, `${ROUND}@p09`)).not.toHaveProperty("package");
+    expect(await resolve(store, ROUND)).not.toHaveProperty("package");
   });
 
-  it("resolves the merge group with no package", () => {
-    const resolved = resolveTicketRef(withRound(seeded()), ROOT, DIR, `${ROUND}@merge`);
+  it("resolves the merge group with no package", async () => {
+    const resolved = await resolve(withRound(seeded()), `${ROUND}@merge`);
     expect(resolved).toMatchObject({ ticket: ROUND, group: "merge", open: true });
     expect(resolved).not.toHaveProperty("package");
   });
 
   it.each([`${ROUND}@P_01`, `${ROUND}@${"g".repeat(33)}`, `${ROUND}@`, `${ROUND}@p01@p02`])(
     "refuses %s with input/invalid-argument",
-    (value) => {
-      expect(resolveTicketRef(withRound(seeded()), ROOT, DIR, value)).toMatchObject({
+    async (value) => {
+      expect(await resolve(withRound(seeded()), value)).toMatchObject({
         rule: "input/invalid-argument",
       });
     },
   );
 
-  it("refuses a group on a ticket of another loop", () => {
-    expect(resolveTicketRef(seeded(), ROOT, DIR, `${TICKET}@p01`)).toMatchObject({
+  it("refuses a group on a ticket of another loop", async () => {
+    expect(await resolve(seeded(), `${TICKET}@p01`)).toMatchObject({
       rule: "input/invalid-argument",
     });
   });
 
-  it("answers a ticket without a record as not open and without a package", () => {
-    const resolved = resolveTicketRef(seeded(), ROOT, DIR, OTHER);
+  it("answers a ticket without a record as not open and without a package", async () => {
+    const resolved = await resolve(seeded(), OTHER);
     expect(resolved).toMatchObject({ ticket: OTHER, open: false });
     expect(resolved).not.toHaveProperty("record");
   });
 
   it("leaves group packages out of the ticket's role list", () => {
     expect(packageRoles(withRound(seeded()), DIR, ROUND)).toStrictEqual([]);
+  });
+});
+
+describe("resolveTicketRef and the agent working on the ticket (#133)", () => {
+  const SIMPLIFIER = "a1c3e5a7c9e1a3c5e";
+  const RUNNER = "a3b5d7f9b1d3f5b7d";
+  const STARTED = "2026-09-25T10:05:00.000Z";
+
+  /** The seeded Change, the runner's package active, and a registry of `agents`. */
+  async function working(
+    agents: Readonly<Record<string, { readonly role: string; readonly endedAt?: string }>>,
+    heartbeats: Readonly<Record<string, Heartbeat>> = {},
+  ) {
+    const store = seeded();
+    writeDocument(store, `${ROOT}/${pkg("simplifier")}`, {
+      data: { ...dispatch, ticket: TICKET, role: "simplifier", report: `${REL}/reports/s.md` },
+      body: "",
+    });
+    stampPackage(store, DIR, TICKET, pkg("runner"));
+    store.write(agentsRegistryPath(ROOT), "");
+    const openRegistry = memoryRegistry((id) => heartbeats[id]);
+    const registry = await openRegistry(ROOT);
+    for (const [id, { role, endedAt }] of Object.entries(agents)) {
+      registry.put(id, {
+        ticket: TICKET,
+        package: pkg(role),
+        startedAt: STARTED,
+        ...(endedAt === undefined ? {} : { endedAt, endedBy: "subagent-stop" as const }),
+      });
+    }
+    return () => resolve(store, TICKET, openRegistry);
+  }
+
+  it("names the working agent's package over the active stamp", async () => {
+    const resolveRef = await working({ [SIMPLIFIER]: { role: "simplifier" } });
+    expect(await resolveRef()).toMatchObject({
+      package: { role: "simplifier", path: pkg("simplifier") },
+    });
+  });
+
+  it("keeps the active stamp once the agent ended", async () => {
+    const resolveRef = await working({
+      [SIMPLIFIER]: { role: "simplifier", endedAt: "2026-09-25T10:06:00.000Z" },
+    });
+    expect(await resolveRef()).toMatchObject({ package: { role: "runner" } });
+  });
+
+  it("counts an ended agent that a heartbeat after its end resumed", async () => {
+    const resolveRef = await working(
+      { [SIMPLIFIER]: { role: "simplifier", endedAt: "2026-09-25T10:06:00.000Z" } },
+      { [SIMPLIFIER]: { open: true, atMs: Date.parse("2026-09-25T10:07:00.000Z") } },
+    );
+    expect(await resolveRef()).toMatchObject({ package: { role: "simplifier" } });
+  });
+
+  it("narrows two working steps to the agent in an open tool call", async () => {
+    const resolveRef = await working(
+      { [SIMPLIFIER]: { role: "simplifier" }, [RUNNER]: { role: "runner" } },
+      {
+        [SIMPLIFIER]: { open: true, atMs: Date.parse(STARTED) },
+        [RUNNER]: { open: false, atMs: Date.parse(STARTED) },
+      },
+    );
+    expect(await resolveRef()).toMatchObject({ package: { role: "simplifier" } });
+  });
+
+  it("leaves out a working agent whose own report is stored", async () => {
+    const store = seeded();
+    stampPackage(store, DIR, TICKET, pkg("runner"));
+    store.write(agentsRegistryPath(ROOT), "");
+    writeDocument(store, `${ROOT}/${REL}/reports/02-3-implementer-${TICKET}.md`, {
+      data: {
+        schema: 1,
+        ticket: TICKET,
+        role: "implementer",
+        at: "2026-09-25T10:06:00.000Z",
+        status: "done",
+        files: [],
+        entries: [],
+        evidence: [],
+      },
+      body: "",
+    });
+    const openRegistry = memoryRegistry();
+    (await openRegistry(ROOT)).put(SIMPLIFIER, {
+      ticket: TICKET,
+      package: pkg("implementer"),
+      startedAt: STARTED,
+    });
+    expect(await resolve(store, TICKET, openRegistry)).toMatchObject({
+      package: { role: "runner" },
+    });
+  });
+
+  it("keeps the active stamp while two working steps stay ambiguous", async () => {
+    const resolveRef = await working({
+      [SIMPLIFIER]: { role: "simplifier" },
+      [RUNNER]: { role: "implementer" },
+    });
+    expect(await resolveRef()).toMatchObject({ package: { role: "runner" } });
   });
 });
 

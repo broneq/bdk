@@ -105,9 +105,9 @@ export function showTicketRules(
   globalDir: string,
   value: string,
 ): Promise<TicketRules | Refusal> {
-  return withIndex(deps.openIndex, deps.store, change.projectRoot, (index) => {
+  return withIndex(deps.openIndex, deps.store, change.projectRoot, async (index) => {
     refreshChange(index, { id: change.id, dir: change.dir, archived: false });
-    const resolved = resolveTicketRef(deps.store, change.projectRoot, change.dir, value);
+    const resolved = await resolveTicketRef(deps, change.projectRoot, change.dir, value);
     if (isRefusal(resolved)) return resolved;
     const { ticket, group, record } = resolved;
     if (record === undefined) {
