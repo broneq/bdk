@@ -2,9 +2,11 @@
 // and line caps, the bound by halving under the lock, no journal without
 // `.bdk/`, swallowed write errors and whole lines under parallel appends.
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -191,29 +193,45 @@ describe("appendJournal across processes", () => {
   async function appendInParallel(limit: number): Promise<string[]> {
     dir = mkdtempSync(join(tmpdir(), "bdk-journal-"));
     mkdirSync(join(dir, ".bdk"));
-    const module = new URL("../journal.ts", import.meta.url).pathname;
-    const script = `
-      import { appendJournal } from ${JSON.stringify(module)};
-      import { fileStore } from ${JSON.stringify(new URL("../store.ts", import.meta.url).pathname)};
+    // Bundled first: Node before 22.18 does not strip types without a flag, so
+    // a child cannot import the .ts sources (the CI runs 22.13).
+    const entry = join(dir, "writer.ts");
+    writeFileSync(
+      entry,
+      `import { appendJournal } from ${JSON.stringify(fileURLToPath(new URL("../journal.ts", import.meta.url)))};
+      import { fileStore } from ${JSON.stringify(fileURLToPath(new URL("../store.ts", import.meta.url)))};
       const store = fileStore();
       for (let i = 0; i < 500; i += 1) {
-        await appendJournal(store, process.argv[1], {
+        await appendJournal(store, process.argv[2], {
           v: 1, kind: "command", at: new Date().toISOString(), command: "part-list",
-          args: [process.argv[3], String(i), "x".repeat(50)], exit: 0, rule: null,
+          args: [process.argv[4], String(i), "x".repeat(50)], exit: 0, rule: null,
           ticket: null, change: null, ms: i,
-        }, { limit: Number(process.argv[2]) });
-      }`;
+        }, { limit: Number(process.argv[3]) });
+      }\n`,
+    );
+    const writer = join(dir, "writer.mjs");
+    await build({
+      entryPoints: [entry],
+      outfile: writer,
+      bundle: true,
+      platform: "node",
+      format: "esm",
+      // The same banner as kernel/build.mjs: the store carries `yaml`, whose
+      // CommonJS code calls `require`.
+      banner: {
+        js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);',
+      },
+      logLevel: "silent",
+    });
     const root = dir;
     await Promise.all(
       Array.from(
         { length: 8 },
         (_, n) =>
           new Promise<void>((done, fail) => {
-            const child = spawn(
-              process.execPath,
-              ["--input-type=module", "-e", script, root, String(limit), `p${n}`],
-              { stdio: ["ignore", "ignore", "inherit"] },
-            );
+            const child = spawn(process.execPath, [writer, root, String(limit), `p${n}`], {
+              stdio: ["ignore", "ignore", "inherit"],
+            });
             child.on("error", fail);
             child.on("exit", (code) => {
               if (code === 0) done();
