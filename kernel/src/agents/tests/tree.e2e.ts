@@ -113,7 +113,9 @@ function subagentStop(change: Started, id: string, running: readonly string[] = 
   return result.json as { decision: string; reason?: string };
 }
 
-describe("the agent tree", () => {
+// Two parts through two leads spawn dozens of kernel and git processes: 12 s
+// alone, over the 30 s project default when the whole E2E suite loads the machine.
+describe("the agent tree", { timeout: 120_000 }, () => {
   it("runs two parts through two leads to part done", async () => {
     const change = twoParts();
     const root = change.root;
