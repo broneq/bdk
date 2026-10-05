@@ -240,15 +240,6 @@ The `stages` suite SHALL run stage skills the way a user starts them: each case 
 - **WHEN** `pnpm eval check` runs
 - **THEN** it renders and validates the `stages` suite config of every stage skill with a case file, without a model call
 
-### Requirement: Retirement of tests/evals
-
-`tests/evals/` SHALL carry a notice that it is superseded by `evals/` and is removed in T32, and T32's scope in the implementation plan SHALL list its removal. New skill evals SHALL go to `evals/`.
-
-#### Scenario: notice present
-
-- **WHEN** `tests/evals/README.md` is read
-- **THEN** it names `evals/` as the replacement and T32 as the task that removes the directory
-
 ### Requirement: Review models measurement
 
 The `review-models` suite SHALL measure the model of the part reviewer (T42-M). Each run types `/bdk:cr` in a fresh copy of a seeded, executed Change: plan parts whose committed code holds seeded logic errors and test gaps, and one integration error across two parts. An answer key in the suite names each seeded defect with its file, its line range and its class (`logic`, `test-gap`, `integration`).
