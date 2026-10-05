@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { repository } from "./support/repo.ts";
 import { REPO_ROOT, runBdk } from "./support/run.ts";
 
 const LAUNCHER = join(REPO_ROOT, "bin", "bdk");
@@ -73,6 +74,14 @@ describe("bin/bdk", () => {
     const viaLauncher = launch(LAUNCHER, ["version", "--json"]);
     const viaPath = runBdk(["version", "--json"], REPO_ROOT);
     expect(viaLauncher.code).toBe(0);
+    expect(JSON.parse(viaLauncher.stdout)).toEqual(viaPath.json);
+  });
+
+  it("answers change status in a project like the bundle run by its path", () => {
+    const project = repository();
+    const viaLauncher = launch(LAUNCHER, ["change", "status", "--json"], { cwd: project });
+    const viaPath = runBdk(["change", "status", "--json"], project);
+    expect(viaLauncher.code).toBe(viaPath.code);
     expect(JSON.parse(viaLauncher.stdout)).toEqual(viaPath.json);
   });
 
