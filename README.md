@@ -21,6 +21,12 @@ A personal Claude Code plugin packaging reusable dev workflows, skills, agents, 
 
 The marketplace installs the latest release from the `release` branch, which carries the built kernel (`dist/bdk.mjs`). The `main` branch holds sources only.
 
+**Craft skills (optional):** the same marketplace lists `bdk-craft`, a separate plugin of portable engineering skills (test-driven development, debugging, Mermaid diagrams and more; `plugins/bdk-craft/README.md`). It works without `bdk`; with `bdk` installed, implementer agents are told to read its `tdd` skill, and `debugging` on a bug Change.
+
+```
+/plugin install bdk-craft@bdk
+```
+
 ### Code tools
 
 BDK ships no MCP server and starts no background process. Skills and agents explore, search and trace code with Claude Code's built-in tools (`Grep`, `Glob`, `Read`, `Bash`), so nothing beyond Claude Code needs installing, and BDK adds no tool-guidance layer on top of them. The reasoning is in `docs/adr/0001-remove-bundled-mcp-servers.md`.
@@ -157,13 +163,10 @@ Invoke with `/bdk:<skill-name>`:
 | `/bdk:execute`                 | Build the verified plan of the active Change through role agents: every ready part in one run, flat or with one lead per part, one commit per task; ends naming `/bdk:cr`                                                                                                                                                                                                                         |
 | `/bdk:close`                   | Close the reviewed Change: merge its spec deltas, archive it in one commit, regenerate drifted rule files, and report the PR summary; it opens no PR                                                                                                                                                                                                                                              |
 | `/bdk:run`                     | Carry a Change through the stages for you: opens it from an intent, then design, plan, execute, review and close; asks nothing and records each choice for the next gate; `--auto` passes every ready gate                                                                                                                                                                                        |
-| `/bdk:debug`                   | Structured debugging: investigate → failing tests → fix or plan                                                                                                                                                                                                                                                                                                                                   |
-| `/bdk:test-driven-development` | Rigid TDD cycle: red → green                                                                                                                                                                                                                                                                                                                                                                      |
 | `/bdk:design`                  | Design the active Change with you: grounds in the code, 2+ approaches with Mermaid and self-critique, writes the design files the kernel names, records decisions in the ledger, verifies and ends at the design gate                                                                                                                                                                             |
 | `/bdk:verify-design`           | Verify the design of the active Change against the code on a fresh context; a passing verdict marks `design-verify` done, which the design gate requires                                                                                                                                                                                                                                          |
 | `/bdk:adr`                     | Record one architecture decision as MADR under `docs/adr/`, from a description or a `decision` entry of a Change                                                                                                                                                                                                                                                                                  |
 | `/bdk:docs`                    | Write architecture documentation for a code path (`docs/architecture/<module>.md` by default), or refresh an existing document against the code after you approve the plan; Mermaid diagrams and prototype examples                                                                                                                                                                               |
-| `/bdk:mermaid-drawer`          | Shared Mermaid standard used by every diagram-emitting skill - type selection, node budget, and a palette verified legible in light and dark themes. Invoke directly to draw one diagram                                                                                                                                                                                                          |
 | `/bdk:rules`                   | Audit recurring lessons into project rules through `bdk rules accept`, capture one lesson, or check the rule files and their `.claude/rules/` projection; removes a rule only as a tombstone you approve                                                                                                                                                                                          |
 | `swarm` (internal)             | Rules the stage skills follow to run role agents in waves: disjoint `Files:`, `execution.concurrency`, the ledger as channel, steps under the ticket, one resume                                                                                                                                                                                                                                  |
 | `/bdk:doctor`                  | Diagnose the BDK installation with `bdk doctor`, apply the safe repairs, and walk the rest with you; a system change only on your agreement                                                                                                                                                                                                                                                       |
@@ -199,6 +202,14 @@ BDK 3 also removed the internal skills and agents its role skills replace:
 | Agents `code-reviewer`, `architecture-reviewer`, `dead-code-detector`, `duplicate-detector`                    | `reviewer` and the Opus `integration-reviewer` of `/bdk:cr`                                                               |
 | Agents `test-runner`, `static-analyse`                                                                         | `runner`                                                                                                                  |
 | Agents `explorer`, `log-analyzer`                                                                              | `scout`                                                                                                                   |
+
+BDK 3 moved the craft skills to the `bdk-craft` plugin:
+
+| Removed                        | Use instead                                                                                                         |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `/bdk:test-driven-development` | `/bdk-craft:tdd`                                                                                                    |
+| `/bdk:debug`                   | `/bdk-craft:debugging` for the process; open a bug Change with `/bdk:change` when the fix needs a plan and a review |
+| `/bdk:mermaid-drawer`          | `/bdk-craft:mermaid-drawer`                                                                                         |
 
 ---
 

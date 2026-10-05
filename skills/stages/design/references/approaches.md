@@ -10,7 +10,7 @@ Each approach of a decision carries:
 - **Components**: the modules or services involved, what each owns, where the boundaries run. Name the existing modules the code already has; a new one is marked as new.
 - **Data flow**: how information moves on the happy path and on the main failure path.
 - **Tradeoffs**: concrete, in the units of the project ("one more network hop on every login, p99 about 50 ms higher"), across scalability, latency, consistency, operational complexity and evolution. State build cost for transparency; weigh it as the `Rules: engineering-judgment` section says.
-- **Diagram**: at least one Mermaid diagram, drawn per `/bdk:mermaid-drawer` when it is installed. Label the edges. When two approaches differ in shape, use the same diagram type for both so they compare side by side.
+- **Diagram**: at least one Mermaid diagram, drawn per `/bdk-craft:mermaid-drawer` when it is installed. Label the edges. When two approaches differ in shape, use the same diagram type for both so they compare side by side.
 
 Then one recommendation with its reason, tied to the constraints the user stated or the code showed.
 

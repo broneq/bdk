@@ -39,8 +39,8 @@ them until T50.
 | A skill added, renamed, or retired under `skills/`                                                                                                                                      | `reference/skills.md`, `index.md` (pipeline diagram + tier table), `README.md` skills table, the owning workflow page                                                                                |
 | `skills/design/`, `create-plan/`, `verify-plan/`, `subagent-execute-plan/`, `tools/cr/` bodies                                                                                          | `workflows/full-pipeline.md`, `workflows/standard.md`, `getting-started/first-feature.md`, `concepts/plan-pipeline.md`                                                                               |
 | `skills/tools/cr/`, `skills/tools/pr-review/` (modes, flags, rounds, `disallowed-tools`)                                                                                                | `workflows/code-review.md`, `reference/skills.md`, `reference/agents.md` (read-only enforcement section)                                                                                             |
-| `skills/debug/`                                                                                                                                                                         | `workflows/debugging.md`                                                                                                                                                                             |
-| `skills/tools/adr/`, `skills/tools/docs/`, `mermaid-drawer/`                                                                                                                            | `workflows/docs-and-decisions.md`, `reference/skills.md`                                                                                                                                             |
+| `plugins/bdk-craft/skills/debugging/`                                                                                                                                                   | `workflows/debugging.md`                                                                                                                                                                             |
+| `skills/tools/adr/`, `skills/tools/docs/`, `plugins/bdk-craft/skills/mermaid-drawer/`                                                                                                   | `workflows/docs-and-decisions.md`, `reference/skills.md`                                                                                                                                             |
 | `skills/tools/rules/`                                                                                                                                                                   | `workflows/rules-hygiene.md`, `reference/skills.md`                                                                                                                                                  |
 | `skills/setup/`                                                                                                                                                                         | `getting-started/setup.md`, `getting-started/installation.md`                                                                                                                                        |
 | `skills/roles/` and `swarm` (the `user-invocable: false` set)                                                                                                                           | `reference/skills.md` (collective role-skill paragraph), `concepts/agents.md` (roles and adapters)                                                                                                   |
@@ -94,12 +94,12 @@ Format: page - what it is for - the files that decide whether it is true.
   Truth: `skills/create-plan/`, `verify-plan/`, `subagent-execute-plan/`, `tools/cr/`.
 - **`workflows/trivial.md`** - why the trivial tier needs no skill.
   Truth: `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json`, `skills/tools/cr/SKILL.md` (`--inline`).
-- **`workflows/debugging.md`** - the five phases, choosing between 5a and 5b.
-  Truth: `skills/debug/SKILL.md`.
+- **`workflows/debugging.md`** - a bug Change, and the `bdk-craft` debugging process inside it.
+  Truth: `plugins/bdk-craft/skills/debugging/SKILL.md`, `kernel/src/dispatch/` (the `Craft` section).
 - **`workflows/code-review.md`** - the review Change, the range, a round, triage and the fix loop, `--inline`, PR review.
   Truth: `skills/tools/cr/SKILL.md`, `skills/tools/pr-review/SKILL.md`, `kernel/src/review/`.
 - **`workflows/docs-and-decisions.md`** - ADRs, module explanations, doc refresh, diagrams.
-  Truth: `skills/tools/adr/`, `skills/tools/docs/`, `mermaid-drawer/`.
+  Truth: `skills/tools/adr/`, `skills/tools/docs/`, `plugins/bdk-craft/skills/mermaid-drawer/`.
 - **`workflows/rules-hygiene.md`** - learnings, the audit with `rules stats`, `rules accept`, `rules prune`,
   `rules import` of hand-written `.claude/rules/`.
   Truth: `skills/tools/rules/`,
@@ -203,7 +203,7 @@ These hold across pages, and break the build or the navigation rather than one p
    `#bdkrules`. A link out of `docs/guide/` (to `README.md`) must be an absolute GitHub URL.
 3. **Snippet paths resolve.** `pymdownx.snippets` runs with `check_paths: true`, so a `--8<--` line
    pointing at a moved file fails the build.
-4. **Mermaid blocks are fenced as ` ```mermaid `** and follow `/bdk:mermaid-drawer` (node budget,
+4. **Mermaid blocks are fenced as ` ```mermaid `** and follow `/bdk-craft:mermaid-drawer` (node budget,
    the shared palette).
 5. **No em dash anywhere.** The site uses a plain `-`.
 6. **Every page opens with the v2 banner** until T50, enforced by `kernel/tests/docs/banner.test.ts`.
