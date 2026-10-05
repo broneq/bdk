@@ -1,16 +1,16 @@
 # The plan pipeline
 
-!!! warning "Describes BDK v2"
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
-    This page describes BDK v2. The v3 documentation replaces it (T50).
-
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
-    active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
-    passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdkplan).
-    `/bdk:execute` replaces `/bdk:subagent-execute-plan`: the kernel's `bdk next`
-    hands it the parts to run, and each task ends as one commit with its trailers.
+::: info BDK 3
+In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
+active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
+passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdk-plan).
+`/bdk:execute` replaces `/bdk:subagent-execute-plan`: the kernel's `bdk next`
+hands it the parts to run, and each task ends as one commit with its trailers.
+:::
 
 Four skills form one chain, each stage consuming the previous stage's output:
 
@@ -49,9 +49,9 @@ Progress is recorded per group in two places:
 
 Every read cross-checks the trailers on the branch and corrects the manifest in place when they disagree. Git always wins. After a rebase or a squash, `rebuild` throws the manifest away and re-derives it from trailers alone.
 
-!!! warning
-
-    Never hand-edit a file under `.bdk/runs/`. `scripts/bdk_run_state.py` is the only reader and writer; an edit git does not agree with is discarded on the next read. For a human-readable view, run the script's `print` subcommand. See [Artifacts](../reference/artifacts.md).
+::: warning
+Never hand-edit a file under `.bdk/runs/`. `scripts/bdk_run_state.py` is the only reader and writer; an edit git does not agree with is discarded on the next read. For a human-readable view, run the script's `print` subcommand. See [Artifacts](../reference/artifacts.md).
+:::
 
 ## Resume, session guard, and `--force`
 

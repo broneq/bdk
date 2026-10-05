@@ -89,10 +89,10 @@ With `--quick`, or when Lavish is off or fails, the skill prints each PR's compu
   ...
 ```
 
-!!! warning
-
-    Nothing is posted to GitHub until you decide. Only then does a single review call per
-    PR post the inline comments, the summary and the event.
+::: warning
+Nothing is posted to GitHub until you decide. Only then does a single review call per
+PR post the inline comments, the summary and the event.
+:::
 
 On your own PR the GitHub event is `COMMENT`, since GitHub rejects self-review.
 

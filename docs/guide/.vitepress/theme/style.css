@@ -1,0 +1,12 @@
+/* A diagram keeps its natural size; a wide one scrolls inside the column. */
+.vp-doc .mermaid {
+  margin: 16px 0;
+  overflow-x: auto;
+}
+
+/* Mermaid sizes a node from its label before the page styles apply, so the
+   paragraph spacing of .vp-doc would overflow and clip every label. */
+.vp-doc .mermaid foreignObject p {
+  margin: 0;
+  line-height: 1.5;
+}

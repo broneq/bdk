@@ -1,8 +1,8 @@
 # BDK - Broneq Dev Kit
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 BDK is a Claude Code plugin that packages one complete development workflow - design, planning, plan verification, autonomous execution, and code review - into a single installable unit. Nothing in it is tied to a language or a stack: your project's test, lint, and build commands live in `.bdk/settings.json`, and every skill reads them from there.
 
@@ -16,18 +16,18 @@ BDK is a Claude Code plugin that packages one complete development workflow - de
 - **[Delta code review](workflows/code-review.md).** Reviews only what changed since the last review by default, with a reviewer per group of the change, and fixes blocking findings in rounds until none is left.
 - **Nothing to install beyond Claude Code.** Skills and agents explore, search and trace code with the built-in tools; BDK ships no MCP server and starts no background process.
 - **[Every seam is a file](workflows/full-pipeline.md).** Design docs, plans, verification reports, and commit trailers carry the state between stages, so any stage of the pipeline runs in a fresh session.
-- **[Rules hygiene built in](workflows/rules-hygiene.md).** Lessons go to the ledger; [`/bdk:rules`](reference/skills.md#bdkrules) adopts the recurring ones as rules you accept and prunes the ones that no longer apply, so the rule set does not turn into a changelog.
+- **[Rules hygiene built in](workflows/rules-hygiene.md).** Lessons go to the ledger; [`/bdk:rules`](reference/skills.md#bdk-rules) adopts the recurring ones as rules you accept and prunes the ones that no longer apply, so the rule set does not turn into a changelog.
 
 ## How you work with it
 
 There is one pipeline, and three tiers differ only in where you enter it.
 
-!!! note "BDK 3"
-
-    In BDK 3 every tier works on a Change: `/bdk:change`, then `/bdk:design` for a
-    feature, then `/bdk:plan`, which replaces `/bdk:create-plan` and runs
-    `/bdk:verify-plan` itself, then `/bdk:execute`, which replaces
-    `/bdk:subagent-execute-plan`. See [Stage skills](reference/skills.md#stage-skills).
+::: info BDK 3
+In BDK 3 every tier works on a Change: `/bdk:change`, then `/bdk:design` for a
+feature, then `/bdk:plan`, which replaces `/bdk:create-plan` and runs
+`/bdk:verify-plan` itself, then `/bdk:execute`, which replaces
+`/bdk:subagent-execute-plan`. See [Stage skills](reference/skills.md#stage-skills).
+:::
 
 ```mermaid
 flowchart LR

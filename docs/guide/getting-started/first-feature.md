@@ -1,8 +1,8 @@
 # Your first feature
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 One toy change, carried through the full tier end to end:
 **add a `--dry-run` flag to the export command**. Five commands, five artifacts,
@@ -11,19 +11,19 @@ each one a file you can read before you continue.
 Every stage is a seam. The artifact is the hand-off, so you can close the
 session after any step and pick up in a fresh one.
 
-!!! note
-
-    Work on a branch. `/bdk:subagent-execute-plan` refuses to run on `main` or
-    `master`, and refuses to start with a dirty working tree.
+::: info
+Work on a branch. `/bdk:subagent-execute-plan` refuses to run on `main` or
+`master`, and refuses to start with a dirty working tree.
+:::
 
 ## 1. Design
 
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:design` works on the active Change: it writes `design.md` and
-    `architecture.md` into the Change, records decisions in the ledger, runs
-    `/bdk:verify-design` and ends at the design gate, where you type `/bdk:plan`.
-    See [/bdk:design](../reference/skills.md#bdkdesign).
+::: info BDK 3
+In BDK 3, `/bdk:design` works on the active Change: it writes `design.md` and
+`architecture.md` into the Change, records decisions in the ledger, runs
+`/bdk:verify-design` and ends at the design gate, where you type `/bdk:plan`.
+See [/bdk:design](../reference/skills.md#bdk-design).
+:::
 
 ```
 /bdk:design add a --dry-run flag to the export command
@@ -43,11 +43,11 @@ doc ends with its own hand-off line pointing at `/bdk:create-plan`.
 
 ## 2. Create the plan
 
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
-    active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
-    passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdkplan).
+::: info BDK 3
+In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
+active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
+passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdk-plan).
+:::
 
 ```
 /bdk:create-plan .bdk/design/2026-09-13-0930-dry-run-export-design.md
@@ -111,12 +111,12 @@ is running the plan that was verified.
 
 ## 4. Execute
 
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:execute` replaces `/bdk:subagent-execute-plan`: it builds the
-    plan parts of the active Change through role agents, every ready part in one
-    run, flat or with one lead per part, then names `/bdk:cr`. See
-    [/bdk:execute](../reference/skills.md#bdkexecute).
+::: info BDK 3
+In BDK 3, `/bdk:execute` replaces `/bdk:subagent-execute-plan`: it builds the
+plan parts of the active Change through role agents, every ready part in one
+run, flat or with one lead per part, then names `/bdk:cr`. See
+[/bdk:execute](../reference/skills.md#bdk-execute).
+:::
 
 ```
 /bdk:subagent-execute-plan .bdk/plans/2026-09-13-0942-dry-run-export.md

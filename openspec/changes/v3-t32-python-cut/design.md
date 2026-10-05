@@ -54,18 +54,21 @@ The config lives in `docs/guide/.vitepress/config.ts` and runs with `vitepress b
 ### D-5 Syntax conversion, mechanical and checked
 
 - `!!! <type> "<title>"` with a four-space indented body becomes `::: <type> <title>`, the body unindented, and `:::`. MkDocs `note` and `warning` map to VitePress `info` and `warning`. The conversion is a one-off script in the scratchpad, not committed, and its result is reviewed through the built site.
-- `--8<-- "CHANGELOG.md"` becomes `<!--@include: ../../CHANGELOG.md-->`, and the same for `CONTRIBUTING.md`. `isSnippetPage` recognises the include form instead. Links inside the included files that point at repository paths are checked by the build. Each one that does not resolve on the site becomes an absolute GitHub URL in the source file. `CHANGELOG.md` is never edited by hand, so a dead link in it goes to `ignoreDeadLinks` as an explicit pattern instead.
+- `--8<-- "CHANGELOG.md"` becomes `<!--@include: ../../CHANGELOG.md-->`, and the same for `CONTRIBUTING.md`. `isSnippetPage` recognises the include form instead. Links inside the included files that point at repository paths are checked by the build. Each one that does not resolve on the site becomes an absolute GitHub URL in the source file. `CHANGELOG.md` is never edited by hand; its links are absolute URLs already, so the config needs no `ignoreDeadLinks` entry.
 - The banner text stays the same; only its container syntax changes, in the pages and in `banner.test.ts`.
 
 ### D-6 Mermaid through a local component, no plugin
 
-A `markdown.config` hook in `config.ts` turns a `mermaid` fence into a `<Mermaid>` component with the encoded source. The component, in `docs/guide/.vitepress/theme/`, extends the default theme, imports `mermaid` on the client only, and renders again when the theme switches between light and dark.
+A `config` hook in `docs/guide/.vitepress/markdown.ts`, the Markdown options that `config.ts` and the anchor guard share, turns a `mermaid` fence into a `<Mermaid>` component with the URI-encoded source. The component, `theme/mermaid.ts`, is a render function in plain TypeScript, so `tsc`, eslint and knip read it without a Vue compiler. The theme extends the default theme and registers it. It imports `mermaid` on the client only and renders again when the theme switches between light and dark. A diagram keeps the width of its viewBox and a wide one scrolls inside the column: scaled to the column, the widest flowchart (1687 px) would shrink its labels to about 4 px. `theme/style.css` resets the `.vp-doc` paragraph spacing inside the diagram, which would otherwise clip every label that mermaid sized before the page styles applied.
 
-- Alternative: `vitepress-plugin-mermaid`. It lost because its last release is from 2024, and it wraps the whole config. The component is about 30 lines with one direct dependency (`mermaid`).
+- Alternative: `vitepress-plugin-mermaid`. It lost because its last release is from 2024, and it wraps the whole config. The component is about 40 lines with two direct dependencies (`mermaid`, and `vue`, which VitePress already brings).
+- Alternative: a `.vue` single-file component. It lost because typecheck and knip would need a Vue toolchain (`vue-tsc`, a knip compiler) for one component.
 
-### D-7 Anchor guard with VitePress's own slug function
+### D-7 Anchor guard with VitePress's own renderer
 
-VitePress's dead-link check ignores anchors, and MkDocs strict mode is what the spec promised. A new contract test collects the headings of each page (explicit `{#id}` first, otherwise the slug from `@mdit-vue/shared`'s `slugify`, the function VitePress uses) and checks every `[...](page.md#anchor)` and `[...](#anchor)` link. `@mdit-vue/shared` becomes a pinned devDependency, so knip sees a declared import.
+VitePress's dead-link check ignores anchors, and MkDocs strict mode is what the spec promised. A new contract test renders each page with VitePress's exported `createMarkdownRenderer` and the site's own `markdown.ts` options, reads the heading ids it writes (explicit `{#id}`, slugs, duplicate suffixes), and checks every in-site link with an anchor: same-page, relative and absolute under `/bdk/`. The ids are exactly the ones the site has, with no slug function copied or imported separately, and no dependency beyond `vitepress`.
+
+- Alternative: `@mdit-vue/shared`'s `slugify` over headings parsed by hand. It lost because a second heading parser drifts from the renderer (code spans, `{#id}`, duplicate suffixes) and adds a devDependency.
 
 - Alternative: a link-checker over the built HTML (for example `linkinator`). It lost because it needs a build in the contract run and adds a crawler for 32 links.
 

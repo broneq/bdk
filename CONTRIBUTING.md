@@ -94,14 +94,16 @@ The Python scripts are linted and formatted by ruff until T32 removes them. `pnp
 
 ## Documentation Site
 
-The user documentation is an MkDocs Material site. `mkdocs.yml` sits at the root and the pages live in `docs/guide/`; everything else under `docs/` stays off the site. Until T50 rewrites them for v3, the pages describe v2 and open with a banner that says so.
+The user documentation is a VitePress site. The pages live in `docs/guide/` and the site's config in `docs/guide/.vitepress/` (`config.ts`, the sidebar in `sidebar.ts`, the Markdown options in `markdown.ts`, the theme with the Mermaid component); everything else under `docs/` stays off the site. VitePress and Mermaid are devDependencies, so `pnpm install` is the whole setup. Until T50 rewrites them for v3, the pages describe v2 and open with a banner that says so.
 
 ```bash
-pnpm docs:build     # mkdocs build --strict, from the docs dependency group
+pnpm docs:dev       # local server with hot reload
+pnpm docs:build     # static build; a dead link fails it
+pnpm docs:preview   # serve the last build
 pnpm test:contract  # includes the site guards in kernel/tests/docs/
 ```
 
-The guards check that every user-invocable skill has a section in `reference/skills.md` and an entry in `README.md`, that every agent is named in `reference/agents.md`, that the nav lists exactly the pages in `docs/guide/`, that every page carries the v2 banner, and that every `hooks/...` path named in prose exists. The `docs.yml` workflow builds the site on every pull request and deploys it only from `main`. The dev skill `docs-sync` (`.claude/skills/docs-sync/`) audits the pages against the code.
+The guards check that every user-invocable skill has a section in `reference/skills.md` and an entry in `README.md`, that every agent is named in `reference/agents.md`, that the sidebar lists exactly the pages in `docs/guide/`, that every page carries the v2 banner, that every `hooks/...` path named in prose exists, and that every in-site link with an anchor names a heading of its target page. The `docs.yml` workflow builds the site on every pull request and deploys it to GitHub Pages only from `main`; the repository's Pages source must be "GitHub Actions". The dev skill `docs-sync` (`.claude/skills/docs-sync/`) audits the pages against the code.
 
 ---
 

@@ -133,4 +133,4 @@ Open a Change for what you want to build:
 
 `/bdk:change` asks whether to work on a new branch (`feat/<slug>`, or
 `fix/<slug>` for a bug) or the current one, binds the Change to that branch and
-names the stage to type next. See [Skills](../reference/skills.md#bdkchange).
+names the stage to type next. See [Skills](../reference/skills.md#bdk-change).

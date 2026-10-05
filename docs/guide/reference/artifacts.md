@@ -1,12 +1,12 @@
 # Artifacts reference
 
-!!! warning "Describes BDK v2"
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
-    This page describes BDK v2. The v3 documentation replaces it (T50).
-
-!!! note "BDK 3"
-
-    [Settings and Changes](#settings-and-changes) describes BDK 3.
+::: info BDK 3
+[Settings and Changes](#settings-and-changes) describes BDK 3.
+:::
 
 ## Settings and Changes
 

@@ -3,8 +3,9 @@ __pycache__/
 *.pyo
 tmp_*.py
 .idea/
-# mkdocs build output (`mkdocs build`, `mkdocs gh-deploy`)
-/site/
+# VitePress build output and cache (`pnpm docs:build`, `pnpm docs:dev`)
+/docs/guide/.vitepress/dist/
+/docs/guide/.vitepress/cache/
 /.bdk/
 /.lavish/
 node_modules/

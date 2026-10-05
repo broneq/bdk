@@ -1,4 +1,4 @@
-// Lint for the kernel and eval harness sources and tests. Formatting is Prettier's job:
+// Lint for the kernel and eval harness sources and tests, and the docs site config. Formatting is Prettier's job:
 // eslint-config-prettier switches off every rule that would fight it.
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier";
@@ -10,14 +10,14 @@ export default tseslint.config(
       "dist/",
       "coverage/",
       "node_modules/",
-      ".venv/",
-      "site/",
+      "docs/guide/.vitepress/dist/",
+      "docs/guide/.vitepress/cache/",
       "evals/.runs/",
       "evals/suites/*/hidden/",
     ],
   },
   {
-    files: ["kernel/**/*.ts", "evals/**/*.ts"],
+    files: ["kernel/**/*.ts", "evals/**/*.ts", "docs/guide/.vitepress/**/*.ts"],
     extends: [
       js.configs.recommended,
       ...tseslint.configs.strictTypeChecked,

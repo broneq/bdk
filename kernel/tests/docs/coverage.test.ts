@@ -1,5 +1,6 @@
 // `docs-site`, Drift guards 1-3: every user-invocable skill and every agent
-// has its reference entry, and the nav of mkdocs.yml equals the site pages.
+// has its reference entry, and the sidebar of the site config names exactly the
+// site pages.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -7,7 +8,7 @@ import { parse } from "yaml";
 
 import { pluginSkills } from "../support/plugin-skills.ts";
 import { REPO_ROOT } from "../support/run.ts";
-import { readMkdocs, readPage, sitePages } from "./site.ts";
+import { readPage, sidebarPages, sitePages } from "./site.ts";
 
 function frontmatter(path: string): Record<string, unknown> {
   const match = /^---\n([\s\S]*?)\n---/.exec(readFileSync(path, "utf8"));
@@ -52,14 +53,14 @@ describe("agents reference", () => {
   });
 });
 
-describe("nav", () => {
-  const { docsDir, nav } = readMkdocs();
+describe("sidebar", () => {
+  const pages = sidebarPages();
 
-  it("builds from docs/guide", () => {
-    expect(docsDir).toBe("docs/guide");
+  it("names each page once", () => {
+    expect(pages.filter((page, at) => pages.indexOf(page) !== at)).toStrictEqual([]);
   });
 
   it("names exactly the pages under docs/guide", () => {
-    expect([...nav].sort()).toStrictEqual(sitePages());
+    expect([...pages].sort()).toStrictEqual(sitePages());
   });
 });

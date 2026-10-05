@@ -1,8 +1,8 @@
 # The shared foundation
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 Every BDK skill carries the same line: _relies on BDK foundation (`STARTUP_INSTRUCTIONS.md`)_. That file is the contract each skill inherits instead of restating. It is what makes a plain session, with no BDK skill invoked at all, still behave like a BDK session.
 
@@ -65,6 +65,6 @@ This table is in the foundation rather than in that skill because the decision u
 - **A safe trivial tier.** Built-in plan mode plus a hand edit is still governed by verification proportionality and the quality rules, which is why [the trivial workflow](../workflows/trivial.md) needs no BDK skill at all.
 - **No prompt drift between orchestrator and subagent.** Both read the same rules, resolved from the same settings.
 
-!!! warning
-
-    The foundation occupies context in every single session. Keep additions to it short, and prefer putting detail in a skill that loads on demand.
+::: warning
+The foundation occupies context in every single session. Keep additions to it short, and prefer putting detail in a skill that loads on demand.
+:::
