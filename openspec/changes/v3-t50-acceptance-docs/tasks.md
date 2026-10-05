@@ -2,11 +2,11 @@
 
 ## 1. Catalogue reader and report generator
 
-- [ ] 1.1 Write failing unit tests for the catalogue reader in `kernel/scripts/acceptance/` on a fixture spec: it returns rows with ID, item and evidence kinds; it refuses a duplicate ID, an unknown evidence kind, an `accepted` row without a reason, an `open` row without an issue, and an `open` `S` row, each naming the row. Verify they fail for the missing module.
-- [ ] 1.2 Implement the catalogue reader (parses the table of `openspec/specs/acceptance-catalogue/spec.md`, or the change's delta until archive) and verify the tests of 1.1 pass.
-- [ ] 1.3 Write failing unit tests for the evidence matcher on fixture title lists per project: an item with `test` and no bracketed title is reported; a `perf` item answered only outside `perf` is reported; a `report <path>` to a missing file is reported; a title naming an unknown ID of a catalogue prefix is reported with its file; a title carrying two IDs answers both; a `describe` title answers its tests. Verify they fail.
-- [ ] 1.4 Implement the matcher and the title collector (`vitest list --json` per project, D3) and verify the tests of 1.3 pass and the collector returns the full names of a sample `describe.each` test.
-- [ ] 1.5 Write failing unit tests for the report renderer: generated marker first, one row per item with its kinds, file and full title per test, perf items marked "local only", byte-stable output for unchanged input. Implement it, add the `acceptance:report` script to the root `package.json` (build, then generate `docs/V3-ACCEPTANCE.md`), and verify the tests pass.
+- [x] 1.1 Write failing unit tests for the catalogue reader in `kernel/tests/support/acceptance.ts` on a fixture spec: it returns rows with ID, item and evidence kinds; it refuses a duplicate ID, an unknown evidence kind, an `accepted` row without a reason, an `open` row without an issue, and an `open` `S` row, each naming the row. Verify they fail for the missing module.
+- [x] 1.2 Implement the catalogue reader (parses the table of `openspec/specs/acceptance-catalogue/spec.md`, or the change's delta until archive) and verify the tests of 1.1 pass.
+- [x] 1.3 Write failing unit tests for the evidence matcher on fixture title lists per project: an item with `test` and no bracketed title is reported; a `perf` item answered only outside `perf` is reported; a `report <path>` to a missing file is reported; a title naming an unknown ID of a catalogue prefix is reported with its file; a title carrying two IDs answers both; a `describe` title answers its tests. Verify they fail.
+- [x] 1.4 Implement the matcher and the title collector (`vitest list --json` per project, D3) and verify the tests of 1.3 pass and the collector returns the full names of a sample `describe.each` test.
+- [x] 1.5 Write failing unit tests for the report renderer: generated marker first, one row per item with its kinds, file and full title per test, perf items marked "local only", byte-stable output for unchanged input. Implement it, add the `acceptance:report` script to the root `package.json` (build, then generate `docs/V3-ACCEPTANCE.md`), and verify the tests pass.
 
 ## 2. IDs on the existing evidence
 

@@ -42,7 +42,7 @@ The prefixes follow the design's sections: `S1`-`S8` plus `S-DISPATCH` and `S-EV
 
 ### D3 Titles are collected with `vitest list`
 
-The report script runs `vitest list --json` for each project (`unit`, `e2e`, `contract`, `perf`) and reads the full names, so titles built with template literals or `describe.each` and nesting are seen as vitest sees them. The contract test and `pnpm acceptance:report` share one module (`kernel/scripts/acceptance/`). The script needs no build: `vitest list` collects files without running them.
+The report script runs `vitest list --json` for each project (`unit`, `e2e`, `contract`, `perf`) and reads the full names, so titles built with template literals or `describe.each` and nesting are seen as vitest sees them. The contract test and `pnpm acceptance:report` (`kernel/scripts/acceptance-report.ts`) share one module, `kernel/tests/support/acceptance.ts`, which sits with the other test support code so the `unit` project runs its tests. The script needs no build: `vitest list` collects files without running them.
 
 - Rejected: a regex over the test sources. It is faster but misses computed titles and needs its own model of `describe` nesting.
 
@@ -56,18 +56,18 @@ The report script runs `vitest list --json` for each project (`unit`, `e2e`, `co
 
 For each partial item the implementation first checks whether the kernel or skill has the behaviour:
 
-| Item          | Expected evidence                                                                                                                                     |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Item          | Expected evidence                                                                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `AC-1`        | New E2E: `change new`, design, plan with one part, execute with one task, review, `close` on the fixture, driven by kernel commands as the skills call them. |
-| `AC-5`        | The item is restated as detection (the `bdk import` command was removed by T41); existing detection tests get the ID.                                 |
-| `EC-3`        | New E2E: two Changes on two branches, each advanced with `next` and `log add`, then `git merge` of both branches and `rebuild` give both states.      |
-| `EC-4`        | New E2E: `settings.local.yaml` disables escalation; the Change's local-override list names the key.                                                   |
-| `EC-7`        | Existing ingest refusal tests, plus a content test that the dispatching skills state "re-dispatch once, then `blocker`".                               |
-| `S3`          | New E2E: `explain` on a task prints part, plan, design and intent.                                                                                    |
-| `S4`          | Content test that the plan verifier contract asks for the rule ID tick list, plus the T31 citation E2E.                                               |
-| `R-11`        | New E2E: telemetry of a call after an unchanged ledger reports no refresh.                                                                             |
-| `R-16`        | New test if `attempt close` checks the envelope's entry ids; otherwise `open` with a follow-up issue.                                                 |
-| `NFR-SCALE-1` | New perf test (D6).                                                                                                                                   |
+| `AC-5`        | The item is restated as detection (the `bdk import` command was removed by T41); existing detection tests get the ID.                                        |
+| `EC-3`        | New E2E: two Changes on two branches, each advanced with `next` and `log add`, then `git merge` of both branches and `rebuild` give both states.             |
+| `EC-4`        | New E2E: `settings.local.yaml` disables escalation; the Change's local-override list names the key.                                                          |
+| `EC-7`        | Existing ingest refusal tests, plus a content test that the dispatching skills state "re-dispatch once, then `blocker`".                                     |
+| `S3`          | New E2E: `explain` on a task prints part, plan, design and intent.                                                                                           |
+| `S4`          | Content test that the plan verifier contract asks for the rule ID tick list, plus the T31 citation E2E.                                                      |
+| `R-11`        | New E2E: telemetry of a call after an unchanged ledger reports no refresh.                                                                                   |
+| `R-16`        | New test if `attempt close` checks the envelope's entry ids; otherwise `open` with a follow-up issue.                                                        |
+| `NFR-SCALE-1` | New perf test (D6).                                                                                                                                          |
 
 A missing behaviour is never built here (non-goal). An `S` item cannot be `open` (spec), so S3 and S4 must end with evidence; if a content test is all the code supports, the item is restated to what the code does and the drift is named, as for S8.
 
@@ -79,15 +79,15 @@ A perf test drives one Change through about 200 kernel calls in the mix a real r
 
 ### D7 Guide pages: rewrite, rename or delete
 
-| Page                                                                                         | Outcome                                                                                                 |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `index`, `getting-started/installation`, `getting-started/first-feature`                     | Rewritten for v3 (first feature: a `small` Change from `/bdk:setup` to `close`).                        |
-| `workflows/trivial`, `workflows/standard`, `workflows/full-pipeline`                         | Renamed to `workflows/tiny`, `workflows/small`, `workflows/large` and rewritten around the profiles.    |
-| `concepts/plan-pipeline`                                                                     | Replaced by `concepts/change-pipeline` (artifact graph, gates, `next`, `run`).                          |
-| `concepts/shared-foundation`                                                                 | Replaced by `concepts/context` (STARTUP, `bdk ctx skill` context lines, dispatch packages).             |
-| `concepts/verification-scoping`                                                              | Rewritten for v3 (evidence partition, `Verification: none`, tree hash).                                 |
-| `workflows/docs-and-decisions`, `reference/skills`, `reference/hooks`, `reference/artifacts`, `troubleshooting` | Checked against the code, v2 tables moved to the migration page, banner dropped.            |
-| new `getting-started/migration-from-v2`, `reference/configuration`, `contributing/evals`      | Written.                                                                                                |
+| Page                                                                                                            | Outcome                                                                                              |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `index`, `getting-started/installation`, `getting-started/first-feature`                                        | Rewritten for v3 (first feature: a `small` Change from `/bdk:setup` to `close`).                     |
+| `workflows/trivial`, `workflows/standard`, `workflows/full-pipeline`                                            | Renamed to `workflows/tiny`, `workflows/small`, `workflows/large` and rewritten around the profiles. |
+| `concepts/plan-pipeline`                                                                                        | Replaced by `concepts/change-pipeline` (artifact graph, gates, `next`, `run`).                       |
+| `concepts/shared-foundation`                                                                                    | Replaced by `concepts/context` (STARTUP, `bdk ctx skill` context lines, dispatch packages).          |
+| `concepts/verification-scoping`                                                                                 | Rewritten for v3 (evidence partition, `Verification: none`, tree hash).                              |
+| `workflows/docs-and-decisions`, `reference/skills`, `reference/hooks`, `reference/artifacts`, `troubleshooting` | Checked against the code, v2 tables moved to the migration page, banner dropped.                     |
+| new `getting-started/migration-from-v2`, `reference/configuration`, `contributing/evals`                        | Written.                                                                                             |
 
 Renamed pages break inbound links, which the strict build reports; there are no external links to keep, because the site has never been deployed. `.claude/skills/docs-sync/references/docs-map.md` follows every move.
 
@@ -109,16 +109,16 @@ The README keeps the sections the spec lists and the skills table (drift guard 1
 
 Each file goes through the four-test admission (plugin-tooling, Repository rules managed by the kernel). Preliminary verdicts from the survey, to be confirmed bullet by bullet during the work:
 
-| File                      | Verdict                                                                                                                                                          |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `artifacts.md`            | One rule (skills write `.bdk/` only through `bdk`); the "why" bullets are narration and go.                                                                     |
+| File                      | Verdict                                                                                                                                                        |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `artifacts.md`            | One rule (skills write `.bdk/` only through `bdk`); the "why" bullets are narration and go.                                                                    |
 | `portability-check.md`    | Keep the dispatch-package rule and the stack-detection exception; the rest is enforced by `skill-check` and goes. The `STARTUP_INSTRUCTIONS.md` framing is v2. |
-| `prompt-writing.md`       | Three to five one-sentence rules (whole task, not a step script; no "double-check" prose; reviewers report every finding; a positive example, no shouting).     |
-| `quality-rules.md`        | Deleted: the definition is in `rules/README.md`; `rule-pack.test.ts` and the `rule-pack` spec repoint there.                                                     |
-| `skill-context.md`        | One rule (more context through a manifest part, never a new `!` line), scoped to `skills/**`; the rest is enforced by `skill-context.test.ts`.                  |
-| `skills.md`               | The "not enforced" bullets stay as rules; the enforced list becomes nothing (the test names itself).                                                            |
-| `testing-protocol.md`     | Procedure, moves to `CONTRIBUTING.md`; possibly one rule "never test a skill inside the BDK repo".                                                               |
-| `verification-scoping.md` | Definition, moves into `kernel-settings` (Keys of evidence policy) and `kernel-state` (Plan part and plan index); `kernel/src/evidence/config.ts` repoints.     |
+| `prompt-writing.md`       | Three to five one-sentence rules (whole task, not a step script; no "double-check" prose; reviewers report every finding; a positive example, no shouting).    |
+| `quality-rules.md`        | Deleted: the definition is in `rules/README.md`; `rule-pack.test.ts` and the `rule-pack` spec repoint there.                                                   |
+| `skill-context.md`        | One rule (more context through a manifest part, never a new `!` line), scoped to `skills/**`; the rest is enforced by `skill-context.test.ts`.                 |
+| `skills.md`               | The "not enforced" bullets stay as rules; the enforced list becomes nothing (the test names itself).                                                           |
+| `testing-protocol.md`     | Procedure, moves to `CONTRIBUTING.md`; possibly one rule "never test a skill inside the BDK repo".                                                             |
+| `verification-scoping.md` | Definition, moves into `kernel-settings` (Keys of evidence policy) and `kernel-state` (Plan part and plan index); `kernel/src/evidence/config.ts` repoints.    |
 
 The survivors are written as one-sentence top-level bullets into new source files named for their prefix (`skills.md` scoped to `skills/**` and `agents/**`, `prompts.md`, and a global `repo.md` if any global rule survives), so `rules import` gives readable IDs (`SKILLS-1`, `PROMPTS-1`). After the import the sources are deleted and `rules export --claude` writes the projection. `CLAUDE.md`, `CONTRIBUTING.md`, `skill-check.config.ts` (comment) and the docs map lose their pointers to the deleted files; `CLAUDE.md` also drops its v2 architecture and "Adding a skill / agent" steps for the v3 layout.
 
