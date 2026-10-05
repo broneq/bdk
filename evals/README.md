@@ -27,15 +27,15 @@ pnpm eval report <suite>           # evals/results/<suite>/report.md from the co
 | `review-models` | `/bdk:cr` on an executed Change whose tasks delivered seeded defects (`suites/review-models/key.yaml`): recall per defect class and false alarms after triage decide the model of the `reviewer` adapter     | `sonnet`, `sonnet-prime` (A/A), `opus`                                   |
 | `rules-noop`    | M1: every rule bullet's question answered blind; M2: seeded patches reviewed with and without the rules (`suites/rules-noop/violations.yaml`); a provisional class per bullet (`docs/V3-EVAL-RULES-NOOP.md`) | M1 `haiku`, `sonnet`, `sonnet-prime`; M2 `with`, `with-prime`, `without` |
 | `stages`        | A user-only stage skill or `cr`: each case typed as its slash command, checked against the kernel state the run leaves                                                                                       | `bdk`                                                                    |
-| `with-without`  | Any BDK skill: each task of a task file with the skill and without it                                                                                                                                        | `with`, `without`                                                        |
+| `with-without`  | Any `bdk` or `bdk-craft` skill: each task of a task file with the skill and without it                                                                                                                       | `with`, `without`                                                        |
 
 ### With / without mode
 
 ```bash
-pnpm eval with-without --skill bdk:<name> --tasks <file> [--fixture default|none] [--probe]
+pnpm eval with-without --skill bdk:<name>|bdk-craft:<name> --tasks <file> [--fixture default|none] [--probe]
 ```
 
-The two cells differ only in the plugin copy: the `without` copy lacks the skill's directory, so a skill the model would pick up or preload is really absent. `--fixture default` runs every task in a fresh copy of the pinned fixture repository; `--fixture none` in an empty git repository. The task file is a YAML list; each entry has an `id` (lowercase letters, digits, dashes), a `prompt` (what the user types) and optional `assert`, a list of promptfoo assertions on the final reply. Write the prompt the way a user would ask, without the skill's slash command, which the `without` cell does not have. Example: `suites/with-without/examples/mermaid-drawer.yaml`.
+The two cells differ only in the plugin copy: the `without` copy lacks the skill's directory, so a skill the model would pick up or preload is really absent. A `bdk:<name>` skill runs on copies of the `bdk` plugin; a `bdk-craft:<name>` skill on copies of `plugins/bdk-craft` alone, with no `bdk` loaded, so a gap also shows the skill working without `bdk`. `--fixture default` runs every task in a fresh copy of the pinned fixture repository; `--fixture none` in an empty git repository. The task file is a YAML list; each entry has an `id` (lowercase letters, digits, dashes), a `prompt` (what the user types) and optional `assert`, a list of promptfoo assertions on the final reply. Write the prompt the way a user would ask, without the skill's slash command, which the `without` cell does not have. Example: `suites/with-without/examples/craft/mermaid-drawer.yaml`; the task files of every `bdk-craft` skill sit next to it.
 
 ````yaml
 - id: login-sequence

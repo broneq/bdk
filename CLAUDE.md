@@ -27,7 +27,7 @@ openspec/specs/          — living specs of BDK v3 (kernel-cli, kernel-architec
 - Skills must be **language-agnostic** — no hardcoded `pytest`, `go test`, `npm test`, etc.
 - Environment discovery (test runner, build tool, lint command) delegated to `STARTUP_INSTRUCTIONS.md`
 - New skills auto-inherit all conventions — edit shared foundation, not individual skills
-- Skills reference each other with full namespace: `/bdk:plan`, `/bdk:debug`
+- Skills reference each other with full namespace: `/bdk:plan`, `/bdk:cr`
 - Every skill starts with: `> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md)...`, placed after the two context lines when the skill has them (`.claude/rules/skill-context.md`)
 
 ## Language
@@ -52,7 +52,7 @@ claude --plugin-dir ~/projects/bdk
 
 # Invoke a skill in the test project
 /bdk:docs src/auth
-/bdk:debug
+/bdk:change
 
 # Run unit tests (deterministic, fast)
 pytest tests/unit/

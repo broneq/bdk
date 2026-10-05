@@ -5,11 +5,11 @@
 import { describe, expect, it } from "vitest";
 
 import { kindRegistry, PostTaskStepKind } from "../../graph/domain/kinds/index.ts";
-import { writeDesign, writeEntry, writePlanPart } from "../../graph/tests/support.ts";
+import { setChange, writeDesign, writeEntry, writePlanPart } from "../../graph/tests/support.ts";
 import { repository, ROOT } from "../../log/tests/support.ts";
 import { activePackage, readDocument } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
-import { demoteHeadings } from "../domain/template.ts";
+import { demoteHeadings } from "../../ctx/index.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
 import {
   build,
@@ -612,4 +612,60 @@ describe("dispatch show", () => {
       expect(refusal(result)).toMatchObject({ rule: "input/not-found" });
     },
   );
+});
+
+describe("the craft section (T42, R-8)", () => {
+  const CACHE = "/home/dev/.claude/plugins/cache/bdk/bdk-craft/0.1.0/skills";
+  const craft = (store: Store, ...names: string[]) => {
+    for (const name of names) {
+      store.write(
+        `${CACHE}/${name}/SKILL.md`,
+        `---\nname: ${name}\ndescription: x\n---\n\nBody.\n`,
+      );
+    }
+  };
+  const section = (body: string) => /\n## Craft\n[\s\S]*?(?=\n## )/.exec(body)?.[0] ?? "";
+
+  it("names tdd and its command for an implementer when bdk-craft is installed", async () => {
+    const h = dispatchHarness();
+    craft(h.store, "tdd", "debugging");
+    const { body } = await built(h);
+    const text = section(body);
+    expect(text).toContain("`bdk ctx craft tdd`");
+    expect(text).not.toContain("debugging");
+    expect(text).not.toContain("/home/dev");
+    expect(headings(body).indexOf("## Craft")).toBeLessThan(
+      headings(body).indexOf("## Ledger entries"),
+    );
+  });
+
+  it("names debugging, then tdd, on a bug Change", async () => {
+    const h = dispatchHarness();
+    setChange(h.store, { kind: "bug" });
+    craft(h.store, "tdd", "debugging");
+    const text = section((await built(h)).body);
+    expect(text.indexOf("`bdk ctx craft debugging`")).toBeGreaterThan(0);
+    expect(text.indexOf("`bdk ctx craft tdd`")).toBeGreaterThan(text.indexOf("debugging"));
+  });
+
+  it("leaves out a craft skill that is not installed", async () => {
+    const h = dispatchHarness();
+    setChange(h.store, { kind: "bug" });
+    craft(h.store, "tdd");
+    const text = section((await built(h)).body);
+    expect(text).toContain("`bdk ctx craft tdd`");
+    expect(text).not.toContain("debugging");
+  });
+
+  it("has no craft section without bdk-craft", async () => {
+    const { body } = await built(dispatchHarness());
+    expect(body).not.toContain("## Craft");
+  });
+
+  it.each(["simplifier", "runner"])("gives a %s package no craft section", async (role) => {
+    const h = dispatchHarness();
+    craft(h.store, "tdd", "debugging");
+    const { body } = await built(h, "02-3", role, TICKET);
+    expect(body).not.toContain("## Craft");
+  });
 });

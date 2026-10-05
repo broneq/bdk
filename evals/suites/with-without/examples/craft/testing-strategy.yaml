@@ -1,0 +1,63 @@
+# Task file for `pnpm eval with-without --skill bdk-craft:testing-strategy` on the
+# default fixture. Each prompt asks for a test plan and example tests for a
+# feature described in words. The assertions see only the final reply, so every
+# prompt asks for the plan and the tests at the end. They check the concrete
+# choices the skill makes: Test Data Builders for test data, a Page Object for
+# browser tests, a contract test between services, and doubles only for owned
+# adapters rather than the HTTP client or the payment SDK.
+- id: checkout
+  prompt: >-
+    We are adding checkout to our React shop: the SPA calls our orders service over
+    REST, the orders service stores orders in Postgres and charges cards through
+    Stripe. How should we test this? End your reply with the test plan and a few
+    example tests in TypeScript.
+  assert:
+    - type: javascript
+      value: >-
+        /\ba[A-Z]\w*\(\)(\s*\.\s*with[A-Z]\w*\([^)]*\))+\s*\.\s*build\(\)/.test(String(output))
+    - type: javascript
+      value: >-
+        /class \w+Page\b/.test(String(output))
+    - type: javascript
+      value: >-
+        /(contract test|consumer[- ]driven|Pact)/i.test(String(output))
+    - type: javascript
+      value: >-
+        !/(vi|jest)\.mock\(\s*["'](stripe|axios|node-fetch|pg)["']/.test(String(output))
+- id: login-mfa
+  prompt: >-
+    Our login now has a second step: after the password, users enter a six-digit
+    code from an authenticator app; five wrong codes lock the account for 15
+    minutes. The frontend is React, the backend is a Node service with its own
+    user database. Propose how to test it and show example tests. Put the plan and
+    the example tests at the end of your reply.
+  assert:
+    - type: javascript
+      value: >-
+        /\ba[A-Z]\w*\(\)(\s*\.\s*with[A-Z]\w*\([^)]*\))+\s*\.\s*build\(\)/.test(String(output))
+    - type: javascript
+      value: >-
+        /class \w+Page\b/.test(String(output))
+    - type: javascript
+      value: >-
+        /(fake clock|useFakeTimers|Clock\b|clock\.|now\(\))/i.test(String(output)) && !/(setTimeout|sleep|waitForTimeout)\(\s*\d{3,}/.test(String(output))
+- id: catalog-search
+  prompt: >-
+    The catalog page lets users search products by text, filter by category and
+    price range, and sort by price or newest; results come from the catalog
+    service, which reads Elasticsearch, and the page shows 20 results at a time.
+    Which tests should we write at which level? Show a few of them. End your reply
+    with the plan and the example tests.
+  assert:
+    - type: javascript
+      value: >-
+        /\ba[A-Z]\w*\(\)(\s*\.\s*with[A-Z]\w*\([^)]*\))+\s*\.\s*build\(\)/.test(String(output))
+    - type: javascript
+      value: >-
+        /class \w+Page\b/.test(String(output))
+    - type: javascript
+      value: >-
+        /(contract test|consumer[- ]driven|Pact)/i.test(String(output))
+    - type: javascript
+      value: >-
+        !/(vi|jest)\.mock\(\s*["'](@elastic\/elasticsearch|axios|node-fetch)["']/.test(String(output))

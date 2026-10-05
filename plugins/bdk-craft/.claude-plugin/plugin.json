@@ -1,0 +1,11 @@
+{
+  "name": "bdk-craft",
+  "description": "Portable engineering craft skills: test-driven development, debugging, refactoring, design and modelling choices, and Mermaid diagrams. No kernel, no setup, works without bdk.",
+  "version": "0.1.0",
+  "author": {
+    "name": "broneq"
+  },
+  "repository": "https://github.com/broneq/bdk",
+  "license": "MIT",
+  "skills": "./skills/"
+}

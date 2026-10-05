@@ -5,16 +5,6 @@
     "fingerprint": "86e56790ce7cfb9f"
   },
   {
-    "rule": "field-values",
-    "file": "skills/debug/SKILL.md",
-    "fingerprint": "176d206c50008a32"
-  },
-  {
-    "rule": "line-limit",
-    "file": "skills/debug/SKILL.md",
-    "fingerprint": "fc57e34fd1a7af05"
-  },
-  {
     "rule": "model-names",
     "file": "agents/web-researcher.md",
     "fingerprint": "55e7446010b6c6e9"

@@ -16,7 +16,7 @@ steps() {
   case "$1" in
     upe-typed) cat <<'EOF'
   1. Type:  /bdk-probe:plan a b        (wait for PLAN-PROBE-LOADED)
-  2. Type:  /bdk:mermaid-drawer        (any reply is fine; this records the real bdk namespace)
+  2. Type:  /bdk:docs        (any reply is fine; this records the real bdk namespace)
   3. Type:  /exit
 EOF
     ;;

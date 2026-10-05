@@ -1,0 +1,60 @@
+# Task file for `pnpm eval with-without --skill bdk-craft:mermaid-drawer`. Each
+# prompt asks for a diagram in plain words. An earlier probe with simpler tasks
+# showed no gap, so these tasks press on what the skill fixes beyond the diagram
+# type: the node budget (a system too big for one diagram is split), labelled
+# edges, colour that sets fill, stroke and text colour together, and subgraphs
+# with a transparent fill and a dashed border, legible in light and dark themes.
+- id: platform-map
+  prompt: >-
+    Draw our whole platform in a diagram: web app, mobile app, admin app, CDN, API
+    gateway, auth service, users service, catalog service, search service backed by
+    Elasticsearch, cart service backed by Redis, orders service, payments service
+    calling Stripe, invoices service writing PDFs to S3, notifications service
+    calling SendGrid and Twilio, a Kafka cluster between orders, payments, invoices
+    and notifications, Postgres for users, catalog and orders, and Grafana reading
+    metrics from all services. Reply with the diagram only.
+  assert:
+    - type: javascript
+      value: >-
+        String(output).split(/```mermaid/).slice(1).map((b) => b.split("```")[0]).every((b) => new Set([...b.matchAll(/(?:^|[\s;&])([A-Za-z_]\w*)\s*(?:\[|\(|\{)/gm)].map((m) => m[1]).filter((n) => !/^(subgraph|classDef|class|style|end|flowchart|graph)$/.test(n))).size <= 15)
+    - type: javascript
+      value: >-
+        String(output).split(/```mermaid/).length - 1 >= 2
+    - type: javascript
+      value: >-
+        /-->\|[^|]+\||--\s[^-]+\s-->/.test(String(output))
+- id: failure-path
+  prompt: >-
+    Draw how a payment is processed: the checkout page sends the payment to our
+    payments service, which calls the card provider; on success the order is marked
+    paid and the customer gets a receipt e-mail; on a decline the customer sees an
+    error; on a provider timeout we retry twice and then mark the payment as
+    pending for manual review. Make the failure paths stand out. Reply with the
+    diagram only.
+  assert:
+    - type: javascript
+      value: >-
+        /(classDef|style)\s.*fill:/.test(String(output)) && String(output).split("\n").filter((line) => /^\s*(classDef|style)\s.*fill:(?!\s*transparent)/.test(line)).every((line) => /stroke:/.test(line) && /[\s,]color:/.test(line))
+    - type: javascript
+      value: >-
+        /-->\|[^|]+\||--\s[^-]+\s-->/.test(String(output))
+    - type: javascript
+      value: >-
+        new Set([...String(output).matchAll(/(?:^|[\s;&])([A-Za-z_]\w*)\s*(?:\[|\(|\{)/gm)].map((m) => m[1]).filter((n) => !/^(subgraph|classDef|class|style|end|flowchart|graph)$/.test(n))).size <= 15
+- id: trust-boundaries
+  prompt: >-
+    Draw the trust boundaries of our login flow: the browser on the public
+    internet, our edge (CDN and WAF), our private network (API gateway, auth
+    service, session store in Redis, users database), and the external identity
+    provider for Google sign-in. Group each zone visibly. Reply with the diagram
+    only.
+  assert:
+    - type: javascript
+      value: >-
+        /subgraph/.test(String(output))
+    - type: javascript
+      value: >-
+        (String(output).match(/^\s*subgraph\s/gm) || []).length <= (String(output).match(/^\s*style\s+\w+\s+[^\n]*fill:\s*transparent[^\n]*stroke-dasharray/gm) || []).length
+    - type: javascript
+      value: >-
+        /-->\|[^|]+\||--\s[^-]+\s-->/.test(String(output))

@@ -30,7 +30,7 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 - **Availability:** `agent`
 - **Mode:** `inject`
 - **Arguments:**
-  - `<name>` (required). Skill name, e.g. debug, create-plan.
+  - `<name>` (required). Skill name, e.g. design, plan.
 - **Behaviour:** Replaces `inject.py`, `inject-rules.py` and `inject-language-rules.py` (Configuration section). `<name>` selects an entry of the context manifest the kernel bundles: an ordered list of parts per skill. A skill is in the manifest exactly when its `SKILL.md` carries the context lines (`kernel-cli`, Output modes). The output is Markdown: the heading `## BDK context: <name>`, then one `### <title>` section per part in manifest order. Part kinds:
   - `rules`: the enabled, non-tombstone rules of the bundle's pack for `<category>` (`rule-pack`, Pack layout), under `### Rules: <category>`, one line `- [<id>] <text>` each in id order, a rule with `applies` followed by ` (applies: <globs>)`; a skill has no file set, so nothing is narrowed by `applies` (`kernel-cli/rules`, bdk rules show). A rule in `rules.disabled` is left out.
   - `project-rules`: the enabled, non-tombstone rules of `.bdk/rules/` in the same line form, under `### Project rules`; the part is omitted when there are none.
@@ -210,3 +210,62 @@ Render the STARTUP instructions, including the agents table generated from agent
 
 - **WHEN** `.bdk/settings.yaml` sets a key no module schema declares and `bdk ctx startup` runs
 - **THEN** the exit code is 0 and stdout is the rendered STARTUP text without a STOP block, because the command reads no configuration
+
+### Requirement: bdk ctx craft
+
+Print an installed `bdk-craft` skill for an agent that cannot load skills itself. The kernel SHALL implement the command as this requirement and its output schema specify.
+
+- **Synopsis:** `bdk ctx craft <name>`
+- **Availability:** `agent`
+- **Mode:** `command`
+- **Arguments:**
+  - `<name>` (required). A craft skill name, e.g. tdd, debugging.
+- **Behaviour:** Finds the `SKILL.md` of the craft skill `<name>` in this order and takes the first hit: `plugins/bdk-craft/skills/<name>/` under the plugin root of the running kernel (a checkout of this repository); then `~/.claude/plugins/cache/<marketplace>/bdk-craft/<version>/skills/<name>/` across every marketplace, the highest `<version>` by semantic version first. Only the directory layout is read, never the host's plugin bookkeeping files. The output is Markdown: the heading `## Craft: <name>`, the skill body without its frontmatter and with its headings one level down, then each file under the skill's `references/` in name order under `### references/<file>`, so the agent gets what the skill links without resolving a path. The command reads no configuration, needs no Change and no git work tree.
+- **Writes:** nothing
+- **Output:** `schema/cli/output/ctx.json` for `--json`, with one part of kind `craft` whose `source` is `bdk-craft/<name>`; Markdown otherwise (`kernel-cli`, Output modes).
+- **Exit codes and rules:** `0, 3`. Specific rules: `input/not-found` when no `bdk-craft` install holds `<name>`, its `why` naming the paths searched; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
+- **Example:**
+
+  ```bash
+  bdk ctx craft tdd --json
+  ```
+
+  ```json
+  {
+    "content": "## Craft: tdd\n\n### Red\n...",
+    "parts": [
+      {
+        "kind": "craft",
+        "source": "bdk-craft/tdd"
+      }
+    ]
+  }
+  ```
+
+- **Owner:** T42
+- **Slice:** `ctx`
+
+#### Scenario: example run
+
+- **WHEN** `bdk ctx craft tdd --json` runs with `bdk-craft` in the plugin cache
+- **THEN** the exit code is 0 and `content` starts with `## Craft: tdd` followed by the skill body without frontmatter
+
+#### Scenario: repository checkout first
+
+- **WHEN** the kernel runs from a checkout that holds `plugins/bdk-craft/skills/tdd/SKILL.md` and the cache holds another version
+- **THEN** the output is the checkout's skill
+
+#### Scenario: highest cached version
+
+- **WHEN** the cache holds `bdk-craft` versions `0.2.0` and `0.10.0`, both with `tdd`
+- **THEN** the output is the `0.10.0` skill
+
+#### Scenario: references inlined
+
+- **WHEN** the skill has `references/builders.md`
+- **THEN** the output ends with a `### references/builders.md` section holding that file
+
+#### Scenario: input/not-found
+
+- **WHEN** `bdk ctx craft tdd` runs and no `bdk-craft` install holds `tdd`
+- **THEN** the exit code is 3 and the error is `input/not-found`, its `why` naming the searched paths

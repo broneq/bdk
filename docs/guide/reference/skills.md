@@ -50,7 +50,7 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **When to use.** When `/bdk:change` or `bdk next` names it: after opening a feature Change of profile `small` or `large`. It ends at the design gate, naming `/bdk:plan`, which you type to accept the design.
 
-**Related skills:** `/bdk:change` before it, `/bdk:verify-design` inside it, `/bdk:plan` after the gate, `/bdk:mermaid-drawer` for its diagrams.
+**Related skills:** `/bdk:change` before it, `/bdk:verify-design` inside it, `/bdk:plan` after the gate, `/bdk-craft:mermaid-drawer` for its diagrams when `bdk-craft` is installed.
 
 ## /bdk:verify-design
 
@@ -74,7 +74,7 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **When to use.** After the design gate, or right after opening a `bug` or `tiny` Change. It ends with a report of the parts, their waves, the corrections it made and each finding with its decision, naming `/bdk:execute`, which you type. Claude starts it only inside a `/bdk:run` of your session.
 
-**Related skills:** `/bdk:design` or `/bdk:change` before it, `/bdk:verify-plan` inside it, `/bdk:debug`, which hands a large fix to a `bug` Change.
+**Related skills:** `/bdk:design` or `/bdk:change` before it, `/bdk:verify-plan` inside it; a `bug` Change from `/bdk:change` starts here.
 
 ## /bdk:verify-plan
 
@@ -158,23 +158,9 @@ BDK 3 works in Changes: one unit of work on one branch, whose intent, design, pl
 
 **Safety.** `disallowed-tools: Edit Write NotebookEdit` removes those tools mechanically; nothing is posted to GitHub until the user confirms each PR's verdict.
 
-## Debugging
-
-## /bdk:debug
-
-**Purpose.** Debug issues through structured investigation, failing-test creation, and a targeted fix - or a hand-off to planning when the fix is too large for an inline patch. Runs its phases strictly in order, announcing each one (`[debug] Phase 2: Investigate`).
-
-**Arguments:** `[error message, traceback, or steps to reproduce]`
-
-**Artifact:** None fixed. A HIGH-risk finding (affects many call sites, introduces new architecture) routes to Phase 5b: a hand-off text for a `bug` Change, with the failing test paths as acceptance criteria, which you pass to `/bdk:change` before typing `/bdk:plan`. A LOW/MEDIUM-risk finding is fixed in place instead.
-
-**When to use.** The user supplies an error message, a traceback, steps to reproduce, or describes unexpected behavior.
-
-**Related skills:** `/bdk:change` and `/bdk:plan` (hand-off targets for HIGH-risk fixes).
-
 ## Docs and decisions
 
-Two skills produce written documentation, and `/bdk:mermaid-drawer` holds the diagram standard.
+Two skills produce written documentation; the diagram standard is `/bdk-craft:mermaid-drawer` of the [craft skills](#craft-skills).
 
 ## /bdk:docs
 
@@ -199,18 +185,6 @@ Two skills produce written documentation, and `/bdk:mermaid-drawer` holds the di
 **When to use.** The user asks to write an ADR or to document a decision, or a decision taken in a Change needs to outlive it.
 
 **Related skills:** `/bdk:design` (records the `decision` entries this skill can start from).
-
-## /bdk:mermaid-drawer
-
-**Purpose.** BDK's shared Mermaid standard: diagram type selection, a node budget, and a palette verified legible in both light and dark themes.
-
-**Arguments:** `[what to draw]`
-
-**Artifact:** None of its own; the diagram lands in the caller's output.
-
-**When to use.** Whenever writing a Mermaid block, or when asked to diagram, visualize, or map a flow, architecture, or state machine.
-
-**Related skills:** `/bdk:design`.
 
 ## Rules hygiene
 
@@ -266,17 +240,22 @@ One skill turns lessons into project rules through the kernel - see [Rules hygie
 
 **Related skills:** None.
 
-## /bdk:test-driven-development
+## Craft skills
 
-**Purpose.** Rigid, gated TDD process: receives test-case bullet points and an implementation spec, writes one test per bullet, and enforces the red (all fail) then green (implementation makes them pass) cycle in strict gate order, with no skipping.
+The separate `bdk-craft` plugin ships portable engineering skills, invoked as `/bdk-craft:<name>`. Install it with `/plugin install bdk-craft@bdk`; it works without `bdk`. Each skill was measured with and without it before it was admitted (`docs/V3-EVAL-CRAFT.md` in the repository).
 
-**Arguments:** None declared in frontmatter.
+| Skill              | What it fixes                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `tdd`              | A red-green-refactor loop with a test list, an observed failure before every change, and a log of each gate        |
+| `debugging`        | Reproduce as a failing test, rank hypotheses by evidence, bisect, fix the cause, keep the regression test          |
+| `mermaid-drawer`   | Diagram type chosen by the relationship, a node budget, labelled edges, a palette legible in light and dark themes |
+| `oop-design`       | Value objects, composition over inheritance, constructor injection, tell-don't-ask, strategy and state objects     |
+| `api-design`       | Resource naming, the status code per outcome, problem+json errors, cursor pagination, idempotency keys             |
+| `refactoring`      | Characterisation tests first, one named refactoring per step, tests green after each step                          |
+| `testing-strategy` | One job per test level, mocks at owned boundaries, Test Data Builders, Page Objects, contract tests                |
+| `modularizing`     | Modules by feature, one public entry each, one dependency direction, the signals to split                          |
 
-**Artifact:** None fixed - it writes the test files the task at hand requires, as part of the red-green cycle; it does not produce a separate report.
-
-**When to use.** Implementing any feature or bugfix, wherever test cases have already been broken into bullet points (typically by `/bdk:plan`).
-
-**Related skills:** `/bdk:plan` (source of the test cases), `/bdk:execute` (its implementer packages carry the same red-green process).
+With `bdk` installed, every implementer package has a `Craft` section that names `tdd`, and `debugging` before it on a `bug` Change, with `bdk ctx craft <name>` to print each one. [Debugging](../workflows/debugging.md) shows the flow.
 
 ## Role skills
 
@@ -298,3 +277,6 @@ Claude Code removed the `TaskCreate` / `TaskUpdate` / `TaskList` tools, which se
 | `/bdk:explain-complex-code`, `/bdk:update-docs`   | `/bdk:docs`                                                                                                                                         |
 | `/bdk:create-adr`                                 | `/bdk:adr`                                                                                                                                          |
 | `/bdk:add-rule`, `/bdk:refine-rules`              | `/bdk:rules`                                                                                                                                        |
+| `/bdk:test-driven-development`                    | `/bdk-craft:tdd`                                                                                                                                    |
+| `/bdk:debug`                                      | `/bdk-craft:debugging`; a `bug` Change from `/bdk:change` when the fix needs a plan and a review                                                    |
+| `/bdk:mermaid-drawer`                             | `/bdk-craft:mermaid-drawer`                                                                                                                         |

@@ -154,6 +154,25 @@ describe("buildPluginCopy", () => {
     expect(existsSync(join(copy.dir, "skills/roles/worker/SKILL.md"))).toBe(true);
   });
 
+  it("copies a plugin directory of the repository alone, without the root plugin", () => {
+    const repo = pluginRepo();
+    write(repo.root, "plugins/craft/.claude-plugin/plugin.json", '{"name":"craft"}\n');
+    write(repo.root, "plugins/craft/skills/tdd/SKILL.md", "tdd\n");
+    write(repo.root, "plugins/craft/skills/refactoring/SKILL.md", "refactoring\n");
+    git(repo.root, "add", "--all");
+    git(repo.root, "commit", "-q", "-m", "craft");
+    const copy = buildPluginCopy({
+      repoRoot: repo.root,
+      ref: "HEAD",
+      target: join(temp(), "without"),
+      pluginDir: "plugins/craft",
+      withoutSkill: "tdd",
+    });
+    expect(copy.commit).toBe(git(repo.root, "rev-parse", "HEAD"));
+    expect(readdirSync(copy.dir).sort()).toStrictEqual([".claude-plugin", "skills"]);
+    expect(readdirSync(join(copy.dir, "skills"))).toStrictEqual(["refactoring"]);
+  });
+
   it("replaces a previous copy at the same target", () => {
     const repo = pluginRepo();
     const target = join(temp(), "copy");

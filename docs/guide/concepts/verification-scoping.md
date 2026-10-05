@@ -29,7 +29,7 @@ A plan task may declare `Verification: none` when **all** of its `Files:` fall i
 - pure wiring or glue,
 - a refactor already fully covered by existing tests.
 
-Such a task carries no `Test cases:` block, never enters `/bdk:test-driven-development`, and is verified by its own `Success criterion` plus the end-of-plan review. The executor reads the declaration at Step 0 and skips the red-green cycle for that task.
+Such a task carries no `Test cases:` block, never runs a test-first loop, and is verified by its own `Success criterion` plus the end-of-plan review. The executor reads the declaration at Step 0 and skips the red-green cycle for that task.
 
 This exists because forcing a test onto a documentation task produces a test that asserts the file exists, which is a maintenance cost with no signal. Declaring the exemption in the plan makes it visible and reviewable instead of leaving the implementer to improvise.
 

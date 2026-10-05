@@ -4,7 +4,7 @@ Two definitions are repeated across the planning/execution skills, the role cont
 
 ## `Verification: none` task class
 
-A plan task may declare `Verification: none` when ALL of its `Files:` are non-executable content (yaml/md/json/plain config not consumed by build or codegen), pure wiring/glue, or a refactor fully covered by existing tests. Such a task has no `Test cases:` block, never enters `/bdk:test-driven-development`, and is verified by its `Success criterion` plus the end-of-plan review.
+A plan task may declare `Verification: none` when ALL of its `Files:` are non-executable content (yaml/md/json/plain config not consumed by build or codegen), pure wiring/glue, or a refactor fully covered by existing tests. Such a task has no `Test cases:` block, never runs a test-first loop, and is verified by its `Success criterion` plus the end-of-plan review.
 
 ## File-class partition (source vs non-executable)
 

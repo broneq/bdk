@@ -7,11 +7,11 @@
 Three skills for the writing side of the work: recording a decision, documenting code and
 keeping that documentation true, and drawing the diagrams in both.
 
-| Skill                 | Use when                                                                     |
-| --------------------- | ---------------------------------------------------------------------------- |
-| `/bdk:adr`            | A decision has been made and needs to outlive the conversation or the Change |
-| `/bdk:docs`           | A module has no architecture doc, or the code moved under an existing one    |
-| `/bdk:mermaid-drawer` | You are drawing any diagram on its own                                       |
+| Skill                       | Use when                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| `/bdk:adr`                  | A decision has been made and needs to outlive the conversation or the Change |
+| `/bdk:docs`                 | A module has no architecture doc, or the code moved under an existing one    |
+| `/bdk-craft:mermaid-drawer` | You are drawing any diagram on its own                                       |
 
 ## Record a decision - `/bdk:adr`
 
@@ -80,14 +80,15 @@ What no longer exists is simply omitted - no "removed" comments.
     annotations, no diff markers. A diagram that is still correct but predates the current
     standard is left alone, so a refresh changes content, not style.
 
-## Draw the diagram - `/bdk:mermaid-drawer`
+## Draw the diagram - `/bdk-craft:mermaid-drawer`
 
 ```
-/bdk:mermaid-drawer <what to draw>
+/bdk-craft:mermaid-drawer <what to draw>
 ```
 
 A standalone diagram standard, so diagrams read the same whoever drew them and wherever
-they are viewed. Invoke it directly to draw one; `/bdk:docs` carries the same rules.
+they are viewed. It ships in the separate `bdk-craft` plugin (`/plugin install bdk-craft@bdk`).
+Invoke it directly to draw one; `/bdk:docs` carries the same rules.
 
 It fixes the parts that go wrong anyway:
 
@@ -108,11 +109,11 @@ It fixes the parts that go wrong anyway:
 
 ## What you get
 
-| Skill                 | Artifact                                                                                     |
-| --------------------- | -------------------------------------------------------------------------------------------- |
-| `/bdk:adr`            | `docs/adr/NNNN-<slug>.md`                                                                    |
-| `/bdk:docs`           | `docs/architecture/<module>.md` or the path you named; a refreshed doc is rewritten in place |
-| `/bdk:mermaid-drawer` | one Mermaid block, in whatever document you are writing                                      |
+| Skill                       | Artifact                                                                                     |
+| --------------------------- | -------------------------------------------------------------------------------------------- |
+| `/bdk:adr`                  | `docs/adr/NNNN-<slug>.md`                                                                    |
+| `/bdk:docs`                 | `docs/architecture/<module>.md` or the path you named; a refreshed doc is rewritten in place |
+| `/bdk-craft:mermaid-drawer` | one Mermaid block, in whatever document you are writing                                      |
 
 None of these commit. Files are generated; when they land in git is your call.
 

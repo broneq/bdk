@@ -15,6 +15,18 @@
           "jsonpath": "$.version"
         }
       ]
+    },
+    "plugins/bdk-craft": {
+      "package-name": "bdk-craft",
+      "component": "bdk-craft",
+      "include-component-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": ".claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        }
+      ]
     }
   }
 }

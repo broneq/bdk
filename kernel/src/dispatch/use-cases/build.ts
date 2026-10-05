@@ -8,6 +8,7 @@
 import { createHash } from "node:crypto";
 import { join, posix } from "node:path";
 
+import { demoteHeadings, installedCraft } from "../../ctx/index.ts";
 import { ROLE_ADAPTERS } from "../../export/index.ts";
 import { artifactPaths, targetSteps } from "../../graph/index.ts";
 import { verifierPolicy, withChangeIndex } from "../../log/index.ts";
@@ -53,7 +54,6 @@ import { groupFlagProblem, reviewText, risksText } from "../domain/review.ts";
 import type { GroupFlags } from "../domain/review.ts";
 import {
   bytes,
-  demoteHeadings,
   largestSection,
   normalise,
   packageBody,
@@ -88,7 +88,7 @@ interface TargetFacts {
 export function buildPackage(
   deps: DispatchDeps,
   change: ActiveChange,
-  globalDir: string,
+  where: { readonly globalDir: string; readonly home: string },
   input: BuildInput,
 ): Promise<BuildReport | Refusal> {
   if (!isRole(input.role)) {
@@ -109,6 +109,7 @@ export function buildPackage(
     );
   }
   const group = input.group;
+  const { globalDir } = where;
   return withChangeIndex(deps, change, async (index): Promise<BuildReport | Refusal> => {
     const target = await targetFacts(deps, change, index, globalDir, input.target);
     if (isRefusal(target)) return target;
@@ -209,6 +210,14 @@ export function buildPackage(
     // Only the implementer resolves a merge; the steps of the ticket check the merged state.
     const resolving = conflicts !== undefined && role === "implementer";
     const instruction = resolving ? promptText(deps, resolved, mergeConflictsPrompt.key) : "";
+    const craft =
+      role === "implementer"
+        ? installedCraft(
+            { store: deps.store, pluginRoot: deps.pluginRoot, home: where.home },
+            changeKindOf(deps, change) === "bug" ? ["debugging", "tdd"] : ["tdd"],
+          )
+        : [];
+    if (craft.length > 0) kinds.push("craft");
     if (isolated) kinds.push("work-root");
     if (resolving) kinds.push("conflict");
     else if (conflicts !== undefined) kinds.push("merge");
@@ -248,6 +257,7 @@ export function buildPackage(
         merged: change.branch,
         conflicts: (conflicts ?? []).map((path) => `- \`${path}\``).join("\n"),
         "merge-instruction": demoteHeadings(instruction.trim()),
+        craft: craft.map((name) => `- \`${name}\`: \`bdk ctx craft ${name}\``).join("\n"),
       },
       kinds,
     );
@@ -498,9 +508,18 @@ function doNotTouch(part: PlanPartFile): string {
 }
 
 function intentOf(deps: DispatchDeps, change: ActiveChange): string {
-  const document = readDocument(deps.store, join(change.dir, "change.md"));
-  const intent = document !== undefined && "data" in document ? document.data.intent : undefined;
+  const intent = changeField(deps, change, "intent");
   return typeof intent === "string" ? intent : `Change ${change.id}.`;
+}
+
+/** The Change kind (`feature`, `bug`, `review`), which picks the implementer's craft skills (D4). */
+function changeKindOf(deps: DispatchDeps, change: ActiveChange): unknown {
+  return changeField(deps, change, "kind");
+}
+
+function changeField(deps: DispatchDeps, change: ActiveChange, field: string): unknown {
+  const document = readDocument(deps.store, join(change.dir, "change.md"));
+  return document !== undefined && "data" in document ? document.data[field] : undefined;
 }
 
 /**

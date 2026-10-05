@@ -12,21 +12,32 @@ import type { WithWithoutSpec } from "./suite.ts";
 import { readTasks } from "./tasks.ts";
 
 describe("skillDir", () => {
-  it("finds a skill by its frontmatter name, nested role skills too", () => {
-    expect(skillDir("bdk:mermaid-drawer")).toBe("mermaid-drawer");
-    expect(skillDir("bdk:reviewer")).toBe("roles/reviewer");
+  it("finds a bdk skill by its frontmatter name, nested role skills too", () => {
+    expect(skillDir("bdk:docs")).toStrictEqual({ pluginDir: ".", path: "tools/docs" });
+    expect(skillDir("bdk:reviewer")).toStrictEqual({ pluginDir: ".", path: "roles/reviewer" });
+  });
+
+  it("finds a bdk-craft skill in plugins/bdk-craft, so the cells copy that plugin alone", () => {
+    expect(skillDir("bdk-craft:tdd")).toStrictEqual({
+      pluginDir: "plugins/bdk-craft",
+      path: "tdd",
+    });
   });
 
   it("refuses another plugin, a malformed name and an unknown skill", () => {
-    expect(() => skillDir("other:mermaid-drawer")).toThrow(SkillError);
-    expect(() => skillDir("mermaid-drawer")).toThrow(/bdk:<name>/);
-    expect(() => skillDir("bdk:nosuch")).toThrow(/no BDK skill named nosuch/);
+    expect(() => skillDir("other:tdd")).toThrow(SkillError);
+    expect(() => skillDir("tdd")).toThrow(/bdk:<name> or bdk-craft:<name>/);
+    expect(() => skillDir("bdk:nosuch")).toThrow(/no skill named nosuch under skills\//);
+    expect(() => skillDir("bdk-craft:debug")).toThrow(
+      /no skill named debug under plugins\/bdk-craft\/skills\//,
+    );
+    expect(() => skillDir("bdk:tdd")).toThrow(SkillError);
   });
 });
 
 function spec(fixture: "default" | "none"): WithWithoutSpec {
   return {
-    skill: "bdk:mermaid-drawer",
+    skill: "bdk-craft:mermaid-drawer",
     series: "series-mermaid-drawer-2026-09-29",
     dir: "/tmp/ww",
     sandbox: "/tmp/sandbox",

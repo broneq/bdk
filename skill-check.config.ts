@@ -70,6 +70,18 @@ export default defineConfig({
       },
     },
     {
+      // bdk-craft: knowledge skills for any Agent Skills host, without bdk
+      // (craft-skills, Craft skill shape). The portable profile admits only
+      // the standard fields and rejects `!` blocks and `${CLAUDE_PLUGIN_ROOT}`.
+      kind: "skills",
+      name: "bdk-craft",
+      dirs: ["plugins/bdk-craft/skills"],
+      profile: "portable",
+      rules: {
+        "namespaced-refs": ["error", { namespace: "bdk-craft" }],
+      },
+    },
+    {
       kind: "agents",
       dirs: ["agents"],
       rules: {

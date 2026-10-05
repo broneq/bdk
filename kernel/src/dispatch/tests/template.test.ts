@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { REPO_ROOT } from "../../../tests/support/run.ts";
-import { demoteHeadings, normalise, renderSections } from "../domain/template.ts";
+import { normalise, renderSections } from "../domain/template.ts";
 import { ENTRY_TYPES } from "../../shared/vocabulary/index.ts";
 
 describe("normalise", () => {
@@ -15,14 +15,6 @@ describe("normalise", () => {
 
   it("leaves a text without frontmatter as is, trimmed", () => {
     expect(normalise("\nText\n")).toBe("Text");
-  });
-});
-
-describe("demoteHeadings", () => {
-  it("adds one level to every heading outside a fenced block", () => {
-    expect(demoteHeadings("# A\n## B\n```md\n# not a heading\n```\nText #1")).toBe(
-      "## A\n### B\n```md\n# not a heading\n```\nText #1",
-    );
   });
 });
 

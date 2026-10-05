@@ -1,136 +1,57 @@
 # Debugging
 
-!!! warning "Describes BDK v2"
+BDK has no debugging stage. A bug is fixed as a bug Change, and the debugging process itself comes from the `debugging` skill of the separate `bdk-craft` plugin. You can also run that skill on its own, outside any Change.
 
-    This page describes BDK v2. The v3 documentation replaces it (T50).
-
-```
-/bdk:debug <error message, traceback, or steps to reproduce>
-```
-
-`/bdk:debug` is not a tier - it is what you run when you have a symptom rather than a
-change. It ends by handing you back to one of the tiers, with a failing test already
-written.
-
-Core principle: understand first, test second, confirm with the user, fix third.
-
-## The five phases
-
-The phases run strictly in order, each announced as it is entered
-(`[debug] Phase 2: Investigate`), and the next one does not start until the current one is
-done.
-
-### Phase 1 - Parse input
-
-Validates the input (empty or vague means it asks for details and stops), extracts the
-error type, failing component, steps to reproduce, and expected versus actual, then prints:
+## Install the craft skills
 
 ```
-[debug] Issue: {one-line summary}
-[debug] Signals: error={exception class or "none"}, component={file/class or "unknown"}
+/plugin install bdk-craft@bdk
 ```
 
-### Phase 2 - Investigate
+`bdk-craft` comes from the same marketplace as `bdk` and works without it. Without `bdk-craft`, a bug Change runs as usual, but its implementers get no debugging process.
 
-With the built-in search tools, it finds the entry point, traces
-callers up and callees down, identifies the impacted execution paths, flags cascading
-risk at choke points, identifies the root cause, quantifies the blast radius, and scans
-for the same class of problem in nearby code only:
+## Fix a bug as a Change
 
-```
-[debug] Root cause: {one sentence}
-[debug] Affected: {file path}:{line range}
-[debug] Test gaps found: {N}
-```
-
-The gate is explicit: the root cause must be identified before Phase 3.
-
-### Phase 3 - Write failing tests
-
-Tests that precisely reproduce the bug, with specific input values and specific expected
-outcomes, placed in the correct existing test file and following the project's test
-conventions. They are confirmed RED by running the matching tier's `scoped` form on just
-those files, directly via `Bash` - never a full tier, and never an e2e tier unless the
-tests written _are_ e2e specs.
+Describe the defect to `/bdk:change`:
 
 ```
-[debug] Failing tests confirmed: {N} red
+/bdk:change The date filter shows entries of the previous evening for users in New York
 ```
 
-All new tests must be RED before Phase 4.
+`/bdk:change` opens a Change of kind `bug` when the intent reports a defect: something that worked, or should work, and does not. A bug Change skips the design stage and goes straight to `/bdk:plan`, then `/bdk:execute` and `/bdk:cr`, as in [the standard workflow](standard.md). `/bdk:run` carries it through these stages for you.
 
-### Phase 4 - Propose and wait (HARD STOP)
-
-This is the phase that makes the skill worth invoking. It describes the proposed solution
-(what changes, why it fixes the root cause, risks), assesses complexity as LOW (isolated
-change, one function or call site) or HIGH (many call sites, new abstractions, shared data
-models), and asks you to choose:
-
-1. **Fix now** - apply the inline fix and verify tests pass
-2. **Create plan** - hand off to a `bug` Change (`/bdk:change`, then `/bdk:plan`) with failing tests as acceptance criteria
-3. **Something else** - redirect, reconsider, investigate more
-
-!!! warning
-
-    Phase 4 is a hard stop. After the question the turn ends: no text, no tools, no
-    action. Only an actual user reply releases it - a background task completing, a hook
-    firing, or the model's own reasoning does not, no matter how obvious the fix looks.
-
-That stop is the whole point. A root cause found in one file very often has a second,
-structural cause, and the cheapest moment to notice is before the first edit.
-
-### Phase 5a - Fix inline
-
-Applies the minimal fix, re-runs the same scoped command from Phase 3 to confirm those
-tests are GREEN, runs the scoped lint and incremental typecheck forms over the changed files (not a
-project-wide sweep), then runs the fast tier's `related`/`scoped` form over the changed
-source as the regression check.
-An e2e tier is added only if the fix touched e2e specs or changed a public contract.
+With `bdk-craft` installed, every implementer package of a bug Change has a `Craft` section that names two skills, `debugging` and then `tdd`, and the command that prints each one:
 
 ```
-[debug] Done.
-  Root cause:   {one sentence}
-  Tests added:  {N}
-  Fix applied:  {brief description}
-  Status:       all tests GREEN
+## Craft
+
+- `debugging`: `bdk ctx craft debugging`
+- `tdd`: `bdk ctx craft tdd`
 ```
 
-### Phase 5b - Hand off to a Change
+The implementer prints both before its first edit and follows them. It reproduces the symptom as a failing test, weighs the candidate causes, fixes the cause, and keeps the test as a regression test. A feature Change names `tdd` only.
+
+## Debug without a Change
+
+`/bdk-craft:debugging` runs the same process in your session, on any repository:
 
 ```
-[debug] Handing off to a bug Change
+/bdk-craft:debugging <the symptom, an error message, or the steps to reproduce>
 ```
 
-The handoff is not just the sentence "fix this bug". `/bdk:debug` prints the root cause as
-the Change's intent, the steps to reproduce verbatim, the failing test file path and test
-names as acceptance criteria, and the architectural constraints discovered during
-investigation. `/bdk:change` and `/bdk:plan` start only when you type them, so you pass
-that text to `/bdk:change` and then type `/bdk:plan`. The plan starts from a
-reproduction, not from a guess.
+It opens no Change and writes nothing under `.bdk/`. It ends with a debug report: the symptom, the reproduction, the hypotheses kept and dropped, the root cause, the fix and the regression test. When the fix turns out to need a plan or a review, open a bug Change with that report as its intent.
 
-From there you are in [the standard workflow](standard.md) - or the
-[full pipeline](full-pipeline.md) if planning surfaces a design question.
+## The process
 
-## Choosing between 5a and 5b
-
-| Choose         | When                                                                                                                     |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Fix now        | The change is isolated to one function or call site, and the failing tests fully describe the contract.                  |
-| Create plan    | The fix touches many call sites, introduces a new abstraction, or changes a shared data model.                           |
-| Something else | The root cause does not explain every symptom you have seen. Investigating again is cheaper than fixing the wrong thing. |
-
-## What you get
-
-| Artifact                          | Path                                                                       |
-| --------------------------------- | -------------------------------------------------------------------------- |
-| Failing tests reproducing the bug | your project's existing test files                                         |
-| Phase 5a: the fix                 | your working tree, tests GREEN                                             |
-| Phase 5b: a plan                  | `.bdk/plans/<ts>-<slug>.md`, with the failing tests as acceptance criteria |
-
-`/bdk:debug` writes nothing under `.bdk/` itself. Its output is a reproduction and a
-decision.
+| Step                 | What it produces                                                                                |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| Pin the symptom      | expected and actual, with the input, and since when it happens                                  |
+| Reproduce            | a failing test that fails with the symptom, not with a setup error                              |
+| Rank hypotheses      | every plausible cause with evidence for and against it, and the check that confirms or kills it |
+| Narrow by bisection  | the first bad commit, input or step, when the hypotheses do not settle it                       |
+| State the root cause | one sentence that explains every observation, including the scope                               |
+| Fix and verify       | the fix at the cause, the regression test green, and the same pattern searched elsewhere        |
 
 ## Next step
 
-After 5a, review it: [Code review](code-review.md). After 5b, execute it:
-[Standard workflow](standard.md).
+A bug Change ends with [Code review](code-review.md), like any other Change.

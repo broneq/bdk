@@ -6,7 +6,15 @@
 
 /** A section a package carries only when the build names its kind. */
 export type SectionKind =
-  "verifier" | "runner" | "lead" | "review" | "risks" | "work-root" | "conflict" | "merge";
+  | "verifier"
+  | "runner"
+  | "lead"
+  | "review"
+  | "risks"
+  | "work-root"
+  | "conflict"
+  | "merge"
+  | "craft";
 
 interface Section {
   readonly name: string;
@@ -15,7 +23,8 @@ interface Section {
    * Only packages of this kind carry it: the verifiers' P8 lists, the runner's
    * checks, the lead's tasks, a grouped package's review scope (T42-A1) and the
    * integration reviewer's risks (T42-K), a worktree target's work root and a
-   * merge ticket's conflict for its implementer and the merge note for its steps (T45).
+   * merge ticket's conflict for its implementer and the merge note for its steps (T45),
+   * and the implementer's installed craft skills (T42, R-8).
    */
   readonly only?: SectionKind;
 }
@@ -57,6 +66,12 @@ const SECTIONS: readonly Section[] = [
     only: "review",
     skeleton:
       "## Review\n\nYou review group `{{group}}` of ticket {{ticket}}. Review only this group; another agent reviews each other group in parallel.\n\n{{review}}",
+  },
+  {
+    name: "craft",
+    only: "craft",
+    skeleton:
+      "## Craft\n\nBefore your first edit, print each craft skill below with its command and follow it while you work:\n\n{{craft}}",
   },
   { name: "entries", skeleton: "## Ledger entries\n\n{{entries}}" },
   { name: "role", skeleton: "{{role-body}}" },
@@ -140,21 +155,4 @@ export function largestSection(sections: readonly RenderedSection[]): RenderedSe
 
 export function bytes(text: string): number {
   return new TextEncoder().encode(text).length;
-}
-
-/** The role body one heading level down, so its `# Role: <role>` sits beside the package sections. */
-export function demoteHeadings(markdown: string): string {
-  let fence: string | undefined;
-  return markdown
-    .split("\n")
-    .map((line) => {
-      const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
-      if (marker !== undefined) {
-        if (fence === undefined) fence = marker;
-        else if (marker.startsWith(fence)) fence = undefined;
-        return line;
-      }
-      return fence === undefined && /^#{1,5} /.test(line) ? `#${line}` : line;
-    })
-    .join("\n");
 }

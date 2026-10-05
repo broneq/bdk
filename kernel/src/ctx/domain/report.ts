@@ -11,7 +11,8 @@ type PartKind =
   | "verifier-policy"
   | "file"
   | "startup"
-  | "agents-table";
+  | "agents-table"
+  | "craft";
 
 interface ContextPart {
   readonly kind: PartKind;
@@ -49,4 +50,11 @@ export interface StartupSource {
   readonly before: readonly string[];
   readonly rows: readonly AgentRow[];
   readonly after: readonly string[];
+}
+
+/** A `bdk-craft` skill: its body without frontmatter and every file under its `references/`, in name order. */
+export interface CraftSkill {
+  readonly name: string;
+  readonly body: string;
+  readonly references: readonly { readonly file: string; readonly text: string }[];
 }

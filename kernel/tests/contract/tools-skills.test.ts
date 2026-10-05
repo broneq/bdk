@@ -1,7 +1,6 @@
 // `tools-skills` (v3-t42-tools): the shape of the tools skills `commit`,
 // `docs`, `rules`, `adr`, `doctor` and `bdk-cli` under skills/tools/, the
 // removal of the v2 skills they replace, and the kernel commands each names.
-import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -9,6 +8,7 @@ import { parse } from "yaml";
 
 import { SKILL_CONTEXT } from "../../src/ctx/use-cases/manifest.ts";
 import { REPO_ROOT } from "../support/run.ts";
+import { userFacingFiles, withoutRemovedSection } from "../support/user-facing.ts";
 
 const TOOLS = join(REPO_ROOT, "skills", "tools");
 const KERNEL_PAIR = 'Bash(node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" *) Bash(echo *)';
@@ -40,18 +40,6 @@ function files(dir: string): string[] {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile())
     .map((entry) => join(entry.parentPath, entry.name));
-}
-
-/**
- * The text without its "Removed skills" section, which maps each removed
- * skill to its replacement (`README.md`, `docs/guide/reference/skills.md`).
- */
-function withoutRemovedSection(text: string): string {
-  const heading = /^(#+) Removed skills$/m.exec(text);
-  if (heading?.[1] === undefined) return text;
-  const rest = text.slice(heading.index + heading[0].length);
-  const next = new RegExp(`^#{1,${String(heading[1].length)}} `, "m").exec(rest);
-  return text.slice(0, heading.index) + (next === null ? "" : rest.slice(next.index));
 }
 
 const allowed = (skill: Skill): string => ` ${String(skill.meta["allowed-tools"])} `;
@@ -107,20 +95,7 @@ describe("the v2 tools skills are removed", () => {
   });
 
   it("nothing user-facing names a removed skill", () => {
-    // Files git sees, so ignored ones such as `.claude/worktrees/` (other checkouts) stay out.
-    const roots = ["skills", "agents", "rules", "fragments", ".claude", "docs/guide"];
-    const single = ["README.md", "STARTUP_INSTRUCTIONS.md", "CONTRIBUTING.md", "CLAUDE.md"];
-    const paths = execFileSync(
-      "git",
-      ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...roots, ...single],
-      {
-        cwd: REPO_ROOT,
-        encoding: "utf8",
-      },
-    )
-      .split("\0")
-      .filter((path) => path !== "" && existsSync(join(REPO_ROOT, path)))
-      .map((path) => join(REPO_ROOT, path));
+    const paths = userFacingFiles();
     const stale = new RegExp(`/bdk:(${REMOVED.join("|")})\\b`);
     const hits = paths.filter((path) =>
       stale.test(withoutRemovedSection(readFileSync(path, "utf8"))),

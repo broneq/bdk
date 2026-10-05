@@ -19,6 +19,7 @@ const V3_PAGES = [
   "concepts/agents.md", // T42
   "reference/agents.md", // T42
   "workflows/code-review.md", // T42
+  "workflows/debugging.md", // T42
   "concepts/worktree-parts.md", // T45
 ];
 

@@ -1,0 +1,69 @@
+# Task file for `pnpm eval with-without --skill bdk-craft:api-design` on the
+# default fixture. Each prompt asks for an HTTP API design in plain words; no code
+# change is needed. The assertions see only the final reply, so every prompt asks
+# for the design at the end. They check the concrete choices the skill makes:
+# problem+json errors, opaque cursor pagination instead of page numbers, an
+# Idempotency-Key on creating POSTs (422 for a reused key with another body),
+# optimistic concurrency with ETag, If-Match and 412, and 201 or 202 with a
+# Location header.
+- id: orders
+  prompt: >-
+    Design the REST API for orders in our shop: customers create an order from
+    their cart, list their orders, see one, change the delivery address while the
+    order is not shipped, and cancel it. End your reply with the endpoints, the
+    request and response bodies, and the error responses.
+  assert:
+    - type: javascript
+      value: >-
+        /application\/problem\+json/.test(String(output))
+    - type: javascript
+      value: >-
+        /cursor/i.test(String(output)) && !/[?&](page|offset)=/.test(String(output))
+    - type: javascript
+      value: >-
+        /Idempotency-Key/i.test(String(output))
+    - type: javascript
+      value: >-
+        /If-Match/.test(String(output)) && /\b412\b/.test(String(output))
+    - type: javascript
+      value: >-
+        /\b201\b/.test(String(output)) && /Location/.test(String(output))
+- id: transfers
+  prompt: >-
+    We need an API for money transfers between a user's own accounts: start a
+    transfer, check its status (pending, completed, failed), list past transfers
+    with filters by date and account, and handle the case where the mobile app
+    loses the connection right after sending a transfer. Describe the API. Put the
+    full design at the end of your reply.
+  assert:
+    - type: javascript
+      value: >-
+        /application\/problem\+json/.test(String(output))
+    - type: javascript
+      value: >-
+        /cursor/i.test(String(output)) && !/[?&](page|offset)=/.test(String(output))
+    - type: javascript
+      value: >-
+        /Idempotency-Key/i.test(String(output)) && /\b422\b/.test(String(output))
+    - type: javascript
+      value: >-
+        /\b202\b/.test(String(output)) && /Location/.test(String(output))
+- id: comments
+  prompt: >-
+    Design an API for comments on interview questions: post a comment, edit your
+    own comment, delete it, list the comments of a question newest first, and keep
+    two moderators from overwriting each other's edits. End your reply with the
+    complete API description including error responses.
+  assert:
+    - type: javascript
+      value: >-
+        /application\/problem\+json/.test(String(output))
+    - type: javascript
+      value: >-
+        /cursor/i.test(String(output)) && !/[?&](page|offset)=/.test(String(output))
+    - type: javascript
+      value: >-
+        /ETag/.test(String(output)) && /If-Match/.test(String(output)) && /\b412\b/.test(String(output))
+    - type: javascript
+      value: >-
+        /\b201\b/.test(String(output)) && /Location/.test(String(output))

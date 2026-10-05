@@ -10,7 +10,8 @@ import { showPackage } from "../use-cases/show.ts";
 export function buildCommand(deps: DispatchDeps): Handler {
   return async (context) => {
     if (context.change === undefined) throw new Error("dispatch build is Change-scoped");
-    const report = await buildPackage(deps, context.change, globalDir(context.runtime), {
+    const where = { globalDir: globalDir(context.runtime), home: context.runtime.home };
+    const report = await buildPackage(deps, context.change, where, {
       target: context.positionals["<target>"] ?? "",
       role: context.positionals["<role>"] ?? "",
       ticket: context.positionals["<ticket>"] ?? "",

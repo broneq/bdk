@@ -1,0 +1,60 @@
+# Task file for `pnpm eval with-without --skill bdk-craft:tdd` on the default fixture.
+# Each prompt asks for a small pure function built test-first, the way a user
+# would ask. The assertions see only the final reply, so every prompt asks for
+# the step log at the end. They check what the skill changes, not its wording:
+# one behaviour at a time (a failing run observed for each of at least three
+# behaviours, not one red run for the whole file), the first failure seen
+# before the first pass, and the exact test command.
+- id: slugify
+  prompt: >-
+    Add a function slugify(title) in src/utils/slugify.ts with tests next to it:
+    lowercase ASCII words joined by single hyphens, Polish diacritics folded
+    (Zażółć gęślą jaźń becomes zazolc-gesla-jazn), no leading or trailing hyphen,
+    and at most 60 characters without cutting a word in half. Work test-first. End
+    your reply with the steps you took in order, with the test results you saw at
+    each step.
+  assert:
+    - type: javascript
+      value: >-
+        (String(output).match(/\bfail(ed|s|ing|ure)?\b/gi) || []).length >= 3
+    - type: javascript
+      value: >-
+        (() => { const o = String(output); const f = o.search(/\bfail/i); const p = o.search(/\bpass/i); return f >= 0 && (p < 0 || f < p); })()
+    - type: javascript
+      value: >-
+        /(npx vitest|npm (run )?test|vitest run)/.test(String(output))
+- id: business-days
+  prompt: >-
+    We need addBusinessDays(date, days) in src/utils/businessDays.ts: it skips
+    Saturdays and Sundays and the dates in an optional list of holidays, accepts a
+    negative number of days, and never mutates the Date it receives. Build it TDD
+    with tests next to it. Finish your reply with what you did step by step,
+    including each test run's result.
+  assert:
+    - type: javascript
+      value: >-
+        (String(output).match(/\bfail(ed|s|ing|ure)?\b/gi) || []).length >= 3
+    - type: javascript
+      value: >-
+        (() => { const o = String(output); const f = o.search(/\bfail/i); const p = o.search(/\bpass/i); return f >= 0 && (p < 0 || f < p); })()
+    - type: javascript
+      value: >-
+        /(npx vitest|npm (run )?test|vitest run)/.test(String(output))
+- id: password-rules
+  prompt: >-
+    Write checkPassword(password) in src/auth/passwordRules.ts that returns the list
+    of broken rules: at least 12 characters, one digit, one letter, no more than two
+    identical characters in a row, and not equal to the e-mail's local part passed
+    as a second argument. Test-first please, tests next to the file. At the end of
+    your reply list the steps in the order you did them, each with the test output
+    you saw.
+  assert:
+    - type: javascript
+      value: >-
+        (String(output).match(/\bfail(ed|s|ing|ure)?\b/gi) || []).length >= 3
+    - type: javascript
+      value: >-
+        (() => { const o = String(output); const f = o.search(/\bfail/i); const p = o.search(/\bpass/i); return f >= 0 && (p < 0 || f < p); })()
+    - type: javascript
+      value: >-
+        /(npx vitest|npm (run )?test|vitest run)/.test(String(output))

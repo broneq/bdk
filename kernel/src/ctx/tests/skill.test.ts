@@ -100,12 +100,12 @@ describe("ctx skill", () => {
   });
 
   it("refuses a name the manifest does not hold with input/not-found and a hint", () => {
-    const outcome = composeSkill(input(), "debugg");
+    const outcome = composeSkill(input(), "setupp");
     expect(outcome).toMatchObject({
       refused: true,
       rule: "input/not-found",
-      why: "debugg is not a skill with a BDK context",
-      instead: ["bdk ctx skill debug", "check the skill name in the context lines"],
+      why: "setupp is not a skill with a BDK context",
+      instead: ["bdk ctx skill setup", "check the skill name in the context lines"],
     });
   });
 
@@ -217,7 +217,7 @@ describe("ctx skill", () => {
   });
 
   it("prints tool entries as config show does, including when, and none configured when empty", () => {
-    const report = compose("debug", {
+    const report = compose("setup", {
       ".bdk/settings.yaml": [
         "tools:",
         "  test:",
@@ -245,6 +245,7 @@ describe("ctx skill", () => {
     expect(report.parts).toStrictEqual([
       { kind: "tools", source: "tools.test" },
       { kind: "tools", source: "tools.lint" },
+      { kind: "tools", source: "tools.build" },
     ]);
   });
 
