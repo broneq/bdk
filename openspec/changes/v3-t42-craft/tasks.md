@@ -62,9 +62,9 @@ Each skill follows D6. It is a process with checkable steps or a choice among na
   - each task is written as a user would ask, without naming the skill;
   - it asks for the result at the end of the reply;
   - its assertions check the markers the skill fixes, for example a failing test shown before the implementation, `problem+json`, a Test Data Builder, or an expand-and-contract step.
-- [ ] 7.2 Commit the skills, the harness and the task files, so the harness runs on a clean tree.
-- [ ] 7.3 Show the user the projected spend (30 to 60 USD for nine probes, about 269 USD left) and get a yes before the first probe.
-- [ ] 7.4 Run each probe:
+- [x] 7.2 Commit the skills, the harness and the task files, so the harness runs on a clean tree.
+- [x] 7.3 Show the user the projected spend (30 to 60 USD for nine probes, about 269 USD left) and get a yes before the first probe.
+- [x] 7.4 Run each probe:
 
   ```bash
   pnpm eval with-without --skill bdk-craft:<name> \
@@ -74,11 +74,11 @@ Each skill follows D6. It is a process with checkable steps or a choice among na
 
   Keep the results under `evals/results/with-without/`. Regenerate `report.md` with `pnpm eval report with-without`.
 
-- [ ] 7.5 Write `docs/V3-EVAL-CRAFT.md` with one row per skill: task file, assertions passed `with` and `without`, cost, and the verdict `admitted` or `rejected` by D7. Delete every rejected skill from `plugins/bdk-craft/skills` and keep its task file.
+- [x] 7.5 Write `docs/V3-EVAL-CRAFT.md` with one row per skill: task file, assertions passed `with` and `without`, cost, and the verdict `admitted` or `rejected` by D7. Delete every rejected skill from `plugins/bdk-craft/skills` and keep its task file.
 
 ## 8. References and documentation
 
-- [ ] 8.1 Replace the references to the three v2 skills:
+- [x] 8.1 Replace the references to the three v2 skills:
   - `README.md` (the Skills rows and a "Removed skills" mapping, plus a short `bdk-craft` section);
   - `CLAUDE.md`, `CONTRIBUTING.md`, `STARTUP_INSTRUCTIONS.md` (through `pnpm build` if it is rendered);
   - `.claude/rules/portability-check.md`, `.claude/rules/verification-scoping.md`, `.claude/skills/docs-sync/references/docs-map.md`;
@@ -86,23 +86,23 @@ Each skill follows D6. It is a process with checkable steps or a choice among na
   - `docs/INJECTION-FLOWS.md`, `docs/HOST-FACTS.md`, `tests/host-probe/*`;
   - `kernel/src/hooks/tests/prompt-expansion.test.ts`;
   - the living specs that name them (`kernel-cli/hooks`, `skill-evals`, `tools-skills`) through this Change's deltas or as plain example renames.
-- [ ] 8.2 Update the user guide:
+- [x] 8.2 Update the user guide:
   - `docs/guide/workflows/debugging.md` becomes a bug Change plus `bdk-craft:debugging`;
   - `docs/guide/workflows/docs-and-decisions.md` and `docs/guide/concepts/verification-scoping.md`;
   - `docs/guide/reference/skills.md`, with a "Removed skills" section and a `bdk-craft` section listing the admitted skills.
 
   Run `pnpm docs:build`.
 
-- [ ] 8.3 Mark the T42 craft item done in `docs/V3-IMPLEMENTATION-PLAN.md`, and record D5 there: `debugging` opens no Change.
+- [x] 8.3 Mark the T42 craft item done in `docs/V3-IMPLEMENTATION-PLAN.md`, and record D5 there: `debugging` opens no Change.
 
 ## 9. Acceptance and gate
 
-- [ ] 9.1 Check the acceptance signal "`bdk-craft` installs alone on a project without `bdk` and `tdd` runs there". The evidence is the `with` cell of the `tdd` probe, which loaded only the `bdk-craft` copy (D8), and `claude plugin validate plugins/bdk-craft`. Name the run file in the report.
-- [ ] 9.2 Run the full gate:
+- [x] 9.1 Check the acceptance signal "`bdk-craft` installs alone on a project without `bdk` and `tdd` runs there". The evidence is the `with` cell of the `tdd` probe, which loaded only the `bdk-craft` copy (D8), and `claude plugin validate plugins/bdk-craft`. Name the run file in the report.
+- [x] 9.2 Run the full gate:
   - build and static checks: `pnpm build`, `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm knip`, `pnpm lint:py`, `pnpm skill-check`, `pnpm eval check`;
   - tests: `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `uv run pytest tests/unit`;
   - docs and plugins: `pnpm docs:build`, `claude plugin validate .`, `claude plugin validate plugins/bdk-craft`.
 
   Fix every finding, including ones not caused by this Change.
 
-- [ ] 9.3 Run `openspec validate v3-t42-craft --strict`.
+- [x] 9.3 Run `openspec validate v3-t42-craft --strict`.
