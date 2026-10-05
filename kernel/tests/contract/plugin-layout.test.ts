@@ -1,10 +1,11 @@
-// `plugin-tooling` (v3-t42-review-skills, T42-E): the agents the plugin ships,
-// no `bdk-*` meta-skill, the tools skill directory, and no reference left to
-// a removed v2 agent.
+// `plugin-tooling` (v3-t42-review-skills, T42-E): the agents the plugin ships
+// with web-researcher's tool allowlist (T32), no `bdk-*` meta-skill, the tools
+// skill directory, and no reference left to a removed v2 agent.
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 
 import { SKILL_CONTEXT } from "../../src/ctx/use-cases/manifest.ts";
 import { pluginSkillDirs } from "../support/plugin-skills.ts";
@@ -39,6 +40,13 @@ describe("plugin layout", () => {
       "web-researcher.md",
       "worker.md",
     ]);
+  });
+
+  it("keeps web-researcher on its five read and web tools", () => {
+    const text = readFileSync(join(REPO_ROOT, "agents", "web-researcher.md"), "utf8");
+    const frontmatter = /^---\n([\s\S]*?)\n---/.exec(text)?.[1] ?? "";
+    const { tools } = parse(frontmatter) as { tools?: unknown };
+    expect(tools).toStrictEqual(["WebSearch", "WebFetch", "Read", "Grep", "Glob"]);
   });
 
   it("ships no bdk-* meta-skill, and the context manifest holds none", () => {
@@ -86,6 +94,41 @@ describe("plugin layout", () => {
           "STARTUP_INSTRUCTIONS.md",
           "README.md",
           "docs/guide/",
+        ],
+        { cwd: REPO_ROOT, encoding: "utf8" },
+      );
+    } catch (error) {
+      // git grep exits 1 when nothing matches.
+      if ((error as { status?: number }).status !== 1) throw error;
+    }
+    expect(found).toBe("");
+  });
+
+  // `plugin-tooling`, Plugin names no removed MCP server. The removed-key
+  // registry names the old feature switches so that config check can refuse
+  // them; tests name them as inputs and as text that must not appear.
+  it("names no removed MCP server, its tools or uvx in what it ships", () => {
+    let found = "";
+    try {
+      found = execFileSync(
+        "git",
+        [
+          "grep",
+          "-nE",
+          "mcp__plugin_bdk|code-review-graph|serena|uvx",
+          "--",
+          ".claude-plugin/",
+          "skills/",
+          "agents/",
+          "rules/",
+          "hooks/",
+          "plugins/",
+          "STARTUP_INSTRUCTIONS.md",
+          "README.md",
+          "docs/guide/",
+          "kernel/src/",
+          ":!kernel/src/**/tests/**",
+          ":!kernel/src/shared/config/known.ts",
         ],
         { cwd: REPO_ROOT, encoding: "utf8" },
       );

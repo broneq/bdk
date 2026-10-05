@@ -6,9 +6,9 @@ import { describe, expect, it } from "vitest";
 import { isSnippetPage, readPage, sitePages } from "./site.ts";
 
 const BANNER = [
-  '!!! warning "Describes BDK v2"',
-  "",
-  "    This page describes BDK v2. The v3 documentation replaces it (T50).",
+  "::: warning Describes BDK v2",
+  "This page describes BDK v2. The v3 documentation replaces it (T50).",
+  ":::",
 ];
 
 /** Pages rewritten for v3 before T50, each by the task named. */

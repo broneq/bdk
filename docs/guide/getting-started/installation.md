@@ -1,8 +1,8 @@
 # Installation
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 BDK installs as a Claude Code plugin. Two commands add it, one skill configures
 the project, and everything else is a slash command in your normal session.

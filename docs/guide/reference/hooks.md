@@ -1,8 +1,8 @@
 # Hooks reference
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 BDK registers hooks via `hooks/hooks.json`. This page lists every entry: the event it fires on, what it runs, what it prints, and when it blocks the session.
 
@@ -125,17 +125,3 @@ Searches `~/.claude/skills/`, `.claude/skills/`, every marketplace under `~/.cla
 ```
 
 See [Troubleshooting](../troubleshooting.md).
-
-## Other hook scripts (not wired into `hooks.json`)
-
-One more script lives under `hooks/` but is not wired into `hooks.json` or any skill:
-
-### `hooks/is-command-exists/check.py`
-
-Usage: `check.py <command> [install-hint]`. Checks `shutil.which(command)`. Warning message (to stderr, exit code 2) when missing:
-
-```
-[BDK] Command '<command>' not found in PATH. This skill requires it to be installed.
-```
-
-with `" Install: <install-hint>"` appended when an install hint argument was given. Silent, exit 0, when the command is found.

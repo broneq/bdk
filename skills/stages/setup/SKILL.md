@@ -22,8 +22,8 @@ When the arguments name a change ("add the e2e suite"), do only that, then go to
 
 ## Constraints
 
-- Write settings only with `bdk config set`, one key or tool entry per call. The kernel validates each value, keeps the schema modeline and adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`; never edit `.bdk/` files yourself. The only project files you edit are the ignore lists of its tools, after the user accepts each entry.
-- Ask the user only what the project files cannot tell you: which detected commands to keep, whether a project without a test or lint tool runs without one, which tools to keep off `.bdk/`, whether to import rules, whether to delete v2 files, whether to install Lavish, where findings are tracked. Tiers, scoped forms, profiles and sizes follow from the runner or are measured by the kernel later, so they are never questions.
+- Write settings only with `bdk config set`, one key or tool entry per call. The kernel validates each value, keeps the schema modeline and adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`; never edit `.bdk/` files yourself. The only project files you edit are the ignore lists of its tools and a v2 rule that ignores `.bdk/`, each after the user accepts it.
+- Ask the user only what the project files cannot tell you: which detected commands to keep, whether a project without a test or lint tool runs without one, which tools to keep off `.bdk/`, whether to import rules, whether to delete v2 files, whether to replace the v2 ignore rule, whether to install Lavish, where findings are tracked. Tiers, scoped forms, profiles and sizes follow from the runner or are measured by the kernel later, so they are never questions.
 - Ask with `AskUserQuestion`, several questions in one call where they are independent. A multi-select with one option per detected command lets the user drop or add commands; the host adds "Other" for a command you did not find.
 - Do not run `bdk export agents`: on Claude Code the agents ship with the plugin, and a copy in the project would register each one twice.
 
@@ -31,6 +31,7 @@ When the arguments name a change ("add the e2e suite"), do only that, then go to
 
 `bdk doctor --json` decides the path:
 
+- A `bdk-ignored` finding, with any layout: replace the rule as [the v2 ignore rule](references/v2-migration.md#the-v2-ignore-rule) describes before you write any setting.
 - `layout: v2`: migrate the project as [the v2 migration](references/v2-migration.md) describes, then continue with the settings.
 - `layout: v3` with `test` and `lint` each configured or declared none: show the settings and change only what the user asks for.
 - Otherwise detect the stack.
@@ -82,7 +83,7 @@ Run `bdk doctor --fix --json`, which writes the schema copy and the modeline, th
 
 - each tool entry as `<tier> <id>: <command>` with its scoped forms, so a wrong derivation is caught now by the person who knows the project;
 - each group declared none; for `test`, that no Change of the project will run a test;
-- what was imported, deleted, or not carried over from v2;
+- what was imported, deleted, or not carried over from v2, and whether the v2 ignore rule was replaced;
 - the exclusions committed, and each declined exclusion with its consequence: agents log a `question` naming `/bdk:setup` when that tool reports a `.bdk/` file;
 - the tracker, or that the review report offers no `track` while it is unset;
 - every remaining `doctor` finding with its repair;

@@ -76,32 +76,26 @@ Every BDK skill:
 
 ## Running Tests
 
-Requires [uv](https://docs.astral.sh/uv/).
+The repository's tests are vitest projects: `unit`, `e2e` and `contract` (the commands are in the Kernel section below). The repository needs no Python.
 
-```bash
-uv run pytest
-```
+Tests mirror the layout of what they cover. A slice's tests sit in its `tests/` directory (`kernel/src/<slice>/tests/`); kernel-wide tests sit in `kernel/tests/`: the E2E harness, the contract tests (`kernel/tests/contract/`) that check the plugin's files (hooks, skills, agents, the host probe and its recorded payloads), and the documentation site guards (`kernel/tests/docs/`).
 
-Dev dependencies (`pytest`) are declared in `pyproject.toml` under `[dependency-groups] dev` — uv installs them automatically on first run.
-
-Both `test_*.py` and `*.test.py` are collected (see `[tool.pytest.ini_options] python_files` in `pyproject.toml`); new tests should use `test_*.py`.
-
-Tests mirror the layout of what they cover: `tests/unit/scripts/`, `tests/unit/hooks/<hook-name>/`, `tests/unit/skills/<skill-name>/`, `tests/unit/agents/`, `tests/unit/fragments/`. Hook tests therefore live at `tests/unit/hooks/is-command-exists/test_check.py`, not under a top-level `tests/hooks/`.
-
-The Python scripts are linted and formatted by ruff until T32 removes them. `pnpm lint:py` runs `ruff check` and `ruff format --check` from the `lint` dependency group, and CI runs the same two steps before the tests. `.git-blame-ignore-revs` lists the formatting commits; GitHub's blame reads it, and local `git blame` does after a one-time `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+`.git-blame-ignore-revs` lists the formatting commits; GitHub's blame reads it, and local `git blame` does after a one-time `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 ---
 
 ## Documentation Site
 
-The user documentation is an MkDocs Material site. `mkdocs.yml` sits at the root and the pages live in `docs/guide/`; everything else under `docs/` stays off the site. Until T50 rewrites them for v3, the pages describe v2 and open with a banner that says so.
+The user documentation is a VitePress site. The pages live in `docs/guide/` and the site's config in `docs/guide/.vitepress/` (`config.ts`, the sidebar in `sidebar.ts`, the Markdown options in `markdown.ts`, the theme with the Mermaid component); everything else under `docs/` stays off the site. VitePress and Mermaid are devDependencies, so `pnpm install` is the whole setup. Until T50 rewrites them for v3, the pages describe v2 and open with a banner that says so.
 
 ```bash
-pnpm docs:build     # mkdocs build --strict, from the docs dependency group
+pnpm docs:dev       # local server with hot reload
+pnpm docs:build     # static build; a dead link fails it
+pnpm docs:preview   # serve the last build
 pnpm test:contract  # includes the site guards in kernel/tests/docs/
 ```
 
-The guards check that every user-invocable skill has a section in `reference/skills.md` and an entry in `README.md`, that every agent is named in `reference/agents.md`, that the nav lists exactly the pages in `docs/guide/`, that every page carries the v2 banner, and that every `hooks/...` path named in prose exists. The `docs.yml` workflow builds the site on every pull request and deploys it only from `main`. The dev skill `docs-sync` (`.claude/skills/docs-sync/`) audits the pages against the code.
+The guards check that every user-invocable skill has a section in `reference/skills.md` and an entry in `README.md`, that every agent is named in `reference/agents.md`, that the sidebar lists exactly the pages in `docs/guide/`, that every page carries the v2 banner, that every `hooks/...` path named in prose exists, that every in-site link with an anchor names a heading of its target page, and that no page names a removed mechanism (the tool tiers, the v2 settings hook, a Python script or hook of BDK). The `docs.yml` workflow builds the site on every pull request and deploys it to GitHub Pages only from `main`; the repository's Pages source must be "GitHub Actions". The dev skill `docs-sync` (`.claude/skills/docs-sync/`) audits the pages against the code.
 
 ---
 

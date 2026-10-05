@@ -1,8 +1,8 @@
 # Full pipeline
 
-!!! warning "Describes BDK v2"
-
-    This page describes BDK v2. The v3 documentation replaces it (T50).
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
 The full tier is five stages, each consuming the previous stage's output:
 
@@ -15,12 +15,12 @@ in one testable sentence. See the [tier table](../index.md#how-you-work-with-it)
 
 ## Stage 1 - Design
 
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:design` works on the active Change: it writes `design.md` and
-    `architecture.md` into the Change, records decisions in the ledger, runs
-    `/bdk:verify-design` and ends at the design gate, where you type `/bdk:plan`.
-    See [/bdk:design](../reference/skills.md#bdkdesign).
+::: info BDK 3
+In BDK 3, `/bdk:design` works on the active Change: it writes `design.md` and
+`architecture.md` into the Change, records decisions in the ledger, runs
+`/bdk:verify-design` and ends at the design gate, where you type `/bdk:plan`.
+See [/bdk:design](../reference/skills.md#bdk-design).
+:::
 
 ```
 /bdk:design <feature or capability>
@@ -37,23 +37,23 @@ Before the doc is written, a separate Opus `design-verifier` subagent critiques 
 draft cold - the author of a design has confirmation bias against it, so the critique
 moves out of the author's head.
 
-!!! warning
-
-    If the chosen approach changes the database schema, the Schema-Change Gate is
-    non-skippable. `/bdk:design` shows the current schema, presents 2+ proposals with
-    migration and rollback implications, and requires explicit approval. A thumbs-up on
-    the broader design is not schema approval.
+::: warning
+If the chosen approach changes the database schema, the Schema-Change Gate is
+non-skippable. `/bdk:design` shows the current schema, presents 2+ proposals with
+migration and rollback implications, and requires explicit approval. A thumbs-up on
+the broader design is not schema approval.
+:::
 
 Output: `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md`, including a "What we did NOT
 decide" section listing every open question.
 
 ## Stage 2 - Plan
 
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
-    active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
-    passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdkplan).
+::: info BDK 3
+In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
+active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
+passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdk-plan).
+:::
 
 ```
 /bdk:create-plan <feature description or design doc path>
@@ -111,12 +111,12 @@ On pass it stamps the plan's sha256 into the report and prints:
 
 ## Stage 4 - Execute
 
-!!! note "BDK 3"
-
-    In BDK 3, `/bdk:execute` replaces `/bdk:subagent-execute-plan`: it builds the
-    plan parts of the active Change through role agents, every ready part in one
-    run, flat or with one lead per part, then names `/bdk:cr`. See
-    [/bdk:execute](../reference/skills.md#bdkexecute).
+::: info BDK 3
+In BDK 3, `/bdk:execute` replaces `/bdk:subagent-execute-plan`: it builds the
+plan parts of the active Change through role agents, every ready part in one
+run, flat or with one lead per part, then names `/bdk:cr`. See
+[/bdk:execute](../reference/skills.md#bdk-execute).
+:::
 
 ```
 /bdk:subagent-execute-plan .bdk/plans/<ts>-<slug>.md
@@ -183,29 +183,29 @@ different branches mean different run ids, different manifests, and trailers tha
 match each other's `git log`. Nothing coordinates the two runs, which is the point -
 merge them the way you merge any two branches.
 
-!!! warning
-
-    One session per worktree. Two sessions in one worktree contend for the same run, and
-    the second is refused by the session guard. Take over a run held by a dead session
-    with `--force`, which prints exactly what it took over.
+::: warning
+One session per worktree. Two sessions in one worktree contend for the same run, and
+the second is refused by the session guard. Take over a run held by a dead session
+with `--force`, which prints exactly what it took over.
+:::
 
 ## Stage 5 - Review
 
-!!! note "BDK 3"
+::: info BDK 3
+In BDK 3 the review gate follows `/bdk:cr`, and `/bdk:close` closes the Change:
+it merges the spec deltas, archives the Change in one commit and reports the PR
+summary. `/bdk:run "<intent>"` runs the stages for you and stops at each gate that
+needs you. See [/bdk:close](../reference/skills.md#bdk-close) and
+[/bdk:run](../reference/skills.md#bdk-run).
 
-    In BDK 3 the review gate follows `/bdk:cr`, and `/bdk:close` closes the Change:
-    it merges the spec deltas, archives the Change in one commit and reports the PR
-    summary. `/bdk:run "<intent>"` runs the stages for you and stops at each gate that
-    needs you. See [/bdk:close](../reference/skills.md#bdkclose) and
-    [/bdk:run](../reference/skills.md#bdkrun).
-
-    `/bdk:cr` ends with a human report (`.bdk/.machine/review/<changeId>.html`) in
-    which you decide every open entry: fix, defer, reject or track. A run does not
-    stop there, even without `--auto`: it defers each undecided entry with
-    `review: true`, so the PR summary lists it as deferred and to be reviewed, and
-    its finish names the report and `/bdk:cr --report` for changing those decisions
-    before the close. A run never chooses fix for you. See
-    [Code review](code-review.md#the-report).
+`/bdk:cr` ends with a human report (`.bdk/.machine/review/<changeId>.html`) in
+which you decide every open entry: fix, defer, reject or track. A run does not
+stop there, even without `--auto`: it defers each undecided entry with
+`review: true`, so the PR summary lists it as deferred and to be reviewed, and
+its finish names the report and `/bdk:cr --report` for changing those decisions
+before the close. A run never chooses fix for you. See
+[Code review](code-review.md#the-report).
+:::
 
 ```
 /bdk:cr --full

@@ -8,6 +8,8 @@ A personal Claude Code plugin packaging reusable dev workflows, skills, agents, 
 
 ## Installation
 
+**Requirements:** Claude Code and Node.js 22.13 or later on `PATH`; the kernel uses Node's built-in `node:sqlite`. BDK needs no Python and no `uv`. `bdk doctor` reports a Node below the minimum with the line that installs a newer one.
+
 **From GitHub directly (recommended until marketplace listing is live):**
 
 1. Add the BDK marketplace source:

@@ -1,12 +1,12 @@
 # Skills
 
-!!! warning "Describes BDK v2"
+::: warning Describes BDK v2
+This page describes BDK v2. The v3 documentation replaces it (T50).
+:::
 
-    This page describes BDK v2. The v3 documentation replaces it (T50).
-
-!!! note "BDK 3"
-
-    [Stage skills](#stage-skills) describes BDK 3.
+::: info BDK 3
+[Stage skills](#stage-skills) describes BDK 3.
+:::
 
 Every skill is invoked as `/bdk:<name>`. This page lists one section per user-invocable skill - purpose, arguments, the artifact it writes, when to reach for it, and the skills it works with. Skills whose frontmatter carries `user-invocable: false` (the role skills and `swarm`) are loaded by agents and orchestrators, never typed as a slash command, so they get one collective paragraph near the end instead of individual sections.
 

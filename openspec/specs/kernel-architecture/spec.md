@@ -450,42 +450,6 @@ The allowlist is `zod` and the YAML parser `yaml` (design, Constraints & NFRs, S
 - **WHEN** the audit reports an advisory of severity high or above for a runtime dependency
 - **THEN** the CI audit step fails
 
-### Requirement: CI pipeline
-
-CI SHALL run, on every push to `main` and every pull request, the kernel steps in this order and fail on the first failing one: frozen install, build, lint, format check over the repository, typecheck, unused code and dependency check, unit tests with coverage thresholds, E2E tests, contract and structural tests.
-
-The kernel job runs every step on each line of the Node matrix of `Tests per slice`. The bundle, the schemas and the adapters the E2E and contract steps use are the ones the build step produced in the same job; no step compares them with a copy from git, because git holds none (`Generated outputs`). A skill content job runs `skill-check` with BDK's configuration over the `skills/` and `agents/` directories of the plugins (capability `skill-content-checks`) on the Node version of `.nvmrc`, after an install whose `prepare` script has written the generated adapters, and fails the build on any error finding or stale baseline entry. On pull requests CI also checks that every commit message follows Conventional Commits, which release-please parses, and lints the workflow files. The same format, lint, commit message and skill content checks run as local git hooks on staged files, but CI never relies on them. The Python job runs ruff lint and ruff format check over the Python scripts before the pytest suite, until T32 removes the scripts. `pnpm lint:py` runs the same two checks locally. A docs workflow runs the strict site build on every pull request and every push to `main` or `staging/v3` (capability `docs-site`). The release workflow builds and publishes the generated outputs (`Distribution ref`).
-
-#### Scenario: coverage below the threshold
-
-- **WHEN** a change lowers unit test coverage of `kernel/src/` below a threshold
-- **THEN** the unit step fails the build
-
-#### Scenario: non-conventional commit
-
-- **WHEN** a pull request contains a commit whose message is not a Conventional Commit
-- **THEN** the commit message check fails the build
-
-#### Scenario: skill content finding
-
-- **WHEN** a pull request changes a skill so that `skill-check` reports an error finding
-- **THEN** the skill content job fails the build
-
-#### Scenario: acceptance run
-
-- **WHEN** a pull request into `staging/v3` or `main` changes the kernel
-- **THEN** CI runs build, lint, format check, typecheck, unused code check, unit with coverage, E2E and contract steps on Node 22.13, 24 and 26, the audit, the commit message check, the workflow lint and the skill content job, and the workflow run fails when any of them fails
-
-#### Scenario: Python lint finding
-
-- **WHEN** a pull request adds a Python file that ruff lint flags or that `ruff format --check` would reformat
-- **THEN** the Python job fails before the pytest suite runs
-
-#### Scenario: parallel kernel changes
-
-- **WHEN** two pull requests each add a settings key or a command and neither edits a hand-written file the other edits
-- **THEN** both merge into `staging/v3` with no conflict on a generated file
-
 ### Requirement: Generated outputs
 
 Every file that `pnpm build` generates SHALL be ignored and untracked on every branch except the distribution ref, and one contract test SHALL keep the ignore list and the generators in step.
@@ -571,3 +535,39 @@ The plugin SHALL ship `bin/bdk`, a tracked POSIX `sh` script with the executable
 
 - **WHEN** `claude plugin validate .` runs in the repository root
 - **THEN** it reports `Validation passed` with no error and no warning about `bin/` (the warning about the repository's own `CLAUDE.md` at the plugin root predates the launcher)
+
+### Requirement: Continuous integration
+
+CI SHALL run, on every push to `main` and every pull request, the kernel steps in this order and fail on the first failing one: frozen install, build, lint, format check over the repository, typecheck, unused code and dependency check, unit tests with coverage thresholds, E2E tests, contract and structural tests.
+
+The kernel job runs every step on each line of the Node matrix of `Tests per slice`. The bundle, the schemas and the adapters the E2E and contract steps use are the ones the build step produced in the same job; no step compares them with a copy from git, because git holds none (`Generated outputs`). A skill content job runs `skill-check` with BDK's configuration over the `skills/` and `agents/` directories of the plugins (capability `skill-content-checks`) on the Node version of `.nvmrc`, after an install whose `prepare` script has written the generated adapters, and fails the build on any error finding or stale baseline entry. On pull requests CI also checks that every commit message follows Conventional Commits, which release-please parses, and lints the workflow files. The same format, lint, commit message and skill content checks run as local git hooks on staged files, but CI never relies on them. CI SHALL run no Python step: no pytest, no ruff and no `uv`. A docs workflow runs the strict site build on every pull request and every push to `main` or `staging/v3` (capability `docs-site`). The release workflow builds and publishes the generated outputs (`Distribution ref`).
+
+#### Scenario: coverage below the threshold
+
+- **WHEN** a change lowers unit test coverage of `kernel/src/` below a threshold
+- **THEN** the unit step fails the build
+
+#### Scenario: non-conventional commit
+
+- **WHEN** a pull request contains a commit whose message is not a Conventional Commit
+- **THEN** the commit message check fails the build
+
+#### Scenario: skill content finding
+
+- **WHEN** a pull request changes a skill so that `skill-check` reports an error finding
+- **THEN** the skill content job fails the build
+
+#### Scenario: acceptance run
+
+- **WHEN** a pull request into `staging/v3` or `main` changes the kernel
+- **THEN** CI runs build, lint, format check, typecheck, unused code check, unit with coverage, E2E and contract steps on Node 22.13, 24 and 26, the audit, the commit message check, the workflow lint and the skill content job, and the workflow run fails when any of them fails
+
+#### Scenario: no Python step
+
+- **WHEN** the workflow files under `.github/workflows/` are read
+- **THEN** no job or step runs `pytest`, `ruff`, `uv` or `uvx`, and no job sets up Python or uv
+
+#### Scenario: parallel kernel changes
+
+- **WHEN** two pull requests each add a settings key or a command and neither edits a hand-written file the other edits
+- **THEN** both merge into `staging/v3` with no conflict on a generated file

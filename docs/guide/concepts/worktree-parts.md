@@ -46,9 +46,9 @@ bdk config set execution.worktree.max-live 2
 
 A new worktree is a fresh checkout: `node_modules/`, virtual environments and build output are absent. Set `setup.command` to whatever makes the project's tests run there.
 
-!!! warning "Tools that crawl the project"
-
-    The default `dir` sits inside the project, under the ignored `.bdk/.machine/`. A tool that walks the directory tree without reading `.gitignore` (a file watcher, an IDE indexer, a test runner with a broad glob, a monorepo tool) also sees a full copy of the project in each worktree. Exclude `.bdk/.machine/` in that tool, or set `dir` to a path outside the project, such as `../.bdk-worktrees`.
+::: warning Tools that crawl the project
+The default `dir` sits inside the project, under the ignored `.bdk/.machine/`. A tool that walks the directory tree without reading `.gitignore` (a file watcher, an IDE indexer, a test runner with a broad glob, a monorepo tool) also sees a full copy of the project in each worktree. Exclude `.bdk/.machine/` in that tool, or set `dir` to a path outside the project, such as `../.bdk-worktrees`.
+:::
 
 ### `.worktreeinclude`
 

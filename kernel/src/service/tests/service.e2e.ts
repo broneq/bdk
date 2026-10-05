@@ -81,6 +81,54 @@ describe("bdk doctor", () => {
     });
   });
 
+  it("exit 0: v2 plan verification reports and designs alone are a v2 layout", () => {
+    const root = fixture({
+      files: { ".bdk/verify-plan/a-verification.md": "", ".bdk/design/a.md": "" },
+    }).root;
+    const result = runBdk(["doctor", "--json"], root);
+    expect(result.code).toBe(0);
+    expect(result.json).toMatchObject({
+      ok: false,
+      layout: "v2",
+      findings: [
+        {
+          id: "v2-layout",
+          level: "warn",
+          summary: ".bdk/design/ and .bdk/verify-plan/ found",
+          repair: "/bdk:setup",
+        },
+      ],
+    });
+  });
+
+  it("exit 0: a v2 rule ignoring .bdk/ is a bdk-ignored fail finding", () => {
+    const root = fixture({ files: { ".gitignore": "node_modules/\n/.bdk/\n", ".bdk/": "" } }).root;
+    const result = runBdk(["doctor", "--json"], root);
+    expect(result.code).toBe(0);
+    expect(validDoctor(result.json), JSON.stringify(validDoctor.errors)).toBe(true);
+    expect(result.json).toMatchObject({
+      ok: false,
+      findings: [
+        {
+          id: "bdk-ignored",
+          level: "fail",
+          summary:
+            ".gitignore ignores .bdk/settings.yaml with /.bdk/ (line 2), so the files BDK commits never reach git",
+          repair: "/bdk:setup",
+        },
+      ],
+    });
+  });
+
+  it("exit 0: the two v3 ignored paths are no bdk-ignored finding", () => {
+    const root = fixture({
+      files: { ".gitignore": "/.bdk/.machine/\n/.bdk/settings.local.yaml\n", ".bdk/": "" },
+    }).root;
+    const result = runBdk(["doctor", "--json"], root);
+    expect(result.code).toBe(0);
+    expect(result.json).toMatchObject({ ok: true, findings: [] });
+  });
+
   it("exit 0: --fix is accepted and the text form lists the findings", () => {
     const root = fixture({ files: { ".bdk/runs/": "" } }).root;
     const result = runBdk(["doctor", "--fix"], root);

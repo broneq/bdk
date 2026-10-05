@@ -10,38 +10,6 @@ on:
   pull_request:
 
 jobs:
-  pytest:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: astral-sh/setup-uv@v10.2.0
-        with:
-          enable-cache: true
-
-      # The host probe tests run its collector script with Node.
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-
-      - name: Configure git
-        # bdk_run_state.py's tests build throwaway repos and commit in them,
-        # which needs an identity the runner does not ship with.
-        run: |
-          git config --global user.email "ci@example.com"
-          git config --global user.name "CI"
-
-      # ruff covers the Python scripts until T32 removes them (pnpm lint:py
-      # runs the same two checks locally).
-      - name: Lint Python
-        run: uv run --group lint ruff check
-
-      - name: Format check Python
-        run: uv run --group lint ruff format --check
-
-      - name: Run unit tests
-        run: uv run pytest tests/unit/ -q
-
   kernel:
     runs-on: ubuntu-latest
     strategy:
@@ -49,7 +17,7 @@ jobs:
       matrix:
         # The minimum (HOST-FACTS node-sqlite-min), the active LTS and the
         # current release; every line runs the same steps (kernel-architecture,
-        # CI pipeline).
+        # Continuous integration).
         node: ["22.13", "24", "26"]
     steps:
       - uses: actions/checkout@v7
