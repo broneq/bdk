@@ -30,8 +30,8 @@
 
 ## 5. `/bdk:setup` replaces the v2 ignore rule (D-10)
 
-- [ ] 5.1 `skills/stages/setup/references/v2-migration.md`: a section on the ignore rule (when doctor reports `bdk-ignored`; show the rule and its file; on a yes remove only that line, add the uncovered v3 paths, commit `.gitignore` alone; on a no name the finding in the closing render), placed before any `bdk config set`. `SKILL.md` runs that step on `bdk-ignored` even without `layout: v2`, and its closing render names the outcome. Verify: `pnpm skill-check` clean, and the stage-skills content test green
-- [ ] 5.2 Extend the `v2-project` setup stage case: `prepare` writes and commits `/.bdk/` into `.gitignore`; the answers confirm the replacement; `expect` checks that `git check-ignore -q .bdk/settings.yaml` fails and that doctor reports no `bdk-ignored`. Verify: `pnpm eval check` green
+- [x] 5.1 `skills/stages/setup/references/v2-migration.md`: a section on the ignore rule (when doctor reports `bdk-ignored`; show the rule and its file; on a yes remove only that line, add the uncovered v3 paths, commit `.gitignore` alone; on a no name the finding in the closing render), placed before any `bdk config set`. `SKILL.md` runs that step on `bdk-ignored` even without `layout: v2`, and its closing render names the outcome. Verify: `pnpm skill-check` clean, and the stage-skills content test green
+- [x] 5.2 Extend the `v2-project` setup stage case: `prepare` writes and commits `/.bdk/` into `.gitignore`; the answers confirm the replacement; `expect` checks that `git check-ignore -q .bdk/settings.yaml` fails and that doctor reports no `bdk-ignored`. Verify: `pnpm eval check` green
 
 ## 6. Acceptance
 

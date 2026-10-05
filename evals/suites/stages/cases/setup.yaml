@@ -93,8 +93,12 @@
   prepare:
     - |-
       mkdir -p .bdk/plans .bdk/design && printf '{"languages":["typescript"],"test-tools":[{"type":"vitest","command":"npm test"}]}' > .bdk/settings.json && echo '# old design' > .bdk/design/x.md
+    # The rule v2 wrote (T32): it hides every file v3 commits under .bdk/.
+    - |-
+      printf '# BDK run state - machine-owned, never committed\n/.bdk/\n' >> .gitignore && git add .gitignore && git commit -qm "v2 ignore rule"
   answers:
     lavish: decline|skip|no|disable
+    ignore rule|gitignore: replace|yes
     delet|remov|v2: delete|remove|yes
   expect:
     - run: config check
@@ -102,6 +106,23 @@
     - run: doctor
       json:
         layout: v3
+    # The v2 rule is gone, the two v3 paths took its place, and the swap is a
+    # commit of .gitignore alone.
+    - shell: |-
+        git check-ignore -q .bdk/settings.yaml
+      exit: 1
+    - shell: |-
+        grep -cx '/.bdk/' .gitignore
+      exit: 1
+    - shell: |-
+        grep -cxE '/\.bdk/\.machine/|/\.bdk/settings\.local\.yaml' .gitignore
+      stdout: "^2"
+    - shell: |-
+        node "$BDK" doctor --json | grep -c bdk-ignored
+      exit: 1
+    - shell: |-
+        git log --format=%H --grep='replace the v2 .bdk/ ignore rule' | head -1 | xargs git show --name-only --format=
+      stdout: "^\\.gitignore\\s*$"
     - run: config show tools.test
       json:
         value.0.command: npm test

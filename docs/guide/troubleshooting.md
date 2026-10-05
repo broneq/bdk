@@ -14,6 +14,19 @@ Symptom, cause, and fix for the messages BDK can actually show you, grouped by t
 
 **Fix:** run `/bdk:setup` and accept the exclusions it proposes. When a formatter already rewrote `.bdk/` files and you have not committed them, restore them with `git restore .bdk/`; for a living spec already committed, `bdk doctor` prints the restore command.
 
+## BDK files ignored by git
+
+**Symptom (`bdk doctor`):**
+
+```
+fail bdk-ignored: .gitignore ignores .bdk/settings.yaml with /.bdk/ (line 2), so the files BDK commits never reach git
+  repair: /bdk:setup
+```
+
+**Cause:** BDK 2 wrote `/.bdk/` into `.gitignore`. BDK 3 commits `.bdk/settings.yaml`, `.bdk/rules/` and the Changes, and that rule keeps all of them out of git, so the team never sees them.
+
+**Fix:** run `/bdk:setup`. It shows the rule, replaces it after you confirm with the two paths BDK 3 keeps out of git (`/.bdk/.machine/`, `/.bdk/settings.local.yaml`), and commits `.gitignore` on its own. See [Artifacts](reference/artifacts.md#the-bdk-2-ignore-rule).
+
 ## Skill dependency missing
 
 **Symptom (session content, exit code 0):**
