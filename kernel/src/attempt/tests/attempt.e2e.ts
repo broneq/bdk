@@ -270,7 +270,7 @@ describe("bdk attempt close", () => {
     refused(open(change, "task-redispatch", "01-1"), 2, "policy/ticket-open");
   });
 
-  it("exit 2 policy/entries-missing", () => {
+  it("exit 2 policy/entries-missing: an envelope claiming entries that do not exist [R-16]", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
     const result = refused(
