@@ -1,7 +1,9 @@
 # Cases of /bdk:execute (spec stage-skills, execute requirements). Every case
 # starts from a fresh copy of the pinned fixture on its branch feat/eval with
-# Lavish off. The seeds (seeds.ts) build the Change through the kernel the run
-# uses, as the user's earlier sessions would have left it.
+# Lavish off. Every case but not-ready runs with diagnostics.verbose, so its
+# fixture keeps the live log and the render for bdk diagnostics; not-ready
+# shows a session without it. The seeds (seeds.ts) build the Change through
+# the kernel the run uses, as the user's earlier sessions would have left it.
 #
 # flat: the T40 audit CSV task on a tiny Change, part 02 depending on part 01.
 # One /bdk:execute runs both parts; main dispatches the tasks itself, so no
@@ -12,6 +14,8 @@
   prepare:
     - |-
       node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      node "$BDK" config set diagnostics.verbose true >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -38,6 +42,8 @@
       node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
     - |-
       node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      node "$BDK" config set diagnostics.verbose true >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -70,6 +76,8 @@
       node "$BDK" config set execution.worktree.setup.command 'npm ci --prefer-offline --no-audit --no-fund' >/dev/null
     - |-
       node "$BDK" config set features.lavish false >/dev/null
+    - |-
+      node "$BDK" config set diagnostics.verbose true >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
