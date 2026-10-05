@@ -40,6 +40,8 @@ Every BDK skill:
 3. Invoke the changed skill in the test project: `/bdk:<skill-name>`
 4. Measure the change when it can move behaviour: `pnpm eval with-without --skill bdk:<name> --tasks <file>` (probe first; see `evals/README.md`)
 
+Try skills in the test project, never in this repository: BDK's own repository does not exercise them the way a user project does. After a change to `STARTUP_INSTRUCTIONS.md`, `hooks/hooks.json` or a hook script, start a new session in the test project, so `SessionStart` runs again, and check that its output or side effects reflect the change; then run a skill that relies on the changed part.
+
 ---
 
 ## Adding a Skill

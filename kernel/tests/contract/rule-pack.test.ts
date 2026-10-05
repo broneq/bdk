@@ -188,7 +188,7 @@ describe("the shipped pack", () => {
 });
 
 describe("the definition of a rule", () => {
-  it.each([".claude/rules/quality-rules.md", "docs/guide/concepts/quality-and-language-rules.md"])(
+  it.each(["rules/README.md", "docs/guide/concepts/quality-and-language-rules.md"])(
     "%s states it, names both kinds and the two non-rules",
     (path) => {
       const text = readFileSync(join(REPO_ROOT, path), "utf8").replace(/\s+/g, " ");

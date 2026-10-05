@@ -1,7 +1,7 @@
 // The settings `evidence` reads (`kernel-settings`, Keys of evidence policy;
 // T23-D16, D46, D48): the file-class partition of the tree hash and the size
-// limit of a committed evidence file. The two glob lists are the kernel's copy
-// of `.claude/rules/verification-scoping.md`; layers append, never remove.
+// limit of a committed evidence file. The two glob lists are the defaults of
+// the file-class partition that requirement defines; layers append, never remove.
 import * as z from "zod";
 
 import { appendOnly, defineConfigModule } from "../shared/config/index.ts";
