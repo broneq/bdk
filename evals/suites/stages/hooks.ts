@@ -5,7 +5,7 @@
 // number of questions asked and of kernel refusals met.
 import { execFileSync, spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { freshCopy } from "../../harness/fixture.ts";
@@ -13,7 +13,7 @@ import { rawDirOf } from "../../harness/hook.ts";
 import type { EvalResult, Measurement, RunContext, SuiteHooks } from "../../harness/hook.ts";
 import { answerHookSettings } from "./answer.ts";
 import type { StageCase } from "./cases.ts";
-import { checkExpectations } from "./checks.ts";
+import { bundlePathFailures, checkExpectations } from "./checks.ts";
 import { countRefusals, refusalMetrics } from "./refusals.ts";
 import { runSeed } from "./seeds.ts";
 import type { CheckResult, KernelCall, ShellCall } from "./checks.ts";
@@ -24,7 +24,7 @@ const ANSWER_HOOK = fileURLToPath(new URL("./answer-hook.ts", import.meta.url));
 export const CASE_VAR = "bdk_case";
 
 export interface StageCellSettings {
-  /** The plugin copy's kernel bundle, `$BDK` in a case's preparation. */
+  /** The plugin copy's kernel bundle, `<plugin>/dist/bdk.mjs`; its `bin/` holds the `bdk` launcher. */
   readonly bundle: string;
   /** The session's `XDG_CONFIG_HOME`, so preparation and checks read the same global layer. */
   readonly configHome: string;
@@ -35,10 +35,15 @@ export interface StageCellSettings {
 /** What a kernel call in a working copy needs of the cell's settings. */
 export type KernelSettings = Pick<StageCellSettings, "bundle" | "configHome">;
 
+/**
+ * A case's shell lines run `bdk` as a session does: the plugin copy's `bin/`
+ * first on PATH, so no other `bdk` on the machine answers.
+ */
 function environment(settings: KernelSettings): NodeJS.ProcessEnv {
+  const launcher = join(dirname(dirname(settings.bundle)), "bin");
   return {
     ...process.env,
-    BDK: settings.bundle,
+    PATH: [launcher, process.env.PATH ?? ""].join(delimiter),
     XDG_CONFIG_HOME: settings.configHome,
     GIT_CONFIG_GLOBAL: "/dev/null",
     GIT_CONFIG_NOSYSTEM: "1",
@@ -137,12 +142,17 @@ export const hooks: SuiteHooks = {
     if (context.cell.workDir === null) throw new Error("a stages run needs a working copy");
     const stage = caseOf(context);
     const output = result.response?.output;
-    const checks = checkExpectations(
+    const expected = checkExpectations(
       stage.expect,
       kernelIn(context.cell.workDir, settingsOf(context)),
       typeof output === "string" ? output : JSON.stringify(output ?? ""),
       shellIn(context.cell.workDir, settingsOf(context)),
     );
+    const failures = [
+      ...expected.failures,
+      ...bundlePathFailures(result.response?.metadata?.toolCalls ?? []),
+    ];
+    const checks: CheckResult = { pass: failures.length === 0, failures };
     const dir = rawDirOf(context);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "checks.json"), `${JSON.stringify(checks, null, 2)}\n`);

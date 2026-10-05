@@ -141,6 +141,16 @@ describe("kernelCalls", () => {
     ];
     expect(kernelCalls(calls)).toEqual({ calls: 5, exit3: 2, exit2: 1 });
   });
+
+  it("counts a call through the plugin's bdk launcher like one by the bundle path", () => {
+    const calls: ToolCall[] = [
+      bash("bdk next --json", '{"artifact":"execute-part:01"}'),
+      bash("cd app && bdk part strat 01", "refused: input/unknown-command\nwhy: x", "toolu_1"),
+      bash("echo bdk is the kernel", "bdk is the kernel"),
+      bash("ls ./bdk-notes", ""),
+    ];
+    expect(kernelCalls(calls)).toEqual({ calls: 2, exit3: 1, exit2: 0 });
+  });
 });
 
 describe("envelopeBytes", () => {

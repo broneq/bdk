@@ -48,6 +48,25 @@ function shown(values: readonly unknown[], path: string): string {
   return JSON.stringify(path.split(".").includes("*") ? values : values[0]);
 }
 
+interface TranscriptCall {
+  readonly name: string;
+  readonly input?: unknown;
+}
+
+/**
+ * One failure per Bash call, in the orchestrator or a subagent, that names the
+ * kernel bundle: skills call the kernel as `bdk` (`kernel-cli`, Invocation).
+ */
+export function bundlePathFailures(calls: readonly TranscriptCall[]): string[] {
+  return calls.flatMap((call) => {
+    if (call.name !== "Bash" || typeof call.input !== "object" || call.input === null) return [];
+    const command = (call.input as Record<string, unknown>).command;
+    return typeof command === "string" && command.includes("bdk.mjs")
+      ? [`a Bash call runs the kernel by its bundle path, not as bdk: ${command}`]
+      : [];
+  });
+}
+
 export function checkExpectations(
   expectations: readonly Expectation[],
   kernel: (args: string) => KernelCall,

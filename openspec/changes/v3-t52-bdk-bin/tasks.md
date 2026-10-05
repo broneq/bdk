@@ -24,8 +24,8 @@
 
 ## 5. Evals
 
-- [ ] 5.1 Write the failing tests in `evals/suites/stages/`: `prepare` runs with `<plugin copy>/bin` first on `PATH` and a case line `bdk config set ...` writes the setting; a run whose transcript holds a Bash call naming `bdk.mjs` fails with a failure naming the command; `kernelCalls` of the execute-ab metrics counts `bdk next` as a kernel call; verify that they fail
-- [ ] 5.2 Implement them: prepend the plugin copy's `bin/` in `evals/suites/stages/hooks.ts` (and in seeds that run shell lines), drop `$BDK`, rewrite the case files under `evals/suites/stages/cases/` to `bdk ...`, add the transcript check, widen `kernelCalls`; verify with `pnpm test:unit` and `pnpm eval check`
+- [x] 5.1 Write the failing tests in `evals/suites/stages/`: `prepare` runs with `<plugin copy>/bin` first on `PATH` and a case line `bdk config set ...` writes the setting; a run whose transcript holds a Bash call naming `bdk.mjs` fails with a failure naming the command; `kernelCalls` of the execute-ab metrics counts `bdk next` as a kernel call; verify that they fail
+- [x] 5.2 Implement them: prepend the plugin copy's `bin/` in `evals/suites/stages/hooks.ts` (and in seeds that run shell lines), drop `$BDK`, rewrite the case files under `evals/suites/stages/cases/` to `bdk ...`, add the transcript check, widen `kernelCalls`; verify with `pnpm test:unit` and `pnpm eval check`
 
 ## 6. Documentation
 

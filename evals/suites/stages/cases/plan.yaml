@@ -9,15 +9,15 @@
   command: /bdk:plan
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
+      bdk change new "formatTimestamp in src/ui/format.ts returns a whitespace-only value verbatim instead of the fallback" --kind bug >/dev/null
   expect:
     - run: explain plan
       json:
@@ -43,15 +43,15 @@
   command: /bdk:plan
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "A 5xx response whose JSON body is not problem details, such as a gateway's {\"error\":\"upstream timeout\"}, is treated as an API error: GET reads are not retried and pages show a generic failure instead of the backend-unavailable message" --kind bug >/dev/null
+      bdk change new "A 5xx response whose JSON body is not problem details, such as a gateway's {\"error\":\"upstream timeout\"}, is treated as an API error: GET reads are not retried and pages show a generic failure instead of the backend-unavailable message" --kind bug >/dev/null
   expect:
     - run: explain plan
       json:

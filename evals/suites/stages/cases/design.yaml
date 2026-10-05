@@ -6,15 +6,15 @@
   command: /bdk:design
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
     - |-
-      node "$BDK" change new "Add Italian to the language options of the account page" >/dev/null
+      bdk change new "Add Italian to the language options of the account page" >/dev/null
   expect:
     - run: explain design
       json:
@@ -33,11 +33,11 @@
   command: /bdk:design
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint none >/dev/null
+      bdk config set tools.lint none >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:

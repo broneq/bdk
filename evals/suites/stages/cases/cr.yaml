@@ -10,11 +10,11 @@
   seed: executed
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npx vitest run}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npx vitest run}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
+      bdk config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -34,11 +34,11 @@
   seed: executed-blocker
   prepare:
     - |-
-      node "$BDK" config set tools.test.vitest '{tier: fast, command: npx vitest run}' >/dev/null
+      bdk config set tools.test.vitest '{tier: fast, command: npx vitest run}' >/dev/null
     - |-
-      node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
+      bdk config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
@@ -60,7 +60,7 @@
   seed: two-independent-parts
   prepare:
     - |-
-      node "$BDK" config set features.lavish false >/dev/null
+      bdk config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
   expect:
