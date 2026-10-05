@@ -110,20 +110,6 @@ The `with-without` suite SHALL take a skill name and a task file and run every t
 - **WHEN** `pnpm eval with-without --skill bdk-craft:tdd --tasks <file>` runs
 - **THEN** both cells load a copy of `plugins/bdk-craft` and no `bdk` plugin, and the `without` copy has no `skills/tdd/`
 
-### Requirement: Budget stop and probe
-
-Every suite SHALL print the running cost after each run and stop starting new runs once the spent cost reaches the budget (default 100 USD, `--budget` overrides). `--probe` SHALL run one run per cell, then print the measured cost per cell and the projected cost of the full series, and start no further run.
-
-#### Scenario: budget reached
-
-- **WHEN** the spent cost reaches the budget during a series
-- **THEN** no new run starts, the results so far are written, and the command exits non-zero naming the budget
-
-#### Scenario: probe projection
-
-- **WHEN** `pnpm eval execute-ab --probe` finishes
-- **THEN** it prints each cell's cost and the projected cost of the full series with the configured runs per cell, and no further run starts
-
 ### Requirement: Run provenance
 
 Every result row SHALL carry the orchestrator and subagent model ids reported by the session, the fixture commit, the BDK commit of each plugin copy, the hash of the skill variant, and for the v3 arms the `template-hash` values of the dispatch packages built during the run (P10).
@@ -288,3 +274,43 @@ The `execute` stage probe SHALL record, per case, the number of kernel refusals 
 
 - **WHEN** a probe row holds a `policy/missing-citation` refusal
 - **THEN** the acceptance comparison reports the row as failing
+
+### Requirement: Run cap and probe
+
+Every session of a suite SHALL be capped by `--run-cap` (default 15 USD), passed to the provider as the session's `max_budget_usd`. No cap SHALL span runs, series or suites: a series runs every run it plans. `--probe` SHALL run one run per cell, then print the measured cost per cell and the projected cost of the full series, and start no further run.
+
+#### Scenario: run cap
+
+- **WHEN** `pnpm eval stages --skill execute --run-cap 8` starts a session
+- **THEN** the session's `max_budget_usd` is 8, and a run that reports no cost is counted at 8 USD and discarded
+
+#### Scenario: no cap across runs
+
+- **WHEN** earlier series spent any amount
+- **THEN** a new series or probe starts all its runs
+
+#### Scenario: probe projection
+
+- **WHEN** `pnpm eval execute-ab --probe` finishes
+- **THEN** it prints each cell's cost and the projected cost of the full series with the configured runs per cell, and no further run starts
+
+### Requirement: Stage probes count refusals from the run journal
+
+After each run of the `stages` suite, the harness SHALL run `bdk diagnostics report --session <id> --json` in the run's fixture working directory and SHALL take `refusals` and `refusal:<rule>` of the results row from that report, so a probe row and a production report count refusals the same way. The count from the Bash tool results of the transcript SHALL stay in the row as `refusals-transcript`, and `pnpm eval report stages` SHALL name every run where the two totals differ.
+
+The report covers every rule class, `guard`, `state` and `kernel` included, and counts guard blocks once in `guardBlocks`, not under `refusals`. A run whose report fails (no journal, a kernel error) keeps the transcript count in `refusals` and is marked with the metric `journal-missing: 1`.
+
+#### Scenario: journal counts in the row
+
+- **WHEN** `pnpm eval stages --skill execute --probe` finishes a run whose agents met three `policy/missing-evidence` refusals
+- **THEN** the row holds `refusal:policy/missing-evidence: 3` taken from the report, and `refusals-transcript`
+
+#### Scenario: totals differ
+
+- **WHEN** a row's `refusals` and `refusals-transcript` differ
+- **THEN** `pnpm eval report stages` lists the run with both totals
+
+#### Scenario: no journal
+
+- **WHEN** the fixture of a run holds no journal
+- **THEN** the row's `refusals` is the transcript count and `journal-missing` is 1
