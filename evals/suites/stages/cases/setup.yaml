@@ -36,6 +36,29 @@
       match:
         value.0: script
 
+# exclusions-declined: the user declines every proposed exclusion (T51,
+# stage-skills "exclusion declined"). The answer matches no option label, so
+# it reaches the skill as free text. No project file outside .bdk/ and
+# .gitignore changes, nothing is committed, and the reply names markdownlint.
+- id: exclusions-declined
+  command: /bdk:setup
+  answers:
+    lavish: decline|skip|no|disable
+    \.bdk|exclu|ignor: "Decline all: add no exclusion to any tool"
+  expect:
+    - run: config check
+      exit: 0
+    - shell: |-
+        grep -c '\.bdk' .markdownlint-cli2.mjs
+      exit: 1
+    - shell: |-
+        git log --format=%s | grep -c 'keep \.bdk/ out'
+      exit: 1
+    - shell: |-
+        git status --porcelain -- . ':!.bdk' ':!.gitignore'
+      stdout: "^$"
+    - reply: markdownlint
+
 - id: invalid-settings
   command: /bdk:setup
   prepare:
