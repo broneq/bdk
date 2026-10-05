@@ -122,7 +122,7 @@ describe("T23 part C acceptance", () => {
     expect(state(change, "lint:01")).toBe("done");
   });
 
-  it("plan-verify goes stale after a plan part edit", () => {
+  it("plan-verify goes stale after a plan part edit [TSH-9]", () => {
     const { root, dir } = pastDesignGate();
     writePlanPart(dir, "01");
     done(root, "plan");
@@ -134,7 +134,7 @@ describe("T23 part C acceptance", () => {
     ).toMatchObject({ state: "stale" });
   });
 
-  it("a project evidence kind records a manifest, not-run with no citation and a cited pass", () => {
+  it("a project evidence kind records a manifest, not-run with no citation and a cited pass [TSH-13] [R-17]", () => {
     const change = started();
     const ticket = String(
       answered(open(change, "task-redispatch", "01-1"), "output/attempt-open.json").ticket,

@@ -10,8 +10,8 @@
 
 ## 2. IDs on the existing evidence
 
-- [ ] 2.1 Add the bracketed ID to the title of the tests that already answer `S1`, `S2`, `S5`-`S8`, `S-DISPATCH`, `AC-2`-`AC-4`, `AC-6`-`AC-9` and `TSH-1`-`TSH-13` (the survey's map in design.md "Context"), changing only titles; verify `pnpm test:unit`, `pnpm test:e2e` and `pnpm test:contract` pass and the collector of 1.4 sees every ID.
-- [ ] 2.2 Add IDs for `EC-1`, `EC-2`, `EC-5`, `EC-6`, `EC-8`, `AC-5` (v2 detection tests), every `NFR-*` item except `NFR-SCALE-1`, and the `R-*` items with `test` or `perf`; verify the same suites pass.
+- [x] 2.1 Add the bracketed ID to the title of the tests that already answer `S1`, `S2`, `S5`-`S8`, `S-DISPATCH`, `AC-2`-`AC-4`, `AC-6`-`AC-9` and `TSH-1`-`TSH-13` (the survey's map in design.md "Context"), changing only titles; verify `pnpm test:unit`, `pnpm test:e2e` and `pnpm test:contract` pass and the collector of 1.4 sees every ID.
+- [x] 2.2 Add IDs for `EC-1`, `EC-2`, `EC-5`, `EC-6`, `EC-8`, `AC-5` (v2 detection tests), every `NFR-*` item except `NFR-SCALE-1`, and the `R-*` items with `test` or `perf`; verify the same suites pass.
 
 ## 3. Missing evidence
 

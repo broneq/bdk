@@ -189,7 +189,7 @@ describe("bdk commit", () => {
 });
 
 describe("bdk commit: serialised commits (T41-D12)", () => {
-  it("two commits at the same moment both succeed, each with its own paths and trailer", async () => {
+  it("two commits at the same moment both succeed, each with its own paths and trailer [NFR-TEAM]", async () => {
     const change = tiny();
     write(change, "src/01-1.ts");
     write(change, "src/01-2.ts");

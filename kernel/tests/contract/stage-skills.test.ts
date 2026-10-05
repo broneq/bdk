@@ -57,7 +57,7 @@ describe("asking the user in two tiers", () => {
 });
 
 describe("stage skill invocation", () => {
-  it("only setup and run are user-only; run starts the others, guarded by hooks pre-tool", () => {
+  it("only setup and run are user-only; run starts the others, guarded by hooks pre-tool [S8]", () => {
     for (const name of readdirSync(STAGES)) {
       const { meta } = readSkill(name);
       const userOnly = ["setup", "run"].includes(name);
@@ -188,7 +188,7 @@ describe("execute", () => {
     ]);
   });
 
-  it("is started by the user or a run and never edits a file itself", () => {
+  it("is started by the user or a run and never edits a file itself [NFR-SEC-4]", () => {
     const { meta } = readSkill("execute");
     expect(meta["disable-model-invocation"]).toBeUndefined();
     expect(meta["disallowed-tools"]).toBe("Edit Write NotebookEdit");
@@ -218,7 +218,7 @@ describe("execute", () => {
 });
 
 describe("close", () => {
-  it("has a manifest entry with no parts and never edits a file itself", () => {
+  it("has a manifest entry with no parts and never edits a file itself [NFR-SEC-4]", () => {
     expect(SKILL_CONTEXT.close).toStrictEqual([]);
     const { meta } = readSkill("close");
     expect(meta["disable-model-invocation"]).toBeUndefined();

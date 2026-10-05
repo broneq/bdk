@@ -73,7 +73,7 @@ describe("hooks pre-tool: subagent git", () => {
     expect(passes(subagentBash(command))).toBe(true);
   });
 
-  it("reads a quoted verb inside an argument as text, not as a command", () => {
+  it("reads a quoted verb inside an argument as text, not as a command [R-15]", () => {
     expect(denied(subagentBash('git commit -m "revert with git reset"')).why).toContain(
       "git commit",
     );

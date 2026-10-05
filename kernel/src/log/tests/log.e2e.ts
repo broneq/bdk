@@ -91,7 +91,7 @@ describe("bdk log add", () => {
     expect(read(dir, `log/${path.split("/").at(-1) ?? ""}`)).toContain("Chosen for the MVP.");
   });
 
-  it("acceptance: --source user is exit 3 input/forbidden-field and writes no file", () => {
+  it("acceptance: --source user is exit 3 input/forbidden-field and writes no file [TSH-2]", () => {
     const { root, dir } = opened();
     const before = logFiles(dir);
     refused(
@@ -169,7 +169,7 @@ describe("bdk log add", () => {
     );
   });
 
-  it("acceptance: 15 parallel adds get 15 distinct ids without a lock", async () => {
+  it("acceptance: 15 parallel adds get 15 distinct ids without a lock [NFR-TEAM]", async () => {
     const { root, dir } = opened();
     const before = logFiles(dir).length;
     const results = await Promise.all(
@@ -280,7 +280,7 @@ describe("bdk log list", () => {
     );
   });
 
-  it("acceptance: under 200 ms at 1 000 entries on the second run, with its telemetry line", () => {
+  it("acceptance: under 200 ms at 1 000 entries on the second run, with its telemetry line [NFR-LAT-1] [R-1]", () => {
     const { root, dir } = opened();
     const store = fileStore();
     for (let n = 0; n < 1000; n++) {
@@ -314,7 +314,7 @@ describe("bdk log list", () => {
     expect(last.ms).toBeLessThan(200);
   });
 
-  it("acceptance: the index deleted and rebuilt gives identical output", () => {
+  it("acceptance: the index deleted and rebuilt gives identical output [EC-2]", () => {
     const { root } = opened();
     add(root, "finding", "one", "--ref", "src/a.ts");
     add(root, "risk", "two", "--ref", "design.md");
@@ -484,7 +484,7 @@ describe("bdk log add --category (P8)", () => {
       "output/log-add.json",
     ) as { entry: { id: string; type: string; review: boolean }; downgraded?: unknown };
 
-  it("exit 0: a verifier blocker without a category is an observation for review", () => {
+  it("exit 0: a verifier blocker without a category is an observation for review [TSH-12]", () => {
     const { root, dir } = opened();
     ticketed(dir);
     const result = blocker(root);

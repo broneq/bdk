@@ -31,7 +31,7 @@ describe("T21 acceptance", () => {
     expect(next(root)).toMatchObject({ artifact: { id: "plan", kind: "plan-part" } });
   });
 
-  it("a log add entry faking approval does not open the gate", () => {
+  it("a log add entry faking approval does not open the gate [TSH-2]", () => {
     const { root } = designed();
     const added = bdk(
       ["log", "add", "decision", "Design approved by the user", "--ref", "gate:design", "--json"],
@@ -42,7 +42,7 @@ describe("T21 acceptance", () => {
     expect(next(root)).not.toHaveProperty("artifact");
   });
 
-  it("a loop-back (done design with a new hash) needs a newer user entry", () => {
+  it("a loop-back (done design with a new hash) needs a newer user entry [TSH-4]", () => {
     const change = designed();
     const { root, dir } = change;
     // Moves the first pass into the past, so the loop-back's done is strictly newer.
@@ -66,7 +66,7 @@ describe("T21 acceptance", () => {
     expect(next(root)).toMatchObject({ artifact: { id: "plan" } });
   });
 
-  it("explain plan-verify prints the chain", () => {
+  it("explain plan-verify prints the chain [R-4]", () => {
     const { root, dir } = designed();
     passGate(dir, "gate:design", "plan");
     writePart(dir, "plan", "01");
@@ -87,7 +87,7 @@ describe("T21 acceptance", () => {
     ]);
   });
 
-  it("tiny has no design node", () => {
+  it("tiny has no design node [S7]", () => {
     const { root } = opened("--profile", "tiny", "--reason", "a typo");
     expect(
       answered(bdk(["explain", "design", "--json"], root), "output/explain.json"),

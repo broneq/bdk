@@ -130,7 +130,7 @@ function designDone(): { root: string; dir: string } {
 }
 
 describe("UserPromptExpansion guard", () => {
-  it("a typed /bdk:plan writes a source: user entry and the gate is done", () => {
+  it("a typed /bdk:plan writes a source: user entry and the gate is done [S8] [TSH-1]", () => {
     const { root, dir } = designDone();
     const run = hook("UserPromptExpansion", root, typed("bdk:plan"));
     expect(run.code, run.stderr).toBe(0);
@@ -143,7 +143,7 @@ describe("UserPromptExpansion guard", () => {
     expect(next.gates[0]).toMatchObject({ gate: "gate:design", done: true, passedBy: "user" });
   });
 
-  it("a payload without the user marker writes no entry", () => {
+  it("a payload without the user marker writes no entry [TSH-3]", () => {
     const { root, dir } = designDone();
     const run = hook("UserPromptExpansion", root, typed("bdk:plan", { expansion_type: "skill" }));
     expect(run.code).toBe(2);
@@ -159,7 +159,7 @@ describe("UserPromptExpansion guard", () => {
     );
   });
 
-  it("/bdk:plan before the design is ready is blocked with the reason and writes nothing", () => {
+  it("/bdk:plan before the design is ready is blocked with the reason and writes nothing [TSH-4]", () => {
     const { root, dir } = opened();
     const run = hook("UserPromptExpansion", root, typed("bdk:plan"));
     expect(run.code).toBe(2);
@@ -170,7 +170,7 @@ describe("UserPromptExpansion guard", () => {
   });
 
   describe("blocks a stage command on unreadable Change state with exit 2, not 4", () => {
-    it("state/corrupted-index", () => {
+    it("state/corrupted-index [NFR-CONS]", () => {
       const { root } = designDone();
       const index = join(root, ".bdk/.machine/index.sqlite");
       rmSync(index, { force: true });
@@ -197,7 +197,7 @@ describe("UserPromptExpansion guard", () => {
     });
   });
 
-  it("blocks a stage command with guard/kernel-unavailable when the kernel is removed", () => {
+  it("blocks a stage command with guard/kernel-unavailable when the kernel is removed [EC-6]", () => {
     const { root } = designDone();
     const run = hook("UserPromptExpansion", root, typed("bdk:plan"), {
       pluginRoot: withoutBundle(),
@@ -208,7 +208,7 @@ describe("UserPromptExpansion guard", () => {
 });
 
 describe("PreToolUse guard", () => {
-  it("denies a subagent git stash while the main thread passes", () => {
+  it("denies a subagent git stash while the main thread passes [TSH-7] [NFR-SEC-1]", () => {
     const { root } = opened();
     const subagent = hook("PreToolUse", root, subagentBash("git stash"));
     expect(subagent.code).toBe(2);
@@ -227,7 +227,7 @@ describe("PreToolUse guard", () => {
     });
   });
 
-  it("denies a subagent bdk.mjs commit", () => {
+  it("denies a subagent bdk.mjs commit [TSH-5]", () => {
     const { root } = opened();
     const run = hook(
       "PreToolUse",
@@ -279,7 +279,7 @@ describe("PreToolUse guard", () => {
     expect(run.stderr).toMatch(/^guard\/hooks-from-bash: /);
   });
 
-  it("denies an Edit under .bdk/specs/", () => {
+  it("denies an Edit under .bdk/specs/ [NFR-SEC-1]", () => {
     const { root } = opened();
     const run = hook(
       "PreToolUse",
@@ -302,7 +302,7 @@ describe("PreToolUse guard", () => {
   });
 
   describe("kernel removed", () => {
-    it("blocks a subagent git commit", () => {
+    it("blocks a subagent git commit [TSH-6]", () => {
       const { root } = opened();
       const run = hook("PreToolUse", root, subagentBash("git commit -m x"), {
         pluginRoot: withoutBundle(),
@@ -311,7 +311,7 @@ describe("PreToolUse guard", () => {
       expect(run.stderr).toMatch(/^guard\/kernel-unavailable: /);
     });
 
-    it("blocks a main-thread bdk.mjs hooks", () => {
+    it("blocks a main-thread bdk.mjs hooks [TSH-6]", () => {
       const { root } = opened();
       const run = hook(
         "PreToolUse",
@@ -341,7 +341,7 @@ describe("PreToolUse guard", () => {
       expect(run.stderr).toMatch(/^guard\/kernel-unavailable: /);
     });
 
-    it("passes a main-thread git status without starting node", () => {
+    it("passes a main-thread git status without starting node [TSH-6]", () => {
       const { root } = opened();
       const run = hook("PreToolUse", root, mainBash("git status"), {
         pluginRoot: withoutBundle(),
@@ -424,7 +424,7 @@ describe("a run's stage skills", () => {
 });
 
 describe("SessionEnd hook", () => {
-  it("commits a checkpoint of the Change directory", () => {
+  it("commits a checkpoint of the Change directory [R-12]", () => {
     const { root } = opened();
     const run = hook("SessionEnd", root, { hook_event_name: "SessionEnd", reason: "clear" });
     expect(run.code).toBe(0);

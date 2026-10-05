@@ -88,7 +88,7 @@ function p95(samples: readonly number[]): number {
 }
 
 describe("guard latency", () => {
-  it("stays within the three p95 budgets", () => {
+  it("stays within the three p95 budgets [NFR-LAT-2] [NFR-LAT-3] [NFR-LAT-4] [R-15]", () => {
     const project = createFixture({ files: { "README.md": "# app\n" }, git: false });
     const root = join(project.root, "my-git-app");
     const { root: repo } = opened();

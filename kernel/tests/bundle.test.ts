@@ -51,12 +51,12 @@ function loadsOf(text: string): Load[] {
 describe("dist/bdk.mjs", () => {
   const loads = loadsOf(readFileSync(BUNDLE, "utf8"));
 
-  it("loads only Node built-ins", () => {
+  it("loads only Node built-ins [NFR-SEC-2]", () => {
     expect(loads.length).toBeGreaterThan(0);
     expect(loads.filter((load) => !isBuiltin(load.specifier))).toStrictEqual([]);
   });
 
-  it("has no static node:sqlite import, only the lazy one (design D-3)", () => {
+  it("has no static node:sqlite import, only the lazy one (design D-3) [R-6]", () => {
     expect(
       loads.filter((load) => load.specifier === "node:sqlite" && load.kind !== "dynamic"),
     ).toStrictEqual([]);
@@ -74,7 +74,7 @@ describe("dist/bdk.mjs", () => {
 describe("package.json", () => {
   const pkg = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")) as PackageJson;
 
-  it("pins every dependency exactly and keeps runtime dependencies on the allowlist", () => {
+  it("pins every dependency exactly and keeps runtime dependencies on the allowlist [NFR-SEC-2]", () => {
     expect(dependencyViolations(pkg)).toStrictEqual([]);
   });
 

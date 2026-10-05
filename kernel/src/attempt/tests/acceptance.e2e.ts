@@ -42,7 +42,7 @@ function budgets(root: string, target: string) {
 }
 
 describe("T22 acceptance", () => {
-  it("an exhausted budget ends in a parked Change with a question and its options", () => {
+  it("an exhausted budget ends in a parked Change with a question and its options [AC-3] [S2]", () => {
     const change = started(
       "policy:\n  budgets:\n    task-redispatch: 1\n  escalation:\n    enabled: false\n",
     );
@@ -60,7 +60,7 @@ describe("T22 acceptance", () => {
     ).toMatchObject({ parked: { entry, options: shown.options } });
   });
 
-  it("an oscillating finding shortens the ladder while budget remains", () => {
+  it("an oscillating finding shortens the ladder while budget remains [AC-4] [R-8]", () => {
     const change = started("policy:\n  budgets:\n    task-redispatch: 5\n");
     let last: Record<string, unknown> = {};
     for (const summary of ["expired token accepted", "Expired token accepted!"]) {
@@ -74,7 +74,7 @@ describe("T22 acceptance", () => {
     refused(open(change, "task-redispatch", "01-1"), 2, "policy/oscillation");
   });
 
-  it("three not-run closes leave the loop budget unused and write the question", () => {
+  it("three not-run closes leave the loop budget unused and write the question [S2] [TSH-8]", () => {
     const change = started();
     let last: Record<string, unknown> = {};
     for (let n = 0; n < 3; n++) {
@@ -96,7 +96,7 @@ describe("T22 acceptance", () => {
     );
   });
 
-  it("a diff touching do-not-touch is rejected at attempt close", () => {
+  it("a diff touching do-not-touch is rejected at attempt close [TSH-11]", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
     fileStore().write(join(change.root, "src/billing/invoice.ts"), "export {};\n");
@@ -104,7 +104,7 @@ describe("T22 acceptance", () => {
     expect(result.why).toContain("src/billing/invoice.ts");
   });
 
-  it("a killed session on a fresh clone: resume and rebuild give the same progress and budgets", () => {
+  it("a killed session on a fresh clone: resume and rebuild give the same progress and budgets [AC-2] [S5]", () => {
     const change = started();
     closed(change, opened(change, "task-redispatch", "01-1"), "ok");
     fileStore().write(join(change.root, "src/01-1.ts"), "export {};\n");
@@ -131,7 +131,7 @@ describe("T22 acceptance", () => {
     expect(listed.items.find((item) => item.outcome === undefined)?.ticket).toBe(open);
   });
 
-  it("a checkpoint leaves a user-staged file out of its commit", () => {
+  it("a checkpoint leaves a user-staged file out of its commit [R-12]", () => {
     const change = started();
     fileStore().write(join(change.root, "notes.md"), "mine\n");
     git(change.root, "add", "notes.md");
@@ -144,7 +144,7 @@ describe("T22 acceptance", () => {
     expect(git(change.root, "diff", "--cached", "--name-only").trim()).toBe("notes.md");
   });
 
-  it("a 9 KB part is refused by part start", () => {
+  it("a 9 KB part is refused by part start [S1]", () => {
     const change = started();
     fileStore().write(
       join(change.dir, "plan/parts/03-part.md"),

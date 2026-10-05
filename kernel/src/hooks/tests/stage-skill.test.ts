@@ -126,7 +126,7 @@ function autoDesign(store: Store): void {
 }
 
 describe("hooks pre-tool: stage skills", () => {
-  it("denies a stage skill outside a run, naming its command, and writes nothing", async () => {
+  it("denies a stage skill outside a run, naming its command, and writes nothing [S8]", async () => {
     const h = harness();
     const result = await call(h, "bdk:execute");
     expect(result.code).toBe(2);

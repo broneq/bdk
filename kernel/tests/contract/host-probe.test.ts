@@ -163,7 +163,7 @@ describe("host probe collector", () => {
     });
   });
 
-  it("fails and names the check when a recording is missing", () => {
+  it("fails and names the check when a recording is missing [R-13]", () => {
     const run = collect("absent=*-SessionEnd.json", { "1-1-PreToolUse.json": payload() });
     expect(run.status).not.toBe(0);
     expect(run.stderr).toContain("absent");

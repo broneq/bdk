@@ -97,7 +97,7 @@ describe("bin/bdk", () => {
     expect(result.stdout).toBe(runBdk(["version"], REPO_ROOT).stdout);
   });
 
-  it("reports a missing node with exit 5 and nothing on stdout", () => {
+  it("reports a missing node with exit 5 and nothing on stdout [EC-1] [R-2]", () => {
     const empty = mkdtempSync(join(tmpdir(), "bdk-launcher-path-"));
     const result = launch(LAUNCHER, ["version"], { path: empty });
     expect(result.code).toBe(5);
@@ -107,7 +107,7 @@ describe("bin/bdk", () => {
     );
   });
 
-  it("reports a missing bundle with exit 5", () => {
+  it("reports a missing bundle with exit 5 [EC-1] [R-2]", () => {
     const root = mkdtempSync(join(tmpdir(), "bdk-launcher-nobundle-"));
     mkdirSync(join(root, "bin"));
     copyFileSync(LAUNCHER, join(root, "bin", "bdk"));

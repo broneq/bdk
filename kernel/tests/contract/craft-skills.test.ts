@@ -123,7 +123,7 @@ describe("craft skill shape", () => {
     }
   });
 
-  it("names no kernel, no bdk skill and no model", () => {
+  it("names no kernel, no bdk skill and no model [EC-8]", () => {
     for (const name of shipped()) {
       for (const path of files(join(SKILLS_DIR, name))) {
         const text = readFileSync(path, "utf8");

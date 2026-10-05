@@ -123,7 +123,7 @@ describe("bdk change close", () => {
     refused(close(change), 2, "policy/git-in-progress");
   });
 
-  it("exit 2: policy/merge-hash-mismatch", () => {
+  it("exit 2: policy/merge-hash-mismatch [NFR-SEC-3]", () => {
     const change = reviewed({ deltas: DELTAS });
     fileStore().write(join(change.root, SPEC), "# auth/login Specification\n\nBy hand.\n");
     refused(close(change), 2, "policy/merge-hash-mismatch");

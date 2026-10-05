@@ -167,7 +167,7 @@ describe("bdk doctor", () => {
     ).toStrictEqual(schema);
   });
 
-  it("names no uv, uvx or MCP server on a machine without them", () => {
+  it("names no uv, uvx or MCP server on a machine without them [R-7]", () => {
     const result = runBdk(["doctor", "--json"], fixture().root, { env: { PATH: "" } });
     expect(result.code).toBe(0);
     expect(result.stdout).not.toMatch(/\buvx?\b|mcp/i);
@@ -291,7 +291,7 @@ describe("bdk rebuild", () => {
     }
   });
 
-  it("exit 4 state/trailer-mismatch: a BDK-Change commit without BDK-Part and BDK-Task", () => {
+  it("exit 4 state/trailer-mismatch: a BDK-Change commit without BDK-Part and BDK-Task [NFR-CONS]", () => {
     const { root, dir, id } = started();
     git(root, "commit", "--quiet", "--allow-empty", "-m", "stray", "-m", `BDK-Change: ${id}`);
     const index = readFileSync(join(dir, "plan/index.md"), "utf8");
@@ -306,7 +306,7 @@ describe("bdk rebuild", () => {
     refused(rebuild(root), 4, "state/change-dir-missing");
   });
 
-  it("exit 4 state/corrupted-index: the index path is a directory", () => {
+  it("exit 4 state/corrupted-index: the index path is a directory [EC-2]", () => {
     const { root } = started();
     const index = join(root, ".bdk/.machine/index.sqlite");
     rmSync(index, { force: true });

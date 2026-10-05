@@ -387,7 +387,7 @@ describe("bdk attempt close ok: post-task step evidence (T23-D41)", () => {
     expect(close(change, ticket, "fail").code).toBe(0);
   });
 
-  it("exit 2 policy/stale-evidence: a file of the part changed after the runner recorded", () => {
+  it("exit 2 policy/stale-evidence: a file of the part changed after the runner recorded [TSH-10]", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
     dispatched(change, ticket, "01-1");

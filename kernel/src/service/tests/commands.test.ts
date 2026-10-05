@@ -51,7 +51,7 @@ describe("service registrations", () => {
     expect(result).toStrictEqual({ code: 0, stdout: "bdk 3.0.0 (contract 3, node 22.12.0)\n" });
   });
 
-  it("answers doctor on an old Node with the node-version finding", async () => {
+  it("answers doctor on an old Node with the node-version finding [NFR-RUNTIME] [R-6]", async () => {
     const result = await run(["doctor", "--json", "--fix"], "22.12.0", "/work/repo");
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({

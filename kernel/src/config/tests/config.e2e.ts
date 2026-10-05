@@ -159,7 +159,7 @@ describe("bdk config show", () => {
     refused(bdk(["config", "show", "prompts.dir", "--json"], fixture().root), 3, "input/not-found");
   });
 
-  it("exit 2: policy/unknown-config-key", () => {
+  it("exit 2: policy/unknown-config-key [S6]", () => {
     refused(
       bdk(["config", "show", "tools.tests", "--json"], fixture().root),
       2,
@@ -204,7 +204,7 @@ describe("bdk config check", () => {
     });
   });
 
-  it("acceptance: config layering with unknown key", () => {
+  it("acceptance: config layering with unknown key [AC-7]", () => {
     const root = fixture({
       [GLOBAL]: `${MODELINE}\nfeatures:\n  lavish: false\n`,
       ".bdk/settings.yaml": `${MODELINE}\ntools:\n  tests: []\n`,
@@ -401,7 +401,7 @@ describe("bdk config check", () => {
     expect(JSON.stringify(refusal)).toContain("execution.concurrency");
   });
 
-  it("acceptance: local override visible in the snapshot", () => {
+  it("acceptance: local override visible in the snapshot [S6]", () => {
     const root = fixture({
       ".bdk/settings.yaml": `${MODELINE}\nlanguages: [go]\n`,
       ".bdk/settings.local.yaml": `${MODELINE}\nfeatures:\n  lavish: false\n`,
@@ -417,7 +417,7 @@ describe("bdk config check", () => {
     ).toStrictEqual(JSON.parse(readFileSync(join(REPO_ROOT, "schema/settings.json"), "utf8")));
   });
 
-  it("exit 0: a v2 settings file is a legacy-settings warning", () => {
+  it("exit 0: a v2 settings file is a legacy-settings warning [AC-5]", () => {
     const root = fixture({ ".bdk/settings.json": "{}" }).root;
     const result = bdk(["config", "check", "--json"], root);
     expect(result.code).toBe(0);

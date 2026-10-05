@@ -58,7 +58,7 @@ function openAttempt(root: string, id: string, loop = "task-redispatch", target 
 }
 
 describe("bdk change new", () => {
-  it("exit 0: opens the Change, its assumption entry, the marker and .gitignore", () => {
+  it("exit 0: opens the Change, its assumption entry, the marker and .gitignore [S7]", () => {
     const root = repository();
     const result = answered(
       bdk(["change", "new", INTENT, "--json"], root),
@@ -164,7 +164,7 @@ describe("bdk change status", () => {
     );
   });
 
-  it("acceptance: at most 100 lines, an --inferred Change shown unconfirmed", () => {
+  it("acceptance: at most 100 lines, an --inferred Change shown unconfirmed [S1]", () => {
     const { root } = opened("--inferred");
     const text = bdk(["change", "status"], root);
     expect(text.code).toBe(0);
@@ -278,7 +278,7 @@ describe("bdk change park and resume", () => {
     expect(bdk(["change", "status", "--json"], root).json).not.toHaveProperty("parked");
   });
 
-  it("exit 0: resume rebinds the Change to another branch", () => {
+  it("exit 0: resume rebinds the Change to another branch [S5]", () => {
     const { root, id } = opened();
     git(root, "checkout", "--quiet", "-b", "feat/login-2");
     const result = answered(

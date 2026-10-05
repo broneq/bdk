@@ -125,7 +125,7 @@ describe("bdk spec merge", () => {
     expect(text).toContain("### Requirement: Magic link sent");
   });
 
-  it("acceptance: merge is idempotent", () => {
+  it("acceptance: merge is idempotent [AC-6]", () => {
     const change = reviewed({ deltas: { [CAP]: creating(["Magic link sent", ["sent"]]) } });
     answered(merge(change.root), "output/spec-merge.json");
     const first = read(change.root, SPEC);
@@ -155,7 +155,7 @@ describe("bdk spec merge", () => {
     );
   });
 
-  it("acceptance: a manual edit after the merge is reported by doctor", () => {
+  it("acceptance: a manual edit after the merge is reported by doctor [NFR-SEC-3]", () => {
     const change = reviewed({ deltas: { [CAP]: creating(["Magic link sent", ["sent"]]) } });
     answered(merge(change.root), "output/spec-merge.json");
     const doctor = () => answered(bdk(["doctor", "--json"], change.root), "output/doctor.json");
@@ -198,7 +198,7 @@ describe("bdk spec merge", () => {
       return change;
     }
 
-    it("exit 2: policy/spec-conflict naming both Changes; --dry-run shows both deltas", () => {
+    it("exit 2: policy/spec-conflict naming both Changes; --dry-run shows both deltas [AC-6] [R-9]", () => {
       const change = contested();
       const preview = answered(merge(change.root, "--dry-run"), "output/spec-merge.json");
       expect(preview.conflicts).toStrictEqual([
@@ -216,7 +216,7 @@ describe("bdk spec merge", () => {
       expect(read(change.root, SPEC)).toBe(before);
     });
 
-    it("acceptance: conflict resolved by a decision", () => {
+    it("acceptance: conflict resolved by a decision [AC-6] [R-9]", () => {
       const change = contested();
       answered(
         bdk(
