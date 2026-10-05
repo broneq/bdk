@@ -35,8 +35,8 @@
 
 ## 6. Acceptance
 
-- [ ] 6.1 The T32 acceptance signal: `grep -r python3 hooks/ skills/` prints nothing; `git ls-files | grep __pycache__` prints nothing; `.github/workflows/` has no pytest step; `git log origin/main..HEAD` holds breaking commits, and the deletion commit carries `!` and a `BREAKING CHANGE:` footer naming the removed scripts (release-please proposes 3.0.0; `plugin.json` and `CHANGELOG.md` untouched)
-- [ ] 6.2 README per the plan's Documentation item: installation names Node >= 22.13 and that no Python is needed; the v3 pipeline section and the skills table match the shipped skills (the drift guard passes); nothing names a deleted file. Verify: `pnpm test:contract` green
-- [ ] 6.3 Setup stage probe with the extended `v2-project` case: `pnpm eval stages --skill setup --probe` passes every case
-- [ ] 6.4 Full gate: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm docs:build`; `openspec validate v3-t32-python-cut --strict`
+- [x] 6.1 The T32 acceptance signal: `grep -r python3 hooks/ skills/` prints nothing; `git ls-files | grep __pycache__` prints nothing; `.github/workflows/` has no pytest step; `git log origin/main..HEAD` holds breaking commits, and the deletion commit carries `!` and a `BREAKING CHANGE:` footer naming the removed scripts (release-please proposes 3.0.0; `plugin.json` and `CHANGELOG.md` untouched)
+- [x] 6.2 README per the plan's Documentation item: installation names Node >= 22.13 and that no Python is needed; the v3 pipeline section and the skills table match the shipped skills (the drift guard passes); nothing names a deleted file. Verify: `pnpm test:contract` green
+- [x] 6.3 Setup stage probe with the extended `v2-project` case: `pnpm eval stages --skill setup --probe` passes every case
+- [x] 6.4 Full gate: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm test:contract`, `pnpm skill-check`, `pnpm docs:build`; `openspec validate v3-t32-python-cut --strict`
 - [ ] 6.5 After the merge into `staging/v3`: close #39 with a comment naming the removed-key state (`features.caveman`, "no consumer in v3 (#39)", T12) and that `fix/39` no longer exists; close #59 with `gh issue close 59 -c "Done in #<PR>"`; move the card to Done; note in the T50 issue that the GitHub Pages source must be "GitHub Actions" before the first deploy
