@@ -18,7 +18,7 @@
 
 - [x] 4.1 `evals/suites/stages/cases/setup.yaml`: the `fresh-project` case answers the exclusion question and expects the commit (D5). `evals/suites/stages/cases/run.yaml`: `run-auto` prepares the fixture as setup leaves it, uses `npm run lint` and expects no commit touching the tool configuration. Run `pnpm eval check`.
 - [x] 4.2 Update `docs/guide/getting-started/setup.md` and `docs/guide/troubleshooting.md`; run `pnpm docs:build`.
-- [ ] 4.3 With the user's approval of the spend only, run the `setup` `fresh-project` and the `run-auto` stage cases with `pnpm eval`. Without approval, leave this box open and report it.
+- [x] 4.3 With the user's approval of the spend only, run the `setup` `fresh-project` and the `run-auto` stage cases with `pnpm eval`. Without approval, leave this box open and report it.
 
 ## 5. Acceptance
 
