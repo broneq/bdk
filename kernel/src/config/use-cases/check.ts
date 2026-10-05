@@ -16,6 +16,7 @@ import {
   settingsSchemaUrl,
   writeSnapshot,
 } from "../../shared/config/index.ts";
+import { KernelRefusal } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { CheckReport, CheckWarning } from "../domain/report.ts";
 import { displayPath, isRefusal, resolve } from "./input.ts";
@@ -36,7 +37,14 @@ export interface Inspection {
 }
 
 export function inspectConfig(input: ConfigInput): Inspection {
-  const resolution = resolveConfig({ ...input, registry: input.settings });
+  let resolution: ReturnType<typeof resolveConfig>;
+  try {
+    resolution = resolveConfig({ ...input, registry: input.settings });
+  } catch (error) {
+    // A layer that is not YAML throws; a caller that must not refuse (session-start) gets it as an error.
+    if (error instanceof KernelRefusal) return { errors: [error.refusal] };
+    throw error;
+  }
   if (resolution.problems.length > 0 || resolution.value === undefined) {
     return { errors: resolution.problems.map((problem) => problemRefusal(input, problem, 0)) };
   }

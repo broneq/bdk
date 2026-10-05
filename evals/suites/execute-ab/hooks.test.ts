@@ -42,8 +42,6 @@ function context(arm: string, dir: string): RunContext {
     plan: {
       suite: "execute-ab",
       series: "s",
-      ledgerFile: "",
-      budgetUsd: 100,
       runCapUsd: 15,
       resultsFile: "",
       rawDir: "",

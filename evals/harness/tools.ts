@@ -39,7 +39,7 @@ export function validateConfig(evalsDir: string, config: string): void {
 /**
  * Runs a series and resolves to promptfoo's exit code: 0 all assertions
  * passed, 100 some failed (a measured outcome, not an error), anything else a
- * failure such as the budget stop.
+ * failure.
  */
 export function evaluate(
   evalsDir: string,

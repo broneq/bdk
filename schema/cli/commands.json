@@ -2141,6 +2141,119 @@
       "exits": [0, 3, 5],
       "refusals": ["input/not-found"],
       "writes": [".bdk/.machine/agents.sqlite"]
+    },
+    {
+      "id": "diagnostics-report",
+      "argv": ["diagnostics", "report"],
+      "summary": "The deterministic report of one session: refusals, retries, tokens, cost and detector findings.",
+      "availability": "read",
+      "mode": "command",
+      "slice": "diagnostics",
+      "owner": "T47",
+      "changeScoped": false,
+      "args": [],
+      "flags": [
+        {
+          "name": "--session",
+          "value": "<session-id>",
+          "description": "The host session; default the session of the latest journal `session` line of the active Change, or the latest session."
+        },
+        {
+          "name": "--stage",
+          "value": "<stage>",
+          "description": "Only the part of the session from that stage skill's `ctx skill` line to the next stage skill's line."
+        }
+      ],
+      "output": "output/diagnostics-report.json",
+      "exits": [0, 3, 5],
+      "refusals": ["input/not-found"],
+      "writes": []
+    },
+    {
+      "id": "diagnostics-log",
+      "argv": ["diagnostics", "log"],
+      "summary": "Render one session as a verbose text log under .bdk/.machine/logs/.",
+      "availability": "agent",
+      "mode": "command",
+      "slice": "diagnostics",
+      "owner": "T47",
+      "changeScoped": false,
+      "args": [],
+      "flags": [
+        {
+          "name": "--session",
+          "value": "<session-id>",
+          "description": "The host session; default the session of the latest journal `session` line of the active Change, or the latest session."
+        },
+        {
+          "name": "--full",
+          "description": "Print skill, role-contract and tool-result text whole instead of collapsed."
+        }
+      ],
+      "output": "output/diagnostics-log.json",
+      "exits": [0, 3, 5],
+      "refusals": ["input/not-found"],
+      "writes": [".bdk/.machine/logs/"]
+    },
+    {
+      "id": "diagnostics-slice",
+      "argv": ["diagnostics", "slice"],
+      "summary": "One bounded excerpt of a session's transcript around a report citation.",
+      "availability": "read",
+      "mode": "command",
+      "slice": "diagnostics",
+      "owner": "T47",
+      "changeScoped": false,
+      "args": [
+        {
+          "name": "<cite>",
+          "required": true,
+          "description": "A finding's cite: journal:<line>, <agent-id>:<line> or a ledger entry id."
+        }
+      ],
+      "flags": [
+        {
+          "name": "--before",
+          "value": "<n>",
+          "description": "Events before the cited one; default 10."
+        },
+        {
+          "name": "--after",
+          "value": "<n>",
+          "description": "Events after the cited one; default 10. Before and after together are at most 100."
+        },
+        {
+          "name": "--session",
+          "value": "<session-id>",
+          "description": "The host session; default the session of the latest journal `session` line of the active Change, or the latest session."
+        }
+      ],
+      "output": "output/diagnostics-slice.json",
+      "exits": [0, 3, 5],
+      "refusals": ["input/not-found"],
+      "writes": []
+    },
+    {
+      "id": "diagnostics-write",
+      "argv": ["diagnostics", "write"],
+      "summary": "Store the analysis of one session from stdin after checking its BDK issue section for project code.",
+      "availability": "agent",
+      "mode": "command",
+      "slice": "diagnostics",
+      "owner": "T47",
+      "changeScoped": false,
+      "args": [],
+      "flags": [
+        {
+          "name": "--session",
+          "value": "<session-id>",
+          "description": "The host session; default the session of the latest journal `session` line of the active Change, or the latest session."
+        }
+      ],
+      "output": "output/diagnostics-write.json",
+      "exits": [0, 2, 3, 5],
+      "refusals": ["policy/project-code"],
+      "writes": [".bdk/.machine/diagnostics/"]
     }
   ]
 }

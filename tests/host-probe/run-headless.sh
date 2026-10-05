@@ -243,6 +243,14 @@ selected lead-detach && { run_check lead-detach '"hook_event_name":"Subagent(Sta
 selected lead-fg && { export BDK_PROBE_INJECT=1; run_check lead-fg 'A-DONE' "Task Agent SendMessage Bash(echo *) Bash(sleep *)" \
   "Use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-spawner in the foreground and this prompt: Your own agent ID is on the line starting with BDK-AGENT-ID in your context. In ONE message make two Agent tool calls at once, both with subagent_type bdk-probe:probe-sleeper and in the foreground (no run_in_background). Prompt A, with your agent ID in place of PARENT: Run with the Bash tool: sleep 5. Then use the SendMessage tool with to set to PARENT and the message PING-FROM-A. Then run sleep 10 and reply A-DONE. Prompt B: Run with the Bash tool: sleep 20, then reply B-DONE. When both return, reply with every message you received, verbatim, both answers, and whether PING-FROM-A reached you before or after the two Agent calls returned. Reply with the subagent's answer verbatim." || status=1; unset BDK_PROBE_INJECT; }
 
+# Run diagnostics (T47): which event a failed Bash call fires, and a session whose
+# transcripts hold every event kind the diagnostics transcript reader reads.
+selected post-tool-failure && { run_check post-tool-failure '"hook_event_name":"PostToolUse(Failure)?"' "Bash(echo *) Bash(sh *)" \
+  "Use the Bash tool twice, one call each and in this order: echo probe-ok, then sh -c 'echo probe-fail >&2; exit 2'. Then reply DONE." || status=1; }
+
+selected transcript-layout && { run_check transcript-layout '"hook_event_name"' "Skill Task Agent AskUserQuestion Bash(echo *) Bash(sleep *) Bash(node *)" \
+  "Do these steps in order, one tool call each. 1: use the Bash tool to run exactly: node $repo/dist/bdk.mjs change status --json. 2: use the Bash tool to run exactly: echo probe-repeat. 3: run exactly the same command again: echo probe-repeat. 4: use the subagent tool (named Task or Agent) with subagent_type bdk-probe:probe-worker and prompt go, in the foreground. 5: use the subagent tool with subagent_type bdk-probe:probe-sleeper, run_in_background true, and this prompt: Run with the Bash tool: sleep 3, then reply BG-DONE. Wait until it finishes. 6: use the AskUserQuestion tool once with the question Continue? and the options Yes and No. 7: call the Skill tool with skill bdk-probe:open-stage and args from-model; its reply line is your final answer." || status=1; }
+
 # A real BDK lead running a part through background workers (T41 acceptance 7.2).
 selected bdk-tree && (
   lead_package=$(tree_fixture) || { echo "not triggered bdk-tree (fixture failed)"; exit 1; }

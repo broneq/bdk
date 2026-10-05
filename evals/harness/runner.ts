@@ -1,11 +1,11 @@
 // Rendering and running a series (design D-1, D-10): a suite describes its
 // cells and items; this module writes the promptfoo config and the plan file,
-// runs promptfoo, and turns the ledger and the rows into what the user reads.
+// runs promptfoo, and turns the rows into what the user reads.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { BudgetReached, projection, readLedger, spent } from "./budget.ts";
+import { projection } from "./cost.ts";
 import type { ProviderEntry } from "./providers.ts";
 import type { ResultRow } from "./results.ts";
 import { SERIES_ENV, expandTests, writePlan } from "./series.ts";
@@ -91,11 +91,6 @@ export async function runSeries(
   const code = await io.evaluate(rendered.configFile, rendered.outputFile, {
     [SERIES_ENV]: rendered.planFile,
   });
-  const used = spent(readLedger(setup.plan.ledgerFile));
-  if (used >= setup.plan.budgetUsd) {
-    io.printError(new BudgetReached(used, setup.plan.budgetUsd).message);
-    return 1;
-  }
   if (code !== 0 && code !== 100) {
     io.printError(`promptfoo exited with ${String(code)}; raw output in ${rendered.outputFile}`);
     return code;
@@ -116,8 +111,6 @@ export interface ProbeSample {
 export function probeSummary(
   rows: readonly ResultRow[],
   runsPerCell: number,
-  budgetUsd: number,
-  spentUsd: number,
   sample?: ProbeSample,
 ): string[] {
   const scale = sample === undefined ? 1 : sample.total / sample.probed;
@@ -137,7 +130,7 @@ export function probeSummary(
           `  (the probe ran ${String(sample.probed)} of ${String(sample.total)} items; costs are scaled to all items)`,
         ]),
     ...lines,
-    `projected series: ${projected.total.toFixed(2)} USD; budget left: ${(budgetUsd - spentUsd).toFixed(2)} USD of ${String(budgetUsd)} USD`,
+    `projected series: ${projected.total.toFixed(2)} USD`,
     ...discarded.map((row) => `  discarded ${row.cell} ${row.item}: ${row.discarded ?? ""}`),
     "the full series starts only after the user approves this projection",
   ];

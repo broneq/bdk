@@ -73,6 +73,13 @@ exports[`ctx skill output > design is unchanged 1`] = `
 }"
 `;
 
+exports[`ctx skill output > diagnose is unchanged 1`] = `
+"{
+  "content": "## BDK context: diagnose\\n",
+  "parts": []
+}"
+`;
+
 exports[`ctx skill output > docs is unchanged 1`] = `
 "{
   "content": "## BDK context: docs\\n",

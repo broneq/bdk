@@ -12,7 +12,7 @@ import {
   withModeline,
   writeSnapshot,
 } from "../../shared/config/index.ts";
-import type { KeyStep } from "../../shared/config/index.ts";
+import type { ConfigModule, ConfigRegistry, KeyStep } from "../../shared/config/index.ts";
 import type { Git } from "../../shared/git/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
@@ -29,6 +29,15 @@ export interface SetRequest {
   readonly value: string;
   readonly global?: boolean;
   readonly local?: boolean;
+}
+
+/** When a change to `key` takes effect: `next-session` when its module is read at session start. */
+export function appliesFrom(
+  settings: ConfigRegistry,
+  key: string,
+): ConfigModule["appliesFrom"] | undefined {
+  return settings.modules.find((module) => key === module.key || key.startsWith(`${module.key}.`))
+    ?.appliesFrom;
 }
 
 export async function setConfig(

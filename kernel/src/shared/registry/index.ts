@@ -6,7 +6,10 @@ export { resolve } from "./resolve.ts";
 export type {
   ActiveChange,
   ActiveChangeResolver,
+  CommandJournalLine,
   Handler,
+  JournalEntry,
+  JournalSink,
   Registration,
   RegistryOptions,
   Runtime,

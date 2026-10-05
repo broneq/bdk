@@ -64,9 +64,7 @@ describe("describeStages", () => {
       emptyBase: "/sandbox/empty-base",
       versions: readVersions(),
       runs: 1,
-      budgetUsd: 10,
       runCapUsd: 3,
-      ledgerFile: "/runs/budget.json",
       resultsFile: "/results/rows.jsonl",
     });
     expect(Object.keys(setup.cells)).toEqual(["bdk"]);

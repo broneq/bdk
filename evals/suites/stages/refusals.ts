@@ -1,7 +1,8 @@
-// The kernel refusals a stage run's agents met (T46, `skill-evals`): counted
-// from the Bash tool results of the run, per rule, so two probes compare by
-// number. A refusal prints as `refused: <rule>` in text mode and as a
-// `"rule"` field with `--json`.
+// The kernel refusals a stage run's agents met (T46, T47, `skill-evals`), per
+// rule, so two probes compare by number. The row takes them from `bdk
+// diagnostics report`, which counts the run journal as a production report
+// does; the count from the Bash tool results stays beside it. A refusal prints
+// as `refused: <rule>` in text mode and as a `"rule"` field with `--json`.
 import type { ResultRow } from "../../harness/results.ts";
 
 const TEXT = /^refused: ((?:input|policy|runtime)\/[a-z-]+)/m;
@@ -23,6 +24,19 @@ export const ACCEPTANCE = {
 interface CountedCall {
   readonly name: string;
   readonly output?: unknown;
+}
+
+/** The refusals per rule of a `bdk diagnostics report --json` call; undefined when it failed. */
+export function reportRefusals(report: {
+  readonly code: number;
+  readonly json: unknown;
+}): Record<string, number> | undefined {
+  if (report.code !== 0) return undefined;
+  const byRule = (report.json as { refusals?: { byRule?: unknown } } | undefined)?.refusals?.byRule;
+  if (typeof byRule !== "object" || byRule === null) return undefined;
+  const entries = Object.entries(byRule);
+  if (!entries.every(([, count]) => typeof count === "number")) return undefined;
+  return Object.fromEntries(entries);
 }
 
 /** The refusals per rule: one per Bash result that holds one. */

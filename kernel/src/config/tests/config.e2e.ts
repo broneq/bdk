@@ -303,6 +303,30 @@ describe("bdk config check", () => {
     expect(refusal.why).toContain("agents.ttl");
   });
 
+  it("acceptance: diagnostics defaults", () => {
+    const shown = bdk(["config", "show", "diagnostics", "--json"], fixture({}).root);
+    expect(shown.code).toBe(0);
+    expect(JSON.parse(shown.stdout)).toMatchObject({
+      value: { verbose: false, "repeat-refusal": 3, "repeat-read": 3, "outlier-factor": 3 },
+    });
+  });
+
+  it("acceptance: diagnostics threshold out of range", () => {
+    const root = fixture({ ".bdk/settings.yaml": "diagnostics:\n  repeat-refusal: 1\n" }).root;
+    const refusal = refused(bdk(["config", "check", "--json"], root), 2, "policy/config-invalid");
+    expect(refusal.why).toContain("diagnostics.repeat-refusal");
+  });
+
+  it("acceptance: no diagnostics.analyze key", () => {
+    const root = fixture({ ".bdk/settings.yaml": "diagnostics:\n  analyze: always\n" }).root;
+    const refusal = refused(
+      bdk(["config", "check", "--json"], root),
+      2,
+      "policy/unknown-config-key",
+    );
+    expect(refusal.why).toContain("diagnostics.analyze");
+  });
+
   it("acceptance: evidence defaults", () => {
     const shown = bdk(["config", "show", "policy.evidence", "--json"], fixture({}).root);
     expect(shown.code).toBe(0);
@@ -497,6 +521,22 @@ describe("bdk config set", () => {
 
     expect(bdk(["config", "set", "features.lavish", "true", "--local"], root).code).toBe(0);
     expect(readFileSync(join(root, ".gitignore"), "utf8")).toBe(expected);
+  });
+
+  it("acceptance: verbose for one user, applied from the next session", () => {
+    const root = fixture({ ".bdk/settings.yaml": TOOLS }).root;
+    const result = bdk(["config", "set", "diagnostics.verbose", "true", "--local"], root);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("diagnostics.verbose = true in the local layer");
+    expect(result.stdout).toContain("applies from the next session start");
+    expect(parse(readFileSync(join(root, ".bdk/settings.local.yaml"), "utf8"))).toMatchObject({
+      diagnostics: { verbose: true },
+    });
+    expect(readFileSync(join(root, ".bdk/settings.yaml"), "utf8")).toBe(TOOLS);
+    const json = bdk(["config", "set", "diagnostics.verbose", "false", "--local", "--json"], root);
+    expect(validSet(json.json), JSON.stringify(validSet.errors)).toBe(true);
+    const plain = bdk(["config", "set", "diagnostics.repeat-read", "4"], root);
+    expect(plain.stdout).not.toContain("next session");
   });
 
   it("comments survive", () => {

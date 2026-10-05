@@ -53,9 +53,7 @@ describe("describeSeries", () => {
       base: "/sandbox/base",
       versions: readVersions(),
       runs: 1,
-      budgetUsd: 10,
       runCapUsd: 3,
-      ledgerFile: "/runs/budget.json",
       resultsFile: "/results/rows.jsonl",
     });
     expect(CELLS).toStrictEqual({ sonnet: "sonnet", "sonnet-prime": "sonnet", opus: "opus" });
@@ -78,9 +76,7 @@ describe("describeSeries", () => {
         base: "/sandbox/base",
         versions: readVersions(),
         runs: 1,
-        budgetUsd: 10,
         runCapUsd: 3,
-        ledgerFile: "/runs/budget.json",
         resultsFile: "/results/rows.jsonl",
       }),
     ).toThrow(/no plugin copy for cell sonnet/);

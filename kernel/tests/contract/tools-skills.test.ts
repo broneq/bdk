@@ -1,6 +1,7 @@
-// `tools-skills` (v3-t42-tools): the shape of the tools skills `commit`,
-// `docs`, `rules`, `adr`, `doctor` and `bdk-cli` under skills/tools/, the
-// removal of the v2 skills they replace, and the kernel commands each names.
+// `tools-skills` (v3-t42-tools, v3-t47-run-diagnostics): the shape of the
+// tools skills `commit`, `docs`, `rules`, `adr`, `doctor`, `diagnose` and
+// `bdk-cli` under skills/tools/, the removal of the v2 skills they replace,
+// and the kernel commands each names.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -12,10 +13,12 @@ import { userFacingFiles, withoutRemovedSection } from "../support/user-facing.t
 
 const TOOLS = join(REPO_ROOT, "skills", "tools");
 const KERNEL_PAIR = "Bash(bdk *) Bash(echo *)";
-const SKILLS = ["commit", "docs", "rules", "adr", "doctor", "bdk-cli"] as const;
-const WITH_CONTEXT = ["commit", "docs", "rules", "adr", "doctor"] as const;
+const SKILLS = ["commit", "docs", "rules", "adr", "doctor", "diagnose", "bdk-cli"] as const;
+const WITH_CONTEXT = ["commit", "docs", "rules", "adr", "doctor", "diagnose"] as const;
+const USER_ONLY = new Set(["doctor", "diagnose"]);
 const REMOVED = ["add-rule", "refine-rules", "update-docs", "explain-complex-code", "create-adr"];
-const MODEL_NAMES = /\b(haiku|sonnet|opus|claude-[a-z0-9-]+)\b/i;
+/** `.claude-plugin` is the plugin manifest directory, not a model. */
+const MODEL_NAMES = /\b(haiku|sonnet|opus|claude-(?!plugin\b)[a-z0-9-]+)\b/i;
 
 interface Skill {
   readonly meta: Record<string, unknown>;
@@ -61,11 +64,17 @@ describe("tools skill shape", () => {
     }
   });
 
-  it("only doctor is user-only", () => {
+  it("only doctor and diagnose are user-only, and only diagnose forks on the reader", () => {
     for (const name of SKILLS) {
       const meta = readSkill(name).meta;
-      if (name === "doctor") expect(meta["disable-model-invocation"]).toBe(true);
+      if (USER_ONLY.has(name)) expect(meta["disable-model-invocation"], name).toBe(true);
       else expect(meta, name).not.toHaveProperty("disable-model-invocation");
+      if (name === "diagnose") {
+        expect(meta).toMatchObject({ context: "fork", agent: "bdk:reader" });
+      } else {
+        expect(meta, name).not.toHaveProperty("context");
+        expect(meta, name).not.toHaveProperty("agent");
+      }
     }
   });
 
@@ -285,5 +294,42 @@ describe("bdk-cli points to the kernel help", () => {
     expect(body).toContain("bdk <group> <verb>");
     expect(body).not.toContain("bdk.mjs");
     expect(body).not.toContain("CLAUDE_PLUGIN_ROOT");
+  });
+});
+
+describe("diagnose analyzes one session", () => {
+  const skill = (): Skill => readSkill("diagnose");
+  /** The skill and its references: the steps may sit in either. */
+  const text = (): string =>
+    files(join(TOOLS, "diagnose"))
+      .map((path) => readFileSync(path, "utf8"))
+      .join("\n");
+
+  it("grants only the kernel pair, Read and Grep", () => {
+    expect(String(skill().meta["allowed-tools"])).toBe(`${KERNEL_PAIR} Read Grep`);
+  });
+
+  it("names the kernel steps and the five sections", () => {
+    for (const needle of [
+      "bdk diagnostics report --json",
+      "bdk diagnostics slice",
+      "bdk diagnostics write",
+      "bdk log add learning",
+      "bdk log show",
+      "policy/project-code",
+      "## Summary",
+      "## What went well",
+      "## What went wrong",
+      "## Where the fix belongs",
+      "## For a BDK issue",
+    ]) {
+      expect(text(), needle).toContain(needle);
+    }
+  });
+
+  it("never sends the analyzer to read a host transcript file", () => {
+    const sentences = text().split(/(?<=[.!?])\s+/);
+    const naming = sentences.filter((sentence) => /~\/\.claude|\.jsonl\b/.test(sentence));
+    for (const sentence of naming) expect(sentence, sentence).toMatch(/\bnever\b/i);
   });
 });

@@ -9,7 +9,7 @@ if (first === undefined) throw new Error("empty test index");
 
 describe("loadIndex", () => {
   it("reads the bundled index", () => {
-    expect(loadIndex(commands).commands).toHaveLength(71);
+    expect(loadIndex(commands).commands).toHaveLength(75);
   });
 
   it("rejects a rule outside the catalogue", () => {

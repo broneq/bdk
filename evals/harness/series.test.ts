@@ -78,8 +78,6 @@ describe("series plan", () => {
     const plan: SeriesPlan = {
       suite: "rules-noop",
       series: "m1-2026-09-28",
-      ledgerFile: join(dir, "budget.json"),
-      budgetUsd: 100,
       runCapUsd: 15,
       resultsFile: join(dir, "rows.jsonl"),
       rawDir: join(dir, "raw"),

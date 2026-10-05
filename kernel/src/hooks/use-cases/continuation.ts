@@ -28,6 +28,7 @@ export type { StopReport };
 import { activeChangeOf, bdkProject, onRegistry, settingsOf } from "./agents.ts";
 import type { HookPlace } from "./agents.ts";
 import type { HooksDeps } from "./input.ts";
+import { journalAgentStop } from "./journal.ts";
 
 /** The work a thread can still do now; undefined when it has none. */
 interface OpenWork {
@@ -98,6 +99,14 @@ export async function subagentStop(
       }
     });
   });
+  if (outcome.report.decision === "pass") {
+    await journalAgentStop(
+      deps,
+      projectRoot,
+      { agent: id, by: "subagent-stop", transcript: payload.agentTranscript },
+      payload.session,
+    );
+  }
   return { agent: id, ...outcome.report };
 }
 

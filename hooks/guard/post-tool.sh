@@ -1,9 +1,11 @@
 #!/bin/sh
-# PostToolUse hook (kernel-cli/hooks, Guard hooks file and prefilter), sourced
-# by the hooks.json command into the host's shell like pre-tool.sh; every
-# `exit` here ends the hook. A subagent's finished call marks its heartbeat
-# `idle` in the shell; Node starts only for the two tools the agent registry
-# reads, `Agent` (the parent's link) and `TaskStop` (an end), in a BDK project.
+# PostToolUse and PostToolUseFailure hook (kernel-cli/hooks, Guard hooks file
+# and prefilter), sourced by the hooks.json command into the host's shell like
+# pre-tool.sh; every `exit` here ends the hook. A subagent's finished call
+# marks its heartbeat `idle` in the shell. In a BDK project Node starts for the
+# tools the kernel records, `Agent` (the parent's link), `TaskStop` (an end)
+# and `AskUserQuestion` (the run journal's question line), and, while the
+# verbose marker exists, for every call (the live log).
 payload=$(cat)
 bdk_beat="${CLAUDE_PROJECT_DIR:-$PWD}/.bdk/.machine"
 
@@ -25,10 +27,14 @@ case $payload in
 esac
 
 [ -d "${CLAUDE_PROJECT_DIR:-$PWD}/.bdk" ] || exit 0
-case $payload in
-  *'"tool_name":"Agent"'* | *'"tool_name": "Agent"'* | *'"tool_name":"TaskStop"'* | *'"tool_name": "TaskStop"'*) ;;
-  *) exit 0 ;;
-esac
+if [ ! -f "$bdk_beat/verbose" ]; then
+  case $payload in
+    *'"tool_name":"Agent"'* | *'"tool_name": "Agent"'*) ;;
+    *'"tool_name":"TaskStop"'* | *'"tool_name": "TaskStop"'*) ;;
+    *'"tool_name":"AskUserQuestion"'* | *'"tool_name": "AskUserQuestion"'*) ;;
+    *) exit 0 ;;
+  esac
+fi
 if ! command -v node >/dev/null 2>&1; then
   echo "guard/kernel-unavailable: node is not on PATH, so BDK cannot record this agent; install Node >= 22.13 and run /bdk:setup" >&2
   exit 2

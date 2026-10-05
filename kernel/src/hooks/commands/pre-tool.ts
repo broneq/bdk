@@ -8,7 +8,9 @@ import { preTool } from "../use-cases/pre-tool.ts";
 /** A pass is silence, so the host's own permission rules stay in force. */
 export function preToolCommand(deps: HooksDeps): Handler {
   return async (context) => {
-    const outcome = await preTool(deps, hookPlace(context), context.runtime.readStdin());
+    const outcome = await preTool(deps, hookPlace(context), context.runtime.readStdin(), (agent) =>
+      context.noteAgent?.(agent),
+    );
     return isRefusal(outcome) ? outcome : { data: outcome, text: "" };
   };
 }

@@ -6,9 +6,13 @@ import { join } from "node:path";
 import { detectLayout, inspectConfig } from "../../config/index.ts";
 import { startupContext } from "../../ctx/index.ts";
 import { rulesOverLimit } from "../../rules/index.ts";
+import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
+import type { Store } from "../../shared/store/index.ts";
+import { verboseModule } from "../config.ts";
 import type { SessionFindings } from "../domain/report.ts";
 import type { HooksDeps } from "./input.ts";
+import { verboseMarkerPath } from "./journal.ts";
 
 export interface SessionStartInput extends Pick<HooksDeps, "store" | "pluginRoot" | "settings"> {
   readonly cwd: string;
@@ -30,6 +34,11 @@ export function sessionStart(input: SessionStartInput): SessionFindings {
     .map((warning) => `${warning.path}: ${warning.message}`);
   const rules =
     errors.length === 0 ? rulesOverLimit(input, projectRoot, input.globalDir) : undefined;
+  syncVerboseMarker(
+    input.store,
+    projectRoot,
+    errors.length === 0 && verboseSetting(input, projectRoot),
+  );
   return {
     startup,
     project: {
@@ -40,4 +49,20 @@ export function sessionStart(input: SessionStartInput): SessionFindings {
       ...(rules === undefined ? {} : { rules }),
     },
   };
+}
+
+function verboseSetting(input: SessionStartInput, projectRoot: string): boolean {
+  const resolved = resolveOrRefuse({ ...input, projectRoot });
+  return !("refused" in resolved) && moduleValue(verboseModule, resolved.value);
+}
+
+/** Keeps the marker in step with the setting; a write that fails leaves the session start unchanged. */
+function syncVerboseMarker(store: Store, projectRoot: string, on: boolean): void {
+  const marker = verboseMarkerPath(projectRoot);
+  try {
+    if (on) store.write(marker, "");
+    else store.remove(marker);
+  } catch {
+    // Diagnostics never block a session start.
+  }
 }

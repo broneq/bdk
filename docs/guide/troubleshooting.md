@@ -6,6 +6,8 @@ This page describes BDK v2. The v3 documentation replaces it (T50).
 
 Symptom, cause, and fix for the messages BDK can actually show you, grouped by the hook or script that prints them. Message text is quoted verbatim from source.
 
+When a run went wrong and no message explains why, analyze the session: see [Diagnostics](workflows/diagnostics.md).
+
 ## A project tool reports files under `.bdk/`
 
 **Symptom:** your linter or formatter reports `.bdk/changes/...` or `.bdk/specs/...`, an agent logs a `question` naming `/bdk:setup`, or a finished Change shows a step as `stale` with "inputs changed" after a formatter run.

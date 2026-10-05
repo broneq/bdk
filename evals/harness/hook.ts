@@ -1,12 +1,11 @@
 // The promptfoo extension hook of every suite (design D-3, D-10, D-11).
-// `beforeEach` stops the series at the budget and resets the run's working
-// copy; `afterEach` checks isolation, measures the run, charges the ledger
-// and appends the result row. promptfoo writes its own output only when a
+// `beforeEach` resets the run's working copy; `afterEach` checks isolation,
+// measures the run and appends the result row. promptfoo writes its own output only when a
 // series ends, so the row is the durable record of a run.
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { assertCanStart, costOf, readLedger, record } from "./budget.ts";
+import { costOf } from "./cost.ts";
 import { freshCopy } from "./fixture.ts";
 import { checkIsolation } from "./isolation.ts";
 import type { JudgeRequest, Judgement } from "./judge.ts";
@@ -38,6 +37,8 @@ export interface EvalResult {
     readonly output?: unknown;
     readonly error?: string;
     readonly cost?: number;
+    /** The host session of the run, which `bdk diagnostics report --session` takes. */
+    readonly sessionId?: string;
     readonly metadata?: {
       readonly modelUsage?: Record<string, { readonly costUSD?: number }>;
       readonly toolCalls?: readonly ToolCall[];
@@ -86,7 +87,6 @@ export function runContext(plan: SeriesPlan, vars: Readonly<Record<string, strin
 }
 
 export async function beforeRun(context: RunContext, hooks: SuiteHooks): Promise<void> {
-  assertCanStart(readLedger(context.plan.ledgerFile), context.plan.budgetUsd);
   rmSync(context.cell.debugFile, { force: true });
   if (context.cell.workDir !== null && context.cell.fixtureBase !== null) {
     freshCopy(context.cell.fixtureBase, context.cell.workDir);
@@ -137,7 +137,7 @@ export async function afterRun(
   try {
     sessionCost = costOf(result);
   } catch {
-    // Charged at the run cap below: the most the session could have spent.
+    // Counted at the run cap below: the most the session could have spent.
   }
   const providerError =
     result.response?.error ??
@@ -159,7 +159,7 @@ export async function afterRun(
     }
   }
   // Cost is a reported metric: a run without it is not counted.
-  if (sessionCost === null) discarded ??= "no reported cost; the ledger charged the run cap";
+  if (sessionCost === null) discarded ??= "no reported cost; the row counts the run cap";
 
   const cost = (sessionCost ?? plan.runCapUsd) + (measurement?.extraCost ?? 0);
   const models = [...new Set([...modelsOf(result), ...(measurement?.models ?? [])])].sort();
@@ -180,7 +180,6 @@ export async function afterRun(
       templateHashes: measurement?.templateHashes ?? [],
     },
   };
-  record(plan.ledgerFile, { suite: plan.suite, cell: context.cellName, run: context.run, cost });
   appendRow(plan.resultsFile, row);
   if (cell.debugFile !== "" && existsSync(cell.debugFile)) {
     writeFileSync(join(raw, "debug.log"), readFileSync(cell.debugFile));
@@ -207,7 +206,7 @@ export async function extensionHook(hookName: string, context: HookContext): Pro
   const hooks = await loadSuiteHooks(plan.suite);
   const run = runContext(plan, context.test?.vars ?? {});
   if (hookName === "beforeEach") {
-    // A throw here aborts the series (probe 8): the budget stop.
+    // A throw here aborts the series (probe 8).
     await beforeRun(run, hooks);
   } else {
     await afterRun(run, context.result ?? {}, hooks);

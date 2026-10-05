@@ -163,7 +163,9 @@ function merged(review: Review, ticket: string, entries: string[], counts: strin
   );
 }
 
-describe("a cr round on a review Change", () => {
+// Two review rounds spawn dozens of kernel and git processes: 13 s alone,
+// over the 30 s project default when the whole E2E suite loads the machine.
+describe("a cr round on a review Change", { timeout: 120_000 }, () => {
   it("fails on a blocker, fixes it first in the next round, reviews the delta and passes review", () => {
     const review = reviewChange();
     expect(answered(run(review, ["next"]), "output/next.json")).toMatchObject({

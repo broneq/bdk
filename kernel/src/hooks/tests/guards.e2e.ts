@@ -238,6 +238,16 @@ describe("PreToolUse guard", () => {
     expect(run.stderr).toMatch(
       /^guard\/subagent-kernel-command: subagents may not run bdk commit,/,
     );
+    // The block is journaled with the payload's agent (`kernel-cli/hooks`, Run journal).
+    const journal = readFileSync(join(root, ".bdk/.machine/telemetry/journal.jsonl"), "utf8");
+    const last = JSON.parse(journal.trim().split("\n").at(-1) ?? "{}") as Record<string, unknown>;
+    expect(last).toMatchObject({
+      kind: "guard",
+      command: "hooks-pre-tool",
+      rule: "guard/subagent-kernel-command",
+      exit: 2,
+      agent: subagentBash("").agent_id,
+    });
   });
 
   it("denies a subagent commit through a bdk shell function", () => {

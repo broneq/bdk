@@ -10,10 +10,12 @@ import { pluginRootOf } from "./shared/config/index.ts";
 import { findWorkTree, systemGit } from "./shared/git/index.ts";
 import { createRegistry, loadIndex } from "./shared/registry/index.ts";
 import {
+  appendJournal,
   fileIndex,
   fileRegistry,
   fileStore,
   findExecutable,
+  findProjectRoot,
   readStdin,
   resolveActiveChange,
 } from "./shared/store/index.ts";
@@ -33,7 +35,12 @@ const registry = createRegistry(
     openRegistry: fileRegistry,
     clock: systemClock,
   }),
-  { activeChange: (where) => resolveActiveChange(store, systemGit, where) },
+  {
+    activeChange: (where) => resolveActiveChange(store, systemGit, where),
+    // A part worktree journals into its home checkout, as the agent registry does.
+    journal: ({ cwd, workTree, line }) =>
+      appendJournal(store, findProjectRoot(store, cwd, workTree), line),
+  },
 );
 
 try {

@@ -2,7 +2,7 @@ import type { Handler } from "../../shared/registry/index.ts";
 import { renderSet } from "../render/set.ts";
 import type { ConfigDeps } from "../use-cases/input.ts";
 import { isRefusal } from "../use-cases/input.ts";
-import { setConfig } from "../use-cases/set.ts";
+import { appliesFrom, setConfig } from "../use-cases/set.ts";
 import { configInput } from "./input.ts";
 
 export function setCommand(deps: ConfigDeps): Handler {
@@ -13,6 +13,7 @@ export function setCommand(deps: ConfigDeps): Handler {
       global: context.flags["--global"] === true,
       local: context.flags["--local"] === true,
     });
-    return isRefusal(outcome) ? outcome : { data: outcome, text: renderSet(outcome) };
+    if (isRefusal(outcome)) return outcome;
+    return { data: outcome, text: renderSet(outcome, appliesFrom(deps.settings, outcome.key)) };
   };
 }

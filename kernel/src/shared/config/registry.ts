@@ -19,6 +19,8 @@ export interface ConfigModule<S extends z.ZodType = z.ZodType> {
   readonly description: string;
   /** The subtree's schema; its defaults are the default layer. */
   readonly schema: S;
+  /** A key read once at session start: `config set` says the change waits for the next session. */
+  readonly appliesFrom?: "next-session";
 }
 
 export interface PromptKey {

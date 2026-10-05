@@ -1,5 +1,5 @@
-// Fixed locations of the harness (design D-1): configs, raw outputs and the
-// ledger live under `evals/.runs/` (gitignored), what a session sees lives in
+// Fixed locations of the harness (design D-1): configs and raw outputs live
+// under `evals/.runs/` (gitignored), what a session sees lives in
 // a sandbox outside the repository; only result rows are committed.
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -12,8 +12,6 @@ import type { FixturePin } from "./fixture.ts";
 export const EVALS_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 export const REPO_ROOT = dirname(EVALS_DIR);
 export const RUNS_DIR = join(EVALS_DIR, ".runs");
-/** One ledger for every suite, so one budget covers all of T40 (design D-10). */
-export const LEDGER_FILE = join(RUNS_DIR, "budget.json");
 /**
  * Working copies, plugin copies and config homes: outside the BDK repository,
  * because a session that walks up from its working copy must not find the

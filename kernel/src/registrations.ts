@@ -15,6 +15,8 @@ import { evidenceConfig, evidenceRegistrations } from "./evidence/index.ts";
 import type { CtxDeps } from "./ctx/index.ts";
 import { exportRegistrations } from "./export/index.ts";
 import { graphConfig, graphRegistrations, requireGate } from "./graph/index.ts";
+import { diagnosticsConfig, diagnosticsRegistrations } from "./diagnostics/index.ts";
+import type { DiagnosticsDeps } from "./diagnostics/index.ts";
 import { hooksConfig, hooksRegistrations } from "./hooks/index.ts";
 import type { HooksDeps } from "./hooks/index.ts";
 import { logConfig, logRegistrations } from "./log/index.ts";
@@ -44,7 +46,8 @@ export type KernelDeps = ServiceDeps &
   LogDeps &
   ChangeDeps &
   QueryDeps &
-  RulesDeps;
+  RulesDeps &
+  DiagnosticsDeps;
 
 export function registrations(deps: KernelDeps): Registration[] {
   return [
@@ -66,6 +69,7 @@ export function registrations(deps: KernelDeps): Registration[] {
     ...rulesRegistrations(deps),
     ...dispatchRegistrations(deps),
     ...agentsRegistrations(deps),
+    ...diagnosticsRegistrations(deps),
     ...specRegistrations({
       ...deps,
       reviewGate: (change, globalDir) => requireGate(deps, change, globalDir, "gate:review"),
@@ -88,6 +92,7 @@ export function settingsRegistry(): ConfigRegistry {
       ...specConfig.modules,
       ...agentsConfig.modules,
       ...hooksConfig.modules,
+      ...diagnosticsConfig.modules,
       ...reviewConfig.modules,
       checkpointModule,
       promptsModule,

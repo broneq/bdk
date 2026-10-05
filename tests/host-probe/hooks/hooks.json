@@ -37,7 +37,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "SendMessage|Agent|TaskStop",
+        "matcher": "SendMessage|Agent|TaskStop|Bash|AskUserQuestion",
         "hooks": [
           {
             "type": "command",
@@ -91,6 +91,18 @@
             "type": "command",
             "command": "sh",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/block-once.sh", "Stop"]
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/record.sh", "PostToolUseFailure"]
           }
         ]
       }

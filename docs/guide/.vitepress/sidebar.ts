@@ -24,6 +24,7 @@ export const sidebar = [
       { text: "Code review", link: "/workflows/code-review" },
       { text: "Docs and decisions", link: "/workflows/docs-and-decisions" },
       { text: "Rules hygiene", link: "/workflows/rules-hygiene" },
+      { text: "Diagnostics", link: "/workflows/diagnostics" },
     ],
   },
   {

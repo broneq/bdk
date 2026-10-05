@@ -4,7 +4,7 @@ Every `bdk-craft` skill was measured with and without it before it was admitted 
 
 ## Setup
 
-- Harness: `pnpm eval with-without --skill bdk-craft:<name> --tasks evals/suites/with-without/examples/craft/<name>.yaml --probe --run-cap 3 --budget 500` (`evals/README.md`).
+- Harness: `pnpm eval with-without --skill bdk-craft:<name> --tasks evals/suites/with-without/examples/craft/<name>.yaml --probe --run-cap 3` (`evals/README.md`).
 - Both cells load a copy of `plugins/bdk-craft` alone, with no `bdk` plugin. The `without` copy lacks the skill's directory. Each passing `with` cell also shows that the skill works without `bdk`.
 - Fixture: `kamkie/technical-interview-frontend` at `946a2081`. Orchestrator: Opus 5.5.
 - Tasks: three tasks per skill, each written as a user would ask, without naming the skill. Each assertion checks the reply for a behaviour the skill changes, for example an observed failure for each behaviour, `problem+json`, a Test Data Builder, or an expand-and-contract step. The assertions do not check the skill's own wording.

@@ -37,7 +37,22 @@ import type { HookPlace } from "./agents.ts";
 import type { HooksDeps } from "./input.ts";
 import { enterStage, NAMESPACE, writer } from "./stage-entry.ts";
 
+/** `noteAgent` hears the blocked agent, `main` without `agent_id`, for the run journal's guard line. */
 export async function preTool(
+  deps: HooksDeps,
+  place: HookPlace,
+  raw: string,
+  noteAgent: (agent: string) => void = () => undefined,
+): Promise<PreToolPass | Refusal> {
+  const outcome = await decide(deps, place, raw);
+  if (isRefusal(outcome)) {
+    const payload = preToolPayload(raw);
+    noteAgent(("missing" in payload ? undefined : payload.agentId) ?? "main");
+  }
+  return outcome;
+}
+
+async function decide(
   deps: HooksDeps,
   place: HookPlace,
   raw: string,

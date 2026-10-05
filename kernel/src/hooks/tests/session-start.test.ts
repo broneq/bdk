@@ -94,6 +94,14 @@ describe("hooks session-start", () => {
     expect(report.configProblems).toBe(2);
   });
 
+  it("reports a settings file that is not YAML as a config line, never as a STOP block", () => {
+    const { report, startup } = run({ ".bdk/settings.yaml": "diagnostics: [\n" });
+    const lines = problemLines(report.content, startup);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^\[BDK\] config: .+settings\.yaml is not valid YAML at line 2/);
+    expect(report.content).not.toContain("BDK STOP");
+  });
+
   it("reports a warning of config check as a config warning line", () => {
     const { report, startup } = run({ ".bdk/settings.yaml": "languages: [go]\n" });
     expect(problemLines(report.content, startup)).toStrictEqual([
@@ -146,5 +154,32 @@ describe("hooks session-start", () => {
       ".bdk/rules/API-3.md": projectRule("API-3"),
     });
     expect(problemLines(report.content, startup)).toStrictEqual([]);
+  });
+});
+
+describe("hooks session-start: verbose marker", () => {
+  const MARKER = `${PROJECT}/.bdk/.machine/verbose`;
+
+  it("creates the marker when diagnostics.verbose is true and removes it when it is not", () => {
+    const on = run({ ".bdk/settings.yaml": `${MODELINE}diagnostics:\n  verbose: true\n` });
+    expect(on.store.exists(MARKER)).toBe(true);
+    const files = { ".bdk/settings.yaml": `${MODELINE}diagnostics:\n  verbose: false\n` };
+    const off = run({ ...files, ".bdk/.machine/verbose": "" });
+    expect(off.store.exists(MARKER)).toBe(false);
+  });
+
+  it("follows the local layer", () => {
+    const { store } = run({
+      ".bdk/settings.yaml": MODELINE,
+      ".bdk/settings.local.yaml": `${MODELINE}diagnostics:\n  verbose: true\n`,
+    });
+    expect(store.exists(MARKER)).toBe(true);
+  });
+
+  it("removes the marker when the settings do not resolve", () => {
+    for (const settings of ["diagnostics:\n  verbose: maybe\n", "diagnostics: [\n"]) {
+      const { store } = run({ ".bdk/settings.yaml": settings, ".bdk/.machine/verbose": "" });
+      expect(store.exists(MARKER)).toBe(false);
+    }
   });
 });

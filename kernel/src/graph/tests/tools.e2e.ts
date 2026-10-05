@@ -32,7 +32,9 @@ describe("tool group states", () => {
       "bdk config set tools.lint none",
       "/bdk:setup",
     ]);
-    expect(readdirSync(join(root, ".bdk"))).toStrictEqual(["settings.yaml"]);
+    // Only the run journal under the never-committed `.machine/` records the refusal.
+    expect(readdirSync(join(root, ".bdk"))).toStrictEqual([".machine", "settings.yaml"]);
+    expect(readdirSync(join(root, ".bdk", ".machine"))).toStrictEqual(["telemetry"]);
   });
 
   it("exit 0: with lint declared none a task closes without a lint manifest", () => {
