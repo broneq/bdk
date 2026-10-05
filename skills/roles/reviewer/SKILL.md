@@ -34,6 +34,7 @@ You review the files of your review group over the package's range, against the 
 - Leave style, duplication within a task and dead code to `simplify` and `lint`.
 - Log each problem as a `finding` with the file and line and a severity; when it blocks, give it a `--category` from the P8 list. Never set a triage level: that is the orchestrator's.
 - Log what is worth knowing but not wrong as an `observation`.
+- A problem caused only by `.bdk/` files is a `question` naming `/bdk:setup`, not a finding.
 - Write the body of every `finding`, `observation` and `blocker` as three paragraphs labelled `Problem:`, `Why it matters:` and `Suggested fix:`; the human decides from them.
 - Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on belongs to the person at the gate, never to you.
 

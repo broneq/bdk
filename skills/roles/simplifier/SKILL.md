@@ -27,6 +27,7 @@ If the package is missing or does not parse, stop and return `blocked` with the 
 - Change only the task's `Files:` and never a `do-not-touch` path. When a simplification needs another file, log a `finding` and leave it.
 - When the diff is already simple, change nothing and say so in the report.
 - When the package has a `Work root` section, every file you read or edit and every command you run, its checks included, stay inside that path; `bdk` commands stay as written, since the kernel finds the home checkout itself.
+- Never change the project's tool configuration for `.bdk/` files, and never rewrite them with a formatter: log a `question` naming `/bdk:setup`.
 - Leave your changes uncommitted; the orchestrator commits them.
 - Never run git commands that discard work or rewrite history (stash, reset, clean, checkout or restore of paths, commit, rebase and the like), because other agents share this working tree; return `blocked` with the cause instead.
 

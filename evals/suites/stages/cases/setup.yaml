@@ -3,11 +3,24 @@
 # scripts and no .bdk/). `prepare` runs in that copy with $BDK set to the
 # plugin copy's kernel bundle; `expect` runs kernel commands there after the
 # session.
+#
+# fresh-project also accepts keeping .bdk/ out of the fixture's markdownlint
+# (T51): its .markdownlint-cli2.mjs globs every Markdown file. The exclusion
+# is committed on its own, without any file under .bdk/.
 - id: fresh-project
   command: /bdk:setup
   answers:
     lavish: decline|skip|no|disable
+    \.bdk|exclu|ignor: markdownlint
   expect:
+    - shell: |-
+        grep -c '\.bdk' .markdownlint-cli2.mjs
+      stdout: "^[1-9]"
+    - shell: |-
+        git diff --quiet HEAD -- .markdownlint-cli2.mjs
+    - shell: |-
+        git log -1 --format=%H -- .markdownlint-cli2.mjs | xargs git show --name-only --format= | grep -c '^\.bdk/'
+      exit: 1
     - run: config check
       exit: 0
     - run: doctor
@@ -22,6 +35,29 @@
     - run: config show languages
       match:
         value.0: script
+
+# exclusions-declined: the user declines every proposed exclusion (T51,
+# stage-skills "exclusion declined"). The answer matches no option label, so
+# it reaches the skill as free text. No project file outside .bdk/ and
+# .gitignore changes, nothing is committed, and the reply names markdownlint.
+- id: exclusions-declined
+  command: /bdk:setup
+  answers:
+    lavish: decline|skip|no|disable
+    \.bdk|exclu|ignor: "Decline all: add no exclusion to any tool"
+  expect:
+    - run: config check
+      exit: 0
+    - shell: |-
+        grep -c '\.bdk' .markdownlint-cli2.mjs
+      exit: 1
+    - shell: |-
+        git log --format=%s | grep -c 'keep \.bdk/ out'
+      exit: 1
+    - shell: |-
+        git status --porcelain -- . ':!.bdk' ':!.gitignore'
+      stdout: "^$"
+    - reply: markdownlint
 
 - id: invalid-settings
   command: /bdk:setup

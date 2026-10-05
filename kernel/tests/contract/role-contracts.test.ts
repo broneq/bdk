@@ -480,3 +480,34 @@ describe("roles in a part worktree (T45)", () => {
     expect(body).toContain("`isolation-reason`");
   });
 });
+
+describe("contracts leave BDK's own files to setup (T51)", () => {
+  /** The one sentence of a body that names `.bdk/` files and `/bdk:setup`. */
+  function bdkLine(name: string): string {
+    const found = sentences(readRole(name).body).filter(
+      (sentence) => sentence.includes("`.bdk/`") && sentence.includes("`/bdk:setup`"),
+    );
+    expect(found, name).toHaveLength(1);
+    return found[0] ?? "";
+  }
+
+  it.each(["implementer", "simplifier", "runner", "reviewer", "integration-reviewer"])(
+    "%s turns a problem caused only by .bdk/ files into a question",
+    (name) => {
+      expect(bdkLine(name)).toContain("`question`");
+    },
+  );
+
+  it.each(["implementer", "simplifier"])(
+    "%s never changes the tool configuration nor formats .bdk/",
+    (name) => {
+      const line = bdkLine(name);
+      expect(line).toMatch(/never change the project's tool configuration/i);
+      expect(line).toMatch(/never rewrite [^.]*with a formatter/);
+    },
+  );
+
+  it("runner records a check that fails only on .bdk/ files as not-run", () => {
+    expect(bdkLine("runner")).toMatch(/`not-run`/);
+  });
+});

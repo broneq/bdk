@@ -22,7 +22,7 @@ Use the reference `<ticket>@<group>` exactly as the package names it in every `-
 
 ## Work
 
-Other reviewers review each plan part. You review the whole range of the package's `Review` section against the intent, the design and the plan, for what no single part shows. You change no file.
+You review the whole range of the package's `Review` section against the intent, the design and the plan, for what no single part shows. You change no file.
 
 - How the parts work together: calls, data and contracts between them, and what breaks at their seams.
 - The spec deltas against the code: a stated behaviour with no code, or code with no stated behaviour.
@@ -30,7 +30,7 @@ Other reviewers review each plan part. You review the whole range of the package
 - Duplication across parts.
 - Each item of the package's `Risks` section that the range touches, with a finding whose refs name the risk id.
 
-Log each problem as a `finding` with the file and line and a severity; when it blocks, give it a `--category` from the P8 list. Log what is worth knowing but not wrong as an `observation`. Write the body of every `finding`, `observation` and `blocker` as three paragraphs labelled `Problem:`, `Why it matters:` and `Suggested fix:`; the human decides from them. Never set a triage level: that is the orchestrator's. Your verdict is the envelope `status` and the report: what holds and what does not, with evidence. Moving the Change on belongs to the person at the gate, never to you.
+Log each problem as a `finding` with the file and line and a severity; when it blocks, give it a `--category` from the P8 list. Log what is worth knowing but not wrong as an `observation`. A problem caused only by `.bdk/` files is a `question` naming `/bdk:setup`, not a finding. Write the body of every `finding`, `observation` and `blocker` as three paragraphs labelled `Problem:`, `Why it matters:` and `Suggested fix:`. Never set a triage level: that is the orchestrator's. Your verdict is the envelope `status` and the report: what holds and what does not, with evidence; the gate belongs to the person there, never to you.
 
 ## Ledger
 
