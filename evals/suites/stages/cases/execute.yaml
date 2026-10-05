@@ -112,6 +112,10 @@
   command: /bdk:execute
   prepare:
     - |-
+      node "$BDK" config set tools.test.vitest '{tier: fast, command: npm test}' >/dev/null
+    - |-
+      node "$BDK" config set tools.lint.eslint '{tier: lint, command: npx eslint .}' >/dev/null
+    - |-
       node "$BDK" config set features.lavish false >/dev/null
     - |-
       git add -A && git commit -qm "bdk settings"
