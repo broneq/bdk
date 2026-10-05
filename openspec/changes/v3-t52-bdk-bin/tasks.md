@@ -7,9 +7,9 @@
 
 ## 2. Launcher and `--version`
 
-- [ ] 2.1 Write the failing tests: the launcher passes argv, stdin and the exit code through, exits 5 with the `kernel unavailable` line without `node` or without the bundle, and is tracked as `100755` with `eol=lf`; `bdk --version` and `bdk --version --json` answer like `bdk version`; verify that they fail
-- [ ] 2.2 Add `bin/bdk` (POSIX `sh`, design D1) with mode `100755` and a `.gitattributes` entry `bin/bdk text eol=lf`; map a first argument `--version` to `version` in the registry and name it in the global help; verify with the tests of 2.1, `pnpm test:unit` for the registry and `claude plugin validate .`
-- [ ] 2.3 Edit the Purpose of `openspec/specs/kernel-cli/spec.md` directly (the delta cannot): replace "The only supported invocation is `node ...`; no PATH shim is installed" with the two entry points of Invocation; verify with `openspec validate --specs --strict`
+- [x] 2.1 Write the failing tests: the launcher passes argv, stdin and the exit code through, exits 5 with the `kernel unavailable` line without `node` or without the bundle, and is tracked as `100755` with `eol=lf`; `bdk --version` and `bdk --version --json` answer like `bdk version`; verify that they fail
+- [x] 2.2 Add `bin/bdk` (POSIX `sh`, design D1) with mode `100755` and a `.gitattributes` entry `bin/bdk text eol=lf`; map a first argument `--version` to `version` in the registry and name it in the global help; verify with the tests of 2.1, `pnpm test:unit` for the registry and `claude plugin validate .`
+- [x] 2.3 Edit the Purpose of `openspec/specs/kernel-cli/spec.md` directly (the delta cannot): replace "The only supported invocation is `node ...`; no PATH shim is installed" with the two entry points of Invocation; verify with `openspec validate --specs --strict`
 
 ## 3. Guards
 
@@ -35,7 +35,7 @@
 
 - [ ] 7.1 In a clean scratch project with the plugin loaded by `--plugin-dir`, run `bdk --version` through the Bash tool of a `claude -p` session and verify the version line
 - [ ] 7.2 Verify that the guards deny a subagent `bdk commit` and a main-thread `bdk hooks pre-tool` with the same rules as today's form, through `pnpm test:e2e`
-- [ ] 7.3 Run `claude plugin validate .` and verify `Validation passed`
+- [ ] 7.3 Run `claude plugin validate .` and verify `Validation passed` with no error and no warning about `bin/`
 - [ ] 7.4 Run the full gate: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm knip && pnpm test:unit && pnpm test:e2e && pnpm test:contract && pnpm skill-check && pnpm eval check`
 - [ ] 7.5 Run `pnpm eval stages --probe`, show its cost projection to the user, and after approval verify that every case passes with no Bash call naming `bdk.mjs` in any transcript
 - [ ] 7.6 Run `openspec validate v3-t52-bdk-bin --strict`

@@ -73,7 +73,7 @@ export function groupHelp(index: CommandIndex, group: string): string | undefine
 export function globalHelp(index: CommandIndex): string {
   return overview(
     index.commands,
-    "usage: bdk <group> [<verb>] <positional...> [--flag [value]] [--json] (bdk <command> --help for details)",
+    "usage: bdk <group> [<verb>] <positional...> [--flag [value]] [--json] (bdk <command> --help for details; bdk --version for the version)",
   );
 }
 

@@ -27,4 +27,4 @@ The plugin SHALL ship `bin/bdk`, a tracked POSIX `sh` script with the executable
 #### Scenario: plugin validates with bin/
 
 - **WHEN** `claude plugin validate .` runs in the repository root
-- **THEN** it reports `Validation passed`
+- **THEN** it reports `Validation passed` with no error and no warning about `bin/` (the warning about the repository's own `CLAUDE.md` at the plugin root predates the launcher)
