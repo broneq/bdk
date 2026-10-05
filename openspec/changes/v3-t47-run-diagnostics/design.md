@@ -168,6 +168,26 @@ After each run, `evals/suites/stages/hooks.ts` runs `bdk diagnostics report --se
 
 This is how the acceptance signal "reproduces the refusal counts of #109's table" is checked on a new probe. The 2026-10-02 runs predate the journal and cannot be replayed.
 
+## As run (probes of 2026-10-05)
+
+`pnpm eval stages --skill execute --case flat,tree,worktree --probe` with `diagnostics.verbose: true` (series `probe-execute-2026-10-05-165912`, BDK `6af5df18`): all three runs met every expectation, 4.93 USD in all.
+
+| Run      | `refusals` (journal) | `refusals-transcript` | Difference                                                                        |
+| -------- | -------------------- | --------------------- | --------------------------------------------------------------------------------- |
+| flat     | 0                    | 0                     | none                                                                              |
+| tree     | 2                    | 2                     | none                                                                              |
+| worktree | 6                    | 7                     | one `guard/agent-message` block, which the report counts under `guardBlocks` only |
+
+In the `worktree` fixture the journal held 36.7 KiB, `.bdk/.machine/logs/` the live log (184.5 KiB) and the render (291.4 KiB), and `git status` was clean. The report's `cost` (1.77 USD) equalled the row's cost. `/bdk:diagnose 784cb229-...` (0.67 USD, 2.5 minutes) wrote the analysis through `bdk diagnostics write` on the first try. It named the top refusal, `policy/entries-missing` (2), with its cause and the citation `ad2e0042b1afb6a90:120`, and found three defects:
+
+- Three refusals counted under `unknown`: agents call the kernel as `B=.../bdk.mjs; node $B ...`, and one Bash use that called the kernel twice was taken by its later line. Fixed in `39ce70b5`: `shellCommands` expands a variable the same Bash command assigned, and each kernel call of a use serves its own line. The rerun report attributes all six.
+- All seven D1 findings were `agents wait` polls and one `attempt close` retry. The analysis blamed a cut command prefix; the commands were in fact identical. Fixed in `39ce70b5`: D1 leaves a Bash command that calls the kernel to D2 and D3.
+- The `guard/agent-message` reason read as the opposite of its rule. Reworded in `39ce70b5`.
+
+A fourth finding is outside this change: `bdk log ingest` takes the role from the ticket's last built package, so a lead that builds the runner package before the simplifier ingests stores the simplifier's report as the runner's.
+
+`pnpm eval stages --skill execute --case not-ready --probe` without `diagnostics.verbose` (series `probe-execute-2026-10-05-173411`, 0.18 USD): no `.bdk/.machine/verbose`, no `logs/`, no `diagnostics/`, and the journal held its `session` line. The case first failed in `prepare` with `policy/tools-unset` (T49); `63ef6b42` sets its tools.
+
 ## Risks / Trade-offs
 
 - [The transcript format is internal to the host and can change.] → A contract test on a recorded transcript per host version, unknown-line counts in the report, and journal metrics that do not depend on transcripts.
