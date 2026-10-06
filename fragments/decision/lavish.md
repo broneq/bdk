@@ -10,7 +10,7 @@ Either way: bundle every open decision of the moment into one ask, put the recom
 Procedure for a rich decision:
 
 1. Once per session, read `lavish-axi --help` and the playbooks it lists for comparisons and for collecting input. Use only commands and flags that `--help` prints: the binary is versioned outside this plugin.
-2. Write the page under `.lavish/` in the project: each option with its diagram or draft, the recommendation and the tradeoffs, and an input for every open decision.
+2. Write the page under `.lavish/` in the project: each option with its diagram or draft, the recommendation and the tradeoffs, and an input for every open decision. Give each ask a file name no earlier ask used, such as one ending in the output of `date +%Y%m%d-%H%M%S`: Lavish never reopens a path whose session the user ended, even after the file is written again.
 3. Open it with `lavish-axi <file>`, then wait with `lavish-axi poll <file>` in the foreground until the reply arrives. Read the whole reply.
 4. Continue with the selections. An edit the user asks for on the page is a new draft: write it, then ask again.
 

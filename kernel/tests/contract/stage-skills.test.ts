@@ -428,6 +428,22 @@ describe("setup asks on one page (T56)", () => {
     for (const question of QUESTIONS) expect(table, question).toContain(`| \`${question}\``);
     expect(table).toMatch(/an `AskUserQuestion` call of its own/);
   });
+
+  it("Apply names the two orderings that matter and numbers no step (#161)", () => {
+    const { body } = readSkill("setup");
+    const apply = body.slice(body.indexOf("## Apply"), body.indexOf("## When the kernel refuses"));
+    expect(apply).not.toMatch(/^\d+\. /m);
+    expect(apply).toMatch(/v2 ignore rule[^\n]*before the first `bdk config set`/);
+    expect(apply).toMatch(/lint run[^\n]*after the commands and the accepted exclusions/);
+  });
+});
+
+describe("Lavish pages get a file name per ask (#161)", () => {
+  it("the decision fragment says why a page path is never reused", () => {
+    const fragment = readFileSync(join(REPO_ROOT, "fragments", "decision", "lavish.md"), "utf8");
+    expect(fragment).toMatch(/file name no earlier ask used/);
+    expect(fragment).toMatch(/never reopens a path whose session the user ended/);
+  });
 });
 
 describe("worktree isolation in the stage skills (T45)", () => {
