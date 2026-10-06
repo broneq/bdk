@@ -270,7 +270,11 @@ describe("runSetup", () => {
 
   it("kills a command still running at the bound, with its children", async () => {
     const run = await runSetup("echo started; sleep 30 & sleep 30", home, 300);
-    expect(run).toMatchObject({ exitCode: undefined, timedOut: true, tail: ["started"] });
+    expect(run).toMatchObject({ exitCode: undefined, timedOut: true });
+    // macOS bash may outlive the group kill long enough to report its killed
+    // child on stderr, so only the first line is fixed.
+    expect(run.tail[0]).toBe("started");
+    // `close` waits for every holder of the pipes, the background sleep too.
     expect(run.durationMs).toBeLessThan(10_000);
   });
 });
