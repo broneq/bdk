@@ -26,4 +26,13 @@ describe("repository rules managed by the kernel", () => {
     const checked = runBdk(["rules", "check", "--json"], REPO_ROOT);
     expect(checked.code, checked.stdout + checked.stderr).toBe(0);
   });
+
+  it("doctor finds no rule problem in the repository", () => {
+    const doctor = runBdk(["doctor", "--json"], REPO_ROOT);
+    const { findings } = doctor.json as { findings: { id: string }[] };
+    const ruleFindings = findings
+      .map((finding) => finding.id)
+      .filter((id) => ["rule-without-id", "rules-invalid", "projection-outdated"].includes(id));
+    expect(ruleFindings, doctor.stdout).toStrictEqual([]);
+  });
 });
