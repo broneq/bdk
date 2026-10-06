@@ -16,8 +16,10 @@ export interface ProjectionFile {
   readonly rules: number;
   /** The scoped file's `paths:`; absent for the global file. */
   readonly paths?: readonly string[];
-  /** The file's text; undefined when it holds no rule and must not exist. */
-  readonly content: string | undefined;
+  /** The `paths:` frontmatter as YAML text; absent for the global file. */
+  readonly frontmatter?: string;
+  /** The file's body; undefined when it holds no rule and the file must not exist. */
+  readonly body: string | undefined;
 }
 
 /** `- [<id>] <text>`, continuation lines indented, ` (applies: ...)` after a scoped rule. */
@@ -35,18 +37,20 @@ export function projectionFiles(rules: readonly LoadedRule[]): [ProjectionFile, 
   const global = rules.filter((rule) => (rule.applies?.length ?? 0) === 0);
   const paths = [...new Set(scoped.flatMap((rule) => rule.applies ?? []))].sort();
   const body = (list: readonly LoadedRule[]): string => list.map(ruleLine).join("");
-  const frontmatter = `---\npaths:\n${paths.map((path) => `  - ${JSON.stringify(path)}\n`).join("")}---\n`;
+  // Every glob double-quoted, as the host's own examples write `paths:`.
+  const frontmatter = `paths:\n${paths.map((path) => `  - ${JSON.stringify(path)}\n`).join("")}`;
   return [
     {
       path: PROJECTION_GLOBAL,
       rules: global.length,
-      content: global.length === 0 ? undefined : `${MARKER}\n\n${body(global)}`,
+      body: global.length === 0 ? undefined : `${MARKER}\n\n${body(global)}`,
     },
     {
       path: PROJECTION_SCOPED,
       rules: scoped.length,
       paths,
-      content: scoped.length === 0 ? undefined : `${frontmatter}${MARKER}\n\n${body(scoped)}`,
+      frontmatter,
+      body: scoped.length === 0 ? undefined : `${MARKER}\n\n${body(scoped)}`,
     },
   ];
 }

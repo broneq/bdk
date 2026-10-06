@@ -2,7 +2,7 @@
 // field tables of the spec equal the generated `schema/state/` files in field
 // names, requiredness and enum values. The prose-only kinds (plan index and
 // the design documents) have no table and are covered by the fixture test.
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -11,9 +11,7 @@ import { REPO_ROOT } from "../support/run.ts";
 import { readStateSchema } from "../support/schemas.ts";
 import { backticked, column, requirement, tableRows } from "../support/specs.ts";
 
-const MAIN = join(REPO_ROOT, "openspec/specs/kernel-state/spec.md");
-const DELTA = join(REPO_ROOT, "openspec/changes/v3-t14-state-schema/specs/kernel-state/spec.md");
-const spec = readFileSync(existsSync(MAIN) ? MAIN : DELTA, "utf8");
+const spec = readFileSync(join(REPO_ROOT, "openspec/specs/kernel-state/spec.md"), "utf8");
 
 /** Requirement title -> the document kind its `Field` table describes. */
 const TABLES: Readonly<Record<string, string>> = {

@@ -50,7 +50,7 @@ export type {
   SelectResult,
 } from "./index/queries.ts";
 export { migrateDocument, readChange, readDocument, writeDocument } from "./state/documents.ts";
-export { renderDocument } from "./state/render.ts";
+export { frontmatterFile, renderDocument } from "./state/render.ts";
 export type { KindOverrides, MigrationResult, StateDocument } from "./state/documents.ts";
 export { findingFingerprint, learningFingerprint, normalise } from "./state/fingerprint.ts";
 export { generateDesignIndex, generatePlanIndex, planWaves } from "./state/indexes.ts";
@@ -76,6 +76,8 @@ export {
   writeMarker,
 } from "./changes.ts";
 export type { ChangeLocation } from "./changes.ts";
+export { ensureFormatterGuard, FORMATTER_GUARD, formatterGuardState } from "./formatter-guard.ts";
+export type { FormatterGuardState } from "./formatter-guard.ts";
 export { ensureIgnored, IGNORED_PATHS, onlyKernelIgnores } from "./ignore.ts";
 export { filesOverlap, firstMatch, matchesGlob } from "./glob.ts";
 export { secondStamp } from "./state/common.ts";

@@ -12,6 +12,7 @@ import { createFixture } from "../../../tests/support/fixture.ts";
 import type { Fixture } from "../../../tests/support/fixture.ts";
 import { REPO_ROOT, runBdk } from "../../../tests/support/run.ts";
 import { validatorFor } from "../../../tests/support/schemas.ts";
+import { FORMATTER_GUARD } from "../../shared/store/index.ts";
 
 const validShow = validatorFor("output/config-show.json");
 const validCheck = validatorFor("output/config-check.json");
@@ -521,6 +522,16 @@ describe("bdk config set", () => {
 
     expect(bdk(["config", "set", "features.lavish", "true", "--local"], root).code).toBe(0);
     expect(readFileSync(join(root, ".gitignore"), "utf8")).toBe(expected);
+  });
+
+  it("writes the formatter guard when absent and keeps a file the user wrote", () => {
+    const fresh = fixture().root;
+    expect(bdk(["config", "set", "features.lavish", "false"], fresh).code).toBe(0);
+    expect(readFileSync(join(fresh, ".bdk/.prettierrc"), "utf8")).toBe(FORMATTER_GUARD);
+
+    const own = fixture({ ".bdk/.prettierrc": '{"semi": false}' }).root;
+    expect(bdk(["config", "set", "features.lavish", "false"], own).code).toBe(0);
+    expect(readFileSync(join(own, ".bdk/.prettierrc"), "utf8")).toBe('{"semi": false}');
   });
 
   it("acceptance: verbose for one user, applied from the next session", () => {

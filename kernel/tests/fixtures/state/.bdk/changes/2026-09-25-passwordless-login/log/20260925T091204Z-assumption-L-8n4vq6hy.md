@@ -10,4 +10,5 @@ at: 2026-09-25T09:12:04.000Z
 refs:
   - change.md
 ---
+
 Recorded by change new: the caller passed no --profile.

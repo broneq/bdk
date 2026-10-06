@@ -14,7 +14,7 @@
 // `shared-lockfile-unisolated` is its plan with both parts shared, done and
 // not yet verified.
 import { execFileSync } from "node:child_process";
-import { cpSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -72,9 +72,13 @@ function git(dir: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd: dir, env: ENV, encoding: "utf8", stdio: "pipe" });
 }
 
-/** The kernel's own .gitignore lines from `change new`, committed as a user would. */
+/**
+ * The kernel's own .gitignore lines and formatter guard from `change new`,
+ * committed as a user would. A kernel older than the guard writes none.
+ */
 function commitIgnore(dir: string): void {
   git(dir, "add", ".gitignore");
+  if (existsSync(join(dir, ".bdk/.prettierrc"))) git(dir, "add", ".bdk/.prettierrc");
   if (git(dir, "diff", "--cached", "--name-only").trim() !== "") {
     git(dir, "commit", "-q", "-m", "chore(bdk): ignore machine state");
   }

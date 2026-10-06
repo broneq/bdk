@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { blockText, hasBullet, parseDelta, statement } from "../domain/grammar.ts";
-import { bodyHash, livingOf, renderLiving } from "../use-cases/living.ts";
+import { bodyHash, hashMatches, livingOf, renderLiving } from "../use-cases/living.ts";
 
 /** The item, failing the test when there is none. */
 function the<T>(item: T | undefined): T {
@@ -191,7 +191,7 @@ describe("living spec", () => {
       "",
     ].join("\n");
     expect(hash).toBe(`sha256:${createHash("sha256").update(body).digest("hex")}`);
-    expect(text).toBe(`---\nbdk-merge-hash: ${hash}\nbdk-change: 2026-09-25-x\n---\n${body}`);
+    expect(text).toBe(`---\nbdk-merge-hash: ${hash}\nbdk-change: 2026-09-25-x\n---\n\n${body}`);
     expect(bodyHash(body)).toBe(hash);
   });
 
@@ -205,6 +205,14 @@ describe("living spec", () => {
       "Magic link sent",
     ]);
     expect(renderLiving("auth/login", living, "2026-09-25-x").text).toBe(text);
+  });
+
+  it("verifies a file in the shape without the separating blank line", () => {
+    const { text } = renderLiving("auth/login", { purpose, requirements }, "2026-09-25-x");
+    const old = text.replace("---\n\n#", "---\n#");
+    expect(old).not.toBe(text);
+    expect(hashMatches(livingOf(old))).toBe(true);
+    expect(livingOf(old).body).toBe(livingOf(text).body);
   });
 
   it("parses a file without frontmatter with no hash", () => {

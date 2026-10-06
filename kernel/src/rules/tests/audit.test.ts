@@ -238,8 +238,8 @@ describe("projection", () => {
 
   it("writes no file for an empty side", () => {
     const [global, scoped] = projectionFiles([rule("NAMING-1")]);
-    expect(global.content).toContain("- [NAMING-1] Text of NAMING-1.\n");
-    expect(scoped).toMatchObject({ rules: 0, paths: [], content: undefined });
+    expect(global.body).toContain("- [NAMING-1] Text of NAMING-1.\n");
+    expect(scoped).toMatchObject({ rules: 0, paths: [], body: undefined });
   });
 
   it("quotes every glob of paths:, sorted and without duplicates", () => {
@@ -247,7 +247,7 @@ describe("projection", () => {
       rule("UI-2", ["web/**", "*.tsx"]),
       rule("API-1", ["web/**"]),
     ]);
-    expect(scoped.content).toMatch(/^---\npaths:\n {2}- "\*\.tsx"\n {2}- "web\/\*\*"\n---\n/);
+    expect(scoped.frontmatter).toBe('paths:\n  - "*.tsx"\n  - "web/**"\n');
   });
 });
 

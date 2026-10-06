@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { startupContext } from "../../ctx/index.ts";
 import { settingsRegistry } from "../../registrations.ts";
 import { SNAPSHOT_PATH } from "../../shared/config/index.ts";
-import { memoryStore } from "../../shared/store/index.ts";
+import { FORMATTER_GUARD, memoryStore } from "../../shared/store/index.ts";
 import { renderSessionStart } from "../render/session-start.ts";
 import { sessionStart } from "../use-cases/session-start.ts";
 
@@ -20,9 +20,17 @@ const PLUGIN_FILES = {
 const MODELINE =
   "# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/dist-v3.0.0/schema/settings.json\n";
 
-function run(project: Record<string, string>, { inGit = true } = {}) {
+const GUARD_PATH = ".bdk/.prettierrc";
+const GUARD_WARNING =
+  "[BDK] WARNING: .bdk/.prettierrc is missing or is not the BDK formatter guard, so Prettier can rewrite files under .bdk/ and break their recorded hashes. " +
+  `Restore it: write ${FORMATTER_GUARD.trimEnd()} to .bdk/.prettierrc and commit it.`;
+
+/** A BDK project (any `.bdk/` file) gets the formatter guard unless `guard` is false. */
+function run(project: Record<string, string>, { inGit = true, guard = true } = {}) {
   const files: Record<string, string> = { ...PLUGIN_FILES };
-  for (const [path, text] of Object.entries(project)) files[`${PROJECT}/${path}`] = text;
+  const bdk = Object.keys(project).some((path) => path.startsWith(".bdk/"));
+  const withGuard = bdk && guard ? { [GUARD_PATH]: FORMATTER_GUARD, ...project } : project;
+  for (const [path, text] of Object.entries(withGuard)) files[`${PROJECT}/${path}`] = text;
   const store = memoryStore(files);
   const deps = { store, pluginRoot: PLUGIN, settings: settingsRegistry() };
   const report = renderSessionStart(
@@ -144,6 +152,32 @@ describe("hooks session-start", () => {
       "[BDK] rules warning: verifier reads 4 rules (rules.warn-above: 2); switch rules off with rules.disabled or narrow them with applies.",
     ]);
     expect(report.configProblems).toBe(0);
+  });
+
+  it("warns first when the formatter guard is missing and never writes it", () => {
+    const { report, startup, store } = run(
+      { ".bdk/settings.yaml": "languages: [go]\n" },
+      { guard: false },
+    );
+    expect(problemLines(report.content, startup)).toStrictEqual([
+      GUARD_WARNING,
+      "[BDK] config warning: .bdk/settings.yaml: no yaml-language-server modeline; bdk doctor --fix adds it",
+    ]);
+    expect(report.content).not.toContain("BDK STOP");
+    expect(store.exists(`${PROJECT}/${GUARD_PATH}`)).toBe(false);
+  });
+
+  it.each([
+    ["the pragma alone", '{ "requirePragma": true }'],
+    ["another configuration", '{"semi": false}'],
+    ["broken syntax", "{ requirePragma: ["],
+  ])("warns about a guard that is not in force: %s, and leaves its bytes", (_, text) => {
+    const { report, startup, store } = run({
+      ".bdk/settings.yaml": `${MODELINE}languages: [go]\n`,
+      [GUARD_PATH]: text,
+    });
+    expect(problemLines(report.content, startup)).toStrictEqual([GUARD_WARNING]);
+    expect(store.read(`${PROJECT}/${GUARD_PATH}`)).toBe(text);
   });
 
   it("stays silent at rules.warn-above and counts no disabled rule", () => {

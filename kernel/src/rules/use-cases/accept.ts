@@ -5,7 +5,13 @@
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import { CHANGE_ID_PATTERN } from "../../shared/ids/index.ts";
-import { findEntry, hasAttempt, refreshAll, withIndex } from "../../shared/store/index.ts";
+import {
+  ensureFormatterGuard,
+  findEntry,
+  hasAttempt,
+  refreshAll,
+  withIndex,
+} from "../../shared/store/index.ts";
 import { prefixProblem } from "../domain/import.ts";
 import type { AcceptReport } from "../domain/report.ts";
 import type { RulesDeps } from "./deps.ts";
@@ -104,6 +110,7 @@ export async function acceptRule(
   });
   const problem = draftProblem(draft);
   if (problem !== undefined) return ruleFormat(`${id}: ${problem}`, "fix the flag named");
+  ensureFormatterGuard(deps.store, projectRoot);
   const path = writeRule(deps.store, projectRoot, draft);
   const after = loadContext(deps, projectRoot, globalDir);
   if ("refused" in after) return after;

@@ -10,7 +10,7 @@ import { ENTRY_TYPES } from "../../src/shared/vocabulary/index.ts";
 import { REPO_ROOT } from "../support/run.ts";
 import { backticked, column, requirement, tableRows } from "../support/specs.ts";
 
-const CHANGE_DIR = join(REPO_ROOT, "openspec/changes/v3-t14-state-schema");
+const CHANGES_DIR = join(REPO_ROOT, "openspec/changes");
 const STATE_MAIN = join(REPO_ROOT, "openspec/specs/kernel-state/spec.md");
 const CLI_DIR = join(REPO_ROOT, "openspec/specs/kernel-cli");
 
@@ -20,11 +20,7 @@ interface Command {
   readonly writes: readonly string[];
 }
 
-/** The spec text in force: the Change's delta until the archive, then the main spec. */
-const stateSpec = readFileSync(
-  existsSync(STATE_MAIN) ? STATE_MAIN : join(CHANGE_DIR, "specs/kernel-state/spec.md"),
-  "utf8",
-);
+const stateSpec = readFileSync(STATE_MAIN, "utf8");
 
 const commands = (
   JSON.parse(readFileSync(join(REPO_ROOT, "schema/cli/commands.json"), "utf8")) as {
@@ -38,7 +34,7 @@ function writesItems(line: string): string[] {
   return line.split(", ").map((item) => item.trim().replace(/^`(.*)`$/, "$1"));
 }
 
-/** `**Writes:**` items per command, a Change delta's requirement replacing the main one. */
+/** `**Writes:**` items per command, an active Change's delta requirement replacing the main one. */
 function writesLines(): Map<string, string[]> {
   const lines = new Map<string, string[]>();
   const read = (text: string): void => {
@@ -53,8 +49,12 @@ function writesLines(): Map<string, string[]> {
     entry.isDirectory(),
   );
   for (const group of groups) read(readFileSync(join(CLI_DIR, group.name, "spec.md"), "utf8"));
-  const deltas = join(CHANGE_DIR, "specs/kernel-cli");
-  if (existsSync(deltas)) {
+  const changes = readdirSync(CHANGES_DIR, { withFileTypes: true }).filter(
+    (entry) => entry.isDirectory() && entry.name !== "archive",
+  );
+  for (const change of changes) {
+    const deltas = join(CHANGES_DIR, change.name, "specs/kernel-cli");
+    if (!existsSync(deltas)) continue;
     for (const group of readdirSync(deltas, { withFileTypes: true })) {
       const path = join(deltas, group.name, "spec.md");
       if (group.isDirectory() && existsSync(path)) read(readFileSync(path, "utf8"));

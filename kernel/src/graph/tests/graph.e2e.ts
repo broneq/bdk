@@ -385,7 +385,7 @@ describe("bdk done", () => {
     writePlanPart(dir, "01");
     writePlanPart(dir, "02");
     expect(done(root, "plan")).toMatchObject({ artifact: "plan", next: "plan-verify" });
-    expect(fileStore().read(join(dir, "plan/index.md"))).toContain("| 02 |");
+    expect(fileStore().read(join(dir, "plan/index.md"))).toContain("| 02   |");
   });
 
   it("exit 0: plan-verify on a verdict, stale after a plan part edit", () => {

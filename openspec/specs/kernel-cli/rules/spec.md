@@ -331,8 +331,8 @@ Import a project's `.claude/rules/*.md` into `.bdk/rules/`, one rule per top-lev
   - `<dir>` (optional). Default `.claude/rules/`.
   - `--dry-run`. Report what would be written; write nothing.
   - `--prefix <PREFIX>`. Override the prefix derived from the file name; only with a single file in `<dir>` or a file path.
-- **Behaviour:** For each `*.md` file, subdirectories included: the prefix is the file name without `.md`, uppercased, with every run of characters outside `[A-Z0-9]` turned into `-` and trimmed (`api-style.md` becomes `API-STYLE`), unless `--prefix`; each top-level bullet of the body becomes one rule with the next free number of its prefix, and a file without top-level bullets becomes one rule holding its body; `applies` is the file's `paths:` frontmatter, and a file without `paths:` gives global rules (no `applies`); every imported rule has `kind: house`, `severity: medium`, `origin: import` and `since` set to today. Skipped with a reason: the generated projection (`bdk-generated*.md`), a file whose frontmatter already carries an `id`, an empty file, a file whose name yields no valid project prefix (rerun it with `--prefix`), and a file whose `paths:` fails the rule schema. The import never judges content; the user edits or tombstones what is not a rule (`rule-pack`, What a rule is). The output lists every imported file with its rule ids, every skipped file with the reason, `dryRun`, and the projection files rewritten. After a write it regenerates the projection as `rules export --claude` does; the imported source files stay, and the user removes them since the projection now carries their rules. `/bdk:setup` runs it for the hand-written rules of a project it sets up or migrates from v2.
-- **Writes:** `.bdk/rules/`, `.claude/rules/bdk-generated.md`, `.claude/rules/bdk-generated-scoped.md`
+- **Behaviour:** For each `*.md` file, subdirectories included: the prefix is the file name without `.md`, uppercased, with every run of characters outside `[A-Z0-9]` turned into `-` and trimmed (`api-style.md` becomes `API-STYLE`), unless `--prefix`; each top-level bullet of the body becomes one rule with the next free number of its prefix, and a file without top-level bullets becomes one rule holding its body; `applies` is the file's `paths:` frontmatter, and a file without `paths:` gives global rules (no `applies`); every imported rule has `kind: house`, `severity: medium`, `origin: import` and `since` set to today. Skipped with a reason: the generated projection (`bdk-generated*.md`), a file whose frontmatter already carries an `id`, an empty file, a file whose name yields no valid project prefix (rerun it with `--prefix`), and a file whose `paths:` fails the rule schema. The import never judges content; the user edits or tombstones what is not a rule (`rule-pack`, What a rule is). The output lists every imported file with its rule ids, every skipped file with the reason, `dryRun`, and the projection files rewritten. After a write it regenerates the projection as `rules export --claude` does; the imported source files stay, and the user removes them since the projection now carries their rules. `/bdk:setup` runs it for the hand-written rules of a project it sets up or migrates from v2. Before its first write it creates `.bdk/.prettierrc` when the file is absent and never changes an existing one (`kernel-state`, Formatter guard).
+- **Writes:** `.bdk/rules/`, `.claude/rules/bdk-generated.md`, `.claude/rules/bdk-generated-scoped.md`, `.bdk/.prettierrc`
 - **Output:** `schema/cli/output/rules-import.json`
 - **Exit codes and rules:** `0, 2, 3, 5`. Specific rules: `input/not-found`, `policy/rule-format`, `policy/duplicate-rule-id`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
 - **Example:**
@@ -395,6 +395,11 @@ Import a project's `.claude/rules/*.md` into `.bdk/rules/`, one rule per top-lev
 
 - **WHEN** `.claude/rules/naming.md` has no frontmatter and two top-level bullets
 - **THEN** the import writes `NAMING-1` and `NAMING-2` without `applies`
+
+#### Scenario: formatter guard created
+
+- **WHEN** `bdk rules import <dir>` runs successfully in a project without `.bdk/.prettierrc`
+- **THEN** `.bdk/.prettierrc` exists with the guard content of `kernel-state`, Formatter guard, and running the command again leaves its bytes unchanged
 
 ### Requirement: bdk rules stats
 
@@ -551,8 +556,8 @@ Adopt a rule: the user's explicit decision, the only path by which a rule file i
   - `--role <role>`. Repeatable; absent means the default of project rules.
   - `--from <ref>`. Repeatable; a qualified entry id (`<changeId>/L-...`) or attempt finding the rule comes from.
   - `--source <text>`, `--verified <date>`. Required with `--kind knowledge` and refused without it (`policy/rule-format`).
-- **Behaviour:** Writes `.bdk/rules/<PREFIX>-<n>.md` where `<n>` is one above the highest number of the prefix, tombstones included, so a number is never reused; `origin` is the first `--from` ref, or `user` without one, and `evidence` holds every `--from` ref; `since` is today. Every `--from` ref must resolve in the index (`input/not-found`). Runs no model and proposes nothing: the audit skill (T42) calls it only after the user accepted the proposal, and the orchestrator-only guard keeps subagents from calling it (T3). Then regenerates the projection as `rules export --claude` does. Works without an active Change, because the audit runs in its own session. No other command or hook writes a rule file (`kernel-state`, Write map).
-- **Writes:** `.bdk/rules/`, `.claude/rules/bdk-generated.md`, `.claude/rules/bdk-generated-scoped.md`
+- **Behaviour:** Writes `.bdk/rules/<PREFIX>-<n>.md` where `<n>` is one above the highest number of the prefix, tombstones included, so a number is never reused; `origin` is the first `--from` ref, or `user` without one, and `evidence` holds every `--from` ref; `since` is today. Every `--from` ref must resolve in the index (`input/not-found`). Runs no model and proposes nothing: the audit skill (T42) calls it only after the user accepted the proposal, and the orchestrator-only guard keeps subagents from calling it (T3). Then regenerates the projection as `rules export --claude` does. Works without an active Change, because the audit runs in its own session. No other command or hook writes a rule file (`kernel-state`, Write map). Before its first write it creates `.bdk/.prettierrc` when the file is absent and never changes an existing one (`kernel-state`, Formatter guard).
+- **Writes:** `.bdk/rules/`, `.claude/rules/bdk-generated.md`, `.claude/rules/bdk-generated-scoped.md`, `.bdk/.prettierrc`
 - **Output:** `schema/cli/output/rules-accept.json`
 - **Exit codes and rules:** `0, 2, 3, 4, 5`. Specific rules: `input/not-found`, `policy/rule-format`, `policy/duplicate-rule-id`, `state/corrupted-index`; plus the common rules of every command (`kernel-cli`, Exit codes and the error object).
 - **Example:**
@@ -609,3 +614,8 @@ Adopt a rule: the user's explicit decision, the only path by which a rule file i
 
 - **WHEN** a subagent runs `bdk rules accept ...` through Bash
 - **THEN** the `pre-tool` hook denies the call and no rule file is written
+
+#### Scenario: formatter guard created
+
+- **WHEN** `bdk rules accept "Use the shared serializer" --prefix API --kind house --severity medium` runs successfully in a project without `.bdk/.prettierrc`
+- **THEN** `.bdk/.prettierrc` exists with the guard content of `kernel-state`, Formatter guard, and running the command again leaves its bytes unchanged

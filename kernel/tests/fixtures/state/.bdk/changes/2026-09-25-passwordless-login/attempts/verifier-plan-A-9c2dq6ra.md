@@ -11,4 +11,5 @@ author: Jan Kowalski <jan@example.com>
 closed-at: 2026-09-25T10:31:07.000Z
 outcome: ok
 ---
+
 One blocker, resolved by L-f5d2k8ob.

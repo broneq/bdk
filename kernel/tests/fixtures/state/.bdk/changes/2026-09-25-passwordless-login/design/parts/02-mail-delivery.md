@@ -5,4 +5,5 @@ title: Mail delivery
 depends-on:
   - "01"
 ---
+
 Sends the link through the existing mailer.

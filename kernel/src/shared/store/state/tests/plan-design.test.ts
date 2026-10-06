@@ -115,10 +115,10 @@ describe("generatePlanIndex", () => {
     const text = generatePlanIndex([part("01", [], "Token store"), part("02", ["01"], "A | B")]);
     expect(splitFrontmatter(text).body).toBe(
       [
-        "| Part | Title | Depends on | Wave |",
-        "| ---- | ----- | ---------- | ---- |",
-        "| 01 | Token store | - | 1 |",
-        "| 02 | A \\| B | 01 | 2 |",
+        "| Part | Title       | Depends on | Wave |",
+        "| ---- | ----------- | ---------- | ---- |",
+        "| 01   | Token store | -          | 1    |",
+        "| 02   | A \\| B      | 01         | 2    |",
         "",
       ].join("\n"),
     );
@@ -165,10 +165,10 @@ describe("generateDesignIndex", () => {
     expect(issues(designIndexKind.schema, data)).toStrictEqual([]);
     expect(body).toBe(
       [
-        "| Part | Title | Depends on |",
-        "| ---- | ----- | ---------- |",
-        "| 01 | Auth service | - |",
-        "| 02 | Mail | 01 |",
+        "| Part | Title        | Depends on |",
+        "| ---- | ------------ | ---------- |",
+        "| 01   | Auth service | -          |",
+        "| 02   | Mail         | 01         |",
         "",
       ].join("\n"),
     );

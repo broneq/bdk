@@ -15,6 +15,7 @@ severity: low
 level: nice-to-have
 disposition: defer
 ---
+
 Triaged as nice-to-have at 2026-09-25T11:50:00.000Z
 
 Decided defer at 2026-09-25T11:52:00.000Z

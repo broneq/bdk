@@ -13,11 +13,15 @@ template-hash: sha256:ed6c03db03a785e2eb2a9935d4737aa48579b40ebb932e3b77be0adf59
 report: .bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-A-7f3kx2p9.md
 rules: [BDK-CQ-1, BDK-TS-2]
 ---
+
 ## Intent
+
 Users log in with a one-time link sent by email instead of a password.
 
 ## Task 02-3
+
 Verify the link.
 
 ## Accepted decisions
+
 - L-m2x9v7qa Magic links expire after 15 minutes and are single use

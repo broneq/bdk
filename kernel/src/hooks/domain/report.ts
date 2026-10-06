@@ -23,6 +23,8 @@ interface ProjectFindings {
   readonly errors: readonly { readonly why: string; readonly instead: readonly string[] }[];
   /** `<path>: <message>` of each config check warning shown. */
   readonly warnings: readonly string[];
+  /** The guard text to restore when `.bdk/.prettierrc` is not the formatter guard; absent when it is. */
+  readonly formatterGuard?: string;
   /** The role reading the most rules, when it reads more than `rules.warn-above`. */
   readonly rules?: { readonly role: string; readonly rules: number; readonly limit: number };
 }

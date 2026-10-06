@@ -12,6 +12,20 @@ When a run went wrong and no message explains why, analyze the session: see [Dia
 
 **Fix:** run `/bdk:setup` and accept the exclusions it proposes. When a formatter already rewrote `.bdk/` files and you have not committed them, restore them with `git restore .bdk/`; for a living spec already committed, `bdk doctor` prints the restore command.
 
+## Prettier rewrites files under `.bdk/`
+
+**Symptom:** every session starts with `[BDK] WARNING: .bdk/.prettierrc is missing or is not the BDK formatter guard`, or a commit hook running Prettier changes files under `.bdk/`.
+
+**Cause:** `.bdk/.prettierrc` is the formatter guard. Prettier reads the configuration file nearest to each file it formats, and this one tells it to skip every file under `.bdk/`, whatever options your project sets and however Prettier is run (the whole tree, lint-staged with explicit paths, or a subdirectory). A `.prettierignore` inside `.bdk/` would not work, because Prettier reads only the one in its working directory. BDK writes the guard when a command first writes to `.bdk/`, and never changes a file that is already there.
+
+**Fix:** write the guard and commit it:
+
+```json
+{ "requirePragma": true, "overrides": [{ "files": "*", "options": { "parser": "yaml" } }] }
+```
+
+The next `bdk change new`, `bdk config set`, `bdk rules accept` or `bdk rules import` writes it too, if the file is absent. Restore files Prettier already rewrote as described in the previous section.
+
 ## BDK files ignored by git
 
 **Symptom (`bdk doctor`):**

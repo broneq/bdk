@@ -13,8 +13,11 @@ template-hash: sha256:ed6c03db03a785e2eb2a9935d4737aa48579b40ebb932e3b77be0adf59
 report: .bdk/changes/2026-09-25-passwordless-login/reports/02-3-implementer-A-4m8rt2wx.md
 rules: [BDK-CQ-1, BDK-TS-2]
 ---
+
 ## Intent
+
 Users log in with a one-time link sent by email instead of a password.
 
 ## Findings in scope
+
 - L-0p4dk7ws verifyLink accepts an expired token when the clock skew exceeds 60 s

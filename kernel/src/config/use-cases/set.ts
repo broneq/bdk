@@ -16,7 +16,7 @@ import type { ConfigModule, ConfigRegistry, KeyStep } from "../../shared/config/
 import type { Git } from "../../shared/git/index.ts";
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
-import { ensureIgnored } from "../../shared/store/index.ts";
+import { ensureFormatterGuard, ensureIgnored } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import type { FileLayerName, SetReport } from "../domain/report.ts";
 import { displayPath, isRefusal, resolve } from "./input.ts";
@@ -81,6 +81,7 @@ export async function setConfig(
   const resolved = resolve(input, { store: overlay(input.store, file.path, next) });
   if (isRefusal(resolved)) return resolved;
   await ensureIgnored(input.store, input.git, input.projectRoot);
+  ensureFormatterGuard(input.store, input.projectRoot);
   input.store.write(file.path, next);
   writeSnapshot(input.store, input.projectRoot, resolved);
   return {

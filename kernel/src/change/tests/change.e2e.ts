@@ -3,7 +3,7 @@
 // new`, `status`, `list`, `resume`, `park`, `checkpoint` and `takeover`, every
 // output validated against its schema, and the acceptance cases that concern
 // Changes.
-import { chmodSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -17,7 +17,7 @@ import {
   refused,
   repository,
 } from "../../../tests/support/repo.ts";
-import { fileStore, writeDocument } from "../../shared/store/index.ts";
+import { fileStore, FORMATTER_GUARD, writeDocument } from "../../shared/store/index.ts";
 
 const INTENT = "Users log in with a one-time link";
 
@@ -110,6 +110,27 @@ describe("bdk change new", () => {
     expect(bdk(["change", "status"], root).stdout).toMatch(
       /^overridden by global or local: .*policy\.escalation\.enabled/m,
     );
+  });
+
+  it("acceptance: writes the formatter guard, untracked and not ignored, once", () => {
+    const { root } = opened();
+    expect(read(root, ".bdk/.prettierrc")).toBe(FORMATTER_GUARD);
+    expect(git(root, "status", "--porcelain", "--untracked-files=all", ".bdk/.prettierrc")).toBe(
+      "?? .bdk/.prettierrc\n",
+    );
+    git(root, "checkout", "--quiet", "-b", "feat/other");
+    answered(bdk(["change", "new", "Add dark mode", "--json"], root), "output/change-new.json");
+    expect(read(root, ".bdk/.prettierrc")).toBe(FORMATTER_GUARD);
+  });
+
+  it("a refused Change writes no formatter guard", () => {
+    const root = repository();
+    refused(
+      bdk(["change", "new", "x", "--base", "main", "--json"], root),
+      3,
+      "input/invalid-argument",
+    );
+    expect(existsSync(join(root, ".bdk/.prettierrc"))).toBe(false);
   });
 
   it("exit 2 policy/change-exists: the branch already has an active Change", () => {
@@ -495,7 +516,7 @@ describe("bdk change takeover", () => {
     );
     expect(report).toStrictEqual({ change: id, closedTickets: ["A-open0001"], rebuilt: true });
     expect(read(root, `.bdk/changes/${id}/attempts/verifier-design-A-open0001.md`)).toMatch(
-      /outcome: not-run[\s\S]*---\ntaken over\n$/,
+      /outcome: not-run[\s\S]*---\n\ntaken over\n$/,
     );
     expect(bdk(["change", "status", "--json"], root).json).toMatchObject({ openTickets: [] });
   });

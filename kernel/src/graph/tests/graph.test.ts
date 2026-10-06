@@ -705,7 +705,9 @@ describe("bdk done", () => {
         .filter((entry) => String(entry.to).startsWith("plan-part"))
         .map((entry) => entry.to),
     ).toStrictEqual(["plan-part:01", "plan-part:02"]);
-    expect(h.store.read(`${DIR}/plan/index.md`)).toContain("| 02 | Part 02 | 01 | 2 |");
+    expect(h.store.read(`${DIR}/plan/index.md`)).toContain(
+      "| 02   | Part 02 | 01         | 2    |",
+    );
     const again = doneOutput.parse((await h.run(["done", "plan", "--json"], T3)).json);
     expect(again.inputHash).toBe(report.inputHash);
   });
@@ -738,7 +740,7 @@ describe("bdk done", () => {
     await h.run(["done", "design-parts"], T0);
     const report = doneOutput.parse((await h.run(["done", "design-index", "--json"], T1)).json);
     expect(report.next).toBe("architecture");
-    expect(h.store.read(`${DIR}/design/index.md`)).toContain("| 02 | Part 02 | - |");
+    expect(h.store.read(`${DIR}/design/index.md`)).toContain("| 02   | Part 02 | -          |");
   });
 
   it("raises a split small design to large", async () => {
