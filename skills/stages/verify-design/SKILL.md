@@ -10,7 +10,7 @@ If no "BDK context: verify-design" heading appears above, run `bdk ctx skill ver
 
 # Verify design
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
 The design of the active Change is checked by a `design-verifier` that knows only its dispatch package, never this conversation, so it reads the design the way the planner will. This skill runs one verifier round in the main thread: it opens the ticket, starts the role, closes the ticket and marks `design-verify` done when the verdict passes. Add `--json` to every command whose output you act on.
 

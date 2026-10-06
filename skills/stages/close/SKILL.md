@@ -11,7 +11,7 @@ If no "BDK context: close" heading appears above, run `bdk ctx skill close` firs
 
 # Close
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
 Closing ends a Change: the kernel merges its spec deltas into the living specs, routes its lessons, archives it and commits the archive. The kernel does all of it in one command; this skill checks that the close can go through, keeps the rule files current and hands the user the PR summary. Add `--json` to every command whose output you act on.
 

@@ -2,6 +2,22 @@
 
 ## MODIFIED Requirements
 
+### Requirement: Keys of prompt locations
+
+The settings SHALL declare the prompt location keys below, owned by T12 and consumed by `shared/config` itself (requirement "Prompt values").
+
+`prompts.dir` is a path read from each layer's own file and never inherited; without it a layer uses its default directory: global `<global dir>/prompts/`, project `.bdk/prompts/`, local `.bdk/prompts.local/`. The v2 keys `quality.<category>` and `language-rules.<language>` do not map to `prompts.files`: rules are not prompt values (T31), and requirement "Removed v2 keys" names their replacements.
+
+| Key                   | Type                                        | Default | Owner | Consumer        | v2 origin |
+| --------------------- | ------------------------------------------- | ------- | ----- | --------------- | --------- |
+| `prompts.dir`         | non-empty string                            | none    | T12   | `shared/config` | none      |
+| `prompts.files.<key>` | non-empty string or `{path, mode, applies}` | none    | T12   | `shared/config` | none      |
+
+#### Scenario: prompts.dir not inherited
+
+- **WHEN** `.bdk/settings.yaml` sets `prompts.dir: docs/bdk-prompts` and `.bdk/settings.local.yaml` sets no `prompts.dir`
+- **THEN** the local layer reads `.bdk/prompts.local/`, not `docs/bdk-prompts`
+
 ### Requirement: Keys of evidence policy
 
 The settings SHALL declare the evidence policy keys below, registered as one module `policy.evidence` with consumer `evidence` (T23-D16, D46, D48).

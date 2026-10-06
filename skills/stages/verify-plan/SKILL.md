@@ -10,7 +10,7 @@ If no "BDK context: verify-plan" heading appears above, run `bdk ctx skill verif
 
 # Verify plan
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
 The plan of the active Change is checked by one `verifier` that knows only its dispatch package, never this conversation, so it reads every plan part, with the design and the spec deltas, the way the workers will. This skill runs one verifier round in the main thread: it opens the ticket, starts the role, closes the ticket and marks `plan-verify` done when the verdict passes. Add `--json` to every command whose output you act on.
 

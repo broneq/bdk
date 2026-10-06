@@ -12,7 +12,7 @@ If no "BDK context: cr" heading appears above, run `bdk ctx skill cr` first and 
 
 # Code review
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
 You are `main`, the orchestrator of the review of one Change. The kernel knows the range, the groups and the budget, and records every result; role agents review, run the gate and fix. Add `--json` to every command whose output you act on. You never edit a file, never write one of your own, and run no test or linter yourself outside "Inline".
 
