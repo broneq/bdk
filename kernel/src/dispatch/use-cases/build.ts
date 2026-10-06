@@ -65,8 +65,12 @@ import {
 import type { SectionKind } from "../domain/template.ts";
 import type { DispatchDeps } from "./deps.ts";
 
-/** `kernel-state`, Dispatch package. */
-const PACKAGE_LIMIT = 12_288;
+/**
+ * `kernel-state`, Dispatch package: 160 KiB is about 40-50k tokens, a fraction of the context
+ * of the agent that reads the package whole. A review group package grows with the files of its
+ * group, the integration group's with all of the range.
+ */
+const PACKAGE_LIMIT = 163_840;
 
 const PART_ID = /^\d{2}$/;
 
@@ -308,7 +312,12 @@ export function buildPackage(
       return refuse(
         "policy/package-too-large",
         `the package is ${String(size)} bytes, above ${String(PACKAGE_LIMIT)}; the largest section is ${largest.name} with ${String(bytes(largest.text))} bytes`,
-        ["split the task or the part so its text and entries fit", "bdk part split <nn>"],
+        group === undefined
+          ? ["split the task or the part so its text and entries fit", "bdk part split <nn>"]
+          : [
+              "lower review.group.max-files so the group holds fewer files",
+              "pass fewer --file paths to the group",
+            ],
       );
     }
     const dir = join(change.dir, "dispatch");

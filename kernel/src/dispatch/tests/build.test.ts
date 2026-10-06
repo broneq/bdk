@@ -353,7 +353,7 @@ describe("dispatch build", () => {
     expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([]);
   });
 
-  it("refuses a package above 12 288 bytes naming its size and largest section [S-DISPATCH]", async () => {
+  it("refuses a package above 160 KiB naming its size and largest section [S-DISPATCH]", async () => {
     const h = dispatchHarness();
     writeEntry(h.store, {
       type: "decision",
@@ -364,13 +364,13 @@ describe("dispatch build", () => {
     const entry = h.store.list(`${DIR}/log`).find((name) => name.includes("decision")) ?? "";
     h.store.write(
       `${DIR}/log/${entry}`,
-      `${h.store.read(`${DIR}/log/${entry}`) ?? ""}${"x".repeat(12_000)}\n`,
+      `${h.store.read(`${DIR}/log/${entry}`) ?? ""}${"x".repeat(170_000)}\n`,
     );
     const result = await build(h);
     expect(result.code).toBe(2);
     expect(refusal(result)).toMatchObject({ rule: "policy/package-too-large" });
     expect(refusal(result).why).toMatch(
-      /^the package is \d+ bytes, above 12288; the largest section is entries/,
+      /^the package is \d+ bytes, above 163840; the largest section is entries/,
     );
     expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([]);
   });

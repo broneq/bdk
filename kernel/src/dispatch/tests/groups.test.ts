@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { writeEntry } from "../../graph/tests/support.ts";
 import { CHANGE, ROOT } from "../../log/tests/support.ts";
+import { reviewGroups } from "../../review/domain/groups.ts";
 import { readAttempts, readDocument } from "../../shared/store/index.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
 import { build, dispatchHarness, DIR, ticket } from "./support.ts";
@@ -48,11 +49,57 @@ function section(text: string, name: string): string {
   return text.slice(start, end === -1 ? undefined : end);
 }
 
+/** Changed files of a large range: 14 modules of 15 files, with paths of a real project's length. */
+function largeRange(): string[] {
+  return Array.from({ length: 14 }, (_, m) =>
+    Array.from(
+      { length: 15 },
+      (_, f) => `packages/feature-${String(m)}/src/components/widgets/handler-${String(f)}.ts`,
+    ),
+  ).flat();
+}
+
 function projectRule(id: string, applies: string): string {
   return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\napplies: [${applies}]\n---\n\nText of ${id}.\n`;
 }
 
 describe("dispatch build --group", () => {
+  it("builds the package of every group `bdk review plan` makes at the default review.group.max-files", async () => {
+    const h = round();
+    const changed = largeRange();
+    const groups = reviewGroups({
+      changed,
+      parts: [],
+      maxFiles: 30,
+      moduleOf: (path) => path.split("/").slice(0, 2).join("/"),
+    });
+    expect(groups.length).toBeGreaterThan(2);
+    for (const group of groups) {
+      const role = group.kind === "integration" ? "integration-reviewer" : "reviewer";
+      const files = group.files.flatMap((file) => ["--file", file]);
+      const result = await grouped(h, role, group.id, "--range", RANGE, ...files);
+      expect(result.code, `${group.id}: ${result.stdout}`).toBe(0);
+    }
+  });
+
+  it("refuses a group package above 160 KiB and names review.group.max-files", async () => {
+    const h = round();
+    const files = Array.from({ length: 4000 }, (_, i) => `src/area-${String(i)}/file.ts`);
+    const result = await grouped(
+      h,
+      "reviewer",
+      "p01",
+      "--range",
+      RANGE,
+      ...files.flatMap((file) => ["--file", file]),
+    );
+    expect(result.code, result.stdout).toBe(2);
+    expect(rule(result)).toBe("policy/package-too-large");
+    expect((result.json as { why: string }).why).toMatch(/above 163840; the largest section is /);
+    expect(JSON.stringify(result.json)).toContain("review.group.max-files");
+    expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([]);
+  });
+
   it("writes the group's package with group, files and report, and leaves the active package", async () => {
     const h = round();
     const { report, data } = await groupBuilt(
