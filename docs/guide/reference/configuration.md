@@ -180,11 +180,11 @@ See [Worktree parts](../concepts/worktree-parts.md).
 
 ## Review
 
-| Key                      | Default                                                                       | What it sets                                                                                                                                                                  |
-| ------------------------ | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `review.group.max-files` | `30`                                                                          | A reviewer group above this many files is split by module; a plan part stays whole up to it.                                                                                  |
-| `review.risks`           | `auth`, `migration`, `secrets`, `public-api`, `dependencies`, `configuration` | The risky areas a review calls out. Each is `{id, instruction, paths, enabled}`, merged by `id`.                                                                              |
-| `tracker`                | unset                                                                         | Where a finding goes when you choose "track" in the review: `{kind: github}`, or `{kind: instruction, instruction: "<how to file it>"}`. Unset, the review offers no "track". |
+| Key                      | Default                                                                       | What it sets                                                                                                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `review.group.max-files` | `30`                                                                          | The target size of a reviewer group. Small modules are packed up to it; a module or plan part stays whole up to a third above it, and only a larger one is split, by directory. |
+| `review.risks`           | `auth`, `migration`, `secrets`, `public-api`, `dependencies`, `configuration` | The risky areas a review calls out. Each is `{id, instruction, paths, enabled}`, merged by `id`.                                                                                |
+| `tracker`                | unset                                                                         | Where a finding goes when you choose "track" in the review: `{kind: github}`, or `{kind: instruction, instruction: "<how to file it>"}`. Unset, the review offers no "track".   |
 
 ```yaml
 review:

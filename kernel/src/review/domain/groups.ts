@@ -23,7 +23,7 @@ export interface GroupInput {
   readonly changed: readonly string[];
   /** The plan parts in plan order; none groups by module. */
   readonly parts: readonly PartFiles[];
-  /** `review.group.max-files`: a group above it is split. */
+  /** `review.group.max-files`: the target size of a group; a module or part is kept whole up to a third above it. */
   readonly maxFiles: number;
   /** The module of a path, as `bdk measure` counts it. */
   readonly moduleOf: (path: string) => string;
@@ -60,40 +60,85 @@ function byPart(changed: readonly string[], parts: readonly PartFiles[]): Review
     : [...groups, { id: UNPLANNED, kind: "unplanned", files: unplanned }];
 }
 
-/** One group per module, in module order, numbered from 1. */
+/** Modules packed into groups of about `max-files`, numbered from 1. */
 function byModule(changed: readonly string[], input: GroupInput): ReviewGroup[] {
-  return [...modules(changed, input.moduleOf).values()].map((files, at) => ({
+  return pack(changed, input).map((files, at) => ({
     id: `m${String(at + 1)}`,
     kind: "module",
     files,
   }));
 }
 
-/**
- * A group above the limit: modules in order fill a chunk until the next would
- * pass it, a module above the limit alone is cut into runs of sorted paths.
- */
+/** A group above the tolerance is packed again; a smaller one stays whole. */
 function split(group: ReviewGroup, input: GroupInput): ReviewGroup[] {
-  if (group.files.length <= input.maxFiles) return [group];
+  if (group.files.length <= tolerance(input.maxFiles)) return [group];
+  return pack(group.files, input).map((files, at) => ({
+    ...group,
+    id: `${group.id}-${String(at + 1)}`,
+    files,
+  }));
+}
+
+/** A module or part up to a third above `max-files` is kept whole rather than cut. */
+function tolerance(maxFiles: number): number {
+  return Math.floor((maxFiles * 4) / 3);
+}
+
+/**
+ * Whole modules, in path order, fill a chunk until the next would pass
+ * `max-files`. A module above the tolerance is cut by its next directory
+ * level, and only files with no directory left below them are cut into runs.
+ */
+function pack(paths: readonly string[], input: GroupInput): string[][] {
+  return packUnits(
+    [...modules(paths, input.moduleOf)],
+    input,
+    (module) => module.split("/").length,
+  );
+}
+
+function packUnits(
+  units: readonly (readonly [string, string[]])[],
+  input: GroupInput,
+  depthOf: (key: string) => number,
+): string[][] {
+  const limit = tolerance(input.maxFiles);
   const chunks: string[][] = [];
   let current: string[] = [];
   const flush = () => {
     if (current.length > 0) chunks.push(current);
     current = [];
   };
-  for (const files of modules(group.files, input.moduleOf).values()) {
-    if (files.length > input.maxFiles) {
+  for (const [key, files] of units) {
+    if (files.length > limit) {
       flush();
-      for (let at = 0; at < files.length; at += input.maxFiles) {
-        chunks.push(files.slice(at, at + input.maxFiles));
-      }
+      chunks.push(...cut(files, depthOf(key), input));
     } else {
       if (current.length + files.length > input.maxFiles) flush();
       current = [...current, ...files];
     }
   }
   flush();
-  return chunks.map((files, at) => ({ ...group, id: `${group.id}-${String(at + 1)}`, files }));
+  return chunks;
+}
+
+/** An oversized module by the directory below `depth`; its own files in even runs. */
+function cut(files: string[], depth: number, input: GroupInput): string[][] {
+  const below = new Map<string, string[]>();
+  for (const path of files) {
+    const segments = path.split("/");
+    const key = segments.length > depth + 1 ? (segments[depth] ?? "") : ".";
+    below.set(key, [...(below.get(key) ?? []), path]);
+  }
+  if (below.size === 1 && below.has(".")) return runs(files, input.maxFiles);
+  return packUnits([...below], input, () => depth + 1);
+}
+
+/** Even runs of at most `size` files, so no run is a stub. */
+function runs(files: readonly string[], size: number): string[][] {
+  const count = Math.ceil(files.length / size);
+  const each = Math.ceil(files.length / count);
+  return Array.from({ length: count }, (_, at) => files.slice(at * each, (at + 1) * each));
 }
 
 /** Sorted paths by module, modules in sorted order. */

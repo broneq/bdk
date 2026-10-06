@@ -113,8 +113,7 @@ describe("a review Change", () => {
         group.files,
       ]),
     ).toStrictEqual([
-      ["m1", "module", ["src/auth/login.ts"]],
-      ["m2", "module", ["web/forms/form.ts"]],
+      ["m1", "module", ["src/auth/login.ts", "web/forms/form.ts"]],
       ["integration", "integration", ["src/auth/login.ts", "web/forms/form.ts"]],
     ]);
   });

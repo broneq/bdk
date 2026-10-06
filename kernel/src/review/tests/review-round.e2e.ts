@@ -199,9 +199,8 @@ describe("a cr round on a review Change", { timeout: 120_000 }, () => {
       ).id;
     const blocker = add("login skips the password check", "src/auth/login.ts", "m1");
     const repeat = add("password check missing in login", "src/auth/login.ts", "integration");
-    const minor = add("form label wording", "web/forms/form.ts", "m2");
-    ingest(review, `${first}@m1`, [blocker]);
-    ingest(review, `${first}@m2`, [minor]);
+    const minor = add("form label wording", "web/forms/form.ts", "m1");
+    ingest(review, `${first}@m1`, [blocker, minor]);
     ingest(review, `${first}@integration`, [repeat]);
     gate(review, first);
 
