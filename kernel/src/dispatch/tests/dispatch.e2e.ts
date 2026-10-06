@@ -135,7 +135,7 @@ describe("bdk dispatch build", () => {
     expect(built(change, "01-1", "implementer", ticket).templateHash).toBe(first.templateHash);
   });
 
-  it("exit 2 policy/package-too-large: a 13 KB package names its size and largest section; nothing written [AC-8]", () => {
+  it("exit 2 policy/package-too-large: a package above 160 KiB names its size and largest section; nothing written [AC-8]", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
     bdk(
@@ -153,7 +153,7 @@ describe("bdk dispatch build", () => {
         "--json",
       ],
       change.root,
-      { stdin: "A long rationale line.\n".repeat(560) },
+      { stdin: "A long rationale line.\n".repeat(8000) },
     );
     const result = refused(
       build(change, "01-1", "implementer", ticket),
@@ -161,7 +161,7 @@ describe("bdk dispatch build", () => {
       "policy/package-too-large",
     );
     expect(result.why).toMatch(
-      /^the package is 1[3-9]\d{3} bytes, above 12288; the largest section is entries/,
+      /^the package is \d{6} bytes, above 163840; the largest section is entries/,
     );
     expect(packages(change)).toStrictEqual([]);
   });
