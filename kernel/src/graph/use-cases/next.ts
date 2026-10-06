@@ -51,7 +51,7 @@ export function nextStep(
           ...base,
           artifact: nodeView(next),
           ...(command === undefined ? {} : { command }),
-          instruction: instructionOf(deps, change, read, next),
+          instruction: await instructionOf(deps, change, read, next),
           ...(next.kind === "execute-part"
             ? { wave: await waveOf(deps, change, read, index) }
             : {}),

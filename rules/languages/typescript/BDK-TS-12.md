@@ -2,6 +2,15 @@
 schema: 1
 id: BDK-TS-12
 kind: house
+paths:
+  - "**/*.ts"
+  - "**/*.mts"
+  - "**/*.cts"
+  - "**/*.tsx"
+stages:
+  - plan
+  - execute
+  - review
 severity: medium
 origin: bdk
 since: 2026-09-30

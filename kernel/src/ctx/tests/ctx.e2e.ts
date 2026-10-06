@@ -1,15 +1,16 @@
 // `kernel-cli/ctx` through the built bundle: every exit code and rule of
 // `ctx skill`, `ctx startup` and `ctx craft`, and the acceptance scenarios of T13 on the
-// plugin's own rules, fragments and STARTUP file. PATH holds only what a case
-// installs, so the machine's own lavish-axi never leaks into a case.
+// plugin's own rules, fragments and STARTUP file. PATH holds git and what a
+// case installs, so the machine's own lavish-axi never leaks into a case.
 import { spawnSync } from "node:child_process";
 import { chmodSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createFixture } from "../../../tests/support/fixture.ts";
 import type { Fixture } from "../../../tests/support/fixture.ts";
-import { REPO_ROOT, runBdk } from "../../../tests/support/run.ts";
+import { gitDir, REPO_ROOT, runBdk } from "../../../tests/support/run.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 import { validatorFor } from "../../../tests/support/schemas.ts";
 
 const validCtx = validatorFor("output/ctx.json");
@@ -27,8 +28,14 @@ afterEach(() => {
   for (const created of fixtures.splice(0)) created.remove();
 });
 
+const GIT_DIR = gitDir();
+
 function bdk(args: readonly string[], root: string, path = "") {
-  const env = { XDG_CONFIG_HOME: join(root, "xdg"), HOME: root, PATH: path };
+  const env = {
+    XDG_CONFIG_HOME: join(root, "xdg"),
+    HOME: root,
+    PATH: path === "" ? GIT_DIR : `${path}${delimiter}${GIT_DIR}`,
+  };
   return runBdk(args, root, { env });
 }
 
@@ -39,23 +46,28 @@ function stop(result: ReturnType<typeof bdk>, fragment: string) {
   expect(result.stdout).toMatch(/\nInstead: .+\n$/);
 }
 
+/** The lines of the `### Rules` section. */
+function rulesSection(stdout: string): string[] {
+  const section = stdout.split("### Rules\n\n")[1]?.split("\n### ")[0] ?? "";
+  return section.split("\n").filter((line) => line !== "");
+}
+
 describe("bdk ctx skill", () => {
   it("prints the heading and the sections of the manifest entry", () => {
-    const result = bdk(["ctx", "skill", "design"], fixture().root);
+    const result = bdk(["ctx", "skill", "design"], fixture({ "src/app.ts": "" }).root);
     expect(result.code).toBe(0);
-    expect(result.stdout).toMatch(/^## BDK context: design\n\n### Rules: architecture\n/);
-    expect(result.stdout).toContain("\n### Rules: engineering-judgment\n");
+    expect(result.stdout).toMatch(/^## BDK context: design\n\n### Rules\n\n- \[BDK-ARCH-1\] /);
+    expect(result.stdout).toContain("\n- [BDK-EJ-1] ");
     expect(result.stdout).toContain("\n### Asking the user\n\n**Decision tier: ask-user**");
   });
 
   it("answers --json with an object that validates against ctx.json", () => {
-    const result = bdk(["ctx", "skill", "design", "--json"], fixture().root);
+    const result = bdk(["ctx", "skill", "design", "--json"], fixture({ "src/app.ts": "" }).root);
     expect(result.code).toBe(0);
     expect(validCtx(result.json), JSON.stringify(validCtx.errors)).toBe(true);
     expect(result.json).toMatchObject({
       parts: [
-        { kind: "rules", source: "rules/architecture" },
-        { kind: "rules", source: "rules/engineering-judgment" },
+        { kind: "rules", source: "stage:design" },
         { kind: "verifier-policy", source: "policy.verifier" },
         { kind: "fragment", source: "fragments/decision/ask-user" },
       ],
@@ -120,6 +132,49 @@ describe("bdk ctx skill", () => {
     chmodSync(join(root, "bin/lavish-axi"), 0o755);
     const result = bdk(["ctx", "skill", "design"], root, join(root, "bin"));
     expect(result.stdout).toContain("**Decision tier: lavish**");
+  });
+
+  it("language rules: the pack of a language in languages, nothing for one without a pack", () => {
+    const root = fixture({
+      ".bdk/settings.yaml": "languages: [typescript, cobol]\n",
+      "src/app.ts": "export {};\n",
+    }).root;
+    const rules = rulesSection(bdk(["ctx", "skill", "plan"], root).stdout);
+    expect(rules).toContainEqual(expect.stringMatching(/^- \[BDK-TS-\d+\] /));
+    expect(rules.join("\n")).not.toContain("cobol");
+  });
+
+  it("rules carry their ids, and a disabled one is left out", () => {
+    const root = fixture({ ".bdk/settings.yaml": "rules:\n  disabled: [BDK-CQ-2]\n" }).root;
+    const rules = rulesSection(bdk(["ctx", "skill", "plan"], root).stdout);
+    expect(rules).toContainEqual(expect.stringMatching(/^- \[BDK-CQ-1\] \S/));
+    expect(rules).not.toContainEqual(expect.stringContaining("[BDK-CQ-2]"));
+  });
+
+  it("a project rule extends the stage it names, and stays out of another", () => {
+    const root = fixture({
+      ".bdk/rules/API-1.md": ruleFile("API-1", {
+        paths: ["src/api/**"],
+        stages: ["plan", "review"],
+        text: "Handlers stay thin.",
+      }),
+      "src/api/login.ts": "export {};\n",
+    }).root;
+    const plan = rulesSection(bdk(["ctx", "skill", "plan"], root).stdout);
+    expect(plan).toContain("- [API-1] Handlers stay thin. (paths: src/api/**)");
+    const design = rulesSection(bdk(["ctx", "skill", "design"], root).stdout);
+    expect(design.join("\n")).not.toMatch(/API-1|BDK-PL-/);
+    expect(design).toContainEqual(expect.stringMatching(/^- \[BDK-ARCH-1\] /));
+  });
+
+  it("a language pack without matching files stays out", () => {
+    const root = fixture({
+      ".bdk/settings.yaml": "languages: [react]\n",
+      "src/app.ts": "export {};\n",
+    }).root;
+    const rules = rulesSection(bdk(["ctx", "skill", "plan"], root).stdout);
+    expect(rules.length).toBeGreaterThan(0);
+    expect(rules.join("\n")).not.toContain("BDK-REACT");
   });
 
   it("prints the project's tool entries with their when text", () => {
@@ -218,8 +273,8 @@ describe("context line of a skill in a shell", () => {
     );
   });
 
-  it("prints the skill's BDK context with bdk and node on PATH", () => {
-    const result = run(`${launcherDir}:${dirname(process.execPath)}`);
+  it("prints the skill's BDK context with bdk, node and git on PATH", () => {
+    const result = run(`${launcherDir}:${dirname(process.execPath)}:${GIT_DIR}`);
     expect(result.status).toBe(0);
     expect(result.stdout).toMatch(/^## BDK context: design\n/);
   });

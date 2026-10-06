@@ -13,8 +13,6 @@ export const ctxOutput = z
         z.strictObject({
           kind: z.enum([
             "rules",
-            "language-rules",
-            "project-rules",
             "fragment",
             "tools",
             "concurrency",
@@ -26,7 +24,7 @@ export const ctxOutput = z
           ]),
           source: z.string().meta({
             description:
-              "The rule directory (rules/security, .bdk/rules), prompt key (fragments/decision/lavish), tools group (tools.test), settings key (execution.concurrency, policy.verifier) plugin path, or `bdk-craft/<name>` of a craft skill, that produced the part.",
+              "The stage of a rules part (stage:design, stage:plan), prompt key (fragments/decision/lavish), tools group (tools.test), settings key (execution.concurrency, policy.verifier) plugin path, or `bdk-craft/<name>` of a craft skill, that produced the part.",
           }),
         }),
       )
@@ -38,10 +36,9 @@ export const ctxOutput = z
       "The prompt context of a skill, the STARTUP instructions or a craft skill; an error of `ctx skill` is the refusal object, still with exit 0.",
     examples: [
       {
-        content: "## BDK context: design\n\n### Rules: architecture\n...",
+        content: "## BDK context: design\n\n### Rules\n...",
         parts: [
-          { kind: "rules", source: "rules/architecture" },
-          { kind: "rules", source: "rules/engineering-judgment" },
+          { kind: "rules", source: "stage:design" },
           { kind: "fragment", source: "fragments/decision/ask-user" },
         ],
       },

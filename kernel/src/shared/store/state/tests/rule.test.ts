@@ -18,12 +18,38 @@ describe("rule", () => {
     expect(issues(schema, knowledge)).toStrictEqual([]);
   });
 
-  it.each(["schema", "id", "kind", "severity", "origin", "since"])("requires %s", (key) => {
-    expect(issues(schema, without(example.rule, key))).toStrictEqual([key]);
+  it.each(["schema", "id", "kind", "paths", "stages", "severity", "origin", "since"])(
+    "requires %s",
+    (key) => {
+      expect(issues(schema, without(example.rule, key))).toStrictEqual([key]);
+    },
+  );
+
+  it("accepts a rule for every file and every stage", () => {
+    const everywhere = {
+      ...example.rule,
+      paths: ["**"],
+      stages: ["design", "plan", "execute", "review"],
+    };
+    expect(issues(schema, everywhere)).toStrictEqual([]);
   });
 
-  it("keeps applies and roles optional", () => {
-    expect(issues(schema, without(without(example.rule, "applies"), "roles"))).toStrictEqual([]);
+  it.each([
+    ["applies", ["**/*.ts"]],
+    ["roles", ["implementer"]],
+  ])("refuses the old field %s", (key, value) => {
+    expect(issues(schema, { ...example.rule, [key]: value })).toStrictEqual([key]);
+  });
+
+  it.each([
+    ["paths", []],
+    ["paths", [""]],
+    ["stages", []],
+    ["stages", ["*"]],
+    ["stages", ["close"]],
+    ["stages", ["plan", "plan"]],
+  ])("rejects %s: %j", (key, value) => {
+    expect(issues(schema, { ...example.rule, [key]: value })[0]).toMatch(new RegExp(`^${key}`));
   });
 
   it.each(["CQ-4", "BDK-SEC-2", "TQ-17", "A1-B2-10"])("accepts the id %j", (id) => {

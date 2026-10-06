@@ -8,16 +8,13 @@ import { describe, expect, it } from "vitest";
 import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
 import { dispatched, opened, started } from "../../attempt/tests/e2e-support.ts";
 import { fileStore, FORMATTER_GUARD } from "../../shared/store/index.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 
 interface Shown {
   readonly role: string;
   readonly target: string;
   readonly rules: readonly { id: string; matchedBy: string | null; text: string }[];
   readonly rulesRead: string;
-}
-
-function projectRule(id: string, extra = ""): string {
-  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
 }
 
 const HAND_WRITTEN = "- Name booleans as questions.\n";
@@ -33,10 +30,10 @@ function attemptText(dir: string, ticket: string): string {
 describe("bdk rules show --ticket", () => {
   it("exit 0: the rules the package stamped, in its order, stamped read once", () => {
     const change = started("languages: [typescript]\n");
-    fileStore().write(join(change.root, ".bdk/rules/NAMING-1.md"), projectRule("NAMING-1"));
+    fileStore().write(join(change.root, ".bdk/rules/NAMING-1.md"), ruleFile("NAMING-1"));
     fileStore().write(
       join(change.root, ".bdk/rules/UI-1.md"),
-      projectRule("UI-1", "applies: [web/**]\n"),
+      ruleFile("UI-1", { paths: ["web/**"] }),
     );
     const ticket = opened(change, "task-redispatch", "01-1");
     dispatched(change, ticket, "01-1");
@@ -51,7 +48,7 @@ describe("bdk rules show --ticket", () => {
     expect(ids).toContain("NAMING-1");
     expect(ids).not.toContain("UI-1");
     expect(first.rules.find((rule) => rule.id === "NAMING-1")).toMatchObject({
-      matchedBy: null,
+      matchedBy: "**",
       text: "Text of NAMING-1.",
     });
     expect(attemptText(change.dir, ticket)).toContain(`rules-read: ${first.rulesRead}`);
@@ -87,7 +84,7 @@ describe("bdk rules show --ticket", () => {
     const change = started();
     fileStore().write(
       join(change.root, ".bdk/rules/API-2.md"),
-      projectRule("API-2", "removed: superseded by API-5\n"),
+      ruleFile("API-2", { extra: "removed: superseded by API-5\n" }),
     );
     const shown = answered(
       bdk(["rules", "show", "API-2", "--json"], change.root),
@@ -103,8 +100,8 @@ const API = { "src/api/login.ts": "export {};\n" };
 describe("bdk rules check", () => {
   it("exit 0: the project's rules, counted", () => {
     const root = repository({
-      ".bdk/rules/API-1.md": projectRule("API-1", "applies: [src/api/**]\n"),
-      ".bdk/rules/API-2.md": projectRule("API-2", "removed: superseded by API-3\n"),
+      ".bdk/rules/API-1.md": ruleFile("API-1", { paths: ["src/api/**"] }),
+      ".bdk/rules/API-2.md": ruleFile("API-2", { extra: "removed: superseded by API-3\n" }),
     });
     const report = answered(
       bdk(["rules", "check", ".bdk/rules", "--json"], root),
@@ -118,7 +115,7 @@ describe("bdk rules check", () => {
   });
 
   it("exit 2 policy/rule-format: a project rule with the bundle prefix, a knowledge rule without verified", () => {
-    const bundled = repository({ ".bdk/rules/BDK-CQ-9.md": projectRule("BDK-CQ-9") });
+    const bundled = repository({ ".bdk/rules/BDK-CQ-9.md": ruleFile("BDK-CQ-9") });
     const why = refused(
       bdk(["rules", "check", ".bdk/rules", "--json"], bundled),
       2,
@@ -126,7 +123,7 @@ describe("bdk rules check", () => {
     ).why;
     expect(why).toContain(".bdk/rules/BDK-CQ-9.md");
     const knowledge = repository({
-      ".bdk/rules/FACT-1.md": projectRule("FACT-1", "source: RFC 9110\n").replace(
+      ".bdk/rules/FACT-1.md": ruleFile("FACT-1", { extra: "source: RFC 9110\n" }).replace(
         "kind: house",
         "kind: knowledge",
       ),
@@ -136,8 +133,8 @@ describe("bdk rules check", () => {
 
   it("exit 2 policy/duplicate-rule-id: a third file declaring an existing id names both files", () => {
     const root = repository({
-      ".bdk/rules/API-3.md": projectRule("API-3"),
-      ".bdk/rules/API-4.md": projectRule("API-3"),
+      ".bdk/rules/API-3.md": ruleFile("API-3"),
+      ".bdk/rules/API-4.md": ruleFile("API-3"),
     });
     const why = refused(
       bdk(["rules", "check", ".bdk/rules", "--json"], root),
@@ -152,9 +149,9 @@ describe("bdk rules explain", () => {
   it("exit 0: the reviewer's rules for a file, the matching glob, disabled ones apart", () => {
     const root = repository({
       ...API,
-      ".bdk/rules/API-1.md": projectRule("API-1", "applies: [src/api/**]\n"),
-      ".bdk/rules/UI-1.md": projectRule("UI-1", "applies: [web/**]\n"),
-      ".bdk/rules/NAMING-1.md": projectRule("NAMING-1"),
+      ".bdk/rules/API-1.md": ruleFile("API-1", { paths: ["src/api/**"] }),
+      ".bdk/rules/UI-1.md": ruleFile("UI-1", { paths: ["web/**"] }),
+      ".bdk/rules/NAMING-1.md": ruleFile("NAMING-1"),
       ".bdk/settings.yaml": "rules:\n  disabled: [NAMING-1]\n",
     });
     const report = answered(
@@ -171,6 +168,24 @@ describe("bdk rules explain", () => {
     expect(rules.map((rule) => rule.id)).not.toContain("UI-1");
   });
 
+  it("exit 0: a language pack needs both the switch and a matching file", () => {
+    const react = (languages: string): string[] => {
+      const root = repository({
+        "web/App.tsx": "export {};\n",
+        ".bdk/settings.yaml": `languages: [${languages}]\n`,
+      });
+      const report = answered(
+        bdk(["rules", "explain", "web/App.tsx", "--role", "reviewer", "--json"], root),
+        "output/rules-explain.json",
+      );
+      return (report.rules as { id: string }[])
+        .map((rule) => rule.id)
+        .filter((id) => id.startsWith("BDK-REACT-"));
+    };
+    expect(react("typescript")).toStrictEqual([]);
+    expect(react("typescript, react").length).toBeGreaterThan(0);
+  });
+
   it("exit 3 input/not-found: a file outside the repository", () => {
     refused(
       bdk(["rules", "explain", "../elsewhere.ts", "--json"], repository()),
@@ -183,10 +198,10 @@ describe("bdk rules explain", () => {
 describe("bdk rules prune", () => {
   it("exit 0: a glob matching nothing; uncited only once the project has --uncited Changes", () => {
     const change = started();
-    fileStore().write(join(change.root, ".bdk/rules/API-1.md"), projectRule("API-1"));
+    fileStore().write(join(change.root, ".bdk/rules/API-1.md"), ruleFile("API-1"));
     fileStore().write(
       join(change.root, ".bdk/rules/API-3.md"),
-      projectRule("API-3", "applies: [legacy/**]\n"),
+      ruleFile("API-3", { paths: ["legacy/**"] }),
     );
     const silent = answered(
       bdk(["rules", "prune", "--json"], change.root),
@@ -195,7 +210,7 @@ describe("bdk rules prune", () => {
     // Bundle rules are reported too: BDK-CQ-9 matches no lockfile in this project.
     const project = (silent.items as { id: string }[]).filter((item) => item.id.startsWith("API-"));
     expect(project).toStrictEqual([
-      { id: "API-3", reason: "no-match", detail: 'applies: ["legacy/**"] matches 0 files' },
+      { id: "API-3", reason: "no-match", detail: 'paths: ["legacy/**"] matches 0 files' },
     ]);
     expect(silent.items).toContainEqual(
       expect.objectContaining({ id: "BDK-CQ-9", reason: "no-match" }),
@@ -217,7 +232,7 @@ describe("bdk rules prune", () => {
 describe("removed rule commands", () => {
   it("exit 2 policy/rule-format: rules check refuses origin import", () => {
     const root = repository({
-      ".bdk/rules/API-1.md": projectRule("API-1").replace("origin: user", "origin: import"),
+      ".bdk/rules/API-1.md": ruleFile("API-1").replace("origin: user", "origin: import"),
     });
     const result = refused(bdk(["rules", "check", "--json"], root), 2, "policy/rule-format");
     expect(result.why).toContain("origin");
@@ -235,7 +250,7 @@ describe("removed rule commands", () => {
 describe("bdk rules stats", () => {
   it("exit 0: citations by id, the raw entries with --entries", () => {
     const change = started();
-    fileStore().write(join(change.root, ".bdk/rules/API-1.md"), projectRule("API-1"));
+    fileStore().write(join(change.root, ".bdk/rules/API-1.md"), ruleFile("API-1"));
     const cited = bdk(
       [
         "log",
@@ -268,7 +283,21 @@ describe("bdk rules accept", () => {
   it("writes the formatter guard when absent", () => {
     const root = repository();
     answered(
-      bdk(["rules", "accept", "Use the shared serializer.", "--prefix", "API", "--json"], root),
+      bdk(
+        [
+          "rules",
+          "accept",
+          "Use the shared serializer.",
+          "--prefix",
+          "API",
+          "--path",
+          "**",
+          "--stage",
+          "plan",
+          "--json",
+        ],
+        root,
+      ),
       "output/rules-accept.json",
     );
     expect(read(root, ".bdk/.prettierrc")).toBe(FORMATTER_GUARD);
@@ -281,12 +310,12 @@ describe("bdk rules accept", () => {
       change.root,
     );
     const from = `${change.id}/${(entry.json as { entry: { id: string } }).entry.id}`;
-    fileStore().write(join(change.root, ".bdk/rules/API-1.md"), projectRule("API-1"));
+    fileStore().write(join(change.root, ".bdk/rules/API-1.md"), ruleFile("API-1"));
     fileStore().write(
       join(change.root, ".bdk/rules/API-2.md"),
-      projectRule("API-2", "removed: merged\n"),
+      ruleFile("API-2", { extra: "removed: merged\n" }),
     );
-    fileStore().write(join(change.root, ".bdk/rules/API-3.md"), projectRule("API-3"));
+    fileStore().write(join(change.root, ".bdk/rules/API-3.md"), ruleFile("API-3"));
     git(change.root, "checkout", "--quiet", "-b", "audit");
     fileStore().write(join(change.root, ".claude/rules/naming.md"), HAND_WRITTEN);
     const report = answered(
@@ -297,8 +326,12 @@ describe("bdk rules accept", () => {
           "Write paths go through command handlers.",
           "--prefix",
           "API",
-          "--applies",
+          "--path",
           "src/api/**",
+          "--stage",
+          "execute",
+          "--stage",
+          "review",
           "--from",
           from,
           "--json",
@@ -336,6 +369,10 @@ describe("bdk rules accept", () => {
           "x",
           "--prefix",
           "API",
+          "--path",
+          "**",
+          "--stage",
+          "plan",
           "--from",
           "2026-09-25-gone/L-00000000",
           "--json",
@@ -353,6 +390,10 @@ describe("bdk rules accept", () => {
           "x",
           "--prefix",
           "API",
+          "--path",
+          "**",
+          "--stage",
+          "plan",
           "--kind",
           "knowledge",
           "--source",
@@ -365,7 +406,10 @@ describe("bdk rules accept", () => {
       "policy/rule-format",
     );
     refused(
-      bdk(["rules", "accept", "x", "--prefix", "BDK", "--json"], root),
+      bdk(
+        ["rules", "accept", "x", "--prefix", "BDK", "--path", "**", "--stage", "plan", "--json"],
+        root,
+      ),
       2,
       "policy/rule-format",
     );

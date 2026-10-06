@@ -23,7 +23,6 @@ The plugin SHALL ship `pipeline/pipeline.yaml`, and the kernel SHALL load it on 
 | `nodes[].kinds`    | array of `feature, bug`       | no       | Default all. The node exists only for these Change kinds.                                                                         |
 | `nodes[].if`       | `features.<name>`             | no       | The node exists only while that boolean feature switch resolves to `true`; the name must be a declared `features` key.            |
 | `nodes[].budget`   | a loop name                   | no       | One of `task-redispatch`, `verify-fix`, `review-fix`, `verifier`, `not-run`; the value lives in `policy.budgets` (read by T22).   |
-| `nodes[].rules`    | array of rule categories      | no       | Rule sets the instruction carries, each a category directory of the BDK pack (`rule-pack`, Pack layout), e.g. `code-quality`.     |
 | `nodes[].policy`   | a key of `policy.gates`       | for gate | The setting that says whether this gate is `manual` or `auto`.                                                                    |
 | `nodes[].opens`    | a stage id                    | for gate | The stage whose command passes the gate; the gate's `command` is that stage's `command`.                                          |
 
@@ -62,7 +61,7 @@ The file SHALL hold no expression other than `if: features.<name>`, no loop cons
 #### Scenario: rule category of the pack
 
 - **WHEN** a node carries `rules: [code-quality, plan]`
-- **THEN** validation passes, and a node carrying `rules: [languages/react]` or `rules: [style]` fails naming `nodes[<n>].rules`, because only the pack's category directories are rule categories
+- **THEN** validation fails naming `nodes[<n>].rules`: a node has no rule field, and the rules of its instruction follow from its `stage` (Instruction)
 
 ### Requirement: Artifact kinds
 
@@ -350,13 +349,13 @@ When `bdk done design` runs on a `small` Change whose `design/parts/` holds part
 
 ### Requirement: Instruction
 
-`next` SHALL hand the ready node's instruction as Markdown with a fixed skeleton, built from the kind's template, the node's rule sets and a bounded ledger summary.
+`next` SHALL hand the ready node's instruction as Markdown with a fixed skeleton, built from the kind's template, the rules of the node's stage and a bounded ledger summary.
 
-Sections in order: a heading naming the node id and kind; the kind's template, the resolved value of the prompt key `pipeline/<kind>` (`kernel-settings`, Prompt values), with `{change}`, `{node}`, `{profile}` and `{paths}` replaced; "Write to" with the paths the kind writes; "Rules" with each rule set the node's `rules` names, resolved as `ctx` resolves them; "Ledger" with at most 20 entry summaries (accepted decisions, live questions and blockers, live `review: true` entries whose `refs` name the node or its files), newest first, one line each with id, type and summary, and a count of the omitted ones; "When finished" naming `bdk done <node id>`, or for an instance collection the instance ids. The same inputs give the same bytes.
+Sections in order: a heading naming the node id and kind; the kind's template, the resolved value of the prompt key `pipeline/<kind>` (`kernel-settings`, Prompt values), with `{change}`, `{node}`, `{profile}` and `{paths}` replaced; "Write to" with the paths the kind writes; "Rules" for a node of stage `design` or `plan`, the stages whose writer is the session itself: the Selection for the node's stage over the work tree files, in the line form of `ctx skill` (`kernel-cli/rules`, bdk rules show, Selection; `kernel-cli/ctx`, bdk ctx skill), omitted when nothing is selected; a node of `execute` or `review` has no "Rules" section, because its agents read their rules through their packages, and `intent` and `close` read none; "Ledger" with at most 20 entry summaries (accepted decisions, live questions and blockers, live `review: true` entries whose `refs` name the node or its files), newest first, one line each with id, type and summary, and a count of the omitted ones; "When finished" naming `bdk done <node id>`, or for an instance collection the instance ids. The same inputs, the work tree files among them, give the same bytes.
 
 #### Scenario: deterministic instruction
 
-- **WHEN** `bdk next` runs twice on an unchanged Change
+- **WHEN** `bdk next` runs twice on an unchanged Change and an unchanged work tree
 - **THEN** both instructions are byte-identical
 
 #### Scenario: project extends the template
@@ -369,6 +368,16 @@ Sections in order: a heading naming the node id and kind; the kind's template, t
 - **WHEN** the Change holds 35 accepted decisions
 - **THEN** the "Ledger" section lists 20 of them and says 15 are omitted
 
+#### Scenario: execute node has no rules section
+
+- **WHEN** `bdk next --json` returns a node of stage `execute`
+- **THEN** its instruction has no "Rules" section
+
+#### Scenario: design node lists the design stage rules
+
+- **WHEN** the project holds `API-1` with `paths: ["**"]` and `stages: [design]`, and `bdk next --json` returns a node of stage `design`
+- **THEN** the instruction's "Rules" section holds `- [API-1] <text>` and no `BDK-PL` rule
+
 ### Requirement: Kind extensibility
 
 A new artifact kind SHALL need only a kind implementation and a node in a pipeline file: `next`, `explain`, `validate`, `done`, `change status` and every skill SHALL work with it unchanged.
@@ -380,7 +389,7 @@ A new artifact kind SHALL need only a kind implementation and a node in a pipeli
 
 ### Requirement: Plan stage nodes
 
-The `plan` node of `pipeline/pipeline.yaml` SHALL carry `rules: [code-quality, architecture, test-quality, plan]`, so its instruction lists the `BDK-PL` rules the planner ticks by id. The `plan-verify` node SHALL require `plan`, `design`, `design-index` and `architecture`: a requirement absent or skipped in the Change's graph variant is satisfied, as for any node, so a `bug` Change still reaches `plan-verify` after `plan`; the verifier's package names the design documents that exist, because a package names the files of the node and of the nodes it requires; and the `fresh` check makes a verdict given before the design last changed fail. The instruction template of `plan-part` SHALL state the task shape (a contract with concrete test cases, no implementation code), the `isolation` and `isolation-reason` fields (`kernel-state`, Plan part and plan index) and that the spec deltas of `spec-impact` are written before `done`; the template of `plan-verify` SHALL name `/bdk:verify-plan`.
+The `plan` node of `pipeline/pipeline.yaml` SHALL have `stage: plan`, so its instruction lists the rules of the `plan` stage, among them the `BDK-PL` rules the planner ticks by id (Instruction). The `plan-verify` node SHALL require `plan`, `design`, `design-index` and `architecture`: a requirement absent or skipped in the Change's graph variant is satisfied, as for any node, so a `bug` Change still reaches `plan-verify` after `plan`; the verifier's package names the design documents that exist, because a package names the files of the node and of the nodes it requires; and the `fresh` check makes a verdict given before the design last changed fail. The instruction template of `plan-part` SHALL state the task shape (a contract with concrete test cases, no implementation code), the `isolation` and `isolation-reason` fields (`kernel-state`, Plan part and plan index) and that the spec deltas of `spec-impact` are written before `done`; the template of `plan-verify` SHALL name `/bdk:verify-plan`.
 
 #### Scenario: plan instruction lists the plan rules
 

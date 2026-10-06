@@ -7,8 +7,9 @@ export interface ShownRule {
   readonly id: string;
   readonly kind: LoadedRule["kind"];
   readonly severity: LoadedRule["severity"];
-  readonly applies?: readonly string[] | undefined;
-  /** The glob that matched a file of the target; null for a global rule or no file set. */
+  readonly paths: LoadedRule["paths"];
+  readonly stages: LoadedRule["stages"];
+  /** The glob that matched a file of the target; null when a package's rule no longer matches it. */
   readonly matchedBy: string | null;
   readonly text: string;
 }
@@ -30,8 +31,8 @@ export interface OneRule {
   readonly file: string;
   readonly kind: LoadedRule["kind"];
   readonly severity: LoadedRule["severity"];
-  readonly applies?: readonly string[] | undefined;
-  readonly roles?: readonly string[] | undefined;
+  readonly paths: LoadedRule["paths"];
+  readonly stages: LoadedRule["stages"];
   readonly origin: string;
   readonly evidence?: readonly string[] | undefined;
   readonly since: string;
@@ -61,8 +62,8 @@ export interface CheckReport {
 
 interface ExplainedRule {
   readonly id: string;
-  /** The glob that matched the file; null for a global rule. */
-  readonly matchedBy: string | null;
+  /** The most specific glob of the rule's `paths` that matched the file. */
+  readonly matchedBy: string;
   readonly kind: LoadedRule["kind"];
 }
 

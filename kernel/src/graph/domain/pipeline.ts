@@ -28,7 +28,6 @@ export interface PipelineNode {
   readonly kinds?: readonly ChangeKind[] | undefined;
   readonly if?: string | undefined;
   readonly budget?: Loop | undefined;
-  readonly rules?: readonly string[] | undefined;
   readonly policy?: string | undefined;
   readonly opens?: string | undefined;
 }
@@ -39,15 +38,13 @@ export interface Pipeline {
   readonly nodes: readonly PipelineNode[];
 }
 
-/** What the file may name: registered kinds, declared settings and rule sets. */
+/** What the file may name: registered kinds and declared settings. */
 export interface Declared {
   readonly kinds: ReadonlySet<string>;
   /** Names of the boolean `features` keys. */
   readonly features: ReadonlySet<string>;
   /** Names of the `policy.gates` keys. */
   readonly gates: ReadonlySet<string>;
-  /** Rule categories with a declared `rules/<category>` prompt key. */
-  readonly rules: ReadonlySet<string>;
 }
 
 /** The kind of every gate node. */
@@ -71,10 +68,6 @@ export function pipelineProblems(pipeline: Pipeline, declared: Declared): string
     const feature = node.if?.slice("features.".length);
     if (feature !== undefined && !declared.features.has(feature)) {
       problems.push(`${at}.if: features.${feature} is not a declared features key`);
-    }
-    for (const rule of node.rules ?? []) {
-      if (!declared.rules.has(rule))
-        problems.push(`${at}.rules: ${rule} is no rule category of the pack`);
     }
     problems.push(...gateProblems(node, at, stages, declared));
   });

@@ -12,6 +12,7 @@ import { readAttempts, readDocument } from "../../shared/store/index.ts";
 import { dispatchBuildOutput, dispatchShowOutput } from "../schema/outputs.ts";
 import { build, dispatchHarness, DIR, ticket } from "./support.ts";
 import type { DispatchHarness } from "./support.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 
 const ROUND = "A-r1v2w3x4";
 const RANGE = "H0..H1";
@@ -57,10 +58,6 @@ function largeRange(): string[] {
       (_, f) => `packages/feature-${String(m)}/src/components/widgets/handler-${String(f)}.ts`,
     ),
   ).flat();
-}
-
-function projectRule(id: string, applies: string): string {
-  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\napplies: [${applies}]\n---\n\nText of ${id}.\n`;
 }
 
 describe("dispatch build --group", () => {
@@ -206,8 +203,8 @@ describe("dispatch build --group", () => {
 
   it("selects the group's rules by its files", async () => {
     const h = round();
-    h.store.write(`${ROOT}/.bdk/rules/API-1.md`, projectRule("API-1", "src/api/**"));
-    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "web/**"));
+    h.store.write(`${ROOT}/.bdk/rules/API-1.md`, ruleFile("API-1", { paths: ["src/api/**"] }));
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, ruleFile("UI-1", { paths: ["web/**"] }));
     const { data } = await groupBuilt(
       h,
       "reviewer",
@@ -223,8 +220,8 @@ describe("dispatch build --group", () => {
 
   it("selects by the --part tasks' files without --file", async () => {
     const h = round();
-    h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, projectRule("AUTH-1", "src/auth/**"));
-    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "web/**"));
+    h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, ruleFile("AUTH-1", { paths: ["src/auth/**"] }));
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, ruleFile("UI-1", { paths: ["web/**"] }));
     const { data } = await groupBuilt(h, "reviewer", "p02", "--range", RANGE, "--part", "02");
     expect(data.rules).toContain("AUTH-1");
     expect(data.rules).not.toContain("UI-1");
@@ -317,13 +314,14 @@ describe("the integration reviewer's package", () => {
     expect(text).toContain("## Role: integration-reviewer");
   });
 
-  it("reads only the ARCH, SEC and TQ packs", async () => {
+  it("reads the review stage over the work tree files, as the reviewer does", async () => {
     const h = round();
+    h.git.workTree.push("src/api/login.ts");
     const { data } = await groupBuilt(h, "integration-reviewer", "integration", "--range", RANGE);
     const packs = new Set(
       (data.rules as string[]).filter((id) => id.startsWith("BDK-")).map((id) => id.split("-")[1]),
     );
-    expect([...packs].sort()).toStrictEqual(["ARCH", "SEC", "TQ"]);
+    expect([...packs].sort()).toStrictEqual(["ARCH", "CQ", "DP", "SEC", "TQ"]);
   });
 
   it("has no Risks section in another role's package", async () => {
@@ -409,9 +407,9 @@ describe("ticket references", () => {
 describe("dispatch build implementer on a review-fix ticket (T42-D3)", () => {
   it("embeds every blocking entry in full, whatever its refs, and selects rules by their files", async () => {
     const h = round();
-    h.store.write(`${ROOT}/.bdk/rules/API-1.md`, projectRule("API-1", "src/api/**"));
-    h.store.write(`${ROOT}/.bdk/rules/WEB-1.md`, projectRule("WEB-1", "web/**"));
-    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "src/ui/**"));
+    h.store.write(`${ROOT}/.bdk/rules/API-1.md`, ruleFile("API-1", { paths: ["src/api/**"] }));
+    h.store.write(`${ROOT}/.bdk/rules/WEB-1.md`, ruleFile("WEB-1", { paths: ["web/**"] }));
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, ruleFile("UI-1", { paths: ["src/ui/**"] }));
     const at = "2026-09-25T10:01:00.000Z";
     const triaged = writeEntry(h.store, {
       type: "finding",

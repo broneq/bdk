@@ -1,22 +1,28 @@
 // Generates `schema/cli/output/rules-show.json` (kernel/scripts/export-schemas.ts).
 import * as z from "zod";
 
-import { ROLES, RULE_ID } from "../../shared/vocabulary/index.ts";
+import { ROLES, RULE_ID, RULE_STAGES } from "../../shared/vocabulary/index.ts";
 import type { RulesShow } from "../domain/report.ts";
 
 const ruleId = z.string().regex(RULE_ID);
 const kind = z.enum(["house", "knowledge"]);
 const severity = z.enum(["critical", "high", "medium", "low"]);
-const globs = z.array(z.string().min(1));
+const paths = z
+  .array(z.string().min(1))
+  .meta({ description: "The globs of the files the rule governs; `**` is every file." });
+const stages = z
+  .array(z.enum(RULE_STAGES))
+  .meta({ description: "The pipeline stages that read the rule." });
 
 const shownRule = z.strictObject({
   id: ruleId,
   kind,
   severity,
-  applies: globs.optional(),
+  paths,
+  stages,
   matchedBy: z.string().nullable().meta({
     description:
-      "The glob that matched a file of the target; null for a rule without applies or a target without files.",
+      "The most specific glob of `paths` that matched a file of the target, or of the work tree for a target without files; null when a package's rule no longer matches them.",
   }),
   text: z.string(),
 });
@@ -48,8 +54,8 @@ export const oneRuleOutput = z
     }),
     kind,
     severity,
-    applies: globs.optional(),
-    roles: z.array(z.enum(ROLES)).optional(),
+    paths,
+    stages,
     origin: z.string().min(1),
     evidence: z.array(z.string()).optional(),
     since: z.iso.date(),
@@ -88,14 +94,17 @@ export const rulesShowOutput = z.union([ticketRulesOutput, oneRuleOutput, roleRu
           id: "BDK-CQ-1",
           kind: "house",
           severity: "medium",
-          matchedBy: null,
+          paths: ["**"],
+          stages: ["plan", "execute", "review"],
+          matchedBy: "**",
           text: "Descriptive identifiers; no abbreviations unless idiomatic for the language.",
         },
         {
           id: "BDK-REACT-4",
           kind: "house",
           severity: "medium",
-          applies: ["**/*.tsx"],
+          paths: ["**/*.jsx", "**/*.tsx"],
+          stages: ["plan", "execute", "review"],
           matchedBy: "**/*.tsx",
           text: "Forms go through Actions ...",
         },
@@ -108,7 +117,8 @@ export const rulesShowOutput = z.union([ticketRulesOutput, oneRuleOutput, roleRu
       file: ".bdk/rules/API-2.md",
       kind: "house",
       severity: "high",
-      applies: ["src/api/**"],
+      paths: ["src/api/**"],
+      stages: ["plan", "execute", "review"],
       origin: "2026-09-25-passwordless-login/L-m2x9v7qa",
       evidence: ["2026-09-25-passwordless-login/L-m2x9v7qa"],
       since: "2026-09-27",
@@ -123,7 +133,8 @@ export const rulesShowOutput = z.union([ticketRulesOutput, oneRuleOutput, roleRu
           id: "API-2",
           kind: "house",
           severity: "high",
-          applies: ["src/api/**"],
+          paths: ["src/api/**"],
+          stages: ["plan", "execute", "review"],
           matchedBy: "src/api/**",
           text: "Every handler validates its input with the shared schema before it reads the body.",
         },

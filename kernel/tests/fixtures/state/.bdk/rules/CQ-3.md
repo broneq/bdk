@@ -2,6 +2,8 @@
 schema: 1
 id: CQ-3
 kind: house
+paths: ["**"]
+stages: [plan, execute, review]
 severity: low
 origin: bdk
 since: 2026-01-10

@@ -13,7 +13,7 @@ export function sessionStartCommand(deps: HooksDeps): Handler {
     const raw = context.runtime.readStdin();
     await endStaleAgents(deps, hookPlace(context), raw);
     const report = renderSessionStart(
-      sessionStart({
+      await sessionStart({
         ...deps,
         cwd: context.cwd,
         workTree: context.workTree ?? context.runtime.workTree(context.cwd),

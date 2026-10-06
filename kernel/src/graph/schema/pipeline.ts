@@ -51,10 +51,6 @@ const node = z
       .enum(LOOPS)
       .optional()
       .meta({ description: "The loop whose policy.budgets value bounds this node (T22)." }),
-    rules: z
-      .array(kebab)
-      .optional()
-      .meta({ description: "Rule categories the instruction carries (rules/<category>)." }),
     policy: kebab
       .optional()
       .meta({ description: "Gate only: the policy.gates key that makes it manual or auto." }),

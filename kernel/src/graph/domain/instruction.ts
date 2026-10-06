@@ -1,6 +1,7 @@
 // The instruction `next` hands to a stage skill (`kernel-pipeline`,
 // Instruction; design D-9): a fixed skeleton, the kind's template with four
-// literal placeholders, the node's rule sets and a capped ledger summary.
+// literal placeholders, the rules of the node's stage and a capped ledger
+// summary.
 // Pure, so the same inputs give the same bytes.
 import type { GraphNode } from "./engine.ts";
 import type { GraphEntry, Kind } from "./kinds/index.ts";
@@ -15,7 +16,8 @@ export interface InstructionParts {
   readonly template: string;
   /** Paths relative to the project root. */
   readonly paths: readonly string[];
-  readonly rules: readonly { readonly category: string; readonly text: string }[];
+  /** The `- [<id>] <text>` lines of the node's stage; empty omits the section. */
+  readonly rules: string;
   /** Newest first, uncapped. */
   readonly ledger: readonly GraphEntry[];
 }
@@ -37,10 +39,7 @@ export function composeInstruction(parts: InstructionParts): string {
     parts.paths.length === 0
       ? "- no file of the Change: the kernel records the result"
       : parts.paths.map((path) => `- ${path}`).join("\n"),
-    "## Rules",
-    parts.rules.length === 0
-      ? "none"
-      : parts.rules.map((rule) => `### ${rule.category}\n\n${rule.text.trimEnd()}`).join("\n\n"),
+    ...(parts.rules === "" ? [] : ["## Rules", parts.rules.trimEnd()]),
     "## Ledger",
     shown.length === 0
       ? "none"

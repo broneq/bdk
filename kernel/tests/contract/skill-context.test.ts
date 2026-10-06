@@ -36,20 +36,17 @@ const registry = settingsRegistry();
 function partFiles(part: Part): (string | undefined)[] {
   switch (part.kind) {
     case "rules":
-      return [`rules/${part.category}`];
+      return ["rules"];
     case "fragment":
       return ["lavish", "ask-user"].map(
         (id) => registry.promptKey(`fragments/decision/${id}`)?.defaultFile,
       );
-    case "language-rules":
-      return ["rules/languages"];
     case "file":
       return [part.path];
     case "tools":
     case "concurrency":
     case "verifier-policy":
     case "setup-coverage":
-    case "project-rules":
       return [];
   }
 }

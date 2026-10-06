@@ -23,6 +23,7 @@ import {
   toolsModule,
 } from "../../shared/config/index.ts";
 import type { Resolved } from "../../shared/config/index.ts";
+import { workTreeFiles } from "../../shared/git/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -44,7 +45,7 @@ import {
   writeDocument,
 } from "../../shared/store/index.ts";
 import type { EntryRow, IndexDb, PlanPartFile } from "../../shared/store/index.ts";
-import { isBlocking, ROLES } from "../../shared/vocabulary/index.ts";
+import { isBlocking, ROLE_STAGE, ROLES } from "../../shared/vocabulary/index.ts";
 import { risksModule } from "../../review/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import { mergeConflictsPrompt } from "../config.ts";
@@ -267,17 +268,20 @@ export function buildPackage(
       },
       kinds,
     );
+    // A target without files of its own (an artifact, the Change) selects over the work tree.
+    const ownFiles =
+      group !== undefined
+        ? groupFiles(input.files, parts, input.part)
+        : fixFiles.length > 0
+          ? fixFiles
+          : withConflicts(target.files, conflicts);
     const rules = selectFor(
       ruleContext(
         { store: deps.store, pluginRoot: deps.pluginRoot, projectRoot: change.projectRoot },
         resolved,
       ),
-      role,
-      group !== undefined
-        ? groupFiles(input.files, parts, input.part)
-        : fixFiles.length > 0
-          ? fixFiles
-          : withConflicts(target.files, conflicts),
+      ROLE_STAGE[role],
+      ownFiles ?? (await workTreeFiles(deps.git, change.projectRoot)),
     );
     const templateHash = hashOf([
       templateSkeleton(),

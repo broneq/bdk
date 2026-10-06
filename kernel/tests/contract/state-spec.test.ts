@@ -69,7 +69,10 @@ function ownFields(text: string): Map<string, Field[]> {
   return own;
 }
 
-/** Literal values a JSON Schema accepts for a property: `enum`, `const`, through unions and `$ref`s. */
+/**
+ * Literal values a JSON Schema accepts for a property: `enum`, `const`, through
+ * unions, `$ref`s and the items of an array of literals.
+ */
 function literals(schema: Json): string[] {
   if (typeof schema.$ref === "string") {
     const name = /^common\.json#\/\$defs\/(.+)$/.exec(schema.$ref)?.[1];
@@ -85,6 +88,9 @@ function literals(schema: Json): string[] {
   for (const key of ["anyOf", "oneOf"]) {
     const parts = schema[key];
     if (Array.isArray(parts)) values.push(...parts.flatMap((part) => literals(part as Json)));
+  }
+  if (schema.type === "array" && typeof schema.items === "object" && schema.items !== null) {
+    values.push(...literals(schema.items as Json));
   }
   return values;
 }

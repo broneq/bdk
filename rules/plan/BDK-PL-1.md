@@ -2,6 +2,10 @@
 schema: 1
 id: BDK-PL-1
 kind: house
+paths:
+  - "**"
+stages:
+  - plan
 severity: medium
 origin: bdk
 since: 2026-09-30

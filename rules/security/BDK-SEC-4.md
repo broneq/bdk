@@ -2,6 +2,12 @@
 schema: 1
 id: BDK-SEC-4
 kind: house
+paths:
+  - "**"
+stages:
+  - design
+  - execute
+  - review
 severity: high
 origin: bdk
 since: 2026-09-30

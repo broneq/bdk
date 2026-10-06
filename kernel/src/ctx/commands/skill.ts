@@ -6,8 +6,8 @@ import type { CtxDeps } from "../use-cases/input.ts";
 import { composeSkill } from "../use-cases/skill.ts";
 
 export function skillCommand(deps: CtxDeps): Handler {
-  return (context) => {
-    const outcome = composeSkill(
+  return async (context) => {
+    const outcome = await composeSkill(
       {
         ...deps,
         globalDir: globalDir(context.runtime),

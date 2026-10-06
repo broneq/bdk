@@ -24,7 +24,7 @@ Representative refusal:
 
 ### Requirement: bdk ctx skill
 
-Compose the prompt context a skill's context line injects: rule sets, language rules, fragments, tool entries, setup coverage, plugin files. The kernel SHALL implement the command as this requirement and its output schema specify.
+Compose the prompt context a skill's context line injects: the rules of a stage, fragments, tool entries, setup coverage, plugin files. The kernel SHALL implement the command as this requirement and its output schema specify.
 
 - **Synopsis:** `bdk ctx skill <name>`
 - **Availability:** `agent`
@@ -32,9 +32,7 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 - **Arguments:**
   - `<name>` (required). Skill name, e.g. design, plan.
 - **Behaviour:** Replaces `inject.py`, `inject-rules.py` and `inject-language-rules.py` (Configuration section). `<name>` selects an entry of the context manifest the kernel bundles: an ordered list of parts per skill. A skill is in the manifest exactly when its `SKILL.md` carries the context lines (`kernel-cli`, Output modes). The output is Markdown: the heading `## BDK context: <name>`, then one `### <title>` section per part in manifest order. Part kinds:
-  - `rules`: the enabled, non-tombstone rules of the bundle's pack for `<category>` (`rule-pack`, Pack layout), under `### Rules: <category>`, one line `- [<id>] <text>` each in id order, a rule with `applies` followed by ` (applies: <globs>)`; a skill has no file set, so nothing is narrowed by `applies` (`kernel-cli/rules`, bdk rules show). A rule in `rules.disabled` is left out.
-  - `project-rules`: the enabled, non-tombstone rules of `.bdk/rules/` in the same line form, under `### Project rules`; the part is omitted when there are none.
-  - `language-rules`: for each entry of `languages` in order, the enabled rules of the bundle's pack under `rules/languages/<language>/` in the same line form, under `### Language rules: <language>`; a language without a pack is skipped, and without any the part is omitted.
+  - `rules`: the Selection for the stage the manifest entry names (`kernel-cli/rules`, bdk rules show, Selection, and Stage readers), over the work tree files, bundle and project rules together, under `### Rules`, one line `- [<id>] <text>` each in selection order, a rule whose `paths` is not `["**"]` followed by ` (paths: <globs>)`. A rule in `rules.disabled`, a rule of another stage and a language pack outside `languages` are left out; the part is omitted when nothing is selected. The entries `design` and `adr` name the stage `design`, and `plan` names `plan`; no other entry has a `rules` part.
   - `fragment`: a choice between prompt values under a fixed title. The only fragment in T13 is `decision`, titled `### Asking the user`: `fragments/decision/lavish` when `features.lavish` is true and an executable `lavish-axi` is on `PATH`, otherwise `fragments/decision/ask-user` (R-11).
   - `tools`: the entries of `tools.<group>` (`test`, `lint` or `build`) under `### Project commands: <group>`, rendered as `bdk config show tools.<group>` renders them in text mode, including `when`; a group declared none renders the line `declared none (tools.<group>: none)`, a `test` or `lint` group no layer sets the line `unset: no command configured`, and an empty `tools.build` the line `none configured` (`kernel-settings`, Tool entries).
   - `concurrency`: the resolved `execution.concurrency` under `### Concurrency`, as the sentence `Run at most <n> agents at once.` (T23-D52); the swarm skill's only part.
@@ -53,15 +51,11 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 
   ```json
   {
-    "content": "## BDK context: design\n\n### Rules: architecture\n...",
+    "content": "## BDK context: design\n\n### Rules\n...",
     "parts": [
       {
         "kind": "rules",
-        "source": "rules/architecture"
-      },
-      {
-        "kind": "rules",
-        "source": "rules/engineering-judgment"
+        "source": "stage:design"
       },
       {
         "kind": "fragment",
@@ -116,8 +110,8 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 
 #### Scenario: language rules
 
-- **WHEN** `languages` is `[typescript, cobol]`, the plugin ships a pack under `rules/languages/typescript/` and none for `cobol`
-- **THEN** `bdk ctx skill create-plan` holds a `Language rules: typescript` section and no section for `cobol`
+- **WHEN** `languages` is `[typescript, cobol]`, the plugin ships a pack under `rules/languages/typescript/` and none for `cobol`, and the work tree holds `src/app.ts`
+- **THEN** the `### Rules` section of `bdk ctx skill plan` holds the `BDK-TS` rules and no line names `cobol`
 
 #### Scenario: tool entries
 
@@ -131,13 +125,13 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 
 #### Scenario: rules carry their ids
 
-- **WHEN** `bdk ctx skill create-plan` runs with `rules.disabled: [BDK-CQ-2]`
-- **THEN** the `### Rules: code-quality` section lists each remaining `CQ` rule as `- [BDK-CQ-<n>] <text>` and no line for `BDK-CQ-2`
+- **WHEN** `bdk ctx skill plan` runs with `rules.disabled: [BDK-CQ-2]`
+- **THEN** the `### Rules` section lists each remaining `CQ` rule as `- [BDK-CQ-<n>] <text>` and no line for `BDK-CQ-2`
 
 #### Scenario: project extends a rule set
 
-- **WHEN** the project holds `API-1` with `applies: [src/api/**]` and `bdk ctx skill create-plan` runs
-- **THEN** a `### Project rules` section holds `- [API-1] <text> (applies: src/api/**)`
+- **WHEN** the project holds `API-1` with `paths: [src/api/**]` and `stages: [plan, review]`, the work tree holds `src/api/login.ts`, and `bdk ctx skill plan` runs
+- **THEN** the `### Rules` section holds `- [API-1] <text> (paths: src/api/**)`
 
 #### Scenario: verifier policy in the plan context
 
@@ -163,6 +157,16 @@ Compose the prompt context a skill's context line injects: rule sets, language r
 
 - **WHEN** `.bdk/settings.yaml` sets `policy.gates.review: auto` and `.bdk/settings.local.yaml` sets `diagnostics.verbose: true`, and `bdk ctx skill setup` runs
 - **THEN** `#### Asked` holds `policy.gates.review: auto (project)` and `#### Not set by setup` holds `diagnostics.verbose: true (local)`
+
+#### Scenario: a rule of another stage stays out
+
+- **WHEN** the project holds `API-1` with `paths: [src/api/**]` and `stages: [plan, review]`, the work tree holds `src/api/login.ts`, and `bdk ctx skill design` runs
+- **THEN** the output holds no line for `API-1` and no `BDK-PL` rule
+
+#### Scenario: language pack without matching files
+
+- **WHEN** `languages` is `[react]` and the work tree holds no `.jsx` or `.tsx` file, and `bdk ctx skill plan` runs
+- **THEN** the output holds no `BDK-REACT` rule
 
 ### Requirement: bdk ctx startup
 

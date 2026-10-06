@@ -50,8 +50,9 @@ If no "BDK context: plan" heading appears above, run `bdk ctx skill plan` first 
 ```
 
 Claude Code runs the `!` line when the skill loads and puts its output in
-place: a `BDK context: plan` section with the rule sets the skill applies, your
-project's rules, the decision fragment (Lavish or `AskUserQuestion`), the
+place: a `BDK context: plan` section with the rules of the skill's stage, the
+shipped and your project's together, selected over the files of the work tree,
+the decision fragment (Lavish or `AskUserQuestion`), the
 configured tool commands and any plugin file the skill reads. The second line
 covers a host that did not run the first. Which parts a skill receives is
 declared once, in the kernel's manifest, so a skill body never names a test

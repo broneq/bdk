@@ -112,7 +112,7 @@ Both modes SHALL produce the same document shape, which a reference file of the 
 - **`audit`** (also the default with no argument):
   - It reads `bdk rules stats --entries --json` and groups the recurring items and the raw entries by meaning.
   - It drops every group that is not a rule as `rules/README.md` defines one: a choice among valid alternatives, house or knowledge. A fact about the project's own system, a process lesson and a principle without alternatives are dropped.
-  - It proposes the rest to the user, each with its text, kind, severity, `applies` and the refs it comes from, through the `Asking the user` section of its context.
+  - It proposes the rest to the user, each with its text, kind, severity, `paths`, `stages` and the refs it comes from. `paths` are the narrowest globs that still cover the code the choice governs, `**` only for a choice about every file; `stages` are the stages in which the choice is made or checked, and the skill states both explicitly, never leaving one out to mean "everywhere", through the `Asking the user` section of its context.
   - It adopts each accepted proposal with `bdk rules accept` and its `--from` refs.
   - It then reads `bdk rules prune --json` and offers each listed rule for removal.
 - **`capture <lesson>`**:
@@ -126,7 +126,7 @@ The skill SHALL create a rule only through `bdk rules accept`, never by writing 
 #### Scenario: audit adopts through the kernel
 
 - **WHEN** the content test reads `skills/tools/rules/SKILL.md`
-- **THEN** it names `bdk rules stats --entries`, `bdk rules accept` with `--from`, and `bdk rules prune`, and says that nothing is adopted before the user accepts
+- **THEN** it names `bdk rules stats --entries`, `bdk rules accept` with `--from`, `--path` and `--stage`, and `bdk rules prune`, and says that nothing is adopted before the user accepts
 
 #### Scenario: capture inside and outside a Change
 
@@ -142,6 +142,11 @@ The skill SHALL create a rule only through `bdk rules accept`, never by writing 
 
 - **WHEN** the content test reads the rules skill
 - **THEN** a removal sets `removed` and keeps the body, and is followed by `bdk rules check`, and the skill names neither `bdk rules export` nor `.claude/rules/`
+
+#### Scenario: proposal states paths and stages
+
+- **WHEN** the content test reads the audit mode of the rules skill
+- **THEN** each proposal names `paths` and `stages`, and the skill names neither `applies` nor `roles` as a rule field
 
 ### Requirement: adr records one decision as MADR
 

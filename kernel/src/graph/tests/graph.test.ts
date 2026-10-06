@@ -39,6 +39,7 @@ import {
 } from "./support.ts";
 import type { Harness } from "./support.ts";
 import { CHANGE } from "../../log/tests/support.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 
 /** `expect.stringContaining` typed for a `toMatchObject` literal. */
 const containing = (text: string): unknown => expect.stringContaining(text);
@@ -141,6 +142,7 @@ describe("bdk next", () => {
 
   it("builds the instruction skeleton, byte-identical on a second run", async () => {
     const h = harness();
+    h.git.workTree.push("src/app.ts");
     const first = await h.run(["next"]);
     expect((await h.run(["next"])).stdout).toBe(first.stdout);
     const sections = first.stdout.split("\n").filter((line) => line.startsWith("#"));
@@ -158,11 +160,13 @@ describe("bdk next", () => {
 
   it("lists the plan rules for plan and names /bdk:verify-plan for plan-verify", async () => {
     const h = harness();
+    h.git.workTree.push("src/app.ts");
     setChange(h.store, { kind: "bug" });
     const plan = (await h.run(["next"])).stdout;
-    expect(plan).toContain("### plan");
-    expect(plan).toContain("[BDK-PL-1]");
-    expect(plan).toContain("[BDK-PL-4]");
+    for (const id of ["BDK-PL-1", "BDK-PL-2", "BDK-PL-3", "BDK-PL-4"]) {
+      expect(plan).toContain(`\n- [${id}] `);
+    }
+    expect(plan).not.toMatch(/^### /m);
     expect(plan).toContain("no implementation code");
     expect(plan).toContain("spec deltas");
     writePlanPart(h.store, "01");
@@ -181,8 +185,29 @@ describe("bdk next", () => {
     );
   });
 
-  it("carries the node's rule sets and caps the ledger at 20", async () => {
+  it("lists the design stage rules for a design node, a project rule among them", async () => {
     const h = harness();
+    h.git.workTree.push("src/app.ts");
+    h.store.write(
+      `${ROOT}/.bdk/rules/API-1.md`,
+      ruleFile("API-1", { stages: ["design"], text: "Name the API owner." }),
+    );
+    const text = (await h.run(["next"])).stdout;
+    const rules = text.slice(text.indexOf("## Rules"), text.indexOf("## Ledger"));
+    expect(rules).toContain("\n- [API-1] Name the API owner.\n");
+    expect(rules).toContain("\n- [BDK-ARCH-1] ");
+    expect(rules).not.toContain("[BDK-PL-");
+    expect(rules).not.toContain("[BDK-CQ-");
+  });
+
+  it("omits the Rules section when the node's stage selects nothing", async () => {
+    const text = (await harness().run(["next"])).stdout;
+    expect(text).not.toContain("## Rules");
+  });
+
+  it("carries the rules of the node's stage and caps the ledger at 20", async () => {
+    const h = harness();
+    h.git.workTree.push("src/app.ts");
     setChange(h.store, { profile: "tiny" });
     for (let i = 0; i < 35; i++) {
       writeEntry(h.store, {
@@ -192,8 +217,8 @@ describe("bdk next", () => {
       });
     }
     const text = (await h.run(["next"])).stdout;
-    expect(text).toContain("### code-quality");
-    expect(text).toContain("### test-quality");
+    expect(text).toContain("\n- [BDK-CQ-1] ");
+    expect(text).toContain("\n- [BDK-TQ-1] ");
     const ledger = text.slice(text.indexOf("## Ledger"), text.indexOf("## When finished"));
     expect(ledger.match(/^- L-/gm)).toHaveLength(20);
     expect(ledger).toContain("Decision 34");

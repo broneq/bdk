@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 
 import { PACK_DIRS } from "../../src/rules/domain/rule.ts";
 import { splitFrontmatter } from "../../src/shared/store/index.ts";
+import { LANGUAGE_PATHS, PACK_STAGES } from "../support/pack-layout.ts";
 import { REPO_ROOT, runBdk } from "../support/run.ts";
 
 const RESULTS = join(REPO_ROOT, "evals/results/rules-noop");
@@ -116,6 +117,15 @@ describe("the shipped pack", () => {
     }
   });
 
+  it("every rule states the stages of its directory and paths for its files", () => {
+    for (const rule of rules) {
+      const where = `rules/${rule.dir}/${rule.name}`;
+      expect(rule.data.stages, where).toStrictEqual(PACK_STAGES[rule.dir]);
+      if (rule.data.id === "BDK-CQ-9") continue;
+      expect(rule.data.paths, where).toStrictEqual(LANGUAGE_PATHS[rule.dir] ?? ["**"]);
+    }
+  });
+
   it("every knowledge rule carries source and verified", () => {
     for (const rule of rules.filter((found) => found.data.kind === "knowledge")) {
       expect(rule.data, rule.name).toHaveProperty("source");
@@ -138,7 +148,7 @@ describe("the shipped pack", () => {
     const lockfiles = rules.find((rule) => rule.data.id === "BDK-CQ-9");
     expect(lockfiles?.dir).toBe("code-quality");
     expect(lockfiles?.data.kind).toBe("house");
-    expect(lockfiles?.data.applies).toStrictEqual(
+    expect(lockfiles?.data.paths).toStrictEqual(
       expect.arrayContaining([
         "**/pnpm-lock.yaml",
         "**/package-lock.json",

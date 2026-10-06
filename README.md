@@ -78,7 +78,7 @@ bdk config set policy.gates.review auto
 
 ## Rules and the learning funnel
 
-A rule is a choice among valid alternatives that BDK or your project made and wants followed, one file per rule, named by its id. BDK ships a language-agnostic pack (`BDK-CQ`, `BDK-ARCH`, `BDK-SEC`, ...) and language packs selected by `languages`; your project adds its own in `.bdk/rules/` and switches any off with `rules.disabled`. Each agent reads the rules for its role and files and cites the ids it applied.
+A rule is a choice among valid alternatives that BDK or your project made and wants followed, one file per rule, named by its id. BDK ships a language-agnostic pack (`BDK-CQ`, `BDK-ARCH`, `BDK-SEC`, ...) and language packs selected by `languages`; your project adds its own in `.bdk/rules/` and switches any off with `rules.disabled`. Every rule states the files it governs (`paths`) and the pipeline stages that read it (`stages`); each agent and skill reads the rules of its stage for its files and cites the ids it applied.
 
 A lesson does not become a rule by itself. It is recorded as a `learning` entry of the Change; `/bdk:rules audit` groups the recurring ones, proposes rules, adopts the ones you accept through `bdk rules accept`, and prunes the rules nobody cites. See [Quality and language rules](docs/guide/concepts/quality-and-language-rules.md) and [Rules hygiene](docs/guide/workflows/rules-hygiene.md).
 

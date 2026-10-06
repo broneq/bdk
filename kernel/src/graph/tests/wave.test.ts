@@ -264,9 +264,12 @@ describe("the execute wave of bdk next", () => {
     expect(report.wave).toBeUndefined();
   });
 
-  it("names bdk next after part done in the execute-part instruction", async () => {
+  it("names bdk next after part done in the execute-part instruction, with no Rules section", async () => {
     const h = await planned("tiny");
+    h.git.workTree.push("src/app.ts");
     const report = await next(h);
+    expect(report.instruction).not.toContain("## Rules");
+    expect(report.instruction).not.toContain("[BDK-");
     expect(report.instruction).toContain("`bdk next`");
     expect(report.instruction).toContain("`wave`");
     expect(report.instruction).not.toContain("the result is a ledger entry");

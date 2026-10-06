@@ -7,6 +7,7 @@
 // prints the Selection for that role and file set, with no Change (T42).
 import { relative, resolve, sep } from "node:path";
 
+import { workTreeFiles } from "../../shared/git/index.ts";
 import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
@@ -18,7 +19,7 @@ import {
   targetFiles,
   withIndex,
 } from "../../shared/store/index.ts";
-import { ROLES } from "../../shared/vocabulary/index.ts";
+import { ROLE_STAGE, ROLES } from "../../shared/vocabulary/index.ts";
 import type { OneRule, RoleRules, TicketRules } from "../domain/report.ts";
 import { selectFor } from "./context.ts";
 import type { RulesDeps } from "./deps.ts";
@@ -41,8 +42,6 @@ export function showRule(
     ]);
   }
   const optional = {
-    applies: rule.applies,
-    roles: rule.roles,
     evidence: rule.evidence,
     source: rule.source,
     verified: rule.verified,
@@ -54,6 +53,8 @@ export function showRule(
     file: rule.file,
     kind: rule.kind,
     severity: rule.severity,
+    paths: rule.paths,
+    stages: rule.stages,
     origin: rule.origin,
     since: rule.since,
     ...Object.fromEntries(Object.entries(optional).filter(([, value]) => value !== undefined)),
@@ -88,14 +89,17 @@ export function showRoleRules(
   }
   const context = loadContext(deps, where.projectRoot, where.globalDir);
   if ("refused" in context) return context;
-  const rules = selectFor(context, known, paths).selected.map(({ rule, matchedBy }) => ({
-    id: rule.id,
-    kind: rule.kind,
-    severity: rule.severity,
-    ...(rule.applies === undefined ? {} : { applies: rule.applies }),
-    matchedBy,
-    text: rule.text,
-  }));
+  const rules = selectFor(context, ROLE_STAGE[known], paths).selected.map(
+    ({ rule, matchedBy }) => ({
+      id: rule.id,
+      kind: rule.kind,
+      severity: rule.severity,
+      paths: rule.paths,
+      stages: rule.stages,
+      matchedBy,
+      text: rule.text,
+    }),
+  );
   return { role: known, files: paths, rules };
 }
 
@@ -139,14 +143,15 @@ export function showTicketRules(
         [`bdk dispatch build ${record.data.target} ${dispatch.role} ${value}`],
       );
     }
-    // A group's package records its own file set (T42-A1); none means every rule applied.
+    // A group's package records its own file set (T42-A1); a target without one selected over the work tree.
     const groupFiles = dispatch.data.files ?? [];
-    const files =
+    const own =
       group === undefined
         ? targetFiles(readPlanParts(deps.store, change.dir), record.data.target)
         : groupFiles.length === 0
           ? undefined
           : groupFiles;
+    const files = own ?? (await workTreeFiles(deps.git, change.projectRoot));
     const rules = dispatch.data.rules.flatMap((id) => {
       const rule = loaded.get(id);
       if (rule === undefined) return [];
@@ -155,7 +160,8 @@ export function showTicketRules(
           id,
           kind: rule.kind,
           severity: rule.severity,
-          ...(rule.applies === undefined ? {} : { applies: rule.applies }),
+          paths: rule.paths,
+          stages: rule.stages,
           matchedBy: matchedGlob(rule, files),
           text: rule.text,
         },

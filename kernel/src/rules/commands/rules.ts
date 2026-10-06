@@ -7,6 +7,7 @@ import { isRefusal, refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { FlagValue, Handler } from "../../shared/registry/index.ts";
 import { findProjectRoot } from "../../shared/store/index.ts";
+import { isRuleStage, RULE_STAGES } from "../../shared/vocabulary/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import {
   renderAccept,
@@ -110,10 +111,25 @@ export function statsCommand(deps: RulesDeps): Handler {
 export function acceptCommand(deps: RulesDeps): Handler {
   return async (context) => {
     const prefix = text(context.flags["--prefix"]);
-    if (prefix === undefined) {
-      return refuse("input/missing-argument", "rules accept needs --prefix <PREFIX>", [
-        'bdk rules accept "<text>" --prefix <PREFIX>',
+    const paths = list(context.flags["--path"]);
+    const stages = list(context.flags["--stage"]);
+    const missing = [
+      ...(prefix === undefined ? ["--prefix <PREFIX>"] : []),
+      ...(paths.length === 0 ? ["--path <glob>"] : []),
+      ...(stages.length === 0 ? ["--stage <stage>"] : []),
+    ];
+    if (prefix === undefined || missing.length > 0) {
+      return refuse("input/missing-argument", `rules accept needs ${missing.join(", ")}`, [
+        'bdk rules accept "<text>" --prefix <PREFIX> --path <glob> --stage <stage>',
       ]);
+    }
+    const unknown = stages.find((stage) => !isRuleStage(stage));
+    if (unknown !== undefined) {
+      return refuse(
+        "input/invalid-argument",
+        `--stage ${unknown} is no rule stage; the stages are ${RULE_STAGES.join(", ")}`,
+        ["name each stage that reads the rule: --stage plan --stage review"],
+      );
     }
     const body = context.positionals["<text>"] ?? "";
     const input: AcceptInput = {
@@ -121,8 +137,8 @@ export function acceptCommand(deps: RulesDeps): Handler {
       prefix,
       kind: (text(context.flags["--kind"]) ?? "house") as AcceptInput["kind"],
       severity: (text(context.flags["--severity"]) ?? "medium") as AcceptInput["severity"],
-      applies: list(context.flags["--applies"]),
-      roles: list(context.flags["--role"]),
+      paths,
+      stages: stages.filter(isRuleStage),
       from: list(context.flags["--from"]),
       source: text(context.flags["--source"]),
       verified: text(context.flags["--verified"]),

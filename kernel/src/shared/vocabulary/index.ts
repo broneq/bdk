@@ -112,6 +112,29 @@ export const ROLES = [
 
 export type Role = (typeof ROLES)[number];
 
+/** The pipeline stages that read rules (`kernel-cli/rules`, Stage readers); a rule's `stages` names them. */
+export const RULE_STAGES = ["design", "plan", "execute", "review"] as const;
+
+export type RuleStage = (typeof RULE_STAGES)[number];
+
+export function isRuleStage(value: string): value is RuleStage {
+  return RULE_STAGES.some((stage) => stage === value);
+}
+
+/** The stage whose rules a role reads; a role without one reads no rules. */
+export const ROLE_STAGE: Readonly<Record<Role, RuleStage | undefined>> = {
+  implementer: "execute",
+  simplifier: "execute",
+  verifier: "plan",
+  "design-verifier": "design",
+  reviewer: "review",
+  "integration-reviewer": "review",
+  "pr-reviewer": "review",
+  runner: undefined,
+  scout: undefined,
+  lead: undefined,
+};
+
 /** The fields of a ledger entry the blocking predicate reads. */
 export interface BlockingFacts {
   readonly type: string;
