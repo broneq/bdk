@@ -52,8 +52,8 @@
 
 ## 7. README v3
 
-- [ ] 7.1 Write the failing README content test (one requirements statement, a quick start naming `/bdk:setup` and `/bdk:run`, a link to `getting-started/migration-from-v2`); verify it fails on the current README.
-- [ ] 7.2 Rewrite `README.md` in the order of docs-site "README v3", moving reference detail to the site (D8); verify the test of 7.1, the v2 workflow guard, drift guards 1 and 6 and `pnpm docs:build` pass.
+- [x] 7.1 Write the failing README content test (one requirements statement, a quick start naming `/bdk:setup` and `/bdk:run`, a link to `getting-started/migration-from-v2`); verify it fails on the current README.
+- [x] 7.2 Rewrite `README.md` in the order of docs-site "README v3", moving reference detail to the site (D8); verify the test of 7.1, the v2 workflow guard, drift guards 1 and 6 and `pnpm docs:build` pass.
 
 ## 8. Eval documentation
 
