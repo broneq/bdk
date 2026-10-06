@@ -4,14 +4,15 @@
 
 BDK keeps its state under `.bdk/`, written only by the kernel (`bdk ...`) and the stage skills that call it:
 
-| Path                       | Written by                                           | Tracked | Contents                                                                                                                                            |
-| -------------------------- | ---------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.bdk/settings.yaml`       | `/bdk:setup` through `bdk config set`                | yes     | The project's languages, tool commands and feature flags, shared by the team                                                                        |
-| `.bdk/settings.local.yaml` | `bdk config set --local`                             | no      | Your personal overrides                                                                                                                             |
-| `.bdk/rules/`              | `bdk rules import`, `bdk rules accept`               | yes     | The project's rules, one file per rule id                                                                                                           |
-| `.bdk/changes/<changeId>/` | `/bdk:change` through `bdk change new`, later stages | yes     | One Change: its intent, design, plan, ledger and progress                                                                                           |
-| `.bdk/.machine/`           | the kernel                                           | no      | Caches, the schema copy, the branch bindings of the Changes and, under `worktrees/`, the worktrees of the parts in flight; rebuilt by `bdk rebuild` |
-| `.bdk/.machine/review/`    | `bdk review render`                                  | no      | The human review report of a Change, `<changeId>.html` or `.md`                                                                                     |
+| Path                       | Written by                                                                              | Tracked | Contents                                                                                                                                            |
+| -------------------------- | --------------------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.bdk/settings.yaml`       | `/bdk:setup` through `bdk config set`                                                   | yes     | The project's languages, tool commands and feature flags, shared by the team                                                                        |
+| `.bdk/settings.local.yaml` | `bdk config set --local`                                                                | no      | Your personal overrides                                                                                                                             |
+| `.bdk/rules/`              | `bdk rules import`, `bdk rules accept`                                                  | yes     | The project's rules, one file per rule id                                                                                                           |
+| `.bdk/.prettierrc`         | `bdk change new`, `bdk config set`, `bdk rules accept`, `bdk rules import`, when absent | yes     | The formatter guard: keeps Prettier off every file under `.bdk/`; never overwritten                                                                 |
+| `.bdk/changes/<changeId>/` | `/bdk:change` through `bdk change new`, later stages                                    | yes     | One Change: its intent, design, plan, ledger and progress                                                                                           |
+| `.bdk/.machine/`           | the kernel                                                                              | no      | Caches, the schema copy, the branch bindings of the Changes and, under `worktrees/`, the worktrees of the parts in flight; rebuilt by `bdk rebuild` |
+| `.bdk/.machine/review/`    | `bdk review render`                                                                     | no      | The human review report of a Change, `<changeId>.html` or `.md`                                                                                     |
 
 The design stage writes into the Change directory:
 
@@ -72,4 +73,4 @@ After the review, the human decides each open entry with `bdk log decide <id> fi
 
 `--review` marks a `defer` or `track` made without the user, as `/bdk:run` does, to be reviewed. `bdk change close` refuses with `policy/undecided-entries` while a live `finding`, `observation` or `blocker` has no disposition, or a `fix` is not made. The `tracker` setting says where `track` files an issue: `{kind: github}` for GitHub issues through `gh`, or `{kind: instruction, instruction: "<how to file one>"}` for any other tracker. While it is unset, the report offers no `track`.
 
-`bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 files are never read; [Migration from v2](../getting-started/migration-from-v2.md#artifacts) says what `/bdk:setup` does with each.
+`bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`, and writes `.bdk/.prettierrc` when it is absent. The v2 files are never read; [Migration from v2](../getting-started/migration-from-v2.md#artifacts) says what `/bdk:setup` does with each.

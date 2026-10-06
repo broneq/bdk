@@ -1,8 +1,9 @@
-// A formatter over committed state (T51, `kernel-state`, Committed state is
-// hashed byte for byte): the repository's pinned prettier rewrites `.bdk/`
-// files, which the kernel shows as a stale node and a `merge-hash` finding,
-// and leaves them alone once the project's own ignore list names `.bdk/`.
-import { execFileSync } from "node:child_process";
+// A formatter over committed state (T51, #140; `kernel-state`, Committed state
+// is hashed byte for byte, Formatter guard): the repository's pinned prettier
+// leaves `.bdk/` alone while the kernel-owned `.bdk/.prettierrc` is in place,
+// finds kernel output already formatted without it, and a rewrite by
+// non-default options shows as a stale node and a `merge-hash` finding.
+import { execFileSync, spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -24,8 +25,19 @@ function mergedAndCommitted(): Reviewed {
   return change;
 }
 
-function prettierWrite(root: string): void {
-  execFileSync(PRETTIER, ["--write", "."], { cwd: root, stdio: "ignore" });
+function prettierWrite(root: string, ...options: string[]): void {
+  execFileSync(PRETTIER, ["--write", ".", ...options], { cwd: root, stdio: "ignore" });
+}
+
+/** Deletes and commits the deletion of the formatter guard. */
+function withoutGuard(root: string): void {
+  git(root, "rm", "--quiet", ".bdk/.prettierrc");
+  git(root, "commit", "--quiet", "-m", "drop the guard");
+}
+
+/** Markdown under `.bdk/` that the kernel writes, as opposed to the host's plan parts and deltas. */
+function kernelMarkdown(line: string): boolean {
+  return line.endsWith(".md") && !/\/(plan\/parts|design\/parts|spec-delta)\//.test(line);
 }
 
 function changedUnderBdk(root: string): string[] {
@@ -51,11 +63,12 @@ function mergeHashFindings(root: string): unknown[] {
 }
 
 describe("a formatter over committed state", () => {
-  it("prettier rewrites .bdk/: the plan part goes stale and doctor reports the merge hash", () => {
+  it("prettier over a reviewed Change without the guard: stale plan part and the merge hash", () => {
     const change = mergedAndCommitted();
     expect(planPart(change.root).state).toBe("done");
+    withoutGuard(change.root);
 
-    prettierWrite(change.root);
+    prettierWrite(change.root, "--prose-wrap", "always", "--print-width", "40");
 
     expect(changedUnderBdk(change.root)).not.toStrictEqual([]);
     const part = planPart(change.root);
@@ -70,14 +83,44 @@ describe("a formatter over committed state", () => {
     expect(bdk(["log", "list", "--json"], change.root).code).toBe(0);
   });
 
-  it("with .bdk/ in .prettierignore nothing under .bdk/ changes and the Change stays done", () => {
+  it("prettier with .bdk/ ignored by the guard: nothing under .bdk/ changes", () => {
     const change = mergedAndCommitted();
-    fileStore().write(join(change.root, ".prettierignore"), ".bdk/\n");
 
-    prettierWrite(change.root);
+    prettierWrite(change.root, "--prose-wrap", "always", "--print-width", "40");
 
     expect(changedUnderBdk(change.root)).toStrictEqual([]);
     expect(planPart(change.root).state).toBe("done");
     expect(mergeHashFindings(change.root)).toStrictEqual([]);
+  });
+
+  it("default prettier without the guard changes no Markdown file the kernel wrote", () => {
+    const change = mergedAndCommitted();
+    withoutGuard(change.root);
+
+    prettierWrite(change.root);
+
+    expect(changedUnderBdk(change.root).filter(kernelMarkdown)).toStrictEqual([]);
+    expect(mergeHashFindings(change.root)).toStrictEqual([]);
+  });
+
+  it("explicit paths are skipped under the guard, from the root and from a subdirectory", () => {
+    const change = mergedAndCommitted();
+    const rule = ".bdk/rules/API-1.md";
+    // JSON has no pragma support: the guard's override is what skips a capture.
+    const capture = `.bdk/changes/${change.id}/evidence/01-1-E-unformat-lint.json`;
+    fileStore().write(join(change.root, capture), '{"a":1,\n"b":[1,2]}\n');
+    fileStore().write(
+      join(change.root, rule),
+      "---\nschema: 1\nid: API-1\nkind: house\nseverity: medium\norigin: user\nsince: 2026-10-06\n---\n*   Badly   formatted.\n",
+    );
+    const check = (cwd: string, path: string) =>
+      spawnSync(PRETTIER, ["--check", path], { cwd, encoding: "utf8" }).status;
+
+    expect(check(change.root, rule)).toBe(0);
+    expect(check(change.root, capture)).toBe(0);
+    expect(check(join(change.root, ".bdk/rules"), "API-1.md")).toBe(0);
+    withoutGuard(change.root);
+    expect(check(change.root, rule)).not.toBe(0);
+    expect(check(change.root, capture)).not.toBe(0);
   });
 });

@@ -62,7 +62,7 @@ describe("the layout maps each path to its kind", () => {
     const path = at("reports/02-3-implementer-A-7f3kx2p9.md");
     writeDocument(store, path, { data: example.report, body: "" });
     expect(store.read(path)).toContain(
-      "files: [ src/auth/magic-link.ts, src/auth/magic-link.test.ts ]\n",
+      "files: [src/auth/magic-link.ts, src/auth/magic-link.test.ts]\n",
     );
   });
 

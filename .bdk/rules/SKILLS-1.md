@@ -9,4 +9,5 @@ severity: medium
 origin: import
 since: 2026-10-05
 ---
+
 A skill writes under `.bdk/` only through `bdk` commands and never creates a directory of its own there.

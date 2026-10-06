@@ -7,7 +7,7 @@ import { parse } from "yaml";
 
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
-import { splitFrontmatter } from "../../shared/store/index.ts";
+import { ensureFormatterGuard, splitFrontmatter } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { prefixFromName, prefixProblem, ruleTexts } from "../domain/import.ts";
 import { isProjection } from "../domain/projection.ts";
@@ -113,6 +113,7 @@ export function importRules(
 
   let projection: string[] = [];
   if (!input.dryRun && drafts.length > 0) {
+    ensureFormatterGuard(deps.store, projectRoot);
     for (const draft of drafts) writeRule(deps.store, projectRoot, draft);
     const after = loadContext(deps, projectRoot, globalDir);
     if ("refused" in after) return after;

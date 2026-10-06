@@ -358,7 +358,7 @@ describe("bdk log show and resolve", () => {
       "Why.",
     );
     const shown = answered(bdk(["log", "show", entry.id, "--json"], root), "output/log-show.json");
-    expect(shown).toMatchObject({ entry: { id: entry.id, body: "Why." } });
+    expect(shown).toMatchObject({ entry: { id: entry.id, body: "Why.\n" } });
   });
 
   it("show exit 3 input/not-found", () => {
@@ -546,7 +546,7 @@ describe("bdk log ingest", () => {
     expect(stored).toMatch(/^at: .+Z\n/m);
     expect(stored.replace(/^at: .*\n/m, "")).toBe(
       `---\nschema: 1\nticket: ${TICKET}\nrole: verifier\nstatus: done-with-concerns\n` +
-        `files: []\nentries: [ ${id} ]\nevidence: []\n---\n` +
+        `files: []\nentries: [${id}]\nevidence: []\n---\n\n` +
         "# Plan verification\n\nPart 02 leans on a helper that does not exist.\n",
     );
     // The Change's opening transition and the observation; ingest adds none.

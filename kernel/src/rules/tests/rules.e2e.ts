@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { answered, bdk, git, read, refused, repository } from "../../../tests/support/repo.ts";
 import { dispatched, opened, started } from "../../attempt/tests/e2e-support.ts";
-import { fileStore } from "../../shared/store/index.ts";
+import { fileStore, FORMATTER_GUARD } from "../../shared/store/index.ts";
 
 interface Shown {
   readonly role: string;
@@ -241,6 +241,7 @@ describe("bdk rules import", () => {
       'paths:\n  - "src/api/**"',
     );
     answered(bdk(["rules", "check", ".bdk/rules", "--json"], root), "output/rules-check.json");
+    expect(read(root, ".bdk/.prettierrc")).toBe(FORMATTER_GUARD);
   });
 
   it("--dry-run writes nothing", () => {
@@ -251,6 +252,7 @@ describe("bdk rules import", () => {
     );
     expect(report).toMatchObject({ dryRun: true, projection: [] });
     expect(existsSync(join(root, ".bdk/rules"))).toBe(false);
+    expect(existsSync(join(root, ".bdk/.prettierrc"))).toBe(false);
   });
 
   it("refuses a missing directory (3) and a BDK prefix (2)", () => {
@@ -357,6 +359,15 @@ describe("bdk rules stats", () => {
 });
 
 describe("bdk rules accept", () => {
+  it("writes the formatter guard when absent", () => {
+    const root = repository();
+    answered(
+      bdk(["rules", "accept", "Use the shared serializer.", "--prefix", "API", "--json"], root),
+      "output/rules-accept.json",
+    );
+    expect(read(root, ".bdk/.prettierrc")).toBe(FORMATTER_GUARD);
+  });
+
   it("exit 0 without an active Change: the next number above the tombstones, origin from --from", () => {
     const change = started();
     const entry = bdk(
@@ -452,5 +463,6 @@ describe("bdk rules accept", () => {
       "policy/rule-format",
     );
     expect(existsSync(join(root, ".bdk/rules"))).toBe(false);
+    expect(existsSync(join(root, ".bdk/.prettierrc"))).toBe(false);
   });
 });

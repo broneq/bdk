@@ -148,7 +148,7 @@ describe("log ingest", () => {
     const text = h.store.read(`${ROOT}/${reportPath("verifier")}`) ?? "";
     const frontmatter = text.split("---\n")[1] ?? "";
     expect(frontmatter.split("\n").length).toBeLessThanOrEqual(15);
-    expect(frontmatter).toContain(`files: [ ${files.join(", ")} ]`);
+    expect(frontmatter).toContain(`files: [${files.join(", ")}]`);
   });
 
   it("writes no ledger entry", async () => {

@@ -6,8 +6,10 @@ import { join } from "node:path";
 
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
+import { frontmatterFile } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { projectionFiles } from "../domain/projection.ts";
+import type { ProjectionFile } from "../domain/projection.ts";
 import type { ExportReport } from "../domain/report.ts";
 import { projectRules } from "./context.ts";
 import type { RuleContext } from "./context.ts";
@@ -50,11 +52,11 @@ function writeProjection(
 ): ExportReport {
   const files = projectionFiles(projectRules(context)).map((file) => {
     const path = join(projectRoot, file.path);
-    const current = store.read(path);
-    const changed = current !== file.content;
+    const content = projectionText(file);
+    const changed = store.read(path) !== content;
     if (write && changed) {
-      if (file.content === undefined) store.remove(path);
-      else store.write(path, file.content);
+      if (content === undefined) store.remove(path);
+      else store.write(path, content);
     }
     return {
       path: file.path,
@@ -64,6 +66,12 @@ function writeProjection(
     };
   });
   return { files };
+}
+
+/** A projection file's text in the document shape; undefined when the file must not exist. */
+function projectionText(file: ProjectionFile): string | undefined {
+  if (file.body === undefined || file.frontmatter === undefined) return file.body;
+  return frontmatterFile(file.frontmatter, file.body);
 }
 
 /** The projection paths that differ from the rules, written nowhere; `doctor` reports them. */

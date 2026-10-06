@@ -1,10 +1,18 @@
 // The session context: the STARTUP text, a blank line and one `[BDK]` line
-// per finding (`kernel-cli/hooks`, `bdk hooks session-start`).
+// per finding, the formatter guard first (`kernel-cli/hooks`, `bdk hooks session-start`).
 import type { SessionFindings, SessionStartReport } from "../domain/report.ts";
 
 export function renderSessionStart({ startup, project }: SessionFindings): SessionStartReport {
   if (project === undefined) return { content: startup };
   const lines = [
+    // First: a guard that is not in force lets a formatter break recorded hashes.
+    ...(project.formatterGuard === undefined
+      ? []
+      : [
+          "[BDK] WARNING: .bdk/.prettierrc is missing or is not the BDK formatter guard, " +
+            "so Prettier can rewrite files under .bdk/ and break their recorded hashes. " +
+            `Restore it: write ${project.formatterGuard} to .bdk/.prettierrc and commit it.`,
+        ]),
     ...project.errors.map(
       ({ why, instead }) => `[BDK] config: ${why} Instead: ${instead.join("; ")}`,
     ),

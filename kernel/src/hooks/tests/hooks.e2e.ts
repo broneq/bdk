@@ -1,7 +1,7 @@
 // `kernel-cli/hooks` through the built bundle: the scenarios of
 // `hooks session-start` and `hooks skill-exists`. HOME is the fixture, so the
 // machine's own skills and plugins never leak into a case.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -9,6 +9,7 @@ import { createFixture } from "../../../tests/support/fixture.ts";
 import type { Fixture } from "../../../tests/support/fixture.ts";
 import { REPO_ROOT, runBdk } from "../../../tests/support/run.ts";
 import { validatorFor } from "../../../tests/support/schemas.ts";
+import { FORMATTER_GUARD } from "../../shared/store/index.ts";
 
 const validSessionStart = validatorFor("output/hooks-session-start.json");
 const validSkillExists = validatorFor("output/hooks-skill-exists.json");
@@ -23,8 +24,11 @@ const MODELINE = `# yaml-language-server: $schema=https://raw.githubusercontent.
 const PAYLOAD = JSON.stringify({ hook_event_name: "SessionStart", source: "startup" });
 
 const fixtures: Fixture[] = [];
+/** A BDK project (any `.bdk/` file) gets the formatter guard unless it names its own. */
 function fixture(files: Record<string, string> = {}, git = true): Fixture {
-  const created = createFixture({ files, git });
+  const bdk = Object.keys(files).some((path) => path.startsWith(".bdk/"));
+  const guarded = bdk ? { ".bdk/.prettierrc": FORMATTER_GUARD, ...files } : files;
+  const created = createFixture({ files: guarded, git });
   fixtures.push(created);
   return created;
 }
@@ -52,6 +56,28 @@ describe("bdk hooks session-start", () => {
     expect(result.code).toBe(0);
     expect(validSessionStart(result.json), JSON.stringify(validSessionStart.errors)).toBe(true);
     expect(result.json).toMatchObject({ layout: "v2", configProblems: 0 });
+  });
+
+  it("formatter guard missing: the warning line first, exit 0, no STOP, nothing written", () => {
+    const root = fixture({ ".bdk/settings.yaml": `${MODELINE}languages: [go]\n` }).root;
+    rmSync(join(root, ".bdk/.prettierrc"));
+    const result = bdk(["hooks", "session-start"], root);
+    expect(result.code).toBe(0);
+    expect(result.stdout).not.toContain("BDK STOP");
+    const [first] = afterStartup(result.stdout);
+    expect(first).toMatch(/^\[BDK\] WARNING: \.bdk\/\.prettierrc is missing/);
+    expect(existsSync(join(root, ".bdk/.prettierrc"))).toBe(false);
+  });
+
+  it("formatter guard without the override: the same warning, the file's bytes unchanged", () => {
+    const own = '{ "requirePragma": true }\n';
+    const root = fixture({
+      ".bdk/settings.yaml": `${MODELINE}languages: [go]\n`,
+      ".bdk/.prettierrc": own,
+    }).root;
+    const [first] = afterStartup(bdk(["hooks", "session-start"], root).stdout);
+    expect(first).toMatch(/^\[BDK\] WARNING: \.bdk\/\.prettierrc is missing or is not/);
+    expect(readFileSync(join(root, ".bdk/.prettierrc"), "utf8")).toBe(own);
   });
 
   it("starts with the output of bdk ctx startup", () => {

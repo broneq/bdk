@@ -114,18 +114,19 @@ describe("T21 acceptance", () => {
     const second = add("Links last 15 minutes", "--supersedes", first, "--body", "Mail is slow.");
     const shown = (id: string) =>
       answered(bdk(["log", "show", id, "--json"], root), "output/log-show.json").entry;
+    // A stored body ends with a newline (`kernel-state`, Markdown document shape).
     expect(shown(first)).toMatchObject({
       id: first,
       // The orchestrator writes without a ticket, so the kernel stamps its own source.
       source: "kernel",
       status: "superseded",
-      body: "Short enough to limit replay.",
+      body: "Short enough to limit replay.\n",
     });
     expect(shown(second)).toMatchObject({
       id: second,
       status: "proposed",
       supersedes: first,
-      body: "Mail is slow.",
+      body: "Mail is slow.\n",
     });
   });
 

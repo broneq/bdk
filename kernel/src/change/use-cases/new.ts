@@ -14,6 +14,7 @@ import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
 import type { ChangeKind } from "../../shared/vocabulary/index.ts";
 import {
+  ensureFormatterGuard,
   ensureIgnored,
   findChange,
   findProjectRoot,
@@ -121,6 +122,7 @@ export async function newChange(
   if (unset !== undefined) return unset;
   const overridden = overriddenKeys(resolution);
   await ensureIgnored(deps.store, deps.git, projectRoot);
+  ensureFormatterGuard(deps.store, projectRoot);
 
   const dir = liveChangeDir(projectRoot, id);
   const profile = input.profile ?? "small";

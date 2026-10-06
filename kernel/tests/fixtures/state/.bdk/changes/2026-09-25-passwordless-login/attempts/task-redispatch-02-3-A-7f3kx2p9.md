@@ -18,4 +18,5 @@ findings:
 dropped:
   - L-3b8wq1mz
 ---
+
 Reviewer finding L-0p4dk7ws (high) is open; attempt 2 narrows to high+.

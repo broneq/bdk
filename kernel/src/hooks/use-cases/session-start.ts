@@ -1,5 +1,7 @@
 // `bdk hooks session-start`: the STARTUP text, then, in a BDK project, the
-// configuration check, the v2 layout detection and the rules load as findings. Nothing here
+// formatter guard, the configuration check, the v2 layout detection and the
+// rules load as findings. The guard is only reported, never written: a session
+// start must not dirty the working tree. Nothing here
 // refuses: a configuration problem must not stop the model at session start.
 import { join } from "node:path";
 
@@ -7,7 +9,7 @@ import { detectLayout, inspectConfig } from "../../config/index.ts";
 import { startupContext } from "../../ctx/index.ts";
 import { rulesOverLimit } from "../../rules/index.ts";
 import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
-import { findProjectRoot } from "../../shared/store/index.ts";
+import { findProjectRoot, FORMATTER_GUARD, formatterGuardState } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { verboseModule } from "../config.ts";
 import type { SessionFindings } from "../domain/report.ts";
@@ -46,6 +48,9 @@ export function sessionStart(input: SessionStartInput): SessionFindings {
       v2Markers: present,
       errors: errors.map(({ why, instead }) => ({ why, instead })),
       warnings,
+      ...(formatterGuardState(input.store, projectRoot) === "ok"
+        ? {}
+        : { formatterGuard: FORMATTER_GUARD.trimEnd() }),
       ...(rules === undefined ? {} : { rules }),
     },
   };

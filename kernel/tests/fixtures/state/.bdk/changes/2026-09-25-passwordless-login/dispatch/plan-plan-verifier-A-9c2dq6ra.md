@@ -13,8 +13,11 @@ template-hash: sha256:5fdb94c0fccd41d1e6e5d83844cf72af7e4a4c5001d1e18b3c40489def
 report: .bdk/changes/2026-09-25-passwordless-login/reports/plan-plan-verifier-A-9c2dq6ra.md
 rules: []
 ---
+
 ## Intent
+
 Users log in with a one-time link sent by email instead of a password.
 
 ## Plan
+
 plan/index.md and parts 01, 02.

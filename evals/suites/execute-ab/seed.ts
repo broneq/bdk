@@ -4,7 +4,7 @@
 // v2.7.0 plan file. Both seeds also commit the project settings a user would
 // have after setup, with the same test and lint commands.
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -265,8 +265,10 @@ export function seedV3(dir: string, task: ExecuteTask, kernel: Kernel = REPO_KER
   for (const part of task.parts) writeFileSync(join(partsDir, part.file), part.source);
   bdk(dir, kernel, "done", "plan", "--json");
   bdk(dir, kernel, "change", "checkpoint", "--json");
-  // The kernel's own .gitignore lines from `change new`, committed as a user would.
+  // The kernel's own .gitignore lines and formatter guard from `change new`,
+  // committed as a user would. A kernel older than the guard writes none.
   git(dir, "add", ".gitignore");
+  if (existsSync(join(dir, ".bdk/.prettierrc"))) git(dir, "add", ".bdk/.prettierrc");
   git(dir, "commit", "-q", "-m", "chore(bdk): ignore machine state");
 }
 

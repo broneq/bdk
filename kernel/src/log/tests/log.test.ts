@@ -529,7 +529,7 @@ describe("log add", () => {
       "From stdin.\n",
     );
     const [name] = logFiles(store);
-    expect(store.read(`${DIR}/log/${name ?? ""}`)).toMatch(/---\nFrom stdin\.\n$/);
+    expect(store.read(`${DIR}/log/${name ?? ""}`)).toMatch(/---\n\nFrom stdin\.\n$/);
   });
 
   it("stamps author unknown when git has no identity", async () => {
@@ -749,7 +749,7 @@ describe("log show", () => {
     ]);
     const shown = logShowOutput.parse((await run(["log", "show", "L-00000001", "--json"])).json);
     expect(shown).toMatchObject({
-      entry: { id: "L-00000001", status: "superseded", body: "Because.", author: AUTHOR },
+      entry: { id: "L-00000001", status: "superseded", body: "Because.\n", author: AUTHOR },
       supersededBy: "L-00000002",
     });
     const text = (await run(["log", "show", "L-00000001"])).stdout;

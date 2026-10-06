@@ -5,6 +5,7 @@ import { KernelRefusal, refuse } from "../../refusal/index.ts";
 import { designIndexKind } from "./design.ts";
 import { planIndexKind } from "./plan.ts";
 import { renderDocument } from "./render.ts";
+import { markdownTable } from "./table.ts";
 
 interface Part {
   readonly id: string;
@@ -22,7 +23,7 @@ export function generatePlanIndex(parts: readonly Part[]): string {
   }));
   const data = { schema: planIndexKind.version, generated: true, parts: rows };
   const table = rows.map((row) => [row.id, cell(row.title), dependencies(row), String(row.wave)]);
-  return renderDocument(data, render(["Part", "Title", "Depends on", "Wave"], table));
+  return renderDocument(data, markdownTable(["Part", "Title", "Depends on", "Wave"], table));
 }
 
 /** The wave of every plan part; refuses what `generatePlanIndex` refuses. */
@@ -39,7 +40,7 @@ export function generateDesignIndex(parts: readonly Part[]): string {
   }));
   const data = { schema: designIndexKind.version, generated: true, parts: rows };
   const table = rows.map((row) => [row.id, cell(row.title), dependencies(row)]);
-  return renderDocument(data, render(["Part", "Title", "Depends on"], table));
+  return renderDocument(data, markdownTable(["Part", "Title", "Depends on"], table));
 }
 
 function sorted(parts: readonly Part[]): Part[] {
@@ -90,10 +91,4 @@ function dependencies(part: Part): string {
 
 function cell(text: string): string {
   return text.replaceAll("|", "\\|");
-}
-
-function render(header: readonly string[], rows: readonly (readonly string[])[]): string {
-  const line = (cells: readonly string[]): string => `| ${cells.join(" | ")} |`;
-  const rule = line(header.map((name) => "-".repeat(name.length)));
-  return [line(header), rule, ...rows.map(line), ""].join("\n");
 }

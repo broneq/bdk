@@ -1,0 +1,1 @@
+{ "requirePragma": true, "overrides": [{ "files": "*", "options": { "parser": "yaml" } }] }

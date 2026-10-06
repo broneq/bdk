@@ -74,7 +74,8 @@
         ".bdk/changes/<id>/change.md",
         ".bdk/changes/<id>/log/",
         ".bdk/.machine/",
-        ".gitignore"
+        ".gitignore",
+        ".bdk/.prettierrc"
       ]
     },
     {
@@ -1365,7 +1366,8 @@
         ".bdk/settings.local.yaml",
         "the global layer file",
         ".bdk/.machine/config/",
-        ".gitignore"
+        ".gitignore",
+        ".bdk/.prettierrc"
       ]
     },
     {
@@ -1637,7 +1639,8 @@
       "writes": [
         ".bdk/rules/",
         ".claude/rules/bdk-generated.md",
-        ".claude/rules/bdk-generated-scoped.md"
+        ".claude/rules/bdk-generated-scoped.md",
+        ".bdk/.prettierrc"
       ]
     },
     {
@@ -1729,7 +1732,8 @@
       "writes": [
         ".bdk/rules/",
         ".claude/rules/bdk-generated.md",
-        ".claude/rules/bdk-generated-scoped.md"
+        ".claude/rules/bdk-generated-scoped.md",
+        ".bdk/.prettierrc"
       ]
     },
     {

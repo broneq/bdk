@@ -12,7 +12,8 @@ parts:
       - "01"
     wave: 2
 ---
-| Part | Title | Depends on | Wave |
-| ---- | ----- | ---------- | ---- |
-| 01 | Token store | - | 1 |
-| 02 | Login with a magic link | 01 | 2 |
+
+| Part | Title                   | Depends on | Wave |
+| ---- | ----------------------- | ---------- | ---- |
+| 01   | Token store             | -          | 1    |
+| 02   | Login with a magic link | 01         | 2    |

@@ -13,10 +13,13 @@ Command: `node "${CLAUDE_PLUGIN_ROOT}/dist/bdk.mjs" hooks session-start 2>&1 || 
 Prints the shared foundation (`STARTUP_INSTRUCTIONS.md`, byte-identical to `bdk ctx startup`) so it becomes session context. In a project with a `.bdk/` directory it then validates the settings as `bdk config check` does, which also refreshes `.bdk/.machine/`, and appends one line per problem:
 
 ```
+[BDK] WARNING: .bdk/.prettierrc is missing or is not the BDK formatter guard, ...
 [BDK] config: <why> Instead: <what to do>
 [BDK] config warning: <path>: <message>
 [BDK] v2 layout detected (<paths>): run /bdk:setup.
 ```
+
+The `WARNING` line comes first. It appears when `.bdk/.prettierrc` is missing or is not the formatter guard (see [Troubleshooting](../troubleshooting.md#prettier-rewrites-files-under-bdk)), and it names the exact content to restore. The hook never writes the file itself.
 
 It also ends, as `stale`, the agents of other sessions that have been silent for longer than `agents.ttl`, so a crashed session leaves no agent `running` in the agent registry (see [Agent hooks](#agent-hooks)).
 

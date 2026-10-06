@@ -83,7 +83,9 @@ living spec. A linter that reads those files fails on Markdown it did not
 write, and a formatter that rewrites them makes finished work stale (a reviewed
 Change goes back to its plan) and makes `bdk doctor` report the living spec as
 edited by hand. Excluding `.bdk/` in each tool's own ignore list also covers
-pre-commit wrappers such as lint-staged. If you decline, BDK's agents never
+pre-commit wrappers such as lint-staged. Prettier needs no exclusion: the
+kernel writes `.bdk/.prettierrc`, a guard that keeps Prettier off `.bdk/`, and
+the session start warns when it is missing. If you decline, BDK's agents never
 "fix" your tool configuration: they log a `question` that points back to
 `/bdk:setup`.
 
