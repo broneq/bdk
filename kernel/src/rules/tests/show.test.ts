@@ -19,23 +19,31 @@ import {
 import type { Store } from "../../shared/store/index.ts";
 import { rulesRegistrations } from "../index.ts";
 import { oneRuleOutput, rulesShowOutput, ticketRulesOutput } from "../schema/show.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
+import type { RuleFileFields } from "../../../tests/support/rule-file.ts";
 
 const PLUGIN = "/plugin";
 const FIRST = "2026-09-25T10:00:41.000Z";
 const LATER = "2026-09-25T10:09:00.000Z";
 
-function rule(id: string, extra = "", origin = "bdk"): string {
-  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: ${origin}\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
+function rule(id: string, fields: RuleFileFields = {}): string {
+  return ruleFile(id, { origin: "bdk", ...fields });
 }
 
 function withRules(store: Store): Store {
   store.write(`${PLUGIN}/rules/code-quality/BDK-CQ-1.md`, rule("BDK-CQ-1"));
   store.write(
     `${PLUGIN}/rules/languages/typescript/BDK-TS-1.md`,
-    rule("BDK-TS-1", "applies: ['**/*.ts']\n"),
+    rule("BDK-TS-1", { paths: ["**/*.ts"] }),
   );
-  store.write(`${ROOT}/.bdk/rules/API-1.md`, rule("API-1", "applies: [src/api/**]\n", "user"));
-  store.write(`${ROOT}/.bdk/rules/API-2.md`, rule("API-2", "removed: superseded\n", "user"));
+  store.write(
+    `${ROOT}/.bdk/rules/API-1.md`,
+    rule("API-1", { paths: ["src/api/**"], origin: "user" }),
+  );
+  store.write(
+    `${ROOT}/.bdk/rules/API-2.md`,
+    rule("API-2", { origin: "user", extra: "removed: superseded\n" }),
+  );
   store.write(
     `${ROOT}/.bdk/settings.yaml`,
     "languages: [typescript]\nrules:\n  disabled: [BDK-CQ-1]\n",
@@ -125,7 +133,8 @@ describe("rules show --ticket", () => {
           id: "API-1",
           kind: "house",
           severity: "medium",
-          applies: ["src/api/**"],
+          paths: ["src/api/**"],
+          stages: ["design", "plan", "execute", "review"],
           matchedBy: "src/api/**",
           text: "Text of API-1.",
         },
@@ -133,7 +142,8 @@ describe("rules show --ticket", () => {
           id: "BDK-TS-1",
           kind: "house",
           severity: "medium",
-          applies: ["**/*.ts"],
+          paths: ["**/*.ts"],
+          stages: ["design", "plan", "execute", "review"],
           matchedBy: "**/*.ts",
           text: "Text of BDK-TS-1.",
         },
@@ -306,8 +316,11 @@ describe("rules show --role --file (T42)", () => {
   function noChange(): Store {
     const store = memoryStore();
     store.write(`${PLUGIN}/rules/code-quality/BDK-CQ-1.md`, rule("BDK-CQ-1"));
-    store.write(`${ROOT}/.bdk/rules/API-1.md`, rule("API-1", "applies: [src/api/**]\n", "user"));
-    store.write(`${ROOT}/.bdk/rules/UI-1.md`, rule("UI-1", "applies: [web/**]\n", "user"));
+    store.write(
+      `${ROOT}/.bdk/rules/API-1.md`,
+      rule("API-1", { paths: ["src/api/**"], origin: "user" }),
+    );
+    store.write(`${ROOT}/.bdk/rules/UI-1.md`, rule("UI-1", { paths: ["web/**"], origin: "user" }));
     return store;
   }
 
@@ -342,6 +355,33 @@ describe("rules show --role --file (T42)", () => {
     expect(ids).toStrictEqual(
       (explained.json as { rules: { id: string }[] }).rules.map((item) => item.id),
     );
+  });
+
+  it("prints no rule for a role without a stage", async () => {
+    const result = await run(noChange(), [
+      "rules",
+      "show",
+      "--role",
+      "runner",
+      "--file",
+      "src/api/login.ts",
+      "--json",
+    ]);
+    expect(result.code, result.stdout).toBe(0);
+    expect(result.json).toMatchObject({ role: "runner", rules: [] });
+  });
+
+  it("prints only the rules of the role's stage", async () => {
+    const store = noChange();
+    store.write(`${ROOT}/.bdk/rules/PLN-1.md`, rule("PLN-1", { stages: ["plan"], origin: "user" }));
+    const ids = async (role: string) =>
+      (
+        (await run(store, ["rules", "show", "--role", role, "--file", "src/a.ts", "--json"]))
+          .json as { rules: { id: string }[] }
+      ).rules.map((item) => item.id);
+    expect(await ids("verifier")).toContain("PLN-1");
+    expect(await ids("implementer")).not.toContain("PLN-1");
+    expect(await ids("integration-reviewer")).toStrictEqual(await ids("reviewer"));
   });
 
   it("prints one heading with the role and the files in text mode", async () => {
@@ -394,7 +434,8 @@ describe("rules show <id>", () => {
       file: ".bdk/rules/API-1.md",
       kind: "house",
       severity: "medium",
-      applies: ["src/api/**"],
+      paths: ["src/api/**"],
+      stages: ["design", "plan", "execute", "review"],
       origin: "user",
       since: "2026-09-30",
       disabled: false,
@@ -420,7 +461,7 @@ describe("rules show <id>", () => {
   it("prints the frontmatter fields and the text in text mode", async () => {
     const result = await run(withRules(repository()), ["rules", "show", "API-1"]);
     expect(result.stdout).toContain("## API-1\n\nfile: .bdk/rules/API-1.md\nkind: house");
-    expect(result.stdout).toContain("applies: src/api/**");
+    expect(result.stdout).toContain("paths: src/api/**\nstages: design, plan, execute, review\n");
     expect(result.stdout).toContain("\n\nText of API-1.\n");
   });
 

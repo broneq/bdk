@@ -9,6 +9,7 @@ import { memoryStore } from "../../shared/store/index.ts";
 import { renderLiving } from "../../spec/use-cases/living.ts";
 import { doctor } from "../use-cases/doctor.ts";
 import { version } from "../use-cases/version.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 
 const PLUGIN = "/plugins/bdk";
 const ROOT = "/work/repo";
@@ -342,8 +343,6 @@ describe("doctor merge-hash (T30-D13)", () => {
 });
 
 describe("doctor rule checks (T31)", () => {
-  const rule = (id: string, extra = "", origin = "user"): string =>
-    `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: ${origin}\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
   const findings = async (files: Record<string, string>) =>
     (await run({ ...HEALTHY, ...files })).findings.map(({ id, level, summary, repair }) => ({
       id,
@@ -357,15 +356,15 @@ describe("doctor rule checks (T31)", () => {
   });
 
   it("is quiet on valid rules", async () => {
-    expect(await findings({ [`${ROOT}/.bdk/rules/NAMING-1.md`]: rule("NAMING-1") })).toStrictEqual(
-      [],
-    );
+    expect(
+      await findings({ [`${ROOT}/.bdk/rules/NAMING-1.md`]: ruleFile("NAMING-1") }),
+    ).toStrictEqual([]);
   });
 
   it("never reports a file under .claude/rules/", async () => {
     expect(
       await findings({
-        [`${ROOT}/.bdk/rules/NAMING-1.md`]: rule("NAMING-1"),
+        [`${ROOT}/.bdk/rules/NAMING-1.md`]: ruleFile("NAMING-1"),
         [`${ROOT}/.claude/rules/naming.md`]: "- Name things well.\n",
         [`${ROOT}/.claude/rules/web/forms.md`]: "- Forms go through actions.\n",
         [`${ROOT}/.claude/rules/bdk-generated-scoped.md`]: "stale",
@@ -374,7 +373,7 @@ describe("doctor rule checks (T31)", () => {
   });
 
   it("fails an invalid rule with the first problem", async () => {
-    const report = await findings({ [`${ROOT}/.bdk/rules/NAMING-1.md`]: rule("NAMING-2") });
+    const report = await findings({ [`${ROOT}/.bdk/rules/NAMING-1.md`]: ruleFile("NAMING-2") });
     expect(report).toHaveLength(1);
     expect(report[0]).toMatchObject({
       id: "rules-invalid",
@@ -385,7 +384,9 @@ describe("doctor rule checks (T31)", () => {
   });
 
   it("fails a rule with origin import", async () => {
-    const report = await findings({ [`${ROOT}/.bdk/rules/API-1.md`]: rule("API-1", "", "import") });
+    const report = await findings({
+      [`${ROOT}/.bdk/rules/API-1.md`]: ruleFile("API-1", { origin: "import" }),
+    });
     expect(report).toHaveLength(1);
     expect(report[0]).toMatchObject({
       id: "rules-invalid",

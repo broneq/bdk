@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createFixture } from "../../../tests/support/fixture.ts";
 import type { Fixture } from "../../../tests/support/fixture.ts";
-import { REPO_ROOT, runBdk } from "../../../tests/support/run.ts";
+import { gitDir, REPO_ROOT, runBdk } from "../../../tests/support/run.ts";
 import { validatorFor } from "../../../tests/support/schemas.ts";
 import { FORMATTER_GUARD } from "../../shared/store/index.ts";
 
@@ -23,6 +23,9 @@ const VERSION = (
 const MODELINE = `# yaml-language-server: $schema=https://raw.githubusercontent.com/broneq/bdk/dist-v${VERSION}/schema/settings.json\n`;
 const PAYLOAD = JSON.stringify({ hook_event_name: "SessionStart", source: "startup" });
 
+/** The hook's PATH holds git, as a session's does, and nothing else of the developer's. */
+const GIT_DIR = gitDir();
+
 const fixtures: Fixture[] = [];
 /** A BDK project (any `.bdk/` file) gets the formatter guard unless it names its own. */
 function fixture(files: Record<string, string> = {}, git = true): Fixture {
@@ -37,7 +40,7 @@ afterEach(() => {
 });
 
 function bdk(args: readonly string[], root: string) {
-  const env = { XDG_CONFIG_HOME: join(root, "xdg"), HOME: root, PATH: "" };
+  const env = { XDG_CONFIG_HOME: join(root, "xdg"), HOME: root, PATH: GIT_DIR };
   return runBdk(args, root, { env, stdin: PAYLOAD });
 }
 
@@ -131,7 +134,7 @@ describe("bdk hooks session-start", () => {
     const lines = afterStartup(result.stdout);
     expect(lines).toHaveLength(1);
     expect(lines[0]).toMatch(
-      /^\[BDK\] rules warning: implementer reads \d+ rules \(rules\.warn-above: 10\); switch rules off with rules\.disabled or narrow them with applies\.$/,
+      /^\[BDK\] rules warning: implementer reads \d+ rules \(rules\.warn-above: 10\); switch rules off with rules\.disabled or narrow their paths or stages\.$/,
     );
   });
 

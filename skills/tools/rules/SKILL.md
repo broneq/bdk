@@ -13,7 +13,7 @@ If no "BDK context: rules" heading appears above, run `bdk ctx skill rules` firs
 
 > Relies on BDK foundation (STARTUP_INSTRUCTIONS.md) for project context.
 
-The project's rules are the files under `.bdk/rules/`, read with the rule pack of the plugin, selected per package by `applies` and cited by id. The kernel owns them: you create a rule only with `bdk rules accept`, never by writing a rule file. Add `--json` to every command whose output you act on.
+The project's rules are the files under `.bdk/rules/`, read with the rule pack of the plugin, selected for each reader by their `paths` and `stages`, and cited by id. The kernel owns them: you create a rule only with `bdk rules accept`, never by writing a rule file. Add `--json` to every command whose output you act on.
 
 The first argument picks the mode: `audit` (also with no argument), `capture <lesson>` or `check`. Done when the mode's report is given.
 
@@ -25,14 +25,14 @@ Read "What a rule is" in `rules/README.md` of the plugin (`${CLAUDE_PLUGIN_ROOT}
 - a process lesson ("the negative test was forgotten"), which stays a `learning` or `finding` entry;
 - a principle with no alternative, or knowledge capable models already have.
 
-A candidate that passes is written as one imperative, falsifiable sentence, without the story of the incident that taught it. It gets the narrowest `applies` globs that still cover the code it governs (none means global), a severity, and for `knowledge` its `source` and the date it was `verified`. Before proposing it, check that no rule already covers it: `bdk rules explain <file>` for a file in its scope lists the rules that apply there. When one covers it, propose no new rule and say which one does.
+A candidate that passes is written as one imperative, falsifiable sentence, without the story of the incident that taught it. It gets the narrowest `paths` globs that still cover the code it governs (`**` only when it governs every file), the `stages` that read it (`design`, `plan`, `execute`, `review`; only those where it changes the work), a severity, and for `knowledge` its `source` and the date it was `verified`. Before proposing it, check that no rule already covers it: `bdk rules explain <file>` for a file in its scope lists the rules that apply there. When one covers it, propose no new rule and say which one does.
 
 ## audit
 
 1. Run `bdk rules stats --entries --json`. Group the `recurring` items and the `entries` by meaning, since a fingerprint only groups near-identical wording. Skip items already `adopted`.
 2. Drop every group that is not a rule (above), and say in one line why for each.
-3. Propose the rest through the `Asking the user` section of the context above, one item per candidate: the sentence, kind, severity, `applies`, prefix, and the entry ids it comes from. The prefix is one the project already uses under `.bdk/rules/`, or a new one the user picks; never `BDK`. Nothing is adopted before the user accepts it.
-4. For each accepted candidate, run `bdk rules accept "<text>" --prefix <PREFIX> --kind <kind> --severity <severity> --applies <glob>... --from <changeId>/<L-id>... --json`, adding `--source` and `--verified` for `knowledge`. On a refusal, report its `why` and continue with the next.
+3. Propose the rest through the `Asking the user` section of the context above, one item per candidate: the sentence, kind, severity, `paths`, `stages`, prefix, and the entry ids it comes from. The prefix is one the project already uses under `.bdk/rules/`, or a new one the user picks; never `BDK`. Nothing is adopted before the user accepts it.
+4. For each accepted candidate, run `bdk rules accept "<text>" --prefix <PREFIX> --kind <kind> --severity <severity> --path <glob>... --stage <stage>... --from <changeId>/<L-id>... --json`, adding `--source` and `--verified` for `knowledge`. On a refusal, report its `why` and continue with the next.
 5. Run `bdk rules prune --json` and offer each listed rule for removal with its reason (`no-match`: its globs match no file; `uncited`: no recent Change cited it). A bundle rule (`BDK-*`) is switched off with `bdk config set rules.disabled`, never edited. For a project rule the user wants gone, see "Removing a rule".
 
 Report the rules adopted with their ids, the candidates rejected with the reason, and the removals.

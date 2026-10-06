@@ -25,7 +25,7 @@ export function renderSessionStart({ startup, project }: SessionFindings): Sessi
       : [
           `[BDK] rules warning: ${project.rules.role} reads ${String(project.rules.rules)} rules ` +
             `(rules.warn-above: ${String(project.rules.limit)}); ` +
-            "switch rules off with rules.disabled or narrow them with applies.",
+            "switch rules off with rules.disabled or narrow their paths or stages.",
         ]),
   ];
   return {

@@ -2,6 +2,15 @@
 schema: 1
 id: BDK-JS-4
 kind: house
+paths:
+  - "**/*.js"
+  - "**/*.mjs"
+  - "**/*.cjs"
+  - "**/*.jsx"
+stages:
+  - plan
+  - execute
+  - review
 severity: medium
 origin: bdk
 since: 2026-09-30

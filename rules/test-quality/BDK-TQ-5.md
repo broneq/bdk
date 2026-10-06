@@ -2,6 +2,12 @@
 schema: 1
 id: BDK-TQ-5
 kind: house
+paths:
+  - "**"
+stages:
+  - plan
+  - execute
+  - review
 severity: medium
 origin: bdk
 since: 2026-09-30

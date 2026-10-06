@@ -2,8 +2,9 @@
 // v3-t23b-dispatch-envelope): the rule prompt values and `languages` moved
 // from `ctx` to `rules`, and a skill's context must not change with the
 // owner. The plugin texts and the pack rules are stand-ins named after their
-// file or id, so a rule edit does not touch the snapshot; the settings and
-// the project rules exercise every part kind.
+// file or id, so a rule edit does not touch the snapshot; the settings, the
+// work tree and the project rules exercise every part kind and every way a
+// rule is left out.
 import { describe, expect, it } from "vitest";
 
 import { renderContext } from "../../src/ctx/render/sections.ts";
@@ -12,6 +13,9 @@ import { composeSkill } from "../../src/ctx/use-cases/skill.ts";
 import { PACK_DIRS } from "../../src/rules/domain/rule.ts";
 import { settingsRegistry } from "../../src/registrations.ts";
 import { memoryStore } from "../../src/shared/store/index.ts";
+import { fakeGit } from "../../src/log/tests/support.ts";
+import { LANGUAGE_PATHS, PACK_STAGES } from "../support/pack-layout.ts";
+import { ruleFile } from "../support/rule-file.ts";
 
 const PLUGIN = "/plugin";
 const PROJECT = "/repo";
@@ -19,12 +23,7 @@ const GLOBAL = "/home/dev/.config/bdk";
 
 const registry = settingsRegistry();
 
-/** A rule file with the stand-in text `Text of <id>.` */
-function rule(id: string, origin: string, extra = ""): string {
-  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: ${origin}\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
-}
-
-/** Every default file of a declared prompt key, the plugin files the manifest names, and one rule per pack directory. */
+/** Every default file of a declared prompt key, the plugin files the manifest names, and two rules per pack directory, with its stages and paths. */
 function pluginFiles(): Record<string, string> {
   const paths = new Set<string>();
   for (const prompt of registry.prompts) {
@@ -36,7 +35,11 @@ function pluginFiles(): Record<string, string> {
   const pack = Object.entries(PACK_DIRS).flatMap(([dir, prefix]) =>
     [1, 2].map((n): [string, string] => [
       `${PLUGIN}/rules/${dir}/BDK-${prefix}-${String(n)}.md`,
-      rule(`BDK-${prefix}-${String(n)}`, "bdk"),
+      ruleFile(`BDK-${prefix}-${String(n)}`, {
+        origin: "bdk",
+        paths: LANGUAGE_PATHS[dir] ?? ["**"],
+        stages: PACK_STAGES[dir] ?? [],
+      }),
     ]),
   );
   return Object.fromEntries([
@@ -65,13 +68,19 @@ const SETTINGS = [
   "",
 ].join("\n");
 
+// TypeScript and API files: the TS and REACT packs and the scoped API-1 apply, the JS pack does not.
+const git = fakeGit();
+git.workTree.push("src/api/x.ts", "web/App.tsx", "README.md");
+
 const input = {
   store: memoryStore({
     ...pluginFiles(),
     [`${PROJECT}/.bdk/settings.yaml`]: SETTINGS,
-    [`${PROJECT}/.bdk/rules/NAMING-1.md`]: rule("NAMING-1", "user"),
-    [`${PROJECT}/.bdk/rules/API-1.md`]: rule("API-1", "user", "applies: [src/api/**]\n"),
+    [`${PROJECT}/.bdk/rules/NAMING-1.md`]: ruleFile("NAMING-1"),
+    [`${PROJECT}/.bdk/rules/API-1.md`]: ruleFile("API-1", { paths: ["src/api/**"] }),
+    [`${PROJECT}/.bdk/rules/E2E-1.md`]: ruleFile("E2E-1", { stages: ["execute", "review"] }),
   }),
+  git,
   pluginRoot: PLUGIN,
   settings: registry,
   globalDir: GLOBAL,
@@ -80,8 +89,8 @@ const input = {
 };
 
 describe("ctx skill output", () => {
-  it.each(Object.keys(SKILL_CONTEXT).sort())("%s is unchanged", (name) => {
-    const outcome = composeSkill(input, name);
+  it.each(Object.keys(SKILL_CONTEXT).sort())("%s is unchanged", async (name) => {
+    const outcome = await composeSkill(input, name);
     if ("refused" in outcome) throw new Error(`refused: ${outcome.why}`);
     expect(JSON.stringify(renderContext(outcome), null, 2)).toMatchSnapshot();
   });

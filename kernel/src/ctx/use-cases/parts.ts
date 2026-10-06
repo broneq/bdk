@@ -24,50 +24,26 @@ import type {
   Resolved,
   SetupClass,
 } from "../../shared/config/index.ts";
-import {
-  languageRules,
-  packRules,
-  PROJECT_RULES_DIR,
-  projectRules,
-  RULE_CATEGORIES,
-  ruleContext,
-  ruleLines,
-} from "../../rules/index.ts";
+import { ruleContext, stageRuleLines } from "../../rules/index.ts";
 import type { RulesInput } from "../../rules/index.ts";
-
-/** The BDK pack categories a `rules` part or a pipeline node may name. */
-export { RULE_CATEGORIES };
+import type { RuleStage } from "../../shared/vocabulary/index.ts";
 import { executionModule, featuresModule, fragmentPrompts } from "../config.ts";
 import type { Section } from "../domain/report.ts";
 import type { CtxInput } from "./input.ts";
 import type { Part } from "./manifest.ts";
 
-export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Section[] {
+/** `files` are the work tree files a `rules` part selects over. */
+export function sectionsOf(
+  input: CtxInput,
+  resolved: Resolved,
+  part: Part,
+  files: readonly string[],
+): Section[] {
   switch (part.kind) {
-    case "rules":
-      return [
-        {
-          title: `Rules: ${part.category}`,
-          body: categoryText(input, resolved, part.category),
-          part: { kind: "rules", source: `rules/${part.category}` },
-        },
-      ];
-    case "language-rules":
-      return languageRules(ruleContext(input, resolved)).map(({ language, rules }) => ({
-        title: `Language rules: ${language}`,
-        body: ruleLines(rules),
-        part: { kind: "language-rules", source: `rules/languages/${language}` },
-      }));
-    case "project-rules": {
-      const rules = projectRules(ruleContext(input, resolved));
-      if (rules.length === 0) return [];
-      return [
-        {
-          title: "Project rules",
-          body: ruleLines(rules),
-          part: { kind: "project-rules", source: PROJECT_RULES_DIR },
-        },
-      ];
+    case "rules": {
+      const body = stageRuleText(input, resolved, part.stage, files);
+      if (body === "") return [];
+      return [{ title: "Rules", body, part: { kind: "rules", source: `stage:${part.stage}` } }];
     }
     case "fragment": {
       const choice = lavish(input, resolved) ? "lavish" : "ask-user";
@@ -134,15 +110,16 @@ export function sectionsOf(input: CtxInput, resolved: Resolved, part: Part): Sec
 }
 
 /**
- * The enabled pack rules of one category as `- [<id>] <text>` lines, as `ctx
- * skill` prints them; the graph's instructions carry the same text. An
- * unknown category is a broken manifest or pipeline and throws.
+ * The rules a stage reads over `files` as `- [<id>] <text>` lines: the `rules`
+ * part prints them, and a pipeline node's instruction carries the same text.
  */
-export function categoryText(input: RulesInput, resolved: Resolved, category: string): string {
-  if (!RULE_CATEGORIES.includes(category)) {
-    throw new Error(`${category} is not a rule category of the pack`);
-  }
-  return ruleLines(packRules(ruleContext(input, resolved), category));
+export function stageRuleText(
+  input: RulesInput,
+  resolved: Resolved,
+  stage: RuleStage,
+  files: readonly string[],
+): string {
+  return stageRuleLines(ruleContext(input, resolved), stage, files);
 }
 
 const SETUP_HEADINGS: readonly (readonly [SetupClass, string])[] = [

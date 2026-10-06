@@ -2,11 +2,11 @@
 schema: 1
 id: TQ-7
 kind: house
-applies:
+paths:
   - "**/*.test.ts"
-roles:
-  - implementer
-  - reviewer
+stages:
+  - execute
+  - review
 severity: medium
 origin: 2026-09-25-passwordless-login/L-q81c0zt4
 since: 2026-09-26

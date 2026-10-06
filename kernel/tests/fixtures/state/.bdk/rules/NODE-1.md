@@ -2,8 +2,12 @@
 schema: 1
 id: NODE-1
 kind: knowledge
-applies:
+paths:
   - kernel/**
+stages:
+  - plan
+  - execute
+  - review
 severity: high
 origin: user
 since: 2026-09-20

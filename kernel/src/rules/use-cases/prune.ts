@@ -1,6 +1,7 @@
 // `bdk rules prune` (`kernel-cli/rules`; design D-9 of v3-t31): rules whose
 // globs match no file of the work tree, and rules no entry of the last
-// `<n>` Changes cites, reported once the project has that many Changes.
+// `<n>` Changes cites, reported once the project has that many Changes. A
+// language pack `languages` does not list is no candidate and is left out.
 // Reports only; removal is a tombstone the user writes.
 import {
   listAllEntries,
@@ -16,6 +17,7 @@ import type { Refusal } from "../../shared/refusal/index.ts";
 import type { PruneItem } from "../domain/report.ts";
 import { citationsOf } from "./citations.ts";
 import type { RulesDeps } from "./deps.ts";
+import { isCandidate } from "./selection.ts";
 import { loadContext } from "./settings.ts";
 
 export async function pruneRules(
@@ -42,15 +44,13 @@ export async function pruneRules(
     const items: PruneItem[] = [];
     for (const rule of context.rules) {
       if (rule.removed !== undefined || disabled.has(rule.id)) continue;
-      const globs = rule.applies ?? [];
-      if (
-        globs.length > 0 &&
-        !files.some((file) => globs.some((glob) => matchesGlob(glob, file)))
-      ) {
+      if (!isCandidate(rule, context.languages)) continue;
+      const globs = rule.paths;
+      if (!files.some((file) => globs.some((glob) => matchesGlob(glob, file)))) {
         items.push({
           id: rule.id,
           reason: "no-match",
-          detail: `applies: ${JSON.stringify(globs)} matches 0 files`,
+          detail: `paths: ${JSON.stringify(globs)} matches 0 files`,
         });
       }
       if (counted && !cited.has(rule.id)) {

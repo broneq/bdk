@@ -1,6 +1,6 @@
 // The settings `rules` owns (`kernel-settings`, Keys of the project toolchain,
-// Keys of rules and specs): the project's languages, which select the
-// bundle's language packs, and the `rules` keys of selection and the audit.
+// Keys of rules and specs): the project's languages, which switch the
+// bundle's language packs on, and the `rules` keys of selection and the audit.
 // Rules themselves are files, not prompt values (T31).
 import * as z from "zod";
 
@@ -15,7 +15,7 @@ export const languagesModule = defineConfigModule({
   owner: "T12",
   setup: "derived",
   description:
-    "Languages and frameworks of the project; a name selects the bundle's pack rules/languages/<name>/.",
+    "Languages and frameworks of the project; a name switches on the bundle's pack rules/languages/<name>/, read for the files its paths match.",
   schema: z
     .array(text)
     .refine((names) => new Set(names).size === names.length, "names must be unique")
@@ -33,7 +33,7 @@ export const rulesModule = defineConfigModule({
     .strictObject({
       "warn-above": count.default(100).meta({
         description:
-          "Rules one role may read before hooks session-start warns; no cap, every applying rule reaches the agent.",
+          "Rules one role may read over the work tree files before hooks session-start warns; no cap, every applying rule reaches the agent.",
       }),
       disabled: z
         .array(z.string().regex(RULE_ID))

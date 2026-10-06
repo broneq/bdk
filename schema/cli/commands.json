@@ -1591,24 +1591,15 @@
           "description": "Default medium."
         },
         {
-          "name": "--applies",
+          "name": "--path",
           "value": "<glob>",
-          "description": "Repeatable; absent means global.",
+          "description": "Required and repeatable; the rule's paths, ** for every file.",
           "repeatable": true
         },
         {
-          "name": "--role",
-          "values": [
-            "implementer",
-            "simplifier",
-            "reviewer",
-            "pr-reviewer",
-            "verifier",
-            "design-verifier",
-            "runner",
-            "scout"
-          ],
-          "description": "Repeatable; absent means every rule-reading role.",
+          "name": "--stage",
+          "values": ["design", "plan", "execute", "review"],
+          "description": "Required and repeatable; the rule's stages.",
           "repeatable": true
         },
         {

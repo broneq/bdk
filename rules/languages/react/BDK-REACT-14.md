@@ -2,6 +2,13 @@
 schema: 1
 id: BDK-REACT-14
 kind: knowledge
+paths:
+  - "**/*.jsx"
+  - "**/*.tsx"
+stages:
+  - plan
+  - execute
+  - review
 severity: medium
 origin: bdk
 since: 2026-09-30

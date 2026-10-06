@@ -209,11 +209,22 @@ describe("rules audits, captures and checks rules through the kernel", () => {
       "bdk rules stats --entries",
       "bdk rules accept",
       "--from",
+      "--path",
+      "--stage",
       "bdk rules prune",
     ]) {
       expect(body, needle).toContain(needle);
     }
     expect(body).toMatch(/nothing is adopted before the user accepts/i);
+  });
+
+  it("has each proposal state paths and stages, and names no applies or roles rule field", () => {
+    const { body } = skill();
+    const audit = body.slice(body.indexOf("## audit"), body.indexOf("## capture"));
+    expect(audit).toMatch(/the sentence, kind, severity, `paths`, `stages`/);
+    expect(body).not.toMatch(/`roles`|--role\b/);
+    // `--applies` stays only as the scope of a `learning` entry (`kernel-state`, Ledger).
+    expect(body.replace(/bdk log add learning [^\n]*/g, "")).not.toMatch(/applies/);
   });
 
   it("captures a lesson inside and outside a Change", () => {
@@ -266,7 +277,7 @@ describe("adr records one decision as MADR", () => {
   it("keeps the MADR template in a linked reference", () => {
     expect(existsSync(join(TOOLS, "adr", "references", "madr-template.md"))).toBe(true);
     expect(skill().body).toContain("references/madr-template.md");
-    expect(SKILL_CONTEXT.adr).toContainEqual({ kind: "rules", category: "architecture" });
+    expect(SKILL_CONTEXT.adr).toContainEqual({ kind: "rules", stage: "design" });
   });
 });
 

@@ -111,7 +111,7 @@ describe("a formatter over committed state", () => {
     fileStore().write(join(change.root, capture), '{"a":1,\n"b":[1,2]}\n');
     fileStore().write(
       join(change.root, rule),
-      "---\nschema: 1\nid: API-1\nkind: house\nseverity: medium\norigin: user\nsince: 2026-10-06\n---\n*   Badly   formatted.\n",
+      '---\nschema: 1\nid: API-1\nkind: house\npaths: ["**"]\nstages: [plan]\nseverity: medium\norigin: user\nsince: 2026-10-06\n---\n*   Badly   formatted.\n',
     );
     const check = (cwd: string, path: string) =>
       spawnSync(PRETTIER, ["--check", path], { cwd, encoding: "utf8" }).status;

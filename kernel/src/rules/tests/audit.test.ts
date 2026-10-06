@@ -20,6 +20,7 @@ import { prefixProblem, ruleLine } from "../domain/rule.ts";
 import type { LoadedRule } from "../domain/rule.ts";
 import { rulesRegistrations } from "../index.ts";
 import { rulesCheckOutput, rulesStatsOutput } from "../schema/outputs.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 
 const PLUGIN = "/plugin";
 const FINGERPRINT = `sha256:${"4".repeat(64)}`;
@@ -206,30 +207,26 @@ describe("rule domain", () => {
     expect(prefixProblem("API-STYLE")).toBeUndefined();
   });
 
-  it("prints a rule line with indented continuation and its applies", () => {
-    const rule: Pick<LoadedRule, "id" | "text" | "applies"> = {
+  it("prints a rule line with indented continuation and its paths unless it governs every file", () => {
+    const rule: Pick<LoadedRule, "id" | "text" | "paths"> = {
       id: "API-1",
       text: "First line.\nSecond line.",
-      applies: ["src/api/**", "web/**"],
+      paths: ["src/api/**", "web/**"],
     };
     expect(ruleLine(rule)).toBe(
-      "- [API-1] First line.\n  Second line. (applies: src/api/**, web/**)\n",
+      "- [API-1] First line.\n  Second line. (paths: src/api/**, web/**)\n",
     );
-    expect(ruleLine({ id: "NAMING-1", text: "Name it.", applies: [] })).toBe(
+    expect(ruleLine({ id: "NAMING-1", text: "Name it.", paths: ["**"] })).toBe(
       "- [NAMING-1] Name it.\n",
     );
   });
 });
 
 describe("rules stats text mode", () => {
-  function projectRule(id: string): string {
-    return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n---\n\nText of ${id}.\n`;
-  }
-
   it("prints the recurring items, the entries with the hidden count and the citations", async () => {
     const store = repository();
-    store.write(`${ROOT}/.bdk/rules/API-1.md`, projectRule("API-1"));
-    store.write(`${ROOT}/.bdk/rules/API-2.md`, projectRule("API-2"));
+    store.write(`${ROOT}/.bdk/rules/API-1.md`, ruleFile("API-1"));
+    store.write(`${ROOT}/.bdk/rules/API-2.md`, ruleFile("API-2"));
     for (const id of ["2026-09-20-one", "2026-09-21-two", "2026-09-22-three"]) {
       changeWith(store, id, [`${id.slice(0, 10)}T10:00:00.000Z`]);
     }
@@ -267,8 +264,7 @@ describe("rules stats text mode", () => {
 describe("rules check with a path", () => {
   it("counts only the rules under the path and ignores problems elsewhere", async () => {
     const store = repository();
-    const rule = (id: string) =>
-      `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n---\n\nText.\n`;
+    const rule = (id: string) => ruleFile(id, { text: "Text." });
     store.write(`${ROOT}/.bdk/rules/API-1.md`, rule("API-1"));
     store.write(`${ROOT}/.bdk/rules/BAD-1.md`, "---\nschema: 1\nid: BAD-1\n---\n\nText.\n");
     const one = await run(store, ["rules", "check", ".bdk/rules/API-1.md"]);

@@ -33,11 +33,11 @@ A lesson that recurs is a candidate, not a rule. Before you adopt it, check it a
 
 ```bash
 bdk rules accept "Keep the pending state in the form's own store." \
-  --prefix FORM --applies "web/forms/**" \
+  --prefix FORM --path "web/forms/**" --stage execute --stage review \
   --from 2026-09-25-login/L-00000012
 ```
 
-`rules accept` is the only way to create a rule file. It writes `.bdk/rules/FORM-<n>.md` with the next free number (tombstones included), and records the entries of `--from` as its `origin` and `evidence`. Other flags: `--kind knowledge` with `--source` and `--verified`, `--severity`, and `--role` to name the roles that read it.
+`rules accept` is the only way to create a rule file. It writes `.bdk/rules/FORM-<n>.md` with the next free number (tombstones included), and records the entries of `--from` as its `origin` and `evidence`. `--path` and `--stage` are required and repeatable: the rule's `paths` (`--path "**"` for every file) and `stages` (`design`, `plan`, `execute`, `review`), as narrow as the rule allows. Other flags: `--kind knowledge` with `--source` and `--verified`, and `--severity`.
 
 ## Remove what no longer pays
 
@@ -45,11 +45,11 @@ bdk rules accept "Keep the pending state in the form's own store." \
 bdk rules prune
 ```
 
-`rules prune` reports rules whose `applies` globs match no file of the work tree, and, once the project has at least `rules.prune.uncited-changes` Changes (20 by default), rules that no entry of those Changes cites. It only reports. To remove a project rule, turn its file into a tombstone: add `removed: <reason>` to the frontmatter and keep the body, so the id is never reused. To stop reading a shipped rule, list its id in `rules.disabled`.
+`rules prune` reports rules whose `paths` globs match no file of the work tree, and, once the project has at least `rules.prune.uncited-changes` Changes (20 by default), rules that no entry of those Changes cites. It only reports. To remove a project rule, turn its file into a tombstone: add `removed: <reason>` to the frontmatter and keep the body, so the id is never reused. To stop reading a shipped rule, list its id in `rules.disabled`.
 
 ## Hand-written `.claude/rules/`
 
-Files you wrote in `.claude/rules/` are Claude Code's, not BDK's: they load in a session by their `paths:`, and BDK never reads, writes or reports them. BDK agents do not see them in their packages and cannot cite them. When an agent must follow one of them, adopt that one rule with `bdk rules accept`, scoped with the narrowest `--applies` glob.
+Files you wrote in `.claude/rules/` are Claude Code's, not BDK's: they load in a session by their `paths:`, and BDK never reads, writes or reports them. BDK agents do not see them in their packages and cannot cite them. When an agent must follow one of them, adopt that one rule with `bdk rules accept`, scoped with the narrowest `--path` glob and the `--stage` values that need it.
 
 ## Let the skill run it
 
@@ -57,12 +57,12 @@ Files you wrote in `.claude/rules/` are Claude Code's, not BDK's: they load in a
 
 ## A working rhythm
 
-| Moment                                               | Command                                        |
-| ---------------------------------------------------- | ---------------------------------------------- |
-| You just learned something the hard way              | `bdk log add learning ...`                     |
-| Every few Changes                                    | `/bdk:rules audit`                             |
-| Session start warns that a role reads too many rules | `bdk rules prune`, `rules.disabled`, `applies` |
-| Before a big refactor                                | `bdk rules prune`                              |
+| Moment                                               | Command                                                           |
+| ---------------------------------------------------- | ----------------------------------------------------------------- |
+| You just learned something the hard way              | `bdk log add learning ...`                                        |
+| Every few Changes                                    | `/bdk:rules audit`                                                |
+| Session start warns that a role reads too many rules | `bdk rules prune`, `rules.disabled`, narrower `paths` or `stages` |
+| Before a big refactor                                | `bdk rules prune`                                                 |
 
 ## What you get
 

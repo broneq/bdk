@@ -9,6 +9,7 @@ import { detectLayout, inspectConfig } from "../../config/index.ts";
 import { startupContext } from "../../ctx/index.ts";
 import { rulesOverLimit } from "../../rules/index.ts";
 import { moduleValue, resolveOrRefuse } from "../../shared/config/index.ts";
+import { workTreeFiles } from "../../shared/git/index.ts";
 import { findProjectRoot, FORMATTER_GUARD, formatterGuardState } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { verboseModule } from "../config.ts";
@@ -16,14 +17,29 @@ import type { SessionFindings } from "../domain/report.ts";
 import type { HooksDeps } from "./input.ts";
 import { verboseMarkerPath } from "./journal.ts";
 
-export interface SessionStartInput extends Pick<HooksDeps, "store" | "pluginRoot" | "settings"> {
+export interface SessionStartInput extends Pick<
+  HooksDeps,
+  "store" | "git" | "pluginRoot" | "settings"
+> {
   readonly cwd: string;
   /** Absent outside a git work tree: the command is standalone. */
   readonly workTree: string | undefined;
   readonly globalDir: string;
 }
 
-export function sessionStart(input: SessionStartInput): SessionFindings {
+/** The work tree files, or undefined when git cannot list them: a session start never stops. */
+async function listedFiles(
+  input: SessionStartInput,
+  projectRoot: string,
+): Promise<string[] | undefined> {
+  try {
+    return await workTreeFiles(input.git, projectRoot);
+  } catch {
+    return undefined;
+  }
+}
+
+export async function sessionStart(input: SessionStartInput): Promise<SessionFindings> {
   const startup = startupContext(input).content;
   if (input.workTree === undefined) return { startup };
   const projectRoot = findProjectRoot(input.store, input.cwd, input.workTree);
@@ -34,8 +50,11 @@ export function sessionStart(input: SessionStartInput): SessionFindings {
   const warnings = (report?.problems ?? [])
     .filter((warning) => warning.code !== "legacy-settings")
     .map((warning) => `${warning.path}: ${warning.message}`);
+  const workTree = errors.length === 0 ? await listedFiles(input, projectRoot) : undefined;
   const rules =
-    errors.length === 0 ? rulesOverLimit(input, projectRoot, input.globalDir) : undefined;
+    workTree === undefined
+      ? undefined
+      : rulesOverLimit(input, projectRoot, input.globalDir, workTree);
   syncVerboseMarker(
     input.store,
     projectRoot,

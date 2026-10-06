@@ -1,6 +1,7 @@
 // A rule as the rules slice works on it (`kernel-state`, Rule file
 // frontmatter; `rule-pack`, Pack layout): the frontmatter, the text, and
 // where the file lives. The pack table maps each bundle directory to its prefix.
+import type { RuleStage } from "../../shared/vocabulary/index.ts";
 
 export type RuleScope = "bundle" | "project";
 
@@ -15,8 +16,9 @@ export interface LoadedRule {
   readonly pack?: string;
   readonly kind: "house" | "knowledge";
   readonly severity: "critical" | "high" | "medium" | "low";
-  readonly applies?: readonly string[];
-  readonly roles?: readonly string[];
+  /** The globs of the files the rule governs; `**` is every file. */
+  readonly paths: readonly string[];
+  readonly stages: readonly RuleStage[];
   readonly origin: string;
   readonly evidence?: readonly string[];
   readonly since: string;
@@ -55,6 +57,9 @@ export const PACK_DIRS: Readonly<Record<string, string>> = {
 
 export const BUNDLE_PREFIX = "BDK-";
 
+/** The glob of a rule that governs every file. */
+export const EVERY_FILE = "**";
+
 /** `BDK-CQ-4` -> `BDK-CQ`, `API-2` -> `API`. */
 export function prefixOf(id: string): string {
   return id.slice(0, id.lastIndexOf("-"));
@@ -62,11 +67,6 @@ export function prefixOf(id: string): string {
 
 export function numberOf(id: string): number {
   return Number(id.slice(id.lastIndexOf("-") + 1));
-}
-
-/** The prefix without `BDK-`: what the role sets and the pack table name. */
-export function familyOf(rule: Pick<LoadedRule, "prefix" | "scope">): string {
-  return rule.scope === "bundle" ? rule.prefix.slice(BUNDLE_PREFIX.length) : rule.prefix;
 }
 
 const PROJECT_PREFIX = /^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*$/;
@@ -82,11 +82,8 @@ export function prefixProblem(prefix: string): string | undefined {
   return undefined;
 }
 
-/** `- [<id>] <text>`, continuation lines indented, ` (applies: ...)` after a scoped rule. */
-export function ruleLine(rule: Pick<LoadedRule, "id" | "text" | "applies">): string {
-  const applies =
-    rule.applies === undefined || rule.applies.length === 0
-      ? ""
-      : ` (applies: ${rule.applies.join(", ")})`;
-  return `- [${rule.id}] ${rule.text.replace(/\n/g, "\n  ")}${applies}\n`;
+/** `- [<id>] <text>`, continuation lines indented, ` (paths: ...)` unless the rule governs every file. */
+export function ruleLine(rule: Pick<LoadedRule, "id" | "text" | "paths">): string {
+  const paths = rule.paths.includes(EVERY_FILE) ? "" : ` (paths: ${rule.paths.join(", ")})`;
+  return `- [${rule.id}] ${rule.text.replace(/\n/g, "\n  ")}${paths}\n`;
 }

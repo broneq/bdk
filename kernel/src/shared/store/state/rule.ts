@@ -4,8 +4,8 @@
 import * as z from "zod";
 
 import { CHANGE_ID_PATTERN } from "../../ids/index.ts";
-import { RULE_ID } from "../../vocabulary/index.ts";
-import { date, glob, role, severity } from "./common.ts";
+import { RULE_ID, RULE_STAGES } from "../../vocabulary/index.ts";
+import { date, glob, severity } from "./common.ts";
 import type { DocumentKind } from "./common.ts";
 
 const VERSION = 1;
@@ -24,8 +24,15 @@ export const ruleKind = {
         .regex(RULE_ID)
         .meta({ description: "Equals the file name without `.md` (`CQ-4`, `BDK-SEC-2`)." }),
       kind: z.enum(["house", "knowledge"]),
-      applies: z.array(glob).optional().meta({ description: "Absent: every file." }),
-      roles: z.array(role).optional().meta({ description: "Absent: every role." }),
+      paths: z
+        .array(glob)
+        .min(1)
+        .meta({ description: "The files the rule governs; `**` is every file." }),
+      stages: z
+        .array(z.enum(RULE_STAGES))
+        .min(1)
+        .refine((stages) => new Set(stages).size === stages.length, "a stage appears twice")
+        .meta({ description: "The pipeline stages that read the rule; no wildcard." }),
       severity,
       origin: z.union([z.enum(["bdk", "user"]), adoptedFrom]).meta({
         description:

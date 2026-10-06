@@ -28,7 +28,8 @@ kind: house
 severity: high
 origin: user
 since: 2026-09-30
-applies: ["src/api/**"]
+paths: ["src/api/**"]
+stages: [plan, execute, review]
 ---
 
 Validate every request body against its schema before the handler reads it.
@@ -40,8 +41,8 @@ Validate every request body against its schema before the handler reads it.
 | `kind`               | `house` or `knowledge`.                                                                     |
 | `severity`           | `critical`, `high`, `medium` or `low`.                                                      |
 | `origin`             | `bdk`, `user`, or the entry or ticket the rule was adopted from.                            |
-| `applies`            | Globs of the files the rule is about. Without it the rule is global.                        |
-| `roles`              | The roles that read the rule, when the default for its prefix does not fit.                 |
+| `paths`              | Required. Globs of the files the rule governs; `["**"]` is every file.                      |
+| `stages`             | Required. The stages that read the rule: `design`, `plan`, `execute`, `review`.             |
 | `source`, `verified` | Required for a `knowledge` rule.                                                            |
 | `removed`            | Makes the file a tombstone: the rule is gone, its id is never reused.                       |
 
@@ -62,11 +63,13 @@ The pack lives in the installed plugin, one directory per category, and is never
 
 A rule enters the pack only after a measurement shows that the models need it: a `house` rule that both measured models already follow, with no measurable effect on review, is left out. `rules/README.md` in the plugin states the admission rule.
 
-A language pack is read only when its name is in `languages`:
+Each shipped rule states its `paths` and `stages` like any other: the directory fixes its stages, and a language directory fixes its `paths` to the file extensions of the language. A language pack is read only when its name is in `languages`:
 
 ```yaml
 languages: [typescript, react]
 ```
+
+The `paths` of the pack then narrow it to the files of that language, so a project with `typescript` and no `.ts` file reads no TypeScript rule. A file extension decides nothing on its own: a `.tsx` file gets the React rules only when `react` is listed.
 
 ## Your project's rules
 
@@ -83,13 +86,22 @@ rules:
 
 ## Which rules an agent reads
 
-When the kernel builds a dispatch package, it selects the rules for the role and the task:
+A rule's `paths` and `stages` are the whole answer: no table in the kernel decides it. Each stage has its readers, and the writer and the checker of a stage read the same rules:
 
-1. A shipped rule is read by the roles its prefix is meant for: the implementer, simplifier and reviewers read `CQ`, `ARCH`, `DP`, `SEC`, `TQ` and the language prefixes; the verifier reads `ARCH`, `TQ`, `EJ` and `PL`; the design verifier reads `ARCH`, `EJ` and `SEC`. A project rule is read by every role that reads rules. `roles` in a rule overrides both.
-2. A rule with `applies` is selected only when one of the task's files matches one of its globs. A target without a file set, such as a design artifact, gets every rule.
-3. Global rules come first, then scoped rules by how specific the matching glob is.
+| Stage     | Session skills            | Pipeline nodes        | Agent roles                                       |
+| --------- | ------------------------- | --------------------- | ------------------------------------------------- |
+| `design`  | `/bdk:design`, `/bdk:adr` | nodes `stage: design` | `design-verifier`                                 |
+| `plan`    | `/bdk:plan`               | nodes `stage: plan`   | `verifier`                                        |
+| `execute` | -                         | -                     | `implementer`, `simplifier`                       |
+| `review`  | -                         | -                     | `reviewer`, `integration-reviewer`, `pr-reviewer` |
 
-Every applying rule is selected: there is no cap, because a configured rule the agent never sees fails silently. When one role would read more than `rules.warn-above` rules (100 by default), the session start prints a `[BDK] rules warning` line; switch rules off or narrow them with `applies`.
+The runner, scout and lead read no rules. A reader selects a rule when:
+
+1. its stage is in the rule's `stages`;
+2. one of the rule's `paths` matches a file of the target: a task's `Files:`, a review group's files, or, for a target without files of its own (a design, a plan, a session skill), the files of the work tree (`git ls-files`, untracked files included, ignored ones left out);
+3. the rule is not in `rules.disabled`, and a language pack's rule also needs its language in `languages`.
+
+Rules of every file come first, then scoped rules by how specific the matching glob is. Every applying rule is selected: there is no cap, because a configured rule the agent never sees fails silently. When one role would read more than `rules.warn-above` rules (100 by default) over the files of the work tree, the session start prints a `[BDK] rules warning` line; switch rules off with `rules.disabled` or narrow their `paths` or `stages`.
 
 The package records the selected ids. The agent reads exactly those rules with `bdk rules show --ticket <ticket>`, and cites the id of every rule that forced a decision or that a finding breaks. A reviewer without a package, such as the PR reviewer of `/bdk:pr-review`, reads the same selection for its file set with `bdk rules show --role pr-reviewer --file <path>...`, which needs no Change. To see what a role would read for a file, run:
 
@@ -100,6 +112,13 @@ bdk rules explain src/api/users.ts --role reviewer
 ## Checking the rules
 
 `bdk rules check` validates every rule file, shipped and project, and refuses a duplicate id. `bdk doctor` reports an invalid rule file under `.bdk/rules/` with the same first problem.
+
+### A rule file with `applies` or `roles`
+
+Earlier v3 previews let a rule leave out where it applies: no `applies` made it global, and `roles` overrode the readers of its prefix. Both fields are gone, and `bdk rules check` names a rule that still carries one. Rewrite each such rule under `.bdk/rules/`:
+
+- Replace `applies: [<globs>]` with `paths: [<globs>]`; a rule without `applies` gets `paths: ["**"]` only when it really governs every file.
+- Replace `roles` with the `stages` of those roles (the table above), and give a rule that had no `roles` only the stages where it changes the work: a rule about E2E tests usually needs `[plan, execute, review]`, not `design`.
 
 ### After an earlier `rules import`
 

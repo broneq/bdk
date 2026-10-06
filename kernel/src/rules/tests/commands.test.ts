@@ -11,23 +11,18 @@ import { memoryIndex, memoryRegistry, writeDocument } from "../../shared/store/i
 import type { Store } from "../../shared/store/index.ts";
 import { rulesRegistrations } from "../index.ts";
 import { rulesAcceptOutput, rulesPruneOutput } from "../schema/outputs.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 
 const PLUGIN = "/plugin";
+/** The required `--path` and `--stage` of `rules accept`, for a test about another flag. */
+const WHERE = ["--path", "**", "--stage", "plan"] as const;
 const RULES = `${ROOT}/.bdk/rules`;
 const HOST = `${ROOT}/.claude/rules`;
 
-function projectRule(id: string, extra = ""): string {
-  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
-}
-
-/** A git whose `ls-files` lists `files`; the rest answers as `fakeGit`. */
+/** A git whose `ls-files` lists `files`. */
 function gitListing(files: readonly string[]): FakeGit {
   const git = fakeGit();
-  const run = git.run.bind(git);
-  git.run = (args, cwd) =>
-    args[0] === "ls-files"
-      ? Promise.resolve({ code: 0, stdout: files.map((file) => `${file}\0`).join(""), stderr: "" })
-      : run(args, cwd);
+  git.workTree.push(...files);
   return git;
 }
 
@@ -56,7 +51,7 @@ function refusedWith(result: { code: number; stdout: string }, code: number, rul
 describe("rules accept", () => {
   it("writes the next number with origin user and leaves .claude/rules/ alone", async () => {
     const store = repository();
-    store.write(`${RULES}/API-2.md`, projectRule("API-2"));
+    store.write(`${RULES}/API-2.md`, ruleFile("API-2"));
     store.write(`${HOST}/naming.md`, "- Name booleans as questions.\n");
     const result = await run(store, [
       "rules",
@@ -64,10 +59,12 @@ describe("rules accept", () => {
       "Validate every request body.",
       "--prefix",
       "API",
-      "--applies",
+      "--path",
       "src/api/**",
-      "--role",
-      "reviewer",
+      "--stage",
+      "execute",
+      "--stage",
+      "review",
       "--severity",
       "high",
       "--json",
@@ -79,6 +76,7 @@ describe("rules accept", () => {
     expect(store.list(HOST)).toStrictEqual(["naming.md"]);
     expect(store.read(`${HOST}/naming.md`)).toBe("- Name booleans as questions.\n");
     const text = store.read(`${RULES}/API-3.md`) ?? "";
+    expect(text).toContain("paths:\n  - src/api/**\nstages:\n  - execute\n  - review\n");
     expect(text).toContain("severity: high");
     expect(text).toContain("since: 2026-09-30");
     expect(text).toContain("Validate every request body.");
@@ -86,7 +84,7 @@ describe("rules accept", () => {
 
   it("reads the text from stdin and prints the adoption", async () => {
     const store = repository();
-    const result = await run(store, ["rules", "accept", "-", "--prefix", "API"], {
+    const result = await run(store, ["rules", "accept", "-", "--prefix", "API", ...WHERE], {
       stdin: "  Name the owner.\n",
     });
     expect(result.stdout.split("\n")[0]).toBe("accepted API-1: .bdk/rules/API-1.md (origin user)");
@@ -121,6 +119,7 @@ describe("rules accept", () => {
       "Test the negative case.",
       "--prefix",
       "TEST",
+      ...WHERE,
       "--from",
       from,
       "--json",
@@ -138,6 +137,7 @@ describe("rules accept", () => {
       "The API rate limit is 100 per minute.",
       "--prefix",
       "API",
+      ...WHERE,
       "--kind",
       "knowledge",
       "--source",
@@ -150,19 +150,44 @@ describe("rules accept", () => {
   });
 
   it.each([
-    ["no --prefix", ["Text."], 3, "input/missing-argument"],
-    ["an empty text", [" ", "--prefix", "API"], 3, "input/invalid-argument"],
-    ["the BDK prefix", ["Text.", "--prefix", "BDK"], 2, "policy/rule-format"],
+    ["no --prefix", ["Text.", ...WHERE], 3, "input/missing-argument"],
+    ["no --path", ["Text.", "--prefix", "API", "--stage", "plan"], 3, "input/missing-argument"],
+    ["no --stage", ["Text.", "--prefix", "API", "--path", "**"], 3, "input/missing-argument"],
+    [
+      "--stage close",
+      ["Text.", "--prefix", "API", "--path", "**", "--stage", "close"],
+      3,
+      "input/invalid-argument",
+    ],
+    [
+      "--stage *",
+      ["Text.", "--prefix", "API", "--path", "**", "--stage", "*"],
+      3,
+      "input/invalid-argument",
+    ],
+    [
+      "the removed --applies",
+      ["Text.", "--prefix", "API", ...WHERE, "--applies", "**"],
+      3,
+      "input/unknown-flag",
+    ],
+    ["an empty text", [" ", "--prefix", "API", ...WHERE], 3, "input/invalid-argument"],
+    ["the BDK prefix", ["Text.", "--prefix", "BDK", ...WHERE], 2, "policy/rule-format"],
     [
       "knowledge without a source",
-      ["Text.", "--prefix", "API", "--kind", "knowledge"],
+      ["Text.", "--prefix", "API", ...WHERE, "--kind", "knowledge"],
       2,
       "policy/rule-format",
     ],
-    ["house with a source", ["Text.", "--prefix", "API", "--source", "x"], 2, "policy/rule-format"],
+    [
+      "house with a source",
+      ["Text.", "--prefix", "API", ...WHERE, "--source", "x"],
+      2,
+      "policy/rule-format",
+    ],
     [
       "a malformed --from",
-      ["Text.", "--prefix", "API", "--from", "L-1"],
+      ["Text.", "--prefix", "API", ...WHERE, "--from", "L-1"],
       3,
       "input/invalid-argument",
     ],
@@ -172,6 +197,7 @@ describe("rules accept", () => {
         "Text.",
         "--prefix",
         "API",
+        ...WHERE,
         "--kind",
         "knowledge",
         "--source",
@@ -197,6 +223,7 @@ describe("rules accept", () => {
         "Text.",
         "--prefix",
         "API",
+        ...WHERE,
         "--from",
         `${CHANGE}/A-00000001`,
       ]),
@@ -207,10 +234,10 @@ describe("rules accept", () => {
 
   it("refuses while the prefix already holds a duplicate id", async () => {
     const store = repository();
-    store.write(`${RULES}/API-1.md`, projectRule("API-1"));
-    store.write(`${RULES}/api-copy.md`, projectRule("API-1"));
+    store.write(`${RULES}/API-1.md`, ruleFile("API-1"));
+    store.write(`${RULES}/api-copy.md`, ruleFile("API-1"));
     refusedWith(
-      await run(store, ["rules", "accept", "Text.", "--prefix", "API"]),
+      await run(store, ["rules", "accept", "Text.", "--prefix", "API", ...WHERE]),
       2,
       "policy/duplicate-rule-id",
     );
@@ -220,22 +247,26 @@ describe("rules accept", () => {
 describe("rules prune", () => {
   it("reports a glob that matches no file, and uncited rules once the window is full", async () => {
     const store = repository();
-    store.write(`${RULES}/API-1.md`, projectRule("API-1", "applies: [legacy/**]\n"));
-    store.write(`${RULES}/API-2.md`, projectRule("API-2", "applies: [src/**]\n"));
-    store.write(`${RULES}/OLD-1.md`, projectRule("OLD-1", "applies: [gone/**]\n"));
+    store.write(`${RULES}/API-1.md`, ruleFile("API-1", { paths: ["legacy/**"] }));
+    store.write(`${RULES}/API-2.md`, ruleFile("API-2", { paths: ["src/**"] }));
+    store.write(`${RULES}/OLD-1.md`, ruleFile("OLD-1", { paths: ["gone/**"] }));
     store.write(`${ROOT}/.bdk/settings.yaml`, "rules:\n  disabled: [OLD-1]\n");
+    store.write(
+      `${PLUGIN}/rules/languages/react/BDK-REACT-1.md`,
+      ruleFile("BDK-REACT-1", { origin: "bdk", paths: ["**/*.tsx"] }),
+    );
     const git = gitListing(["src/a.ts"]);
 
     const counted = await run(store, ["rules", "prune", "--json"], { git });
     expect(counted.code, counted.stdout).toBe(0);
     expect(rulesPruneOutput.parse(counted.json).items).toStrictEqual([
-      { id: "API-1", reason: "no-match", detail: 'applies: ["legacy/**"] matches 0 files' },
+      { id: "API-1", reason: "no-match", detail: 'paths: ["legacy/**"] matches 0 files' },
     ]);
 
     const windowed = await run(store, ["rules", "prune", "--uncited", "1"], { git });
     expect(windowed.stdout).toBe(
       [
-        'API-1 no-match: applies: ["legacy/**"] matches 0 files',
+        'API-1 no-match: paths: ["legacy/**"] matches 0 files',
         "API-1 uncited: no entry of the last 1 Changes names API-1",
         "API-2 uncited: no entry of the last 1 Changes names API-2",
         "",
@@ -257,16 +288,16 @@ describe("rules prune", () => {
 describe("text mode", () => {
   it("rules explain names the matching glob, the global rules and the disabled ones", async () => {
     const store = repository();
-    store.write(`${RULES}/API-1.md`, projectRule("API-1", "applies: [src/api/**]\n"));
-    store.write(`${RULES}/NAMING-1.md`, projectRule("NAMING-1"));
-    store.write(`${RULES}/OLD-1.md`, projectRule("OLD-1"));
+    store.write(`${RULES}/API-1.md`, ruleFile("API-1", { paths: ["src/api/**"] }));
+    store.write(`${RULES}/NAMING-1.md`, ruleFile("NAMING-1"));
+    store.write(`${RULES}/OLD-1.md`, ruleFile("OLD-1"));
     store.write(`${ROOT}/.bdk/settings.yaml`, "rules:\n  disabled: [OLD-1]\n");
     store.write(`${ROOT}/src/api/a.ts`, "");
     const result = await run(store, ["rules", "explain", "src/api/a.ts", "--role", "reviewer"]);
     expect(result.stdout).toBe(
       [
         "src/api/a.ts (reviewer)",
-        "- [NAMING-1] global",
+        "- [NAMING-1] matched by **",
         "- [API-1] matched by src/api/**",
         "disabled: OLD-1",
         "",
@@ -274,9 +305,23 @@ describe("text mode", () => {
     );
   });
 
+  it("rules explain leaves out a rule of a stage the role does not read", async () => {
+    const store = repository();
+    store.write(
+      `${RULES}/E2E-1.md`,
+      ruleFile("E2E-1", { paths: ["tests/e2e/**"], stages: ["plan", "execute", "review"] }),
+    );
+    const explain = (role: string) =>
+      run(store, ["rules", "explain", "tests/e2e/login.spec.ts", "--role", role, "--json"]);
+    expect((await explain("reviewer")).json).toMatchObject({
+      rules: [{ id: "E2E-1", matchedBy: "tests/e2e/**" }],
+    });
+    expect((await explain("design-verifier")).json).toMatchObject({ rules: [] });
+  });
+
   it("rules explain says no rule applies when no glob matches the file", async () => {
     const store = repository();
-    store.write(`${RULES}/API-1.md`, projectRule("API-1", "applies: [src/api/**]\n"));
+    store.write(`${RULES}/API-1.md`, ruleFile("API-1", { paths: ["src/api/**"] }));
     store.write(`${ROOT}/src/a.ts`, "");
     const result = await run(store, ["rules", "explain", "src/a.ts"]);
     expect(result.stdout).toBe("src/a.ts (implementer)\nNo rule applies.\n");

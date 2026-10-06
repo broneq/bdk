@@ -191,6 +191,44 @@ describe("node: boundary", () => {
   });
 });
 
+// `kernel-architecture`, scenario "one selection for every reader" (#153): a
+// rule's `paths` and `stages` decide who reads it, so no source maps a role, a
+// skill or a node to pack prefixes or categories. Only `PACK_DIRS`, the
+// directory-to-prefix table of the rules slice, names them.
+const PACK_TABLE = "rules/domain/rule.ts";
+const PACK_NAME =
+  /["'`](?:BDK-)?(?:ARCH|CQ|DP|SEC|TQ|EJ|PL|JS|TS|REACT)["'`]|["'`](?:code-quality|design-patterns|engineering-judgment|test-quality)["'`]|["'`]rules\/(?:\$\{|[a-z])/;
+
+function ruleTableViolations(files: readonly SourceFile[]): string[] {
+  return files
+    .filter((file) => file.path !== PACK_TABLE && !file.path.includes("/tests/"))
+    .filter((file) => PACK_NAME.test(file.text))
+    .map((file) => file.path);
+}
+
+describe("one selection for every reader", () => {
+  it("finds no table of pack prefixes or categories outside the rules slice's pack table", () => {
+    expect(ruleTableViolations(sources)).toStrictEqual([]);
+  });
+
+  it.each([
+    [
+      "a role-to-prefix table",
+      "dispatch/use-cases/table.ts",
+      'const ROLE_PREFIXES = { verifier: ["PL", "TQ"] };',
+    ],
+    [
+      "a skill naming a category",
+      "ctx/use-cases/extra.ts",
+      'const parts = [rules("code-quality")];',
+    ],
+    ["a node's category path", "graph/use-cases/extra.ts", "const dir = `rules/${category}`;"],
+    ["a bundle prefix", "rules/use-cases/extra.ts", 'const verifier = ["BDK-CQ"];'],
+  ])("fails on %s", (_, path, text) => {
+    expect(ruleTableViolations(seeded(path, text))).toStrictEqual([path]);
+  });
+});
+
 describe("config consumers (S6)", async () => {
   const architecture = readFileSync(
     join(REPO_ROOT, "openspec/specs/kernel-architecture/spec.md"),

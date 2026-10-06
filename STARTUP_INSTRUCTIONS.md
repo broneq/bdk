@@ -60,11 +60,11 @@ BDK ships rules by id (`BDK-CQ-4`), one file each; a project adds its own in `.b
 
 Before recording a convention or lesson anywhere, route it:
 
-| The knowledge                                           | Where it goes                                                                           |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Cross-cutting invariant whose violation fails silently  | a project rule in `.bdk/rules/`, scoped by the narrowest `applies:` glob that covers it |
-| Trap visible at the code site where the mistake happens | a doc comment there                                                                     |
-| Something a test or lint already enforces               | one line naming the enforcer                                                            |
-| Anything else                                           | nothing                                                                                 |
+| The knowledge                                           | Where it goes                                                                                                             |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Cross-cutting invariant whose violation fails silently  | a project rule in `.bdk/rules/`, scoped by the narrowest `paths:` glob that covers it and only the `stages:` that need it |
+| Trap visible at the code site where the mistake happens | a doc comment there                                                                                                       |
+| Something a test or lint already enforces               | one line naming the enforcer                                                                                              |
+| Anything else                                           | nothing                                                                                                                   |
 
 A line that a rename or file move would force you to edit is a code mirror, not a rule. **"Nothing" is the frequent, correct answer** - never write something down just to have written it. `/bdk:rules capture` runs this routing and adopts a rule through `bdk rules accept`; `/bdk:rules audit` turns recurring lessons into rules and prunes what no longer applies.

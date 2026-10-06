@@ -265,6 +265,8 @@ function work(root: string, branch: string, at: string, rule: string, capability
       schema: 1,
       id: rule,
       kind: "house",
+      paths: ["**"],
+      stages: ["execute", "review"],
       severity: "low",
       origin: "user",
       since: "2026-09-27",

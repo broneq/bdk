@@ -53,7 +53,21 @@ function project(): string {
     "output/log-add.json",
   );
   answered(
-    bdk(["rules", "accept", "Use the shared serializer", "--prefix", "API", "--json"], root),
+    bdk(
+      [
+        "rules",
+        "accept",
+        "Use the shared serializer",
+        "--prefix",
+        "API",
+        "--path",
+        "**",
+        "--stage",
+        "plan",
+        "--json",
+      ],
+      root,
+    ),
     "output/rules-accept.json",
   );
   answered(
@@ -64,8 +78,10 @@ function project(): string {
         "Return typed errors",
         "--prefix",
         "API",
-        "--applies",
+        "--path",
         "src/**",
+        "--stage",
+        "plan",
         "--json",
       ],
       root,

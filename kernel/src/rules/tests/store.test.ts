@@ -6,16 +6,18 @@ import { describe, expect, it } from "vitest";
 import { memoryStore } from "../../shared/store/index.ts";
 import type { Store } from "../../shared/store/index.ts";
 import { loadRules } from "../use-cases/store.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
+import type { RuleFileFields } from "../../../tests/support/rule-file.ts";
 
 const PLUGIN = "/plugin";
 const ROOT = "/repo";
 
-function rule(id: string, extra = "", body = `Text of ${id}.`): string {
-  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: bdk\nsince: 2026-09-30\n${extra}---\n\n${body}\n`;
+function rule(id: string, fields: RuleFileFields = {}): string {
+  return ruleFile(id, { origin: "bdk", ...fields });
 }
 
-function project(id: string, extra = ""): string {
-  return rule(id, extra).replace("origin: bdk", "origin: user");
+function project(id: string, fields: RuleFileFields = {}): string {
+  return ruleFile(id, fields);
 }
 
 function load(store: Store, disabled: readonly string[] = []) {
@@ -31,11 +33,10 @@ describe("loadRules", () => {
     const store = memoryStore({
       [`${PLUGIN}/rules/README.md`]: "# The pack\n",
       [`${PLUGIN}/rules/code-quality/BDK-CQ-1.md`]: rule("BDK-CQ-1"),
-      [`${PLUGIN}/rules/languages/react/BDK-REACT-2.md`]: rule(
-        "BDK-REACT-2",
-        "applies: ['**/*.tsx']\n",
-      ),
-      [`${ROOT}/.bdk/rules/API-1.md`]: project("API-1", "applies: [src/api/**]\n"),
+      [`${PLUGIN}/rules/languages/react/BDK-REACT-2.md`]: rule("BDK-REACT-2", {
+        paths: ["**/*.tsx"],
+      }),
+      [`${ROOT}/.bdk/rules/API-1.md`]: project("API-1", { paths: ["src/api/**"] }),
     });
     const loaded = load(store);
     expect(loaded.problems).toStrictEqual([]);
@@ -49,23 +50,27 @@ describe("loadRules", () => {
     const api = loaded.rules[2];
     expect(api?.prefix).toBe("API");
     expect(api?.number).toBe(1);
-    expect(api?.applies).toStrictEqual(["src/api/**"]);
+    expect(api?.paths).toStrictEqual(["src/api/**"]);
+    expect(api?.stages).toStrictEqual(["design", "plan", "execute", "review"]);
     expect(api?.text).toBe("Text of API-1.");
   });
 
   it("keeps a tombstone with its reason [EC-5]", () => {
     const store = memoryStore({
-      [`${ROOT}/.bdk/rules/API-2.md`]: project("API-2", "removed: superseded by API-5\n"),
+      [`${ROOT}/.bdk/rules/API-2.md`]: project("API-2", {
+        extra: "removed: superseded by API-5\n",
+      }),
     });
     expect(load(store).rules[0]?.removed).toBe("superseded by API-5");
   });
 
   it("accepts origin user and qualified evidence", () => {
     const store = memoryStore({
-      [`${ROOT}/.bdk/rules/API-1.md`]: project(
-        "API-1",
-        "evidence: [2026-09-25-passwordless-login/L-m2x9v7qa, 2026-09-27-export-csv/A-7f3k9m2q]\n",
-      ).replace("origin: user", "origin: 2026-09-25-passwordless-login/L-m2x9v7qa"),
+      [`${ROOT}/.bdk/rules/API-1.md`]: project("API-1", {
+        origin: "2026-09-25-passwordless-login/L-m2x9v7qa",
+        extra:
+          "evidence: [2026-09-25-passwordless-login/L-m2x9v7qa, 2026-09-27-export-csv/A-7f3k9m2q]\n",
+      }),
       [`${ROOT}/.bdk/rules/API-2.md`]: project("API-2"),
     });
     expect(codes(store)).toStrictEqual([]);
@@ -102,14 +107,26 @@ describe("loadRules", () => {
 
   it("names the field a knowledge rule lacks", () => {
     const store = memoryStore({
-      [`${ROOT}/.bdk/rules/LIB-1.md`]: project("LIB-1", "source: https://example.com\n").replace(
-        "kind: house",
-        "kind: knowledge",
-      ),
+      [`${ROOT}/.bdk/rules/LIB-1.md`]: project("LIB-1", {
+        extra: "source: https://example.com\n",
+      }).replace("kind: house", "kind: knowledge"),
     });
     const [problem] = load(store).problems;
     expect(problem?.code).toBe("format");
     expect(problem?.message).toMatch(/verified/);
+  });
+
+  it("names paths and stages when a rule lacks them, and the old fields it still carries", () => {
+    const store = memoryStore({
+      [`${ROOT}/.bdk/rules/API-1.md`]: project("API-1")
+        .replace('paths: ["**"]\n', "applies: [src/api/**]\n")
+        .replace("stages: [design, plan, execute, review]\n", "roles: [reviewer]\n"),
+    });
+    const [problem] = load(store).problems;
+    expect(problem?.code).toBe("format");
+    for (const field of ["paths", "stages", "applies", "roles"]) {
+      expect(problem?.message).toContain(field);
+    }
   });
 
   it("refuses a file without frontmatter or with broken YAML", () => {

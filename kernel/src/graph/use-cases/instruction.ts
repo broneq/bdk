@@ -1,6 +1,8 @@
 // Gathers what the instruction of a node needs (design D-9): the resolved
-// template `pipeline/<kind>`, the pack's rules by id through `ctx`, and the ledger
-// entries that concern the node, newest first.
+// template `pipeline/<kind>`, the rules of the node's stage over the work tree
+// files, and the ledger entries that concern the node, newest first. Only a
+// `design` or `plan` node carries rules: there the session itself writes; an
+// `execute` or `review` node's agents read theirs through their packages.
 import { posix, relative, sep } from "node:path";
 
 import type { GraphNode } from "../domain/engine.ts";
@@ -8,18 +10,24 @@ import { composeInstruction } from "../domain/instruction.ts";
 import { live } from "../domain/kinds/index.ts";
 import type { GraphEntry } from "../domain/kinds/index.ts";
 import { pipelinePrompts } from "../config.ts";
-import { categoryText } from "../../ctx/index.ts";
+import { stageRuleText } from "../../ctx/index.ts";
 import { promptContent } from "../../shared/config/index.ts";
+import type { Resolved } from "../../shared/config/index.ts";
+import { workTreeFiles } from "../../shared/git/index.ts";
+import type { RuleStage } from "../../shared/vocabulary/index.ts";
 import type { ActiveChange } from "../../shared/registry/index.ts";
 import type { GraphDeps } from "./deps.ts";
 import type { ChangeGraph } from "./graph.ts";
 
-export function instructionOf(
+/** The pipeline stages whose nodes carry a Rules section. */
+const SESSION_STAGES: readonly RuleStage[] = ["design", "plan"];
+
+export async function instructionOf(
   deps: GraphDeps,
   change: ActiveChange,
   read: ChangeGraph,
   node: GraphNode,
-): string {
+): Promise<string> {
   const kind = read.kinds.get(node.kind);
   if (kind === undefined) throw new Error(`${node.id} has the unknown kind ${node.kind}`);
   const key = templateKey(deps, node.kind);
@@ -34,16 +42,26 @@ export function instructionOf(
     profile: read.view.profile,
     template: promptContent(deps.store, value),
     paths: writes.map((path) => posix.join(dir, path)),
-    rules: (node.node.rules ?? []).map((category) => ({
-      category,
-      text: categoryText(
-        { store: deps.store, pluginRoot: deps.pluginRoot, projectRoot: change.projectRoot },
-        read.resolved,
-        category,
-      ),
-    })),
+    rules: await rulesOf(deps, change, read.resolved, node.node.stage),
     ledger: ledgerOf(read.view.entries, [node.id, ...writes]),
   });
+}
+
+/** The stage's selection over the work tree files; empty for a stage the session does not write in. */
+async function rulesOf(
+  deps: GraphDeps,
+  change: ActiveChange,
+  resolved: Resolved,
+  stage: string,
+): Promise<string> {
+  const session = SESSION_STAGES.find((candidate) => candidate === stage);
+  if (session === undefined) return "";
+  return stageRuleText(
+    { store: deps.store, pluginRoot: deps.pluginRoot, projectRoot: change.projectRoot },
+    resolved,
+    session,
+    await workTreeFiles(deps.git, change.projectRoot),
+  );
 }
 
 /** Accepted decisions, live questions and blockers, and live review entries naming the node. */

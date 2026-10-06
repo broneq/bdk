@@ -2,6 +2,11 @@
 schema: 1
 id: BDK-DP-11
 kind: house
+paths:
+  - "**"
+stages:
+  - execute
+  - review
 severity: medium
 origin: bdk
 since: 2026-09-30

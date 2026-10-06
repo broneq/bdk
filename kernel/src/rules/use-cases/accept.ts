@@ -11,6 +11,7 @@ import {
   refreshAll,
   withIndex,
 } from "../../shared/store/index.ts";
+import type { RuleStage } from "../../shared/vocabulary/index.ts";
 import type { AcceptReport } from "../domain/report.ts";
 import { prefixProblem } from "../domain/rule.ts";
 import type { RulesDeps } from "./deps.ts";
@@ -29,8 +30,8 @@ export interface AcceptInput {
   readonly prefix: string;
   readonly kind: "house" | "knowledge";
   readonly severity: "critical" | "high" | "medium" | "low";
-  readonly applies: readonly string[];
-  readonly roles: readonly string[];
+  readonly paths: readonly string[];
+  readonly stages: readonly RuleStage[];
   readonly from: readonly string[];
   readonly source?: string | undefined;
   readonly verified?: string | undefined;
@@ -97,8 +98,8 @@ export async function acceptRule(
   const origin = input.from[0] ?? "user";
   const draft = ruleDraft(id, text, {
     kind: input.kind,
-    applies: input.applies,
-    roles: input.roles,
+    paths: input.paths,
+    stages: [...new Set(input.stages)],
     severity: input.severity,
     origin,
     evidence: input.from,

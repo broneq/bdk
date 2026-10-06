@@ -25,7 +25,7 @@ The kernel source SHALL be organised as one slice per command group plus `shared
 | `spec`        | `spec delta check`, `merge`, `diff`                                                                                                          | T30           | Spec deltas and the deterministic merge (D2b, V1-7).                                                                                                                                                                            |
 | `config`      | `config show`, `check`, `schema`, `set`                                                                                                      | T12           | The commands over the layered configuration; the layering itself is `shared/config`.                                                                                                                                            |
 | `ctx`         | `ctx skill`, `startup`, `craft`                                                                                                              | T13, T42      | Prompt context composition: the skill manifest, rules, fragments, tool entries, the agents table, and the installed `bdk-craft` skills.                                                                                         |
-| `rules`       | `rules check`, `show`, `accept`, `explain`, `prune`, `import`, `stats`, `export`                                                             | T23, T31      | Rule files of the bundle and the project, their ids, `applies` selection per package, the audit view and adoption by `rules accept`; the rule texts `ctx` and `dispatch` read.                                                  |
+| `rules`       | `rules check`, `show`, `accept`, `explain`, `prune`, `stats`                                                                                 | T23, T31      | Rule files of the bundle and the project, their ids, the selection by `paths` and `stages` for a role, a skill or a pipeline node, the audit view and adoption by `rules accept`; the rule texts `ctx` and `dispatch` read.     |
 | `query`       | `query`                                                                                                                                      | T20           | Read-only SQL over the index.                                                                                                                                                                                                   |
 | `commit`      | `commit`                                                                                                                                     | T22           | The task commit with BDK trailers.                                                                                                                                                                                              |
 | `review`      | `review plan`                                                                                                                                | T42           | The range and the reviewer groups of a review round, from the plan parts, the ledger and git.                                                                                                                                   |
@@ -69,7 +69,6 @@ flowchart TB
     change -->|"first artifact"| graphSlice
     change -->|"entries"| log
     change -->|"merge at close"| spec
-    change -->|"export at close"| rules
     change -->|"status parts"| part
     graphSlice -->|"done entries"| log
     graphSlice -->|"instruction text"| ctx
@@ -135,6 +134,11 @@ flowchart TB
 
 - **WHEN** the structural test compares the `slice` values of `schema/cli/commands.json` with the slice table
 - **THEN** `diagnostics` is in both, owning `diagnostics report`, `log`, `slice` and `write`, and none answers `kernel/not-implemented`
+
+#### Scenario: one selection for every reader
+
+- **WHEN** the kernel source is searched for tables that map a role, a skill or a pipeline node to rule prefixes or pack categories
+- **THEN** none is found: `dispatch`, `ctx` and `graph` select rules only through the `rules` slice and the stage table of `shared/vocabulary`
 
 ### Requirement: Dependency matrix
 

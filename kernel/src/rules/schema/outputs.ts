@@ -40,10 +40,10 @@ export const rulesExplainOutput = z
       .array(
         z.strictObject({
           id: ruleId,
-          matchedBy: z
-            .string()
-            .nullable()
-            .meta({ description: "The glob that matched the file; null for a global rule." }),
+          matchedBy: z.string().meta({
+            description:
+              "The most specific glob of the rule's `paths` that matched the file; `**` for a rule of every file.",
+          }),
           kind: z.enum(["house", "knowledge"]),
         }),
       )
@@ -60,7 +60,7 @@ export const rulesExplainOutput = z
         file: "src/api/login.ts",
         role: "reviewer",
         rules: [
-          { id: "BDK-CQ-1", matchedBy: null, kind: "house" },
+          { id: "BDK-CQ-1", matchedBy: "**", kind: "house" },
           { id: "API-1", matchedBy: "src/api/**", kind: "house" },
         ],
         disabled: ["BDK-SEC-3"],
@@ -87,7 +87,7 @@ export const rulesPruneOutput = z
     examples: [
       {
         items: [
-          { id: "API-3", reason: "no-match", detail: 'applies: ["legacy/**"] matches 0 files' },
+          { id: "API-3", reason: "no-match", detail: 'paths: ["legacy/**"] matches 0 files' },
         ],
         total: 1,
         truncated: false,

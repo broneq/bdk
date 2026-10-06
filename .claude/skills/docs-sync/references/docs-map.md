@@ -132,9 +132,10 @@ Format: page - what it is for - the files that decide whether it is true.
 - **`concepts/agents.md`** - roles and adapters, model-as-cost, read-only enforcement, how an agent
   reads its context, structured returns, `SendMessage` vs respawn, the tree.
   Truth: `agents/*.md`, `skills/roles/`, `kernel/src/export/domain/adapters.ts`, `STARTUP_INSTRUCTIONS.md`.
-- **`concepts/quality-and-language-rules.md`** - the definition of a rule, rule files and ids, the shipped
-  pack, project rules, `rules.disabled`, selection per role and file, `rules check`, and the note for projects
-  that used the removed import and export.
+- **`concepts/quality-and-language-rules.md`** - the definition of a rule, rule files and ids with `paths`
+  and `stages`, the shipped pack, project rules, `rules.disabled`, the stage readers table and the selection
+  per stage and file, `rules check`, and the notes for projects whose rules use `applies` or `roles` or that
+  used the removed import and export.
   Truth: `rules/`, `kernel/src/rules/` (`domain/rule.ts`, `use-cases/selection.ts`),
   `kernel/src/shared/store/state/rule.ts`.
 

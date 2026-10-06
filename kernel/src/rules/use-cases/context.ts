@@ -1,22 +1,16 @@
 // The rules of a project as the other slices read them (`kernel-cli/rules`;
 // `kernel-cli/ctx`, bdk ctx skill): the loaded pack and project rules with
-// the settings that select among them, the per-category and per-language
-// lists `ctx` prints, and the selection `dispatch build` stamps.
+// the settings that select among them, and the one selection every reader
+// uses: `dispatch build`, `ctx skill` and the node instruction.
 import type { Resolved } from "../../shared/config/index.ts";
 import type { Store } from "../../shared/store/index.ts";
-import type { Role } from "../../shared/vocabulary/index.ts";
+import type { RuleStage } from "../../shared/vocabulary/index.ts";
 import { languagesModule, rulesModule } from "../config.ts";
-import { PACK_DIRS, ruleLine } from "../domain/rule.ts";
-import type { LoadedRule } from "../domain/rule.ts";
+import { ruleLine } from "../domain/rule.ts";
 import { selectRules } from "./selection.ts";
 import type { Selection } from "./selection.ts";
 import { loadRules } from "./store.ts";
 import type { RuleSet } from "./store.ts";
-
-/** The pack's category directories: what a pipeline node's `rules` and a `rules` part name. */
-export const RULE_CATEGORIES: readonly string[] = Object.keys(PACK_DIRS).filter(
-  (dir) => !dir.startsWith("languages/"),
-);
 
 export interface RulesInput {
   readonly store: Store;
@@ -47,48 +41,31 @@ export function ruleContext(input: RulesInput, resolved: Resolved): RuleContext 
   };
 }
 
-/** The rules a role reads for the target's files (undefined: no file set). */
+/** The rules a stage reads for the target's files, or for the work tree files of a target without its own. */
 export function selectFor(
   context: RuleContext,
-  role: Role,
-  files: readonly string[] | undefined,
+  stage: RuleStage | undefined,
+  files: readonly string[],
 ): Selection {
   return selectRules({
     rules: context.rules,
-    role,
+    stage,
     files,
     languages: context.languages,
     disabled: context.disabled,
   });
 }
 
-/** The enabled rules of one pack directory, in id order. */
-export function packRules(context: RuleContext, pack: string): LoadedRule[] {
-  return enabled(context).filter((rule) => rule.scope === "bundle" && rule.pack === pack);
-}
-
-/** The enabled rules of `.bdk/rules/`, in id order. */
-export function projectRules(context: RuleContext): LoadedRule[] {
-  return enabled(context).filter((rule) => rule.scope === "project");
-}
-
-/** Each language of `languages` with a pack, with its enabled rules. */
-export function languageRules(
+/**
+ * A stage's selection over `files` as `ctx skill` and a node instruction print
+ * it: `- [<id>] <text>` per rule, ` (paths: ...)` after a scoped one.
+ */
+export function stageRuleLines(
   context: RuleContext,
-): { readonly language: string; readonly rules: LoadedRule[] }[] {
-  return context.languages
-    .map((language) => ({ language, rules: packRules(context, `languages/${language}`) }))
-    .filter((entry) => entry.rules.length > 0);
-}
-
-/** `- [<id>] <text>` per rule, ` (applies: ...)` after a scoped one. */
-export function ruleLines(rules: readonly LoadedRule[]): string {
-  return rules.map(ruleLine).join("");
-}
-
-function enabled(context: RuleContext): LoadedRule[] {
-  const disabled = new Set(context.disabled);
-  return context.rules
-    .filter((rule) => rule.removed === undefined && !disabled.has(rule.id))
-    .sort((a, b) => a.prefix.localeCompare(b.prefix) || a.number - b.number);
+  stage: RuleStage,
+  files: readonly string[],
+): string {
+  return selectFor(context, stage, files)
+    .selected.map(({ rule }) => ruleLine(rule))
+    .join("");
 }

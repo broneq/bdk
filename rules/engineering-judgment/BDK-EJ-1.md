@@ -2,6 +2,11 @@
 schema: 1
 id: BDK-EJ-1
 kind: house
+paths:
+  - "**"
+stages:
+  - design
+  - plan
 severity: medium
 origin: bdk
 since: 2026-09-30

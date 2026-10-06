@@ -21,6 +21,7 @@ import {
   withDispatchPlugin,
 } from "./support.ts";
 import type { DispatchHarness } from "./support.ts";
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 
 function refusal(result: { json: unknown }) {
   return result.json as { rule: string; why: string };
@@ -32,10 +33,6 @@ async function built(h: DispatchHarness, ...argv: string[]) {
   const report = dispatchBuildOutput.parse(result.json);
   const text = h.store.read(`${ROOT}/${report.path}`) ?? "";
   return { report, text, body: text.slice(text.indexOf("\n---\n") + 5) };
-}
-
-function projectRule(id: string, extra = ""): string {
-  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
 }
 
 /** The frontmatter a package stamps. */
@@ -244,19 +241,16 @@ describe("dispatch build", () => {
     h.store.write(skill, `${original}\nOne more rule.\n`);
     const changed = (await built(h)).report.templateHash;
     expect(changed).not.toBe(first);
-    h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, projectRule("AUTH-1"));
+    h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, ruleFile("AUTH-1"));
     expect((await built(h)).report.templateHash).not.toBe(changed);
   });
 
   it("stamps the selected rule ids in order", async () => {
     const h = dispatchHarness();
-    h.store.write(
-      `${ROOT}/.bdk/rules/AUTH-1.md`,
-      projectRule("AUTH-1", "applies: [src/auth/**]\n"),
-    );
-    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "applies: [web/**]\n"));
-    h.store.write(`${ROOT}/.bdk/rules/PLAN-1.md`, projectRule("PLAN-1", "roles: [verifier]\n"));
-    h.store.write(`${ROOT}/.bdk/rules/NAMING-1.md`, projectRule("NAMING-1"));
+    h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, ruleFile("AUTH-1", { paths: ["src/auth/**"] }));
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, ruleFile("UI-1", { paths: ["web/**"] }));
+    h.store.write(`${ROOT}/.bdk/rules/PLAN-1.md`, ruleFile("PLAN-1", { stages: ["plan"] }));
+    h.store.write(`${ROOT}/.bdk/rules/NAMING-1.md`, ruleFile("NAMING-1"));
     const { report } = await built(h, "02-3", "reviewer", TICKET);
     const rules = stampedRules(h.store, report.path);
     expect(rules.filter((id) => !id.startsWith("BDK-"))).toStrictEqual(["NAMING-1", "AUTH-1"]);
@@ -266,14 +260,62 @@ describe("dispatch build", () => {
     expect(stamped(h.store, report.path)).not.toHaveProperty("rules-truncated");
   });
 
+  it("records the same rules for every role of a stage", async () => {
+    const h = dispatchHarness();
+    h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, ruleFile("AUTH-1", { paths: ["src/auth/**"] }));
+    const reviewer = await built(h, "02-3", "reviewer", TICKET);
+    const integration = await built(h, "02-3", "integration-reviewer", TICKET);
+    expect(stampedRules(h.store, integration.report.path)).toStrictEqual(
+      stampedRules(h.store, reviewer.report.path),
+    );
+    const runner = await built(h, "02-3", "runner", TICKET);
+    expect(stampedRules(h.store, runner.report.path)).toStrictEqual([]);
+  });
+
+  it("stages and paths select a project rule", async () => {
+    const h = dispatchHarness();
+    h.store.write(
+      `${ROOT}/.bdk/rules/E2E-1.md`,
+      ruleFile("E2E-1", { paths: ["tests/e2e/**"], stages: ["plan", "execute", "review"] }),
+    );
+    writePlanPart(h.store, "03", {
+      body: "## 03-1 Login journey\n\n**Files:**\n\n- Create: `tests/e2e/login.spec.ts`\n\n**Test cases:**\n\n- logs in\n",
+    });
+    ticket(h.store, { target: "03-1", id: "A-e2e0test" });
+    const e2e = await built(h, "03-1", "implementer", "A-e2e0test");
+    expect(stampedRules(h.store, e2e.report.path)).toContain("E2E-1");
+    const app = await built(h, "02-3", "implementer", TICKET);
+    expect(stampedRules(h.store, app.report.path)).not.toContain("E2E-1");
+    h.git.workTree.push("tests/e2e/login.spec.ts");
+    writeDesign(h.store, "design");
+    ticket(h.store, { target: "design-verify", loop: "verifier", id: "A-d3s1gn00" });
+    const design = await built(h, "design-verify", "design-verifier", "A-d3s1gn00");
+    expect(stampedRules(h.store, design.report.path)).not.toContain("E2E-1");
+  });
+
+  it("selects over the work tree files for a target without files", async () => {
+    const h = dispatchHarness();
+    h.store.write(
+      `${ROOT}/.bdk/rules/PY-1.md`,
+      ruleFile("PY-1", { paths: ["**/*.py"], stages: ["plan"] }),
+    );
+    ticket(h.store, { target: "plan-verify", loop: "verifier", id: "A-v3r1f7y2" });
+    h.git.workTree.push("src/app.ts");
+    const without = await built(h, "plan-verify", "verifier", "A-v3r1f7y2");
+    expect(stampedRules(h.store, without.report.path)).not.toContain("PY-1");
+    h.git.workTree.push("tools/gen.py");
+    const withPython = await built(h, "plan-verify", "verifier", "A-v3r1f7y2");
+    expect(stampedRules(h.store, withPython.report.path)).toContain("PY-1");
+  });
+
   it("selects by the union of a part's tasks' files", async () => {
     const h = dispatchHarness();
     ticket(h.store, { target: "02", loop: "review-fix", id: "A-p4r7t0k2" });
     h.store.write(
       `${ROOT}/.bdk/rules/STORE-1.md`,
-      projectRule("STORE-1", "applies: [src/auth/store.ts]\n"),
+      ruleFile("STORE-1", { paths: ["src/auth/store.ts"] }),
     );
-    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "applies: [web/**]\n"));
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, ruleFile("UI-1", { paths: ["web/**"] }));
     const { report } = await built(h, "02", "reviewer", "A-p4r7t0k2");
     const rules = stampedRules(h.store, report.path);
     expect(rules.filter((id) => !id.startsWith("BDK-"))).toStrictEqual(["STORE-1"]);
@@ -281,23 +323,20 @@ describe("dispatch build", () => {
 
   it("changes the hash with a selected rule's text or id, not with an unselected rule", async () => {
     const h = dispatchHarness();
-    h.store.write(
-      `${ROOT}/.bdk/rules/AUTH-1.md`,
-      projectRule("AUTH-1", "applies: [src/auth/**]\n"),
-    );
+    h.store.write(`${ROOT}/.bdk/rules/AUTH-1.md`, ruleFile("AUTH-1", { paths: ["src/auth/**"] }));
     const first = (await built(h)).report.templateHash;
-    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, projectRule("UI-1", "applies: [web/**]\n"));
+    h.store.write(`${ROOT}/.bdk/rules/UI-1.md`, ruleFile("UI-1", { paths: ["web/**"] }));
     expect((await built(h)).report.templateHash).toBe(first);
     h.store.write(
       `${ROOT}/.bdk/rules/AUTH-1.md`,
-      projectRule("AUTH-1", "applies: [src/auth/**]\n").replace("Text of", "New text of"),
+      ruleFile("AUTH-1", { paths: ["src/auth/**"] }).replace("Text of", "New text of"),
     );
     const edited = (await built(h)).report.templateHash;
     expect(edited).not.toBe(first);
     h.store.remove(`${ROOT}/.bdk/rules/AUTH-1.md`);
     h.store.write(
       `${ROOT}/.bdk/rules/AUTH-2.md`,
-      projectRule("AUTH-2", "applies: [src/auth/**]\n").replace(
+      ruleFile("AUTH-2", { paths: ["src/auth/**"] }).replace(
         "Text of AUTH-2",
         "New text of AUTH-1",
       ),

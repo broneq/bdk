@@ -5,6 +5,7 @@ import { relative, resolve, sep } from "node:path";
 
 import { refuse } from "../../shared/refusal/index.ts";
 import type { Refusal } from "../../shared/refusal/index.ts";
+import { ROLE_STAGE } from "../../shared/vocabulary/index.ts";
 import type { Role } from "../../shared/vocabulary/index.ts";
 import type { ExplainReport } from "../domain/report.ts";
 import { selectFor } from "./context.ts";
@@ -28,7 +29,7 @@ export function explainRules(
   const context = loadContext(deps, projectRoot, globalDir);
   if ("refused" in context) return context;
   const path = inside.split(sep).join("/");
-  const selection = selectFor(context, role, [path]);
+  const selection = selectFor(context, ROLE_STAGE[role], [path]);
   return {
     file: path,
     role,

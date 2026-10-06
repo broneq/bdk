@@ -134,14 +134,9 @@ describe("a pipeline file is rejected", () => {
       "nodes[16].budget",
     ],
     [
-      "a rules category the pack does not hold",
-      (data: Data) => (node(data, "plan").rules = ["style"]),
-      "nodes[7] (plan).rules: style is no rule category of the pack",
-    ],
-    [
-      "a language pack as a rules category",
-      (data: Data) => (node(data, "plan").rules = ["languages/react"]),
-      "nodes[7].rules[0]: must be kebab-case",
+      "a rules field: the node's stage decides its rules",
+      (data: Data) => (node(data, "plan").rules = ["code-quality", "plan"]),
+      "nodes[7].rules: unknown key",
     ],
     [
       "policy on a node that is no gate",

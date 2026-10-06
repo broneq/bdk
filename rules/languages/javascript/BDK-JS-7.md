@@ -2,6 +2,15 @@
 schema: 1
 id: BDK-JS-7
 kind: knowledge
+paths:
+  - "**/*.js"
+  - "**/*.mjs"
+  - "**/*.cjs"
+  - "**/*.jsx"
+stages:
+  - plan
+  - execute
+  - review
 severity: medium
 origin: bdk
 since: 2026-09-30

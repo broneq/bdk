@@ -9,10 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import { answered, bdk, git, read, repository } from "../../../tests/support/repo.ts";
 import { fileStore } from "../../shared/store/index.ts";
-
-function projectRule(id: string, extra = ""): string {
-  return `---\nschema: 1\nid: ${id}\nkind: house\nseverity: medium\norigin: user\nsince: 2026-09-30\n${extra}---\n\nText of ${id}.\n`;
-}
+import { ruleFile } from "../../../tests/support/rule-file.ts";
 
 function task(id: string, file: string): string {
   return `## ${id} Task ${id}\n\n**Files:**\n\n- \`${file}\`\n\n**Test cases:**\n\n- works\n`;
@@ -60,8 +57,8 @@ function stampedProjectRules(root: string, target: string): string[] {
 describe("T31 acceptance", () => {
   it("8.1: a scoped rule reaches only the task whose files it applies to, the global one both", () => {
     const root = repository({
-      ".bdk/rules/API-1.md": projectRule("API-1", "applies: [src/api/**]\n"),
-      ".bdk/rules/NAMING-1.md": projectRule("NAMING-1"),
+      ".bdk/rules/API-1.md": ruleFile("API-1", { paths: ["src/api/**"] }),
+      ".bdk/rules/NAMING-1.md": ruleFile("NAMING-1"),
     });
     changeWithTasks(root, "Scope the rules");
     expect(stampedProjectRules(root, "01-1")).toStrictEqual(["NAMING-1", "API-1"]);
@@ -70,8 +67,8 @@ describe("T31 acceptance", () => {
 
   it("rules explain lists the same ids, in the same order, as the package of a one-file task", () => {
     const root = repository({
-      ".bdk/rules/API-1.md": projectRule("API-1", "applies: [src/api/**]\n"),
-      ".bdk/rules/NAMING-1.md": projectRule("NAMING-1"),
+      ".bdk/rules/API-1.md": ruleFile("API-1", { paths: ["src/api/**"] }),
+      ".bdk/rules/NAMING-1.md": ruleFile("NAMING-1"),
       ".bdk/settings.yaml": "languages: [typescript]\n",
     });
     changeWithTasks(root, "Explain the selection");
@@ -120,8 +117,12 @@ describe("T31 acceptance", () => {
           "Keep the pending state in the form's own store.",
           "--prefix",
           "FORM",
-          "--applies",
+          "--path",
           "web/forms/**",
+          "--stage",
+          "execute",
+          "--stage",
+          "review",
           "--from",
           entries[0] ?? "",
           "--json",

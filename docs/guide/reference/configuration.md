@@ -64,13 +64,13 @@ meant. A key that BDK 2 used names its replacement; see
 
 ## Project toolchain
 
-| Key               | Default | Setup     | What it sets                                                                                                                                   |
-| ----------------- | ------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `languages`       | `[]`    | `derived` | The languages and frameworks of the project. Each name selects the plugin's language rules under `rules/languages/<name>/`.                    |
-| `tools.test`      | unset   | `derived` | The test commands, or `none` when the project has no tests.                                                                                    |
-| `tools.lint`      | unset   | `derived` | The lint, format and type check commands, or `none` when the project has no linter.                                                            |
-| `tools.build`     | `[]`    | `derived` | The build commands. No pipeline step runs them; they tell the roles how the project builds.                                                    |
-| `features.lavish` | `true`  | `derived` | Run the design and review conversations in [Lavish](https://github.com/broneq/lavish); `false` asks the same questions with `AskUserQuestion`. |
+| Key               | Default | Setup     | What it sets                                                                                                                                                            |
+| ----------------- | ------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `languages`       | `[]`    | `derived` | The languages and frameworks of the project. Each name switches on the plugin's language rules under `rules/languages/<name>/`, read for the files their `paths` match. |
+| `tools.test`      | unset   | `derived` | The test commands, or `none` when the project has no tests.                                                                                                             |
+| `tools.lint`      | unset   | `derived` | The lint, format and type check commands, or `none` when the project has no linter.                                                                                     |
+| `tools.build`     | `[]`    | `derived` | The build commands. No pipeline step runs them; they tell the roles how the project builds.                                                                             |
+| `features.lavish` | `true`  | `derived` | Run the design and review conversations in [Lavish](https://github.com/broneq/lavish); `false` asks the same questions with `AskUserQuestion`.                          |
 
 `tools.test` and `tools.lint` have no default on purpose: while either is
 unset, `bdk change new` refuses with `policy/tools-unset`. What each state does
@@ -207,12 +207,12 @@ tracker: { kind: instruction, instruction: "Create a Jira issue in project PAY w
 
 ## Rules
 
-| Key                           | Default | Setup     | What it sets                                                                                         |
-| ----------------------------- | ------- | --------- | ---------------------------------------------------------------------------------------------------- |
-| `rules.disabled`              | `[]`    | `default` | Rule ids switched off, BDK's own included (`BDK-SEC-3`).                                             |
-| `rules.warn-above`            | `100`   | `default` | Rules one role may receive before the session start warns. Every rule that applies still reaches it. |
-| `rules.audit.min-changes`     | `3`     | `default` | Distinct Changes a finding must appear in before `bdk rules stats` lists it as recurring.            |
-| `rules.prune.uncited-changes` | `20`    | `default` | Recent Changes `bdk rules prune` looks back over for citations.                                      |
+| Key                           | Default | Setup     | What it sets                                                                                                                  |
+| ----------------------------- | ------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `rules.disabled`              | `[]`    | `default` | Rule ids switched off, BDK's own included (`BDK-SEC-3`).                                                                      |
+| `rules.warn-above`            | `100`   | `default` | Rules one role may receive over the work tree files before the session start warns. Every rule that applies still reaches it. |
+| `rules.audit.min-changes`     | `3`     | `default` | Distinct Changes a finding must appear in before `bdk rules stats` lists it as recurring.                                     |
+| `rules.prune.uncited-changes` | `20`    | `default` | Recent Changes `bdk rules prune` looks back over for citations.                                                               |
 
 Your own rules are files under `.bdk/rules/`, not settings; see
 [Rules hygiene](../workflows/rules-hygiene.md).
