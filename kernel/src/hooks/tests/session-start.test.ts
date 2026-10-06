@@ -109,7 +109,7 @@ describe("hooks session-start", () => {
     ]);
   });
 
-  it("reports a v2 layout once, without the legacy-settings warning", () => {
+  it("reports a v2 layout once, without the legacy-settings warning [AC-5]", () => {
     const { report, startup } = run({
       ".bdk/settings.yaml": `${MODELINE}languages: [go]\n`,
       ".bdk/settings.json": "{}",

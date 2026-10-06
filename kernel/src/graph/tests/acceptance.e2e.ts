@@ -31,7 +31,7 @@ describe("T21 acceptance", () => {
     expect(next(root)).toMatchObject({ artifact: { id: "plan", kind: "plan-part" } });
   });
 
-  it("a log add entry faking approval does not open the gate", () => {
+  it("a log add entry faking approval does not open the gate [TSH-2]", () => {
     const { root } = designed();
     const added = bdk(
       ["log", "add", "decision", "Design approved by the user", "--ref", "gate:design", "--json"],
@@ -42,7 +42,7 @@ describe("T21 acceptance", () => {
     expect(next(root)).not.toHaveProperty("artifact");
   });
 
-  it("a loop-back (done design with a new hash) needs a newer user entry", () => {
+  it("a loop-back (done design with a new hash) needs a newer user entry [TSH-4]", () => {
     const change = designed();
     const { root, dir } = change;
     // Moves the first pass into the past, so the loop-back's done is strictly newer.
@@ -66,7 +66,7 @@ describe("T21 acceptance", () => {
     expect(next(root)).toMatchObject({ artifact: { id: "plan" } });
   });
 
-  it("explain plan-verify prints the chain", () => {
+  it("explain plan-verify prints the chain [R-4]", () => {
     const { root, dir } = designed();
     passGate(dir, "gate:design", "plan");
     writePart(dir, "plan", "01");
@@ -87,7 +87,49 @@ describe("T21 acceptance", () => {
     ]);
   });
 
-  it("tiny has no design node", () => {
+  it("explain on a task's part prints part, plan, design and intent; decisions carry their reasons [S3]", () => {
+    const { root, dir } = designed();
+    passGate(dir, "gate:design", "plan");
+    writePart(dir, "plan", "01");
+    done(root, "plan");
+    const explained = answered(
+      bdk(["explain", "execute-part:01", "--json"], root),
+      "output/explain.json",
+    ) as { chain: { id: string }[] };
+    const chain = explained.chain.map((item) => item.id);
+    for (const id of ["execute-part:01", "plan-part:01", "gate:design", "design", "intent"]) {
+      expect(chain).toContain(id);
+    }
+    expect(chain.indexOf("plan-part:01")).toBeLessThan(chain.indexOf("design"));
+    expect(chain.indexOf("design")).toBeLessThan(chain.indexOf("intent"));
+
+    const add = (summary: string, ...flags: string[]) =>
+      (
+        answered(
+          bdk(["log", "add", "decision", summary, "--ref", "design.md", ...flags, "--json"], root),
+          "output/log-add.json",
+        ).entry as { id: string }
+      ).id;
+    const first = add("Links last 10 minutes", "--body", "Short enough to limit replay.");
+    const second = add("Links last 15 minutes", "--supersedes", first, "--body", "Mail is slow.");
+    const shown = (id: string) =>
+      answered(bdk(["log", "show", id, "--json"], root), "output/log-show.json").entry;
+    expect(shown(first)).toMatchObject({
+      id: first,
+      // The orchestrator writes without a ticket, so the kernel stamps its own source.
+      source: "kernel",
+      status: "superseded",
+      body: "Short enough to limit replay.",
+    });
+    expect(shown(second)).toMatchObject({
+      id: second,
+      status: "proposed",
+      supersedes: first,
+      body: "Mail is slow.",
+    });
+  });
+
+  it("tiny has no design node [S7]", () => {
     const { root } = opened("--profile", "tiny", "--reason", "a typo");
     expect(
       answered(bdk(["explain", "design", "--json"], root), "output/explain.json"),

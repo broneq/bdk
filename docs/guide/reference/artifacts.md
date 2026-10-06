@@ -1,16 +1,8 @@
 # Artifacts reference
 
-::: warning Describes BDK v2
-This page describes BDK v2. The v3 documentation replaces it (T50).
-:::
-
-::: info BDK 3
-[Settings and Changes](#settings-and-changes) describes BDK 3.
-:::
-
 ## Settings and Changes
 
-BDK 3 keeps its state under `.bdk/` too, written only by the kernel (`bdk ...`) and the stage skills that call it:
+BDK keeps its state under `.bdk/`, written only by the kernel (`bdk ...`) and the stage skills that call it:
 
 | Path                       | Written by                                           | Tracked | Contents                                                                                                                                            |
 | -------------------------- | ---------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -80,29 +72,4 @@ After the review, the human decides each open entry with `bdk log decide <id> fi
 
 `--review` marks a `defer` or `track` made without the user, as `/bdk:run` does, to be reviewed. `bdk change close` refuses with `policy/undecided-entries` while a live `finding`, `observation` or `blocker` has no disposition, or a `fix` is not made. The `tracker` setting says where `track` files an issue: `{kind: github}` for GitHub issues through `gh`, or `{kind: instruction, instruction: "<how to file one>"}` for any other tracker. While it is unset, the report offers no `track`.
 
-`bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 file `.bdk/settings.json` is never read; `/bdk:setup` migrates a project that still has it.
-
-## The BDK 2 layout
-
-BDK 2 skills wrote their output under `.bdk/<skill-name>/`. A project upgraded from BDK 2 can still hold these paths. `bdk doctor` reports the first five as `layout: v2`, and `/bdk:setup` migrates the project:
-
-| Path                         | Written by                         | Contents                                                                                                      |
-| ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `.bdk/settings.json`         | BDK 2 setup                        | v2 project configuration; `/bdk:setup` migrates it to `.bdk/settings.yaml`                                    |
-| `.bdk/plans/`                | BDK 2 `/bdk:create-plan`           | v2 implementation plans; BDK 3 plans live in the Change, and `/bdk:setup` deletes this directory              |
-| `.bdk/design/`               | BDK 2 `/bdk:design`                | v2 design docs; BDK 3 designs live in the Change, and `/bdk:setup` deletes this directory                     |
-| `.bdk/verify-plan/`          | BDK 2 `/bdk:verify-plan`           | v2 verification reports; `/bdk:setup` deletes this directory                                                  |
-| `.bdk/runs/`                 | BDK 2 `/bdk:subagent-execute-plan` | Run manifests; BDK 3 removed the skill and keeps progress in the Change and the task commits' trailers        |
-| `.bdk/cr/`                   | BDK 2 `/bdk:cr`                    | v2 code review reports; the BDK 3 review lives in the Change, and its human report in `.bdk/.machine/review/` |
-| `.bdk/explain-complex-code/` | BDK 2 `explain-complex-code` skill | v2 architecture docs; BDK 3 removed the skill, and `/bdk:docs` writes to `docs/architecture/`                 |
-
-## The BDK 2 ignore rule
-
-Nothing in the BDK 2 layout was tracked. The first time a plan ran, BDK 2 appended this block to the project's `.gitignore`, unless a rule already covered the path:
-
-```gitignore
-# BDK run state - machine-owned, never committed
-/.bdk/
-```
-
-That rule also hides the files BDK 3 commits: `.bdk/settings.yaml`, `.bdk/rules/` and the Changes. `bdk doctor` reports it as `bdk-ignored`. `/bdk:setup` shows the rule and the file that holds it, removes it after you confirm, and adds the two paths BDK 3 keeps out of git (`/.bdk/.machine/`, `/.bdk/settings.local.yaml`). See [Settings and Changes](#settings-and-changes) and [Setup](../getting-started/setup.md).
+`bdk config set` adds `/.bdk/.machine/` and `/.bdk/settings.local.yaml` to `.gitignore`. The v2 files are never read; [Migration from v2](../getting-started/migration-from-v2.md#artifacts) says what `/bdk:setup` does with each.

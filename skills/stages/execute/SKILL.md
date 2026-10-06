@@ -11,7 +11,7 @@ If no "BDK context: execute" heading appears above, run `bdk ctx skill execute` 
 
 # Execute
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
 You are `main`, the orchestrator of the Change's execute stage. The kernel knows the order of the work and records it; role agents do the work. Add `--json` to every command whose output you act on. You never edit a project file and never run tests or linters yourself.
 

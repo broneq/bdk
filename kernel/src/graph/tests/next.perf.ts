@@ -9,7 +9,7 @@ import { BUNDLE, REPO_ROOT } from "../../../tests/support/run.ts";
 import { designed, done, entry, next, passGate, settle, writePart } from "./bundle.ts";
 
 describe("T21 performance", () => {
-  it("next p95 is under 150 ms on 8 plan parts and 1 000 entries", () => {
+  it("next p95 is under 150 ms on 8 plan parts and 1 000 entries [NFR-LAT-5]", () => {
     const { root, dir } = designed();
     passGate(dir, "gate:design", "plan");
     for (let nn = 1; nn <= 8; nn++) writePart(dir, "plan", `0${String(nn)}`);

@@ -70,19 +70,10 @@ wrong thing.
 
 ## From BDK 2
 
-A project with `.bdk/settings.json` or `.bdk/plans/` has the v2 layout, and
-the session start says so. `/bdk:setup` migrates it:
-
-- `.bdk/settings.json` is read as hints: its languages and its test, lint and
-  build tools become v3 tool entries and `features.lavish` carries over. Every
-  value is confirmed like a detected one and written with `bdk config set`.
-  Quality or language rule overrides are named with their v3 key
-  (`prompts.files`) and set only when you ask; any other key is reported as not
-  carried over.
-- v2 plans, designs, run manifests and verification reports have no v3
-  counterpart. After you confirm, setup deletes `.bdk/settings.json`,
-  `.bdk/plans/`, `.bdk/design/`, `.bdk/runs/` and `.bdk/verify-plan/`; if you
-  decline, they stay and `bdk doctor` keeps reporting the v2 layout.
+A project with the v2 layout is migrated first: setup replaces the v2 ignore
+rule, offers the v2 settings as detected values and deletes the v2 files, each
+after you confirm. [Migration from v2](migration-from-v2.md) lists every step,
+the v2 keys, skills and paths and what each became.
 
 ### Why `.bdk/` stays out of your tools
 

@@ -35,7 +35,7 @@ Agents that must not write are constrained by their tool list, not by an instruc
 
 ## Each agent reads its own context
 
-Subagents do not inherit the session's shared foundation, and an agent file cannot run the `!` context lines a skill has. A role agent therefore gets everything from its package and from kernel commands the package names: its rules with `bdk rules show --ticket <ticket>`, the ledger entries it needs with `bdk log list --for <target>`, and, for a runner, the project's commands in the package's `Checks` section. The mechanism is described in [The shared foundation](shared-foundation.md).
+Subagents do not inherit the session's shared foundation, and an agent file cannot run the `!` context lines a skill has. A role agent therefore gets everything from its package and from kernel commands the package names: its rules with `bdk rules show --ticket <ticket>`, the ledger entries it needs with `bdk log list --for <target>`, and, for a runner, the project's commands in the package's `Checks` section. The mechanism is described in [Context](context.md#dispatch-packages).
 
 ## Structured returns, not prose
 

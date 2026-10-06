@@ -1,58 +1,85 @@
 # BDK - Broneq Dev Kit
 
-::: warning Describes BDK v2
-This page describes BDK v2. The v3 documentation replaces it (T50).
-:::
-
-BDK is a Claude Code plugin that packages one complete development workflow - design, planning, plan verification, autonomous execution, and code review - into a single installable unit. Nothing in it is tied to a language or a stack: your project's test, lint, and build commands live in `.bdk/settings.json`, and every skill reads them from there.
+BDK is a Claude Code plugin that carries a piece of work from intent to a
+reviewed, mergeable branch: design, plan, execution by role agents, review and
+close. A small TypeScript kernel keeps the state of that work in committed
+files, decides what comes next and refuses what the process does not allow, so
+nothing depends on what a conversation remembers. Nothing in it is tied to a
+language: your test, lint and build commands live in `.bdk/settings.yaml`, and
+every skill and agent gets them from the kernel.
 
 ## Why BDK
 
-- **[Language-agnostic by construction](concepts/shared-foundation.md).** Skills never name a test runner; commands live in `.bdk/settings.yaml` and reach agents through their dispatch packages.
-- **[Verification proportional to the change](concepts/verification-scoping.md).** Fast and e2e tiers with scoped, related, failed, and incremental forms; the full suite runs once per plan, not after every edit.
-- **[Crash-safe, resumable execution](concepts/plan-pipeline.md).** The plan is immutable once verified (sha256 stamp), git commit trailers are the ground truth, the run manifest is only a cache - resume from any session, or run plans in parallel worktrees.
-- **[Coordinator-only executor](concepts/plan-pipeline.md).** Every task gets a fresh subagent context, parallel waves are computed at plan time, and each group lands as one commit.
-- **[Independent verifiers](concepts/agents.md).** The `verifier` and `design-verifier` roles run on separate Opus agents critiquing the author's draft; reviewers are read-only mechanically - by a `tools:` allowlist that grants no editing tools, and by `disallowed-tools` on the skills that spawn them - not by promise.
-- **[Delta code review](workflows/code-review.md).** Reviews only what changed since the last review by default, with a reviewer per group of the change, and fixes blocking findings in rounds until none is left.
-- **Nothing to install beyond Claude Code.** Skills and agents explore, search and trace code with the built-in tools; BDK ships no MCP server and starts no background process.
-- **[Every seam is a file](workflows/full-pipeline.md).** Design docs, plans, verification reports, and commit trailers carry the state between stages, so any stage of the pipeline runs in a fresh session.
-- **[Rules hygiene built in](workflows/rules-hygiene.md).** Lessons go to the ledger; [`/bdk:rules`](reference/skills.md#bdk-rules) adopts the recurring ones as rules you accept and prunes the ones that no longer apply, so the rule set does not turn into a changelog.
+- **[State in files, not in the conversation](concepts/change-pipeline.md).**
+  Every piece of work is a Change under `.bdk/changes/`, committed with the
+  code. Close the session after any step and continue in a fresh one, on
+  another machine, or after a teammate pulls the branch.
+- **[Process sized to the change](concepts/change-pipeline.md#profiles).** A
+  `tiny` Change goes straight to a plan; a `small` one gets a design and two
+  verifications; a `large` one splits its design into parts and runs its plan
+  parts as a tree of agents.
+- **[You decide at the gates](concepts/change-pipeline.md#gates).** The design
+  and the review each end at a gate that only a command you type passes. The
+  model cannot pass it for you.
+- **[Independent verifiers](concepts/agents.md).** The design and the plan are
+  checked against the code by an Opus agent that knows only its package, and
+  that may block only on the categories you allow.
+- **[Verification proportional to the change](concepts/verification-scoping.md).**
+  Each task runs the tests related to its own files; the whole suite runs once,
+  before the review verdict. The kernel, not an agent, decides when a result is
+  stale.
+- **[Retries that end](concepts/change-pipeline.md#tickets-and-the-escalation-ladder).**
+  Every retry has a budget, one escalation to a stronger model, and then a
+  question to you. No loop runs until the context is gone.
+- **[Review in rounds](workflows/code-review.md).** A reviewer per group of the
+  change and an integration reviewer over all of it; blocking findings are fixed
+  in the next round, and you decide the rest.
+- **[Living specs](concepts/change-pipeline.md#living-specs).** What the project
+  ships is described in `.bdk/specs/`; each Change carries a delta that the
+  close merges.
+- **[Rules that earn their place](concepts/quality-and-language-rules.md).**
+  Rules have ids, agents cite the ones they applied, and
+  [`/bdk:rules`](reference/skills.md#bdk-rules) turns recurring lessons into
+  rules and prunes the ones nobody cites.
+- **Nothing to run beside Claude Code but Node.** No MCP server, no background
+  process; agents use Claude Code's built-in tools.
 
 ## How you work with it
 
-There is one pipeline, and three tiers differ only in where you enter it.
-
-::: info BDK 3
-In BDK 3 every tier works on a Change: `/bdk:change`, then `/bdk:design` for a
-feature, then `/bdk:plan`, which replaces `/bdk:create-plan` and runs
-`/bdk:verify-plan` itself, then `/bdk:execute`, which replaces
-`/bdk:subagent-execute-plan`. See [Stage skills](reference/skills.md#stage-skills).
-:::
-
 ```mermaid
 flowchart LR
-    Full(["Full tier"]) --> D["/bdk:design"]
-    Std(["Standard tier"]) --> P["/bdk:create-plan"]
-    Triv(["Trivial tier"]) --> E["plan mode + your own edits"]
-    D --> P
-    P --> V["/bdk:verify-plan"]
-    V --> X["/bdk:subagent-execute-plan"]
-    X -->|"--full before a PR"| CR["/bdk:cr"]
-    E -->|"--inline"| CR
+    S["/bdk:setup<br/>once per project"] --> C["/bdk:change"]
+    C --> D["/bdk:design"]
+    D -->|"you type"| P["/bdk:plan"]
+    P --> X["/bdk:execute"]
+    X --> R["/bdk:cr"]
+    R -->|"you type"| Z["/bdk:close"]
+    C -. "tiny or bug" .-> P
 ```
 
-| Tier     | When                                                        | Flow                                                                                                          |
-| -------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Full     | new feature, architecture or schema change, ambiguous scope | `/bdk:design` -> `/bdk:create-plan` -> `/bdk:verify-plan` -> `/bdk:subagent-execute-plan` -> `/bdk:cr --full` |
-| Standard | clear scope, several files, no design questions             | `/bdk:create-plan` -> (`/bdk:verify-plan`) -> `/bdk:subagent-execute-plan` -> `/bdk:cr`                       |
-| Trivial  | one or two files, obvious change                            | Claude Code built-in plan mode -> edit -> `/bdk:cr --inline`                                                  |
+Each stage ends by naming the command to type next. Type it yourself, or let
+[`/bdk:run`](reference/skills.md#bdk-run) type them for you: it stops at each
+gate, and with `--auto` it passes those too.
 
-The trivial tier needs no BDK skill at all: the SessionStart hook injects the [shared foundation](concepts/shared-foundation.md) - the agent fleet, verification proportionality, quality rules, capture conventions - into every session.
+| Profile                       | When                                                                      | Stages                                                   |
+| ----------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------- |
+| [`tiny`](workflows/tiny.md)   | At most 2 files in 1 module, no behaviour, schema or configuration change | change, plan, execute, review, close                     |
+| [`small`](workflows/small.md) | Most work; the default                                                    | change, design, plan, execute, review, close             |
+| [`large`](workflows/large.md) | A design across three or more subsystems                                  | the same, with design parts and plan parts run as a tree |
+
+A bug fix is a `bug` Change: no design, a plan with the failing test and the
+fix. See [Debugging](workflows/debugging.md).
 
 ## Where to start
 
-- **[Installation](getting-started/installation.md)** - prerequisites, the two install commands, and what the first session looks like.
-- **[Your first feature](getting-started/first-feature.md)** - one small change carried through the full tier, step by step, with the output to expect.
-- **[How you work with it](#how-you-work-with-it)** - the tier table above: which of full, standard, and trivial fits the change.
+- **[Installation](getting-started/installation.md)**: Node, the two install
+  commands, and what changes in your sessions.
+- **[Project setup](getting-started/setup.md)**: `/bdk:setup` writes your
+  commands into `.bdk/settings.yaml`.
+- **[Your first feature](getting-started/first-feature.md)**: one `small`
+  Change from `/bdk:change` to `/bdk:close`.
+- **[Migration from v2](getting-started/migration-from-v2.md)**: you used BDK 2.
 
-Looking for a specific flag, setting, or artifact path? Go straight to the [skill reference](reference/skills.md), or [troubleshooting](troubleshooting.md).
+Looking for a setting, a skill or a file? Go to
+[Configuration](reference/configuration.md), [Skills](reference/skills.md),
+[Artifacts](reference/artifacts.md) or [Troubleshooting](troubleshooting.md).

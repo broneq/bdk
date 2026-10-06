@@ -336,7 +336,7 @@ describe("log add", () => {
     expect(logFiles(store)).toEqual([]);
   });
 
-  it("refuses a summary over 120 characters and a missing ref", async () => {
+  it("refuses a summary over 120 characters and a missing ref [NFR-SIZES]", async () => {
     const { run } = harness();
     expect(
       (await run(["log", "add", "risk", "x".repeat(121), "--ref", "a", "--json"])).json,

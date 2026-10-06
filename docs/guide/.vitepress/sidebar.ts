@@ -12,14 +12,15 @@ export const sidebar = [
       { text: "Installation", link: "/getting-started/installation" },
       { text: "Setup", link: "/getting-started/setup" },
       { text: "Your first feature", link: "/getting-started/first-feature" },
+      { text: "Migration from v2", link: "/getting-started/migration-from-v2" },
     ],
   },
   {
     text: "Workflows",
     items: [
-      { text: "Full pipeline", link: "/workflows/full-pipeline" },
-      { text: "Standard", link: "/workflows/standard" },
-      { text: "Trivial", link: "/workflows/trivial" },
+      { text: "Tiny changes", link: "/workflows/tiny" },
+      { text: "Small changes", link: "/workflows/small" },
+      { text: "Large changes", link: "/workflows/large" },
       { text: "Debugging", link: "/workflows/debugging" },
       { text: "Code review", link: "/workflows/code-review" },
       { text: "Docs and decisions", link: "/workflows/docs-and-decisions" },
@@ -30,9 +31,9 @@ export const sidebar = [
   {
     text: "Concepts",
     items: [
-      { text: "Shared foundation", link: "/concepts/shared-foundation" },
+      { text: "The Change pipeline", link: "/concepts/change-pipeline" },
+      { text: "Context", link: "/concepts/context" },
       { text: "Verification scoping", link: "/concepts/verification-scoping" },
-      { text: "Plan pipeline", link: "/concepts/plan-pipeline" },
       { text: "Worktree parts", link: "/concepts/worktree-parts" },
       { text: "Agents", link: "/concepts/agents" },
       { text: "Quality and language rules", link: "/concepts/quality-and-language-rules" },
@@ -43,11 +44,18 @@ export const sidebar = [
     items: [
       { text: "Skills", link: "/reference/skills" },
       { text: "Agents", link: "/reference/agents" },
+      { text: "Configuration", link: "/reference/configuration" },
       { text: "Hooks", link: "/reference/hooks" },
       { text: "Artifacts", link: "/reference/artifacts" },
     ],
   },
   { text: "Troubleshooting", link: "/troubleshooting" },
-  { text: "Contributing", items: [{ text: "Overview", link: "/contributing/" }] },
+  {
+    text: "Contributing",
+    items: [
+      { text: "Overview", link: "/contributing/" },
+      { text: "Evals", link: "/contributing/evals" },
+    ],
+  },
   { text: "Changelog", link: "/changelog" },
 ] satisfies DefaultTheme.SidebarItem[];

@@ -353,7 +353,7 @@ describe("dispatch build", () => {
     expect(h.store.list(`${DIR}/dispatch`)).toStrictEqual([]);
   });
 
-  it("refuses a package above 12 288 bytes naming its size and largest section", async () => {
+  it("refuses a package above 12 288 bytes naming its size and largest section [S-DISPATCH]", async () => {
     const h = dispatchHarness();
     writeEntry(h.store, {
       type: "decision",

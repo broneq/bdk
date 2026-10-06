@@ -12,7 +12,7 @@ If no "BDK context: pr-review" heading appears above, run `bdk ctx skill pr-revi
 
 # PR review
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
 Review each PR the user names in a detached worktree of its head, and post the confirmed result to GitHub, where the author and the team read it. The review keeps no state: no ticket, no ledger entry, no file under `.bdk/`. The GitHub review is the only durable output.
 

@@ -58,7 +58,7 @@ describe("anchor extraction", () => {
     const html = [
       '<a href="#here">a</a>',
       '<a href="../reference/skills.html#bdk-cr">b</a>',
-      '<a href="./plan-pipeline.md#parts">c</a>',
+      '<a href="./change-pipeline.md#parts">c</a>',
       '<a href="/bdk/reference/">d</a>',
       '<a href="/bdk/reference/#top">e</a>',
       '<a href="https://example.com/#x">f</a>',
@@ -67,7 +67,7 @@ describe("anchor extraction", () => {
     expect(anchorLinks("concepts/agents.md", html)).toStrictEqual([
       { target: "concepts/agents.md", anchor: "here" },
       { target: "reference/skills.md", anchor: "bdk-cr" },
-      { target: "concepts/plan-pipeline.md", anchor: "parts" },
+      { target: "concepts/change-pipeline.md", anchor: "parts" },
       { target: "reference/index.md", anchor: "top" },
     ]);
   });

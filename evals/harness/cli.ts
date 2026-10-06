@@ -143,7 +143,7 @@ export interface AuthStatus {
   readonly loggedIn: boolean;
 }
 
-/** Null when the SDK can authenticate: an API key, or a Claude Code login (evals/README.md, Provider facts). */
+/** Null when the SDK can authenticate: an API key, or a Claude Code login (docs/guide/contributing/evals.md, Provider facts). */
 export function credentialsProblem(
   env: Readonly<Record<string, string | undefined>>,
   authStatus: () => AuthStatus | undefined,

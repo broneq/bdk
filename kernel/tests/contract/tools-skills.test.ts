@@ -9,7 +9,7 @@ import { parse } from "yaml";
 
 import { SKILL_CONTEXT } from "../../src/ctx/use-cases/manifest.ts";
 import { REPO_ROOT } from "../support/run.ts";
-import { userFacingFiles, withoutRemovedSection } from "../support/user-facing.ts";
+import { userFacingFiles } from "../support/user-facing.ts";
 
 const TOOLS = join(REPO_ROOT, "skills", "tools");
 const KERNEL_PAIR = "Bash(bdk *) Bash(echo *)";
@@ -104,9 +104,7 @@ describe("the v2 tools skills are removed", () => {
   it("nothing user-facing names a removed skill", () => {
     const paths = userFacingFiles();
     const stale = new RegExp(`/bdk:(${REMOVED.join("|")})\\b`);
-    const hits = paths.filter((path) =>
-      stale.test(withoutRemovedSection(readFileSync(path, "utf8"))),
-    );
+    const hits = paths.filter((path) => stale.test(readFileSync(path, "utf8")));
     expect(hits.map((path) => relative(REPO_ROOT, path))).toStrictEqual([]);
   });
 

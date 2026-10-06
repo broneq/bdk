@@ -12,7 +12,7 @@ If no "BDK context: run" heading appears above, run `bdk ctx skill run` first an
 
 # Run
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
 A run carries one Change through the stages the user would otherwise type one by one. You start each stage skill with the `Skill` tool and let it do its stage with its own instructions and tools; you hold no copy of any stage's procedure. Add `--json` to every command whose output you act on.
 

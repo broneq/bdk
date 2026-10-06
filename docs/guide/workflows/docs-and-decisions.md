@@ -1,9 +1,5 @@
 # Docs and decisions
 
-::: warning Describes BDK v2
-This page describes BDK v2. The v3 documentation replaces it (T50).
-:::
-
 Three skills for the writing side of the work: recording a decision, documenting code and
 keeping that documentation true, and drawing the diagrams in both.
 

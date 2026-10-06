@@ -74,7 +74,7 @@ A craft skill SHALL be shipped only after a with / without probe on a task file 
 
 ### Requirement: The v2 craft skills leave bdk
 
-`bdk` SHALL NOT ship `skills/debug/`, `skills/test-driven-development/` or `skills/mermaid-drawer/`, and the `ctx skill` manifest SHALL hold no entry for `debug` or `test-driven-development`. Nothing in the repository outside `docs/v3/`, `docs/V3-*.md`, `CHANGELOG.md`, `openspec/changes/archive/`, the recorded host payloads under `tests/fixtures/host-payloads/` and the "Removed skills" sections of `README.md` and `docs/guide/reference/skills.md` SHALL name `/bdk:debug`, `/bdk:test-driven-development` or `/bdk:mermaid-drawer`. The "Removed skills" sections SHALL map them to `bdk-craft:debugging` with `/bdk:change` of kind `bug`, `bdk-craft:tdd`, and `bdk-craft:mermaid-drawer`.
+`bdk` SHALL NOT ship `skills/debug/`, `skills/test-driven-development/` or `skills/mermaid-drawer/`, and the `ctx skill` manifest SHALL hold no entry for `debug` or `test-driven-development`. Nothing in the repository outside `docs/v3/`, `docs/V3-*.md`, `CHANGELOG.md`, `openspec/changes/archive/`, the recorded host payloads under `tests/fixtures/host-payloads/` and the migration page `docs/guide/getting-started/migration-from-v2.md` SHALL name `/bdk:debug`, `/bdk:test-driven-development` or `/bdk:mermaid-drawer`. The migration page SHALL map them to `bdk-craft:debugging` with `/bdk:change` of kind `bug`, `bdk-craft:tdd`, and `bdk-craft:mermaid-drawer`.
 
 #### Scenario: removed directories
 
@@ -83,5 +83,5 @@ A craft skill SHALL be shipped only after a with / without probe on a task file 
 
 #### Scenario: no stale name
 
-- **WHEN** the content test searches the skills, agents, rules, fragments, `README.md`, `STARTUP_INSTRUCTIONS.md`, `CONTRIBUTING.md`, `CLAUDE.md`, `.claude/` and `docs/guide/` for the three names, skipping the two "Removed skills" sections
+- **WHEN** the content test searches the skills, agents, rules, fragments, `README.md`, `STARTUP_INSTRUCTIONS.md`, `CONTRIBUTING.md`, `CLAUDE.md`, `.claude/` and `docs/guide/` for the three names, skipping the migration page
 - **THEN** it finds none

@@ -11,7 +11,7 @@ If no "BDK context: design" heading appears above, run `bdk ctx skill design` fi
 
 # Design
 
-> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md). Assumes environment discovery has already run (language, test runner, build tool are known).
+> Relies on BDK foundation (STARTUP_INSTRUCTIONS.md).
 
 You are the user's design partner for the active Change: you shape what to build and how it fits the code before any code is written. The kernel decides which files the design needs and in what order; the conversation decides what they say. Add `--json` to every command whose output you act on. Apply the `Rules: architecture`, `Rules: engineering-judgment` and project rules sections of the BDK context above.
 

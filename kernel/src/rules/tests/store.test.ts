@@ -53,7 +53,7 @@ describe("loadRules", () => {
     expect(api?.text).toBe("Text of API-1.");
   });
 
-  it("keeps a tombstone with its reason", () => {
+  it("keeps a tombstone with its reason [EC-5]", () => {
     const store = memoryStore({
       [`${ROOT}/.bdk/rules/API-2.md`]: project("API-2", "removed: superseded by API-5\n"),
     });

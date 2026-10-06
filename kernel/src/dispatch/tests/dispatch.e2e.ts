@@ -135,7 +135,7 @@ describe("bdk dispatch build", () => {
     expect(built(change, "01-1", "implementer", ticket).templateHash).toBe(first.templateHash);
   });
 
-  it("exit 2 policy/package-too-large: a 13 KB package names its size and largest section; nothing written", () => {
+  it("exit 2 policy/package-too-large: a 13 KB package names its size and largest section; nothing written [AC-8]", () => {
     const change = started();
     const ticket = opened(change, "task-redispatch", "01-1");
     bdk(

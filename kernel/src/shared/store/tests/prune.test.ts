@@ -42,7 +42,7 @@ function index(store: Store, dir: string) {
 }
 
 describe("pruneChange", () => {
-  it("replaces the bodies of dispatch/ and reports/ with an index of hashes and sizes", () => {
+  it("replaces the bodies of dispatch/ and reports/ with an index of hashes and sizes [R-10]", () => {
     const store = seeded();
     const texts = Object.fromEntries(
       store.list(`${DIR}/dispatch`).map((name) => [name, store.read(`${DIR}/dispatch/${name}`)]),

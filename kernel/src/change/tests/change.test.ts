@@ -404,7 +404,7 @@ describe("change new", () => {
     });
   });
 
-  it("records the keys the local layer overrides", async () => {
+  it("records the keys the local layer overrides [S6]", async () => {
     const h = harness();
     h.store.write(
       `${ROOT}/.bdk/settings.local.yaml`,

@@ -253,7 +253,7 @@ describe("plan part checks", () => {
     );
   });
 
-  it("size passes at 8 192 bytes and fails at 8 193", () => {
+  it("size passes at 8 192 bytes and fails at 8 193 [S1]", () => {
     expect(check({ files: { [PART]: { data, bytes: 8192 } } }, "size")).toStrictEqual({
       id: "size",
       ok: true,
@@ -267,7 +267,7 @@ describe("plan part checks", () => {
     });
   });
 
-  it("tasks fails with no task and with nine", () => {
+  it("tasks fails with no task and with nine [S1]", () => {
     const none = check(
       { files: { [PART]: { data } }, planParts: { [PART]: { tasks: [] } } },
       "tasks",

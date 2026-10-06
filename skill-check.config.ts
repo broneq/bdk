@@ -93,7 +93,7 @@ export default defineConfig({
   ],
   rules: {
     "line-limit": ["error", { max: 200 }],
-    // BDK's listing budget (.claude/rules/skills.md), below the host cap.
+    // BDK's listing budget, below the host cap.
     description: ["error", { max: 250 }],
     "description-front-loaded": "error",
     "require-model": "error",

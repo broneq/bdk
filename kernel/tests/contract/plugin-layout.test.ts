@@ -10,6 +10,7 @@ import { parse } from "yaml";
 import { SKILL_CONTEXT } from "../../src/ctx/use-cases/manifest.ts";
 import { pluginSkillDirs } from "../support/plugin-skills.ts";
 import { REPO_ROOT } from "../support/run.ts";
+import { MIGRATION_PAGE_PATH } from "../support/user-facing.ts";
 
 const REMOVED_AGENTS = [
   "implementer",
@@ -77,6 +78,7 @@ describe("plugin layout", () => {
 
   it("names no removed agent anywhere the plugin or its guide ships", () => {
     // POSIX ERE has no \b: a name ends at a character that cannot continue it.
+    // The migration page maps each removed agent to its adapter.
     const pattern = `bdk:(${REMOVED_AGENTS.join("|")})([^a-z0-9-]|$)`;
     let found = "";
     try {
@@ -94,6 +96,7 @@ describe("plugin layout", () => {
           "STARTUP_INSTRUCTIONS.md",
           "README.md",
           "docs/guide/",
+          `:!${MIGRATION_PAGE_PATH}`,
         ],
         { cwd: REPO_ROOT, encoding: "utf8" },
       );
@@ -106,7 +109,8 @@ describe("plugin layout", () => {
 
   // `plugin-tooling`, Plugin names no removed MCP server. The removed-key
   // registry names the old feature switches so that config check can refuse
-  // them; tests name them as inputs and as text that must not appear.
+  // them; tests name them as inputs and as text that must not appear; the
+  // migration page tells a v2 user what became of them.
   it("names no removed MCP server, its tools or uvx in what it ships", () => {
     let found = "";
     try {
@@ -129,6 +133,7 @@ describe("plugin layout", () => {
           "kernel/src/",
           ":!kernel/src/**/tests/**",
           ":!kernel/src/shared/config/known.ts",
+          `:!${MIGRATION_PAGE_PATH}`,
         ],
         { cwd: REPO_ROOT, encoding: "utf8" },
       );

@@ -139,7 +139,7 @@ describe("log ingest", () => {
     });
   });
 
-  it("writes the envelope in flow style, within 15 lines", async () => {
+  it("writes the envelope in flow style, within 15 lines [NFR-SIZES]", async () => {
     const h = harness();
     const files = Array.from({ length: 12 }, (_, at) => `src/auth/file-${String(at)}.ts`);
     await h.ingest(

@@ -308,7 +308,7 @@ describe("nextRung", () => {
     );
   });
 
-  it("fail oscillating with budget left: escalate naming the fingerprint", () => {
+  it("fail oscillating with budget left: escalate naming the fingerprint [AC-4] [R-8]", () => {
     const after = state(["fail", ["sha256:a"]], ["fail", ["sha256:a"]]);
     expect(nextRung("fail", false, after, POLICY, undefined)).toMatchObject({
       action: "escalate",

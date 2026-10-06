@@ -27,12 +27,12 @@ When the user declines, change nothing. Say in the closing render that `bdk doct
 
 Offer the v2 values as the detected ones; the user confirms them like any other detection.
 
-| v2 key                                            | v3 key                                                                                                                                             |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `languages`                                       | `languages`                                                                                                                                        |
-| `test-tools`, `lint-tools`, `build-tools`         | `tools.test`, `tools.lint`, `tools.build`; an item's `type` becomes its `id`, and the tier and scoped forms come from [the stack table](stacks.md) |
-| `features.lavish`                                 | `features.lavish`                                                                                                                                  |
-| `quality.<category>`, `language-rules.<language>` | `prompts.files.<key>`; name the v3 key to the user, and set it only when they ask                                                                  |
+| v2 key                                            | v3 key                                                                                                                                                                                                                                                        |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `languages`                                       | `languages`                                                                                                                                                                                                                                                   |
+| `test-tools`, `lint-tools`, `build-tools`         | `tools.test`, `tools.lint`, `tools.build`; an item's `type` becomes its `id`, and the tier and scoped forms come from [the stack table](stacks.md)                                                                                                            |
+| `features.lavish`                                 | `features.lavish`                                                                                                                                                                                                                                             |
+| `quality.<category>`, `language-rules.<language>` | none: rules are no longer settings. List the key in the closing render with its replacement: the project's own rules go into `.bdk/rules/` (`bdk rules accept`), a BDK rule is switched off with `rules.disabled`, and `languages` selects the language packs |
 
 Any other v2 key has no v3 counterpart: list it in the closing render as not carried over.
 

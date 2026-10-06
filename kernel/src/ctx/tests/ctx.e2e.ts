@@ -74,7 +74,7 @@ describe("bdk ctx skill", () => {
     });
   });
 
-  it("policy/unknown-config-key: a STOP block, exit 0", () => {
+  it("policy/unknown-config-key: a STOP block, exit 0 [AC-9]", () => {
     const root = fixture({ ".bdk/settings.yaml": "tools:\n  tests: []\n" }).root;
     stop(bdk(["ctx", "skill", "setup"], root), "tools.tests in the project layer");
   });

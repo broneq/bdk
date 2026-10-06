@@ -1,214 +1,149 @@
 # Your first feature
 
-::: warning Describes BDK v2
-This page describes BDK v2. The v3 documentation replaces it (T50).
-:::
+One feature carried from intent to a mergeable branch:
+**users log in with a one-time link**. It is a `small` Change, the default:
+a design, a plan, execution, a review and the close, six commands in all.
 
-One toy change, carried through the full tier end to end:
-**add a `--dry-run` flag to the export command**. Five commands, five artifacts,
-each one a file you can read before you continue.
+Every stage writes its result into the Change and ends by naming the next
+command. You can close the session after any stage and continue in a fresh one.
 
-Every stage is a seam. The artifact is the hand-off, so you can close the
-session after any step and pick up in a fresh one.
+Before you start, [`/bdk:setup`](setup.md) has written the project's test and
+lint commands.
 
-::: info
-Work on a branch. `/bdk:subagent-execute-plan` refuses to run on `main` or
-`master`, and refuses to start with a dirty working tree.
-:::
-
-## 1. Design
-
-::: info BDK 3
-In BDK 3, `/bdk:design` works on the active Change: it writes `design.md` and
-`architecture.md` into the Change, records decisions in the ledger, runs
-`/bdk:verify-design` and ends at the design gate, where you type `/bdk:plan`.
-See [/bdk:design](../reference/skills.md#bdk-design).
-:::
+## 1. Open the Change
 
 ```
-/bdk:design add a --dry-run flag to the export command
+/bdk:change "Users log in with a one-time link"
 ```
 
-`/bdk:design` dispatches `bdk:scout` subagents to ground itself in your code
-before it proposes anything, asks you to classify the work as product,
-architecture, or combined, then offers at least two approaches with a Mermaid
-diagram each and a devil's-advocate critique. A separate Opus `design-verifier`
-subagent reviews the draft before it is written.
+`/bdk:change` asks whether to work on a new branch (`feat/one-time-link-login`)
+or the current one, then opens the Change with `bdk change new`. It reads the
+code the intent touches to pick the profile; a login flow changes user-visible
+behaviour, so it stays `small`. It reports the Change id, the branch and the
+next command, `/bdk:design`.
 
-**Artifact:** `.bdk/design/YYYY-MM-DD-HHMM-<slug>-design.md`
-
-**Before continuing:** read the "What we did NOT decide" section. Everything
-left open there becomes a decision someone makes later, under more pressure. The
-doc ends with its own hand-off line pointing at `/bdk:create-plan`.
-
-## 2. Create the plan
-
-::: info BDK 3
-In BDK 3, `/bdk:plan` replaces `/bdk:create-plan`: it writes plan parts into the
-active Change, runs `/bdk:verify-plan` and corrects the plan until the verdict
-passes, then names `/bdk:execute`. See [/bdk:plan](../reference/skills.md#bdk-plan).
-:::
+The Change is now a directory, committed with your work:
 
 ```
-/bdk:create-plan .bdk/design/2026-09-13-0930-dry-run-export-design.md
+.bdk/changes/2026-10-06-users-log-in-with-a-one-time-link/
+├── change.md      # the intent, kind and profile
+└── log/           # one file per ledger entry
 ```
 
-The skill finds the design doc by slug keywords and reads it, explores, picks an
-approach with you, verifies its own outline, then writes the plan in one pass:
+At any point, `bdk change status` shows where it stands:
 
 ```
-[create-plan] Found related design doc: {filename}
-[create-plan] Setup complete. Plan: <path>
-[create-plan] Launching {N} explorer(s): {list of agent names}
-[create-plan] Exploration complete:
-  - Utilities: {N}
-  - Affected files: {N}
-  - Similar features: {N}
-  - Degraded agents: {list or "none"}
-[create-plan] Design complete: {selected approach name}
-[create-plan] Outline verified: {N} gaps found and fixed
-[create-plan] Parallelism: {T} tasks in {W} waves (max width {widest wave size}, critical path {longest dependency chain})
-[create-plan] Plan written: <path> — {N} tasks, {M} files to modify, {K} files to create
+2026-10-06-users-log-in-with-a-one-time-link (feature, user)
+stage: intent
+profile: small
+nodes:
+  intent done
+  design ready
+  architecture blocked: design is ready, not done
+  ...
+gate:design: not ready
+gate:review: not ready
 ```
 
-**Artifact:** `.bdk/plans/<timestamp>-<slug>.md`
-
-**Before continuing:** read the plan's tasks. Each one declares `Files:` and
-`Depends on:`, and those two lines are what let the executor run a wide wave
-instead of a long serial chain. Edit now if anything is wrong: the plan's bytes
-become its identity at the next step, so an edit after verification invalidates
-the stamp.
-
-## 3. Verify the plan
+## 2. Design
 
 ```
-/bdk:verify-plan .bdk/plans/2026-09-13-0942-dry-run-export.md
+/bdk:design
 ```
 
-One Opus `verifier` subagent runs a six-section checklist against the
-real code (signature drift, data trace, edge cases, regression flows, test
-coverage, plan completeness) and returns a YAML verdict. A `FAIL` gets one
-delta iteration; a second `FAIL` sends you back to `/bdk:design` rather than a
-third pass.
+The skill reads the code first and tells you what exists, then asks about each
+real decision with at least two approaches, each with a Mermaid diagram and a
+self-critique. With Lavish installed, the comparisons open as a page in your
+browser. It writes `design.md` and `architecture.md`, and records every
+decision you take as a `decision` entry and every open point as a `question`.
 
-On success the skill prints:
+It then runs `/bdk:verify-design`: an Opus agent that knows only its dispatch
+package checks every claim the design makes about the code. The skill corrects
+false claims itself and shows you the design with the verdict.
+
+**Before continuing:** read the design and the open questions. The design gate
+is yours: the Change waits until you type the next command.
+
+## 3. Plan
 
 ```
-  Verdict:  PASS | PASS_WITH_WARNINGS
-  Report:   .bdk/verify-plan/<plan-slug>-verification.md
-  Plan sha: <first 12 chars>
-
-  Next: /bdk:subagent-execute-plan <plan-path>
+/bdk:plan
 ```
 
-**Artifact:** `.bdk/verify-plan/<plan-slug>-verification.md`
+Typing it passes the design gate; the hook that sees the command refuses it,
+naming what is missing, if the design is not done and verified. The skill
+writes plan parts under `plan/parts/`, each at most 8 tasks. Every task is a
+contract: its goal, its `Files:` and test cases that name an input and the
+expected result. A part that changes a living spec gets a spec delta under
+`spec-delta/`. It runs `/bdk:verify-plan`, corrects the plan until the verdict
+passes and reports the parts and their waves.
 
-**Before continuing:** read the `must_fix` entries, and on
-`PASS_WITH_WARNINGS` read the warnings - they do not block execution but they
-are worth knowing before subagents act on the plan. The `Plan sha:` is the
-sha256 of the plan's bytes; the executor recomputes it and tells you whether it
-is running the plan that was verified.
+**Before continuing:** read the test cases. They are what the implementers
+will make pass.
 
 ## 4. Execute
 
-::: info BDK 3
-In BDK 3, `/bdk:execute` replaces `/bdk:subagent-execute-plan`: it builds the
-plan parts of the active Change through role agents, every ready part in one
-run, flat or with one lead per part, then names `/bdk:cr`. See
-[/bdk:execute](../reference/skills.md#bdk-execute).
-:::
-
 ```
-/bdk:subagent-execute-plan .bdk/plans/2026-09-13-0942-dry-run-export.md
+/bdk:execute
 ```
 
-The coordinator never edits a file itself. It groups file-disjoint tasks,
-dispatches a fresh `implementer` package per task, runs scoped tests and lint
-through `runner` packages, routes failures back to an implementer,
-and commits one group at a time. It opens with:
+The skill never edits a file itself. For each task it opens a ticket, builds a
+dispatch package and starts a `bdk:worker` agent with it; after the
+implementer, the same ticket runs the simplifier and a `bdk:runner` agent that
+runs the tests related to the task's files and the scoped lint, recording each
+result as evidence. The kernel closes the ticket only on fresh, passing
+evidence, and the task becomes one commit:
 
 ```
-[subagent-execute-plan] Plan loaded: {path}
-  Resume: {yes, from group N|no}
-  Verification: {stamped|stale|missing}
-  Tasks: {N}
-  Parallel groups: {G} {source}  (e.g. [1.1,1.2] [1.3] [2.1,2.2,2.3] [3.1])
-  Base SHA: {short-sha}
-  Manifest: .bdk/runs/{run-id}.json
-  Worktree mode: same-worktree (disjoint files within group)
-  Test/lint cadence: orchestrator judgment per group (max 2 consecutive skips)
-  Test/lint scope: scoped to changed files; full suite once, at 4d
+Store the login token
+
+BDK-Change: 2026-10-06-users-log-in-with-a-one-time-link
+BDK-Part: 01
+BDK-Task: 01-1
 ```
 
-then one pair of lines per group:
-
-```
-[subagent-execute-plan] Group {n}/{G}: tasks {ids} — dispatching
-[subagent-execute-plan] Group {n}/{G}: committed {short-sha}
-```
-
-and closes with a fixed-shape `[subagent-execute-plan-summary]` block
-(`tasks_completed`, `groups_committed`, `final_tests`, `wall_clock_per_group`,
-`status`, and more). The keys are documented in
-[The full pipeline](../workflows/full-pipeline.md).
-
-**Artifacts:** commits on your branch carrying `BDK-Run:` and `BDK-Group:`
-trailers, plus a run manifest at `.bdk/runs/{run-id}.json`.
-
-**Before continuing:** check the `Verification:` line said `stamped`, and that
-`status:` is `success`. Git trailers are the durable record; the manifest is
-only a cache, and the run state script corrects it from git whenever the two
-disagree.
+A task that fails is retried in a narrowing scope, then once on a stronger
+model; after that the kernel parks the Change and asks you. When every part is
+done, the skill reports the commits and the open findings and names `/bdk:cr`.
 
 ## 5. Review
 
 ```
-/bdk:cr --full
+/bdk:cr
 ```
 
-`/bdk:cr` reviews only the delta since the last review by default. Before a PR,
-always pass `--full`: a delta pass cannot see a later commit breaking an
-earlier, already-reviewed one.
+The review runs in rounds. In each round, a reviewer per group of files and an
+Opus integration reviewer over everything read the diff, while a runner runs
+the full test and lint suite once against the whole Change. Every finding is
+triaged: `blocker`, `should-fix`, `nice-to-have` or `not-a-problem`. Blockers
+are fixed in the next round by an implementer. When no blocker is left, the
+report opens, and you decide each open entry: fix, defer, reject or track it in
+your issue tracker. See [Code review](../workflows/code-review.md).
+
+## 6. Close
 
 ```
-[cr] Step 1: Resolving range...
-[cr] Range: {anchor}..{head} ({delta|full}, {anchor_source}) — {N} commits
-[cr] Scope: {N} files changed, {N} lines → {tiny|small|large|massive}
-[cr] Step 2: Dispatching {N} agents ({M} deferred findings suppressed)...
-[cr] Step 3: Waiting for agents...
-[cr] Step 4: Merging results...
-[cr] ✓ Complete ({N} findings: {critical}C/{high}H/{medium}M/{low}L)
-[cr] Report: {path}
+/bdk:close
 ```
 
-**Artifact:** `.bdk/cr/{stamp}-{branch-slug}-{delta|full}.md`
+Typing it passes the review gate. The kernel merges the spec deltas into
+`.bdk/specs/`, moves the Change to `.bdk/changes/archive/`, and commits both as
+`chore(bdk): close <id>`. The skill prints the PR summary from the ledger: the
+intent, the decisions, the assumptions, the risks and the open findings. It
+opens no PR: push the branch and open it with that summary.
 
-**Before continuing:** the range line tells you whether this was a deliberate
-full review or one that fell back to full because the watermark was lost -
-`anchor_source` says which. Reviewers are read-only, so nothing was fixed:
-acting on the findings is your next, explicit decision.
+## The same, without typing each command
 
-## Next time you may skip to a shorter tier
+```
+/bdk:run "Users log in with a one-time link"
+```
 
-The full tier is for new features, architecture or schema changes, and anything
-where the scope is still ambiguous. Most work is smaller:
-
-- **[Standard](../workflows/standard.md)** - clear scope, several files, no open
-  design questions. Start at `/bdk:create-plan`, optionally verify, execute, and
-  review with `/bdk:cr`.
-- **[Trivial](../workflows/trivial.md)** - one or two files and an obvious
-  change. No BDK skill at all: Claude Code's built-in plan mode, the edit, then
-  `/bdk:cr --inline`. It is safe without skills because the shared foundation is
-  injected into every session.
-
-The [tier table](../index.md#how-you-work-with-it) sums up when each fits.
-
-## What you get
-
-- A design doc, a plan, a verification report, a branch of grouped commits with
-  run trailers, and a code review report.
-- A run manifest that lets any of those steps resume in a fresh session.
+`/bdk:run` starts each stage the kernel names. It asks nothing: each stage takes
+the option it recommends and records it as a decision marked for review, shown
+to you at the next gate. It stops at each gate and names the command to type.
+`/bdk:run --auto` passes the gates too.
 
 ## Next step
 
-[The standard tier](../workflows/standard.md).
+Most changes are smaller or larger than this one; see the
+[`tiny`](../workflows/tiny.md) and [`large`](../workflows/large.md) workflows.

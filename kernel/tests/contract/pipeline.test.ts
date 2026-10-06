@@ -33,7 +33,7 @@ describe("pipeline/pipeline.yaml", () => {
     expect(pipelineErrors(shipped, declared).errors).toStrictEqual([]);
   });
 
-  it("the when: fixture fails the kernel's schema naming the key", () => {
+  it("the when: fixture fails the kernel's schema naming the key [R-3]", () => {
     const declared = declaredBy(settingsRegistry(), kindRegistry());
     expect(pipelineErrors(WHEN, declared).errors).toStrictEqual(["nodes[16].when: unknown key"]);
   });

@@ -54,17 +54,17 @@ Match verification to what changed. Never run the full suite "just to be safe" a
 
 ## Quality Rules
 
-BDK ships rules by id (`BDK-CQ-4`), one file each; a project adds its own in `.bdk/rules/` and switches any off with `rules.disabled`. An agent reads the rules of its ticket with `bdk rules show --ticket <ticket>` and cites the id of every rule that shaped its work. See README "Quality Rules".
+BDK ships rules by id (`BDK-CQ-4`), one file each; a project adds its own in `.bdk/rules/` and switches any off with `rules.disabled`. An agent reads the rules of its ticket with `bdk rules show --ticket <ticket>` and cites the id of every rule that shaped its work. See "Quality and language rules" in the BDK guide.
 
 ## Capture Conventions
 
 Before recording a convention or lesson anywhere, route it:
 
-| The knowledge                                           | Where it goes                                                     |
-| ------------------------------------------------------- | ----------------------------------------------------------------- |
-| Cross-cutting invariant whose violation fails silently  | `.claude/rules/`, scoped by the narrowest `paths:` that covers it |
-| Trap visible at the code site where the mistake happens | a doc comment there                                               |
-| Something a test or lint already enforces               | one line naming the enforcer                                      |
-| Anything else                                           | nothing                                                           |
+| The knowledge                                           | Where it goes                                                                           |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Cross-cutting invariant whose violation fails silently  | a project rule in `.bdk/rules/`, scoped by the narrowest `applies:` glob that covers it |
+| Trap visible at the code site where the mistake happens | a doc comment there                                                                     |
+| Something a test or lint already enforces               | one line naming the enforcer                                                            |
+| Anything else                                           | nothing                                                                                 |
 
 A line that a rename or file move would force you to edit is a code mirror, not a rule. **"Nothing" is the frequent, correct answer** - never write something down just to have written it. `/bdk:rules capture` runs this routing and adopts a rule through `bdk rules accept`; `/bdk:rules audit` turns recurring lessons into rules and prunes what no longer applies.

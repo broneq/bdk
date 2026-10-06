@@ -27,3 +27,6 @@ coverage/
 # `bdk export agents --host claude`: every file of agents/ but the hand-written one
 /agents/*
 !/agents/web-researcher.md
+
+# Claude Code personal settings.
+.claude/settings.local.json

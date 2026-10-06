@@ -450,9 +450,11 @@ The body holds the part's tasks. A task starts at a level-2 heading `## <task-id
 | ------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `**Files:**`        | yes            | A list; each item holds one backticked relative path, optionally prefixed by `Create:`, `Modify:`, `Test:` or `Delete:`. |
 | `**Test cases:**`   | one of the two | A non-empty list of test cases.                                                                                          |
-| `**Verification:**` | one of the two | `none` (`.claude/rules/verification-scoping.md`, `Verification: none` task class).                                       |
+| `**Verification:**` | one of the two | `none`: the `Verification: none` task class (below).                                                                     |
 | `**Depends on:**`   | no             | `none` or comma-separated task ids of the same part.                                                                     |
 | `**Stop rule:**`    | no             | The condition under which the worker stops and returns `blocked` (P6).                                                   |
+
+A task MAY declare `Verification: none` only when every file of its `**Files:**` is non-executable content (a path in `policy.evidence.non-executable` and not in `policy.evidence.build-config`, `kernel-settings`, Keys of evidence policy), pure wiring, or a refactor fully covered by existing tests. Such a task has no `**Test cases:**`, is not run test-first, and is verified by its success measure and the review at the end of the plan.
 
 Executable fields are `goal`, `success-measure`, `isolation-reason`, each task title, each `Files:` item, each `Test cases:` item and `Stop rule:`. An executable field holds a placeholder when it contains `TODO`, `TBD` or `FIXME` as a word, `<fill in>` or `[...]`, is `...` or `…` alone, or is wrapped in square brackets as a whole (`[Action verb + what]`).
 

@@ -46,7 +46,7 @@ describe("capLines", () => {
     expect(capLines(lines(TEXT_LINE_CAP))).toBe(`${lines(TEXT_LINE_CAP)}\n`);
   });
 
-  it("prints at most 100 lines and says how many were cut", () => {
+  it("prints at most 100 lines and says how many were cut [S1]", () => {
     const out = capLines(lines(250)).trimEnd().split("\n");
     expect(out).toHaveLength(TEXT_LINE_CAP);
     expect(out[98]).toBe("line 99");

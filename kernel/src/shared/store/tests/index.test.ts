@@ -628,7 +628,7 @@ describe("on disk", () => {
     expect(selectReadOnly(index, "SELECT count(*) FROM findings").rows).toEqual([[0]]);
   });
 
-  it("rebuilds a file that is not a SQLite database", async () => {
+  it("rebuilds a file that is not a SQLite database [EC-2]", async () => {
     mkdirSync(join(root, ".bdk/.machine"), { recursive: true });
     writeFileSync(path(), "not a database, just bytes ".repeat(100));
     const index = await openIndex(fileStore(), root);

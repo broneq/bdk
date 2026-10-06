@@ -58,7 +58,7 @@ function openAttempt(root: string, id: string, loop = "task-redispatch", target 
 }
 
 describe("bdk change new", () => {
-  it("exit 0: opens the Change, its assumption entry, the marker and .gitignore", () => {
+  it("exit 0: opens the Change, its assumption entry, the marker and .gitignore [S7]", () => {
     const root = repository();
     const result = answered(
       bdk(["change", "new", INTENT, "--json"], root),
@@ -86,6 +86,30 @@ describe("bdk change new", () => {
       .filter((line) => line.includes(".bdk"));
     expect(lines).toEqual(["/.bdk/.machine/", "/.bdk/settings.local.yaml"]);
     expect(git(root, "status", "--porcelain", "--ignored", ".bdk/.machine")).toContain("!!");
+  });
+
+  it("acceptance: a local override disabling escalation is in the Change's list [EC-4]", () => {
+    const root = repository();
+    fileStore().write(
+      join(root, ".bdk/settings.local.yaml"),
+      "policy:\n  escalation:\n    enabled: false\n",
+    );
+    const result = answered(
+      bdk(["change", "new", INTENT, "--json"], root),
+      "output/change-new.json",
+    );
+    // The fixture's global layer sets the tool groups; the local file adds the escalation key.
+    expect(result.overriddenKeys).toContain("policy.escalation.enabled");
+    const id = String(result.change);
+    expect(read(root, `.bdk/changes/${id}/change.md`)).toMatch(
+      /overridden:\n(?: {2}- .*\n)* {2}- policy\.escalation\.enabled\n/,
+    );
+    expect(
+      answered(bdk(["change", "status", "--json"], root), "output/change-status.json"),
+    ).toMatchObject({ overriddenKeys: result.overriddenKeys });
+    expect(bdk(["change", "status"], root).stdout).toMatch(
+      /^overridden by global or local: .*policy\.escalation\.enabled/m,
+    );
   });
 
   it("exit 2 policy/change-exists: the branch already has an active Change", () => {
@@ -164,7 +188,7 @@ describe("bdk change status", () => {
     );
   });
 
-  it("acceptance: at most 100 lines, an --inferred Change shown unconfirmed", () => {
+  it("acceptance: at most 100 lines, an --inferred Change shown unconfirmed [S1]", () => {
     const { root } = opened("--inferred");
     const text = bdk(["change", "status"], root);
     expect(text.code).toBe(0);
@@ -278,7 +302,7 @@ describe("bdk change park and resume", () => {
     expect(bdk(["change", "status", "--json"], root).json).not.toHaveProperty("parked");
   });
 
-  it("exit 0: resume rebinds the Change to another branch", () => {
+  it("exit 0: resume rebinds the Change to another branch [S5]", () => {
     const { root, id } = opened();
     git(root, "checkout", "--quiet", "-b", "feat/login-2");
     const result = answered(

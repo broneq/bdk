@@ -20,6 +20,7 @@
     "test:e2e": "pnpm build && vitest run --project e2e",
     "test:perf": "pnpm build && vitest run --project perf",
     "test:contract": "pnpm build && vitest run --project contract",
+    "acceptance:report": "pnpm build && node kernel/scripts/acceptance-report.ts",
     "skill-check": "skill-check",
     "docs:build": "vitepress build docs/guide",
     "docs:dev": "vitepress dev docs/guide",

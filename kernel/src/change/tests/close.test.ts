@@ -247,7 +247,7 @@ describe("change close", () => {
     });
   });
 
-  it("keeps the evidence bodies with archive.keep-evidence", async () => {
+  it("keeps the evidence bodies with archive.keep-evidence [R-10]", async () => {
     const h = closing();
     h.store.write(`${ROOT}/.bdk/settings.yaml`, "archive:\n  keep-evidence: true\n");
     writePackage(h.store, "A-00000001", "implementer", "01-1");
